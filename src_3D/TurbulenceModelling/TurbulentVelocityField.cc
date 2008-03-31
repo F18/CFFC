@@ -4,6 +4,158 @@
 #endif // _TURBULENT_VELOCITY_FIELD_INCLUDED
 
 
+/* -------------------------------------------------------------------------- */
+/*                Turbulent_Velocity_Field_Block member functions             */
+/* -------------------------------------------------------------------------- */
+
+
+
+/*************************************************************************
+ * Turbulent_Velocity_Field_Block::allocate -- Allocate memory.          *
+ *************************************************************************/
+void Turbulent_Velocity_Field_Block::allocate(const int Ni, 
+                                              const int Nj, 
+                                              const int Nk,
+                                              const int Ng) {
+    assert( Ni >= 1 && Nj >= 1 && Nk >= 1 && Ng >=1 && !Allocated);
+    NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1;
+    NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1;
+    NCk = Nk+2*Ng; KCl = Ng; KCu = Nk+Ng-1;
+    Nghost = Ng;
+    Allocated = TURBULENT_VELOCITY_FIELD_DATA_USED;
+    
+    Velocity = new Vector3D**[NCi];
+    Position = new Vector3D**[NCi];
+    for (int i = 0; i <= NCi-1; ++i ){
+        Velocity[i] = new Vector3D*[NCj];
+        Position[i] = new Vector3D*[NCj];
+        for (int j = 0; j <= NCj-1; ++j ){
+            Velocity[i][j] = new Vector3D[NCk];
+            Position[i][j] = new Vector3D[NCk];
+        } /* endfor */
+    } /* endfor */
+    
+}
+
+/*************************************************************************
+ * Turbulent_Velocity_Field_Block::allocate_gradients                    *
+ *                                 -- Allocate gradients memory.         * 
+ *************************************************************************/
+void Turbulent_Velocity_Field_Block::allocate_gradients(void) {
+    
+    assert(!_Allocated && NCi >= 1 && NCj >= 1 && NCk >= 1 && Nghost >=1);
+    _Allocated = TURBULENT_VELOCITY_FIELD_DATA_USED;
+    
+    dVdx = new Vector3D**[NCi];
+    dVdy = new Vector3D**[NCi];
+    dVdz = new Vector3D**[NCi];
+    for (int i = 0; i <= NCi-1; ++i ){
+        dVdx[i] = new Vector3D*[NCj];
+        dVdy[i] = new Vector3D*[NCj];
+        dVdz[i] = new Vector3D*[NCj];
+        for (int j = 0; j <= NCj-1; ++j ){
+            dVdx[i][j] = new Vector3D[NCk];
+            dVdy[i][j] = new Vector3D[NCk];
+            dVdz[i][j] = new Vector3D[NCk];
+        } /* endfor */
+    } /* endfor */
+    
+}
+
+/*************************************************************************
+ * Turbulent_Velocity_Field_Block::deallocate -- Deallocate memory.      *
+ *************************************************************************/
+void Turbulent_Velocity_Field_Block::deallocate(void) {
+    if (Allocated) {
+        assert(NCi >= 1 && NCj >= 1 && NCk >= 1);
+        for (int i = 0; i <= NCi-1 ; ++i ) {
+            for ( int j = 0 ; j <= NCj-1 ; ++j) {
+                delete []Velocity[i][j]; Velocity[i][j] = NULL;
+                delete []Position[i][j]; Position[i][j] = NULL;
+            } /* endfor */
+            delete []Velocity[i]; Velocity[i] = NULL;
+            delete []Position[i]; Position[i] = NULL;
+        }/*endfor*/
+        delete []Velocity; Velocity = NULL;
+        delete []Position; Position = NULL;
+        
+        NCi = 0; ICl = 0; ICu = 0; 
+        NCj = 0; JCl = 0; JCu = 0; 
+        NCk = 0; KCl = 0; KCu = 0; 
+        Nghost = 0;
+        Allocated = TURBULENT_VELOCITY_FIELD_DATA_NOT_USED;
+    } /* endif */
+}
+
+/*************************************************************************
+ * Turbulent_Velocity_Field_Block::deallocate_gradients                  *
+ *                                 -- Deallocate gradients memory.       *
+ *************************************************************************/
+void Turbulent_Velocity_Field_Block::deallocate_gradients(void) {
+    
+    if (_Allocated) {
+        
+        assert(NCi >= 1 && NCj >= 1 && NCk >= 1);
+        for (int i = 0; i <= NCi-1 ; ++i ) {
+            for ( int j = 0 ; j <= NCj-1 ; ++j) {
+                delete []dVdx[i][j]; dVdx[i][j] = NULL;
+                delete []dVdy[i][j]; dVdy[i][j] = NULL;
+                delete []dVdz[i][j]; dVdz[i][j] = NULL;
+            } /* endfor */
+            delete []dVdx[i]; dVdx[i] = NULL;
+            delete []dVdy[i]; dVdy[i] = NULL;
+            delete []dVdz[i]; dVdz[i] = NULL;
+        }/*endfor*/
+        delete []dVdx; dVdx = NULL;
+        delete []dVdy; dVdy = NULL;
+        delete []dVdz; dVdz = NULL;
+        
+        _Allocated = TURBULENT_VELOCITY_FIELD_DATA_NOT_USED;
+    }
+    
+}
+
+/*************************************************************************
+ * Turbulent_Velocity_Field_Block::Copy -- Copy a block.                 *
+ *************************************************************************/
+void Turbulent_Velocity_Field_Block::Copy(Turbulent_Velocity_Field_Block &Block2){
+    if (Block2.Allocated) {
+        //  Allocate memory as required.
+        if (NCi != Block2.NCi ||
+            NCj != Block2.NCj ||
+            NCk != Block2.NCk ||
+            Nghost != Block2.Nghost) {
+            if (Allocated) {
+                deallocate();
+            } /*endif */
+            
+            allocate(Block2.NCi-2*Block2.Nghost, 
+                     Block2.NCj-2*Block2.Nghost, 
+                     Block2.NCk-2*Block2.Nghost, 
+                     Block2.Nghost);
+        } /* endif */
+        
+        /* Assign initial turbulent velocity field to solution block. */
+        
+        for (int i = ICl ; i <= ICu ; i++) {
+            for (int j = JCl ; j <= JCu ; j++) {
+                for (int k = KCl ; k <= KCu ; k++) {
+                    Velocity[i][j][k] = Block2.Velocity[i][j][k];
+                    Position[i][j][k] = Block2.Position[i][j][k];
+                } /* endfor */
+            } /* endfor */
+        } /* endfor */
+        
+        gblknum = Block2.gblknum;
+        Node_INl_JNl_KNl = Block2.Node_INl_JNl_KNl;
+        Node_INu_JNu_KNu = Block2.Node_INu_JNu_KNu;
+        
+    }
+    
+}
+
+
+
 /***********************************************************************
  * Turbulent_Velocity_Field_Block::LeastSquares_Reconstruction         *
  *                                 -- Reconstruct the velocity field.  *
@@ -770,127 +922,127 @@ void Turbulent_Velocity_Field_Block::LeastSquares_Reconstruction(void) {
  *                     -- Broadcast turbulent velocity field block.  *
  *********************************************************************/
 void Turbulent_Velocity_Field_Block::Broadcast(void) {
-
+    
 #ifdef _MPI_VERSION
-
-  int ni, nj, nk, ng, block_allocated, buffer_size;
-  double *buffer;
-
-  int N_3Dvectors = 2; // Position and Velocity
-
-  /* Broadcast the number of cells in each direction. */
-
-  if (CFFC_Primary_MPI_Processor()) {
-    ni = NCi;
-    nj = NCj;
-    nk = NCk;
-    ng = Nghost;
-
-    if (Allocated)
-      block_allocated = 1;
-    else
-      block_allocated = 0;
-     
-  } /* endif */
-
-  MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
-  MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
-  MPI::COMM_WORLD.Bcast(&nk, 1, MPI::INT, 0);
-  MPI::COMM_WORLD.Bcast(&ng, 1, MPI::INT, 0);
-  MPI::COMM_WORLD.Bcast(&block_allocated, 1, MPI::INT, 0);
-
-  /* On non-primary MPI processors, allocate (re-allocate) 
-     memory for the block as necessary. */
-
-  if (!CFFC_Primary_MPI_Processor()) {
-    if (NCi != ni || NCj != nj ||  NCk != nk || Nghost != ng ) { 
-      if (block_allocated) allocate(ni-2*ng, nj-2*ng, nk-2*ng, ng); 
-    }
-  } 
-
-  /* Broadcast the global block number and diagonally opposite corners. */
     
-  MPI::COMM_WORLD.Bcast(&gblknum, 1, MPI::INT, 0);
-  
-  MPI::COMM_WORLD.Bcast(&(Node_INl_JNl_KNl.x),
-                          1,
-			  MPI::DOUBLE, 0);
-  MPI::COMM_WORLD.Bcast(&(Node_INl_JNl_KNl.y),
-                          1,
-			  MPI::DOUBLE, 0);
-  MPI::COMM_WORLD.Bcast(&(Node_INl_JNl_KNl.z),
-                          1,
-			  MPI::DOUBLE, 0);
-
-  MPI::COMM_WORLD.Bcast(&(Node_INu_JNu_KNu.x),
-                          1,
-			  MPI::DOUBLE, 0);
-  MPI::COMM_WORLD.Bcast(&(Node_INu_JNu_KNu.y),
-                          1,
-			  MPI::DOUBLE, 0);
-  MPI::COMM_WORLD.Bcast(&(Node_INu_JNu_KNu.z),
-                          1,
-			  MPI::DOUBLE, 0);
-  
-   
-  /* Broadcast the velocities */
-
-  if (block_allocated) {
-    ni = (ICu+Nghost) - (ICl-Nghost) + 1;
-    nj = (JCu+Nghost) - (JCl-Nghost) + 1;
-    nk = (KCu+Nghost) - (KCl-Nghost) + 1;
+    int ni, nj, nk, ng, block_allocated, buffer_size;
+    double *buffer;
     
-    buffer_size = N_3Dvectors*(3*ni*nj*nk);
-    buffer = new double[buffer_size]; 
+    int N_3Dvectors = 2; // Position and Velocity
+    
+    /* Broadcast the number of cells in each direction. */
     
     if (CFFC_Primary_MPI_Processor()) {
-      int i_buffer = 0;
-      for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-	for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-	  for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-	    for (int l=1;  l<=N_3Dvectors; ++l) {
-	      for ( int n=1; n<=3; ++n) {
-		if (l==1) {
-		  buffer[i_buffer] = Velocity[i][j][k][n];
-		} else if (l==2) {
-		  buffer[i_buffer] = Position[i][j][k][n];
-		}
-		i_buffer ++;
-	      }
-	    }
-	  }
-	}
-      } /* endfor */ 
+        ni = NCi;
+        nj = NCj;
+        nk = NCk;
+        ng = Nghost;
+        
+        if (Allocated)
+            block_allocated = 1;
+        else
+            block_allocated = 0;
+        
     } /* endif */
-	    
-    MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
-
+    
+    MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&nk, 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&ng, 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&block_allocated, 1, MPI::INT, 0);
+    
+    /* On non-primary MPI processors, allocate (re-allocate) 
+     memory for the block as necessary. */
+    
     if (!CFFC_Primary_MPI_Processor()) {
-      int i_buffer = 0;
-      for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-	for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-	  for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
-	    for (int l=1;  l<=N_3Dvectors; ++l) {
-	      for ( int n=1; n<=3; ++n) {
-		if (l==1) {
-		  Velocity[i][j][k][n] = buffer[i_buffer];
-		} else if (l==2) {
-		  Position[i][j][k][n] = buffer[i_buffer];
-		}
-		i_buffer ++;
-	      }
-	    }
-	  }	 
-	}
-      } /* endfor */
+        if (NCi != ni || NCj != nj ||  NCk != nk || Nghost != ng ) { 
+            if (block_allocated) allocate(ni-2*ng, nj-2*ng, nk-2*ng, ng); 
+        }
+    } 
+    
+    /* Broadcast the global block number and diagonally opposite corners. */
+    
+    MPI::COMM_WORLD.Bcast(&gblknum, 1, MPI::INT, 0);
+    
+    MPI::COMM_WORLD.Bcast(&(Node_INl_JNl_KNl.x),
+                          1,
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Node_INl_JNl_KNl.y),
+                          1,
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Node_INl_JNl_KNl.z),
+                          1,
+                          MPI::DOUBLE, 0);
+    
+    MPI::COMM_WORLD.Bcast(&(Node_INu_JNu_KNu.x),
+                          1,
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Node_INu_JNu_KNu.y),
+                          1,
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Node_INu_JNu_KNu.z),
+                          1,
+                          MPI::DOUBLE, 0);
+    
+    
+    /* Broadcast the velocities */
+    
+    if (block_allocated) {
+        ni = (ICu+Nghost) - (ICl-Nghost) + 1;
+        nj = (JCu+Nghost) - (JCl-Nghost) + 1;
+        nk = (KCu+Nghost) - (KCl-Nghost) + 1;
+        
+        buffer_size = N_3Dvectors*(3*ni*nj*nk);
+        buffer = new double[buffer_size]; 
+        
+        if (CFFC_Primary_MPI_Processor()) {
+            int i_buffer = 0;
+            for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+                for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+                    for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                        for (int l=1;  l<=N_3Dvectors; ++l) {
+                            for ( int n=1; n<=3; ++n) {
+                                if (l==1) {
+                                    buffer[i_buffer] = Velocity[i][j][k][n];
+                                } else if (l==2) {
+                                    buffer[i_buffer] = Position[i][j][k][n];
+                                }
+                                i_buffer ++;
+                            }
+                        }
+                    }
+                }
+            } /* endfor */ 
+        } /* endif */
+	    
+        MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
+        
+        if (!CFFC_Primary_MPI_Processor()) {
+            int i_buffer = 0;
+            for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+                for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+                    for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+                        for (int l=1;  l<=N_3Dvectors; ++l) {
+                            for ( int n=1; n<=3; ++n) {
+                                if (l==1) {
+                                    Velocity[i][j][k][n] = buffer[i_buffer];
+                                } else if (l==2) {
+                                    Position[i][j][k][n] = buffer[i_buffer];
+                                }
+                                i_buffer ++;
+                            }
+                        }
+                    }	 
+                }
+            } /* endfor */
+        } /* endif */
+        
+        delete []buffer; 
+        buffer = NULL;
+        
     } /* endif */
-       
-    delete []buffer; 
-    buffer = NULL;
-
-  } /* endif */
 #endif
-
+    
 }
 
 
@@ -900,131 +1052,321 @@ void Turbulent_Velocity_Field_Block::Broadcast(void) {
  *********************************************************************/
 #ifdef _MPI_VERSION
 void Turbulent_Velocity_Field_Block::Broadcast(MPI::Intracomm &Communicator, 
-					       const int Source_CPU){
+                                               const int Source_CPU){
     
-  int Source_Rank = 0;
-  int ni, nj, nk, ng, block_allocated, buffer_size;
-  double *buffer;
+    int Source_Rank = 0;
+    int ni, nj, nk, ng, block_allocated, buffer_size;
+    double *buffer;
     
-  int N_3Dvectors = 2; // Position and Velocity
+    int N_3Dvectors = 2; // Position and Velocity
     
-  /* Broadcast the number of cells in each direction. */
+    /* Broadcast the number of cells in each direction. */
     
-  if (CFFC_MPI::This_Processor_Number == Source_CPU) {
-    ni = NCi;
-    nj = NCj;
-    nk = NCk;
-    ng = Nghost; 
-
-    if (Allocated)
-      block_allocated = 1;
-    else
-      block_allocated = 0;
-  } /* endif */
+    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
+        ni = NCi;
+        nj = NCj;
+        nk = NCk;
+        ng = Nghost; 
+        
+        if (Allocated)
+            block_allocated = 1;
+        else
+            block_allocated = 0;
+    } /* endif */
     
-  Communicator.Bcast(&ni, 1, MPI::INT, Source_Rank);
-  Communicator.Bcast(&nj, 1, MPI::INT, Source_Rank); 
-  Communicator.Bcast(&nk, 1, MPI::INT, Source_Rank);
-  Communicator.Bcast(&ng, 1, MPI::INT, Source_Rank);
-  Communicator.Bcast(&block_allocated, 1, MPI::INT, Source_Rank);
-
+    Communicator.Bcast(&ni, 1, MPI::INT, Source_Rank);
+    Communicator.Bcast(&nj, 1, MPI::INT, Source_Rank); 
+    Communicator.Bcast(&nk, 1, MPI::INT, Source_Rank);
+    Communicator.Bcast(&ng, 1, MPI::INT, Source_Rank);
+    Communicator.Bcast(&block_allocated, 1, MPI::INT, Source_Rank);
     
-  /* On non-source MPI processors, allocate (re-allocate) 
+    
+    /* On non-source MPI processors, allocate (re-allocate) 
      memory for the block as necessary. */
     
-  if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-    if (NCi != ni || NCj != nj ||  NCk != nk || Nghost != ng) { 
-      if (block_allocated) {
-	allocate(ni-2*ng, nj-2*ng, nk-2*ng, ng); 
-      }
-    } /* endif */
-  } /* endif */
-    
-
-  /* Broadcast the global block number and diagonally opposite corners. */
-    
-  Communicator.Bcast(&gblknum, 1, MPI::INT, Source_Rank);
-
-  Communicator.Bcast(&(Node_INl_JNl_KNl.x),
-		     1,
-		     MPI::DOUBLE, Source_Rank);
-  Communicator.Bcast(&(Node_INl_JNl_KNl.y),
-		     1,
-		     MPI::DOUBLE, Source_Rank);
-  Communicator.Bcast(&(Node_INl_JNl_KNl.z),
-		     1,
-		     MPI::DOUBLE, Source_Rank);
-
-  Communicator.Bcast(&(Node_INu_JNu_KNu.x),
-		     1,
-		     MPI::DOUBLE, Source_Rank);
-  Communicator.Bcast(&(Node_INu_JNu_KNu.y),
-		     1,
-		     MPI::DOUBLE, Source_Rank);
-  Communicator.Bcast(&(Node_INu_JNu_KNu.z),
-		     1,
-		     MPI::DOUBLE, Source_Rank);
-    
-  /* Broadcast the velocities */
-    
-  if (block_allocated) {
-    ni = (ICu+Nghost) - (ICl-Nghost) + 1;
-    nj = (JCu+Nghost) - (JCl-Nghost) + 1;
-    nk = (KCu+Nghost) - (KCl-Nghost) + 1;
-
-    buffer_size = N_3Dvectors*(3*ni*nj*nk);
-    buffer = new double[buffer_size];
-
-    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
-      int i_buffer = 0;
-      for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-	for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-	  for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
-	    for (int l=1;  l<=N_3Dvectors; ++l) {
-	      for ( int n=1; n<=3; ++n) {
-		if (l==1) {
-		  buffer[i_buffer] = Velocity[i][j][k][n];
-		} else if (l==2) {
-		  buffer[i_buffer] = Position[i][j][k][n];
-		}
-		i_buffer ++;
-	      }
-	    }
-	  }	 
-	}
-      } /* endfor */
-    } /* endif */
-        
-    Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
-
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-      int i_buffer = 0;
-      for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-	for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-	  for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
-	    for (int l=1;  l<=N_3Dvectors; ++l) {
-	      for ( int n=1; n<=3; ++n) {
-		if (l==1) {
-		  Velocity[i][j][k][n] = buffer[i_buffer];
-		} else if (l==2) {
-		  Position[i][j][k][n] = buffer[i_buffer];
-		}                       
-		i_buffer ++;
-	      }
-	    }
-	  }	 
-	}
-      } /* endfor */
+        if (NCi != ni || NCj != nj ||  NCk != nk || Nghost != ng) { 
+            if (block_allocated) {
+                allocate(ni-2*ng, nj-2*ng, nk-2*ng, ng); 
+            }
+        } /* endif */
     } /* endif */
-
-    delete []buffer; 
-    buffer = NULL;
-                
-  } /* endif */ 
-
+    
+    
+    /* Broadcast the global block number and diagonally opposite corners. */
+    
+    Communicator.Bcast(&gblknum, 1, MPI::INT, Source_Rank);
+    
+    Communicator.Bcast(&(Node_INl_JNl_KNl.x),
+                       1,
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(Node_INl_JNl_KNl.y),
+                       1,
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(Node_INl_JNl_KNl.z),
+                       1,
+                       MPI::DOUBLE, Source_Rank);
+    
+    Communicator.Bcast(&(Node_INu_JNu_KNu.x),
+                       1,
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(Node_INu_JNu_KNu.y),
+                       1,
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(Node_INu_JNu_KNu.z),
+                       1,
+                       MPI::DOUBLE, Source_Rank);
+    
+    /* Broadcast the velocities */
+    
+    if (block_allocated) {
+        ni = (ICu+Nghost) - (ICl-Nghost) + 1;
+        nj = (JCu+Nghost) - (JCl-Nghost) + 1;
+        nk = (KCu+Nghost) - (KCl-Nghost) + 1;
+        
+        buffer_size = N_3Dvectors*(3*ni*nj*nk);
+        buffer = new double[buffer_size];
+        
+        if (CFFC_MPI::This_Processor_Number == Source_CPU) {
+            int i_buffer = 0;
+            for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+                for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+                    for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+                        for (int l=1;  l<=N_3Dvectors; ++l) {
+                            for ( int n=1; n<=3; ++n) {
+                                if (l==1) {
+                                    buffer[i_buffer] = Velocity[i][j][k][n];
+                                } else if (l==2) {
+                                    buffer[i_buffer] = Position[i][j][k][n];
+                                }
+                                i_buffer ++;
+                            }
+                        }
+                    }	 
+                }
+            } /* endfor */
+        } /* endif */
+        
+        Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
+        
+        if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+            int i_buffer = 0;
+            for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+                for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+                    for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+                        for (int l=1;  l<=N_3Dvectors; ++l) {
+                            for ( int n=1; n<=3; ++n) {
+                                if (l==1) {
+                                    Velocity[i][j][k][n] = buffer[i_buffer];
+                                } else if (l==2) {
+                                    Position[i][j][k][n] = buffer[i_buffer];
+                                }                       
+                                i_buffer ++;
+                            }
+                        }
+                    }	 
+                }
+            } /* endfor */
+        } /* endif */
+        
+        delete []buffer; 
+        buffer = NULL;
+        
+    } /* endif */ 
+    
 }
 #endif 
 
+
+
+/* -------------------------------------------------------------------------- */
+/*          Turbulent_Velocity_Field_Multi_Block_List member functions        */
+/* -------------------------------------------------------------------------- */
+
+
+
+/*****************************************************************************
+ * Turbulent_Velocity_Field_Multi_Block_List::Allocate -- Allocate memory.   *
+ *****************************************************************************/
+void Turbulent_Velocity_Field_Multi_Block_List::Allocate(const int Ni, 
+                                                         const int Nj, 
+                                                         const int Nk) {
+    if (Ni >= 1 && Nj >= 1 && Nk >= 1 && !Allocated) {
+        NBlk_Idir = Ni; 
+        NBlk_Jdir = Nj; 
+        NBlk_Kdir = Nk; 
+        NBlk = Ni*Nj*Nk;
+        Vel_Blks = new Turbulent_Velocity_Field_Block[NBlk];
+        Allocated = 1;
+    } /* endif */
+}
+
+/*****************************************************************************
+ * Turbulent_Velocity_Field_Multi_Block_List::Allocate -- Allocate memory.   *
+ *****************************************************************************/
+void Turbulent_Velocity_Field_Multi_Block_List::Allocate(const int N) {
+    if (N >= 1 && !Allocated) {
+        NBlk_Idir = N; 
+        NBlk_Jdir = 1; 
+        NBlk_Kdir = 1; 
+        NBlk = N;
+        Vel_Blks = new Turbulent_Velocity_Field_Block[NBlk];
+        Allocated = 1;
+    } /* endif */
+}
+
+/*****************************************************************************
+ * Turbulent_Velocity_Field_Multi_Block_List::Allocate -- Deallocate memory. *
+ *****************************************************************************/
+void Turbulent_Velocity_Field_Multi_Block_List::Deallocate(void) {
+    if (NBlk >= 1 && Allocated) {
+        delete []Vel_Blks;
+        Vel_Blks = NULL;
+        NBlk_Idir = 0; 
+        NBlk_Jdir = 0; 
+        NBlk_Kdir = 0;
+        NBlk = 0;
+        Allocated = 0;
+    } /* endif */
+}
+
+/*****************************************************************************
+ * Turbulent_Velocity_Field_Multi_Block_List::Create --                      *
+ *       Create memory containers for velocity field data.                   *
+ *****************************************************************************/
+void Turbulent_Velocity_Field_Multi_Block_List::Create(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
+                                                       const Grid3D_Input_Parameters &Input) {
+    if (Initial_Mesh.NBlk >= 1 && Initial_Mesh.Allocated) {
+        Allocate(Initial_Mesh.NBlk_Idir, Initial_Mesh.NBlk_Jdir, Initial_Mesh.NBlk_Kdir);
+        for (int nBlk = 0; nBlk <= NBlk-1; ++nBlk ) {
+            if (Initial_Mesh.Grid_Blks[nBlk].Allocated) Vel_Blks[nBlk].allocate(Initial_Mesh.Grid_Blks[nBlk].NCi-
+                                                                                2*Initial_Mesh.Grid_Blks[nBlk].Nghost,
+                                                                                Initial_Mesh.Grid_Blks[nBlk].NCj-
+                                                                                2*Initial_Mesh.Grid_Blks[nBlk].Nghost,
+                                                                                Initial_Mesh.Grid_Blks[nBlk].NCk-
+                                                                                2*Initial_Mesh.Grid_Blks[nBlk].Nghost,
+                                                                                Initial_Mesh.Grid_Blks[nBlk].Nghost);
+        } /* endfor */
+    } /* endif */
+}
+
+/*****************************************************************************
+ * Turbulent_Velocity_Field_Multi_Block_List::Broadcast --                   *
+ *     Broadcast the turbulent velocity field data from the main processor.  *
+ *****************************************************************************/
+void Turbulent_Velocity_Field_Multi_Block_List::Broadcast() {
+    
+#ifdef _MPI_VERSION
+    
+    int nblki, nblkj, nblkk, Block_allocated;
+    
+    if ( CFFC_Primary_MPI_Processor() ) {
+        nblki = NBlk_Idir;
+        nblkj = NBlk_Jdir;
+        nblkk = NBlk_Kdir;
+        if (Allocated)
+            Block_allocated = 1;
+        else
+            Block_allocated = 0;  
+    }
+    
+    MPI::COMM_WORLD.Bcast(&nblki, 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&nblkj, 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&nblkk, 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&Block_allocated, 1, MPI::INT, 0);
+    
+    /* On non-primary MPI processors, allocate (re-allocate)
+     memory as necessary. */
+    
+    if ( !CFFC_Primary_MPI_Processor() ) {
+        if (NBlk_Idir != nblki || NBlk_Jdir != nblkj ||  NBlk_Kdir != nblkk) {
+            if (Block_allocated) Allocate(nblki, nblkj, nblkk);
+        }
+    } 
+    
+    for (int nBlk = 0; nBlk < NBlk; ++nBlk) {
+        Vel_Blks[nBlk].Broadcast();
+    }
+    
+#endif
+}
+
+
+/*****************************************************************************
+ * Turbulent_Velocity_Field_Multi_Block_List::Write_Turbulent_Velocity_Field *
+ *      --  Write the turbulent velocity field data to a file.               * 
+ *****************************************************************************/
+int Turbulent_Velocity_Field_Multi_Block_List::Write_Turbulent_Velocity_Field(void) const {
+    
+    ofstream out_file;
+    
+    // Open file
+    out_file.open("Turbulent_Velocity_Field_Data.dat", ios::out);
+    if (out_file.fail()) {
+        cerr<<"\n Error opening file:  Turbulent_Velocity_Field_Data.dat to write" << endl;
+        exit(1);
+    }
+    
+    // Write number of blocks in each direction
+    out_file << NBlk_Idir << " " << NBlk_Jdir << " " << NBlk_Kdir << "\n";
+    
+    // Write block data
+    for (int nBlk = 0; nBlk < NBlk; ++nBlk) {
+        out_file << setprecision(10) << Vel_Blks[nBlk];
+    }
+    
+    // Close file
+    out_file.close();
+    
+    return 0;
+    
+}
+
+
+/*****************************************************************************
+ * Turbulent_Velocity_Field_Multi_Block_List::Read_Turbulent_Velocity_Field  *
+ *      --  Read the turbulent velocity field data from a file.              *        
+ *****************************************************************************/
+int Turbulent_Velocity_Field_Multi_Block_List::Read_Turbulent_Velocity_Field(void) {
+    
+    int ni, nj, nk;
+    ifstream in_file;
+    
+    // Open file
+    in_file.open("Turbulent_Velocity_Field_Data.dat", ios::in); 
+    if(in_file.fail()){ 
+        cerr<<"\n Error opening file: Turbulent_Velocity_Field_Data.dat to read" << endl;
+        exit(1); 
+    } 
+    
+    // Read number of blocks in each direction
+    in_file.setf(ios::skipws);
+    in_file >> ni >> nj  >> nk;   
+    in_file.unsetf(ios::skipws);
+    
+    if (ni == 0 || nj == 0 || nk == 0) {
+        if (Allocated) Deallocate(); 
+        return (1);
+    } 
+    
+    if (!Allocated || NBlk_Idir != ni || NBlk_Jdir != nj || NBlk_Kdir != nk) {
+        if (Allocated) Deallocate();
+        Allocate(ni, nj, nk);
+    } 
+    
+    
+    // Read data bloks
+    for (int nBlk = 0; nBlk < NBlk; ++nBlk) {
+        in_file >> Vel_Blks[nBlk];
+    }
+    
+    
+    // Close file
+    in_file.close();
+    
+    return 0;
+    
+}
 
 /*****************************************************************************
  * Turbulent_Velocity_Field_Multi_Block_List::Interpolate_Turbulent_Field    *
@@ -1142,6 +1484,119 @@ Interpolate_Turbulent_Field(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
 }
 
 
+
+
+/**
+ * Turbulent_Velocity_Field_Multi_Block_List::Assign_Local_Velocity_Field_Blocks
+ *
+ * Copies velocity field blocks from this list to the local list. 
+ * The velocity field blocks to be copied are those with matching 
+ * global block number.
+ *
+ * \param [out] Local_List  The local Turbulent_Velocity_Field_Multi_Block_List
+ */
+void Turbulent_Velocity_Field_Multi_Block_List::Assign_Local_Velocity_Field_Blocks(Turbulent_Velocity_Field_Multi_Block_List &Local_List){
+    
+    for (int nBlk = 0; nBlk < Local_List.NBlk; nBlk++) {
+        Vel_Blks[Local_List.Vel_Blks[nBlk].gblknum].Copy(Local_List.Vel_Blks[nBlk]);
+    }
+}
+
+
+
+/**
+ * Turbulent_Velocity_Field_Multi_Block_List::Collect_Blocks_from_all_processors
+ *
+ * Collects each local Turbulent_Velocity_Field_Block from all the processors
+ * and copies them in this (global) Turbulent_Velocity_Field_Multi_Block_List by
+ * comparing the global block number.
+ *
+ * \param [in] OcTree                  The Octree_DataStructure
+ * \param [in] LocalSolnBlockList      The local AdaptiveBlock3D_List
+ * \param [in] Global_Soln_Block_List  The global AdaptiveBlock3D_ResourceList
+ */
+void Turbulent_Velocity_Field_Multi_Block_List::Collect_Blocks_from_all_processors(Octree_DataStructure &OcTree,
+                                                                                   AdaptiveBlock3D_List &LocalSolnBlockList,
+                                                                                   AdaptiveBlock3D_ResourceList &Global_Soln_Block_List) {
+    int *new_blocks_CPU, *CPUs_in_new_blocks;
+    int  new_blocks_BLK;
+    CPUs_in_new_blocks = new int[Global_Soln_Block_List.Ncpu];
+    new_blocks_CPU = new int[Global_Soln_Block_List.Ncpu];
+    
+#ifdef _MPI_VERSION
+    MPI::Intracomm new_comm;
+    MPI::Group     big_group = MPI::COMM_WORLD.Get_group();
+    MPI::Group     new_group;
+#endif
+    
+    Turbulent_Velocity_Field_Block  Velocity_Field_Block_duplicated;
+    OctreeBlock *octree_block_duplicated_ptr;
+    
+    for (int iCPU = 0; iCPU <= OcTree.Ncpu-1; ++iCPU ) { // Loop over available processors.
+        for (int iBLK = 0; iBLK <= OcTree.Nblk-1; ++iBLK ) { // Loop over available blocks.
+            if (OcTree.Blocks[iCPU][iBLK] != NULL) {
+                if (OcTree.Blocks[iCPU][iBLK]->block.used) { // Check if the solution block is used.
+                    
+                    octree_block_duplicated_ptr = OcTree.Blocks[iCPU][iBLK];
+                    new_blocks_CPU[0] = octree_block_duplicated_ptr->block.info.cpu;
+                    new_blocks_BLK = octree_block_duplicated_ptr->block.info.gblknum;
+                    
+                    CPUs_in_new_blocks[0] = new_blocks_CPU[0];
+                    
+                    if (Global_Soln_Block_List.Ncpu > 1) {
+                        for (int iNEW = 1 ; iNEW < Global_Soln_Block_List.Ncpu; ++iNEW ) {
+                            if (iNEW != new_blocks_CPU[0]) {
+                                new_blocks_CPU[iNEW] = iNEW;
+                            } else {
+                                new_blocks_CPU[iNEW] = 0;
+                            }
+                            CPUs_in_new_blocks[iNEW] = new_blocks_CPU[iNEW];
+                        }
+                    }
+                    
+                    if (LocalSolnBlockList.ThisCPU == new_blocks_CPU[0]) { 
+                        Velocity_Field_Block_duplicated.Copy(Vel_Blks[new_blocks_BLK]); 
+                    } 
+#ifdef _MPI_VERSION 
+                    new_group = big_group.Incl(Global_Soln_Block_List.Ncpu, CPUs_in_new_blocks);
+                    new_comm = MPI::COMM_WORLD.Create(new_group);
+                    
+                    Velocity_Field_Block_duplicated.Broadcast(new_comm, new_blocks_CPU[0]); 
+                    
+                    if (new_comm != MPI::COMM_NULL) new_comm.Free();
+                    new_group.Free();
+#endif
+                    Vel_Blks[Velocity_Field_Block_duplicated.gblknum].Copy(Velocity_Field_Block_duplicated);
+                    
+                }
+            }
+        }
+    }
+    
+    //delete octree_block_duplicated_ptr;
+    delete[] CPUs_in_new_blocks;
+    delete[] new_blocks_CPU;
+    
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* -------------------------------------------------------------------------- */
 
 template <typename HEXA_BLOCK>
 int Longitudinal_Correlation(const Octree_DataStructure &OcTree,

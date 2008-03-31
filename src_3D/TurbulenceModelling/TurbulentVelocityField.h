@@ -124,28 +124,28 @@ class Turbulent_Velocity_Field_Block {
       allocate(Ni, Nj, Nk, Ng);
     }
 
-    /* Destructor. */
+    //! Destructor
     ~Turbulent_Velocity_Field_Block(void) {
        deallocate_gradients();
        deallocate();        
     }
 
-    /* Allocate memory for velocity field data. */
+    //! Allocate memory for velocity field data. 
     void allocate(const int Ni, 
                   const int Nj, 
                   const int Nk,
                   const int Ng);
     
-    /* Deallocate memory for velocity field data. */
+    //! Deallocate memory for velocity field data.
     void deallocate(void);
 
-    /* Allocate memory for velocity field gradients. */
+    //! Allocate memory for velocity field gradients. 
     void allocate_gradients(void);
 
-    /* Deallocate memory for velocity field gradients. */
+    //! Deallocate memory for velocity field gradients.
     void deallocate_gradients(void);
 
-    /* Reconstruct velocity field data. */
+    //! Reconstruct velocity field data. 
     void LeastSquares_Reconstruction(const int &i,
 				     const int &j,
 				     const int &k,
@@ -153,25 +153,30 @@ class Turbulent_Velocity_Field_Block {
 				     Vector3D &dVdy,
 				     Vector3D &dVdz);
 
+    //! Least Squares Reconstruction
     void LeastSquares_Reconstruction(const int &i,
 				     const int &j,
 				     const int &k);
 
+    //! Least Squares Reconstruction
     void LeastSquares_Reconstruction(void);
 
+    //! Copy operator
     void Copy(Turbulent_Velocity_Field_Block &Block2);
 
+    //! Broadcast
     void Broadcast(void);
 
-#ifdef _MPI_VERSION    
+#ifdef _MPI_VERSION   
+    //! Broadcast from a given processor
     void Broadcast(MPI::Intracomm &Communicator, 
                    const int Source_CPU);
 #endif
     
-    /* Input-output operators. */
+    //! Output operator
     friend ostream &operator << (ostream &out_file, 
                                  const Turbulent_Velocity_Field_Block &V);
-
+    //! Input operator
     friend istream &operator >> (istream &in_file, 
                                  Turbulent_Velocity_Field_Block &V);
   
@@ -184,171 +189,27 @@ class Turbulent_Velocity_Field_Block {
 };
 
 /*************************************************************************
- * Turbulent_Velocity_Field_Block::allocate -- Allocate memory.          *
- *************************************************************************/
-inline void Turbulent_Velocity_Field_Block::allocate(const int Ni, 
-                                                     const int Nj, 
-                                                     const int Nk,
-                                                     const int Ng) {
-   assert( Ni >= 1 && Nj >= 1 && Nk >= 1 && Ng >=1 && !Allocated);
-   NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1;
-   NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1;
-   NCk = Nk+2*Ng; KCl = Ng; KCu = Nk+Ng-1;
-   Nghost = Ng;
-   Allocated = TURBULENT_VELOCITY_FIELD_DATA_USED;
-
-   Velocity = new Vector3D**[NCi];
-   Position = new Vector3D**[NCi];
-   for (int i = 0; i <= NCi-1; ++i ){
-      Velocity[i] = new Vector3D*[NCj];
-      Position[i] = new Vector3D*[NCj];
-      for (int j = 0; j <= NCj-1; ++j ){
-         Velocity[i][j] = new Vector3D[NCk];
-	 Position[i][j] = new Vector3D[NCk];
-      } /* endfor */
-   } /* endfor */
-   
-}
-
-/*************************************************************************
- * Turbulent_Velocity_Field_Block::allocate_gradients                    *
- *                                 -- Allocate gradients memory.         * 
- *************************************************************************/
-inline void Turbulent_Velocity_Field_Block::allocate_gradients(void) {
-  
-  assert(!_Allocated && NCi >= 1 && NCj >= 1 && NCk >= 1 && Nghost >=1);
-  _Allocated = TURBULENT_VELOCITY_FIELD_DATA_USED;
-    
-  dVdx = new Vector3D**[NCi];
-  dVdy = new Vector3D**[NCi];
-  dVdz = new Vector3D**[NCi];
-  for (int i = 0; i <= NCi-1; ++i ){
-    dVdx[i] = new Vector3D*[NCj];
-    dVdy[i] = new Vector3D*[NCj];
-    dVdz[i] = new Vector3D*[NCj];
-    for (int j = 0; j <= NCj-1; ++j ){
-      dVdx[i][j] = new Vector3D[NCk];
-      dVdy[i][j] = new Vector3D[NCk];
-      dVdz[i][j] = new Vector3D[NCk];
-    } /* endfor */
-  } /* endfor */
-
-}
-
-/*************************************************************************
- * Turbulent_Velocity_Field_Block::deallocate -- Deallocate memory.      *
- *************************************************************************/
-inline void Turbulent_Velocity_Field_Block::deallocate(void) {
-   if (Allocated) {
-      assert(NCi >= 1 && NCj >= 1 && NCk >= 1);
-      for (int i = 0; i <= NCi-1 ; ++i ) {
-         for ( int j = 0 ; j <= NCj-1 ; ++j) {
-            delete []Velocity[i][j]; Velocity[i][j] = NULL;
-	    delete []Position[i][j]; Position[i][j] = NULL;
-         } /* endfor */
-         delete []Velocity[i]; Velocity[i] = NULL;
-	 delete []Position[i]; Position[i] = NULL;
-      }/*endfor*/
-      delete []Velocity; Velocity = NULL;
-      delete []Position; Position = NULL;
-  
-      NCi = 0; ICl = 0; ICu = 0; 
-      NCj = 0; JCl = 0; JCu = 0; 
-      NCk = 0; KCl = 0; KCu = 0; 
-      Nghost = 0;
-      Allocated = TURBULENT_VELOCITY_FIELD_DATA_NOT_USED;
-   } /* endif */
-}
-
-/*************************************************************************
- * Turbulent_Velocity_Field_Block::deallocate_gradients                  *
- *                                 -- Deallocate gradients memory.       *
- *************************************************************************/
-inline void Turbulent_Velocity_Field_Block::deallocate_gradients(void) {
-
-  if (_Allocated) {
-
-    assert(NCi >= 1 && NCj >= 1 && NCk >= 1);
-    for (int i = 0; i <= NCi-1 ; ++i ) {
-      for ( int j = 0 ; j <= NCj-1 ; ++j) {
-	delete []dVdx[i][j]; dVdx[i][j] = NULL;
-	delete []dVdy[i][j]; dVdy[i][j] = NULL;
-	delete []dVdz[i][j]; dVdz[i][j] = NULL;
-      } /* endfor */
-      delete []dVdx[i]; dVdx[i] = NULL;
-      delete []dVdy[i]; dVdy[i] = NULL;
-      delete []dVdz[i]; dVdz[i] = NULL;
-    }/*endfor*/
-    delete []dVdx; dVdx = NULL;
-    delete []dVdy; dVdy = NULL;
-    delete []dVdz; dVdz = NULL;
-
-    _Allocated = TURBULENT_VELOCITY_FIELD_DATA_NOT_USED;
-  }
-
-}
-
-/*************************************************************************
- * Turbulent_Velocity_Field_Block::Copy -- Copy a block.                 *
- *************************************************************************/
-inline void Turbulent_Velocity_Field_Block::Copy(Turbulent_Velocity_Field_Block &Block2){
-  if (Block2.Allocated) {
-    //  Allocate memory as required.
-    if (NCi != Block2.NCi ||
-	NCj != Block2.NCj ||
-	NCk != Block2.NCk ||
-	Nghost != Block2.Nghost) {
-      if (Allocated) {
-	deallocate();
-      } /*endif */
-            
-      allocate(Block2.NCi-2*Block2.Nghost, 
-	       Block2.NCj-2*Block2.Nghost, 
-	       Block2.NCk-2*Block2.Nghost, 
-	       Block2.Nghost);
-    } /* endif */
-        
-    /* Assign initial turbulent velocity field to solution block. */
-        
-    for (int i = ICl ; i <= ICu ; i++) {
-      for (int j = JCl ; j <= JCu ; j++) {
-	for (int k = KCl ; k <= KCu ; k++) {
-	  Velocity[i][j][k] = Block2.Velocity[i][j][k];
-	  Position[i][j][k] = Block2.Position[i][j][k];
-	} /* endfor */
-      } /* endfor */
-    } /* endfor */
-
-    gblknum = Block2.gblknum;
-    Node_INl_JNl_KNl = Block2.Node_INl_JNl_KNl;
-    Node_INu_JNu_KNu = Block2.Node_INu_JNu_KNu;
-        
-  }
-        
-}
-   
-/*************************************************************************
  * Turbulent_Velocity_Field_Block -- Input-output operators.             *
  *************************************************************************/
 inline ostream &operator << (ostream &out_file,
-			     const Turbulent_Velocity_Field_Block &V){  
- 
-  out_file << V.NCi << " " << V.NCj << " " << V.NCk << "\n";
-  out_file << V.Nghost << " " << V.gblknum << "\n";
-  out_file << V.Node_INl_JNl_KNl << " " << V.Node_INu_JNu_KNu << "\n";
-     
-  if (V.NCi == 0 || V.NCj == 0 || V.NCk == 0 || V.Nghost == 0)  return(out_file);
-   
-  for (int k=V.KCl-V.Nghost; k<= V.KCu+V.Nghost; ++k) {
-    for(int j= V.JCl-V.Nghost; j<= V.JCu+V.Nghost; ++j) {
-      for(int i=V.ICl-V.Nghost; i<= V.ICu+V.Nghost; ++i) {
-	out_file << V.Position[i][j][k] << " " << V.Velocity[i][j][k] << "\n";
-      } 
-    } 
-  } /* endfor */ 
+                             const Turbulent_Velocity_Field_Block &V){  
     
-  return (out_file);
-
+    out_file << V.NCi << " " << V.NCj << " " << V.NCk << "\n";
+    out_file << V.Nghost << " " << V.gblknum << "\n";
+    out_file << V.Node_INl_JNl_KNl << " " << V.Node_INu_JNu_KNu << "\n";
+    
+    if (V.NCi == 0 || V.NCj == 0 || V.NCk == 0 || V.Nghost == 0)  return(out_file);
+    
+    for (int k=V.KCl-V.Nghost; k<= V.KCu+V.Nghost; ++k) {
+        for(int j= V.JCl-V.Nghost; j<= V.JCu+V.Nghost; ++j) {
+            for(int i=V.ICl-V.Nghost; i<= V.ICu+V.Nghost; ++i) {
+                out_file << V.Position[i][j][k] << " " << V.Velocity[i][j][k] << "\n";
+            } 
+        } 
+    } /* endfor */ 
+    
+    return (out_file);
+    
 }
 
 inline istream &operator >> (istream &in_file,
@@ -392,7 +253,7 @@ inline istream &operator >> (istream &in_file,
 
 
 
-/*!
+/**
  * Class: Turbulent_Velocity_Field_Multi_Block
  *
  * \brief Class used to store turbulent velocity field for a
@@ -446,203 +307,169 @@ class Turbulent_Velocity_Field_Multi_Block_List {
     int Write_Turbulent_Velocity_Field(void) const;   
     int Read_Turbulent_Velocity_Field(void);
     
+    void Collect_Blocks_from_all_processors(Octree_DataStructure &OcTree,
+                                            AdaptiveBlock3D_List &LocalSolnBlockList,
+                                            AdaptiveBlock3D_ResourceList &Global_Soln_Block_List) ;
+    
+    void Assign_Local_Velocity_Field_Blocks(Turbulent_Velocity_Field_Multi_Block_List &Local_List);
+    
 
+    
   private:
     //copy and assignment are not permitted
     Turbulent_Velocity_Field_Multi_Block_List(const Turbulent_Velocity_Field_Multi_Block_List &V);
     Turbulent_Velocity_Field_Multi_Block_List &operator = (const Turbulent_Velocity_Field_Multi_Block_List &V);
 };
 
-/*****************************************************************************
- * Turbulent_Velocity_Field_Multi_Block_List::Allocate -- Allocate memory.   *
- *****************************************************************************/
-inline void Turbulent_Velocity_Field_Multi_Block_List::Allocate(const int Ni, 
-                                                                const int Nj, 
-                                                                const int Nk) {
-   if (Ni >= 1 && Nj >= 1 && Nk >= 1 && !Allocated) {
-      NBlk_Idir = Ni; 
-      NBlk_Jdir = Nj; 
-      NBlk_Kdir = Nk; 
-      NBlk = Ni*Nj*Nk;
-      Vel_Blks = new Turbulent_Velocity_Field_Block[NBlk];
-      Allocated = 1;
-   } /* endif */
+
+/**
+ * Create_Local_Velocity_Field_Multi_Block_List
+ *
+ * Creates and allocates a Velocity_Field_Multi_Block_List
+ * containing velocity field blocks corresponding to local blocks
+ *
+ * \param [out] Local_List          The list of local velocity field blocks
+ * \param [in]  Solution_Block      The local solution blocks
+ * \param [in]  LocalSolnBlockList  The local AdaptiveBlock3D_List
+ */
+template <typename HEXA_BLOCK>
+inline void Create_Local_Velocity_Field_Multi_Block_List(Turbulent_Velocity_Field_Multi_Block_List &Local_List, 
+                                                         HEXA_BLOCK *Solution_Block, 
+                                                         AdaptiveBlock3D_List &LocalSolnBlockList) {
+    if (LocalSolnBlockList.Nused() >= 1) {
+        Local_List.Allocate(LocalSolnBlockList.Nused());
+        for (int nBlk = 0; nBlk <= LocalSolnBlockList.Nused(); ++nBlk ) {
+            if (LocalSolnBlockList.Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
+                Local_List.Vel_Blks[nBlk].allocate(Solution_Block[nBlk].NCi - 2*Solution_Block[nBlk].Nghost,
+                                                   Solution_Block[nBlk].NCj - 2*Solution_Block[nBlk].Nghost,
+                                                   Solution_Block[nBlk].NCk - 2*Solution_Block[nBlk].Nghost,
+                                                   Solution_Block[nBlk].Nghost);
+                Local_List.Vel_Blks[nBlk].gblknum = LocalSolnBlockList.Block[nBlk].info.gblknum;
+            }         
+        } /* endfor */
+    } /* endif */
 }
 
-/*****************************************************************************
- * Turbulent_Velocity_Field_Multi_Block_List::Allocate -- Allocate memory.   *
- *****************************************************************************/
-inline void Turbulent_Velocity_Field_Multi_Block_List::Allocate(const int N) {
-   if (N >= 1 && !Allocated) {
-      NBlk_Idir = N; 
-      NBlk_Jdir = 1; 
-      NBlk_Kdir = 1; 
-      NBlk = N;
-      Vel_Blks = new Turbulent_Velocity_Field_Block[NBlk];
-      Allocated = 1;
-   } /* endif */
+
+
+/**
+ * Get_Local_Homogeneous_Turbulence_Velocity_Field
+ *
+ * Fills all the local velocity field blocks with velocity fluctuations around
+ * a domain averaged velocity with data from the local solution blocks
+ *
+ * \param [in]  Solution_Block              All the local Solution Hexa_Blocks
+ * \param [in]  LocalSolnBlockList          The AdaptiveBlock3D_List
+ * \param [in]  v_average                   The average velocity of the whole domain
+ * \param [out] Local_Velocity_Field_List   The list of local Turbulent_Velocity_Field_Blocks
+ */
+template<typename HEXA_BLOCK>
+void Get_Local_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK *Solution_Block,
+                                                     const AdaptiveBlock3D_List &LocalSolnBlockList,
+                                                     const Vector3D &v_average,
+                                                     Turbulent_Velocity_Field_Multi_Block_List &Local_Velocity_Field_List) {
+    /* Assign initial turbulent velocity field to each solution block. */
+    for (int nBlk = 0 ; nBlk <= LocalSolnBlockList.Nblk-1 ; nBlk++) {
+        if (LocalSolnBlockList.Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
+            if (Local_Velocity_Field_List.Vel_Blks[nBlk].Allocated) {
+                Get_Local_Homogeneous_Turbulence_Velocity_Field(Solution_Block[nBlk],
+                                                                v_average,
+                                                                Local_Velocity_Field_List.Vel_Blks[nBlk]);
+            } /* endif */
+        } /* endif */
+    }  /* endfor */
 }
 
-/*****************************************************************************
- * Turbulent_Velocity_Field_Multi_Block_List::Allocate -- Deallocate memory. *
- *****************************************************************************/
-inline void Turbulent_Velocity_Field_Multi_Block_List::Deallocate(void) {
-   if (NBlk >= 1 && Allocated) {
-       delete []Vel_Blks;
-       Vel_Blks = NULL;
-       NBlk_Idir = 0; 
-       NBlk_Jdir = 0; 
-       NBlk_Kdir = 0;
-       NBlk = 0;
-       Allocated = 0;
-   } /* endif */
-}
 
-/*****************************************************************************
- * Turbulent_Velocity_Field_Multi_Block_List::Create --                      *
- *       Create memory containers for velocity field data.                   *
- *****************************************************************************/
-inline void Turbulent_Velocity_Field_Multi_Block_List::Create(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
-                                                              const Grid3D_Input_Parameters &Input) {
-   if (Initial_Mesh.NBlk >= 1 && Initial_Mesh.Allocated) {
-      Allocate(Initial_Mesh.NBlk_Idir, Initial_Mesh.NBlk_Jdir, Initial_Mesh.NBlk_Kdir);
-      for (int nBlk = 0; nBlk <= NBlk-1; ++nBlk ) {
-	if (Initial_Mesh.Grid_Blks[nBlk].Allocated) Vel_Blks[nBlk].allocate(Initial_Mesh.Grid_Blks[nBlk].NCi-
-                                                                            2*Initial_Mesh.Grid_Blks[nBlk].Nghost,
-                                                                            Initial_Mesh.Grid_Blks[nBlk].NCj-
-                                                                            2*Initial_Mesh.Grid_Blks[nBlk].Nghost,
-                                                                            Initial_Mesh.Grid_Blks[nBlk].NCk-
-                                                                            2*Initial_Mesh.Grid_Blks[nBlk].Nghost,
-                                                                            Initial_Mesh.Grid_Blks[nBlk].Nghost);
-      } /* endfor */
-   } /* endif */
-}
-
-/*****************************************************************************
- * Turbulent_Velocity_Field_Multi_Block_List::Broadcast --                   *
- *     Broadcast the turbulent velocity field data from the main processor.  *
- *****************************************************************************/
-inline void Turbulent_Velocity_Field_Multi_Block_List::Broadcast() {
-
-#ifdef _MPI_VERSION
-
-  int nblki, nblkj, nblkk, Block_allocated;
-
-  if ( CFFC_Primary_MPI_Processor() ) {
-    nblki = NBlk_Idir;
-    nblkj = NBlk_Jdir;
-    nblkk = NBlk_Kdir;
-    if (Allocated)
-      Block_allocated = 1;
-    else
-      Block_allocated = 0;  
-  }
-
-  MPI::COMM_WORLD.Bcast(&nblki, 1, MPI::INT, 0);
-  MPI::COMM_WORLD.Bcast(&nblkj, 1, MPI::INT, 0);
-  MPI::COMM_WORLD.Bcast(&nblkk, 1, MPI::INT, 0);
-  MPI::COMM_WORLD.Bcast(&Block_allocated, 1, MPI::INT, 0);
-
-  /* On non-primary MPI processors, allocate (re-allocate)
-     memory as necessary. */
-
-  if ( !CFFC_Primary_MPI_Processor() ) {
-    if (NBlk_Idir != nblki || NBlk_Jdir != nblkj ||  NBlk_Kdir != nblkk) {
-      if (Block_allocated) Allocate(nblki, nblkj, nblkk);
-    }
-  } 
+/**
+ * Get_Local_Homogeneous_Turbulence_Velocity_Field
+ *
+ * Copies velocity fluctuations from a local solution block to a
+ * local velocity field block.
+ *
+ * \param [in]  Solution_Block  A local Solution Hexa_Block
+ * \param [in]  v_average       The average velocity of the whole domain
+ * \param [out] Velocity_Field  A local Turbulent_Velocity_Field_Block
+ */
+template<typename HEXA_BLOCK>
+void Get_Local_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK &Solution_Block,
+                                                     const Vector3D &v_average,
+                                                     Turbulent_Velocity_Field_Block &Velocity_Field) {
     
-  for (int nBlk = 0; nBlk < NBlk; ++nBlk) {
-    Vel_Blks[nBlk].Broadcast();
-  }
+    /* Assign initial turbulent velocity field to solution block. */
+    
+    for (int i = Velocity_Field.ICl ; i <= Velocity_Field.ICu ; i++) {
+        for (int j = Velocity_Field.JCl ; j <= Velocity_Field.JCu ; j++) {
+            for (int k = Velocity_Field.KCl ; k <= Velocity_Field.KCu ; k++) {
+                Velocity_Field.Velocity[i][j][k] = Solution_Block.W[i][j][k].v - v_average;
+            } /* endfor */
+        } /* endfor */
+    } /* endfor */
+}
 
-#endif
+/**
+ * Assign_Homogeneous_Turbulence_Velocity_Field
+ *
+ * Superimposes turbulence velocity fluctuations on all the local solution blocks
+ * with velocities from the global Turbulent_Velocity_Field_Multi_Block_List
+ *
+ * \param [in]  Solution_Block        The local Solution Hexa_Blocks
+ * \param [in]  LocalSolnBlockList    The local AdaptiveBlock3D_List
+ * \param [out] Velocity_Field        The list of all Turbulent_Velocity_Field_Blocks
+ */
+template<typename HEXA_BLOCK>
+void Assign_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK *Solution_Block,
+                                                  const AdaptiveBlock3D_List &LocalSolnBlockList,
+                                                  const Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field) {
+    
+    /* Assign initial turbulent velocity field to each solution block. */
+    
+    for (int nBlk = 0 ; nBlk <= LocalSolnBlockList.Nblk-1 ; nBlk++) {
+        if (LocalSolnBlockList.Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
+            if (Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].info.gblknum].Allocated) {
+                Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Block[nBlk],
+                                                             Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].info.gblknum]);
+            } /* endif */
+        } /* endif */
+    }  /* endfor */
+    
+}
+
+/**
+ * Assign_Homogeneous_Turbulence_Velocity_Field
+ *
+ * Superimposes velocities from a Turbulent_Velocity_Field_Block to
+ * a local solution block.
+ *
+ * \param [out]  Solution_Block   A local Solution Hexa_Block
+ * \param [in]   Velocity_Field   A Turbulent_Velocity_Field_Block
+ */
+template<typename HEXA_BLOCK>
+void Assign_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK &Solution_Block,
+                                                  const Turbulent_Velocity_Field_Block &Velocity_Field) {
+    
+    /* Assign initial turbulent velocity field to solution block. */
+    
+    for (int i = Solution_Block.ICl ; i <= Solution_Block.ICu ; i++) {
+        for (int j = Solution_Block.JCl ; j <= Solution_Block.JCu ; j++) {
+            for (int k = Solution_Block.KCl ; k <= Solution_Block.KCu ; k++) {
+                Solution_Block.W[i][j][k].v += Velocity_Field.Velocity[i][j][k];
+                Solution_Block.U[i][j][k] = Solution_Block.W[i][j][k].U();
+            } /* endfor */
+        } /* endfor */
+    } /* endfor */
+    
 }
 
 
-/*****************************************************************************
- * Turbulent_Velocity_Field_Multi_Block_List::Write_Turbulent_Velocity_Field *
- *      --  Write the turbulent velocity field data to a file.               * 
- *****************************************************************************/
-inline int Turbulent_Velocity_Field_Multi_Block_List::Write_Turbulent_Velocity_Field(void) const {
-
-  ofstream out_file;
-  
-  // Open file
-  out_file.open("Turbulent_Velocity_Field_Data.dat", ios::out);
-  if (out_file.fail()) {
-    cerr<<"\n Error opening file:  Turbulent_Velocity_Field_Data.dat to write" << endl;
-    exit(1);
-  }
-  
-  // Write number of blocks in each direction
-  out_file << NBlk_Idir << " " << NBlk_Jdir << " " << NBlk_Kdir << "\n";
-
-  // Write block data
-  for (int nBlk = 0; nBlk < NBlk; ++nBlk) {
-    out_file << setprecision(10) << Vel_Blks[nBlk];
-  }
-   
-  // Close file
-  out_file.close();
-
-  return 0;
-
-}
 
 
-/*****************************************************************************
- * Turbulent_Velocity_Field_Multi_Block_List::Read_Turbulent_Velocity_Field  *
- *      --  Read the turbulent velocity field data from a file.              *        
- *****************************************************************************/
-inline int Turbulent_Velocity_Field_Multi_Block_List::Read_Turbulent_Velocity_Field(void) {
-
-  int ni, nj, nk;
-  ifstream in_file;
-  
-  // Open file
-  in_file.open("Turbulent_Velocity_Field_Data.dat", ios::in); 
-  if(in_file.fail()){ 
-    cerr<<"\n Error opening file: Turbulent_Velocity_Field_Data.dat to read" << endl;
-    exit(1); 
-  } 
-
-  // Read number of blocks in each direction
-  in_file.setf(ios::skipws);
-  in_file >> ni >> nj  >> nk;   
-  in_file.unsetf(ios::skipws);
-
-  if (ni == 0 || nj == 0 || nk == 0) {
-    if (Allocated) Deallocate(); 
-    return (1);
-  } 
-
-  if (!Allocated || NBlk_Idir != ni || NBlk_Jdir != nj || NBlk_Kdir != nk) {
-    if (Allocated) Deallocate();
-    Allocate(ni, nj, nk);
-  } 
-   
-
-  // Read data bloks
-  for (int nBlk = 0; nBlk < NBlk; ++nBlk) {
-    in_file >> Vel_Blks[nBlk];
-  }
-  
-
-  // Close file
-  in_file.close();
-
-  return 0;
-
-}
-
-
-/********************************************************
- * Routine: Inflow_Turbulence_XY_Plane                  *
- *                                                      *
- * Feeds turbulent velocity fluctuations on a XY-plane  *
- * of a 3D grid. It applies a turbulent inflow BC.      *
- *                                                      *
+/****************************************************//**
+ * Routine: Inflow_Turbulence_XY_Plane                  
+ *                                                      
+ * Feeds turbulent velocity fluctuations on a XY-plane  
+ * of a 3D grid. It applies a turbulent inflow BC.      
+ *                                                      
  ********************************************************/
 template<typename HEXA_BLOCK>
 void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
@@ -946,13 +773,13 @@ int Inflow_Turbulence_XY_Plane(HEXA_BLOCK *Solution_Block,
 }
 
 
-/********************************************************
- * Routine: IC_Assign_Turbulence_Fresh_Gas              *
- *                                                      *
- * Assigns turbulent velocity fluctuations to a volume  *
- * of a 3D domain. It is used with the slot and Bunsen  *  
- * burner configurations.                               *                         
- *                                                      *
+/****************************************************//**
+ * Routine: IC_Assign_Turbulence_Fresh_Gas              
+ *                                                      
+ * Assigns turbulent velocity fluctuations to a volume  
+ * of a 3D domain. It is used with the slot and Bunsen    
+ * burner configurations.                                                        
+ *                                                      
  ********************************************************/
 template<typename HEXA_BLOCK>
 void IC_Assign_Turbulence_Fresh_Gas(HEXA_BLOCK &Solution_Block,
@@ -1109,7 +936,7 @@ int IC_Assign_Turbulence_Fresh_Gas(HEXA_BLOCK *Solution_Block,
 
 
 
-/*!
+/**
  * Class: K_container
  *
  * \brief Class defined to contain spectral information at one wave number
@@ -1123,13 +950,15 @@ int IC_Assign_Turbulence_Fresh_Gas(HEXA_BLOCK *Solution_Block,
  */
 class K_container {
 public:
-    K_container() : k(0), N(1), Ek(0), velocity_scaling_factor(1), indexcounter(0) {  }
+    K_container() : MAX_INDEXES(100), k(0), N(1), Ek(0), velocity_scaling_factor(1), indexcounter(0) {  }
     double k;
     int N;
     int indexcounter;
     int *indexes;
     int index;
+    int MAX_INDEXES;
     double Ek;
+    double Ek_smooth;
     double Emodel;
     double velocity_scaling_factor;
     // Relational operators
@@ -1171,7 +1000,7 @@ public:
 };
 
 
-/*!
+/**
  * Class: K_BinaryTree
  *
  * \brief This class inherits from BinaryTree<itemtype> to adapt to perform on K_containers
@@ -1185,20 +1014,24 @@ public:
  * store all the K_containers.
  */
 class K_BinaryTree : public BinaryTree<K_container> {
+    
 public:
     
-    K_BinaryTree( ) : BinaryTree<K_container>( ) { }
+    K_BinaryTree( ) : BinaryTree<K_container>( ) {MAX_INDEXES=0; }
     
     
     void InsertNode(K_container &newItem) {
         InsertNode(K_BinaryTree::root, newItem);
     }
     
+private: 
+    int MAX_INDEXES;
     void InsertNode(treeNode<K_container> *&root, K_container &newItem) {
-        int MAX_INDEXES = 500;
         if ( root == NULL ) {
             root = new treeNode<K_container>( newItem );
-            root->item.indexes = new int[MAX_INDEXES];
+            
+            root->item.MAX_INDEXES =  (root->item.MAX_INDEXES > MAX_INDEXES ? root->item.MAX_INDEXES : MAX_INDEXES);
+            root->item.indexes = new int[root->item.MAX_INDEXES];
             root->item.indexes[0] = newItem.index;
             root->item.indexcounter++;
             return;
@@ -1208,8 +1041,24 @@ public:
             root->item.indexes[i] = newItem.index;
             root->item.indexcounter++;
             root->item.N++;
-            if (root->item.indexcounter==MAX_INDEXES)
-                cerr << "\n Maximum amount of indexes reached";
+            if (root->item.indexcounter==root->item.MAX_INDEXES) {
+                int *indexes_copy = new int[root->item.MAX_INDEXES];
+                for (int j=0; j<root->item.indexcounter; j++){
+                    indexes_copy[j] = root->item.indexes[j];
+                }
+                delete[] root->item.indexes;
+                
+                root->item.MAX_INDEXES *= 5;
+                root->item.indexes = new int[root->item.MAX_INDEXES];
+                
+                for (int j=0; j<root->item.indexcounter; j++){
+                    root->item.indexes[j] = indexes_copy[j];
+                }
+                
+                MAX_INDEXES =  (root->item.MAX_INDEXES > MAX_INDEXES ? root->item.MAX_INDEXES : MAX_INDEXES);
+                
+                delete[] indexes_copy;
+            }
         }
         else if ( newItem < root->item ) {
             InsertNode( root->left, newItem );
@@ -1221,7 +1070,7 @@ public:
 };
 
 
-/*!
+/**
  * Class: RandomFieldRogallo
  *
  * \brief Class defined to generate random fluctuations using
@@ -1239,10 +1088,19 @@ public:
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 class RandomFieldRogallo {   
 public:
+    //! Constructor
+    RandomFieldRogallo(Input_Parameters<SOLN_pSTATE,SOLN_cSTATE> &IPs);
+    
+    //! Destructor
+    ~RandomFieldRogallo(void);
+    
+    const char *File_Name;
+    
+/** @name spectrum imposed members */
+/*        ------------------------ */    
+//@{    
     string spectrum_name;
     int spectrum_flag;  //!< Turbulence kinetic energy spectrum flag.
-    double L1, L2, L3;  //!< Grid dimensions
-    int Nx, Ny, Nz;     //!< Number of grid nodes
     double Ls;          //!< Smallest domain length
     double Lp;          //!< Length scale with highest energy
     double k_L;         //!< wave number with highest energy 
@@ -1255,98 +1113,64 @@ public:
     double up;          //!< RMS velocity
     double Rlambda;     //!< Taylor scale Reynolds Number
     double lambda_g;    //!< Taylor scale
+//@}  
     
-    const char *File_Name;
-
-    
-    //! Constructor
-    RandomFieldRogallo(Input_Parameters<SOLN_pSTATE,SOLN_cSTATE> &IPs) {
-        File_Name = IPs.Output_File_Name;
-        spectrum_flag = IPs.Turbulence_IP.i_spectrum;
-        spectrum_name = IPs.Turbulence_IP.spectrum;
-	if (IPs.Grid_IP.i_Grid == GRID_BUNSEN_BURNER || IPs.Grid_IP.i_Grid == GRID_BUNSEN_BOX) {
-	  L1 = IPs.Grid_IP.Turbulence_Box_Width;
-	  L2 = IPs.Grid_IP.Turbulence_Box_Height;
-	  L3 = IPs.Grid_IP.Turbulence_Box_Length;
-	} else {
-	  L1 = IPs.Grid_IP.Box_Width;
-	  L2 = IPs.Grid_IP.Box_Height;
-	  L3 = IPs.Grid_IP.Box_Length;
-	}
-        Ls = min(min(L1,L2),L3);
-        Lp = Ls/IPs.Turbulence_IP.LLR;
-        TKE = IPs.Turbulence_IP.TKE;
-        nu = IPs.Wo.nu();
-
-        //Calculate :
-        up  = sqrt(TKE*TWO/THREE);         
-        eps = pow(TKE,THREE/TWO)/Lp;      
-        ReL = sqrt(TKE)*Lp/nu;              
-        eta = pow(ReL,-THREE/FOUR)*Lp;    
-        k_eta = TWO*PI/eta;
-        k_L = TWO*PI/Lp;
-        Rlambda = sqrt(TWENTY/THREE * ReL); 
-        lambda_g = nu*Rlambda/up;           
-    }  
-
+/** @name Grid imposed members */
+/*        -------------------- */    
+//@{
+    //! Grid dimensions
+    double L1, L2, L3;  
+    //!< Number of grid nodes
+    int Nx, Ny, Nz, nz;
+    //!< Number of cells per block
+    int NCells_Idir, NCells_Jdir, NCells_Kdir;
+    //! wave numbers
+    double k0x, k0y, k0z, abs_k0, kcx, kcy, kcz, abs_kc;
+    //! array of all wave numbers visible on grid
+    K_container *K;
+    //! number of wave numbers visible on grid
+    int nK;
     //! k1 = n1 * 2*PI/L1
     double k_1(const int &n1) const {
-        if (n1<=Nx/2)
-            return  n1 * TWO*PI/L1; 
-        else
-            return  (Nx-n1) * TWO*PI/L1;
+        if (n1<=Nx/2)   return       n1 * TWO*PI/L1; 
+        else            return  (Nx-n1) * TWO*PI/L1;
     }
     //! k2 = n2 * 2*PI/L2
     double k_2(const int &n2) const {
-        if (n2<=Ny/2)
-            return  n2 * TWO*PI/L2; 
-        else
-            return  (Ny-n2) * TWO*PI/L2;
+        if (n2<=Ny/2)   return       n2 * TWO*PI/L2; 
+        else            return  (Ny-n2) * TWO*PI/L2;
     }
     //! k3 = n3 * 2*PI/L3
     double k_3(const int &n3) const {
-        if (n3<=Nz/2)
-            return  n3 * TWO*PI/L3; 
-        else
-            return  (Nz-n3) * TWO*PI/L3;
+        if (n3<=Nz/2)   return       n3 * TWO*PI/L3; 
+        else            return  (Nz-n3) * TWO*PI/L3;
     }
     
-    //! Generates a random double
-    double random_double() const { return  drand48(); }
+    //! Assign wave numbers and K_container array
+    void Calculate_wave_numbers(void);
+    
+//@}
 
-    //! The model for the energy spectrum
-    double Energy_Spectrum_Value(const double &abs_wave_num) const;
+    
     
 /** @name Rogallo procedure functions */
 /*        --------------------------- */    
 //@{
+    
+    //! Generates a random double
+    double random_double() const { return  drand48(); }
+    
     //! alpha as defined by Rogallo, 1981 for continuous spectra
     complex<double> alpha(const double &abs_wave_num, 
-			  const double &theta1, 
-			  const double &phi) const;
+                          const double &theta1, 
+                          const double &phi) const;
     
     //! beta as defined by Rogallo, 1981 for continuous spectra
     complex<double> beta(const double &abs_wave_num, 
-			 const double &theta2, 
-			 const double &phi) const;
+                         const double &theta2, 
+                         const double &phi) const;
     
-    //! alpha as defined by Rogallo, 1981 for discrete spectra
-    complex<double> alpha_discrete(const double &abs_wave_num, 
-                                   const double &N,
-                                   const double &theta1, 
-                                   const double &phi) const;
-    
-    //! beta as defined by Rogallo, 1981 for discrete spectra
-    complex<double> beta_discrete(const double &abs_wave_num, 
-                                  const double &N,
-                                  const double &theta2, 
-                                  const double &phi) const;
-
-    //! Create and assign a homogeneous turbulence velocity field
-    int Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
-                                                     const Grid3D_Input_Parameters &IPs,
-                                                     int &batch_flag,
-                                                     Turbulent_Velocity_Field_Multi_Block_List &Initial_Velocity_Field);
+    void Rogallo_Procedure(void);
 //@}
     
 /** @name Write and read a Velocity Field */
@@ -1355,31 +1179,158 @@ public:
     void Write_Turbulent_Velocity_Field(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
                                         const Turbulent_Velocity_Field_Multi_Block_List &Initial_Velocity_Field,
                                         const Grid3D_Input_Parameters &IPs) const;
-       
+    
     void Read_Turbulent_Velocity_Field(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
                                        Turbulent_Velocity_Field_Multi_Block_List &Initial_Velocity_Field,
                                        Grid3D_Input_Parameters &IPs);
 //@}
     
+    
+/** @name General member functions */
+/*        ------------------------ */    
+//@{
+    
+    //! Velocity field
+    double        *u, *v, *w;        // Arrays to store the velocity fluctuations in physical space
+    fftw_complex  *uu, *vv, *ww;     // Arrays to store the velocity fluctuations in Fourier space
+    
+    
+    //! The model for the energy spectrum
+    double Energy_Spectrum_Value(const double &abs_wave_num) const;
+    
+    //! Calculate the energy spectrum of a given velocity field
+    int Get_Energy_Spectrum(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
+                            int &batch_flag,
+                            Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field);
+    
+    //! Create and assign a homogeneous turbulence velocity field
+    int Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
+                                                     int &batch_flag,
+                                                     Turbulent_Velocity_Field_Multi_Block_List &Initial_Velocity_Field);
+
+    void Import_from_Velocity_Field_Blocks(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
+                                           Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field_List);
+
+    void Export_to_Velocity_Field_Blocks(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
+                                         Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field_List);
+    
+    double Calculate_Energy_Spectrum(void);
+    
+    double Rescale_Energy_Spectrum_to_Initial_Spectrum(void);
+    
+    void FFT_spectral_to_physical(void);
+    
+    void FFT_physical_to_spectral(void);
+    
+//@}    
+    
 /** @name Output the spectrum to a gnuplot file */
 /*        ------------------------------------- */    
 //@{
     ofstream Turbulence_Spectrum_File;
-    int Open_Turbulence_Spectrum_File( );
-    int Output_Turbulence_Spectrum_to_File(const double &k,
-                                           const double &model_Energy,
-                                           const double &constructed_Energy);
-    int Close_Turbulence_Spectrum_File( );
+    int Open_Turbulence_Spectrum_File(void);
+    int Output_Turbulence_Spectrum_to_File(void);
+    int Close_Turbulence_Spectrum_File(void);
 //@}    
+    
+    
+/** @name Statistical Parameters */
+/*        ---------------------- */
+//@{
+    double TKE_model;
+    double TKE_grid;
+    double TKE_physical;
+    double L11_spectral;
+    double L11_physical;
+    double u2, v2, w2, uRMS;
+    double lambda_g_sim;
+    double eps_sim;
+    double Rlambda_sim;
+    double ReL_sim;
+    double eta_sim;
+    double L_sim;
+    
+    double Longitudinal_Correlation_spectral(void);
+    void Spatial_Averages(void);
+    double Longitudinal_Correlation(void);
+    double Dissipation(void);
+//@}    
+    
 
 };
 
-//-----------------------------------------------------//
-//         Members of RandomFieldRogallo class         //
-//-----------------------------------------------------//
+//---------------------------------------------------------------------------//
+//                    Members of RandomFieldRogallo class                    //
+//---------------------------------------------------------------------------//
 
 
-// Prescribed energy spectrum
+/**
+ * Constructor
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
+RandomFieldRogallo(Input_Parameters<SOLN_pSTATE,SOLN_cSTATE> &IPs) {
+    File_Name = IPs.Output_File_Name;
+    spectrum_flag = IPs.Turbulence_IP.i_spectrum;
+    spectrum_name = IPs.Turbulence_IP.spectrum;
+    
+    if (IPs.Grid_IP.i_Grid == GRID_BUNSEN_BURNER || IPs.Grid_IP.i_Grid == GRID_BUNSEN_BOX) {
+        NCells_Idir = IPs.Grid_IP.NCells_Turbulence_Idir;
+        NCells_Jdir = IPs.Grid_IP.NCells_Turbulence_Jdir;
+        NCells_Kdir = IPs.Grid_IP.NCells_Turbulence_Kdir;
+        
+        L1 = IPs.Grid_IP.Turbulence_Box_Width;
+        L2 = IPs.Grid_IP.Turbulence_Box_Height;
+        L3 = IPs.Grid_IP.Turbulence_Box_Length;
+        
+    } else {
+        NCells_Idir = IPs.Grid_IP.NCells_Idir;
+        NCells_Jdir = IPs.Grid_IP.NCells_Jdir;
+        NCells_Kdir = IPs.Grid_IP.NCells_Kdir;
+        
+        L1 = IPs.Grid_IP.Box_Width;
+        L2 = IPs.Grid_IP.Box_Height;
+        L3 = IPs.Grid_IP.Box_Length;
+    }
+    Ls = min(min(L1,L2),L3);
+    Lp = Ls/IPs.Turbulence_IP.LLR;
+    TKE = IPs.Turbulence_IP.TKE;
+    nu = IPs.Wo.nu();
+    
+    //Calculate :
+    up  = sqrt(TKE*TWO/THREE);         
+    eps = pow(TKE,THREE/TWO)/Lp;      
+    ReL = sqrt(TKE)*Lp/nu;              
+    eta = pow(ReL,-THREE/FOUR)*Lp;    
+    k_eta = TWO*PI/eta;
+    k_L = TWO*PI/Lp;
+    Rlambda = sqrt(TWENTY/THREE * ReL); 
+    lambda_g = nu*Rlambda/up;           
+};  
+
+/**
+ * Destructor
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
+~RandomFieldRogallo(void) {
+    for (int ii=0; ii <nK; ii++) {
+        delete[] K[ii].indexes;
+    }
+    delete[] K;
+    
+    fftw_free(u);
+    fftw_free(v);
+    fftw_free(w);
+    fftw_free(uu);
+    fftw_free(vv);
+    fftw_free(ww);
+}
+
+
+/**
+ * Prescribed energy spectrum
+ */
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 double RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
 Energy_Spectrum_Value(const double &abs_wave_num) const {
@@ -1482,7 +1433,9 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
 }
 
 
-// alpha
+/**
+ * alpha as defined in Rogallo's procedure
+ */
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 complex<double> RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
 alpha(const double &abs_wave_num, const double &theta1, const double &phi) const {
@@ -1492,7 +1445,9 @@ alpha(const double &abs_wave_num, const double &theta1, const double &phi) const
     return (k == 0.0)  ?  0.0 : sqrt(TWO*E/(4.0*PI*k*k)) * exp(I*theta1) * cos(phi);
 }
 
-// beta
+/**
+ * beta as defined in Rogallo's procedure
+ */
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 complex<double> RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
 beta(const double &abs_wave_num, const double &theta2, const double &phi) const {
@@ -1502,70 +1457,20 @@ beta(const double &abs_wave_num, const double &theta2, const double &phi) const 
     return (k == 0.0)  ?  0.0 : sqrt(TWO*E/(4.0*PI*k*k)) * exp(I*theta2) * sin(phi);    
 }
 
-// alpha
-template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-complex<double> RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
-alpha_discrete(const double &abs_wave_num, const double &N, const double &theta1, const double &phi) const {
-    
-    double E, k;
-    k = abs_wave_num;  E = Energy_Spectrum_Value(k);
-    return (k == 0.0)  ?  0.0 : sqrt(E/N) * exp(I*theta1) * cos(phi);
-}
 
-// beta
-template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-complex<double> RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
-beta_discrete(const double &abs_wave_num, const double &N, const double &theta2, const double &phi) const {
-    
-    double E, k;
-    k = abs_wave_num;  E = Energy_Spectrum_Value(k);
-    return (k == 0.0)  ?  0.0 : sqrt(E/N) * exp(I*theta2) * sin(phi);
-}
-
- 
-/*!
- * Subroutine: Create_Homogeneous_Turbulence_Velocity_Field
- * 
- * Creates and assigns a turbulence velocity field
+/**
+ * RandomFieldRogallo::Calculate_wave_numbers()
  *
- *
+ * Calculates grid characteristic wave numbers
+ * and fills the K_container with all possible
+ * absolute wave numbers on the grid, saving the
+ * index of the each combination.
  */
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
-Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
-					     const Grid3D_Input_Parameters &IPs,
-					     int &batch_flag,
-                                             Turbulent_Velocity_Field_Multi_Block_List &Initial_Velocity_Field ) {
-
-  int errorflag;
-  errorflag = Open_Turbulence_Spectrum_File( );
-  bool rescale = true;
-  
-  Nx = IPs.NCells_Turbulence_Idir*Initial_Mesh.NBlk_Idir;
-  Ny = IPs.NCells_Turbulence_Jdir*Initial_Mesh.NBlk_Jdir;
-  Nz = IPs.NCells_Turbulence_Kdir*Initial_Mesh.NBlk_Kdir; 
-
-  double        *u, *v, *w;        // Arrays to store the velocity fluctuations in physical space
-  fftw_complex  *uu, *vv, *ww;     // Arrays to store the velocity fluctuations in spectral space
-  fftw_plan      physical;
-
-  int index;
-  int nz = Nz/2+1;
-
-    // Allocation of arrays used in the transforms
-    u = (double *) malloc(Nx*Ny*Nz * sizeof(double));
-    v = (double *) malloc(Nx*Ny*Nz * sizeof(double));
-    w = (double *) malloc(Nx*Ny*Nz * sizeof(double));
-    uu = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
-    vv = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
-    ww = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
-
-
-    int seed = 1; // = time(NULL);   // assigns the current time to the seed
-    srand48(seed);             // changes the seed for drand48()
-    double k1, k2, k3, abs_k;  // Wave numbers
+void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
+Calculate_wave_numbers(void) {
     
-    double k0x, k0y, k0z, abs_k0, kcx, kcy, kcz, abs_kc;
+    
     k0x = TWO*PI/L1;    // smallest wavenumber on grid in x-direction
     k0y = TWO*PI/L2;    // smallest wavenumber on grid in y-direction
     k0z = TWO*PI/L3;    // smallest wavenumber on grid in z-direction
@@ -1574,37 +1479,20 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
     kcy = Ny/2*k0y;     // largest wavenumber on grid in y-direction
     kcz = Nz/2*k0z;     // largest wavenumber on grid in z-direction
     abs_kc = sqrt( sqr(kcx) + sqr(kcy) + sqr(kcz) );
-
-    if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
-        cout << "\n\n";
-        cout << " ==========================================================================\n"; 
-        cout << "         Generating Homogeneous Isotropic Turbulent Velocity Field \n";
-        cout << " ==========================================================================\n";
-        cout << endl;
-        cout << "   Turbulence parameters in case of continuous spectrum: " << endl;
-        cout << "    -->  TKE         = " << TKE << endl;
-        cout << "    -->  u_RMS       = " << up << endl;
-        cout << "    -->  L           = " << Lp << endl;
-        cout << "    -->  L11 ~ 0.4 L = " << Lp*0.4 << endl;
-        cout << "    -->  eps         = " << eps << endl;
-        cout << "    -->  eta         = " << eta << endl;
-        cout << "    -->  ReL         = " << ReL << endl;
-        cout << "    -->  Rlambda     = " << Rlambda << endl;
-        cout << "    -->  lambda_g    = " << lambda_g << endl;
-    }
     
-        
-    K_container *K = new K_container [Nx*Ny*nz];  // Container of information for a wavenumber
-    K_BinaryTree Ktree;                           // A binary tree that will order and store K_containers
+    K = new K_container [Nx*Ny*nz];  // Container of information for a wavenumber
+    K_BinaryTree Ktree;              // A binary tree that will order and store K_containers
+    int index;
+    double k1,k2,k3,abs_k;
     for (int i=0; i<Nx; ++i) {
         k1 = k_1(i);
-
+        
         for (int j=0; j<Ny; ++j) {
             k2 = k_2(j);
-
+            
             for (int l=0; l<nz; ++l) {
                 k3 = k_3(l);
-
+                
                 abs_k = sqrt(k1*k1 + k2*k2 + k3*k3); // Wave number magnitude
                 
                 index = l + nz*(j+Ny*i);
@@ -1614,286 +1502,128 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
             }   
         }
     }
+    
     delete[] K;
-
-    int nK = Ktree.countNodes();    // The total number of unique values of abs_k
+    
+    nK = Ktree.countNodes();        // The total number of unique values of abs_k
     
     K = Ktree.asArray();            // Make an array of the tree nodes in order.
     
-    
-    /* -------------------- gnuplot model -------------------- */
-    #ifdef _GNUPLOT
-    int npts = int((k_eta-abs_k0)/abs_k0);
-        double kmin = abs_k0/10;
-        double kmax = k_eta/4.0;
-        dpoint *dp = new dpoint[npts];
-        for (int i=0; i<npts; i++) {
-            dp[i].x= kmin + i*(kmax-kmin)/(npts-1);
-            dp[i].y= Energy_Spectrum_Value(dp[i].x);
-        }
-        Gnuplot_Control h1;
-        h1.gnuplot_init();
-        h1.gnuplot_setstyle("lines") ;
-        h1.gnuplot_cmd("set logscale xy");
-        h1.gnuplot_cmd("set grid");
-        h1.gnuplot_set_xlabel("k");
-        h1.gnuplot_set_ylabel("E(k)");
-        h1.gnuplot_set_title("Turbulent kinetic energy spectrum");
-        h1.gnuplot_plot1d_var2(dp,npts,"model");
-        sleep(2);
-    #endif
+}
 
-    
-    double theta1, theta2, phi;         // random phases for Rogallo spectrum
-    complex<double> aa, bb;             // complex energy components for Rogallo spectrum
-    double deno;                        // denominator in Rogallo spectrum function
-    
-    double *EE;
-    EE = new double [Nx*Ny*nz];   // Energy of one wavenumber vector
-    
-    
-    for(int ii=0; ii<nK; ii++) {            // For every abs_k
-        for(int jj=0; jj<K[ii].N; jj++) {       // For all grid points with this value of abs_k
-            index = K[ii].indexes[jj];
-            int i = index/(Ny*nz);              // convert index to (i,j,l) coordinates
-            int j = (index - Ny*nz*i)/nz;
-            int l = index - nz*(j+Ny*i);
-
-            k1 = k_1(i);
-            k2 = k_2(j);
-            k3 = k_3(l);
-            abs_k = K[ii].k;
-            
-            /* ----------- Calculate velocities with Rogallo's procedure ---------- */
-            theta1 = TWO*PI*random_double();   // Random number (0, 2*PI)
-            theta2 = TWO*PI*random_double();   // Random number (0, 2*PI)
-            phi    = TWO*PI*random_double();   // Random number (0, 2*PI)
-            
-            if ( theta1 == theta2  && theta2 == phi ) {
-                cerr << "\n theta1, theta2 and phi are all equal.";
-            }
-            
-            //aa = alpha_discrete(abs_k, K[ii].N, theta1, phi);
-            //bb =  beta_discrete(abs_k, K[ii].N, theta2, phi);
-            
-            aa = alpha(abs_k, theta1, phi);
-            bb =  beta(abs_k, theta2, phi);
-
-            deno = abs_k * sqrt(k1*k1 + k2*k2) + PICO;
-            
-            uu[index][0] = real( (aa*abs_k*k2 + bb*k1*k3)/deno ) ;
-            uu[index][1] = imag( (aa*abs_k*k2 + bb*k1*k3)/deno ) ;
-            vv[index][0] = real( (bb*k2*k3 - aa*abs_k*k1)/deno ) ;
-            vv[index][1] = imag( (bb*k2*k3 - aa*abs_k*k1)/deno ) ;
-            ww[index][0] = real( -( bb*(k1*k1 + k2*k2) )/deno  ) ;
-            ww[index][1] = imag( -( bb*(k1*k1 + k2*k2) )/deno  ) ;
-            
-            /* ------------ Some exceptions to make FFT real ------------ */
-            if ( l==0  ||  l==Nz/2) {
-                if ( j>Ny/2  ||  ( i>Nx/2  &&  (j==0 || j==Ny/2) ) ) {
-                    int iconj = (i==0  ?  0 : Nx-i);
-                    int jconj = (j==0  ?  0 : Ny-j);
-                    int index_conj = l + nz*(jconj+Ny*iconj);
-                    
-                    uu[index][0] =  uu[index_conj][0]; // complex conjugates
-                    uu[index][1] = -uu[index_conj][1];
-                    vv[index][0] =  vv[index_conj][0];
-                    vv[index][1] = -vv[index_conj][1];
-                    ww[index][0] =  ww[index_conj][0];
-                    ww[index][1] = -ww[index_conj][1];
-                    
-                } else if ( (i==0 || i==Nx/2)  &&  (j==0 || j==Ny/2) ) { // real values at 8 corners
-                    uu[index][0] = sqrt( sqr(uu[index][0]) + sqr(uu[index][1]) );
-                    uu[index][1] = 0.0;    
-                    vv[index][0] = sqrt( sqr(vv[index][0]) + sqr(vv[index][1]) );
-                    vv[index][1] = 0.0;
-                    ww[index][0] = sqrt( sqr(ww[index][0]) + sqr(ww[index][1]) );
-                    ww[index][1] = 0.0; 
+/**
+ * RandomFieldRogallo::Import_from_Velocity_Field_Blocks
+ *
+ * Assigns the vectors u, v, w used in FFT from the
+ * Turbulent_Velocity_Field_Multi_Block_List
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
+Import_from_Velocity_Field_Blocks(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
+                                  Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field_List) {
+    int index;
+    int nBlk, ix, iy, iz;
+    for (int kBlk = 0; kBlk <= Initial_Mesh.NBlk_Kdir-1; ++kBlk) {
+        for (int jBlk = 0; jBlk <= Initial_Mesh.NBlk_Jdir-1; ++jBlk) {
+            for (int iBlk = 0; iBlk <= Initial_Mesh.NBlk_Idir-1; ++iBlk) {
+                nBlk = iBlk + 
+                jBlk*Initial_Mesh.NBlk_Idir + 
+                kBlk*Initial_Mesh.NBlk_Idir*Initial_Mesh.NBlk_Jdir;
+                for (int i = Initial_Mesh.Grid_Blks[nBlk].ICl; i <= Initial_Mesh.Grid_Blks[nBlk].ICu; ++i) {
+                    for (int j = Initial_Mesh.Grid_Blks[nBlk].JCl; j <= Initial_Mesh.Grid_Blks[nBlk].JCu; ++j) {
+                        for (int k = Initial_Mesh.Grid_Blks[nBlk].KCl; k <= Initial_Mesh.Grid_Blks[nBlk].KCu; ++k) {
+                            ix = iBlk*NCells_Idir+(i-Initial_Mesh.Grid_Blks[nBlk].ICl);
+                            iy = jBlk*NCells_Jdir+(j-Initial_Mesh.Grid_Blks[nBlk].JCl);
+                            iz = kBlk*NCells_Kdir+(k-Initial_Mesh.Grid_Blks[nBlk].KCl);
+                            index = iz + Nz*(iy + ix*Ny);
+                            u[index] = Velocity_Field_List.Vel_Blks[nBlk].Velocity[i][j][k].x;
+                            v[index] = Velocity_Field_List.Vel_Blks[nBlk].Velocity[i][j][k].y;
+                            w[index] = Velocity_Field_List.Vel_Blks[nBlk].Velocity[i][j][k].z;
+                        }
+                    }
                 }
             }
-
-            /* ---------- Calculate energy corresponding with this index -------- */
-            // Velocity correlation tensor for this wavenumber
-            double Rxx = (sqr(uu[index][0]) + sqr(uu[index][1]));
-            double Ryy = (sqr(vv[index][0]) + sqr(vv[index][1]));
-            double Rzz = (sqr(ww[index][0]) + sqr(ww[index][1]));
-            
-            // Energy = HALF * trace(velocity correlation tensor Rij)
-            EE[index] = HALF * (Rxx + Ryy + Rzz) ;
-            
-            /* ------- Calculate energy corresponding with this wavenumber ------ */
-            K[ii].Ek += TWO * EE[index] * (TWO*PI*sqr(abs_k)) / K[ii].N;
-            
         }
-        K[ii].Emodel = Energy_Spectrum_Value(K[ii].k);
+    } 
+};
 
-        if (rescale) {  // rescale is false now
-            if (K[ii].Ek != ZERO)
-                K[ii].velocity_scaling_factor = sqrt(K[ii].Emodel/(K[ii].Ek));
-            else 
-                K[ii].velocity_scaling_factor = ONE;
-        }
 
-    }
-    
-
-    /* ---------------- gnuplot Rogallo spectrum -------------- */
-    double *k  = new double [nK];
-    double *Ek = new double [nK];
-    double *Emodel = new double [nK];
-
-    for (int ii=1; ii <nK; ii++) {
-        k[ii-1]  = K[ii].k;   // Don't wish to store K[0].k which is 0
-        Ek[ii-1] = K[ii].Ek; 
-        Emodel[ii-1] = K[ii].Emodel;
-    }
-    #ifdef _GNUPLOT
-        h1.gnuplot_setstyle("points");
-        h1.gnuplot_plot1d_var2(k,Ek,nK-1,"Rogallo");
-    #endif
-    
-    double TKE_model   = CubicSplinesIntegration(k,Emodel,nK-1);
-    double TKE_rogallo = CubicSplinesIntegration(k,Ek,nK-1);
-
-    if (!batch_flag) {       
-        cout << endl;
-        cout << "   Total Kinetic Energy calculated in spectral space: " << endl;
-        cout << "    -->  TKE of the model            = " << TKE_model << endl;
-        cout << "    -->  TKE with Rogallo            = " << TKE_rogallo << endl;
-    }
-    
-    
-    /* ------- rescale the rogallo spectrum to match the model spectrum ------- */
-    if (rescale) {   // rescale is false now
-        for (int ii=0; ii<nK; ii++) {
-            K[ii].Ek = 0;
-            double abs_k = K[ii].k;
-            for (int jj=0; jj<K[ii].N; jj++) {
-                int index = K[ii].indexes[jj];
-                double velocity_scaling_factor = K[ii].velocity_scaling_factor;
-                uu[index][0] *= velocity_scaling_factor;
-                uu[index][1] *= velocity_scaling_factor;
-                vv[index][0] *= velocity_scaling_factor;
-                vv[index][1] *= velocity_scaling_factor;
-                ww[index][0] *= velocity_scaling_factor;
-                ww[index][1] *= velocity_scaling_factor;
-                
-                double Rxx = (sqr(uu[index][0]) + sqr(uu[index][1]));
-                double Ryy = (sqr(vv[index][0]) + sqr(vv[index][1]));
-                double Rzz = (sqr(ww[index][0]) + sqr(ww[index][1]));
-                EE[index] = HALF * (Rxx + Ryy + Rzz);
-                
-                K[ii].Ek += TWO * EE[index] * (TWO*PI*sqr(abs_k)) / K[ii].N;
+/**
+ * RandomFieldRogallo::Import_from_Velocity_Field_Blocks
+ *
+ * Assigns the Turbulent_Velocity_Field_Multi_Block_List
+ * from the vectors u, v, w used in FFT
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
+Export_to_Velocity_Field_Blocks(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
+                                Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field_List) {
+    int index;
+    int nBlk, ix, iy, iz;
+    for (int kBlk = 0; kBlk <= Initial_Mesh.NBlk_Kdir-1; ++kBlk) {
+        for (int jBlk = 0; jBlk <= Initial_Mesh.NBlk_Jdir-1; ++jBlk) {
+            for (int iBlk = 0; iBlk <= Initial_Mesh.NBlk_Idir-1; ++iBlk) {
+                nBlk = iBlk + 
+                jBlk*Initial_Mesh.NBlk_Idir + 
+                kBlk*Initial_Mesh.NBlk_Idir*Initial_Mesh.NBlk_Jdir;
+                for (int i = Initial_Mesh.Grid_Blks[nBlk].ICl; i <= Initial_Mesh.Grid_Blks[nBlk].ICu; ++i) {
+                    for (int j = Initial_Mesh.Grid_Blks[nBlk].JCl; j <= Initial_Mesh.Grid_Blks[nBlk].JCu; ++j) {
+                        for (int k = Initial_Mesh.Grid_Blks[nBlk].KCl; k <= Initial_Mesh.Grid_Blks[nBlk].KCu; ++k) {
+                            ix = iBlk*NCells_Idir+(i-Initial_Mesh.Grid_Blks[nBlk].ICl);
+                            iy = jBlk*NCells_Jdir+(j-Initial_Mesh.Grid_Blks[nBlk].JCl);
+                            iz = kBlk*NCells_Kdir+(k-Initial_Mesh.Grid_Blks[nBlk].KCl);
+                            index = iz + Nz*(iy + ix*Ny);
+                            Velocity_Field_List.Vel_Blks[nBlk].Velocity[i][j][k].x = u[index];
+                            Velocity_Field_List.Vel_Blks[nBlk].Velocity[i][j][k].y = v[index];
+                            Velocity_Field_List.Vel_Blks[nBlk].Velocity[i][j][k].z = w[index];
+                        }
+                    }
+                }
             }
-            if (ii>0) {
-                Ek[ii-1] = K[ii].Ek; // Don't wish to store K[0].k which is 0
-            } 
         } 
-        
-        TKE_rogallo = CubicSplinesIntegration(k,Ek,nK-1);
+    } 
+};
 
-        if (!batch_flag)
-            cout << "    -->  TKE with Rogallo rescaled   = " << TKE_rogallo << endl;
-    }
-    
-    /* ------------------ write gnuplot spectrum files --------------- */
-    for (int ii=0; ii <nK; ii++) {
-        if (ii>0) {
-            k[ii-1]  = K[ii].k;   // Don't wish to store K[0].k which is 0
-            Ek[ii-1] = K[ii].Ek; 
-            Emodel[ii-1] = K[ii].Emodel;
-        }    
-        Output_Turbulence_Spectrum_to_File(K[ii].k,K[ii].Emodel,K[ii].Ek);
-    }
-    
-    /* ------------------ gnuplot the rescaled spectrum -------------- */
-    #ifdef _GNUPLOT
-        if (rescale)    // rescale is false now
-            h1.gnuplot_plot1d_var2(k,Ek,nK,"Rogallo - rescaled");
-    #endif
-
-    /* ---------- Total kinetic energy for continuous spectrum ---------- */
-
-
- 
-    typedef double (RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::*Energy_Spectrum_Type) (const double &abs_wave_num) const;
-    _Member_Function_Wrapper_<RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>,Energy_Spectrum_Type, double> Energy_function(this, &RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::Energy_Spectrum_Value);
-    double dummy;
-    double TKE_entire_range = AdaptiveGaussianQuadrature(Energy_function, 0.0, k_eta/2.0, dummy,5);
-    
-    if (!batch_flag) {       
-        cout << "    -->  TKE of the entire range     = " << TKE_entire_range << endl;
-        cout << "    -->  TKE percentage on the grid  = " << int(TKE_rogallo/TKE*HUNDRED) << " %" << endl;
-	cout << "    -->  u_RMS with Rogallo          = " << sqrt(TWO/THREE*TKE_rogallo) << endl;
-    }
-
-    
-    
-    /* ----------------- calculate L11 ---------------------- */
-    
-    
-    double *Ek_over_k = new double [nK];
-    for (int ii=1; ii <nK; ii++) {
-            Ek_over_k[ii-1] = K[ii].Ek/K[ii].k; 
-    }
-    double L11_spectral = THREE*PI/FOUR * CubicSplinesIntegration(k,Ek_over_k,nK-1) / TKE_rogallo;
-    // deallocate
-    delete[]  Ek_over_k;
-    
-    if (!batch_flag)      
-        cout << "    -->  L11                         = " << L11_spectral << endl;
-
-    /* ---------------------------------------------------------------------------- *
-     *          Perform Fourier transform from spectral to physical space           *
-     * ---------------------------------------------------------------------------- */
-
-    physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, uu, u, FFTW_ESTIMATE);
-    fftw_execute(physical); 
-    fftw_destroy_plan(physical);
- 
-    physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, vv, v, FFTW_ESTIMATE);
-    fftw_execute(physical); 
-    fftw_destroy_plan(physical);
-  
-    physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, ww, w, FFTW_ESTIMATE);
-    fftw_execute(physical); 
-    fftw_destroy_plan(physical);
-  
-    /* --------------- Total kinetic energy in physical space --------------- */
-    double TKE_physical = 0;
-    double u2 = 0 , v2 = 0 , w2 = 0;
+/**
+ * RandomFieldRogallo::Spatial_Averages
+ *
+ * Calculates the Total Kinetic Energy and the
+ * RMS velocity, assuming the grid is uniform!
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::Spatial_Averages(void) {
+    int index;
+    u2 = 0 , v2 = 0 , w2 = 0;
     for (int i=0; i<Nx; i++) {
         for (int j=0; j<Ny; j++) {
             for (int l=0; l<Nz; l++) {
-                index = l + Nz*(j+Ny*i);
-                u[index] *= sqrt(pow(TWO*PI,3.0)/(L1*L2*L3));
-                v[index] *= sqrt(pow(TWO*PI,3.0)/(L1*L2*L3));
-                w[index] *= sqrt(pow(TWO*PI,3.0)/(L1*L2*L3));
-
+                index = l + Nz*(j+Ny*i);                
                 u2 += ONE/(Nx*Ny*Nz) * sqr(u[index]);   // average of u^2
                 v2 += ONE/(Nx*Ny*Nz) * sqr(v[index]);   // average of v^2
                 w2 += ONE/(Nx*Ny*Nz) * sqr(w[index]);   // average of w^2
-            } /* endfor */
-        } /* endfor */
-    } /* endfor */
+            } 
+        } 
+    } 
     TKE_physical = HALF*(u2+v2+w2);
-    double uRMS = sqrt(TWO/THREE*TKE_physical);
-    
-    if (!batch_flag) {
-        cout << endl;
-        cout << "   Total Kinetic Energy calculated in physical space: " << endl;
-        cout << "    -->  discrete TKE  = " << TKE_physical << endl;
-        cout << "    -->  u_RMS         = " << uRMS << endl;
-    }
-    
-    
-    
-    double *Rr, *fr, *r;
-    /* ---------- Longitudinal velocity correlation function fr ---------- */ 
-    Rr = new double [Nx];
-    fr = new double [Nx];
-    r = new double [Nx];
+    uRMS = sqrt(TWO/THREE*TKE_physical);
+}
 
+
+/**
+ * RandomFieldRogallo::Longitudinal_Correlation
+ *
+ * Calculates thelongitudinal velocity autocorrelation 
+ * lengthscale in physical space,
+ * assuming the grid is uniform!
+ * 
+ * \return L11: longitudinal velocity autocorrelation lengthscale
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+double RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::Longitudinal_Correlation(void) {
+    
+    double *Rr = new double [Nx];
+    double *fr = new double [Nx];
+    double *r = new double [Nx];
     for (int ri=0; ri<Nx; ri++){ // loop for variation in r
         Rr[ri] = 0;
     }
@@ -1915,87 +1645,7 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
         fr[ri] = Rr[ri]/u2;
     }
     
-    /* ---------------- L11 = Integral of fr ---------------- */
-    double L11_physical = CubicSplinesIntegration(r,fr,Nx);
-    if (!batch_flag)
-        cout << "    -->  L11           = " << L11_physical << endl;
-    delete[]  Rr;
-    delete[]  fr;
-    delete[]   r;
-
-
-    /* ---------- Transversal velocity correlation function fr ---------- */
-    Rr = new double [Ny];
-    fr = new double [Ny];
-    r = new double [Ny];
-
-    for (int rj=0; rj<Ny; rj++){ // loop for variation in r
-        Rr[rj] = 0;
-    }
-    for (int l=0; l<Nz; l++) {
-        for (int i=0; i<Nx; i++) {
-	    for (int j=0; j<Ny; j++) {
-                for (int jj=j; jj<Ny; jj++) {
-                    int indexr = l + Nz*( jj + Ny*i );
-                    int index  = l + Nz*( j + Ny*i );
-                    int rj = jj-j;
-                    Rr[rj] += ONE/(Nx*Ny*Nz) * (v[indexr]*v[index]); 
-                }
-            }
-        }
-    }
-    dr = L2/(Ny-1.0);
-    for (int rj = 0; rj<Ny; rj++) {
-        r[rj] = rj*dr;
-        fr[rj] = Rr[rj]/v2;
-    }
-    
-    /* ---------------- L22 = Integral of fr ---------------- */
-    double L22_physical = CubicSplinesIntegration(r,fr,Ny);
-    if (!batch_flag)
-        cout << "    -->  L22           = " << L22_physical << endl;
-
-    delete[]  Rr;
-    delete[]  fr;
-    delete[]   r;
-
-
-    /* ---------- Transversal velocity correlation function fr ---------- */
-    Rr = new double [Nz];
-    fr = new double [Nz];
-    r = new double [Nz];
-    
-    for (int rl=0; rl<Nz; rl++){ // loop for variation in r
-        Rr[rl] = 0;
-    }
-    
-    for (int i=0; i<Nx; i++) {
-        for (int j=0; j<Ny; j++) {
-	    for (int l=0; l<Nz; l++) {
-                for (int ll=l; ll<Nz; ll++) {
-                    int indexr = ll + Nz*( j + Ny*i );
-                    int index  = l + Nz*( j + Ny*i );
-                    int rl = ll-l;
-                    Rr[rl] += ONE/(Nx*Ny*Nz) * (w[indexr]*w[index]); 
-                }
-            }
-        }
-    }
-    dr = L3/(Nz-1.0);
-    for (int rl = 0; rl<Nz; rl++) {
-        r[rl] = rl*dr;
-        fr[rl] = Rr[rl]/w2;
-    }
-    
-    /* ---------------- L33 = Integral of fr ---------------- */
-    double L33_physical = CubicSplinesIntegration(r,fr,Nz);
-    if (!batch_flag)
-        cout << "    -->  L33           = " << L33_physical << endl;
-
-    delete[]  Rr;
-    delete[]  fr;
-    delete[]   r;
-
+    L11_physical = CubicSplinesIntegration(r,fr,Nx);
 
     
 #ifdef _GNUPLOT
@@ -2007,132 +1657,830 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
     h2.gnuplot_set_ylabel("f(r)");
     h2.gnuplot_set_title("longitudinal velocity autocorrelation function");
     h2.gnuplot_plot1d_var2(r,fr,Nx,"");
-//    sleep(2);    
-//    h2.gnuplot_close();
 #endif
     
     
-//    /* ---------------------------------------------------------------------------- *
-//     *          Perform Fourier transform from physical to spectral space           *
-//     * ---------------------------------------------------------------------------- */
-//    fftw_plan      spectral;
-//
-//    spectral = fftw_plan_dft_r2c_3d(Nx, Ny, Nz, u, uu, FFTW_ESTIMATE);
-//    fftw_execute(spectral); 
-//    fftw_destroy_plan(spectral);
-//    
-//    spectral = fftw_plan_dft_r2c_3d(Nx, Ny, Nz, v, vv, FFTW_ESTIMATE);
-//    fftw_execute(physical); 
-//    fftw_destroy_plan(spectral);
-//    
-//    spectral = fftw_plan_dft_r2c_3d(Nx, Ny, Nz, w, ww, FFTW_ESTIMATE);
-//    fftw_execute(spectral); 
-//    fftw_destroy_plan(spectral);
-//    
-//    
-//    
-//    for (int ii=0; ii<nK; ii++) {
-//        K[ii].Ek = 0;
-//        double abs_k = K[ii].k;
-//        for (int jj=0; jj<K[ii].N; jj++) {
-//            int index = K[ii].indexes[jj];
-//            
-//            uu[index][0] *= ONE/(Nx*Ny*Nz)   / sqrt(pow(TWO*PI,3)/(L1*L2*L3));
-//            uu[index][1] *= ONE/(Nx*Ny*Nz)   / sqrt(pow(TWO*PI,3)/(L1*L2*L3));
-//            vv[index][0] *= ONE/(Nx*Ny*Nz)   / sqrt(pow(TWO*PI,3)/(L1*L2*L3));
-//            vv[index][1] *= ONE/(Nx*Ny*Nz)   / sqrt(pow(TWO*PI,3)/(L1*L2*L3));
-//            ww[index][0] *= ONE/(Nx*Ny*Nz)   / sqrt(pow(TWO*PI,3)/(L1*L2*L3));
-//            ww[index][1] *= ONE/(Nx*Ny*Nz)   / sqrt(pow(TWO*PI,3)/(L1*L2*L3));
-//
-//            double Rxx = (sqr(uu[index][0]) + sqr(uu[index][1]));
-//            double Ryy = (sqr(vv[index][0]) + sqr(vv[index][1]));
-//            double Rzz = (sqr(ww[index][0]) + sqr(ww[index][1]));
-//            EE[index] = HALF * (Rxx + Ryy + Rzz);
-//            
-//            K[ii].Ek += TWO * EE[index] * (TWO*PI*sqr(abs_k)) / K[ii].N;
-//        }
-//        if (ii>0) {
-//            k[ii-1] = K[ii].k;
-//            Ek[ii-1] = K[ii].Ek; // Don't wish to store K[0].k which is 0
-//        } 
-//    } 
-//    
-//    /* ------------------ gnuplot the rescaled spectrum -------------- */
-//#ifdef _GNUPLOT
-//        h1.gnuplot_plot1d_var2(k,Ek,nK-1,"from physical");
-//#endif
-//    
-//    cout << " TKE from physical back to spectral = " << CubicSplinesIntegration(k,Ek,nK-1);
-//    
-  
+    delete[] Rr;
+    delete[] fr;
+    delete[] r;
+    
+    return L11_physical;    // Note: this is a class member
+}
 
-  /* ------------------------------------ Assign turbulent velocity field ------------------------------------ */
-  int nBlk, ix, iy, iz;
-  int INl, INu, JNl, JNu, KNl, KNu;
-  for (int kBlk = 0; kBlk <= Initial_Mesh.NBlk_Kdir-1; ++kBlk) {
-     for (int jBlk = 0; jBlk <= Initial_Mesh.NBlk_Jdir-1; ++jBlk) {
-        for (int iBlk = 0; iBlk <= Initial_Mesh.NBlk_Idir-1; ++iBlk) {
-            nBlk = iBlk +
-                   jBlk*Initial_Mesh.NBlk_Idir +
-                   kBlk*Initial_Mesh.NBlk_Idir*Initial_Mesh.NBlk_Jdir;
-            for (int i = Initial_Mesh.Grid_Blks[nBlk].ICl; i <= Initial_Mesh.Grid_Blks[nBlk].ICu; ++i) {
-               for (int j = Initial_Mesh.Grid_Blks[nBlk].JCl; j <= Initial_Mesh.Grid_Blks[nBlk].JCu; ++j) {
-                  for (int k = Initial_Mesh.Grid_Blks[nBlk].KCl; k <= Initial_Mesh.Grid_Blks[nBlk].KCu; ++k) {
-		     ix = iBlk*IPs.NCells_Turbulence_Idir+(i-Initial_Mesh.Grid_Blks[nBlk].ICl);
-		     iy = jBlk*IPs.NCells_Turbulence_Jdir+(j-Initial_Mesh.Grid_Blks[nBlk].JCl);
-		     iz = kBlk*IPs.NCells_Turbulence_Kdir+(k-Initial_Mesh.Grid_Blks[nBlk].KCl);
-	             index = iz + 
-                             iy*Nz + 
-                             ix*Ny*Nz;
-                     Initial_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k].x = u[index];
-                     Initial_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k].y = v[index];
-                     Initial_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k].z = w[index];
-		     Initial_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k] = Initial_Mesh.Grid_Blks[nBlk].Cell[i][j][k].Xc;	     
-                     
-		  } /* endfor */
-	       } /* endfor */
-	    } /* endfor */  
-	    INl = Initial_Mesh.Grid_Blks[nBlk].INl; 
-	    INu = Initial_Mesh.Grid_Blks[nBlk].INu; 
-	    JNl = Initial_Mesh.Grid_Blks[nBlk].JNl; 
-	    JNu = Initial_Mesh.Grid_Blks[nBlk].JNu; 
-	    KNl = Initial_Mesh.Grid_Blks[nBlk].KNl; 
-	    KNu = Initial_Mesh.Grid_Blks[nBlk].KNu;
-	    Initial_Velocity_Field.Vel_Blks[nBlk].Node_INl_JNl_KNl = Initial_Mesh.Grid_Blks[nBlk].Node[INl][JNl][KNl].X; 
-	    Initial_Velocity_Field.Vel_Blks[nBlk].Node_INu_JNu_KNu = Initial_Mesh.Grid_Blks[nBlk].Node[INu][JNu][KNu].X;
 
-	} /* endfor */
-     } /* endfor */
-  } /* endfor */
-  
-      /* --------------- Deallocations --------------- */
-    for (int ii=0; ii <nK; ii++) {
-        delete[] K[ii].indexes;
+/**
+ * RandomFieldRogallo::Longitudinal_Correlation_spectral
+ *
+ * Calculates longitudinal velocity autocorrelation 
+ * lengthscale in spectral space,
+ * assuming the turbulence is isotropic!
+ *
+ * \return L11: longitudinal velocity autocorrelation lengthscale
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+double RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::Longitudinal_Correlation_spectral(void) {
+    
+    double *Ek_over_k = new double [nK];
+    double *k = new double [nK];
+    for (int ii=1; ii <nK; ii++) {
+        k[ii-1] = K[ii].k;
+        Ek_over_k[ii-1] = K[ii].Ek/K[ii].k; 
     }
-    delete[] K;
+    L11_spectral = THREE*PI/FOUR * CubicSplinesIntegration(k,Ek_over_k,nK-1) / TKE_grid;
+    
+    delete[] Ek_over_k;
+    delete[] k;
+    
+    return L11_spectral;  // Note: this is a class member
+}
+
+ 
+
+/**
+ * RandomFieldRogallo::Dissipation
+ *
+ * Calculates the dissipation in spectral space
+ * which is visible on the grid only
+ *
+ * \return Dissipation
+ */ 
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+double RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::Dissipation(void) {
+    
+    double *Dk_smooth = new double [nK];
+    double *k = new double [nK];
+    for (int ii=0; ii <nK; ii++) {
+        k[ii] = K[ii].k;
+        Dk_smooth[ii] = TWO*nu*sqr(K[ii].k)*K[ii].Ek_smooth; 
+        // For non smooth data: Dk[ii] = TWO*nu*sqr(K[ii].k)*K[ii].Ek; 
+        
+    }
+    double dissipation = CubicSplinesIntegration(k,Dk_smooth,nK);
+    
+#ifdef _GNUPLOT
+    int npts = int((k_eta-abs_k0)/abs_k0);
+    double kmin = abs_k0/10;
+    double kmax = k_eta/4.0;
+    dpoint *dp = new dpoint[npts];
+    dpoint *Ep = new dpoint[npts];
+    for (int i=0; i<npts; i++) {
+        dp[i].x = kmin + i*(kmax-kmin)/(npts-1);
+        dp[i].y = TWO*nu*sqr(dp[i].x)*Energy_Spectrum_Value(dp[i].x);
+    }
+    Gnuplot_Control h1;
+    h1.gnuplot_init();
+    h1.gnuplot_setstyle("lines") ;
+    h1.gnuplot_cmd("set grid");
+    h1.gnuplot_cmd("set logscale xy");
+    h1.gnuplot_set_xlabel("k");
+    h1.gnuplot_set_ylabel("D(k)");
+    h1.gnuplot_set_title("Dissipation spectrum");
+    
+    // the initial dissipation spectrum
+    h1.gnuplot_plot1d_var2(dp,npts,"dissipation model");
+    delete[] dp;
+    
+    // the current dissipation spectrum
+    h1.gnuplot_plot1d_var2(k,Dk_smooth,nK,"dissipation on grid");
+#endif
+    
+    delete[] Dk_smooth;
+    delete[] k;
+    
+    return dissipation;
+}
+
+
+
+/**
+ * RandomFieldRogallo::Rogallo_Procedure
+ *
+ * The spectral velocity components that are used in FFT are 
+ * assigned using Rogallo's procedure described in paper:
+ * "Numerical Experiments in Homogeneous Turbulence" (1981)
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::Rogallo_Procedure(void) {
+    
+    /* --------------- Create spectral velocity fluctuations ---------------- */
+    int seed = 1; // = time(NULL);      // assigns the current time to the seed
+    srand48(seed);                      // changes the seed for drand48()
+    double k1, k2, k3, abs_k;           // Wave numbers
+    double theta1, theta2, phi;         // random angles for Rogallo spectrum
+    complex<double> aa, bb;             // complex energy components for Rogallo spectrum
+    double deno;                        // denominator in Rogallo spectrum function
+    int index, i, j, l;                 // indexes
+    int index_conj, iconj, jconj;
+    
+    for(int ii=0; ii<nK; ii++) {                // For every abs_k
+        for(int jj=0; jj<K[ii].N; jj++) {       // For all grid points with this value of abs_k
+            index = K[ii].indexes[jj];      // index corresponding to (i,j,l)
+            i = index/(Ny*nz);              // convert index to (i,j,l) coordinates
+            j = (index - Ny*nz*i)/nz;
+            l = index - nz*(j+Ny*i);
+            
+            k1 = k_1(i);
+            k2 = k_2(j);
+            k3 = k_3(l);
+            abs_k = K[ii].k;
+            
+            /* ----------- Calculate velocities with Rogallo's procedure ---------- */
+            theta1 = TWO*PI*random_double();   // Random number (0, 2*PI)
+            theta2 = TWO*PI*random_double();   // Random number (0, 2*PI)
+            phi    = TWO*PI*random_double();   // Random number (0, 2*PI)
+            
+            if ( theta1 == theta2  && theta2 == phi ) {
+                cerr << "\n theta1, theta2 and phi are all equal.";
+            }
+            
+            aa = alpha(abs_k, theta1, phi);
+            bb = beta (abs_k, theta2, phi);
+            deno = abs_k * sqrt(k1*k1 + k2*k2) + PICO;
+            
+            uu[index][0] = real( (aa*abs_k*k2 + bb*k1*k3)/deno ) ;
+            uu[index][1] = imag( (aa*abs_k*k2 + bb*k1*k3)/deno ) ;
+            vv[index][0] = real( (bb*k2*k3 - aa*abs_k*k1)/deno ) ;
+            vv[index][1] = imag( (bb*k2*k3 - aa*abs_k*k1)/deno ) ;
+            ww[index][0] = real( -( bb*(k1*k1 + k2*k2) )/deno  ) ;
+            ww[index][1] = imag( -( bb*(k1*k1 + k2*k2) )/deno  ) ;
+            
+            /* ------------ Some exceptions to make FFT real ------------ */
+            if ( l==0  ||  l==Nz/2) {
+                if ( j>Ny/2  ||  ( i>Nx/2  &&  (j==0 || j==Ny/2) ) ) {
+                    iconj = (i==0  ?  0 : Nx-i);
+                    jconj = (j==0  ?  0 : Ny-j);
+                    index_conj = l + nz*(jconj+Ny*iconj);
+                    
+                    // complex conjugates
+                    uu[index][0] =  uu[index_conj][0];
+                    uu[index][1] = -uu[index_conj][1];
+                    vv[index][0] =  vv[index_conj][0];
+                    vv[index][1] = -vv[index_conj][1];
+                    ww[index][0] =  ww[index_conj][0];
+                    ww[index][1] = -ww[index_conj][1];
+                    
+                } else if ( (i==0 || i==Nx/2)  &&  (j==0 || j==Ny/2) ) {
+                    // real values at 8 corners
+                    uu[index][0] = sqrt( sqr(uu[index][0]) + sqr(uu[index][1]) );
+                    uu[index][1] = 0.0;    
+                    vv[index][0] = sqrt( sqr(vv[index][0]) + sqr(vv[index][1]) );
+                    vv[index][1] = 0.0;
+                    ww[index][0] = sqrt( sqr(ww[index][0]) + sqr(ww[index][1]) );
+                    ww[index][1] = 0.0; 
+                }
+            }                
+        }
+    }
+};
+
+/**
+ * RandomFieldRogallo::Calculate_Energy_Spectrum
+ *
+ * The Kinetic Energy spectrum is calculated from the
+ * spectral velocity components. The Total Kinetic Energy (TKE)
+ * is calculated by integrating the spectrum.
+ *
+ * \return Total Kinetic Energy
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+double RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::Calculate_Energy_Spectrum(void) {
+    
+    double *k  = new double [nK];
+    double *Ek = new double [nK];
+    double *Ek_smooth = new double [nK];
+    double *Emodel = new double [nK];
+    
+    double *EE = new double [Nx*Ny*nz];   // Energy of one wavenumber vector
+    double Rxx, Ryy, Rzz;
+    
+    int index, i, j, l;                 // indexes
+    double abs_k;
+    
+    for(int ii=0; ii<nK; ii++) {                // For every abs_k
+        K[ii].Ek = ZERO;
+        for(int jj=0; jj<K[ii].N; jj++) {       // For all grid points with this value of abs_k
+            index = K[ii].indexes[jj];      // index corresponding to (i,j,l)
+            i = index/(Ny*nz);              // convert index to (i,j,l) coordinates
+            j = (index - Ny*nz*i)/nz;
+            l = index - nz*(j+Ny*i);
+            
+            abs_k = K[ii].k;
+            
+            /* ------ Calculate energy corresponding with this wave number ------ */
+            // Velocity correlation tensor for this wavenumber
+            Rxx = (sqr(uu[index][0]) + sqr(uu[index][1]));
+            Ryy = (sqr(vv[index][0]) + sqr(vv[index][1]));
+            Rzz = (sqr(ww[index][0]) + sqr(ww[index][1]));
+            
+            // Energy = HALF * trace(velocitycorrelation tensor Rij)
+            EE[index] = HALF * (Rxx + Ryy + Rzz) ;
+            
+            /* ------- Calculate energy corresponding with this wavenumber ------ */
+            K[ii].Ek += TWO * EE[index] * (TWO*PI*sqr(abs_k)) / K[ii].N;
+            
+        }
+        K[ii].Emodel = Energy_Spectrum_Value(K[ii].k);
+        
+        if (K[ii].Ek != ZERO)
+            K[ii].velocity_scaling_factor = sqrt(K[ii].Emodel/(K[ii].Ek));
+        else 
+            K[ii].velocity_scaling_factor = ONE;
+        
+    }
+    
+    /* ------------------- Total Kinetic Energy ------------------- */
+    for (int ii=0; ii<nK; ii++) {
+        k[ii]  = K[ii].k;
+        Ek[ii] = K[ii].Ek; 
+        Emodel[ii] = K[ii].Emodel;
+    }
+    
+    TKE_model = CubicSplinesIntegration(k,Emodel,nK);
+    TKE_grid  = CubicSplinesIntegration(k,Ek,nK);
+    
+    /* --------------- Calculate Smoothed spectrum ---------------- */
+    polyfit_smoothing_logscale(nK,k,Ek,3,0.1,true,Ek_smooth);
+    for (int ii=0; ii<nK; ii++) {
+        K[ii].Ek_smooth = Ek_smooth[ii];
+    }
+        
+    delete[] k;
     delete[] EE;
+    delete[] Ek;
+    delete[] Ek_smooth;
+    delete[] Emodel;
+    
+    return TKE_grid;  // Note: This is a class member
+};
+
+
+/**
+ * RandomFieldRogallo::Rescale_Energy_Spectrum_to_Initial_Spectrum
+ *
+ * The spectral velocity components are being rescaled to match the same
+ * spectral content as the initial Kinetic Energy Spectrum
+ *
+ * \return Total Kinetic Energy
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+double RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
+Rescale_Energy_Spectrum_to_Initial_Spectrum(void) {
+    
+    double *k  = new double [nK];
+    double *Ek = new double [nK];
+    double *Ek_smooth = new double [nK];
+    
+    double *EE = new double [Nx*Ny*nz];
+    int index;
+    double velocity_scaling_factor;
+    double abs_k;
+    double Rxx, Ryy, Rzz;
+    for (int ii=0; ii<nK; ii++) {
+        K[ii].Ek = 0;
+        abs_k = K[ii].k;
+        for (int jj=0; jj<K[ii].N; jj++) {
+            index = K[ii].indexes[jj];
+            velocity_scaling_factor = K[ii].velocity_scaling_factor;
+            uu[index][0] *= velocity_scaling_factor;
+            uu[index][1] *= velocity_scaling_factor;
+            vv[index][0] *= velocity_scaling_factor;
+            vv[index][1] *= velocity_scaling_factor;
+            ww[index][0] *= velocity_scaling_factor;
+            ww[index][1] *= velocity_scaling_factor;
+            
+            Rxx = (sqr(uu[index][0]) + sqr(uu[index][1]));
+            Ryy = (sqr(vv[index][0]) + sqr(vv[index][1]));
+            Rzz = (sqr(ww[index][0]) + sqr(ww[index][1]));
+            EE[index] = HALF * (Rxx + Ryy + Rzz);
+            
+            K[ii].Ek += TWO * EE[index] * (TWO*PI*sqr(abs_k)) / K[ii].N;
+        }
+        
+    } 
+    
+    /* ------------------- Total Kinetic Energy ------------------- */
+    for (int ii=0; ii <nK; ii++) {
+        k[ii]  = K[ii].k;   // Don't wish to store K[0].k which is 0
+        Ek[ii] = K[ii].Ek; 
+    }
+    
+    TKE_grid = CubicSplinesIntegration(k,Ek,nK);
+    
+    /* --------------- Calculate Smoothed spectrum ---------------- */
+    polyfit_smoothing_logscale(nK,k,Ek,3,0.1,true,Ek_smooth);
+    for (int ii=0; ii<nK; ii++) {
+        K[ii].Ek_smooth = Ek_smooth[ii];
+    }
+    
     delete[] k;
     delete[] Ek;
+    delete[] Ek_smooth;
+    delete[] EE;
+    
+    return TKE_grid;  // Note: this is a class member
+}
 
-    delete[] Emodel;
-    fftw_free(u);
-    fftw_free(v);
-    fftw_free(w);
-    fftw_free(uu);
-    fftw_free(vv);
-    fftw_free(ww);
-    // clean up accumulated data by the fftw plan
-    fftw_cleanup();  
+/**
+ * RandomFieldRogallo::FFT_spectral_to_physical
+ *
+ * The physical velocity components are calculated
+ * through FFT of the spectral velocity components.
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::FFT_spectral_to_physical(void) {
     
-    #ifdef _GNUPLOT
-        delete[] dp;
-       // sleep(2);
-       // h1.gnuplot_close();
-    #endif
+    fftw_plan physical;
+    physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, uu, u, FFTW_ESTIMATE);
+    fftw_execute(physical); 
+    fftw_destroy_plan(physical);
     
-    errorflag = Close_Turbulence_Spectrum_File( );
-      
+    physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, vv, v, FFTW_ESTIMATE);
+    fftw_execute(physical); 
+    fftw_destroy_plan(physical);
+    
+    physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, ww, w, FFTW_ESTIMATE);
+    fftw_execute(physical); 
+    fftw_destroy_plan(physical);
+    
+    /* ---------- FFT scaling factor ---------- */
+    double FFT_scaling_factor = sqrt(pow(TWO*PI,3.0)/(L1*L2*L3));
+    int index;
+    for (int i=0; i<Nx; i++) {
+        for (int j=0; j<Ny; j++) {
+            for (int l=0; l<Nz; l++) {
+                index = l + Nz*(j+Ny*i);
+                u[index] *= FFT_scaling_factor;
+                v[index] *= FFT_scaling_factor;
+                w[index] *= FFT_scaling_factor;
+            } 
+        } 
+    }
+};
+
+/**
+ * RandomFieldRogallo::FFT_physical_to_spectral
+ *
+ * The spectral velocity components are calculated
+ * through FFT of the physical velocity components.
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::FFT_physical_to_spectral(void) {
+    
+    fftw_plan spectral;
+    spectral = fftw_plan_dft_r2c_3d(Nx, Ny, Nz, u, uu, FFTW_ESTIMATE);
+    fftw_execute(spectral); 
+    fftw_destroy_plan(spectral);
+    
+    spectral = fftw_plan_dft_r2c_3d(Nx, Ny, Nz, v, vv, FFTW_ESTIMATE);
+    fftw_execute(spectral); 
+    fftw_destroy_plan(spectral);
+    
+    spectral = fftw_plan_dft_r2c_3d(Nx, Ny, Nz, w, ww, FFTW_ESTIMATE);
+    fftw_execute(spectral); 
+    fftw_destroy_plan(spectral);
+    
+    /* --------------- FFT scaling factor ---------------- */
+    
+    double FFT_scaling_factor = ONE/(Nx*Ny*Nz)   / sqrt(pow(TWO*PI,3)/(L1*L2*L3));
+    int index;
+    for (int ii=0; ii<nK; ii++) {
+        for (int jj=0; jj<K[ii].N; jj++) {
+            index = K[ii].indexes[jj];
+            
+            uu[index][0] *= FFT_scaling_factor;
+            uu[index][1] *= FFT_scaling_factor;
+            vv[index][0] *= FFT_scaling_factor;
+            vv[index][1] *= FFT_scaling_factor;
+            ww[index][0] *= FFT_scaling_factor;
+            ww[index][1] *= FFT_scaling_factor;
+        }
+    }
+};
+
+
+
+/**
+ * Subroutine: Create_Homogeneous_Turbulence_Velocity_Field
+ * 
+ * Creates and assigns a turbulence velocity field
+ *
+ *
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
+Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
+                                             int &batch_flag,
+                                             Turbulent_Velocity_Field_Multi_Block_List &Initial_Velocity_Field) {
+    
+    if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
+        cout << "\n\n";
+        cout << " ==========================================================================\n"; 
+        cout << "         Generating Homogeneous Isotropic Turbulent Velocity Field \n";
+        cout << " ==========================================================================\n";
+        cout << endl;
+        cout << "   Turbulence parameters of the initial spectrum (k=0:infinity) : " << endl;
+        cout << "    -->  spectrum     = " << spectrum_name << endl; 
+        cout << "    -->  TKE          = " << TKE << endl;
+        cout << "    -->  u_RMS        = " << up << endl;
+        cout << "    -->  L            = " << Lp << endl;
+        cout << "    -->  L11 ~ 0.43 L = " << Lp*0.43 << endl;
+        cout << "    -->  eps          = " << eps << endl;
+        cout << "    -->  eta          = " << eta << endl;
+        cout << "    -->  ReL          = " << ReL << endl;
+        cout << "    -->  Rlambda      = " << Rlambda << endl;
+        cout << "    -->  lambda_g     = " << lambda_g << endl;
+    }
+    
+    
+    int errorflag;
+    errorflag = Open_Turbulence_Spectrum_File( );
+    bool rescale = true;
+    
+    
+    //  Allocate_spectrum();
+    Nx = NCells_Idir * Initial_Mesh.NBlk_Idir;
+    Ny = NCells_Jdir * Initial_Mesh.NBlk_Idir;
+    Nz = NCells_Kdir * Initial_Mesh.NBlk_Kdir;
+    nz = Nz/2+1;
+    
+    // Allocation of arrays used in the transforms
+    u = (double *) malloc(Nx*Ny*Nz * sizeof(double));
+    v = (double *) malloc(Nx*Ny*Nz * sizeof(double));
+    w = (double *) malloc(Nx*Ny*Nz * sizeof(double));
+    uu = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
+    vv = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
+    ww = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
+    fftw_plan      physical;
+    
+    Calculate_wave_numbers();
+    
+    
+    
+    
+    /* -------------------- gnuplot model -------------------- */
+#ifdef _GNUPLOT
+    int npts = int((k_eta-abs_k0)/abs_k0);
+    double kmin = abs_k0/10;
+    double kmax = k_eta/4.0;
+    dpoint *dp = new dpoint[npts];
+    for (int i=0; i<npts; i++) {
+        dp[i].x= kmin + i*(kmax-kmin)/(npts-1);
+        dp[i].y= Energy_Spectrum_Value(dp[i].x);
+    }
+    Gnuplot_Control h1;
+    h1.gnuplot_init();
+    h1.gnuplot_setstyle("lines") ;
+    h1.gnuplot_cmd("set logscale xy");
+    h1.gnuplot_cmd("set grid");
+    h1.gnuplot_set_xlabel("k");
+    h1.gnuplot_set_ylabel("E(k)");
+    h1.gnuplot_set_title("Kinetic energy spectrum");
+    h1.gnuplot_plot1d_var2(dp,npts,"model");
+    sleep(2);
+    delete[] dp;
+#endif
+    
+    
+    /* --------------- Create spectral velocity fluctuations ---------------- */
+    Rogallo_Procedure();
+    
+    
+    /* --------------------------- Energy spectrum -------------------------- */
+    Calculate_Energy_Spectrum();
+    if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {       
+        cout << endl;
+        cout << "    Statistical parameters in spectral space: " << endl;
+        cout << "    -->  TKE of the model            = " << TKE_model << endl;
+        cout << "    -->  TKE with Rogallo            = " << TKE_grid << endl;
+    }
+    
+    /* ---------------- gnuplot rogallo spectrum -------------- */
+#ifdef _GNUPLOT
+    double *k = new double [nK];
+    double *Ek = new double [nK];
+    for (int ii=0; ii <nK; ii++) {
+        k[ii]  = K[ii].k;   
+        Ek[ii] = K[ii].Ek; 
+    }
+    h1.gnuplot_setstyle("points");
+    h1.gnuplot_plot1d_var2(k,Ek,nK,"Rogallo");
+#endif
+    
+    
+    
+    rescale = true;
+    /* ------- rescale the rogallo spectrum to match the model spectrum ------- */
+    if (rescale) { 
+        Rescale_Energy_Spectrum_to_Initial_Spectrum();
+        
+        if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) 
+            cout << "    -->  TKE with Rogallo rescaled   = " << TKE_grid << endl;
+    }
+    
+    /* ------------------ write gnuplot spectrum files --------------- */
+    Output_Turbulence_Spectrum_to_File();
+    
+    
+    /* ------------------ gnuplot the rescaled spectrum -------------- */
+#ifdef _GNUPLOT
+    if (rescale) {
+        for (int ii=0; ii <nK; ii++) {
+            k[ii]  = K[ii].k; 
+            Ek[ii] = K[ii].Ek; 
+        }
+        h1.gnuplot_plot1d_var2(k,Ek,nK,"Rogallo - rescaled"); 
+    }
+    delete[] k;
+    delete[] Ek;
+#endif
+    
+    /* ------------ Percentage of TKE on the grid ----------- */
+    if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
+        cout << "    -->  TKE percentage on the grid  = " << int(TKE_grid/TKE*HUNDRED) << " %" << endl;
+    }
+    
+    
+    
+    /* ----------------- calculate L11 ---------------------- */
+    Longitudinal_Correlation_spectral();
+    if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
+        cout << "    -->  L11                         = " << L11_spectral << endl;
+        cout << "    -->  L11 / L                     = " << L11_spectral  / Lp << endl;
+        cout << "    -->  L_domain / L11              = " << Ls / L11_spectral << endl;
+    }
+    
+    /* --------------------- dissipation -------------------- */
+    double diss = Dissipation();
+    if (CFFC_Primary_MPI_Processor() && !(batch_flag) )
+        cout << "    -->  eps on grid                 = " << diss << endl;
+
+    
+    
+    /* ---------------------------------------------------------------------------- *
+     *               Fourier transform from spectral to physical space              *
+     * ---------------------------------------------------------------------------- */
+    
+    FFT_spectral_to_physical();
+    
+    Spatial_Averages();
+    
+    if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
+        cout << endl;
+        cout << "    Statistical parameters in physical space:" << endl;
+        cout << "    -->  TKE            = " << TKE_physical << endl;
+        cout << "    -->  u_RMS          = " << uRMS << endl;
+        cout << "    -->  <u^2>          = " << u2 << endl;
+        cout << "    -->  <v^2>          = " << v2 << endl;
+        cout << "    -->  <w^2>          = " << w2 << endl;
+    }
+    
+    
+    /* ---------- Longitudinal velocity correlation function fr ----------- */
+    Longitudinal_Correlation();
+    if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
+        cout << "    -->  L11            = " << L11_physical << endl;
+        cout << "    -->  L11 / L        = " << L11_physical  / Lp << endl;
+        cout << "    -->  L_domain / L11 = " << Ls / L11_physical << endl;
+    }
+    
+    /* ----------------- Assign turbulent velocity field ------------------ */
+    Export_to_Velocity_Field_Blocks(Initial_Mesh, Initial_Velocity_Field);
+    
+    
+    
+    errorflag = Close_Turbulence_Spectrum_File( );      
     return (0);
+}
+
+
+
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
+Get_Energy_Spectrum(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
+                    int &batch_flag,
+                    Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field_List) {
+    
+    
+    /* ------- assign grid parameters --------- */
+    Nx = NCells_Idir * Initial_Mesh.NBlk_Idir;
+    Ny = NCells_Jdir * Initial_Mesh.NBlk_Idir;
+    Nz = NCells_Kdir * Initial_Mesh.NBlk_Kdir;
+    nz = Nz/2+1;
+    
+    /* ------- allocate physical and spectral velocity fluctuation arrays ---------- */    
+    u = (double *) malloc(Nx*Ny*Nz * sizeof(double));
+    v = (double *) malloc(Nx*Ny*Nz * sizeof(double));
+    w = (double *) malloc(Nx*Ny*Nz * sizeof(double));
+    uu = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
+    vv = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
+    ww = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
+    
+    /* ----- assign the wave number list and some key wave numbers ----- */
+    Calculate_wave_numbers();
+    
+    
+    /* ------------ assign the physical velocity fluctuations ------------- */
+    Import_from_Velocity_Field_Blocks(Initial_Mesh,
+                                      Velocity_Field_List); 
+    
+    
+    
+    /* --------------- Turbulent kinetic energy in physical space --------------- */
+    Spatial_Averages();
+    if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
+        cout << endl;
+        cout << "    Statistical parameters in physical space:" << endl;
+        cout << "    -->  TKE            = " << TKE_physical << endl;
+        cout << "    -->  u_RMS          = " << uRMS << endl;
+        cout << "    -->  <u^2>          = " << u2 << endl;
+        cout << "    -->  <v^2>          = " << v2 << endl;
+        cout << "    -->  <w^2>          = " << w2 << endl;
+        
+    }
+    
+    /* ---------- Longitudinal velocity correlation function fr ---------- */
+    Longitudinal_Correlation();
+    if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
+        cout << "    -->  L11            = " << L11_physical << endl;
+        cout << "    -->  L_domain / L11 = " << Ls / L11_physical << endl;
+    }
+    
+    /* ---------------------------------------------------------------------------- *
+     *          Perform Fourier transform from physical to spectral space           *
+     * ---------------------------------------------------------------------------- */
+    
+    FFT_physical_to_spectral();
+    
+    Calculate_Energy_Spectrum();
+    
+    if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {       
+        cout << endl;
+        cout << "   Statistical parameters in spectral space: " << endl;
+        cout << "   -->  TKE on the grid       = " << TKE_grid << endl;
+    }
+    
+    /* ----------------- calculate L11 ---------------------- */
+    Longitudinal_Correlation_spectral();
+    if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
+        cout << "    -->  L11                  = " << L11_spectral << endl;
+        cout << "    -->  L_domain / L11       = " << Ls / L11_spectral << endl;
+    }
+    
+    /* --------------------- dissipation -------------------- */
+    double diss = Dissipation();    
+    if (CFFC_Primary_MPI_Processor() && !(batch_flag) )
+        cout << "   -->  eps on grid           = " << diss << endl;
+
+    
+    /* --------------- gnuplot initial spectrum -------------- */
+#ifdef _GNUPLOT
+    int npts = int((k_eta-abs_k0)/abs_k0);
+    double kmin = abs_k0/10;
+    double kmax = k_eta/4.0;
+    dpoint *energy = new dpoint[npts];
+    for (int i=0; i<npts; i++) {
+        energy[i].x= kmin + i*(kmax-kmin)/(npts-1);
+        energy[i].y= Energy_Spectrum_Value(energy[i].x);
+    }
+    Gnuplot_Control h1;
+    h1.gnuplot_init();
+    h1.gnuplot_setstyle("lines") ;
+    h1.gnuplot_cmd("set logscale xy");
+    h1.gnuplot_cmd("set grid");
+    h1.gnuplot_set_xlabel("k");
+    h1.gnuplot_set_ylabel("E(k)");
+    h1.gnuplot_set_title("Kinetic energy spectrum");
+    h1.gnuplot_plot1d_var2(energy,npts,"initial");
+    
+    delete[] energy;
+#endif
+    
+    /* ------------------ gnuplot the numerical spectrum -------------- */
+#ifdef _GNUPLOT
+    double *k  = new double [nK];
+    double *Ek = new double [nK];
+    for (int ii=0; ii <nK; ii++) {
+        k[ii] = K[ii].k;
+        Ek[ii] = K[ii].Ek; 
+    }
+    h1.gnuplot_setstyle("points");
+    h1.gnuplot_plot1d_var2(k,Ek,nK,"on grid");
+    sleep(2);
+    delete[] k;
+    delete[] Ek;
+#endif
+    
+    Open_Turbulence_Spectrum_File();
+    Output_Turbulence_Spectrum_to_File();
+    Close_Turbulence_Spectrum_File();
+    
+}
+
+
+/*!
+ * Open_Turbulence_Spectrum_File
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
+Open_Turbulence_Spectrum_File( ) {
+    
+    int i;
+    char prefix[256], extension[256], 
+    turbulence_spectrum_file_name[256], gnuplot_file_name[256];
+    char *turbulence_spectrum_file_name_ptr, *gnuplot_file_name_ptr;
+    ofstream gnuplot_file;
+    
+    /* Determine the name of the turbulence spectrum file. */
+    
+    i = 0;
+    while (1) {
+        if (File_Name[i] == ' ' ||
+            File_Name[i] == '.') break;
+        prefix[i] = File_Name[i];
+        i = i + 1;
+        if (i > strlen(File_Name) ) break;
+    } /* endwhile */
+    prefix[i] = '\0';
+    strcat(prefix, "_energy_spectrum");
+    
+    strcpy(extension, ".dat");
+    strcpy(turbulence_spectrum_file_name, prefix);
+    strcat(turbulence_spectrum_file_name, extension);
+    
+    turbulence_spectrum_file_name_ptr = turbulence_spectrum_file_name;
+    
+    /* Open the turbulence spectrum file. */
+    
+    Turbulence_Spectrum_File.open(turbulence_spectrum_file_name_ptr, ios::out);
+    if (Turbulence_Spectrum_File.bad()) return (1);
+    
+    /* Write the appropriate GNUPLOT command file for 
+     plotting turbulence progress file information. */
+    
+    strcpy(extension, ".gplt");
+    strcpy(gnuplot_file_name, prefix);
+    strcat(gnuplot_file_name, extension);
+    
+    gnuplot_file_name_ptr = gnuplot_file_name;
+    
+    gnuplot_file.open(gnuplot_file_name_ptr, ios::out);
+    if (gnuplot_file.fail()) return(1);
+    
+    gnuplot_file 
+    << "set title \"Turbulence energy spectrum "<< spectrum_name <<"\"\n"
+    << "set xlabel \"wavenumber k \"\n"
+    << "set ylabel \"EE\"\n" 
+    << "set logscale xy\n"
+    << "plot \"" << turbulence_spectrum_file_name_ptr << "\" using 1:2 \\\n"
+    << "     title \"" << "initial condition"    << "\" with lines , \\\n"
+    
+    << "\""      << turbulence_spectrum_file_name_ptr << "\" using 1:3 \\\n"
+    << "     title \"" << "LES"                  << "\" with points , \\\n"
+    
+    << "\""      << turbulence_spectrum_file_name_ptr << "\" using 1:4 \\\n"
+    << "     title \"" << "smoothed"             << "\" with lines \n"
+    
+    << "pause -1  \"Hit return to continue\"\n";
+    
+    gnuplot_file.close();
+    
+    /* Preparation of progress file complete.
+     Return zero value. */    
+    return(0);
+}
+
+
+/*!
+ * Output_Turbulence_Spectrum_to_File
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
+Output_Turbulence_Spectrum_to_File() {
+    
+    Turbulence_Spectrum_File << setprecision(6);
+    Turbulence_Spectrum_File.setf(ios::scientific);
+    
+    for (int ii=0; ii <nK; ii++) {
+        Turbulence_Spectrum_File    << K[ii].k  << " " << K[ii].Emodel
+        << " " << K[ii].Ek 
+        << " " << K[ii].Ek_smooth
+        << "\n";
+    } 
+    
+    Turbulence_Spectrum_File.unsetf(ios::scientific);
+    Turbulence_Spectrum_File.flush();
+    
+    return(0);
+}
+
+/*!
+ * Close_Turbulence_Spectrum_File
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
+Close_Turbulence_Spectrum_File( ) {
+    Turbulence_Spectrum_File.close();
+    return(0);
 }
 
 
@@ -2197,141 +2545,6 @@ Read_Turbulent_Velocity_Field(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
 
 }
 
-/*!
- * Open_Turbulence_Spectrum_File
- */
-template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
-Open_Turbulence_Spectrum_File( ) {
-    
-    int i;
-    char prefix[256], extension[256], 
-    turbulence_spectrum_file_name[256], gnuplot_file_name[256];
-    char *turbulence_spectrum_file_name_ptr, *gnuplot_file_name_ptr;
-    ofstream gnuplot_file;
-    
-    /* Determine the name of the turbulence spectrum file. */
-    
-    i = 0;
-    while (1) {
-        if (File_Name[i] == ' ' ||
-            File_Name[i] == '.') break;
-        prefix[i] = File_Name[i];
-        i = i + 1;
-        if (i > strlen(File_Name) ) break;
-    } /* endwhile */
-    prefix[i] = '\0';
-    strcat(prefix, "_energy_spectrum");
-    
-    strcpy(extension, ".dat");
-    strcpy(turbulence_spectrum_file_name, prefix);
-    strcat(turbulence_spectrum_file_name, extension);
-    
-    turbulence_spectrum_file_name_ptr = turbulence_spectrum_file_name;
-    
-    /* Open the turbulence spectrum file. */
-    
-    Turbulence_Spectrum_File.open(turbulence_spectrum_file_name_ptr, ios::out);
-    if (Turbulence_Spectrum_File.bad()) return (1);
-    
-    /* Write the appropriate GNUPLOT command file for 
-     plotting turbulence progress file information. */
-    
-    strcpy(extension, ".gplt");
-    strcpy(gnuplot_file_name, prefix);
-    strcat(gnuplot_file_name, extension);
-    
-    gnuplot_file_name_ptr = gnuplot_file_name;
-    
-    gnuplot_file.open(gnuplot_file_name_ptr, ios::out);
-    if (gnuplot_file.fail()) return(1);
-    
-    gnuplot_file << "set title \"Turbulence energy spectrum "<< spectrum_name <<"\"\n"
-    << "set xlabel \"wavenumber k \"\n"
-    << "set ylabel \"EE\"\n" 
-    << "set logscale xy\n"
-    << "plot \"" << turbulence_spectrum_file_name_ptr << "\" using 1:2 \\\n"
-    << "     title \"" << "model" << "\" with lines , \\\n"
-    << "\"" << turbulence_spectrum_file_name_ptr << "\"  using 1:3 \\\n"
-    << "     title \"" << "constructed" << "\" with lines\n"
-    << "pause -1  \"Hit return to continue\"\n";
-    
-    gnuplot_file.close();
-    
-    /* Preparation of progress file complete.
-     Return zero value. */    
-    return(0);
-}
-
-
-/*!
- * Output_Turbulence_Spectrum_to_File
- */
-template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
-Output_Turbulence_Spectrum_to_File(const double &k,
-                                   const double &model_Energy,
-                                   const double &constructed_Energy) {
-    
-    Turbulence_Spectrum_File << setprecision(6);
-    Turbulence_Spectrum_File.setf(ios::scientific);
-    
-    Turbulence_Spectrum_File << k   << " " << model_Energy
-    << " " << constructed_Energy 
-    << "\n";
-    
-    Turbulence_Spectrum_File.unsetf(ios::scientific);
-    Turbulence_Spectrum_File.flush();
-    
-    return(0);
-}
-
-/*!
- * Close_Turbulence_Spectrum_File
- */
-template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
-Close_Turbulence_Spectrum_File( ) {
-    Turbulence_Spectrum_File.close();
-    return(0);
-}
-
-
-// Assign_Homogeneous_Turbulence_Velocity_Field
-template<typename HEXA_BLOCK>
-void Assign_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK *Solution_Block,
-                                                  const AdaptiveBlock3D_List &LocalSolnBlockList,
-                                                  const Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field) {
-
-   /* Assign initial turbulent velocity field to each solution block. */
-
-   for (int nBlk = 0 ; nBlk <= LocalSolnBlockList.Nblk-1 ; nBlk++) {
-      if (LocalSolnBlockList.Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
-	 if (Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].info.gblknum].Allocated) {
-  	    Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Block[nBlk],
-                                                         Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].info.gblknum]);
-	 } /* endif */
-      } /* endif */
-   }  /* endfor */
-
-}
-
-template<typename HEXA_BLOCK>
-void Assign_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK &Solution_Block,
-                                                  const Turbulent_Velocity_Field_Block &Velocity_Field) {
-
-  /* Assign initial turbulent velocity field to solution block. */
-
-  for (int i = Solution_Block.ICl ; i <= Solution_Block.ICu ; i++) {
-     for (int j = Solution_Block.JCl ; j <= Solution_Block.JCu ; j++) {
-        for (int k = Solution_Block.KCl ; k <= Solution_Block.KCu ; k++) {
-           Solution_Block.W[i][j][k].v += Velocity_Field.Velocity[i][j][k];
- 	   Solution_Block.U[i][j][k] = Solution_Block.W[i][j][k].U();
-	} /* endfor */
-     } /* endfor */
-  } /* endfor */
-
-}
 
 
 /********************************************************
@@ -2401,8 +2614,8 @@ inline int Open_Turbulence_Progress_File(ofstream &Turbulence_Progress_File,
                  << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%lf%*lf%*lf%*lf\" \\\n"
                  << "     title \"enstrophy\" with lines, \\\n"
                  << "\"" << turbulence_progress_file_name_ptr << "\""
-		 << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%*lf%lf%*lf%*lf\" \\\n"
-	         << "     title \"Taylor_scale\" with lines, \\\n"
+                 << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%*lf%lf%*lf%*lf\" \\\n"
+                 << "     title \"Taylor_scale\" with lines, \\\n"
                  << "\"" << turbulence_progress_file_name_ptr << "\""
                  << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%*lf%*lf%*lf%lf\" \\\n"
                  << "     title \"St\" with lines\n"

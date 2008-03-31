@@ -3040,7 +3040,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Flat_Plate(Grid3D_Input_Parameter
     /* Creat 2D cross-section grids from which the 3D grid
      will be extruded. */
     
-    Grid2D_Flat_Plate_XYplane =  Grid_Flat_Plate(Grid2D_Box_XYplane,
+    Grid2D_Flat_Plate_XYplane =  Grid_Flat_Plate(Grid2D_Flat_Plate_XYplane,
                                                  Input.NBlk_Idir, 
                                                  Input.NBlk_Jdir,
                                                  Input.Plate_Length,
@@ -3099,7 +3099,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Flat_Plate(Grid3D_Input_Parameter
     
     /* Deallocate 2D grid. */
     
-    Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
+    Grid2D_Flat_Plate_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Flat_Plate_XYplane,
                                                      Input.NBlk_Idir, 
                                                      Input.NBlk_Jdir);
     

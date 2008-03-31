@@ -46,7 +46,6 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
 				   Solution_Data.Input.Grid_IP);
 
 	error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Initial_Mesh, 
-										      Solution_Data.Input.Grid_IP,
 										      Data.batch_flag,
       										      Data.Velocity_Field);
       // use auxiliary mesh
@@ -56,7 +55,6 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
 				   Solution_Data.Input.Grid_IP);
 
 	error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Auxiliary_Mesh, 
-										      Solution_Data.Input.Grid_IP,
 										      Data.batch_flag,
 										      Data.Velocity_Field);
       }
