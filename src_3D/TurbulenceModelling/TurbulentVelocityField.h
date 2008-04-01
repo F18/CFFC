@@ -1242,17 +1242,15 @@ public:
     double TKE_physical;
     double L11_spectral;
     double L11_physical;
+    double L22_physical;
+    double L33_physical;
     double u2, v2, w2, uRMS;
-    double lambda_g_sim;
-    double eps_sim;
-    double Rlambda_sim;
-    double ReL_sim;
-    double eta_sim;
-    double L_sim;
     
     double Longitudinal_Correlation_spectral(void);
     void Spatial_Averages(void);
     double Longitudinal_Correlation(void);
+    double Transversal_Correlation_L22(void);
+    double Transversal_Correlation_L33(void);
     double Dissipation(void);
 //@}    
     
@@ -1325,6 +1323,8 @@ RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
     fftw_free(uu);
     fftw_free(vv);
     fftw_free(ww);
+    // clean up accumulated data by the fftw plan
+    fftw_cleanup();  
 }
 
 
@@ -1612,8 +1612,8 @@ void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::Spatial_Averages(void) {
 /**
  * RandomFieldRogallo::Longitudinal_Correlation
  *
- * Calculates thelongitudinal velocity autocorrelation 
- * lengthscale in physical space,
+ * Calculates the longitudinal velocity autocorrelation 
+ * lengthscale L11 in physical space,
  * assuming the grid is uniform!
  * 
  * \return L11: longitudinal velocity autocorrelation lengthscale
@@ -1623,26 +1623,27 @@ double RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::Longitudinal_Correlation(vo
     
     double *Rr = new double [Nx];
     double *fr = new double [Nx];
-    double *r = new double [Nx];
-    for (int ri=0; ri<Nx; ri++){ // loop for variation in r
-        Rr[ri] = 0;
+    double *r  = new double [Nx];
+    for (int i=0; i<Nx; i++){ // loop for variation in r
+        Rr[i] = 0;
     }
+    int ri, indexr, index;
     for (int l=0; l<Nz; l++) {
         for (int j=0; j<Ny; j++) {
             for (int i=0; i<Nx; i++) {
                 for (int ii=i; ii<Nx; ii++) {
-                    int indexr = l + Nz*( j + Ny*ii );
-                    int index  = l + Nz*( j + Ny*i );
-                    int ri = ii-i;
+                    indexr = l + Nz*( j + Ny*ii );
+                    index  = l + Nz*( j + Ny*i );
+                    ri = ii-i;
                     Rr[ri] += ONE/(Nx*Ny*Nz) * (u[indexr]*u[index]); 
                 }
             }
         }
     }
     double dr = L1/(Nx-1.0);
-    for (int ri = 0; ri<Nx; ri++) {
-        r[ri] = ri*dr;
-        fr[ri] = Rr[ri]/u2;
+    for (int i = 0; i<Nx; i++) {
+        r[i] = i*dr;
+        fr[i] = Rr[i]/u2;
     }
     
     L11_physical = CubicSplinesIntegration(r,fr,Nx);
@@ -1665,6 +1666,100 @@ double RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::Longitudinal_Correlation(vo
     delete[] r;
     
     return L11_physical;    // Note: this is a class member
+}
+
+
+/**
+ * RandomFieldRogallo::Transversal_Correlation_L22
+ *
+ * Calculates the transversal velocity autocorrelation 
+ * lengthscale L22 in physical space,
+ * assuming the grid is uniform!
+ * 
+ * \return L22: transversal velocity autocorrelation lengthscale
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+double RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::Transversal_Correlation_L22(void) {
+    
+    double *Rr = new double [Ny];
+    double *fr = new double [Ny];
+    double *r  = new double [Ny];
+    for (int j=0; j<Ny; j++){ // loop for variation in r
+        Rr[j] = 0;
+    }
+    int indexr, index, rj;
+    for (int l=0; l<Nz; l++) {
+        for (int i=0; i<Nx; i++) {
+            for (int j=0; j<Ny; j++) {
+                for (int jj=j; jj<Ny; jj++) {
+                    indexr = l + Nz*( jj + Ny*i );
+                    index  = l + Nz*( j + Ny*i );
+                    rj = jj-j;
+                    Rr[rj] += ONE/(Nx*Ny*Nz) * (v[indexr]*v[index]); 
+                }
+            }
+        }
+    }
+    double dr = L2/(Ny-1.0);
+    for (int j = 0; j<Ny; j++) {
+        r[j] = j*dr;
+        fr[j] = Rr[j]/v2;
+    }
+    
+    L22_physical = CubicSplinesIntegration(r,fr,Ny);
+    
+    delete[] Rr;
+    delete[] fr;
+    delete[] r;
+    
+    return L22_physical;    // Note: this is a class member
+}
+
+
+/**
+ * RandomFieldRogallo::Transversal_Correlation_L33
+ *
+ * Calculates the transversal velocity autocorrelation 
+ * lengthscale L33 in physical space,
+ * assuming the grid is uniform!
+ * 
+ * \return L33: transversal velocity autocorrelation lengthscale
+ */
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+double RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::Transversal_Correlation_L33(void) {
+    
+    double *Rr = new double [Nz];
+    double *fr = new double [Nz];
+    double *r  = new double [Nz];
+    for (int l=0; l<Nz; l++){ // loop for variation in r
+        Rr[l] = 0;
+    }
+    int indexr, index, rl;
+    for (int i=0; i<Nx; i++) {
+        for (int j=0; j<Ny; j++) {
+            for (int l=0; l<Nz; l++) {
+                for (int ll=l; ll<Nz; ll++) {
+                    indexr = ll + Nz*( j + Ny*i );
+                    index  = l + Nz*( j + Ny*i );
+                    rl = ll-l;
+                    Rr[rl] += ONE/(Nx*Ny*Nz) * (w[indexr]*w[index]); 
+                }
+            }
+        }
+    }
+    double dr = L3/(Nz-1.0);
+    for (int l = 0; l<Nz; l++) {
+        r[l] = l*dr;
+        fr[l] = Rr[l]/w2;
+    }
+    
+    L33_physical = CubicSplinesIntegration(r,fr,Nz);
+    
+    delete[] Rr;
+    delete[] fr;
+    delete[] r;
+    
+    return L33_physical;    // Note: this is a class member
 }
 
 
@@ -2204,9 +2299,9 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
     /* ----------------- calculate L11 ---------------------- */
     Longitudinal_Correlation_spectral();
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
-        cout << "    -->  L11                         = " << L11_spectral << endl;
-        cout << "    -->  L11 / L                     = " << L11_spectral  / Lp << endl;
-        cout << "    -->  L_domain / L11              = " << Ls / L11_spectral << endl;
+        cout << "    -->  L11                         = " << L11_spectral
+             << "      Lx/L11  = " << L1 / L11_spectral
+             << "      L11/L  = " << L11_spectral  / Lp << endl;
     }
     
     /* --------------------- dissipation -------------------- */
@@ -2227,20 +2322,28 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
         cout << endl;
         cout << "    Statistical parameters in physical space:" << endl;
-        cout << "    -->  TKE            = " << TKE_physical << endl;
-        cout << "    -->  u_RMS          = " << uRMS << endl;
-        cout << "    -->  <u^2>          = " << u2 << endl;
-        cout << "    -->  <v^2>          = " << v2 << endl;
-        cout << "    -->  <w^2>          = " << w2 << endl;
+        cout << "    -->  TKE    = " << TKE_physical << endl;
+        cout << "    -->  u_RMS  = " << uRMS << endl;
+        cout << "    -->  <u^2>  = " << u2 << endl;
+        cout << "    -->  <v^2>  = " << v2 << endl;
+        cout << "    -->  <w^2>  = " << w2 << endl;
     }
     
     
-    /* ---------- Longitudinal velocity correlation function fr ----------- */
+    /* --------------- Velocity auto-correlation functions -------------- */
     Longitudinal_Correlation();
+    Transversal_Correlation_L22();
+    Transversal_Correlation_L33();
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
-        cout << "    -->  L11            = " << L11_physical << endl;
-        cout << "    -->  L11 / L        = " << L11_physical  / Lp << endl;
-        cout << "    -->  L_domain / L11 = " << Ls / L11_physical << endl;
+        cout << "    -->  L11  = " << L11_physical 
+             << "      Lx/L11  = " << L1 / L11_physical
+             << "      L11/L  = " << L11_physical  / Lp << endl;
+        cout << "    -->  L22  = " << L22_physical 
+             << "      Ly/L22  = " << L2 / L22_physical
+             << "      L22/L  = " << L22_physical  / Lp << endl;
+        cout << "    -->  L33  = " << L33_physical 
+             << "      Lz/L33  = " << L3 / L33_physical
+             << "      L33/L  = " << L33_physical  / Lp << endl;
     }
     
     /* ----------------- Assign turbulent velocity field ------------------ */
@@ -2299,10 +2402,17 @@ Get_Energy_Spectrum(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
     }
     
     /* ---------- Longitudinal velocity correlation function fr ---------- */
+    /* --------------- Velocity auto-correlation functions -------------- */
     Longitudinal_Correlation();
+    Transversal_Correlation_L22();
+    Transversal_Correlation_L33();
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
-        cout << "    -->  L11            = " << L11_physical << endl;
-        cout << "    -->  L_domain / L11 = " << Ls / L11_physical << endl;
+        cout << "    -->  L11            = " << L11_physical 
+        << "    Lx / L11 = " << L1 / L11_physical << endl;
+        cout << "    -->  L22            = " << L22_physical 
+        << "    Ly / L22 = " << L2 / L11_physical << endl;
+        cout << "    -->  L33            = " << L33_physical 
+        << "    Lz / L33 = " << L3 / L33_physical << endl;
     }
     
     /* ---------------------------------------------------------------------------- *
