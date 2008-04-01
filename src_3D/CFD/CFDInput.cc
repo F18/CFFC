@@ -1080,6 +1080,12 @@ void CFD_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(i_ICs),
                           1,
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(Original_ICs_Type,
+                          INPUT_PARAMETER_LENGTH,
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(i_Original_ICs),
+                          1,
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(Gas_Type, 
                           INPUT_PARAMETER_LENGTH, 
                           MPI::CHAR, 0);
