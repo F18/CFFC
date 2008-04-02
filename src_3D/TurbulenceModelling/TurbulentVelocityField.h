@@ -458,10 +458,66 @@ void Assign_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK &Solution_Block,
             } /* endfor */
         } /* endfor */
     } /* endfor */
+}
+
+/**
+ * Assign_Homogeneous_Turbulence_Velocity_Field
+ *
+ * Sets velocities from all local solution block to domain averaged velocity,
+ * superimposed with turbulence velocity fluctuations from the global
+ * Turbulent_Velocity_Field_Multi_Block_List.
+ *
+ * \param [in]  Solution_Block        The local Solution Hexa_Blocks
+ * \param [in]  LocalSolnBlockList    The local AdaptiveBlock3D_List
+ * \param [in]  v_average             The domain averaged velocity
+ * \param [out] Velocity_Field        The list of all Turbulent_Velocity_Field_Blocks
+ */
+template<typename HEXA_BLOCK>
+void Assign_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK *Solution_Block,
+                                                  const AdaptiveBlock3D_List &LocalSolnBlockList,
+                                                  const Vector3D &v_average,
+                                                  const Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field) {
+    
+    /* Assign initial turbulent velocity field to each solution block. */
+    
+    for (int nBlk = 0 ; nBlk <= LocalSolnBlockList.Nblk-1 ; nBlk++) {
+        if (LocalSolnBlockList.Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
+            if (Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].info.gblknum].Allocated) {
+                Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Block[nBlk],
+                                                             Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].info.gblknum],
+                                                             v_average);
+            } /* endif */
+        } /* endif */
+    }  /* endfor */
     
 }
 
-
+/**
+ * Assign_Homogeneous_Turbulence_Velocity_Field
+ *
+ * Set velocities from a local solution block to the velocities of 
+ * a Turbulent_Velocity_Field_Block superimposed with a given average velocity.
+ *
+ * \param [out]  Solution_Block   A local Solution Hexa_Block
+ * \param [in]   Velocity_Field   A Turbulent_Velocity_Field_Block
+ * \param [in]   v_average        The domain averaged velocity
+ */
+template<typename HEXA_BLOCK>
+void Assign_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK &Solution_Block,
+                                                  const Turbulent_Velocity_Field_Block &Velocity_Field,
+                                                  const Vector3D &v_average) {
+    
+    /* Assign initial turbulent velocity field to solution block. */
+    
+    for (int i = Solution_Block.ICl ; i <= Solution_Block.ICu ; i++) {
+        for (int j = Solution_Block.JCl ; j <= Solution_Block.JCu ; j++) {
+            for (int k = Solution_Block.KCl ; k <= Solution_Block.KCu ; k++) {
+                Solution_Block.W[i][j][k].v = Velocity_Field.Velocity[i][j][k] + v_average;
+                Solution_Block.U[i][j][k] = Solution_Block.W[i][j][k].U();
+            } /* endfor */
+        } /* endfor */
+    } /* endfor */
+}
 
 
 /****************************************************//**
@@ -2173,7 +2229,7 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
         cout << "         Generating Homogeneous Isotropic Turbulent Velocity Field \n";
         cout << " ==========================================================================\n";
         cout << endl;
-        cout << "   Turbulence parameters of the initial spectrum (k=0:infinity) : " << endl;
+        cout << "   Turbulence statistics of the initial spectrum (k=0:infinity) : " << endl;
         cout << "    -->  spectrum     = " << spectrum_name << endl; 
         cout << "    -->  TKE          = " << TKE << endl;
         cout << "    -->  u_RMS        = " << up << endl;
@@ -2244,7 +2300,7 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
     Calculate_Energy_Spectrum();
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {       
         cout << endl;
-        cout << "    Statistical parameters in spectral space: " << endl;
+        cout << "   Turbulence statistics in spectral space: " << endl;
         cout << "    -->  TKE of the model            = " << TKE_model << endl;
         cout << "    -->  TKE with Rogallo            = " << TKE_grid << endl;
     }
@@ -2299,9 +2355,13 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
     /* ----------------- calculate L11 ---------------------- */
     Longitudinal_Correlation_spectral();
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
-        cout << "    -->  L11                         = " << L11_spectral
-             << "      Lx/L11  = " << L1 / L11_spectral
-             << "      L11/L  = " << L11_spectral  / Lp << endl;
+        cout.setf(ios::fixed, ios::floatfield);
+        cout.precision(4);    
+        cout << "    -->  L11                         = " << setw(7) << L11_spectral
+             << "      Lx/L11  = " << setw(7) << L1 / L11_spectral
+             << "      L11/L  = " << setw(7) << L11_spectral  / Lp << endl;
+        cout.unsetf(ios::fixed);
+        cout.unsetf(ios::floatfield);
     }
     
     /* --------------------- dissipation -------------------- */
@@ -2321,7 +2381,7 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
     
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
         cout << endl;
-        cout << "    Statistical parameters in physical space:" << endl;
+        cout << "   Turbulence statistics in physical space:" << endl;
         cout << "    -->  TKE    = " << TKE_physical << endl;
         cout << "    -->  u_RMS  = " << uRMS << endl;
         cout << "    -->  <u^2>  = " << u2 << endl;
@@ -2335,15 +2395,19 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
     Transversal_Correlation_L22();
     Transversal_Correlation_L33();
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
-        cout << "    -->  L11  = " << L11_physical 
-             << "      Lx/L11  = " << L1 / L11_physical
-             << "      L11/L  = " << L11_physical  / Lp << endl;
-        cout << "    -->  L22  = " << L22_physical 
-             << "      Ly/L22  = " << L2 / L22_physical
-             << "      L22/L  = " << L22_physical  / Lp << endl;
-        cout << "    -->  L33  = " << L33_physical 
-             << "      Lz/L33  = " << L3 / L33_physical
-             << "      L33/L  = " << L33_physical  / Lp << endl;
+        cout.setf(ios::fixed, ios::floatfield);
+        cout.precision(4);    
+        cout << "    -->  L11    = " << setw(7) << L11_physical 
+             << "      Lx/L11  = " << setw(7) << L1 / L11_physical
+             << "      L11/L  = " << setw(7) << L11_physical  / Lp << endl;
+        cout << "    -->  L22    = " << setw(7) << L22_physical 
+             << "      Ly/L22  = " << setw(7) << L2 / L22_physical
+             << "      L22/L  = " << setw(7) << L22_physical  / Lp << endl;
+        cout << "    -->  L33    = " << setw(7) << L33_physical 
+             << "      Lz/L33  = " << setw(7) << L3 / L33_physical
+             << "      L33/L  = " << setw(7) << L33_physical  / Lp << endl;
+        cout.unsetf(ios::fixed);
+        cout.unsetf(ios::floatfield);
     }
     
     /* ----------------- Assign turbulent velocity field ------------------ */
@@ -2392,27 +2456,30 @@ Get_Energy_Spectrum(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
     Spatial_Averages();
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
         cout << endl;
-        cout << "    Statistical parameters in physical space:" << endl;
-        cout << "    -->  TKE            = " << TKE_physical << endl;
-        cout << "    -->  u_RMS          = " << uRMS << endl;
-        cout << "    -->  <u^2>          = " << u2 << endl;
-        cout << "    -->  <v^2>          = " << v2 << endl;
-        cout << "    -->  <w^2>          = " << w2 << endl;
+        cout << "   Turbulence statistics in physical space:" << endl;
+        cout << "    -->  TKE    = " << TKE_physical << endl;
+        cout << "    -->  u_RMS  = " << uRMS << endl;
+        cout << "    -->  <u^2>  = " << u2 << endl;
+        cout << "    -->  <v^2>  = " << v2 << endl;
+        cout << "    -->  <w^2>  = " << w2 << endl;
         
     }
     
-    /* ---------- Longitudinal velocity correlation function fr ---------- */
     /* --------------- Velocity auto-correlation functions -------------- */
     Longitudinal_Correlation();
     Transversal_Correlation_L22();
     Transversal_Correlation_L33();
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
-        cout << "    -->  L11            = " << L11_physical 
-        << "    Lx / L11 = " << L1 / L11_physical << endl;
-        cout << "    -->  L22            = " << L22_physical 
-        << "    Ly / L22 = " << L2 / L11_physical << endl;
-        cout << "    -->  L33            = " << L33_physical 
-        << "    Lz / L33 = " << L3 / L33_physical << endl;
+        cout.setf(ios::fixed, ios::floatfield);
+        cout.precision(4);        
+        cout << "    -->  L11    = " << setw(7) << L11_physical 
+        << "    Lx/L11  = " << setw(6) << L1 / L11_physical << endl;
+        cout << "    -->  L22    = " << setw(7) << L22_physical 
+        << "    Ly/L22  = " << setw(6) << L2 / L22_physical << endl;
+        cout << "    -->  L33    = " << setw(7) << L33_physical 
+        << "    Lz/L33  = " << setw(6) << L3 / L33_physical << endl;
+        cout.unsetf(ios::fixed);
+        cout.unsetf(ios::floatfield);
     }
     
     /* ---------------------------------------------------------------------------- *
@@ -2425,21 +2492,25 @@ Get_Energy_Spectrum(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
     
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {       
         cout << endl;
-        cout << "   Statistical parameters in spectral space: " << endl;
-        cout << "   -->  TKE on the grid       = " << TKE_grid << endl;
+        cout << "   Turbulence statistics in spectral space: " << endl;
+        cout << "    -->  TKE on the grid  = " << TKE_grid << endl;
     }
     
     /* ----------------- calculate L11 ---------------------- */
     Longitudinal_Correlation_spectral();
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
-        cout << "    -->  L11                  = " << L11_spectral << endl;
-        cout << "    -->  L_domain / L11       = " << Ls / L11_spectral << endl;
+        cout.setf(ios::fixed, ios::floatfield);
+        cout.precision(4); 
+        cout << "    -->  L11              = " << setw(6) << L11_spectral
+             << "      Lx/L11  = " << setw(6) << L1 / L11_spectral << endl;
+        cout.unsetf(ios::fixed);
+        cout.unsetf(ios::floatfield);
     }
     
     /* --------------------- dissipation -------------------- */
     double diss = Dissipation();    
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) )
-        cout << "   -->  eps on grid           = " << diss << endl;
+        cout << "    -->  eps on grid      = " << diss << endl;
 
     
     /* --------------- gnuplot initial spectrum -------------- */
@@ -2537,7 +2608,7 @@ Open_Turbulence_Spectrum_File( ) {
     if (gnuplot_file.fail()) return(1);
     
     gnuplot_file 
-    << "set title \"Turbulence energy spectrum "<< spectrum_name <<"\"\n"
+    << "set title \"Turbulence kinetic energy spectrum "<< spectrum_name <<"\"\n"
     << "set xlabel \"wavenumber k \"\n"
     << "set ylabel \"EE\"\n" 
     << "set logscale xy\n"

@@ -50,6 +50,7 @@ class Turbulence_Modelling_Input_Parameters{
     //@{ @name LES related input parameters:
     char SFS_model[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];     //!< Sub-filter-scale model , default = Smagorinsky + Yoshizawa
     int i_SFS_model;                                            //!< Sub-filter-scale model , default = Smagorinsky + Yoshizawa
+    double smagorinsky_coefficient;                             //!< SFS smagorinsky coefficient
     char filter_type[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];   //!< Filter type : default = implicit filtering
     int i_filter_type;                                          //!< Filter type : default = implicit filtering
     double FGR;                                                 //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
@@ -61,6 +62,7 @@ class Turbulence_Modelling_Input_Parameters{
     int i_spectrum;                                             //!< Spectrum function, default = Von Karman - Pao
     double LLR;                                                 //!< domainsize / (integral length scale L = k^(3/2)/eps)
     double TKE;                                                 //!< Turbulent Kinetic Energy
+    int rescale_spectrum;                                       //!< Flag that decides if spectrum will be rescaled before computations
     //@}
 
     //@{ @name Reacting LES related input parameters:
@@ -81,15 +83,18 @@ class Turbulence_Modelling_Input_Parameters{
       strcpy(SFS_model, "Smagorinsky");
       i_SFS_model = SFS_MODEL_SMAGORINSKY;
       strcpy(filter_type, "Implicit");
+      smagorinsky_coefficient = 0.18;
       i_filter_type = FILTER_TYPE_IMPLICIT;
       FGR = TWO;
       Filter_Width = ZERO;
     
       // Spectrum parameters
-      strcpy(spectrum,"Von_Karman_Pao");
-      i_spectrum = SPECTRUM_VON_KARMAN_PAO;
+      strcpy(spectrum,"Pope");
+      i_spectrum = SPECTRUM_POPE;
       LLR = 6;
       TKE = 150.0;
+      rescale_spectrum = OFF;
+
 
       // Reacting LES parameters
       Laminar_Flame_Speed = 0.38;

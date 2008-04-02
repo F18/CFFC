@@ -63,7 +63,8 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
 				const double &u_average, 
 				const double &v_average,
 				const double &w_average,
-				double &sqr_u) {
+				double &sqr_u,
+                int &batch_flag) {
 
   double vis, u_ave, v_ave, w_ave, local_vol, total_vol(ZERO), vis_ave(ZERO);
   double u_p(ZERO), v_p(ZERO), w_p(ZERO), ens(ZERO), eps_w(ZERO), eps_ss(ZERO);
@@ -154,7 +155,7 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
     l_2 = 0.0;
   }
 
-  if (CFFC_Primary_MPI_Processor()) {
+  if (CFFC_Primary_MPI_Processor() & !batch_flag) {
     cout << "\n ==========================================================================\n"; 
     cout << " Turbulent Statistics of Resolved Velocity Field (in Physical Space):\n";
     cout << "\n <u> = " << u_ave <<"  "<< "\t<v> = " << v_ave <<"  "<< "\t<w> = " << w_ave;
@@ -313,6 +314,39 @@ double Average_viscosity(HEXA_BLOCK *Solution_Block,
 }
 
 
+/* sub filter scale turbulent kinetic energy */
+template <typename HEXA_BLOCK>
+double SFS_TKE(HEXA_BLOCK *Solution_Block,
+               AdaptiveBlock3D_List &LocalSolnBlockList) {
+    
+    double local_vol, total_vol = ZERO, k_SFS = ZERO;
+    
+    for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
+        if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
+            for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
+                for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
+                    for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
+                        local_vol = Solution_Block[p].Grid.volume(i,j,k);
+                        total_vol += local_vol;
+                        k_SFS += Solution_Block[p].W[i][j][k].SFS_Kinetic_Energy(Solution_Block[p].dWdx[i][j][k],
+                                                                                 Solution_Block[p].dWdy[i][j][k],
+                                                                                 Solution_Block[p].dWdz[i][j][k],
+                                                                                 Solution_Block[p].Flow_Type,
+                                                                                 local_vol) * local_vol;
+                    } /* endfor */
+                } /* endfor */
+            } /* endfor */
+        } /* endif */
+    } /* endfor */
+    
+    total_vol = CFFC_Summation_MPI(total_vol);
+    k_SFS = CFFC_Summation_MPI(k_SFS);
+    
+    //CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    k_SFS = k_SFS/total_vol;
+    
+    return k_SFS;
+}
 
 
 //------------------------------------------------------//

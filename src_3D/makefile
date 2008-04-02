@@ -35,6 +35,7 @@ MATH_DIR = Math/
 MPI_DIR = MPI/
 MULTIGRID_DIR = FASMultigrid/
 NAVIERSTOKES_DIR = NavierStokes/
+LES_POLYTROPIC_DIR = LES/LES_Polytropic/
 LESFSD_DIR = LES/LES_FSD/
 LESTF_DIR = LES/LES_ThickenedFlame/
 NKS_DIR = NewtonKrylovSchwarz/
@@ -172,6 +173,21 @@ SRC_FANS = $(SRC_FANS_POLYTROPIC) $(SRC_FANS_THERMPERFECT)
 SRC_FANS_POLYTROPIC_EXE = $(FANS_DIR)FANS3DPolytropic.cc
 SRC_FANS_THERMPERFECT_EXE = $(FANS_DIR)FANS3DThermallyPerfect.cc
 
+# LES_POLYTROPIC:
+SRC_LES_POLYTROPIC = $(LES_POLYTROPIC_DIR)LES3DPolytropicInput.cc \
+                     $(LES_POLYTROPIC_DIR)LES3DPolytropicState.cc \
+                     $(LES_POLYTROPIC_DIR)LES3DPolytropicHexaBlock.cc \
+                     $(LES_POLYTROPIC_DIR)LES3DPolytropicHexaPreProcessing.cc
+
+SRC_LES_POLYTROPIC_EXE = $(LES_POLYTROPIC_DIR)LES3DPolytropic.cc
+
+# Add LES3D testing if required:
+SRC_LES_POLYTROPIC_TESTS = test_LES3DPolytropicState.cc
+SRC_LES_POLYTROPIC_TESTS := $(addprefix $(LES_POLYTROPIC_DIR)UnitTests/, $(SRC_LES_POLYTROPIC_TESTS))
+ifeq ($(TUT_TESTING),ON) 
+  SRC_LES_POLYTROPIC += $(SRC_LES_POLYTROPIC_TESTS)
+endif
+
 # LES3DFSD:
 SRC_LESFSD = $(LESFSD_DIR)LES3DFsdInput.cc \
              $(LESFSD_DIR)LES3DFsdState.cc \
@@ -222,7 +238,7 @@ ifeq ($(TUT_TESTING),ON)
   SRC_BASE += $(SRC_TUT)
 endif
 SRC_CFFC = $(SRC_BASE) \
-           $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_FANS) $(SRC_LESFSD) $(SRC_LESTF)\
+           $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_FANS) $(SRC_LES_POLYTROPIC) $(SRC_LESFSD) $(SRC_LESTF)\
            $(SRC_PHYSICS) $(SRC_TURBULENCE) $(SRC_EOS) $(SRC_NASADATA) \
            $(SRC_REACTIONS)
 
@@ -279,6 +295,10 @@ OBJ_FANS = $(SRC_FANS:.cc=.o)
 OBJ_FANS_POLYTROPIC_EXE = $(SRC_FANS_POLYTROPIC_EXE:.cc=.o)
 OBJ_FANS_THERMPERFECT_EXE = $(SRC_FANS_THERMPERFECT_EXE:.cc=.o)
 
+#LES3D_POLYTROPIC:
+OBJ_LES_POLYTROPIC = $(SRC_LES_POLYTROPIC:.cc=.o)
+OBJ_LES_POLYTROPIC_EXE = $(SRC_LES_POLYTROPIC_EXE:.cc=.o)
+
 #LES3DFSD:
 OBJ_LESFSD = $(SRC_LESFSD:.cc=.o)
 OBJ_LESFSD_EXE = $(SRC_LESFSD_EXE:.cc=.o)
@@ -311,7 +331,7 @@ ifeq ($(TUT_TESTING),ON)
   OBJ_BASE += $(OBJ_TUT)
 endif
 OBJ_CFFC = $(OBJ_BASE) \
-           $(OBJ_EULER) $(OBJ_NAVIERSTOKES) $(OBJ_FANS) $(OBJ_LESFSD) $(OBJ_LESTF)\
+           $(OBJ_EULER) $(OBJ_NAVIERSTOKES) $(OBJ_FANS) $(OBJ_LES_POLYTROPIC) $(OBJ_LESFSD) $(OBJ_LESTF)\
            $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_EOS) $(OBJ_NASADATA) \
            $(OBJ_REACTIONS)
 
@@ -327,6 +347,7 @@ EXE_EULER_THERMPERFECT = euler3Dthermallyperfect
 EXE_NAVIERSTOKES_POLYTROPIC = navierstokes3Dpolytropic
 EXE_NAVIERSTOKES_THERMPERFECT = navierstokes3Dthermallyperfect
 EXE_FANS_THERMPERFECT = fans3Dthermallyperfect
+EXE_LES_POLYTROPIC = les3Dpolytropic
 EXE_LESFSD = les3Dfsd
 EXE_LESTF = les3Dtf
 
@@ -349,6 +370,8 @@ help:
 	@echo "|             compile navierstokes3Dthermallyperfect stand alone program            |"
 	@echo "|        make fans3Dthermallyperfect                                                |"
 	@echo "|             compile fans3Dthermallyperfect stand alone program                    |"
+	@echo "|        make les3Dpolytropic                                                       |"
+	@echo "|             compile les3Dpolytropic stand alone program                           |"
 	@echo "|        make les3Dfsd                                                              |"
 	@echo "|             compile les3Dfsd stand alone program                                  |"
 	@echo "|        make les3Dtf                                                               |"
@@ -390,7 +413,7 @@ help:
 all: $(EXE_MAIN) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) \
      $(EXE_NAVIERSTOKES_POLYTROPIC) $(EXE_NAVIERSTOKES_THERMPERFECT) \
      $(EXE_FANS_THERMPERFECT) \
-     $(EXE_LESFSD) $(EXE_LESTF)
+     $(EXE_LES_POLYTROPIC) $(EXE_LESFSD)  $(EXE_LESTF)
 	@echo ' '	
 	@echo All programs have been brought up to date.
 	@echo '-------------------------------------------'
@@ -544,6 +567,19 @@ $(EXE_FANS_THERMPERFECT): $(OBJ_FANS_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_FANS_TH
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
+$(EXE_LES_POLYTROPIC): $(OBJ_LES_POLYTROPIC_EXE) $(OBJ_BASE) $(OBJ_LES_POLYTROPIC) $(OBJ_NAVIERSTOKES_POLYTROPIC) $(OBJ_EULER_POLYTROPIC) \
+               $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+	@echo ' '
+	@echo Building program $(EXE_LES_POLYTROPIC) for a $(PLATFORM) platform.
+	@echo '-----------------------------------------------------------------'
+	@echo ' '
+	$(LD) -o $(EXE_LES_POLYTROPIC) $(OBJ_LES_POLYTROPIC_EXE) $(OBJ_BASE) $(OBJ_LES_POLYTROPIC) $(OBJ_NAVIERSTOKES_POLYTROPIC) $(OBJ_EULER_POLYTROPIC) \
+                 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
+	@echo ' '
+	@echo Program $(EXE_LES_POLYTROPIC) has been brought up to date.
+	@echo '---------------------------------------------------------'
+	@echo ' '
+
 $(EXE_LESFSD): $(OBJ_LESFSD_EXE) $(OBJ_BASE) $(OBJ_LESFSD) $(OBJ_NAVIERSTOKES_THERMPERFECT) $(OBJ_EULER_THERMPERFECT) \
                $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
 	@echo ' '
@@ -583,11 +619,11 @@ install: $(EXE_MAIN)
 install-all: $(EXE_MAIN) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) \
              $(EXE_NAVIERSTOKES_POLYTROPIC) $(EXE_NAVIERSTOKES_THERMPERFECT) \
              $(EXE_FANS_THERMPERFECT) \
-             $(EXE_LESFSD) $(EXE_LESTF)
+             $(EXE_LES_POLYTROPIC) $(EXE_LESFSD) $(EXE_LESTF)
 	@for f in $(EXE_MAIN) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) \
-                  $(EXE_NAVIERSTOKES_POLYTROPIC) $(EXE_NAVIERSTOKES_THERMPERFECT) \
-                  $(EXE_FANS_THERMPERFECT) \
-                  $(EXE_LESFSD) $(EXE_LESTF); \
+              $(EXE_NAVIERSTOKES_POLYTROPIC) $(EXE_NAVIERSTOKES_THERMPERFECT) \
+              $(EXE_FANS_THERMPERFECT) \
+              $(EXE_LES_POLYTROPIC) $(EXE_LESFSD) $(EXE_LESTF); \
 	do \
 	  echo "Installing $$f"; \
 	  cp $$f $(CFFC_BIN_DIR); \
@@ -607,15 +643,15 @@ uninstall:
 
 uninstall-all:
 	@for f in $(EXE_MAIN) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) \
-                  $(EXE_NAVIERSTOKES_POLYTROPIC) $(EXE_NAVIERSTOKES_THERMPERFECT) \
-                  $(EXE_FANS_THERMPERFECT) \
-                  $(EXE_LESFSD) $(EXE_LESTF); \
+              $(EXE_NAVIERSTOKES_POLYTROPIC) $(EXE_NAVIERSTOKES_THERMPERFECT) \
+              $(EXE_FANS_THERMPERFECT) \
+			  $(EXE_LES_POLYTROPIC) $(EXE_LESFSD) $(EXE_LESTF); \
 	do \
 	  echo "Uninstalling $$f"; \
 	  cd $(CFFC_BIN_DIR) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) \
-             $(EXE_NAVIERSTOKES_POLYTROPIC) $(EXE_NAVIERSTOKES_THERMPERFECT) \
-             $(EXE_FANS_THERMPERFECT) \
-             $(EXE_LESFSD) $(EXE_LESTF); \
+         $(EXE_NAVIERSTOKES_POLYTROPIC) $(EXE_NAVIERSTOKES_THERMPERFECT) \
+         $(EXE_FANS_THERMPERFECT) \
+		 $(EXE_LES_POLYTROPIC) $(EXE_LESFSD) $(EXE_LESTF); \
 	  rm -f $$f; \
 	done;
 	@echo " "
@@ -668,6 +704,7 @@ clean:
 	rm -f $(EULER_DIR)UnitTests/*.o $(EULER_DIR)UnitTests/*.il $(EULER_DIR)UnitTests/*~ $(EULER_DIR)UnitTests/*.bak
 	rm -f $(NAVIERSTOKES_DIR)*.o $(NAVIERSTOKES_DIR)*.il $(NAVIERSTOKES_DIR)*~ $(NAVIERSTOKES_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(FANS_DIR)*.o $(FANS_DIR)*.il $(FANS_DIR)*~ $(FANS_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
+	rm -f $(LES_POLYTROPIC_DIR)*.o $(LES_POLYTROPIC_DIR)*.il $(LES_POLYTROPIC_DIR)*~ $(LES_POLYTROPIC_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(LESFSD_DIR)*.o $(LESFSD_DIR)*.il $(LESFSD_DIR)*~ $(LESFSD_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(LESTF_DIR)*.o $(LESTF_DIR)*.il $(LESTF_DIR)*~ $(LESTF_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(HEXA_DIR)*.o $(HEXA_DIR)*.il $(HEXA_DIR)*~
@@ -689,6 +726,7 @@ clean:
 	rm -f $(EXE_NAVIERSTOKES_POLYTROPIC)
 	rm -f $(EXE_NAVIERSTOKES_THERMPERFECT)
 	rm -f $(EXE_FANS_THERMPERFECT)
+	rm -f $(EXE_LES_POLYTROPIC)
 	rm -f $(EXE_LESFSD)
 	rm -f $(EXE_LESTF)
 	rm -fr $(DEPEND_DIR)
@@ -780,6 +818,7 @@ ifeq ($(strip $(filter $(MAKECMDGOALS), $(NODEP_LIST)) ), )
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_NAVIERSTOKES_POLYTROPIC_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_NAVIERSTOKES_THERMPERFECT_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_FANS_THERMPERFECT_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_LES_POLYTROPIC_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_LESFSD_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_LESTF_EXE)))
 endif

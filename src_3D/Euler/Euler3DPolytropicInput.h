@@ -16,6 +16,13 @@
 
 /* Define the specializations. */
 
+
+//! Deallocate static data of reference solution states
+template<>
+void Input_Parameters<Euler3D_Polytropic_pState, 
+                      Euler3D_Polytropic_cState>::Deallocate_Static(void);
+
+
 //! Sets values of reference solution states
 template<>
 void Input_Parameters<Euler3D_Polytropic_pState, 

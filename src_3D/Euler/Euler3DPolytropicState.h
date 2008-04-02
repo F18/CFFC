@@ -165,6 +165,8 @@ public:
 	static double    gm1i;      //!< 1/(g-1) 
 	static double       R;      //!< Gas constant R  
 	static char* gas_type;      //!< Gas type
+    static double    Mref;      //!< Reference Mach number for low-Mach-number precondtioning (normally set to incoming freestream Mach)
+
 
 /** @name Constructors and desctructors */
 /*        ----------------------------- */
@@ -563,6 +565,21 @@ public:
     static Vector2D HLLE_wavespeeds(const Euler3D_Polytropic_pState &Wl,
 				    const Euler3D_Polytropic_pState &Wr,
 				    const Vector3D &norm_dir);
+    
+    //! AUSM+-up flux function in x-direction given 2 primitive states
+    static Euler3D_Polytropic_cState FluxAUSMplus_up_x(const Euler3D_Polytropic_pState &Wl,
+                                                       const Euler3D_Polytropic_pState &Wr);
+    //! AUSM+-up flux function in x-direction given 2 conservative states
+    static Euler3D_Polytropic_cState FluxAUSMplus_up_x(const Euler3D_Polytropic_cState &Wl,
+                                                       const Euler3D_Polytropic_cState &Wr); 
+    //! AUSM+-up flux function in n-direction given 2 primitive states and a direction
+    static Euler3D_Polytropic_cState FluxAUSMplus_up_n(const Euler3D_Polytropic_pState &Wl,
+                                                       const Euler3D_Polytropic_pState &Wr,
+                                                       const Vector3D &norm_dir);
+    //! AUSM+-up flux function in n-direction given 2 conservative states and a direction
+    static Euler3D_Polytropic_cState FluxAUSMplus_up_n(const Euler3D_Polytropic_cState &Wl,
+                                                       const Euler3D_Polytropic_cState &Wr,
+                                                       const Vector3D &norm_dir);    
 
     //! Returns rotated primitive state aligned with a local x-direction
     Euler3D_Polytropic_pState Rotate(const Vector3D &norm_dir) const;

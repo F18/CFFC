@@ -1,8 +1,7 @@
-
-#ifndef _EULER3D_POLYTROPIC_INPUT_INCLUDED
-#include "Euler3DPolytropicInput.h"
-#endif // _EULER3D_POLYTROPIC_INPUT_INCLUDED
-
+#ifndef _LES3D_POLYTROPIC_INPUT_INCLUDED
+#include "LES3DPolytropicInput.h"
+#endif // _LES3D_POLYTROPIC_INPUT_INCLUDED
+    
 
 /********************************************************
  * Routine: Deallocate_Static                           *
@@ -12,11 +11,10 @@
  *                                                      *
  ********************************************************/
 template<>
-void Input_Parameters<Euler3D_Polytropic_pState, 
-                      Euler3D_Polytropic_cState>::Deallocate_Static(void) {
-    
+void Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::
+Deallocate_Static(void) {
+        
 }
-
 
 
 /********************************************************
@@ -27,21 +25,32 @@ void Input_Parameters<Euler3D_Polytropic_pState,
  *                                                      *
  ********************************************************/
 template<>
-void Input_Parameters<Euler3D_Polytropic_pState, 
-                      Euler3D_Polytropic_cState>::Set_Reference_Solution_States(void) {
-
-    // Set gas type.
+void Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::
+Set_Reference_Solution_States(void) {
+  
+    // Set gas
     Wo.setgas(Gas_Type);
     Uo.setgas(Gas_Type);
-
+    
     // Set reference solution states.
     Wo.rho = Pressure/(Wo.R*Temperature); 
     Wo.p = Pressure;	
     Wo.v.zero();
-    Wo.v.x = Mach_Number*Wo.a()*cos(TWO*PI*Flow_Angle/360.00);
-    Wo.v.y = Mach_Number*Wo.a()*sin(TWO*PI*Flow_Angle/360.00);
-    Uo = Wo.U();  
-
+    Uo = Wo.U();
+    
+    // create filter
+    Filter_Parameters filter;
+    filter.FGR = Turbulence_IP.FGR;
+    filter.type = Turbulence_IP.i_filter_type;
+                          
+    SFS_model_Parameters SFS_model;
+    SFS_model.model = Turbulence_IP.i_SFS_model;
+    SFS_model.smagorinsky_coefficient = Turbulence_IP.smagorinsky_coefficient;    
+                          
+    // Set LES parameters
+    Wo.Set_LES_parameters(SFS_model,filter);
+    Uo.Set_LES_parameters(SFS_model,filter);
+    
 }
 
 /********************************************************
@@ -51,8 +60,8 @@ void Input_Parameters<Euler3D_Polytropic_pState,
  *                                                      *
  ********************************************************/
 template<>
-void Input_Parameters<Euler3D_Polytropic_pState, 
-                      Euler3D_Polytropic_cState>::Read_Reference_Solution_States(istream &restart_file) {
+void Input_Parameters<LES3D_Polytropic_pState, 
+                      LES3D_Polytropic_cState>::Read_Reference_Solution_States(istream &restart_file) {
 
     char line[256];
 
@@ -75,9 +84,8 @@ void Input_Parameters<Euler3D_Polytropic_pState,
  *                                                      *
  ********************************************************/
 template<>
-void Input_Parameters<Euler3D_Polytropic_pState, 
-                      Euler3D_Polytropic_cState>::Write_Reference_Solution_States(ostream &restart_file) {
-
+void Input_Parameters<LES3D_Polytropic_pState, 
+                      LES3D_Polytropic_cState>::Write_Reference_Solution_States(ostream &restart_file) {
     // Write gas type.
     restart_file << Gas_Type << endl;
 
@@ -86,3 +94,14 @@ void Input_Parameters<Euler3D_Polytropic_pState,
 
 }
 
+/*************************************************************************************
+ * LES3D_Input_Parameters -- Input-output operators.                              *
+ *************************************************************************************/
+template<>
+void Input_Parameters<LES3D_Polytropic_pState, 
+                      LES3D_Polytropic_cState>::Output_Solution_Type(ostream &out_file) const {
+    // Turbulence Modelling Input Parameters:
+    out_file << "\n\n Turbulence Modelling Input Parameters";
+    out_file << Turbulence_IP;
+
+}

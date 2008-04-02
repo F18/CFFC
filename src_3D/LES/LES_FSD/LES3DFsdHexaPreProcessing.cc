@@ -176,7 +176,8 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
 				u_ave,
 				v_ave,
 				w_ave,
-				sqr_u);
+				sqr_u,
+                Data.batch_flag);
    }
 
    if (Data.Time == 0.0  &&  Data.number_of_explicit_time_steps == 0) { 

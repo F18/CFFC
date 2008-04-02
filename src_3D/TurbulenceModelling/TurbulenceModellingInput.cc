@@ -24,6 +24,9 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(i_SFS_model),
                           1,
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(smagorinsky_coefficient),
+                          1,
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(filter_type,
                           TURBULENCEMODEL_INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
@@ -48,6 +51,9 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(TKE),
                           1,
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(rescale_spectrum),
+                          1,
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Laminar_Flame_Speed),
                           1,
                           MPI::DOUBLE, 0);
@@ -108,10 +114,17 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
     } else {
       i_command = INVALID_INPUT_VALUE;
     } 
+      
+  } else if (strcmp(code, "Smagorinsky_Coefficient") == 0) {
+      i_command = 121;
+      value >> smagorinsky_coefficient;
+      if (smagorinsky_coefficient < ZERO)
+          i_command = INVALID_INPUT_VALUE;
+      
           
     /* ---- LES : filter type ---- */
   } else if (strcmp(code, "Filter_Type") == 0) {
-    i_command = 121;
+    i_command = 130;
     value >> value_string;
     strcpy(filter_type, value_string.c_str());
     if (strcmp(filter_type, "Implicit") == 0) {
@@ -121,20 +134,20 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
     } /* endif */
       
   } else if (strcmp(code, "Filter_Grid_Ratio") == 0) {
-    i_command = 122;
+    i_command = 131;
     value >> FGR;
     if (FGR < 1)
       i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Filter_Width") == 0) {
-    i_command = 123;
+    i_command = 132;
     value >> Filter_Width;
     if ( Filter_Width < 0.0 )
       i_command = INVALID_INPUT_VALUE;
         
     /* ---- Spectrum Parameters ---- */
   } else if (strcmp(code, "Spectrum_Model") == 0) {
-    i_command = 130;
+    i_command = 140;
     value >> value_string;
     strcpy(spectrum, value_string.c_str());
     if (strcmp(spectrum, "Von_Karman_Pao") == 0) {
@@ -150,57 +163,64 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
     } /* endif */
         
   } else if (strcmp(code, "Domain_Integral_Lengthscale_Ratio") == 0) {
-    i_command = 131;
+    i_command = 141;
     value >> LLR;
     if (LLR < 1)
       i_command = INVALID_INPUT_VALUE;
         
   } else if (strcmp(code, "Turbulent_Kinetic_Energy") == 0) {
-    i_command = 132;
+    i_command = 142;
     value >> TKE;
     if (TKE <= ZERO)
       i_command = INVALID_INPUT_VALUE;
-
+      
+  } else if (strcmp(code, "Rescale_Spectrum_Before_Execution") == 0) {
+      i_command = 143;
+      value >> value_string;
+      if      (value_string == "ON")   rescale_spectrum = ON;
+      else if (value_string == "OFF")  rescale_spectrum = OFF;
+      else 
+          i_command = INVALID_INPUT_VALUE;
 
     /* ----- Reacting LES parameters ----- */
   } else if (strcmp(code, "Laminar_Flame_Speed") == 0) {
-    i_command = 140;
+    i_command = 150;
     value >> Laminar_Flame_Speed;
     if ( Laminar_Flame_Speed <= 0.0 )
       i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Laminar_Flame_Thickness") == 0) {
-    i_command = 141;
+    i_command = 151;
     value >> Laminar_Flame_Thickness;
     if ( Laminar_Flame_Thickness <= 0.0 )
       i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Thickening_Factor") == 0) {
-    i_command = 142;
+    i_command = 152;
     value >> Thickening_Factor;
     if ( Thickening_Factor < ONE )
       i_command = INVALID_INPUT_VALUE;
     
   } else if (strcmp(code, "Fuel_Equivalence_Ratio") == 0) {
-    i_command = 143;
+    i_command = 153;
     value >> Fuel_Equivalence_Ratio;
     if ( Fuel_Equivalence_Ratio <= 0.0 )
       i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Unburnt_Fuel_Mass_Fraction") == 0) {
-    i_command = 144;
+    i_command = 154;
     value >> Unburnt_Fuel_Mass_Fraction;
     if ( Unburnt_Fuel_Mass_Fraction <= 0.0 )
       i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Reactants_Density") == 0) {
-    i_command = 145;
+    i_command = 155;
     value >> Reactants_Density;
     if ( Reactants_Density <= 0.0 )
       i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Adiabatic_Flame_Temperature") == 0) {
-    i_command = 146;
+    i_command = 156;
     value >> Adiabatic_Flame_Temperature;
     if ( Adiabatic_Flame_Temperature <= 0.0 )
       i_command = INVALID_INPUT_VALUE;
@@ -260,6 +280,9 @@ void Turbulence_Modelling_Input_Parameters::Output(ostream &out_file) const {
         out_file << "\n       -> Filter Grid Ratio: " << FGR;
     }
     out_file << "\n    -> Sub Filter Scale model: " << SFS_model;
+    if (i_SFS_model == SFS_MODEL_SMAGORINSKY){
+        out_file << "\n       -> Smagorinsky Coefficient: " << smagorinsky_coefficient;
+    }
     
     out_file << "\n  Spectrum parameters:";
     out_file << "\n    -> Spectrum model: " << spectrum;

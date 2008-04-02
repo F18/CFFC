@@ -18,7 +18,12 @@
 
 /* Define the specializations. */
 
-//! Sets values of reference solution states
+//! Deallocate static data of reference solution states
+template<>
+void Input_Parameters<NavierStokes3D_Polytropic_pState, 
+                      NavierStokes3D_Polytropic_cState>::Deallocate_Static(void);
+
+//!Sets values of reference solution states
 template<>
 void Input_Parameters<NavierStokes3D_Polytropic_pState, 
                       NavierStokes3D_Polytropic_cState>::Set_Reference_Solution_States(void);

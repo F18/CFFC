@@ -7,20 +7,22 @@
 
 #include "Euler3DPolytropicState.h"
 
-/*--------------------------------------------------------------------------------*
- *			     Euler3D_Polytropic_pState subroutines                *
- *--------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------*
+ *			     Euler3D_Polytropic_pState subroutines                         *
+ *-----------------------------------------------------------------------------*/
 
 /*
-* Set static variables
-* ---------------------------- 
-*/
+ * Set static variables
+ * -------------------- 
+ */
 int Euler3D_Polytropic_pState::num_vars = NUM_VAR_EULER3D;
 double Euler3D_Polytropic_pState::g = GAMMA_AIR;
 double Euler3D_Polytropic_pState::gm1 = GAMMA_AIR-ONE;
 double Euler3D_Polytropic_pState::gm1i = ONE/(GAMMA_AIR-ONE);
 double Euler3D_Polytropic_pState::R = R_UNIVERSAL/(MOLE_WT_AIR*MILLI);
 char* Euler3D_Polytropic_pState::gas_type = "AIR";
+double Euler3D_Polytropic_pState::Mref = 0.1;
+
 
 // Set gas constants.
 /*!
@@ -2150,6 +2152,118 @@ Vector2D Euler3D_Polytropic_pState::HLLE_wavespeeds(const Euler3D_Polytropic_pSt
 
     return (wavespeed);
 }
+
+
+
+/************************************************************************************************
+ * Euler3D_Polytropic_pState::AUSMplus_up_x -- AUSMplus_up flux function, x-direction flux.     *
+ ************************************************************************************************/
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxAUSMplus_up_x(const Euler3D_Polytropic_pState &Wl,
+                                                                       const Euler3D_Polytropic_pState &Wr) {
+    
+    Euler3D_Polytropic_cState Flux;
+    double beta = 0.125, sigma = 0.75, Kp =0.25, Ku = 0.75;
+    double alpha, rhohalf, mass_flux_half;
+    double ahalf, Ml, Mr, Mplus, Mminus, Mhalf, pplus, pminus, phalf;
+    
+    ahalf = HALF*(Wl.a() + Wr.a());
+    rhohalf = HALF*(Wl.rho + Wr.rho); 
+    
+    
+    // Determine the left and right state Mach numbers based on the intermediate state sound speed:
+    Ml = Wl.v.x/ahalf;
+    Mr = Wr.v.x/ahalf;
+    
+    // Determine the reference Mach number, scaling function and coefficient
+    double M2_bar, M2_ref, fa;
+    M2_bar = (Wl.v.x*Wl.v.x + Wr.v.x*Wr.v.x)/(TWO*ahalf*ahalf);
+    M2_ref = min(ONE, max(M2_bar, Wl.Mref*Wl.Mref));
+    if (M2_ref > ONE || M2_ref < 0.0) cout << "\nM2_ref out of range in AUSM+-up.";
+    //fa = sqrt(M2_ref)*(TWO - sqrt(M2_ref));
+    fa = sqrt(sqr(ONE - M2_ref)*M2_bar + FOUR*M2_ref)/(ONE + M2_ref);
+    if (fa > ONE || fa <= ZERO) cout << "\nfa out of range in AUSM+-up.";
+    alpha = (3.0/16.0)*(-4.0 + 5.0*fa*fa);
+    if (alpha < (-3.0/4.0)  ||  alpha > (3.0/16.0)) cout << "\nalpha out of range in AUSM+-up.";
+    
+    
+    // Determine the left state split Mach number:
+    if (fabs(Ml) >= ONE) {
+        Mplus = 0.5*(Ml+fabs(Ml));
+        pplus = 0.5*(Ml+fabs(Ml))/Ml;
+    } else {
+        Mplus = 0.25*sqr(Ml+1.0) * (1.0 - 16.0*beta*(-0.25*sqr(Ml-1.0)));
+        pplus = 0.25*sqr(Ml+1.0) * ((2.0 - Ml) - 16.0*alpha*Ml*(-0.25*sqr(Ml-1.0)));
+    } /* endif */
+    
+    // Determine the right state split Mach number:
+    if (fabs(Mr) >= ONE) {
+        Mminus = 0.5*(Mr-fabs(Mr));
+        pminus = 0.5*(Mr-fabs(Mr))/Mr;        
+    } else {
+        Mminus = -0.25*sqr(Mr-1.0) * (1.0 + 16.0*beta*0.25*sqr(Mr+1.0));
+        pminus = -0.25*sqr(Mr-1.0) * ((-2.0 - Mr) + 16.0*alpha*Mr*0.25*sqr(Mr+1.0));
+    } /* endif */
+    
+    // Determine the intermediate state Mach number, pressure and mass flux:
+    Mhalf = Mplus + Mminus - (Kp/fa)*max((ONE - sigma*M2_bar), ZERO)*(Wr.p - Wl.p)/(rhohalf*ahalf*ahalf);
+    phalf = pplus*Wl.p + pminus*Wr.p - Ku*pplus*pminus*TWO*rhohalf*(fa*ahalf)*(Wr.v.x - Wl.v.x);
+    mass_flux_half = (Mhalf > ZERO) ? ahalf*Mhalf*Wl.rho : ahalf*Mhalf*Wr.rho; 
+    
+    // Determine the intermediate state convective solution flux:
+    if (mass_flux_half > ZERO) {
+        Flux.rho = ONE;
+        Flux.rhov.x = Wl.v.x; 
+        Flux.rhov.y = Wl.v.y; 
+        Flux.rhov.z = Wl.v.z;
+        Flux.E = Wl.H()/Wl.rho;
+    } else {
+        Flux.rho = ONE;
+        Flux.rhov.x = Wr.v.x; 
+        Flux.rhov.y = Wr.v.y; 
+        Flux.rhov.z = Wr.v.z; 
+        Flux.E = Wr.H()/Wr.rho;
+    } /* endif */
+    
+    Flux = mass_flux_half*Flux;
+    
+    // Add the pressure contribution to the intermediate state solution flux:
+    Flux[2] += phalf;
+    
+    // Return solution flux.
+    return Flux;
+    
+}
+
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxAUSMplus_up_x(const Euler3D_Polytropic_cState &Ul,
+                                                                       const Euler3D_Polytropic_cState &Ur) {
+    return FluxAUSMplus_up_x(Ul.W(),Ur.W());
+}
+
+/****************************************************************************************************
+ * Euler3D_Polytropic_pState::FluxAUSMplus_up_n -- AUSMplus_up flux function, n-direction flux.     *
+ ****************************************************************************************************/
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxAUSMplus_up_n(const Euler3D_Polytropic_pState &Wl,
+                                                                       const Euler3D_Polytropic_pState &Wr,
+                                                                       const Vector3D &norm_dir) {
+    
+    // Determine the left and right solution states in the rotate frame.
+    Euler3D_Polytropic_pState Wl_rot(Wl.Rotate(norm_dir));
+    Euler3D_Polytropic_pState Wr_rot(Wr.Rotate(norm_dir));
+    
+    // Evaluate the intermediate state solution flux in the rotated frame.
+    Euler3D_Polytropic_cState Flux_rot = FluxAUSMplus_up_x(Wl_rot, Wr_rot);
+    
+    // Return numerical flux in un-rotated frame.
+    return (Flux_rot.RotateBack(norm_dir));
+    
+}
+
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxAUSMplus_up_n(const Euler3D_Polytropic_cState &Ul,
+                                                                       const Euler3D_Polytropic_cState &Ur,
+                                                                       const Vector3D &norm_dir) {
+    return FluxAUSMplus_up_n(Ul.W(),Ur.W(),norm_dir);
+}
+
 
 /*!
  * Routine: Rotate

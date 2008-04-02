@@ -3,6 +3,23 @@
 #include "NavierStokes3DPolytropicInput.h"
 #endif // _NAVIERSTOKES3D_POLYTROPIC_INPUT_INCLUDED
 
+
+/********************************************************
+ * Routine: Deallocate_Static                           *
+ *                                                      *
+ * Deallocate static data of the reference solution     * 
+ * states.                                              *
+ *                                                      *
+ ********************************************************/
+template<>
+void Input_Parameters<NavierStokes3D_Polytropic_pState, 
+                      NavierStokes3D_Polytropic_cState>::Deallocate_Static(void) {
+    
+}
+
+
+
+
 /********************************************************
  * Routine: Set_Reference_Solution_States               *
  *                                                      *
