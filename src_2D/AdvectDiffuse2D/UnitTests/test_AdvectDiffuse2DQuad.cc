@@ -574,13 +574,13 @@ namespace tut
     set_local_output_path("QuadBlockData");
 
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion_HighOrder.in");
+    Open_Input_File("CircularAdvectionDiffusion_HighOrder_ErrorStudy.in");
 
     // Parse the input file
     IP.Verbose() = false;
     IP.Parse_Input_File(input_file_name);
     HighOrder2D_Input::Set_Final_Parameters(IP);
-    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = ON;
+    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = OFF;
 
     // Create computational domain
     InitializeComputationalDomain(MeshBlk,QuadTree,
@@ -592,14 +592,152 @@ namespace tut
     ensure_equals("Main High-order ", SolnBlk[0].HighOrderVariable(0).RecOrder(), 3);
     ensure_equals("Second High-order ", SolnBlk[0].HighOrderVariable(1).RecOrder(), 2);
     ensure_equals("Third High-order ", SolnBlk[0].HighOrderVariable(2).RecOrder(), 4);
-
+    
     // Apply initial condition
     ICs(SolnBlk,LocalList_Soln_Blocks,IP);
-    
+
     // Reconstruct solution
     SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+    SolnBlk[0].HighOrderVariable(1).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+    SolnBlk[0].HighOrderVariable(2).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
 
-    // Print_(SolnBlk[0].HighOrderVariable(0).CellTaylorDeriv(5,5));
+    // Compute solution error
+    double Error;
+
+    SolnBlk[0].HighOrderVariable(0).ComputeSolutionErrors(wrapped_member_function(SolnBlk[0].ExactSolution(),
+										  &AdvectDiffuse2D_Quad_Block::
+										  Exact_Solution_Type::Solution,
+										  Error),
+							  1, 12);
+    SolnBlk[0].HighOrderVariable(1).ComputeSolutionErrors(wrapped_member_function(SolnBlk[0].ExactSolution(),
+										  &AdvectDiffuse2D_Quad_Block::
+										  Exact_Solution_Type::Solution,
+										  Error),
+							  1, 12);
+    SolnBlk[0].HighOrderVariable(2).ComputeSolutionErrors(wrapped_member_function(SolnBlk[0].ExactSolution(),
+										  &AdvectDiffuse2D_Quad_Block::
+										  Exact_Solution_Type::Solution,
+										  Error),
+							  1, 12);
+
+    // Check errors against values determined in a grid convergence study which reproduced the expected order of accuracy
+    ensure_distance("HO_0, L1", SolnBlk[0].HighOrderVariable(0).L1(),0.001801828715892732 , AcceptedError(0.001801828715892732));
+    ensure_distance("HO_0, L2", SolnBlk[0].HighOrderVariable(0).L2(),2.22858063792015e-05 , AcceptedError(2.22858063792015e-05));
+    ensure_distance("HO_0, LMax", SolnBlk[0].HighOrderVariable(0).LMax(),0.01647612251871387, AcceptedError(0.01647612251871387));
+    ensure_distance("HO_0, BlockArea", SolnBlk[0].HighOrderVariable(0).BlockArea(), 1.0, AcceptedError(1.0));
+    ensure_distance("HO_0, Block L1", SolnBlk[0].HighOrderVariable(0).BlockL1Norm(), 
+		    0.001801828715892732, AcceptedError(0.001801828715892732));
+    ensure_distance("HO_0, Block L2", SolnBlk[0].HighOrderVariable(0).BlockL2Norm(), 
+		    0.00472078450887154, AcceptedError(0.00472078450887154));
+    ensure_distance("HO_0, Block LMax", SolnBlk[0].HighOrderVariable(0).BlockLMaxNorm(), 
+		    0.01647612251871387, AcceptedError(0.01647612251871387));
+    ensure_equals("HO_1, Cells used", SolnBlk[0].HighOrderVariable(0).UsedCells(), 64);
+
+
+    ensure_distance("HO_1, L1", SolnBlk[0].HighOrderVariable(1).L1(),0.008666756828796066 , AcceptedError(0.008666756828796066));
+    ensure_distance("HO_1, L2", SolnBlk[0].HighOrderVariable(1).L2(),0.000483179638195169 , AcceptedError(0.000483179638195169));
+    ensure_distance("HO_1, LMax", SolnBlk[0].HighOrderVariable(1).LMax(),0.07216104037829933, AcceptedError(0.07216104037829933));
+    ensure_distance("HO_1, BlockArea", SolnBlk[0].HighOrderVariable(1).BlockArea(), 1.0, AcceptedError(1.0));
+    ensure_distance("HO_1, Block L1", SolnBlk[0].HighOrderVariable(1).BlockL1Norm(), 
+		    0.008666756828796066, AcceptedError(0.008666756828796066));
+    ensure_distance("HO_1, Block L2", SolnBlk[0].HighOrderVariable(1).BlockL2Norm(), 
+		    0.02198134750635568, AcceptedError(0.02198134750635568));
+    ensure_distance("HO_1, Block LMax", SolnBlk[0].HighOrderVariable(1).BlockLMaxNorm(), 
+		    0.07216104037829933, AcceptedError(0.07216104037829933));
+    ensure_equals("HO_1, Cells used", SolnBlk[0].HighOrderVariable(1).UsedCells(), 64);
+
+
+    ensure_distance("HO_2, L1", SolnBlk[0].HighOrderVariable(2).L1(),0.001390104987434202 , AcceptedError(0.001390104987434202));
+    ensure_distance("HO_2, L2", SolnBlk[0].HighOrderVariable(2).L2(),1.383174295956005e-05, AcceptedError(1.383174295956005e-05));
+    ensure_distance("HO_2, LMax", SolnBlk[0].HighOrderVariable(2).LMax(),0.01329552268181446, AcceptedError(0.01329552268181446));
+    ensure_distance("HO_2, BlockArea", SolnBlk[0].HighOrderVariable(2).BlockArea(), 1.0, AcceptedError(1.0));
+    ensure_distance("HO_2, Block L1", SolnBlk[0].HighOrderVariable(2).BlockL1Norm(), 
+		    0.001390104987434202, AcceptedError(0.001390104987434202));
+    ensure_distance("HO_2, Block L2", SolnBlk[0].HighOrderVariable(2).BlockL2Norm(), 
+		    0.003719105128866358, AcceptedError(0.003719105128866358));
+    ensure_distance("HO_2, Block LMax", SolnBlk[0].HighOrderVariable(2).BlockLMaxNorm(), 
+		    0.01329552268181446, AcceptedError(0.01329552268181446));
+    ensure_equals("HO_2, Cells used", SolnBlk[0].HighOrderVariable(2).UsedCells(), 64);
+
+  }
+
+  /* Test 11:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<11>()
+  {
+
+    set_test_name("Check high-order output functions");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    RunRegression = ON;
+
+    // Set input file name
+    Open_Input_File("CircularAdvectionDiffusion_HighOrder_ErrorStudy.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+    HighOrder2D_Input::Set_Final_Parameters(IP);
+    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = OFF;
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // == check correct initialization
+    ensure("High-order variables", SolnBlk[0].HighOrderVariables() != NULL);
+    ensure_equals("Main High-order ", SolnBlk[0].HighOrderVariable(0).RecOrder(), 3);
+    ensure_equals("Second High-order ", SolnBlk[0].HighOrderVariable(1).RecOrder(), 2);
+    ensure_equals("Third High-order ", SolnBlk[0].HighOrderVariable(2).RecOrder(), 4);
+    
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+    // Reconstruct the solution
+    SolnBlk[0].HighOrderVariable(2).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+
+    if (RunRegression){
+      //===== Check solution interior nodal solution
+      MasterFile  = "HighOrder_Circular_Advection_In_Rectangular_Box_cpu000000_block000.dat";
+      CurrentFile = "Current_HighOrder_Circular_Advection_In_Rectangular_Box_cpu000000_block000.dat";
+
+      // Output 
+      SolnBlk[0].Output_Tecplot_HighOrder_Debug_Mode(LocalList_Soln_Blocks, IP, 0, 2);
+      
+      // check
+      RunRegressionTest("HighOrder Interior Nodal Solution Tecplot", CurrentFile, MasterFile, 5.0e-7, 5.0e-7);
+
+      //===== Check solution interior nodal solution
+      MasterFile  = "HighOrder_Circular_Advection_In_Rectangular_Box_nodes_cpu000000_block000.dat";
+      CurrentFile = "Current_HighOrder_Circular_Advection_In_Rectangular_Box_nodes_cpu000000_block000.dat";
+      
+      // Output 
+      SolnBlk[0].Output_Nodes_Tecplot_HighOrder_Debug_Mode(LocalList_Soln_Blocks, IP, 0, 2);
+
+      // check
+      RunRegressionTest("HighOrder Interior+Ghost Nodal Solution Tecplot", CurrentFile, MasterFile, 5.0e-7, 5.0e-7);
+
+      //===== Check solution centroid solution
+      MasterFile  = "HighOrder_Circular_Advection_In_Rectangular_Box_cells_cpu000000_block000.dat";
+      CurrentFile = "Current_HighOrder_Circular_Advection_In_Rectangular_Box_cells_cpu000000_block000.dat";
+
+      // Output 
+      SolnBlk[0].Output_Cells_Tecplot_HighOrder_Debug_Mode(LocalList_Soln_Blocks, IP, 0, 2);
+      
+      // check
+      RunRegressionTest("HighOrder Centroid Solution Tecplot", CurrentFile, MasterFile, 5.0e-7, 5.0e-7);
+
+    } else {
+      // generate the master files
+
+      // Output 
+      SolnBlk[0].Output_Tecplot_HighOrder_Debug_Mode(LocalList_Soln_Blocks, IP, 0, 2);
+      SolnBlk[0].Output_Nodes_Tecplot_HighOrder_Debug_Mode(LocalList_Soln_Blocks, IP, 0, 2);
+      SolnBlk[0].Output_Cells_Tecplot_HighOrder_Debug_Mode(LocalList_Soln_Blocks, IP, 0, 2);
+    }
   }
 
 }

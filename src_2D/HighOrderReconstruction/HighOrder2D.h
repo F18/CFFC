@@ -277,11 +277,22 @@ public:
 			       const double & X_Coord, const double & Y_Coord, const unsigned & parameter) const {
     return TD[ii][jj].ComputeSolutionFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj))[parameter];
   }
+  //! Evaluate the interpolant at a given position vector for a specified solution variable (i.e. parameter),
+  //  using the reconstruction of cell (ii,jj)
+  double SolutionAtLocation(const int & ii, const int & jj,
+			    const Vector2D &CalculationPoint, const unsigned & parameter) const {
+    return SolutionAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y,parameter);
+  }
+  
   //! Evaluate the interpolant at a given location (X_Coord,Y_Coord) for all solution variables,
   //  using the reconstruction of cell (ii,jj)
   Soln_State SolutionAtCoordinates(const int & ii, const int & jj,
 				   const double & X_Coord, const double & Y_Coord) const {
     return TD[ii][jj].ComputeSolutionFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
+  }
+  //! Evaluate the interpolant at a given position vector for all solution variables, using the reconstruction of cell (ii,jj).
+  Soln_State SolutionStateAtLocation(const int & ii, const int & jj, const Vector2D &CalculationPoint) const {
+    return SolutionAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
   }
   //@}
 
@@ -347,18 +358,59 @@ public:
 
   //! @name Error Evaluation:
   //@{
-  /*! @brief Compute L1 norm of the solution error */
-  template<typename Function_Object_Type>
-  double ComputeSolutionErrorL1(Function_Object_Type FuncObj, const unsigned &parameter);
 
-  double ComputeSolutionErrorL1(HighOrder2D<Soln_State> & Obj, const unsigned &parameter);
-
-  /*! @brief Compute the L2 norm of the solution error */
-  template<typename Function_Object_Type>
-  double ComputeSolutionErrorL2(Function_Object_Type FuncObj, const unsigned &parameter);
-
-  double ComputeSolutionErrorL2(const HighOrder2D<Soln_State> & Obj);
+  //! @name Access to the error data:
+  //@{
+  const double & L1(void) const {return ErrorL1; }       //!< return the L1 error
+  const double & L2(void) const {return ErrorL2; }       //!< return the L2 error
+  const double & LMax(void) const {return ErrorMax; }    //!< return the LMax error
+  const double & BlockArea(void) const {return TotalBlockArea; } //!< return the area of the block used to calculate errors
+  
+  double BlockL1Norm(void) { return ErrorL1/TotalBlockArea; }	      //!< return the L1 error norm for the block
+  double BlockL2Norm(void) { return sqrt(ErrorL2/TotalBlockArea); }   //!< return the L2 error norm for the block
+  double BlockLMaxNorm(void) { return ErrorMax; }                     //!< return the LMax error norm for the block
+  
+  const unsigned int & UsedCells(void) const {return CellsUsed;}  //!< return the number of used cells for error calculation
   //@}
+
+  //! @name Block Level Error Computation:
+  //@{
+  /*! @brief Compute the integral of the solution error function (i.e. L1, L2 and LMax errors) for the whole block */
+  template<typename Function_Object_Type>
+  void ComputeSolutionErrors(const Function_Object_Type FuncObj, const unsigned &parameter,
+			     const int & digits = 8);
+
+  /*! @brief Compute the integral of the error of two high-order reconstructions (i.e. L1, L2 and LMax norm) for the whole block */
+  void ComputeReconstructionsErrors(const HighOrder2D<Soln_State> & Obj, const unsigned &parameter,
+				    const int & digits = 8);
+  //@} (Block Level Errors)
+
+  //! @name Cell Level Errors Computation:
+  //@{
+  /*! @brief Compute the integral of the solution error function (i.e. L1 norm) for cell (iCell,jCell) */
+  template<typename Function_Object_Type>
+  double ComputeSolutionErrorL1(const int &iCell, const int &jCell,
+				const Function_Object_Type FuncObj, const unsigned &parameter,
+				const int & digits = 8);
+
+  /*! @brief Compute the integral of the error of two high-order reconstructions (i.e. L1 norm) for cell (iCell,jCell) */
+  double ComputeReconstructionsErrorL1(const int &iCell, const int &jCell,
+				       const HighOrder2D<Soln_State> & Obj, const unsigned &parameter,
+				       const int & digits = 8);
+
+  /*! @brief Compute the integral of the squared solution error function (i.e. L2 norm) for cell (iCell,jCell) */
+  template<typename Function_Object_Type>
+  double ComputeSolutionErrorL2(const int &iCell, const int &jCell,
+				Function_Object_Type FuncObj, const unsigned &parameter,
+				const int & digits = 8);
+
+  /*! @brief Compute the integral of the squared error of two high-order reconstructions (i.e. L1 norm) for cell (iCell,jCell) */
+  double ComputeReconstructionsErrorL2(const int &iCell, const int &jCell,
+				       const HighOrder2D<Soln_State> & Obj, const unsigned &parameter,
+				       const int & digits = 8);
+  //@} (Cell Level Errors)
+
+  //@} (Error Evaluation)
 
   //! @name Input/Output functions:
   //@{
@@ -465,6 +517,15 @@ private:
   DenseMatrix All_Delta_U;	     // Storage for the RHS matrix (i.e. solution dependent) of the k-Exact reconstruction.
   ColumnVector Delta_U;              // Storage for a particular column of the RHS matrix.
   ColumnVector X;                    // Storage for the solution to the least-square problem.
+  //@}
+
+  //! @name Error calculation variables and internal functions:
+  //@{
+  double ErrorL1, ErrorL2, ErrorMax; //!< errors/error norms
+  double TotalBlockArea;             //!< the area of the block used for error calculation
+  unsigned int CellsUsed;	     //!< the number of cells used for accuracy assessment
+  //! Set all error variables to zero
+  void ResetErrors(void){ ErrorL1 = 0.0; ErrorL2 = 0.0; ErrorMax = 0.0; TotalBlockArea = 0.0; CellsUsed = 0;}
   //@}
 };
 
@@ -1418,82 +1479,320 @@ void HighOrder2D<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const i
   
 }
 
-
-#if 0
 /*! 
- * Compute the integral over the cell geometry of the error between the
+ * Compute the integral over the block geometry of the error between the
  * reconstructed polynomial and the function provided as input. 
  *
  * \param [in] FuncObj  The function relative to which the error is evaluated
  * \param [in] parameter The parameter for which the reconstruction is evaluated
+ * \param [in] digits  The targeted number of exact digits with which the integral is evaluated
  */
 template<class SOLN_STATE> 
-template<typename Function_Object_Type>
-double HighOrder2D<SOLN_STATE>::ComputeSolutionErrorL1(const Function_Object_Type FuncObj,
-						       const unsigned parameter){
+template<typename Function_Object_Type> inline
+void HighOrder2D<SOLN_STATE>::ComputeSolutionErrors(const Function_Object_Type FuncObj,
+						    const unsigned &parameter,
+						    const int &digits){
   
-  // Set the type of the returned value
-  double _dummy_param(0.0);
+  int StartI_Int, EndI_Int, StartJ_Int, EndJ_Int; // Integration indexes for cells with straight edges.
+  int i,j;
+  bool _integrate_with_curved_boundaries(false);
+  double ErrorTemp;
+  
+  /* Algorithm:
+     1. Decide where integration for straight quads can be used.
+        If low boundary representation is used than all quads are straight.
+	If high-order boundary representation is provided, then all cells near boundaries are 
+        considered to be curved, even if they might actually have boundary straight lines.
+     2. Integrate over straight quads.
+     3. Integrate over the curved cells if necessary.
+  */
 
-  // set the pointer to the member function that is used to compute the solution of the polynomial reconstruction
-  MemberFunction_TwoArguments_OneParameter_Type ReconstructedSolution = &ClassType::SolutionAtCoordinates;
+  // Decide the range of integration
+  if (Geom->IsHighOrderBoundary()){
+    StartI_Int = ICl + 1;
+    EndI_Int   = ICu - 1;
+    StartJ_Int = JCl + 1;
+    EndJ_Int   = JCu - 1;
+    _integrate_with_curved_boundaries = true;
+    throw runtime_error("HighOrder2D<SOLN_STATE>::ComputeSolutionErrors() Warning! Integration with curved bnds is not setup!");
+  } else {
+    StartI_Int = ICl;
+    EndI_Int   = ICu;
+    StartJ_Int = JCl;
+    EndJ_Int   = JCu;
+  }
 
-  // Call the integration function
-  return IntegrateOverTheCell(error_function(FuncObj,
-					     wrapped_member_function_one_parameter(this,
-										   ReconstructedSolution,
-										   parameter,
-										   _dummy_param),
-					     _dummy_param),
-			      10,_dummy_param);
-}
+  // Reset the error values
+  ResetErrors();
 
-template<class SOLN_STATE> 
-double HighOrder2D<SOLN_STATE>::ComputeSolutionErrorL1(HighOrder2D<Soln_State> & Obj,
-						       const unsigned parameter){
+  // Sum up the contribution from each straight quad cell
+  for (j = StartJ_Int; j <= EndJ_Int; ++j){
+    for (i = StartI_Int; i <= EndI_Int; ++i, ++CellsUsed){
+      ErrorTemp = ComputeSolutionErrorL1(i,j,
+					 FuncObj,
+					 parameter,
+					 digits);
+ 
+      ErrorL1 += ErrorTemp;
 
-  // Set the type of the returned value
-  double _dummy_param(0.0);
+      ErrorL2 += ComputeSolutionErrorL2(i,j,
+					FuncObj,
+					parameter,
+					digits);
 
-  // set the pointer to the member function that is used to compute the solution of the polynomial reconstruction
-  MemberFunction_TwoArguments_OneParameter_Type ReconstructedSolution = &ClassType::SolutionAtCoordinates;
+      ErrorMax = max(ErrorMax, ErrorTemp/Geom->CellArea(i,j));
 
-  // Call the computation of the error routine with a function given by a wrapper based on the argument
-  return ComputeSolutionErrorL1(wrapped_member_function_one_parameter(&Obj,
-								      ReconstructedSolution,
-								      parameter,
-								      _dummy_param),
-				parameter);
+      TotalBlockArea += Geom->CellArea(i,j);
+    }// endfor
+  }// endfor
+
+  // Sum up the contribution from the cells with curved boundaries
+  if (_integrate_with_curved_boundaries){
+
+    for (j = JCl; j <= JCu; ++j){
+      // not available yet
+
+      // West boundary
+      // (ICl,j)
+
+      // East boundary
+      // (ICu,j)
+
+      CellsUsed += 2;
+    }// endfor
+
+    for (i = ICl+1; i <= ICu-1; ++i){
+      // not available yet
+
+      // South boundary
+      // (i,JCl)
+
+      // North boundary
+      // (i,JCu)
+
+      CellsUsed += 2;
+    }// endfor
+
+  } //endif
+
 }
 
 /*! 
- * Compute the integral over the cell geometry of the squared error between the
- * reconstructed polynomial and the function provided as input. 
+ * Compute the integral over the block geometry of the polynomial
+ * reconstructions of two high-order variables over the whole domain. 
  *
  * \param [in] FuncObj  The function relative to which the error is evaluated
  * \param [in] parameter The parameter for which the reconstruction is evaluated
+ * \param [in] digits  The targeted number of exact digits with which the integral is evaluated
  */
-template<class SOLN_STATE> 
-template<typename Function_Object_Type>
-double HighOrder2D<SOLN_STATE>::ComputeSolutionErrorL2(const Function_Object_Type FuncObj, const unsigned parameter){
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::ComputeReconstructionsErrors(const HighOrder2D<Soln_State> & Obj,
+							   const unsigned &parameter,
+							   const int &digits){
+  
+  int StartI_Int, EndI_Int, StartJ_Int, EndJ_Int; // Integration indexes for cells with straight edges.
+  int i,j;
+  bool _integrate_with_curved_boundaries(false);
+  double ErrorTemp;
+  
+  /* Algorithm:
+     1. Decide where integration for straight quads can be used.
+        If low boundary representation is used than all quads are straight.
+	If high-order boundary representation is provided, then all cells near boundaries are 
+        considered to be curved, even if they might actually have boundary straight lines.
+     2. Integrate over straight quads.
+     3. Integrate over the curved cells if necessary.
+  */
 
-  // Set the type of the returned value
-  double _dummy_param(0.0);
+  // Decide the range of integration
+  if (Geom->IsHighOrderBoundary()){
+    StartI_Int = ICl + 1;
+    EndI_Int   = ICu - 1;
+    StartJ_Int = JCl + 1;
+    EndJ_Int   = JCu - 1;
+    _integrate_with_curved_boundaries = true;
+    throw runtime_error("HighOrder2D<SOLN_STATE>::ComputeReconstructionsErrors() Warning! Integration with curved bnds is not setup!");
+  } else {
+    StartI_Int = ICl;
+    EndI_Int   = ICu;
+    StartJ_Int = JCl;
+    EndJ_Int   = JCu;
+  }
 
-  // set the pointer to the member function that is used to compute the solution of the polynomial reconstruction
-  MemberFunction_TwoArguments_OneParameter_Type ReconstructedSolution = &ClassType::SolutionAtCoordinates;
+  // Reset the error values
+  ResetErrors();
 
-  // Call the integration function
-  return IntegrateOverTheCell(square_error_function(FuncObj,
-						    wrapped_member_function_one_parameter(this,
-											  ReconstructedSolution,
-											  parameter,
-											  _dummy_param),
-						    _dummy_param),
-			      10,_dummy_param);
+  // Sum up the contribution from each straight quad cell
+  for (j = StartJ_Int; j <= EndJ_Int; ++j){
+    for (i = StartI_Int; i <= EndI_Int; ++i, ++CellsUsed){
+      ErrorTemp = ComputeReconstructionsErrorL1(i,j,
+					       Obj,
+					       parameter,
+					       digits);
+ 
+      ErrorL1 += ErrorTemp;
+
+      ErrorL2 += ComputeReconstructionsErrorL2(i,j,
+					       Obj,
+					       parameter,
+					       digits);
+
+      ErrorMax = max(ErrorMax, ErrorTemp/Geom->CellArea(i,j));
+
+      TotalBlockArea += Geom->CellArea(i,j);
+    }// endfor
+  }// endfor
+
+  // Sum up the contribution from the cells with curved boundaries
+  if (_integrate_with_curved_boundaries){
+
+    for (j = JCl; j <= JCu; ++j){
+      // not available yet
+
+      // West boundary
+      // (ICl,j)
+
+      // East boundary
+      // (ICu,j)
+
+      CellsUsed += 2;
+    }// endfor
+
+    for (i = ICl+1; i <= ICu-1; ++i){
+      // not available yet
+
+      // South boundary
+      // (i,JCl)
+
+      // North boundary
+      // (i,JCu)
+
+      CellsUsed += 2;
+    }// endfor
+
+  } //endif
+
 }
 
-#endif
+/*! 
+ * Compute the integral of the error function between what 
+ * is considered as exact solution and the reconstructed 
+ * polynomial over the domain of cell (iCell,jCell).
+ * This result is used in the evaluation of L1 error norm.
+ */
+template<class SOLN_STATE>
+template<typename Function_Object_Type> inline
+double HighOrder2D<SOLN_STATE>::ComputeSolutionErrorL1(const int &iCell, const int &jCell,
+						       const Function_Object_Type FuncObj,
+						       const unsigned &parameter, const int & digits){
+
+  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
+  Vector2D _dummy_Position(0.0); // defined only to provide the type of the position vector where the function is evaluated.
+
+  return IntegrateOverTheCell(iCell,jCell,
+			      error_function(FuncObj,
+					     wrapped_member_function_one_parameter(this,
+										   &ClassType::SolutionAtLocation,
+										   _dummy_Position,
+										   iCell, jCell,
+										   parameter,
+										   _dummy_result),
+					     _dummy_result),
+			      digits, _dummy_result);
+
+}
+
+/*! 
+ * Compute the integral of the error function between the
+ * polynomial reconstructions of two high-order variables
+ * over the domain of cell (iCell,jCell).
+ *
+ * \note This subroutine doesn't check that the domains are the same! It's the caller's responsibility.
+ */
+template<class SOLN_STATE> inline
+double HighOrder2D<SOLN_STATE>::ComputeReconstructionsErrorL1(const int &iCell, const int &jCell,
+							      const HighOrder2D<Soln_State> & Obj,
+							      const unsigned &parameter,
+							      const int &digits){
+
+  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
+  Vector2D _dummy_Position(0.0); // defined only to provide the type of the position vector where the function is evaluated.
+
+  return IntegrateOverTheCell(iCell,jCell,
+			      error_function(wrapped_member_function_one_parameter(&Obj,
+										   &ClassType::SolutionAtLocation,
+										   _dummy_Position,
+										   iCell, jCell,
+										   parameter,
+										   _dummy_result),
+					     wrapped_member_function_one_parameter(this,
+										   &ClassType::SolutionAtLocation,
+										   _dummy_Position,
+										   iCell, jCell,
+										   parameter,
+										   _dummy_result),
+					     _dummy_result),
+			      digits, _dummy_result);
+}
+
+/*! 
+ * Compute the integral of the squared error function between what 
+ * is considered as exact solution and the reconstructed 
+ * polynomial over the domain of cell (iCell,jCell).
+ * This result is used in the evaluation of L2 error norm.
+ */
+template<class SOLN_STATE> 
+template<typename Function_Object_Type> inline
+double HighOrder2D<SOLN_STATE>::ComputeSolutionErrorL2(const int &iCell, const int &jCell,
+						       Function_Object_Type FuncObj,
+						       const unsigned &parameter, const int &digits){
+
+  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
+  Vector2D _dummy_Position(0.0); // defined only to provide the type of the position vector where the function is evaluated.
+  
+  return IntegrateOverTheCell(iCell,jCell,
+			      square_error_function(FuncObj,
+						    wrapped_member_function_one_parameter(this,
+											  &ClassType::SolutionAtLocation,
+											  _dummy_Position,
+											  iCell, jCell,
+											  parameter,
+											  _dummy_result),
+						    _dummy_result),
+			      digits, _dummy_result);
+}
+
+/*! 
+ * Compute the integral of the squared error function between the
+ * polynomial reconstructions of two high-order variables
+ * over the domain of cell (iCell,jCell).
+ *
+ * \note This subroutine doesn't check that the domains are the same! It's the caller's responsibility.
+ */
+template<class SOLN_STATE> inline
+double HighOrder2D<SOLN_STATE>::ComputeReconstructionsErrorL2(const int &iCell, const int &jCell,
+							      const HighOrder2D<Soln_State> & Obj,
+							      const unsigned &parameter, const int &digits){
+
+  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
+  Vector2D _dummy_Position(0.0); // defined only to provide the type of the position vector where the function is evaluated.
+
+  return IntegrateOverTheCell(iCell,jCell,
+			      square_error_function(wrapped_member_function_one_parameter(&Obj,
+											  &ClassType::SolutionAtLocation,
+											  _dummy_Position,
+											  iCell, jCell,
+											  parameter,
+											  _dummy_result),
+						    wrapped_member_function_one_parameter(this,
+											  &ClassType::SolutionAtLocation,
+											  _dummy_Position,
+											  iCell, jCell,
+											  parameter,
+											  _dummy_result),
+						    _dummy_result),
+			      digits, _dummy_result);
+}
 
 /*! 
  * Output the current object to the 

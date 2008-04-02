@@ -2872,8 +2872,8 @@ int AdvectDiffuse2D_Quad_Block::UnloadReceiveBuffer_Flux_F2C(double *buffer,
  * This subroutine is used only for debugging!
  ***********************************************************/
 void AdvectDiffuse2D_Quad_Block::Output_Tecplot_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
-							       const AdvectDiffuse2D_Input_Parameters &IP,
-							       const int &Block_Number){
+							   const AdvectDiffuse2D_Input_Parameters &IP,
+							   const int &Block_Number){
  
   int i, j, i_output_title;
   char prefix[256], extension[256], extension2[20], output_file_name[256];
@@ -2974,8 +2974,8 @@ void AdvectDiffuse2D_Quad_Block::Output_Tecplot_Debug_Mode(AdaptiveBlock2D_List 
  * This subroutine is used only for debugging!
  ***********************************************************/
 void AdvectDiffuse2D_Quad_Block::Output_Cells_Tecplot_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
-								     const AdvectDiffuse2D_Input_Parameters &IP,
-								     const int &Block_Number){
+								 const AdvectDiffuse2D_Input_Parameters &IP,
+								 const int &Block_Number){
 
   int i, j, i_output_title;
   char prefix[256], extension[256], extension2[20], output_file_name[256];

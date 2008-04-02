@@ -31,7 +31,7 @@
 #define SINUSOIDAL_III               2
 #define SINUSOIDAL_IV                3
 #define CONSTANT_INFLOW_FIELD        4
-
+#define HYPERBOLIC_TANGENT_I         5
 
 
 
@@ -282,5 +282,60 @@ public:
 private:
   double A;			//!< Constant parameter of the inflow field
 };
+
+/*! 
+ * \class Hyperbolic_Tangent_I_InflowField
+ * 
+ * \brief Implements an inflow field with the following expression: 
+ *        \f$ Inflow(x,y) = M \left{ A - \tanh^2 [S (r - r_{0}) ] \right} \f$ \n
+ *
+ * where r is the location of interest, \f$r_{0}\f$ is the reference point,
+ * M is the magnitude of the function, A is a shift coefficient and S controls the
+ * steepness. \n
+ */
+class Hyperbolic_Tangent_I_InflowField: public InflowFieldBasicType{
+public:
+  
+  //! Basic Constructor
+  Hyperbolic_Tangent_I_InflowField(void): ReferencePoint(0.0),
+					  A(1.0), Magnitude(1.0),
+					  Steepness(1.0)
+  { 
+
+    InflowFieldName = "Hyperbolic Tan 1, Inflow(x,y) = M*[A - tanh^2[S*(r - r0)] ]";	// Name the inflow field
+  }
+  
+  //! Return value of the inflow field
+  double EvaluateSolutionAt(const double &x, const double &y) const;
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+  
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+  
+private:
+  Vector2D ReferencePoint;	//!< 2D-space location used as reference for the field
+  double A;			//!< Constant parameter of the inflow field
+  double Magnitude, Steepness; 	//!< Function magnitude and steepness control
+};
+
+//! Return value of the inflow field
+inline double Hyperbolic_Tangent_I_InflowField::EvaluateSolutionAt(const double &x, const double &y) const {
+
+  double R;
+  double Func;
+
+  // Calculate the distance R relative to the reference point
+  R = abs(Vector2D(x,y) - ReferencePoint);
+
+  Func  = tanh(Steepness * R);
+  Func *= Func;
+
+  return Magnitude * (A - Func); 
+}
 
 #endif
