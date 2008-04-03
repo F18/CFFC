@@ -756,7 +756,7 @@ ICs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
 	      double tau_fsd = W[i][j][k].HeatRelease_Parameter();
 
 	      if (Grid.Cell[i][j][k].Xc.z <=IPs.Fresh_Gas_Height) {
-       	      W[i][j][k].C = (erf((rr-IPs.Grid_IP.Radius_Bunsen_Burner_Fuel_Line)*4000.0)+1.0)/2.0;
+	      W[i][j][k].C = (erf((rr-IPs.Grid_IP.Radius_Bunsen_Burner_Fuel_Line)*4000.0)+1.0)/2.0;
        	      W[i][j][k].rho = IPs.Turbulence_IP.Reactants_Density/(1.0+tau_fsd*W[i][j][k].C);
        	      W[i][j][k].Fsd = 4000.0*exp(-sqr((rr-IPs.Grid_IP.Radius_Bunsen_Burner_Fuel_Line)*4000.0))/sqrt(PI)/W[i][j][k].rho;
 	      W[i][j][k].v.x = IPs.Turbulence_IP.Reactants_Density*IPs.Turbulence_IP.Laminar_Flame_Speed/W[i][j][k].rho*cos_theta;
@@ -771,13 +771,13 @@ ICs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
               }else if (rr<=IPs.Grid_IP.Radius_Bunsen_Burner_Fuel_Line) {
        	      W[i][j][k].C = (erf((Grid.Cell[i][j][k].Xc.z-IPs.Fresh_Gas_Height)*4000.0)+1.0)/2.0;
        	      W[i][j][k].rho = IPs.Turbulence_IP.Reactants_Density/(1.0+tau_fsd*W[i][j][k].C);
-       	      W[i][j][k].Fsd = 2500.0*exp(-sqr((Grid.Cell[i][j][k].Xc.z-IPs.Fresh_Gas_Height)*4000.0))/sqrt(PI)/W[i][j][k].rho;
+       	      W[i][j][k].Fsd = 1500.0*exp(-sqr((Grid.Cell[i][j][k].Xc.z-IPs.Fresh_Gas_Height)*4000.0))/sqrt(PI)/W[i][j][k].rho;
 	      W[i][j][k].v.x = 0.0;
 	      W[i][j][k].v.y = 0.0;
 	      W[i][j][k].v.z = IPs.Mean_Velocity.z+IPs.Turbulence_IP.Reactants_Density*IPs.Turbulence_IP.Laminar_Flame_Speed/W[i][j][k].rho;
 
 	      }else if (Grid.Cell[i][j][k].Xc.z > IPs.Fresh_Gas_Height || 
-                       (Grid.Cell[i][j][k].Xc.z <= IPs.Fresh_Gas_Height && rr > IPs.Grid_IP.Radius_Bunsen_Burner_Fuel_Line)) {
+			(Grid.Cell[i][j][k].Xc.z <= IPs.Fresh_Gas_Height && rr > IPs.Grid_IP.Radius_Bunsen_Burner_Fuel_Line)) {
 	      W[i][j][k].C = 1.0;
        	      W[i][j][k].rho = IPs.Turbulence_IP.Reactants_Density/(1.0+tau_fsd);
        	      W[i][j][k].Fsd = 0.0;

@@ -460,7 +460,7 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
 
   } else if (strcmp(code, "Radius_Bunsen_Burner_Fuel_Line") == 0) {
      i_command = 3031;
-     value >> Radius_Bunsen_Burner;
+     value >> Radius_Bunsen_Burner_Fuel_Line;
      if (Radius_Bunsen_Burner <ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Radius_Bunsen_Burner") == 0) {
