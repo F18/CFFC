@@ -45,24 +45,9 @@ public:
   template<typename Input_Parameters_Type>
   void OutputErrorNormsTecplot(const Input_Parameters_Type & IP);
   
-
-  //   template<typename Input_Parameters_Type>
-  //   void AssessSolutionAccuracy(const Input_Parameters_Type & IP,
-  // 			      typename Quad_Soln_Block::HighOrderType & 
-  // 			      (Quad_Soln_Block::*AccessToHighOrderVar)(void) = 
-  // 			      &Quad_Soln_Block::CellHighOrder,
-  // 			      double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
-  // 									   const Vector2D &,
-  // 									   const unsigned int &) const = 
-  // 			      &Quad_Soln_Block::PiecewiseLinearSolutionAtLocation);
-  
-  //   template<typename Quad_Soln_Block, typename Function_Object_Type>
-  //   static void ComputeSolutionErrorsHighOrder(Quad_Soln_Block * SolnBlk,
-  // 					     Function_Object_Type FuncObj,
-  // 					     const unsigned parameter,
-  // 					     typename Quad_Soln_Block::HighOrderType & 
-  // 					     (Quad_Soln_Block::*AccessToHighOrderVar)(void) = 
-  // 					     &Quad_Soln_Block::CellHighOrder);
+  void ComputeSolutionErrorsHighOrder(const unsigned int &parameter,
+				      const unsigned int &accuracy_digits,
+				      const unsigned short int &Pos = 0) throw(ArgumentNullException);
 
   void ComputeSolutionErrors(const unsigned int &parameter,
 			     const unsigned int &accuracy_digits,
@@ -209,12 +194,56 @@ void AccuracyAssessment2D<Quad_Soln_Block>::OutputErrorNormsTecplot(const Input_
  * set in the Quad_Soln_Block.
  *
  * \param parameter the state variable which is used for computing the errors
+ * \accuracy_digits the number of exact digits with which the error is sought
+ * \param AccessToHighOrderVars Quad_Soln_Block member function which returns the 
+ *                              array of high-order objects in the block.
+ * \param Pos  The specific high-order object which is used to compute the error.
+ * \throw ArgumentNullException when the exact solution pointer is NULL
+ */
+template<typename Quad_Soln_Block> inline
+void AccuracyAssessment2D<Quad_Soln_Block>::
+ComputeSolutionErrorsHighOrder(const unsigned int &parameter,
+			       const unsigned int &accuracy_digits,
+			       const unsigned short int &Pos)
+  throw(ArgumentNullException)
+{
+
+  // Set the type of the returned value
+  double _dummy_param(0.0);
+  
+  if (SolnBlk->ExactSolution()->IsExactSolutionSet()){  // exact solution is set
+
+    // Compute the errors
+    SolnBlk->HighOrderVariable(Pos).ComputeSolutionErrors(wrapped_member_function(SolnBlk->ExactSolution(),
+										  &Quad_Soln_Block::
+										  Exact_Solution_Type::Solution,
+										  _dummy_param),
+							  parameter,
+							  accuracy_digits);
+    
+    // Write the final information in the designated variables
+    L1() = SolnBlk->HighOrderVariable(Pos).L1();
+    L2() = SolnBlk->HighOrderVariable(Pos).L2();
+    LMax() = SolnBlk->HighOrderVariable(Pos).LMax();
+    TotalBlockArea = SolnBlk->HighOrderVariable(Pos).BlockArea();
+    CellsUsed = SolnBlk->HighOrderVariable(Pos).UsedCells();
+    
+  } else {
+    // exact solution is not set
+    throw ArgumentNullException("AccuracyAssessment2D::ComputeSolutionErrors() ERROR! There is no exact solution set!");
+  }  
+}
+
+/*!
+ * Compute solution errors relative to the exact solution
+ * set in the Quad_Soln_Block.
+ *
+ * \param parameter the state variable which is used for computing the errors
  * \param ComputeSolutionAt Quad_Soln_Block member function which returns the solution 
  *                          at a given location (PointOfInterest) using the reconstruction 
  *                          of cell (i,j) for a specified parameter.
  * \throw ArgumentNullException when the exact solution pointer is NULL
  *
- * \todo Add proper treatment of curved boundaries!!!
  */
 template<typename Quad_Soln_Block> inline
 void AccuracyAssessment2D<Quad_Soln_Block>::

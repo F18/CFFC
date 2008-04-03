@@ -1483,8 +1483,10 @@ void HighOrder2D<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const i
  * Compute the integral over the block geometry of the error between the
  * reconstructed polynomial and the function provided as input. 
  *
- * \param [in] FuncObj  The function relative to which the error is evaluated
- * \param [in] parameter The parameter for which the reconstruction is evaluated
+ * \param [in] FuncObj  The function relative to which the error is evaluated.
+ *                      It is assumed that the exact solution can take two arguments
+ *                      (x & y position) and returns a double.
+ * \param [in] parameter The state variable which is used for computing the errors
  * \param [in] digits  The targeted number of exact digits with which the integral is evaluated
  */
 template<class SOLN_STATE> 

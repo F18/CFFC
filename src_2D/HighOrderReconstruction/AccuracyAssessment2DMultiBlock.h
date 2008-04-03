@@ -345,8 +345,15 @@ int AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracyBasedOnExactSolution(
     // all the blocks on that CPU
     for (int nb = 0; nb < Soln_Block_List.Nblk; ++nb) {
       if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
-	SolnBlk[nb].AssessAccuracy.ComputeSolutionErrors(IP.Accuracy_Assessment_Parameter,
-							 IP.Accuracy_Assessment_Exact_Digits);
+	if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+	  // Use the first high-order object to assess the accuracy
+	  SolnBlk[nb].AssessAccuracy.ComputeSolutionErrorsHighOrder(IP.Accuracy_Assessment_Parameter,
+								    IP.Accuracy_Assessment_Exact_Digits);
+	} else {
+	  // Use the low-order reconstruction
+	  SolnBlk[nb].AssessAccuracy.ComputeSolutionErrors(IP.Accuracy_Assessment_Parameter,
+							   IP.Accuracy_Assessment_Exact_Digits);
+	}
 	
 	L1() += SolnBlk[nb].AssessAccuracy.L1();
 	L2() += SolnBlk[nb].AssessAccuracy.L2();
