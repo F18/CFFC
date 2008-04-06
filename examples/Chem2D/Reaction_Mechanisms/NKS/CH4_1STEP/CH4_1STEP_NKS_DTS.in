@@ -1,0 +1,221 @@
+# 1D Premixed Flame Test Case
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type=
+Explicit_Predictor_Corrector
+#N_Stage=
+#4
+#Residual_Smoothing_Epsilon = 
+#0.125
+#Residual_Smoothing_Gauss_Seidel_Iterations =
+#2
+##########################
+## 1 Yes, 0, No
+Freeze_Limiter =
+0
+# Relative to L2 Norm, so if rhoU will be much
+# higher than say just rho??
+Freeze_Limiter_Residual_Level = 
+1e4
+Residual_Variable =
+2
+############################
+# NKS PARAMETERS
+############################
+GMRES_Overlap =
+0
+GMRES_Tolerance =
+1.0e-02
+NKS_Overall_Tolerance =
+1.0e-03
+GMRES_Block_Preconditioner = 
+ILUK
+#Diagonal
+#ILUK
+GMRES_ILUK_Level_of_Fill = 
+4
+# Implict Euler Startup
+NKS_Finite_Time_Step =
+OFF
+NKS_Finite_Time_Step_Initial_CFL =
+1e12
+#NKS_Fintie_Time_Step_Max_CFL=
+#100
+GMRES_Normalization = 
+ON
+GMRES_Check=
+OFF 
+Jacobian_Order =
+Source_Terms_Only
+#Second_Order_Diamond_Path_with_Roe
+#First_Order_Inviscid_Roe
+#################################
+# Dual-Time Stepping (Implicit Time Accurate)
+NKS_Dual_Time_Stepping =
+ON
+NKS_Physical_Time_Integration =
+Second_Order_Backwards
+#
+#NKS_Physical_Time_CFL =
+#0.1
+NKS_Physical_Time_Step=
+2e-8
+# Outer loop Max steps 
+Maximum_Number_of_NKS_DTS_Steps =
+500
+DTS_Time_Accurate_Plot_Frequency =
+1
+###############################
+Time_Max =
+0.005
+# 
+###############################
+# 0 for steady, 1 unsteady
+Time_Accurate= 
+0
+# 0(global) ,1 (local), 2(PI), 3 (Pre) ,4 (SI) ,5 (Pre&SI), 6(Pre*PI)
+Local_Time_Stepping=
+1
+# Least_Squares, Green_Gauss
+Reconstruction_Type=
+Green_Gauss
+#
+Limiter_Type= 
+Venkatakrishnan
+Flux_Function_Type=
+Roe
+###############################
+#
+###############################
+#Flow_Type=
+#Laminar
+#Viscous_Flux_Evaluation_Type=
+#Diamond_Path_Green_Gauss
+#########################
+# Set initial conditions
+#########################
+ICs_Type= 
+Uniform
+Mach_Number=
+0.0
+#Mach_Number_Reference=
+#0.01 0.01
+########################
+Grid_Type=
+Square
+#Box
+Box_Width=
+0.02
+Box_Height=
+0.02
+Number_of_Cells_Idir= 
+8
+Number_of_Cells_Jdir=
+8
+Number_of_Blocks_Idir= 
+1
+Number_of_Blocks_Jdir=
+1
+##############################
+# AMR
+###########################
+AMR=
+OFF
+AMR_Frequency =
+0
+Number_of_Initial_Mesh_Refinements =
+0
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Boundary_Mesh_Refinements =
+0
+Maximum_Refinement_Level =
+3
+Minimum_Refinement_Level =
+1
+Threshold_for_Refinement =
+0.50
+Threshold_for_Coarsening =
+0.10
+Number_of_Blocks_Per_Processor=
+100
+# CRITERIA
+Refinement_Criteria_Gradient_Density=
+ON
+Refinement_Criteria_Divergence_Velocity=
+OFF
+Refinement_Criteria_Curl_Velocity=
+OFF
+Refinement_Criteria_Gradient_Temperature=
+OFF
+Refinement_Criteria_Gradient_CH4=
+OFF
+Refinement_Criteria_Gradient_CO2=
+OFF
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number=
+0.5
+####### Explicit ###############
+Maximum_Number_of_Time_Steps=
+0
+Full_Multigrid =
+0
+####### Implicit ###############
+Maximum_Number_of_NKS_Iterations =
+20
+Maximum_Number_of_GMRES_Iterations=
+100
+GMRES_Restart =
+100
+###############################
+#
+##############################
+Output_File_Name= 
+box_NKS
+Restart_Solution_Save_Frequency=
+1000
+##################################
+# Chem2D Parameters
+#################################
+Reaction_Mechanism=
+CH4_1STEP
+Schmidt_Numbers=
+0.73 0.8 1.0 0.66 1.0
+Mass_Fractions=
+0.0551 0.2202 0.0 0.0 0.7247 
+############
+#Species =
+#6 CH4 O2 CO H2O CO2 N2
+#Mass_Fractions=
+#0.0551 0.2202 0.0 0.0 0.0 0.7247
+#################################
+# Non STD_ATM properties
+# T(K) and P(kPa)
+#################################ls
+Temperature=
+1500.00
+#################################
+# Execute program
+#################################
+Execute
+# The next section is used by the 
+# postprocessor , until terminate
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+#Write_Output_Mesh
+#Write_Mesh_Definition
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+Write_Restart
+#######################
+# Terminate program
+#######################
+Terminate
+

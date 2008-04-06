@@ -72,7 +72,10 @@ void ICs(Chem2D_Quad_Block *Soln_ptr,
   
   /* Define various reference flow states. */
   Wo[0] = Input_Parameters.Wo;
-    
+  
+  //Static so only set once..
+  Soln_ptr[0].residual_variable = Input_Parameters.i_Residual_Variable;
+
   //Assign initial data for each solution block.
   for (int i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
     if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
@@ -1384,33 +1387,6 @@ int Update_Solution_Multistage_Explicit(Chem2D_Quad_Block *Soln_ptr,
 
     return(error_flag);
 
-}
-
-/********************************************************
- * Routine: Update_Dual_Solution_States                 *
- *                                                      *
- * This routine updates solution states of the given    *
- * solution block corresponding to different times,     *
- * required in the dual time stepping.                  * 
- *                                                      *
- ********************************************************/
-int Update_Dual_Solution_States(Chem2D_Quad_Block *Soln_ptr,
-                                 AdaptiveBlock2D_List &Soln_Block_List) {
-    int i, error_flag;
- 
-    error_flag = 0;
-
-    /* Update the solution states required by the dual time stepping for each * 
-     *  solution block.                                                       */
-
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          error_flag =  Update_Dual_Solution_States(Soln_ptr[i]);
-          if (error_flag) return (error_flag);
-       }
-    }  
-    
-    return(error_flag); 
 }
 
 

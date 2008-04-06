@@ -1055,6 +1055,7 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
       Viscous_Calculations(SolnBlk);
     }
 
+    //cout<<"\n Output_Cells_Tecplot BCS commented out -FYI";
     BCs(SolnBlk,IP);
 
     Out_File << setprecision(14);
@@ -1092,6 +1093,14 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
        Out_File << "\"T\" \\ \n"
 	        << "\"M\" \\ \n"
                 << "\"R\" \\ \n"
+		<< "\"rho*H\"  \\ \n"  
+		<<"\"h\" \\ \n"
+		<<"\"h_s\" \\ \n"
+		<<"\"h_ref\" \\ \n"
+		<<"\"rho*E\" \\ \n"
+		<< "\"e\" \\  \n" 
+		<< "\"e_s\" \\ \n"
+		<< "\"e_ref\" \\ \n"
 	        << "\"viscosity\" \\ \n"
 	        << "\"thermal conduct\" \\ \n"
 	        << "\"Prandtl\" \\ \n";
@@ -1181,7 +1190,9 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 		    << " " << SolnBlk.U[i][j].theta<< " " << SolnBlk.U[i][j].lambda
 		    << " " << SolnBlk.W[i][j].T()
 		    << " " << SolnBlk.W[i][j].v.abs()/SolnBlk.W[i][j].a() 
-		    << " " << SolnBlk.W[i][j].Rtot()
+		    << " " << SolnBlk.W[i][j].Rtot() 
+		    << " " << SolnBlk.W[i][j].H() <<" "<< SolnBlk.W[i][j].h() <<" "<< SolnBlk.W[i][j].hs()<<" "<< SolnBlk.W[i][j].href()
+		    << " " << SolnBlk.W[i][j].E() <<" "<< SolnBlk.W[i][j].e() <<" "<< SolnBlk.W[i][j].es()<<" "<< SolnBlk.W[i][j].eref()
 		    << " " << SolnBlk.W[i][j].mu()
 		    << " " << SolnBlk.W[i][j].kappa()
 		    << " " << SolnBlk.U[i][j].Prandtl(); 
@@ -2005,15 +2016,15 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	      SolnBlk.W[i][j].v.x = ZERO;
 	    }
 	    //region for injected air parabolic profile
-	  } else if (SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing+tube_thickness && 
-		     SolnBlk.Grid.Cell[i][j].Xc.x <= 0.05*air_spacing + fuel_spacing+tube_thickness ){		    
-	    SolnBlk.W[i][j] = Wr;
-	    SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
-	    SolnBlk.W[i][j].v.y = ( ONE -  pow(  (SolnBlk.Grid.Cell[i][j].Xc.x - fuel_spacing - tube_thickness - 0.05*air_spacing) 
-						 /(0.05*air_spacing),TWO))*air_velocity;	  
-	    SolnBlk.W[i][j].v.x = ZERO;
+// 	  } else if (SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing+tube_thickness && 
+// 		     SolnBlk.Grid.Cell[i][j].Xc.x <= 0.05*air_spacing + fuel_spacing+tube_thickness ){		    
+// 	    SolnBlk.W[i][j] = Wr;
+// 	    SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
+//  	    SolnBlk.W[i][j].v.y = ( ONE -  pow(  (SolnBlk.Grid.Cell[i][j].Xc.x - fuel_spacing - tube_thickness - 0.05*air_spacing) 
+//  						 /(0.05*air_spacing),TWO))*air_velocity;	  
+// 	    SolnBlk.W[i][j].v.x = ZERO;
 	    //region for injected air
-	  } else if (SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing+tube_thickness && 
+	  } else if (SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing +tube_thickness && 
 		     SolnBlk.Grid.Cell[i][j].Xc.x <= air_spacing ){	
 	      SolnBlk.W[i][j] = Wr;
 	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
@@ -3844,6 +3855,7 @@ void Linear_Reconstruction_GreenGauss(Chem2D_Quad_Block &SolnBlk,
 	   
 	// Calculate slope limiters.    
       if (!SolnBlk.Freeze_Limiter) {
+
 	for ( n = 1 ; n <= NUM_VAR_CHEM2D ; ++n ) {
 	  u0Min = SolnBlk.W[i][j][n];
 	    u0Max = u0Min;
@@ -3899,9 +3911,11 @@ void Linear_Reconstruction_GreenGauss(Chem2D_Quad_Block &SolnBlk,
 	    } /* endswitch */
 	    
 	    SolnBlk.phi[i][j][n] = phi;
-	  } /* endfor */
+
+	} /* endfor */ 
+	
       } // end limiter if
-	  
+      
     } else {
       SolnBlk.dWdx[i][j].Vacuum();
       SolnBlk.dWdy[i][j].Vacuum();
@@ -5263,6 +5277,12 @@ void Linear_Reconstruction_GreenGauss_Diamond(Chem2D_Quad_Block &SolnBlk,
     SolnBlk.dWdx_faceN[i][j] = ( W_average[0]* norm[0].x +W_average[1]* norm[1].x+ W_average[2]* norm[2].x+W_average[3]* norm[3].x)/AREA;
     SolnBlk.dWdy_faceN[i][j] = ( W_average[0]* norm[0].y +W_average[1]* norm[1].y+ W_average[2]* norm[2].y+W_average[3]* norm[3].y)/AREA;  
     
+
+//     //HACK FOR NS -1 ??? so last gradient is correct ie sum cs still = 1
+//     SolnBlk.dWdx_faceN[i][j].spec[SolnBlk.dWdx_faceN[i][j].ns-1].c = ONE - SolnBlk.dWdx_faceN[i][j].sum_species(); //ensure sum;
+//     SolnBlk.dWdy_faceN[i][j].spec[SolnBlk.dWdx_faceN[i][j].ns-1].c = ONE - SolnBlk.dWdy_faceN[i][j].sum_species(); //ensure sum;
+
+
     /*************** EAST ****************************/
     
     /*Formulate the gradients of primitive parameters on the east face of cell (i, j)*/
@@ -5380,7 +5400,7 @@ void Linear_Reconstruction_GreenGauss_Diamond(Chem2D_Quad_Block &SolnBlk,
     Vector2D deltaX; 
     
     // Calculate slope limiters.  
-    if (!SolnBlk.Freeze_Limiter) {
+    if (!SolnBlk.Freeze_Limiter) {     
       for ( int n=1 ; n <= SolnBlk.NumVar(); n++ ) {
 	u0Min = SolnBlk.W[i][j][n];
 	u0Max = u0Min;
@@ -5436,8 +5456,10 @@ void Linear_Reconstruction_GreenGauss_Diamond(Chem2D_Quad_Block &SolnBlk,
 	} /* endswitch */
 	
 	SolnBlk.phi[i][j][n] = phi;
-      } /* endfor */
+	
+      } /* endfor */              
     }//end limiter if 
+    
   } else {
     SolnBlk.dWdx_faceN[i][j].Vacuum();
     SolnBlk.dWdx_faceS[i][j].Vacuum();
@@ -6213,6 +6235,9 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	    (SolnBlk.phi[i+1][j]^SolnBlk.dWdx[i+1][j])*dX.x +
 	    (SolnBlk.phi[i+1][j]^SolnBlk.dWdy[i+1][j])*dX.y;	
 	  
+	  Wr.spec[Wr.ns-1].c = ONE - Wr.sum_species(); //ensure sum;
+
+
 	  if (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION) {
 	    Wl = Reflect(Wr, SolnBlk.Grid.nfaceW(i+1, j));
 	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_FREE_SLIP_ISOTHERMAL) {
@@ -6260,7 +6285,8 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
 	  Wl = SolnBlk.W[i][j] + 
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
-	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;	    
+	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
+	  Wl.spec[Wl.ns-1].c = ONE - Wl.sum_species(); //ensure sum;	    
 	  if (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION) {
 	    Wr = Reflect(Wl, SolnBlk.Grid.nfaceE(i, j));   
 	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_FREE_SLIP_ISOTHERMAL) {
@@ -6301,11 +6327,14 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
 	  Wl = SolnBlk.W[i][j] + 
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
-	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
+	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y; 
+	  Wl.spec[Wl.ns-1].c = ONE - Wl.sum_species(); //ensure sum;
 	  dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
 	  Wr = SolnBlk.W[i+1][j] + 
 	    (SolnBlk.phi[i+1][j]^SolnBlk.dWdx[i+1][j])*dX.x +
-	    (SolnBlk.phi[i+1][j]^SolnBlk.dWdy[i+1][j])*dX.y;	       
+	    (SolnBlk.phi[i+1][j]^SolnBlk.dWdy[i+1][j])*dX.y;		  
+	  Wr.spec[Wr.ns-1].c = ONE - Wr.sum_species(); //ensure sum;
+
 	} /* endif */
 	
 	  // Spacing for Preconditioner 
@@ -6464,13 +6493,6 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  SolnBlk.dUdt[i][j][0] += SolnBlk.W[i][j].Sg();
 	}   
 	
-	/* Include physical time derivative for dual time stepping */
-	if (Input_Parameters.Dual_Time_Stepping) {
-	  //cout << "Source[0] dual time" << endl;
-	  SolnBlk.dUdt[i][j][0] -= SolnBlk.W[i][j].S_dual_time_stepping(SolnBlk.U[i][j], SolnBlk.Ut[i][j], 
-									SolnBlk.Uold[i][j], 
-									dTime, Input_Parameters.first_step);
-	}  
 	/*****************************************/
 	/*****************************************/
 	
@@ -6513,6 +6535,7 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  Wr = SolnBlk.W[i][j+1] +
 	    (SolnBlk.phi[i][j+1]^SolnBlk.dWdx[i][j+1])*dX.x +
 	    (SolnBlk.phi[i][j+1]^SolnBlk.dWdy[i][j+1])*dX.y;
+	  Wr.spec[Wr.ns-1].c = ONE - Wr.sum_species(); //ensure sum;
 	  if (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION) {
 	    Wl = Reflect(Wr, SolnBlk.Grid.nfaceS(i, j+1)); 
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_FREE_SLIP_ISOTHERMAL) {
@@ -6568,6 +6591,7 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  Wl = SolnBlk.W[i][j] + 
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
+	  Wl.spec[Wl.ns-1].c = ONE - Wl.sum_species(); //ensure sum;
 	  if (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION) {
 	    Wr = Reflect(Wl, SolnBlk.Grid.nfaceN(i, j));	
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_FREE_SLIP_ISOTHERMAL) {
@@ -6609,10 +6633,12 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  Wl = SolnBlk.W[i][j] + 
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
+	  Wl.spec[Wl.ns-1].c = ONE - Wl.sum_species(); //ensure sum;
 	  dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
 	  Wr = SolnBlk.W[i][j+1] +
 	    (SolnBlk.phi[i][j+1]^SolnBlk.dWdx[i][j+1])*dX.x +
 	    (SolnBlk.phi[i][j+1]^SolnBlk.dWdy[i][j+1])*dX.y;
+	  Wr.spec[Wr.ns-1].c = ONE - Wr.sum_species(); //ensure sum;
 	} /* endif */
 	  
 	// Spacing for Preconditioner 
@@ -6776,6 +6802,7 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 //       SolnBlk.set_v_zero();
 //     }
 
+  return 0;
 }
 
 /********************************************************
@@ -7826,26 +7853,6 @@ int Update_Solution_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
   /* Solution successfully updated. */
   return (0);
   
-}
-/********************************************************
- * Routine: Update_Dual_Solution_States                 *
- *                                                      *
- * This routine updates solution states of the given    *
- * solution block at different times, required in the   *
- * dual time stepping.                                  * 
- *                                                      *
- ********************************************************/
-int Update_Dual_Solution_States(Chem2D_Quad_Block &SolnBlk) {
-
-  for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-    for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-      SolnBlk.Uold[i][j] = SolnBlk.Ut[i][j];  // Solution at time t(n-1)
-      SolnBlk.Ut[i][j] = SolnBlk.U[i][j];     // Solution at time t(n)
-    }
-  }
-
-  /* Solution successfully updated. */
-  return (0);
 }
 
 /**********************************************************************

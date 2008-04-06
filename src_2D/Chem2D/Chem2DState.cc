@@ -1996,35 +1996,39 @@ Chem2D_cState Chem2D_pState::Sw(int &REACT_SET_FLAG, const int Flow_Type) const 
 
 }
 
-/************* Chemical Source Term Jacobian ****************************/
+/************* Chemical Source Term Jacobian ****************************
+ * Analytic                                                             *
+ ************************************************************************/
 void Chem2D_pState::dSwdU(DenseMatrix &dSwdU, const int &Flow_Type,const int &solver_type) const {
-  React.dSwdU<Chem2D_pState,Chem2D_cState>(dSwdU,*this,false, Flow_Type,solver_type);
+  React.dSwdU<Chem2D_pState,Chem2D_cState>(dSwdU,*this,false, Flow_Type,solver_type);  //Analytical in Reactions
+  //dSwdU_FD(dSwdU,Flow_Type);
 }
 
+/************* Chemical Source Term Jacobian ****************************
+ * Finite Difference                                                    *
+ ************************************************************************/
 void Chem2D_pState::dSwdU_FD(DenseMatrix &dSwdU, const int Flow_Type) const{
 
-  Chem2D_cState A,C;
-  Chem2D_cState B,D;
-  double perturb = 1e-6; //5e-6;
+  Chem2D_cState A(*this),C(*this);
+  Chem2D_cState B,D; 
+  static const double perturb = numeric_limits<double>::epsilon();  // 1.0E-12;
   double a;
+  D = C.W().Sw(React.reactset_flag,Flow_Type); 
 
-  for(int jcol=0; jcol<NUM_VAR_CHEM2D-1; jcol++){    
-    A =U(*this);  C=U(*this);
-    a =  perturb*max(ONE,A[jcol+1]);
+  for(int jcol=NUM_VAR_CHEM2D-ns; jcol<NUM_VAR_CHEM2D-1; jcol++){    
+    a = sqrt( perturb*fabs(A[jcol+1]) + perturb )/1000.0; //perturb*max(ONE,A[jcol+1]);
 
-    if( jcol <NUM_CHEM2D_VAR_SANS_SPECIES) {
-      A[jcol+1] += a;
- //      C[jcol+1] -= perturb*max(ONE,C[jcol+1]);
-    } else {                                       //enforce sum(ci) = 1;
-      A[jcol+1] += a;
-      A[NUM_VAR_CHEM2D] -= a;            
-//       if(C[jcol+1] - a > ZERO) {  C[jcol+1] -= a; C[NUM_VAR_CHEM2D] += a;}      
-    }   
-    B = A.W().Sw(React.reactset_flag,Flow_Type);   D = C.W().Sw(React.reactset_flag,Flow_Type);
-    for(int irow=0; irow<NUM_VAR_CHEM2D-1; irow++){
-      //dSwdU(irow,jcol) += ( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE, U(*this)[jcol+1]));      
+    A[jcol+1] += a;
+    A[NUM_VAR_CHEM2D] -= a;            
+    B = A.W().Sw(React.reactset_flag,Flow_Type);   
+
+    for(int irow=NUM_VAR_CHEM2D-ns; irow<NUM_VAR_CHEM2D-1; irow++){
       dSwdU(irow,jcol) += ( B[irow+1] - D[irow+1])/a;      
     }
+    
+    A[jcol+1] -= a; 
+    A[NUM_VAR_CHEM2D] += a;   
+
   } 
 
 }
@@ -2035,11 +2039,11 @@ double Chem2D_pState::dSwdU_max_diagonal(const int &Preconditioned,
 					 const int &solver_type) const {
 
   //this is expensive as I am recalculating the whole Jacobain
-  //as above, but its really easy to setup.
-  //should change later to only calculate the diagonal terms!!!!
+  //as above, but its easy to setup.
+  //should flag to only calculate the diagonal terms!!!!
 
   double max_diagonal =ONE;
-  DenseMatrix dSwdU(NUM_VAR_CHEM2D-1,NUM_VAR_CHEM2D-1,ZERO);
+  DenseMatrix dSwdU(NUM_VAR_CHEM2D-1,NUM_VAR_CHEM2D-1,ZERO);  //TEMP!
   React.dSwdU<Chem2D_pState,Chem2D_cState>(dSwdU,*this,true,flow_type_flag,solver_type);
 
 //   if(Preconditioned){
@@ -2083,33 +2087,6 @@ Chem2D_cState Chem2D_pState::Sg(void) const {
 void Chem2D_pState::dSgdU(DenseMatrix &dSgdU) const {
   dSgdU(2,0) += gravity_z;
   dSgdU(3,2) += gravity_z;
-}
-
-/*****************************************************************
- *****************************************************************
- ** Chem2D_pState::S_dual_time_stepping                         **
- **                                                             **
- **                -- Source Terms for dual time stepping.      **
- **                                                             **
- *****************************************************************
- *****************************************************************/
-Chem2D_cState Chem2D_pState::S_dual_time_stepping(const Chem2D_cState &U,
-                                                  const Chem2D_cState &Ut,
-                                                  const Chem2D_cState &Uold,
-                                                  const double &dTime,
-                                                  const int &first_step) const {
-Chem2D_cState NEW;
- if (first_step) {
-   // Implicit Euler
-   //cout << "\n First step, Implicit Euler" << endl;
-   NEW = (U - Ut)/dTime;
- } else {
-   // Second-order backward implicit
-   //cout << "\n Second-order backward implicit" << endl;
-   NEW = (THREE*U - FOUR*Ut + Uold)/(TWO*dTime);
- }
- 
-  return NEW; 
 }
 
 
@@ -2901,26 +2878,25 @@ Chem2D_pState BC_2DFlame_Inflow(const Chem2D_pState &Wi,
 				const Vector2D &norm_dir,
 				const double &radius,
 				const double &physical_time){ 
-  return Wo;
+//   return Wo;
   
-//    //fixed rho, v, p, and species
-//   Chem2D_pState Wnew(Wo);
-//   //Wnew.v.x = Wi.v.x;//let radial velocity flucuate
+   //fixed rho, v, p, and species
+  Chem2D_pState Wnew(Wo);
   
-//   //Periodic fuel velocity for Unsteady
-//   // Vz = fuel_max*( 1 + r^2/R^2)*(1 + alpha*sin(omega*t))
-//   // R = 0.002,
-//   // fuel_max = 70 cm/s
-//   // alpha = 0.5 (amplitude)
-//   // omega = 2*pi*freq
-//   // freq = 20 (Hz)
-//   // t = physical time (s)
-//   if (radius <= 0.002 ){  //fuel spacing 0.002m    
-//     Wnew.v.y = 0.70 * ( ONE - (radius*radius)/(0.002*0.002))
-//       *(ONE + 0.5*sin( 2*PI*20*physical_time));    // physical_time + 0.0375 to go from 35 -> 35         
-//   }
+  //Periodic fuel velocity for Unsteady ( Vz if physical_time = 0)
+  // Vz = fuel_max*( 1 + r^2/R^2)*(1 + alpha*sin(omega*t))
+  // R = 0.002,
+  // fuel_max = 70 cm/s
+  // alpha = 0.5 (amplitude)
+  // omega = 2*pi*freq
+  // freq = 20 (Hz)
+  // t = physical time (s)
+  if (radius <= 0.002 ){  //fuel spacing 0.002m    
+    Wnew.v.y = 0.70 * ( ONE - (radius*radius)/(0.002*0.002))
+      *(ONE + 0.5*sin( 2*PI*20*physical_time));    // physical_time + 0.0375 to go from 35 -> 105
+  }
 
-//  return Wnew;
+ return Wnew;
  
 }
 
@@ -3283,6 +3259,7 @@ Chem2D_pState RoeAverage(const Chem2D_pState &Wl,
     double Hl, Hr, srhol, srhor;
     double Ha, ha;
     Chem2D_pState Temp;
+    double sumspec(ZERO);
 
     /* Determine the left and right state specific enthalpies
        and square roots of the density. */
@@ -3300,8 +3277,10 @@ Chem2D_pState RoeAverage(const Chem2D_pState &Wl,
     Temp.omega= (srhol*Wl.omega + srhor*Wr.omega)/(srhol+srhor);
     for(int i=0; i<Wl.ns; i++){
       Temp.spec[i].c = (srhol*Wl.spec[i].c + srhor*Wr.spec[i].c)/(srhol+srhor);
+      //sumspec += Temp.spec[i].c;
     }
- 
+    //Temp.spec[Temp.NUM_VAR_CHEM2D].c = ONE - sumspec; // enforce sum of cs =1
+
     Ha = (srhol*Hl+srhor*Hr)/(srhol+srhor);
     ha = Ha - HALF*(sqr(Temp.v.x)+sqr(Temp.v.y));
 

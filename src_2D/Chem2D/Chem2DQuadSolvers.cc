@@ -57,15 +57,11 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   time_t start_explicit, end_explicit;
 
   /* Other local solution variables. */
-  int number_of_time_steps, first_step, last_step,
+  int number_of_time_steps, first_step,
     command_flag, error_flag, line_number, 
     i_stage, limiter_freezing_off;
   
   double Time, dTime, initial_residual_l2_norm;
-
-  /* Variables used for dual time stepping. */
-  int n_inner = 0, n_inner_temp = 0;
-  const double dual_eps = 1.0E-3;  // 5.0E-4;
 
   /*************************************************************************
    ******************** INPUT PARAMETERS  **********************************
@@ -242,7 +238,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     error_flag = Send_All_Messages(Local_SolnBlk, 
 				   List_of_Local_Solution_Blocks,
 				   NUM_COMP_VECTOR2D,
-				   ON);     
+				   ON);
 
     /****** Else apply initial conditions from input parameters *******/
   } else {   
@@ -470,9 +466,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       if (!batch_flag) { cout << "\n\n Beginning Explicit Chem2D computations on "
 			      << Date_And_Time() << ".\n\n"; time(&start_explicit); /*start_explicit = clock();*/ }
 
-     last_step = 0;
-     int i=1; //markthis
-
      while ((!Input_Parameters.Time_Accurate &&
 	     number_of_time_steps < Input_Parameters.Maximum_Number_of_Time_Steps) ||
 	    (Input_Parameters.Time_Accurate && Time < Input_Parameters.Time_Max)) {
@@ -554,51 +547,35 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
            } /* endif */
         } /* endif */
 
-// 	n_inner_temp = n_inner;
-//         n_inner = 0;
-
-// 	do{
-	  /********************** TIME STEPS **************************************
+	/********************** TIME STEPS **************************************
            Determine local and global time steps. 
-	  *************************************************************************/
+	*************************************************************************/
 
-	  dTime = CFL(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
-	  if (!Input_Parameters.Dual_Time_Stepping) {
-	    // Find global minimum time step for all processors.
-	    dTime = CFFC_Minimum_MPI(dTime);
-	  } else {
-            // Assign physical time step for dual time stepping.
-            if (n_inner == 0) { 
-	      dTime = Input_Parameters.Physical_CFL_Number*CFFC_Minimum_MPI(dTime);
-              Input_Parameters.dTime = dTime;              
-	    }
-            dTime = Input_Parameters.dTime;
-	  }
+	dTime = CFL(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
+	// Find global minimum time step for all processors.
+	dTime = CFFC_Minimum_MPI(dTime);
 
-	  if (Input_Parameters.Time_Accurate) {
-	    if ((Input_Parameters.i_Time_Integration != 
-		 TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING) &&
-		(Time + Input_Parameters.CFL_Number*dTime > Input_Parameters.Time_Max)) {
-	      dTime = (Input_Parameters.Time_Max-Time)/Input_Parameters.CFL_Number;
-	      last_step = 1;
-	       
-	    } else if (Time + Input_Parameters.CFL_Number*dTime*
-		       MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
-						      Input_Parameters.N_Stage,
-						      Input_Parameters.i_Limiter) > 
-		       Input_Parameters.Time_Max && (!Input_Parameters.Dual_Time_Stepping)) {
-	      
-	      dTime = (Input_Parameters.Time_Max-Time)/
-		(Input_Parameters.CFL_Number*
-		 MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
-						Input_Parameters.N_Stage,
-						Input_Parameters.i_Limiter)); 
-	      last_step = 1;
+	if (Input_Parameters.Time_Accurate) {
+	  if ((Input_Parameters.i_Time_Integration != 
+	       TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING) &&
+	      (Time + Input_Parameters.CFL_Number*dTime > Input_Parameters.Time_Max)) {
+	    dTime = (Input_Parameters.Time_Max-Time)/Input_Parameters.CFL_Number;
+	    
+	  } else if (Time + Input_Parameters.CFL_Number*dTime*
+		     MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
+						    Input_Parameters.N_Stage,
+						    Input_Parameters.i_Limiter) > 
+		     Input_Parameters.Time_Max) {
+	    
+	    dTime = (Input_Parameters.Time_Max-Time)/
+	      (Input_Parameters.CFL_Number*
+	       MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
+					      Input_Parameters.N_Stage,
+					      Input_Parameters.i_Limiter)); 
 	   
-	    } else if (Time + dTime > Input_Parameters.Time_Max && Input_Parameters.Dual_Time_Stepping) {
-	      dTime = Input_Parameters.Time_Max - Time;
+	  } else if (Time + dTime > Input_Parameters.Time_Max) {
+	    dTime = Input_Parameters.Time_Max - Time;
               Input_Parameters.dTime = dTime;
-              last_step = 1;
             } 
 	  } 	 
 	  
@@ -620,7 +597,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	    residual_l2_norm[q] = sqrt(CFFC_Summation_MPI(residual_l2_norm[q])); // L2 norm for all processors.
 	    residual_max_norm[q] = CFFC_Maximum_MPI(residual_max_norm[q]); // Max norm for all processors.
 	  }
-	  if (n_inner == 1) initial_residual_l2_norm = residual_l2_norm[Local_SolnBlk[0].residual_variable-1];
 	  
 	  /* Update CPU time used for the calculation so far. */
 	  processor_cpu_time.update();
@@ -628,12 +604,9 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
 	  /************************ RESTART *****************************************
           Periodically save restart solution files. 
-	  ***************************************************************************/ 
-	  if (!Input_Parameters.Dual_Time_Stepping  ||  
-	      (Input_Parameters.Dual_Time_Stepping && n_inner == 0)) {
-	    
-	    if (!first_step &&
-		number_of_time_steps%Input_Parameters.Restart_Solution_Save_Frequency == 0 ) {
+	  ***************************************************************************/ 	   
+	  if (!first_step &&
+	      number_of_time_steps%Input_Parameters.Restart_Solution_Save_Frequency == 0 ) {
 	      if (!batch_flag){
 		cout << "\n\n  Saving Chem2D solution to restart data file(s) after"
 		     << " n = " << number_of_time_steps << " steps (iterations).";
@@ -664,45 +637,42 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	      error_flag = CFFC_OR_MPI(error_flag);
 	      if (error_flag) return (error_flag);
 	      cout.flush();
-	    } 
-	  }
+	  } 
+	  
 	  
 	  /************************ PROGRESS *****************************************
            Output progress information for the calculation. 
 	  ***************************************************************************/
-	  //screen 
-	  if (!Input_Parameters.Dual_Time_Stepping || 
-	      (Input_Parameters.Dual_Time_Stepping && n_inner == 0)) {
-	    
-	    if (!batch_flag) Output_Progress_L2norm(number_of_time_steps,
-						    Time*THOUSAND, //time in ms
-						    total_cpu_time,
-						    residual_l2_norm[Local_SolnBlk[0].residual_variable-1],
-						    first_step,
-						    50);
+	  //screen 	    
+	  if (!batch_flag) Output_Progress_L2norm(number_of_time_steps,
+						  Time*THOUSAND, //time in ms
+						  total_cpu_time,
+						  residual_l2_norm[Local_SolnBlk[0].residual_variable-1],
+						  first_step,
+						  50);
 	    //residual to file
-	    if (CFFC_Primary_MPI_Processor() && !first_step) {
-	      Output_Progress_to_File(residual_file,
-				      number_of_time_steps,
-				      Time*THOUSAND,
-				      total_cpu_time,
-				      residual_l1_norm,
-				      residual_l2_norm,
-				      residual_max_norm,
-				      Local_SolnBlk[0].residual_variable,
-				      Local_SolnBlk[0].Number_of_Residual_Norms);
-	    }
-	    
-	    //time vs mass frac (time accurate) for debugging
-	    //chemical solutions with no flow ie. just nonequilibrium chemistry
-	    if (Input_Parameters.Time_Accurate && Input_Parameters.Time_Accurate_Plot_Frequency != 0){
-	      if ( (number_of_time_steps%Input_Parameters.Time_Accurate_Plot_Frequency) == 0 ){ 
-		Output_to_Time_Accurate_File(time_accurate_data_file,
-					     Time,
-					     Local_SolnBlk[0].W[2][2]);
-	      }
+	  if (CFFC_Primary_MPI_Processor() && !first_step) {
+	    Output_Progress_to_File(residual_file,
+				    number_of_time_steps,
+				    Time*THOUSAND,
+				    total_cpu_time,
+				    residual_l1_norm,
+				    residual_l2_norm,
+				    residual_max_norm,
+				    Local_SolnBlk[0].residual_variable,
+				    Local_SolnBlk[0].Number_of_Residual_Norms);
+	  }
+	  
+	  //time vs mass frac (time accurate) for debugging
+	  //chemical solutions with no flow ie. just nonequilibrium chemistry
+	  if (Input_Parameters.Time_Accurate && Input_Parameters.Time_Accurate_Plot_Frequency != 0){
+	    if ( (number_of_time_steps%Input_Parameters.Time_Accurate_Plot_Frequency) == 0 ){ 
+	      Output_to_Time_Accurate_File(time_accurate_data_file,
+					   Time,
+					   Local_SolnBlk[0].W[2][2]);
 	    }
 	  }
+	  
 	  /******************* CALCULATION CHECK ************************************
            Check to see if calculations are complete and if so jump of out of 
            this infinite loop.   
@@ -716,11 +686,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
  	    Input_Parameters.Maximum_Number_of_Time_Steps) break;
  	if (Input_Parameters.Time_Accurate && 
  	    Time >= Input_Parameters.Time_Max) break;
-	if (Input_Parameters.Dual_Time_Stepping && 
-	    (n_inner == Input_Parameters.Max_Inner_Steps ||
-	     (n_inner > 0  && (residual_l2_norm[Local_SolnBlk[0].residual_variable-1] < dual_eps  || 
-			       residual_l2_norm[Local_SolnBlk[0].residual_variable-1]/
-			       initial_residual_l2_norm < dual_eps)))) break;
+
 
 // 	/******************* LIMITER FREEZE ***************************************	
 // 	 Freeze limiters as necessary
@@ -797,7 +763,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 								List_of_Local_Solution_Blocks,
 								Input_Parameters,
 								i_stage);
-	 
+
+
 	    // 6. Smooth the solution residual using implicit residual smoothing. */
 	    if (Input_Parameters.Residual_Smoothing) {
               Residual_Smoothing(Local_SolnBlk,
@@ -823,24 +790,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	    if (error_flag) return (error_flag);
 	    
 	  } /* endfor */
-
-	  n_inner++;
-// 	} while (Input_Parameters.Dual_Time_Stepping && 
-//                  (n_inner < Input_Parameters.Max_Inner_Steps+1  || first_step)); 
-
-// 	/********** UPDATE STATES FOR DUAL TIME STEPPING ***************************  
-//          Update solution states, at different times, required by dual time stepping.
-//         ****************************************************************************/
-//         if (Input_Parameters.Dual_Time_Stepping) {
-// 	  error_flag = Update_Dual_Solution_States(Local_SolnBlk, 
-// 						 List_of_Local_Solution_Blocks);
-// 	  if (error_flag) {
-// 	    cout << "\n Chem2D ERROR: Chem2D solution states update error on processor "
-// 		 << List_of_Local_Solution_Blocks.ThisCPU
-// 		 << ".\n";
-// 	    cout.flush();
-// 	  }
-// 	}
 	
 	/******************* UPDATE TIMER & COUNTER *******************************
           Update time and time step counter. 
@@ -850,32 +799,19 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  Input_Parameters.first_step = 0;
 	}
 
-	number_of_time_steps = number_of_time_steps + 1;
-
-	// check for last step
-        if (!Input_Parameters.Time_Accurate &&
-	    number_of_time_steps == Input_Parameters.Maximum_Number_of_Time_Steps) {
-          last_step = 1;
-	}
+	number_of_time_steps++;
 		
 	if (Input_Parameters.i_Time_Integration != 
-	  TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING  &&
-          !Input_Parameters.Dual_Time_Stepping) {
-	  Time = Time + Input_Parameters.CFL_Number*dTime;
- 
+	    TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING){
+	  Time = Time + Input_Parameters.CFL_Number*dTime; 
 	} else if (Input_Parameters.i_Time_Integration == 
-	  TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING  &&
-	  !Input_Parameters.Dual_Time_Stepping) {
+		   TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING){
 	  Time = Time + Input_Parameters.CFL_Number*dTime*
 	    MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
 					   Input_Parameters.N_Stage,
 					   Input_Parameters.i_Limiter);
-	} else if (Input_Parameters.Dual_Time_Stepping) {
-          Time = Time + dTime;
 	} /* endif */
-        
-	i++; // is this necessary???
-	
+        	
       } /* endwhile */
       
       if (!batch_flag) { cout << "\n\n Explicit Chem2D computations complete on " 
@@ -889,12 +825,13 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     that the solution is consistent on each block. 
     *************************************************************************************/
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-    
+
+
     error_flag = Send_All_Messages(Local_SolnBlk, 
 				   List_of_Local_Solution_Blocks,
 				   NUM_VAR_CHEM2D,
 				   OFF);
-    
+
     if (error_flag) {
       cout << "\n Chem2D ERROR: Chem2D message passing error on processor "
 	   << List_of_Local_Solution_Blocks.ThisCPU

@@ -119,7 +119,7 @@ void SemiImplicitBlockJacobi_dSdU(DenseMatrix &dSdU,
   
   //Add Jacobian for finite-rate chemistry source terms  
   if (SolnBlk.W[ii][jj].React.reactset_flag != NO_REACTIONS){    
-    SolnBlk.W[ii][jj].dSwdU(dSdU, SolnBlk.Flow_Type,solver_type);
+    SolnBlk.W[ii][jj].dSwdU(dSdU, SolnBlk.Flow_Type,solver_type);    
   }  
 
   //Add Jacobian for gravitational source terms

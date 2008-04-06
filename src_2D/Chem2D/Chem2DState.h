@@ -302,6 +302,7 @@ class Chem2D_pState {
 //    bool Unphysical_Properties_Check(Chem2D_cState &U, const int Flow_Type, const int n) ;   
    double SpecCon(int i) const;     //Species i concentration (rho*c/mol_mass)
    double Gibbs(int species) const; //Gibbs Free Energy (H-TS) for species
+   double sum_species(void) const;
 
    /**************** turbulence model related parameters*********/
    double eddy_viscosity(void) const;      
@@ -427,13 +428,6 @@ class Chem2D_pState {
                                     const Vector2D &X,
                                     const int Flow_Type,
                                     const int Axisymmetric);
-
-  /****** Source terms associated with dual time stepping *******/
-  Chem2D_cState S_dual_time_stepping(const Chem2D_cState &U,
-                                     const Chem2D_cState &Ut,
-                                     const Chem2D_cState &Uold,
-                                     const double &dTime,
-                                     const int &first_step) const;
 
    /**************** Operators Overloading ********************/
    /* Index operator */
@@ -1033,6 +1027,17 @@ inline void Chem2D_pState::set_turbulence_variables(const double &C_constant,
 //   return true;
 //}
 
+/**************************************************************
+  Sum N-1 species.
+***************************************************************/
+inline double Chem2D_pState::sum_species(void) const{
+  double sum(ZERO);
+  for(int i=0; i<ns-1; i++){
+    sum += spec[i].c;
+  }
+  return sum;
+}
+
 /***** Species Concentrations ******************************/
 inline double Chem2D_pState::SpecCon(int i) const{
   //returned in kg/m^3 / kg/mol => mol/m^3
@@ -1361,21 +1366,21 @@ inline bool Chem2D_cState::negative_speccheck(const int &step) {
     sum += temp;
   } 
 
-//   rhospec[ns-1].c = rho*(ONE - sum); //PUSH error into NS-1 species, probably N2
+   rhospec[ns-1].c = rho*(ONE - sum); //PUSH error into NS-1 species, probably N2
 
-  temp = max(ONE- sum, ZERO);    //Spread Error across species
-  sum += temp;
-  rhospec[ns-1].c = rho*temp;
-  for(int i=0; i<ns; i++){
-    rhospec[i].c = rhospec[i].c*(ONE/sum);
-  } 
+//   temp = max(ONE- sum, ZERO);    //Spread Error across species
+//   sum += temp;
+//   rhospec[ns-1].c = rho*temp;
+//   for(int i=0; i<ns; i++){
+//     rhospec[i].c = rhospec[i].c*(ONE/sum);
+//   } 
   
   return true;
 }
 
 // USED IN MULTIGRID
 inline bool Chem2D_cState::Unphysical_Properties(){
-  Chem2D_cState::Unphysical_Properties_Check(FLOWTYPE_LAMINAR,10);
+  return Chem2D_cState::Unphysical_Properties_Check(FLOWTYPE_LAMINAR,10);
 }
 
 /**************************************************************
@@ -1408,6 +1413,8 @@ inline bool Chem2D_cState::Unphysical_Properties_Check(const int Flow_Type, cons
   }else{
     return true ;
   }
+  
+  return true;
 } 
 
 /**************************************************************

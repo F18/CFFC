@@ -61,7 +61,8 @@ void Reaction_set::set_reactions(string &react){
     //allocate memory 
     reactions = new React_data[num_reactions];
     //set reaction coefficients
-    reactions[0].set_data("CH4_2step_1",2.6*1.443e13,0.0,(48400.0*CAL_TO_JOULE),0);
+    reactions[0].set_data("CH4_2step_1",2.6*1.443e13,0.0,(48400.0*CAL_TO_JOULE),0); // for 0.2, 1.3
+    //reactions[0].set_data("CH4_1step",8.5*2.4e16,0.0,(48400.0*CAL_TO_JOULE),0);   // for 1.0,1.0
     reactions[1].set_data("CH4_2step_2",pow(10.0,14.6),5.0e8,0.0,(40000.0*CAL_TO_JOULE),0);
     
     //setup species list 

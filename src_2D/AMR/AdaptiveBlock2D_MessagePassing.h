@@ -8128,6 +8128,11 @@ int Send_All_Messages2(Quad_Soln_Block *Soln_ptr,
        return(error_flag);
     } /* endif */
 
+    // BCS -> Needed for corner ghost cell reconstruction, 
+    // however not necessary if Subcellreconstruction is done properly, ie on boundaries,
+    // don't use all eight, only internal cells.
+    // BCs(Soln_ptr,Soln_Block_List, Input_Parameters);
+
     /* Load message buffers at block interfaces for sending from coarse to fine blocks. */
     dout << endl << " Load_Send_Message_Buffers_ResChange_CoarseToFine"; dout.flush();
     error_flag = Load_Send_Message_Buffers_ResChange_CoarseToFine(Soln_ptr,
