@@ -36,7 +36,8 @@ using namespace std;
 #define STABILIZATION 1.0e-18  //positive numbers only please.
                                //otherwise it's anti-stabilization.
 
-#define EXP_LIMIT     250.0
+#define EXP_LIMIT                250.0
+#define LEVERMORE1D_DETECTOR_TOL 1.0e-3
 
 /* Define the classes. */
 class Levermore1D_cState;
@@ -53,7 +54,7 @@ class Levermore1D_pState : public Levermore1D_Vector{
   Levermore1D_pState(const Levermore1D_pState &W) : Levermore1D_Vector(W) {}
   explicit Levermore1D_pState(const Levermore1D_cState &U) {set_from_U(U);}
   explicit Levermore1D_pState(const Levermore1D_weights &A, double us) {set_from_A(A,us);}
-  Levermore1D_pState(double rho, double u, double p) {
+  Levermore1D_pState(double rho, double u, double p) { //Maxwell-Boltzmann
     int coef;
     zero();
     m_values[0] = rho; m_values[1] = u; m_values[2] = p;
@@ -90,23 +91,35 @@ class Levermore1D_cState : public Levermore1D_Vector{
   Levermore1D_cState(const Levermore1D_cState &U) : Levermore1D_Vector(U) {}
   explicit Levermore1D_cState(const Levermore1D_pState &W) {set_from_W(W);}
   explicit Levermore1D_cState(const Levermore1D_weights &A, double us) {set_from_A(A,us);}
+  Levermore1D_cState(double rho, double u, double p) { //Maxwell-Boltzmann
+    MaxBoltz(rho,u,p);
+  }
 
   /* Functions. */
   Levermore1D_Vector& operator=(const Levermore1D_Vector &V) {return Levermore1D_Vector::operator=(V);}
   void Vacuum() {Levermore1D_Vector::zero();}
   void set_from_W(const Levermore1D_pState &W);
   void set_from_A(const Levermore1D_weights &A, double us);
+  void MaxBoltz(double rho, double u, double p) {
+    set_from_W(Levermore1D_pState(rho,u,p)); // change to something better later.
+  }
+  void MaxBoltz() {
+    MaxBoltz(rho(),u(),p());
+  }
+
+  double rho() const {return m_values[0];}
+  double u() const {return m_values[1]/m_values[0];}
+  double p() const {return (m_values[2] - m_values[1]*m_values[1]/m_values[0]);}
   double moment(int n, const Levermore1D_weights &A, const double &us) const;
-  //double moment(int n, const Levermore1D_weights &A, int real_L) const;
-  //double moment_series(int n, const Levermore1D_weights &A, int real_L) const;
   double moment_series(int n, const Levermore1D_weights &A, const double &us) const;
   double moment_series_L(const Levermore1D_weights &A, const double &us) const;
   DenseMatrix d2hda2(const Levermore1D_weights &A, const double &us) const;
   DenseMatrix d2jda2(const Levermore1D_weights &A, const double &us) const;
   Levermore1D_Vector F(const Levermore1D_weights &A) const;
   int in_sync_with(const Levermore1D_weights &A) const;
-  //int find_real_L(const Levermore1D_weights &A) const;
+  double detector_value(const Levermore1D_weights &A) const;
   double relative_error(const Levermore1D_cState &U2) const;
+  double relaxation_time() const;
 
 };
 
@@ -238,5 +251,18 @@ extern Levermore1D_Vector FluxKinetic(const Levermore1D_weights &Al,
 				      const double &us_l,
 				      const Levermore1D_weights &Ar,
 				      const double &us_r);
+
+extern Levermore1D_Vector Collision_RHS(const Levermore1D_cState &U);
+
+extern void Add_Collision_LHS(const DenseMatrix *LHS,
+			      const Levermore1D_cState &U,
+			      const double &omega);
+
+extern double relaxation_time(const Levermore1D_cState &U);
+
+inline int detector_below_tolerance(const double &detector) {
+  return (detector < LEVERMORE1D_DETECTOR_TOL);
+}
+
 
 #endif

@@ -129,7 +129,7 @@ void Levermore1D_pState::set_from_A(const Levermore1D_weights &A, double us) {
  ********************************************************/
 double Levermore1D_cState::moment(int n, const Levermore1D_weights &A, const double &us) const {
   if(n<length) return m_values[n];
-  //return A.integrate_conserved_moment(n, us);
+  return A.integrate_conserved_moment(n, us); //use for now, even though it's slow
   if(n==length) return moment_series_L(A,us);
   return moment_series(n,A,us);
 }
@@ -142,11 +142,12 @@ double Levermore1D_cState::moment_series(int n, const Levermore1D_weights &A, co
   _moment = (double)(n-length)*moment(n-length-1,A,us);
 
   for(i=0; i<length-1; ++i) {
+
     _moment += ( (double)(i+1)*A[i+2]+
 		 sign*STABILIZATION*(double)(length+1)*Pascals_Triangle(length,i)*pow(us,length-i) ) * moment(n-length+i,A,us);
     sign *= -1;
   }
-  
+
   _moment += ( sign*STABILIZATION*(double)(length+1)*Pascals_Triangle(length,i)*pow(us,length-i) ) * moment(n-length+i,A,us);
 
   _moment /= ((double)(length+1)*STABILIZATION);
@@ -172,6 +173,20 @@ double Levermore1D_cState::moment_series_L(const Levermore1D_weights &A, const d
 }
 
 /********************************************************
+ * Function: Levermore1D_cState::detector_value         *
+ *                                                      *
+ * Calculate detector to see if U and A are in sync.    *
+ *                                                      *
+ ********************************************************/
+double Levermore1D_cState::detector_value(const Levermore1D_weights &A) const {
+  double moment1, moment2;
+  double us(m_values[1]/m_values[0]);
+  moment1 = moment_series(length+1,A,us);
+  moment2 = A.integrate_conserved_moment(length+1,us);
+  return fabs((moment1-moment2)/moment1);
+}
+
+/********************************************************
  * Function: Levermore1D_cState::in_sync_with           *
  *                                                      *
  * Use Known relations to determine if U and A are      *
@@ -179,19 +194,7 @@ double Levermore1D_cState::moment_series_L(const Levermore1D_weights &A, const d
  *                                                      *
  ********************************************************/
 int Levermore1D_cState::in_sync_with(const Levermore1D_weights &A) const {
-  double moment1, moment2, test;
-  double us(m_values[1]/m_values[0]);
-  moment1 = moment_series(length,A,us);
-  moment2 = A.integrate_conserved_moment(length,us);
-  test = fabs((moment1-moment2)*A[length]);
-//  cout << endl << "********************" << endl
-//       << (*this) << endl << Levermore1D_cState(A,m_values[1]/m_values[0]) << endl;
-//  cout << A << endl;
-//  cout << moment1 << " " << moment2 << endl;
-//  cout << test << endl; 
-//  cout << "Next moment = " << moment_series(length,A,us) << "   " << A.integrate_conserved_moment(length,us) << endl;
-//  cout.flush();
-  return (test < 1.0e-1);
+  return detector_below_tolerance(detector_value(A));
 }
 
 /********************************************************
@@ -366,7 +369,7 @@ int Levermore1D_weights::set_from_U(const Levermore1D_cState &U) {
   rel_err = U_temp.relative_error(U);
   rel_err_last = rel_err;
 
-  while( rel_err > 1e-10) { //fix tolerance later
+  while( rel_err > 1e-14) { //fix tolerance later
     d2hda2 = U_temp.d2hda2(*this,us);
 
     if(count > 100) {
@@ -548,3 +551,61 @@ Levermore1D_Vector FluxKinetic(const Levermore1D_weights &Al,
 
   return Flux;
 }
+
+/********************************************************
+ * Function: relaxation_time                            *
+ *                                                      *
+ * Calculate relaxation time for BGK collision operator.*
+ *                                                      *
+ ********************************************************/
+double Levermore1D_cState::relaxation_time() const {
+  return 1.0;  //set to something more realistic later
+}
+
+double relaxation_time(const Levermore1D_cState &U) {
+  return U.relaxation_time();
+}
+
+/********************************************************
+ * Function: Collision_RHS                              *
+ *                                                      *
+ * Calculate collision terms for use in an explicit     *
+ * algorithm.                                           *
+ *                                                      *
+ ********************************************************/
+Levermore1D_Vector Collision_RHS(const Levermore1D_cState &U) {
+  Levermore1D_cState MB(U);
+  MB.MaxBoltz();
+  return (MB-U)/U.relaxation_time();
+}
+
+/********************************************************
+ * Function: Add_Collision_LHS                          *
+ *                                                      *
+ * Calculate collision terms for use in an implicit     *
+ * algorithm.                                           *
+ *                                                      *
+ ********************************************************/
+//void Add_Collision_LHS(const DenseMatrix &LHS,
+//		       const Levermore1D_cState &U,
+//		       const double *omega) {
+//  double tau(U.relaxation_time());
+//  Levermore1D_pState W(U);
+//  if(Levermore1D_Vector::get_length()==3) {
+//    return;
+//  } else if(Levermore1D_Vector::get_length()==5) {
+//    LHS(3,0) -= W[2]*(2.0*W[1]*W[2]*W[2]+3.0*W[3])/(tau*W[1]);
+//    LHS(3,1) += 3.0*(W[1]*W[2]*W[2]-W[1]*W[2]+W[3])/(tau*W[1});
+//    LHS(3,2) += 3.0*W[2]/tau;
+//    LHS(3,3) -= 1.0/tau;
+//    LHS(4,0) += -W[3]*W[3]/(tau*W[1]*W[1]) + 4.0*W[4]*W[2]/(tau*W[1])
+//                -4.0*W[2]*W[2]*(2.0*W[1]*W[2]*W[2]+3.0*W[3])/(tau*W[1])
+//                +W[2]*(5.0*W[1]*W[2]*W[2]*W[2]-4*W[4])/(tau*W[1]);
+//    LHS(4,1) += - //WORKING HERE
+//    return;
+//  } else {
+//    cout << "Error in \"Add_Collision_LHS\": not set up for this number of moments" << endl;
+//    assert(1==0);
+//  }
+//
+//}

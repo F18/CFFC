@@ -43,10 +43,6 @@ void F77NAME(dgesvd) (char *, char *, integer *, integer *, const doublereal *,
     integer *, doublereal *, doublereal *, integer *, doublereal *, integer *,
     doublereal *, integer *, integer *);
 
-void F77NAME(dgeev) (char *, char *, integer *, doublereal *, integer *,
-    doublereal *, doublereal *, doublereal *, integer *, doublereal *, integer *,
-    doublereal *, integer *, integer *);
-
 void F77NAME(bpilut)(int *n, doublereal *a, int *ja, int *ia, int *lfil,
     doublereal *tol, doublereal *alu, int *jlu, int *ju,
     int *iwk, doublereal *w, int *jw, int *ierr);

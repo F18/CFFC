@@ -228,7 +228,8 @@ SRC_LEVERMORE1D := $(addprefix $(LEVERMORE_1D_DIR), $(SRC_LEVERMORE1D))
 SRC_LEVERMORE1D_TESTS = test_Levermore1DVector.cc \
                         test_Levermore1D_pState.cc \
                         test_Levermore1D_cState.cc \
-                        test_Levermore1D_weights.cc 
+                        test_Levermore1D_weights.cc \
+                        test_Levermore1D_UniformMesh.cc
 SRC_LEVERMORE1D_TESTS := $(addprefix $(LEVERMORE_1D_DIR)UnitTests/, $(SRC_LEVERMORE1D_TESTS))
 ifeq ($(TUT_TESTING),ON)
   SRC_LEVERMORE1D += $(SRC_LEVERMORE1D_TESTS)

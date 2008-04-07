@@ -15,6 +15,19 @@ RowVector    DenseMatrix::temp_RVec;
  *************************************************************/
 RowVector    TriDiagonalMatrix::temp_RVec;
 
+
+/*************************************************************
+ *                   Fortran Wrappers                        *
+ *************************************************************/
+extern "C"
+{
+void F77NAME(dgeev) (char *, char *, integer *, doublereal *, integer *,
+    doublereal *, doublereal *, doublereal *, integer *, doublereal *, integer *,
+    doublereal *, integer *, integer *);
+
+void F77NAME(dgetrf)(int *, int *, doublereal *, int *, int *, int *);
+}
+
 /*************************************************************
  * pseudo_inverse -- Compute the pseudo-inverse of a dense   *
  *                   matrix MxN and write it on top of the   *
@@ -130,4 +143,41 @@ ColumnVector DenseMatrix::eigenvalues_overwrite(void) {
   delete [] WORK; WORK=NULL;
 
   return REAL;
+}
+
+/*************************************************************
+ * inverse -- Return matrix inverse using LAPACK's           *
+ *            dgetrf & dgetri functions.                     *
+ *************************************************************/
+void DenseMatrix::inverse_overwrite(void) {
+  assert(size(0)==size(1));
+
+  int N(size(0));
+  int LDA(N);
+  int *IPIV = new int[N];
+  for(int i=0; i<N; ++i) {IPIV[i] = 0;}
+  int IWORK(40*N); // how big should this be ?
+  double *WORK = new double[IWORK];
+  for(int i=0; i<N; ++i) {WORK[i] = 0.0;}
+  int INFO(0);
+
+  /* Call Fortran subroutines */
+  F77NAME(dgetrf)(&N, &N, &v_(0), &LDA, IPIV, &INFO);
+  if(INFO != 0) {
+    delete [] IPIV; IPIV = NULL;
+    delete [] WORK; WORK = NULL;
+    bperror("Error in BPKIT:dgetrf",INFO);
+  }
+  F77NAME(dgetri)(&N, &v_(0), &LDA, IPIV,
+		  WORK, &IWORK, &INFO);
+  if(INFO != 0) {
+    delete [] IPIV; IPIV = NULL;
+    delete [] WORK; WORK = NULL;
+    bperror("Error in BPKIT:dgetri",INFO);
+  }
+
+  delete [] IPIV; IPIV = NULL;
+  delete [] WORK; WORK = NULL;
+
+  return;
 }

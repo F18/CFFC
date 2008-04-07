@@ -99,7 +99,7 @@ namespace tut
   void Levermore1D_weights_object::test<2>()
   {
     set_test_name("Constructor from pState");
-    cout << "Fix this test after stabilization is Galilean invariant" << endl;
+
     double rho(1.333);
     double u(-92.22);
     double p(90325.0);
@@ -107,23 +107,19 @@ namespace tut
     double n(rho/m); //number density
     double B(rho/(2.0*p));
 
-    Levermore1D_weights A1;
-    A1.zero();
-    A1[1] = -B*u*u+log(n*sqrt(B/PI));
-    A1[2] = 2.0*B*u;
-    A1[3] = -B;
-    if(Levermore1D_Vector::get_length() > 3) {
-      A1[4] = B*B*u;  //anything
-      A1[5] = -B*B; //anything negative
+    Levermore1D_pState W1(rho,u,p);
+
+    Levermore1D_weights A(W1);
+
+    Levermore1D_pState W2(A,u);
+
+    for(int i=1;i<=Levermore1D_Vector::get_length();i=i+2) {
+      double toler = fabs(W1[i])*1e-5+1e-12;
+      ensure_distance("W2=W1",W2[i],W1[i],toler);
+      if(i!=Levermore1D_Vector::get_length()) {
+	ensure_distance("W2=W1",W2[i+1],W1[i+1],toler);
+      }
     }
-
-    Levermore1D_pState W(A1,u);
-    Levermore1D_weights A2(W);
-
-    for(int i=1;i<=Levermore1D_Vector::get_length();++i) {
-      //ensure_distance("alpha2=alpha1",A2[i],A1[i],fabs(A1[i])*1e-6+1e-16);
-    }
-
 
   }
 
@@ -133,7 +129,7 @@ namespace tut
   void Levermore1D_weights_object::test<3>()
   {
     set_test_name("Constructor from cState");
-    cout << "Fix this test after stabilization is Galilean invariant" << endl;
+
     double rho(1.225);
     double u(132.22);
     double p(101325.0);
@@ -141,22 +137,18 @@ namespace tut
     double n(rho/m); //number density
     double B(rho/(2.0*p));
 
-    Levermore1D_weights A1, A1b;
-    A1.zero();
-    A1[1] = -B*u*u+log(n*sqrt(B/PI));
-    A1[2] = 2.0*B*u;
-    A1[3] = -B;
-    A1b = A1;
-    if(Levermore1D_Vector::get_length() > 3) {
-      A1[4] = -B*B*u;  //anything
-      A1[5] = -B*B; //anything negative
-    }
+    Levermore1D_pState W1(rho,u,p);
+    Levermore1D_cState U1(W1);
 
-    Levermore1D_cState U(A1,u);
-    Levermore1D_weights A2(U);
+    Levermore1D_weights A(U1);
+    Levermore1D_cState U2(A,u);
 
-    for(int i=1;i<=Levermore1D_Vector::get_length();++i) {
-      //ensure_distance("alpha2=alpha1",A2[i],A1[i],fabs(A1[i])*1e-6+1e-16);
+    for(int i=1;i<=Levermore1D_Vector::get_length();i=i+2) {
+      double toler = fabs(U1[i])*1e-5+1e-12;
+      ensure_distance("U2=U1",U2[i],U1[i],toler);
+      if(i!=Levermore1D_Vector::get_length()) {
+	ensure_distance("U2=U1",U2[i+1],U1[i+1],toler);
+      }
     }
 
   }
@@ -409,11 +401,11 @@ namespace tut
   void Levermore1D_weights_object::test<13>()
   {
     set_test_name("value_at");
-    cout << "Fix this test after stabilization is Galilean invariant" << endl;
+
     Levermore1D_weights alpha;
     double exponent, expected;
     double a1(1.223), a2(0.552), a3(0.456), a4(-0.223), a5(0.003);
-    double v(1.3);
+    double v(1.3), us(50.0); //anything for us
 
     alpha.zero();
 
@@ -425,13 +417,14 @@ namespace tut
       alpha[5] = a5;
     }
 
-    exponent = a1 + a2*v + a3*v*v - STABILIZATION*pow(v,Levermore1D_Vector::get_length()+1);
+    exponent = a1 + a2*v + a3*v*v - STABILIZATION*pow(v-us,Levermore1D_Vector::get_length()+1);
     if(Levermore1D_Vector::get_length() > 3) {
       exponent += a4*v*v*v + a5*v*v*v*v;
     }
+
     expected = exp(exponent);
 
-    //ensure_distance("value_at",expected,alpha.value_at(v),fabs(expected)*tol);
+    ensure_distance("value_at",expected,alpha.value_at(v,us),fabs(expected)*tol);
 
   }
 
@@ -505,7 +498,7 @@ namespace tut
 
       Levermore1D_weights A(U);
       U2.set_from_A(A,U[2]/U[1]);
-      cout << U << endl << U2 << endl << A << endl;
+
       for(int i=1;i<=Levermore1D_Vector::get_length();++i) {
 	ensure_distance("U2=U",U2[i],U[i],fabs(U[i])*1e-6+1e-10);
       }
@@ -615,15 +608,14 @@ namespace tut
     p = 101325.0;
 
     Levermore1D_pState W1(rho,ZERO,p), W2(rho,u,p);
-    cout << W1 <<endl << W2 << endl;
+
     Levermore1D_weights A1(W1), A2(W2);
-    cout << A1 <<endl << A2 << endl;
 
     for(int i=Levermore1D_Vector::get_length()+1; i<15; i=i+2) {
       sprintf(testname, "Integrate random moment %d.", i);
       moment1 = A1.integrate_random_moment(i,0.0,0.0);
       moment2 = A2.integrate_random_moment(i,u,u);
-      ensure_distance(testname, moment1, moment2, fabs(moment2)*1e-8+1e-8);
+      ensure_distance(testname, moment1, moment2, fabs(moment2)*1e-6+1e-6);
     }
 
 
@@ -649,9 +641,9 @@ namespace tut
       Levermore1D_weights A(U);
 
       U2.set_from_A(A,U[2]/U[1]);
-      cout << U << endl << U2 << endl << A << endl;
+
       Levermore1D_pState W(A,U[2]/U[1]);
-      cout << W[5]/(W[3]*W[3]/W[1]) << endl;
+
       for(int i=1;i<=Levermore1D_Vector::get_length();++i) {
 	ensure_distance("U2=U",U2[i],U[i],fabs(U[i])*1e-6+1e-10);
       }
@@ -687,9 +679,9 @@ namespace tut
       A.set_from_U(U);
 
       U2.set_from_A(A,U[2]/U[1]);
-      cout << U << endl << U2 << endl << A << endl;
+
       Levermore1D_pState W(A,U[2]/U[1]);
-      cout << W[5]/(W[3]*W[3]/W[1]) << endl;
+
       for(int i=1;i<=Levermore1D_Vector::get_length();++i) {
 	ensure_distance("U2=U",U2[i],U[i],fabs(U[i])*1e-6+1e-10);
       }
@@ -731,9 +723,9 @@ namespace tut
       A.set_from_U(U);
 
       U2.set_from_A(A,U[2]/U[1]);
-      cout << U << endl << U2 << endl << A << endl;
+
       Levermore1D_pState W(A,U[2]/U[1]);
-      cout << W[5]/(W[3]*W[3]/W[1]) << endl;
+
       for(int i=1;i<=Levermore1D_Vector::get_length();++i) {
 	ensure_distance("U2=U",U2[i],U[i],fabs(U[i])*1e-6+1e-10);
       }

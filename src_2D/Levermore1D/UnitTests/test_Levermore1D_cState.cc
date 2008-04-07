@@ -465,30 +465,60 @@ namespace tut
   template<>
   void Levermore1D_cState_object::test<14>()
   {
-    set_test_name("calculate moments (part 2)");
+    set_test_name("calculate moments (part 2) only length == 5");
+    if(Levermore1D_Vector::get_length() == 5) {
+      //same as before, but with zero velocity.
+      double rho(1.225);
+      double u(13.00);
+      double p(101325.0);
+
+      double momentum(rho*u);
+      double e(p+rho*u*u);
+
+      double m = Levermore1D_weights::m();
+      double n(rho/m); //number density
+
+      double B(rho/(2.0*p));
+
+      Levermore1D_weights A;
+      A.zero();
+
+      A[1] = -B*u*u+log(rho*sqrt(B/PI));
+      A[2] = 2.0*B*u;
+      A[3] = -B;
+      A[4] = B*B;
+      A[5] = -B*B;
+
+      Levermore1D_cState U(A,u);
+      double momentU, momentA;
+      char testname[256];
+
+      //check series of moments
+      for(int i=0;i<15;++i) {
+	sprintf(testname, "Integrate moment %d.", i);
+	momentU = U.moment(i,A,u);
+	momentA = A.integrate_conserved_moment(i,u);
+	cout.precision(16);
+	ensure_distance(testname, momentU, momentA, fabs(momentU)*1e-3+1e-3);
+      }
+    }
+  }
+
+  /* Test 15:*/
+  template<>
+  template<>
+  void Levermore1D_cState_object::test<15>()
+  {
+    set_test_name("Again, more moments");
     //same as before, but with zero velocity.
-    double rho(1.225);
-    double u(13.00);
-    double p(101325.0);
+    double rho(0.7514567644995078);
+    double u(145.2577807997585);
+    double p(37678.24668769664);
 
-    double momentum(rho*u);
-    double e(p+rho*u*u);
+    Levermore1D_pState W(rho,u,p);
+    Levermore1D_cState U(W);
+    Levermore1D_weights A(U);
 
-    double m = Levermore1D_weights::m();
-    double n(rho/m); //number density
-
-    double B(rho/(2.0*p));
-
-    Levermore1D_weights A;
-    A.zero();
-
-    A[1] = -B*u*u+log(rho*sqrt(B/PI));
-    A[2] = 2.0*B*u;
-    A[3] = -B;
-    A[4] = B*B;
-    A[5] = -B*B;
-
-    Levermore1D_cState U(A,u);
     double momentU, momentA;
     char testname[256];
 
