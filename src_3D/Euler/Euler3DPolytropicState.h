@@ -156,7 +156,6 @@ class Euler3D_Polytropic_cState;
  */
 class Euler3D_Polytropic_pState{
 public: 
-	static int   num_vars;      //!< Number of variables 
 	double            rho;      //!< Density                   kg/m^3
 	Vector3D            v;      //!< Velocity                  m/s
 	double              p;      //!< Pressure                  Pa 
@@ -214,6 +213,9 @@ public:
 //@{
     //! Return the number of variables.
     int NumVar(void) {
+        return NUM_VAR_EULER3D;
+    }
+    int NumVar(void) const {
         return NUM_VAR_EULER3D;
     }
 
@@ -306,7 +308,7 @@ public:
 /** @name Fluxes */
 /*        ------ */
 //@{
-    Euler3D_Polytropic_cState F(void);         //!< x-direction inviscid solution flux
+    Euler3D_Polytropic_cState F(void);          //!< x-direction inviscid solution flux
     Euler3D_Polytropic_cState Fx(void);         //!< x-direction inviscid solution flux
     Euler3D_Polytropic_cState Fy(void);         //!< y-direction inviscid solution flux
     Euler3D_Polytropic_cState Fz(void);         //!< z-direction inviscid solution flux
@@ -455,7 +457,9 @@ public:
     //! W = -W 
     friend Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W);
 
-// Shortcut arithmetic operators. 
+// Shortcut arithmetic operators.
+    //! W = W
+    Euler3D_Polytropic_pState &operator  =(const Euler3D_Polytropic_pState &W);
     //! W += W
     Euler3D_Polytropic_pState &operator +=(const Euler3D_Polytropic_pState &W);
     //! W -= W
@@ -688,7 +692,6 @@ public:
  */
 class Euler3D_Polytropic_cState{
 public:
-    static int     num_vars;      //!< Number of variables.
     double              rho;      //!< Density.
     Vector3D           rhov;      //!< Momentum.
     double                E;      //!< Total Energy.
@@ -745,6 +748,9 @@ public:
 //@{
     //! Return the number of variables.
     int NumVar(void) {
+        return NUM_VAR_EULER3D;
+    }
+    int NumVar(void) const {
         return NUM_VAR_EULER3D;
     }
 
@@ -913,6 +919,8 @@ public:
     friend Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U);
 
 // Shortcut arithmetic operators.
+    //! U = U
+    Euler3D_Polytropic_cState& operator =(const Euler3D_Polytropic_cState &U);
     //! U += U
     Euler3D_Polytropic_cState& operator +=(const Euler3D_Polytropic_cState &U);
     //! U -= U
@@ -960,7 +968,7 @@ inline Euler3D_Polytropic_pState::Euler3D_Polytropic_pState(const Euler3D_Polytr
  * Euler3D_Polytropic_pState -- Index operators.                                       *
  ***************************************************************************************/
 inline double& Euler3D_Polytropic_pState::operator[](int index) {
-    assert( index >= 1 && index <= NUM_VAR_EULER3D );
+    assert( index >= 1 && index <= NumVar() );
     switch(index) {
         case 1 :
             return (rho);
@@ -978,7 +986,7 @@ inline double& Euler3D_Polytropic_pState::operator[](int index) {
 }
 
 inline const double& Euler3D_Polytropic_pState::operator[](int index) const {
-    assert( index >= 1 && index <= NUM_VAR_EULER3D );
+    assert( index >= 1 && index <= NumVar() );
     switch(index) {
         case 1 :
             return (rho);
@@ -1000,12 +1008,12 @@ inline const double& Euler3D_Polytropic_pState::operator[](int index) const {
  ***************************************************************************************/
 inline Euler3D_Polytropic_pState operator +(const Euler3D_Polytropic_pState &W1, 
                                             const Euler3D_Polytropic_pState &W2) {
-    return (Euler3D_Polytropic_pState(W1.rho+W2.rho,W1.v+W2.v,W1.p+W2.p));
+    return (Euler3D_Polytropic_pState(W1.rho+W2.rho, W1.v+W2.v, W1.p+W2.p));
 }
 
 inline Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W1, 
                                             const Euler3D_Polytropic_pState &W2) {
-    return (Euler3D_Polytropic_pState(W1.rho-W2.rho,W1.v-W2.v, W1.p-W2.p));
+    return (Euler3D_Polytropic_pState(W1.rho-W2.rho, W1.v-W2.v, W1.p-W2.p));
 }
 
 inline double operator *(const Euler3D_Polytropic_pState &W1, 
@@ -1015,17 +1023,17 @@ inline double operator *(const Euler3D_Polytropic_pState &W1,
 
 inline Euler3D_Polytropic_pState operator *(const Euler3D_Polytropic_pState &W, 
                                             const double &a) {
-    return (Euler3D_Polytropic_pState(a*W.rho,a*W.v.x,a*W.v.y, a*W.v.z, a*W.p));
+    return (Euler3D_Polytropic_pState(a*W.rho, a*W.v, a*W.p));
 }
 
 inline Euler3D_Polytropic_pState operator *(const double &a, 
                                             const Euler3D_Polytropic_pState &W) {
-    return (Euler3D_Polytropic_pState(a*W.rho,a*W.v.x,a*W.v.y, a*W.v.z,a*W.p));
+    return (Euler3D_Polytropic_pState(a*W.rho, a*W.v, a*W.p));
 }
 
 inline Euler3D_Polytropic_pState operator /(const Euler3D_Polytropic_pState &W, 
                                             const double &a) {
-    return (Euler3D_Polytropic_pState(W.rho/a, W.v.x/a, W.v.y/a, W.v.z/a,W.p/a));
+    return (Euler3D_Polytropic_pState(W.rho/a, W.v/a, W.p/a));
 }
 
 inline Euler3D_Polytropic_pState operator ^(const Euler3D_Polytropic_pState &W1, 
@@ -1040,30 +1048,39 @@ inline Euler3D_Polytropic_pState operator ^(const Euler3D_Polytropic_pState &W1,
 /***************************************************************************************
  * Euler3D_Polytropic_pState -- Shortcut arithmetic operators.                         *
  ***************************************************************************************/
+inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator =(const Euler3D_Polytropic_pState &W) {
+    if(this != &W) {
+        rho = W.rho; 
+        v = W.v;
+        p = W.p;
+    }
+    return *this;
+}
+
 inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator +=(const Euler3D_Polytropic_pState &W) {
     rho += W.rho; 
-    v.x += W.v.x; v.y += W.v.y;	v.z += W.v.z;
+    v += W.v;
     p += W.p;
     return *this;
 }
 
 inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator -=(const Euler3D_Polytropic_pState &W) {
     rho -= W.rho; 
-    v.x -= W.v.x; v.y -= W.v.y;	v.z -= W.v.z;
+    v -= W.v;
     p -= W.p;
     return *this;
 }
 
 inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator *=(const double &a) {
     rho *= a; 
-    v.x *= a; v.y *= a;	v.z *= a; 
+    v *= a; 
     p *= a;
     return *this;
 }
 
 inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator /=(const double &a) {
     rho /= a; 
-    v.x /= a; v.y /= a; v.z /= a;
+    v /= a;
     p /= a;
     return *this;
 }
@@ -1072,7 +1089,7 @@ inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator /=(const d
  * Euler3D_Polytropic_pState -- Unary arithmetic operators.                            *
  ***************************************************************************************/
 inline Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W) {
-    return (Euler3D_Polytropic_pState(-W.rho,-W.v.x, -W.v.y, -W.v.z, -W.p));
+    return (Euler3D_Polytropic_pState(-W.rho, -W.v, -W.p));
 }
 
 /***************************************************************************************
@@ -1122,8 +1139,7 @@ inline ostream& operator << (ostream &out_file,
 inline istream& operator >> (istream &in_file,  
                              Euler3D_Polytropic_pState &W) {
     in_file.setf(ios::skipws);
-    in_file >> W.rho >> W.v.x >> W.v.y >> W.v.z 
-        >> W.p;
+    in_file >> W.rho >> W.v.x >> W.v.y >> W.v.z >> W.p;
     in_file.unsetf(ios::skipws);
     return (in_file);
 }
@@ -1136,7 +1152,7 @@ inline istream& operator >> (istream &in_file,
  * Euler3D_Polytropic_cState -- Index operators.                                       *
  ***************************************************************************************/
 inline double& Euler3D_Polytropic_cState::operator[](int index) {
-    assert( index >= 1 && index <= NUM_VAR_EULER3D );
+    assert( index >= 1 && index <= NumVar() );
     switch(index) {
         case 1 :
             return (rho);
@@ -1154,7 +1170,7 @@ inline double& Euler3D_Polytropic_cState::operator[](int index) {
 }
 
 inline const double& Euler3D_Polytropic_cState::operator[](int index) const {
-    assert( index >= 1 && index <= NUM_VAR_EULER3D );
+    assert( index >= 1 && index <= NumVar() );
     switch(index) {
         case 1 :
             return (rho);
@@ -1176,12 +1192,12 @@ inline const double& Euler3D_Polytropic_cState::operator[](int index) const {
  ***************************************************************************************/
 inline Euler3D_Polytropic_cState operator +(const Euler3D_Polytropic_cState &U1, 
                                             const Euler3D_Polytropic_cState &U2) {
-    return (Euler3D_Polytropic_cState(U1.rho+U2.rho,U1.rhov+U2.rhov,U1.E+U2.E));
+    return (Euler3D_Polytropic_cState(U1.rho+U2.rho, U1.rhov+U2.rhov, U1.E+U2.E));
 }
 
 inline Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U1, 
                                             const Euler3D_Polytropic_cState &U2) {
-    return (Euler3D_Polytropic_cState(U1.rho-U2.rho,U1.rhov-U2.rhov,U1.E-U2.E));
+    return (Euler3D_Polytropic_cState(U1.rho-U2.rho, U1.rhov-U2.rhov, U1.E-U2.E));
 }
 
 inline double operator *(const Euler3D_Polytropic_cState &U1, 
@@ -1216,6 +1232,15 @@ inline Euler3D_Polytropic_cState operator ^(const Euler3D_Polytropic_cState &U1,
 /***************************************************************************************
  * Euler3D_Polytropic_cState -- Shortcut arithmetic operators.                         *
  ***************************************************************************************/
+inline Euler3D_Polytropic_cState& Euler3D_Polytropic_cState::operator =(const Euler3D_Polytropic_cState &U) {
+    if(this != &U) {
+        rho = U.rho; 
+        rhov = U.rhov;
+        E = U.E;
+    }
+    return *this;
+}
+
 inline Euler3D_Polytropic_cState& Euler3D_Polytropic_cState::operator +=(const Euler3D_Polytropic_cState &U) {
     rho += U.rho;
     rhov += U.rhov;
@@ -1232,14 +1257,14 @@ inline Euler3D_Polytropic_cState& Euler3D_Polytropic_cState::operator -=(const E
 
 inline Euler3D_Polytropic_cState& Euler3D_Polytropic_cState::operator *=(const double &a) {
     rho *= a;
-    rhov.x *= a; rhov.y *= a; rhov.z *= a;
+    rhov *= a;
     E *= a;
     return *this;
 }
 
 inline Euler3D_Polytropic_cState& Euler3D_Polytropic_cState::operator /=(const double &a) {
     rho /= a;
-    rhov.x /= a; rhov.y /= a; rhov.z /= a;
+    rhov /= a;
     E /= a;
     return *this;
 }
@@ -1248,7 +1273,7 @@ inline Euler3D_Polytropic_cState& Euler3D_Polytropic_cState::operator /=(const d
  * Euler3D_Polytropic_cState -- Unary arithmetic operators.                            *
  ***************************************************************************************/
 inline Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U) {
-    return (Euler3D_Polytropic_cState(-U.rho,-U.rhov,-U.E));
+    return (Euler3D_Polytropic_cState(-U.rho, -U.rhov, -U.E));
 }
 
 /***************************************************************************************

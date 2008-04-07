@@ -68,27 +68,6 @@ double LES3D_Polytropic_pState::kappa_t(const LES3D_Polytropic_pState &dWdx,
   return (mu_t(dWdx,dWdy,dWdz,Volume)*Cp/Pr_t()); 
 }
 
-/**
- * LES3D_Polytropic_pState::Pr_t
- * Return turbulent Prandtl number.
- */
-double LES3D_Polytropic_pState::Pr_t(void) {
-   return (0.9); 
-}
-
-/**
- * LES3D_Polytropic_pState::filter_width
- * Return LES characteristic filter width
- */
-double LES3D_Polytropic_pState::filter_width(const double &Volume) const {
-  return (filter.FGR*pow(Volume,1.0/3.0)); 
-}
-
-
-
-
-
-
 
 
 /*
@@ -628,16 +607,13 @@ double LES3D_Polytropic_pState::SFS_Kinetic_Energy(const LES3D_Polytropic_pState
                                                    const LES3D_Polytropic_pState &dWdy,
                                                    const LES3D_Polytropic_pState &dWdz,
                                                    const double &Volume) {
- //   double CI = 0.005;
-//    return (CI*sqr(filter_width(Volume)*abs_strain_rate(dWdx,dWdy,dWdz)));
+    //   double CI = 0.005;
+    //    return (CI*sqr(filter_width(Volume)*abs_strain_rate(dWdx,dWdy,dWdz)));
     
     double Ck = 0.05;  /* Yoshizawa 1985 */
     double Delta = filter_width(Volume);
     return ( sqr(nu_t(dWdx,dWdy,dWdz,Volume)) / sqr(Ck*Delta) );
-
 }
-
-
 
 
 
@@ -708,28 +684,6 @@ double LES3D_Polytropic_cState::kappa_t(const LES3D_Polytropic_pState &dWdx,
                                         const double &Volume) {
   return (mu_t(dWdx,dWdy,dWdz,Volume)*Cp/Pr_t()); 
 }
-
-
-/**
- * LES3D_Polytropic_cState::Pr_t
- * Return turbulent Prandtl number.
- */
-double LES3D_Polytropic_cState::Pr_t(void) {
-   return (0.9); 
-}
-
-
-/**
- * LES3D_Polytropic_cState::filter_width
- * Return LES characteristic filter width
- */
-double LES3D_Polytropic_cState::filter_width(const double &Volume) const {
-  return (filter.FGR*pow(Volume,1.0/3.0)); 
-}
-
-
-
-
 
 
 

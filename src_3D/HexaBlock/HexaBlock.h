@@ -706,7 +706,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate_static(void) {
  ******************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::NumVar(void) {
-   return (W[0][0][0].num_vars);
+   return (W[0][0][0].NumVar());
 }
 
 /* Return primitive solution state at specified node. */

@@ -184,9 +184,9 @@ public:
 //@{
     //! Subfilter scale turbulent dynamic viscosity
     double mu_t(const LES3D_Polytropic_pState &dWdx, 
-               const LES3D_Polytropic_pState &dWdy, 
-               const LES3D_Polytropic_pState &dWdz,
-               const double &Volume);
+                const LES3D_Polytropic_pState &dWdy, 
+                const LES3D_Polytropic_pState &dWdz,
+                const double &Volume);
     
     //! Subfilter scale turbulent dynamic viscosity adaptor
     double mu_t(const LES3D_Polytropic_pState &dWdx, 
@@ -210,10 +210,10 @@ public:
                    const double &Volume);      
 
     //! Turbulent Prandtl number
-    double Pr_t(void);
+    double Pr_t(void)  { return 0.9; }
 
     //! LES filter width
-    double filter_width(const double &Volume) const;
+    double filter_width(const double &Volume) const { return (filter.FGR*pow(Volume,1.0/3.0)); }
 //@}
 
 /** @name Subfilter scale turbulent stress tensor and heat flux vector */
@@ -424,6 +424,8 @@ public:
                               const double &Volume) {
         return SFS_Kinetic_Energy(dWdx,dWdy,dWdz,Volume);
     }
+
+    
  //@}
 
 };
@@ -531,10 +533,11 @@ public:
                    const double &Volume);     
 
     //! Turbulent Prandtl number
-    double Pr_t(void);
+    double Pr_t(void) { return 0.9; }
 
     //! LES filter width
-    double filter_width(const double &Volume) const;
+    double filter_width(const double &Volume) const { return (filter.FGR*pow(Volume,1.0/3.0)); }
+
 //@}
 
 

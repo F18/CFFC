@@ -110,7 +110,9 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
     value >> value_string;
     strcpy(SFS_model, value_string.c_str());
     if (strcmp(SFS_model, "Smagorinsky") == 0) {
-      i_SFS_model = SFS_MODEL_SMAGORINSKY;
+        i_SFS_model = SFS_MODEL_SMAGORINSKY;
+    } else if (strcmp(SFS_model, "k-equation") == 0) {
+        i_SFS_model = SFS_MODEL_K_EQUATION;
     } else {
       i_command = INVALID_INPUT_VALUE;
     } 

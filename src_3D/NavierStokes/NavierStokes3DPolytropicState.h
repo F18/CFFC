@@ -151,6 +151,18 @@ public :
     NavierStokes3D_Polytropic_pState(const Euler3D_Polytropic_pState &W) : Euler3D_Polytropic_pState(W) { }
 //@}
 
+/** @name Operators */
+/*        --------- */
+//@{    
+    NavierStokes3D_Polytropic_pState& operator =(const NavierStokes3D_Polytropic_pState &W){
+        if(this != &W) {
+            Euler3D_Polytropic_pState::operator=(W);
+        }
+        return *this;
+    }
+//@}    
+    
+    
 /** @name Gas specific constants */
 /*        ---------------------- */
 //@{
@@ -324,7 +336,18 @@ public :
     
     NavierStokes3D_Polytropic_cState(const Euler3D_Polytropic_cState &U) : Euler3D_Polytropic_cState(U) { }
 //@}
-	
+	    
+/** @name Operators */
+/*        --------- */
+//@{    
+    NavierStokes3D_Polytropic_cState& operator =(const NavierStokes3D_Polytropic_cState &U){
+        if(this != &U) {
+            Euler3D_Polytropic_cState::operator=(U);
+        }
+        return *this;
+    }
+//@}  
+    
 /** @name Gas specific constants */
 /*        ---------------------- */
 //@{
