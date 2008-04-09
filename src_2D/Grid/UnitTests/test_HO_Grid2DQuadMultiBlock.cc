@@ -1529,6 +1529,17 @@ namespace tut
       ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
       ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 0);
 
+      bool face_type;
+      ensure_equals("Flux GQPs North", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_North(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs North face", face_type, false);
+      ensure_equals("Flux GQPs South", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_South(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs South face", face_type, false);
+      ensure_equals("Flux GQPs East" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_East(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs East face", face_type, false);
+      ensure_equals("Flux GQPs West" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_West(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs West face", face_type, false);
+      ensure_equals("Total Flux GQPs", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints(iCell,jCell), 8);
+
       // Check update state
       ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);
       ensure_equals("GhostCells", MeshBlk(0,0).Value_GhostCellsUpdate_Flag(), OFF);
@@ -1709,6 +1720,17 @@ namespace tut
       ensure_equals("Constaints East", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
       ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
       ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 2);
+
+      bool face_type;
+      ensure_equals("Flux GQPs North", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_North(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs North face", face_type, false);
+      ensure_equals("Flux GQPs South", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_South(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs South face", face_type, true);
+      ensure_equals("Flux GQPs East" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_East(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs East face", face_type, false);
+      ensure_equals("Flux GQPs West" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_West(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs West face", face_type, false);
+      ensure_equals("Total Flux GQPs", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints(iCell,jCell), 8);
 
       // Check update state
       ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);
@@ -2667,6 +2689,17 @@ namespace tut
       ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
       ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 0);
 
+      bool face_type;
+      ensure_equals("Flux GQPs North", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_North(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs North face", face_type, false);
+      ensure_equals("Flux GQPs South", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_South(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs South face", face_type, false);
+      ensure_equals("Flux GQPs East" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_East(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs East face", face_type, false);
+      ensure_equals("Flux GQPs West" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_West(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs West face", face_type, false);
+      ensure_equals("Total Flux GQPs", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints(iCell,jCell), 8);
+
       // Check boundary conditions
       ensure_equals("BCtypeS", MeshBlk(0,0).BCtypeS[iCell], BC_REFLECTION);
       ensure_equals("BCtypeW", MeshBlk(0,0).BCtypeW[jCell], BC_REFLECTION);
@@ -3129,6 +3162,17 @@ namespace tut
       ensure_equals("Constaints East", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
       ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
       ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 2);
+
+      bool face_type;
+      ensure_equals("Flux GQPs North", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_North(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs North face", face_type, false);
+      ensure_equals("Flux GQPs South", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_South(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs South face", face_type, true);
+      ensure_equals("Flux GQPs East" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_East(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs East face", face_type, false);
+      ensure_equals("Flux GQPs West" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_West(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs West face", face_type, false);
+      ensure_equals("Total Flux GQPs", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints(iCell,jCell), 8);
 
       // Check update state
       ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);
@@ -4032,6 +4076,17 @@ namespace tut
       ensure_equals("Constaints East", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
       ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
       ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 0);
+
+      bool face_type;
+      ensure_equals("Flux GQPs North", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_North(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs North face", face_type, false);
+      ensure_equals("Flux GQPs South", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_South(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs South face", face_type, false);
+      ensure_equals("Flux GQPs East" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_East(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs East face", face_type, false);
+      ensure_equals("Flux GQPs West" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_West(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs West face", face_type, false);
+      ensure_equals("Total Flux GQPs", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints(iCell,jCell), 8);
 
       // Check update state
       ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);

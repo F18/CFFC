@@ -469,6 +469,8 @@ public:
   //@{
   //! Set NumGQP to the passed number.
   void SetNumberOfGaussQuadraturePoints(const int & _NumGQP_){ NumGQP = _NumGQP_; }
+  //! Set NumGQP based on the reconstruction order to obtain the required solution accuracy
+  void SetNumberOfFluxCalculationGaussQuadraturePoints(const int & RecOrder);
   //! Set NumGQP based on correlations.
   void SetNumberOfGaussQuadraturePoints(void);
   //! Get NumGQP
@@ -499,6 +501,34 @@ public:
 
   int NumOfConstrainedGaussQuadPoints(const Cell2D_HO &Cell){ return NumOfConstrainedGaussQuadPoints(Cell.I,Cell.J);}
   int NumOfConstrainedGaussQuadPoints(const int &ii, const int &jj);
+  //@}
+
+  //! @name Get number of flux calculation Gauss quadrature points for each cell.
+  //@{
+  int NumOfFluxCalculationGaussQuadPoints_North(const Cell2D_HO &Cell, bool & curved_face){
+    return NumOfFluxCalculationGaussQuadPoints_North(Cell.I,Cell.J,curved_face);
+  }
+  int NumOfFluxCalculationGaussQuadPoints_North(const int &ii, const int &jj, bool & curved_face);
+
+  int NumOfFluxCalculationGaussQuadPoints_South(const Cell2D_HO &Cell, bool & curved_face){
+    return NumOfFluxCalculationGaussQuadPoints_South(Cell.I,Cell.J,curved_face);
+  }
+  int NumOfFluxCalculationGaussQuadPoints_South(const int &ii, const int &jj, bool & curved_face);
+
+  int NumOfFluxCalculationGaussQuadPoints_East(const Cell2D_HO &Cell, bool & curved_face){
+    return NumOfFluxCalculationGaussQuadPoints_East(Cell.I,Cell.J,curved_face);
+  }
+  int NumOfFluxCalculationGaussQuadPoints_East(const int &ii, const int &jj, bool & curved_face);
+
+  int NumOfFluxCalculationGaussQuadPoints_West(const Cell2D_HO &Cell, bool & curved_face){
+    return NumOfFluxCalculationGaussQuadPoints_West(Cell.I,Cell.J,curved_face);
+  }
+  int NumOfFluxCalculationGaussQuadPoints_West(const int &ii, const int &jj, bool & curved_face);
+
+  int NumOfFluxCalculationGaussQuadPoints(const Cell2D_HO &Cell){
+    return NumOfFluxCalculationGaussQuadPoints(Cell.I,Cell.J);
+  }
+  int NumOfFluxCalculationGaussQuadPoints(const int &ii, const int &jj);
   //@}
 
   //! @name Get cell geometric moments and related information.
@@ -2050,7 +2080,7 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_East(const int 
     return 0;
   } else if (BndEastSplineInfo != NULL){
     /* use high-order boundary info */
-    return BndEastSplineInfo[ii].NumGQPoints();
+    return BndEastSplineInfo[jj].NumGQPoints();
   } else {
     /* return the number of points based on the order of accuracy
        (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux") */
@@ -2070,7 +2100,7 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_West(const int 
     return 0;
   } else if (BndWestSplineInfo != NULL){
     /* use high-order boundary info */
-    return BndWestSplineInfo[ii].NumGQPoints();
+    return BndWestSplineInfo[jj].NumGQPoints();
   } else {
     /* return the number of points based on the order of accuracy
        (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux") */
@@ -2085,6 +2115,214 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_West(const int 
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints(const int &ii, const int &jj){
   return ( NumOfConstrainedGaussQuadPoints_North(ii,jj) + NumOfConstrainedGaussQuadPoints_South(ii,jj) +
 	   NumOfConstrainedGaussQuadPoints_West(ii,jj) + NumOfConstrainedGaussQuadPoints_East(ii,jj));
+}
+
+/*!
+ * Return the number of Gauss quadrature points on the North
+ * cell face at which flux calculation is performed.
+ *
+ * \param curved_face Set to true if the face is treated as curved otherwise to false.
+ */
+inline int Grid2D_Quad_Block_HO::NumOfFluxCalculationGaussQuadPoints_North(const int &ii, const int &jj,
+									   bool & curved_face){
+
+  if (!IsHighOrderBoundary()){
+    // return the number of points based on the order of accuracy
+    // if no high-order treatment of geometry is required
+    curved_face = false;
+    return NumGQP;
+  }
+
+  // Handle high-order geometry
+  if (ii >= ICl && ii<=ICu){
+    // These cells have potentially curved North faces
+    if (jj == JCu){		// check last layer of interior cells on the North block boundary
+      if (BndNorthSplineInfo != NULL){
+	/* use high-order boundary info */
+	curved_face = true;
+	return BndNorthSplineInfo[ii].NumGQPoints();
+      } else {
+	curved_face = false;
+	return NumGQP;
+      }
+    } else if (jj == JCl - 1){	// check first layer of ghost cells on the South block boundary
+      if (BndSouthSplineInfo != NULL){
+	/* use high-order boundary info */
+	curved_face = true;
+	return BndSouthSplineInfo[ii].NumGQPoints();
+      } else {
+	curved_face = false;
+	return NumGQP;
+      }
+    } else {
+      curved_face = false;
+      return NumGQP;
+    }
+  } else {
+    // These cells don't have any potentially curved North face
+    // Return the number of points based on the order of accuracy
+    curved_face = false;
+    return NumGQP;
+  }
+}
+
+/*!
+ * Return the number of Gauss quadrature points on the South
+ * cell face at which flux calculation is performed.
+ *
+ * \param curved_face Set to true if the face is treated as curved otherwise to false.
+ */
+inline int Grid2D_Quad_Block_HO::NumOfFluxCalculationGaussQuadPoints_South(const int &ii, const int &jj,
+									   bool & curved_face){
+
+  if (!IsHighOrderBoundary()){
+    // return the number of points based on the order of accuracy
+    // if no high-order treatment of geometry is required
+    curved_face = false;
+    return NumGQP;
+  }
+
+  // Handle high-order geometry
+  if (ii >= ICl && ii<=ICu){
+    // These cells have potentially curved South face
+    if (jj == JCu+1){		// check first layer of ghost cells on the North block boundary
+      if (BndNorthSplineInfo != NULL){
+	/* use high-order boundary info */
+	curved_face = true;
+	return BndNorthSplineInfo[ii].NumGQPoints();
+      } else {
+	curved_face = false;
+	return NumGQP;
+      }
+    } else if (jj == JCl){	// check first layer of interior cells on the South block boundary
+      if (BndSouthSplineInfo != NULL){
+	/* use high-order boundary info */
+	curved_face = true;
+	return BndSouthSplineInfo[ii].NumGQPoints();
+      } else {
+	curved_face = false;
+	return NumGQP;
+      }
+    } else {
+      curved_face = false;
+      return NumGQP;
+    }
+  } else {
+    // These cells don't have any potentially curved South face
+    // Return the number of points based on the order of accuracy
+    curved_face = false;
+    return NumGQP;
+  }
+}
+
+/*!
+ * Return the number of Gauss quadrature points on the East
+ * cell face at which flux calculation is performed.
+ *
+ * \param curved_face Set to true if the face is treated as curved otherwise to false.
+ */
+inline int Grid2D_Quad_Block_HO::NumOfFluxCalculationGaussQuadPoints_East(const int &ii, const int &jj,
+									  bool & curved_face){
+
+  if (!IsHighOrderBoundary()){
+    // return the number of points based on the order of accuracy
+    // if no high-order treatment of geometry is required
+    curved_face = false;
+    return NumGQP;
+  }
+
+  // Handle high-order geometry
+  if (jj >= JCl && jj <= JCu){
+    // These cells have potentially curved East face
+    if (ii == ICl-1){		// check first layer of ghost cells on the West block boundary
+      if (BndWestSplineInfo != NULL){
+	/* use high-order boundary info */
+	curved_face = true;
+	return BndWestSplineInfo[jj].NumGQPoints();
+      } else {
+	curved_face = false;
+	return NumGQP;
+      }
+    } else if (ii == ICu){	// check last layer of interior cells on the East block boundary
+      if (BndEastSplineInfo != NULL){
+	/* use high-order boundary info */
+	curved_face = true;
+	return BndEastSplineInfo[jj].NumGQPoints();
+      } else {
+	curved_face = false;
+	return NumGQP;
+      }
+    } else {
+      curved_face = false;
+      return NumGQP;
+    }
+  } else {
+    // These cells don't have any potentially curved East face
+    // Return the number of points based on the order of accuracy
+    curved_face = false;
+    return NumGQP;
+  }
+
+}
+
+/*!
+ * Return the number of Gauss quadrature points on the West
+ * cell face at which flux calculation is performed.
+ *
+ * \param curved_face Set to true if the face is treated as curved otherwise to false.
+ */
+inline int Grid2D_Quad_Block_HO::NumOfFluxCalculationGaussQuadPoints_West(const int &ii, const int &jj,
+									  bool & curved_face){
+
+  if (!IsHighOrderBoundary()){
+    // return the number of points based on the order of accuracy
+    // if no high-order treatment of geometry is required
+    curved_face = false;
+    return NumGQP;
+  }
+
+  // Handle high-order geometry
+  if (jj >= JCl && jj <= JCu){
+    // These cells have potentially curved West face
+    if (ii == ICl){		// check first layer of interior cells on the West block boundary
+      if (BndWestSplineInfo != NULL){
+	/* use high-order boundary info */
+	curved_face = true;
+	return BndWestSplineInfo[jj].NumGQPoints();
+      } else {
+	curved_face = false;
+	return NumGQP;
+      }
+    } else if (ii == ICu+1){	// check first layer of ghost cells on the East block boundary
+      if (BndEastSplineInfo != NULL){
+	/* use high-order boundary info */
+	curved_face = true;
+	return BndEastSplineInfo[jj].NumGQPoints();
+      } else {
+	curved_face = false;
+	return NumGQP;
+      }
+    } else {
+      curved_face = false;
+      return NumGQP;
+    }
+  } else {
+    // These cells don't have any potentially curved East face
+    // Return the number of points based on the order of accuracy
+    curved_face = false;
+    return NumGQP;
+  }
+
+}
+
+/*!
+ * Return the total number of Gauss quadrature points for the specified cell
+ * at which flux calculation is performed.
+ */
+inline int Grid2D_Quad_Block_HO::NumOfFluxCalculationGaussQuadPoints(const int &ii, const int &jj){
+  bool dummy;
+  return ( NumOfFluxCalculationGaussQuadPoints_North(ii,jj,dummy) + NumOfFluxCalculationGaussQuadPoints_South(ii,jj,dummy) +
+	   NumOfFluxCalculationGaussQuadPoints_West(ii,jj,dummy)  + NumOfFluxCalculationGaussQuadPoints_East(ii,jj,dummy));
 }
 
 /*!
@@ -2264,18 +2502,22 @@ inline void Grid2D_Quad_Block_HO::Disturb_Interior_Nodes(const int &Number_of_It
   Update_Cells();  
 }
 
-
 /*!
  * Set the number of Gauss quadrature points used for 
- * flux evaluation based on the correlation between the highest 
+ * flux evaluation based on the correlation between the provided  
  * order of reconstruction and the minimum number of GQP required
- * for obtaining the desired accuracy.
+ * for obtaining the desired solution accuracy.
+ *
+ * \param [in] RecOrder the reconstruction order required to obtain the targeted solution accuracy
+ *
+ * \note Case 4 should return NumGQP=3!
+ * \todo Find a better way to setup this number based on correlation with the high-order object!
  */
-inline void Grid2D_Quad_Block_HO::SetNumberOfGaussQuadraturePoints(void){
+inline void Grid2D_Quad_Block_HO::SetNumberOfFluxCalculationGaussQuadraturePoints(const int & RecOrder){
 
-  switch(HighestReconstructionOrder){
+  switch(RecOrder){
   case 4:
-    NumGQP = 3;
+    NumGQP = 2;			// This is a temporary solution to return the write number!
   case 3:
     NumGQP = 2;
     break;
@@ -2289,8 +2531,23 @@ inline void Grid2D_Quad_Block_HO::SetNumberOfGaussQuadraturePoints(void){
     NumGQP = 1;
     break;
   default:
-    throw runtime_error("Grid2D_Quad_Block_HO::SetNumberOfGaussQuadraturePoints() ERROR! Unknown option for the current reconstruction order");
+    throw runtime_error("Grid2D_Quad_Block_HO::SetNumberOfFluxCalculationGaussQuadraturePoints() ERROR! Unknown option for the passed reconstruction order");
   } // endswitch
+}
+
+/*!
+ * Set the number of Gauss quadrature points used for 
+ * flux evaluation based on the correlation between the highest 
+ * order of reconstruction and the minimum number of GQP required
+ * for obtaining the desired accuracy.
+ */
+inline void Grid2D_Quad_Block_HO::SetNumberOfGaussQuadraturePoints(void){
+
+  try{
+    SetNumberOfFluxCalculationGaussQuadraturePoints(HighestReconstructionOrder);
+  } catch (runtime_error){
+    throw runtime_error("Grid2D_Quad_Block_HO::SetNumberOfGaussQuadraturePoints() ERROR! Unknown option for the current reconstruction order");
+  }
 }
 
 /*!

@@ -100,6 +100,10 @@ public:
 
   //! Get the array of Gauss quadrature points
   const Vector2D* GQPoint(void) const {return GQP;}
+
+  //! Copy the array of Gauss quadrature points used for flux calculation in the provided container
+  void CopyGQPoints(Vector2D *CopyGQP){ for (int i=0; i<NumGQPoints(); ++i) CopyGQP[i] = GQP[i]; }
+
   /*! 
    * Get a specific Gauss quadrature point location. 
    * \param Position index specifying which GQP is retrieved. Position >= ONE!!!
