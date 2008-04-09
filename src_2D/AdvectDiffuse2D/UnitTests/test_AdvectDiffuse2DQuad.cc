@@ -740,6 +740,84 @@ namespace tut
     }
   }
 
+  /* Test 12:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<12>()
+  {
+
+    set_test_name("Piecewise Linear Reconstruction");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    RunRegression = ON;
+
+    // Indexes of the tested cell
+    int iCell,jCell; 
+    iCell = 7;
+    jCell = 7;
+
+    // Set input file name
+    Open_Input_File("CircularAdvectionDiffusion_HighOrder_With_DropOrder.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+    HighOrder2D_Input::Set_Final_Parameters(IP);
+    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = OFF;
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // == check correct initialization
+    ensure("High-order variables", SolnBlk[0].HighOrderVariables() != NULL);
+    ensure_equals("Main High-order ", SolnBlk[0].HighOrderVariable(0).RecOrder(), 4);
+    ensure_equals("Main High-order ", SolnBlk[0].HighOrderVariable(1).RecOrder(), 1);
+    
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+    // Reconstruct the solution without geometric weighting
+    CENO_Execution_Mode::CENO_APPLY_GEOMETRIC_WEIGHTING = OFF;
+    SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+    SolnBlk[0].HighOrderVariable(1).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+    // Reconstruct with PWL 
+    SolnBlk[0].HighOrderVariable(0).ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk[0],
+											iCell,jCell,
+											IP.Limiter());
+
+    Linear_Reconstruction_LeastSquares(SolnBlk[0],IP.Limiter());
+
+    // == check
+    ensure_distance("D01, Drop Order",
+		    SolnBlk[0].HighOrderVariable(0).get_dUdy(),
+		    SolnBlk[0].dUdy[iCell][jCell],
+		    AcceptedError(SolnBlk[0].dUdy[iCell][jCell]));
+    ensure_distance("D10, Drop Order",
+		    SolnBlk[0].HighOrderVariable(0).get_dUdx(),
+		    SolnBlk[0].dUdx[iCell][jCell],
+		    AcceptedError(SolnBlk[0].dUdx[iCell][jCell]));
+    ensure_distance("phi, Drop Order",
+		    SolnBlk[0].HighOrderVariable(0).get_phi()[1],
+		    9.1528284874531129e-02,
+		    AcceptedError(9.1528284874531129e-02));
+
+    ensure_distance("D00",
+		    SolnBlk[0].HighOrderVariable(1).CellTaylorDerivState(iCell,jCell,0),
+		    SolnBlk[0].U[iCell][jCell],
+		    AcceptedError(SolnBlk[0].U[iCell][jCell]));
+    ensure_distance("D01",
+		    SolnBlk[0].HighOrderVariable(1).CellTaylorDerivState(iCell,jCell,1),
+		    SolnBlk[0].dUdy[iCell][jCell],
+		    AcceptedError(SolnBlk[0].dUdy[iCell][jCell]));
+    ensure_distance("D10",
+		    SolnBlk[0].HighOrderVariable(1).CellTaylorDerivState(iCell,jCell,2),
+		    SolnBlk[0].dUdx[iCell][jCell],
+		    AcceptedError(SolnBlk[0].dUdx[iCell][jCell]));
+  }
+
 }
 
 

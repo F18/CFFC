@@ -116,6 +116,12 @@ public:
   //! Get the Taylor derivative of cell (ii,jj) which is stored in the 'position' place (i.e. powers and value).
   const Derivative & CellTaylorDeriv(const int & ii, const int & jj,
 				     const int & position) const {return TD[ii][jj](position);}
+  //! Get the solution state of the Taylor derivative of cell (ii,jj) which is stored in the 'position' place.
+  Soln_State & CellTaylorDerivState(const int & ii, const int & jj,
+				    const int & position) {return TD[ii][jj](position).D();}
+  //! Get the solution state of the Taylor derivative of cell (ii,jj) which is stored in the 'position' place.
+  const Soln_State & CellTaylorDerivState(const int & ii, const int & jj,
+					  const int & position) const {return TD[ii][jj](position).D();}
   //! Get the number of Taylor derivatives in each cell container
   const int NumberOfTaylorDerivatives(void) const {return TD[ICl][JCl].size();}
   //@} 
@@ -338,6 +344,14 @@ public:
   void ComputeCellReconstructionPseudoInverse(const int &iCell, const int &jCell,
 					      const IndexType & i_index, const IndexType & j_index);
 
+  //! @brief Compute the piecewise linear solution reconstruction of cell (iCell,jCell). 
+  template<class Soln_Block_Type>
+  void ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk, 
+							   const int &iCell, const int &jCell,
+							   const int &Limiter,
+							   const Soln_State &
+							   (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const = 
+							   &Soln_Block_Type::CellSolution);
   //@} (Cell Level Reconstructions)
 
   //! @name Helper Functions:
@@ -355,6 +369,15 @@ public:
   void ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk);
   //@}
 
+  //! @name Access to the first-order derivatives from memory pool:
+  //@{
+  //! Get dUdx
+  const Soln_State & get_dUdx(void) { return dUdx; }
+  //! Get dUdy
+  const Soln_State & get_dUdy(void) { return dUdy; }
+  //! Get Limiter
+  const Soln_State & get_phi(void) { return phi; }
+  //@}
 
   //! @name Error Evaluation:
   //@{
@@ -517,6 +540,12 @@ private:
   DenseMatrix All_Delta_U;	     // Storage for the RHS matrix (i.e. solution dependent) of the k-Exact reconstruction.
   ColumnVector Delta_U;              // Storage for a particular column of the RHS matrix.
   ColumnVector X;                    // Storage for the solution to the least-square problem.
+
+  // === Helper variables for the limited piecewise linear solution reconstruction ===
+  Soln_State U_ave, dUdx, dUdy, phi;
+  int I_Index[8], J_Index[8];
+  double geom_weights[8];
+  Vector2D dX[8];
   //@}
 
   //! @name Error calculation variables and internal functions:
@@ -527,6 +556,26 @@ private:
   //! Set all error variables to zero
   void ResetErrors(void){ ErrorL1 = 0.0; ErrorL2 = 0.0; ErrorMax = 0.0; TotalBlockArea = 0.0; CellsUsed = 0;}
   //@}
+
+  //! @name Functions related to the memory pool piecewise linear solution interpolant:
+  //@{
+  //! Evaluate the linear interpolant at a given location (X_Coord,Y_Coord) 
+  //  for a specified solution variable (i.e. parameter) and a cell (ii,jj)
+  double UnlimitedLinearSolutionAtCoordinates(const int & ii, const int & jj, 
+					      const double & X_Coord, const double & Y_Coord, const unsigned & parameter) const {
+    return U_ave[parameter] + dUdx[parameter]*(X_Coord - XCellCenter(ii,jj)) + dUdy[parameter]*(Y_Coord - YCellCenter(ii,jj));
+  }
+  //! Evaluate the linear interpolant at a given position vector for a 
+  // specified solution variable (i.e. parameter) and a cell (ii,jj)
+  double UnlimitedLinearSolutionAtLocation(const int & ii, const int & jj,
+					   const Vector2D &CalculationPoint, const unsigned & parameter) const {
+    return UnlimitedLinearSolutionAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y,parameter);
+  }
+  //! Evaluate the limiter
+  double CalculateLimiter(double *uQuad, const int &nQuad,
+			  const double &u0, const double &u0Min, const double &u0Max, const int &Limiter);
+  //@}
+
 };
 
 /******************************************************
@@ -1794,6 +1843,34 @@ double HighOrder2D<SOLN_STATE>::ComputeReconstructionsErrorL2(const int &iCell, 
 											  _dummy_result),
 						    _dummy_result),
 			      digits, _dummy_result);
+}
+
+/*! 
+ * Calculate the slope limiter for a variety 
+ * of limiting functions. 
+ */
+template<class SOLN_STATE> inline
+double HighOrder2D<SOLN_STATE>::CalculateLimiter(double *uQuad, const int &nQuad,
+						 const double &u0, const double &u0Min,
+						 const double &u0Max, const int &Limiter){
+  switch(Limiter) {
+  case LIMITER_ONE :
+    return ONE;
+  case LIMITER_ZERO :
+    return ZERO;
+  case LIMITER_BARTH_JESPERSEN :
+    return Limiter_BarthJespersen(uQuad,u0,u0Min,u0Max,nQuad);
+  case LIMITER_VENKATAKRISHNAN :
+    return Limiter_Venkatakrishnan(uQuad,u0,u0Min,u0Max,nQuad);
+  case LIMITER_VENKATAKRISHNAN_CORRECTED :
+    return Limiter_Venkatakrishnan_Modified(uQuad,u0,u0Min,u0Max,nQuad);
+  case LIMITER_VANLEER :
+    return Limiter_VanLeer(uQuad,u0,u0Min,u0Max,nQuad);
+  case LIMITER_VANALBADA :
+    return Limiter_VanAlbada(uQuad,u0,u0Min,u0Max,nQuad);
+  default:
+    return Limiter_BarthJespersen(uQuad,u0,u0Min,u0Max,nQuad);
+  };
 }
 
 /*! 

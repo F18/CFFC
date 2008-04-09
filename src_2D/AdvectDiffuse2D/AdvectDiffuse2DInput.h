@@ -246,7 +246,10 @@ public:
 
   //! @name Reconstruction related member functions:
   //@{
-  int ReconstructionOrder(void) {return (Space_Accuracy-1);} //!< return order of reconstruction based on Space_Accuracy
+  /*! Return order of reconstruction based on Space_Accuracy.
+    To obtain a certain global space accuracy (i.e. convective, diffusive and source term)
+    a piecewise polynomial reconstruction of the same order as the space accuracy must be performed. */
+  int ReconstructionOrder(void) {return (Space_Accuracy);}
   int & Limiter(void) {return i_Limiter;}                    //!< write/read selected limiter
   const int & Limiter(void) const {return i_Limiter;}        //!< return selected limiter (read only)
   /*!

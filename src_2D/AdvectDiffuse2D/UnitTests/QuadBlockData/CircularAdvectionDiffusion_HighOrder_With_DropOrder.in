@@ -23,8 +23,6 @@ Box_Height =
 	2.00
 X_Shift =
 	0.0 0.0
-High_Order_Boundary =
-              OFF
 
 	###############################
 	#  VELOCITY FIELD PARAMETERS  #
@@ -57,26 +55,8 @@ ICs_Type =
 	 Exact_Solution
 
 Exact_Integration_Digits =
-    13
+    6
 
-	###########################
-	#  DEFINE EXACT SOLUTION  #
-	###########################
-Exact_Solution =
-		Pure_Circular_Advection
-Center_Of_Rotation =
-	    0.0 0.0
-
-Inflow_Field =
-        Inflow_HyperTan_I
-Inflow_Reference_Point =
-        0.0 0.0
-Inflow_A_Coeff =
-        1.0
-Inflow_Magnitude_Coeff =
-        2.8
-Inflow_Steepness_Coeff =
-        3.0
 
 	################################
 	#  DEFINE BOUNDARY CONDITIONS  #
@@ -100,6 +80,20 @@ BC_West =
 	Farfield
 	#Dirichlet
 
+Inflow_Field =
+	 Inflow_Sinusoidal_IV
+
+
+	###########################
+	#  DEFINE EXACT SOLUTION  #
+	###########################
+Exact_Solution =
+		Pure_Circular_Advection
+Center_Of_Rotation =
+	    0.0 0.0
+
+
+
 
 			###########################################
 			# SET NUMERICAL DISCRETIZATION PARAMETERS #
@@ -111,9 +105,9 @@ BC_West =
 	#########################
 
 Number_of_Cells_Idir = 
-	16
+	12
 Number_of_Cells_Jdir =
-	16
+	12
 Number_of_Blocks_Idir = 
 	2
 Number_of_Blocks_Jdir =
@@ -122,8 +116,7 @@ Number_of_Ghost_Cells =
 	5
 Number_of_Blocks_Per_Processor =
 	10
-Iteration_Disturb_Mesh =
-        0
+
 
 	###########################################
 	#  SET SPATIAL DISCRETIZATION PARAMETERS  #
@@ -132,20 +125,20 @@ Reconstruction_Type =
 	CENO
 
 Space_Accuracy =
-        3
+        4
 
 Number_of_Auxiliary_Reconstructions =
-        2
+        1
 
 Auxiliary_Reconstruction_Orders =
-      2   4
+      1
 
 CENO_Smoothness_Indicator =
      Use_First_Neighbours
 
 Limiter_Type = 
-	 One
-	# Barth_Jespersen
+	# One
+	 Barth_Jespersen
 	# Venkatakrishnan
 	# Zero
 
@@ -227,7 +220,7 @@ AMR_Frequency =
 	# SET OUTPUT PARAMETERS #
 	#########################
 Output_File_Name = 
-	AdvectDiffuse2D/UnitTests/QuadBlockData/Current_HighOrder_Circular_Advection_In_Rectangular_Box
+	AdvectDiffuse2D/UnitTests/QuadBlockData/Current_Circular_Advection_In_Rectangular_Box
 
 Restart_Solution_Save_Frequency = 
 	600

@@ -57,6 +57,11 @@ public:
       ---------------------------------------------------------------------------------------- */
   static short CENO_PADDING;
 
+  /*! Turn ON this flag if the geometric weighting is applied. (default) \n
+      Turn OFF if the geometric weighting is not applied. \n
+      ---------------------------------------------------------------------------------------- */
+  static short CENO_APPLY_GEOMETRIC_WEIGHTING;
+
   /*! Turn ON this flag if the geometric weighting used in the least-squares problem is 1.0/(Distance^2). \n
       Turn OFF if the geometric weighting is 1.0/fabs(Distance) (default) \n
       ---------------------------------------------------------------------------------------- */
@@ -163,6 +168,14 @@ void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Ty
       CENO_PADDING = ON;
     } else {
       CENO_PADDING = OFF;
+    }
+    i_command = 0;
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Apply_Geom_Weighting") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
+      CENO_APPLY_GEOMETRIC_WEIGHTING = ON;
+    } else {
+      CENO_APPLY_GEOMETRIC_WEIGHTING = OFF;
     }
     i_command = 0;
   } else if (strcmp(IP.Next_Control_Parameter, "CENO_Square_Geom_Weighting") == 0) {

@@ -19,11 +19,17 @@
  */
 inline double CENO_Geometric_Weighting(double & Distance){
   
-  if (CENO_Execution_Mode::CENO_SQUARE_GEOM_WEIGHTING ) {
-    return 1.0/(EpsilonTol::epsilon + sqr(Distance));
-  }
-  else {
-    return 1.0/(EpsilonTol::epsilon + fabs(Distance));
+  if (CENO_Execution_Mode::CENO_APPLY_GEOMETRIC_WEIGHTING){
+    // calculate the weight
+
+    if (CENO_Execution_Mode::CENO_SQUARE_GEOM_WEIGHTING ) {
+      return 1.0/(EpsilonTol::epsilon + sqr(Distance));
+    }
+    else {
+      return 1.0/(EpsilonTol::epsilon + fabs(Distance));
+    }
+  } else {
+    return 1.0;
   }
 }
 
@@ -38,13 +44,19 @@ inline double CENO_Geometric_Weighting(double & Distance){
 ************************************************************************************/
 inline void CENO_Geometric_Weighting(double & ControlVolumeWeight, const double & DistanceBetweenCentroids){
 
-  ControlVolumeWeight = DistanceBetweenCentroids;
+  if (CENO_Execution_Mode::CENO_APPLY_GEOMETRIC_WEIGHTING){
+    // calculate the weight
+    ControlVolumeWeight = DistanceBetweenCentroids;
 
-  if (CENO_Execution_Mode::CENO_SQUARE_GEOM_WEIGHTING ) {
-    ControlVolumeWeight *= ControlVolumeWeight;
+    if (CENO_Execution_Mode::CENO_SQUARE_GEOM_WEIGHTING ) {
+      ControlVolumeWeight *= ControlVolumeWeight;
+    }
+
+    ControlVolumeWeight = 1.0/(EpsilonTol::epsilon + ControlVolumeWeight);
+
+  } else {
+    ControlVolumeWeight = 1.0;
   }
-
-  ControlVolumeWeight = 1.0/(EpsilonTol::epsilon + ControlVolumeWeight);
 }
 
 

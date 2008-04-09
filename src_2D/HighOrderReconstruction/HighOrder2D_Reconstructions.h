@@ -359,7 +359,7 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
   int P1, P2;
 
   // *********  Assign the average solution to D00 ***********
-  CellTaylorDeriv(iCell,jCell,0).D() = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
+  CellTaylorDerivState(iCell,jCell,0) = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
 
   // == Check if the reconstruction polynomial is piecewise constant
   if (RecOrder() == 0){
@@ -660,6 +660,193 @@ void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverse(const int &
   // This operation will change the dimensions of the matrix.
   Cell_LHS_Inv(iCell,jCell).pseudo_inverse_override();
   
+}
+
+/*! 
+ * Performs the reconstruction of a limited piecewise 
+ * linear solution state within a given cell (iCell,jCell) of   
+ * the computational mesh for the specified             
+ * quadrilateral solution block.  A least squares       
+ * approach is used in the evaluation of the unlimited  
+ * solution gradients.  Several slope limiters may be   
+ * used.                                                
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::
+ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
+						    const int &iCell, const int &jCell,
+						    const int &Limiter,
+						    const Soln_State & 
+						    (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const){
+
+  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+
+  int n, parameter, n_pts;
+  double MaxWeight(0.0);
+  double DxDx_ave(0), DxDy_ave(0), DyDy_ave(0);
+  Soln_State DU, DUDx_ave(0), DUDy_ave(0);
+  double u0Min, u0Max;
+  double *uQuad(NULL);
+  Vector2D *GQP(NULL);
+  int NumGQP, GQP_North, GQP_South, GQP_East, GQP_West;
+  bool faceNorth, faceSouth, faceEast, faceWest;
+
+  // == Check if the reconstruction polynomial is piecewise constant
+  if (RecOrder() == 0){
+    // There is no need to calculate the reconstruction
+    return;
+  }
+
+  /* Carry out the limited solution reconstruction in
+     each cell of the computational mesh. */
+
+  /* Determine the number of neighbouring cells to
+     be used in the reconstruction procedure.
+     This stencil might be different near boundaries
+     and it is influenced by the boundary conditions. */
+  SolnBlk.SetPiecewiseLinearReconstructionStencil(iCell,jCell,
+						  I_Index,J_Index,
+						  n_pts);
+
+  // Perform reconstruction.
+  if (n_pts > 0) {
+    
+    // Compute distance between centroids and the geometric weights
+    for ( n = 0 ; n < n_pts ; ++n ) {
+      /* Compute the X and Y component of the distance between
+	 the cell centers of the neighbour and the reconstructed cell */
+      dX[n] = Geom->Cell[ I_Index[n] ][ J_Index[n] ].Xc - Geom->Cell[iCell][jCell].Xc;
+
+      /* Compute the geometric weight based on the centroid distance */
+      CENO_Geometric_Weighting(geom_weights[n], dX[n].abs());
+
+      /* Compute the maximum geometric weight (this is used for normalization) */
+      MaxWeight = max(MaxWeight, geom_weights[n]);
+    }
+
+    for ( n = 0 ; n < n_pts ; ++n ) {
+      // compute the normalized geometric weight
+      geom_weights[n] /= MaxWeight;
+
+      // compute the square of the normalized geometric weight
+      geom_weights[n] *= geom_weights[n];
+
+      DU = (SolnBlk.*ReconstructedSoln)( I_Index[n], J_Index[n] ) - (SolnBlk.*ReconstructedSoln)(iCell,jCell);
+      DUDx_ave += DU*(geom_weights[n]*dX[n].x);
+      DUDy_ave += DU*(geom_weights[n]*dX[n].y);
+      DxDx_ave += geom_weights[n]*dX[n].x*dX[n].x;
+      DxDy_ave += geom_weights[n]*dX[n].x*dX[n].y;
+      DyDy_ave += geom_weights[n]*dX[n].y*dX[n].y;
+    } /* endfor */
+    					    
+    DUDx_ave /= double(n_pts);
+    DUDy_ave /= double(n_pts);
+    DxDx_ave /= double(n_pts);
+    DxDy_ave /= double(n_pts);
+    DyDy_ave /= double(n_pts);
+
+    // Calculate the first-order derivatives
+    dUdx = ( (DUDx_ave*DyDy_ave-DUDy_ave*DxDy_ave)/
+	     (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+    dUdy = ( (DUDy_ave*DxDx_ave-DUDx_ave*DxDy_ave)/
+	     (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+
+    // Set the average solution
+    U_ave = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
+
+    // Calculate slope limiters.
+    if (!SolnBlk.Freeze_Limiter) {
+
+      // Get number of flux calculation points and edge type for each of the 4 cell faces.
+      GQP_North = Geom->NumOfFluxCalculationGaussQuadPoints_North(iCell,jCell,faceNorth);
+      GQP_South = Geom->NumOfFluxCalculationGaussQuadPoints_South(iCell,jCell,faceSouth);
+      GQP_East  = Geom->NumOfFluxCalculationGaussQuadPoints_East(iCell,jCell,faceEast);
+      GQP_West  = Geom->NumOfFluxCalculationGaussQuadPoints_West(iCell,jCell,faceWest);
+
+      // Get total number of points which are used to assess the slope limiter
+      NumGQP = GQP_North + GQP_South + GQP_East + GQP_West;
+
+      // Allocate memory for the location of the points and the solution
+      uQuad = new double [NumGQP];
+      GQP = new Vector2D [NumGQP];
+
+      // Get North face GQPs
+      n = 0;
+      if (faceNorth){
+	// used GQPs from BndSplineInfo
+	Geom->BndNorthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+      } else {
+	// used GQPs from straight edge
+	Geom->getGaussQuadPointsFaceN(iCell,jCell,&GQP[n],GQP_North);
+      }
+      // Update n
+      n += GQP_North;
+      
+      // Get West face GQPs
+      if (faceWest){
+	// used GQPs from BndSplineInfo
+	Geom->BndWestSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+      } else {
+	// used GQPs from straight edge
+	Geom->getGaussQuadPointsFaceW(iCell,jCell,&GQP[n],GQP_West);
+      }
+      // Update n
+      n += GQP_West;
+
+      // Get South face GQPs
+      if (faceSouth){
+	// used GQPs from BndSplineInfo
+	Geom->BndSouthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+      } else {
+	// used GQPs from straight edge
+	Geom->getGaussQuadPointsFaceS(iCell,jCell,&GQP[n],GQP_South);
+      }
+      // Update n
+      n += GQP_South;
+
+      // Get East face GQPs
+      if (faceEast){
+	// used GQPs from BndSplineInfo
+	Geom->BndEastSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+      } else {
+	// used GQPs from straight edge
+	Geom->getGaussQuadPointsFaceE(iCell,jCell,&GQP[n],GQP_East);
+      }
+
+      // Calculate the limiter for each solution variable (i.e. parameter)
+      for (parameter = 1; parameter <= NumberOfVariables(); ++parameter) {
+
+	// Compute the minimum and maximum average solution in the stencil for the current parameter
+	u0Min = U_ave[parameter];
+	u0Max = u0Min;
+	for (n = 0; n < n_pts; ++n) {
+	  u0Min = min(u0Min, (SolnBlk.*ReconstructedSoln)(I_Index[n],J_Index[n])[parameter]);
+	  u0Max = max(u0Max, (SolnBlk.*ReconstructedSoln)(I_Index[n],J_Index[n])[parameter]);
+	}
+
+	// Evaluate the solution at all required points
+	for (n = 0; n < NumGQP; ++n){
+	  uQuad[n] = UnlimitedLinearSolutionAtLocation(iCell,jCell,
+						       GQP[n],
+						       parameter);
+	}
+
+	// Evaluate limiter for the current parameter
+	phi[parameter] = CalculateLimiter(uQuad,NumGQP,U_ave[parameter],u0Min,u0Max,Limiter);
+      }	// endfor
+
+      // Deallocate memory
+      delete [] uQuad;
+      delete [] GQP;
+      NumGQP = 0;
+    }
+
+  } else {
+    CellTaylorDerivState(iCell,jCell,1,0).Vacuum();
+    CellTaylorDerivState(iCell,jCell,0,1).Vacuum();
+    CellTaylorDeriv(iCell,jCell).Limiter().Vacuum();
+  } /* endif */
 }
 
 

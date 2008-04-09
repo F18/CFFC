@@ -325,24 +325,27 @@ public:
 
   //! @name Member functions to compute the piecewise linear solution at a particular location
   //@{
+  void SetPiecewiseLinearReconstructionStencil(const int &i, const int &j,
+					       int i_index[], int j_index[],
+					       int & n_ptr);
   AdvectDiffuse2D_State PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
-							    const double &DeltaXToCentroid,
-							    const double &DeltaYToCentroid) const;
+							const double &DeltaXToCentroid,
+							const double &DeltaYToCentroid) const;
   double PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
 					 const double &DeltaXToCentroid,
 					 const double &DeltaYToCentroid,
 					 const unsigned int &parameter) const;
   AdvectDiffuse2D_State PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
-							      const Vector2D &CalculationPoint) const;
+							  const Vector2D &CalculationPoint) const;
   double PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
 					   const Vector2D &CalculationPoint,
 					   const unsigned int &parameter) const;
 
   AdvectDiffuse2D_State UnlimitedPiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
-								     const double &DeltaXToCentroid,
-								     const double &DeltaYToCentroid) const;
+								 const double &DeltaXToCentroid,
+								 const double &DeltaYToCentroid) const;
   AdvectDiffuse2D_State UnlimitedPiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
-								       const Vector2D &CalculationPoint) const;
+								   const Vector2D &CalculationPoint) const;
   //@}
 
   //! @name Member functions to compute the inviscid and elliptic flux states at a boundary interface
@@ -807,6 +810,242 @@ inline void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_Array(const int & Num
       NumberOfHighOrderVariables = NumberOfReconstructions;
     }
   }
+}
+
+/*!
+ * Determine the number of neighbouring cells to
+ * be used in the piecewise linear reconstruction
+ * procedure and set the cell indexes in the 
+ * provided containers.
+ *
+ * \param [in] i the i-index of the reconstructed cell
+ * \param [in] j the j-index of the reconstructed cell
+ * \param [out] i_index the "i" indexes of the neighbouring cells that form the stencil
+ * \param [out] j_index the "j" indexes of the neighbouring cells that form the stencil
+ * \param [out] n_ptr the number of neighbouring cells that form the stencil.
+ * This number is typically 8, but it can vary for different boundary conditions.
+ */
+inline void AdvectDiffuse2D_Quad_Block::SetPiecewiseLinearReconstructionStencil(const int &i, const int &j,
+										int i_index[], int j_index[],
+										int &n_pts){
+
+  if (i <= ICl-Nghost || i >= ICu+Nghost || j <= JCl-Nghost || j >= JCu+Nghost) {
+    n_pts = 0;
+  } else if ((i == ICl-1) && (Grid.BCtypeW[j] != BC_NONE)) {
+    if (j == JCl-1 || j == JCu+1) {
+      n_pts = 0;
+    } else if (Grid.BCtypeW[j] == BC_PERIODIC ||
+	       Grid.BCtypeW[j] == BC_NEUMANN ||
+	       Grid.BCtypeW[j] == BC_ROBIN) {
+      if (j == JCl) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i+1; j_index[1] = j  ;
+	i_index[2] = i-1; j_index[2] = j+1;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } else if (j == JCu) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+      } else {
+	n_pts = 8;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+	i_index[5] = i-1; j_index[5] = j+1;
+	i_index[6] = i  ; j_index[6] = j+1;
+	i_index[7] = i+1; j_index[7] = j+1;
+      } /* endif */
+    } else {
+      if (j == JCl) {
+	n_pts = 3;
+	i_index[0] = i+1; j_index[0] = j  ;
+	i_index[1] = i  ; j_index[1] = j+1;
+	i_index[2] = i+1; j_index[2] = j+1;
+      } else if (j == JCu) {
+	n_pts = 3;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+      } else {
+	n_pts = 5;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } /* endif */
+    } /* endif */           
+  } else if ((i == ICu+1) && (Grid.BCtypeE[j] != BC_NONE)) {
+    if (j == JCl-1 || j == JCu+1) {
+      n_pts = 0;
+    } else if (Grid.BCtypeE[j] == BC_PERIODIC ||
+	       Grid.BCtypeE[j] == BC_NEUMANN ||
+	       Grid.BCtypeE[j] == BC_ROBIN) {
+      if (j == JCl) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i+1; j_index[1] = j  ;
+	i_index[2] = i-1; j_index[2] = j+1;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } else if (j == JCu) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+      } else {
+	n_pts = 8;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+	i_index[5] = i-1; j_index[5] = j+1;
+	i_index[6] = i  ; j_index[6] = j+1;
+	i_index[7] = i+1; j_index[7] = j+1;
+      } /* endif */
+    } else {
+      if (j == JCl) {
+	n_pts = 3;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i-1; j_index[1] = j+1;
+	i_index[2] = i  ; j_index[2] = j+1;
+      } else if (j == JCu) {
+	n_pts = 3;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+      } else {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+	i_index[3] = i-1; j_index[3] = j+1;
+	i_index[4] = i  ; j_index[4] = j+1;
+      } /* endif */
+    } /* endif */
+  } else if ((j == JCl-1) && (Grid.BCtypeS[i] != BC_NONE)) {
+    if (i == ICl-1 || i == ICu+1) {
+      n_pts = 0;
+    } else if (Grid.BCtypeS[i] == BC_PERIODIC ||
+	       Grid.BCtypeS[i] == BC_NEUMANN ||
+	       Grid.BCtypeS[i] == BC_ROBIN) {
+      if (i == ICl) {
+	n_pts = 5;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } else if (i == ICu) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+	i_index[3] = i-1; j_index[3] = j+1;
+	i_index[4] = i  ; j_index[4] = j+1;
+      } else {
+	n_pts = 8;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+	i_index[5] = i-1; j_index[5] = j+1;
+	i_index[6] = i  ; j_index[6] = j+1;
+	i_index[7] = i+1; j_index[7] = j+1;
+      } /* endif */
+    } else {
+      if (i == ICl) {
+	n_pts = 3;
+	i_index[0] = i+1; j_index[0] = j  ;
+	i_index[1] = i  ; j_index[1] = j+1;
+	i_index[2] = i+1; j_index[2] = j+1;
+      } else if (i == ICu) {
+	n_pts = 3;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i-1; j_index[1] = j+1;
+	i_index[2] = i  ; j_index[2] = j+1;
+      } else {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i+1; j_index[1] = j  ;
+	i_index[2] = i-1; j_index[2] = j+1;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } /* endif */
+    } /* endif */
+  } else if ((j == JCu+1) && (Grid.BCtypeN[i] != BC_NONE)) {
+    if (i == ICl-1 || i == ICu+1) {
+      n_pts = 0;
+    } else if (Grid.BCtypeN[i] == BC_PERIODIC ||
+	       Grid.BCtypeN[i] == BC_NEUMANN ||
+	       Grid.BCtypeN[i] == BC_ROBIN) {
+      if (i == ICl) {
+	n_pts = 5;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } else if (i == ICu) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+	i_index[3] = i-1; j_index[3] = j+1;
+	i_index[4] = i  ; j_index[4] = j+1;
+      } else {
+	n_pts = 8;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+	i_index[5] = i-1; j_index[5] = j+1;
+	i_index[6] = i  ; j_index[6] = j+1;
+	i_index[7] = i+1; j_index[7] = j+1;
+      } /* endif */
+    } else {
+      if (i == ICl) {
+	n_pts = 3;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+      } else if (i == ICu) {
+	n_pts = 3;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+      } else {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+      } /* endif */
+    } /* endif */
+  } else {
+    n_pts = 8;
+    i_index[0] = i-1; j_index[0] = j-1;
+    i_index[1] = i  ; j_index[1] = j-1;
+    i_index[2] = i+1; j_index[2] = j-1;
+    i_index[3] = i-1; j_index[3] = j  ;
+    i_index[4] = i+1; j_index[4] = j  ;
+    i_index[5] = i-1; j_index[5] = j+1;
+    i_index[6] = i  ; j_index[6] = j+1;
+    i_index[7] = i+1; j_index[7] = j+1;
+  } /* endif */
 }
 
 /**************************************************************************

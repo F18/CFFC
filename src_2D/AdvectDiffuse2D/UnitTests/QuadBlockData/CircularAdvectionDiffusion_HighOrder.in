@@ -125,7 +125,7 @@ Reconstruction_Type =
 	CENO
 
 Space_Accuracy =
-        4
+        3
 
 Number_of_Auxiliary_Reconstructions =
         2
