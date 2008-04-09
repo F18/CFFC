@@ -266,7 +266,7 @@ namespace tut
       MasterFile  = "CircularAdvectionInRectangularBox_cpu000000.dat";
       CurrentFile = "Current_CircularAdvectionInRectangularBox_cpu000000.dat";
       // check
-      RunRegressionTest("Nodal solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+      RunRegressionTest("Nodal solution", CurrentFile, MasterFile, 5.0e-3, 5.0e-9);
 
       //===== Check cell solution
       MasterFile  = "CircularAdvectionInRectangularBox_cells_cpu000000.dat";

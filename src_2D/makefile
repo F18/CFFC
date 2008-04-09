@@ -620,9 +620,11 @@ OBJ_CFFC += $(patsubst %.f,%.o,$(filter %.f,$(SRC_CFFC)))
 # Executable objects:
 OBJ_MAIN = $(SRC_MAIN:.cc=.o)
 OBJ_ICEMCFD_UTIL1 = $(SRC_ICEMCFD_UTIL1:.cc=.o) \
-                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD)
+                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD) \
+		    $(OBJ_HIGH_ORDER_RECONSTRUCTION_2D) $(OBJ_HIGH_ORDER_RECONSTRUCTION_COMMON)
 OBJ_ICEMCFD_UTIL2 = $(SRC_ICEMCFD_UTIL2:.cc=.o) \
-                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD)
+                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD) \
+		    $(OBJ_HIGH_ORDER_RECONSTRUCTION_2D) $(OBJ_HIGH_ORDER_RECONSTRUCTION_COMMON)
 ifeq ($(TUT_TESTING),ON) 
   OBJ_ICEMCFD_UTIL1 += $(OBJ_TUT)
   OBJ_ICEMCFD_UTIL2 += $(OBJ_TUT)
@@ -1093,6 +1095,8 @@ clean:
 	@echo '---------------------------------'
 	@echo ' '
 	rm -f *.depend *.o *.bak *.il *~
+	rm -f journal.tut log.tut
+	rm -f gmon.out tecplot.phy
 	rm -f $(MATH_DIR)*.o $(MATH_DIR)*.il $(MATH_DIR)*~
 	rm -f $(MATH_DIR)Polyfit/*.o $(MATH_DIR)Polyfit/*.il $(MATH_DIR)Polyfit/*~
 	rm -f $(MATH_DIR)UnitTests/*.o $(MATH_DIR)UnitTests/*.il $(MATH_DIR)UnitTests/*~
