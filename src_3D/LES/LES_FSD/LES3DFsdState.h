@@ -298,6 +298,14 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
      _adiabatic_flame_temperature = adiabatic_flame_temperature;
      _filter_width = filter_width;    
    }
+    
+    //! Return the number of variables.
+    int NumVar(void) {
+        return num_vars;
+    }
+    int NumVar(void) const {
+        return num_vars;
+    }
 
    //! Copy solution state (cheaper than = operator)
    void Copy(const LES3DFsd_pState &W);

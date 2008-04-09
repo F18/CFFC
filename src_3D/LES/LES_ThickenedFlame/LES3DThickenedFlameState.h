@@ -276,6 +276,14 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
       Euler3D_ThermallyPerfect_pState::set_species_data(n, S, PATH, debug, Mr, Sc, trans_data);
       num_vars = NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3DTF_VAR_EXTRA + ns;
    }
+    
+    //! Return the number of variables.
+    int NumVar(void) {
+        return num_vars;
+    }
+    int NumVar(void) const {
+        return num_vars;
+    }
 
    //! Assign modelling data (needs to be called only once as it is static)
    void set_modelling_data(const double &laminar_flame_speed,

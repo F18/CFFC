@@ -281,6 +281,14 @@ class Euler3D_ThermallyPerfect_pState {
 /** @name Some useful operators */
 /*        --------------------- */
 //@{
+    //! Return the number of variables.
+    int NumVar(void) {
+        return num_vars;
+    }
+    int NumVar(void) const {
+        return num_vars;
+    }
+    
    //! Allocate memory for species data
    void Allocate(void) {
 #ifdef STATIC_NUMBER_OF_SPECIES
