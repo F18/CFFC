@@ -402,6 +402,7 @@ void Get_Local_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK &Solution_Block,
         for (int j = Velocity_Field.JCl ; j <= Velocity_Field.JCu ; j++) {
             for (int k = Velocity_Field.KCl ; k <= Velocity_Field.KCu ; k++) {
                 Velocity_Field.Velocity[i][j][k] = Solution_Block.W[i][j][k].v - v_average;
+                Velocity_Field.Position[i][j][k] = Solution_Block.Grid.Cell[i][j][k].Xc;
             } /* endfor */
         } /* endfor */
     } /* endfor */
@@ -1250,6 +1251,7 @@ public:
     double        *u, *v, *w;        // Arrays to store the velocity fluctuations in physical space
     fftw_complex  *uu, *vv, *ww;     // Arrays to store the velocity fluctuations in Fourier space
     
+    double *dudy;                    // derivative to y of velocity fluctuations in x-direction
     
     //! The model for the energy spectrum
     double Energy_Spectrum_Value(const double &abs_wave_num) const;
@@ -1372,7 +1374,7 @@ RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
         delete[] K[ii].indexes;
     }
     delete[] K;
-    
+    delete[] dudy;
     fftw_free(u);
     fftw_free(v);
     fftw_free(w);
@@ -1579,6 +1581,7 @@ Import_from_Velocity_Field_Blocks(const Grid3D_Hexa_Multi_Block_List &Initial_Me
                                   Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field_List) {
     int index;
     int nBlk, ix, iy, iz;
+    Vector3D dVdx, dVdy, dVdz;
     for (int kBlk = 0; kBlk <= Initial_Mesh.NBlk_Kdir-1; ++kBlk) {
         for (int jBlk = 0; jBlk <= Initial_Mesh.NBlk_Jdir-1; ++jBlk) {
             for (int iBlk = 0; iBlk <= Initial_Mesh.NBlk_Idir-1; ++iBlk) {
@@ -1595,6 +1598,8 @@ Import_from_Velocity_Field_Blocks(const Grid3D_Hexa_Multi_Block_List &Initial_Me
                             u[index] = Velocity_Field_List.Vel_Blks[nBlk].Velocity[i][j][k].x;
                             v[index] = Velocity_Field_List.Vel_Blks[nBlk].Velocity[i][j][k].y;
                             w[index] = Velocity_Field_List.Vel_Blks[nBlk].Velocity[i][j][k].z;
+                            Velocity_Field_List.Vel_Blks[nBlk].LeastSquares_Reconstruction(i,j,k,dVdx,dVdy,dVdz);
+                            dudy[index] = dVdy.x;
                         }
                     }
                 }
@@ -1616,6 +1621,7 @@ Export_to_Velocity_Field_Blocks(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh
                                 Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field_List) {
     int index;
     int nBlk, ix, iy, iz;
+    int INl,INu,JNl,JNu,KNl,KNu;
     for (int kBlk = 0; kBlk <= Initial_Mesh.NBlk_Kdir-1; ++kBlk) {
         for (int jBlk = 0; jBlk <= Initial_Mesh.NBlk_Jdir-1; ++jBlk) {
             for (int iBlk = 0; iBlk <= Initial_Mesh.NBlk_Idir-1; ++iBlk) {
@@ -1632,9 +1638,18 @@ Export_to_Velocity_Field_Blocks(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh
                             Velocity_Field_List.Vel_Blks[nBlk].Velocity[i][j][k].x = u[index];
                             Velocity_Field_List.Vel_Blks[nBlk].Velocity[i][j][k].y = v[index];
                             Velocity_Field_List.Vel_Blks[nBlk].Velocity[i][j][k].z = w[index];
+                            Velocity_Field_List.Vel_Blks[nBlk].Position[i][j][k] = Initial_Mesh.Grid_Blks[nBlk].Cell[i][j][k].Xc;	                                 
                         }
                     }
                 }
+                INl = Initial_Mesh.Grid_Blks[nBlk].INl; 
+                INu = Initial_Mesh.Grid_Blks[nBlk].INu; 
+                JNl = Initial_Mesh.Grid_Blks[nBlk].JNl; 
+                JNu = Initial_Mesh.Grid_Blks[nBlk].JNu; 
+                KNl = Initial_Mesh.Grid_Blks[nBlk].KNl; 
+                KNu = Initial_Mesh.Grid_Blks[nBlk].KNu;
+                Velocity_Field_List.Vel_Blks[nBlk].Node_INl_JNl_KNl = Initial_Mesh.Grid_Blks[nBlk].Node[INl][JNl][KNl].X; 
+                Velocity_Field_List.Vel_Blks[nBlk].Node_INu_JNu_KNu = Initial_Mesh.Grid_Blks[nBlk].Node[INu][JNu][KNu].X;
             }
         } 
     } 
@@ -1649,19 +1664,23 @@ Export_to_Velocity_Field_Blocks(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::Spatial_Averages(void) {
     int index;
+    double dudy2 = 0;
     u2 = 0 , v2 = 0 , w2 = 0;
+    double invN = ONE/(Nx*Ny*Nz);
     for (int i=0; i<Nx; i++) {
         for (int j=0; j<Ny; j++) {
             for (int l=0; l<Nz; l++) {
                 index = l + Nz*(j+Ny*i);                
-                u2 += ONE/(Nx*Ny*Nz) * sqr(u[index]);   // average of u^2
-                v2 += ONE/(Nx*Ny*Nz) * sqr(v[index]);   // average of v^2
-                w2 += ONE/(Nx*Ny*Nz) * sqr(w[index]);   // average of w^2
+                u2 += invN * sqr(u[index]);   // average of u^2
+                v2 += invN * sqr(v[index]);   // average of v^2
+                w2 += invN * sqr(w[index]);   // average of w^2
+                dudy2 += invN * sqr(dudy[index]);
             } 
         } 
     } 
     TKE_physical = HALF*(u2+v2+w2);
     uRMS = sqrt(TWO/THREE*TKE_physical);
+    lambda_g = sqrt(u2/(dudy2+PICO));
 }
 
 
@@ -2263,6 +2282,12 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
     ww = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
     fftw_plan      physical;
     
+    
+    // Allocation of dudy (needs to be allocated)
+    dudy = new double [Nx*Ny*Nz];
+    
+    
+    
     Calculate_wave_numbers();
     
     
@@ -2442,6 +2467,10 @@ Get_Energy_Spectrum(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
     vv = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
     ww = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
     
+    
+    /* ------------ allocate dudy --------------- */
+    dudy = new double[Nx*Ny*Nz];
+
     /* ----- assign the wave number list and some key wave numbers ----- */
     Calculate_wave_numbers();
     
@@ -2457,11 +2486,12 @@ Get_Energy_Spectrum(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
         cout << endl;
         cout << "   Turbulence statistics in physical space:" << endl;
-        cout << "    -->  TKE    = " << TKE_physical << endl;
-        cout << "    -->  u_RMS  = " << uRMS << endl;
-        cout << "    -->  <u^2>  = " << u2 << endl;
-        cout << "    -->  <v^2>  = " << v2 << endl;
-        cout << "    -->  <w^2>  = " << w2 << endl;
+        cout << "    -->  TKE      = " << TKE_physical << endl;
+        cout << "    -->  u_RMS    = " << uRMS << endl;
+        cout << "    -->  <u^2>    = " << u2 << endl;
+        cout << "    -->  <v^2>    = " << v2 << endl;
+        cout << "    -->  <w^2>    = " << w2 << endl;
+        cout << "    -->  lambda_g = " << lambda_g << endl;
         
     }
     
@@ -2472,11 +2502,11 @@ Get_Energy_Spectrum(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
     if (CFFC_Primary_MPI_Processor() && !(batch_flag) ) {
         cout.setf(ios::fixed, ios::floatfield);
         cout.precision(4);        
-        cout << "    -->  L11    = " << setw(7) << L11_physical 
+        cout << "    -->  L11      = " << setw(7) << L11_physical 
         << "    Lx/L11  = " << setw(6) << L1 / L11_physical << endl;
-        cout << "    -->  L22    = " << setw(7) << L22_physical 
+        cout << "    -->  L22      = " << setw(7) << L22_physical 
         << "    Ly/L22  = " << setw(6) << L2 / L22_physical << endl;
-        cout << "    -->  L33    = " << setw(7) << L33_physical 
+        cout << "    -->  L33      = " << setw(7) << L33_physical 
         << "    Lz/L33  = " << setw(6) << L3 / L33_physical << endl;
         cout.unsetf(ios::fixed);
         cout.unsetf(ios::floatfield);
