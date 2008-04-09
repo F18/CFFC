@@ -38,6 +38,7 @@ NAVIERSTOKES_DIR = NavierStokes/
 LES_POLYTROPIC_DIR = LES/LES_Polytropic/
 LESFSD_DIR = LES/LES_FSD/
 LESTF_DIR = LES/LES_ThickenedFlame/
+LES_FILTERS_DIR = LES/Filters/
 NKS_DIR = NewtonKrylovSchwarz/
 PHYSICS_DIR = Physics/
 EOS_DIR = $(PHYSICS_DIR)EquationOfState/
@@ -204,6 +205,19 @@ SRC_LESTF = $(LESTF_DIR)LES3DThickenedFlameInput.cc \
 	    $(LESTF_DIR)PowerLaw.cc
 
 SRC_LESTF_EXE = $(LESTF_DIR)LES3DThickenedFlame.cc
+
+# LES_FILTERS:
+SRC_LES_FILTERS = $(LES_FILTERS_DIR)LES_Filters.cc
+
+# LESFILTERS_TESTS
+SRC_LES_FILTERS_TESTS = test_LES_Filters.cc
+SRC_LES_FILTERS_TESTS := $(addprefix $(LES_FILTERS_DIR)UnitTests/, $(SRC_LES_FILTERS_TESTS))
+ifeq ($(TUT_TESTING),ON) 
+  SRC_LES_FILTERS += $(SRC_LES_FILTERS_TESTS)
+endif
+
+# Add LES_FILTERS to LES classes
+SRC_LES_POLYTROPIC += $(SRC_LES_FILTERS)
 
 # Physics, Turbulence, Thermodynamics, and Chemistry:
 SRC_PHYSICS = $(PHYSICS_DIR)SpeciesInput.cc
