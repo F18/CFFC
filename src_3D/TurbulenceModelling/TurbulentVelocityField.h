@@ -656,12 +656,13 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
   double L_convected = double(N)*Lz - Time*IPs.Mean_Velocity.z;
 
   if ( L_convected < ZERO ) {
-    while ( L_convected < ZERO ) {
+    while (true) {
       N++;
       L_convected = double(N)*Lz - Time*IPs.Mean_Velocity.z;
+      if ( L_convected >= ZERO) break;
     }
   }
-  
+
   int nBlk, k, ii, jj, kk;
   double new_z, delta, dmin, dmin1, delta1, zmax, zmin, delta_z;  	      
   Vector3D Position_on_Slice, dX;
@@ -699,6 +700,7 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 	  }
 
 	  new_z = L_convected - delta_z;
+	  if ( new_z < NANO ) new_z = ZERO; 
 
 	  Solution_Block.W[i][j][k].v = IPs.Mean_Velocity;
 
