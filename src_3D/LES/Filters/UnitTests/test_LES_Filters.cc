@@ -2,6 +2,7 @@
 
 
 #include "TestData.h"
+#include "../LES_Filters.h"
 
 // Change this file to your
 #include "../../LES_Polytropic/LES3DPolytropic.h"
@@ -138,8 +139,13 @@ namespace tut
         ensure("CFFC or MPI",error_flag==false);
         error_flag = Initial_Conditions(Data,Solution_Data);      
         ensure("Initial_Conditions",error_flag==false);
-        error_flag = Hexa_Post_Processing(Data,Solution_Data);
-        ensure("Post_Processing",error_flag==false);
+        
+        
+        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,1);
+        myfilter.filter();
+        
+        //error_flag = Hexa_Post_Processing(Data,Solution_Data);
+        //ensure("Post_Processing",error_flag==false);
 
         
     }
