@@ -129,7 +129,7 @@ void Levermore1D_pState::set_from_A(const Levermore1D_weights &A, double us) {
  ********************************************************/
 double Levermore1D_cState::moment(int n, const Levermore1D_weights &A, const double &us) const {
   if(n<length) return m_values[n];
-  return A.integrate_conserved_moment(n, us); //use for now, even though it's slow
+  //return A.integrate_conserved_moment(n, us); //use for now, even though it's slow
   if(n==length) return moment_series_L(A,us);
   return moment_series(n,A,us);
 }
@@ -559,7 +559,7 @@ Levermore1D_Vector FluxKinetic(const Levermore1D_weights &Al,
  *                                                      *
  ********************************************************/
 double Levermore1D_cState::relaxation_time() const {
-  return 1.0;  //set to something more realistic later
+  return 1.0e-7;  //set to something more realistic later
 }
 
 double relaxation_time(const Levermore1D_cState &U) {

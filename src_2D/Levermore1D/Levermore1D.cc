@@ -611,7 +611,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 
     for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
       if ( !Local_Time_Stepping ) Soln[i].dt = dtMin;
-      Update = Soln[i].dUdt*(CFL_Number*Soln[i].dt);
+      Update = (Soln[i].dUdt + Collision_RHS(Soln[i].U) )*(CFL_Number*Soln[i].dt);
       Soln[i].U += Update;
       Soln[i].A += Soln[i].dUdA_inv * Update;
       Soln[i].calculate_detector();
@@ -974,7 +974,7 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
         /* Update solution variables for this stage. */
 
         for ( i = 1 ; i <= IP.Number_of_Cells ; ++i ) {
-	  Update = Soln[i].dUdt*(CFL_Number*Soln[i].dt);
+	  Update = (Soln[i].dUdt+Collision_RHS(Soln[i].U)*omega)*(CFL_Number*Soln[i].dt);
 	  Soln[i].U = Soln[i].Uo + Update;
 	  Soln[i].A = Soln[i].Ao + Soln[i].dUdA_inv * Update;
 	  Soln[i].calculate_detector();

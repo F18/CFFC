@@ -254,9 +254,9 @@ extern Levermore1D_Vector FluxKinetic(const Levermore1D_weights &Al,
 
 extern Levermore1D_Vector Collision_RHS(const Levermore1D_cState &U);
 
-extern void Add_Collision_LHS(const DenseMatrix *LHS,
-			      const Levermore1D_cState &U,
-			      const double &omega);
+//extern void Add_Collision_LHS(const DenseMatrix *LHS,
+//			      const Levermore1D_cState &U,
+//			      const double &omega);
 
 extern double relaxation_time(const Levermore1D_cState &U);
 
