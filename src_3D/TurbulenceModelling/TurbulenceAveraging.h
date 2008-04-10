@@ -38,9 +38,9 @@ void Time_Averaging_of_Velocity_Field(HEXA_BLOCK *Solution_Block,
       for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
         for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
            for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
-	       local_vol = Solution_Block[p].Grid.volume(i,j,k);
+	       local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
 	       vel += Solution_Block[p].W[i][j][k].v * local_vol;
-	       Volume += Solution_Block[p].Grid.volume(i,j,k); 
+	       Volume += Solution_Block[p].Grid.Cell[i][j][k].V; 
 	   } /* endfor */
 	} /* endfor */
       } /* endfor*/
@@ -78,7 +78,7 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
       for (int i = Solution_Block[p].ICl; i <= Solution_Block[p].ICu; ++i) {
         for (int j  = Solution_Block[p].JCl; j <= Solution_Block[p].JCu; ++j) {
            for (int k  = Solution_Block[p].KCl; k <= Solution_Block[p].KCu; ++k) {
-                local_vol = Solution_Block[p].Grid.volume(i,j,k);
+                local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
                 total_vol += local_vol;
                 u_p += sqr(Solution_Block[p].W[i][j][k].v.x - u_ave) * local_vol;
                 v_p += sqr(Solution_Block[p].W[i][j][k].v.y - v_ave) * local_vol;
@@ -187,7 +187,7 @@ double Total_TKE(HEXA_BLOCK *Solution_Block,
       for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
         for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
            for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
-	       local_vol = Solution_Block[p].Grid.volume(i,j,k);
+	       local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
 	       total_vol += local_vol;
 	       u_p += sqr(Solution_Block[p].W[i][j][k].v.x - u_ave) * local_vol;
 	       v_p += sqr(Solution_Block[p].W[i][j][k].v.y - v_ave) * local_vol;
@@ -226,7 +226,7 @@ double Total_Enstrophy(HEXA_BLOCK *Solution_Block,
       for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
         for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
            for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
-	       local_vol = Solution_Block[p].Grid.volume(i,j,k);
+	       local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
 	       total_vol += local_vol;
 	       ens += Solution_Block[p].W[i][j][k].Enstrophy(Solution_Block[p].dWdx[i][j][k],
                                                           Solution_Block[p].dWdy[i][j][k],
@@ -290,7 +290,7 @@ double Average_viscosity(HEXA_BLOCK *Solution_Block,
       for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
         for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
            for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
-	       local_vol = Solution_Block[p].Grid.volume(i,j,k);
+	       local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
 	       total_vol += local_vol;
 	       vis += ( Solution_Block[p].W[i][j][k].mu() + 
 			Solution_Block[p].W[i][j][k].mu_t(Solution_Block[p].dWdx[i][j][k],
@@ -326,7 +326,7 @@ double SFS_TKE(HEXA_BLOCK *Solution_Block,
             for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
                 for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
                     for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
-                        local_vol = Solution_Block[p].Grid.volume(i,j,k);
+                        local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
                         total_vol += local_vol;
                         k_SFS += Solution_Block[p].W[i][j][k].SFS_Kinetic_Energy(Solution_Block[p].dWdx[i][j][k],
                                                                                  Solution_Block[p].dWdy[i][j][k],
@@ -374,9 +374,9 @@ void Conditional_Averaging_of_Velocity_Field(HEXA_BLOCK *Solution_Block,
         for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
            for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
 	     if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
-	       local_vol = Solution_Block[p].Grid.volume(i,j,k);
+	       local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
 	       vel += Solution_Block[p].W[i][j][k].v * local_vol;
-	       Volume += Solution_Block[p].Grid.volume(i,j,k); 
+	       Volume += Solution_Block[p].Grid.Cell[i][j][k].V; 
 	     } /* endif */
 	   } /* endfor */
 	} /* endfor */
@@ -418,7 +418,7 @@ void Conditional_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
         for (int j  = Solution_Block[p].JCl; j <= Solution_Block[p].JCu; ++j) {
            for (int k  = Solution_Block[p].KCl; k <= Solution_Block[p].KCu; ++k) {
 	      if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
-                local_vol = Solution_Block[p].Grid.volume(i,j,k);
+                local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
                 total_vol += local_vol;
                 u_p += sqr(Solution_Block[p].W[i][j][k].v.x - u_ave) * local_vol;
                 v_p += sqr(Solution_Block[p].W[i][j][k].v.y - v_ave) * local_vol;
@@ -533,7 +533,7 @@ double Conditional_Total_TKE(HEXA_BLOCK *Solution_Block,
         for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
            for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
 	     if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
-	       local_vol = Solution_Block[p].Grid.volume(i,j,k);
+	       local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
 	       total_vol += local_vol;
 	       u_p += sqr(Solution_Block[p].W[i][j][k].v.x - u_ave) * local_vol;
 	       v_p += sqr(Solution_Block[p].W[i][j][k].v.y - v_ave) * local_vol;
@@ -578,7 +578,7 @@ double Conditional_Total_Enstrophy(HEXA_BLOCK *Solution_Block,
         for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
            for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
 	     if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
-	       local_vol = Solution_Block[p].Grid.volume(i,j,k);
+	       local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
 	       total_vol += local_vol;
 	       ens += Solution_Block[p].W[i][j][k].Enstrophy(Solution_Block[p].dWdx[i][j][k],
                                                           Solution_Block[p].dWdy[i][j][k],
@@ -648,7 +648,7 @@ double Conditional_Average_viscosity(HEXA_BLOCK *Solution_Block,
         for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
            for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
 	     if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
-	       local_vol = Solution_Block[p].Grid.volume(i,j,k);
+	       local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
 	       total_vol += local_vol;
 	       vis += ( Solution_Block[p].W[i][j][k].mu() + 
 			Solution_Block[p].W[i][j][k].mu_t(Solution_Block[p].dWdx[i][j][k],
@@ -684,7 +684,7 @@ void Max_and_Min_Cell_Volumes(HEXA_BLOCK *Solution_Block,
       for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
         for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
 	  for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
-	    cell_volume = Solution_Block[p].Grid.volume(i,j,k);
+	    cell_volume = Solution_Block[p].Grid.Cell[i][j][k].V;
 	    if ( cell_volume > max_volume ) max_volume = cell_volume;
 	    if ( cell_volume < min_volume ) min_volume = cell_volume;
 	  }
