@@ -698,6 +698,8 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 
 	  new_z = L_convected - delta_z;
 
+	  if (new_z <= NANO) {new_z = ZERO;}
+
 	  Solution_Block.W[i][j][k].v = IPs.Mean_Velocity;
 
 

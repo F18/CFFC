@@ -1528,6 +1528,9 @@ inline LES3DFsd_pState LES3DFsd_pState::operator /(const double &a) const {
 //----------------- Inner Product ------------------------//
 inline double LES3DFsd_pState::operator *(const LES3DFsd_pState &W) const {
    double sum=0.0;
+   for (int i=0; i < ns; ++i) {
+      sum += spec[i]*W.spec[i];
+   } /* endfor */
    return (rho*W.rho + v*W.v + p*W.p + C*W.C + Fsd*W.Fsd + k*W.k + sum);
 }
 

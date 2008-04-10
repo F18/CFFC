@@ -633,7 +633,7 @@ LES3DFsd_cState LES3DFsd_pState::U(const LES3DFsd_pState &W) {
     Temp.rhoFsd = W.rho*W.Fsd;
     Temp.rhok = W.rho*W.k;
    for (int i = 0; i < ns; i++) {
-      Temp.rhospec[i] = rho*spec[i];
+      Temp.rhospec[i] = W.rho*W.spec[i];
    } /* endfor */
     return Temp;
 }
@@ -3613,7 +3613,7 @@ LES3DFsd_pState LES3DFsd_cState::W(const LES3DFsd_cState &U) const {
    Temp.Fsd = U.Fsd();
    Temp.k = U.k();
    for (int i = 0; i < ns; i++) {
-      Temp.spec[i] = rhospec[i]/rho;
+      Temp.spec[i] = U.rhospec[i]/U.rho;
    } /* endfor */
    return Temp;
 }

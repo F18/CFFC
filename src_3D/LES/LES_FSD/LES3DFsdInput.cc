@@ -79,16 +79,11 @@ void Input_Parameters<LES3DFsd_pState,
 			  Turbulence_IP.Laminar_Flame_Thickness,
 			  Turbulence_IP.Adiabatic_Flame_Temperature,
 			  Turbulence_IP.Filter_Width);
-//     Uo.set_modelling_data(Turbulence_IP.Laminar_Flame_Speed,
-// 			  Turbulence_IP.Laminar_Flame_Thickness,
-// 			  Turbulence_IP.Thickening_Factor,
-// 			  Turbulence_IP.Filter_Width);  
 
     // Set reference solution states.
     Wo.rho = 1.13; 
     Wo.p = Pressure;	
     Wo.v.zero();
-    Wo.v.x = 0.3837;
     Wo.k = 0.0;
     Wo.C = 0.0;
     Wo.Fsd = 0.0;
@@ -146,11 +141,6 @@ void Input_Parameters<LES3DFsd_pState,
 		 >> Turbulence_IP.Adiabatic_Flame_Temperature
 		 >> Turbulence_IP.Filter_Width;
 
-//     restart_file >> Turbulence_IP.Laminar_Flame_Speed 
-// 		 >> Turbulence_IP.Laminar_Flame_Thickness
-// 		 >> Turbulence_IP.Thickening_Factor
-// 		 >> Turbulence_IP.Filter_Width;
-
     restart_file.unsetf(ios::skipws);
 
     // Set reference solution states.
@@ -196,11 +186,6 @@ void Input_Parameters<LES3DFsd_pState,
 		 << Turbulence_IP.Laminar_Flame_Thickness     << " "
 		 << Turbulence_IP.Adiabatic_Flame_Temperature << " "
 		 << Turbulence_IP.Filter_Width                << endl;
-
-//     restart_file << Turbulence_IP.Laminar_Flame_Speed     << " "
-// 		 << Turbulence_IP.Laminar_Flame_Thickness << " "
-// 		 << Turbulence_IP.Thickening_Factor       << " "
-// 		 << Turbulence_IP.Filter_Width            << endl;
 
     // Write reference solution states.
     restart_file << Wo << endl << Uo << endl;

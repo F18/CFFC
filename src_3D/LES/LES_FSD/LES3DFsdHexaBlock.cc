@@ -4,6 +4,14 @@
 #endif // _LES3DFSD_HEXA_BLOCK_INCLUDED
 
 /******************************************************************
+ * Hexa_Block::NumVar -- Return the number of solution variables. *
+ ******************************************************************/
+template<>
+int Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::NumVar() {
+  return (W[0][0][0].num_vars+1);
+}
+
+/******************************************************************
  * Routine: allocate_static -- Allocate static memory.            *
  ******************************************************************/
 template<>
