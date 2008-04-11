@@ -784,38 +784,71 @@ namespace tut
     SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
     SolnBlk[0].HighOrderVariable(1).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
     // Reconstruct with PWL 
+    SolnBlk[0].HighOrderVariable(0).CellInadequateFitValue(iCell,jCell,1) = ON;
     SolnBlk[0].HighOrderVariable(0).ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk[0],
+											iCell,jCell,
+											IP.Limiter());
+    SolnBlk[0].HighOrderVariable(1).CellInadequateFitValue(iCell,jCell,1) = ON;
+    SolnBlk[0].HighOrderVariable(1).ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk[0],
 											iCell,jCell,
 											IP.Limiter());
 
     Linear_Reconstruction_LeastSquares(SolnBlk[0],IP.Limiter());
 
-    // == check
-    ensure_distance("D01, Drop Order",
+    // == check HighOrderVariable(0)
+    ensure_distance("D00, I",
+		    SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,0),
+		    SolnBlk[0].U[iCell][jCell],
+		    AcceptedError(SolnBlk[0].U[iCell][jCell]));
+    ensure_distance("D01, Drop Order, I",
 		    SolnBlk[0].HighOrderVariable(0).get_dUdy(),
 		    SolnBlk[0].dUdy[iCell][jCell],
 		    AcceptedError(SolnBlk[0].dUdy[iCell][jCell]));
-    ensure_distance("D10, Drop Order",
+    ensure_distance("D10, Drop Order, I",
 		    SolnBlk[0].HighOrderVariable(0).get_dUdx(),
 		    SolnBlk[0].dUdx[iCell][jCell],
 		    AcceptedError(SolnBlk[0].dUdx[iCell][jCell]));
-    ensure_distance("phi, Drop Order",
-		    SolnBlk[0].HighOrderVariable(0).get_phi()[1],
+    ensure_distance("D01, I",
+		    SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,0,1),
+		    SolnBlk[0].dUdy[iCell][jCell],
+		    AcceptedError(SolnBlk[0].dUdy[iCell][jCell]));
+    ensure_distance("D10, I",
+		    SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,1,0),
+		    SolnBlk[0].dUdx[iCell][jCell],
+		    AcceptedError(SolnBlk[0].dUdx[iCell][jCell]));
+    ensure_distance("phi, Drop Order, I",
+		    SolnBlk[0].HighOrderVariable(0).CellTaylorDeriv(iCell,jCell).Limiter(1),
 		    9.1528284874531129e-02,
 		    AcceptedError(9.1528284874531129e-02));
+    ensure_distance("D02, I", SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,0,2)[1], 0.0, AcceptedError(0.0));
+    ensure_distance("D03, I", SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,0,3)[1], 0.0, AcceptedError(0.0));
+    ensure_distance("D04, I", SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,0,4)[1], 0.0, AcceptedError(0.0));
+    ensure_distance("D11, I", SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,1,1)[1], 0.0, AcceptedError(0.0));
+    ensure_distance("D12, I", SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,1,2)[1], 0.0, AcceptedError(0.0));
+    ensure_distance("D13, I", SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,1,3)[1], 0.0, AcceptedError(0.0));
+    ensure_distance("D20, I", SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,2,0)[1], 0.0, AcceptedError(0.0));
+    ensure_distance("D21, I", SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,2,1)[1], 0.0, AcceptedError(0.0));
+    ensure_distance("D22, I", SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,2,2)[1], 0.0, AcceptedError(0.0));
+    ensure_distance("D31, I", SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,3,1)[1], 0.0, AcceptedError(0.0));
+    ensure_distance("D40, I", SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,4,0)[1], 0.0, AcceptedError(0.0));
 
-    ensure_distance("D00",
+    // == check HighOrderVariable(1)
+    ensure_distance("D00, II",
 		    SolnBlk[0].HighOrderVariable(1).CellTaylorDerivState(iCell,jCell,0),
 		    SolnBlk[0].U[iCell][jCell],
 		    AcceptedError(SolnBlk[0].U[iCell][jCell]));
-    ensure_distance("D01",
+    ensure_distance("D01, II",
 		    SolnBlk[0].HighOrderVariable(1).CellTaylorDerivState(iCell,jCell,1),
 		    SolnBlk[0].dUdy[iCell][jCell],
 		    AcceptedError(SolnBlk[0].dUdy[iCell][jCell]));
-    ensure_distance("D10",
+    ensure_distance("D10, II",
 		    SolnBlk[0].HighOrderVariable(1).CellTaylorDerivState(iCell,jCell,2),
 		    SolnBlk[0].dUdx[iCell][jCell],
 		    AcceptedError(SolnBlk[0].dUdx[iCell][jCell]));
+    ensure_distance("phi, Drop Order, II",
+		    SolnBlk[0].HighOrderVariable(1).CellTaylorDeriv(iCell,jCell).Limiter(1),
+		    9.1528284874531129e-02,
+		    AcceptedError(9.1528284874531129e-02));
   }
 
 }

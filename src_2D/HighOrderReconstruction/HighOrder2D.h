@@ -365,8 +365,20 @@ public:
 
   //! @name CENO Analysis:
   //@{
+  /*! @brief Compute smoothness indicator for all block cells. */
   template<class Soln_Block_Type>
-  void ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk);
+  void ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
+				  const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
+											   const int &) const = 
+				  &Soln_Block_Type::CellSolution);
+
+  /*! @brief Compute smoothness indicator for a specific cell (iCell,jCell). */
+  template<class Soln_Block_Type>
+  void ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
+				  const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
+											   const int &) const,
+				  const int &iCell, const int &jCell,
+				  const IndexType & i_index, const IndexType & j_index);
   //@}
 
   //! @name Access to the first-order derivatives from memory pool:
@@ -375,8 +387,6 @@ public:
   const Soln_State & get_dUdx(void) { return dUdx; }
   //! Get dUdy
   const Soln_State & get_dUdy(void) { return dUdy; }
-  //! Get Limiter
-  const Soln_State & get_phi(void) { return phi; }
   //@}
 
   //! @name Error Evaluation:
@@ -542,7 +552,7 @@ private:
   ColumnVector X;                    // Storage for the solution to the least-square problem.
 
   // === Helper variables for the limited piecewise linear solution reconstruction ===
-  Soln_State U_ave, dUdx, dUdy, phi;
+  Soln_State U_ave, dUdx, dUdy;
   int I_Index[8], J_Index[8];
   double geom_weights[8];
   Vector2D dX[8];
@@ -1289,14 +1299,135 @@ void HighOrder2D<SOLN_STATE>::InitializeMonotonicityVariables(const int & ii, co
 
 /*! 
  * Compute the CENO smoothness indicator which is used to
- * differentiate between smooth and non-smooth solution content. 
- * \param [in] SolnBlk The solution block which provides solution data
+ * differentiate between smooth and non-smooth solution content
+ * for all block cells which are used for flux calculation.
+ * The typical range of cells if formed by the interior cells and
+ * the first layer of ghost cells. 
+ * If constrained reconstruction is used along some boundaries the
+ * ghost cells adjacent to those don't need to have the indicator computed.
+ *
+ * \param [in] SolnBlk The solution block which provides solution data.
+ * \param ReconstructedSoln member function of Soln_Block_Type which returns the average solution.
  */
 template<class SOLN_STATE>
 template<class Soln_Block_Type>
-void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk){
+void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
+							 const Soln_State &
+							 (Soln_Block_Type::*ReconstructedSoln)(const int &,
+											       const int &) const){
 
-#if 0
+  // SET VARIABLES USED IN THE ANALYSIS PROCESS
+
+  // Set the typical indexes for the range of cells which have SI computed.
+  int StartI_SI(ICl-1), EndI_SI(ICu+1), StartJ_SI(JCl-1), EndJ_SI(JCu+1);
+
+  if (_constrained_block_reconstruction){
+    if (CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS){
+      if (_constrained_WEST_reconstruction){
+	StartI_SI += 2;		// Shift to the second interior cell
+      }
+
+      if (_constrained_EAST_reconstruction){
+	EndI_SI -= 2;		// Shift to the second last interior cell
+      }
+      
+      if (_constrained_NORTH_reconstruction){
+	
+      }
+      
+      if (_constrained_NORTH_reconstruction){
+	
+      }
+    } else {
+
+
+    }
+  }
+
+  // Set range of cell indexes which have the regular stencil
+  
+
+
+}
+
+/*! 
+ * Compute the CENO smoothness indicator which is used to
+ * differentiate between smooth and non-smooth solution content
+ * for a specific cell (iCell,jCell).
+ *
+ * \param [in] SolnBlk The solution block which provides solution data.
+ * \param ReconstructedSoln member function of Soln_Block_Type which returns the average solution.
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type>
+void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
+							 const Soln_State &
+							 (Soln_Block_Type::*ReconstructedSoln)(const int &,
+											       const int &) const,
+							 const int &iCell, const int &jCell,
+							 const IndexType & i_index, const IndexType & j_index){
+
+  // SET VARIABLES USED IN THE ANALYSIS PROCESS
+  
+  
+
+
+#if 0				// From old 2D
+
+  static SolType SS_Regression, SS_Residual;
+  static SolType Max_SS_Regression, Temp;
+
+  double alpha;
+  static int DOF(SolnBlk.NumberOfTaylorDerivatives()); 			/* degrees of freedom */
+  static double AdjustmentCoeff((StencilSize - DOF)/(DOF - 1.0));       /* adjustment coefficient */
+  static int parameter, cell;
+
+
+  /* Initialize SS_Regression and SS_Residual */
+  SS_Regression = sqr(SolnBlk.CellDeriv(iCell,jCell,0,0) - SolnBlk.CellSolutionPrimVar(iCell,jCell));
+  SS_Residual   = sqr(SolnBlk.CellDeriv(iCell,jCell,0,0) - 
+		      SolnBlk.SolutionAtCoordinates(iCell,jCell,SolnBlk.CellCenter(iCell,jCell)) );
+
+  /* Initialize Max_SS_Regression */
+  Max_SS_Regression = SS_Regression;
+
+
+  for( cell=1; cell<StencilSize; ++cell){
+    /* Compute SS_Regression and SS_Residual for all the variables at once */
+    Temp = sqr(SolnBlk.CellDeriv(i_index[cell],j_index[cell],0,0) - SolnBlk.CellSolutionPrimVar(iCell,jCell));
+    SS_Regression += Temp;
+
+    Max_SS_Regression = max(Max_SS_Regression,Temp); /* update Max_SS_Regression */
+
+    SS_Residual   += sqr(SolnBlk.CellDeriv(i_index[cell],j_index[cell],0,0) - 
+			 SolnBlk.SolutionAtCoordinates(iCell,jCell,SolnBlk.CellCenter(i_index[cell],j_index[cell])));
+  }
+
+  /* Compute the smoothness indicator */
+  for (parameter=1; parameter<=SolutionContainer::NumberOfVariables; ++parameter){
+    
+    /* Decide if the smoothness indicator is computed or not.
+       Max_SS_Regression is normalized by the characteristic normal state of the solved problem.
+       The tolerance around the local value is relative to the normalized value.
+    */
+    if ( (Max_SS_Regression[parameter]/sqr(SolnBlk.NormalState(parameter)) ) >      
+	 (CENO_EpsilonTol::SquareToleranceAroundValue(SolnBlk.CellSolutionPrimVar(iCell,jCell,parameter)/
+						      SolnBlk.NormalState(parameter))  ) ){ 
+
+      alpha = 1.0 - (SS_Residual[parameter]/SS_Regression[parameter]);
+    } else {
+      // Assign the perfect fit value to the smoothness indicator
+      alpha = 1.0;
+    }
+
+    /* Compute final value */
+    SolnBlk.CellSmoothnessIndicator(iCell,jCell,parameter) = (alpha/(max(CENO_EpsilonTol::epsilon,1.0 - alpha)))*AdjustmentCoeff;
+  }
+#endif 
+
+
+
+#if 0 				// From 1D 
 
   static double SS_Regression, SS_Residual; // regression sum of squares, residual sum of squares
   static double MeanSolution, alpha;

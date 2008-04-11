@@ -669,7 +669,10 @@ void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverse(const int &
  * quadrilateral solution block.  A least squares       
  * approach is used in the evaluation of the unlimited  
  * solution gradients.  Several slope limiters may be   
- * used.                                                
+ * used.
+ * The high-order derivatives of the variable flag as unfit
+ * are replaced with the first-order ones computed with
+ * this subroutine. 
  */
 template<class SOLN_STATE>
 template<class Soln_Block_Type> inline
@@ -712,48 +715,51 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
   // Perform reconstruction.
   if (n_pts > 0) {
     
-    // Compute distance between centroids and the geometric weights
-    for ( n = 0 ; n < n_pts ; ++n ) {
-      /* Compute the X and Y component of the distance between
-	 the cell centers of the neighbour and the reconstructed cell */
-      dX[n] = Geom->Cell[ I_Index[n] ][ J_Index[n] ].Xc - Geom->Cell[iCell][jCell].Xc;
+    // Perform piecewise linear reconstruction only if the reconstruction order is greater than 1
+    if (RecOrder() > 1){
 
-      /* Compute the geometric weight based on the centroid distance */
-      CENO_Geometric_Weighting(geom_weights[n], dX[n].abs());
+      // Compute distance between centroids and the geometric weights
+      for ( n = 0 ; n < n_pts ; ++n ) {
+	/* Compute the X and Y component of the distance between
+	   the cell centers of the neighbour and the reconstructed cell */
+	dX[n] = Geom->Cell[ I_Index[n] ][ J_Index[n] ].Xc - Geom->Cell[iCell][jCell].Xc;
 
-      /* Compute the maximum geometric weight (this is used for normalization) */
-      MaxWeight = max(MaxWeight, geom_weights[n]);
-    }
+	/* Compute the geometric weight based on the centroid distance */
+	CENO_Geometric_Weighting(geom_weights[n], dX[n].abs());
 
-    for ( n = 0 ; n < n_pts ; ++n ) {
-      // compute the normalized geometric weight
-      geom_weights[n] /= MaxWeight;
+	/* Compute the maximum geometric weight (this is used for normalization) */
+	MaxWeight = max(MaxWeight, geom_weights[n]);
+      }
 
-      // compute the square of the normalized geometric weight
-      geom_weights[n] *= geom_weights[n];
+      for ( n = 0 ; n < n_pts ; ++n ) {
+	// compute the normalized geometric weight
+	geom_weights[n] /= MaxWeight;
 
-      DU = (SolnBlk.*ReconstructedSoln)( I_Index[n], J_Index[n] ) - (SolnBlk.*ReconstructedSoln)(iCell,jCell);
-      DUDx_ave += DU*(geom_weights[n]*dX[n].x);
-      DUDy_ave += DU*(geom_weights[n]*dX[n].y);
-      DxDx_ave += geom_weights[n]*dX[n].x*dX[n].x;
-      DxDy_ave += geom_weights[n]*dX[n].x*dX[n].y;
-      DyDy_ave += geom_weights[n]*dX[n].y*dX[n].y;
-    } /* endfor */
+	// compute the square of the normalized geometric weight
+	geom_weights[n] *= geom_weights[n];
+
+	DU = (SolnBlk.*ReconstructedSoln)( I_Index[n], J_Index[n] ) - (SolnBlk.*ReconstructedSoln)(iCell,jCell);
+	DUDx_ave += DU*(geom_weights[n]*dX[n].x);
+	DUDy_ave += DU*(geom_weights[n]*dX[n].y);
+	DxDx_ave += geom_weights[n]*dX[n].x*dX[n].x;
+	DxDy_ave += geom_weights[n]*dX[n].x*dX[n].y;
+	DyDy_ave += geom_weights[n]*dX[n].y*dX[n].y;
+      } /* endfor */
     					    
-    DUDx_ave /= double(n_pts);
-    DUDy_ave /= double(n_pts);
-    DxDx_ave /= double(n_pts);
-    DxDy_ave /= double(n_pts);
-    DyDy_ave /= double(n_pts);
+      DUDx_ave /= double(n_pts);
+      DUDy_ave /= double(n_pts);
+      DxDx_ave /= double(n_pts);
+      DxDy_ave /= double(n_pts);
+      DyDy_ave /= double(n_pts);
 
-    // Calculate the first-order derivatives
-    dUdx = ( (DUDx_ave*DyDy_ave-DUDy_ave*DxDy_ave)/
-	     (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-    dUdy = ( (DUDy_ave*DxDx_ave-DUDx_ave*DxDy_ave)/
-	     (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+      // Calculate the first-order derivatives
+      dUdx = ( (DUDx_ave*DyDy_ave-DUDy_ave*DxDy_ave)/
+	       (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+      dUdy = ( (DUDy_ave*DxDx_ave-DUDx_ave*DxDy_ave)/
+	       (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
 
-    // Set the average solution
-    U_ave = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
+    }//endif(RecOrder())
+
 
     // Calculate slope limiters.
     if (!SolnBlk.Freeze_Limiter) {
@@ -817,24 +823,52 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
       // Calculate the limiter for each solution variable (i.e. parameter)
       for (parameter = 1; parameter <= NumberOfVariables(); ++parameter) {
 
-	// Compute the minimum and maximum average solution in the stencil for the current parameter
-	u0Min = U_ave[parameter];
-	u0Max = u0Min;
-	for (n = 0; n < n_pts; ++n) {
-	  u0Min = min(u0Min, (SolnBlk.*ReconstructedSoln)(I_Index[n],J_Index[n])[parameter]);
-	  u0Max = max(u0Max, (SolnBlk.*ReconstructedSoln)(I_Index[n],J_Index[n])[parameter]);
-	}
+	// Drop the order only for the variables that are flagged as unfit
+	if ( CellInadequateFitValue(iCell,jCell,parameter) ){
 
-	// Evaluate the solution at all required points
-	for (n = 0; n < NumGQP; ++n){
-	  uQuad[n] = UnlimitedLinearSolutionAtLocation(iCell,jCell,
-						       GQP[n],
-						       parameter);
-	}
+	  if (RecOrder() > 1){
+	    // Zero all derivatives but D00 associated with this parameter.
+	    for (n = 1; n < NumberOfTaylorDerivatives(); ++n){
+	      CellTaylorDerivState(iCell,jCell,n)[parameter] = 0.0;
+	    }
 
-	// Evaluate limiter for the current parameter
-	phi[parameter] = CalculateLimiter(uQuad,NumGQP,U_ave[parameter],u0Min,u0Max,Limiter);
-      }	// endfor
+	    // Set D00 and U_ave(see memory pool) of the current parameter to the correspondent average solution.
+	    // U_ave is used in UnlimitedLinearSolutionAtLocation() (see below).
+	    U_ave[parameter] = CellTaylorDerivState(iCell,jCell,0)[parameter] = (SolnBlk.*ReconstructedSoln)(iCell,jCell)[parameter];
+
+	    // Set D01 and D10 to the values of the first-order derivatives.
+	    CellTaylorDerivValue(iCell,jCell,0,1,parameter) = dUdy[parameter];
+	    CellTaylorDerivValue(iCell,jCell,1,0,parameter) = dUdx[parameter];
+
+	  } else {
+	    // Set U_ave of the current parameter
+	    U_ave[parameter] = CellTaylorDerivState(iCell,jCell,0)[parameter];
+	    dUdy[parameter] = CellTaylorDerivState(iCell,jCell,1)[parameter];
+	    dUdx[parameter] = CellTaylorDerivState(iCell,jCell,2)[parameter];
+	  }
+
+	  // Compute the minimum and maximum average solution in the stencil for the current parameter
+	  u0Min = U_ave[parameter];
+	  u0Max = u0Min;
+	  for (n = 0; n < n_pts; ++n) {
+	    u0Min = min(u0Min, (SolnBlk.*ReconstructedSoln)(I_Index[n],J_Index[n])[parameter]);
+	    u0Max = max(u0Max, (SolnBlk.*ReconstructedSoln)(I_Index[n],J_Index[n])[parameter]);
+	  }// endfor(n)
+
+	  // Evaluate the solution at all required points
+	  for (n = 0; n < NumGQP; ++n){
+	    uQuad[n] = UnlimitedLinearSolutionAtLocation(iCell,jCell,
+							 GQP[n],
+							 parameter);
+	  }// endfor(n)
+
+	  // Evaluate limiter for the current parameter
+	  CellTaylorDeriv(iCell,jCell).Limiter(parameter) = CalculateLimiter(uQuad,NumGQP,U_ave[parameter],
+									     u0Min,u0Max,Limiter);
+	
+	}// endif
+
+      }//endfor(parameter)
 
       // Deallocate memory
       delete [] uQuad;
@@ -843,9 +877,15 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
     }
 
   } else {
-    CellTaylorDerivState(iCell,jCell,1,0).Vacuum();
-    CellTaylorDerivState(iCell,jCell,0,1).Vacuum();
+    // Set D00 to average solution
+    CellTaylorDerivState(iCell,jCell,0) = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
+    // Zero all derivatives
+    for (n = 1; n < NumberOfTaylorDerivatives(); ++n){
+      CellTaylorDerivState(iCell,jCell,n).Vacuum();
+    }
+    // Reset limiter
     CellTaylorDeriv(iCell,jCell).Limiter().Vacuum();
+
   } /* endif */
 }
 
