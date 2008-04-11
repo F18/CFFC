@@ -683,7 +683,7 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 
 	    delta_z = fabs(Solution_Block.Grid.Cell[i][j][k].Xc.z 
 			   - Solution_Block.Grid.Cell[i][j][Solution_Block.KCu].Xc.z)
-	              - Solution_Block.Grid.volume(i, j, Solution_Block.KCu)/
+	              - Solution_Block.Grid.Cell[i][j][Solution_Block.KCu].V/
 	                (Solution_Block.Grid.AfaceTop(i, j, Solution_Block.KCu) 
 			 + Solution_Block.Grid.AfaceBot(i, j, Solution_Block.KCu));
 
@@ -694,13 +694,13 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 	    
 	    delta_z = fabs(Solution_Block.Grid.Cell[i][j][k].Xc.z 
 			   - Solution_Block.Grid.Cell[i][j][Solution_Block.KCl].Xc.z)
-	              - Solution_Block.Grid.volume(i, j, Solution_Block.KCl)/
+	              - Solution_Block.Grid.Cell[i][j][Solution_Block.KCl].V/
 	                (Solution_Block.Grid.AfaceTop(i, j, Solution_Block.KCl) 
 			 + Solution_Block.Grid.AfaceBot(i, j, Solution_Block.KCl));
 	  }
 
 	  new_z = L_convected - delta_z;
-	  if ( new_z < NANO ) new_z = ZERO; 
+	  if (new_z < NANO) new_z = ZERO;
 
 	  Solution_Block.W[i][j][k].v = IPs.Mean_Velocity;
 
@@ -723,9 +723,8 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 	
 	    if ( (nBlk == Velocity_Field.NBlk-1) && (new_z < zmin  ||  new_z > zmax) ) {
 	      cout << "\n --> n_ghost = " << n_ghost  << " i = " << i 
-		   << " j = " << j << " k = " << k << flush << endl;
-	      cerr << "\n new_z = " << new_z << " not found in turbulence blocks";
-	      exit(1);
+		   << " j = " << j << " k = " << k;
+	      cout << "\n WARNING: new_z = " << new_z << " not found in turbulence blocks.";
 	    }   
 	  }
 

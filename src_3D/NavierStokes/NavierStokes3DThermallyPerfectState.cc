@@ -19,10 +19,10 @@
  ********************************************************************************************/
 // Based on Wilke mixing rule
 double NavierStokes3D_ThermallyPerfect_pState::mu(void) {
-  double sum =0.0;
-  double Temp = T();
+  double sum(0.0);
+  double Temp( T() );
   for (int i = 0; i < ns; i++) {
-    double phi = 0.0;
+    double phi(0.0);
     for (int j = 0; j < ns; j++) {
       if (i == 0) {
         _temp_values[j] = specdata[j].Viscosity(Temp);
@@ -46,10 +46,10 @@ double NavierStokes3D_ThermallyPerfect_pState::nu(void) {
  ********************************************************************************************/
 // Based on Mason & Saxena mixing rule
 double NavierStokes3D_ThermallyPerfect_pState::kappa(void) {
-  double sum = 0.0;  
-  double Temp = T();
+  double sum(0.0);  
+  double Temp( T() );
   for (int i=0; i<ns; i++) {
-     double phi = 0.0;
+     double phi(0.0);
      for (int j=0; j<ns; j++){
        if (i == 0) {
  	  _temp_values[j] = specdata[j].Viscosity(Temp);
@@ -114,9 +114,7 @@ thermal_diffusion(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
                   const NavierStokes3D_ThermallyPerfect_pState &dWdz) const {
 
    Vector3D sum, gradc;
-   double Temp = T();
-
-   sum.zero();
+   double Temp( T() );
 
    for (int index = 0; index < ns; index++) {
       gradc.x = dWdx.spec[index].c;
@@ -141,9 +139,7 @@ thermal_diffusion_x(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
                     const NavierStokes3D_ThermallyPerfect_pState &dWdz) const {
 
    Vector3D sum, gradc;
-   double Temp = T();
-
-   sum.zero();
+   double Temp( T() );
 
    for (int index = 0; index < ns; index++) {
       gradc.x = dWdx.spec[index].c;
@@ -166,9 +162,7 @@ thermal_diffusion_y(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
                     const NavierStokes3D_ThermallyPerfect_pState &dWdz) const {
 
    Vector3D sum, gradc;
-   double Temp = T();
-
-   sum.zero();
+   double Temp( T() );
 
    for (int index = 0; index < ns; index++) {
       gradc.y = dWdy.spec[index].c;
@@ -191,9 +185,7 @@ thermal_diffusion_z(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
                     const NavierStokes3D_ThermallyPerfect_pState &dWdz) const {
 
    Vector3D sum, gradc;
-   double Temp = T();
-
-   sum.zero();
+   double Temp( T() );
 
    for (int index = 0; index < ns; index++) {
       gradc.z = dWdz.spec[index].c;
@@ -807,10 +799,10 @@ FluxViscous_n(const NavierStokes3D_ThermallyPerfect_pState &Wl,
  ********************************************************************************************/
 // Based on Wilke mixing rule
 double NavierStokes3D_ThermallyPerfect_cState::mu(void) {
-   double sum = ZERO;
-   double Temp = T();
+   double sum(ZERO);
+   double Temp( T() );
    for (int i = 0; i < ns; i++) {
-     double phi = 0.0;
+     double phi(0.0);
      for (int j = 0; j < ns; j++) {
        phi += ((rhospec[j].c/rho) / specdata[j].Mol_mass())*
               pow(1.0 + sqrt(specdata[i].Viscosity(Temp)/specdata[j].Viscosity(Temp))*
