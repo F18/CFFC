@@ -71,6 +71,8 @@ public:
   Levermore1D_weights  Ao;   //!< Initial weights.
   double         detector;   //!< The detector to determine syncronization of U and A
   int   number_of_resyncs;   //!< The number of times a resync was done
+  Levermore1D_cState Ul_old, Ur_old;  //!< Remember left and right reconstructed states
+  Levermore1D_weights Al_old, Ar_old; //!< Remember left and right reconstructed weights
   // Made public so can access them.
 
   int Nghost;            //!< Number of ghost cells(!= 1 for high-order)
@@ -118,10 +120,12 @@ public:
 
   /* Set gas state */
   void set_state(const Levermore1D_pState &W0) {
-    W = W0; U = Levermore1D_cState(W); A = Levermore1D_weights(U); detector = 0.0; number_of_resyncs = 0;
+    W = W0; U = Levermore1D_cState(W); A = Levermore1D_weights(U); detector = 0.0;
+    Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
   }
   void set_state(const Levermore1D_cState &U0) {
-    U = U0; W = Levermore1D_pState(U); A = Levermore1D_weights(U); detector = 0.0; number_of_resyncs = 0;
+    U = U0; W = Levermore1D_pState(U); A = Levermore1D_weights(U); detector = 0.0;
+    Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
   }
 //  void set_state(const Levermore1D_weights &A0) {
 //    A = A0; U = Levermore1D_cState(A); W = Levermore1D_pState(U);
@@ -130,6 +134,8 @@ public:
 		 const Levermore1D_cState &U0,
 		 const Levermore1D_weights &A0) {
     W = W0; U = U0; A = A0;
+    detector = 0.0;
+    Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
   }
 
   void calculate_Hessians() {
@@ -172,6 +178,7 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(void){
   dUdt.zero(); dWdx.zero(); phi.zero();
   Uo.zero(); Ao.zero();
   detector = 0.0; number_of_resyncs = 0;
+  Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
 }
 
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_UniformMesh &Soln) {
@@ -183,6 +190,7 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_Unifor
   lambda_min = Soln.lambda_min;
   detector = Soln.detector;
   number_of_resyncs = Soln.number_of_resyncs;
+  Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
 }
 
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_pState &W0,
@@ -193,6 +201,7 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_pState
   dt = ZERO; dUdt.zero();
   dWdx.zero(); phi.zero(); Uo.zero(); Ao.zero();
   detector = 0.0; number_of_resyncs = 0;
+  Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
 }
 
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_pState &W0,
@@ -201,6 +210,7 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_pState
   X = X0; dt = ZERO; dUdt.zero();
   dWdx.zero(); phi.zero(); Uo.zero(); Ao.zero();
   detector = 0.0; number_of_resyncs = 0;
+  Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
 }
 
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_cState &U0,
@@ -209,6 +219,7 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_cState
   X = X0; dt = ZERO; dUdt.zero();
   dWdx.zero(); phi.zero(); Uo.zero(); Ao.zero();
   detector = 0.0; number_of_resyncs = 0;
+  Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
 }
 
 ////! Return the solution of the piecewise limited linear reconstruction at the coordinate X_Coord,

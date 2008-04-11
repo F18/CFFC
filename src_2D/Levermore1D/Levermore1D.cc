@@ -249,8 +249,16 @@ void ICs(Levermore1D_UniformMesh *Soln,
     Ur = Levermore1D_cState(Wr);
     Al = Levermore1D_weights(Ul);
     Ar = Levermore1D_weights(Ur);
-    cout << Ul << endl << Levermore1D_cState(Al,Wl[2])<< endl << Al << endl << Wl << endl << endl;
-    cout << Ur << endl << Levermore1D_cState(Ar,Wr[2])<< endl << Ar << endl << Wr << endl << endl;
+
+    cout << endl << endl << "Ul  = " << Ul << endl
+	 << "Ual = " << Levermore1D_cState(Al,Wl[2])<< endl
+	 << "Al  = " << Al << endl
+	 << "Wl  = " << Wl << endl << endl;
+    cout << "Ur  = " << Ur << endl
+	 << "Uar = " << Levermore1D_cState(Ar,Wr[2])<< endl
+	 << "Ar  = " << Ar << endl
+	 << "Wr  = " << Wr << endl << endl;
+
     for ( i = 0 ; i <= TC-1 ; ++i ) {
       if (Soln[i].X.x <= ZERO) {
 	Soln[i].set_state(Wl,Ul,Al);
@@ -818,11 +826,15 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
                                 const int Flux_Function_Type,
 			        const int Local_Time_Stepping) {
     int i, n_stage, count(0);
+    double us;
     double omega;
     Levermore1D_pState Wl, Wr;
     Levermore1D_cState Ul, Ur;
     Levermore1D_cState Flux, Update;
     Levermore1D_weights Al, Ar;
+    ColumnVector rhs(Levermore1D_Vector::get_length()), delta_A(Levermore1D_Vector::get_length());
+    DenseMatrix dUdA_interface(Levermore1D_Vector::get_length(),
+			       Levermore1D_Vector::get_length());
 
     /* Perform second-order two-stage semi-implicit update of solution
        varibles for new time level. */
@@ -896,8 +908,24 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	    Ul = Levermore1D_cState(Wl);
 	    Ur = Levermore1D_cState(Wr);
 
-	    Al = Soln[i].A + Soln[i].dUdA_inv * (Ul-Soln[i].U);
-	    Ar = Soln[i+1].A + Soln[i+1].dUdA_inv * (Ur-Soln[i+1].U);
+	    us = Soln[i].Ur_old[2]/Soln[i].Ur_old[1];
+	    dUdA_interface = Soln[i].Ur_old.d2hda2(Soln[i].Ar_old,us);
+	    for(int iii=1;iii<=Levermore1D_Vector::get_length(); ++iii) rhs[iii-1] = Ul[iii]-Soln[i].Ur_old[iii];
+	    Solve_LU_Decomposition(dUdA_interface,rhs,delta_A);
+	    Al = Soln[i].Ar_old + delta_A;
+	    Soln[i].Ar_old = Al;
+	    Soln[i].Ur_old = Ul;
+
+	    us = Soln[i+1].Ul_old[2]/Soln[i+1].Ul_old[1];
+	    dUdA_interface = Soln[i+1].Ul_old.d2hda2(Soln[i+1].Al_old,us);
+	    for(int iii=1;iii<=Levermore1D_Vector::get_length(); ++iii) rhs[iii-1] = Ur[iii]-Soln[i+1].Ul_old[iii];
+	    Solve_LU_Decomposition(dUdA_interface,rhs,delta_A);
+	    Ar = Soln[i+1].Al_old + delta_A;
+	    Soln[i+1].Al_old = Ar;
+	    Soln[i+1].Ul_old = Ur;
+
+//	    Al = Soln[i].A + Soln[i].dUdA_inv * (Ul-Soln[i].U);
+//	    Ar = Soln[i+1].A + Soln[i+1].dUdA_inv * (Ur-Soln[i+1].U);
 
 	    if ( ! Ul.in_sync_with(Al) ) {
 	      if(Al.set_from_U(Ul)) { //returns 1 if fail
@@ -907,6 +935,7 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 		     << "U_A = " <<  Levermore1D_cState(Al, Ul[2]/Ul[1]) << endl;
 		return 1;
 	      }
+	      Soln[i].Ar_old = Al;
 	      cout << "L";cout.flush();
 	      ++count;
 	    }
@@ -918,6 +947,7 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 		     << "U_A = " <<  Levermore1D_cState(Ar, Ur[2]/Ur[1]) << endl;
 		return 1;
 	      }
+	      Soln[i+1].Al_old = Ar;
 	      cout << "R";cout.flush();
 	      ++count;
 	    }
