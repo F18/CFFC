@@ -313,6 +313,7 @@ namespace tut
     ensure("CENO_Geometric_Weights", HO.GeomWeights() == NULL);
     ensure_equals("Order of reconstruction", HO.RecOrder(), -1);
     ensure_equals("Rings", HO.Rings(), 0);
+    ensure_equals("Rings SI", HO.RingsSI(), 0);
     ensure_equals("PseudoInverseFlag", HO.IsPseudoInversePreComputed(), false);    
     ensure("Geometry Pointer", HO.Geometry() == NULL);
   }
@@ -358,6 +359,7 @@ namespace tut
 
     // check Reconstruction Order and number of rings
     ensure_equals("Rings", HO.Rings(), 1);
+    ensure_equals("Rings SI", HO.RingsSI(), 1);
     ensure_equals("RecOrder", HO.RecOrder(), 1);
 
     // check monotonicity containers
@@ -439,6 +441,7 @@ namespace tut
 
     // check Reconstruction Order and number of rings
     ensure_equals("Rings", HO.Rings(), 1);
+    ensure_equals("Rings SI", HO.RingsSI(), 1);
     ensure_equals("RecOrder", HO.RecOrder(), 1);
 
     // check monotonicity containers
@@ -524,6 +527,7 @@ namespace tut
 
     // check Reconstruction Order and number of rings
     ensure_equals("Rings", HO.Rings(), 2);
+    ensure_equals("Rings SI", HO.RingsSI(), 2);
     ensure_equals("RecOrder", HO.RecOrder(), 4);
 
     // check monotonicity containers
@@ -619,6 +623,7 @@ namespace tut
 
     // check Reconstruction Order and number of rings
     ensure_equals("Rings", HO.Rings(), 2);
+    ensure_equals("Rings SI", HO.RingsSI(), 1);
     ensure_equals("RecOrder", HO.RecOrder(), 4);
 
     // check monotonicity containers
@@ -714,6 +719,7 @@ namespace tut
 
     // check Reconstruction Order and number of rings
     ensure_equals("Rings", HO.Rings(), 2);
+    ensure_equals("Rings SI", HO.RingsSI(), 1);
     ensure_equals("RecOrder", HO.RecOrder(), 2);
 
     // check monotonicity containers
@@ -848,6 +854,7 @@ namespace tut
     ensure_equals("Geometry", HO_Copy.Geometry(), HO.Geometry());
     ensure_equals("RecOrder", HO_Copy.RecOrder(), HO.RecOrder());
     ensure_equals("Rings", HO_Copy.Rings(), HO.Rings());
+    ensure_equals("Rings SI", HO_Copy.RingsSI(), HO.RingsSI());
 
     for (i = 3; i<= 8; ++i) {
       for (j = 3; j<= 9; ++j) {
@@ -890,6 +897,7 @@ namespace tut
     ensure_equals("Geometry", HO_Copy.Geometry(), HO.Geometry());
     ensure_equals("RecOrder", HO_Copy.RecOrder(), HO.RecOrder());
     ensure_equals("Rings", HO_Copy.Rings(), HO.Rings());
+    ensure_equals("Rings SI", HO_Copy.RingsSI(), HO.RingsSI());
 
     for (i = 2; i<= 9; ++i) {
       for (j = 2; j<= 10; ++j) {
@@ -932,6 +940,7 @@ namespace tut
     ensure_equals("Geometry", HO_Copy.Geometry(), HO.Geometry());
     ensure_equals("RecOrder", HO_Copy.RecOrder(), HO.RecOrder());
     ensure_equals("Rings", HO_Copy.Rings(), HO.Rings());
+    ensure_equals("Rings SI", HO_Copy.RingsSI(), HO.RingsSI());
 
     for (i = 3; i<= 8; ++i) {
       for (j = 3; j<= 9; ++j) {
@@ -1032,6 +1041,11 @@ namespace tut
     ensure_equals("East Bnd Flag", HO.IsEastConstrainedReconstructionRequired(), false);
     ensure_equals("North Bnd Flag", HO.IsNorthConstrainedReconstructionRequired(), false);
     ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), false);
+    // == check indexes for smoothness indicator
+    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()-1);
+    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()+1);
+    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()-1);
+    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()+1);
 
     // == check solution
     double Result = 0.59509999999999985;
@@ -1082,6 +1096,11 @@ namespace tut
     ensure_equals("East Bnd Flag", HO.IsEastConstrainedReconstructionRequired(), false);
     ensure_equals("North Bnd Flag", HO.IsNorthConstrainedReconstructionRequired(), false);
     ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), false);
+    // == check indexes for smoothness indicator
+    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()-1);
+    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()+1);
+    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()-1);
+    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()+1);
 
     // Change spline type
     Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
@@ -1096,7 +1115,12 @@ namespace tut
     ensure_equals("East Bnd Flag", HO.IsEastConstrainedReconstructionRequired(), true);
     ensure_equals("North Bnd Flag", HO.IsNorthConstrainedReconstructionRequired(), true);
     ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), false);
-
+    // == check indexes for smoothness indicator
+    ensure_equals("Rings SI", HO.RingsSI(), 2);
+    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()-1);
+    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()-2);
+    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()-1);
+    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()-2);
   }
 
   /* Test 24:*/

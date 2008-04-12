@@ -287,7 +287,7 @@ private:
  * \class Hyperbolic_Tangent_I_InflowField
  * 
  * \brief Implements an inflow field with the following expression: 
- *        \f$ Inflow(x,y) = M \left{ A - \tanh^2 [S (r - r_{0}) ] \right} \f$ \n
+ *        \f$ Inflow(x,y) = M \left\{ A - \tanh^2 [S (r - r_{0}) ] \right\} \f$ \n
  *
  * where r is the location of interest, \f$r_{0}\f$ is the reference point,
  * M is the magnitude of the function, A is a shift coefficient and S controls the

@@ -145,6 +145,8 @@ public:
   //@{
   //! Get the number of rings of neighbour cells around the reconstructed cell.
   const int & Rings(void) const {return rings;}
+  //! Get the number of rings of neighbour cells around the reconstructed cell used for smoothness indicator calculation.
+  const int & RingsSI(void) const {return rings_SI;}
   //! Get the order of reconstruction set for this object.
   const int & RecOrder(void) const {return OrderOfReconstruction;}
   //@}
@@ -182,6 +184,14 @@ public:
   //! Get the smoothness indicators for reconstruction of cell (ii,jj) and the variable stored in the position 'VarPosition'.
   double & CellSmoothnessIndicatorValue(const int & ii, const int & jj,
 					const int & VarPosition){ return SI[ii][jj][VarPosition-1];}
+  //@}
+
+  //! @name Indexes of cells between which the smoothness indicator is computed with central stencil
+  //@{
+  const int & StartIdir_SI(void) const { return StartI_SI; }
+  const int & EndIdir_SI(void) const { return EndI_SI; }
+  const int & StartJdir_SI(void) const { return StartJ_SI; }
+  const int & EndJdir_SI(void) const { return EndJ_SI; }
   //@}
 
   //! @name Pseudo-inverse of the LHS term in the CENO reconstruction
@@ -249,6 +259,16 @@ public:
   const bool & IsNorthConstrainedReconstructionRequired(void) const { return _constrained_NORTH_reconstruction; }
   //! Return true if constrained reconstruction is used in the proximity of South block boundary, otherwise return false
   const bool & IsSouthConstrainedReconstructionRequired(void) const { return _constrained_SOUTH_reconstruction; }
+  //! Get i-direction index of first interior cell
+  const int & ICl_Grid(void) const {return Geom->ICl; }
+  //! Get i-direction index of last interior cell
+  const int & ICu_Grid(void) const {return Geom->ICu; }
+  //! Get j-direction index of first interior cell
+  const int & JCl_Grid(void) const {return Geom->JCl; }
+  //! Get j-direction index of last interior cell
+  const int & JCu_Grid(void) const {return Geom->JCu; }
+  //! Get number of ghost cells for the associated block mesh
+  const int & Nghost_Grid(void) const {return Geom->Nghost; }
   //@}
 
   //! @name Initialize container functions.
@@ -485,6 +505,10 @@ private:
     EndI,                      //!< Index of the last cell in i-direction in which NO constrained reconstruction is performed. 
     StartJ,                    //!< Index of the first cell in j-direction in which NO constrained reconstruction is performed. 
     EndJ;                      //!< Index of the last cell in j-direction in which NO constrained reconstruction is performed. 
+  int StartI_SI,               //!< Index of the first cell in i-direction in which SI is computed with centered stencil
+    EndI_SI,                   //!< Index of the last cell in i-direction in which SI is computed with centered stencil
+    StartJ_SI,                 //!< Index of the first cell in j-direction in which SI is computed with centered stencil
+    EndJ_SI;                   //!< Index of the last cell in j-direction in which SI is computed with centered stencil
   //@}
 
   //! @name Memory allocation flags:
@@ -507,6 +531,7 @@ private:
   //! @name Other internal variables/flags:
   //@{
   int rings;                   //!< Number of rings used to generate the reconstruction stencil
+  int rings_SI;		       //!< Number of rings used to compute the smoothness indicator
   bool _calculated_psinv;      //!< Flag to indicate whether the pseudo-inverse has been already computed or not.
   short int _si_calculation;   /*!< Flag to store the method for smoothness indicator calculation. Set to the 
 				* same value as CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS. */
@@ -521,17 +546,6 @@ private:
   bool _constrained_EAST_reconstruction; //!< Flag for the EAST boundary to show if constrained rec. is required.
   bool _constrained_NORTH_reconstruction; //!< Flag for the NORTH boundary to show if constrained rec. is required.
   bool _constrained_SOUTH_reconstruction; //!< Flag for the SOUTH boundary to show if constrained rec. is required.
-
-  //! Get i-direction index of first interior cell
-  const int & ICl_Grid(void) const {return Geom->ICl; }
-  //! Get i-direction index of last interior cell
-  const int & ICu_Grid(void) const {return Geom->ICu; }
-  //! Get j-direction index of first interior cell
-  const int & JCl_Grid(void) const {return Geom->JCl; }
-  //! Get j-direction index of last interior cell
-  const int & JCu_Grid(void) const {return Geom->JCu; }
-  //! Get number of ghost cells for the associated block mesh
-  const int & Nghost_Grid(void) const {return Geom->Nghost; }
   //@}
 
   //! Get the number of variables in the solution state
@@ -603,9 +617,10 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(void):
   ICl(0), ICu(0), JCl(0), JCu(0),
   OrderOfReconstruction(-1), Nghost_HO(0),
   StartI(0), EndI(0), StartJ(0), EndJ(0),
+  StartI_SI(0), EndI_SI(0), StartJ_SI(0), EndJ_SI(0),
   _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
   TD(NULL), SI(NULL), LimitedCell(NULL),
-  rings(0), _calculated_psinv(false),
+  rings(0), rings_SI(0), _calculated_psinv(false),
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
   Geom(NULL), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
   _constrained_block_reconstruction(false),
@@ -624,9 +639,10 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder,
   ICl(0), ICu(0), JCl(0), JCu(0),
   OrderOfReconstruction(-1), Nghost_HO(0),
   StartI(0), EndI(0), StartJ(0), EndJ(0),
+  StartI_SI(0), EndI_SI(0), StartJ_SI(0), EndJ_SI(0),
   _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
   TD(NULL), SI(NULL), LimitedCell(NULL), 
-  rings(0), _calculated_psinv(false),
+  rings(0), rings_SI(0), _calculated_psinv(false),
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL), 
   Geom(&Block), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
   _constrained_block_reconstruction(false),
@@ -652,7 +668,7 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
     OrderOfReconstruction(-1), Nghost_HO(0),
     _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
     TD(NULL), SI(NULL), LimitedCell(NULL),
-    rings(0), _calculated_psinv(false),
+    rings(0), rings_SI(0), _calculated_psinv(false),
     CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
     Geom(rhs.Geom), _si_calculation(rhs._si_calculation)
 {
@@ -696,6 +712,12 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
     EndI = rhs.EndI;
     StartJ = rhs.StartJ;
     EndJ = rhs.EndJ;
+
+    // set range of cells with central stencil smoothness indicator calculation
+    StartI_SI = rhs.StartI_SI;
+    EndI_SI = rhs.EndI_SI;
+    StartJ_SI = rhs.StartJ_SI;
+    EndJ_SI = rhs.EndJ_SI;
 
     // set the type of reconstruction required by the geometry setup
     _constrained_block_reconstruction = rhs._constrained_block_reconstruction;
@@ -954,8 +976,11 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
     OrderOfReconstruction = -1;
     Nghost_HO = 0;
     rings = 0;
+    rings_SI = 0;
     StartI = 0; EndI = 0;
     StartJ = 0; EndJ = 0;
+    StartI_SI = 0; EndI_SI = 0;
+    StartJ_SI = 0; EndJ_SI = 0;
 
     // Separate the high-order object from the associated geometry
     Geom = NULL;
@@ -1025,8 +1050,11 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
     OrderOfReconstruction = -1;
     Nghost_HO = 0;
     rings = 0;
+    rings_SI = 0;
     StartI = 0; EndI = 0;
     StartJ = 0; EndJ = 0;
+    StartI_SI = 0; EndI_SI = 0;
+    StartJ_SI = 0; EndJ_SI = 0;
 
     _allocated_cells = false;
     _allocated_psinv = false;
@@ -1232,10 +1260,20 @@ int HighOrder2D<SOLN_STATE>::getMinimumNghost(const int &ReconstructionOrder){
  * The number of derivatives is determined with 
  * getTaylorDerivativesSize() subroutine based on
  * the order of reconstruction.
+ * Set also the number of rings around the current cell
+ * which will be used to compute the smoothness indicator.
  */
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::SetRings(void){
   rings = getNumberOfRings(getTaylorDerivativesSize());
+
+  if (CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS){
+    // use only one layer of neighbours
+    rings_SI = 1;
+  } else {
+    // use the same number of rings as the reconstruction
+    rings_SI = rings;
+  }
 }
 
 //!< getStencilSize()
@@ -1317,34 +1355,6 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
 											       const int &) const){
 
   // SET VARIABLES USED IN THE ANALYSIS PROCESS
-
-  // Set the typical indexes for the range of cells which have SI computed.
-  int StartI_SI(ICl-1), EndI_SI(ICu+1), StartJ_SI(JCl-1), EndJ_SI(JCu+1);
-
-  if (_constrained_block_reconstruction){
-    if (CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS){
-      if (_constrained_WEST_reconstruction){
-	StartI_SI += 2;		// Shift to the second interior cell
-      }
-
-      if (_constrained_EAST_reconstruction){
-	EndI_SI -= 2;		// Shift to the second last interior cell
-      }
-      
-      if (_constrained_NORTH_reconstruction){
-	
-      }
-      
-      if (_constrained_NORTH_reconstruction){
-	
-      }
-    } else {
-
-
-    }
-  }
-
-  // Set range of cell indexes which have the regular stencil
   
 
 
@@ -1548,6 +1558,11 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
   StartI = ICl - Nghost_HO; EndI = ICu + Nghost_HO;
   StartJ = JCl - Nghost_HO; EndJ = JCu + Nghost_HO;
 
+  /* Initialize indexes for calculation of smoothness indicator
+     (i.e. cells used for flux calculation) as if no constrained reconstruction would exit. */
+  StartI_SI = ICl - 1; EndI_SI = ICu + 1;
+  StartJ_SI = JCl - 1; EndJ_SI = JCu + 1;
+
   // Reset affected flags
   _constrained_block_reconstruction = false;
   _constrained_WEST_reconstruction  = false; 
@@ -1563,6 +1578,8 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
     StartI = ICl + rings;
     // Flag the boundary accordingly
     _constrained_WEST_reconstruction = true;
+    // Set StartI_SI
+    StartI += 1 + rings_SI;
   } 
   // Check East boundary
   if (Geom->IsEastBoundaryReconstructionConstrained()){
@@ -1570,6 +1587,8 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
     EndI = ICu - rings;
     // Flag the boundary accordingly
     _constrained_EAST_reconstruction = true;    
+    // Set EndI_SI
+    EndI_SI -= 1 + rings_SI;
   } 
   // Check South boundary
   if (Geom->IsSouthBoundaryReconstructionConstrained()){
@@ -1577,6 +1596,8 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
     StartJ = JCl + rings;
     // Flag the boundary accordingly
     _constrained_SOUTH_reconstruction = true;
+    // Set StartJ_SI
+    StartJ_SI += 1 + rings_SI;
   } 
   // Check North boundary
   if (Geom->IsNorthBoundaryReconstructionConstrained()){
@@ -1584,6 +1605,8 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
     EndJ = JCu - rings;
     // Flag the boundary accordingly
     _constrained_NORTH_reconstruction = true;    
+    // Set EndJ_SI
+    EndJ_SI -= 1 + rings_SI;
   }
 
   // Flag the block accordingly
