@@ -159,7 +159,9 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
     } else if(strcmp(spectrum, "Pope") == 0) {
       i_spectrum = SPECTRUM_POPE;
     } else if(strcmp(spectrum, "Laval_Nazarenko") == 0) {
-      i_spectrum = SPECTRUM_LAVAL_NAZARENKO;         
+      i_spectrum = SPECTRUM_LAVAL_NAZARENKO; 
+    } else if(strcmp(spectrum, "Uniform") == 0) {
+      i_spectrum = SPECTRUM_UNIFORM;
     } else {
       i_command = INVALID_INPUT_VALUE;
     } /* endif */

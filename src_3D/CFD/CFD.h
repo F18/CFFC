@@ -490,6 +490,7 @@ inline char *Date_And_Time() {
 #define SPECTRUM_CHASNOV                         4
 #define SPECTRUM_BELL_DAY                        5
 #define SPECTRUM_POPE                            6
+#define SPECTRUM_UNIFORM                         7
 
 /**********************************************************************
  * CFD -- Initial Condition Types.                                    *

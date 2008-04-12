@@ -1459,7 +1459,13 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
             EE = pow(k/kp, 4.0) * exp(-9.0*pow(k/kd, 4.0/3.0)/4.0);
             EE /= pow(1.0+(k/kp)*(k/kp), 17.0/6.0);
             break;
-
+        
+        case SPECTRUM_UNIFORM :
+            // This spectrum is constant over the entire range
+            // with constant value as the given total kinetic energy
+            EE = TKE;
+            break;
+        
         /*****   Pope   "Turbulent Flows" , Cambridge University Press *****/
         case SPECTRUM_POPE :
         default :
