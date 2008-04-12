@@ -4,14 +4,6 @@
 #endif // _LES3DFSD_HEXA_BLOCK_INCLUDED
 
 /******************************************************************
- * Hexa_Block::NumVar -- Return the number of solution variables. *
- ******************************************************************/
-template<>
-int Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::NumVar() {
-  return (W[0][0][0].num_vars+1);
-}
-
-/******************************************************************
  * Routine: allocate_static -- Allocate static memory.            *
  ******************************************************************/
 template<>
@@ -348,7 +340,7 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
                                               dWdy[i][j][k],
                                               dWdz[i][j][k],
                                               Flow_Type,
-                                              Grid.volume(i,j,k)) 
+                                              Grid.Cell[i][j][k].V) 
                      << " " <<W[i][j][k].Fsd*W[i][j][k].rho
                      << " " <<W[i][j][k].Reaction_Rate_Fsd(dWdx[i][j][k],
                                                            dWdy[i][j][k],
@@ -372,7 +364,7 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
                                                     dWdy[i][j][k],
                                                     dWdz[i][j][k],
                                                     Flow_Type,
-                                                    Grid.volume(i,j,k))
+                                                    Grid.Cell[i][j][k].V)
                      << " " <<W[i][j][k].SFS_Curvature(dWdx[i][j][k],
                                                        dWdy[i][j][k],
                                                        dWdz[i][j][k]) 
@@ -422,7 +414,7 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
                                                                _d2Wdxdz[i][j][k],
                                                                _d2Wdydz[i][j][k],
                                                                Flow_Type,
-                                                               Grid.volume(i,j,k))
+                                                               Grid.Cell[i][j][k].V)
                      << " " <<W[i][j][k].SFS_Diffusion_Fsd(dWdx[i][j][k],
                                                            dWdy[i][j][k],
                                                            dWdz[i][j][k],
@@ -433,7 +425,7 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
                                                            _d2Wdxdz[i][j][k],
                                                            _d2Wdydz[i][j][k],
                                                            Flow_Type,
-                                                           Grid.volume(i,j,k))
+                                                           Grid.Cell[i][j][k].V)
                      << " " <<W[i][j][k].Heat_Release_Strain(dWdx[i][j][k],
                                                              dWdy[i][j][k],
                                                              dWdz[i][j][k],
@@ -453,7 +445,7 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
                                                                  _d2Wdxdz[i][j][k],
                                                                  _d2Wdydz[i][j][k],
                                                                  Flow_Type,
-                                                                 Grid.volume(i,j,k))
+                                                                 Grid.Cell[i][j][k].V)
                      << " " <<W[i][j][k].Net_Rate_Change_Fsd(dWdx[i][j][k],
                                                              dWdy[i][j][k],
                                                              dWdz[i][j][k],
@@ -464,7 +456,7 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
                                                              _d2Wdxdz[i][j][k],
                                                              _d2Wdydz[i][j][k],
                                                              Flow_Type,
-                                                             Grid.volume(i,j,k)) << "\n";
+                                                             Grid.Cell[i][j][k].V) << "\n";
             Out_File.unsetf(ios::scientific);
          } /* endfor */
       } /* endfor */
@@ -681,8 +673,8 @@ ICs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
        	      W[i][j][k].C = (erf(xx*4000.0)+1.0)/2.0;
               W[i][j][k].p = 101325.0;
 	      W[i][j][k].premixed_mfrac();
-       	      W[i][j][k].rho = 1.13*W[ICu][j][k].Rtot()/W[i][j][k].Rtot()/(1.0+tau_fsd*W[i][j][k].C);
-              W[i][j][k].v.x = 1.13*0.3837/W[i][j][k].rho;
+       	      W[i][j][k].rho = IPs.Turbulence_IP.Reactants_Density*W[ICu][j][k].Rtot()/W[i][j][k].Rtot()/(1.0+tau_fsd*W[i][j][k].C);
+              W[i][j][k].v.x = IPs.Turbulence_IP.Reactants_Density*IPs.Turbulence_IP.Laminar_Flame_Speed/W[i][j][k].rho;
        	      W[i][j][k].Fsd = 4000.0*exp(-sqr(xx*4000.0))/sqrt(PI)/W[i][j][k].rho;
 	      W[i][j][k].k = 0.0;
               U[i][j][k] = W[i][j][k].U();
@@ -1153,9 +1145,11 @@ BCs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs) {
 	     W[ICl-1][j][k] = W[ICl][j][k]; 
 	     W[ICl-1][j][k].p = WoW[j][k].p;
 	     U[ICl-1][j][k] = W[ICl-1][j][k].U();
- 	     W[ICl-2][j][k] = W[ICl][j][k]; 
-	     W[ICl-2][j][k].p = WoW[j][k].p;
-	     U[ICl-2][j][k] = W[ICl-2][j][k].U();
+//  	     W[ICl-2][j][k] = W[ICl][j][k]; 
+// 	     W[ICl-2][j][k].p = WoW[j][k].p;
+// 	     U[ICl-2][j][k] = W[ICl-2][j][k].U();
+	     W[ICl-2][j][k].Copy( W[ICl-1][j][k] );  
+	     U[ICl-2][j][k].Copy( U[ICl-1][j][k] );
 	     break;
 
 	   case BC_INFLOW_TURBULENCE :
@@ -1272,9 +1266,11 @@ BCs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs) {
 	     W[ICu+1][j][k] = W[ICu][j][k]; 
 	     W[ICu+1][j][k].p = WoE[j][k].p;
 	     U[ICu+1][j][k] = W[ICu+1][j][k].U();
-	     W[ICu+2][j][k] = W[ICu][j][k]; 
-	     W[ICu+2][j][k].p = WoE[j][k].p;
-	     U[ICu+2][j][k] = W[ICu+2][j][k].U();
+// 	     W[ICu+2][j][k] = W[ICu][j][k]; 
+// 	     W[ICu+2][j][k].p = WoE[j][k].p;
+// 	     U[ICu+2][j][k] = W[ICu+2][j][k].U();
+	     W[ICu+2][j][k].Copy( W[ICu+1][j][k] );
+	     U[ICu+2][j][k].Copy( U[ICu+1][j][k] );
 	     break;
             
 	   case BC_INFLOW_TURBULENCE :
@@ -1395,9 +1391,11 @@ BCs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs) {
 	     W[i][JCu+1][k] = W[i][JCu][k];
 	     W[i][JCu+1][k].p = WoN[i][k].p;
 	     U[i][JCu+1][k] = W[i][JCu+1][k].U();
- 	     W[i][JCu+2][k] = W[i][JCu][k];
-	     W[i][JCu+2][k].p = WoN[i][k].p;
-	     U[i][JCu+2][k] = W[i][JCu+2][k].U();
+//  	     W[i][JCu+2][k] = W[i][JCu][k];
+// 	     W[i][JCu+2][k].p = WoN[i][k].p;
+// 	     U[i][JCu+2][k] = W[i][JCu+2][k].U();
+	     W[i][JCu+2][k].Copy( W[i][JCu+1][k] );
+	     U[i][JCu+2][k].Copy( U[i][JCu+1][k] );
 	     break;
 
 	  case BC_INFLOW_TURBULENCE :
@@ -1514,9 +1512,11 @@ BCs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs) {
 	     W[i][JCl-1][k] = W[i][JCl][k];
 	     W[i][JCl-1][k].p = WoS[i][k].p;
 	     U[i][JCl-1][k] = W[i][JCl-1][k].U();
-	     W[i][JCl-2][k] = W[i][JCl][k];
-	     W[i][JCl-2][k].p = WoS[i][k].p;
-	     U[i][JCl-2][k] = W[i][JCl-2][k].U();
+// 	     W[i][JCl-2][k] = W[i][JCl][k];
+// 	     W[i][JCl-2][k].p = WoS[i][k].p;
+// 	     U[i][JCl-2][k] = W[i][JCl-2][k].U();
+	     W[i][JCl-2][k].Copy( W[i][JCl-1][k] );
+	     U[i][JCl-2][k].Copy( U[i][JCl-1][k] );
 	     break;
             
 	   case BC_INFLOW_TURBULENCE :
@@ -1638,9 +1638,11 @@ BCs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs) {
              W[i][j][KCl-1] = WoB[i][j]; 
              W[i][j][KCl-1].p = W[i][j][KCl].p;
              U[i][j][KCl-1] = W[i][j][KCl-1].U();
-             W[i][j][KCl-2] = WoB[i][j];
-             W[i][j][KCl-2].p = W[i][j][KCl].p;
-             U[i][j][KCl-2] = W[i][j][KCl-2].U();
+//              W[i][j][KCl-2] = WoB[i][j];
+//              W[i][j][KCl-2].p = W[i][j][KCl].p;
+//              U[i][j][KCl-2] = W[i][j][KCl-2].U();
+	     W[i][j][KCl-2].Copy( W[i][j][KCl-1] );
+             U[i][j][KCl-2].Copy( U[i][j][KCl-1] );
              break;
 
            case BC_OUTFLOW_SUBSONIC :
@@ -1767,9 +1769,11 @@ BCs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs) {
              W[i][j][KCu+1] = W[i][j][KCu];
              W[i][j][KCu+1].p = WoT[i][j].p;
              U[i][j][KCu+1] = W[i][j][KCu+1].U();
-             W[i][j][KCu+2] = W[i][j][KCu];
-             W[i][j][KCu+2].p = WoT[i][j].p;
-             U[i][j][KCu+2] = W[i][j][KCu+2].U();
+//              W[i][j][KCu+2] = W[i][j][KCu];
+//              W[i][j][KCu+2].p = WoT[i][j].p;
+//              U[i][j][KCu+2] = W[i][j][KCu+2].U();
+	     W[i][j][KCu+2].Copy( W[i][j][KCu+1] );
+             U[i][j][KCu+2].Copy( U[i][j][KCu+1] );
              break;
 
 	   case BC_INFLOW_TURBULENCE :
@@ -1830,11 +1834,11 @@ CFL(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
             } else {
 	       V = W[i][j][k].rhov()/W[i][j][k].rho;
 
-               d_i = TWO*(Grid.volume(i,j,k)/
+               d_i = TWO*(Grid.Cell[i][j][k].V/
                           (Grid.AfaceE(i, j, k)+ Grid.AfaceW(i, j, k)));
-               d_j = TWO*( Grid.volume(i, j, k)/
+               d_j = TWO*( Grid.Cell[i][j][k].V/
                            (Grid.AfaceN(i, j, k)+ Grid.AfaceS(i, j, k)));
-               d_k = TWO*( Grid.volume(i, j, k)/
+               d_k = TWO*( Grid.Cell[i][j][k].V/
                            (Grid.AfaceTop(i, j, k)+ Grid.AfaceBot(i, j, k)));
                v_i = HALF*(V*(Grid.nfaceE(i, j, k)- Grid.nfaceW(i, j, k)));
                v_j = HALF*(V*(Grid.nfaceN(i, j, k)- Grid.nfaceS(i, j, k)));
@@ -1869,6 +1873,7 @@ CFL(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
 	       } /* endif */
                      
                if (Flow_Type != FLOWTYPE_INVISCID) {  
+
                   nu = W[i][j][k].mu()/W[i][j][k].rho;
 
                   if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
@@ -1877,7 +1882,7 @@ CFL(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
                                             dWdy[i][j][k],
                                             dWdz[i][j][k],
                                             Flow_Type,
-					    Grid.volume(i, j, k)) / W[i][j][k].rho; 
+					    Grid.Cell[i][j][k].V) / W[i][j][k].rho; 
                      nu = max(nu, nu_t);
 		  }
                   
@@ -1892,7 +1897,7 @@ CFL(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
 
              W[i][j][k].SemiImplicitSourceJacobi(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
                                                  d_dWdx_dW[i][j][k][0],d_dWdy_dW[i][j][k][0],
-                                                 d_dWdz_dW[i][j][k][0],dSwdU,Grid.volume(i,j,k)); 
+                                                 d_dWdz_dW[i][j][k][0],dSwdU,Grid.Cell[i][j][k].V); 
 
              if(IPs.Preconditioning == 1){
  	      DenseMatrix Pinv(nn,nn);
@@ -2139,9 +2144,9 @@ dUdt_Multistage_Explicit(const int i_stage,
                
                // Spacing for Preconditioner 
 	       if(IPs.Flow_Type != FLOWTYPE_INVISCID && IPs.Preconditioning){
- 	          delta_n = min(min(TWO*(Grid.volume(i,j,k)/(Grid.AfaceE(i,j,k)+Grid.AfaceW(i,j,k))),
-                                    TWO*(Grid.volume(i,j,k)/(Grid.AfaceN(i,j,k)+Grid.AfaceS(i,j,k)))),
-                                    TWO*(Grid.volume(i,j,k)/(Grid.AfaceTop(i,j,k)+Grid.AfaceBot(i,j,k))));
+ 	          delta_n = min(min(TWO*(Grid.Cell[i][j][k].V/(Grid.AfaceE(i,j,k)+Grid.AfaceW(i,j,k))),
+                                    TWO*(Grid.Cell[i][j][k].V/(Grid.AfaceN(i,j,k)+Grid.AfaceS(i,j,k)))),
+                                    TWO*(Grid.Cell[i][j][k].V/(Grid.AfaceTop(i,j,k)+Grid.AfaceBot(i,j,k))));
 	       } /* endif */
 
                // Evaluate inviscid numerical flux
@@ -2163,14 +2168,14 @@ dUdt_Multistage_Explicit(const int i_stage,
                                                        dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k],
                                                        dWdx[i+1][j][k], dWdy[i+1][j][k], dWdz[i+1][j][k],
                                                        Grid.nfaceE(i,j,k), Grid.Voe(i,j,k),  
-                                                       Grid.delta_oe(i,j,k), Grid.volume(i,j,k), 
-	                                               Grid.volume(i+1,j,k), Flow_Type);
+                                                       Grid.delta_oe(i,j,k), Grid.Cell[i][j][k].V, 
+	                                               Grid.Cell[i+1][j][k].V, Flow_Type);
 
                /* Evaluate cell-averaged solution changes. */
                dUdt[i][j][k][k_residual] -= (IPs.CFL_Number*dt[i][j][k])*
-                                            Flux*Grid.AfaceE(i,j,k)/Grid.volume(i,j,k);
+                                            Flux*Grid.AfaceE(i,j,k)/Grid.Cell[i][j][k].V;
                dUdt[i+1][j][k][k_residual] += (IPs.CFL_Number*dt[i+1][j][k])*
-                                              Flux*Grid.AfaceW(i+1,j,k)/Grid.volume(i+1,j,k);
+                                              Flux*Grid.AfaceW(i+1,j,k)/Grid.Cell[i+1][j][k].V;
 
                /* Include source terms associated with modelled turbulence-chemistry interactions. */
                dUdt[i][j][k][k_residual] += (IPs.CFL_Number*dt[i][j][k])*
@@ -2179,7 +2184,7 @@ dUdt_Multistage_Explicit(const int i_stage,
                                                                        dWdy[i][j][k], 
                                                                        dWdz[i][j][k],
                                                                        Flow_Type,
-                                                                       Grid.volume(i,j,k));
+                                                                       Grid.Cell[i][j][k].V);
 
                /* Include physical time derivative for dual time stepping. */
 //                if (IPs.Dual_Time_Stepping) {
@@ -2287,9 +2292,9 @@ dUdt_Multistage_Explicit(const int i_stage,
 
 	    // Spacing for Preconditioner 
 	    if (IPs.Flow_Type != FLOWTYPE_INVISCID && IPs.Preconditioning){
- 	       delta_n = min(min(TWO*(Grid.volume(i,j,k)/(Grid.AfaceE(i,j,k)+Grid.AfaceW(i,j,k))),
-                                 TWO*(Grid.volume(i,j,k)/(Grid.AfaceN(i,j,k)+Grid.AfaceS(i,j,k)))),
-                                 TWO*( Grid.volume(i,j,k)/(Grid.AfaceTop(i,j,k)+Grid.AfaceBot(i,j,k))));
+ 	       delta_n = min(min(TWO*(Grid.Cell[i][j][k].V/(Grid.AfaceE(i,j,k)+Grid.AfaceW(i,j,k))),
+                                 TWO*(Grid.Cell[i][j][k].V/(Grid.AfaceN(i,j,k)+Grid.AfaceS(i,j,k)))),
+                                 TWO*( Grid.Cell[i][j][k].V/(Grid.AfaceTop(i,j,k)+Grid.AfaceBot(i,j,k))));
 	    } /* endif */
 
             // Evaluate inviscid numerical flux
@@ -2311,14 +2316,14 @@ dUdt_Multistage_Explicit(const int i_stage,
                                                    dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k],
                                                    dWdx[i][j+1][k], dWdy[i][j+1][k], dWdz[i][j+1][k],
                                                    Grid.nfaceN(i,j,k), Grid.Von(i,j,k),
-                                                   Grid.delta_on(i,j,k), Grid.volume(i,j,k), 
-                                                   Grid.volume(i,j+1,k), Flow_Type);
+                                                   Grid.delta_on(i,j,k), Grid.Cell[i][j][k].V, 
+                                                   Grid.Cell[i][j+1][k].V, Flow_Type);
             
             /* Evaluate cell-averaged solution changes. */
             dUdt[i][j][k][k_residual] -= (IPs.CFL_Number*dt[i][j][k])*
-                                         Flux*Grid.AfaceN(i,j,k)/Grid.volume(i,j,k);
+                                         Flux*Grid.AfaceN(i,j,k)/Grid.Cell[i][j][k].V;
             dUdt[i][j+1][k][k_residual] += (IPs.CFL_Number*dt[i][j+1][k])*
-                                           Flux*Grid.AfaceS(i,j+1,k)/Grid.volume(i,j+1,k);
+                                           Flux*Grid.AfaceS(i,j+1,k)/Grid.Cell[i][j+1][k].V;
 
             /* Save south and north face boundary flux. */
 
@@ -2417,9 +2422,9 @@ dUdt_Multistage_Explicit(const int i_stage,
              
 	    // Spacing for Preconditioner 
 	    if (IPs.Flow_Type != FLOWTYPE_INVISCID && IPs.Preconditioning) {
-  	       delta_n = min(min(TWO*(Grid.volume(i,j,k)/(Grid.AfaceE(i,j,k)+Grid.AfaceW(i,j,k))),
-	                         TWO*(Grid.volume(i,j,k)/(Grid.AfaceN(i,j,k)+Grid.AfaceS(i,j,k)))),
-                                 TWO*(Grid.volume(i,j,k)/(Grid.AfaceTop(i,j,k)+Grid.AfaceBot(i,j,k))));
+  	       delta_n = min(min(TWO*(Grid.Cell[i][j][k].V/(Grid.AfaceE(i,j,k)+Grid.AfaceW(i,j,k))),
+	                         TWO*(Grid.Cell[i][j][k].V/(Grid.AfaceN(i,j,k)+Grid.AfaceS(i,j,k)))),
+                                 TWO*(Grid.Cell[i][j][k].V/(Grid.AfaceTop(i,j,k)+Grid.AfaceBot(i,j,k))));
 	    } /* endif */
 
             // Evaluate inviscid numerical flux
@@ -2441,14 +2446,14 @@ dUdt_Multistage_Explicit(const int i_stage,
                                                     dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k],
                                                     dWdx[i][j][k+1], dWdy[i][j][k+1], dWdz[i][j][k+1],
                                                     Grid.nfaceTop(i,j,k), Grid.Vot(i,j,k), 
-                                                    Grid.delta_ot(i,j,k), Grid.volume(i,j,k), 
-                                                    Grid.volume(i,j,k+1), Flow_Type);
+                                                    Grid.delta_ot(i,j,k), Grid.Cell[i][j][k].V, 
+                                                    Grid.Cell[i][j][k+1].V, Flow_Type);
 
             /* Evaluate cell-averaged solution changes. */
              dUdt[i][j][k][k_residual] -= (IPs.CFL_Number*dt[i][j][k])*
-                                          Flux*Grid.AfaceTop(i,j,k)/Grid.volume(i,j,k);
+                                          Flux*Grid.AfaceTop(i,j,k)/Grid.Cell[i][j][k].V;
              dUdt[i][j][k+1][k_residual] += (IPs.CFL_Number*dt[i][j][k+1])*
-                                            Flux*Grid.AfaceBot(i,j,k+1)/Grid.volume(i,j,k+1);
+                                            Flux*Grid.AfaceBot(i,j,k+1)/Grid.Cell[i][j][k+1].V;
 
             /* Save top and bottom face boundary flux. */
 //           if (j ==  JCl-1) {

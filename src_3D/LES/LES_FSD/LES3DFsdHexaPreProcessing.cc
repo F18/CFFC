@@ -59,6 +59,9 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
 										      Solution_Data.Input.Grid_IP,
 										      Data.batch_flag,
 										      Data.Velocity_Field);
+	// the auxiliary mesh is not needed anymore, thus deallocate it
+	Data.Auxiliary_Mesh.Deallocate();
+
       }
 
       if (error_flag) return error_flag;
@@ -345,22 +348,27 @@ int Initialize_Solution_Blocks_Specializations(HexaSolver_Data &Data,
 
   } /* endif */
 
-  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  //---------------------------------------------------------------------
+  // As the primary processor is creating the turbulent velocity field, 
+  // there is no need to broadcast the auxiliary mesh
+  //---------------------------------------------------------------------
+
+//   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
   
-  /* Broadcast the auxiliary mesh to other MPI processors. */
+//   /* Broadcast the auxiliary mesh to other MPI processors. */
 
-  if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER) {
+//   if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER) {
 
-    Solution_Data.Input.Grid_IP.i_Grid = GRID_TURBULENCE_BOX;
-    Data.Auxiliary_Mesh.Broadcast();
-    Solution_Data.Input.Grid_IP.i_Grid = GRID_BUNSEN_BURNER;
+//     Solution_Data.Input.Grid_IP.i_Grid = GRID_TURBULENCE_BOX;
+//     Data.Auxiliary_Mesh.Broadcast();
+//     Solution_Data.Input.Grid_IP.i_Grid = GRID_BUNSEN_BURNER;
 
-  } else if(Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BOX) {
+//   } else if(Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BOX) {
 
-    Solution_Data.Input.Grid_IP.i_Grid = GRID_TURBULENCE_BOX;
-    Data.Auxiliary_Mesh.Broadcast();
-    Solution_Data.Input.Grid_IP.i_Grid = GRID_BUNSEN_BOX;
-  }                  
+//     Solution_Data.Input.Grid_IP.i_Grid = GRID_TURBULENCE_BOX;
+//     Data.Auxiliary_Mesh.Broadcast();
+//     Solution_Data.Input.Grid_IP.i_Grid = GRID_BUNSEN_BOX;
+//   }                  
  
   return error_flag;
 }

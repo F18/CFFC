@@ -680,7 +680,7 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 
 	    delta_z = fabs(Solution_Block.Grid.Cell[i][j][k].Xc.z 
 			   - Solution_Block.Grid.Cell[i][j][Solution_Block.KCu].Xc.z)
-	              - Solution_Block.Grid.volume(i, j, Solution_Block.KCu)/
+	              - Solution_Block.Grid.Cell[i][j][Solution_Block.KCu].V/
 	                (Solution_Block.Grid.AfaceTop(i, j, Solution_Block.KCu) 
 			 + Solution_Block.Grid.AfaceBot(i, j, Solution_Block.KCu));
 
@@ -691,7 +691,7 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 	    
 	    delta_z = fabs(Solution_Block.Grid.Cell[i][j][k].Xc.z 
 			   - Solution_Block.Grid.Cell[i][j][Solution_Block.KCl].Xc.z)
-	              - Solution_Block.Grid.volume(i, j, Solution_Block.KCl)/
+	              - Solution_Block.Grid.Cell[i][j][Solution_Block.KCl].V/
 	                (Solution_Block.Grid.AfaceTop(i, j, Solution_Block.KCl) 
 			 + Solution_Block.Grid.AfaceBot(i, j, Solution_Block.KCl));
 	  }
