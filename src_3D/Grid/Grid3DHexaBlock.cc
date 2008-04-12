@@ -237,6 +237,7 @@ void Grid3D_Hexa_Block::Copy(Grid3D_Hexa_Block &Grid2) {
 	     for (int i = Grid2.ICl-Grid2.Nghost; i <= Grid2.ICu+Grid2.Nghost; ++i) {
 	        Cell[i][j][k].I  = Grid2.Cell[i][j][k].I;
 	        Cell[i][j][k].J  = Grid2.Cell[i][j][k].J;
+	        Cell[i][j][k].K  = Grid2.Cell[i][j][k].K;
 	        Cell[i][j][k].Xc = Grid2.Cell[i][j][k].Xc;
 	        Cell[i][j][k].V  = Grid2.Cell[i][j][k].V;
 	     } /* endfor */

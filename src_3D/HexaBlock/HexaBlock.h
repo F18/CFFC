@@ -117,6 +117,11 @@ class Hexa_Block {
       WoT = NULL; WoB = NULL; WallData = NULL;
    }
 
+   Hexa_Block(Hexa_Block &Block2) {
+       Copy(Block2);
+   }
+    
+    
    Hexa_Block(const int Ni, 
               const int Nj, 
               const int Nk, 
