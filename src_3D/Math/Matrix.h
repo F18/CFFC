@@ -697,6 +697,276 @@ inline RowVector transpose(const ColumnVector &CVec) {
    return (RowVector(CVec));
 }
 
+/* Define the n x n square diagonal matrix class.
+ Uses the MV++ MV_Vector_double class. */
+
+/********************************************************
+ * Class: DiagonalMatrix                             *
+ *                                                      *
+ * Member functions                                     *
+ *      n          -- Return number of rows and columns.*
+ *      D          -- Return array of diagonal elements.*
+ *      A          -- Return array of elements above    *
+ *                    main diagonal.                    *
+ *      B          -- Return array of elements below    *
+ *                    main diagonal.                    *
+ *      allocate   -- Allocate memory for matrix.       *
+ *      deallocate -- Deallocate memory for matrix.     *
+ *      zero       -- Assign zero matrix.               *
+ *      identity   -- Assign identity matrix.           *
+ *      trace      -- Return the trace of matrix.       *
+ *      transpose  -- Return the transpose of matrix.   *
+ *                                                      *
+ * Member operators                                     *
+ *      M  -- a tridiagonal matrix                      *
+ *      RV -- a row vector                              *
+ *      CV -- a column vector                           *
+ *      a  -- a scalar (double)                         *
+ *                                                      *
+ * M = M;                                               *
+ * a = M[i];                                            * 
+ * M = M + M;                                           *
+ * M = M - M;                                           *
+ * CV = M * CV;                                         *
+ * M = a * M;                                           *
+ * M = M * a;                                           *
+ * M = M / a;                                           *
+ * M = +M;                                              *
+ * M = -M;                                              *
+ * M += M;                                              *
+ * M -= M;                                              *
+ * M == M;                                              *
+ * M != M;                                              *
+ * cout << M; (output function)                         *
+ * cin  >> M; (input function)                          *
+ *                                                      *
+ ********************************************************/
+class DiagonalMatrix : public MV_Vector_double {
+public:
+    
+    /* Creation, copy, and assignment constructors. */
+    DiagonalMatrix(void)                                                : MV_Vector_double() { }
+    DiagonalMatrix(unsigned int n)                                      : MV_Vector_double(n) { } 
+    DiagonalMatrix(unsigned int n, const double &x)                     : MV_Vector_double(n, x) { }   
+    DiagonalMatrix(double *x, unsigned int n)                           : MV_Vector_double(x, n) { }
+    DiagonalMatrix(MV_Vector_double &A, MV_Vector_::ref_type i)         : MV_Vector_double(A, i) { }   
+    DiagonalMatrix(double *x, unsigned int n, MV_Vector_::ref_type i)   : MV_Vector_double(x, n, i) { }
+    DiagonalMatrix(const MV_Vector_double &A)                           : MV_Vector_double(A) { }
+    DiagonalMatrix(DiagonalMatrix &A, const double &x)                  : MV_Vector_double(A.size(),x) { }
+    DiagonalMatrix(DiagonalMatrix &A, MV_Vector_::ref_type i)           : MV_Vector_double(A, i) { }
+    
+    /* Assign the zero matrix. */
+    void zero(void);
+    
+    /* Assign the identity matrix. */
+    void identity(void);
+    
+    /* Compute the trace of the matrix. */
+    double trace(void);
+    double trace(void) const;
+    friend double trace(const DiagonalMatrix &M);
+    
+    /* Assignment operator. */
+    // DiagonalMatrix operator = (const DiagonalMatrix &M);
+    // Use automatically generated assignment operator.
+    
+//    /* Index operator. */
+//    double &operator[](int index) {
+//        assert( index >= 0 && index <= n-1 );
+//        return (D(index));
+//    }
+//    
+//    const double &operator[](int index) const {
+//        assert( index >= 0 && index <= n-1 );
+//        return (D(index));
+//    }
+    
+    /* Unary arithmetic operators. */
+    friend DiagonalMatrix operator +(const DiagonalMatrix &M);
+    friend DiagonalMatrix operator -(const DiagonalMatrix &M);
+    
+    /* Binary arithmetic operators. */
+    friend DiagonalMatrix operator +(const DiagonalMatrix &M1, const DiagonalMatrix &M2);
+    friend DiagonalMatrix operator -(const DiagonalMatrix &M1, const DiagonalMatrix &M2);
+    friend ColumnVector operator *(const DiagonalMatrix &M, const ColumnVector &CVec);
+    friend DiagonalMatrix operator *(const DiagonalMatrix &M, const double &a);
+    friend DiagonalMatrix operator *(const double &a, const DiagonalMatrix &M);
+    friend DiagonalMatrix operator /(const DiagonalMatrix &M, const double &a);
+    
+    /* Shortcut arithmetic operators. */
+    friend DiagonalMatrix &operator +=(DiagonalMatrix &M1, const DiagonalMatrix &M2);
+    friend DiagonalMatrix &operator -=(DiagonalMatrix &M1, const DiagonalMatrix &M2);
+    
+    /* Relational operators. */
+    friend int operator ==(const DiagonalMatrix &M1, const DiagonalMatrix &M2);
+    friend int operator !=(const DiagonalMatrix &M1, const DiagonalMatrix &M2);
+    
+    /* Input-output operators. */
+    friend ostream &operator << (ostream &out_file, const DiagonalMatrix &M);
+    friend istream &operator >> (istream &in_file, DiagonalMatrix &M);
+    
+};
+
+
+/********************************************************
+ * DiagonalMatrix::zero -- Assign zero matrix.       *
+ ********************************************************/
+inline void DiagonalMatrix::zero(void) {
+    int i, m; m = size(); for ( i = 0; i <= m-1; ++i ) p_[i]=ZERO;
+}
+
+/********************************************************
+ * DiagonalMatrix::indentity -- Set identity matrix. *
+ ********************************************************/
+inline void DiagonalMatrix::identity(void) {
+    int i, m; m = size(); for ( i = 0; i <= m-1; ++i ) p_[i]=ONE;
+}
+
+/********************************************************
+ * DiagonalMatrix::trace -- Trace of a matrix.       *
+ ********************************************************/
+inline double DiagonalMatrix::trace(void) {
+    double xx; xx= 0;
+    int i, m; m = size(); 
+    for ( i = 0; i <= m-1; ++i ) xx+=p_[i];
+    return (xx);
+}
+
+inline double DiagonalMatrix::trace(void) const {
+    double xx; xx= 0;
+    int i, m; m = size(); 
+    for ( i = 0; i <= m-1; ++i ) xx+=p_[i];
+    return (xx);
+}
+
+inline double trace(const DiagonalMatrix &M) {
+    double xx; xx= 0;
+    int i, m; m = M.size(); 
+    for ( i = 0; i <= m-1; ++i ) xx+=M(i);
+    return (xx);
+}
+
+/********************************************************
+ * DiagonalMatrix -- Unary arithmetic operators.     *
+ ********************************************************/
+inline DiagonalMatrix operator +(const DiagonalMatrix &M) {
+    assert( M.size() >= 1 );
+    return (M);
+}
+
+inline DiagonalMatrix operator -(const DiagonalMatrix &M) {
+    assert( M.size() >= 1 ); int i; DiagonalMatrix M2(M);
+    for ( i = 0; i <= M.size()-1; ++i ) {
+        M2(i) = -M(i); 
+    } /* endfor */
+    return (M2); 
+}
+
+/********************************************************
+ * DiagonalMatrix -- Binary arithmetic operators.    *
+ ********************************************************/
+
+inline ColumnVector operator *(const DiagonalMatrix &M, const ColumnVector &CVec) {
+    assert( M.size() >= 1 && M.size() == (int)CVec.size());   
+    int i; ColumnVector cv(M.size(), ZERO);
+    for ( i = 0; i < M.size(); ++i ) {
+        cv(i)+=M(i)*CVec(i);
+    } /* endfor */
+    return (cv);
+}
+
+inline DiagonalMatrix operator *(const DiagonalMatrix &M, const double &a) {
+    assert( M.size() >= 1);
+    DiagonalMatrix DM(M);
+    for (int i=0; i< M.size(); i++) {
+        DM(i) *= a;
+    }
+    return (DM);
+}
+
+inline DiagonalMatrix operator *(const double &a, const DiagonalMatrix &M) {
+    assert( M.size() >= 1);
+    DiagonalMatrix DM(M);
+    for (int i=0; i< M.size(); i++) {
+        DM(i) *= a;
+    }
+    return (DM);
+}
+
+inline DiagonalMatrix operator /(const DiagonalMatrix &M, const double &a) {
+    assert( M.size() >= 1);
+    DiagonalMatrix DM(M);
+    for (int i=0; i< M.size(); i++) {
+        DM(i) /= a;
+    }
+    return (DM);
+}
+
+/********************************************************
+ * DiagonalMatrix -- Shortcut arithmetic operators.  *
+ ********************************************************/
+inline DiagonalMatrix &operator +=(DiagonalMatrix &M1, const DiagonalMatrix &M2) {
+    assert( M1.size() >= 1 && M1.size() == M2.size()); int i;
+    for ( i = 0; i < M1.size(); ++i ) {
+        M1(i) += M2(i); 
+    } /* endfor */
+    return (M1);
+}
+
+inline DiagonalMatrix &operator -=(DiagonalMatrix &M1, const DiagonalMatrix &M2) {
+    assert( M1.size() >= 1 && M1.size() == M2.size()); int i;
+    for ( i = 0; i < M1.size(); ++i ) {
+        M1(i) -= M2(i); 
+    } /* endfor */
+    return (M1);
+}
+
+/********************************************************
+ * DiagonalMatrix -- Relational operators.           *
+ ********************************************************/
+inline int operator ==(const DiagonalMatrix &M1, const DiagonalMatrix &M2) {
+    int i, equal; i = 0; equal = 1;
+    if (M1.size() != M2.size()) equal = 0;
+    while (equal) {
+        if (M1(i) != M2(i)) equal = 0;
+        if (i == M1.size()-1) break;
+        i = i + 1;
+    } /* endwhile */
+    return (equal);
+}
+
+inline int operator !=(const DiagonalMatrix &M1, const DiagonalMatrix &M2) {
+    int i, not_equal; i = 0; not_equal = 1;
+    if (M1.size() == M2.size()) {
+        while (not_equal) {
+            if (M1(i) == M2(i)) not_equal = 0;
+            if (i == M1.size()-1) break;
+            i = i + 1;
+        } /* endwhile */
+    } /* endif */
+    return (not_equal);
+}
+
+/********************************************************
+ * DiagonalMatrix -- Input-output operators.         *
+ ********************************************************/
+inline ostream &operator << (ostream &out_file, const DiagonalMatrix &M) {
+    int i;
+    out_file.setf(ios::scientific);
+    for ( i = 0 ; i < M.size(); ++i ) {
+        out_file << " " << M(i);
+    } /* endfor */
+    out_file.unsetf(ios::scientific);
+    return (out_file);
+}
+
+inline istream &operator >> (istream &in_file, DiagonalMatrix &M) {
+    in_file.setf(ios::skipws);
+    in_file.unsetf(ios::skipws);
+    return (in_file);
+}
+
+
 /* Define the regular dense matrix class, 
    a derived class based on MV++ MV_ColMat_double class. */
 
@@ -732,6 +1002,7 @@ inline RowVector transpose(const ColumnVector &CVec) {
  *      RV -- a row vector                              *
  *      CV -- a column vector                           *
  *      a  -- a scalar (double)                         *
+ *      D  -- a Diagonal matrix                         *
  *                                                      *
  * M = M;                                               *
  * a = M(i,j);                                          *
@@ -745,6 +1016,12 @@ inline RowVector transpose(const ColumnVector &CVec) {
  * M = a * M;                                           *
  * M = M * a;                                           *
  * M = M / a;                                           *
+ * M = M + D;                                           *
+ * M = D + M;                                           *
+ * M = M - D;                                           *
+ * M = D - M;                                           *
+ * M = M * D;                                           *
+ * M = D * M;                                           *
  * M = +M;                                              *
  * M = -M;                                              *
  * M += M;                                              *
@@ -863,6 +1140,13 @@ class DenseMatrix: public MV_ColMat_double{
     friend DenseMatrix operator *(const DenseMatrix &M, const double &a);
     friend DenseMatrix operator *(const double &a, const DenseMatrix &M);
     friend DenseMatrix operator /(const DenseMatrix &M, const double &a);
+    friend DenseMatrix operator +(const DenseMatrix &M, const DiagonalMatrix &D);
+    friend DenseMatrix operator +(const DiagonalMatrix &D, const DenseMatrix &M);
+    friend DenseMatrix operator -(const DenseMatrix &M, const DiagonalMatrix &D);
+    friend DenseMatrix operator -(const DiagonalMatrix &D, const DenseMatrix &M);
+    friend DenseMatrix operator *(const DenseMatrix &M, const DiagonalMatrix &D);
+    friend DenseMatrix operator *(const DiagonalMatrix &D, const DenseMatrix &M);
+
 
     /* Shortcut arithmetic operators. */
     friend DenseMatrix &operator +=(DenseMatrix &M1, const DenseMatrix &M2);
@@ -1135,6 +1419,68 @@ inline DenseMatrix operator /(const DenseMatrix &M, const double &a) {
    double xx; xx = ONE/a; DenseMatrix Ma(M.dim0_,M.dim1_); Ma.v_ = xx*M.v_;
    return (Ma);
 }
+
+
+inline DenseMatrix operator +(const DenseMatrix &M1, const DiagonalMatrix &D) {
+    assert(M1.dim0_ == D.size() && M1.dim1_ == D.size());
+    DenseMatrix M(M1);
+    for(int i=0; i<D.size(); i++) {
+        M(i,i) += D(i);
+    }
+    return (M);
+}
+
+inline DenseMatrix operator +(const DiagonalMatrix &D, const DenseMatrix &M1) {
+    assert(M1.dim0_ == D.size() && M1.dim1_ == D.size());
+    DenseMatrix M(M1);
+    for(int i=0; i<D.size(); i++) {
+        M(i,i) += D(i);
+    }
+    return (M);
+}
+
+inline DenseMatrix operator -(const DenseMatrix &M1, const DiagonalMatrix &D) {
+    assert(M1.dim0_ == D.size() && M1.dim1_ == D.size());
+    DenseMatrix M(M1);
+    for(int i=0; i<D.size(); i++) {
+        M(i,i) -= D(i);
+    }
+    return (M);
+}
+
+inline DenseMatrix operator -(const DiagonalMatrix &D, const DenseMatrix &M1) {
+    assert(M1.dim0_ == D.size() && M1.dim1_ == D.size());
+    DenseMatrix M(M1);
+    for(int i=0; i<D.size(); i++) {
+        M(i,i) -= D(i);
+    }
+    return (M);
+}
+
+
+
+inline DenseMatrix operator *(const DenseMatrix &M1, const DiagonalMatrix &D) {
+    assert(M1.dim1_ == D.size());
+    int i, j; DenseMatrix MP(M1);
+    for ( i = 0; i <= MP.dim0_-1; ++i ) {
+        for ( j = 0 ; j <= MP.dim1_-1; ++j ) {
+            MP(i,j) *= D(j);
+        } /* endfor */
+    } /* endfor */
+    return (MP);
+}
+
+inline DenseMatrix operator *(const DiagonalMatrix &D, const DenseMatrix &M1) {
+    assert(M1.dim0_ == D.size());
+    int i, j; DenseMatrix MP(M1);
+    for ( i = 0; i <= MP.dim0_-1; ++i ) {
+        for ( j = 0 ; j <= MP.dim1_-1; ++j ) {
+            MP(i,j) *= D(i);
+        } /* endfor */
+    } /* endfor */
+    return (MP);
+}
+
 
 /********************************************************
  * DenseMatrix -- Shortcut arithmetic operators.        *
@@ -1604,5 +1950,6 @@ inline istream &operator >> (istream &in_file, TriDiagonalMatrix &M) {
   in_file.unsetf(ios::skipws);
   return (in_file);
 }
+
 
 #endif /* _MATRIX_INCLUDED  */
