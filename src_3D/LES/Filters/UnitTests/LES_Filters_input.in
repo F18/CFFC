@@ -1,0 +1,103 @@
+##############################
+#    Solver parameters       #
+##############################
+ICs_Type = 
+Uniform
+Reconstruction_Type =
+Least_Squares
+Limiter_Type = 
+One
+Flux_Function_Type =
+AUSM_plus_up
+##############################
+#       LES parameters       #
+##############################
+Filter_Grid_Ratio =
+2
+SFS_model = 
+Smagorinsky
+Smagorinsky_Coefficient = 
+0.18
+##############################
+#     Spectrum parameters    #
+##############################
+Spectrum_Model =
+Uniform
+#Pope
+#Haworth_Poinsot
+#Laval_Nazarenko
+Domain_Integral_Lengthscale_Ratio = 
+#3.2
+5
+Turbulent_Kinetic_Energy =
+1
+Rescale_Spectrum_Before_Execution = 
+OFF
+##############################
+#       Grid parameters      #
+##############################
+Grid_Type =
+Periodic_Box
+Number_of_Cells_Idir = 
+32
+Number_of_Cells_Jdir =
+32
+Number_of_Cells_Kdir =
+32
+Number_of_Blocks_Idir = 
+1
+Number_of_Blocks_Jdir =
+1
+Number_of_Blocks_Kdir =
+1
+Box_Width = 
+#0.0366
+6.28
+#3.14
+Box_Height =
+#0.0366
+6.28
+#3.14
+Box_Length = 
+#0.0366
+6.28
+#3.14
+###################################
+#   Time stepping parameters      #
+###################################
+Time_Integration_Type =
+Explicit_Runge_Kutta
+#Explicit_Euler
+N_Stage =
+2
+Time_Accurate = 
+ON
+Local_Time_Stepping =
+0
+CFL_Number =
+0.1
+Time_Max = 
+10
+Maximum_Number_of_Time_Steps =
+0
+Number_of_Blocks_Per_Processor =
+1000
+Output_File_Name = 
+test_LES_Filters
+Restart_Solution_Save_Frequency =
+100
+#######################
+# Execute program     
+#######################
+Execute
+#######################
+# Write output        
+#######################
+Write_Output_Nodes
+#Write_Output
+#Write_Restart
+#######################
+# Terminate program   
+#######################
+Terminate
+#########################

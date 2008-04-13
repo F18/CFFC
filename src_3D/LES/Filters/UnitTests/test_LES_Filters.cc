@@ -69,6 +69,14 @@ namespace tut
              automatically for each individual test. Declare it relative to the /src_3D directory,
              otherwise the framework might not find the input and output files. */
             set_test_suite_path("LES/Filters/UnitTests");
+            
+            
+            
+            batch_flag = 1;
+            error_flag = false;
+            Input_File_Name_ptr = strcat(Global_TestSuite_Path, "LES_Filters_input.in");
+            
+            
 
         }
         
@@ -118,42 +126,119 @@ namespace tut
      */
     
     
+
     /* Test 1:*/
     template<>
     template<>
     void LES_Filters_object::test<1>()
     {
         
-        set_test_name("Test Input");
+        set_test_name("Test Haselbacher functions");
         
-        batch_flag = false;
-        error_flag = false;
-        Input_File_Name_ptr = strcat(Global_TestSuite_Path, "LES_Filters_input.in");
-  
+        Haselbacher_Filter<Soln_pState,Soln_cState> filter;
+        
+        cout << endl << endl << endl;
+        ensure("fac(0)",filter.fac(0)==1);
+        ensure("fac(1)",filter.fac(1)==1);
+        ensure("fac(2)",filter.fac(2)==2);
+        ensure("fac(3)",filter.fac(3)==6);
+        
+        ensure("trinomial(0,0,0)",filter.trinomial_coefficient(0,0,0)==1);
+        ensure("trinomial(0,0,0)",filter.trinomial_coefficient(1,2,1)==12);
+        ensure("trinomial(0,0,0)",filter.trinomial_coefficient(3,2,1)==60);
+
+
+        
+    }
+
+
+    /* Test 2:*/
+    template<>
+    template<>
+    void LES_Filters_object::test<2>()
+    {
+        
+        set_test_name("Test transfer_function");
+        
+        
+        Data.batch_flag=batch_flag;
         error_flag = Solution_Data.Get_Input_Parameters(Input_File_Name_ptr, batch_flag);  
         ensure("Get Input Parameters",error_flag==false);
         CFFC_Barrier_MPI();
         error_flag = Initialize_Solution_Blocks(Data,Solution_Data);
         ensure("Initialize_Solution_Blocks",error_flag==false);
-        error_flag = CFFC_OR_MPI(error_flag);
-        ensure("CFFC or MPI",error_flag==false);
         error_flag = Initial_Conditions(Data,Solution_Data);      
         ensure("Initial_Conditions",error_flag==false);
         
         
-        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,1);
-        myfilter.filter();
         
-        //error_flag = Hexa_Post_Processing(Data,Solution_Data);
-        //ensure("Post_Processing",error_flag==false);
+        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
+        
+        myfilter.transfer_function();
 
         
     }
     
     
     
+    /* Test 4:*/
+    template<>
+    template<>
+    void LES_Filters_object::test<4>()
+    {
+        
+        set_test_name("Test DiagonalMatrix");
+        
+        
+        DiagonalMatrix D(3);
+        DenseMatrix M(3,3);
+        for (int i=0; i<3; i++) {
+            for (int j=0; j<3; j++) {
+                M(i,j) = (i+1)*(j+1);
+            }
+            D(i)=i+1;
+        }
+        cout << "D = " << endl << D << endl;
+        cout << "M = " << endl << M << endl;
+        cout << "M*D = " << endl << M*D << endl;
+        cout << "D*M = " << endl << D*M << endl;
+        
+    }
     
+    /* Test 3:*/
+    template<>
+    template<>
+    void LES_Filters_object::test<3>()
+    {
+        
+        set_test_name("Test Filter");
+        
+        
+        Data.batch_flag=batch_flag;
+        error_flag = Solution_Data.Get_Input_Parameters(Input_File_Name_ptr, batch_flag);  
+        ensure("Get Input Parameters",error_flag==false);
+        CFFC_Barrier_MPI();
+        error_flag = Initialize_Solution_Blocks(Data,Solution_Data);
+        ensure("Initialize_Solution_Blocks",error_flag==false);
+        error_flag = Initial_Conditions(Data,Solution_Data);      
+        ensure("Initial_Conditions",error_flag==false);
+        
+        
+        
+        
+        cout << endl<< endl << endl << "FILTERING..." << endl;
+        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
+        myfilter.filter();
+        
+        error_flag = Hexa_Post_Processing(Data,Solution_Data);
+        ensure("Post_Processing",error_flag==false);
+    
+    }
+    
+
+
 }
+
 
 
 
