@@ -124,7 +124,7 @@ void Levermore1D_pState::set_from_A(const Levermore1D_weights &A, double us) {
 /********************************************************
  * Function: Levermore1D_cState::moment                 *
  *                                                      *
- * Return value of velocity moment              .       *
+ * Return value of velocity moment.                     *
  *                                                      *
  ********************************************************/
 double Levermore1D_cState::moment(int n, const Levermore1D_weights &A, const double &us) const {
