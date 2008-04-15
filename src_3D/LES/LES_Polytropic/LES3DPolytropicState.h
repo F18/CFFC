@@ -179,6 +179,11 @@ public:
     void Set_LES_parameters(SFS_model_Parameters &SFS_model_, Filter_Parameters &filter_);
 //@}    
     
+    
+    static double E_return(LES3D_Polytropic_pState &W) {
+        return W.E();
+    }
+    
 /** @name Turbulent transport coefficients */
 /*        -------------------------------- */
 //@{

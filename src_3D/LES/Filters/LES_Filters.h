@@ -6,7 +6,8 @@
  *
  */
 
-
+#ifndef _LES_FILTERS_INCLUDED_
+#define _LES_FILTERS_INCLUDED_
 
 /*
  *
@@ -45,7 +46,10 @@
 // Complex type definition 
 typedef  complex<double>  Complex;
 
-
+/* ------------------------------------------------------------------------------------------------------------------------------ */
+/**
+ * CLASS : Neighbours
+ */
 class Neighbours{
 public:
     Cell3D *neighbour;
@@ -81,7 +85,11 @@ inline ostream &operator << (ostream &out_file,
     return (out_file);
 }
 
-// Abstract class
+/* ------------------------------------------------------------------------------------------------------------------------------ */
+/**
+ * CLASS: General Filter
+ * Abstract class
+ */
 template <typename Soln_pState, typename Soln_cState>
 class General_Filter {
 public:
@@ -94,7 +102,7 @@ template <typename Soln_pState, typename Soln_cState>
 class Haselbacher_Filter;
 
 
-
+/* ------------------------------------------------------------------------------------------------------------------------------ */
 /**
  * CLASS : LES_Filter
  */
@@ -179,7 +187,7 @@ void LES_Filter<Soln_pState,Soln_cState>::filter() {
 }
 
 
-
+/* ------------------------------------------------------------------------------------------------------------------------------- */
 /**
  * CLASS: Haselbacher_Filter
  */
@@ -496,7 +504,7 @@ Soln_pState Haselbacher_Filter<Soln_pState,Soln_cState>::LeastSquaresReconstruct
     /* ---------------- Matrix b ---------------- */
     DenseMatrix b = Matrix_b(SolnBlk,theNeighbours);
     
-    Weight_Matrix_A_and_b(A, b, theCell, theNeighbours);
+    //Weight_Matrix_A_and_b(A, b, theCell, theNeighbours);
     
     /* ------------ LS procedure for Unknowns DenseMatrix x ---------- */
     DenseMatrix x(the_number_of_unknowns,SolnBlk.NumVar());
@@ -511,7 +519,7 @@ Soln_pState Haselbacher_Filter<Soln_pState,Soln_cState>::LeastSquaresReconstruct
         temp[j] = x(0,j-1);
     
     
-    /* NOTE: MAKE "b" AND "x" INTO A "DenseMatrix" FOR MULTIPLE VARIABLES
+    /* NOTE: MAKE "b" AND "x" INTO A "ColumnVector" FOR Single VARIABLES
     
 //    /* --------------- Vector b --------------- */
 //    ColumnVector b(the_number_of_neighbours);
@@ -584,3 +592,57 @@ inline double Haselbacher_Filter<Soln_pState,Soln_cState>::trinomial_coefficient
 }
 
 
+
+
+
+/* ----------------------------------------------------------------------------------------------------------------------- 
+typedef double (theClass::*function_with_one_argument) (const double &abs_wave_num) const;
+_Member_Function_Wrapper_<theClass,function_with_one_argument, double> mapped_function(this, &theClass::Energy_Spectrum_Value);
+double dummy;
+double TKE_entire_range = AdaptiveGaussianQuadrature(mapped_function, 0.0, k_eta/2.0, dummy,5);
+/**/
+
+
+
+template<typename Soln_pState, typename Soln_cState>
+inline double return_it(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, double (func)(Soln_pState &)){
+    /* For static member functions or any function */
+    double b;
+    b = func(SolnBlk.W[2][2][2]);
+    
+    return b;
+}
+
+template<typename Soln_pState, typename Soln_cState>
+inline double return_it_2(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, double (Soln_pState::*&func)(void)){
+    /* for non static member functions */
+    double b;
+    b = (SolnBlk.W[2][2][2].*func)();
+    
+    return b;
+}
+
+template<typename Soln_pState, typename Soln_cState>
+inline double return_it_2(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, double (Soln_pState::*&func)){
+    /* for non static member functions */
+    double b;
+    b = (SolnBlk.W[2][2][2].*func);
+    
+    return b;
+}
+
+
+
+template<typename Soln_pState, typename Soln_cState, typename func_object>
+inline double return_it_3(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, func_object func) {
+    /* for non static member functions */
+    double b;
+    b = (SolnBlk.W[2][2][2].*func);
+    
+    return b;
+}
+
+
+
+
+#endif
