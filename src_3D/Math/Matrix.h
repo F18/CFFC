@@ -142,6 +142,8 @@ class RowVector: public MV_Vector_double{
     friend RowVector operator /(const RowVector &RVec1, const double &a);
     friend double operator *(const RowVector &RVec1, const RowVector &RVec2);
     friend double operator *(const RowVector &RVec, const ColumnVector &CVec);
+    friend RowVector operator *(const double &a, const RowVector &RVec);
+    friend RowVector operator *(const RowVector &RVec, const double &a);
 
     /* Relational operators. */
     friend int operator ==(const RowVector &RVec1, const RowVector &RVec2);
@@ -284,6 +286,27 @@ inline RowVector operator /(const RowVector &RVec, const double &a) {
    } /* endfor */
    return (rv);
 }
+
+
+
+
+inline RowVector operator *(const double &a, const RowVector &RVec) {
+    int i, m; m = RVec.size(); RowVector rv(m);
+    for ( i = 0; i <= m-1; ++i ) {
+        rv(i) = a*RVec(i);
+    } /* endfor */
+    return (rv);
+}
+
+inline RowVector operator *(const RowVector &RVec, const double &a) {
+    int i, m; m = RVec.size(); RowVector rv(m);
+    for ( i = 0; i <= m-1; ++i ) {
+        rv(i) = a*RVec(i);
+    } /* endfor */
+    return (rv);
+}
+
+
 
 inline double operator *(const RowVector &RVec1, const RowVector &RVec2) {
    return (dot(RVec1, RVec2));
