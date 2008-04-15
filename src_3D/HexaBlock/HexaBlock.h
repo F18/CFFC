@@ -2460,11 +2460,11 @@ CFL(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
                 k <  KCl || k >  KCu) {
                dt[i][j][k] = ZERO;
             } else {
-               d_i = TWO*(Grid.volume(i,j,k)/
+               d_i = TWO*(Grid.Cell[i][j][k].V/
                           (Grid.AfaceE(i, j, k)+ Grid.AfaceW(i, j, k)));
-               d_j = TWO*( Grid.volume(i, j, k)/
+               d_j = TWO*( Grid.Cell[i][j][k].V/
                            (Grid.AfaceN(i, j, k)+ Grid.AfaceS(i, j, k)));
-               d_k = TWO*( Grid.volume(i, j, k)/
+               d_k = TWO*( Grid.Cell[i][j][k].V/
                            (Grid.AfaceTop(i, j, k)+ Grid.AfaceBot(i, j, k)));
                v_i = HALF*(W[i][j][k].rhov()/W[i][j][k].rho*
                            (Grid.nfaceE(i, j, k)- Grid.nfaceW(i, j, k)));
@@ -3065,10 +3065,10 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             
 	    dUdt[i][j][k][0] -=	     
 	      Flux* Grid.AfaceE(i, j, k)/
-	      Grid.volume(i, j, k);
+	      Grid.Cell[i][j][k].V;
 	    dUdt[i+1][j][k][0] +=
 	      Flux* Grid.AfaceW(i+1, j, k)/
-	      Grid.volume(i+1, j ,k);
+	      Grid.Cell[i+1][j][k].V;
                
 	    /* Save west and east face boundary flux. */
                
@@ -3178,10 +3178,10 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
             dUdt[i][j][k][0] -=
                Flux* Grid.AfaceN(i, j, k)/
-               Grid.volume(i, j, k);
+               Grid.Cell[i][j][k].V;
             dUdt[i][j+1][k][0] +=
                Flux* Grid.AfaceS(i, j+1, k)/
-               Grid.volume(i, j+1, k);
+               Grid.Cell[i][j+1][k].V;
             
             /* Save south and north face boundary flux. */
             
@@ -3290,10 +3290,10 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             
             dUdt[i][j][k][0] -=	      
                Flux* Grid.AfaceTop(i, j, k)/
-               Grid.volume(i, j, k);
+               Grid.Cell[i][j][k].V;
             dUdt[i][j][k+1][0] +=
                Flux* Grid.AfaceBot(i, j, k+1)/
-               Grid.volume(i, j, k+1);
+               Grid.Cell[i][j][k+1].V;
             
             /* Save top and bottom face boundary flux. */
             
@@ -3528,11 +3528,11 @@ dUdt_Multistage_Explicit(const int i_stage,
                dUdt[i][j][k][k_residual] -=
                   (IPs.CFL_Number* dt[i][j][k])*
                   Flux* Grid.AfaceE(i, j, k)/
-                  Grid.volume(i, j, k);
+                Grid.Cell[i][j][k].V;
                dUdt[i+1][j][k][k_residual] +=
                   (IPs.CFL_Number* dt[i+1][j][k])*
                   Flux* Grid.AfaceW(i+1, j, k)/
-                  Grid.volume(i+1, j ,k);
+                  Grid.Cell[i+1][j][k].V;
                
                /* Save west and east face boundary flux. */
                
@@ -3637,11 +3637,11 @@ dUdt_Multistage_Explicit(const int i_stage,
             dUdt[i][j][k][k_residual] -=
                (IPs.CFL_Number* dt[i][j][k])*
                Flux* Grid.AfaceN(i, j, k)/
-               Grid.volume(i, j, k);
+               Grid.Cell[i][j][k].V;
             dUdt[i][j+1][k][k_residual] +=
                (IPs.CFL_Number* dt[i][j+1][k])*
                Flux* Grid.AfaceS(i, j+1, k)/
-               Grid.volume(i, j+1, k);
+               Grid.Cell[i][j+1][k].V;
             
             /* Save south and north face boundary flux. */
             
@@ -3745,11 +3745,11 @@ dUdt_Multistage_Explicit(const int i_stage,
             dUdt[i][j][k][k_residual] -=
                (IPs.CFL_Number* dt[i][j][k])*
                Flux* Grid.AfaceTop(i, j, k)/
-               Grid.volume(i, j, k);
+               Grid.Cell[i][j][k].V;
             dUdt[i][j][k+1][k_residual] +=
                (IPs.CFL_Number* dt[i][j][k+1])*
                Flux* Grid.AfaceBot(i, j, k+1)/
-               Grid.volume(i, j, k+1);
+               Grid.Cell[i][j][k+1].V;
             
             /* Save top and bottom face boundary flux. */
             
