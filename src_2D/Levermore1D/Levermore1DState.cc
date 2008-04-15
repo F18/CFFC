@@ -122,6 +122,54 @@ void Levermore1D_pState::set_from_A(const Levermore1D_weights &A, double us) {
 }
 
 /********************************************************
+ * Function: Levermore1D_pState::dUdW                   *
+ *                                                      *
+ * Generate dUdW Jacobian.                              *
+ *                                                      *
+ ********************************************************/
+DenseMatrix Levermore1D_pState::dUdW(void) const {
+  DenseMatrix dUdW(Levermore1D_Vector::get_length(),
+		   Levermore1D_Vector::get_length());
+  double col_entry(1.0);
+
+  dUdW.zero();
+
+  //fill first two columns
+  for(int i=0; i < Levermore1D_Vector::get_length(); ++i) {
+    //first column
+    dUdW(i,0) = col_entry;
+    col_entry *= m_values[1];
+
+    //second column
+    if(i==0) dUdW(i,1) = 0.0;
+    else if(i==1) dUdW(i,1) = m_values[0];
+    else {
+      dUdW(i,1) = (double)i * m_values[0] * pow(m_values[1],i-1);
+      for(int j=1; j < i-1; ++j) {
+	dUdW(i,1) += (double)((i-j-1)*Pascals_Triangle(i,j+1))*m_values[3+j-2]*pow(m_values[1],i-j-2);
+      } //end for
+    } //end if
+  }//end for
+
+  //remaining columns
+  for(int j=2; j<Levermore1D_Vector::get_length(); ++j) {
+    dUdW(j,j) = 1.0;
+    col_entry = m_values[1];
+    for(int i=j+1; i<Levermore1D_Vector::get_length(); ++i) {
+      dUdW(i,j) = Pascals_Triangle(i,j)*col_entry;
+      col_entry *= m_values[1];
+    }//end for
+  }//end for
+
+  return dUdW;
+}
+
+DenseMatrix Levermore1D_cState::dUdW(void) const {
+  Levermore1D_pState temp(*this);
+  return temp.dUdW();
+}
+
+/********************************************************
  * Function: Levermore1D_cState::moment                 *
  *                                                      *
  * Return value of velocity moment.                     *

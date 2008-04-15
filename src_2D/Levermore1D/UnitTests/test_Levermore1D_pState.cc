@@ -411,6 +411,64 @@ namespace tut
     }
   }
 
+  /* Test 14:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<14>()
+  {
+    set_test_name("dUdW (cState version as well)");
+
+    double rho(1.005), u(-210.1), p(75663.0), q(-765.4e4), r(1.2345e8);
+
+    Levermore1D_pState W(rho,u,p);
+    if(Levermore1D_Vector::get_length() > 3) {
+      W[4] = q;
+      W[5] = r;
+    }
+
+    Levermore1D_cState U(W);
+
+    DenseMatrix dUdW1, dUdW1a, dUdW2(Levermore1D_Vector::get_length(),
+				     Levermore1D_Vector::get_length());
+
+    dUdW1  = W.dUdW();
+    dUdW1a = U.dUdW();
+
+    dUdW2.zero();
+
+    dUdW2(0,0) = 1.0;
+    dUdW2(1,0) = u;
+    dUdW2(2,0) = u*u;
+
+    dUdW2(1,1) = rho;
+    dUdW2(2,1) = 2.0*rho*u;
+
+    dUdW2(2,2) = 1.0;
+
+    if(Levermore1D_Vector::get_length() > 3) {
+      dUdW2(3,0) = u*u*u;
+      dUdW2(4,0) = u*u*u*u;
+
+      dUdW2(3,1) = 3.0*(rho*u*u + p);
+      dUdW2(4,1) = 4.0*rho*u*u*u + 12.0*u*p + 4.0*q;
+
+      dUdW2(3,2) = 3.0*u;
+      dUdW2(4,2) = 6.0*u*u;
+
+      dUdW2(3,3) = 1.0;
+      dUdW2(4,3) = 4.0*u;
+
+      dUdW2(4,4) = 1.0;
+    }
+
+    for(int i=0; i < Levermore1D_Vector::get_length(); ++i) {
+      for(int j=0; j < Levermore1D_Vector::get_length(); ++j) {
+	ensure_distance("dUdW1==dUdW2",dUdW1(i,j),dUdW2(i,j),fabs(dUdW1(i,j)*tol+tol));
+	ensure_distance("dUdW1a==dUdW2",dUdW1a(i,j),dUdW2(i,j),fabs(dUdW1a(i,j)*tol+tol));
+      }
+    }
+  }
+
   //end tests
 }
 
