@@ -178,6 +178,14 @@ void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Ty
       CENO_APPLY_GEOMETRIC_WEIGHTING = OFF;
     }
     i_command = 0;
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Use_Geom_Weighting_For_Smoothness_Analysis") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
+      CENO_CONSIDER_WEIGHTS = ON;
+    } else {
+      CENO_CONSIDER_WEIGHTS = OFF;
+    }
+    i_command = 0;
   } else if (strcmp(IP.Next_Control_Parameter, "CENO_Square_Geom_Weighting") == 0) {
     IP.Get_Next_Input_Control_Parameter();
     if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){

@@ -283,7 +283,7 @@ void HighOrderSolutionReconstructionOverDomain(Soln_Block_Type *SolnBlk,
       
       //Step 3: Do a post-reconstruction analysis
       /* Check the smoothness condition */
-      for(parameter=1; parameter<=Soln_Block_Type::HighOrderType::Soln_State::NumberOfVariables; ++parameter){
+      for(parameter=1; parameter<=NumberOfVariables(); ++parameter){
 	if( (SolnBlk[i].*AccessToHighOrderVar)().CellSmoothnessIndicator(parameter) < CENO_Tolerances::Fit_Tolerance ){
 
 	  /* Flag the 'i' cell with non-smooth reconstruction */
@@ -307,7 +307,7 @@ void HighOrderSolutionReconstructionOverDomain(Soln_Block_Type *SolnBlk,
       InadequateFitFlag = false;
       
       // analyse the 'CellInadequateFit' flags and set 'InadequateFitFlag'
-      for(parameter=1; parameter<=Soln_Block_Type::HighOrderType::Soln_State::NumberOfVariables; ++parameter){
+      for(parameter=1; parameter<=NumberOfVariables(); ++parameter){
 	if (InadequateFitFlag == true){	// break the loop if the flag is already 'true'
 	  break;
 	} else if ( (SolnBlk[i].*AccessToHighOrderVar)().CellInadequateFit(parameter) == ON ){

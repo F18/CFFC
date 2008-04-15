@@ -255,6 +255,9 @@ public:
 
   /*! Absolute value */
   friend AdvectDiffuse2D_State fabs(const AdvectDiffuse2D_State &U){ return AdvectDiffuse2D_State(fabs(U.u));}
+  //! Maximum value 
+  friend AdvectDiffuse2D_State max(const AdvectDiffuse2D_State &Ul,
+				   const AdvectDiffuse2D_State &Ur){ return AdvectDiffuse2D_State(max(Ul.u,Ur.u));}
 
   //! @name Binary arithmetic operators.
   //@{

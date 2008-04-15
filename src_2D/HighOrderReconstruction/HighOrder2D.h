@@ -378,9 +378,13 @@ public:
   //@{
   /*! @brief Set the range of cells with straight edges in which reconstruction is performed.  */
   void SetRangeOfQuadCellsWithoutConstrainedReconstruction(void);
-  /*! @brief Set the stencil of cells used for reconstruction.  */
+  /*! @brief Set the central stencil of cells used for reconstruction.  */
   void SetReconstructionStencil(const int &iCell, const int &jCell,
 				IndexType & i_index, IndexType & j_index) const;
+  /*! @brief Set a central stencil of cells with a given extend for a particular cell. */
+  void SetCentralStencil(const int &iCell, const int &jCell,
+			 IndexType & i_index, IndexType & j_index,
+			 const int &rings, int &StencilSize) const;
   //@} (Helper Functions)
 
   //! @name CENO Analysis:
@@ -398,7 +402,7 @@ public:
 				  const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
 											   const int &) const,
 				  const int &iCell, const int &jCell,
-				  const IndexType & i_index, const IndexType & j_index);
+				  const IndexType & i_index, const IndexType & j_index, const int & StencilSize);
   //@}
 
   //! @name Access to the first-order derivatives from memory pool:
@@ -598,6 +602,29 @@ private:
   //! Evaluate the limiter
   double CalculateLimiter(double *uQuad, const int &nQuad,
 			  const double &u0, const double &u0Min, const double &u0Max, const int &Limiter);
+  //@}
+
+  //! @name Functions and variables related to calculation of the smoothness indicator
+  //@{
+  int StencilSize_SmoothnessIndicator;
+  //! Mean solution of the cell for which the smoothness indicator is computed. It's used as a reference.
+  Soln_State MeanSolution;
+  //! Sum of the squares of differences between the reconstructions of stencil cells evaluated at their centroids and MeanSolution.
+  Soln_State SS_Regression;
+  /*! Sum of the squares of difference between the reconstruction of cell (iCell,jCell) and 
+    the reconstructions of the stencil cells evaluated at their centroids. */
+  Soln_State SS_Residual;
+  //! Intermediate variables.
+  Soln_State Max_SS_Regression, Temp_Regression, Temp_Residual;
+  //! Normalization state characteristic to each solution state and cell
+  Soln_State NormalizationState;
+  //! Local variable
+  Vector2D DeltaCentroids;
+  //! Local variable
+  double GeomWeightSI;
+
+  /*! @brief Set the central stencil of cells used to compute the smoothness indicator.  */
+  void SetSmoothnessIndicatorStencil(const int &iCell, const int &jCell);
   //@}
 
 };
@@ -1339,6 +1366,7 @@ void HighOrder2D<SOLN_STATE>::InitializeMonotonicityVariables(const int & ii, co
  * Compute the CENO smoothness indicator which is used to
  * differentiate between smooth and non-smooth solution content
  * for all block cells which are used for flux calculation.
+ * Flag also those cells detected with non-smooth solution content.
  * The typical range of cells if formed by the interior cells and
  * the first layer of ghost cells. 
  * If constrained reconstruction is used along some boundaries the
@@ -1354,9 +1382,79 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
 							 (Soln_Block_Type::*ReconstructedSoln)(const int &,
 											       const int &) const){
 
-  // SET VARIABLES USED IN THE ANALYSIS PROCESS
+  // Set local variables
+  int parameter;
+  int i,j;
   
+  // Compute the smoothness indicator for cells that use the central stencil
+  for ( j  = StartJ_SI ; j <= EndJ_SI ; ++j ) {
+    for ( i = StartI_SI ; i <= EndI_SI ; ++i ) {
 
+      // Set the supporting stencil
+      SetSmoothnessIndicatorStencil(i,j);
+
+      // Evaluate the Smoothness Indicator for the current cell for all solution state variables
+      ComputeSmoothnessIndicator(SolnBlk, ReconstructedSoln,
+				 i, j, i_index, j_index, StencilSize_SmoothnessIndicator);
+
+      // Check the smoothness condition
+      for(parameter=1; parameter<=NumberOfVariables(); ++parameter){
+
+	if( CellSmoothnessIndicatorValue(i,j,parameter) < CENO_Tolerances::Fit_Tolerance ){
+
+	  // Flag the (i,j) cell with inadequate reconstruction for the current variable
+	  CellInadequateFitValue(i,j,parameter) = ON;
+
+	  if (CENO_Execution_Mode::CENO_PADDING){
+	    /* Flag also all cells surrounding the (i,j) cell with inadequate reconstruction if CENO_Padding is ON */
+	    CellInadequateFitValue(i-1,j-1,parameter) = ON;
+	    CellInadequateFitValue(i  ,j-1,parameter) = ON;
+	    CellInadequateFitValue(i+1,j-1,parameter) = ON;
+
+	    CellInadequateFitValue(i-1, j ,parameter) = ON;
+	    CellInadequateFitValue(i+1, j ,parameter) = ON;
+
+	    CellInadequateFitValue(i-1,j+1,parameter) = ON;
+	    CellInadequateFitValue(i  ,j+1,parameter) = ON;
+	    CellInadequateFitValue(i+1,j+1,parameter) = ON;
+	  }//endif
+	}//endif
+
+      }//endfor(parameter)
+ 
+    } /* endfor(i) */
+  } /* endfor(j) */
+
+  // Check whether smoothness indicator calculation with modified stencil is required anywhere in the block.
+  if ( !_constrained_block_reconstruction ){
+    // No need to perform any calculation with modified stencil
+    return;
+  }
+
+
+  /***************************************************************************
+   *    Perform smoothness indicator calculation with modified stencil       *
+   **************************************************************************/
+
+  // Check WEST boundary
+  if (_constrained_WEST_reconstruction){
+    // Add calculation here
+  } 
+
+  // Check EAST boundary
+  if (_constrained_EAST_reconstruction){
+    // Add calculation here
+  } 
+
+  // Check NORTH boundary
+  if (_constrained_NORTH_reconstruction){
+    // Add calculation here
+  } 
+
+  // Check SOUTH boundary
+  if (_constrained_SOUTH_reconstruction){
+    // Add calculation here
+  }
 
 }
 
@@ -1375,158 +1473,106 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
 							 (Soln_Block_Type::*ReconstructedSoln)(const int &,
 											       const int &) const,
 							 const int &iCell, const int &jCell,
-							 const IndexType & i_index, const IndexType & j_index){
+							 const IndexType & i_index, const IndexType & j_index,
+							 const int & StencilSize){
 
   // SET VARIABLES USED IN THE ANALYSIS PROCESS
-  
-  
-
-
-#if 0				// From old 2D
-
-  static SolType SS_Regression, SS_Residual;
-  static SolType Max_SS_Regression, Temp;
-
   double alpha;
-  static int DOF(SolnBlk.NumberOfTaylorDerivatives()); 			/* degrees of freedom */
-  static double AdjustmentCoeff((StencilSize - DOF)/(DOF - 1.0));       /* adjustment coefficient */
-  static int parameter, cell;
+  int parameter, cell;
 
-
-  /* Initialize SS_Regression and SS_Residual */
-  SS_Regression = sqr(SolnBlk.CellDeriv(iCell,jCell,0,0) - SolnBlk.CellSolutionPrimVar(iCell,jCell));
-  SS_Residual   = sqr(SolnBlk.CellDeriv(iCell,jCell,0,0) - 
-		      SolnBlk.SolutionAtCoordinates(iCell,jCell,SolnBlk.CellCenter(iCell,jCell)) );
-
-  /* Initialize Max_SS_Regression */
-  Max_SS_Regression = SS_Regression;
-
-
-  for( cell=1; cell<StencilSize; ++cell){
-    /* Compute SS_Regression and SS_Residual for all the variables at once */
-    Temp = sqr(SolnBlk.CellDeriv(i_index[cell],j_index[cell],0,0) - SolnBlk.CellSolutionPrimVar(iCell,jCell));
-    SS_Regression += Temp;
-
-    Max_SS_Regression = max(Max_SS_Regression,Temp); /* update Max_SS_Regression */
-
-    SS_Residual   += sqr(SolnBlk.CellDeriv(i_index[cell],j_index[cell],0,0) - 
-			 SolnBlk.SolutionAtCoordinates(iCell,jCell,SolnBlk.CellCenter(i_index[cell],j_index[cell])));
+  // Set the mean solution of (iCell,jCell). It's used as a reference.
+  MeanSolution = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
+  
+  /* Adjustment coefficient.
+     It adjust the value of the smoothness indicator based on the overlapping degree of the reconstruction */
+  double AdjustmentCoeff( (StencilSize - NumberOfTaylorDerivatives() )/( NumberOfTaylorDerivatives() - 1.0) );
+  if (AdjustmentCoeff < 0 || _si_calculation){
+    AdjustmentCoeff = 1.0;
   }
 
-  /* Compute the smoothness indicator */
-  for (parameter=1; parameter<=SolutionContainer::NumberOfVariables; ++parameter){
-    
-    /* Decide if the smoothness indicator is computed or not.
-       Max_SS_Regression is normalized by the characteristic normal state of the solved problem.
-       The tolerance around the local value is relative to the normalized value.
-    */
-    if ( (Max_SS_Regression[parameter]/sqr(SolnBlk.NormalState(parameter)) ) >      
-	 (CENO_EpsilonTol::SquareToleranceAroundValue(SolnBlk.CellSolutionPrimVar(iCell,jCell,parameter)/
-						      SolnBlk.NormalState(parameter))  ) ){ 
+  /*! NOTE: The following used variables are set as private to the class:
+    SS_Regression, SS_Residual, Max_SS_Regression, Temp_Regression, Temp_Residual. */
 
-      alpha = 1.0 - (SS_Residual[parameter]/SS_Regression[parameter]);
+  // Initialize SS_Regression and SS_Residual
+  SS_Regression  = CellTaylorDerivState(iCell,jCell,0) - MeanSolution;
+  SS_Regression *= SS_Regression;      // get the squared value
+  Max_SS_Regression = SS_Regression;   // initialize Max_SS_Regression 
+  SS_Residual.Vacuum(); // Note: the residual difference for (iCell,jCell) is zero.
+
+  // Get the normalization state
+  NormalizationState = SolnBlk.getNormalizationState(iCell,jCell);
+
+  /* Compute SS_Regression and SS_Residual for all the variables at once */
+  for( cell=1; cell<StencilSize; ++cell){
+
+    Temp_Regression  = CellTaylorDerivState(i_index[cell],j_index[cell],0) - MeanSolution;
+    Temp_Regression *= Temp_Regression;          /* compute Temp_Regression square */
+
+    // Get maximum squared solution variation for the current Temp_Regression
+    Max_SS_Regression = max(Max_SS_Regression, Temp_Regression);
+
+    Temp_Residual  = ( CellTaylorDerivState(i_index[cell],j_index[cell],0) - 
+		       SolutionStateAtLocation(iCell,jCell,CellCenter(i_index[cell],j_index[cell])) );
+
+    // Update SS_Regression & SS_Residual
+    if (CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS){
+
+      /* Compute the X and Y component of the distance between
+	 the cell center of the neighbour cell and the reconstructed cell */
+      DeltaCentroids = CellCenter(i_index[cell],j_index[cell]) - CellCenter(iCell,jCell);
+    
+      // Compute the geometric weight based on the centroid distance
+      CENO_Geometric_Weighting(GeomWeightSI, DeltaCentroids.abs());
+
+      // Update SS_Regression
+      SS_Regression += Temp_Regression * GeomWeightSI;
+      // Update SS_Residual
+      SS_Residual   += Temp_Residual * Temp_Residual * GeomWeightSI;
+
     } else {
+
+      // Update SS_Regression
+      SS_Regression += Temp_Regression;
+      // Update SS_Residual
+      SS_Residual  += Temp_Residual * Temp_Residual;
+    }//endif
+
+  }//endfor(cell)
+
+  /* Compute the smoothness indicator for each variable */
+  for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+
+    /* Decide if the 'alpha' for the current parameter is computed or not.
+       This decision is dictated by the following reasons:
+       --> If there is not at all or very small solution variation within the stencil (i.e. uniform flow)
+           SS_Residual[parameter] is approximately equal to SS_Regression[parameter].
+	   That would trigger 'alpha' to have a very small value and consequently the cell flagged as unfit.
+       --> The user should have the freedom to specify a level of numerical noise under which solution
+           discontinuities are not of interest.
+       To solve both these problems, the maximum squared variation is compared relative to an accepted 
+       level of solution variation.
+       To obtain consistency in setting the tolerated lack of smoothness for large ranges of solution values,
+       a normalization is employed with the reference state provided by the solution state class for the 
+       current parameter.
+    */
+    if ( Max_SS_Regression[parameter]/sqr(NormalizationState[parameter]) > 
+	 CENO_Tolerances::SquareToleranceAroundValue(MeanSolution[parameter]/NormalizationState[parameter]) ){
+      
+      // Compute 'alpha'
+      alpha = 1.0 - (SS_Residual[parameter]/SS_Regression[parameter]);
+      
+    } else {
+      
+      // There is not enough variation in the solution based on user set tolerance to flag a potential discontinuity.
       // Assign the perfect fit value to the smoothness indicator
       alpha = 1.0;
-    }
+      
+    } // endif
 
     /* Compute final value */
-    SolnBlk.CellSmoothnessIndicator(iCell,jCell,parameter) = (alpha/(max(CENO_EpsilonTol::epsilon,1.0 - alpha)))*AdjustmentCoeff;
-  }
-#endif 
+    CellSmoothnessIndicatorValue(iCell,jCell,parameter) = (alpha/(max(CENO_Tolerances::epsilon,1.0 - alpha)))*AdjustmentCoeff;
 
-
-
-#if 0 				// From 1D 
-
-  static double SS_Regression, SS_Residual; // regression sum of squares, residual sum of squares
-  static double MeanSolution, alpha;
-  static int DOF; 		 /* degrees of freedom */
-  static double AdjustmentCoeff; /* adjustment coefficient */
-  static double Temp, DeltaTol;	
-  static int parameter, cell, ComputeSI;
-  int _StencilSize_(getStencilSize());
-  vector<int> i_index(_StencilSize_); 
-
-  // Make Stencil
-  MakeReconstructionStencil(Rings(),iCell,i_index);
-
-  /* Compute the CENO smoothness indicator for the current cell */
-
-  /* Initialize the static variables */
-  DOF = NumberOfTaylorDerivatives();
-  AdjustmentCoeff = (_StencilSize_ - DOF)/(DOF - 1.0);
-
-  for (parameter=1; parameter<=NumberOfVariables(); ++parameter){
-
-    // Assign the Mean Solution
-    MeanSolution = SolnBlk[iCell].CellSolutionPrimVar(parameter);
-
-    /* DeltaTolerance */
-    DeltaTol = CENO_Tolerances::SquareToleranceAroundValue(MeanSolution);
-
-    // Compute the regression and residual sums
-    ComputeSI = OFF;		/* assume that the smoothness indicator is not computed but assigned */
-
-    /* Initialize SS_Regression & SS_Residual with the values obtained for iCell */
-    Temp = (SolnBlk[iCell].*AccessToHighOrderVar)().TaylorDeriv(0,parameter) - MeanSolution;
-    Temp *= Temp;		/* compute Temp square */
-    SS_Regression = Temp;
-    
-    /* Check if the Temp is greater than DeltaTol */
-    if (Temp > DeltaTol){
-      ComputeSI = ON; 	        /* Decide to compute the smoothness indicator */
-    }
-    SS_Residual = 0.0;		/* for iCell this term is 0.0 */
-    
-    /* compute S(quare)S(sum)_Regression and SS_Residual for the rest of the stencil */
-    for(cell=1; cell<_StencilSize_; ++cell){
-
-      Temp = (SolnBlk[i_index[cell]].*AccessToHighOrderVar)().TaylorDeriv(0,parameter) - MeanSolution;
-      Temp *= Temp;		/* compute Temp square */
-
-      if (CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS){
-	if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
-	  /* the weighting works only with the speed efficient CENO */
-	  SS_Regression += (SolnBlk[iCell].*AccessToHighOrderVar)().GeomWeights(cell) * Temp;
-	} else {
-	  throw runtime_error("ComputeSmoothnessIndicator() 2D ERROR: CENO_CONSIDER_WEIGHTS only works with CENO_SPEED_EFFICIENT");
-	}
-      } else {
-	SS_Regression += Temp;
-      }
-      
-      /* Check if any of the Temps is greater than DeltaTol */
-      if ((ComputeSI==OFF) && (Temp > DeltaTol)){
-	ComputeSI = ON; 	/* Decide to compute the smoothness indicator */
-      }
-      
-      Temp = ( (SolnBlk[i_index[cell]].*AccessToHighOrderVar)().TaylorDeriv(0,parameter) - 
-	       (SolnBlk[iCell].*AccessToHighOrderVar)().SolutionAtCoordinates( (SolnBlk[i_index[cell]].*AccessToHighOrderVar)().CellCenter(),parameter) );
-
-      if (CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS){
-	if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
-	  /* the weighting works only with the speed efficient CENO */
-	  SS_Residual += (SolnBlk[iCell].*AccessToHighOrderVar)().GeomWeights(cell) * Temp * Temp;
-	}
-      } else {
-	SS_Residual += Temp * Temp;
-      }
-    }
-    
-    // Decide if the smoothness indicator is computed or not
-    if (ComputeSI){ 
-      alpha = 1.0 - SS_Residual/SS_Regression;
-    } else {
-      // Assign the perfect fit value to the smoothness indicator
-      alpha = 1.0;
-    }
-
-    (SolnBlk[iCell].*AccessToHighOrderVar)().CellSmoothnessIndicator(parameter) = 
-      (alpha/(max(CENO_Tolerances::epsilon,1.0 - alpha))) * AdjustmentCoeff;
-
-  }//endfor -> parameter
-#endif
+  } // endfor (parameter)
 
 }
 
@@ -1618,18 +1664,21 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
 
 /*! 
  * Write the 'i' and 'j' indexes of the cells that are part of
- * the reconstruction of cell (iCell,jCell). Use the number of
- * rings set in the class to determine how far the stencil extends.
- * This routine doesn't modify the stencil due to existence 
- * of curved boundaries.
+ * the CENTRAL stencil of cell (iCell,jCell). To decide how far 
+ * this stencil extends the routine uses the passed number of rings.
+ *
  * \param [out] i_index The i-index of the cells.
  * \param [out] j_index The j-index of the cells.
+ * \param [in]  rings The number of neighbour cell rings around (iCell,jCell) cell.
+ * \param [out] StencilSize This variable gets set to the stencil size.
+ * This parameter is different than the class variable "rings".
  *
  * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
  */
 template<class SOLN_STATE> inline
-void HighOrder2D<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const int &jCell,
-						       IndexType & i_index, IndexType & j_index) const{
+void HighOrder2D<SOLN_STATE>::SetCentralStencil(const int &iCell, const int &jCell,
+						IndexType & i_index, IndexType & j_index,
+						const int &rings, int &StencilSize) const{
 
   switch(rings){
 
@@ -1665,12 +1714,18 @@ void HighOrder2D<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const i
     i_index[6]=iCell-1; j_index[6]=jCell+1;
     i_index[7]=iCell;   j_index[7]=jCell+1;
     i_index[8]=iCell+1; j_index[8]=jCell+1;
+
+    if (rings == 2){
+      StencilSize = 25;
+    } else {
+      StencilSize = 9;
+    }
     break;
 
   default: // general expression
     i_index[0] = iCell;
     j_index[0] = jCell;
-    for (int i=iCell-rings, Poz=1; i<=iCell+rings; ++i)
+    for (int i=iCell-rings, Poz=1; i<=iCell+rings; ++i){
       for (int j=jCell-rings; j<=jCell+rings; ++j){
 	if(!((i==iCell)&&(j==jCell)) ){
 	  i_index[Poz] = i;
@@ -1678,8 +1733,52 @@ void HighOrder2D<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const i
 	  ++Poz;
 	}
       }
+      StencilSize = Poz;
+    }
   }//endswitch
   
+}
+
+/*! 
+ * Write the 'i' and 'j' indexes of the cells that are part of
+ * the reconstruction of cell (iCell,jCell). Use the number of
+ * rings set in the class to determine how far the stencil extends.
+ * This routine doesn't modify the stencil due to existence 
+ * of curved boundaries.
+ * \param [out] i_index The i-index of the cells.
+ * \param [out] j_index The j-index of the cells.
+ *
+ * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const int &jCell,
+						       IndexType & i_index, IndexType & j_index) const{
+
+  int _dummy_;
+
+  // Call set central stencil
+  SetCentralStencil(iCell,jCell,i_index,j_index,rings,_dummy_);
+}
+
+/*! 
+ * Write the 'i' and 'j' indexes of the cells that are part of
+ * the smoothness indicator calculation stencil of cell (iCell,jCell).
+ * Use the number of rings smoothness indicator set in the class to 
+ * determine how far the stencil extends.
+ * This routine doesn't modify the stencil due to existence 
+ * of curved boundaries.
+ * The indexes are written in the i_index and j_index containers.
+ * Because these containers might be larger than needed, 
+ * the StencilSize_SmoothnessIndicator variable is used for storing 
+ * the smoothness indicator stencil size.
+ *
+ * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::SetSmoothnessIndicatorStencil(const int &iCell, const int &jCell){
+
+  // Call set central stencil
+  SetCentralStencil(iCell,jCell,i_index,j_index,rings_SI,StencilSize_SmoothnessIndicator);
 }
 
 /*! 

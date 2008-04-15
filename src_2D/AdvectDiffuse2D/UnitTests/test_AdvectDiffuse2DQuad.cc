@@ -851,6 +851,107 @@ namespace tut
 		    AcceptedError(9.1528284874531129e-02));
   }
 
+  /* Test 13:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<13>()
+  {
+
+    set_test_name("Check smoothness indicator");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    RunRegression = ON;
+
+    // Set input file name
+    Open_Input_File("CircularAdvectionDiffusion_HighOrder_SmoothnessIndicatorStudy.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // == check correct initialization
+    ensure("High-order variables", SolnBlk[0].HighOrderVariables() != NULL);
+    ensure_equals("Main High-order ", SolnBlk[0].HighOrderVariable(0).RecOrder(), 3);
+    ensure_equals("Second High-order ", SolnBlk[0].HighOrderVariable(1).RecOrder(), 2);
+    ensure_equals("Third High-order ", SolnBlk[0].HighOrderVariable(2).RecOrder(), 4);
+    
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+    // Reconstruct the solution
+    SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+    SolnBlk[0].HighOrderVariable(1).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+    SolnBlk[0].HighOrderVariable(2).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+
+    // Calculate the smoothness indicator for the reconstructions
+    SolnBlk[0].HighOrderVariable(0).ComputeSmoothnessIndicator(SolnBlk[0]);
+    SolnBlk[0].HighOrderVariable(1).ComputeSmoothnessIndicator(SolnBlk[0]);
+    SolnBlk[0].HighOrderVariable(2).ComputeSmoothnessIndicator(SolnBlk[0]);
+
+    if (RunRegression) {
+
+      //===== Check interior nodal values
+      // Output Order 3
+      MasterFile = "HighOrder_SmoothnessIndicator_Order3.dat";
+      CurrentFile = "Current_HighOrder_SmoothnessIndicator_Order3.dat";
+      Open_Output_File(CurrentFile);
+
+      SolnBlk[0].Output_Nodes_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+
+      // check
+      RunRegressionTest("Order 3", CurrentFile, MasterFile, 5.0e-10, 5.0e-10);
+
+      // Output Order 2
+      MasterFile = "HighOrder_SmoothnessIndicator_Order2.dat";
+      CurrentFile = "Current_HighOrder_SmoothnessIndicator_Order2.dat";
+      Open_Output_File(CurrentFile);
+
+      SolnBlk[0].Output_Nodes_Tecplot_HighOrder(0,0,0, 1, out(), 1);
+
+      // check
+      RunRegressionTest("Order 2", CurrentFile, MasterFile, 5.0e-10, 5.0e-10);
+
+      // Output Order 4
+      MasterFile = "HighOrder_SmoothnessIndicator_Order4.dat";
+      CurrentFile = "Current_HighOrder_SmoothnessIndicator_Order4.dat";
+      Open_Output_File(CurrentFile);
+
+      SolnBlk[0].Output_Nodes_Tecplot_HighOrder(0,0,0, 1, out(), 2);
+
+      // check
+      RunRegressionTest("Order 4", CurrentFile, MasterFile, 5.0e-10, 5.0e-10);
+
+    } else {
+      // Generate master files
+
+      // Output Order 3
+      MasterFile = "HighOrder_SmoothnessIndicator_Order3.dat";
+      Open_Output_File(MasterFile);
+
+      SolnBlk[0].Output_Nodes_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+
+      // Output Order 2
+      MasterFile = "HighOrder_SmoothnessIndicator_Order2.dat";
+      Open_Output_File(MasterFile);
+
+      SolnBlk[0].Output_Nodes_Tecplot_HighOrder(0,0,0, 1, out(), 1);
+
+      // Output Order 4
+      MasterFile = "HighOrder_SmoothnessIndicator_Order4.dat";
+      Open_Output_File(MasterFile);
+
+      SolnBlk[0].Output_Nodes_Tecplot_HighOrder(0,0,0, 1, out(), 2);
+    }
+
+  }
+
+
 }
 
 

@@ -277,6 +277,14 @@ public:
 
   //@} //end(Field access)
 
+  //! @name Normalization related functions:
+  //@{
+  //! Get normalization state
+  const AdvectDiffuse2D_State getNormalizationState(const int &ii, const int &jj) const { return RefU; }
+  //! Set normalization state
+  static void Set_Normalization_Reference_State(const AdvectDiffuse2D_State & State){ RefU = State; }
+  //@}
+
   //! @name Evaluate diffusive fluxes.
   //@{
   //! Calculate the solution at mesh nodes
@@ -529,6 +537,7 @@ private:
 
   int NNi, NNj;		//!< number of nodes in i-direction and j-direction.
 
+  static AdvectDiffuse2D_State RefU;	//!< reference state for normalizing the solution
 
   //! @name High-order variables and member functions
   //@{

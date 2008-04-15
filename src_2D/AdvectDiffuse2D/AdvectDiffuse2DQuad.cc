@@ -26,7 +26,8 @@ int AdvectDiffuse2D_Quad_Block::Flow_Type = FLOWTYPE_INVISCID;
 int AdvectDiffuse2D_Quad_Block::Axisymmetric = OFF;
 // Initialize Number_of_Residual_Norms
 int AdvectDiffuse2D_Quad_Block::Number_of_Residual_Norms = 1;
-
+// Initialize RefU
+AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::RefU(1.0);
 
 /*******************************************************************************
  * AdvectDiffuse2D_Quad_Block -- Single Block Member Functions.                *

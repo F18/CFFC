@@ -111,6 +111,12 @@ int AdvectDiffuse2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr
 
   // Perform update of the internal variables of the inflow field
   Inflow->Set_InflowField_Parameters();
+
+  // Perform update of the internal variables of the high-order input parameters
+  HighOrder2D_Input::Set_Final_Parameters(*this);
+
+  // Set reference state in the AdvectDiffuse2D_Quad_Block class
+  AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(RefU);
 }
 
 /******************************************************//**
@@ -1177,6 +1183,21 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
     // HighOrder2D_Input variables
     HighOrder2D_Input::Broadcast();    
+
+    // Update all dependent variables
+    if (!CFFC_Primary_MPI_Processor()) {
+      // Perform update of the internal variables of the exact solution
+      IP.ExactSoln->Set_ParticularSolution_Parameters();
+
+      // Perform update of the internal variables of the inflow field
+      IP.Inflow->Set_InflowField_Parameters();
+
+      // Perform update of the internal variables of the high-order input parameters
+      HighOrder2D_Input::Set_Final_Parameters(IP);
+
+      // Set reference state in the AdvectDiffuse2D_Quad_Block class
+      AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(IP.RefU);
+    }
 
 #endif
 
@@ -2755,6 +2776,13 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Input_File.setf(ios::skipws);
     IP.Input_File.getline(buffer, sizeof(buffer));
 
+  } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_Normalization") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.RefU;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
   } else if (strcmp(IP.Next_Control_Parameter, "Space_Accuracy") == 0) {
     i_command = 210;
     IP.Line_Number = IP.Line_Number + 1;
@@ -2961,6 +2989,9 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
     // U2 state
     Input_Parameters.U2 = Input_Parameters.Uo;
     Input_Parameters.U2.u = -ONE;
+
+    // Set reference state in the AdvectDiffuse2D_Quad_Block class
+    AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(Input_Parameters.RefU);
 
     /* Initial processing of input control parameters complete.  
        Return the error indicator flag. */

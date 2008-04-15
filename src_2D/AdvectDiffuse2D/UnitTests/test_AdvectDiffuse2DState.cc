@@ -813,6 +813,23 @@ namespace tut
     ensure_distance("Fd at Point III", Fd(Ul,Ur,GradU,Vector2D(8.5,-12.5),Normal), Result, AcceptedError(Result));
   }
 
+  /* Test 40:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<40>()
+  {
+
+    set_test_name("Max member function");
+
+    // Set initial data
+    AdvectDiffuse2D_State Ul(12.2323), Ur(5.34), Um(-34.56);
+
+    // === check max
+    ensure_equals("Max I"  , max(Ul,Ur), 12.2323);
+    ensure_equals("Max II" , max(Ul,Um), 12.2323);
+    ensure_equals("Max III", max(Ur,Um), 5.34);
+  }
+
 }
 
 
