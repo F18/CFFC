@@ -170,14 +170,13 @@ namespace tut
         set_test_name("Test transfer_function");
         
         
-        // Initialize();
+         Initialize();
         
-//        
-//        
-//        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
-//        
-//        myfilter.transfer_function();
-//        
+        
+        
+        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
+        myfilter.transfer_function();
+        
         
         /* Function pointers:
          * W. Deconinck

@@ -199,10 +199,10 @@ public:
     Haselbacher_Filter(void) {
         commutation_order = 2;
         filter_width = 0.1;
-        weight_factor = 0.7;
+        weight_factor = 3.1;
         the_number_of_unknowns = number_of_unknowns();
         
-        relaxation_factor = 0.75;
+        relaxation_factor = 0.47;
 
     }
 
@@ -226,6 +226,8 @@ public:
     DenseMatrix Matrix_A(Cell3D &theCell, Neighbours &theNeighbours);
     DenseMatrix Matrix_b(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Neighbours &theNeighbours);
     DiagonalMatrix Matrix_W(Cell3D &theCell, Neighbours &theNeighbours);
+    DiagonalMatrix Matrix_W(Cell3D &theCell, Neighbours &theNeighbours, double weight_factor);
+
     
     void Weight_Matrix_A_and_b(DenseMatrix &A, DenseMatrix &b, Cell3D &theCell, Neighbours &theNeighbours);
     
@@ -239,23 +241,15 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
     theNeighbours.GetNeighbours(theCell);
     
     DenseMatrix A = Matrix_A(theCell, theNeighbours);
-    DiagonalMatrix W = Matrix_W(theCell, theNeighbours);
-    DenseMatrix Z = (W*A).pseudo_inverse()*W;
+
     
-    RowVector w = Z[0];
+    double w0;
     
-    double w0 = relaxation_factor;
-    
-//    cout << "W = " << W.size() << "x" << W.size() << endl << W << endl << endl;
-//    cout << "A = " << A.size(0) << "x" << A.size(1) << endl;
-//    cout << A << endl;
-//    cout << "Z = " << Z.size(0) << "x" << Z.size(1) << endl;
-//    cout << Z << endl;
-//    //cout << "w = " << w << endl;
     cout << "kmax = " << kmax << endl;
     
+    
     /* --------------- allocations ----------------- */
-    int N=20;
+    int N=50;
     Cell3D  ***kCells   = new Cell3D  **[N];
     Complex ***G        = new Complex **[N];
     for (int i=0; i<N; i++) {
@@ -276,35 +270,16 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
             }
         }
     }
+
     
     
-//    cout << "w(0) = " << w(0) << "      w[0] = " << w[0] <<  endl;
-//    cout << "w(n) = " << w(theNeighbours.number_of_neighbours-1) << "      w[n] = " << w[theNeighbours.number_of_neighbours-1] << endl;
-//    cout << "w = " << w << endl;
-//    cout << "w.size() = " << w.size() << endl;
-    double x,y,z,x0,y0,z0,abs_k;
-    int index;
     K_BinaryTree K_tree;
     K_container *K = new K_container [N*N*N];  // Container of information for a wavenumber
-
-    K_container thisK;
-    x0 = theCell.Xc.x;
-    y0 = theCell.Xc.y;
-    z0 = theCell.Xc.z;
+    int index;
     for (int i=0; i<N; i++) {
         for (int j=0; j<N; j++) {
             for (int k=0; k<N; k++) {
-                G[i][j][k] = 0;
-                for(int n=0; n<theNeighbours.number_of_neighbours; n++) {
-                    index = k+N*(j+N*i);
-                    x=theNeighbours.neighbour[n].Xc.x;
-                    y=theNeighbours.neighbour[n].Xc.y;
-                    z=theNeighbours.neighbour[n].Xc.z;
-                    G[i][j][k] += w(n) * exp(I*(kCells[i][j][k].Xc.x*(x0-x) + kCells[i][j][k].Xc.y*(y0-y) + kCells[i][j][k].Xc.z*(z0-z)));
-                }
-                G[i][j][k] = w0 + (ONE - w0) * G[i][j][k];
-              //  Print_3(i,j,k);
-              //  cout << "               G[i][j][k] = " << G[i][j][k] << endl;
+                index = k+N*(j+N*i);
                 K[index].k = kCells[i][j][k].Xc.abs();
                 K[index].index = index;
                 K_tree.InsertNode(K[index]);
@@ -314,48 +289,121 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
     delete[] K;
     K = K_tree.asArray();
     int nK = K_tree.countNodes();
-    cout << "nK = " << nK << endl;
     
-    int i,j,k;
-    for (int ii=0; ii<nK; ii++) {
-        K[ii].Ek = 0;
-        K[ii].Ek_smooth = 0;
-        for(int jj=0; jj<K[ii].N; jj++) {       // For all grid points with this value of abs_k
-            index = K[ii].indexes[jj];      // index corresponding to (i,j,l)
-            i = index/(N*N);
-            j = (index - N*N*i)/N;
-            k = index - N*(j+N*i);
-//            Print_3(i,j,k);
-            K[ii].Ek += real(G[i][j][k])/double(K[ii].N);
-            K[ii].Ek_smooth += imag(G[i][j][k])/double(K[ii].N);
-        }
-//        cout << "k = " << K[ii].k << "      Gre = " << K[ii].Ek << "     Gim = " << K[ii].Ek_smooth << endl;
-    }
     
-    /* ---------- output ----------- */
 
-    dpoint *dpr = new dpoint[nK];
-    dpoint *dpi = new dpoint[nK];
+    
 
-    for (int ii=0; ii<nK; ii++) {
-        dpr[ii].x = K[ii].k;
-        dpr[ii].y = K[ii].Ek;
-        dpi[ii].x = K[ii].k;
-        dpi[ii].y = K[ii].Ek_smooth;
-    }
+    
+    
+    double x,y,z,x0,y0,z0;
+    x0 = theCell.Xc.x;
+    y0 = theCell.Xc.y;
+    z0 = theCell.Xc.z;
+    Complex G_max = G[N-1][N-1][N-1];
+    double a=0.0, b=1.0;
+    int counter;
+    double *kk = new double [nK];
+    double *GR = new double [nK];
+    double *GRs = new double [nK];
     Gnuplot_Control h1;
     h1.gnuplot_init();
-//    h1.gnuplot_cmd("set terminal x11");
     h1.gnuplot_setstyle("lines") ;
     h1.gnuplot_cmd("set grid");
-    //h1.gnuplot_cmd("set logscale xy");
     h1.gnuplot_cmd("set xrange [0:50]");
     h1.gnuplot_cmd("set yrange [-1:1]");
     h1.gnuplot_set_xlabel("k");
     h1.gnuplot_set_ylabel("G(k)");
     h1.gnuplot_set_title("Transfer function");
-    h1.gnuplot_plot1d_var2(dpr,nK,"real part");
-    h1.gnuplot_plot1d_var2(dpi,nK,"imaginary part");
+    
+    for (double weight_factor=0.1; weight_factor<=6.0; weight_factor+=0.5) {
+        
+        DiagonalMatrix W = Matrix_W(theCell, theNeighbours,weight_factor);
+        DenseMatrix Z = (W*A).pseudo_inverse()*W;
+        RowVector w = Z[0];
+        
+        for (int i=0; i<N; i++) {
+            for (int j=0; j<N; j++) {
+                for (int k=0; k<N; k++) {
+                    G[i][j][k] = 0;
+                    for(int n=0; n<theNeighbours.number_of_neighbours; n++) {
+                        x=theNeighbours.neighbour[n].Xc.x;
+                        y=theNeighbours.neighbour[n].Xc.y;
+                        z=theNeighbours.neighbour[n].Xc.z;
+                        G[i][j][k] += w(n) * exp(I*(kCells[i][j][k].Xc.x*(x0-x) + kCells[i][j][k].Xc.y*(y0-y) + kCells[i][j][k].Xc.z*(z0-z)));
+                    }
+                }
+            }
+        }
+        
+        
+        Complex G_max = G[N-1][N-1][N-1];
+        a=0.0, b=1.0;
+        counter = 0;
+        w0 = (a+b)/TWO;
+        while( fabs(real(w0+(ONE-w0)*G_max)) >= 0.01 ) {
+            if( real(a+(ONE-a)*G_max) * real(w0+(ONE-w0)*G_max) <= ZERO)
+                b = w0;
+            else
+                a = w0;
+            w0 = (a+b)/TWO;
+            counter++;
+            if(counter >=1000) {
+                cout << "max reached" << endl;
+                break;
+            }
+        }
+        cout << "w0 = " << w0 << endl;
+        
+        
+        
+        for (int i=0; i<N; i++) {
+            for (int j=0; j<N; j++) {
+                for (int k=0; k<N; k++) {
+                    G[i][j][k] = w0 + (ONE - w0) * G[i][j][k];
+                }
+            }
+        }
+        
+        
+        
+        
+        int i,j,k;
+        for (int ii=0; ii<nK; ii++) {
+            K[ii].Ek = 0;
+            K[ii].Ek_smooth = 0;
+            for(int jj=0; jj<K[ii].N; jj++) {       // For all grid points with this value of abs_k
+                index = K[ii].indexes[jj];      // index corresponding to (i,j,l)
+                i = index/(N*N);
+                j = (index - N*N*i)/N;
+                k = index - N*(j+N*i);
+                //            Print_3(i,j,k);
+                K[ii].Ek += real(G[i][j][k])/double(K[ii].N);
+                K[ii].Ek_smooth += imag(G[i][j][k])/double(K[ii].N);
+            }
+            kk[ii]=K[ii].k;
+            GR[ii]=K[ii].Ek;
+        }
+        polyfit_smoothing(nK, kk, GR, 3, 2.5, true, GRs)  ;  
+        /* ---------- output ----------- */
+        
+        char title[80];
+        sprintf(title,"weight = %3.2f  w0 = %3.2f",weight_factor,w0);
+        
+        h1.gnuplot_plot1d_var2(kk,GRs,nK,title);
+        
+    }
+    
+//    dpoint *dpr = new dpoint[nK];
+//    dpoint *dpi = new dpoint[nK];
+//
+//    for (int ii=0; ii<nK; ii++) {
+//        dpr[ii].x = K[ii].k;
+//        dpr[ii].y = K[ii].Ek;
+//        dpi[ii].x = K[ii].k;
+//        dpi[ii].y = K[ii].Ek_smooth;
+//    }
+
 
     
     /* ----------- deallocations ------------ */
@@ -374,9 +422,12 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
     }
     delete[] kCells;
     delete[] G;
-    delete[] dpr;
-    delete[] dpi;
+    //delete[] dpr;
+    //delete[] dpi;
 
+    delete[] kk;
+    delete[] GR;
+    delete[] GRs;
     
     return; 
 }
@@ -442,8 +493,9 @@ DenseMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_A(Cell3D &theCel
 }
 
 
+
 template<typename Soln_pState, typename Soln_cState>
-DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell3D &theCell, Neighbours &theNeighbours) {
+DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell3D &theCell, Neighbours &theNeighbours, double weight_factor) {
     
     int the_number_of_neighbours = theNeighbours.number_of_neighbours;
     DiagonalMatrix W(the_number_of_neighbours);
@@ -452,18 +504,23 @@ DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell3D &the
     double Delta;
     double r;
     
-    Delta = pow(theCell.V,1.0/3.0) / weight_factor;
-
+    Delta = pow(theCell.V,1.0/3.0) * weight_factor;
+    
     for (int i=0; i<the_number_of_neighbours; i++) {
         
         r=(theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
         W(i) = sqrt(6.0/(PI*pow(Delta,2)) * exp(- 6.0* pow(r/Delta,2))) ;
         
-//        cout << "weight_factor = " << weight_factor << "   Delta = " << Delta << "    r = " << r << "    W(i) = " << W(i) << endl;
+        //        cout << "weight_factor = " << weight_factor << "   Delta = " << Delta << "    r = " << r << "    W(i) = " << W(i) << endl;
         
     }
-
+    
     return W;
+}
+
+template<typename Soln_pState, typename Soln_cState>
+DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell3D &theCell, Neighbours &theNeighbours) {
+    return Matrix_W(theCell, theNeighbours, weight_factor);
 }
 
 
@@ -485,6 +542,25 @@ DenseMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_b(Hexa_Block<Sol
 }
 
 
+//template<typename Soln_pState, typename Soln_cState>
+//DenseMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Relaxation_Matrix_x(DenseMatrix &x, Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Neighbours &theNeighbours) {
+//    
+//    double w0 = relaxation_factor;
+//    
+//    w0 + (ONE - w0)
+//    int the_number_of_neighbours = theNeighbours.number_of_neighbours;
+//    DenseMatrix b(the_number_of_neighbours,SolnBlk.NumVar());
+//    int I,J,K;
+//    for (int i=0; i<the_number_of_neighbours; i++) {
+//        I = theNeighbours.neighbour[i].I;
+//        J = theNeighbours.neighbour[i].J;
+//        K = theNeighbours.neighbour[i].K;
+//        for(int j=1; j<=SolnBlk.NumVar(); j++)
+//            b(i,j-1) = SolnBlk.W[I][J][K][j];
+//    }
+//    return b;
+//}
+
 template<typename Soln_pState, typename Soln_cState>
 void Haselbacher_Filter<Soln_pState,Soln_cState>::Weight_Matrix_A_and_b(DenseMatrix &A, DenseMatrix &b,Cell3D &theCell, Neighbours &theNeighbours) {
     DiagonalMatrix W = Matrix_W(theCell, theNeighbours);
@@ -503,8 +579,8 @@ Soln_pState Haselbacher_Filter<Soln_pState,Soln_cState>::LeastSquaresReconstruct
     
     /* ---------------- Matrix b ---------------- */
     DenseMatrix b = Matrix_b(SolnBlk,theNeighbours);
-    
-    //Weight_Matrix_A_and_b(A, b, theCell, theNeighbours);
+        
+    Weight_Matrix_A_and_b(A, b, theCell, theNeighbours);
     
     /* ------------ LS procedure for Unknowns DenseMatrix x ---------- */
     DenseMatrix x(the_number_of_unknowns,SolnBlk.NumVar());
@@ -513,10 +589,25 @@ Soln_pState Haselbacher_Filter<Soln_pState,Soln_cState>::LeastSquaresReconstruct
     Solve_LS_Householder(A,b,x,krank,Rnorm);
     
     
+    /* --------------- relaxation -------------- */
+    RowVector xrow = x[0];
+    RowVector x0(SolnBlk.NumVar());
+    int I,J,K;
+    I = theCell.I;
+    J = theCell.J;
+    K = theCell.K;
+    for (int n=1; n<=SolnBlk.NumVar(); n++) {
+        x0(n-1) = SolnBlk.W[I][J][K][n];
+    }
+    double w0 = relaxation_factor;
+
+    xrow = x0*w0 + xrow*(ONE-w0);
+    //xrow += w0*x0;
+    
     /* ---------- Filtered value is first element of x ----------- */
     Soln_pState temp;
     for (int j=1; j<SolnBlk.NumVar(); j++)
-        temp[j] = x(0,j-1);
+        temp[j] = xrow(j-1);
     
     
     /* NOTE: MAKE "b" AND "x" INTO A "ColumnVector" FOR Single VARIABLES
