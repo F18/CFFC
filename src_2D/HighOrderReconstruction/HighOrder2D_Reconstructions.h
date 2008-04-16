@@ -135,201 +135,223 @@ void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(void){
 
 /*! 
  * Compute the limited linear least-squares reconstruction proposed
- * by Barth (1993).
+ * by Barth (1993) for those interpolants detected as non-smooth.
  * This reconstruction is carried out when the order or reconstruction
  * is required to be dropped since the high-order interpolant is detected
  * to be non-smooth. \n
  * The high-order interpolant is going to be overwritten by the low-order one.
- * \param [in] SolnBlk The solution block which provides solution data
+ * \param [in] SolnBlk The solution block which provides solution data.
+ * \param ReconstructedSoln member function of Soln_Block_Type which returns the solution.
  * \param [in] Limiter The limiter used during this limited reconstruction.
  */
 template<class SOLN_STATE>
-template<class Soln_Block_Type>
-void HighOrder2D<SOLN_STATE>::ComputeLowOrderReconstruction(Soln_Block_Type &SolnBlk,
-							    const int &Limiter){
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::EnforceMonotonicityToNonSmoothInterpolants(Soln_Block_Type &SolnBlk,
+									 const int &Limiter,
+									 const Soln_State &
+									 (Soln_Block_Type::*ReconstructedSoln)(const int &,
+													       const int &) const){
 
-#if 0
-  // Local variables
-  int i, n, n2, n_pts, index[2];
-  double u0Min, u0Max, uQuad[2], phi;
-  double Dx, DxDx_ave;
-  Soln_State DU, DUDx_ave, dWdx;
-  int TD;
+  // Set local variables
+  int i,j;
+  
+  // == Check if the reconstruction polynomial is piecewise constant
+  if (RecOrder() == 0){
+    // There is no need to enforce any monotonicity
+    return;
+  }
 
-  /* Carry out the limited linear least-squares solution reconstruction. */
+  if (CENO_Execution_Mode::CENO_DROP_ORDER){
+    // Carry on actions required to enforce monotonicity
 
-  n_pts = 2;
-  index[0] = iCell-1;
-  index[1] = iCell+1; 
-    
-  DUDx_ave = Soln_State(0);
-  DxDx_ave = ZERO;
-    
-  for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
-    Dx = SolnBlk[ index[n2] ].CellCenter() - SolnBlk[iCell].CellCenter();
-    DU = SolnBlk[ index[n2] ].CellSolutionPrimVar() - SolnBlk[iCell].CellSolutionPrimVar();
-    DUDx_ave += DU*Dx;
-    DxDx_ave += Dx*Dx;
-  } /* endfor */
-    					    
-  DUDx_ave = DUDx_ave/double(n_pts);
-  DxDx_ave = DxDx_ave/double(n_pts);
-	
-  dWdx = DUDx_ave/DxDx_ave;
-	
-  for ( n = 1 ; n <= NumberOfVariables() ; ++n ) {
+    // Switch to limited piecewise linear reconstruction those interpolants detected as non-smooth
+    for ( j  = StartJ_LPWL ; j <= EndJ_LPWL ; ++j ) {
+      for ( i = StartI_LPWL ; i <= EndI_LPWL ; ++i ) {
+      
+	if ( IsThereAnyNonSmoothHighOrderReconstruction(i,j) ){
+	  // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+							      i,j,
+							      Limiter,
+							      ReconstructedSoln);
+	} // endif
+ 
+      } /* endfor(i) */
+    } /* endfor(j) */
 
-    if (CellInadequateFit(n) == ON){ // drop the order only for the variables that are flagged as unfit
-
-      /* Zero all the derivatives but the first two ones associated with this parameter. */
-      for (TD = 2; TD<NumberOfTaylorDerivatives(); ++TD){
-	TaylorDeriv(TD,n) = 0.0;
-      }
-
-      /* Copy the first order derivative in the derivatives container. */
-      TaylorDeriv(0,n) = SolnBlk[iCell].CellSolutionPrimVar(n);
-      TaylorDeriv(1,n) = dWdx[n];
-
-      /* Compute the limiter value for this parameter */
-      u0Min = SolnBlk[iCell].CellSolutionPrimVar(n);
-      u0Max = u0Min;
-      for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
-	u0Min = min(u0Min, SolnBlk[ index[n2] ].CellSolutionPrimVar(n));
-	u0Max = max(u0Max, SolnBlk[ index[n2] ].CellSolutionPrimVar(n));
-      } /* endfor */
-
-      uQuad[0] = SolnBlk[iCell].CellSolutionPrimVar(n) - HALF*dWdx[n]*SolnBlk[iCell].CellDelta();
-      uQuad[1] = SolnBlk[iCell].CellSolutionPrimVar(n) + HALF*dWdx[n]*SolnBlk[iCell].CellDelta();
-
-      switch(Limiter) {
-      case LIMITER_BARTH_JESPERSEN :
-	phi = Limiter_BarthJespersen(uQuad, SolnBlk[iCell].CellSolutionPrimVar(n), u0Min, u0Max, 2);
-	break;
-      case LIMITER_VENKATAKRISHNAN :
-	phi = Limiter_Venkatakrishnan(uQuad, SolnBlk[iCell].CellSolutionPrimVar(n), u0Min, u0Max, 2);
-	break;
-      case LIMITER_VANLEER :
-	phi = Limiter_VanLeer(uQuad, SolnBlk[iCell].CellSolutionPrimVar(n), u0Min, u0Max, 2);
-	break;
-      case LIMITER_VANALBADA :
-	phi = Limiter_VanAlbada(uQuad, SolnBlk[iCell].CellSolutionPrimVar(n), u0Min, u0Max, 2);
-	break;
-      case LIMITER_ZERO :
-	phi = ZERO;
-	break;
-      case LIMITER_ONE :
-	phi = ONE;
-	break;
-      default:
-	throw runtime_error("ComputeLowOrderReconstruction() ERROR: Unknown limiter type");
-      } /* endswitch */
-
-      /* Copy the limiter value to the derivatives container. */
-      TaylorDeriv().Limiter(n) = phi;
-    } // endif
-  } /* endfor (n) */
-#endif
-}
-
-#if 0
-
-// HighOrderSolutionReconstructionOverDomain()
-/*! 
- * Compute the high-order reconstruction for each computational cell 
- * of the SolnBlk using the 'IP.i_ReconstructionMethod' algorithm.
- *
- * \param IP input parameter object. Provides the reconstruction method
- * \param AccessToHighOrderVar member function of Soln_Block_Type 
- * that returns the high-order variable which is used in the
- * reconstruction process.
- */
-template<class Soln_Block_Type, class InputParametersType>
-void HighOrderSolutionReconstructionOverDomain(Soln_Block_Type *SolnBlk,
-					       const InputParametersType & IP,
-					       typename Soln_Block_Type::HighOrderType & 
-					       (Soln_Block_Type::*AccessToHighOrderVar)(void)) {
-
-  typedef typename Soln_Block_Type::HighOrderType HighOrderType;
-
-  int ICl(SolnBlk[0].ICl), ICu( SolnBlk[0].ICu);
-  int i, parameter;
-  bool InadequateFitFlag;
-
-  switch(IP.i_ReconstructionMethod){
-    /* C(entral)ENO -> central stencil with post-analysis of the reconstruction */
-  case RECONSTRUCTION_CENO:
-    // require a minimum number of ghost cells equal to what is necessary for the current high-order reconstruction
-    require(SolnBlk[0].Nghost >= HighOrderType::Nghost((SolnBlk[0].*AccessToHighOrderVar)().CellRecOrder()),
-	    "ReconstructSolutionOverDomain() ERROR: Not enough ghost cells to perform the current reconstruction");
-
-    //Step 1: Compute the k-exact reconstruction
-    for (i = ICl - ((SolnBlk[0].*AccessToHighOrderVar)().Rings() + 1);
-	 i<= ICu + ((SolnBlk[0].*AccessToHighOrderVar)().Rings() + 1);
-	 ++i) {
-
-      // Compute PseudoInverse if required
-      (SolnBlk[i].*AccessToHighOrderVar)().ComputeReconstructionPseudoInverse(SolnBlk,i);
-
-      // Compute Unlimited High-Order Reconstruction
-      (SolnBlk[i].*AccessToHighOrderVar)().ComputeUnlimitedSolutionReconstruction(SolnBlk,i,RECONSTRUCTION_CENO,
-										  AccessToHighOrderVar);
+    // Check whether reconstruction based flux calculation is required anywhere in the block.
+    if ( !_constrained_block_reconstruction ){
+      // All cells involved in flux calculation have been checked for non-smooth interpolants.
+      // No need to do anything more.
+      return;
     }
-    
-    // Step 2 and 3: Check smoothness
-    for (i=ICl-1; i<=ICu+1; ++i){
-      
-      //Step 2: Compute the Smoothness Indicator for the cells used to compute the Riemann problem.
-      (SolnBlk[i].*AccessToHighOrderVar)().ComputeSmoothnessIndicator(SolnBlk,i,AccessToHighOrderVar);
-      
-      //Step 3: Do a post-reconstruction analysis
-      /* Check the smoothness condition */
-      for(parameter=1; parameter<=NumberOfVariables(); ++parameter){
-	if( (SolnBlk[i].*AccessToHighOrderVar)().CellSmoothnessIndicator(parameter) < CENO_Tolerances::Fit_Tolerance ){
 
-	  /* Flag the 'i' cell with non-smooth reconstruction */
-	  (SolnBlk[i].*AccessToHighOrderVar)().CellInadequateFit(parameter) = ON;
 
-	  if (CENO_Execution_Mode::CENO_PADDING){
-	    /* Flag all the cell surrounding the 'i' cell with bad reconstruction if CENO_Padding is ON */
-	    (SolnBlk[i-1].*AccessToHighOrderVar)().CellInadequateFit(parameter) = ON;
-	    (SolnBlk[i+1].*AccessToHighOrderVar)().CellInadequateFit(parameter) = ON;
-	  }
-	}//endif
-      }//endfor(parameter)
-      
-    } //endfor(i)
-    
-    //Step 4: Switch the high-order reconstruction to a monotone piecewise one for 
-    //        those cells that are detected as unfit.
-    for (i=ICl-1; i<=ICu+1; ++i){
-      
-      // Reset flag
-      InadequateFitFlag = false;
-      
-      // analyse the 'CellInadequateFit' flags and set 'InadequateFitFlag'
-      for(parameter=1; parameter<=NumberOfVariables(); ++parameter){
-	if (InadequateFitFlag == true){	// break the loop if the flag is already 'true'
-	  break;
-	} else if ( (SolnBlk[i].*AccessToHighOrderVar)().CellInadequateFit(parameter) == ON ){
-	  InadequateFitFlag = true;
-	}
-      }//endfor(parameter)
-      
-      if (InadequateFitFlag == true && CENO_Execution_Mode::CENO_DROP_ORDER){
-	(SolnBlk[i].*AccessToHighOrderVar)().ComputeLowOrderReconstruction(SolnBlk,i,IP.i_Limiter);
+    /* Motivation of the algorithm below:
+       If reconstruction based flux calculation is required at some of the boundaries
+       and non-smooth solution interpolants are detected near these boundaries the 
+       flux is not going to be computed based on the high-order interpolant but on
+       solving a Riemann problem at the interface.
+       The purpose of the algorithm below is to ensure that a limited piecewise linear
+       reconstruction is available in the first ghost cells that have interface with an
+       interior cell detected with inadequate interpolant. Thus, when the flux calculation 
+       is performed, the Riemann problem for those interfaces can be solved.
+       Note that no interior cells are going to be affected by the code that follows!
+       Note also that trying to obtain a high-order interpolant in these ghost cells is not
+       justified based on accuracy and computational efficiency reasons.
+    */
+
+    // Check WEST boundary
+    if (_constrained_WEST_reconstruction){
+      for (j = JCl; j <= JCu; ++j){
+	if ( IsThereAnyNonSmoothHighOrderReconstruction(ICl,j) ) { // check the interior cell
+	  // flag all reconstructions of the adjacent ghost cell as non-smooth
+	  FlagCellReconstructionsAsNonSmooth(ICl-1,j);
+	  // perform a limited piecewise linear reconstruction
+	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+							      ICl-1,j,
+							      Limiter,
+							      ReconstructedSoln);
+	}// endif
+      }// enfor 
+    }// endif 
+
+    // Check EAST boundary
+    if (_constrained_EAST_reconstruction){
+      for (j = JCl; j <= JCu; ++j){
+	if ( IsThereAnyNonSmoothHighOrderReconstruction(ICu,j) ) { // check the interior cell
+	  // flag all reconstructions of the adjacent ghost cell as non-smooth
+	  FlagCellReconstructionsAsNonSmooth(ICu+1,j);
+	  // perform a limited piecewise linear reconstruction
+	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+							      ICu+1,j,
+							      Limiter,
+							      ReconstructedSoln);
+	}// endif
+      }// enfor 
+    }// endif 
+
+    // Check NORTH boundary
+    if (_constrained_NORTH_reconstruction){
+      for (i = ICl; i <= ICu; ++i){
+	if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCu) ) { // check the interior cell
+	  // flag all reconstructions of the adjacent ghost cell as non-smooth
+	  FlagCellReconstructionsAsNonSmooth(i,JCu+1);
+	  // perform a limited piecewise linear reconstruction
+	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+							      i,JCu+1,
+							      Limiter,
+							      ReconstructedSoln);
+
+	}// endif
+      }// enfor 
+    }// endif 
+
+    // Check SOUTH boundary
+    if (_constrained_SOUTH_reconstruction){
+      for (i = ICl; i <= ICu; ++i){
+	if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCl) ) { // check the interior cell
+	  // flag all reconstructions of the adjacent ghost cell as non-smooth
+	  FlagCellReconstructionsAsNonSmooth(i,JCl-1);
+	  // perform a limited piecewise linear reconstruction
+	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+							      i,JCl-1,
+							      Limiter,
+							      ReconstructedSoln);
+
+	}// endif
+      }// enfor 
+    }// endif 
+
+  } else {
+    /* Reset monotonicity flags for boundary cells near splines which require reconstruction based flux calculation.
+       If Riemann based flux calculation is desired there is nothing to be done.
+     */
+
+    // Check whether reset of monotonicity flags is required anywhere in the block.
+    if ( !_constrained_block_reconstruction ){
+      // No need to reset
+      return;
+    }
+
+    // Check WEST boundary
+    if (_constrained_WEST_reconstruction){
+      for (j = JCl - 1; j <= JCu + 1; ++j){
+	// reset the monotonicity flag for the interior cell
+	ResetMonotonicityData(ICl,j);
       }
+    } 
 
-    }//endfor (i) 
+    // Check EAST boundary
+    if (_constrained_EAST_reconstruction){
+      for (j = JCl - 1; j <= JCu + 1; ++j){
+	// reset the monotonicity flag for the interior cell
+	ResetMonotonicityData(ICu,j);
+      }
+    } 
 
-    break;
-    
-  default:
-    throw runtime_error("ReconstructSolutionOverDomain ERROR: Unknown reconstruction method!");
-  } /* endswitch */
+    // Check NORTH boundary
+    if (_constrained_NORTH_reconstruction){
+      for (i = ICl - 1; i <= ICu + 1; ++i){
+	// reset the monotonicity flag for the interior cell
+	ResetMonotonicityData(i,JCu);
+      }
+    } 
+
+    // Check SOUTH boundary
+    if (_constrained_SOUTH_reconstruction){
+      for (i = ICl - 1; i <= ICu + 1; ++i){
+	// reset the monotonicity flag for the interior cell
+	ResetMonotonicityData(i,JCl);
+      }
+    }
+
+  } // endif(CENO_Execution_Mode::CENO_DROP_ORDER)
   
 }
 
-#endif
+/*! 
+ * Compute the high-order reconstruction for all SolnBlk cells 
+ * using the CENO algorithm proposed by Ivan and Groth (AIAA-2007-4323-670).
+ * This algorithm consists of three steps:
+ *      --> Perform k-exact reconstruction in each computation cell for all solution variables.
+ *      --> Compute the smoothness indicator for each computation cell and solution variable.
+ *      --> Switch to a limited piecewise linear reconstruction those interpolants detected as non-smooth.
+ * Slightly different variants of the same idea can be employed to 
+ * compute the smoothness indicator. To choose between different algorithms
+ * use the control execution flags provided by CENO_Execution_Mode class.
+ *
+ * \note This routine performs all three steps of the algorithm, 
+ *       which might not be suited for equations with both elliptic and hyperbolic terms!
+ *
+ * \param SolnBlk the quad block for which the solution reconstruction is done.
+ * \param ReconstructedSoln member function of Soln_Block_Type which returns the solution.
+ * \param Limiter flag to indicate which limiter is used in the limited piecewise linear reconstruction.
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::ComputeHighOrderSolutionReconstruction(Soln_Block_Type &SolnBlk,
+								     const int &Limiter,
+								     const Soln_State & 
+								     (Soln_Block_Type::*ReconstructedSoln)(const int &,
+													   const int &) const ){
+
+  
+  // Step 1. Compute the unlimited solution reconstruction in all required computational cells.
+  ComputeUnlimitedSolutionReconstruction(SolnBlk,
+					 ReconstructedSoln);
+
+
+  // Step 2. Perform smoothness indicator calculation and analysis (i.e. flag those interpolants detected as non-smooth).
+  ComputeSmoothnessIndicator(SolnBlk,
+			     ReconstructedSoln);
+
+  // Step 3. Enforce monotonicity to the non-smooth interpolants (i.e. switch to a limited linear interpolant)
+  EnforceMonotonicityToNonSmoothInterpolants(SolnBlk,
+					     Limiter,
+					     ReconstructedSoln);
+}
+
 
 
 /* -----------------------------------------------------------------
@@ -343,7 +365,7 @@ void HighOrderSolutionReconstructionOverDomain(Soln_Block_Type *SolnBlk,
  * other than the mean quantity conservation.
  */
 template<class SOLN_STATE>
-template<class Soln_Block_Type> inline
+template<class Soln_Block_Type>
 void HighOrder2D<SOLN_STATE>::
 ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 						    const Soln_State & 
@@ -564,7 +586,7 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
  * computational cell based on the information provided by the
  * associated grid.
  */
-template<class SOLN_STATE> inline
+template<class SOLN_STATE>
 void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverse(const int &iCell, const int &jCell,
 								     const IndexType & i_index,
 								     const IndexType & j_index){
@@ -675,7 +697,7 @@ void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverse(const int &
  * this subroutine. 
  */
 template<class SOLN_STATE>
-template<class Soln_Block_Type> inline
+template<class Soln_Block_Type>
 void HighOrder2D<SOLN_STATE>::
 ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
 						    const int &iCell, const int &jCell,

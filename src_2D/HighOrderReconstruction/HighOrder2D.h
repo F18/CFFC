@@ -60,10 +60,6 @@ public:
   typedef std::vector<short int> FlagType;
   //! Type for smoothness indicator associated with each reconstructed variable.
   typedef std::vector<double> DoubleArrayType;
-
-  typedef double (ClassType::*MemberFunction_OneArgument_Type)(const double &);
-  typedef double (ClassType::*MemberFunction_TwoArguments_Type)(const double &, const double &);
-  typedef double (ClassType::*MemberFunction_TwoArguments_OneParameter_Type)(const double &, const unsigned );
   //@}
   
   //! @name Constructors:
@@ -192,6 +188,14 @@ public:
   const int & EndIdir_SI(void) const { return EndI_SI; }
   const int & StartJdir_SI(void) const { return StartJ_SI; }
   const int & EndJdir_SI(void) const { return EndJ_SI; }
+  //@}
+
+  //! @name Indexes of cells between which the limited piecewise linear (LPWL) reconstruction is potentially applied.
+  //@{
+  const int & StartIdir_LPWL(void) const { return StartI_LPWL; }
+  const int & EndIdir_LPWL(void) const { return EndI_LPWL; }
+  const int & StartJdir_LPWL(void) const { return StartJ_LPWL; }
+  const int & EndJdir_LPWL(void) const { return EndJ_LPWL; }
   //@}
 
   //! @name Pseudo-inverse of the LHS term in the CENO reconstruction
@@ -342,10 +346,21 @@ public:
   /*! @brief Compute the pseudo-inverse corresponding to the unlimited high-order solution reconstruction.  */
   void ComputeReconstructionPseudoInverse(void);
 
-  /*! @brief Compute the second (low-order) reconstruction in the CENO algorithm.  */
+  /*! @brief Switch the previously detected non-smooth interpolants to limited piecewise linear reconstruction. */
   template<class Soln_Block_Type>
-  void ComputeLowOrderReconstruction(Soln_Block_Type &SolnBlk,
-				     const int &Limiter);
+  void EnforceMonotonicityToNonSmoothInterpolants(Soln_Block_Type &SolnBlk,
+						  const int &Limiter,
+						  const Soln_State &
+						  (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const = 
+						  &Soln_Block_Type::CellSolution);
+
+  /*! @brief Compute the high-order solution reconstruction (i.e. high-order, data analysis and monotonicity enforcement). */
+  template<class Soln_Block_Type>
+  void ComputeHighOrderSolutionReconstruction(Soln_Block_Type &SolnBlk,
+					      const int &Limiter,
+					      const Soln_State &
+					      (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const = 
+					      &Soln_Block_Type::CellSolution);
   //@} (Block Level Reconstructions)
 
 
@@ -403,6 +418,8 @@ public:
 											   const int &) const,
 				  const int &iCell, const int &jCell,
 				  const IndexType & i_index, const IndexType & j_index, const int & StencilSize);
+  //! @brief Check whether any of the high-order interpolants of (iCell,jCell) cell is flagged as non-smooth.
+  const bool IsThereAnyNonSmoothHighOrderReconstruction(const int &iCell, const int &jCell) const;
   //@}
 
   //! @name Access to the first-order derivatives from memory pool:
@@ -513,6 +530,10 @@ private:
     EndI_SI,                   //!< Index of the last cell in i-direction in which SI is computed with centered stencil
     StartJ_SI,                 //!< Index of the first cell in j-direction in which SI is computed with centered stencil
     EndJ_SI;                   //!< Index of the last cell in j-direction in which SI is computed with centered stencil
+  int StartI_LPWL,             //!< Index of the first cell in i-direction which is checked for non-smooth interpolant
+    EndI_LPWL,                 //!< Index of the last cell in i-direction which is checked for non-smooth interpolant
+    StartJ_LPWL,               //!< Index of the first cell in j-direction which is checked for non-smooth interpolant
+    EndJ_LPWL;                 //!< Index of the last cell in j-direction which is checked for non-smooth interpolant
   //@}
 
   //! @name Memory allocation flags:
@@ -625,6 +646,8 @@ private:
 
   /*! @brief Set the central stencil of cells used to compute the smoothness indicator.  */
   void SetSmoothnessIndicatorStencil(const int &iCell, const int &jCell);
+  //! @brief Flag (iCell,jCell) cell with non-smooth high-order interpolants.
+  void FlagCellReconstructionsAsNonSmooth(const int &iCell, const int &jCell);
   //@}
 
 };
@@ -645,6 +668,7 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(void):
   OrderOfReconstruction(-1), Nghost_HO(0),
   StartI(0), EndI(0), StartJ(0), EndJ(0),
   StartI_SI(0), EndI_SI(0), StartJ_SI(0), EndJ_SI(0),
+  StartI_LPWL(0), EndI_LPWL(0), StartJ_LPWL(0), EndJ_LPWL(0),
   _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
   TD(NULL), SI(NULL), LimitedCell(NULL),
   rings(0), rings_SI(0), _calculated_psinv(false),
@@ -667,6 +691,7 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder,
   OrderOfReconstruction(-1), Nghost_HO(0),
   StartI(0), EndI(0), StartJ(0), EndJ(0),
   StartI_SI(0), EndI_SI(0), StartJ_SI(0), EndJ_SI(0),
+  StartI_LPWL(0), EndI_LPWL(0), StartJ_LPWL(0), EndJ_LPWL(0),
   _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
   TD(NULL), SI(NULL), LimitedCell(NULL), 
   rings(0), rings_SI(0), _calculated_psinv(false),
@@ -745,6 +770,12 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
     EndI_SI = rhs.EndI_SI;
     StartJ_SI = rhs.StartJ_SI;
     EndJ_SI = rhs.EndJ_SI;
+
+    // set range of cells checked for non-smooth interpolant
+    StartI_LPWL = rhs.StartI_LPWL;
+    EndI_LPWL = rhs.EndI_LPWL;
+    StartJ_LPWL = rhs.StartJ_LPWL;
+    EndJ_LPWL = rhs.EndJ_LPWL;
 
     // set the type of reconstruction required by the geometry setup
     _constrained_block_reconstruction = rhs._constrained_block_reconstruction;
@@ -1008,6 +1039,8 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
     StartJ = 0; EndJ = 0;
     StartI_SI = 0; EndI_SI = 0;
     StartJ_SI = 0; EndJ_SI = 0;
+    StartI_LPWL = 0; EndI_LPWL = 0;
+    StartJ_LPWL = 0; EndJ_LPWL = 0;
 
     // Separate the high-order object from the associated geometry
     Geom = NULL;
@@ -1082,6 +1115,8 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
     StartJ = 0; EndJ = 0;
     StartI_SI = 0; EndI_SI = 0;
     StartJ_SI = 0; EndJ_SI = 0;
+    StartI_LPWL = 0; EndI_LPWL = 0;
+    StartJ_LPWL = 0; EndJ_LPWL = 0;
 
     _allocated_cells = false;
     _allocated_psinv = false;
@@ -1386,6 +1421,12 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
   int parameter;
   int i,j;
   
+  // == Check if the reconstruction polynomial is piecewise constant
+  if (RecOrder() == 0){
+    // There is no need to calculate the smoothness indicator
+    return;
+  }
+
   // Compute the smoothness indicator for cells that use the central stencil
   for ( j  = StartJ_SI ; j <= EndJ_SI ; ++j ) {
     for ( i = StartI_SI ; i <= EndI_SI ; ++i ) {
@@ -1576,6 +1617,38 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
 
 }
 
+/*! 
+ * Return true if any of the high-order solution reconstructions
+ * of cell (iCell,jCell) is flagged as non-smooth, otherwise
+ * return false.
+ */
+template<class SOLN_STATE> inline
+const bool HighOrder2D<SOLN_STATE>::IsThereAnyNonSmoothHighOrderReconstruction(const int &iCell,
+									       const int &jCell) const {
+
+  // Analyse 'CellInadequateFit' flag for each solution variable.
+  for(int parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+    if ( CellInadequateFitValue(iCell,jCell,parameter) ){
+      return true; 	// found already one interpolant flagged as non-smooth
+    }//endif
+  }//endfor(parameter)
+
+  // No interpolant flagged as non-smooth was found.
+  return false;
+}
+
+/*! 
+ * This function bypass the smoothness indicator analysis
+ * and flags all reconstructions of (iCell,jCell) cell 
+ * as non-smooth.
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::FlagCellReconstructionsAsNonSmooth(const int &iCell, const int &jCell){
+  for(int parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+    CellInadequateFitValue(iCell,jCell,parameter) = ON;
+  }//endfor(parameter)  
+}
+
 //! Integrate over the cell
 template<class SOLN_STATE>
 template<typename FO, class ReturnType> inline
@@ -1609,6 +1682,11 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
   StartI_SI = ICl - 1; EndI_SI = ICu + 1;
   StartJ_SI = JCl - 1; EndJ_SI = JCu + 1;
 
+  /* Initialize indexes between which the interpolants are checked for non-smoothness
+     (i.e. cells used for flux calculation) as if no constrained reconstruction would exit. */
+  StartI_LPWL = ICl - 1; EndI_LPWL = ICu + 1;
+  StartJ_LPWL = JCl - 1; EndJ_LPWL = JCu + 1;
+
   // Reset affected flags
   _constrained_block_reconstruction = false;
   _constrained_WEST_reconstruction  = false; 
@@ -1625,7 +1703,9 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
     // Flag the boundary accordingly
     _constrained_WEST_reconstruction = true;
     // Set StartI_SI
-    StartI += 1 + rings_SI;
+    StartI_SI += 1 + rings_SI;
+    // Set StartI_LPWL
+    StartI_LPWL += 1;
   } 
   // Check East boundary
   if (Geom->IsEastBoundaryReconstructionConstrained()){
@@ -1635,6 +1715,8 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
     _constrained_EAST_reconstruction = true;    
     // Set EndI_SI
     EndI_SI -= 1 + rings_SI;
+    // Set EndI_LPWL
+    EndI_LPWL -= 1;
   } 
   // Check South boundary
   if (Geom->IsSouthBoundaryReconstructionConstrained()){
@@ -1644,6 +1726,8 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
     _constrained_SOUTH_reconstruction = true;
     // Set StartJ_SI
     StartJ_SI += 1 + rings_SI;
+    // Set StartJ_LPWL
+    StartJ_LPWL += 1;
   } 
   // Check North boundary
   if (Geom->IsNorthBoundaryReconstructionConstrained()){
@@ -1653,6 +1737,8 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
     _constrained_NORTH_reconstruction = true;    
     // Set EndJ_SI
     EndJ_SI -= 1 + rings_SI;
+    // Set EndJ_LPWL
+    EndJ_LPWL -= 1;
   }
 
   // Flag the block accordingly

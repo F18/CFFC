@@ -1046,6 +1046,11 @@ namespace tut
     ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()+1);
     ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()-1);
     ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()+1);
+    // == check indexes for limited piecewise linear
+    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid()-1);
+    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
+    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
+    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
 
     // == check solution
     double Result = 0.59509999999999985;
@@ -1101,6 +1106,11 @@ namespace tut
     ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()+1);
     ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()-1);
     ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()+1);
+    // == check indexes for limited piecewise linear
+    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid()-1);
+    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
+    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
+    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
 
     // Change spline type
     Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
@@ -1121,6 +1131,38 @@ namespace tut
     ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()-2);
     ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()-1);
     ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()-2);
+    // == check indexes for limited piecewise linear
+    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid()-1);
+    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid());
+    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
+    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid());
+
+    // Change spline types again
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    // == check that constrained reconstruction is required
+    ensure_equals("Block Flag, II", HO.IsConstrainedReconstructionRequired(), true);
+    ensure_equals("West Bnd Flag, II", HO.IsWestConstrainedReconstructionRequired(), true);
+    ensure_equals("East Bnd Flag, II", HO.IsEastConstrainedReconstructionRequired(), false);
+    ensure_equals("North Bnd Flag, II", HO.IsNorthConstrainedReconstructionRequired(), false);
+    ensure_equals("South Bnd Flag, II", HO.IsSouthConstrainedReconstructionRequired(), true);
+    // == check indexes for smoothness indicator
+    ensure_equals("Rings SI, II", HO.RingsSI(), 2);
+    ensure_equals("StartI_SI, II", HO.StartIdir_SI(), HO.ICl_Grid()+2);
+    ensure_equals("EndI_SI, II", HO.EndIdir_SI(), HO.ICu_Grid()+1);
+    ensure_equals("StartJ_SI, II", HO.StartJdir_SI(), HO.JCl_Grid()+2);
+    ensure_equals("EndJ_SI, II", HO.EndJdir_SI(), HO.JCu_Grid()+1);
+    // == check indexes for limited piecewise linear
+    ensure_equals("StartI_LPWL, II", HO.StartIdir_LPWL(), HO.ICl_Grid());
+    ensure_equals("EndI_LPWL, II", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
+    ensure_equals("StartJ_LPWL, II", HO.StartJdir_LPWL(), HO.JCl_Grid());
+    ensure_equals("EndJ_LPWL, II", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
   }
 
   /* Test 24:*/
