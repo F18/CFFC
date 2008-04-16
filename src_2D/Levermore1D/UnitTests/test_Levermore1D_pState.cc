@@ -483,8 +483,60 @@ namespace tut
       dUdW2(4,4) = 1.0;
     }
 
-    for(int i=0; i < Levermore1D_Vector::get_length(); ++i) {
-      for(int j=0; j < Levermore1D_Vector::get_length(); ++j) {
+    if(Levermore1D_Vector::get_length() > 5) {
+      dUdW2(5,0) = u*u*u*u*u;
+      dUdW2(6,0) = u*u*u*u*u*u;
+
+      dUdW2(5,1) = 5.0*rho*u*u*u*u + 30.0*u*u*p + 20.0*u*q + 5.0*r;
+      dUdW2(6,1) = 6.0*rho*u*u*u*u*u + 60.0*u*u*u*p + 60.0*u*u*q + 30.0*u*r + 6.0*W[6];
+
+      dUdW2(5,2) = 10.0*u*u*u;
+      dUdW2(6,2) = 15.0*u*u*u*u;
+
+      dUdW2(5,3) = 10.0*u*u;
+      dUdW2(6,3) = 20.0*u*u*u;
+
+      dUdW2(5,4) = 5.0*u;
+      dUdW2(6,4) = 15.0*u*u;
+
+      dUdW2(5,5) = 1.0;
+      dUdW2(6,5) = 6.0*u;
+
+      dUdW2(6,6) = 1.0;
+    }
+
+    if(Levermore1D_Vector::get_length() > 7) {
+      dUdW2(7,0) = u*u*u*u*u*u*u;
+      dUdW2(8,0) = u*u*u*u*u*u*u*u;
+
+      dUdW2(7,1) = 7.0*rho*u*u*u*u*u*u + 105.0*u*u*u*u*p + 140.0*u*u*u*q +
+                   105*u*u*r + 42.0*u*W[6] + 7.0*W[7];
+      dUdW2(8,1) = 8.0*rho*u*u*u*u*u*u*u + 168.0*u*u*u*u*u*p + 280.0*u*u*u*u*q +
+	           280.0*u*u*u*r + 168.0*u*u*W[6] + 56.0*u*W[7] + 8.0*W[8];
+
+      dUdW2(7,2) = 21.0*u*u*u*u*u;
+      dUdW2(8,2) = 28.0*u*u*u*u*u*u;
+
+      dUdW2(7,3) = 35.0*u*u*u*u;
+      dUdW2(8,3) = 56.0*u*u*u*u*u;
+
+      dUdW2(7,4) = 35.0*u*u*u;
+      dUdW2(8,4) = 70.0*u*u*u*u;
+
+      dUdW2(7,5) = 21.0*u*u;
+      dUdW2(8,5) = 56.0*u*u*u;
+
+      dUdW2(7,6) = 7.0*u;
+      dUdW2(8,6) = 28.0*u*u;
+
+      dUdW2(7,7) = 1.0;
+      dUdW2(8,7) = 8.0*u;
+
+      dUdW2(8,8) = 1.0;
+    }
+
+    for(int i=0; i < min(9,Levermore1D_Vector::get_length()); ++i) {
+      for(int j=0; j < min(9,Levermore1D_Vector::get_length()); ++j) {
 	ensure_distance("dUdW1==dUdW2",dUdW1(i,j),dUdW2(i,j),fabs(dUdW1(i,j)*tol+tol));
 	ensure_distance("dUdW1a==dUdW2",dUdW1a(i,j),dUdW2(i,j),fabs(dUdW1a(i,j)*tol+tol));
       }
