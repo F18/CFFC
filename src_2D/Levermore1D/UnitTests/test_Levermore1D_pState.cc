@@ -416,6 +416,28 @@ namespace tut
   template<>
   void Levermore1D_pState_object::test<14>()
   {
+    set_test_name("Maxwell-Boltzmann");
+
+    double rho(2.1), u(-120.2), p(113998.0), expected(0.0);
+
+    Levermore1D_pState W(rho,u,p);
+
+    ensure_distance("rho==rho",W[1],rho,fabs(rho)*tol);
+    ensure_distance("u==u",W[2],u,fabs(u)*tol);
+    ensure_distance("p==p",W[3],p,fabs(p)*tol);
+    for(int i=4; i <= Levermore1D_Vector::get_length(); i=i+2) {
+      ensure_distance("Odd moment == zero",W[i],0.0,tol);
+      expected = ((double)Double_Factorial(i-1)) * pow(p,(i+1)/2 ) / pow(rho,(i+1)/2-1);
+      ensure_distance("Even moment == expected",W[i+1],expected,fabs(expected)*tol);
+    }
+
+  }
+
+  /* Test 15:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<15>()
+  {
     set_test_name("dUdW (cState version as well)");
 
     double rho(1.005), u(-210.1), p(75663.0), q(-765.4e4), r(1.2345e8);

@@ -59,11 +59,7 @@ class Levermore1D_pState : public Levermore1D_Vector{
     zero();
     m_values[0] = rho; m_values[1] = u; m_values[2] = p;
     for(int i=4; i<Levermore1D_Vector::get_length(); i=i+2) {
-      coef = 1;
-      for(int j=i-1; j>0;j=j-2) {
-	coef*=j; //double factorial
-      }
-      m_values[i] = (double)coef * pow(p,i/2) / pow(rho,i/2-1);
+      m_values[i] = (double)Double_Factorial(i-1) * pow(p,i/2) / pow(rho,i/2-1);
     }
   }
 

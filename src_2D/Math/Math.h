@@ -203,6 +203,11 @@ inline int Factorial(int N){
   else return N*Factorial(N-1);
 }
 
+inline int Double_Factorial(int N){
+  if (N==0 || N == -1 || N == 1) return 1;
+  else return N*Double_Factorial(N-2);
+}
+
 inline double ConvertDomainToMinusOneOne (double xmin, double xmax, double x){
   // convert the domain [xmin,xmax] to [-1:1]
   return (2*x-xmax-xmin)/(xmax-xmin);
