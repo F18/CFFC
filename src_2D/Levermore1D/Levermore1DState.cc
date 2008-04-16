@@ -170,6 +170,63 @@ DenseMatrix Levermore1D_cState::dUdW(void) const {
 }
 
 /********************************************************
+ * Function: Levermore1D_pState::dU_MBdW                *
+ *                                                      *
+ * Generate Jacobian of corresponding Maxwell-Boltzmann *
+ * distribution with respect to W.                      *
+ *                                                      *
+ ********************************************************/
+DenseMatrix Levermore1D_pState::dU_MBdW(void) const {
+  DenseMatrix dU_MBdW(Levermore1D_Vector::get_length(),
+		   Levermore1D_Vector::get_length());
+  double col_entry(1.0);
+
+  dU_MBdW.zero();
+
+  for(int i=0; i < Levermore1D_Vector::get_length(); ++i) {
+    //first column
+    dU_MBdW(i,0) = col_entry;
+    col_entry *= m_values[1];
+    for(int j = 4; j <= i; j = j+2) {
+      dU_MBdW(i,0) -= (double)(Pascals_Triangle(i,j)*Double_Factorial(j-1)*(j/2-1))*
+	              pow(m_values[2]/m_values[0],j/2) * pow(m_values[1],i-j);
+    } //end for
+
+    //second column
+    if(i==0) dU_MBdW(i,1) = 0.0;
+    else if(i==1) dU_MBdW(i,1) = m_values[0];
+    else {
+      dU_MBdW(i,1) = (double)i * m_values[0] * pow(m_values[1],i-1) +
+                     (double)(Pascals_Triangle(i,2)*(i-2))*pow(m_values[1],i-3)*m_values[2];
+      for(int j = 4; j <= i-1; j = j+2) {
+	dU_MBdW(i,1) += (double)(Pascals_Triangle(i,j)*Double_Factorial(j-1)*(i-j))*
+	                m_values[0]*pow(m_values[2]/m_values[0],j/2) * pow(m_values[1],i-j-1);
+      } //end for
+    } //end if
+
+    //third column
+    if(i<2) dU_MBdW(i,2) = 0.0;
+    else if(i==2) dU_MBdW(i,2) = 1.0;
+    else {
+      dU_MBdW(i,2) = (double)(Pascals_Triangle(i,2))*pow(m_values[1],i-2);
+      for(int j = 4; j <= i; j = j+2) {
+	dU_MBdW(i,2) += (double)(Pascals_Triangle(i,j)*Double_Factorial(j-1)*(j/2))*
+	                pow(m_values[2]/m_values[0],j/2-1) * pow(m_values[1],i-j);
+      } //end for
+    } //end if
+
+  }//end for
+
+  return dU_MBdW;
+
+}
+
+DenseMatrix Levermore1D_cState::dU_MBdW(void) const {
+  Levermore1D_pState temp(*this);
+  return temp.dU_MBdW();
+}
+
+/********************************************************
  * Function: Levermore1D_cState::moment                 *
  *                                                      *
  * Return value of velocity moment.                     *

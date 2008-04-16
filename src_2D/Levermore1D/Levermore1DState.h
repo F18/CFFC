@@ -70,6 +70,7 @@ class Levermore1D_pState : public Levermore1D_Vector{
   void set_from_A(const Levermore1D_weights &A, double us);
   double conserved_extras(int i) const;
   DenseMatrix dUdW(void) const;
+  DenseMatrix dU_MBdW(void) const;
 
  protected:
   double conserved_extras_recursive(int i, int &pf, int pf_num, int pf_den) const;
@@ -111,6 +112,7 @@ class Levermore1D_cState : public Levermore1D_Vector{
   double moment_series(int n, const Levermore1D_weights &A, const double &us) const;
   double moment_series_L(const Levermore1D_weights &A, const double &us) const;
   DenseMatrix dUdW(void) const;
+  DenseMatrix dU_MBdW(void) const;
   DenseMatrix d2hda2(const Levermore1D_weights &A, const double &us) const;
   DenseMatrix d2jda2(const Levermore1D_weights &A, const double &us) const;
   Levermore1D_Vector F(const Levermore1D_weights &A) const;
