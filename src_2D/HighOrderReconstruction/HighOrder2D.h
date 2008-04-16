@@ -1370,7 +1370,7 @@ void HighOrder2D<SOLN_STATE>::ResetMonotonicityData(void){
 /*!
  * Reset the monotonicity data (i.e. flag + limiter)
  * for the specified cell.
- * \todo Add logic for when to NOT reset the monotonicity data (e.g. limiter frozen )
+ * \todo Add logic for when NOT to reset the monotonicity data (e.g. limiter frozen )
  */
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::ResetMonotonicityData(const int & ii, const int & jj){

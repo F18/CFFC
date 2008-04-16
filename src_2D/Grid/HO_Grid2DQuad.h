@@ -973,7 +973,6 @@ private:
 
   /*!
    * Number of Gauss quadrature points require for flux calculation on interior edges or low-order exterior boundaries.
-   * \todo Set this number accordingly.
    */
   int NumGQP;	
 

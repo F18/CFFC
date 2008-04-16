@@ -1728,6 +1728,514 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
 
 }
 
+/******************************************************//**
+ * This routine evaluate the residual for the
+ * solution block using a 2nd-order limited upwind    
+ * finite-volume spatial discretization scheme for the  
+ * convective flux coupled with a centrally-weighted    
+ * finite-volume discretization for the diffusive flux.  
+ * The residual is stored in dUdt[][][0].               
+ *                                                      
+ ********************************************************/
+int AdvectDiffuse2D_Quad_Block::dUdt_Residual_Evaluation(const AdvectDiffuse2D_Input_Parameters &IP){
+
+  int i, j;
+  Vector2D dX;
+  AdvectDiffuse2D_State Ul, Ur, U_face, Flux;
+  Vector2D GradU_face;		// Solution gradient at the inter-cellular face
+  /* Set the stencil flag for the gradient reconstruction to the most common case. */
+  int GradientReconstructionStencilFlag(DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+
+  /* Perform the linear reconstruction within each cell
+     of the computational grid for this stage. */
+    
+  switch(IP.i_Reconstruction) {
+  case RECONSTRUCTION_GREEN_GAUSS :
+    Linear_Reconstruction_GreenGauss(*this,
+				     IP.i_Limiter);    
+    break;
+  case RECONSTRUCTION_LEAST_SQUARES :
+    Linear_Reconstruction_LeastSquares(*this,
+				       IP.i_Limiter);
+    break;
+  default:
+    throw runtime_error("AdvectDiffuse2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! Unknown reconstruction method!");
+  } /* endswitch */
+
+
+  /* Calculate the solution values at the mesh nodes
+     using a bilinear interpolation procedure . */
+  Calculate_Nodal_Solutions();
+
+  /* Evaluate the time rate of change of the solution
+     (i.e., the solution residuals) using a second-order
+     limited upwind finite-volume scheme for the convective 
+     fluxes and a diamond-path gradient reconstruction 
+     for the diffusive fluxes. */
+    
+  // Add i-direction (zeta-direction) fluxes.
+  for ( j  = JCl-1 ; j <= JCu+1 ; ++j ) {
+    dUdt[ICl-1][j][0].Vacuum();	// set to zero
+          
+    for ( i = ICl-1 ; i <= ICu ; ++i ) {
+      dUdt[i+1][j][0].Vacuum();	// set to zero
+	 
+      if ( j >= JCl && j <= JCu ) {
+    
+	/* Evaluate the cell interface i-direction fluxes. */
+
+	if (i == ICl-1){ // This is a WEST boundary interface
+	  // Compute the right interface state based on reconstruction
+	  Ur = PiecewiseLinearSolutionAtLocation(i+1, j,Grid.xfaceW(i+1, j));
+
+	  /* Compute the left interface state for inviscid flux calculation,
+	     the solution state for calculation of the diffusion coefficient 
+	     and the solution gradient such that to satisfy the WEST boundary 
+	     condition at the Gauss quadrature point. */
+	  InviscidAndEllipticFluxStates_AtBoundaryInterface(WEST,
+							    i,j,
+							    Ul,Ur,
+							    U_face,
+							    GradU_face,IP.i_Viscous_Reconstruction);
+	  
+	} else if (i == ICu){ // This is a EAST boundary interface
+	  // Compute the left interface state based on reconstruction
+	  Ul = PiecewiseLinearSolutionAtLocation(i  , j,Grid.xfaceE(i  , j));
+	  
+	  /* Compute the left interface state for inviscid flux calculation,
+	     the solution state for calculation of the diffusion coefficient 
+	     and the solution gradient such that to satisfy the EAST boundary 
+	     condition at the Gauss quadrature point. */
+	  InviscidAndEllipticFluxStates_AtBoundaryInterface(EAST,
+							    i,j,
+							    Ul,Ur,
+							    U_face,
+							    GradU_face,IP.i_Viscous_Reconstruction);
+
+	} else {		// This is an interior interface
+	  // Compute left and right interface states at 
+	  // the face midpoint based on reconstruction
+	  Ul = PiecewiseLinearSolutionAtLocation(i  , j,Grid.xfaceE(i  , j));
+	  Ur = PiecewiseLinearSolutionAtLocation(i+1, j,Grid.xfaceW(i+1, j));
+
+	  // Determine the solution state at the Gauss quadrature
+	  // point for the calculation of the diffusion coefficient
+	  EllipticFluxStateAtInteriorInterface(i  ,j,
+					       i+1,j,
+					       Grid.xfaceE(i,j),U_face);
+
+	  // Calculate gradient at the face midpoint
+	  GradU_face = InterfaceSolutionGradient(i  ,j,
+						 i+1,j,
+						 IP.i_Viscous_Reconstruction,
+						 GradientReconstructionStencilFlag);
+	}
+
+	// Compute the advective flux 'Fa' in the normal direction at the face midpoint 
+	Flux = Fa(Ul, Ur, Grid.xfaceE(i,j), Grid.nfaceE(i,j));
+	  
+	// Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
+	Flux += Fd(U_face, GradU_face, Grid.xfaceE(i,j), Grid.nfaceE(i,j));
+
+	/* Evaluate cell-averaged solution changes. */
+	dUdt[i  ][j][0] -= Flux*Grid.lfaceE(i  , j)/Grid.Cell[i  ][j].A;
+	dUdt[i+1][j][0] += Flux*Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A;
+	   
+	/* Include regular source terms. */
+	dUdt[i][j][0] += SourceTerm(i,j);
+
+	/* Include axisymmetric source terms as required. */
+	if (Axisymmetric) {
+	  dUdt[i][j][0] += AxisymmetricSourceTerm(i,j);
+	} /* endif */
+
+	/* Save west and east face boundary flux. */
+	if (i == ICl-1) {
+	  FluxW[j] = -Flux*Grid.lfaceW(i+1, j);
+	} else if (i == ICu) {
+	  FluxE[j] =  Flux*Grid.lfaceE(i  , j);
+	} /* endif */
+
+      } /* endif */
+    } /* endfor */
+    
+    if ( j >= JCl && j <= JCu ) {
+      dUdt[ICl-1][j][0].Vacuum();	// set to zero
+      dUdt[ICu+1][j][0].Vacuum();	// set to zero
+    } /* endif */
+  } /* endfor */
+    
+    // Add j-direction (eta-direction) fluxes.
+  for ( i = ICl ; i <= ICu ; ++i ) {
+    for ( j  = JCl-1 ; j <= JCu ; ++j ) {
+    
+      /* Evaluate the cell interface j-direction fluxes. */
+
+      if (j == JCl-1){ // This is a SOUTH boundary interface
+	// Compute the right interface state based on reconstruction
+	Ur = PiecewiseLinearSolutionAtLocation(i ,j+1,Grid.xfaceS(i ,j+1));
+	
+	/* Compute the left interface state for inviscid flux calculation,
+	   the solution state for calculation of the diffusion coefficient 
+	   and the solution gradient such that to satisfy the SOUTH boundary 
+	   condition at the Gauss quadrature point. */
+	InviscidAndEllipticFluxStates_AtBoundaryInterface(SOUTH,
+							  i,j,
+							  Ul,Ur,
+							  U_face,
+							  GradU_face,IP.i_Viscous_Reconstruction);
+	
+      } else if (j == JCu){ // This is a NORTH boundary interface
+	// Compute the left interface state based on reconstruction
+	Ul = PiecewiseLinearSolutionAtLocation(i ,j  ,Grid.xfaceN(i ,j  ));
+	  
+	/* Compute the left interface state for inviscid flux calculation,
+	   the solution state for calculation of the diffusion coefficient 
+	   and the solution gradient such that to satisfy the NORTH boundary 
+	   condition at the Gauss quadrature point. */
+	InviscidAndEllipticFluxStates_AtBoundaryInterface(NORTH,
+							  i,j,
+							  Ul,Ur,
+							  U_face,
+							  GradU_face,IP.i_Viscous_Reconstruction);
+	  
+      } else {		// This is an interior interface
+	// Compute left and right interface states at 
+	// the face midpoint based on reconstruction
+	Ul = PiecewiseLinearSolutionAtLocation(i ,j  ,Grid.xfaceN(i ,j  ));
+	Ur = PiecewiseLinearSolutionAtLocation(i ,j+1,Grid.xfaceS(i ,j+1));
+
+	// Determine the solution state at the Gauss quadrature
+	// point for the calculation of the diffusion coefficient
+	EllipticFluxStateAtInteriorInterface(i  ,j,
+					     i  ,j+1,
+					     Grid.xfaceN(i,j),U_face);
+	
+	// Calculate gradient at the face midpoint
+	GradU_face = InterfaceSolutionGradient(i  ,j,
+					       i  ,j+1,
+					       IP.i_Viscous_Reconstruction,
+					       GradientReconstructionStencilFlag);
+      }
+
+      // Compute the advective flux in the normal direction at the face midpoint 
+      Flux = Fa(Ul, Ur, Grid.xfaceN(i,j), Grid.nfaceN(i, j));
+         
+      // Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
+      Flux += Fd(U_face, GradU_face, Grid.xfaceN(i,j), Grid.nfaceN(i,j));
+
+      /* Evaluate cell-averaged solution changes. */
+      dUdt[i][j  ][0] -= Flux*Grid.lfaceN(i, j  )/Grid.Cell[i][j  ].A;
+      dUdt[i][j+1][0] += Flux*Grid.lfaceS(i, j+1)/Grid.Cell[i][j+1].A;
+          
+      /* Save south and north face boundary flux. */
+      if (j == JCl-1) {
+	FluxS[i] = -Flux*Grid.lfaceS(i, j+1);
+      } else if (j == JCu) {
+	FluxN[i] =  Flux*Grid.lfaceN(i, j  );
+      } /* endif */
+      
+    } /* endfor */
+    
+    dUdt[i][JCl-1][0].Vacuum();	// set to zero
+    dUdt[i][JCu+1][0].Vacuum();	// set to zero
+  }/* endfor */
+    
+  /* residual evaluation successful. */
+  return 0;
+}
+
+/******************************************************//**
+ * This routine determines the solution residuals for a 
+ * given stage of a variety of multi-stage explicit     
+ * time integration schemes for the solution block. 
+ ********************************************************/
+int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
+							 const AdvectDiffuse2D_Input_Parameters &IP){
+
+  int i, j, k_residual;
+  double omega;
+  Vector2D dX;
+  AdvectDiffuse2D_State Ul, Ur, U_face, Flux;
+  Vector2D GradU_face;		// Solution gradient at the inter-cellular face
+  /* Set the stencil flag for the gradient reconstruction to the most common case. */
+  int GradientReconstructionStencilFlag(DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+  
+
+  /* Evaluate the solution residual for stage 
+     i_stage of an N stage scheme. */
+
+  /* Evaluate the time step fraction and residual storage location for the stage. */
+  
+  switch(IP.i_Time_Integration) {
+  case TIME_STEPPING_EXPLICIT_EULER :
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
+    k_residual = 0;
+    break;
+  case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
+    k_residual = 0;
+    break;
+  case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
+    k_residual = 0;
+    if (IP.N_Stage == 4) {
+      if (i_stage == 4) {
+	k_residual = 0;
+      } else {
+	k_residual = i_stage - 1;
+      } /* endif */
+    } /* endif */
+    break;
+  case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
+    omega = MultiStage_Optimally_Smoothing(i_stage, 
+					   IP.N_Stage,
+					   IP.i_Limiter);
+    k_residual = 0;
+    break;
+  default:
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
+    k_residual = 0;
+    break;
+  } /* endswitch */
+    
+  /* Perform the linear reconstruction within each cell
+     of the computational grid for this stage. */
+    
+  switch(IP.i_Reconstruction) {
+  case RECONSTRUCTION_GREEN_GAUSS :
+    Linear_Reconstruction_GreenGauss(*this,
+				     IP.i_Limiter);    
+    break;
+  case RECONSTRUCTION_LEAST_SQUARES :
+    Linear_Reconstruction_LeastSquares(*this,
+				       IP.i_Limiter);
+    break;
+  default:
+    throw runtime_error("AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit() ERROR! Unknown reconstruction method!");
+  } /* endswitch */
+
+  /* Calculate the solution values at the mesh nodes
+     using a bilinear interpolation procedure . */
+  Calculate_Nodal_Solutions();
+  
+  /* Evaluate the time rate of change of the solution
+     (i.e., the solution residuals) using a second-order
+     limited upwind finite-volume scheme for the convective 
+     fluxes and a diamond-path gradient reconstruction 
+     for the diffusive fluxes. */
+    
+  // Add i-direction (zeta-direction) fluxes.
+  for ( j  = JCl-1 ; j <= JCu+1 ; ++j ) {
+
+    // Set Uo for cell (ICl-1,j)
+    if ( i_stage == 1 ) {
+      Uo[ICl-1][j] = U[ICl-1][j];
+    } /* endif */
+    
+    // Reset dUdt of cell (ICl-1,j) for the current stage
+    dUdt[ICl-1][j][k_residual].Vacuum();
+    
+    for ( i = ICl-1 ; i <= ICu ; ++i ) {
+      if ( i_stage == 1 ) {
+	Uo[i+1][j] = U[i+1][j];
+	dUdt[i+1][j][k_residual].Vacuum(); // set to zero
+      } else if ( j >= JCl && j <= JCu ) {
+	switch(IP.i_Time_Integration) {
+	case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
+	  // 
+	  break;
+	case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
+	  if (IP.N_Stage == 2) {
+	    // 
+	  } else if (IP.N_Stage == 4 && i_stage == 4) {
+	    dUdt[i+1][j][k_residual] = ( dUdt[i+1][j][0] + 
+					 TWO*dUdt[i+1][j][1] +
+					 TWO*dUdt[i+1][j][2] );
+	  } else {
+	    dUdt[i+1][j][k_residual].Vacuum(); // set to zero
+	  } /* endif */
+	  break;
+	case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
+	  dUdt[i+1][j][k_residual].Vacuum(); // set to zero
+	  break;
+	default:
+	  dUdt[i+1][j][k_residual].Vacuum(); // set to zero
+	  break;
+	} /* endswitch */
+      } /* endif */
+      
+      if ( j >= JCl && j <= JCu ) {
+	
+	/* Evaluate the cell interface i-direction fluxes. */
+	
+	if (i == ICl-1){ // This is a WEST boundary interface
+	  // Compute the right interface state based on reconstruction
+	  Ur = PiecewiseLinearSolutionAtLocation(i+1, j,Grid.xfaceW(i+1, j));
+	  
+	  /* Compute the left interface state for inviscid flux calculation,
+	     the solution state for calculation of the diffusion coefficient 
+	     and the solution gradient such that to satisfy the WEST boundary 
+	     condition at the Gauss quadrature point. */
+	  InviscidAndEllipticFluxStates_AtBoundaryInterface(WEST,
+							    i,j,
+							    Ul,Ur,
+							    U_face,
+							    GradU_face,IP.i_Viscous_Reconstruction);
+	  
+	} else if (i == ICu){ // This is a EAST boundary interface
+	  // Compute the left interface state based on reconstruction
+	  Ul = PiecewiseLinearSolutionAtLocation(i  , j,Grid.xfaceE(i  , j));
+	  
+	  /* Compute the left interface state for inviscid flux calculation,
+	     the solution state for calculation of the diffusion coefficient 
+	     and the solution gradient such that to satisfy the EAST boundary 
+	     condition at the Gauss quadrature point. */
+	  InviscidAndEllipticFluxStates_AtBoundaryInterface(EAST,
+							    i,j,
+							    Ul,Ur,
+							    U_face,
+							    GradU_face,IP.i_Viscous_Reconstruction);
+	  
+	} else {		// This is an interior interface
+	  // Compute left and right interface states at 
+	  // the face midpoint based on reconstruction
+	  Ul = PiecewiseLinearSolutionAtLocation(i  , j,Grid.xfaceE(i  , j));
+	  Ur = PiecewiseLinearSolutionAtLocation(i+1, j,Grid.xfaceW(i+1, j));
+	  
+	  // Determine the solution state at the Gauss quadrature
+	  // point for the calculation of the diffusion coefficient
+	  EllipticFluxStateAtInteriorInterface(i  ,j,
+					       i+1,j,
+					       Grid.xfaceE(i,j),U_face);
+
+	  // Calculate gradient at the face midpoint
+	  GradU_face = InterfaceSolutionGradient(i  ,j,
+						 i+1,j,
+						 IP.i_Viscous_Reconstruction,
+						 GradientReconstructionStencilFlag);
+   	}
+	
+	// Compute the advective flux in the normal direction at the face midpoint 
+	Flux = Fa(Ul, Ur, Grid.xfaceE(i,j), Grid.nfaceE(i,j));
+	
+	// Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
+	Flux += Fd(U_face, GradU_face, Grid.xfaceE(i,j), Grid.nfaceE(i,j));
+	
+	/* Evaluate cell-averaged solution changes. */
+	dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number*dt[i  ][j])* 
+				      Flux*Grid.lfaceE(i  , j)/Grid.Cell[i  ][j].A );
+
+	dUdt[i+1][j][k_residual] += ( (IP.CFL_Number*dt[i+1][j])* 
+				      Flux*Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A );
+	   
+	/* Include regular source terms. */
+	dUdt[i][j][k_residual] += (IP.CFL_Number*dt[i][j])*SourceTerm(i,j);
+	
+	/* Include axisymmetric source terms as required. */
+	if (Axisymmetric) {
+	  dUdt[i][j][k_residual] += ( (IP.CFL_Number*dt[i][j])*
+				      AxisymmetricSourceTerm(i,j) );
+	} /* endif */
+	
+	
+	/* Save west and east face boundary flux. */
+	if (i == ICl-1) {
+	  FluxW[j] = -Flux*Grid.lfaceW(i+1, j);
+	} else if (i == ICu) {
+	  FluxE[j] =  Flux*Grid.lfaceE(i  , j);
+	} /* endif */
+	
+      } /* endif */
+    } /* endfor */
+    
+    if ( j >= JCl && j <= JCu ) {
+      dUdt[ICl-1][j][k_residual].Vacuum();
+      dUdt[ICu+1][j][k_residual].Vacuum();
+    } /* endif */
+  } /* endfor */
+  
+    // Add j-direction (eta-direction) fluxes.
+  for ( i = ICl ; i <= ICu ; ++i ) {
+    for ( j  = JCl-1 ; j <= JCu ; ++j ) {
+      
+      /* Evaluate the cell interface j-direction fluxes. */
+      
+      if (j == JCl-1){ // This is a SOUTH boundary interface
+	// Compute the right interface state based on reconstruction
+	Ur = PiecewiseLinearSolutionAtLocation(i ,j+1,Grid.xfaceS(i ,j+1));
+	
+	/* Compute the left interface state for inviscid flux calculation 
+	   and the solution state at the Gauss quadrature point 
+	   for calculation of the diffusion coefficient
+	   such that to satisfy the SOUTH boundary condition */
+	InviscidAndEllipticFluxStates_AtBoundaryInterface(SOUTH,
+							  i,j,
+							  Ul,Ur,
+							  U_face,
+							  GradU_face,IP.i_Viscous_Reconstruction);
+	
+      } else if (j == JCu){ // This is a NORTH boundary interface
+	// Compute the left interface state based on reconstruction
+	Ul = PiecewiseLinearSolutionAtLocation(i ,j  ,Grid.xfaceN(i ,j  ));
+	
+	/* Compute the left interface state for inviscid flux calculation 
+	   and the solution state at the Gauss quadrature point 
+	   for calculation of the diffusion coefficient
+	   such that to satisfy the NORTH boundary condition */
+	InviscidAndEllipticFluxStates_AtBoundaryInterface(NORTH,
+							  i,j,
+							  Ul,Ur,
+							  U_face,
+							  GradU_face,IP.i_Viscous_Reconstruction);
+	
+      } else {		// This is an interior interface
+	// Compute left and right interface states at 
+	// the face midpoint based on reconstruction
+	Ul = PiecewiseLinearSolutionAtLocation(i ,j  ,Grid.xfaceN(i ,j  ));
+	Ur = PiecewiseLinearSolutionAtLocation(i ,j+1,Grid.xfaceS(i ,j+1));
+	
+	// Determine the solution state at the Gauss quadrature
+	// point for the calculation of the diffusion coefficient
+	EllipticFluxStateAtInteriorInterface(i  ,j,
+					     i  ,j+1,
+					     Grid.xfaceN(i,j),U_face);
+
+	// Calculate gradient at the face midpoint
+	GradU_face = InterfaceSolutionGradient(i  ,j,
+					       i  ,j+1,
+					       IP.i_Viscous_Reconstruction,
+					       GradientReconstructionStencilFlag);
+      }
+
+      // Compute the advective flux in the normal direction at the face midpoint 
+      Flux = Fa(Ul, Ur, Grid.xfaceN(i,j), Grid.nfaceN(i, j));
+      
+      // Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
+      Flux += Fd(U_face, GradU_face, Grid.xfaceN(i,j), Grid.nfaceN(i,j));
+      
+      /* Evaluate cell-averaged solution changes. */
+      dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number*dt[i][j  ])*
+				    Flux*Grid.lfaceN(i, j  )/Grid.Cell[i][j  ].A );
+      dUdt[i][j+1][k_residual] += ( (IP.CFL_Number*dt[i][j+1])*
+				    Flux*Grid.lfaceS(i, j+1)/Grid.Cell[i][j+1].A );
+      
+      /* Save south and north face boundary flux. */
+      if (j == JCl-1) {
+	FluxS[i] = -Flux*Grid.lfaceS(i, j+1);
+      } else if (j == JCu) {
+	FluxN[i] =  Flux*Grid.lfaceN(i, j  );
+      } /* endif */
+      
+    } /* endfor */
+    
+    dUdt[i][JCl-1][k_residual].Vacuum(); // set to zero
+    dUdt[i][JCu+1][k_residual].Vacuum(); // set to zero
+  }/* endfor */
+  
+  /* Residual for the stage successfully calculated. */
+  return (0);  
+}
 
 /********************
  * Output operator.

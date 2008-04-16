@@ -797,3 +797,39 @@ void AdvectDiffuse2D_Quad_Block::Output_Cells_Tecplot_HighOrder_Debug_Mode(Adapt
   
   /* Writing of output data files complete. */
 }
+
+/*!
+ * Evaluate the residual for the solution block 
+ * using the high-order CENO upwind finite-volume 
+ * spatial discretization scheme for the  
+ * convective flux coupled with a centrally-weighted    
+ * high-order finite-volume discretization for the diffusive flux.  
+ * The residual is stored in dUdt[][][0].               
+ *                                                      
+ */
+int AdvectDiffuse2D_Quad_Block::dUdt_Residual_Evaluation_HighOrder(const AdvectDiffuse2D_Input_Parameters &IP){
+
+
+
+  /* residual evaluation successful. */
+  return 0;
+}
+
+
+/*!
+ * This routine determines the solution residuals for a 
+ * given stage of a variety of multi-stage explicit     
+ * time integration schemes for the solution block.
+ * The solution residuals are evaluated  
+ * using the high-order CENO upwind finite-volume 
+ * spatial discretization scheme for the convective 
+ * flux coupled with a centrally-weighted high-order 
+ * finite-volume discretization for the diffusive flux.
+ */
+int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_stage,
+								   const AdvectDiffuse2D_Input_Parameters &IP) {
+
+
+  /* residual for the stage successfully calculated. */
+  return (0);
+}

@@ -383,6 +383,16 @@ public:
   void Set_Boundary_Reference_States_Based_On_Input(const AdvectDiffuse2D_Input_Parameters &IP);
   //@}
 
+  //! @name Residual evaluation functions:
+  //@{
+  int dUdt_Residual_Evaluation(const AdvectDiffuse2D_Input_Parameters &IP);
+  int dUdt_Residual_Evaluation_HighOrder(const AdvectDiffuse2D_Input_Parameters &IP);
+  int dUdt_Multistage_Explicit(const int &i_stage,
+			       const AdvectDiffuse2D_Input_Parameters &IP);
+  int dUdt_Multistage_Explicit_HighOrder(const int &i_stage,
+					 const AdvectDiffuse2D_Input_Parameters &IP);
+  //@}
+
   //! @name Input-output operators.
   //@{
   friend ostream &operator << (ostream &out_file,
