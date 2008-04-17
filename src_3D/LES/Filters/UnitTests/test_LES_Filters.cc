@@ -261,19 +261,28 @@ namespace tut
         
         
 
-        Initialize();
-        
-        SpectralAnalysis<Soln_pState,Soln_cState> Spectrum(Data,Solution_Data);
-        double (Soln_pState::*member_ptr);
-        member_ptr = &Soln_pState::rho;    // werkt niet met p waarom???????????????????
-        Spectrum.Set_Spectrum(member_ptr);
-        
-        cout << endl<< endl << endl << "FILTERING..." << endl;
-        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
-        myfilter.filter();
-        
+//        Initialize();
+//        
+//        SpectralAnalysis<Soln_pState,Soln_cState> Spectrum(Data,Solution_Data);
+//        double (Soln_pState::*member_ptr);
+//        member_ptr = &Soln_pState::rho;    // werkt niet met p waarom???????????????????
+//        Spectrum.Set_Spectrum(member_ptr);
+//        
+//        cout << endl<< endl << endl << "FILTERING..." << endl;
+//        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
+//        myfilter.filter();
+//        
+//
+//        Spectrum.Get_Spectrum(member_ptr,"filtered");
 
-        Spectrum.Get_Spectrum(member_ptr,"filtered");
+        Complex G = 5.0+5.0*I;
+        cout << "G = " << G << endl;
+        cout << "2G = " << 2.0*G << endl;
+        cout << "5+G = " << 5.0+G << endl;
+        real(G) = 20;
+        imag(G) = 10;
+        cout << "G = " << G << endl;
+        
 
         
         

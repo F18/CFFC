@@ -952,7 +952,15 @@ public:
 
     
     
-    
+    ~SpectralAnalysis(){
+        delete[] s;
+        fftw_free(ss);
+        fftw_cleanup();
+        for (int i=0; i<nK; i++){
+            delete[] K[i].indexes;
+        }
+        delete[] K;
+    }
 
     
     
@@ -1228,8 +1236,6 @@ SpectralAnalysis(HexaSolver_Data &Data,
     Ls = min(min(L1,L2),L3);
     
     
-    
-    //  Allocate_spectrum();
     Nx = NCells_Idir * Data.Initial_Mesh.NBlk_Idir;
     Ny = NCells_Jdir * Data.Initial_Mesh.NBlk_Idir;
     Nz = NCells_Kdir * Data.Initial_Mesh.NBlk_Kdir;

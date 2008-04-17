@@ -522,6 +522,11 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
      i_command = 3042;
      value >> Slot_Width;
      if (Slot_Width <= ZERO) i_command = INVALID_INPUT_VALUE;
+  
+  } else if (strcmp(code, "Number_of_Ghost_Cells") == 0) {
+      i_command = 3035;
+      value >> Nghost;
+      if (Nghost <1) i_command = INVALID_INPUT_VALUE;
 
   } else {
      i_command = INVALID_INPUT_CODE;
