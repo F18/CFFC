@@ -583,6 +583,7 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Space_Accuracy = 1;
     IP.IncludeHighOrderBoundariesRepresentation = OFF;
     IP.i_ReconstructionMethod = RECONSTRUCTION_LEAST_SQUARES;
+    CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF;
 
     // Viscous gradient reconstruction type:
     string_ptr = "Diamond_Path";
@@ -1690,12 +1691,15 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     if (strcmp(IP.Reconstruction_Type, "Green_Gauss") == 0) {
       IP.i_Reconstruction = RECONSTRUCTION_GREEN_GAUSS;
       IP.i_ReconstructionMethod = RECONSTRUCTION_GREEN_GAUSS;
+      CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF;
     } else if (strcmp(IP.Reconstruction_Type, "Least_Squares") == 0) {
       IP.i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
       IP.i_ReconstructionMethod = RECONSTRUCTION_LEAST_SQUARES;
+      CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF;
     } else if (strcmp(IP.Reconstruction_Type, "CENO") == 0) {
       IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
       IP.i_ReconstructionMethod = RECONSTRUCTION_CENO;
+      CENO_Execution_Mode::USE_CENO_ALGORITHM = ON;
     } else {
       std::cout << "\n ==> Unknown reconstruction method!";
       i_command = INVALID_INPUT_VALUE;

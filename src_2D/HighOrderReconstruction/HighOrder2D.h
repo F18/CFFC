@@ -324,6 +324,30 @@ public:
   Soln_State SolutionStateAtLocation(const int & ii, const int & jj, const Vector2D &CalculationPoint) const {
     return SolutionAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
   }
+  
+  //! Evaluate the X-gradient of the interpolant at a given location (X_Coord,Y_Coord) for all solution variables,
+  //  using the reconstruction of cell (ii,jj).
+  Soln_State XGradientAtCoordinates(const int & ii, const int & jj,
+				    const double & X_Coord, const double & Y_Coord) const {
+    return TD[ii][jj].ComputeXGradientFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
+  }
+  //! Evaluate the X-gradient of the interpolant at a given position vector for all solution variables,
+  //  using the reconstruction of cell (ii,jj).
+  Soln_State XGradientStateAtLocation(const int & ii, const int & jj, const Vector2D &CalculationPoint) const {
+    return XGradientAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
+  }
+
+  //! Evaluate the Y-gradient of the interpolant at a given location (X_Coord,Y_Coord) for all solution variables,
+  //  using the reconstruction of cell (ii,jj).
+  Soln_State YGradientAtCoordinates(const int & ii, const int & jj,
+				    const double & X_Coord, const double & Y_Coord) const {
+    return TD[ii][jj].ComputeXGradientFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
+  }
+  //! Evaluate the Y-gradient of the interpolant at a given position vector for all solution variables,
+  //  using the reconstruction of cell (ii,jj).
+  Soln_State YGradientStateAtLocation(const int & ii, const int & jj, const Vector2D &CalculationPoint) const {
+    return YGradientAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
+  }
   //@}
 
   /*! @brief Integrate over the domain of the geometry associated with this high-order solution  */

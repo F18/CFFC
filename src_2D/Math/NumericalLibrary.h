@@ -1446,6 +1446,9 @@ public:
   static const double GQ5_Abscissa[5];
   static const double GQ5_Weight[5];  
 
+  //! Set the weights in the passed array
+  static void getGaussQuadWeights(double * GaussQuadWeights, const int & NumberOfGQPs);
+
 protected:
   GaussQuadratureData(void); //!< Private default constructor
   GaussQuadratureData(const GaussQuadratureData&); //!< Private copy constructor
@@ -1453,7 +1456,40 @@ protected:
   
 };
 
+inline void GaussQuadratureData::getGaussQuadWeights(double * GaussQuadWeights, const int & NumberOfGQPs){
 
+  // Note: This subroutine doesn't check if there is enough memory allocated!
+
+  switch ( NumberOfGQPs ){
+  case 1:			// One point
+    GaussQuadWeights[0] = GQ1_Weight[0];
+    break;
+
+  case 2:			// Two points
+    GaussQuadWeights[0] = GQ2_Weight[0];
+    GaussQuadWeights[1] = GQ2_Weight[1];
+    break;
+    
+  case 3:			// Three points
+    GaussQuadWeights[0] = GQ3_Weight[0];
+    GaussQuadWeights[1] = GQ3_Weight[1];
+    GaussQuadWeights[2] = GQ3_Weight[2];
+    break;
+
+  case 5:			// Five points
+    GaussQuadWeights[0] = GQ5_Weight[0];
+    GaussQuadWeights[1] = GQ5_Weight[1];
+    GaussQuadWeights[2] = GQ5_Weight[2];
+    GaussQuadWeights[3] = GQ5_Weight[3];
+    GaussQuadWeights[4] = GQ5_Weight[4];
+    break;
+
+  default:
+    // Add option if different GQPs are desired.
+    throw runtime_error("GaussQuadratureData::getGaussQuadWeights() ERROR! There is no implementation for this number of Gauss points!");
+  } // endswitch
+
+}
 
 /**************** Function Prototypes ********************/
 

@@ -805,9 +805,12 @@ void AdvectDiffuse2D_Quad_Block::Output_Cells_Tecplot_HighOrder_Debug_Mode(Adapt
  * convective flux coupled with a centrally-weighted    
  * high-order finite-volume discretization for the diffusive flux.  
  * The residual is stored in dUdt[][][0].               
+ *
+ * \param Pos index to identify the high-order variable used to calculate the residual
  *                                                      
  */
-int AdvectDiffuse2D_Quad_Block::dUdt_Residual_Evaluation_HighOrder(const AdvectDiffuse2D_Input_Parameters &IP){
+int AdvectDiffuse2D_Quad_Block::dUdt_Residual_Evaluation_HighOrder(const AdvectDiffuse2D_Input_Parameters &IP,
+								   const unsigned short int Pos){
 
 
 
@@ -825,10 +828,257 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_Evaluation_HighOrder(const AdvectD
  * spatial discretization scheme for the convective 
  * flux coupled with a centrally-weighted high-order 
  * finite-volume discretization for the diffusive flux.
+ *
+ * \param Pos index to identify the high-order variable used to calculate the residual
  */
 int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_stage,
-								   const AdvectDiffuse2D_Input_Parameters &IP) {
+								   const AdvectDiffuse2D_Input_Parameters &IP,
+								   const unsigned short int Pos) {
 
+  int i, j, k_residual, GQPoint;
+  double omega;
+  AdvectDiffuse2D_State Ul, Ur, U_face, Flux;
+  Vector2D GradU_face;		// Solution gradient at the inter-cellular face
+  int NumGQP(Grid.getNumGQP());	// Number of Gauss quadrature points per face used to compute the flux integral
+
+  Vector2D *GaussQuadPoints = new Vector2D [NumGQP]; // the GQPs at which a Riemann-like problem is solved
+  double * GaussQuadWeights = new double [NumGQP];   // the Gauss integration weights for each Gauss quadrature
+
+
+  /* Set the GaussQuadWeights. */
+  GaussQuadratureData::getGaussQuadWeights(GaussQuadWeights, NumGQP);
+
+  /* Evaluate the solution residual for stage 
+     i_stage of an N stage scheme. */
+
+  /* Evaluate the time step fraction and residual storage location for the stage. */
+  
+  switch(IP.i_Time_Integration) {
+  case TIME_STEPPING_EXPLICIT_EULER :
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
+    k_residual = 0;
+    break;
+  case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
+    k_residual = 0;
+    break;
+  case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
+    k_residual = 0;
+    if (IP.N_Stage == 4) {
+      if (i_stage == 4) {
+	k_residual = 0;
+      } else {
+	k_residual = i_stage - 1;
+      } /* endif */
+    } /* endif */
+    break;
+  case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
+    omega = MultiStage_Optimally_Smoothing(i_stage, 
+					   IP.N_Stage,
+					   IP.i_Limiter);
+    k_residual = 0;
+    break;
+  default:
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
+    k_residual = 0;
+    break;
+  } /* endswitch */
+
+  /***************************************************************************************
+   *                 EVALUATE THE HIGH-ORDER SOLUTION RESIDUALS                          *
+   *                                                                                     *
+   * Algorithm Purpose: To evaluate solution residuals for solution blocks               *
+   *                    characterized by a broad range of options.                       *
+   *                                                                                     *
+   * Important options to consider:                                                      *
+   *         --> Geometry treatment: high-order or low-order                             *
+   *         --> Spatial accuracy:   order of accuracy for flux calculation              *
+   *         --> Boundary flux calculation: 'Riemann' problem or reconstruction based    *
+   *                                                                                     *
+   * In order to respond easier to all these parameter variations, the following         *
+   * algorithm is adopted to sweep through the cell interfaces:                          *
+   *         --> Compute all fluxes at interior inter-cellular faces.                    *
+   *         --> Compute fluxes for South and North block boundary faces.                *
+   *         --> Compute fluxes for East and West block boundary faces.                  *
+   *                                                                                     *
+   * Note: Two passes are needed to compute both elliptic and hyperbolic terms!          *
+   ***************************************************************************************/
+
+  /* Evaluate the time rate of change of the solution
+     (i.e., the solution residuals) using a centrally-weighted
+     gradient reconstruction for the diffusive fluxes.
+     NOTE: Include here the contribution of the elliptic and source terms! */
+
+   
+  /* Perform the unlimited high-order reconstruction within 
+     each cell of the computational grid for this stage. 
+     NOTE: This solution reconstruction IS NOT recommended for computing hyperbolic fluxes!
+  */
+  HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this);
+
+  // ************* Step 1. (Re)-Set parameters in all cells based on the time integration scheme **************
+  // **********************************************************************************************************
+  for ( j = JCl-1 ; j <= JCu+1 ; ++j ){
+    for ( i = ICl-1 ; i <= ICu+1 ; ++i ) {
+
+      if ( i_stage == 1 ){
+	Uo[i][j] = U[i][j];
+	dUdt[i][j][k_residual].Vacuum();  // set to zero
+      } else {
+	switch(IP.i_Time_Integration) {
+	case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
+	  // 
+	  break;
+	case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
+	  if (IP.N_Stage == 2) {
+	    // 
+	  } else if (IP.N_Stage == 4 && i_stage == 4) {
+	    dUdt[i][j][k_residual] = ( dUdt[i][j][0] + 
+				       TWO*dUdt[i][j][1] +
+				       TWO*dUdt[i][j][2] );
+	  } else {
+	    dUdt[i][j][k_residual].Vacuum();  // set to zero
+	  } /* endif */
+	  break;
+	case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
+	  dUdt[i][j][k_residual].Vacuum(); // set to zero
+	  break;
+	default:
+	  dUdt[i][j][k_residual].Vacuum(); // set to zero
+	  break;
+	} /* endswitch */
+      }/* endif */
+
+    } // endfor (i)
+  } // endfor (j)
+
+
+  // ** Step 2. Compute interior diffusive fluxes and any source contributions for cells between (ICl,JCl)-->(ICu,JCu) **
+  // ********************************************************************************************************************
+  for ( j = JCl ; j <= JCu ; ++j ){
+    for ( i = ICl ; i <= ICu ; ++i ) {
+      
+      if ( i != ICu) { 		// (i == ICu) corresponds to the East block boundary which will be considered separately!
+	
+	/* Evaluate the cell interface i-direction diffusive fluxes.
+	   --> ( i.e. East Flux for cell (i,j) & West Flux for cell (i+1,j) ) */
+	// Determine the location of the Gauss Quadrature Points
+	Grid.getGaussQuadPointsFaceE(i,j,GaussQuadPoints,NumGQP);
+
+	// Reset Flux
+	Flux.Vacuum();
+
+	for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+
+	  // Compute left and right interface states at the current Gauss
+	  // point location based on the unlimited high-order reconstruction
+	  Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i  ,j,GaussQuadPoints[GQPoint]);
+	  Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i+1,j,GaussQuadPoints[GQPoint]);
+
+	  // Determine the solution state at the Gauss quadrature
+	  // point for the calculation of the diffusion coefficient
+	  U_face = 0.5*(Ul + Ur);
+
+	  // Calculate gradient at the Gauss quadrature point using a centrally-weighted reconstruction.
+	  GradU_face = 0.5*Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i  ,j,GaussQuadPoints[GQPoint])[1] + 
+				    HighOrderVariable(Pos).XGradientStateAtLocation(i+1,j,GaussQuadPoints[GQPoint])[1] ,
+				    HighOrderVariable(Pos).YGradientStateAtLocation(i  ,j,GaussQuadPoints[GQPoint])[1] + 
+				    HighOrderVariable(Pos).YGradientStateAtLocation(i+1,j,GaussQuadPoints[GQPoint])[1]);
+
+	  /* Add the weighted contribution of the current GQP to the total 
+	     diffusive flux in the normal direction through the face. */
+	  Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceE(i, j));
+
+	} //endfor (GQPoint)
+      
+	/* Evaluate cell-averaged solution changes. */
+	dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number * dt[i  ][j])*
+				      Flux * Grid.lfaceE(i  , j)/Grid.Cell[i  ][j].A );
+
+	dUdt[i+1][j][k_residual] += ( (IP.CFL_Number * dt[i+1][j])*
+				      Flux * Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A );
+
+      }	//endif (i != ICu)
+
+
+      if ( j != JCu) {		// (j == JCu) corresponds to the North block boundary which will be considered separately!
+
+	/* Evaluate the cell interface j-direction diffusive fluxes.
+	   --> ( i.e. North Flux for cell (i,j) & South Flux for cell (i,j+1) ) */
+	// Determine the Gauss Quadrature Points
+	Grid.getGaussQuadPointsFaceN(i,j,GaussQuadPoints,NumGQP);
+
+	// Reset Flux
+	Flux.Vacuum();
+
+	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
+
+	  // Compute left and right interface states at the current Gauss
+	  // point location based on the unlimited high-order reconstruction
+	  Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,j  ,GaussQuadPoints[GQPoint]);
+	  Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i,j+1,GaussQuadPoints[GQPoint]);
+
+	  // Determine the solution state at the Gauss quadrature
+	  // point for the calculation of the diffusion coefficient
+	  U_face = 0.5*(Ul + Ur);
+
+	  // Calculate gradient at the Gauss quadrature point using a centrally-weighted reconstruction.
+	  GradU_face = 0.5*Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,j  ,GaussQuadPoints[GQPoint])[1] + 
+				    HighOrderVariable(Pos).XGradientStateAtLocation(i,j+1,GaussQuadPoints[GQPoint])[1] ,
+				    HighOrderVariable(Pos).YGradientStateAtLocation(i,j  ,GaussQuadPoints[GQPoint])[1] + 
+				    HighOrderVariable(Pos).YGradientStateAtLocation(i,j+1,GaussQuadPoints[GQPoint])[1]);
+
+	  /* Add the weighted contribution of the current GQP to the total 
+	     diffusive flux through the face in the normal direction. */
+	  Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceN(i, j));
+	} //endfor (GQPoint)
+
+
+	/* Evaluate cell-averaged solution changes. */
+	dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number * dt[i][j  ])*
+				      Flux * Grid.lfaceN(i, j  )/Grid.Cell[i][j  ].A );
+
+	dUdt[i][j+1][k_residual] += ( (IP.CFL_Number * dt[i][j+1])*
+				      Flux * Grid.lfaceS(i, j+1)/Grid.Cell[i][j+1].A );
+
+      } //endif (j != JCu)
+
+      /* Include regular source terms. */
+      dUdt[i][j][k_residual] += (IP.CFL_Number*dt[i][j])*SourceTerm(i,j);
+	
+      /* Include axisymmetric source terms as required. */
+      if (Axisymmetric) {
+	dUdt[i][j][k_residual] += ( (IP.CFL_Number*dt[i][j])*
+				    AxisymmetricSourceTerm(i,j) );
+      } /* endif */
+
+    } // endfor (i)
+  } // endfor (j)
+
+
+
+
+  /* Evaluate the time rate of change of the solution
+     (i.e., the solution residuals) using a high-order 
+     CENO upwind finite-volume scheme for the convective fluxes.
+     NOTE: Include here the contribution of the hyperbolic terms! */
+
+
+  /* Enforce monotonicity to the high-order interpolants detected as 
+     non-smooth by the smoothness indicator analysis. 
+     NOTE: This solution reconstruction IS recommended for computing hyperbolic fluxes!
+  */
+  HighOrderVariable(Pos).ComputeSmoothnessIndicator(*this);
+  HighOrderVariable(Pos).EnforceMonotonicityToNonSmoothInterpolants(*this, IP.Limiter());
+
+
+
+
+
+  // Deallocate memory
+  delete [] GaussQuadPoints;
+  delete [] GaussQuadWeights;
 
   /* residual for the stage successfully calculated. */
   return (0);

@@ -592,8 +592,6 @@ DiamondPathGradientReconstruction(const Vector2D &Xl, const AdvectDiffuse2D_Stat
 
 /*********************************************//**
  * Compute the average source term for cell (ii,jj).
- * 
- * \todo Add integration with high-order reconstruction!
  *************************************************/
 AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::SourceTerm(const int & ii, const int & jj) const{
   
@@ -602,26 +600,42 @@ AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::SourceTerm(const int & ii, con
   if (U[ii][jj].SourceTerm->FieldRequireIntegration()){
     // this source term field requires numerical integration
 
-    // Integrate the non-linear source term field with the high-order reconstruction
-    
+    if (CENO_Execution_Mode::USE_CENO_ALGORITHM) {
 
+      // Integrate the non-linear source term field with the high-order reconstruction
 
-    // Integrate the non-linear source term field with the low-order reconstruction
+      // Define a source term functional that uses the high-order piecewise reconstruction 
+      // as a closure for the non-linear source variation.
+      SourceTermFunctionalWithHighOrderPiecewiseInterpolant NonLinearSourceVariation(ii,jj,
+										     this,
+										     &HighOrderVariable(0));
 
-    // Define a source term functional that uses the piecewise linear reconstruction 
-    // as a closure for the non-linear source variation.
-    SourceTermFunctionalWithPiecewiseLinear NonLinearSourceVariation(ii,jj,this);
+      // Integrate the source term functional over the cell (ii,jj) domain
+      SourceTermIntegral = Grid.Integration.IntegrateFunctionOverCell(ii,jj,NonLinearSourceVariation,10,_dummy_);
 
-    // Integrate the source term functional over the cell (ii,jj) domain
-    SourceTermIntegral = Grid.Integration.IntegrateFunctionOverCell(ii,jj,NonLinearSourceVariation,10,_dummy_);
+      // compute average value and cast the result to AdvectDiffuse2D_State
+      return AdvectDiffuse2D_State(SourceTermIntegral/Grid.Cell[ii][jj].A);
 
-    // compute average value and cast the result to AdvectDiffuse2D_State
-    return AdvectDiffuse2D_State(SourceTermIntegral/Grid.Cell[ii][jj].A);
+    } else {
+
+      // Integrate the non-linear source term field with the low-order reconstruction
+
+      // Define a source term functional that uses the piecewise linear reconstruction 
+      // as a closure for the non-linear source variation.
+      SourceTermFunctionalWithPiecewiseLinear NonLinearSourceVariation(ii,jj,this);
+
+      // Integrate the source term functional over the cell (ii,jj) domain
+      SourceTermIntegral = Grid.Integration.IntegrateFunctionOverCell(ii,jj,NonLinearSourceVariation,10,_dummy_);
+
+      // compute average value and cast the result to AdvectDiffuse2D_State
+      return AdvectDiffuse2D_State(SourceTermIntegral/Grid.Cell[ii][jj].A);
+
+    }//endif
 
   } else {
     // this source term field is already integrated numerically and expressed as a function of cell average solution
     return AdvectDiffuse2D_State(U[ii][jj].s());
-  }
+  } //endif
 }
 
 /*********************************************//**
@@ -1740,7 +1754,6 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
 int AdvectDiffuse2D_Quad_Block::dUdt_Residual_Evaluation(const AdvectDiffuse2D_Input_Parameters &IP){
 
   int i, j;
-  Vector2D dX;
   AdvectDiffuse2D_State Ul, Ur, U_face, Flux;
   Vector2D GradU_face;		// Solution gradient at the inter-cellular face
   /* Set the stencil flag for the gradient reconstruction to the most common case. */
@@ -1955,7 +1968,6 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 
   int i, j, k_residual;
   double omega;
-  Vector2D dX;
   AdvectDiffuse2D_State Ul, Ur, U_face, Flux;
   Vector2D GradU_face;		// Solution gradient at the inter-cellular face
   /* Set the stencil flag for the gradient reconstruction to the most common case. */

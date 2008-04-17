@@ -386,11 +386,13 @@ public:
   //! @name Residual evaluation functions:
   //@{
   int dUdt_Residual_Evaluation(const AdvectDiffuse2D_Input_Parameters &IP);
-  int dUdt_Residual_Evaluation_HighOrder(const AdvectDiffuse2D_Input_Parameters &IP);
+  int dUdt_Residual_Evaluation_HighOrder(const AdvectDiffuse2D_Input_Parameters &IP,
+					 const unsigned short int Pos = 0);
   int dUdt_Multistage_Explicit(const int &i_stage,
 			       const AdvectDiffuse2D_Input_Parameters &IP);
   int dUdt_Multistage_Explicit_HighOrder(const int &i_stage,
-					 const AdvectDiffuse2D_Input_Parameters &IP);
+					 const AdvectDiffuse2D_Input_Parameters &IP,
+					 const unsigned short int Pos = 0);
   //@}
 
   //! @name Input-output operators.
@@ -561,7 +563,7 @@ private:
 
 
 /*!
- * Class: SourceTermFunctionalWithPiecewiseLinear
+ * \class SourceTermFunctionalWithPiecewiseLinear
  *
  * @brief Definition of the source term functional
  *        with piecewise linear reconstruction
@@ -581,10 +583,10 @@ public:
    *  \param _SolnBlk_ the pointer to the solution block
    */
   SourceTermFunctionalWithPiecewiseLinear(const int &_ii_,
-					  const int& _jj_,
+					  const int &_jj_,
 					  const AdvectDiffuse2D_Quad_Block *_SolnBlk_): ii(_ii_),
-											    jj(_jj_),
-											    SolnBlk(_SolnBlk_){ };
+											jj(_jj_),
+											SolnBlk(_SolnBlk_){ };
   
   //! Return the pointwise value of the source term at a specified location (x,y)
   double operator()(const double &x, const double &y){
@@ -599,6 +601,53 @@ private:
   SourceTermFunctionalWithPiecewiseLinear();
   //! private assignment operator
   SourceTermFunctionalWithPiecewiseLinear operator=(const SourceTermFunctionalWithPiecewiseLinear &);
+};
+
+
+/*!
+ * \class SourceTermFunctionalWithHighOrderPiecewiseInterpolant
+ *
+ * @brief Definition of the source term functional
+ *        with high-order piecewise reconstruction.
+ *        The order of this interpolant is runtime dependent.
+ *
+ * An object of this class calculates the non-linear source 
+ * term at a location specified by the Cartesian coordinates (x,y)
+ * using information from the cell (ii,jj).
+ * The high-order reconstruction of the cell (ii,jj) provides
+ * the value of the solution at a given location. Thus, the 
+ * source term function can be integrated over the cell area.
+ */
+class SourceTermFunctionalWithHighOrderPiecewiseInterpolant{
+public:
+  /*! Constructor with the cell indexes
+   *  \param _ii_      the i-index of the cell that provides the information
+   *  \param _jj_      the j-index of the cell that provides the information
+   *  \param _SolnBlk_ the pointer to the solution block
+   *  \param _HO_      the pointer to the high-order object that provides the reconstruction
+   */
+  SourceTermFunctionalWithHighOrderPiecewiseInterpolant(const int &_ii_,
+							const int &_jj_,
+							const AdvectDiffuse2D_Quad_Block *_SolnBlk_,
+							const AdvectDiffuse2D_Quad_Block::HighOrderType *_HO_): ii(_ii_),
+														jj(_jj_),
+														SolnBlk(_SolnBlk_),
+														HO(_HO_){ };
+  
+  //! Return the pointwise value of the source term at a specified location (x,y)
+  double operator()(const double &x, const double &y){
+    return SolnBlk->U[ii][jj].s(x,y,HO->SolutionAtLocation(ii,jj,Vector2D(x,y),1));
+  }
+  
+private:
+  int ii,jj;	  //!< cell indexes
+  const AdvectDiffuse2D_Quad_Block * SolnBlk; //!< pointer to the solution block
+  const AdvectDiffuse2D_Quad_Block::HighOrderType * HO;   //!< pointer to the high-order object
+  
+  //! private default cstr
+  SourceTermFunctionalWithHighOrderPiecewiseInterpolant();
+  //! private assignment operator
+  SourceTermFunctionalWithHighOrderPiecewiseInterpolant operator=(const SourceTermFunctionalWithHighOrderPiecewiseInterpolant &);
 };
 
 
