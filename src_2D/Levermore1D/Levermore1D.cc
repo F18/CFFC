@@ -623,17 +623,8 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
       Soln[i].U += Update;
       Soln[i].A += Soln[i].dUdA_inv * Update;
       Soln[i].calculate_detector();
-//      if(i==1) {
-//	double us = Soln[i].U[2]/Soln[i].U[1];
-//	cout << "*************************************" << endl
-//	     << "U = " << Soln[i].U << endl
-//	     << "A = " << Soln[i].A << endl
-//	     << "moment1 = " << Soln[i].U.moment_series(Levermore1D_Vector::get_length()+1,Soln[i].A,us) << endl
-//	     << "moment2 = " << Soln[i].A.integrate_conserved_moment(Levermore1D_Vector::get_length()+1,us) << endl
-//	     << "detector = " << Soln[i].detector << endl;
-//      }
+
       if ( ! detector_below_tolerance(Soln[i].detector) ) {
-	//cout << "(" << Soln[i].detector;
 	if(Soln[i].A.set_from_U(Soln[i].U)) { //returns 1 if fail
 	  cout << endl << "Error, Cannot resync:" << endl
 	       << "U =   " << Soln[i].U << endl
@@ -641,7 +632,6 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 	       << "U_A = " <<  Levermore1D_cState(Soln[i].A,Soln[i].U[2]/Soln[i].U[1]) << endl;
 	  return 1;
 	}
-	//cout << "," << Soln[i].U.detector_value(Soln[i].A) << ")";
 	Soln[i].number_of_resyncs++;
 	cout << "%";cout.flush();
 	++count;
