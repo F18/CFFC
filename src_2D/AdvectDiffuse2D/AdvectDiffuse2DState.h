@@ -148,13 +148,16 @@ public:
   friend Vector2D Fa(const AdvectDiffuse2D_State &U, const double &x, const double &y);
   AdvectDiffuse2D_State Fa(const double &x, const double &y, const Vector2D & norm_dir) const;
   friend AdvectDiffuse2D_State Fa(const AdvectDiffuse2D_State &Ul,
-				      const AdvectDiffuse2D_State &Ur,
-				      const double &x, const double &y,
-				      const Vector2D & norm_dir);
+				  const AdvectDiffuse2D_State &Ur,
+				  const double &x, const double &y,
+				  const Vector2D & norm_dir);
   friend AdvectDiffuse2D_State Fa(const AdvectDiffuse2D_State &Ul,
-				      const AdvectDiffuse2D_State &Ur,
-				      const Vector2D & ComputationPoint,
-				      const Vector2D & norm_dir);
+				  const AdvectDiffuse2D_State &Ur,
+				  const Vector2D & ComputationPoint,
+				  const Vector2D & norm_dir);
+  friend AdvectDiffuse2D_State Fa(const AdvectDiffuse2D_State &U_face,
+				  const Vector2D & ComputationPoint,
+				  const Vector2D & norm_dir);
   //@}
 
   //! @name Computation of diffusive flux.
@@ -407,6 +410,22 @@ inline AdvectDiffuse2D_State Fa(const AdvectDiffuse2D_State &Ul,
 				const Vector2D & ComputationPoint,
 				const Vector2D & norm_dir){
   return Fa(Ul,Ur,ComputationPoint.x,ComputationPoint.y,norm_dir);
+}
+
+/*!
+ * Compute the upwind advective flux \f$Fa=(\vec{V}(x,y) \cdot \vec{n})\, u\f$ 
+ * based on the provided state.
+ *
+ * \param [in] U_face   the state provided to compute the flux with
+ * \param [in] ComputationPoint the Cartesian coordinates of the location where the flux is computed
+ * \param [in] norm_dir         the direction used to project the flux onto
+ * \return the projection of the upwind advective flux onto the 'norm-dir' direction 
+ * at a given location based on the provided solution state
+ */
+inline AdvectDiffuse2D_State Fa(const AdvectDiffuse2D_State &U_face,
+				const Vector2D & ComputationPoint,
+				const Vector2D & norm_dir){
+  return U_face.Fa(ComputationPoint.x,ComputationPoint.y,norm_dir);
 }
 
 /*!
