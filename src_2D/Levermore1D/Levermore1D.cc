@@ -578,7 +578,11 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 			      const int Local_Time_Stepping) {
     int i, count(0);
     Levermore1D_cState Flux;
-    Levermore1D_cState Update;
+    Levermore1D_Vector temp;
+    ColumnVector Update(Levermore1D_Vector::get_length());
+    ColumnVector RHS(Levermore1D_Vector::get_length());
+    DenseMatrix LHS(Levermore1D_Vector::get_length(),
+		    Levermore1D_Vector::get_length());
 
     /* Evaluate the time rate of change of the solution
        (i.e., the solution residuals) using the first-order
@@ -619,7 +623,17 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 
     for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
       if ( !Local_Time_Stepping ) Soln[i].dt = dtMin;
-      Update = (Soln[i].dUdt + Collision_RHS(Soln[i].U) )*(CFL_Number*Soln[i].dt);
+      temp = (Soln[i].dUdt + Collision_RHS(Soln[i].U) ); //store here temporarily
+
+      LHS.zero();
+      for(int j = 0; j < Levermore1D_Vector::get_length(); ++j) {
+	LHS(j,j) = 1/(CFL_Number*Soln[i].dt);
+	RHS(j) = temp[j+1];
+      }
+      LHS -= Soln[i].W.dSdU();
+
+      Solve_LU_Decomposition(LHS,RHS,Update);
+
       Soln[i].U += Update;
       Soln[i].A += Soln[i].dUdA_inv * Update;
       Soln[i].calculate_detector();
