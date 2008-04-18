@@ -624,6 +624,82 @@ namespace tut
   template<>
   void Levermore1D_pState_object::test<17>()
   {
+    set_test_name("dU_MBdW (cState version as well)");
+
+    double rho(1.1), u(0.0), p(85222.0), q(0.0), r(1.5432e8);
+
+    Levermore1D_pState W(rho,u,p);
+    if(Levermore1D_Vector::get_length() > 3) {
+      W[4] = q;
+      W[5] = r;
+    }
+
+    Levermore1D_cState U(W);
+
+    DenseMatrix dU_MBdW1, dU_MBdW1a, dU_MBdW2(Levermore1D_Vector::get_length(),
+					      Levermore1D_Vector::get_length());
+
+    dU_MBdW1  = W.dU_MBdW();
+    dU_MBdW1a = U.dU_MBdW();
+
+    dU_MBdW2.zero();
+
+    dU_MBdW2(0,0) = 1.0;
+    dU_MBdW2(1,0) = u;
+    dU_MBdW2(2,0) = u*u;
+
+    dU_MBdW2(1,1) = rho;
+    dU_MBdW2(2,1) = 2.0*rho*u;
+
+    dU_MBdW2(2,2) = 1.0;
+
+    if(Levermore1D_Vector::get_length() > 3) {
+      dU_MBdW2(3,0) = u*u*u;
+      dU_MBdW2(4,0) = u*u*u*u-3*p*p/rho/rho;
+
+      dU_MBdW2(3,1) = 3.0*(rho*u*u + p);
+      dU_MBdW2(4,1) = 4.0*rho*u*u*u + 12.0*u*p;
+
+      dU_MBdW2(3,2) = 3.0*u;
+      dU_MBdW2(4,2) = 6.0*u*u+6.0*p/rho;
+    }
+
+    if(Levermore1D_Vector::get_length() > 5) {
+      dU_MBdW2(5,0) = u*u*u*u*u - 15.0*u*p*p/rho/rho;
+      dU_MBdW2(6,0) = u*u*u*u*u*u - 30.0*p*p*p/rho/rho/rho - 45.0*u*u*p*p/rho/rho;
+
+      dU_MBdW2(5,1) = 5.0*rho*u*u*u*u + 30.0*u*u*p + 15.0*p*p/rho;
+      dU_MBdW2(6,1) = 6.0*rho*u*u*u*u*u + 60.0*u*u*u*p + 90.0*u*p*p/rho;
+
+      dU_MBdW2(5,2) = 10.0*u*u*u + 30.0*u*p/rho;
+      dU_MBdW2(6,2) = 15.0*u*u*u*u + 90.0*u*u*p/rho + 45.0*p*p/rho/rho;
+    }
+
+    if(Levermore1D_Vector::get_length() > 7) {
+      dU_MBdW2(7,0) = u*u*u*u*u*u*u - 105.0*u*u*u*p*p/rho/rho - 210.0*u*p*p*p/rho/rho/rho;
+      dU_MBdW2(8,0) = u*u*u*u*u*u*u*u - 210.0*u*u*u*u*p*p/rho/rho
+	              - 840.0*u*u*p*p*p/rho/rho/rho - 315.0*p*p*p*p/rho/rho/rho/rho;
+
+      dU_MBdW2(7,1) = 7.0*rho*u*u*u*u*u*u + 105*u*u*u*u*p + 315*u*u*p*p/rho + 105.0*p*p*p/rho/rho;
+      dU_MBdW2(8,1) = 8.0*rho*u*u*u*u*u*u*u + 168.0*u*u*u*u*u*p + 840.0*u*u*u*p*p/rho + 840.0*u*p*p*p/rho/rho;
+
+      dU_MBdW2(7,2) = 21.0*u*u*u*u*u + 210.0*u*u*u*p/rho + 315.0*u*p*p/rho/rho;
+      dU_MBdW2(8,2) = 28.0*u*u*u*u*u*u + 420.0*u*u*u*u*p/rho + 1260.0*u*u*p*p/rho/rho + 420.0*p*p*p/rho/rho/rho;
+    }
+
+    for(int i=0; i < min(9,Levermore1D_Vector::get_length()); ++i) {
+      for(int j=0; j < min(9,Levermore1D_Vector::get_length()); ++j) {
+	ensure_distance("dU_MBdW1==dU_MBdW2",dU_MBdW1(i,j),dU_MBdW2(i,j),fabs(dU_MBdW1(i,j)*tol+tol));
+	ensure_distance("dU_MBdW1a==dU_MBdW2",dU_MBdW1a(i,j),dU_MBdW2(i,j),fabs(dU_MBdW1a(i,j)*tol+tol));
+      }
+    }
+  }
+
+  /* Test 18:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<18>()
+  {
     set_test_name("dSdW");
 
     double rho(1.1), u(-102.1), p(85222.0), q(-589.4e4), r(1.5432e8), tau,
@@ -745,10 +821,10 @@ namespace tut
     }
   }
 
-  /* Test 18:*/
+  /* Test 19:*/
   template<>
   template<>
-  void Levermore1D_pState_object::test<18>()
+  void Levermore1D_pState_object::test<19>()
   {
     set_test_name("dSdU");
 

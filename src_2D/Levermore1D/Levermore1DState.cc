@@ -196,8 +196,8 @@ DenseMatrix Levermore1D_pState::dU_MBdW(void) const {
     if(i==0) dU_MBdW(i,1) = 0.0;
     else if(i==1) dU_MBdW(i,1) = m_values[0];
     else {
-      dU_MBdW(i,1) = (double)i * m_values[0] * pow(m_values[1],i-1) +
-                     (double)(Pascals_Triangle(i,2)*(i-2))*pow(m_values[1],i-3)*m_values[2];
+      dU_MBdW(i,1) = (double)i * m_values[0] * pow(m_values[1],i-1);
+      if(i>2) dU_MBdW(i,1) += (double)(Pascals_Triangle(i,2)*(i-2))*pow(m_values[1],i-3)*m_values[2];
       for(int j = 4; j <= i-1; j = j+2) {
 	dU_MBdW(i,1) += (double)(Pascals_Triangle(i,j)*Double_Factorial(j-1)*(i-j))*
 	                m_values[0]*pow(m_values[2]/m_values[0],j/2) * pow(m_values[1],i-j-1);
