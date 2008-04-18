@@ -365,6 +365,15 @@ public:
 							 AdvectDiffuse2D_State &U_face,
 							 Vector2D &GradU_face,
 							 const int &Gradient_Reconstruction_Type);
+  void EllipticFluxStates_AtBoundaryInterface_HighOrder(const int &BOUNDARY,
+							const int &ii, const int &jj,
+							const AdvectDiffuse2D_State &Ul,
+							const AdvectDiffuse2D_State &Ur,
+							AdvectDiffuse2D_State &U_face,
+							const Vector2D &GradUl,
+							const Vector2D &GradUr,
+							Vector2D &GradU_face,
+							const Vector2D &CalculationPoint) const;
   //@}
 
 

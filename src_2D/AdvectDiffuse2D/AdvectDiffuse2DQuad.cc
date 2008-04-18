@@ -642,7 +642,7 @@ AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::SourceTerm(const int & ii, con
  * Compute the inviscid-flux ghost-cell state, 
  * the solution state used to evaluate the 
  * the diffusion coefficient for the elliptic-flux and
- * the the solution gradient at a boundary interface.
+ * the solution gradient at a boundary interface.
  * These variables depend on the boundary conditions that 
  * need to be enforced.
  * 
@@ -1029,7 +1029,6 @@ InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
 					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       break;
       
-      // Category IV
     case BC_FARFIELD :
       /* Farfield BC is implemented differently for flows that 
 	 enter the domain than for flows that leave the domain.

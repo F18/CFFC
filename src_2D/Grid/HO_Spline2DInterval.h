@@ -86,7 +86,7 @@ public:
   const int& GQPointsPerSubInterval(void) const {return N_GQP; }
   //! Get the total number of Gauss quadrate points used for flux evaluation
   int NumGQPoints(void) const {return N_GQP*N_SubIntervals; }
-  //! Get the total number of Gauss quadrate points used for contour integration
+  //! Get the total number of Gauss quadrature points used for contour integration
   int NumGQPoints_ContourIntegral(void) const {return NUMBER_OF_GQP_CONTOURINT * N_SubIntervals; }
 
   //! Get the array of subinterval length
