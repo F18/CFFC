@@ -227,6 +227,26 @@ DenseMatrix Levermore1D_cState::dU_MBdW(void) const {
 }
 
 /********************************************************
+ * Function: Levermore1D_pState::dSdW                   *
+ *                                                      *
+ * Generate dSdW Jacobian, where S is source vector.    *
+ *                                                      *
+ ********************************************************/
+DenseMatrix Levermore1D_pState::dSdW(void) const {
+  return (dU_MBdW()-dUdW())/relaxation_time();
+}
+
+/********************************************************
+ * Function: Levermore1D_pState::dSdU                   *
+ *                                                      *
+ * Generate dSdU Jacobian, where S is source vector.    *
+ *                                                      *
+ ********************************************************/
+DenseMatrix Levermore1D_pState::dSdU(void) const {
+  return dSdW() * ( dUdW().inverse() );
+}
+
+/********************************************************
  * Function: Levermore1D_cState::moment                 *
  *                                                      *
  * Return value of velocity moment.                     *
@@ -663,6 +683,14 @@ Levermore1D_Vector FluxKinetic(const Levermore1D_weights &Al,
  * Calculate relaxation time for BGK collision operator.*
  *                                                      *
  ********************************************************/
+double Levermore1D_pState::relaxation_time() const {
+  return 1.0e-7;  //set to something more realistic later
+}
+
+double relaxation_time(const Levermore1D_pState &W) {
+  return W.relaxation_time();
+}
+
 double Levermore1D_cState::relaxation_time() const {
   return 1.0e-7;  //set to something more realistic later
 }

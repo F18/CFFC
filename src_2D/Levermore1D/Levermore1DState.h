@@ -69,8 +69,11 @@ class Levermore1D_pState : public Levermore1D_Vector{
   void set_from_U(const Levermore1D_cState &U);
   void set_from_A(const Levermore1D_weights &A, double us);
   double conserved_extras(int i) const;
+  double relaxation_time() const;
   DenseMatrix dUdW(void) const;
   DenseMatrix dU_MBdW(void) const;
+  DenseMatrix dSdW(void) const;
+  DenseMatrix dSdU(void) const;
 
  protected:
   double conserved_extras_recursive(int i, int &pf, int pf_num, int pf_den) const;

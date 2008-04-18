@@ -619,6 +619,291 @@ namespace tut
     }
   }
 
+  /* Test 17:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<17>()
+  {
+    set_test_name("dSdW");
+
+    double rho(1.1), u(-102.1), p(85222.0), q(-589.4e4), r(1.5432e8), tau,
+      M5(2.2113e10), M6(1.112e12), M7(9.876e13), M8(5.434e16);
+
+    Levermore1D_pState W(rho,u,p);
+
+    if(Levermore1D_Vector::get_length() > 3) {
+      W[4] = q;
+      W[5] = r;
+    }
+
+    if(Levermore1D_Vector::get_length() > 5) {
+      W[6] = M5;
+      W[7] = M6;
+    }
+
+    if(Levermore1D_Vector::get_length() > 7) {
+      W[8] = M7;
+      W[9] = M8;
+    }
+
+    tau = W.relaxation_time();
+
+    DenseMatrix dSdW1, dSdW2(max(9,Levermore1D_Vector::get_length()),
+			     max(9,Levermore1D_Vector::get_length()));
+
+    dSdW1  = W.dSdW();
+
+    dSdW2.zero();
+
+    // from Maple:
+    dSdW2(0,0) = 0.0;
+    dSdW2(0,1) = 0.0;
+    dSdW2(0,2) = 0.0;
+    dSdW2(0,3) = 0.0;
+    dSdW2(0,4) = 0.0;
+    dSdW2(0,5) = 0.0;
+    dSdW2(0,6) = 0.0;
+    dSdW2(0,7) = 0.0;
+    dSdW2(0,8) = 0.0;
+    dSdW2(1,0) = 0.0;
+    dSdW2(1,1) = 0.0;
+    dSdW2(1,2) = 0.0;
+    dSdW2(1,3) = 0.0;
+    dSdW2(1,4) = 0.0;
+    dSdW2(1,5) = 0.0;
+    dSdW2(1,6) = 0.0;
+    dSdW2(1,7) = 0.0;
+    dSdW2(1,8) = 0.0;
+    dSdW2(2,0) = 0.0;
+    dSdW2(2,1) = 0.0;
+    dSdW2(2,2) = 0.0;
+    dSdW2(2,3) = 0.0;
+    dSdW2(2,4) = 0.0;
+    dSdW2(2,5) = 0.0;
+    dSdW2(2,6) = 0.0;
+    dSdW2(2,7) = 0.0;
+    dSdW2(2,8) = 0.0;
+    dSdW2(3,0) = 0.0;
+    dSdW2(3,1) = 0.0;
+    dSdW2(3,2) = 0.0;
+    dSdW2(3,3) = -1/tau;
+    dSdW2(3,4) = 0.0;
+    dSdW2(3,5) = 0.0;
+    dSdW2(3,6) = 0.0;
+    dSdW2(3,7) = 0.0;
+    dSdW2(3,8) = 0.0;
+    dSdW2(4,0) = -3.0/tau*p*p/(rho*rho);
+    dSdW2(4,1) = -4.0/tau*q;
+    dSdW2(4,2) = 6.0/tau*p/rho;
+    dSdW2(4,3) = -4.0/tau*u;
+    dSdW2(4,4) = -1/tau;
+    dSdW2(4,5) = 0.0;
+    dSdW2(4,6) = 0.0;
+    dSdW2(4,7) = 0.0;
+    dSdW2(4,8) = 0.0;
+    dSdW2(5,0) = -15.0/tau*u*p*p/(rho*rho);
+    dSdW2(5,1) = 1/tau*(15.0*p*p/rho-20.0*u*q-5.0*r);
+    dSdW2(5,2) = 30.0/tau*u*p/rho;
+    dSdW2(5,3) = -10.0/tau*u*u;
+    dSdW2(5,4) = -5.0/tau*u;
+    dSdW2(5,5) = -1/tau;
+    dSdW2(5,6) = 0.0;
+    dSdW2(5,7) = 0.0;
+    dSdW2(5,8) = 0.0;
+    dSdW2(6,0) = 1/tau*(-30.0*p*p*p/(rho*rho*rho)-45.0*u*u*p*p/(rho*rho));
+    dSdW2(6,1) = 1/tau*(90.0*u*p*p/rho-60.0*u*u*q-30.0*u*r-6.0*M5);
+    dSdW2(6,2) = 1/tau*(45.0*p*p/(rho*rho)+90.0*u*u*p/rho);
+    dSdW2(6,3) = -20.0/tau*u*u*u;
+    dSdW2(6,4) = -15.0/tau*u*u;
+    dSdW2(6,5) = -6.0/tau*u;
+    dSdW2(6,6) = -1/tau;
+    dSdW2(6,7) = 0.0;
+    dSdW2(6,8) = 0.0;
+    dSdW2(7,0) = 1/tau*(-210.0*u*p*p*p/(rho*rho*rho)-105.0*u*u*u*p*p/(rho*rho));
+    dSdW2(7,1) = 1/tau*(105.0*p*p*p/(rho*rho)+315.0*u*u*p*p/rho-140.0*u*u*u*q-105.0*u*u*r-42.0*u*M5-7.0*M6);
+    dSdW2(7,2) = 1/tau*(315.0*u*p*p/(rho*rho)+210.0*u*u*u*p/rho);
+    dSdW2(7,3) = -35.0/tau*u*u*u*u;
+    dSdW2(7,4) = -35.0/tau*u*u*u;
+    dSdW2(7,5) = -21.0/tau*u*u;
+    dSdW2(7,6) = -7.0/tau*u;
+    dSdW2(7,7) = -1/tau;
+    dSdW2(7,8) = 0.0;
+    dSdW2(8,0) = 1/tau*(-840.0*u*u*p*p*p/(rho*rho*rho)-210.0*u*u*u*u*p*p/(rho*rho)-315.0*p*p*p*p/(rho*rho*rho*rho));
+    dSdW2(8,1) = 1/tau*(840.0*u*p*p*p/(rho*rho)+840.0*u*u*u*p*p/rho-280.0*u*u*u*u*q-280.0*u*u*u*r-168.0*u*u*M5-56.0*u*M6-8.0*M7);
+    dSdW2(8,2) = 1/tau*(1260.0*u*u*p*p/(rho*rho)+420.0*u*u*u*u*p/rho+420.0*p*p*p/(rho*rho*rho));
+    dSdW2(8,3) = -56.0/tau*u*u*u*u*u;
+    dSdW2(8,4) = -70.0/tau*u*u*u*u;
+    dSdW2(8,5) = -56.0/tau*u*u*u;
+    dSdW2(8,6) = -28.0/tau*u*u;
+    dSdW2(8,7) = -8.0/tau*u;
+    dSdW2(8,8) = -1/tau;
+
+    for(int i=0; i < min(9,Levermore1D_Vector::get_length()); ++i) {
+      for(int j=0; j < min(9,Levermore1D_Vector::get_length()); ++j) {
+	ensure_distance("dSdW1==dSdW2",dSdW1(i,j),dSdW2(i,j),fabs(dSdW1(i,j)*tol+tol));
+      }
+    }
+  }
+
+  /* Test 18:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<18>()
+  {
+    set_test_name("dSdU");
+
+    double rho(2.1), u(-987.1), p(101222.0), q(-589.4e4), r(1.432e8), tau,
+      M5(8.5113e10), M6(1.882e12), M7(-9.7611e13), M8(8.434e16);
+
+    Levermore1D_pState W(rho,u,p);
+
+    if(Levermore1D_Vector::get_length() > 3) {
+      W[4] = q;
+      W[5] = r;
+    }
+
+    if(Levermore1D_Vector::get_length() > 5) {
+      W[6] = M5;
+      W[7] = M6;
+    }
+
+    if(Levermore1D_Vector::get_length() > 7) {
+      W[8] = M7;
+      W[9] = M8;
+    }
+
+    tau = W.relaxation_time();
+
+    DenseMatrix dSdU1, dSdU2(max(9,Levermore1D_Vector::get_length()),
+			     max(9,Levermore1D_Vector::get_length()));
+
+    dSdU1  = W.dSdU();
+
+    dSdU2.zero();
+
+    // from Maple:
+    dSdU2(0,0) = 0.0;
+    dSdU2(0,1) = 0.0;
+    dSdU2(0,2) = 0.0;
+    dSdU2(0,3) = 0.0;
+    dSdU2(0,4) = 0.0;
+    dSdU2(0,5) = 0.0;
+    dSdU2(0,6) = 0.0;
+    dSdU2(0,7) = 0.0;
+    dSdU2(0,8) = 0.0;
+    dSdU2(1,0) = 0.0;
+    dSdU2(1,1) = 0.0;
+    dSdU2(1,2) = 0.0;
+    dSdU2(1,3) = 0.0;
+    dSdU2(1,4) = 0.0;
+    dSdU2(1,5) = 0.0;
+    dSdU2(1,6) = 0.0;
+    dSdU2(1,7) = 0.0;
+    dSdU2(1,8) = 0.0;
+    dSdU2(2,0) = 0.0;
+    dSdU2(2,1) = 0.0;
+    dSdU2(2,2) = 0.0;
+    dSdU2(2,3) = 0.0;
+    dSdU2(2,4) = 0.0;
+    dSdU2(2,5) = 0.0;
+    dSdU2(2,6) = 0.0;
+    dSdU2(2,7) = 0.0;
+    dSdU2(2,8) = 0.0;
+    dSdU2(3,0) = 1/tau*u*(rho*u*u-3.0*p)/rho;
+    dSdU2(3,1) = -3.0/tau*(rho*u*u-p)/rho;
+    dSdU2(3,2) = 3.0/tau*u;
+    dSdU2(3,3) = -1/tau;
+    dSdU2(3,4) = 0.0;
+    dSdU2(3,5) = 0.0;
+    dSdU2(3,6) = 0.0;
+    dSdU2(3,7) = 0.0;
+    dSdU2(3,8) = 0.0;
+    dSdU2(4,0) = -3.0/tau*p*p/(rho*rho)+4.0/tau*q*u/rho+6.0/tau*p/rho*u*u+
+      4.0/tau*u*u*(rho*u*u-3.0*p)/rho-1/tau*u*(rho*u*u*u+4.0*q)/rho;
+    dSdU2(4,1) = -4.0/tau*q/rho-12.0/tau*u*p/rho-12.0/tau*u*(rho*u*u-p)/rho
+      +4.0/tau*(rho*u*u*u+q)/rho;
+    dSdU2(4,2) = 6.0/tau*p/rho+6.0/tau*u*u;
+    dSdU2(4,3) = 0.0;
+    dSdU2(4,4) = -1/tau;
+    dSdU2(4,5) = 0.0;
+    dSdU2(4,6) = 0.0;
+    dSdU2(4,7) = 0.0;
+    dSdU2(4,8) = 0.0;
+    dSdU2(5,0) = -15.0/tau*u*p*p/(rho*rho)-1/tau*
+      (15.0*p*p/rho-20.0*u*q-5.0*r)*u/rho+30.0/tau*u*u*u*p/rho+10.0/tau*u*u*u*
+      (rho*u*u-3.0*p)/rho-5.0/tau*u*u*(rho*u*u*u+4.0*q)/rho-1/tau*u*(-rho*u*u*u*u+5.0*r)/rho;
+    dSdU2(5,1) = 1/tau*(15.0*p*p/rho-20.0*u*q-5.0*r)/rho-60.0/tau*p/rho*u*u
+      -30.0/tau*u*u*(rho*u*u-p)/rho+20.0/tau*u*(rho*u*u*u+q)/rho+5.0/tau*(-rho*u*u*u*u+r)/rho;
+    dSdU2(5,2) = 30.0/tau*u*p/rho+10.0/tau*u*u*u;
+    dSdU2(5,3) = 0.0;
+    dSdU2(5,4) = 0.0;
+    dSdU2(5,5) = -1/tau;
+    dSdU2(5,6) = 0.0;
+    dSdU2(5,7) = 0.0;
+    dSdU2(5,8) = 0.0;
+    dSdU2(6,0) = 1/tau*(-30.0*p*p*p/(rho*rho*rho)-45.0*u*u*p*p/(rho*rho))-
+      1/tau*(90.0*u*p*p/rho-60.0*u*u*q-30.0*u*r-6.0*M5)*u/rho+1/tau*
+      (45.0*p*p/(rho*rho)+90.0*u*u*p/rho)*u*u+20.0/tau*u*u*u*u*(rho*u*u-3.0*p)/rho-15.0/tau*u*u*u*
+      (rho*u*u*u+4.0*q)/rho-6.0/tau*u*u*(-rho*u*u*u*u+5.0*r)/rho-1/tau*u*(rho*u*u*u*u*u+6.0*M5)/rho;
+    dSdU2(6,1) = 1/tau*(90.0*u*p*p/rho-60.0*u*u*q-30.0*u*r-6.0*M5)/rho-2.0/
+      tau*(45.0*p*p/(rho*rho)+90.0*u*u*p/rho)*u-60.0/tau*u*u*u*(rho*u*u-p)/rho+60.0/
+      tau*u*u*(rho*u*u*u+q)/rho+30.0/tau*u*(-rho*u*u*u*u+r)/rho+6.0/tau*(rho*u*u*u*u*
+									 u+M5)/rho;
+    dSdU2(6,2) = 1/tau*(45.0*p*p/(rho*rho)+90.0*u*u*p/rho)+15.0/tau*u*u*u*u;
+    dSdU2(6,3) = 0.0;
+    dSdU2(6,4) = 0.0;
+    dSdU2(6,5) = 0.0;
+    dSdU2(6,6) = -1/tau;
+    dSdU2(6,7) = 0.0;
+    dSdU2(6,8) = 0.0;
+    dSdU2(7,0) = 1/tau*(-210.0*u*p*p*p/(rho*rho*rho)-105.0*u*u*u*p*p/
+			(rho*rho))-1/tau*(105.0*p*p*p/(rho*rho)+315.0*u*u*p*p/rho-
+					  140.0*u*u*u*q-105.0*u*u*r-42.0*u*M5-7.0*M6)*u/rho+
+      1/tau*(315.0*u*p*p/(rho*rho)+210.0*u*u*u*p/rho)*u*u+
+      35.0/tau*u*u*u*u*u*(rho*u*u-3.0*p)/rho-35.0/tau*u*u*u*u*(rho*u*u*u+4.0*q)/rho
+      -21.0/tau*u*u*u*(-rho*u*u*u*u+5.0*r)/rho-7.0/tau*u*u*(rho*u*u*u*u*u+6.0*M5)/rho
+      -1/tau*u*(-rho*u*u*u*u*u*u+7.0*M6)/rho;
+    dSdU2(7,1) = 1/tau*(105.0*p*p*p/(rho*rho)+315.0*u*u*p*p/rho-140.0*u*u*u*q-
+			105.0*u*u*r-42.0*u*M5-7.0*M6)/rho-2.0/tau*
+      (315.0*u*p*p/(rho*rho)+210.0*u*u*u*p/rho)*u-105.0/tau*u*u*u*u*(rho*u*u-p)/rho+140.0/tau*u*u*u*(rho*u*u*u+q)/rho+
+      105.0/tau*u*u*(-rho*u*u*u*u+r)/rho+42.0/tau*u*(rho*u*u*u*u*u+M5)/rho+7.0/tau*(-rho*u*u*u*u*u*u+M6)/rho;
+    dSdU2(7,2) = 1/tau*(315.0*u*p*p/(rho*rho)+210.0*u*u*u*p/rho)+21.0/tau*u*u*u*u*u;
+    dSdU2(7,3) = 0.0;
+    dSdU2(7,4) = 0.0;
+    dSdU2(7,5) = 0.0;
+    dSdU2(7,6) = 0.0;
+    dSdU2(7,7) = -1/tau;
+    dSdU2(7,8) = 0.0;
+    dSdU2(8,0) = 1/tau*(-840.0*u*u*p*p*p/(rho*rho*rho)-210.0*u*u*u*u*p*p/
+			(rho*rho)-315.0*p*p*p*p/(rho*rho*rho*rho))-
+      1/tau*(840.0*u*p*p*p/(rho*rho)+840.0*u*u*u*p*p/rho-280.0*u*u*u*u*q-280.0*u*u*u*r-
+	     168.0*u*u*M5-56.0*u*M6-8.0*M7)*u/rho+1/tau*
+      (1260.0*u*u*p*p/(rho*rho)+420.0*u*u*u*u*p/rho+420.0*p*p*p/(rho*rho*rho))*u*u+
+      56.0/tau*u*u*u*u*u*u*(rho*u*u-3.0*p)/rho-70.0/tau*u*u*u*u*u*(rho*u*u*u+4.0*q)/rho
+      -56.0/tau*u*u*u*u*(-rho*u*u*u*u+5.0*r)/rho-28.0/tau*u*u*u*(rho*u*u*u*u*u+6.0*M5)/rho
+      -8.0/tau*u*u*(-rho*u*u*u*u*u*u+7.0*M6)/rho-1/tau*u*(rho*u*u*u*u*u*u*u+8.0*M7)/rho;
+    dSdU2(8,1) = 1/tau*(840.0*u*p*p*p/(rho*rho)+840.0*u*u*u*p*p/rho-280.0*u*u*u*u*q
+			-280.0*u*u*u*r-168.0*u*u*M5-56.0*u*M6-8.0*M7)/rho
+      -2.0/tau*(1260.0*u*u*p*p/(rho*rho)+420.0*u*u*u*u*p/rho+420.0*p*p*p/(rho*rho*rho))*u
+      -168.0/tau*u*u*u*u*u*(rho*u*u-p)/rho+280.0/tau*u*u*u*u*(rho*u*u*u+q)/rho
+      +280.0/tau*u*u*u*(-rho*u*u*u*u+r)/rho+168.0/tau*u*u*(rho*u*u*u*u*u+M5)/rho
+      +56.0/tau*u*(-rho*u*u*u*u*u*u+M6)/rho+8.0/tau*(rho*u*u*u*u*u*u*u+M7)/rho;
+    dSdU2(8,2) = 1/tau*(1260.0*u*u*p*p/(rho*rho)+420.0*u*u*u*u*p/rho+420.0*
+			p*p*p/(rho*rho*rho))+28.0/tau*u*u*u*u*u*u;
+    dSdU2(8,3) = 0.0;
+    dSdU2(8,4) = 0.0;
+    dSdU2(8,5) = 0.0;
+    dSdU2(8,6) = 0.0;
+    dSdU2(8,7) = 0.0;
+    dSdU2(8,8) = -1/tau;
+
+    for(int i=0; i < min(9,Levermore1D_Vector::get_length()); ++i) {
+      for(int j=0; j < min(9,Levermore1D_Vector::get_length()); ++j) {
+	ensure_distance("dSdU1==dSdU2",dSdU1(i,j),dSdU2(i,j),fabs(dSdU1(i,0)*tol*HUNDRED+tol*HUNDRED));
+      }
+    }
+  }
+
   //end tests
 }
 
