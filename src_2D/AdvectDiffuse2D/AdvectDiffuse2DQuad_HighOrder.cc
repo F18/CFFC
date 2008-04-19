@@ -830,8 +830,6 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_Evaluation_HighOrder(const AdvectD
  * finite-volume discretization for the diffusive flux.
  *
  * \param Pos index to identify the high-order variable used to calculate the residual
- *
- * \todo Save the boundary fluxes!!!
  */
 int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_stage,
 								   const AdvectDiffuse2D_Input_Parameters &IP,
@@ -3116,14 +3114,14 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
  * \return The solution state and the solution gradient that are used to calculate the elliptic flux.
  */
 void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder(const int &BOUNDARY,
-										  const int &ii, const int &jj,
-										  const AdvectDiffuse2D_State &Ul,
-										  const AdvectDiffuse2D_State &Ur,
-										  AdvectDiffuse2D_State &U_face,
-										  const Vector2D &GradUl,
-										  const Vector2D &GradUr,
-										  Vector2D &GradU_face,
-										  const Vector2D &CalculationPoint) const{
+										 const int &ii, const int &jj,
+										 const AdvectDiffuse2D_State &Ul,
+										 const AdvectDiffuse2D_State &Ur,
+										 AdvectDiffuse2D_State &U_face,
+										 const Vector2D &GradUl,
+										 const Vector2D &GradUr,
+										 Vector2D &GradU_face,
+										 const Vector2D &CalculationPoint) const{
 
   double Vn;
   AdvectDiffuse2D_State Value;
@@ -3138,11 +3136,17 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
     switch (Grid.BCtypeW[jj]){
 
     case BC_NONE :
-
+      // Calculate U_face in the same way as for an interior interface
+      U_face = 0.5*(Ul + Ur);
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
 
     case BC_PERIODIC :
-
+      // Calculate U_face in the same way as for an interior interface
+      U_face = 0.5*(Ul + Ur);
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
 
     case BC_FROZEN :
@@ -3193,9 +3197,17 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
     switch (Grid.BCtypeE[jj]){
 
     case BC_NONE :
+      // Calculate U_face in the same way as for an interior interface
+      U_face = 0.5*(Ul + Ur);
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
 
     case BC_PERIODIC :
+      // Calculate U_face in the same way as for an interior interface
+      U_face = 0.5*(Ul + Ur);
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
 
     case BC_FROZEN :
@@ -3244,9 +3256,17 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
     switch (Grid.BCtypeS[ii]){
 
     case BC_NONE :
+      // Calculate U_face in the same way as for an interior interface
+      U_face = 0.5*(Ul + Ur);
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
 
     case BC_PERIODIC :
+      // Calculate U_face in the same way as for an interior interface
+      U_face = 0.5*(Ul + Ur);
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
 
     case BC_FROZEN :
@@ -3295,9 +3315,17 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
     switch (Grid.BCtypeN[ii]){
 
     case BC_NONE :
+      // Calculate U_face in the same way as for an interior interface
+      U_face = 0.5*(Ul + Ur);
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
 
     case BC_PERIODIC :
+      // Calculate U_face in the same way as for an interior interface
+      U_face = 0.5*(Ul + Ur);
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
 
     case BC_FROZEN :
@@ -3380,11 +3408,13 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
     switch (Grid.BCtypeW[jj]){
 
     case BC_NONE :
-
+      // Compute Ur based on the high-order reconstruction in the ghost cell
+      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ii-1,jj,CalculationPoint);
       break;
 
     case BC_PERIODIC :
-
+      // Compute Ur based on the high-order reconstruction in the ghost cell
+      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ii-1,jj,CalculationPoint);
       break;
 
     case BC_FROZEN :
@@ -3435,9 +3465,13 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
     switch (Grid.BCtypeE[jj]){
 
     case BC_NONE :
+      // Compute Ur based on the high-order reconstruction in the ghost cell
+      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ii+1,jj,CalculationPoint);
       break;
 
     case BC_PERIODIC :
+      // Compute Ur based on the high-order reconstruction in the ghost cell
+      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ii+1,jj,CalculationPoint);
       break;
 
     case BC_FROZEN :
@@ -3486,9 +3520,13 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
     switch (Grid.BCtypeS[ii]){
 
     case BC_NONE :
+      // Compute Ur based on the high-order reconstruction in the ghost cell
+      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj-1,CalculationPoint);
       break;
 
     case BC_PERIODIC :
+      // Compute Ur based on the high-order reconstruction in the ghost cell
+      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj-1,CalculationPoint);
       break;
 
     case BC_FROZEN :
@@ -3537,9 +3575,13 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
     switch (Grid.BCtypeN[ii]){
 
     case BC_NONE :
+      // Compute Ur based on the high-order reconstruction in the ghost cell
+      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj+1,CalculationPoint);
       break;
 
     case BC_PERIODIC :
+      // Compute Ur based on the high-order reconstruction in the ghost cell
+      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj+1,CalculationPoint);
       break;
 
     case BC_FROZEN :

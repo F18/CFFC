@@ -129,6 +129,7 @@ public:
   typedef AdvectDiffuse2D_ExactSolutions Exact_Solution_Type;
   typedef AccuracyAssessment2D<AdvectDiffuse2D_Quad_Block> Accuracy_Assessment_Type;
   typedef HighOrder2D<AdvectDiffuse2D_State> HighOrderType; //!< high-order variable data type
+  typedef AdvectDiffuse2D_State Soln_State;
   //@}
 
 
