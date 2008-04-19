@@ -1062,11 +1062,13 @@ namespace tut
     RunRegression = OFF;
 
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion_HighOrder_SmoothnessIndicatorStudy.in");
+    Open_Input_File("HighOrder_Residual_Study.in");
 
     // Parse the input file
     IP.Verbose() = false;
     IP.Parse_Input_File(input_file_name);
+
+    Print_(IP)
 
     // Create computational domain
     InitializeComputationalDomain(MeshBlk,QuadTree,
@@ -1076,14 +1078,18 @@ namespace tut
     // == check correct initialization
     ensure("High-order variables", SolnBlk[0].HighOrderVariables() != NULL);
     ensure_equals("Main High-order ", SolnBlk[0].HighOrderVariable(0).RecOrder(), 3);
-    ensure_equals("Second High-order ", SolnBlk[0].HighOrderVariable(1).RecOrder(), 2);
-    ensure_equals("Third High-order ", SolnBlk[0].HighOrderVariable(2).RecOrder(), 4);
     
     // Apply initial condition
     ICs(SolnBlk,LocalList_Soln_Blocks,IP);
 
     // Compute residuals for stage 1
     SolnBlk[0].dUdt_Multistage_Explicit_HighOrder(1,IP);
+
+    // Output solution
+    CurrentFile = "Current_HighOrder_Residual_Study.dat";
+    Open_Output_File(CurrentFile);
+    
+    SolnBlk[0].Output_Nodes_Tecplot_HighOrder(0,0,0, 1, out(), 0);
 
   }
 

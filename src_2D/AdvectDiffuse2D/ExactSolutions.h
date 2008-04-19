@@ -92,7 +92,7 @@ public:
   }
 
   /*! Calculate the right hand side (RHS) of the partial differential equation (PDE) at the location of interest */
-  virtual double PDE_RighHandSide(const double &x, const double &y) const  = 0;
+  virtual double PDE_RightHandSide(const double &x, const double &y) const  = 0;
 
   //! Update internal variables
   virtual void Set_ParticularSolution_Parameters(void){ };
@@ -138,7 +138,7 @@ public:
   Vector2D EvaluateGradientAt(const double &x, const double &y) const {return Vector2D(A,B); }
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+  double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -177,7 +177,7 @@ public:
   Vector2D EvaluateGradientAt(const double &x, const double &y) const {return Vector2D(2.0*A*x + B*y, -2.0*A*y + B*x); }
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+  double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -218,7 +218,7 @@ public:
  }
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+  double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -259,7 +259,7 @@ public:
   }
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+  double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -305,7 +305,7 @@ public:
   }
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+  double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -346,7 +346,7 @@ public:
   }
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
+  double PDE_RightHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -387,7 +387,7 @@ public:
   }
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
+  double PDE_RightHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -428,7 +428,7 @@ public:
   }
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
+  double PDE_RightHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -469,7 +469,7 @@ public:
   }
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
+  double PDE_RightHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -517,7 +517,7 @@ public:
   }
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
+  double PDE_RightHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -566,7 +566,7 @@ public:
   Vector2D EvaluateGradientAt(const double &x, const double &y) const ;
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return lambda*EvaluateSolutionAt(x,y); }
+  double PDE_RightHandSide(const double &x, const double &y) const {return lambda*EvaluateSolutionAt(x,y); }
 
   //! Update internal variables
   void Set_ParticularSolution_Parameters(void);
@@ -678,7 +678,7 @@ public:
   double EvaluateSolutionAt(const double &x, const double &y) const;
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+  double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
   //! Update internal variables
   void Set_ParticularSolution_Parameters(void){ };
@@ -740,7 +740,7 @@ public:
   double EvaluateSolutionAt(const double &x, const double &y) const;
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+  double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
   //! Update internal variables
   void Set_ParticularSolution_Parameters(void);
@@ -820,7 +820,7 @@ public:
   double EvaluateSolutionAt_OneVariable(const double &Var) const;
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+  double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
   //! Update internal variables
   void Set_ParticularSolution_Parameters(void){ };
@@ -891,7 +891,7 @@ public:
   double EvaluateSolutionAt_OneVariable(const double &Var) const;
 
   //! Calculate the PDE RHS
-  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+  double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
   //! Update internal variables
   void Set_ParticularSolution_Parameters(void){ };

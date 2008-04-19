@@ -117,6 +117,9 @@ int AdvectDiffuse2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr
 
   // Set reference state in the AdvectDiffuse2D_Quad_Block class
   AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(RefU);
+
+  // Set flag for including/excluding source term in the model equation
+  AdvectDiffuse2D_Quad_Block::Include_Source_Term = Include_Source_Term;
 }
 
 /******************************************************//**
@@ -196,6 +199,11 @@ ostream &operator << (ostream &out_file,
     DiffusionFields::Print_Info(out_file);
 
     // ====    Source field parameters ====
+    if (IP.Include_Source_Term) {
+      out_file << "\n  -> Source Term Included in Equation: Yes ";
+    } else {
+      out_file << "\n  -> Source Term Included in Equation: No ";
+    }
     IP.SourceTerm->Print_Info(out_file);
 
     // ====    Boundary conditions ====
@@ -616,6 +624,7 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     string_ptr = "Planar";
     strcpy(IP.Flow_Geometry_Type, string_ptr);
     IP.Axisymmetric = 0;
+    IP.Include_Source_Term = ON;
 
     // Grid parameters:
     string_ptr = "Square";
@@ -842,6 +851,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
                           INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Axisymmetric), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Include_Source_Term), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.Grid_Type, 
@@ -1198,6 +1210,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
       // Set reference state in the AdvectDiffuse2D_Quad_Block class
       AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(IP.RefU);
+
+      // Set flag for including/excluding source term in the model equation
+      AdvectDiffuse2D_Quad_Block::Include_Source_Term = IP.Include_Source_Term;
     }
 
 #endif
@@ -1315,6 +1330,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
                        INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.Axisymmetric), 
+                       1, 
+                       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Include_Source_Term), 
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(IP.Grid_Type, 
@@ -2226,6 +2244,15 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.Axisymmetric = 0;
     } /* endif */
 
+  } else if (strcmp(IP.Next_Control_Parameter, "Include_Source_Term_In_Equation") == 0) {
+    i_command = 0;
+    IP.Get_Next_Input_Control_Parameter();
+    if (strcmp(IP.Next_Control_Parameter, "Yes") == 0) {
+      IP.Include_Source_Term = ON;
+    } else {
+      IP.Include_Source_Term = OFF;
+    } /* endif */
+
   } else if (strcmp(IP.Next_Control_Parameter, "Restart_Solution_Save_Frequency") == 0) {
     i_command = 47;
     IP.Line_Number = IP.Line_Number + 1;
@@ -2996,6 +3023,9 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
 
     // Set reference state in the AdvectDiffuse2D_Quad_Block class
     AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(Input_Parameters.RefU);
+
+    // Set flag for including/excluding source term in the model equation
+    AdvectDiffuse2D_Quad_Block::Include_Source_Term = Input_Parameters.Include_Source_Term;
 
     /* Initial processing of input control parameters complete.  
        Return the error indicator flag. */

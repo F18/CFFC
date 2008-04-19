@@ -120,6 +120,7 @@ public:
   //@{
   char Flow_Geometry_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   int Axisymmetric;
+  int Include_Source_Term;
   //@}
 
   //! @name Grid type indicator and related input parameters:

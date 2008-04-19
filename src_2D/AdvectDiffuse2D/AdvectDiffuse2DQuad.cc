@@ -28,6 +28,8 @@ int AdvectDiffuse2D_Quad_Block::Axisymmetric = OFF;
 int AdvectDiffuse2D_Quad_Block::Number_of_Residual_Norms = 1;
 // Initialize RefU
 AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::RefU(1.0);
+// Initialize Include_Source_Term
+int AdvectDiffuse2D_Quad_Block::Include_Source_Term = ON; // include the source term by default
 
 /*******************************************************************************
  * AdvectDiffuse2D_Quad_Block -- Single Block Member Functions.                *
@@ -1854,7 +1856,9 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_Evaluation(const AdvectDiffuse2D_I
 	dUdt[i+1][j][0] += Flux*Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A;
 	   
 	/* Include regular source terms. */
-	dUdt[i][j][0] += SourceTerm(i,j);
+	if (Include_Source_Term){
+	  dUdt[i][j][0] += SourceTerm(i,j);
+	}
 
 	/* Include axisymmetric source terms as required. */
 	if (Axisymmetric) {
@@ -1966,7 +1970,6 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 							 const AdvectDiffuse2D_Input_Parameters &IP){
 
   int i, j, k_residual;
-  double omega;
   AdvectDiffuse2D_State Ul, Ur, U_face, Flux;
   Vector2D GradU_face;		// Solution gradient at the inter-cellular face
   /* Set the stencil flag for the gradient reconstruction to the most common case. */
@@ -1976,19 +1979,16 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
   /* Evaluate the solution residual for stage 
      i_stage of an N stage scheme. */
 
-  /* Evaluate the time step fraction and residual storage location for the stage. */
+  /* Set the residual storage location for the stage. */
   
   switch(IP.i_Time_Integration) {
   case TIME_STEPPING_EXPLICIT_EULER :
-    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
     break;
   case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
     break;
   case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
     if (IP.N_Stage == 4) {
       if (i_stage == 4) {
@@ -1999,13 +1999,9 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
     } /* endif */
     break;
   case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-    omega = MultiStage_Optimally_Smoothing(i_stage, 
-					   IP.N_Stage,
-					   IP.i_Limiter);
     k_residual = 0;
     break;
   default:
-    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
     break;
   } /* endswitch */
@@ -2141,7 +2137,9 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 				      Flux*Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A );
 	   
 	/* Include regular source terms. */
-	dUdt[i][j][k_residual] += (IP.CFL_Number*dt[i][j])*SourceTerm(i,j);
+	if (Include_Source_Term) {
+	  dUdt[i][j][k_residual] += (IP.CFL_Number*dt[i][j])*SourceTerm(i,j);
+	}
 	
 	/* Include axisymmetric source terms as required. */
 	if (Axisymmetric) {

@@ -525,7 +525,7 @@ void Poisson_I_ExactSolution::Parse_Next_Input_Control_Parameter(AdvectDiffuse2D
   } else if (strcmp(IP.Next_Control_Parameter, "beta_Coeff") == 0) {
     i_command = 0;
     ++IP.Line_Number;
-    IP.Input_File >> C;
+    IP.Input_File >> beta;
     IP.Input_File.getline(buffer, sizeof(buffer));
 
   } else {
@@ -624,7 +624,7 @@ void Poisson_II_ExactSolution::Parse_Next_Input_Control_Parameter(AdvectDiffuse2
   } else if (strcmp(IP.Next_Control_Parameter, "beta_Coeff") == 0) {
     i_command = 0;
     ++IP.Line_Number;
-    IP.Input_File >> C;
+    IP.Input_File >> beta;
     IP.Input_File.getline(buffer, sizeof(buffer));
 
   } else {
@@ -723,7 +723,7 @@ void Poisson_III_ExactSolution::Parse_Next_Input_Control_Parameter(AdvectDiffuse
   } else if (strcmp(IP.Next_Control_Parameter, "beta_Coeff") == 0) {
     i_command = 0;
     ++IP.Line_Number;
-    IP.Input_File >> C;
+    IP.Input_File >> beta;
     IP.Input_File.getline(buffer, sizeof(buffer));
 
   } else {
@@ -823,7 +823,7 @@ void Poisson_IV_ExactSolution::Parse_Next_Input_Control_Parameter(AdvectDiffuse2
   } else if (strcmp(IP.Next_Control_Parameter, "beta_Coeff") == 0) {
     i_command = 0;
     ++IP.Line_Number;
-    IP.Input_File >> C;
+    IP.Input_File >> beta;
     IP.Input_File.getline(buffer, sizeof(buffer));
 
   } else {
@@ -923,7 +923,7 @@ void Poisson_V_ExactSolution::Parse_Next_Input_Control_Parameter(AdvectDiffuse2D
   } else if (strcmp(IP.Next_Control_Parameter, "beta_Coeff") == 0) {
     i_command = 0;
     ++IP.Line_Number;
-    IP.Input_File >> C;
+    IP.Input_File >> beta;
     IP.Input_File.getline(buffer, sizeof(buffer));
 
   } else {

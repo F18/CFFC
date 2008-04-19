@@ -183,6 +183,7 @@ public:
   static int      Axisymmetric; //!< Axisymmetric geometry indicator.
   int           Freeze_Limiter; //!< Limiter freezing indicator.
   static int         Flow_Type; //!< Flow type flag ( required by AMR ).
+  static int    Include_Source_Term; //!< Flag for including/excluding the source term in the model equation.
   //@}
 
   //! @name Boundary condtion reference states:

@@ -830,6 +830,8 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_Evaluation_HighOrder(const AdvectD
  * finite-volume discretization for the diffusive flux.
  *
  * \param Pos index to identify the high-order variable used to calculate the residual
+ *
+ * \todo Take out from this routine the spatial residual calculation. Pass k_residual to know where to write the residuals.
  */
 int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_stage,
 								   const AdvectDiffuse2D_Input_Parameters &IP,
@@ -837,7 +839,6 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
   // SET VARIABLES USED IN THE RESIDUAL CALCULATION PROCESS
 
   int i, j, k_residual, GQPoint, Position, SplineSegment;
-  double omega;
   bool IsNonSmoothHighOrderReconstruction;
   AdvectDiffuse2D_State Ul, Ur, U_face, Flux, FaceFlux;
   Vector2D GradU_face, GradUl, GradUr;		// Solution gradient at the inter-cellular face
@@ -857,15 +858,12 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
   
   switch(IP.i_Time_Integration) {
   case TIME_STEPPING_EXPLICIT_EULER :
-    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
     break;
   case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
     break;
   case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
     if (IP.N_Stage == 4) {
       if (i_stage == 4) {
@@ -876,15 +874,10 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
     } /* endif */
     break;
   case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-    omega = MultiStage_Optimally_Smoothing(i_stage, 
-					   IP.N_Stage,
-					   IP.i_Limiter);
     k_residual = 0;
     break;
   default:
-    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
-    break;
   } /* endswitch */
 
   /***************************************************************************************
@@ -1046,7 +1039,9 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
       } //endif (j != JCu)
 
       /* Include regular source terms. */
-      dUdt[i][j][k_residual] += (IP.CFL_Number*dt[i][j])*SourceTerm(i,j);
+      if (Include_Source_Term) {
+	dUdt[i][j][k_residual] += (IP.CFL_Number*dt[i][j])*SourceTerm(i,j);
+      }
 	
       /* Include axisymmetric source terms as required. */
       if (Axisymmetric) {
