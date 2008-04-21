@@ -834,9 +834,14 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
     double omega;
     Levermore1D_pState Wl, Wr;
     Levermore1D_cState Ul, Ur;
-    Levermore1D_cState Flux, Update;
+    Levermore1D_cState Flux;
     Levermore1D_weights Al, Ar;
-    ColumnVector rhs(Levermore1D_Vector::get_length()), delta_A(Levermore1D_Vector::get_length());
+    Levermore1D_Vector temp;
+    ColumnVector Update(Levermore1D_Vector::get_length());
+    ColumnVector RHS(Levermore1D_Vector::get_length());
+    DenseMatrix LHS(Levermore1D_Vector::get_length(),
+		    Levermore1D_Vector::get_length());
+    ColumnVector delta_A(Levermore1D_Vector::get_length());
     DenseMatrix dUdA_interface(Levermore1D_Vector::get_length(),
 			       Levermore1D_Vector::get_length());
 
@@ -914,16 +919,16 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 
 	    us = Soln[i].Ur_old[2]/Soln[i].Ur_old[1];
 	    dUdA_interface = Soln[i].Ur_old.d2hda2(Soln[i].Ar_old,us);
-	    for(int iii=1;iii<=Levermore1D_Vector::get_length(); ++iii) rhs[iii-1] = Ul[iii]-Soln[i].Ur_old[iii];
-	    Solve_LU_Decomposition(dUdA_interface,rhs,delta_A);
+	    for(int iii=1;iii<=Levermore1D_Vector::get_length(); ++iii) RHS[iii-1] = Ul[iii]-Soln[i].Ur_old[iii];
+	    Solve_LU_Decomposition(dUdA_interface,RHS,delta_A);
 	    Al = Soln[i].Ar_old + delta_A;
 	    Soln[i].Ar_old = Al;
 	    Soln[i].Ur_old = Ul;
 
 	    us = Soln[i+1].Ul_old[2]/Soln[i+1].Ul_old[1];
 	    dUdA_interface = Soln[i+1].Ul_old.d2hda2(Soln[i+1].Al_old,us);
-	    for(int iii=1;iii<=Levermore1D_Vector::get_length(); ++iii) rhs[iii-1] = Ur[iii]-Soln[i+1].Ul_old[iii];
-	    Solve_LU_Decomposition(dUdA_interface,rhs,delta_A);
+	    for(int iii=1;iii<=Levermore1D_Vector::get_length(); ++iii) RHS[iii-1] = Ur[iii]-Soln[i+1].Ul_old[iii];
+	    Solve_LU_Decomposition(dUdA_interface,RHS,delta_A);
 	    Ar = Soln[i+1].Al_old + delta_A;
 	    Soln[i+1].Al_old = Ar;
 	    Soln[i+1].Ul_old = Ur;
@@ -1008,10 +1013,21 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
         /* Update solution variables for this stage. */
 
         for ( i = 1 ; i <= IP.Number_of_Cells ; ++i ) {
-	  Update = (Soln[i].dUdt+Collision_RHS(Soln[i].U)*omega)*(CFL_Number*Soln[i].dt);
+	  temp = (Soln[i].dUdt + Collision_RHS(Soln[i].Uo) ); //store here temporarily
+
+	  LHS.zero();
+	  for(int j = 0; j < Levermore1D_Vector::get_length(); ++j) {
+	    LHS(j,j) = 1/(CFL_Number*Soln[i].dt);
+	    RHS(j) = temp[j+1];
+	  }
+	  LHS -= Soln[i].Uo.dSdU()*omega;
+
+	  Solve_LU_Decomposition(LHS,RHS,Update);
+
 	  Soln[i].U = Soln[i].Uo + Update;
 	  Soln[i].A = Soln[i].Ao + Soln[i].dUdA_inv * Update;
 	  Soln[i].calculate_detector();
+
 	  if ( ! detector_below_tolerance(Soln[i].detector) ) {
 	    if(Soln[i].A.set_from_U(Soln[i].U)) { //returns 1 if fail
 	      cout << endl << "Error, Cannot resync:" << endl
