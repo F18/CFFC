@@ -1155,20 +1155,22 @@ class DenseMatrix: public MV_ColMat_double{
     friend DenseMatrix operator -(const DenseMatrix &M);
 
     /* Binary arithmetic operators. */
-    friend DenseMatrix operator +(const DenseMatrix &M1, const DenseMatrix &M2);
-    friend DenseMatrix operator -(const DenseMatrix &M1, const DenseMatrix &M2);
-    friend DenseMatrix operator *(const DenseMatrix &M1, const DenseMatrix &M2);
+    friend DenseMatrix  operator +(const DenseMatrix &M1, const DenseMatrix &M2);
+    friend DenseMatrix  operator -(const DenseMatrix &M1, const DenseMatrix &M2);
+    friend DenseMatrix  operator *(const DenseMatrix &M1, const DenseMatrix &M2);
     friend ColumnVector operator *(const DenseMatrix &M, const ColumnVector &CVec);
-    friend DenseMatrix operator *(const ColumnVector &CVec, const RowVector &RVec);
-    friend DenseMatrix operator *(const DenseMatrix &M, const double &a);
-    friend DenseMatrix operator *(const double &a, const DenseMatrix &M);
-    friend DenseMatrix operator /(const DenseMatrix &M, const double &a);
-    friend DenseMatrix operator +(const DenseMatrix &M, const DiagonalMatrix &D);
-    friend DenseMatrix operator +(const DiagonalMatrix &D, const DenseMatrix &M);
-    friend DenseMatrix operator -(const DenseMatrix &M, const DiagonalMatrix &D);
-    friend DenseMatrix operator -(const DiagonalMatrix &D, const DenseMatrix &M);
-    friend DenseMatrix operator *(const DenseMatrix &M, const DiagonalMatrix &D);
-    friend DenseMatrix operator *(const DiagonalMatrix &D, const DenseMatrix &M);
+    friend RowVector    operator *(const RowVector &RVec, const DenseMatrix &M);
+    friend DenseMatrix  operator *(const ColumnVector &CVec, const RowVector &RVec);
+    friend DenseMatrix  operator *(const DenseMatrix &M, const double &a);
+    friend DenseMatrix  operator *(const double &a, const DenseMatrix &M);
+    friend DenseMatrix  operator /(const DenseMatrix &M, const double &a);
+    friend DenseMatrix  operator +(const DenseMatrix &M, const DiagonalMatrix &D);
+    friend DenseMatrix  operator +(const DiagonalMatrix &D, const DenseMatrix &M);
+    friend DenseMatrix  operator -(const DenseMatrix &M, const DiagonalMatrix &D);
+    friend DenseMatrix  operator -(const DiagonalMatrix &D, const DenseMatrix &M);
+    friend DenseMatrix  operator *(const DenseMatrix &M, const DiagonalMatrix &D);
+    friend DenseMatrix  operator *(const DiagonalMatrix &D, const DenseMatrix &M);
+
 
 
     /* Shortcut arithmetic operators. */
@@ -1417,6 +1419,17 @@ inline ColumnVector operator *(const DenseMatrix &M, const ColumnVector &CVec) {
    } /* endfor */
    return (cv);
 }
+
+inline RowVector operator *(const RowVector &RVec, const DenseMatrix &M) {
+    assert(M.dim0_ ==  (int)RVec.size());
+    int i, j; RowVector rv(M.dim1_, ZERO);
+    for ( j = 0; j <= M.dim1_-1; j++ ) {
+        for ( i = 0 ; i <= M.dim0_-1; i++ ) 
+            rv(j)+=RVec(i)*M(i,j);
+    } /* endfor */
+    return (rv);
+}
+
 
 inline DenseMatrix operator *(const ColumnVector &CVec, const RowVector &RVec){
    int i, j; DenseMatrix M(CVec.size(), RVec.size());
