@@ -94,6 +94,12 @@ public:
   /*! Calculate the right hand side (RHS) of the partial differential equation (PDE) at the location of interest */
   virtual double PDE_RightHandSide(const double &x, const double &y) const  = 0;
 
+  /*! Calculate the integrated dependency of the right hand side (RHS) with respect to x of the
+    partial differential equation (PDE) at the location of interest. 
+    This function can be used to integrate the RHS over domain with curved boundaries,
+    by using a Gauss quadrature along the domain contour. */
+  virtual double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const  = 0;
+
   //! Update internal variables
   virtual void Set_ParticularSolution_Parameters(void){ };
 
@@ -140,6 +146,12 @@ public:
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const{
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! This function hasn't been implemented yet!");
+    return 0;
+  }
+
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
 
@@ -178,6 +190,12 @@ public:
 
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const{
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! This function hasn't been implemented yet!");
+    return 0;
+  }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -220,6 +238,12 @@ public:
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const{
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! This function hasn't been implemented yet!");
+    return 0;
+  }
+
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
 
@@ -260,6 +284,12 @@ public:
 
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const{
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! This function hasn't been implemented yet!");
+    return 0;
+  }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -307,6 +337,12 @@ public:
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const{
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! This function hasn't been implemented yet!");
+    return 0;
+  }
+
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
 
@@ -347,6 +383,12 @@ public:
 
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
+
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const{
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! This function hasn't been implemented yet!");
+    return 0;
+  }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -389,6 +431,12 @@ public:
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
 
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const{
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! This function hasn't been implemented yet!");
+    return 0;
+  }
+
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
 
@@ -430,6 +478,12 @@ public:
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
 
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const{
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! This function hasn't been implemented yet!");
+    return 0;
+  }
+
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
 
@@ -470,6 +524,12 @@ public:
 
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
+
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const{
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! This function hasn't been implemented yet!");
+    return 0;
+  }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -519,6 +579,9 @@ public:
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
 
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const;
+
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
 
@@ -532,6 +595,14 @@ private:
   double A, B, C, a, beta;		//!< coefficients of the exact solution
 };
 
+inline double Poisson_V_ExactSolution::XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const {
+
+  double Term;
+
+  Term = sqrt(sqr(y) + 2*y*B + sqr(B) - C);
+
+  return 8*C/(beta * Term)*arctan((x + A),Term);
+}
 
 /*! 
  * \class StationaryHeatEqnWithLinearSource_ExactSolution
@@ -567,6 +638,12 @@ public:
 
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return lambda*EvaluateSolutionAt(x,y); }
+
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const{
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! This function hasn't been implemented yet!");
+    return 0;
+  }
 
   //! Update internal variables
   void Set_ParticularSolution_Parameters(void);
@@ -680,6 +757,12 @@ public:
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const{
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! This function hasn't been implemented yet!");
+    return 0;
+  }
+
   //! Update internal variables
   void Set_ParticularSolution_Parameters(void){ };
 
@@ -741,6 +824,12 @@ public:
 
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const{
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! This function hasn't been implemented yet!");
+    return 0;
+  }
 
   //! Update internal variables
   void Set_ParticularSolution_Parameters(void);
@@ -822,6 +911,12 @@ public:
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const{
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! This function hasn't been implemented yet!");
+    return 0;
+  }
+
   //! Update internal variables
   void Set_ParticularSolution_Parameters(void){ };
 
@@ -892,6 +987,12 @@ public:
 
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const{
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! This function hasn't been implemented yet!");
+    return 0;
+  }
 
   //! Update internal variables
   void Set_ParticularSolution_Parameters(void){ };
