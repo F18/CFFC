@@ -9,6 +9,8 @@ Limiter_Type =
 One
 Flux_Function_Type =
 AUSM_plus_up
+Pressure =
+0.1
 ##############################
 #       LES parameters       #
 ##############################

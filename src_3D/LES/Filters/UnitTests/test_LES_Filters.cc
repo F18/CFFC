@@ -170,12 +170,12 @@ namespace tut
         set_test_name("Test transfer_function");
         
         
-         Initialize();
+         //Initialize();
         
         
         
-        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
-        myfilter.transfer_function();
+        //LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
+       // myfilter.transfer_function();
         
         
         /* Function pointers:
@@ -261,33 +261,26 @@ namespace tut
         
         
 
-//        Initialize();
-//        
-//        SpectralAnalysis<Soln_pState,Soln_cState> Spectrum(Data,Solution_Data);
-//        double (Soln_pState::*member_ptr);
-//        member_ptr = &Soln_pState::rho;    // werkt niet met p waarom???????????????????
-//        Spectrum.Set_Spectrum(member_ptr);
-//        
-//        cout << endl<< endl << endl << "FILTERING..." << endl;
-//        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
-//        myfilter.filter();
-//        
-//
-//        Spectrum.Get_Spectrum(member_ptr,"filtered");
+        Initialize();
+        
+        SpectralAnalysis<Soln_pState,Soln_cState> Spectrum(Data,Solution_Data);
+        typedef double (Soln_pState::*member_ptr);
+        member_ptr rho_member = &Soln_pState::rho;
+        member_ptr p_member = &Soln_pState::p;
 
-        Complex G = 5.0+5.0*I;
-        cout << "G = " << G << endl;
-        cout << "2G = " << 2.0*G << endl;
-        cout << "5+G = " << 5.0+G << endl;
-        real(G) = 20;
-        imag(G) = 10;
-        cout << "G = " << G << endl;
+        Spectrum.Set_Spectrum(p_member);
+        Spectrum.Set_Spectrum(rho_member);
+                
+        //cout << endl<< endl << endl << "FILTERING..." << endl;
+        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
+        myfilter.filter();
         
 
-        
-        
-//        error_flag = Hexa_Post_Processing(Data,Solution_Data);
-//        ensure("Post_Processing",error_flag==false);
+        Spectrum.Get_Spectrum(rho_member,"density");
+        Spectrum.Get_Spectrum(p_member,"pressure");
+
+        error_flag = Hexa_Post_Processing(Data,Solution_Data);
+        ensure("Post_Processing",error_flag==false);
     
     }
     
@@ -299,6 +292,27 @@ namespace tut
     {
         
         set_test_name("Test DiagonalMatrix");
+        
+        DenseMatrix A(3,2);
+        A(0,0) = 1;
+        A(1,0) = 2;
+        A(2,0) = 3;
+        A(0,1) = 4;
+        A(1,1) = 5;
+        A(2,1) = 6;
+        RowVector rv(3);
+        rv(0) = 1;
+        rv(1) = 2;
+        rv(2) = 3;
+        
+        ColumnVector cv(2);
+        cv(0) = 1;
+        cv(1) = 2;
+        
+        RowVector resrow = rv*A;
+        ColumnVector rescolumn = A*cv;
+        cout << "rv * A = " << resrow;
+        cout << "A * cv = " << rescolumn;
         
         
         //        DiagonalMatrix D(3);

@@ -822,28 +822,29 @@ public:
     int *indexes;
     int index;
     int MAX_INDEXES;
+    
     // Relational operators
-    //! W == W
+    //! K1 == K2
     friend bool operator ==(const Spectral_container &K1, const Spectral_container &K2) {
         return ((fabs((K1.k - K2.k)/(K1.k+NANO)) <= TOLER));
     }
-    //! W != W
+    //! K1 != K2
     friend bool operator !=(const Spectral_container &K1, const Spectral_container &K2) {
         return (K1.k != K2.k);
     }
-    //! W <= W
+    //! K1 <= K2
     friend bool operator <=(const Spectral_container &K1, const Spectral_container &K2) {
         return (K1.k <= K2.k);
     }
-    //! W >= W
+    //! K1 >= K2
     friend bool operator >=(const Spectral_container &K1, const Spectral_container &K2) {
         return (K1.k >= K2.k);
     }
-    //! W < W
+    //! K1 < K2
     friend bool operator <(const Spectral_container &K1, const Spectral_container &K2) {
         return (K1.k < K2.k);
     }
-    //! W > W
+    //! K1 > K2
     friend bool operator >(const Spectral_container &K1, const Spectral_container &K2) {
         return (K1.k > K2.k);
     }
@@ -885,49 +886,64 @@ public:
         InsertNode(Spectral_BinaryTree::root, newItem);
     }
     
+    // Destructor
+    ~Spectral_BinaryTree() { destroy(root); }
+    
 private: 
     int MAX_INDEXES;
-    void InsertNode(treeNode<Spectral_container> *&root, Spectral_container &newItem) {
-        if ( root == NULL ) {
-            root = new treeNode<Spectral_container>( newItem );
+    void InsertNode(treeNode<Spectral_container> *&node, Spectral_container &newItem) {
+        if ( node == NULL ) {
+            node = new treeNode<Spectral_container>( newItem );
             
-            root->item.MAX_INDEXES =  (root->item.MAX_INDEXES > MAX_INDEXES ? root->item.MAX_INDEXES : MAX_INDEXES);
-            root->item.indexes = new int[root->item.MAX_INDEXES];
-            root->item.indexes[0] = newItem.index;
-            root->item.indexcounter++;
+            node->item.MAX_INDEXES =  (node->item.MAX_INDEXES > MAX_INDEXES ? node->item.MAX_INDEXES : MAX_INDEXES);
+            node->item.indexes = new int[node->item.MAX_INDEXES];
+            node->item.indexes[0] = newItem.index;
+            node->item.indexcounter++;
             return;
         }
-        else if ( newItem == root->item ) {
-            int i = root->item.indexcounter;
-            root->item.indexes[i] = newItem.index;
-            root->item.indexcounter++;
-            root->item.N++;
-            if (root->item.indexcounter==root->item.MAX_INDEXES) {
-                int *indexes_copy = new int[root->item.MAX_INDEXES];
-                for (int j=0; j<root->item.indexcounter; j++){
-                    indexes_copy[j] = root->item.indexes[j];
+        else if ( newItem == node->item ) {
+            int i = node->item.indexcounter;
+            node->item.indexes[i] = newItem.index;
+            node->item.indexcounter++;
+            node->item.N++;
+            if (node->item.indexcounter==node->item.MAX_INDEXES) {
+                int *indexes_copy = new int[node->item.MAX_INDEXES];
+                for (int j=0; j<node->item.indexcounter; j++){
+                    indexes_copy[j] = node->item.indexes[j];
                 }
-                delete[] root->item.indexes;
+                delete[] node->item.indexes;
                 
-                root->item.MAX_INDEXES *= 5;
-                root->item.indexes = new int[root->item.MAX_INDEXES];
+                node->item.MAX_INDEXES *= 5;
+                node->item.indexes = new int[node->item.MAX_INDEXES];
                 
-                for (int j=0; j<root->item.indexcounter; j++){
-                    root->item.indexes[j] = indexes_copy[j];
+                for (int j=0; j<node->item.indexcounter; j++){
+                    node->item.indexes[j] = indexes_copy[j];
                 }
                 
-                MAX_INDEXES =  (root->item.MAX_INDEXES > MAX_INDEXES ? root->item.MAX_INDEXES : MAX_INDEXES);
+                MAX_INDEXES =  (node->item.MAX_INDEXES > MAX_INDEXES ? node->item.MAX_INDEXES : MAX_INDEXES);
                 
                 delete[] indexes_copy;
             }
         }
-        else if ( newItem < root->item ) {
-            InsertNode( root->left, newItem );
+        else if ( newItem < node->item ) {
+            InsertNode( node->left, newItem );
         }
         else {
-            InsertNode( root->right, newItem );
+            InsertNode( node->right, newItem );
         }
     }
+    
+    
+    void destroy(treeNode<Spectral_container>* &node) {
+        if(node != NULL) {
+            destroy(node->left);
+            destroy(node->right);
+            //delete[] node->item.indexes;
+            delete node;
+            node = NULL;
+        }
+    }
+    
 };
 
 
@@ -956,13 +972,15 @@ public:
         delete[] s;
         fftw_free(ss);
         fftw_cleanup();
+        deallocate_wave_numbers();
+    }
+
+    void deallocate_wave_numbers(void) {
         for (int i=0; i<nK; i++){
             delete[] K[i].indexes;
         }
         delete[] K;
     }
-
-    
     
     
     /** @name Grid imposed members */
@@ -1049,6 +1067,8 @@ public:
     template <typename Function_type>
     void Assign_Local_Scalar_Field(Function_type func);
     
+    
+    // From Soln_pState classes:
     void Assign_Local_Scalar_Field_Block(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
                                          Scalar_Field_Block &Scalar_Field,
                                          double (Soln_pState::*&member));
@@ -1065,6 +1085,14 @@ public:
                                          Scalar_Field_Block &Scalar_Field,
                                          double (Soln_pState::*&function)(const Soln_pState&, const Soln_pState&, const Soln_pState&, const double&));
 
+    // From Soln_cState classes
+    void Assign_Local_Scalar_Field_Block(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
+                                         Scalar_Field_Block &Scalar_Field,
+                                         double (Soln_cState::*&member));
+    
+    void Assign_Local_Scalar_Field_Block(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
+                                         Scalar_Field_Block &Scalar_Field,
+                                         double (Soln_cState::*&function)(void));
     
     
     void Gather_from_all_processors(void);
@@ -1083,21 +1111,16 @@ public:
     template <typename Function_type>
     void Get_Spectrum(Function_type func, char* scalar_name){
         Assign_Scalar_Field(func);
-        Calculate_wave_numbers();
         FFT_physical_to_spectral();
         Output_Spectrum_1D(scalar_name);
-        /* do it all */
     }
     
     template <typename Member_type>
     void Set_Spectrum(Member_type member) {
-        Calculate_wave_numbers();
         Calculate_Spectrum();
         FFT_spectral_to_physical();
         Export_To_Local_Scalar_Field();
         Assign_Local_Solution_Blocks(member);
-
-
     }
     
     template <typename Member_type>
@@ -1105,6 +1128,9 @@ public:
     void Assign_Local_Solution_Block(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
                                      Scalar_Field_Block &Scalar_Field,
                                      double (Soln_pState::*&member));
+    void Assign_Local_Solution_Block(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
+                                     Scalar_Field_Block &Scalar_Field,
+                                     double (Soln_cState::*&member));
     
     
     
@@ -1134,12 +1160,25 @@ random_double(){
 template <typename Soln_pState, typename Soln_cState>
 void SpectralAnalysis<Soln_pState,Soln_cState>::Calculate_Spectrum(void) {
     
-    
-    
     int index, i, j, l, iconj, jconj, index_conj;
     double theta;
     Complex aa;
+    
+    for (int i=0; i<Nx; i++) {
+        for (int j=0; j<Ny; j++) {
+            for (int l=0; l<nz; l++) {
+                index = l + nz*(j + Ny*i);
+                ss[index][0]=ZERO;
+                ss[index][1]=ZERO;
+            }
+        }
+    }
+    
+
  
+    int seed = 1; // = time(NULL);      // assigns the current time to the seed
+    srand48(seed);                      // changes the seed for drand48()
+    
     for (int ii=0; ii<nK; ii++) {
         
         K[ii].realS = 0;
@@ -1244,6 +1283,7 @@ SpectralAnalysis(HexaSolver_Data &Data,
     // Allocation of arrays used in the transforms
     s  = (double *) malloc(Nx*Ny*Nz * sizeof(double));
     ss = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
+    Calculate_wave_numbers();
 
 
 }
@@ -1727,7 +1767,12 @@ void SpectralAnalysis<Soln_pState,Soln_cState>::Assign_Local_Scalar_Field_Block(
     for (int i = Scalar_Field.ICl ; i <= Scalar_Field.ICu ; i++) {
         for (int j = Scalar_Field.JCl ; j <= Scalar_Field.JCu ; j++) {
             for (int k = Scalar_Field.KCl ; k <= Scalar_Field.KCu ; k++) {
+                if (i==5 && j==5 && k==5)
+                    cout << "get: \n p = " << Solution_Block.W[i][j][k].*member << "   s = " << Scalar_Field.s[i][j][k] << endl;
                 Scalar_Field.s[i][j][k] = Solution_Block.W[i][j][k].*member;
+                if (i==5 && j==5 && k==5)
+                    cout <<" s = " << Scalar_Field.s[i][j][k] << endl;
+
             } 
         }
     }
@@ -1783,6 +1828,40 @@ void SpectralAnalysis<Soln_pState,Soln_cState>::Assign_Local_Scalar_Field_Block(
 }
 
 
+// From Soln_cState:
+template<typename Soln_pState, typename Soln_cState>
+void SpectralAnalysis<Soln_pState,Soln_cState>::Assign_Local_Scalar_Field_Block(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
+                                                                                Scalar_Field_Block &Scalar_Field,
+                                                                                double (Soln_cState::*&member)) {
+    
+    /* Assign initial turbulent velocity field to solution block. */
+    
+    for (int i = Scalar_Field.ICl ; i <= Scalar_Field.ICu ; i++) {
+        for (int j = Scalar_Field.JCl ; j <= Scalar_Field.JCu ; j++) {
+            for (int k = Scalar_Field.KCl ; k <= Scalar_Field.KCu ; k++) {
+                Scalar_Field.s[i][j][k] = Solution_Block.U[i][j][k].*member;
+            } 
+        }
+    }
+}
+
+template<typename Soln_pState, typename Soln_cState>
+void SpectralAnalysis<Soln_pState,Soln_cState>::Assign_Local_Scalar_Field_Block(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
+                                                                                Scalar_Field_Block &Scalar_Field,
+                                                                                double (Soln_cState::*&func)(void)) {
+    
+    /* Assign initial turbulent velocity field to solution block. */
+    
+    for (int i = Scalar_Field.ICl ; i <= Scalar_Field.ICu ; i++) {
+        for (int j = Scalar_Field.JCl ; j <= Scalar_Field.JCu ; j++) {
+            for (int k = Scalar_Field.KCl ; k <= Scalar_Field.KCu ; k++) {
+                Scalar_Field.s[i][j][k] = (Solution_Block.U[i][j][k].*func)();
+            } 
+        }
+    }
+}
+
+
 
 
 
@@ -1812,7 +1891,12 @@ void SpectralAnalysis<Soln_pState,Soln_cState>::Assign_Local_Solution_Block(Hexa
     for (int i = Scalar_Field.ICl ; i <= Scalar_Field.ICu ; i++) {
         for (int j = Scalar_Field.JCl ; j <= Scalar_Field.JCu ; j++) {
             for (int k = Scalar_Field.KCl ; k <= Scalar_Field.KCu ; k++) {
+                if (i==5 && j==5 && k==5)
+                cout << "set: \n p = " << Solution_Block.W[i][j][k].*member << "   s = " << Scalar_Field.s[i][j][k] << endl;
                 Solution_Block.W[i][j][k].*member = Scalar_Field.s[i][j][k];
+                Solution_Block.U[i][j][k] = Solution_Block.W[i][j][k].U();
+                if (i==5 && j==5 && k==5)
+                cout << " p = " << Solution_Block.W[i][j][k].*member << endl;
             } 
         }
     }
@@ -1820,7 +1904,20 @@ void SpectralAnalysis<Soln_pState,Soln_cState>::Assign_Local_Solution_Block(Hexa
 
 
 
-
+template<typename Soln_pState, typename Soln_cState>
+void SpectralAnalysis<Soln_pState,Soln_cState>::Assign_Local_Solution_Block(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
+                                                                            Scalar_Field_Block &Scalar_Field,
+                                                                            double (Soln_cState::*&member)) {
+    
+    for (int i = Scalar_Field.ICl ; i <= Scalar_Field.ICu ; i++) {
+        for (int j = Scalar_Field.JCl ; j <= Scalar_Field.JCu ; j++) {
+            for (int k = Scalar_Field.KCl ; k <= Scalar_Field.KCu ; k++) {
+                Solution_Block.U[i][j][k].*member = Scalar_Field.s[i][j][k];
+                Solution_Block.W[i][j][k] = Solution_Block.U[i][j][k].W();
+            } 
+        }
+    }
+}
 
 
 

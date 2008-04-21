@@ -60,6 +60,7 @@ public:
     static int number_of_rings;
     bool Allocated;
     int number_of_neighbours;
+    Vector3D Delta;
     Neighbours(Grid3D_Hexa_Block &Grid){
         Grid_ptr = &Grid;
         Allocated = true;
@@ -178,7 +179,7 @@ void LES_Filter<Soln_pState,Soln_cState>::filter() {
     /* For every local solution block */
     if (LocalSolnBlkList_ptr->Nused() >= 1) {
         Hexa_Block<Soln_pState,Soln_cState> Filtered_Solution_Block;
-        for (int nBlk = 0; nBlk <= LocalSolnBlkList_ptr->Nused(); ++nBlk ) {
+        for (int nBlk = 0; nBlk < LocalSolnBlkList_ptr->Nused(); nBlk++ ) {
             if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
                 /* For every cell */
                 Filtered_Solution_Block.Copy(Solution_Blocks_ptr[nBlk]);    // could be more efficient
@@ -186,8 +187,7 @@ void LES_Filter<Soln_pState,Soln_cState>::filter() {
                     for (int j=Solution_Blocks_ptr[nBlk].Grid.JCl ; j<=Solution_Blocks_ptr[nBlk].Grid.JCu ; j++) {
                         for (int k=Solution_Blocks_ptr[nBlk].Grid.KCl ; k<=Solution_Blocks_ptr[nBlk].Grid.KCu ; k++) {
                             Filtered_Solution_Block.W[i][j][k] = 
-                                filter_ptr->filter(Solution_Blocks_ptr[nBlk],Solution_Blocks_ptr[nBlk].Grid.Cell[i][j][k]);
-                            Filtered_Solution_Block.U[i][j][k] = Filtered_Solution_Block.W[i][j][k].U();
+                                filter_ptr->filter(Solution_Blocks_ptr[nBlk],Solution_Blocks_ptr[nBlk].Grid.Cell[i][j][k]);                            
                         }
                     }
                 }
@@ -208,10 +208,12 @@ public:
 
     
     Haselbacher_Filter(void) {
-        number_of_rings = 1;
-        commutation_order = 3;
+        Assigned_w_Uniform_Grid = false;
+        UNIFORM_GRID = true;
+        number_of_rings = 2; //2;
+        commutation_order = 3; // 2;
         filter_width = 0.1;
-        weight_factor = 6.0;
+        weight_factor = 2.5;
         the_number_of_unknowns = number_of_unknowns();
         
         relaxation_factor = 0.08;
@@ -225,6 +227,10 @@ public:
     int relaxation_flag;
     int weight_flag;
     double weight_factor;
+    RowVector w_Uniform_Grid;
+    bool Assigned_w_Uniform_Grid;
+    bool UNIFORM_GRID;
+    void Assign_w_Uniform_Grid(Cell3D &theCell, Neighbours &theNeighbours);
     int number_of_unknowns();
     int number_of_unknowns(int &commutation_order);
     int the_number_of_unknowns;
@@ -237,6 +243,7 @@ public:
     void transfer_function(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, double &kmax);
 
     Soln_pState LeastSquaresReconstruction(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, Neighbours &theNeighbours);
+    Soln_pState LeastSquaresReconstruction_Uniform_Grid(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, Neighbours &theNeighbours);
     DenseMatrix Matrix_A(Cell3D &theCell, Neighbours &theNeighbours);
     DenseMatrix Matrix_A(Cell3D &theCell, Neighbours &theNeighbours, int &commutation_order);
     DenseMatrix Matrix_b(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Neighbours &theNeighbours);
@@ -250,7 +257,11 @@ public:
     Complex G_function(Cell3D &theCell, Neighbours &theNeighbours, Cell3D &kCell, RowVector &w, double &w0);
     Complex G_function_1D(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w);
     Complex G_function_1D(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w, double &w0);
-    
+    Complex G_function_1D_100(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w);
+    Complex G_function_1D_100(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w, double &w0);
+    Complex G_function_1D_110(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w);
+    Complex G_function_1D_110(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w, double &w0);
+
     Complex dG_function(Cell3D &theCell, Neighbours &theNeighbours, Cell3D &kCell, RowVector &w);
     Complex dG_function(Cell3D &theCell, Neighbours &theNeighbours, Cell3D &kCell, RowVector &w, double &w0);
     Complex dG_function_1D(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w);
@@ -260,7 +271,10 @@ public:
     double Calculate_wavenumber_of_Gvalue(Cell3D &theCell, Neighbours &theNeighbours, double &kmax, RowVector &w, double &w0, double G_value);
     double Calculate_wavenumber_of_dGvalue(Cell3D &theCell, Neighbours &theNeighbours, double kmin, double &kmax, RowVector &w, double &w0, double G_value);
     double filter_quality(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, double &kmax, int number_of_rings, int commutation_order, double weight_factor);
-    double filter_quality(Cell3D &theCell, Neighbours &theNeighbours, double &kmax, RowVector &w);
+    double filter_quality(Cell3D &theCell, Neighbours &theNeighbours, double &kmax, RowVector &w, double &w0);
+    double filter_sharpness(Cell3D &theCell, Neighbours &theNeighbours, double &kmax, RowVector &w, double &w0);
+    double filter_smoothness(Cell3D &theCell, Neighbours &theNeighbours, double &kmax, RowVector &w, double &w0, double max_smoothness);
+    double filter_uniformity(Cell3D &theCell, Neighbours &theNeighbours, double &kmax, RowVector &w, double &w0, double max_distortion);
     int Output_Tecplot(Cell3D  ***kCells, Complex ***G, int N);
     int Output_Filter_types(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, double kmax);
 
@@ -351,165 +365,35 @@ Output_Tecplot(Cell3D  ***kCells, Complex ***G, int N) {
 
 
 
+
+
+
 template<typename Soln_pState, typename Soln_cState>
-int Haselbacher_Filter<Soln_pState,Soln_cState>::
-Output_Filter_types(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, double kmax) {
-    
-    
-    int N_number_of_rings = 5;
-    int N_weight_factor = 19;   double max_weight_factor = 10.0;
-    int N_commutation_order = 6;
-    
-    double *weight_factors = new double[N_weight_factor];
-    int *commutation_orders = new int[N_commutation_order];
-    int *rings = new int[N_number_of_rings];
-    
-    double ***FGR = new double **[N_number_of_rings];
-    double ***Q = new double **[N_number_of_rings];
-    for (int i=0; i<N_number_of_rings; i++) {
-        FGR[i] = new double *[N_commutation_order];
-        Q[i] = new double *[N_commutation_order];
-        for (int j=0; j<N_commutation_order; j++) {
-            FGR[i][j] = new double [N_weight_factor];
-            Q[i][j] = new double [N_weight_factor];
-        }
-    }
+Complex Haselbacher_Filter<Soln_pState,Soln_cState>::G_function_1D_100(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w) {
+    Cell3D kCell;
+    kCell.Xc = Vector3D(wave_number,ZERO,ZERO);    
+    return (G_function(theCell, theNeighbours, kCell, w));
+}
 
-    Neighbours theNeighbours(SolnBlk.Grid);
+template<typename Soln_pState, typename Soln_cState>
+Complex Haselbacher_Filter<Soln_pState,Soln_cState>::G_function_1D_100(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w, double &w0) {
+    Cell3D kCell;
+    kCell.Xc = Vector3D(wave_number,ZERO,ZERO);    
+    return (G_function(theCell, theNeighbours, kCell, w, w0));
+}
 
-    
-    for (int i=0; i<N_number_of_rings; i++) {
-        int number_of_rings = i+1;
-        rings[i] = number_of_rings;
-        
-        theNeighbours.GetNeighbours(theCell,number_of_rings);
+template<typename Soln_pState, typename Soln_cState>
+Complex Haselbacher_Filter<Soln_pState,Soln_cState>::G_function_1D_110(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w) {
+    Cell3D kCell;
+    kCell.Xc = Vector3D(wave_number/sqrt(TWO),wave_number/sqrt(TWO),ZERO);    
+    return (G_function(theCell, theNeighbours, kCell, w));
+}
 
-        
-        
-        for (int j=0; j<N_commutation_order; j++) {
-            int commutation_order = j+1;
-            commutation_orders[j] = commutation_order;
-        
-
-
-            for (int k=0; k<N_weight_factor; k++) {
-                double weight_factor = 1.0 + k*(max_weight_factor-1.0)/(N_weight_factor-1.0);
-                weight_factors[k]=weight_factor;
-                
-                Print_3(number_of_rings,commutation_order,weight_factor);
-                DenseMatrix A = Matrix_A(theCell, theNeighbours, commutation_order);
-                DiagonalMatrix W = Matrix_W(theCell, theNeighbours,weight_factor);
-                DenseMatrix Z = (W*A).pseudo_inverse()*W;
-                RowVector w = Z[0];
-                
-                double w0 = Calculate_relaxation_factor(theCell,theNeighbours,kmax,w);
-                
-                /* ------- calculate k_HALF where G(k_HALF) = 0.5 -------- */
-                double k_HALF = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax,w,w0,HALF);
-            
-                FGR[i][j][k] = kmax/k_HALF;
-                Q[i][j][k] = filter_quality(theCell, theNeighbours, kmax, w);
-                // FGR = FGR(weight,commutation_order,number_of_rings)
-                
-                //cout << "weight = " << weight_factor << "    w0 = " << w0 << "    FGR = " << FGR[i][j][k] << "    FQ = " << Q[i][j][k] << endl;
-                
-                
-                
-            }
-        }
-    }
-
-
-    
-    
-    char prefix[256], extension[256], output_file_name[256];
-    char *output_file_name_ptr;
-    ofstream output_file;    
-    
-    /* Determine prefix of output data file names. */
-    
-    //    i = 0;
-    //    while (1) {
-    //        if (Input.Output_File_Name[i] == ' ' ||
-    //            Input.Output_File_Name[i] == '.') break;
-    //        prefix[i]=Input.Output_File_Name[i];
-    //        i = i + 1;
-    //        if (i > strlen(Input.Output_File_Name) ) break;
-    //    } /* endwhile */
-    //    prefix[i] = '\0';
-    sprintf(prefix,"filter_types");
-    
-    /* Determine output data file name for this processor. */
-    
-    sprintf(extension, ".dat");
-    strcpy(output_file_name, prefix);
-    strcat(output_file_name, extension);
-    output_file_name_ptr = output_file_name;
-    
-    /* Open the output data file. */
-    
-    output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.fail()) return (1);
-    
-    /* Write the solution data for each solution block. */
-    
-    output_file << setprecision(14);
-    
-    output_file << "TITLE = \"" << "Filter types, "
-    << "\"" << "\n"
-    << "VARIABLES = "
-    << "\"Number of rings\" \\ \n"
-    << "\"Commutation order\" \\ \n"
-    << "\"Weight factor\" \\ \n"
-    //<< "\"G abs\" \\ \n"
-    << "\"FGR\" \\ \n"
-    << "\"filter quality\" \\ \n";
-    
-    output_file<< "ZONE T =  \"Block Number = 0" 
-    << "\" \\ \n"
-    << "I = " << N_number_of_rings << " \\ \n"
-    << "J = " << N_commutation_order << " \\ \n"
-    << "K = " << N_weight_factor << " \\ \n"
-    << "DATAPACKING = POINT \n";
-    
-    
-    for (int k=0; k<N_weight_factor; k++) {
-        for (int j=0; j<N_commutation_order; j++) {
-            for (int i=0; i<N_number_of_rings ; i++) {
-                output_file << " " << rings[i] << " " << commutation_orders[j] << " " << weight_factors[k] 
-                << " " << FGR[i][j][k]
-                << " " << Q[i][j][k]
-                << "\n";
-            } 
-        } 
-    }
-    
-    output_file << setprecision(6);
-    
-    /* deallocate */
-    for (int i=0; i<N_number_of_rings; i++) {
-        for (int j=0; j<N_commutation_order; j++) {
-            delete[] FGR[i][j];
-            delete[] Q[i][j];
-        }
-        delete[] FGR[i];
-        delete[] Q[i];
-    }
-    delete[] FGR;
-    delete[] Q;
-    
-    delete[] weight_factors;
-    delete[] commutation_orders;
-    delete[] rings;
-    
-    /* Close the output data file. */
-    
-    output_file.close();
-    
-    /* Writing of output data files complete.  Return zero value. */
-    
-    return(0);
-    
+template<typename Soln_pState, typename Soln_cState>
+Complex Haselbacher_Filter<Soln_pState,Soln_cState>::G_function_1D_110(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w, double &w0) {
+    Cell3D kCell;
+    kCell.Xc = Vector3D(wave_number/sqrt(TWO),wave_number/sqrt(TWO),ZERO);    
+    return (G_function(theCell, theNeighbours, kCell, w, w0));
 }
 
 template<typename Soln_pState, typename Soln_cState>
@@ -613,9 +497,7 @@ Complex Haselbacher_Filter<Soln_pState,Soln_cState>::dG_function(Cell3D &theCell
 
 template<typename Soln_pState, typename Soln_cState>
 double Haselbacher_Filter<Soln_pState,Soln_cState>::filter_quality(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, double &kmax, int number_of_rings, int commutation_order, double weight_factor) {
-    
-    cout << "filter_quality: number_of_rings = " << number_of_rings << endl;
-    
+        
     Neighbours theNeighbours(SolnBlk.Grid);
     theNeighbours.GetNeighbours(theCell,number_of_rings);
     
@@ -625,43 +507,56 @@ double Haselbacher_Filter<Soln_pState,Soln_cState>::filter_quality(Hexa_Block<So
     RowVector w = Z[0];
     double w0 = Calculate_relaxation_factor(theCell,theNeighbours,kmax,w);
     
-    double k_90 = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax,w,w0,0.9);
-    double k_10 = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax,w,w0,0.1);
-    double sharpness = ONE - (k_10 - k_90)/kmax;
+    return filter_quality(theCell,theNeighbours,kmax,w,w0);
+}
+
+
+template<typename Soln_pState, typename Soln_cState>
+double Haselbacher_Filter<Soln_pState,Soln_cState>::filter_quality(Cell3D &theCell, Neighbours &theNeighbours, double &kmax, RowVector &w, double &w0) {
     
-    double k_extreme = Calculate_wavenumber_of_dGvalue(theCell,theNeighbours,k_10,kmax,w,w0,ZERO);
-    Complex G = G_function_1D(theCell,theNeighbours,k_extreme,w,w0);
-    double overshoot = fabs(real(G)) > 0.25 ? ZERO : fabs(fabs(real(G))-0.25)/0.25;
+    double sharpness  = filter_sharpness(theCell,theNeighbours,kmax,w,w0);
+    double smoothness  = filter_smoothness(theCell,theNeighbours,kmax,w,w0,0.25);
+    double uniformity = filter_uniformity(theCell,theNeighbours,kmax,w,w0,0.3); 
     
-    double quality = sharpness * overshoot;
-    
-    Print_3(k_extreme,real(G),overshoot);
+    double quality = sharpness * smoothness * uniformity;
+        
+    Print_3(sharpness, smoothness, uniformity);
     
     return quality;
 }
 
 
 template<typename Soln_pState, typename Soln_cState>
-double Haselbacher_Filter<Soln_pState,Soln_cState>::filter_quality(Cell3D &theCell, Neighbours &theNeighbours, double &kmax, RowVector &w) {
-
-    double w0 = Calculate_relaxation_factor(theCell,theNeighbours,kmax,w);
+double Haselbacher_Filter<Soln_pState,Soln_cState>::filter_sharpness(Cell3D &theCell, Neighbours &theNeighbours, double &kmax, RowVector &w, double &w0) {
     
     double k_90 = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax,w,w0,0.9);
     double k_10 = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax,w,w0,0.1);
-    double sharpness = ONE - (k_10 - k_90)/kmax;
-
-    double k_extreme = Calculate_wavenumber_of_dGvalue(theCell,theNeighbours,k_10,kmax,w,w0,ZERO);
-    Complex G = G_function_1D(theCell,theNeighbours,k_extreme,w,w0);
-    double overshoot = fabs(real(G)) > 0.25 ? ZERO : fabs(fabs(real(G))-0.25)/0.25;
-    
-    double quality = sharpness * overshoot;
-    
-    Print_3(k_extreme,real(G),overshoot);
-    
-    return quality;
+    double sharpness = max(ZERO,ONE - (k_10 - k_90)/kmax);
+    return sqrt(sharpness);
 }
 
+template<typename Soln_pState, typename Soln_cState>
+double Haselbacher_Filter<Soln_pState,Soln_cState>::filter_smoothness(Cell3D &theCell, Neighbours &theNeighbours, double &kmax, RowVector &w, double &w0, double max_smoothness) {
+    
+    double k_10 = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax,w,w0,0.1);
+    double k_extreme = Calculate_wavenumber_of_dGvalue(theCell,theNeighbours,k_10,kmax,w,w0,ZERO);
+    Complex G = G_function_1D(theCell,theNeighbours,k_extreme,w,w0);
+    double smoothness = fabs(real(G)) > max_smoothness ? ZERO : fabs(fabs(real(G))-max_smoothness)/max_smoothness;
+    return smoothness;
+}
 
+template<typename Soln_pState, typename Soln_cState>
+double Haselbacher_Filter<Soln_pState,Soln_cState>::filter_uniformity(Cell3D &theCell, Neighbours &theNeighbours, double &kmax, RowVector &w, double &w0, double max_distortion) {
+        
+    Complex G_111 = G_function_1D(theCell,theNeighbours,kmax,w,w0);
+    Complex G_100 = G_function_1D_100(theCell,theNeighbours,kmax,w,w0);
+    Complex G_110 = G_function_1D_110(theCell,theNeighbours,kmax,w,w0);
+
+    double uniformity_100 = fabs(real(G_100)-real(G_111)) > max_distortion ? ZERO : fabs(fabs(real(G_100)-real(G_111))-max_distortion)/max_distortion;
+    double uniformity_110 = fabs(real(G_110)-real(G_111)) > max_distortion ? ZERO : fabs(fabs(real(G_110)-real(G_111))-max_distortion)/max_distortion;
+    
+    return min(uniformity_100,uniformity_110);
+}
 
 
 /* ------- calculate relaxation factor such that G_max = 0 ------- */
@@ -821,20 +716,37 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
     
     
 
-    double *kk = new double [nK];
-    double *GR = new double [nK];
-    double *GRs = new double [nK];
-    char xrange[80];
-    sprintf(xrange,"set xrange [0:%f]",K[nK-1].k/kmax);
-    Gnuplot_Control h1;
+    double *k_111 = new double [N];
+    double *k_110 = new double [N];
+    double *k_100 = new double [N];
+    double *G_111 = new double [N];
+    double *G_110 = new double [N];
+    double *G_100 = new double [N];
+    Gnuplot_Control h1, h2, h3;
     h1.gnuplot_init();
+    h2.gnuplot_init();
+    h3.gnuplot_init();
+
     h1.gnuplot_setstyle("lines") ;
+    h2.gnuplot_setstyle("lines") ;
+    h3.gnuplot_setstyle("lines") ;
+
     h1.gnuplot_cmd("set grid");
-    h1.gnuplot_cmd(xrange);
-    //h1.gnuplot_cmd("set yrange [-1:1]");
+    h2.gnuplot_cmd("set grid");
+    h3.gnuplot_cmd("set grid");
+
     h1.gnuplot_set_xlabel("k");
+    h2.gnuplot_set_xlabel("k");
+    h3.gnuplot_set_xlabel("k");
+
     h1.gnuplot_set_ylabel("G(k)");
-    h1.gnuplot_set_title("Transfer function");
+    h2.gnuplot_set_ylabel("G(k)");
+    h3.gnuplot_set_ylabel("G(k)");
+
+    h1.gnuplot_set_title("Transfer function 111");
+    h2.gnuplot_set_title("Transfer function 110");
+    h3.gnuplot_set_title("Transfer function 100");
+
     
     
     for (double weight_factor=0.5; weight_factor<=10.0; weight_factor+=0.5) {
@@ -848,7 +760,7 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
         /* ------- calculate k_HALF where G(k_HALF) = 0.5 -------- */
         double k_HALF = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax,w,w0,HALF);
 
-        double FQ = filter_quality(theCell, theNeighbours, kmax, w);
+        double FQ = filter_quality(theCell, theNeighbours, kmax, w, w0);
         //double FQ = filter_quality(SolnBlk, theCell, kmax, number_of_rings, commutation_order, weight_factor);
         // FGR = FGR(weight,commutation_order,number_of_rings)
         cout << "weight = " << weight_factor << "    w0 = " << w0 << "   k_HALF = " << k_HALF << "    FGR = " << kmax/k_HALF << "    FQ = " << FQ << endl;
@@ -872,14 +784,20 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
 //            GR[ii]=K[ii].Ek;
 //        }
         
-        int i,j,k;
-        for (int ii=0; ii<nK; ii++) {
-            K[ii].Ek = 0;
-            K[ii].Ek_smooth = 0;
-
-            kk[ii]=K[ii].k;
-            GR[ii]=real(dG_function_1D(theCell,theNeighbours,kk[ii],w,w0));
+        for (int i=0; i<N; i++) {
+            k_111[i] = i*sqrt(THREE)*kmax/(N-1.0);
+            k_110[i] = i*sqrt(TWO)*kmax/(N-1.0);
+            k_100[i] = i*kmax/(N-1.0);
+            G_111[i]=real(G_function_1D(theCell,theNeighbours,k_111[i],w,w0));
+            G_110[i]=real(G_function_1D_110(theCell,theNeighbours,k_110[i],w,w0));
+            G_100[i]=real(G_function_1D_100(theCell,theNeighbours,k_100[i],w,w0));
+            k_111[i]/=kmax;
+            k_110[i]/=kmax;
+            k_100[i]/=kmax;
         }
+        
+
+        
         
         //polyfit_smoothing(nK, kk, GR, 3, 2.5, true, GRs)  ;  
         /* ---------- output ----------- */
@@ -888,26 +806,17 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
         sprintf(title,"W = %3.2f  FGR = %3.2f",weight_factor,kmax/k_HALF);
         
         
-        for (int ii=0; ii<nK; ii++) {
-            kk[ii]/=kmax;
-        }
-        h1.gnuplot_plot1d_var2(kk,GR,nK,title);
+        h1.gnuplot_plot1d_var2(k_111,G_111,N,title);
+        h2.gnuplot_plot1d_var2(k_110,G_110,N,title);
+        h3.gnuplot_plot1d_var2(k_100,G_100,N,title);
     }
     
     //cout << "filterquality(weight=5) = " << filter_quality(SolnBlk, theCell, kmax, number_of_rings, commutation_order, 5.0) << endl;
     
-//    dpoint *dpr = new dpoint[nK];
-//    dpoint *dpi = new dpoint[nK];
-//
-//    for (int ii=0; ii<nK; ii++) {
-//        dpr[ii].x = K[ii].k;
-//        dpr[ii].y = K[ii].Ek;
-//        dpi[ii].x = K[ii].k;
-//        dpi[ii].y = K[ii].Ek_smooth;
-//    }
+
 
     
-    DiagonalMatrix W = Matrix_W(theCell, theNeighbours, 10.0);
+    DiagonalMatrix W = Matrix_W(theCell, theNeighbours, weight_factor);
     DenseMatrix Z = (W*A).pseudo_inverse()*W;
     RowVector w = Z[0];
     
@@ -917,14 +826,15 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
     for (int i=0; i<N; i++) {
         for (int j=0; j<N; j++) {
             for (int k=0; k<N; k++) {
-                G[i][j][k] = dG_function(theCell,theNeighbours,kCells[i][j][k],w,w0);
+                G[i][j][k] = G_function(theCell,theNeighbours,kCells[i][j][k],w,w0);
             }
         }
     }
+
     
     Output_Tecplot(kCells,G,N);
     
-    Output_Filter_types(SolnBlk,theCell,kmax);
+    //Output_Filter_types(SolnBlk,theCell,kmax);
     
     /* ----------- deallocations ------------ */
     for (int ii=0; ii<nK; ii++) {
@@ -942,12 +852,15 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
     }
     delete[] kCells;
     delete[] G;
-    //delete[] dpr;
-    //delete[] dpi;
 
-    delete[] kk;
-    delete[] GR;
-    delete[] GRs;
+    delete[] k_111;
+    delete[] k_110;
+    delete[] k_100;
+
+    delete[] G_111;
+    delete[] G_110;
+    delete[] G_100;
+
     
     return; 
 }
@@ -955,10 +868,23 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
 template<typename Soln_pState, typename Soln_cState>
 Soln_pState Haselbacher_Filter<Soln_pState,Soln_cState>::filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell) {
 
-    Neighbours theNeighbours(SolnBlk.Grid);
-    theNeighbours.GetNeighbours(theCell,2);
     
-    return LeastSquaresReconstruction(SolnBlk, theCell, theNeighbours);
+    Neighbours theNeighbours(SolnBlk.Grid);
+    theNeighbours.GetNeighbours(theCell,number_of_rings);
+    
+    if (UNIFORM_GRID) {
+        if (!Assigned_w_Uniform_Grid) {
+            Assign_w_Uniform_Grid(theCell,theNeighbours);
+        }
+        if(w_Uniform_Grid.size() != theNeighbours.number_of_neighbours)
+            cout << "size(w) = "<< w_Uniform_Grid.size() << "    number_of_neighbours = " << theNeighbours.number_of_neighbours << endl;
+
+        return LeastSquaresReconstruction_Uniform_Grid(SolnBlk, theCell, theNeighbours);
+    }
+    else{
+        return LeastSquaresReconstruction(SolnBlk, theCell, theNeighbours);
+
+    }
 }
 
 
@@ -1042,20 +968,16 @@ DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell3D &the
     DiagonalMatrix W(the_number_of_neighbours);
     
     
-    double Delta;
-    double r;
+    Vector3D Delta(theNeighbours.Delta);
+    Vector3D dr;
     
-    Delta = pow(theCell.V,1.0/3.0) * weight_factor;
+    Delta *= weight_factor;
     
     for (int i=0; i<the_number_of_neighbours; i++) {
-        
-        r=(theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
-        W(i) = sqrt(6.0/(PI*pow(Delta,2)) * exp(- 6.0* pow(r/Delta,2))) ;
-        
-        //        cout << "weight_factor = " << weight_factor << "   Delta = " << Delta << "    r = " << r << "    W(i) = " << W(i) << endl;
-        
+        dr=(theNeighbours.neighbour[i].Xc - theCell.Xc);
+        W(i) = sqrt(SIX/(PI*Delta.sqr())*exp(- SIX * dr.sqr()/Delta.sqr())) ;
     }
-    
+        
     return W;
 }
 
@@ -1146,37 +1068,55 @@ Soln_pState Haselbacher_Filter<Soln_pState,Soln_cState>::LeastSquaresReconstruct
     double w0 = relaxation_factor;
 
     xrow = x0*w0 + xrow*(ONE-w0);
-    //xrow += w0*x0;
     
     /* ---------- Filtered value is first element of x ----------- */
     Soln_pState temp;
-    for (int j=1; j<SolnBlk.NumVar(); j++)
+    for (int j=1; j<=SolnBlk.NumVar(); j++)
         temp[j] = xrow(j-1);
-    
-    
-    /* NOTE: MAKE "b" AND "x" INTO A "ColumnVector" FOR Single VARIABLES
-    
-//    /* --------------- Vector b --------------- */
-//    ColumnVector b(the_number_of_neighbours);
-//    int I,J,K;
-//    for (int i=0; i<the_number_of_neighbours; i++) {
-//        I = theNeighbours.neighbour[i].I;
-//        J = theNeighbours.neighbour[i].J;
-//        K = theNeighbours.neighbour[i].K;
-//        b(i) = SolnBlk.W[I][J][K].v.x;
-//    }
-//
-//    /* ------------ LS procedure for Unknowns Vector x ---------- */
-//    ColumnVector x(the_number_of_unknowns);
-//    int krank;
-//    double Rnorm;
-//    Solve_LS_Householder(A,b,x,krank,Rnorm);
-//
-//    /* ---------- Filtered value is first element of x ----------- */
-//    return x(0); 
     
     return temp;  
 
+}
+
+
+template<typename Soln_pState, typename Soln_cState>
+Soln_pState Haselbacher_Filter<Soln_pState,Soln_cState>::LeastSquaresReconstruction_Uniform_Grid(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, Neighbours &theNeighbours) {
+        
+    /* ---------------- Matrix b ---------------- */
+    DenseMatrix b = Matrix_b(SolnBlk,theNeighbours);
+        
+    /* ----------- unknowns directly solved ------------ */
+    RowVector x = w_Uniform_Grid * b;
+    
+    /* --------------- relaxation -------------- */
+    RowVector x0(SolnBlk.NumVar());
+    int I,J,K;
+    I = theCell.I;
+    J = theCell.J;
+    K = theCell.K;
+    for (int n=1; n<=SolnBlk.NumVar(); n++) {
+        x0(n-1) = SolnBlk.W[I][J][K][n];
+    }
+    double w0 = relaxation_factor;
+    
+    x = x0*w0 + x*(ONE-w0);
+
+    /* ---------- Filtered value is first element of x ----------- */
+    Soln_pState temp;
+    for (int j=1; j<=SolnBlk.NumVar(); j++)
+        temp[j] = x(j-1);
+    
+    return temp;  
+    
+}
+
+template<typename Soln_pState, typename Soln_cState>
+void Haselbacher_Filter<Soln_pState,Soln_cState>::Assign_w_Uniform_Grid(Cell3D &theCell, Neighbours &theNeighbours) {
+    DenseMatrix A = Matrix_A(theCell,theNeighbours);
+    DiagonalMatrix W = Matrix_W(theCell,theNeighbours,weight_factor);
+    DenseMatrix Z = (W*A).pseudo_inverse()*W;
+    w_Uniform_Grid = Z[0]; // RowVector of weights
+    Assigned_w_Uniform_Grid = true;
 }
 
 
@@ -1235,6 +1175,208 @@ template<typename Soln_pState, typename Soln_cState>
 inline double Haselbacher_Filter<Soln_pState,Soln_cState>::trinomial_coefficient(int n1, int n2, int n3){
     return (  double(fac(n1+n2+n3))/double( fac(n1) * fac(n2) * fac(n3) ) );
 }
+
+
+
+
+template<typename Soln_pState, typename Soln_cState>
+int Haselbacher_Filter<Soln_pState,Soln_cState>::
+Output_Filter_types(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, double kmax) {
+    
+    
+    int N_number_of_rings = 5;
+    int N_weight_factor = 59;   double max_weight_factor = 30.0;
+    int N_commutation_order = 6;
+    
+    double *weight_factors = new double[N_weight_factor];
+    int *commutation_orders = new int[N_commutation_order];
+    int *rings = new int[N_number_of_rings];
+    
+    double ***FGR = new double **[N_number_of_rings];
+    double ***Q = new double **[N_number_of_rings];
+    double ***smoothness = new double **[N_number_of_rings];
+    double ***sharpness = new double **[N_number_of_rings];
+    double ***uniformity = new double **[N_number_of_rings];
+    double ***cost = new double **[N_number_of_rings];
+    for (int i=0; i<N_number_of_rings; i++) {
+        FGR[i] = new double *[N_commutation_order];
+        Q[i] = new double *[N_commutation_order];
+        smoothness[i] = new double *[N_commutation_order];
+        sharpness[i] = new double *[N_commutation_order];
+        uniformity[i] = new double *[N_commutation_order];
+        cost[i] = new double *[N_commutation_order];
+        for (int j=0; j<N_commutation_order; j++) {
+            FGR[i][j] = new double [N_weight_factor];
+            Q[i][j] = new double [N_weight_factor];
+            smoothness[i][j] = new double [N_weight_factor];
+            sharpness[i][j] = new double [N_weight_factor];
+            uniformity[i][j] = new double [N_weight_factor];
+            cost[i][j] = new double [N_weight_factor];
+        }
+    }
+    
+    Neighbours theNeighbours(SolnBlk.Grid);
+    
+    
+    for (int i=0; i<N_number_of_rings; i++) {
+        int number_of_rings = i+1;
+        rings[i] = number_of_rings;
+        
+        theNeighbours.GetNeighbours(theCell,number_of_rings);
+        
+        
+        
+        for (int j=0; j<N_commutation_order; j++) {
+            int commutation_order = j+1;
+            commutation_orders[j] = commutation_order;
+            
+            DenseMatrix A = Matrix_A(theCell, theNeighbours, commutation_order);
+            
+            
+            for (int k=0; k<N_weight_factor; k++) {
+                double weight_factor = 1.0 + k*(max_weight_factor-1.0)/(N_weight_factor-1.0);
+                weight_factors[k]=weight_factor;
+                
+                Print_3(number_of_rings,commutation_order,weight_factor);
+                DiagonalMatrix W = Matrix_W(theCell, theNeighbours,weight_factor);
+                DenseMatrix Z = (W*A).pseudo_inverse()*W;
+                RowVector w = Z[0];
+                
+                double w0 = Calculate_relaxation_factor(theCell,theNeighbours,kmax,w);
+                
+                /* ------- calculate k_HALF where G(k_HALF) = 0.5 -------- */
+                double k_HALF = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax,w,w0,HALF);
+                
+                FGR[i][j][k] = kmax/k_HALF;
+                Q[i][j][k] = filter_quality(theCell, theNeighbours, kmax, w, w0);
+                sharpness[i][j][k] = filter_sharpness(theCell, theNeighbours, kmax, w, w0);
+                smoothness[i][j][k] = filter_smoothness(theCell, theNeighbours, kmax, w, w0, 0.25);
+                uniformity[i][j][k] = filter_uniformity(theCell, theNeighbours, kmax, w, w0, 0.3);
+                cost[i][j][k] = theNeighbours.number_of_neighbours * number_of_unknowns(commutation_order);
+                
+                // FGR = FGR(weight,commutation_order,number_of_rings)
+                
+                //cout << "weight = " << weight_factor << "    w0 = " << w0 << "    FGR = " << FGR[i][j][k] << "    FQ = " << Q[i][j][k] << endl;
+                
+                
+                
+            }
+        }
+    }
+    
+    
+    
+    
+    char prefix[256], extension[256], output_file_name[256];
+    char *output_file_name_ptr;
+    ofstream output_file;    
+    
+    /* Determine prefix of output data file names. */
+    
+    //    i = 0;
+    //    while (1) {
+    //        if (Input.Output_File_Name[i] == ' ' ||
+    //            Input.Output_File_Name[i] == '.') break;
+    //        prefix[i]=Input.Output_File_Name[i];
+    //        i = i + 1;
+    //        if (i > strlen(Input.Output_File_Name) ) break;
+    //    } /* endwhile */
+    //    prefix[i] = '\0';
+    sprintf(prefix,"filter_types");
+    
+    /* Determine output data file name for this processor. */
+    
+    sprintf(extension, ".dat");
+    strcpy(output_file_name, prefix);
+    strcat(output_file_name, extension);
+    output_file_name_ptr = output_file_name;
+    
+    /* Open the output data file. */
+    
+    output_file.open(output_file_name_ptr, ios::out);
+    if (output_file.fail()) return (1);
+    
+    /* Write the solution data for each solution block. */
+    
+    output_file << setprecision(14);
+    
+    output_file << "TITLE = \"" << "Filter types, "
+    << "\"" << "\n"
+    << "VARIABLES = "
+    << "\"Number of rings\" \\ \n"
+    << "\"Commutation order\" \\ \n"
+    << "\"Weight factor\" \\ \n"
+    << "\"FGR\" \\ \n"
+    << "\"filter quality\" \\ \n"
+    << "\"sharpness\" \\ \n"
+    << "\"smoothness\" \\ \n"
+    << "\"uniformity\" \\ \n"
+    << "\"cost\" \\ \n";
+    output_file<< "ZONE T =  \"Block Number = 0" 
+    << "\" \\ \n"
+    << "I = " << N_number_of_rings << " \\ \n"
+    << "J = " << N_commutation_order << " \\ \n"
+    << "K = " << N_weight_factor << " \\ \n"
+    << "DATAPACKING = POINT \n";
+    
+    
+    for (int k=0; k<N_weight_factor; k++) {
+        for (int j=0; j<N_commutation_order; j++) {
+            for (int i=0; i<N_number_of_rings ; i++) {
+                output_file << " " << rings[i] << " " << commutation_orders[j] << " " << weight_factors[k] 
+                << " " << FGR[i][j][k]
+                << " " << Q[i][j][k]*100
+                << " " << sharpness[i][j][k]*100
+                << " " << smoothness[i][j][k]*100
+                << " " << uniformity[i][j][k]*100
+                << " " << cost[i][j][k]
+                << "\n";
+            } 
+        } 
+    }
+    
+    output_file << setprecision(6);
+    
+    /* deallocate */
+    for (int i=0; i<N_number_of_rings; i++) {
+        for (int j=0; j<N_commutation_order; j++) {
+            delete[] FGR[i][j];
+            delete[] Q[i][j];
+            delete[] smoothness[i][j];
+            delete[] sharpness[i][j];
+            delete[] uniformity[i][j];
+            delete[] cost[i][j];
+        }
+        delete[] FGR[i];
+        delete[] Q[i];
+        delete[] smoothness[i];
+        delete[] sharpness[i];
+        delete[] uniformity[i];
+        delete[] cost[i];
+    }
+    delete[] FGR;
+    delete[] Q;
+    delete[] smoothness;
+    delete[] sharpness;
+    delete[] uniformity;
+    delete[] cost;
+    delete[] weight_factors;
+    delete[] commutation_orders;
+    delete[] rings;
+    
+    /* Close the output data file. */
+    
+    output_file.close();
+    
+    /* Writing of output data files complete.  Return zero value. */
+    
+    return(0);
+    
+}
+
+
+
+
 
 
 

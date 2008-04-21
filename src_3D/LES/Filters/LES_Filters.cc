@@ -41,17 +41,27 @@ void Neighbours::GetNeighbours(Cell3D &theCell, int number_of_rings) {
     int jmax = min(theCell.J+number_of_rings,Grid_ptr->JCu+Grid_ptr->Nghost);
     int kmin = max(theCell.K-number_of_rings,Grid_ptr->KCl-Grid_ptr->Nghost);
     int kmax = min(theCell.K+number_of_rings,Grid_ptr->KCu+Grid_ptr->Nghost);
+        
+    Vector3D Xmin(MILLION,MILLION,MILLION), Xmax(-MILLION,-MILLION,-MILLION);
     
     for (int i=imin; i<=imax; i++) {
         for (int j=jmin; j<=jmax; j++) {
             for (int k=kmin; k<=kmax; k++) {
                 if (theCell != Grid_ptr->Cell[i][j][k]) {
                     neighbour[number_of_neighbours] = Grid_ptr->Cell[i][j][k];
+                    Xmin.x = min(Xmin.x,neighbour[number_of_neighbours].Xc.x);
+                    Xmin.y = min(Xmin.y,neighbour[number_of_neighbours].Xc.y);
+                    Xmin.z = min(Xmin.z,neighbour[number_of_neighbours].Xc.z);
+                    Xmax.x = max(Xmax.x,neighbour[number_of_neighbours].Xc.x);
+                    Xmax.y = max(Xmax.y,neighbour[number_of_neighbours].Xc.y);
+                    Xmax.z = max(Xmax.z,neighbour[number_of_neighbours].Xc.z);
                     number_of_neighbours++;
                 }
             }
         }
     }
+    
+    Delta = (Xmax-Xmin)/(TWO*number_of_rings);   // --> averaged dx dy dz over number of neighbouring rings
 }
 
 
