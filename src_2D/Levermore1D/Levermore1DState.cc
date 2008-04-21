@@ -236,6 +236,11 @@ DenseMatrix Levermore1D_pState::dSdW(void) const {
   return (dU_MBdW()-dUdW())/relaxation_time();
 }
 
+DenseMatrix Levermore1D_cState::dSdW(void) const {
+  Levermore1D_pState temp(*this);
+  return temp.dSdW();
+}
+
 /********************************************************
  * Function: Levermore1D_pState::dSdU                   *
  *                                                      *
@@ -244,6 +249,11 @@ DenseMatrix Levermore1D_pState::dSdW(void) const {
  ********************************************************/
 DenseMatrix Levermore1D_pState::dSdU(void) const {
   return dSdW() * ( dUdW().inverse() );
+}
+
+DenseMatrix Levermore1D_cState::dSdU(void) const {
+  Levermore1D_pState temp(*this);
+  return temp.dSdU();
 }
 
 /********************************************************
