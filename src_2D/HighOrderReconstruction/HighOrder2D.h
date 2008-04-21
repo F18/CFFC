@@ -341,7 +341,7 @@ public:
   //  using the reconstruction of cell (ii,jj).
   Soln_State YGradientAtCoordinates(const int & ii, const int & jj,
 				    const double & X_Coord, const double & Y_Coord) const {
-    return TD[ii][jj].ComputeXGradientFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
+    return TD[ii][jj].ComputeYGradientFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
   }
   //! Evaluate the Y-gradient of the interpolant at a given position vector for all solution variables,
   //  using the reconstruction of cell (ii,jj).

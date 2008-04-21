@@ -40,6 +40,7 @@ public:
   double operator()(const double &x, const double &y) const;
   double Solution(const double &x, const double &y) const;
   Vector2D Gradient(const double &x, const double &y) const;
+  double PDE_RightHandSide(const double &x, const double &y) const;
   //@}
 
   //! Update the internal variables of the exact solution
@@ -91,4 +92,13 @@ inline Vector2D AdvectDiffuse2D_ExactSolutions::Gradient(const double &x, const 
   return ExactSoln->EvaluateGradientAt(x,y);
 }
 
+/*! 
+ * Evaluate the right-hand-side term of
+ * the equation to which the provided
+ * function is a solution.
+ * \param x,y Cartesian coordinates
+ */
+inline double AdvectDiffuse2D_ExactSolutions::PDE_RightHandSide(const double &x, const double &y) const{
+  return ExactSoln->PDE_RightHandSide(x,y);
+}
 #endif

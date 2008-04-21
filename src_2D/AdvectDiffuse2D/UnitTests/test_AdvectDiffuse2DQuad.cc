@@ -62,6 +62,20 @@ namespace tut
     void Output_Block(AdvectDiffuse2D_Quad_Block & SolnBlock,
 		      AdvectDiffuse2D_Input_Parameters & _IP_){};
 
+    // Set the local time step to value for all solution blocks.
+    void SetLocalTimeStepToValue(AdvectDiffuse2D_Quad_Block *& _SolnBlk_,
+				 AdaptiveBlock2D_List & _LocalList_Soln_Blocks_,
+				 const double & ValueToBeSet);
+
+    // Compute right-hand-side term of the equation
+    void ComputeEquationRightHandSideTerm(AdvectDiffuse2D_Quad_Block & _SolnBlk_,
+					  AdvectDiffuse2D_Input_Parameters & _IP_,
+					  const int & k_residual);
+
+    // Compute residual errors
+    void ComputeResidualErrors(AdvectDiffuse2D_Quad_Block & _SolnBlk_,
+			       const int & k_residual_I, const int & k_residual_II,
+			       double & L1, double & L2, double & LMax);
   private:
     
   };
@@ -115,11 +129,105 @@ namespace tut
     HighOrder2D_MultiBlock::Create_Initial_HighOrder_Variables(_SolnBlk_,
 							       _LocalList_Soln_Blocks_);
 
+
+
     if (_SolnBlk_ == NULL) {
       throw runtime_error("Create_Initial_Solution_Blocks() ERROR: Unable to create initial Euler2D solution blocks.");
     }
 
+    for (int n = 0 ; n <= _LocalList_Soln_Blocks_.Nblk-1 ; ++n ) {
+      if (_LocalList_Soln_Blocks_.Block[n].used == ADAPTIVEBLOCK2D_USED) {
+	if (_SolnBlk_[n].Grid.Check_Quad_Block_Completely() ){
+	  throw runtime_error("Create_Initial_Solution_Blocks() ERROR: Invalid quadrilateral block detected!");
+	}
+      } /* endif */
+    }  /* endfor */
+
     Status = ON;
+  }
+
+  // === SetLocalTimeStepToValue()
+  void Data_AdvectDiffuse2D_Quad_Block::SetLocalTimeStepToValue(AdvectDiffuse2D_Quad_Block *& _SolnBlk_,
+								AdaptiveBlock2D_List & _LocalList_Soln_Blocks_,
+								const double & ValueToBeSet){
+
+    int n, i, j;
+
+    for ( n = 0 ; n <= _LocalList_Soln_Blocks_.Nblk-1 ; ++n ) {
+      if (_LocalList_Soln_Blocks_.Block[n].used == ADAPTIVEBLOCK2D_USED) {
+	for (j = _SolnBlk_[n].JCl; j <= _SolnBlk_[n].JCu; ++j ){
+	  for (i = _SolnBlk_[n].ICl; i <= _SolnBlk_[n].ICu; ++i ){
+	    _SolnBlk_[n].dt[i][j] = ValueToBeSet;
+	  } /* endfor */
+	} /* endfor */	
+      } /* endif */
+
+    }  /* endfor */
+  }
+
+  // === Compute the integral of the right-hand-side term of the equation based on what the exact solution has set
+  void Data_AdvectDiffuse2D_Quad_Block::ComputeEquationRightHandSideTerm(AdvectDiffuse2D_Quad_Block & _SolnBlk_,
+									 AdvectDiffuse2D_Input_Parameters & _IP_,
+									 const int & k_residual){
+
+    int i,j;
+    double IntResult;
+
+    // Calculate the integral of the right hand side term over the domain of each interior cell divided by the local area
+    // Use the ExactSoln pointer to access the exact solution
+    if (_SolnBlk_.ExactSoln->IsExactSolutionSet()) {
+      for ( j  = _SolnBlk_.JCl ; j <= _SolnBlk_.JCu ; ++j ) {
+ 	for ( i = _SolnBlk_.ICl ; i <= _SolnBlk_.ICu ; ++i ) {
+	  IntResult = 
+	    _SolnBlk_.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								 wrapped_member_function(_SolnBlk_.ExactSoln,
+											 &AdvectDiffuse2D_ExactSolutions::
+											 PDE_RightHandSide,
+											 IntResult),
+								 IP.Exact_Integration_Digits,
+								 IntResult)/_SolnBlk_.Grid.Cell[i][j].A;
+	  _SolnBlk_.dUdt[i][j][k_residual] = IntResult;
+	} /* endfor */
+      } /* endfor */
+    } else {
+      // There is no exact solution set for this problem
+      throw runtime_error("ICs() ERROR! No exact solution has been set!");
+    }
+  }
+
+
+  // === Compute the errors between the left and right hand sides of the equation.
+  //     The k_residual_I and k_residual_II indicate where the two residuals are stored.
+  //     The residual of the first index is going to be overwritten for error plotting.
+  //     Return error statistics in L1, L2 and LMax.
+  void Data_AdvectDiffuse2D_Quad_Block::ComputeResidualErrors(AdvectDiffuse2D_Quad_Block & _SolnBlk_,
+							      const int & k_residual_I, const int & k_residual_II,
+							      double & L1, double & L2, double & LMax){
+
+    int i,j, counter(0);
+
+    // Initialize error norms
+    L1 = L2 = LMax = 0.0;
+
+    for ( j  = _SolnBlk_.JCl ; j <= _SolnBlk_.JCu ; ++j ) {
+      for ( i = _SolnBlk_.ICl ; i <= _SolnBlk_.ICu ; ++i, ++counter ) {
+
+	// Compute error
+	_SolnBlk_.dUdt[i][j][k_residual_I] = fabs(_SolnBlk_.dUdt[i][j][k_residual_I] - 
+						  _SolnBlk_.dUdt[i][j][k_residual_II]);
+
+	// Compute error norms
+	L1 += _SolnBlk_.dUdt[i][j][k_residual_I].u;
+	L2 += sqr(_SolnBlk_.dUdt[i][j][k_residual_I].u);
+	LMax = max(LMax,_SolnBlk_.dUdt[i][j][k_residual_I].u);
+	
+      } /* endfor */
+    } /* endfor */
+
+    // Compute final errors
+    L1 /= counter;
+    L2 /= counter; L2 = sqrt(L2);
+
   }
 
   /**
@@ -1059,7 +1167,11 @@ namespace tut
     set_local_input_path("QuadBlockData");
     set_local_output_path("QuadBlockData");
 
-    RunRegression = OFF;
+    RunRegression = ON;
+
+    // Error norms
+    double L1, L2, LMax;
+    double L1_M, L2_M, LMax_M;	// master errors
 
     // Set input file name
     Open_Input_File("HighOrder_Residual_Study.in");
@@ -1068,8 +1180,6 @@ namespace tut
     IP.Verbose() = false;
     IP.Parse_Input_File(input_file_name);
 
-    Print_(IP)
-
     // Create computational domain
     InitializeComputationalDomain(MeshBlk,QuadTree,
 				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
@@ -1077,19 +1187,93 @@ namespace tut
 
     // == check correct initialization
     ensure("High-order variables", SolnBlk[0].HighOrderVariables() != NULL);
-    ensure_equals("Main High-order ", SolnBlk[0].HighOrderVariable(0).RecOrder(), 3);
+    ensure_equals("Main High-order ", SolnBlk[0].HighOrderVariable(0).RecOrder(), 4);
+    ensure_equals("2nd High-order " , SolnBlk[0].HighOrderVariable(1).RecOrder(), 1);
+    ensure_equals("3rd High-order " , SolnBlk[0].HighOrderVariable(2).RecOrder(), 2);
+    ensure_equals("4th High-order " , SolnBlk[0].HighOrderVariable(3).RecOrder(), 3);
     
     // Apply initial condition
     ICs(SolnBlk,LocalList_Soln_Blocks,IP);
 
+    // Set local time step
+    SetLocalTimeStepToValue(SolnBlk,
+			    LocalList_Soln_Blocks,
+			    1.0);
+
+    // Compute integral of the RHS term and write it to the k_residual = 2
+    ComputeEquationRightHandSideTerm(SolnBlk[0], IP, 2);
+
+    // ========= Compute with HighOrderVariable(0) ========
+
     // Compute residuals for stage 1
     SolnBlk[0].dUdt_Multistage_Explicit_HighOrder(1,IP);
 
-    // Output solution
-    CurrentFile = "Current_HighOrder_Residual_Study.dat";
-    Open_Output_File(CurrentFile);
-    
-    SolnBlk[0].Output_Nodes_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+    // Compute residual errors
+    ComputeResidualErrors(SolnBlk[0], 0, 2, L1, L2, LMax);
+
+    // === check errors
+    L1_M = 1.893420021730188e-06; L2_M = 3.843827746933967e-06; LMax_M = 1.646626337714271e-05;
+    ensure_distance("L1, k=4"  , L1, L1_M, AcceptedError(L1_M) );
+    ensure_distance("L2, k=4"  , L2, L2_M, AcceptedError(L2_M) );
+    ensure_distance("LMax, k=4", LMax, LMax_M, AcceptedError(LMax_M) );
+
+
+    // ========= Compute with HighOrderVariable(1) ========
+
+    // Compute residuals for stage 1
+    SolnBlk[0].dUdt_Multistage_Explicit_HighOrder(1,IP,1);
+
+    // Compute residual errors
+    ComputeResidualErrors(SolnBlk[0], 0, 2, L1, L2, LMax);
+
+    // === check errors
+    L1_M = 0.0001285957220702368; L2_M = 0.0001736157714376252; LMax_M = 0.0005888891194135541;
+    ensure_distance("L1, k=1"  , L1, L1_M, AcceptedError(L1_M) );
+    ensure_distance("L2, k=1"  , L2, L2_M, AcceptedError(L2_M) );
+    ensure_distance("LMax, k=1", LMax, LMax_M, AcceptedError(LMax_M) );
+
+    // ========= Compute with HighOrderVariable(2) ========
+
+    // Compute residuals for stage 1
+    SolnBlk[0].dUdt_Multistage_Explicit_HighOrder(1,IP,2);
+
+    // Compute residual errors
+    ComputeResidualErrors(SolnBlk[0], 0, 2, L1, L2, LMax);
+
+    // === check errors
+    L1_M = 0.0002726793258866349; L2_M = 0.0004199290419628109; LMax_M = 0.001404192919094511;
+    ensure_distance("L1, k=2"  , L1, L1_M, AcceptedError(L1_M) );
+    ensure_distance("L2, k=2"  , L2, L2_M, AcceptedError(L2_M) );
+    ensure_distance("LMax, k=2", LMax, LMax_M, AcceptedError(LMax_M) );
+
+    // ========= Compute with HighOrderVariable(3) ========
+
+    // Compute residuals for stage 1
+    SolnBlk[0].dUdt_Multistage_Explicit_HighOrder(1,IP,3);
+
+    // Compute residual errors
+    ComputeResidualErrors(SolnBlk[0], 0, 2, L1, L2, LMax);
+
+    // === check errors
+    L1_M = 4.32976294122695e-06; L2_M = 7.498140474432567e-06; LMax_M = 3.275058817210977e-05;
+    ensure_distance("L1, k=3"  , L1, L1_M, AcceptedError(L1_M) );
+    ensure_distance("L2, k=3"  , L2, L2_M, AcceptedError(L2_M) );
+    ensure_distance("LMax, k=3", LMax, LMax_M, AcceptedError(LMax_M) );
+
+    if (RunRegression == OFF){ 
+      // Print errors
+      cout << endl
+	   << SolnBlk[0].ICu - SolnBlk[0].ICl + 1 << "x" <<  SolnBlk[0].JCu - SolnBlk[0].JCl + 1 << endl
+	   << "L1_Norm = " << setprecision(16) << L1 << endl
+	   << "L2_Norm = " << setprecision(16) << L2 << endl
+	   << "Max_Norm = " << setprecision(16) << LMax << endl;
+
+      // Output solution to check residual errors
+      CurrentFile = "Current_HighOrder_Residual_Study.dat";
+      Open_Output_File(CurrentFile);
+      
+      SolnBlk[0].Output_Nodes_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+    }
 
   }
 
