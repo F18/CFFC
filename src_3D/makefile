@@ -659,6 +659,15 @@ uninstall-all:
 	@echo "---------------------"
 	@echo " "
 
+install-les3Dpolytropic: $(EXE_LES_POLYTROPIC)
+	@echo "Installing $(EXE_LES_POLYTROPIC)"
+	cp $(EXE_LES_POLYTROPIC) $(CFFC_BIN_DIR)
+	@echo " "
+	@echo "Installation complete"
+	@echo "---------------------"
+	@echo " "
+
+
 #
 # Create code documentation using doxygen and latex.
 documentation:
