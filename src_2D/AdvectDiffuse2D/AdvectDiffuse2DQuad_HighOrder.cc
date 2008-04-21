@@ -804,45 +804,25 @@ void AdvectDiffuse2D_Quad_Block::Output_Cells_Tecplot_HighOrder_Debug_Mode(Adapt
  * spatial discretization scheme for the  
  * convective flux coupled with a centrally-weighted    
  * high-order finite-volume discretization for the diffusive flux.  
- * The residual is stored in dUdt[][][0].               
+ * The residual is stored in dUdt[][][k_residual].
  *
+ * \param IP  input parameters object
  * \param Pos index to identify the high-order variable used to calculate the residual
- *                                                      
- */
-int AdvectDiffuse2D_Quad_Block::dUdt_Residual_Evaluation_HighOrder(const AdvectDiffuse2D_Input_Parameters &IP,
-								   const unsigned short int Pos){
-
-
-
-  /* residual evaluation successful. */
-  return 0;
-}
-
-
-/*!
- * This routine determines the solution residuals for a 
- * given stage of a variety of multi-stage explicit     
- * time integration schemes for the solution block.
- * The solution residuals are evaluated  
- * using the high-order CENO upwind finite-volume 
- * spatial discretization scheme for the convective 
- * flux coupled with a centrally-weighted high-order 
- * finite-volume discretization for the diffusive flux.
+ * \param k_residual index to identify the residual storage location
  *
- * \param Pos index to identify the high-order variable used to calculate the residual
- *
- * \todo Take out from this routine the spatial residual calculation. Pass k_residual to know where to write the residuals.
+ * \todo Optimize the number of high-order evaluations for different boundary conditions!
  */
-int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_stage,
-								   const AdvectDiffuse2D_Input_Parameters &IP,
-								   const unsigned short int Pos) {
+int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_Input_Parameters &IP,
+							const int & k_residual,
+							const unsigned short int Pos){
+
   // SET VARIABLES USED IN THE RESIDUAL CALCULATION PROCESS
 
-  int i, j, k_residual, GQPoint, Position, SplineSegment;
+  int i, j, GQPoint, Position, SplineSegment;
   bool IsNonSmoothHighOrderReconstruction;
   AdvectDiffuse2D_State Ul, Ur, U_face, Flux, FaceFlux;
   Vector2D GradU_face, GradUl, GradUr;		// Solution gradient at the inter-cellular face
-  int NumGQP(Grid.getNumGQP());	// Number of Gauss quadrature points per face used to compute the flux integral
+  int NumGQP(Grid.getNumGQP());	  // Number of Gauss quadrature points per face used to compute the flux integral
 
   Vector2D *GaussQuadPoints = new Vector2D [NumGQP]; // the GQPs at which a Riemann-like problem is solved
   double * GaussQuadWeights = new double [NumGQP];   // the Gauss integration weights for each Gauss quadrature
@@ -851,34 +831,8 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
   /* Set the GaussQuadWeights. */
   GaussQuadratureData::getGaussQuadWeights(GaussQuadWeights, NumGQP);
 
-  /* Evaluate the solution residual for stage 
-     i_stage of an N stage scheme. */
-
-  /* Evaluate the time step fraction and residual storage location for the stage. */
-  
-  switch(IP.i_Time_Integration) {
-  case TIME_STEPPING_EXPLICIT_EULER :
-    k_residual = 0;
-    break;
-  case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-    k_residual = 0;
-    break;
-  case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-    k_residual = 0;
-    if (IP.N_Stage == 4) {
-      if (i_stage == 4) {
-	k_residual = 0;
-      } else {
-	k_residual = i_stage - 1;
-      } /* endif */
-    } /* endif */
-    break;
-  case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-    k_residual = 0;
-    break;
-  default:
-    k_residual = 0;
-  } /* endswitch */
+  /* Evaluate the solution residual 
+     and write it to dUdt[][][k_residual]. */
 
   /***************************************************************************************
    *                 EVALUATE THE HIGH-ORDER SOLUTION RESIDUALS                          *
@@ -911,44 +865,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
   */
   HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this);
 
-  // ************* Step 1. (Re)-Set parameters in all cells based on the time integration scheme **************
-  // **********************************************************************************************************
-  for ( j = JCl-1 ; j <= JCu+1 ; ++j ){
-    for ( i = ICl-1 ; i <= ICu+1 ; ++i ) {
-
-      if ( i_stage == 1 ){
-	Uo[i][j] = U[i][j];
-	dUdt[i][j][k_residual].Vacuum();  // set to zero
-      } else {
-	switch(IP.i_Time_Integration) {
-	case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-	  // 
-	  break;
-	case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-	  if (IP.N_Stage == 2) {
-	    // 
-	  } else if (IP.N_Stage == 4 && i_stage == 4) {
-	    dUdt[i][j][k_residual] = ( dUdt[i][j][0] + 
-				       TWO*dUdt[i][j][1] +
-				       TWO*dUdt[i][j][2] );
-	  } else {
-	    dUdt[i][j][k_residual].Vacuum();  // set to zero
-	  } /* endif */
-	  break;
-	case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-	  dUdt[i][j][k_residual].Vacuum(); // set to zero
-	  break;
-	default:
-	  dUdt[i][j][k_residual].Vacuum(); // set to zero
-	  break;
-	} /* endswitch */
-      }/* endif */
-
-    } // endfor (i)
-  } // endfor (j)
-
-
-  // ** Step 2. Compute interior diffusive fluxes and any source contributions for cells between (ICl,JCl)-->(ICu,JCu) **
+  // ** Step 1. Compute interior diffusive fluxes and any source contributions for cells between (ICl,JCl)-->(ICu,JCu) **
   // ********************************************************************************************************************
   for ( j = JCl ; j <= JCu ; ++j ){
     for ( i = ICl ; i <= ICu ; ++i ) {
@@ -1053,7 +970,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
   } // endfor (j)
 
  
-  // ****** Step 3. Compute diffusive fluxes through North block boundary ******
+  // ****** Step 2. Compute diffusive fluxes through North block boundary ******
   // ***************************************************************************
   // == Check the flux calculation method ==
   if (Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
@@ -1278,7 +1195,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
   } // endif (Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
 
 
-  // ****** Step 4. Compute diffusive fluxes through South block boundary ******
+  // ****** Step 3. Compute diffusive fluxes through South block boundary ******
   // ***************************************************************************
   // == Check the flux calculation method ==
   if (Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
@@ -1503,7 +1420,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
   } // endif (Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
 
 
-  // ****** Step 5. Compute diffusive fluxes through East block boundary ******
+  // ****** Step 4. Compute diffusive fluxes through East block boundary ******
   // **************************************************************************
   // == Check the flux calculation method ==
   if (Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
@@ -1728,7 +1645,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
   } // endif (Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
 
 
-  // ****** Step 6. Compute diffusive fluxes through West block boundary ******
+  // ****** Step 5. Compute diffusive fluxes through West block boundary ******
   // **************************************************************************
   // == Check the flux calculation method ==
   if (Grid.BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
@@ -1969,7 +1886,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
   HighOrderVariable(Pos).EnforceMonotonicityToNonSmoothInterpolants(*this, IP.Limiter());
 
 
-  // ** Step 7. Compute interior convective fluxes for cells between (ICl,JCl)-->(ICu,JCu) **
+  // ** Step 6. Compute interior convective fluxes for cells between (ICl,JCl)-->(ICu,JCu) **
   // ****************************************************************************************
   for ( j = JCl ; j <= JCu ; ++j ){
     for ( i = ICl ; i <= ICu ; ++i ) {
@@ -2043,7 +1960,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
   } // endfor (j)
 
  
-  // ****** Step 8. Compute convective fluxes through North block boundary ******
+  // ****** Step 7. Compute convective fluxes through North block boundary ******
   // ***************************************************************************
   // == Check the flux calculation method ==
   if (Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
@@ -2302,7 +2219,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
   } // endif (Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
 
 
-  // ****** Step 9. Compute convective fluxes through South block boundary ******
+  // ****** Step 8. Compute convective fluxes through South block boundary ******
   // ***************************************************************************
   // == Check the flux calculation method ==
   if (Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
@@ -2561,7 +2478,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
   } // endif (Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
 
 
-  // ****** Step 10. Compute convective fluxes through East block boundary ******
+  // ****** Step 9. Compute convective fluxes through East block boundary ******
   // **************************************************************************
   // == Check the flux calculation method ==
   if (Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
@@ -2820,7 +2737,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
   } // endif (Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
 
 
-  // ****** Step 11. Compute convective fluxes through West block boundary ******
+  // ****** Step 10. Compute convective fluxes through West block boundary ******
   // **************************************************************************
   // == Check the flux calculation method ==
   if (Grid.BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
@@ -3085,6 +3002,129 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
 
   /* residual for the stage successfully calculated. */
   return (0);
+
+}
+
+/*!
+ * Evaluate the residual for the solution block 
+ * using the high-order CENO upwind finite-volume 
+ * spatial discretization scheme for the  
+ * convective flux coupled with a centrally-weighted    
+ * high-order finite-volume discretization for the diffusive flux.  
+ * The residual is stored in dUdt[][][0].               
+ *
+ * \param Pos index to identify the high-order variable used to calculate the residual
+ *                                                      
+ */
+int AdvectDiffuse2D_Quad_Block::dUdt_Residual_Evaluation_HighOrder(const AdvectDiffuse2D_Input_Parameters &IP,
+								   const unsigned short int Pos){
+
+  int i,j;
+  
+  // ************* Step 1. (Re)-Set residual for k_residual=0 to zero in all affected cells **************
+  // *****************************************************************************************************
+  for ( j = JCl-1 ; j <= JCu+1 ; ++j ) {
+    for ( i = ICl-1 ; i <= ICu+1 ; ++i ) {
+      dUdt[i][j][0].Vacuum();  // set to zero
+    } // endfor (i)
+  } // endfor (j)
+
+  // ** Step 2. Compute high-order spatial residual and write it to k_residual = 0 **
+  // ********************************************************************************
+  return dUdt_Residual_HighOrder(IP, 0, Pos);
+}
+
+
+/*!
+ * This routine determines the solution residuals for a 
+ * given stage of a variety of multi-stage explicit     
+ * time integration schemes for the solution block.
+ * The solution residuals are evaluated  
+ * using the high-order CENO upwind finite-volume 
+ * spatial discretization scheme for the convective 
+ * flux coupled with a centrally-weighted high-order 
+ * finite-volume discretization for the diffusive flux.
+ *
+ * \param Pos index to identify the high-order variable used to calculate the residual
+ *
+ */
+int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_stage,
+								   const AdvectDiffuse2D_Input_Parameters &IP,
+								   const unsigned short int Pos) {
+  // SET VARIABLES USED IN THE RESIDUAL CALCULATION PROCESS
+
+  int i, j, k_residual;
+
+  /* Evaluate the solution residual for stage 
+     i_stage of an N stage scheme. */
+
+  /* Evaluate the time step fraction and residual storage location for the stage. */
+  
+  switch(IP.i_Time_Integration) {
+  case TIME_STEPPING_EXPLICIT_EULER :
+    k_residual = 0;
+    break;
+  case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
+    k_residual = 0;
+    break;
+  case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
+    k_residual = 0;
+    if (IP.N_Stage == 4) {
+      if (i_stage == 4) {
+	k_residual = 0;
+      } else {
+	k_residual = i_stage - 1;
+      } /* endif */
+    } /* endif */
+    break;
+  case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
+    k_residual = 0;
+    break;
+  default:
+    k_residual = 0;
+  } /* endswitch */
+
+
+  // ************* Step 1. (Re)-Set parameters in all affected cells based on the time integration scheme **************
+  // *******************************************************************************************************************
+  for ( j = JCl-1 ; j <= JCu+1 ; ++j ){
+    for ( i = ICl-1 ; i <= ICu+1 ; ++i ) {
+
+      if ( i_stage == 1 ){
+	Uo[i][j] = U[i][j];
+	dUdt[i][j][k_residual].Vacuum();  // set to zero
+      } else {
+	switch(IP.i_Time_Integration) {
+	case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
+	  // 
+	  break;
+	case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
+	  if (IP.N_Stage == 2) {
+	    // 
+	  } else if (IP.N_Stage == 4 && i_stage == 4) {
+	    dUdt[i][j][k_residual] = ( dUdt[i][j][0] + 
+				       TWO*dUdt[i][j][1] +
+				       TWO*dUdt[i][j][2] );
+	  } else {
+	    dUdt[i][j][k_residual].Vacuum();  // set to zero
+	  } /* endif */
+	  break;
+	case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
+	  dUdt[i][j][k_residual].Vacuum(); // set to zero
+	  break;
+	default:
+	  dUdt[i][j][k_residual].Vacuum(); // set to zero
+	  break;
+	} /* endswitch */
+      }/* endif */
+
+    } // endfor (i)
+  } // endfor (j)
+
+
+  // ** Step 2. Compute high-order spatial residual for the current time step fraction **
+  // ************************************************************************************
+  return dUdt_Residual_HighOrder(IP, k_residual, Pos);
 }
 
 /*!
