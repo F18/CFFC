@@ -1,6 +1,10 @@
 #ifndef _HEXA_EXPLICIT_SOLVER
 #define _HEXA_EXPLICIT_SOLVER
 
+#ifndef _LES_FILTERS_INCLUDED
+#include "../LES/Filters/LES_Filters.h"
+#endif // _LES_FILTERS_INCLUDED
+
 /*! ******************************************************
  * Routine: Hexa_Explicit_Solver                        *
  *                                                      *
@@ -9,6 +13,11 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 				    HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
   
+    SOLN_cSTATE **** (Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::*dUdt_ptr) = NULL;
+    dUdt_ptr = &Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::dUdt;
+    LES_Filter<SOLN_pSTATE,SOLN_cSTATE> Explicit_Filter(Data,Solution_Data,LES_FILTER_HASELBACHER);
+    Explicit_Filter.Set_Filter_Variables(dUdt_ptr,0);
+    
   int error_flag(0);
    
   double dTime;
@@ -215,6 +224,11 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	// 6. Smooth the solution residual using implicit residual smoothing. */
 
 	/*******************************************************************/
+          
+          if (i_stage == Solution_Data.Input.N_Stage) {
+              Explicit_Filter.filter();
+          }      
+          
 	// 7. Update solution for stage.
 	error_flag = 
            Solution_Data.Local_Solution_Blocks.Update_Solution_Multistage_Explicit(Solution_Data.Input, 
