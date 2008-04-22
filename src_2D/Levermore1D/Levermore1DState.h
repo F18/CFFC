@@ -37,7 +37,6 @@ using namespace std;
                                //otherwise it's anti-stabilization.
 
 #define EXP_LIMIT                250.0
-#define LEVERMORE1D_DETECTOR_TOL 1.0e-3
 
 /* Define the classes. */
 class Levermore1D_cState;
@@ -127,6 +126,8 @@ class Levermore1D_cState : public Levermore1D_Vector{
   double detector_value(const Levermore1D_weights &A) const;
   double relative_error(const Levermore1D_cState &U2) const;
   double relaxation_time() const;
+
+  static double m_resync_tol;
 
  protected:
   static double m_relaxation_time;
@@ -263,14 +264,10 @@ extern Levermore1D_Vector FluxKinetic(const Levermore1D_weights &Al,
 
 extern Levermore1D_Vector Collision_RHS(const Levermore1D_cState &U);
 
-//extern void Add_Collision_LHS(const DenseMatrix *LHS,
-//			      const Levermore1D_cState &U,
-//			      const double &omega);
-
 extern double relaxation_time(const Levermore1D_cState &U);
 
 inline int detector_below_tolerance(const double &detector) {
-  return (detector < LEVERMORE1D_DETECTOR_TOL);
+  return (detector < Levermore1D_cState::m_resync_tol);
 }
 
 

@@ -264,6 +264,7 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
     // levermore1D-specific inputs
     IP.number_of_moments = 3;
     IP.relaxation_time = 1.0e10;
+    IP.resync_tol = 1.0e-4;
 
 }
 
@@ -710,6 +711,16 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
 	 i_command = INVALID_INPUT_VALUE;
        }/* endif */
       
+    } else if (strcmp(IP.Next_Control_Parameter, "Resync_Tol") == 0) {
+       i_command = 32;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.resync_tol;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.resync_tol <= 0.0 ){
+	 cout << "\n Error! Re-synchronization tolerance must be greater than zero.";
+	 i_command = INVALID_INPUT_VALUE;
+       }/* endif */
+
     } else if (strcmp(IP.Next_Control_Parameter, "Execute") == 0) {
        i_command = EXECUTE_CODE;
 

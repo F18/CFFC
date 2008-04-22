@@ -19,6 +19,7 @@
  **********************************************************/
 double Levermore1D_pState::m_relaxation_time = 1.0e10; //Always overwritten by input
 double Levermore1D_cState::m_relaxation_time = 1.0e10; //when ICs are set.
+double Levermore1D_cState::m_resync_tol = 1.0e-4;
 
 /********************************************************
  * Static member variables                              *

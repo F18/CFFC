@@ -287,6 +287,7 @@ void ICs(Levermore1D_UniformMesh *Soln,
   //set relaxation times
   Levermore1D_pState::set_relaxation_time(IP.relaxation_time);
   Levermore1D_cState::set_relaxation_time(IP.relaxation_time);
+  Levermore1D_cState::m_resync_tol = IP.resync_tol;
 }
 
 /******************************************************//**

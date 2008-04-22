@@ -70,6 +70,7 @@ class CFD1D_Input_Parameters{
   // levermore1D-specific input parameters
   int number_of_moments;
   double relaxation_time;
+  double resync_tol;
 
   // Output file name:
   char Output_File_Name[INPUT_PARAMETER_LENGTH_CFD1D];
@@ -248,7 +249,10 @@ inline ostream &operator << (ostream &out_file,
 	     << "\n  -> Number of Moments: "
 	     << IP.number_of_moments
 	     << "\n  -> Relaxation time: "
-	     << IP.relaxation_time;
+	     << IP.relaxation_time
+	     << "\n  -> Re-synchronization tolerance: "
+             << IP.resync_tol;
+
     return (out_file);
 }
 
