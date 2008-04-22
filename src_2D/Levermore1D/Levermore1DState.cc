@@ -321,11 +321,13 @@ double Levermore1D_cState::moment_series_L(const Levermore1D_weights &A, const d
  *                                                      *
  ********************************************************/
 double Levermore1D_cState::detector_value(const Levermore1D_weights &A) const {
-  double moment1, moment2;
+  double moment1, moment2, ref;
   double us(m_values[1]/m_values[0]);
-  moment1 = moment_series(length+1,A,us);
-  moment2 = A.integrate_conserved_moment(length+1,us);
-  return fabs((moment1-moment2)/moment1);
+  moment1 = moment_series_L(A,us);
+  moment2 = A.integrate_conserved_moment(length,us);
+  ref = moment_series(length+1,A,us);
+  ref = sqrt( ref * m_values[length-1] );
+  return fabs((moment1-moment2)/ref);
 }
 
 /********************************************************
