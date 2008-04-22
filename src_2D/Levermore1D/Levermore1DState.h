@@ -68,6 +68,7 @@ class Levermore1D_pState : public Levermore1D_Vector{
   void Vacuum() {Levermore1D_Vector::zero();}
   void set_from_U(const Levermore1D_cState &U);
   void set_from_A(const Levermore1D_weights &A, double us);
+  static void set_relaxation_time(double tau) {m_relaxation_time = tau;}
   double conserved_extras(int i) const;
   double relaxation_time() const;
   DenseMatrix dUdW(void) const;
@@ -77,7 +78,7 @@ class Levermore1D_pState : public Levermore1D_Vector{
 
  protected:
   double conserved_extras_recursive(int i, int &pf, int pf_num, int pf_den) const;
-
+  static double m_relaxation_time;
 };
 
 /********************************************************
@@ -101,6 +102,7 @@ class Levermore1D_cState : public Levermore1D_Vector{
   void Vacuum() {Levermore1D_Vector::zero();}
   void set_from_W(const Levermore1D_pState &W);
   void set_from_A(const Levermore1D_weights &A, double us);
+  static void set_relaxation_time(double tau) {m_relaxation_time = tau;}
   void MaxBoltz(double rho, double u, double p) {
     set_from_W(Levermore1D_pState(rho,u,p)); // change to something better later.
   }
@@ -126,6 +128,8 @@ class Levermore1D_cState : public Levermore1D_Vector{
   double relative_error(const Levermore1D_cState &U2) const;
   double relaxation_time() const;
 
+ protected:
+  static double m_relaxation_time;
 };
 
 /********************************************************

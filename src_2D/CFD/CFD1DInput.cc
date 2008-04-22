@@ -263,6 +263,7 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
 
     // levermore1D-specific inputs
     IP.number_of_moments = 3;
+    IP.relaxation_time = 1.0e10;
 
 }
 
@@ -696,6 +697,16 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.number_of_moments < 3 || IP.number_of_moments%2 ==0 ){
 	 cout << "\n Error! Invalid number of moments.";
+	 i_command = INVALID_INPUT_VALUE;
+       }/* endif */
+      
+    } else if (strcmp(IP.Next_Control_Parameter, "Relaxation_Time") == 0) {
+       i_command = 31;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.relaxation_time;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.relaxation_time <= 0.0 ){
+	 cout << "\n Error! Relaxation time must be greater than zero.";
 	 i_command = INVALID_INPUT_VALUE;
        }/* endif */
       

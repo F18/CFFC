@@ -14,6 +14,12 @@
 
 #define INTEGRATION_RESOLUTION  10.0
 
+/******************************************************//**
+ * Static Variables
+ **********************************************************/
+double Levermore1D_pState::m_relaxation_time = 1.0e10; //Always overwritten by input
+double Levermore1D_cState::m_relaxation_time = 1.0e10; //when ICs are set.
+
 /********************************************************
  * Static member variables                              *
  ********************************************************/
@@ -694,7 +700,7 @@ Levermore1D_Vector FluxKinetic(const Levermore1D_weights &Al,
  *                                                      *
  ********************************************************/
 double Levermore1D_pState::relaxation_time() const {
-  return 1.0e-7;  //set to something more realistic later
+  return m_relaxation_time;
 }
 
 double relaxation_time(const Levermore1D_pState &W) {
@@ -702,7 +708,7 @@ double relaxation_time(const Levermore1D_pState &W) {
 }
 
 double Levermore1D_cState::relaxation_time() const {
-  return 1.0e-7;  //set to something more realistic later
+  return m_relaxation_time;
 }
 
 double relaxation_time(const Levermore1D_cState &U) {

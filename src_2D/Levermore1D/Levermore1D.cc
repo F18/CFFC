@@ -284,6 +284,9 @@ void ICs(Levermore1D_UniformMesh *Soln,
     Soln[i].calculate_Hessians();
   }
 
+  //set relaxation times
+  Levermore1D_pState::set_relaxation_time(IP.relaxation_time);
+  Levermore1D_cState::set_relaxation_time(IP.relaxation_time);
 }
 
 /******************************************************//**
