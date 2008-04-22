@@ -184,6 +184,8 @@ public:
   int           Freeze_Limiter; //!< Limiter freezing indicator.
   static int         Flow_Type; //!< Flow type flag ( required by AMR ).
   static int    Include_Source_Term; //!< Flag for including/excluding the source term in the model equation.
+  static int    Include_Advection_Term; //!< Flag for including/excluding the advection term in the model equation.
+  static int    Include_Diffusion_Term; //!< Flag for including/excluding the diffusion term in the model equation.
   //@}
 
   //! @name Boundary condtion reference states:

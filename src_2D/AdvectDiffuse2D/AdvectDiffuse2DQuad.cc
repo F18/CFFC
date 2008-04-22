@@ -30,6 +30,10 @@ int AdvectDiffuse2D_Quad_Block::Number_of_Residual_Norms = 1;
 AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::RefU(1.0);
 // Initialize Include_Source_Term
 int AdvectDiffuse2D_Quad_Block::Include_Source_Term = ON; // include the source term by default
+// Initialize Include_Advection_Term
+int AdvectDiffuse2D_Quad_Block::Include_Advection_Term = ON; // include the advection term by default
+// Initialize Include_Diffusion_Term
+int AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = ON; // include the diffusion term by default
 
 /*******************************************************************************
  * AdvectDiffuse2D_Quad_Block -- Single Block Member Functions.                *

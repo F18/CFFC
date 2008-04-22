@@ -869,91 +869,95 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
   // ********************************************************************************************************************
   for ( j = JCl ; j <= JCu ; ++j ){
     for ( i = ICl ; i <= ICu ; ++i ) {
+
+      if (Include_Diffusion_Term){
       
-      if ( i != ICu) { 		// (i == ICu) corresponds to the East block boundary which will be considered separately!
+	if ( i != ICu) { 		// (i == ICu) corresponds to the East block boundary which will be considered separately!
 	
-	/* Evaluate the cell interface i-direction diffusive fluxes.
-	   --> ( i.e. East Flux for cell (i,j) & West Flux for cell (i+1,j) ) */
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceE(i,j,GaussQuadPoints,NumGQP);
+	  /* Evaluate the cell interface i-direction diffusive fluxes.
+	     --> ( i.e. East Flux for cell (i,j) & West Flux for cell (i+1,j) ) */
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceE(i,j,GaussQuadPoints,NumGQP);
 
-	// Reset Flux
-	Flux.Vacuum();
+	  // Reset Flux
+	  Flux.Vacuum();
 
-	for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+	  for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
 
-	  // Compute left and right interface states at the current Gauss
-	  // point location based on the unlimited high-order reconstruction
-	  Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i  ,j,GaussQuadPoints[GQPoint]);
-	  Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i+1,j,GaussQuadPoints[GQPoint]);
+	    // Compute left and right interface states at the current Gauss
+	    // point location based on the unlimited high-order reconstruction
+	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i  ,j,GaussQuadPoints[GQPoint]);
+	    Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i+1,j,GaussQuadPoints[GQPoint]);
 
-	  // Determine the solution state at the Gauss quadrature
-	  // point for the calculation of the diffusion coefficient
-	  U_face = 0.5*(Ul + Ur);
+	    // Determine the solution state at the Gauss quadrature
+	    // point for the calculation of the diffusion coefficient
+	    U_face = 0.5*(Ul + Ur);
 
-	  // Calculate gradient at the Gauss quadrature point using a centrally-weighted reconstruction.
-	  GradU_face = 0.5*Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i  ,j,GaussQuadPoints[GQPoint])[1] + 
-				    HighOrderVariable(Pos).XGradientStateAtLocation(i+1,j,GaussQuadPoints[GQPoint])[1] ,
-				    HighOrderVariable(Pos).YGradientStateAtLocation(i  ,j,GaussQuadPoints[GQPoint])[1] + 
-				    HighOrderVariable(Pos).YGradientStateAtLocation(i+1,j,GaussQuadPoints[GQPoint])[1]);
+	    // Calculate gradient at the Gauss quadrature point using a centrally-weighted reconstruction.
+	    GradU_face = 0.5*Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i  ,j,GaussQuadPoints[GQPoint])[1] + 
+				      HighOrderVariable(Pos).XGradientStateAtLocation(i+1,j,GaussQuadPoints[GQPoint])[1] ,
+				      HighOrderVariable(Pos).YGradientStateAtLocation(i  ,j,GaussQuadPoints[GQPoint])[1] + 
+				      HighOrderVariable(Pos).YGradientStateAtLocation(i+1,j,GaussQuadPoints[GQPoint])[1]);
 
-	  /* Add the weighted contribution of the current GQP to the total 
-	     diffusive flux in the normal direction through the face. */
-	  Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceE(i, j));
+	    /* Add the weighted contribution of the current GQP to the total 
+	       diffusive flux in the normal direction through the face. */
+	    Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceE(i, j));
 
-	} //endfor (GQPoint)
+	  } //endfor (GQPoint)
       
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number * dt[i  ][j])*
-				      Flux * Grid.lfaceE(i  , j)/Grid.Cell[i  ][j].A );
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number * dt[i  ][j])*
+					Flux * Grid.lfaceE(i  , j)/Grid.Cell[i  ][j].A );
 
-	dUdt[i+1][j][k_residual] += ( (IP.CFL_Number * dt[i+1][j])*
-				      Flux * Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A );
+	  dUdt[i+1][j][k_residual] += ( (IP.CFL_Number * dt[i+1][j])*
+					Flux * Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A );
 
-      }	//endif (i != ICu)
-
-
-      if ( j != JCu) {		// (j == JCu) corresponds to the North block boundary which will be considered separately!
-
-	/* Evaluate the cell interface j-direction diffusive fluxes.
-	   --> ( i.e. North Flux for cell (i,j) & South Flux for cell (i,j+1) ) */
-	// Determine the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceN(i,j,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	Flux.Vacuum();
-
-	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
-
-	  // Compute left and right interface states at the current Gauss
-	  // point location based on the unlimited high-order reconstruction
-	  Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,j  ,GaussQuadPoints[GQPoint]);
-	  Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i,j+1,GaussQuadPoints[GQPoint]);
-
-	  // Determine the solution state at the Gauss quadrature
-	  // point for the calculation of the diffusion coefficient
-	  U_face = 0.5*(Ul + Ur);
-
-	  // Calculate gradient at the Gauss quadrature point using a centrally-weighted reconstruction.
-	  GradU_face = 0.5*Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,j  ,GaussQuadPoints[GQPoint])[1] + 
-				    HighOrderVariable(Pos).XGradientStateAtLocation(i,j+1,GaussQuadPoints[GQPoint])[1] ,
-				    HighOrderVariable(Pos).YGradientStateAtLocation(i,j  ,GaussQuadPoints[GQPoint])[1] + 
-				    HighOrderVariable(Pos).YGradientStateAtLocation(i,j+1,GaussQuadPoints[GQPoint])[1]);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     diffusive flux through the face in the normal direction. */
-	  Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceN(i, j));
-	} //endfor (GQPoint)
+	}	//endif (i != ICu)
 
 
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number * dt[i][j  ])*
-				      Flux * Grid.lfaceN(i, j  )/Grid.Cell[i][j  ].A );
+	if ( j != JCu) {		// (j == JCu) corresponds to the North block boundary which will be considered separately!
 
-	dUdt[i][j+1][k_residual] += ( (IP.CFL_Number * dt[i][j+1])*
-				      Flux * Grid.lfaceS(i, j+1)/Grid.Cell[i][j+1].A );
+	  /* Evaluate the cell interface j-direction diffusive fluxes.
+	     --> ( i.e. North Flux for cell (i,j) & South Flux for cell (i,j+1) ) */
+	  // Determine the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceN(i,j,GaussQuadPoints,NumGQP);
 
-      } //endif (j != JCu)
+	  // Reset Flux
+	  Flux.Vacuum();
+
+	  for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
+
+	    // Compute left and right interface states at the current Gauss
+	    // point location based on the unlimited high-order reconstruction
+	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,j  ,GaussQuadPoints[GQPoint]);
+	    Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i,j+1,GaussQuadPoints[GQPoint]);
+
+	    // Determine the solution state at the Gauss quadrature
+	    // point for the calculation of the diffusion coefficient
+	    U_face = 0.5*(Ul + Ur);
+
+	    // Calculate gradient at the Gauss quadrature point using a centrally-weighted reconstruction.
+	    GradU_face = 0.5*Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,j  ,GaussQuadPoints[GQPoint])[1] + 
+				      HighOrderVariable(Pos).XGradientStateAtLocation(i,j+1,GaussQuadPoints[GQPoint])[1] ,
+				      HighOrderVariable(Pos).YGradientStateAtLocation(i,j  ,GaussQuadPoints[GQPoint])[1] + 
+				      HighOrderVariable(Pos).YGradientStateAtLocation(i,j+1,GaussQuadPoints[GQPoint])[1]);
+
+	    /* Add the weighted contribution of the current GQP to the total 
+	       diffusive flux through the face in the normal direction. */
+	    Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceN(i, j));
+	  } //endfor (GQPoint)
+
+
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number * dt[i][j  ])*
+					Flux * Grid.lfaceN(i, j  )/Grid.Cell[i][j  ].A );
+
+	  dUdt[i][j+1][k_residual] += ( (IP.CFL_Number * dt[i][j+1])*
+					Flux * Grid.lfaceS(i, j+1)/Grid.Cell[i][j+1].A );
+
+	} //endif (j != JCu)
+
+      }	// endif (Include_Diffusion_Term)
 
       /* Include regular source terms. */
       if (Include_Source_Term) {
@@ -969,146 +973,205 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
     } // endfor (i)
   } // endfor (j)
 
- 
-  // ****** Step 2. Compute diffusive fluxes through North block boundary ******
-  // ***************************************************************************
-  // == Check the flux calculation method ==
-  if (Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
-    /* Calculate the flux using information directly from the reconstruction.
-       The boundary conditions along this spline has been enforced to the reconstruction procedure. */
-    
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndNorthSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
-     
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. North Flux for cell (i,JCu) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
 
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndNorthSplineInfo[i].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
+  if (Include_Diffusion_Term){
+
+    // ****** Step 2. Compute diffusive fluxes through North block boundary ******
+    // ***************************************************************************
+    // == Check the flux calculation method ==
+    if (Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+      /* Calculate the flux using information directly from the reconstruction.
+	 The boundary conditions along this spline has been enforced to the reconstruction procedure. */
+    
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndNorthSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
+     
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. North Flux for cell (i,JCu) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
+
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndNorthSplineInfo[i].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	    FluxN[i].Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndNorthSplineInfo[i].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // Determine the solution state at the Gauss quadrature point for the calculation 
+	      // of the diffusion coefficient based on the constrained reconstruction.
+	      U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,Grid.BndNorthSplineInfo[i].GQPoint(Position));
+
+	      // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
+	      GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCu,
+										    Grid.BndNorthSplineInfo[i].GQPoint(Position))[1],
+				    HighOrderVariable(Pos).YGradientStateAtLocation(i,JCu,
+										    Grid.BndNorthSplineInfo[i].GQPoint(Position))[1]);
+
+	      /* Add the weighted contribution of the current GQP to the total 
+		 diffusive flux through the spline segment in the local normal direction. */
+	      Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
+						     Grid.BndNorthSplineInfo[i].GQPoint(Position), 
+						     Grid.BndNorthSplineInfo[i].NormalGQPoint(Position));
+	    } //endfor (GQPoint)
+	
+	    // Update North face boundary flux with the contribution of this spline segment
+	    FluxN[i] += Flux * Grid.BndNorthSplineInfo[i].IntLength(SplineSegment);
+
+	  } // endfor (SplineSegment)
+
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FluxN[i]/Grid.Cell[i][JCu].A );
+
+	}	// endfor (i)
+
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
+
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. North Flux for cell (i,JCu) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
+
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);
 
 	  // Reset Flux
-	  Flux.Vacuum();
 	  FluxN[i].Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndNorthSplineInfo[i].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	  // Calculate total flux through the cell face in the normal direction
+	  for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
 
 	    // Determine the solution state at the Gauss quadrature point for the calculation 
 	    // of the diffusion coefficient based on the constrained reconstruction.
-	    U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,Grid.BndNorthSplineInfo[i].GQPoint(Position));
+	    U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,GaussQuadPoints[GQPoint]);
 
 	    // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
-	    GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCu,
-										  Grid.BndNorthSplineInfo[i].GQPoint(Position))[1],
-				  HighOrderVariable(Pos).YGradientStateAtLocation(i,JCu,
-										  Grid.BndNorthSplineInfo[i].GQPoint(Position))[1]);
+	    GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCu,GaussQuadPoints[GQPoint])[1],
+				  HighOrderVariable(Pos).YGradientStateAtLocation(i,JCu,GaussQuadPoints[GQPoint])[1]);
 
 	    /* Add the weighted contribution of the current GQP to the total 
-	       diffusive flux through the spline segment in the local normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
-						   Grid.BndNorthSplineInfo[i].GQPoint(Position), 
-						   Grid.BndNorthSplineInfo[i].NormalGQPoint(Position));
+	       diffusive flux through the face in the normal direction. */
+	    FluxN[i] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceN(i,JCu));
 	  } //endfor (GQPoint)
 	
-	  // Update North face boundary flux with the contribution of this spline segment
-	  FluxN[i] += Flux * Grid.BndNorthSplineInfo[i].IntLength(SplineSegment);
+	  // Update North face boundary flux with the contribution of this cell face
+	  FluxN[i] *= Grid.lfaceN(i,JCu);
 
-	} // endfor (SplineSegment)
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* FluxN[i]/Grid.Cell[i][JCu].A );
 
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FluxN[i]/Grid.Cell[i][JCu].A );
+	}	// endfor (i)
 
-      }	// endfor (i)
+      } // endif (Grid.BndNorthSplineInfo != NULL)
+
 
     } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
+      /* Calculate the flux using the centrally-weighted gradient reconstruction
+	 and ensure that boundary conditions for this boundary are correctly enforced. */
 
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. North Flux for cell (i,JCu) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	FluxN[i].Vacuum();
-
-	// Calculate total flux through the cell face in the normal direction
-	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
-
-	  // Determine the solution state at the Gauss quadrature point for the calculation 
-	  // of the diffusion coefficient based on the constrained reconstruction.
-	  U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,GaussQuadPoints[GQPoint]);
-
-	  // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
-	  GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCu,GaussQuadPoints[GQPoint])[1],
-				HighOrderVariable(Pos).YGradientStateAtLocation(i,JCu,GaussQuadPoints[GQPoint])[1]);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     diffusive flux through the face in the normal direction. */
-	  FluxN[i] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceN(i,JCu));
-	} //endfor (GQPoint)
-	
-	// Update North face boundary flux with the contribution of this cell face
-	FluxN[i] *= Grid.lfaceN(i,JCu);
-
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* FluxN[i]/Grid.Cell[i][JCu].A );
-
-      }	// endfor (i)
-
-    } // endif (Grid.BndNorthSplineInfo != NULL)
-
-
-  } else {
-    /* Calculate the flux using the centrally-weighted gradient reconstruction
-       and ensure that boundary conditions for this boundary are correctly enforced. */
-
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndNorthSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndNorthSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
       
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. North Flux for cell (i,JCu) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. North Flux for cell (i,JCu) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
 
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndNorthSplineInfo[i].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndNorthSplineInfo[i].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	    FluxN[i].Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndNorthSplineInfo[i].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // Compute left and right interface states at the current Gauss
+	      // point location based on the unlimited high-order reconstruction
+	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu  ,Grid.BndNorthSplineInfo[i].GQPoint(Position));
+	      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu+1,Grid.BndNorthSplineInfo[i].GQPoint(Position));
+
+	      // Compute left and right interface gradients at the current Gauss
+	      // point location based on the unlimited high-order reconstruction
+	      GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCu,
+										Grid.BndNorthSplineInfo[i].GQPoint(Position))[1],
+				HighOrderVariable(Pos).YGradientStateAtLocation(i,JCu,
+										Grid.BndNorthSplineInfo[i].GQPoint(Position))[1]);
+	      GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCu+1,
+										Grid.BndNorthSplineInfo[i].GQPoint(Position))[1] ,
+				HighOrderVariable(Pos).YGradientStateAtLocation(i,JCu+1,
+										Grid.BndNorthSplineInfo[i].GQPoint(Position))[1]);
+	    
+	      // Determine the solution state at the Gauss quadrature point for the calculation 
+	      // of the diffusion coefficient and the gradient at the interface such that
+	      // to satisfy the specified boundary conditions.
+	      ViscousFluxStates_AtBoundaryInterface_HighOrder(NORTH,
+							      i,JCu,
+							      Ul,Ur,
+							      U_face,
+							      GradUl,GradUr,
+							      GradU_face,
+							      Grid.BndNorthSplineInfo[i].GQPoint(Position));
+
+	      /* Add the weighted contribution of the current GQP to the total 
+		 diffusive flux through the spline segment in the local normal direction. */
+	      Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
+						     Grid.BndNorthSplineInfo[i].GQPoint(Position), 
+						     Grid.BndNorthSplineInfo[i].NormalGQPoint(Position));
+	    } //endfor (GQPoint)
+	
+	    // Update North face boundary flux with the contribution of this spline segment
+	    FluxN[i] += Flux * Grid.BndNorthSplineInfo[i].IntLength(SplineSegment);
+
+	  } // endfor (SplineSegment)
+
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FluxN[i]/Grid.Cell[i][JCu].A );
+
+	}	// endfor (i)
+      
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
+
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. North Flux for cell (i,JCu) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
+
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);
 
 	  // Reset Flux
-	  Flux.Vacuum();
 	  FluxN[i].Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndNorthSplineInfo[i].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	  // Calculate total flux through the cell face in the normal direction
+	  for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
 
 	    // Compute left and right interface states at the current Gauss
 	    // point location based on the unlimited high-order reconstruction
-	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu  ,Grid.BndNorthSplineInfo[i].GQPoint(Position));
-	    Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu+1,Grid.BndNorthSplineInfo[i].GQPoint(Position));
+	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu  ,GaussQuadPoints[GQPoint]);
+	    Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu+1,GaussQuadPoints[GQPoint]);
 
 	    // Compute left and right interface gradients at the current Gauss
 	    // point location based on the unlimited high-order reconstruction
-	    GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCu,
-									      Grid.BndNorthSplineInfo[i].GQPoint(Position))[1],
-			      HighOrderVariable(Pos).YGradientStateAtLocation(i,JCu,
-									      Grid.BndNorthSplineInfo[i].GQPoint(Position))[1]);
-	    GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCu+1,
-									      Grid.BndNorthSplineInfo[i].GQPoint(Position))[1] ,
-			      HighOrderVariable(Pos).YGradientStateAtLocation(i,JCu+1,
-									      Grid.BndNorthSplineInfo[i].GQPoint(Position))[1]);
-	    
+	    GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCu,GaussQuadPoints[GQPoint])[1],
+			      HighOrderVariable(Pos).YGradientStateAtLocation(i,JCu,GaussQuadPoints[GQPoint])[1]);
+	    GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCu+1,GaussQuadPoints[GQPoint])[1] ,
+			      HighOrderVariable(Pos).YGradientStateAtLocation(i,JCu+1,GaussQuadPoints[GQPoint])[1]);	
+
 	    // Determine the solution state at the Gauss quadrature point for the calculation 
 	    // of the diffusion coefficient and the gradient at the interface such that
 	    // to satisfy the specified boundary conditions.
@@ -1118,222 +1181,222 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							    U_face,
 							    GradUl,GradUr,
 							    GradU_face,
-							    Grid.BndNorthSplineInfo[i].GQPoint(Position));
+							    GaussQuadPoints[GQPoint]);
 
 	    /* Add the weighted contribution of the current GQP to the total 
-	       diffusive flux through the spline segment in the local normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
-						   Grid.BndNorthSplineInfo[i].GQPoint(Position), 
-						   Grid.BndNorthSplineInfo[i].NormalGQPoint(Position));
+	       diffusive flux through the face in the normal direction. */
+	    FluxN[i] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceN(i,JCu));
 	  } //endfor (GQPoint)
 	
-	  // Update North face boundary flux with the contribution of this spline segment
-	  FluxN[i] += Flux * Grid.BndNorthSplineInfo[i].IntLength(SplineSegment);
+	  // Update North face boundary flux with the contribution of this cell face
+	  FluxN[i] *= Grid.lfaceN(i,JCu);
 
-	} // endfor (SplineSegment)
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* FluxN[i]/Grid.Cell[i][JCu].A );
 
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FluxN[i]/Grid.Cell[i][JCu].A );
-
-      }	// endfor (i)
+	}	// endfor (i)
       
-    } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
-
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. North Flux for cell (i,JCu) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	FluxN[i].Vacuum();
-
-	// Calculate total flux through the cell face in the normal direction
-	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
-
-	  // Compute left and right interface states at the current Gauss
-	  // point location based on the unlimited high-order reconstruction
-	  Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu  ,GaussQuadPoints[GQPoint]);
-	  Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu+1,GaussQuadPoints[GQPoint]);
-
-	  // Compute left and right interface gradients at the current Gauss
-	  // point location based on the unlimited high-order reconstruction
-	  GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCu,GaussQuadPoints[GQPoint])[1],
-			    HighOrderVariable(Pos).YGradientStateAtLocation(i,JCu,GaussQuadPoints[GQPoint])[1]);
-	  GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCu+1,GaussQuadPoints[GQPoint])[1] ,
-			    HighOrderVariable(Pos).YGradientStateAtLocation(i,JCu+1,GaussQuadPoints[GQPoint])[1]);	
-
-	  // Determine the solution state at the Gauss quadrature point for the calculation 
-	  // of the diffusion coefficient and the gradient at the interface such that
-	  // to satisfy the specified boundary conditions.
-	  ViscousFluxStates_AtBoundaryInterface_HighOrder(NORTH,
-							  i,JCu,
-							  Ul,Ur,
-							  U_face,
-							  GradUl,GradUr,
-							  GradU_face,
-							  GaussQuadPoints[GQPoint]);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     diffusive flux through the face in the normal direction. */
-	  FluxN[i] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceN(i,JCu));
-	} //endfor (GQPoint)
-	
-	// Update North face boundary flux with the contribution of this cell face
-	FluxN[i] *= Grid.lfaceN(i,JCu);
-
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* FluxN[i]/Grid.Cell[i][JCu].A );
-
-      }	// endfor (i)
-      
-    } // endif (Grid.BndNorthSplineInfo != NULL)
+      } // endif (Grid.BndNorthSplineInfo != NULL)
     
-  } // endif (Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
+    } // endif (Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
 
 
-  // ****** Step 3. Compute diffusive fluxes through South block boundary ******
-  // ***************************************************************************
-  // == Check the flux calculation method ==
-  if (Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
-    /* Calculate the flux using information directly from the reconstruction.
-       The boundary conditions along this spline has been enforced to the reconstruction procedure. */
+    // ****** Step 3. Compute diffusive fluxes through South block boundary ******
+    // ***************************************************************************
+    // == Check the flux calculation method ==
+    if (Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+      /* Calculate the flux using information directly from the reconstruction.
+	 The boundary conditions along this spline has been enforced to the reconstruction procedure. */
     
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndSouthSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndSouthSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
      
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. South Flux for cell (i,JCl) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. South Flux for cell (i,JCl) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
 
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndSouthSplineInfo[i].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndSouthSplineInfo[i].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	    FluxS[i].Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndSouthSplineInfo[i].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // Determine the solution state at the Gauss quadrature point for the calculation 
+	      // of the diffusion coefficient based on the constrained reconstruction.
+	      U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,Grid.BndSouthSplineInfo[i].GQPoint(Position));
+
+	      // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
+	      GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCl,
+										    Grid.BndSouthSplineInfo[i].GQPoint(Position))[1],
+				    HighOrderVariable(Pos).YGradientStateAtLocation(i,JCl,
+										    Grid.BndSouthSplineInfo[i].GQPoint(Position))[1]);
+
+	      /* Add the weighted contribution of the current GQP to the total 
+		 diffusive flux through the spline segment in the local normal direction. */
+	      Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
+						     Grid.BndSouthSplineInfo[i].GQPoint(Position), 
+						     Grid.BndSouthSplineInfo[i].NormalGQPoint(Position));
+	    } //endfor (GQPoint)
+	
+	    // Update South face boundary flux with the contribution of this spline segment
+	    FluxS[i] += Flux * Grid.BndSouthSplineInfo[i].IntLength(SplineSegment);
+
+	  } // endfor (SplineSegment)
+
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FluxS[i]/Grid.Cell[i][JCl].A );
+
+	}	// endfor (i)
+
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
+
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. South Flux for cell (i,JCl) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
+
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
 
 	  // Reset Flux
-	  Flux.Vacuum();
 	  FluxS[i].Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndSouthSplineInfo[i].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	  // Calculate total flux through the cell face in the normal direction
+	  for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
 
 	    // Determine the solution state at the Gauss quadrature point for the calculation 
 	    // of the diffusion coefficient based on the constrained reconstruction.
-	    U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,Grid.BndSouthSplineInfo[i].GQPoint(Position));
+	    U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,GaussQuadPoints[GQPoint]);
 
 	    // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
-	    GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCl,
-										  Grid.BndSouthSplineInfo[i].GQPoint(Position))[1],
-				  HighOrderVariable(Pos).YGradientStateAtLocation(i,JCl,
-										  Grid.BndSouthSplineInfo[i].GQPoint(Position))[1]);
+	    GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCl,GaussQuadPoints[GQPoint])[1],
+				  HighOrderVariable(Pos).YGradientStateAtLocation(i,JCl,GaussQuadPoints[GQPoint])[1]);
 
 	    /* Add the weighted contribution of the current GQP to the total 
-	       diffusive flux through the spline segment in the local normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
-						   Grid.BndSouthSplineInfo[i].GQPoint(Position), 
-						   Grid.BndSouthSplineInfo[i].NormalGQPoint(Position));
+	       diffusive flux through the face in the normal direction. */
+	    FluxS[i] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceS(i,JCl));
 	  } //endfor (GQPoint)
 	
-	  // Update South face boundary flux with the contribution of this spline segment
-	  FluxS[i] += Flux * Grid.BndSouthSplineInfo[i].IntLength(SplineSegment);
+	  // Update South face boundary flux with the contribution of this cell face
+	  FluxS[i] *= Grid.lfaceS(i,JCl);
 
-	} // endfor (SplineSegment)
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* FluxS[i]/Grid.Cell[i][JCl].A );
 
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FluxS[i]/Grid.Cell[i][JCl].A );
+	}	// endfor (i)
 
-      }	// endfor (i)
+      } // endif (Grid.BndSouthSplineInfo != NULL)
+
 
     } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
+      /* Calculate the flux using the centrally-weighted gradient reconstruction
+	 and ensure that boundary conditions for this boundary are correctly enforced. */
 
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. South Flux for cell (i,JCl) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	FluxS[i].Vacuum();
-
-	// Calculate total flux through the cell face in the normal direction
-	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
-
-	  // Determine the solution state at the Gauss quadrature point for the calculation 
-	  // of the diffusion coefficient based on the constrained reconstruction.
-	  U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,GaussQuadPoints[GQPoint]);
-
-	  // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
-	  GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCl,GaussQuadPoints[GQPoint])[1],
-				HighOrderVariable(Pos).YGradientStateAtLocation(i,JCl,GaussQuadPoints[GQPoint])[1]);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     diffusive flux through the face in the normal direction. */
-	  FluxS[i] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceS(i,JCl));
-	} //endfor (GQPoint)
-	
-	// Update South face boundary flux with the contribution of this cell face
-	FluxS[i] *= Grid.lfaceS(i,JCl);
-
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* FluxS[i]/Grid.Cell[i][JCl].A );
-
-      }	// endfor (i)
-
-    } // endif (Grid.BndSouthSplineInfo != NULL)
-
-
-  } else {
-    /* Calculate the flux using the centrally-weighted gradient reconstruction
-       and ensure that boundary conditions for this boundary are correctly enforced. */
-
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndSouthSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndSouthSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
       
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. South Flux for cell (i,JCl) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. South Flux for cell (i,JCl) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
 
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndSouthSplineInfo[i].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndSouthSplineInfo[i].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	    FluxS[i].Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndSouthSplineInfo[i].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // Compute left and right interface states at the current Gauss
+	      // point location based on the unlimited high-order reconstruction
+	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl  ,Grid.BndSouthSplineInfo[i].GQPoint(Position));
+	      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl-1,Grid.BndSouthSplineInfo[i].GQPoint(Position));
+
+	      // Compute left and right interface gradients at the current Gauss
+	      // point location based on the unlimited high-order reconstruction
+	      GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCl,
+										Grid.BndSouthSplineInfo[i].GQPoint(Position))[1],
+				HighOrderVariable(Pos).YGradientStateAtLocation(i,JCl,
+										Grid.BndSouthSplineInfo[i].GQPoint(Position))[1]);
+	      GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCl-1,
+										Grid.BndSouthSplineInfo[i].GQPoint(Position))[1] ,
+				HighOrderVariable(Pos).YGradientStateAtLocation(i,JCl-1,
+										Grid.BndSouthSplineInfo[i].GQPoint(Position))[1]);
+	    
+	      // Determine the solution state at the Gauss quadrature point for the calculation 
+	      // of the diffusion coefficient and the gradient at the interface such that
+	      // to satisfy the specified boundary conditions.
+	      ViscousFluxStates_AtBoundaryInterface_HighOrder(SOUTH,
+							      i,JCl,
+							      Ul,Ur,
+							      U_face,
+							      GradUl,GradUr,
+							      GradU_face,
+							      Grid.BndSouthSplineInfo[i].GQPoint(Position));
+
+	      /* Add the weighted contribution of the current GQP to the total 
+		 diffusive flux through the spline segment in the local normal direction. */
+	      Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
+						     Grid.BndSouthSplineInfo[i].GQPoint(Position), 
+						     Grid.BndSouthSplineInfo[i].NormalGQPoint(Position));
+	    } //endfor (GQPoint)
+	
+	    // Update South face boundary flux with the contribution of this spline segment
+	    FluxS[i] += Flux * Grid.BndSouthSplineInfo[i].IntLength(SplineSegment);
+
+	  } // endfor (SplineSegment)
+
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FluxS[i]/Grid.Cell[i][JCl].A );
+
+	}	// endfor (i)
+      
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
+
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. South Flux for cell (i,JCl) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
+
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
 
 	  // Reset Flux
-	  Flux.Vacuum();
 	  FluxS[i].Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndSouthSplineInfo[i].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	  // Calculate total flux through the cell face in the normal direction
+	  for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
 
 	    // Compute left and right interface states at the current Gauss
 	    // point location based on the unlimited high-order reconstruction
-	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl  ,Grid.BndSouthSplineInfo[i].GQPoint(Position));
-	    Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl-1,Grid.BndSouthSplineInfo[i].GQPoint(Position));
+	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl  ,GaussQuadPoints[GQPoint]);
+	    Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl-1,GaussQuadPoints[GQPoint]);
 
 	    // Compute left and right interface gradients at the current Gauss
 	    // point location based on the unlimited high-order reconstruction
-	    GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCl,
-									      Grid.BndSouthSplineInfo[i].GQPoint(Position))[1],
-			      HighOrderVariable(Pos).YGradientStateAtLocation(i,JCl,
-									      Grid.BndSouthSplineInfo[i].GQPoint(Position))[1]);
-	    GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCl-1,
-									      Grid.BndSouthSplineInfo[i].GQPoint(Position))[1] ,
-			      HighOrderVariable(Pos).YGradientStateAtLocation(i,JCl-1,
-									      Grid.BndSouthSplineInfo[i].GQPoint(Position))[1]);
-	    
+	    GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCl,GaussQuadPoints[GQPoint])[1],
+			      HighOrderVariable(Pos).YGradientStateAtLocation(i,JCl,GaussQuadPoints[GQPoint])[1]);
+	    GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCl-1,GaussQuadPoints[GQPoint])[1] ,
+			      HighOrderVariable(Pos).YGradientStateAtLocation(i,JCl-1,GaussQuadPoints[GQPoint])[1]);	
+
 	    // Determine the solution state at the Gauss quadrature point for the calculation 
 	    // of the diffusion coefficient and the gradient at the interface such that
 	    // to satisfy the specified boundary conditions.
@@ -1343,222 +1406,222 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							    U_face,
 							    GradUl,GradUr,
 							    GradU_face,
-							    Grid.BndSouthSplineInfo[i].GQPoint(Position));
+							    GaussQuadPoints[GQPoint]);
 
 	    /* Add the weighted contribution of the current GQP to the total 
-	       diffusive flux through the spline segment in the local normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
-						   Grid.BndSouthSplineInfo[i].GQPoint(Position), 
-						   Grid.BndSouthSplineInfo[i].NormalGQPoint(Position));
+	       diffusive flux through the face in the normal direction. */
+	    FluxS[i] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceS(i,JCl));
 	  } //endfor (GQPoint)
 	
-	  // Update South face boundary flux with the contribution of this spline segment
-	  FluxS[i] += Flux * Grid.BndSouthSplineInfo[i].IntLength(SplineSegment);
+	  // Update South face boundary flux with the contribution of this cell face
+	  FluxS[i] *= Grid.lfaceS(i,JCl);
 
-	} // endfor (SplineSegment)
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* FluxS[i]/Grid.Cell[i][JCl].A );
 
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FluxS[i]/Grid.Cell[i][JCl].A );
-
-      }	// endfor (i)
+	}	// endfor (i)
       
-    } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
-
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. South Flux for cell (i,JCl) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	FluxS[i].Vacuum();
-
-	// Calculate total flux through the cell face in the normal direction
-	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
-
-	  // Compute left and right interface states at the current Gauss
-	  // point location based on the unlimited high-order reconstruction
-	  Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl  ,GaussQuadPoints[GQPoint]);
-	  Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl-1,GaussQuadPoints[GQPoint]);
-
-	  // Compute left and right interface gradients at the current Gauss
-	  // point location based on the unlimited high-order reconstruction
-	  GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCl,GaussQuadPoints[GQPoint])[1],
-			    HighOrderVariable(Pos).YGradientStateAtLocation(i,JCl,GaussQuadPoints[GQPoint])[1]);
-	  GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCl-1,GaussQuadPoints[GQPoint])[1] ,
-			    HighOrderVariable(Pos).YGradientStateAtLocation(i,JCl-1,GaussQuadPoints[GQPoint])[1]);	
-
-	  // Determine the solution state at the Gauss quadrature point for the calculation 
-	  // of the diffusion coefficient and the gradient at the interface such that
-	  // to satisfy the specified boundary conditions.
-	  ViscousFluxStates_AtBoundaryInterface_HighOrder(SOUTH,
-							  i,JCl,
-							  Ul,Ur,
-							  U_face,
-							  GradUl,GradUr,
-							  GradU_face,
-							  GaussQuadPoints[GQPoint]);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     diffusive flux through the face in the normal direction. */
-	  FluxS[i] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceS(i,JCl));
-	} //endfor (GQPoint)
-	
-	// Update South face boundary flux with the contribution of this cell face
-	FluxS[i] *= Grid.lfaceS(i,JCl);
-
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* FluxS[i]/Grid.Cell[i][JCl].A );
-
-      }	// endfor (i)
-      
-    } // endif (Grid.BndSouthSplineInfo != NULL)
+      } // endif (Grid.BndSouthSplineInfo != NULL)
     
-  } // endif (Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
+    } // endif (Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
 
 
-  // ****** Step 4. Compute diffusive fluxes through East block boundary ******
-  // **************************************************************************
-  // == Check the flux calculation method ==
-  if (Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
-    /* Calculate the flux using information directly from the reconstruction.
-       The boundary conditions along this spline has been enforced to the reconstruction procedure. */
+    // ****** Step 4. Compute diffusive fluxes through East block boundary ******
+    // **************************************************************************
+    // == Check the flux calculation method ==
+    if (Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+      /* Calculate the flux using information directly from the reconstruction.
+	 The boundary conditions along this spline has been enforced to the reconstruction procedure. */
     
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndEastSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndEastSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
      
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. East Flux for cell (ICu,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. East Flux for cell (ICu,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
 
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndEastSplineInfo[j].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndEastSplineInfo[j].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	    FluxE[j].Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndEastSplineInfo[j].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // Determine the solution state at the Gauss quadrature point for the calculation 
+	      // of the diffusion coefficient based on the constrained reconstruction.
+	      U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,Grid.BndEastSplineInfo[j].GQPoint(Position));
+
+	      // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
+	      GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICu,j,
+										    Grid.BndEastSplineInfo[j].GQPoint(Position))[1],
+				    HighOrderVariable(Pos).YGradientStateAtLocation(ICu,j,
+										    Grid.BndEastSplineInfo[j].GQPoint(Position))[1]);
+
+	      /* Add the weighted contribution of the current GQP to the total 
+		 diffusive flux through the spline segment in the local normal direction. */
+	      Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
+						     Grid.BndEastSplineInfo[j].GQPoint(Position), 
+						     Grid.BndEastSplineInfo[j].NormalGQPoint(Position));
+	    } //endfor (GQPoint)
+	
+	    // Update East face boundary flux with the contribution of this spline segment
+	    FluxE[j] += Flux * Grid.BndEastSplineInfo[j].IntLength(SplineSegment);
+
+	  } // endfor (SplineSegment)
+
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FluxE[j]/Grid.Cell[ICu][j].A );
+
+	}	// endfor (j)
+
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
+
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. East Flux for cell (ICu,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
+
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
 
 	  // Reset Flux
-	  Flux.Vacuum();
 	  FluxE[j].Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndEastSplineInfo[j].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	  // Calculate total flux through the cell face in the normal direction
+	  for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
 
 	    // Determine the solution state at the Gauss quadrature point for the calculation 
 	    // of the diffusion coefficient based on the constrained reconstruction.
-	    U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,Grid.BndEastSplineInfo[j].GQPoint(Position));
+	    U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,GaussQuadPoints[GQPoint]);
 
 	    // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
-	    GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICu,j,
-										  Grid.BndEastSplineInfo[j].GQPoint(Position))[1],
-				  HighOrderVariable(Pos).YGradientStateAtLocation(ICu,j,
-										  Grid.BndEastSplineInfo[j].GQPoint(Position))[1]);
+	    GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICu,j,GaussQuadPoints[GQPoint])[1],
+				  HighOrderVariable(Pos).YGradientStateAtLocation(ICu,j,GaussQuadPoints[GQPoint])[1]);
 
 	    /* Add the weighted contribution of the current GQP to the total 
-	       diffusive flux through the spline segment in the local normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
-						   Grid.BndEastSplineInfo[j].GQPoint(Position), 
-						   Grid.BndEastSplineInfo[j].NormalGQPoint(Position));
+	       diffusive flux through the face in the normal direction. */
+	    FluxE[j] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceE(ICu,j));
 	  } //endfor (GQPoint)
 	
-	  // Update East face boundary flux with the contribution of this spline segment
-	  FluxE[j] += Flux * Grid.BndEastSplineInfo[j].IntLength(SplineSegment);
+	  // Update East face boundary flux with the contribution of this cell face
+	  FluxE[j] *= Grid.lfaceE(ICu,j);
 
-	} // endfor (SplineSegment)
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* FluxE[j]/Grid.Cell[ICu][j].A );
 
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FluxE[j]/Grid.Cell[ICu][j].A );
+	}	// endfor (j)
 
-      }	// endfor (j)
+      } // endif (Grid.BndEastSplineInfo != NULL)
+
 
     } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
+      /* Calculate the flux using the centrally-weighted gradient reconstruction
+	 and ensure that boundary conditions for this boundary are correctly enforced. */
 
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. East Flux for cell (ICu,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	FluxE[j].Vacuum();
-
-	// Calculate total flux through the cell face in the normal direction
-	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
-
-	  // Determine the solution state at the Gauss quadrature point for the calculation 
-	  // of the diffusion coefficient based on the constrained reconstruction.
-	  U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,GaussQuadPoints[GQPoint]);
-
-	  // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
-	  GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICu,j,GaussQuadPoints[GQPoint])[1],
-				HighOrderVariable(Pos).YGradientStateAtLocation(ICu,j,GaussQuadPoints[GQPoint])[1]);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     diffusive flux through the face in the normal direction. */
-	  FluxE[j] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceE(ICu,j));
-	} //endfor (GQPoint)
-	
-	// Update East face boundary flux with the contribution of this cell face
-	FluxE[j] *= Grid.lfaceE(ICu,j);
-
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* FluxE[j]/Grid.Cell[ICu][j].A );
-
-      }	// endfor (j)
-
-    } // endif (Grid.BndEastSplineInfo != NULL)
-
-
-  } else {
-    /* Calculate the flux using the centrally-weighted gradient reconstruction
-       and ensure that boundary conditions for this boundary are correctly enforced. */
-
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndEastSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndEastSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
       
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. East Flux for cell (ICu,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. East Flux for cell (ICu,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
 
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndEastSplineInfo[j].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndEastSplineInfo[j].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	    FluxE[j].Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndEastSplineInfo[j].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // Compute left and right interface states at the current Gauss
+	      // point location based on the unlimited high-order reconstruction
+	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICu  ,j,Grid.BndEastSplineInfo[j].GQPoint(Position));
+	      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ICu+1,j,Grid.BndEastSplineInfo[j].GQPoint(Position));
+
+	      // Compute left and right interface gradients at the current Gauss
+	      // point location based on the unlimited high-order reconstruction
+	      GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICu,j,
+										Grid.BndEastSplineInfo[j].GQPoint(Position))[1],
+				HighOrderVariable(Pos).YGradientStateAtLocation(ICu,j,
+										Grid.BndEastSplineInfo[j].GQPoint(Position))[1]);
+	      GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICu+1,j,
+										Grid.BndEastSplineInfo[j].GQPoint(Position))[1] ,
+				HighOrderVariable(Pos).YGradientStateAtLocation(ICu+1,j,
+										Grid.BndEastSplineInfo[j].GQPoint(Position))[1]);
+	    
+	      // Determine the solution state at the Gauss quadrature point for the calculation 
+	      // of the diffusion coefficient and the gradient at the interface such that
+	      // to satisfy the specified boundary conditions.
+	      ViscousFluxStates_AtBoundaryInterface_HighOrder(EAST,
+							      ICu,j,
+							      Ul,Ur,
+							      U_face,
+							      GradUl,GradUr,
+							      GradU_face,
+							      Grid.BndEastSplineInfo[j].GQPoint(Position));
+
+	      /* Add the weighted contribution of the current GQP to the total 
+		 diffusive flux through the spline segment in the local normal direction. */
+	      Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
+						     Grid.BndEastSplineInfo[j].GQPoint(Position), 
+						     Grid.BndEastSplineInfo[j].NormalGQPoint(Position));
+	    } //endfor (GQPoint)
+	
+	    // Update East face boundary flux with the contribution of this spline segment
+	    FluxE[j] += Flux * Grid.BndEastSplineInfo[j].IntLength(SplineSegment);
+
+	  } // endfor (SplineSegment)
+
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FluxE[j]/Grid.Cell[ICu][j].A );
+
+	}	// endfor (j)
+      
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
+
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. East Flux for cell (ICu,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
+
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
 
 	  // Reset Flux
-	  Flux.Vacuum();
 	  FluxE[j].Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndEastSplineInfo[j].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	  // Calculate total flux through the cell face in the normal direction
+	  for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
 
 	    // Compute left and right interface states at the current Gauss
 	    // point location based on the unlimited high-order reconstruction
-	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICu  ,j,Grid.BndEastSplineInfo[j].GQPoint(Position));
-	    Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ICu+1,j,Grid.BndEastSplineInfo[j].GQPoint(Position));
+	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICu  ,j,GaussQuadPoints[GQPoint]);
+	    Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ICu+1,j,GaussQuadPoints[GQPoint]);
 
 	    // Compute left and right interface gradients at the current Gauss
 	    // point location based on the unlimited high-order reconstruction
-	    GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICu,j,
-									      Grid.BndEastSplineInfo[j].GQPoint(Position))[1],
-			      HighOrderVariable(Pos).YGradientStateAtLocation(ICu,j,
-									      Grid.BndEastSplineInfo[j].GQPoint(Position))[1]);
-	    GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICu+1,j,
-									      Grid.BndEastSplineInfo[j].GQPoint(Position))[1] ,
-			      HighOrderVariable(Pos).YGradientStateAtLocation(ICu+1,j,
-									      Grid.BndEastSplineInfo[j].GQPoint(Position))[1]);
-	    
+	    GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICu  ,j,GaussQuadPoints[GQPoint])[1],
+			      HighOrderVariable(Pos).YGradientStateAtLocation(ICu  ,j,GaussQuadPoints[GQPoint])[1]);
+	    GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICu+1,j,GaussQuadPoints[GQPoint])[1] ,
+			      HighOrderVariable(Pos).YGradientStateAtLocation(ICu+1,j,GaussQuadPoints[GQPoint])[1]);	
+
 	    // Determine the solution state at the Gauss quadrature point for the calculation 
 	    // of the diffusion coefficient and the gradient at the interface such that
 	    // to satisfy the specified boundary conditions.
@@ -1568,222 +1631,222 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							    U_face,
 							    GradUl,GradUr,
 							    GradU_face,
-							    Grid.BndEastSplineInfo[j].GQPoint(Position));
+							    GaussQuadPoints[GQPoint]);
 
 	    /* Add the weighted contribution of the current GQP to the total 
-	       diffusive flux through the spline segment in the local normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
-						   Grid.BndEastSplineInfo[j].GQPoint(Position), 
-						   Grid.BndEastSplineInfo[j].NormalGQPoint(Position));
+	       diffusive flux through the face in the normal direction. */
+	    FluxE[j] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceE(ICu,j));
 	  } //endfor (GQPoint)
 	
-	  // Update East face boundary flux with the contribution of this spline segment
-	  FluxE[j] += Flux * Grid.BndEastSplineInfo[j].IntLength(SplineSegment);
+	  // Update East face boundary flux with the contribution of this cell face
+	  FluxE[j] *= Grid.lfaceE(ICu,j);
 
-	} // endfor (SplineSegment)
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* FluxE[j]/Grid.Cell[ICu][j].A );
 
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FluxE[j]/Grid.Cell[ICu][j].A );
-
-      }	// endfor (j)
+	}	// endfor (j)
       
-    } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
-
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. East Flux for cell (ICu,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	FluxE[j].Vacuum();
-
-	// Calculate total flux through the cell face in the normal direction
-	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
-
-	  // Compute left and right interface states at the current Gauss
-	  // point location based on the unlimited high-order reconstruction
-	  Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICu  ,j,GaussQuadPoints[GQPoint]);
-	  Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ICu+1,j,GaussQuadPoints[GQPoint]);
-
-	  // Compute left and right interface gradients at the current Gauss
-	  // point location based on the unlimited high-order reconstruction
-	  GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICu  ,j,GaussQuadPoints[GQPoint])[1],
-			    HighOrderVariable(Pos).YGradientStateAtLocation(ICu  ,j,GaussQuadPoints[GQPoint])[1]);
-	  GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICu+1,j,GaussQuadPoints[GQPoint])[1] ,
-			    HighOrderVariable(Pos).YGradientStateAtLocation(ICu+1,j,GaussQuadPoints[GQPoint])[1]);	
-
-	  // Determine the solution state at the Gauss quadrature point for the calculation 
-	  // of the diffusion coefficient and the gradient at the interface such that
-	  // to satisfy the specified boundary conditions.
-	  ViscousFluxStates_AtBoundaryInterface_HighOrder(EAST,
-							  ICu,j,
-							  Ul,Ur,
-							  U_face,
-							  GradUl,GradUr,
-							  GradU_face,
-							  GaussQuadPoints[GQPoint]);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     diffusive flux through the face in the normal direction. */
-	  FluxE[j] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceE(ICu,j));
-	} //endfor (GQPoint)
-	
-	// Update East face boundary flux with the contribution of this cell face
-	FluxE[j] *= Grid.lfaceE(ICu,j);
-
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* FluxE[j]/Grid.Cell[ICu][j].A );
-
-      }	// endfor (j)
-      
-    } // endif (Grid.BndEastSplineInfo != NULL)
+      } // endif (Grid.BndEastSplineInfo != NULL)
     
-  } // endif (Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
+    } // endif (Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
 
 
-  // ****** Step 5. Compute diffusive fluxes through West block boundary ******
-  // **************************************************************************
-  // == Check the flux calculation method ==
-  if (Grid.BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
-    /* Calculate the flux using information directly from the reconstruction.
-       The boundary conditions along this spline has been enforced to the reconstruction procedure. */
+    // ****** Step 5. Compute diffusive fluxes through West block boundary ******
+    // **************************************************************************
+    // == Check the flux calculation method ==
+    if (Grid.BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+      /* Calculate the flux using information directly from the reconstruction.
+	 The boundary conditions along this spline has been enforced to the reconstruction procedure. */
     
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndWestSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndWestSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
      
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. West Flux for cell (ICl,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. West Flux for cell (ICl,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
 
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndWestSplineInfo[j].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndWestSplineInfo[j].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	    FluxW[j].Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndWestSplineInfo[j].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // Determine the solution state at the Gauss quadrature point for the calculation 
+	      // of the diffusion coefficient based on the constrained reconstruction.
+	      U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,Grid.BndWestSplineInfo[j].GQPoint(Position));
+
+	      // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
+	      GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICl,j,
+										    Grid.BndWestSplineInfo[j].GQPoint(Position))[1],
+				    HighOrderVariable(Pos).YGradientStateAtLocation(ICl,j,
+										    Grid.BndWestSplineInfo[j].GQPoint(Position))[1]);
+
+	      /* Add the weighted contribution of the current GQP to the total 
+		 diffusive flux through the spline segment in the local normal direction. */
+	      Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
+						     Grid.BndWestSplineInfo[j].GQPoint(Position), 
+						     Grid.BndWestSplineInfo[j].NormalGQPoint(Position));
+	    } //endfor (GQPoint)
+	
+	    // Update West face boundary flux with the contribution of this spline segment
+	    FluxW[j] += Flux * Grid.BndWestSplineInfo[j].IntLength(SplineSegment);
+
+	  } // endfor (SplineSegment)
+
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FluxW[j]/Grid.Cell[ICl][j].A );
+
+	}	// endfor (j)
+
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
+
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. West Flux for cell (ICl,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
+
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
 
 	  // Reset Flux
-	  Flux.Vacuum();
 	  FluxW[j].Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndWestSplineInfo[j].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	  // Calculate total flux through the cell face in the normal direction
+	  for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
 
 	    // Determine the solution state at the Gauss quadrature point for the calculation 
 	    // of the diffusion coefficient based on the constrained reconstruction.
-	    U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,Grid.BndWestSplineInfo[j].GQPoint(Position));
+	    U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,GaussQuadPoints[GQPoint]);
 
 	    // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
-	    GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICl,j,
-										  Grid.BndWestSplineInfo[j].GQPoint(Position))[1],
-				  HighOrderVariable(Pos).YGradientStateAtLocation(ICl,j,
-										  Grid.BndWestSplineInfo[j].GQPoint(Position))[1]);
+	    GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICl,j,GaussQuadPoints[GQPoint])[1],
+				  HighOrderVariable(Pos).YGradientStateAtLocation(ICl,j,GaussQuadPoints[GQPoint])[1]);
 
 	    /* Add the weighted contribution of the current GQP to the total 
-	       diffusive flux through the spline segment in the local normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
-						   Grid.BndWestSplineInfo[j].GQPoint(Position), 
-						   Grid.BndWestSplineInfo[j].NormalGQPoint(Position));
+	       diffusive flux through the face in the normal direction. */
+	    FluxW[j] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceW(ICl,j));
 	  } //endfor (GQPoint)
 	
-	  // Update West face boundary flux with the contribution of this spline segment
-	  FluxW[j] += Flux * Grid.BndWestSplineInfo[j].IntLength(SplineSegment);
+	  // Update West face boundary flux with the contribution of this cell face
+	  FluxW[j] *= Grid.lfaceW(ICl,j);
 
-	} // endfor (SplineSegment)
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* FluxW[j]/Grid.Cell[ICl][j].A );
 
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FluxW[j]/Grid.Cell[ICl][j].A );
+	}	// endfor (j)
 
-      }	// endfor (j)
+      } // endif (Grid.BndWestSplineInfo != NULL)
+
 
     } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
+      /* Calculate the flux using the centrally-weighted gradient reconstruction
+	 and ensure that boundary conditions for this boundary are correctly enforced. */
 
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. West Flux for cell (ICl,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	FluxW[j].Vacuum();
-
-	// Calculate total flux through the cell face in the normal direction
-	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
-
-	  // Determine the solution state at the Gauss quadrature point for the calculation 
-	  // of the diffusion coefficient based on the constrained reconstruction.
-	  U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,GaussQuadPoints[GQPoint]);
-
-	  // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
-	  GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICl,j,GaussQuadPoints[GQPoint])[1],
-				HighOrderVariable(Pos).YGradientStateAtLocation(ICl,j,GaussQuadPoints[GQPoint])[1]);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     diffusive flux through the face in the normal direction. */
-	  FluxW[j] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceW(ICl,j));
-	} //endfor (GQPoint)
-	
-	// Update West face boundary flux with the contribution of this cell face
-	FluxW[j] *= Grid.lfaceW(ICl,j);
-
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* FluxW[j]/Grid.Cell[ICl][j].A );
-
-      }	// endfor (j)
-
-    } // endif (Grid.BndWestSplineInfo != NULL)
-
-
-  } else {
-    /* Calculate the flux using the centrally-weighted gradient reconstruction
-       and ensure that boundary conditions for this boundary are correctly enforced. */
-
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndWestSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndWestSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
       
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. West Flux for cell (ICl,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. West Flux for cell (ICl,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
 
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndWestSplineInfo[j].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndWestSplineInfo[j].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	    FluxW[j].Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndWestSplineInfo[j].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // Compute left and right interface states at the current Gauss
+	      // point location based on the unlimited high-order reconstruction
+	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICl  ,j,Grid.BndWestSplineInfo[j].GQPoint(Position));
+	      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ICl-1,j,Grid.BndWestSplineInfo[j].GQPoint(Position));
+
+	      // Compute left and right interface gradients at the current Gauss
+	      // point location based on the unlimited high-order reconstruction
+	      GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICl,j,
+										Grid.BndWestSplineInfo[j].GQPoint(Position))[1],
+				HighOrderVariable(Pos).YGradientStateAtLocation(ICl,j,
+										Grid.BndWestSplineInfo[j].GQPoint(Position))[1]);
+	      GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICl-1,j,
+										Grid.BndWestSplineInfo[j].GQPoint(Position))[1] ,
+				HighOrderVariable(Pos).YGradientStateAtLocation(ICl-1,j,
+										Grid.BndWestSplineInfo[j].GQPoint(Position))[1]);
+	    
+	      // Determine the solution state at the Gauss quadrature point for the calculation 
+	      // of the diffusion coefficient and the gradient at the interface such that
+	      // to satisfy the specified boundary conditions.
+	      ViscousFluxStates_AtBoundaryInterface_HighOrder(WEST,
+							      ICl,j,
+							      Ul,Ur,
+							      U_face,
+							      GradUl,GradUr,
+							      GradU_face,
+							      Grid.BndWestSplineInfo[j].GQPoint(Position));
+
+	      /* Add the weighted contribution of the current GQP to the total 
+		 diffusive flux through the spline segment in the local normal direction. */
+	      Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
+						     Grid.BndWestSplineInfo[j].GQPoint(Position), 
+						     Grid.BndWestSplineInfo[j].NormalGQPoint(Position));
+	    } //endfor (GQPoint)
+	
+	    // Update West face boundary flux with the contribution of this spline segment
+	    FluxW[j] += Flux * Grid.BndWestSplineInfo[j].IntLength(SplineSegment);
+
+	  } // endfor (SplineSegment)
+
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FluxW[j]/Grid.Cell[ICl][j].A );
+
+	}	// endfor (j)
+      
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
+
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. West Flux for cell (ICl,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
+
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
 
 	  // Reset Flux
-	  Flux.Vacuum();
 	  FluxW[j].Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndWestSplineInfo[j].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	  // Calculate total flux through the cell face in the normal direction
+	  for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
 
 	    // Compute left and right interface states at the current Gauss
 	    // point location based on the unlimited high-order reconstruction
-	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICl  ,j,Grid.BndWestSplineInfo[j].GQPoint(Position));
-	    Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ICl-1,j,Grid.BndWestSplineInfo[j].GQPoint(Position));
+	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICl  ,j,GaussQuadPoints[GQPoint]);
+	    Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ICl-1,j,GaussQuadPoints[GQPoint]);
 
 	    // Compute left and right interface gradients at the current Gauss
 	    // point location based on the unlimited high-order reconstruction
-	    GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICl,j,
-									      Grid.BndWestSplineInfo[j].GQPoint(Position))[1],
-			      HighOrderVariable(Pos).YGradientStateAtLocation(ICl,j,
-									      Grid.BndWestSplineInfo[j].GQPoint(Position))[1]);
-	    GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICl-1,j,
-									      Grid.BndWestSplineInfo[j].GQPoint(Position))[1] ,
-			      HighOrderVariable(Pos).YGradientStateAtLocation(ICl-1,j,
-									      Grid.BndWestSplineInfo[j].GQPoint(Position))[1]);
-	    
+	    GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICl  ,j,GaussQuadPoints[GQPoint])[1],
+			      HighOrderVariable(Pos).YGradientStateAtLocation(ICl  ,j,GaussQuadPoints[GQPoint])[1]);
+	    GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICl-1,j,GaussQuadPoints[GQPoint])[1] ,
+			      HighOrderVariable(Pos).YGradientStateAtLocation(ICl-1,j,GaussQuadPoints[GQPoint])[1]);	
+
 	    // Determine the solution state at the Gauss quadrature point for the calculation 
 	    // of the diffusion coefficient and the gradient at the interface such that
 	    // to satisfy the specified boundary conditions.
@@ -1793,82 +1856,26 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							    U_face,
 							    GradUl,GradUr,
 							    GradU_face,
-							    Grid.BndWestSplineInfo[j].GQPoint(Position));
+							    GaussQuadPoints[GQPoint]);
 
 	    /* Add the weighted contribution of the current GQP to the total 
-	       diffusive flux through the spline segment in the local normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
-						   Grid.BndWestSplineInfo[j].GQPoint(Position), 
-						   Grid.BndWestSplineInfo[j].NormalGQPoint(Position));
+	       diffusive flux through the face in the normal direction. */
+	    FluxW[j] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceW(ICl,j));
 	  } //endfor (GQPoint)
 	
-	  // Update West face boundary flux with the contribution of this spline segment
-	  FluxW[j] += Flux * Grid.BndWestSplineInfo[j].IntLength(SplineSegment);
+	  // Update West face boundary flux with the contribution of this cell face
+	  FluxW[j] *= Grid.lfaceW(ICl,j);
 
-	} // endfor (SplineSegment)
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* FluxW[j]/Grid.Cell[ICl][j].A );
 
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FluxW[j]/Grid.Cell[ICl][j].A );
-
-      }	// endfor (j)
+	}	// endfor (j)
       
-    } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
-
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. West Flux for cell (ICl,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	FluxW[j].Vacuum();
-
-	// Calculate total flux through the cell face in the normal direction
-	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
-
-	  // Compute left and right interface states at the current Gauss
-	  // point location based on the unlimited high-order reconstruction
-	  Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICl  ,j,GaussQuadPoints[GQPoint]);
-	  Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ICl-1,j,GaussQuadPoints[GQPoint]);
-
-	  // Compute left and right interface gradients at the current Gauss
-	  // point location based on the unlimited high-order reconstruction
-	  GradUl = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICl  ,j,GaussQuadPoints[GQPoint])[1],
-			    HighOrderVariable(Pos).YGradientStateAtLocation(ICl  ,j,GaussQuadPoints[GQPoint])[1]);
-	  GradUr = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICl-1,j,GaussQuadPoints[GQPoint])[1] ,
-			    HighOrderVariable(Pos).YGradientStateAtLocation(ICl-1,j,GaussQuadPoints[GQPoint])[1]);	
-
-	  // Determine the solution state at the Gauss quadrature point for the calculation 
-	  // of the diffusion coefficient and the gradient at the interface such that
-	  // to satisfy the specified boundary conditions.
-	  ViscousFluxStates_AtBoundaryInterface_HighOrder(WEST,
-							  ICl,j,
-							  Ul,Ur,
-							  U_face,
-							  GradUl,GradUr,
-							  GradU_face,
-							  GaussQuadPoints[GQPoint]);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     diffusive flux through the face in the normal direction. */
-	  FluxW[j] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceW(ICl,j));
-	} //endfor (GQPoint)
-	
-	// Update West face boundary flux with the contribution of this cell face
-	FluxW[j] *= Grid.lfaceW(ICl,j);
-
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* FluxW[j]/Grid.Cell[ICl][j].A );
-
-      }	// endfor (j)
-      
-    } // endif (Grid.BndWestSplineInfo != NULL)
+      } // endif (Grid.BndWestSplineInfo != NULL)
     
-  } // endif (Grid.BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
+    } // endif (Grid.BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
 
+  } // endif (Include_Diffusion_Term)
 
   /*****************************************************************
    * --------------------------------------------------------------*
@@ -1877,131 +1884,273 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
      CENO upwind finite-volume scheme for the convective fluxes.
      NOTE: Include here the contribution of the hyperbolic terms! */
 
+  if (Include_Advection_Term){
 
-  /* Enforce monotonicity to the high-order interpolants detected as 
-     non-smooth by the smoothness indicator analysis. 
-     NOTE: This solution reconstruction IS recommended for computing hyperbolic fluxes!
-  */
-  HighOrderVariable(Pos).ComputeSmoothnessIndicator(*this);
-  HighOrderVariable(Pos).EnforceMonotonicityToNonSmoothInterpolants(*this, IP.Limiter());
-
-
-  // ** Step 6. Compute interior convective fluxes for cells between (ICl,JCl)-->(ICu,JCu) **
-  // ****************************************************************************************
-  for ( j = JCl ; j <= JCu ; ++j ){
-    for ( i = ICl ; i <= ICu ; ++i ) {
-      
-      if ( i != ICu) { 		// (i == ICu) corresponds to the East block boundary which will be considered separately!
-	
-	/* Evaluate the cell interface i-direction diffusive fluxes.
-	   --> ( i.e. East Flux for cell (i,j) & West Flux for cell (i+1,j) ) */
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceE(i,j,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	Flux.Vacuum();
-
-	for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
-
-	  // Compute left and right interface states at the current Gauss
-	  // point location based on the high-order reconstruction
-	  Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i  ,j,GaussQuadPoints[GQPoint]);
-	  Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i+1,j,GaussQuadPoints[GQPoint]);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     convective flux in the normal direction through the face. */
-	  Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceE(i, j));
-
-	} //endfor (GQPoint)
-      
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number * dt[i  ][j])*
-				      Flux * Grid.lfaceE(i  , j)/Grid.Cell[i  ][j].A );
-
-	dUdt[i+1][j][k_residual] += ( (IP.CFL_Number * dt[i+1][j])*
-				      Flux * Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A );
-
-      }	//endif (i != ICu)
-
-
-      if ( j != JCu) {		// (j == JCu) corresponds to the North block boundary which will be considered separately!
-
-	/* Evaluate the cell interface j-direction convective fluxes.
-	   --> ( i.e. North Flux for cell (i,j) & South Flux for cell (i,j+1) ) */
-	// Determine the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceN(i,j,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	Flux.Vacuum();
-
-	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
-
-	  // Compute left and right interface states at the current Gauss
-	  // point location based on the high-order reconstruction
-	  Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,j  ,GaussQuadPoints[GQPoint]);
-	  Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i,j+1,GaussQuadPoints[GQPoint]);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     convective flux through the face in the normal direction. */
-	  Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceN(i, j));
-	} //endfor (GQPoint)
-
-
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number * dt[i][j  ])*
-				      Flux * Grid.lfaceN(i, j  )/Grid.Cell[i][j  ].A );
-
-	dUdt[i][j+1][k_residual] += ( (IP.CFL_Number * dt[i][j+1])*
-				      Flux * Grid.lfaceS(i, j+1)/Grid.Cell[i][j+1].A );
-
-      } //endif (j != JCu)
-
-    } // endfor (i)
-  } // endfor (j)
-
- 
-  // ****** Step 7. Compute convective fluxes through North block boundary ******
-  // ***************************************************************************
-  // == Check the flux calculation method ==
-  if (Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
-    /* Calculate the flux using information directly from the reconstruction.
-       The boundary conditions along this spline has been enforced to the reconstruction procedure.
-       If the high-order reconstruction has been detected as non-smooth compute an upwind flux
-       with the value provided by the ghost cell reconstruction.
+    /* Enforce monotonicity to the high-order interpolants detected as 
+       non-smooth by the smoothness indicator analysis. 
+       NOTE: This solution reconstruction IS recommended for computing hyperbolic fluxes!
     */
-    
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndNorthSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
-     
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. North Flux for cell (i,JCu) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
+    HighOrderVariable(Pos).ComputeSmoothnessIndicator(*this);
+    HighOrderVariable(Pos).EnforceMonotonicityToNonSmoothInterpolants(*this, IP.Limiter());
 
-	// Determine if the solution reconstruction was detected as non-smooth for the current cell.
-	IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(i,JCu);
 
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndNorthSplineInfo[i].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
+    // ** Step 6. Compute interior convective fluxes for cells between (ICl,JCl)-->(ICu,JCu) **
+    // ****************************************************************************************
+    for ( j = JCl ; j <= JCu ; ++j ){
+      for ( i = ICl ; i <= ICu ; ++i ) {
+      
+	if ( i != ICu) { 		// (i == ICu) corresponds to the East block boundary which will be considered separately!
+	
+	  /* Evaluate the cell interface i-direction diffusive fluxes.
+	     --> ( i.e. East Flux for cell (i,j) & West Flux for cell (i+1,j) ) */
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceE(i,j,GaussQuadPoints,NumGQP);
 
 	  // Reset Flux
 	  Flux.Vacuum();
-	  FaceFlux.Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndNorthSplineInfo[i].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
 
-	    // == Check if the solution reconstruction was detected as non-smooth.
-	    if ( IsNonSmoothHighOrderReconstruction ){
+	  for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+
+	    // Compute left and right interface states at the current Gauss
+	    // point location based on the high-order reconstruction
+	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i  ,j,GaussQuadPoints[GQPoint]);
+	    Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i+1,j,GaussQuadPoints[GQPoint]);
+
+	    /* Add the weighted contribution of the current GQP to the total 
+	       convective flux in the normal direction through the face. */
+	    Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceE(i, j));
+
+	  } //endfor (GQPoint)
+      
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number * dt[i  ][j])*
+					Flux * Grid.lfaceE(i  , j)/Grid.Cell[i  ][j].A );
+
+	  dUdt[i+1][j][k_residual] += ( (IP.CFL_Number * dt[i+1][j])*
+					Flux * Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A );
+
+	}	//endif (i != ICu)
+
+
+	if ( j != JCu) {		// (j == JCu) corresponds to the North block boundary which will be considered separately!
+
+	  /* Evaluate the cell interface j-direction convective fluxes.
+	     --> ( i.e. North Flux for cell (i,j) & South Flux for cell (i,j+1) ) */
+	  // Determine the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceN(i,j,GaussQuadPoints,NumGQP);
+
+	  // Reset Flux
+	  Flux.Vacuum();
+
+	  for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
+
+	    // Compute left and right interface states at the current Gauss
+	    // point location based on the high-order reconstruction
+	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,j  ,GaussQuadPoints[GQPoint]);
+	    Ur = HighOrderVariable(Pos).SolutionStateAtLocation(i,j+1,GaussQuadPoints[GQPoint]);
+
+	    /* Add the weighted contribution of the current GQP to the total 
+	       convective flux through the face in the normal direction. */
+	    Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceN(i, j));
+	  } //endfor (GQPoint)
+
+
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number * dt[i][j  ])*
+					Flux * Grid.lfaceN(i, j  )/Grid.Cell[i][j  ].A );
+
+	  dUdt[i][j+1][k_residual] += ( (IP.CFL_Number * dt[i][j+1])*
+					Flux * Grid.lfaceS(i, j+1)/Grid.Cell[i][j+1].A );
+
+	} //endif (j != JCu)
+
+      } // endfor (i)
+    } // endfor (j)
+
+ 
+    // ****** Step 7. Compute convective fluxes through North block boundary ******
+    // ***************************************************************************
+    // == Check the flux calculation method ==
+    if (Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+      /* Calculate the flux using information directly from the reconstruction.
+	 The boundary conditions along this spline has been enforced to the reconstruction procedure.
+	 If the high-order reconstruction has been detected as non-smooth compute an upwind flux
+	 with the value provided by the ghost cell reconstruction.
+      */
+    
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndNorthSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
+     
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. North Flux for cell (i,JCu) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
+
+	  // Determine if the solution reconstruction was detected as non-smooth for the current cell.
+	  IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(i,JCu);
+
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndNorthSplineInfo[i].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	    FaceFlux.Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndNorthSplineInfo[i].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // == Check if the solution reconstruction was detected as non-smooth.
+	      if ( IsNonSmoothHighOrderReconstruction ){
+
+		// Compute left interface state at the current Gauss
+		// point location based on the low-order reconstruction.
+		Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,Grid.BndNorthSplineInfo[i].GQPoint(Position));
+	      
+		// Determine right interface state at the Gauss calculation point
+		InviscidFluxStates_AtBoundaryInterface_HighOrder(NORTH,
+								 i,JCu,
+								 Ul,Ur,
+								 Grid.BndNorthSplineInfo[i].GQPoint(Position),
+								 Pos);
+
+		/* Add the weighted contribution of the current GQP to the total 
+		   convective flux in the normal direction through the face. */
+		Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
+						       Grid.BndNorthSplineInfo[i].GQPoint(Position),
+						       Grid.BndNorthSplineInfo[i].NormalGQPoint(Position));
+
+	      } else {
+
+		// Determine the solution state at the Gauss quadrature point for the calculation 
+		// of the advective flux based on the constrained reconstruction.
+		U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,Grid.BndNorthSplineInfo[i].GQPoint(Position));
+
+		/* Add the weighted contribution of the current GQP to the total 
+		   convective flux through the spline segment in the local normal direction. */
+		Flux += GaussQuadWeights[GQPoint] * Fa(U_face,
+						       Grid.BndNorthSplineInfo[i].GQPoint(Position), 
+						       Grid.BndNorthSplineInfo[i].NormalGQPoint(Position));
+	      } // endif (IsNonSmoothHighOrderReconstruction)
+
+	    } //endfor (GQPoint)
+	
+	    // Update FaceFlux with the contribution of this spline segment
+	    FaceFlux += Flux * Grid.BndNorthSplineInfo[i].IntLength(SplineSegment);
+
+	  } // endfor (SplineSegment)
+
+	  // Update North face boundary flux with the contribution of the hyperbolic term
+	  FluxN[i] += FaceFlux;
+
+	  /* Evaluate cell-averaged solution changes due to convective flux. */
+	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FaceFlux/Grid.Cell[i][JCu].A );
+
+	}	// endfor (i)
+
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
+
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. North Flux for cell (i,JCu) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
+
+	  // Determine if the solution reconstruction was detected as non-smooth for the current cell.
+	  IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(i,JCu);
+
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);
+
+	  // Reset Flux
+	  Flux.Vacuum();
+
+	  // == Check if the solution reconstruction was detected as non-smooth.
+	  if ( IsNonSmoothHighOrderReconstruction ){
+
+	    // Calculate total flux through the cell face in the normal direction
+	    for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
 
 	      // Compute left interface state at the current Gauss
 	      // point location based on the low-order reconstruction.
-	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,Grid.BndNorthSplineInfo[i].GQPoint(Position));
-	      
+	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,GaussQuadPoints[GQPoint]);
+	    
+	      // Determine right interface state at the Gauss calculation point
+	      InviscidFluxStates_AtBoundaryInterface_HighOrder(NORTH,
+							       i,JCu,
+							       Ul,Ur,
+							       GaussQuadPoints[GQPoint],
+							       Pos);
+	    
+	      /* Add the weighted contribution of the current GQP to the total 
+		 convective flux in the normal direction through the face. */
+	      Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceN(i,JCu));
+	    } //endfor (GQPoint)
+	    
+	  } else {
+
+	    // Calculate total flux through the cell face in the normal direction
+	    for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+
+	      // Determine the solution state at the Gauss quadrature point for the calculation 
+	      // of the advective flux based on the constrained reconstruction.
+	      U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,GaussQuadPoints[GQPoint]);
+	    
+	      /* Add the weighted contribution of the current GQP to the total 
+		 convective flux through the face in the normal direction. */
+	      Flux += GaussQuadWeights[GQPoint] * Fa(U_face, GaussQuadPoints[GQPoint], Grid.nfaceN(i,JCu));
+	    } //endfor (GQPoint)
+
+	  } // endif
+	
+	  // Calculate final flux through the cell face
+	  Flux *= Grid.lfaceN(i,JCu);
+
+	  // Update North face boundary flux with the contribution of this cell face
+	  FluxN[i] += Flux;
+
+	  /* Evaluate cell-averaged solution changes due to convective flux. */
+	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* Flux/Grid.Cell[i][JCu].A );
+
+	}	// endfor (i)
+
+      } // endif (Grid.BndNorthSplineInfo != NULL)
+
+
+    } else {
+
+      /* Calculate the flux using an upwind method and ensure that
+	 boundary conditions for this boundary are correctly enforced. */
+
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndNorthSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
+      
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. North Flux for cell (i,JCu) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
+
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndNorthSplineInfo[i].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndNorthSplineInfo[i].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // Compute left interface state at the current Gauss
+	      // point location based on the reconstruction
+	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,
+								  Grid.BndNorthSplineInfo[i].GQPoint(Position));
+
 	      // Determine right interface state at the Gauss calculation point
 	      InviscidFluxStates_AtBoundaryInterface_HighOrder(NORTH,
 							       i,JCu,
@@ -2010,257 +2159,257 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							       Pos);
 
 	      /* Add the weighted contribution of the current GQP to the total 
-		 convective flux in the normal direction through the face. */
-	      Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
-						     Grid.BndNorthSplineInfo[i].GQPoint(Position),
-						     Grid.BndNorthSplineInfo[i].NormalGQPoint(Position));
-
-	    } else {
-
-	      // Determine the solution state at the Gauss quadrature point for the calculation 
-	      // of the advective flux based on the constrained reconstruction.
-	      U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,Grid.BndNorthSplineInfo[i].GQPoint(Position));
-
-	      /* Add the weighted contribution of the current GQP to the total 
 		 convective flux through the spline segment in the local normal direction. */
-	      Flux += GaussQuadWeights[GQPoint] * Fa(U_face,
+	      Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
 						     Grid.BndNorthSplineInfo[i].GQPoint(Position), 
 						     Grid.BndNorthSplineInfo[i].NormalGQPoint(Position));
-	    } // endif (IsNonSmoothHighOrderReconstruction)
-
-	  } //endfor (GQPoint)
+	    } //endfor (GQPoint)
 	
-	  // Update FaceFlux with the contribution of this spline segment
-	  FaceFlux += Flux * Grid.BndNorthSplineInfo[i].IntLength(SplineSegment);
+	    // Update FaceFlux with the contribution of this spline segment
+	    FaceFlux += Flux * Grid.BndNorthSplineInfo[i].IntLength(SplineSegment);
 
-	} // endfor (SplineSegment)
+	  } // endfor (SplineSegment)
 
-	// Update North face boundary flux with the contribution of the hyperbolic term
-	FluxN[i] += FaceFlux;
+	  // Update North face boundary flux with the contribution of the hyperbolic term
+	  FluxN[i] += FaceFlux;
 
-	/* Evaluate cell-averaged solution changes due to convective flux. */
-	dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FaceFlux/Grid.Cell[i][JCu].A );
+	  /* Evaluate cell-averaged solution changes due to convective flux. */
+	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FaceFlux/Grid.Cell[i][JCu].A );
 
-      }	// endfor (i)
+	}	// endfor (i)
+      
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
 
-    } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. North Flux for cell (i,JCu) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
 
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. North Flux for cell (i,JCu) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);
 
-	// Determine if the solution reconstruction was detected as non-smooth for the current cell.
-	IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(i,JCu);
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	Flux.Vacuum();
-
-	// == Check if the solution reconstruction was detected as non-smooth.
-	if ( IsNonSmoothHighOrderReconstruction ){
+	  // Reset Flux
+	  Flux.Vacuum();
 
 	  // Calculate total flux through the cell face in the normal direction
-	  for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+	  for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
 
-	    // Compute left interface state at the current Gauss
-	    // point location based on the low-order reconstruction.
+	    // Compute left and right interface states at the current Gauss
+	    // point location based on the high-order reconstruction
 	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,GaussQuadPoints[GQPoint]);
-	    
+
 	    // Determine right interface state at the Gauss calculation point
 	    InviscidFluxStates_AtBoundaryInterface_HighOrder(NORTH,
 							     i,JCu,
 							     Ul,Ur,
 							     GaussQuadPoints[GQPoint],
 							     Pos);
-	    
-	    /* Add the weighted contribution of the current GQP to the total 
-	       convective flux in the normal direction through the face. */
-	    Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceN(i,JCu));
-	  } //endfor (GQPoint)
-	    
-	} else {
 
-	  // Calculate total flux through the cell face in the normal direction
-	  for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
-
-	    // Determine the solution state at the Gauss quadrature point for the calculation 
-	    // of the advective flux based on the constrained reconstruction.
-	    U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,GaussQuadPoints[GQPoint]);
-	    
 	    /* Add the weighted contribution of the current GQP to the total 
 	       convective flux through the face in the normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fa(U_face, GaussQuadPoints[GQPoint], Grid.nfaceN(i,JCu));
-	  } //endfor (GQPoint)
-
-	} // endif
-	
-	// Calculate final flux through the cell face
-	Flux *= Grid.lfaceN(i,JCu);
-
-	// Update North face boundary flux with the contribution of this cell face
-	FluxN[i] += Flux;
-
-	/* Evaluate cell-averaged solution changes due to convective flux. */
-	dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* Flux/Grid.Cell[i][JCu].A );
-
-      }	// endfor (i)
-
-    } // endif (Grid.BndNorthSplineInfo != NULL)
-
-
-  } else {
-
-    /* Calculate the flux using an upwind method and ensure that
-       boundary conditions for this boundary are correctly enforced. */
-
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndNorthSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
-      
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. North Flux for cell (i,JCu) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
-
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndNorthSplineInfo[i].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
-
-	  // Reset Flux
-	  Flux.Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndNorthSplineInfo[i].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
-
-	    // Compute left interface state at the current Gauss
-	    // point location based on the reconstruction
-	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,
-								Grid.BndNorthSplineInfo[i].GQPoint(Position));
-
-	    // Determine right interface state at the Gauss calculation point
-	    InviscidFluxStates_AtBoundaryInterface_HighOrder(NORTH,
-							     i,JCu,
-							     Ul,Ur,
-							     Grid.BndNorthSplineInfo[i].GQPoint(Position),
-							     Pos);
-
-	    /* Add the weighted contribution of the current GQP to the total 
-	       convective flux through the spline segment in the local normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
-						   Grid.BndNorthSplineInfo[i].GQPoint(Position), 
-						   Grid.BndNorthSplineInfo[i].NormalGQPoint(Position));
+	    Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceN(i,JCu));
 	  } //endfor (GQPoint)
 	
-	  // Update FaceFlux with the contribution of this spline segment
-	  FaceFlux += Flux * Grid.BndNorthSplineInfo[i].IntLength(SplineSegment);
+	  // Calculate final flux through the cell face
+	  Flux *= Grid.lfaceN(i,JCu);
 
-	} // endfor (SplineSegment)
+	  // Update North face boundary flux with the contribution of this cell face
+	  FluxN[i] += Flux;
 
-	// Update North face boundary flux with the contribution of the hyperbolic term
-	FluxN[i] += FaceFlux;
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* Flux/Grid.Cell[i][JCu].A );
 
-	/* Evaluate cell-averaged solution changes due to convective flux. */
-	dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FaceFlux/Grid.Cell[i][JCu].A );
-
-      }	// endfor (i)
+	}	// endfor (i)
       
-    } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
-
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. North Flux for cell (i,JCu) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	Flux.Vacuum();
-
-	// Calculate total flux through the cell face in the normal direction
-	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
-
-	  // Compute left and right interface states at the current Gauss
-	  // point location based on the high-order reconstruction
-	  Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCu,GaussQuadPoints[GQPoint]);
-
-	  // Determine right interface state at the Gauss calculation point
-	  InviscidFluxStates_AtBoundaryInterface_HighOrder(NORTH,
-							   i,JCu,
-							   Ul,Ur,
-							   GaussQuadPoints[GQPoint],
-							   Pos);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     convective flux through the face in the normal direction. */
-	  Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceN(i,JCu));
-	} //endfor (GQPoint)
-	
-	// Calculate final flux through the cell face
-	Flux *= Grid.lfaceN(i,JCu);
-
-	// Update North face boundary flux with the contribution of this cell face
-	FluxN[i] += Flux;
-
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* Flux/Grid.Cell[i][JCu].A );
-
-      }	// endfor (i)
-      
-    } // endif (Grid.BndNorthSplineInfo != NULL)
+      } // endif (Grid.BndNorthSplineInfo != NULL)
     
-  } // endif (Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
+    } // endif (Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
 
 
-  // ****** Step 8. Compute convective fluxes through South block boundary ******
-  // ***************************************************************************
-  // == Check the flux calculation method ==
-  if (Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
-    /* Calculate the flux using information directly from the reconstruction.
-       The boundary conditions along this spline has been enforced to the reconstruction procedure.
-       If the high-order reconstruction has been detected as non-smooth compute an upwind flux
-       with the value provided by the ghost cell reconstruction.
-    */
+    // ****** Step 8. Compute convective fluxes through South block boundary ******
+    // ***************************************************************************
+    // == Check the flux calculation method ==
+    if (Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+      /* Calculate the flux using information directly from the reconstruction.
+	 The boundary conditions along this spline has been enforced to the reconstruction procedure.
+	 If the high-order reconstruction has been detected as non-smooth compute an upwind flux
+	 with the value provided by the ghost cell reconstruction.
+      */
     
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndSouthSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndSouthSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
      
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. South Flux for cell (i,JCl) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. South Flux for cell (i,JCl) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
 
-	// Determine if the solution reconstruction was detected as non-smooth for the current cell.
-	IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(i,JCl);
+	  // Determine if the solution reconstruction was detected as non-smooth for the current cell.
+	  IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(i,JCl);
 
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndSouthSplineInfo[i].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndSouthSplineInfo[i].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	    FaceFlux.Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndSouthSplineInfo[i].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // == Check if the solution reconstruction was detected as non-smooth.
+	      if ( IsNonSmoothHighOrderReconstruction ){
+
+		// Compute left interface state at the current Gauss
+		// point location based on the low-order reconstruction.
+		Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,Grid.BndSouthSplineInfo[i].GQPoint(Position));
+	      
+		// Determine right interface state at the Gauss calculation point
+		InviscidFluxStates_AtBoundaryInterface_HighOrder(SOUTH,
+								 i,JCl,
+								 Ul,Ur,
+								 Grid.BndSouthSplineInfo[i].GQPoint(Position),
+								 Pos);
+
+		/* Add the weighted contribution of the current GQP to the total 
+		   convective flux in the normal direction through the face. */
+		Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
+						       Grid.BndSouthSplineInfo[i].GQPoint(Position),
+						       Grid.BndSouthSplineInfo[i].NormalGQPoint(Position));
+
+	      } else {
+
+		// Determine the solution state at the Gauss quadrature point for the calculation 
+		// of the advective flux based on the constrained reconstruction.
+		U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,Grid.BndSouthSplineInfo[i].GQPoint(Position));
+
+		/* Add the weighted contribution of the current GQP to the total 
+		   convective flux through the spline segment in the local normal direction. */
+		Flux += GaussQuadWeights[GQPoint] * Fa(U_face,
+						       Grid.BndSouthSplineInfo[i].GQPoint(Position), 
+						       Grid.BndSouthSplineInfo[i].NormalGQPoint(Position));
+	      } // endif (IsNonSmoothHighOrderReconstruction)
+
+	    } //endfor (GQPoint)
+	
+	    // Update FaceFlux with the contribution of this spline segment
+	    FaceFlux += Flux * Grid.BndSouthSplineInfo[i].IntLength(SplineSegment);
+
+	  } // endfor (SplineSegment)
+
+	  // Update South face boundary flux with the contribution of the hyperbolic term
+	  FluxS[i] += FaceFlux;
+
+	  /* Evaluate cell-averaged solution changes due to convective flux. */
+	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FaceFlux/Grid.Cell[i][JCl].A );
+
+	}	// endfor (i)
+
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
+
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. South Flux for cell (i,JCl) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
+
+	  // Determine if the solution reconstruction was detected as non-smooth for the current cell.
+	  IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(i,JCl);
+
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
 
 	  // Reset Flux
 	  Flux.Vacuum();
-	  FaceFlux.Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndSouthSplineInfo[i].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
 
-	    // == Check if the solution reconstruction was detected as non-smooth.
-	    if ( IsNonSmoothHighOrderReconstruction ){
+	  // == Check if the solution reconstruction was detected as non-smooth.
+	  if ( IsNonSmoothHighOrderReconstruction ){
+
+	    // Calculate total flux through the cell face in the normal direction
+	    for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
 
 	      // Compute left interface state at the current Gauss
 	      // point location based on the low-order reconstruction.
-	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,Grid.BndSouthSplineInfo[i].GQPoint(Position));
-	      
+	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,GaussQuadPoints[GQPoint]);
+	    
+	      // Determine right interface state at the Gauss calculation point
+	      InviscidFluxStates_AtBoundaryInterface_HighOrder(SOUTH,
+							       i,JCl,
+							       Ul,Ur,
+							       GaussQuadPoints[GQPoint],
+							       Pos);
+	    
+	      /* Add the weighted contribution of the current GQP to the total 
+		 convective flux in the normal direction through the face. */
+	      Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceS(i,JCl));
+	    } //endfor (GQPoint)
+	    
+	  } else {
+
+	    // Calculate total flux through the cell face in the normal direction
+	    for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+
+	      // Determine the solution state at the Gauss quadrature point for the calculation 
+	      // of the advective flux based on the constrained reconstruction.
+	      U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,GaussQuadPoints[GQPoint]);
+	    
+	      /* Add the weighted contribution of the current GQP to the total 
+		 convective flux through the face in the normal direction. */
+	      Flux += GaussQuadWeights[GQPoint] * Fa(U_face, GaussQuadPoints[GQPoint], Grid.nfaceS(i,JCl));
+	    } //endfor (GQPoint)
+
+	  } // endif
+	
+	  // Calculate final flux through the cell face
+	  Flux *= Grid.lfaceS(i,JCl);
+
+	  // Update South face boundary flux with the contribution of this cell face
+	  FluxS[i] += Flux;
+
+	  /* Evaluate cell-averaged solution changes due to convective flux. */
+	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* Flux/Grid.Cell[i][JCl].A );
+
+	}	// endfor (i)
+
+      } // endif (Grid.BndSouthSplineInfo != NULL)
+
+
+    } else {
+
+      /* Calculate the flux using an upwind method and ensure that
+	 boundary conditions for this boundary are correctly enforced. */
+
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndSouthSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
+      
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. South Flux for cell (i,JCl) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
+
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndSouthSplineInfo[i].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndSouthSplineInfo[i].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // Compute left interface state at the current Gauss
+	      // point location based on the reconstruction
+	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,
+								  Grid.BndSouthSplineInfo[i].GQPoint(Position));
+
 	      // Determine right interface state at the Gauss calculation point
 	      InviscidFluxStates_AtBoundaryInterface_HighOrder(SOUTH,
 							       i,JCl,
@@ -2269,257 +2418,257 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							       Pos);
 
 	      /* Add the weighted contribution of the current GQP to the total 
-		 convective flux in the normal direction through the face. */
-	      Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
-						     Grid.BndSouthSplineInfo[i].GQPoint(Position),
-						     Grid.BndSouthSplineInfo[i].NormalGQPoint(Position));
-
-	    } else {
-
-	      // Determine the solution state at the Gauss quadrature point for the calculation 
-	      // of the advective flux based on the constrained reconstruction.
-	      U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,Grid.BndSouthSplineInfo[i].GQPoint(Position));
-
-	      /* Add the weighted contribution of the current GQP to the total 
 		 convective flux through the spline segment in the local normal direction. */
-	      Flux += GaussQuadWeights[GQPoint] * Fa(U_face,
+	      Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
 						     Grid.BndSouthSplineInfo[i].GQPoint(Position), 
 						     Grid.BndSouthSplineInfo[i].NormalGQPoint(Position));
-	    } // endif (IsNonSmoothHighOrderReconstruction)
-
-	  } //endfor (GQPoint)
+	    } //endfor (GQPoint)
 	
-	  // Update FaceFlux with the contribution of this spline segment
-	  FaceFlux += Flux * Grid.BndSouthSplineInfo[i].IntLength(SplineSegment);
+	    // Update FaceFlux with the contribution of this spline segment
+	    FaceFlux += Flux * Grid.BndSouthSplineInfo[i].IntLength(SplineSegment);
 
-	} // endfor (SplineSegment)
+	  } // endfor (SplineSegment)
 
-	// Update South face boundary flux with the contribution of the hyperbolic term
-	FluxS[i] += FaceFlux;
+	  // Update South face boundary flux with the contribution of the hyperbolic term
+	  FluxS[i] += FaceFlux;
 
-	/* Evaluate cell-averaged solution changes due to convective flux. */
-	dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FaceFlux/Grid.Cell[i][JCl].A );
+	  /* Evaluate cell-averaged solution changes due to convective flux. */
+	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FaceFlux/Grid.Cell[i][JCl].A );
 
-      }	// endfor (i)
+	}	// endfor (i)
+      
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
 
-    } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. South Flux for cell (i,JCl) ) */
+	for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
 
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. South Flux for cell (i,JCl) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
 
-	// Determine if the solution reconstruction was detected as non-smooth for the current cell.
-	IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(i,JCl);
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	Flux.Vacuum();
-
-	// == Check if the solution reconstruction was detected as non-smooth.
-	if ( IsNonSmoothHighOrderReconstruction ){
+	  // Reset Flux
+	  Flux.Vacuum();
 
 	  // Calculate total flux through the cell face in the normal direction
-	  for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+	  for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
 
-	    // Compute left interface state at the current Gauss
-	    // point location based on the low-order reconstruction.
+	    // Compute left and right interface states at the current Gauss
+	    // point location based on the high-order reconstruction
 	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,GaussQuadPoints[GQPoint]);
-	    
+
 	    // Determine right interface state at the Gauss calculation point
 	    InviscidFluxStates_AtBoundaryInterface_HighOrder(SOUTH,
 							     i,JCl,
 							     Ul,Ur,
 							     GaussQuadPoints[GQPoint],
 							     Pos);
-	    
-	    /* Add the weighted contribution of the current GQP to the total 
-	       convective flux in the normal direction through the face. */
-	    Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceS(i,JCl));
-	  } //endfor (GQPoint)
-	    
-	} else {
 
-	  // Calculate total flux through the cell face in the normal direction
-	  for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
-
-	    // Determine the solution state at the Gauss quadrature point for the calculation 
-	    // of the advective flux based on the constrained reconstruction.
-	    U_face = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,GaussQuadPoints[GQPoint]);
-	    
 	    /* Add the weighted contribution of the current GQP to the total 
 	       convective flux through the face in the normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fa(U_face, GaussQuadPoints[GQPoint], Grid.nfaceS(i,JCl));
-	  } //endfor (GQPoint)
-
-	} // endif
-	
-	// Calculate final flux through the cell face
-	Flux *= Grid.lfaceS(i,JCl);
-
-	// Update South face boundary flux with the contribution of this cell face
-	FluxS[i] += Flux;
-
-	/* Evaluate cell-averaged solution changes due to convective flux. */
-	dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* Flux/Grid.Cell[i][JCl].A );
-
-      }	// endfor (i)
-
-    } // endif (Grid.BndSouthSplineInfo != NULL)
-
-
-  } else {
-
-    /* Calculate the flux using an upwind method and ensure that
-       boundary conditions for this boundary are correctly enforced. */
-
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndSouthSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
-      
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. South Flux for cell (i,JCl) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
-
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndSouthSplineInfo[i].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
-
-	  // Reset Flux
-	  Flux.Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndSouthSplineInfo[i].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
-
-	    // Compute left interface state at the current Gauss
-	    // point location based on the reconstruction
-	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,
-								Grid.BndSouthSplineInfo[i].GQPoint(Position));
-
-	    // Determine right interface state at the Gauss calculation point
-	    InviscidFluxStates_AtBoundaryInterface_HighOrder(SOUTH,
-							     i,JCl,
-							     Ul,Ur,
-							     Grid.BndSouthSplineInfo[i].GQPoint(Position),
-							     Pos);
-
-	    /* Add the weighted contribution of the current GQP to the total 
-	       convective flux through the spline segment in the local normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
-						   Grid.BndSouthSplineInfo[i].GQPoint(Position), 
-						   Grid.BndSouthSplineInfo[i].NormalGQPoint(Position));
+	    Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceS(i,JCl));
 	  } //endfor (GQPoint)
 	
-	  // Update FaceFlux with the contribution of this spline segment
-	  FaceFlux += Flux * Grid.BndSouthSplineInfo[i].IntLength(SplineSegment);
+	  // Calculate final flux through the cell face
+	  Flux *= Grid.lfaceS(i,JCl);
 
-	} // endfor (SplineSegment)
+	  // Update South face boundary flux with the contribution of this cell face
+	  FluxS[i] += Flux;
 
-	// Update South face boundary flux with the contribution of the hyperbolic term
-	FluxS[i] += FaceFlux;
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* Flux/Grid.Cell[i][JCl].A );
 
-	/* Evaluate cell-averaged solution changes due to convective flux. */
-	dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FaceFlux/Grid.Cell[i][JCl].A );
-
-      }	// endfor (i)
+	}	// endfor (i)
       
-    } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
-
-      /* Evaluate the cell interface j-direction fluxes.
-	 --> ( i.e. South Flux for cell (i,JCl) ) */
-      for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	Flux.Vacuum();
-
-	// Calculate total flux through the cell face in the normal direction
-	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
-
-	  // Compute left and right interface states at the current Gauss
-	  // point location based on the high-order reconstruction
-	  Ul = HighOrderVariable(Pos).SolutionStateAtLocation(i,JCl,GaussQuadPoints[GQPoint]);
-
-	  // Determine right interface state at the Gauss calculation point
-	  InviscidFluxStates_AtBoundaryInterface_HighOrder(SOUTH,
-							   i,JCl,
-							   Ul,Ur,
-							   GaussQuadPoints[GQPoint],
-							   Pos);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     convective flux through the face in the normal direction. */
-	  Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceS(i,JCl));
-	} //endfor (GQPoint)
-	
-	// Calculate final flux through the cell face
-	Flux *= Grid.lfaceS(i,JCl);
-
-	// Update South face boundary flux with the contribution of this cell face
-	FluxS[i] += Flux;
-
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* Flux/Grid.Cell[i][JCl].A );
-
-      }	// endfor (i)
-      
-    } // endif (Grid.BndSouthSplineInfo != NULL)
+      } // endif (Grid.BndSouthSplineInfo != NULL)
     
-  } // endif (Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
+    } // endif (Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
 
 
-  // ****** Step 9. Compute convective fluxes through East block boundary ******
-  // **************************************************************************
-  // == Check the flux calculation method ==
-  if (Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
-    /* Calculate the flux using information directly from the reconstruction.
-       The boundary conditions along this spline has been enforced to the reconstruction procedure.
-       If the high-order reconstruction has been detected as non-smooth compute an upwind flux
-       with the value provided by the ghost cell reconstruction.
-    */
+    // ****** Step 9. Compute convective fluxes through East block boundary ******
+    // **************************************************************************
+    // == Check the flux calculation method ==
+    if (Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+      /* Calculate the flux using information directly from the reconstruction.
+	 The boundary conditions along this spline has been enforced to the reconstruction procedure.
+	 If the high-order reconstruction has been detected as non-smooth compute an upwind flux
+	 with the value provided by the ghost cell reconstruction.
+      */
     
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndEastSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndEastSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
      
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. East Flux for cell (ICu,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. East Flux for cell (ICu,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
 
-	// Determine if the solution reconstruction was detected as non-smooth for the current cell.
-	IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(ICu,j);
+	  // Determine if the solution reconstruction was detected as non-smooth for the current cell.
+	  IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(ICu,j);
 
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndEastSplineInfo[j].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndEastSplineInfo[j].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	    FaceFlux.Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndEastSplineInfo[j].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // == Check if the solution reconstruction was detected as non-smooth.
+	      if ( IsNonSmoothHighOrderReconstruction ){
+
+		// Compute left interface state at the current Gauss
+		// point location based on the low-order reconstruction.
+		Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,Grid.BndEastSplineInfo[j].GQPoint(Position));
+	      
+		// Determine right interface state at the Gauss calculation point
+		InviscidFluxStates_AtBoundaryInterface_HighOrder(EAST,
+								 ICu,j,
+								 Ul,Ur,
+								 Grid.BndEastSplineInfo[j].GQPoint(Position),
+								 Pos);
+
+		/* Add the weighted contribution of the current GQP to the total 
+		   convective flux in the normal direction through the face. */
+		Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
+						       Grid.BndEastSplineInfo[j].GQPoint(Position),
+						       Grid.BndEastSplineInfo[j].NormalGQPoint(Position));
+
+	      } else {
+
+		// Determine the solution state at the Gauss quadrature point for the calculation 
+		// of the advective flux based on the constrained reconstruction.
+		U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,Grid.BndEastSplineInfo[j].GQPoint(Position));
+
+		/* Add the weighted contribution of the current GQP to the total 
+		   convective flux through the spline segment in the local normal direction. */
+		Flux += GaussQuadWeights[GQPoint] * Fa(U_face,
+						       Grid.BndEastSplineInfo[j].GQPoint(Position), 
+						       Grid.BndEastSplineInfo[j].NormalGQPoint(Position));
+	      } // endif (IsNonSmoothHighOrderReconstruction)
+
+	    } //endfor (GQPoint)
+	
+	    // Update FaceFlux with the contribution of this spline segment
+	    FaceFlux += Flux * Grid.BndEastSplineInfo[j].IntLength(SplineSegment);
+
+	  } // endfor (SplineSegment)
+
+	  // Update East face boundary flux with the contribution of the hyperbolic term
+	  FluxE[j] += FaceFlux;
+
+	  /* Evaluate cell-averaged solution changes due to convective flux. */
+	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FaceFlux/Grid.Cell[ICu][j].A );
+
+	}	// endfor (j)
+
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
+
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. East Flux for cell (ICu,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
+
+	  // Determine if the solution reconstruction was detected as non-smooth for the current cell.
+	  IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(ICu,j);
+
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
 
 	  // Reset Flux
 	  Flux.Vacuum();
-	  FaceFlux.Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndEastSplineInfo[j].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
 
-	    // == Check if the solution reconstruction was detected as non-smooth.
-	    if ( IsNonSmoothHighOrderReconstruction ){
+	  // == Check if the solution reconstruction was detected as non-smooth.
+	  if ( IsNonSmoothHighOrderReconstruction ){
+
+	    // Calculate total flux through the cell face in the normal direction
+	    for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
 
 	      // Compute left interface state at the current Gauss
 	      // point location based on the low-order reconstruction.
-	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,Grid.BndEastSplineInfo[j].GQPoint(Position));
-	      
+	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,GaussQuadPoints[GQPoint]);
+	    
+	      // Determine right interface state at the Gauss calculation point
+	      InviscidFluxStates_AtBoundaryInterface_HighOrder(EAST,
+							       ICu,j,
+							       Ul,Ur,
+							       GaussQuadPoints[GQPoint],
+							       Pos);
+	    
+	      /* Add the weighted contribution of the current GQP to the total 
+		 convective flux in the normal direction through the face. */
+	      Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceE(ICu,j));
+	    } //endfor (GQPoint)
+	    
+	  } else {
+
+	    // Calculate total flux through the cell face in the normal direction
+	    for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+
+	      // Determine the solution state at the Gauss quadrature point for the calculation 
+	      // of the advective flux based on the constrained reconstruction.
+	      U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,GaussQuadPoints[GQPoint]);
+	    
+	      /* Add the weighted contribution of the current GQP to the total 
+		 convective flux through the face in the normal direction. */
+	      Flux += GaussQuadWeights[GQPoint] * Fa(U_face, GaussQuadPoints[GQPoint], Grid.nfaceE(ICu,j));
+	    } //endfor (GQPoint)
+
+	  } // endif
+	
+	  // Calculate final flux through the cell face
+	  Flux *= Grid.lfaceE(ICu,j);
+
+	  // Update East face boundary flux with the contribution of this cell face
+	  FluxE[j] += Flux;
+
+	  /* Evaluate cell-averaged solution changes due to convective flux. */
+	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* Flux/Grid.Cell[ICu][j].A );
+
+	}	// endfor (j)
+
+      } // endif (Grid.BndEastSplineInfo != NULL)
+
+
+    } else {
+
+      /* Calculate the flux using an upwind method and ensure that
+	 boundary conditions for this boundary are correctly enforced. */
+
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndEastSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
+      
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. East Flux for cell (ICu,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
+
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndEastSplineInfo[j].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndEastSplineInfo[j].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // Compute left interface state at the current Gauss
+	      // point location based on the reconstruction
+	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,
+								  Grid.BndEastSplineInfo[j].GQPoint(Position));
+
 	      // Determine right interface state at the Gauss calculation point
 	      InviscidFluxStates_AtBoundaryInterface_HighOrder(EAST,
 							       ICu,j,
@@ -2528,257 +2677,257 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							       Pos);
 
 	      /* Add the weighted contribution of the current GQP to the total 
-		 convective flux in the normal direction through the face. */
-	      Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
-						     Grid.BndEastSplineInfo[j].GQPoint(Position),
-						     Grid.BndEastSplineInfo[j].NormalGQPoint(Position));
-
-	    } else {
-
-	      // Determine the solution state at the Gauss quadrature point for the calculation 
-	      // of the advective flux based on the constrained reconstruction.
-	      U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,Grid.BndEastSplineInfo[j].GQPoint(Position));
-
-	      /* Add the weighted contribution of the current GQP to the total 
 		 convective flux through the spline segment in the local normal direction. */
-	      Flux += GaussQuadWeights[GQPoint] * Fa(U_face,
+	      Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
 						     Grid.BndEastSplineInfo[j].GQPoint(Position), 
 						     Grid.BndEastSplineInfo[j].NormalGQPoint(Position));
-	    } // endif (IsNonSmoothHighOrderReconstruction)
-
-	  } //endfor (GQPoint)
+	    } //endfor (GQPoint)
 	
-	  // Update FaceFlux with the contribution of this spline segment
-	  FaceFlux += Flux * Grid.BndEastSplineInfo[j].IntLength(SplineSegment);
+	    // Update FaceFlux with the contribution of this spline segment
+	    FaceFlux += Flux * Grid.BndEastSplineInfo[j].IntLength(SplineSegment);
 
-	} // endfor (SplineSegment)
+	  } // endfor (SplineSegment)
 
-	// Update East face boundary flux with the contribution of the hyperbolic term
-	FluxE[j] += FaceFlux;
+	  // Update East face boundary flux with the contribution of the hyperbolic term
+	  FluxE[j] += FaceFlux;
 
-	/* Evaluate cell-averaged solution changes due to convective flux. */
-	dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FaceFlux/Grid.Cell[ICu][j].A );
+	  /* Evaluate cell-averaged solution changes due to convective flux. */
+	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FaceFlux/Grid.Cell[ICu][j].A );
 
-      }	// endfor (j)
+	}	// endfor (j)
+      
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
 
-    } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. East Flux for cell (ICu,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
 
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. East Flux for cell (ICu,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
 
-	// Determine if the solution reconstruction was detected as non-smooth for the current cell.
-	IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(ICu,j);
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	Flux.Vacuum();
-
-	// == Check if the solution reconstruction was detected as non-smooth.
-	if ( IsNonSmoothHighOrderReconstruction ){
+	  // Reset Flux
+	  Flux.Vacuum();
 
 	  // Calculate total flux through the cell face in the normal direction
-	  for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+	  for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
 
-	    // Compute left interface state at the current Gauss
-	    // point location based on the low-order reconstruction.
+	    // Compute left and right interface states at the current Gauss
+	    // point location based on the high-order reconstruction
 	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,GaussQuadPoints[GQPoint]);
-	    
+
 	    // Determine right interface state at the Gauss calculation point
 	    InviscidFluxStates_AtBoundaryInterface_HighOrder(EAST,
 							     ICu,j,
 							     Ul,Ur,
 							     GaussQuadPoints[GQPoint],
 							     Pos);
-	    
-	    /* Add the weighted contribution of the current GQP to the total 
-	       convective flux in the normal direction through the face. */
-	    Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceE(ICu,j));
-	  } //endfor (GQPoint)
-	    
-	} else {
 
-	  // Calculate total flux through the cell face in the normal direction
-	  for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
-
-	    // Determine the solution state at the Gauss quadrature point for the calculation 
-	    // of the advective flux based on the constrained reconstruction.
-	    U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,GaussQuadPoints[GQPoint]);
-	    
 	    /* Add the weighted contribution of the current GQP to the total 
 	       convective flux through the face in the normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fa(U_face, GaussQuadPoints[GQPoint], Grid.nfaceE(ICu,j));
-	  } //endfor (GQPoint)
-
-	} // endif
-	
-	// Calculate final flux through the cell face
-	Flux *= Grid.lfaceE(ICu,j);
-
-	// Update East face boundary flux with the contribution of this cell face
-	FluxE[j] += Flux;
-
-	/* Evaluate cell-averaged solution changes due to convective flux. */
-	dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* Flux/Grid.Cell[ICu][j].A );
-
-      }	// endfor (j)
-
-    } // endif (Grid.BndEastSplineInfo != NULL)
-
-
-  } else {
-
-    /* Calculate the flux using an upwind method and ensure that
-       boundary conditions for this boundary are correctly enforced. */
-
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndEastSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
-      
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. East Flux for cell (ICu,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
-
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndEastSplineInfo[j].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
-
-	  // Reset Flux
-	  Flux.Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndEastSplineInfo[j].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
-
-	    // Compute left interface state at the current Gauss
-	    // point location based on the reconstruction
-	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,
-								Grid.BndEastSplineInfo[j].GQPoint(Position));
-
-	    // Determine right interface state at the Gauss calculation point
-	    InviscidFluxStates_AtBoundaryInterface_HighOrder(EAST,
-							     ICu,j,
-							     Ul,Ur,
-							     Grid.BndEastSplineInfo[j].GQPoint(Position),
-							     Pos);
-
-	    /* Add the weighted contribution of the current GQP to the total 
-	       convective flux through the spline segment in the local normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
-						   Grid.BndEastSplineInfo[j].GQPoint(Position), 
-						   Grid.BndEastSplineInfo[j].NormalGQPoint(Position));
+	    Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceE(ICu,j));
 	  } //endfor (GQPoint)
 	
-	  // Update FaceFlux with the contribution of this spline segment
-	  FaceFlux += Flux * Grid.BndEastSplineInfo[j].IntLength(SplineSegment);
+	  // Calculate final flux through the cell face
+	  Flux *= Grid.lfaceE(ICu,j);
 
-	} // endfor (SplineSegment)
+	  // Update East face boundary flux with the contribution of this cell face
+	  FluxE[j] += Flux;
 
-	// Update East face boundary flux with the contribution of the hyperbolic term
-	FluxE[j] += FaceFlux;
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* Flux/Grid.Cell[ICu][j].A );
 
-	/* Evaluate cell-averaged solution changes due to convective flux. */
-	dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FaceFlux/Grid.Cell[ICu][j].A );
-
-      }	// endfor (j)
+	}	// endfor (j)
       
-    } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
-
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. East Flux for cell (ICu,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	Flux.Vacuum();
-
-	// Calculate total flux through the cell face in the normal direction
-	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
-
-	  // Compute left and right interface states at the current Gauss
-	  // point location based on the high-order reconstruction
-	  Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICu,j,GaussQuadPoints[GQPoint]);
-
-	  // Determine right interface state at the Gauss calculation point
-	  InviscidFluxStates_AtBoundaryInterface_HighOrder(EAST,
-							   ICu,j,
-							   Ul,Ur,
-							   GaussQuadPoints[GQPoint],
-							   Pos);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     convective flux through the face in the normal direction. */
-	  Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceE(ICu,j));
-	} //endfor (GQPoint)
-	
-	// Calculate final flux through the cell face
-	Flux *= Grid.lfaceE(ICu,j);
-
-	// Update East face boundary flux with the contribution of this cell face
-	FluxE[j] += Flux;
-
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* Flux/Grid.Cell[ICu][j].A );
-
-      }	// endfor (j)
-      
-    } // endif (Grid.BndEastSplineInfo != NULL)
+      } // endif (Grid.BndEastSplineInfo != NULL)
     
-  } // endif (Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
+    } // endif (Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
 
 
-  // ****** Step 10. Compute convective fluxes through West block boundary ******
-  // **************************************************************************
-  // == Check the flux calculation method ==
-  if (Grid.BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
-    /* Calculate the flux using information directly from the reconstruction.
-       The boundary conditions along this spline has been enforced to the reconstruction procedure.
-       If the high-order reconstruction has been detected as non-smooth compute an upwind flux
-       with the value provided by the ghost cell reconstruction.
-    */
+    // ****** Step 10. Compute convective fluxes through West block boundary ******
+    // **************************************************************************
+    // == Check the flux calculation method ==
+    if (Grid.BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+      /* Calculate the flux using information directly from the reconstruction.
+	 The boundary conditions along this spline has been enforced to the reconstruction procedure.
+	 If the high-order reconstruction has been detected as non-smooth compute an upwind flux
+	 with the value provided by the ghost cell reconstruction.
+      */
     
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndWestSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndWestSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
      
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. West Flux for cell (ICl,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. West Flux for cell (ICl,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
 
-	// Determine if the solution reconstruction was detected as non-smooth for the current cell.
-	IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(ICl,j);
+	  // Determine if the solution reconstruction was detected as non-smooth for the current cell.
+	  IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(ICl,j);
 
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndWestSplineInfo[j].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndWestSplineInfo[j].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	    FaceFlux.Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndWestSplineInfo[j].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // == Check if the solution reconstruction was detected as non-smooth.
+	      if ( IsNonSmoothHighOrderReconstruction ){
+
+		// Compute left interface state at the current Gauss
+		// point location based on the low-order reconstruction.
+		Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,Grid.BndWestSplineInfo[j].GQPoint(Position));
+	      
+		// Determine right interface state at the Gauss calculation point
+		InviscidFluxStates_AtBoundaryInterface_HighOrder(WEST,
+								 ICl,j,
+								 Ul,Ur,
+								 Grid.BndWestSplineInfo[j].GQPoint(Position),
+								 Pos);
+
+		/* Add the weighted contribution of the current GQP to the total 
+		   convective flux in the normal direction through the face. */
+		Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
+						       Grid.BndWestSplineInfo[j].GQPoint(Position),
+						       Grid.BndWestSplineInfo[j].NormalGQPoint(Position));
+
+	      } else {
+
+		// Determine the solution state at the Gauss quadrature point for the calculation 
+		// of the advective flux based on the constrained reconstruction.
+		U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,Grid.BndWestSplineInfo[j].GQPoint(Position));
+
+		/* Add the weighted contribution of the current GQP to the total 
+		   convective flux through the spline segment in the local normal direction. */
+		Flux += GaussQuadWeights[GQPoint] * Fa(U_face,
+						       Grid.BndWestSplineInfo[j].GQPoint(Position), 
+						       Grid.BndWestSplineInfo[j].NormalGQPoint(Position));
+	      } // endif (IsNonSmoothHighOrderReconstruction)
+
+	    } //endfor (GQPoint)
+	
+	    // Update FaceFlux with the contribution of this spline segment
+	    FaceFlux += Flux * Grid.BndWestSplineInfo[j].IntLength(SplineSegment);
+
+	  } // endfor (SplineSegment)
+
+	  // Update West face boundary flux with the contribution of the hyperbolic term
+	  FluxW[j] += FaceFlux;
+
+	  /* Evaluate cell-averaged solution changes due to convective flux. */
+	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FaceFlux/Grid.Cell[ICl][j].A );
+
+	}	// endfor (j)
+
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
+
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. West Flux for cell (ICl,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
+
+	  // Determine if the solution reconstruction was detected as non-smooth for the current cell.
+	  IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(ICl,j);
+
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
 
 	  // Reset Flux
 	  Flux.Vacuum();
-	  FaceFlux.Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndWestSplineInfo[j].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
 
-	    // == Check if the solution reconstruction was detected as non-smooth.
-	    if ( IsNonSmoothHighOrderReconstruction ){
+	  // == Check if the solution reconstruction was detected as non-smooth.
+	  if ( IsNonSmoothHighOrderReconstruction ){
+
+	    // Calculate total flux through the cell face in the normal direction
+	    for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
 
 	      // Compute left interface state at the current Gauss
 	      // point location based on the low-order reconstruction.
-	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,Grid.BndWestSplineInfo[j].GQPoint(Position));
-	      
+	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,GaussQuadPoints[GQPoint]);
+	    
+	      // Determine right interface state at the Gauss calculation point
+	      InviscidFluxStates_AtBoundaryInterface_HighOrder(WEST,
+							       ICl,j,
+							       Ul,Ur,
+							       GaussQuadPoints[GQPoint],
+							       Pos);
+	    
+	      /* Add the weighted contribution of the current GQP to the total 
+		 convective flux in the normal direction through the face. */
+	      Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceW(ICl,j));
+	    } //endfor (GQPoint)
+	    
+	  } else {
+
+	    // Calculate total flux through the cell face in the normal direction
+	    for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+
+	      // Determine the solution state at the Gauss quadrature point for the calculation 
+	      // of the advective flux based on the constrained reconstruction.
+	      U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,GaussQuadPoints[GQPoint]);
+	    
+	      /* Add the weighted contribution of the current GQP to the total 
+		 convective flux through the face in the normal direction. */
+	      Flux += GaussQuadWeights[GQPoint] * Fa(U_face, GaussQuadPoints[GQPoint], Grid.nfaceW(ICl,j));
+	    } //endfor (GQPoint)
+
+	  } // endif
+	
+	  // Calculate final flux through the cell face
+	  Flux *= Grid.lfaceW(ICl,j);
+
+	  // Update West face boundary flux with the contribution of this cell face
+	  FluxW[j] += Flux;
+
+	  /* Evaluate cell-averaged solution changes due to convective flux. */
+	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* Flux/Grid.Cell[ICl][j].A );
+
+	}	// endfor (j)
+
+      } // endif (Grid.BndWestSplineInfo != NULL)
+
+
+    } else {
+
+      /* Calculate the flux using an upwind method and ensure that
+	 boundary conditions for this boundary are correctly enforced. */
+
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid.BndWestSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
+      
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. West Flux for cell (ICl,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
+
+	  for (SplineSegment = 1, Position = 1; 
+	       SplineSegment <= Grid.BndWestSplineInfo[j].NumOfSubIntervals();
+	       ++SplineSegment){  // for each continuous spline subinterval
+
+	    // Reset Flux
+	    Flux.Vacuum();
+	  
+	    // Calculate total flux through the spline subinterval
+	    for (GQPoint = 0;
+		 GQPoint < Grid.BndWestSplineInfo[j].GQPointsPerSubInterval();
+		 ++GQPoint, ++Position){  // for each Gauss Quadrature point
+
+	      // Compute left interface state at the current Gauss
+	      // point location based on the reconstruction
+	      Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,
+								  Grid.BndWestSplineInfo[j].GQPoint(Position));
+
 	      // Determine right interface state at the Gauss calculation point
 	      InviscidFluxStates_AtBoundaryInterface_HighOrder(WEST,
 							       ICl,j,
@@ -2787,214 +2936,74 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							       Pos);
 
 	      /* Add the weighted contribution of the current GQP to the total 
-		 convective flux in the normal direction through the face. */
-	      Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
-						     Grid.BndWestSplineInfo[j].GQPoint(Position),
-						     Grid.BndWestSplineInfo[j].NormalGQPoint(Position));
-
-	    } else {
-
-	      // Determine the solution state at the Gauss quadrature point for the calculation 
-	      // of the advective flux based on the constrained reconstruction.
-	      U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,Grid.BndWestSplineInfo[j].GQPoint(Position));
-
-	      /* Add the weighted contribution of the current GQP to the total 
 		 convective flux through the spline segment in the local normal direction. */
-	      Flux += GaussQuadWeights[GQPoint] * Fa(U_face,
+	      Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
 						     Grid.BndWestSplineInfo[j].GQPoint(Position), 
 						     Grid.BndWestSplineInfo[j].NormalGQPoint(Position));
-	    } // endif (IsNonSmoothHighOrderReconstruction)
-
-	  } //endfor (GQPoint)
+	    } //endfor (GQPoint)
 	
-	  // Update FaceFlux with the contribution of this spline segment
-	  FaceFlux += Flux * Grid.BndWestSplineInfo[j].IntLength(SplineSegment);
+	    // Update FaceFlux with the contribution of this spline segment
+	    FaceFlux += Flux * Grid.BndWestSplineInfo[j].IntLength(SplineSegment);
 
-	} // endfor (SplineSegment)
+	  } // endfor (SplineSegment)
 
-	// Update West face boundary flux with the contribution of the hyperbolic term
-	FluxW[j] += FaceFlux;
+	  // Update West face boundary flux with the contribution of the hyperbolic term
+	  FluxW[j] += FaceFlux;
 
-	/* Evaluate cell-averaged solution changes due to convective flux. */
-	dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FaceFlux/Grid.Cell[ICl][j].A );
+	  /* Evaluate cell-averaged solution changes due to convective flux. */
+	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FaceFlux/Grid.Cell[ICl][j].A );
 
-      }	// endfor (j)
+	}	// endfor (j)
+      
+      } else {
+	/* Low-order boundary representation is required.
+	   Treat the cell faces as straight edges. */
 
-    } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. West Flux for cell (ICl,j) ) */
+	for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
 
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. West Flux for cell (ICl,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
+	  // Determine the location of the Gauss Quadrature Points
+	  Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
 
-	// Determine if the solution reconstruction was detected as non-smooth for the current cell.
-	IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(ICl,j);
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	Flux.Vacuum();
-
-	// == Check if the solution reconstruction was detected as non-smooth.
-	if ( IsNonSmoothHighOrderReconstruction ){
+	  // Reset Flux
+	  Flux.Vacuum();
 
 	  // Calculate total flux through the cell face in the normal direction
-	  for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+	  for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
 
-	    // Compute left interface state at the current Gauss
-	    // point location based on the low-order reconstruction.
+	    // Compute left and right interface states at the current Gauss
+	    // point location based on the high-order reconstruction
 	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,GaussQuadPoints[GQPoint]);
-	    
+
 	    // Determine right interface state at the Gauss calculation point
 	    InviscidFluxStates_AtBoundaryInterface_HighOrder(WEST,
 							     ICl,j,
 							     Ul,Ur,
 							     GaussQuadPoints[GQPoint],
 							     Pos);
-	    
-	    /* Add the weighted contribution of the current GQP to the total 
-	       convective flux in the normal direction through the face. */
-	    Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceW(ICl,j));
-	  } //endfor (GQPoint)
-	    
-	} else {
 
-	  // Calculate total flux through the cell face in the normal direction
-	  for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
-
-	    // Determine the solution state at the Gauss quadrature point for the calculation 
-	    // of the advective flux based on the constrained reconstruction.
-	    U_face = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,GaussQuadPoints[GQPoint]);
-	    
 	    /* Add the weighted contribution of the current GQP to the total 
 	       convective flux through the face in the normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fa(U_face, GaussQuadPoints[GQPoint], Grid.nfaceW(ICl,j));
-	  } //endfor (GQPoint)
-
-	} // endif
-	
-	// Calculate final flux through the cell face
-	Flux *= Grid.lfaceW(ICl,j);
-
-	// Update West face boundary flux with the contribution of this cell face
-	FluxW[j] += Flux;
-
-	/* Evaluate cell-averaged solution changes due to convective flux. */
-	dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* Flux/Grid.Cell[ICl][j].A );
-
-      }	// endfor (j)
-
-    } // endif (Grid.BndWestSplineInfo != NULL)
-
-
-  } else {
-
-    /* Calculate the flux using an upwind method and ensure that
-       boundary conditions for this boundary are correctly enforced. */
-
-    // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
-    if ( Grid.BndWestSplineInfo != NULL){
-      /* High-order boundary representation is required.
-	 Use all geometric information from the correspondent BndSplineInfo */
-      
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. West Flux for cell (ICl,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
-
-	for (SplineSegment = 1, Position = 1; 
-	     SplineSegment <= Grid.BndWestSplineInfo[j].NumOfSubIntervals();
-	     ++SplineSegment){  // for each continuous spline subinterval
-
-	  // Reset Flux
-	  Flux.Vacuum();
-	  
-	  // Calculate total flux through the spline subinterval
-	  for (GQPoint = 0;
-	       GQPoint < Grid.BndWestSplineInfo[j].GQPointsPerSubInterval();
-	       ++GQPoint, ++Position){  // for each Gauss Quadrature point
-
-	    // Compute left interface state at the current Gauss
-	    // point location based on the reconstruction
-	    Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,
-								Grid.BndWestSplineInfo[j].GQPoint(Position));
-
-	    // Determine right interface state at the Gauss calculation point
-	    InviscidFluxStates_AtBoundaryInterface_HighOrder(WEST,
-							     ICl,j,
-							     Ul,Ur,
-							     Grid.BndWestSplineInfo[j].GQPoint(Position),
-							     Pos);
-
-	    /* Add the weighted contribution of the current GQP to the total 
-	       convective flux through the spline segment in the local normal direction. */
-	    Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur,
-						   Grid.BndWestSplineInfo[j].GQPoint(Position), 
-						   Grid.BndWestSplineInfo[j].NormalGQPoint(Position));
+	    Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceW(ICl,j));
 	  } //endfor (GQPoint)
 	
-	  // Update FaceFlux with the contribution of this spline segment
-	  FaceFlux += Flux * Grid.BndWestSplineInfo[j].IntLength(SplineSegment);
+	  // Calculate final flux through the cell face
+	  Flux *= Grid.lfaceW(ICl,j);
 
-	} // endfor (SplineSegment)
+	  // Update West face boundary flux with the contribution of this cell face
+	  FluxW[j] += Flux;
 
-	// Update West face boundary flux with the contribution of the hyperbolic term
-	FluxW[j] += FaceFlux;
+	  /* Evaluate cell-averaged solution changes. */
+	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* Flux/Grid.Cell[ICl][j].A );
 
-	/* Evaluate cell-averaged solution changes due to convective flux. */
-	dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FaceFlux/Grid.Cell[ICl][j].A );
-
-      }	// endfor (j)
+	}	// endfor (j)
       
-    } else {
-      /* Low-order boundary representation is required.
-	 Treat the cell faces as straight edges. */
-
-      /* Evaluate the cell interface i-direction fluxes.
-	 --> ( i.e. West Flux for cell (ICl,j) ) */
-      for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
-
-	// Determine the location of the Gauss Quadrature Points
-	Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
-
-	// Reset Flux
-	Flux.Vacuum();
-
-	// Calculate total flux through the cell face in the normal direction
-	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
-
-	  // Compute left and right interface states at the current Gauss
-	  // point location based on the high-order reconstruction
-	  Ul = HighOrderVariable(Pos).SolutionStateAtLocation(ICl,j,GaussQuadPoints[GQPoint]);
-
-	  // Determine right interface state at the Gauss calculation point
-	  InviscidFluxStates_AtBoundaryInterface_HighOrder(WEST,
-							   ICl,j,
-							   Ul,Ur,
-							   GaussQuadPoints[GQPoint],
-							   Pos);
-
-	  /* Add the weighted contribution of the current GQP to the total 
-	     convective flux through the face in the normal direction. */
-	  Flux += GaussQuadWeights[GQPoint] * Fa(Ul, Ur, GaussQuadPoints[GQPoint], Grid.nfaceW(ICl,j));
-	} //endfor (GQPoint)
-	
-	// Calculate final flux through the cell face
-	Flux *= Grid.lfaceW(ICl,j);
-
-	// Update West face boundary flux with the contribution of this cell face
-	FluxW[j] += Flux;
-
-	/* Evaluate cell-averaged solution changes. */
-	dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* Flux/Grid.Cell[ICl][j].A );
-
-      }	// endfor (j)
-      
-    } // endif (Grid.BndWestSplineInfo != NULL)
+      } // endif (Grid.BndWestSplineInfo != NULL)
     
-  } // endif (Grid.BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
+    } // endif (Grid.BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux)
 
+  } // endif (Include_Advection_Term)
 
   // Deallocate memory
   delete [] GaussQuadPoints;

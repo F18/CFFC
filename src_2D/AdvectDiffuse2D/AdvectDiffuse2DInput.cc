@@ -120,6 +120,13 @@ int AdvectDiffuse2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr
 
   // Set flag for including/excluding source term in the model equation
   AdvectDiffuse2D_Quad_Block::Include_Source_Term = Include_Source_Term;
+
+  // Set flag for including/excluding advection term in the model equation
+  AdvectDiffuse2D_Quad_Block::Include_Advection_Term = Include_Advection_Term;
+
+  // Set flag for including/excluding diffusion term in the model equation
+  AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = Include_Diffusion_Term;
+
 }
 
 /******************************************************//**
@@ -193,9 +200,19 @@ ostream &operator << (ostream &out_file,
     }
 
     // ====    Velocity field parameters ====
+    if (IP.Include_Advection_Term) {
+      out_file << "\n  -> Advection Term Included in Equation: Yes ";
+    } else {
+      out_file << "\n  -> Advection Term Included in Equation: No ";
+    }
     VelocityFields::Print_Info(out_file);
 
     // ====    Diffusion field parameters ====
+    if (IP.Include_Diffusion_Term) {
+      out_file << "\n  -> Diffusion Term Included in Equation: Yes ";
+    } else {
+      out_file << "\n  -> Diffusion Term Included in Equation: No ";
+    }
     DiffusionFields::Print_Info(out_file);
 
     // ====    Source field parameters ====
@@ -625,6 +642,8 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     strcpy(IP.Flow_Geometry_Type, string_ptr);
     IP.Axisymmetric = 0;
     IP.Include_Source_Term = ON;
+    IP.Include_Advection_Term = ON;
+    IP.Include_Diffusion_Term = ON;
 
     // Grid parameters:
     string_ptr = "Square";
@@ -854,6 +873,12 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Include_Source_Term), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Include_Advection_Term), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Include_Diffusion_Term), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.Grid_Type, 
@@ -1213,6 +1238,12 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
       // Set flag for including/excluding source term in the model equation
       AdvectDiffuse2D_Quad_Block::Include_Source_Term = IP.Include_Source_Term;
+
+      // Set flag for including/excluding advection term in the model equation
+      AdvectDiffuse2D_Quad_Block::Include_Advection_Term = IP.Include_Advection_Term;
+      
+      // Set flag for including/excluding diffusion term in the model equation
+      AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = IP.Include_Diffusion_Term;
     }
 
 #endif
@@ -1333,6 +1364,12 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.Include_Source_Term), 
+                       1, 
+                       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Include_Advection_Term), 
+                       1, 
+                       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Include_Diffusion_Term), 
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(IP.Grid_Type, 
@@ -2253,6 +2290,24 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.Include_Source_Term = OFF;
     } /* endif */
 
+  } else if (strcmp(IP.Next_Control_Parameter, "Include_Advection_Term_In_Equation") == 0) {
+    i_command = 0;
+    IP.Get_Next_Input_Control_Parameter();
+    if (strcmp(IP.Next_Control_Parameter, "Yes") == 0) {
+      IP.Include_Advection_Term = ON;
+    } else {
+      IP.Include_Advection_Term = OFF;
+    } /* endif */
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Include_Diffusion_Term_In_Equation") == 0) {
+    i_command = 0;
+    IP.Get_Next_Input_Control_Parameter();
+    if (strcmp(IP.Next_Control_Parameter, "Yes") == 0) {
+      IP.Include_Diffusion_Term = ON;
+    } else {
+      IP.Include_Diffusion_Term = OFF;
+    } /* endif */
+
   } else if (strcmp(IP.Next_Control_Parameter, "Restart_Solution_Save_Frequency") == 0) {
     i_command = 47;
     IP.Line_Number = IP.Line_Number + 1;
@@ -3026,6 +3081,12 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
 
     // Set flag for including/excluding source term in the model equation
     AdvectDiffuse2D_Quad_Block::Include_Source_Term = Input_Parameters.Include_Source_Term;
+
+    // Set flag for including/excluding advection term in the model equation
+    AdvectDiffuse2D_Quad_Block::Include_Advection_Term = Input_Parameters.Include_Advection_Term;
+    
+    // Set flag for including/excluding diffusion term in the model equation
+    AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = Input_Parameters.Include_Diffusion_Term;
 
     /* Initial processing of input control parameters complete.  
        Return the error indicator flag. */
