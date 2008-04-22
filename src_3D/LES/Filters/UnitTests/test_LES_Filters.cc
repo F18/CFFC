@@ -170,7 +170,7 @@ namespace tut
         set_test_name("Test transfer_function");
         
         
-         //Initialize();
+         Initialize();
         
         
         
@@ -201,22 +201,34 @@ namespace tut
         // function_ptr = &Soln_pState::E_return;
         // cout << endl << "return_it = " << endl;
         // cout << return_it(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr) << endl;
-/*        
+       
         double (Soln_pState::*function_ptr2)(void) = NULL; 
         function_ptr2 = &Soln_pState::E;
         cout << endl << "return_it_2 = " << endl;
         cout << return_it_2(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr2) << endl;
         
+        double (Soln_pState::*function_ptr22) = NULL; 
+        function_ptr22 = &Soln_pState::p;
+        cout << endl << "return_it_2_2 = " << endl;
+        cout << return_it_2(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr22) << endl;
+        
+        
         double (Soln_pState::*function_ptr3) = NULL; 
         function_ptr3 = &Soln_pState::p;
         cout << endl << "return_it_3 = " << endl;
-        cout << return_it_2(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr3) << endl;
+        cout << return_it_3(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr3) << endl;  
         
-        
-        double (Soln_pState::*function_ptr4) = NULL; 
-        function_ptr4 = &Soln_pState::p;
+        Soln_pState *** (Hexa_Block<Soln_pState,Soln_cState>::*function_ptr4) = NULL; 
+        function_ptr4 = &Hexa_Block<Soln_pState,Soln_cState>::W;
         cout << endl << "return_it_4 = " << endl;
-        cout << return_it_3(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr4) << endl;  */
+        cout << return_it_4(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr4) << endl;  
+        cout << return_it_44(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr4) << endl;  
+
+        Soln_cState **** (Hexa_Block<Soln_pState,Soln_cState>::*function_ptr5) = NULL; 
+        function_ptr5 = &Hexa_Block<Soln_pState,Soln_cState>::dUdt;
+        cout << endl << "return_it_5 = " << endl;
+        cout << return_it_5(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr5 , 0) << endl;  
+        
         
 //        double (Vector3D::*member_ptr) = NULL;
 //       // Vector3D (Soln_pState::*vector_ptr); 
@@ -227,7 +239,7 @@ namespace tut
 //        
 //        member_ptr = &vector_ptr.x;
         
-
+//
 //        typedef double (Vector3D::*member_ptr);
 //        _Member_Function_Wrapper_<Vector3D,member_ptr,double> V_x(&Soln_pState::v, &Vector3D::x);
 //        
@@ -273,6 +285,9 @@ namespace tut
                 
         //cout << endl<< endl << endl << "FILTERING..." << endl;
         LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
+        Soln_cState **** (Hexa_Block<Soln_pState,Soln_cState>::*dUdt_ptr) = NULL;
+        dUdt_ptr = &Hexa_Block<Soln_pState,Soln_cState>::dUdt;
+        myfilter.Set_Filter_Variables(dUdt_ptr,0);
         myfilter.filter();
         
 

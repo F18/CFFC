@@ -6,8 +6,8 @@
  *
  */
 
-#ifndef _LES_FILTERS_INCLUDED_
-#define _LES_FILTERS_INCLUDED_
+#ifndef _LES_FILTERS_INCLUDED
+#define _LES_FILTERS_INCLUDED
 
 /*
  *
@@ -25,9 +25,8 @@
  *
  */
 
-
-
-#include "../LES_Polytropic/LES3DPolytropic.h"
+#include "../../HexaBlock/HexaMultiBlock.h"
+#include "../../HexaBlock/HexaSolverClasses.h"
 #include "../../Math/math.h"
 #include "../../Math/LinearSystems.h"
 #include "../../Math/Matrix.h"
@@ -101,7 +100,7 @@ inline ostream &operator << (ostream &out_file,
 template <typename Soln_pState, typename Soln_cState>
 class General_Filter {
 public:
-    virtual Soln_pState filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell) = 0;
+    virtual RowVector filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell) = 0;
     virtual void transfer_function(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, double &kmax) =0;
 
 };
@@ -114,9 +113,21 @@ class Haselbacher_Filter;
 /**
  * CLASS : LES_Filter
  */
+
+#define SOLN_CSTATE_3D 0
+#define SOLN_CSTATE_4D 1
+
 template<typename Soln_pState, typename Soln_cState>
 class LES_Filter {
 public:
+    typedef Soln_cState *** (Hexa_Block<Soln_pState,Soln_cState>::*Soln_cState_3D_ptr_type);
+    typedef Soln_cState **** (Hexa_Block<Soln_pState,Soln_cState>::*Soln_cState_4D_ptr_type);
+
+    static Soln_cState_3D_ptr_type Soln_cState_3D_ptr;
+    static Soln_cState_4D_ptr_type Soln_cState_4D_ptr;
+
+    static int dUdt_k_residual;
+    static int filter_variable_type;
     
     AdaptiveBlock3D_List *LocalSolnBlkList_ptr;                     // List with properties of SolnBlks
     Hexa_Block<Soln_pState,Soln_cState> *Solution_Blocks_ptr;       // array of SolnBlks
@@ -131,14 +142,39 @@ public:
         if (filter_flag == LES_FILTER_HASELBACHER) {
             filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;            
         }
+        FILTER_ONLY_ONE_SOLNBLK = false;
+    }
+    
+    LES_Filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk,
+               int filter_flag) {
+        FILTER_ONLY_ONE_SOLNBLK = true;
+        Solution_Blocks_ptr  = &SolnBlk;
+        
+        if (filter_flag == LES_FILTER_HASELBACHER) {
+            filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;            
+        }
     }
 
     ~LES_Filter() {
         delete filter_ptr;
     }
     
+    void Set_Filter_Variables(Soln_cState *** Hexa_Block<Soln_pState,Soln_cState>::*&member) {
+        Soln_cState_3D_ptr = member;
+        filter_variable_type = SOLN_CSTATE_3D;
+    }
+    void Set_Filter_Variables(Soln_cState **** Hexa_Block<Soln_pState,Soln_cState>::*&member,int k_residual) {
+        Soln_cState_4D_ptr = member;
+        dUdt_k_residual = k_residual;
+        filter_variable_type = SOLN_CSTATE_4D;
+    }
+    
+    static RowVector what_to_filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, int i, int j, int k);
+
+    
     General_Filter<Soln_pState,Soln_cState> *filter_ptr;
-    void filter();
+    
+    void filter(void);
     
     double filter_width;
     void transfer_function();
@@ -147,7 +183,66 @@ public:
     double tophat();
 
     double maximum_wavenumber();
+    bool FILTER_ONLY_ONE_SOLNBLK;
+    RowVector ***Filtered;
+    
+    void allocate_Filtered(Hexa_Block<Soln_pState,Soln_cState> &Soln_Blk){
+        Filtered = new RowVector **[Soln_Blk.NCi];
+        for (int i=0; i<Soln_Blk.NCi; i++) {
+            Filtered[i] = new RowVector *[Soln_Blk.NCj];
+            for (int j=0; j<Soln_Blk.NCj; j++) {
+                Filtered[i][j] = new RowVector [Soln_Blk.NCk];
+//                for (int k=0; k<Soln_Blk.NCk; k++) {
+//                    Filtered[i][j][k] = RowVector(Soln_Blk.Num_Var());
+//                }
+            }
+        }
+    }
+    
+    void deallocate_Filtered(Hexa_Block<Soln_pState,Soln_cState> &Soln_Blk) {
+        for (int i=0; i<Soln_Blk.NCi; i++) {
+            for (int j=0; j<Soln_Blk.NCj; j++) {
+                delete[] Filtered[i][j];   Filtered[i][j] = NULL;
+            }
+            delete[] Filtered[i];   Filtered[i] = NULL;
+        }
+        delete[] Filtered;   Filtered = NULL;
+    }
+    
 };
+
+template<typename Soln_pState, typename Soln_cState>
+int LES_Filter<Soln_pState,Soln_cState>::filter_variable_type = SOLN_CSTATE_4D;
+
+template<typename Soln_pState, typename Soln_cState>
+int LES_Filter<Soln_pState,Soln_cState>::dUdt_k_residual = 0;
+
+template<typename Soln_pState, typename Soln_cState>
+Soln_cState *** Hexa_Block<Soln_pState,Soln_cState>::* LES_Filter<Soln_pState,Soln_cState>::Soln_cState_3D_ptr = NULL;
+
+template<typename Soln_pState, typename Soln_cState>
+Soln_cState **** Hexa_Block<Soln_pState,Soln_cState>::* LES_Filter<Soln_pState,Soln_cState>::Soln_cState_4D_ptr = NULL;
+
+template<typename Soln_pState, typename Soln_cState>
+RowVector LES_Filter<Soln_pState,Soln_cState>::what_to_filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, int i, int j, int k) {
+    RowVector x;
+    switch (filter_variable_type) {
+        case SOLN_CSTATE_3D:
+            x = RowVector(SolnBlk.NumVar());
+            for (int n=1; n<=SolnBlk.NumVar(); n++) {
+                x(n-1) = (SolnBlk.*Soln_cState_3D_ptr)[i][j][k][n];
+            }
+            return x;
+        case SOLN_CSTATE_4D:
+            x = RowVector(SolnBlk.NumVar());
+            for (int n=1; n<=SolnBlk.NumVar(); n++) {
+                x(n-1) = (SolnBlk.*Soln_cState_4D_ptr)[i][j][k][dUdt_k_residual][n];
+            }
+            return x;            
+    }
+
+}
+
 
 
 template<typename Soln_pState, typename Soln_cState>
@@ -175,26 +270,56 @@ void LES_Filter<Soln_pState,Soln_cState>::transfer_function() {
 }
 
 template<typename Soln_pState, typename Soln_cState>
-void LES_Filter<Soln_pState,Soln_cState>::filter() {
-    /* For every local solution block */
-    if (LocalSolnBlkList_ptr->Nused() >= 1) {
-        Hexa_Block<Soln_pState,Soln_cState> Filtered_Solution_Block;
-        for (int nBlk = 0; nBlk < LocalSolnBlkList_ptr->Nused(); nBlk++ ) {
-            if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
-                /* For every cell */
-                Filtered_Solution_Block.Copy(Solution_Blocks_ptr[nBlk]);    // could be more efficient
-                for(int i=Solution_Blocks_ptr[nBlk].Grid.ICl ; i<=Solution_Blocks_ptr[nBlk].Grid.ICu ; i++) {
-                    for (int j=Solution_Blocks_ptr[nBlk].Grid.JCl ; j<=Solution_Blocks_ptr[nBlk].Grid.JCu ; j++) {
-                        for (int k=Solution_Blocks_ptr[nBlk].Grid.KCl ; k<=Solution_Blocks_ptr[nBlk].Grid.KCu ; k++) {
-                            Filtered_Solution_Block.W[i][j][k] = 
-                                filter_ptr->filter(Solution_Blocks_ptr[nBlk],Solution_Blocks_ptr[nBlk].Grid.Cell[i][j][k]);                            
+void LES_Filter<Soln_pState,Soln_cState>::filter(void) {
+    if (FILTER_ONLY_ONE_SOLNBLK) {
+        allocate_Filtered(*Solution_Blocks_ptr);
+        for(int i=Solution_Blocks_ptr->ICl ; i<=Solution_Blocks_ptr->ICu ; i++) {
+            for (int j=Solution_Blocks_ptr->JCl ; j<=Solution_Blocks_ptr->JCu ; j++) {
+                for (int k=Solution_Blocks_ptr->KCl ; k<=Solution_Blocks_ptr->KCu ; k++) {
+                    Filtered[i][j][k] = filter_ptr->filter(*Solution_Blocks_ptr,Solution_Blocks_ptr->Grid.Cell[i][j][k]);
+                }
+            }
+        }
+        for(int i=Solution_Blocks_ptr->ICl ; i<=Solution_Blocks_ptr->ICu ; i++) {
+            for (int j=Solution_Blocks_ptr->JCl ; j<=Solution_Blocks_ptr->JCu ; j++) {
+                for (int k=Solution_Blocks_ptr->KCl ; k<=Solution_Blocks_ptr->KCu ; k++) {
+                    for (int n=1; n<= Solution_Blocks_ptr->NumVar(); n++) {
+                        Solution_Blocks_ptr->U[i][j][k][n] = Filtered[i][j][k](n-1); 
+                    }
+                    Solution_Blocks_ptr->W[i][j][k] = Solution_Blocks_ptr->U[i][j][k].W();                           
+                }
+            }
+        }
+        deallocate_Filtered(*Solution_Blocks_ptr);        
+    }
+    else {
+        /* For every local solution block */
+        if (LocalSolnBlkList_ptr->Nused() >= 1) {
+            for (int nBlk = 0; nBlk < LocalSolnBlkList_ptr->Nused(); nBlk++ ) {
+                if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
+                    /* For every cell */
+                    allocate_Filtered(Solution_Blocks_ptr[nBlk]);
+                    for(int i=Solution_Blocks_ptr[nBlk].ICl ; i<=Solution_Blocks_ptr[nBlk].ICu ; i++) {
+                        for (int j=Solution_Blocks_ptr[nBlk].JCl ; j<=Solution_Blocks_ptr[nBlk].JCu ; j++) {
+                            for (int k=Solution_Blocks_ptr[nBlk].KCl ; k<=Solution_Blocks_ptr[nBlk].KCu ; k++) {
+                                Filtered[i][j][k] = filter_ptr->filter(Solution_Blocks_ptr[nBlk],Solution_Blocks_ptr[nBlk].Grid.Cell[i][j][k]);
+                            }
                         }
                     }
-                }
-                Solution_Blocks_ptr[nBlk].Copy(Filtered_Solution_Block);   // could be more efficient
-            }         
-        } 
-    } 
+                    for(int i=Solution_Blocks_ptr[nBlk].ICl ; i<=Solution_Blocks_ptr[nBlk].ICu ; i++) {
+                        for (int j=Solution_Blocks_ptr[nBlk].JCl ; j<=Solution_Blocks_ptr[nBlk].JCu ; j++) {
+                            for (int k=Solution_Blocks_ptr[nBlk].KCl ; k<=Solution_Blocks_ptr[nBlk].KCu ; k++) {
+                                for (int n=1; n<= Solution_Blocks_ptr[nBlk].NumVar(); n++) {
+                                    Solution_Blocks_ptr[nBlk].dUdt[i][j][k][0][n] = Filtered[i][j][k](n-1);                           
+                                }
+                            }
+                        }
+                    }
+                    deallocate_Filtered(Solution_Blocks_ptr[nBlk]);
+                }         
+            } 
+        }         
+    }
 }
 
 
@@ -238,19 +363,21 @@ public:
     int fac(int n);
     double trinomial_coefficient(int n1, int n2, int n3);
     
-    Soln_pState filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell);
+    RowVector filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell);
     
     void transfer_function(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, double &kmax);
 
-    Soln_pState LeastSquaresReconstruction(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, Neighbours &theNeighbours);
-    Soln_pState LeastSquaresReconstruction_Uniform_Grid(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, Neighbours &theNeighbours);
+    RowVector LeastSquaresReconstruction(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, Neighbours &theNeighbours);
+    RowVector LeastSquaresReconstruction_Uniform_Grid(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, Neighbours &theNeighbours);
     DenseMatrix Matrix_A(Cell3D &theCell, Neighbours &theNeighbours);
     DenseMatrix Matrix_A(Cell3D &theCell, Neighbours &theNeighbours, int &commutation_order);
     DenseMatrix Matrix_b(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Neighbours &theNeighbours);
     DiagonalMatrix Matrix_W(Cell3D &theCell, Neighbours &theNeighbours);
     DiagonalMatrix Matrix_W(Cell3D &theCell, Neighbours &theNeighbours, double weight_factor);
 
-    
+    RowVector what_to_filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Soln_cState *** Hexa_Block<Soln_pState,Soln_cState>::*&U, int i, int j, int k);
+    RowVector what_to_filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Soln_cState **** Hexa_Block<Soln_pState,Soln_cState>::*&dUdt, int i, int j, int k);
+        
     void Weight_Matrix_A_and_b(DenseMatrix &A, DenseMatrix &b, Cell3D &theCell, Neighbours &theNeighbours);
     
     Complex G_function(Cell3D &theCell, Neighbours &theNeighbours, Cell3D &kCell, RowVector &w);
@@ -749,11 +876,12 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
 
     
     
-    for (double weight_factor=0.5; weight_factor<=10.0; weight_factor+=0.5) {
+    for (double weight=0.5; weight<=10.0; weight+=0.5) {
         
-        DiagonalMatrix W = Matrix_W(theCell, theNeighbours,weight_factor);
+        DiagonalMatrix W = Matrix_W(theCell, theNeighbours,weight);
         DenseMatrix Z = (W*A).pseudo_inverse()*W;
         RowVector w = Z[0];
+        
         
         double w0 = Calculate_relaxation_factor(theCell,theNeighbours,kmax,w);
         
@@ -763,7 +891,7 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
         double FQ = filter_quality(theCell, theNeighbours, kmax, w, w0);
         //double FQ = filter_quality(SolnBlk, theCell, kmax, number_of_rings, commutation_order, weight_factor);
         // FGR = FGR(weight,commutation_order,number_of_rings)
-        cout << "weight = " << weight_factor << "    w0 = " << w0 << "   k_HALF = " << k_HALF << "    FGR = " << kmax/k_HALF << "    FQ = " << FQ << endl;
+        cout << "weight = " << weight << "    w0 = " << w0 << "   k_HALF = " << k_HALF << "    FGR = " << kmax/k_HALF << "    FQ = " << FQ << endl;
         
         
         
@@ -803,7 +931,7 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
         /* ---------- output ----------- */
         
         char title[80];
-        sprintf(title,"W = %3.2f  FGR = %3.2f",weight_factor,kmax/k_HALF);
+        sprintf(title,"W = %3.2f  FGR = %3.2f",weight,kmax/k_HALF);
         
         
         h1.gnuplot_plot1d_var2(k_111,G_111,N,title);
@@ -866,8 +994,7 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Block<S
 }
 
 template<typename Soln_pState, typename Soln_cState>
-Soln_pState Haselbacher_Filter<Soln_pState,Soln_cState>::filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell) {
-
+RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell) {
     
     Neighbours theNeighbours(SolnBlk.Grid);
     theNeighbours.GetNeighbours(theCell,number_of_rings);
@@ -994,12 +1121,15 @@ DenseMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_b(Hexa_Block<Sol
     int the_number_of_neighbours = theNeighbours.number_of_neighbours;
     DenseMatrix b(the_number_of_neighbours,SolnBlk.NumVar());
     int I,J,K;
+    
+    RowVector newRow;
+    
     for (int i=0; i<the_number_of_neighbours; i++) {
         I = theNeighbours.neighbour[i].I;
         J = theNeighbours.neighbour[i].J;
         K = theNeighbours.neighbour[i].K;
-        for(int j=1; j<=SolnBlk.NumVar(); j++)
-            b(i,j-1) = SolnBlk.W[I][J][K][j];
+        newRow = LES_Filter<Soln_pState,Soln_cState>::what_to_filter(SolnBlk,I,J,K);
+        b.assignRow(i, newRow);
     }
     return b;
 }
@@ -1038,14 +1168,15 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::Weight_Matrix_A_and_b(DenseMat
  * A x = b  Least Squares  and filtered variable is first element of x
  */
 template<typename Soln_pState, typename Soln_cState>
-Soln_pState Haselbacher_Filter<Soln_pState,Soln_cState>::LeastSquaresReconstruction(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, Neighbours &theNeighbours) {
+RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::LeastSquaresReconstruction(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, Neighbours &theNeighbours) {
 
     /* ---------------- Matrix A ---------------- */
     DenseMatrix A = Matrix_A(theCell,theNeighbours);
     
     /* ---------------- Matrix b ---------------- */
     DenseMatrix b = Matrix_b(SolnBlk,theNeighbours);
-        
+
+    /* --------------- Weighting ---------------- */
     Weight_Matrix_A_and_b(A, b, theCell, theNeighbours);
     
     /* ------------ LS procedure for Unknowns DenseMatrix x ---------- */
@@ -1053,34 +1184,20 @@ Soln_pState Haselbacher_Filter<Soln_pState,Soln_cState>::LeastSquaresReconstruct
     int krank;
     ColumnVector Rnorm(the_number_of_unknowns);
     Solve_LS_Householder(A,b,x,krank,Rnorm);
-    
+    RowVector xrow = x[0];
     
     /* --------------- relaxation -------------- */
-    RowVector xrow = x[0];
-    RowVector x0(SolnBlk.NumVar());
-    int I,J,K;
-    I = theCell.I;
-    J = theCell.J;
-    K = theCell.K;
-    for (int n=1; n<=SolnBlk.NumVar(); n++) {
-        x0(n-1) = SolnBlk.W[I][J][K][n];
-    }
+    RowVector x0 = LES_Filter<Soln_pState,Soln_cState>::what_to_filter(SolnBlk,theCell.I,theCell.J,theCell.K);
     double w0 = relaxation_factor;
-
     xrow = x0*w0 + xrow*(ONE-w0);
     
-    /* ---------- Filtered value is first element of x ----------- */
-    Soln_pState temp;
-    for (int j=1; j<=SolnBlk.NumVar(); j++)
-        temp[j] = xrow(j-1);
-    
-    return temp;  
-
+    /* ------- return filtered variables for theCell ------- */
+    return xrow;
 }
 
 
 template<typename Soln_pState, typename Soln_cState>
-Soln_pState Haselbacher_Filter<Soln_pState,Soln_cState>::LeastSquaresReconstruction_Uniform_Grid(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, Neighbours &theNeighbours) {
+RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::LeastSquaresReconstruction_Uniform_Grid(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, Neighbours &theNeighbours) {
         
     /* ---------------- Matrix b ---------------- */
     DenseMatrix b = Matrix_b(SolnBlk,theNeighbours);
@@ -1089,26 +1206,14 @@ Soln_pState Haselbacher_Filter<Soln_pState,Soln_cState>::LeastSquaresReconstruct
     RowVector x = w_Uniform_Grid * b;
     
     /* --------------- relaxation -------------- */
-    RowVector x0(SolnBlk.NumVar());
-    int I,J,K;
-    I = theCell.I;
-    J = theCell.J;
-    K = theCell.K;
-    for (int n=1; n<=SolnBlk.NumVar(); n++) {
-        x0(n-1) = SolnBlk.W[I][J][K][n];
-    }
+    RowVector x0 = LES_Filter<Soln_pState,Soln_cState>::what_to_filter(SolnBlk,theCell.I,theCell.J,theCell.K);
     double w0 = relaxation_factor;
-    
     x = x0*w0 + x*(ONE-w0);
 
-    /* ---------- Filtered value is first element of x ----------- */
-    Soln_pState temp;
-    for (int j=1; j<=SolnBlk.NumVar(); j++)
-        temp[j] = x(j-1);
-    
-    return temp;  
-    
+    /* ------- return filtered variables for theCell ------- */
+    return x;
 }
+
 
 template<typename Soln_pState, typename Soln_cState>
 void Haselbacher_Filter<Soln_pState,Soln_cState>::Assign_w_Uniform_Grid(Cell3D &theCell, Neighbours &theNeighbours) {
@@ -1117,6 +1222,7 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::Assign_w_Uniform_Grid(Cell3D &
     DenseMatrix Z = (W*A).pseudo_inverse()*W;
     w_Uniform_Grid = Z[0]; // RowVector of weights
     Assigned_w_Uniform_Grid = true;
+    cout << "   w_Uniform_Grid assigned   ";
 }
 
 
@@ -1382,6 +1488,7 @@ Output_Filter_types(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCel
 
 
 
+
 /* ----------------------------------------------------------------------------------------------------------------------- 
 typedef double (theClass::*function_with_one_argument) (const double &abs_wave_num) const;
 _Member_Function_Wrapper_<theClass,function_with_one_argument, double> mapped_function(this, &theClass::Energy_Spectrum_Value);
@@ -1429,6 +1536,38 @@ inline double return_it_3(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, func_obj
     return b;
 }
 
+template<typename Soln_pState, typename Soln_cState, typename func_object>
+inline double return_it_4(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, func_object func) {
+    /* for non static member functions */
+    double b;
+    cout << "func = " << (SolnBlk.*func)[2][2][2] << endl;
+    b = (SolnBlk.*func)[2][2][2].rho;
+    
+    return b;
+}
+
+
+template<typename Soln_pState, typename Soln_cState>
+inline double return_it_44(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Soln_pState *** Hexa_Block<Soln_pState,Soln_cState>::*&func) {
+    /* for non static member functions */
+    double b;
+    cout << "44" << endl;
+    cout << "func = " << (SolnBlk.*func)[2][2][2] << endl;
+    b = (SolnBlk.*func)[2][2][2].rho;
+    
+    return b;
+}
+
+
+template<typename Soln_pState, typename Soln_cState, typename func_object>
+inline double return_it_5(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, func_object func, int istage) {
+    /* for non static member functions */
+    double b;
+    cout << "func = " << (SolnBlk.*func)[2][2][2][istage] << endl;
+    b = (SolnBlk.*func)[2][2][2][istage].rho;
+    
+    return b;
+}
 
 
 
