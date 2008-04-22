@@ -1131,6 +1131,14 @@ class DenseMatrix: public MV_ColMat_double{
     // DenseMatrix operator = (const DenseMatrix &M1);
     // Use automatically generated assignment operator.
 
+    void assignRow(int index, RowVector &RVec) {
+        assert( index >= 0 && index <= dim0_-1);
+        assert( RVec.size() == dim1_ );
+        for (int j = 0; j<= dim1_-1; j++) {
+            v_(j*lda_+index) = RVec(j);
+        }
+    }
+    
     /* Index operator. */
     RowVector &operator[](int index) {
        assert( index >= 0 && index <= dim0_-1); int j; 
