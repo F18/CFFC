@@ -22,6 +22,10 @@
 #include "../../TurbulenceModelling/TurbulenceAveraging.h"
 #endif // TURBULENCE_AVERAGING_INCLUDED
 
+#ifndef _LES_FILTERS_INCLUDED
+#include "../Filters/LES_Filters.h"
+#endif // TURBULENCE_AVERAGING_INCLUDED
+
 /* Define required specializations. */
 
 

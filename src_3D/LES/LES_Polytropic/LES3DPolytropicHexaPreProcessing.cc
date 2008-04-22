@@ -100,6 +100,47 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
         /* -------------------- ICs Specializations --------------------- */
         error_flag = Solution_Data.Local_Solution_Blocks.ICs_Specializations(Solution_Data.Input);
         if (error_flag) return error_flag;
+        
+        
+        
+        /* ----------- Get turbulence statistics before computations -------- */
+        
+        // Get average velocity
+        double u_ave, v_ave, w_ave, sqr_u;
+        Time_Averaging_of_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+                                         Data.Local_Adaptive_Block_List,
+                                         u_ave,
+                                         v_ave,
+                                         w_ave);
+        
+        // Make local velocity field blocks containing fluctuations around average velocity
+        Turbulent_Velocity_Field_Multi_Block_List  Local_Velocity_Field;
+        Create_Local_Velocity_Field_Multi_Block_List(Local_Velocity_Field, 
+                                                     Solution_Data.Local_Solution_Blocks.Soln_Blks,
+                                                     Data.Local_Adaptive_Block_List);
+        Get_Local_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+                                                        Data.Local_Adaptive_Block_List,
+                                                        Vector3D(u_ave,v_ave,w_ave),
+                                                        Local_Velocity_Field);
+        
+        // Collect all local velocity field blocks and put them in a global list
+        Turbulent_Velocity_Field_Multi_Block_List  Global_Velocity_Field;
+        Global_Velocity_Field.Create(Data.Initial_Mesh, Solution_Data.Input.Grid_IP);
+        Global_Velocity_Field.Assign_Local_Velocity_Field_Blocks(Local_Velocity_Field);
+        Global_Velocity_Field.Collect_Blocks_from_all_processors(Data.Octree,
+                                                                 Data.Local_Adaptive_Block_List,
+                                                                 Data.Global_Adaptive_Block_List);
+        
+        // Get the kinetic energy spectrum
+        Spectrum.Get_Energy_Spectrum(Data.Initial_Mesh, 
+                                     Data.batch_flag,
+                                     Global_Velocity_Field);
+        
+        
+        
+        
+        
+        
     }
     return error_flag;
 }

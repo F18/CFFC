@@ -37,5 +37,9 @@
 #include "../../ICEM/ICEMCFD.h"
 #endif // _ICEMCFD_INCLUDED
 
+#ifndef _LES_FILTERS_INCLUDED
+#include "../LES/Filters/LES_Filters.h"
+#endif // _LES_FILTERS_INCLUDED
+
 #endif // _LES3D_INCLUDED
 
