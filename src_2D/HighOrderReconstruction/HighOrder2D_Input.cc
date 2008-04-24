@@ -50,8 +50,6 @@ void HighOrder2D_Input::Print_Info(std::ostream & out_file){
  * processors associated with the specified communicator
  * from the specified processor using the MPI broadcast 
  * routine.
- *
- * \todo Check this subroutine!
  */
 void HighOrder2D_Input::Broadcast(void){
 #ifdef _MPI_VERSION
@@ -87,7 +85,7 @@ void HighOrder2D_Input::Broadcast(void){
 
 
   // Broadcast the buffer
-  MPI::COMM_WORLD.Bcast(&buffer, buffer_size, MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&buffer[0], buffer_size, MPI::SHORT, 0);
 
 
   // On non-primary MPI processors, unpack the buffer.
