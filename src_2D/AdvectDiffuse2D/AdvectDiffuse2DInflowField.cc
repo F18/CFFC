@@ -75,6 +75,10 @@ void AdvectDiffuse2D_InflowField::SetInflowField(const short &InflowIndex){
       Inflow = new Hyperbolic_Tangent_I_InflowField;
     break;
 
+    case EXPONENTIAL_SINUSOIDAL:
+      Inflow = new Squared_Exponential_Times_Sinusoidal_InflowField;
+    break;
+
   default:
     throw runtime_error("AdvectDiffuse2D_InflowField::SetInflowField() ERROR! Unknown inflow field index.");
   }
@@ -115,6 +119,8 @@ void AdvectDiffuse2D_InflowField::Parse_Next_Input_Control_Parameter(AdvectDiffu
       SetInflowField(CONSTANT_INFLOW_FIELD);
     } else if ( strcmp(IP.Next_Control_Parameter, "Inflow_HyperTan_I") == 0 ) {
       SetInflowField(HYPERBOLIC_TANGENT_I);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Inflow_ExpSinusoidal") == 0 ) {
+      SetInflowField(EXPONENTIAL_SINUSOIDAL);
     } else {
       i_command = INVALID_INPUT_CODE;
       return;
