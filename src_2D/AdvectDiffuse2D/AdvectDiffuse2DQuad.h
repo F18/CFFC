@@ -377,12 +377,14 @@ public:
 						       const Vector2D &GradUl,
 						       const Vector2D &GradUr,
 						       Vector2D &GradU_face,
-						       const Vector2D &CalculationPoint) const;
+						       const Vector2D &CalculationPoint,
+						       const Vector2D &NormalDirection) const;
   void InviscidFluxStates_AtBoundaryInterface_HighOrder(const int &BOUNDARY,
 							const int &ii, const int &jj,
 							AdvectDiffuse2D_State &Ul,
 							AdvectDiffuse2D_State &Ur,
 							const Vector2D &CalculationPoint,
+							const Vector2D &NormalDirection,
 							const unsigned short int Pos = 0) const;
   //@}
 

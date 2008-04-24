@@ -1124,7 +1124,8 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							      U_face,
 							      GradUl,GradUr,
 							      GradU_face,
-							      Grid.BndNorthSplineInfo[i].GQPoint(Position));
+							      Grid.BndNorthSplineInfo[i].GQPoint(Position),
+							      Grid.BndNorthSplineInfo[i].NormalGQPoint(Position));
 
 	      /* Add the weighted contribution of the current GQP to the total 
 		 diffusive flux through the spline segment in the local normal direction. */
@@ -1181,7 +1182,8 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							    U_face,
 							    GradUl,GradUr,
 							    GradU_face,
-							    GaussQuadPoints[GQPoint]);
+							    GaussQuadPoints[GQPoint],
+							    Grid.nfaceN(i,JCu));
 
 	    /* Add the weighted contribution of the current GQP to the total 
 	       diffusive flux through the face in the normal direction. */
@@ -1349,7 +1351,8 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							      U_face,
 							      GradUl,GradUr,
 							      GradU_face,
-							      Grid.BndSouthSplineInfo[i].GQPoint(Position));
+							      Grid.BndSouthSplineInfo[i].GQPoint(Position),
+							      Grid.BndSouthSplineInfo[i].NormalGQPoint(Position));
 
 	      /* Add the weighted contribution of the current GQP to the total 
 		 diffusive flux through the spline segment in the local normal direction. */
@@ -1406,7 +1409,8 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							    U_face,
 							    GradUl,GradUr,
 							    GradU_face,
-							    GaussQuadPoints[GQPoint]);
+							    GaussQuadPoints[GQPoint],
+							    Grid.nfaceS(i,JCl));
 
 	    /* Add the weighted contribution of the current GQP to the total 
 	       diffusive flux through the face in the normal direction. */
@@ -1574,7 +1578,8 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							      U_face,
 							      GradUl,GradUr,
 							      GradU_face,
-							      Grid.BndEastSplineInfo[j].GQPoint(Position));
+							      Grid.BndEastSplineInfo[j].GQPoint(Position),
+							      Grid.BndEastSplineInfo[j].NormalGQPoint(Position));
 
 	      /* Add the weighted contribution of the current GQP to the total 
 		 diffusive flux through the spline segment in the local normal direction. */
@@ -1631,7 +1636,8 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							    U_face,
 							    GradUl,GradUr,
 							    GradU_face,
-							    GaussQuadPoints[GQPoint]);
+							    GaussQuadPoints[GQPoint],
+							    Grid.nfaceE(ICu,j));
 
 	    /* Add the weighted contribution of the current GQP to the total 
 	       diffusive flux through the face in the normal direction. */
@@ -1799,7 +1805,8 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							      U_face,
 							      GradUl,GradUr,
 							      GradU_face,
-							      Grid.BndWestSplineInfo[j].GQPoint(Position));
+							      Grid.BndWestSplineInfo[j].GQPoint(Position),
+							      Grid.BndWestSplineInfo[j].NormalGQPoint(Position));
 
 	      /* Add the weighted contribution of the current GQP to the total 
 		 diffusive flux through the spline segment in the local normal direction. */
@@ -1856,7 +1863,8 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							    U_face,
 							    GradUl,GradUr,
 							    GradU_face,
-							    GaussQuadPoints[GQPoint]);
+							    GaussQuadPoints[GQPoint],
+							    Grid.nfaceW(ICl,j));
 
 	    /* Add the weighted contribution of the current GQP to the total 
 	       diffusive flux through the face in the normal direction. */
@@ -2015,6 +2023,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 								 i,JCu,
 								 Ul,Ur,
 								 Grid.BndNorthSplineInfo[i].GQPoint(Position),
+								 Grid.BndNorthSplineInfo[i].NormalGQPoint(Position),
 								 Pos);
 
 		/* Add the weighted contribution of the current GQP to the total 
@@ -2083,6 +2092,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							       i,JCu,
 							       Ul,Ur,
 							       GaussQuadPoints[GQPoint],
+							       Grid.nfaceN(i,JCu),
 							       Pos);
 	    
 	      /* Add the weighted contribution of the current GQP to the total 
@@ -2156,6 +2166,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							       i,JCu,
 							       Ul,Ur,
 							       Grid.BndNorthSplineInfo[i].GQPoint(Position),
+							       Grid.BndNorthSplineInfo[i].NormalGQPoint(Position),
 							       Pos);
 
 	      /* Add the weighted contribution of the current GQP to the total 
@@ -2204,6 +2215,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							     i,JCu,
 							     Ul,Ur,
 							     GaussQuadPoints[GQPoint],
+							     Grid.nfaceN(i,JCu),
 							     Pos);
 
 	    /* Add the weighted contribution of the current GQP to the total 
@@ -2274,6 +2286,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 								 i,JCl,
 								 Ul,Ur,
 								 Grid.BndSouthSplineInfo[i].GQPoint(Position),
+								 Grid.BndSouthSplineInfo[i].NormalGQPoint(Position),
 								 Pos);
 
 		/* Add the weighted contribution of the current GQP to the total 
@@ -2342,6 +2355,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							       i,JCl,
 							       Ul,Ur,
 							       GaussQuadPoints[GQPoint],
+							       Grid.nfaceS(i,JCl),
 							       Pos);
 	    
 	      /* Add the weighted contribution of the current GQP to the total 
@@ -2415,6 +2429,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							       i,JCl,
 							       Ul,Ur,
 							       Grid.BndSouthSplineInfo[i].GQPoint(Position),
+							       Grid.BndSouthSplineInfo[i].NormalGQPoint(Position),
 							       Pos);
 
 	      /* Add the weighted contribution of the current GQP to the total 
@@ -2463,6 +2478,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							     i,JCl,
 							     Ul,Ur,
 							     GaussQuadPoints[GQPoint],
+							     Grid.nfaceS(i,JCl),
 							     Pos);
 
 	    /* Add the weighted contribution of the current GQP to the total 
@@ -2533,6 +2549,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 								 ICu,j,
 								 Ul,Ur,
 								 Grid.BndEastSplineInfo[j].GQPoint(Position),
+								 Grid.BndEastSplineInfo[j].NormalGQPoint(Position),
 								 Pos);
 
 		/* Add the weighted contribution of the current GQP to the total 
@@ -2601,6 +2618,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							       ICu,j,
 							       Ul,Ur,
 							       GaussQuadPoints[GQPoint],
+							       Grid.nfaceE(ICu,j),
 							       Pos);
 	    
 	      /* Add the weighted contribution of the current GQP to the total 
@@ -2674,6 +2692,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							       ICu,j,
 							       Ul,Ur,
 							       Grid.BndEastSplineInfo[j].GQPoint(Position),
+							       Grid.BndEastSplineInfo[j].NormalGQPoint(Position),
 							       Pos);
 
 	      /* Add the weighted contribution of the current GQP to the total 
@@ -2722,6 +2741,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							     ICu,j,
 							     Ul,Ur,
 							     GaussQuadPoints[GQPoint],
+							     Grid.nfaceE(ICu,j),
 							     Pos);
 
 	    /* Add the weighted contribution of the current GQP to the total 
@@ -2792,6 +2812,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 								 ICl,j,
 								 Ul,Ur,
 								 Grid.BndWestSplineInfo[j].GQPoint(Position),
+								 Grid.BndWestSplineInfo[j].NormalGQPoint(Position),
 								 Pos);
 
 		/* Add the weighted contribution of the current GQP to the total 
@@ -2860,6 +2881,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							       ICl,j,
 							       Ul,Ur,
 							       GaussQuadPoints[GQPoint],
+							       Grid.nfaceW(ICl,j),
 							       Pos);
 	    
 	      /* Add the weighted contribution of the current GQP to the total 
@@ -2933,6 +2955,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							       ICl,j,
 							       Ul,Ur,
 							       Grid.BndWestSplineInfo[j].GQPoint(Position),
+							       Grid.BndWestSplineInfo[j].NormalGQPoint(Position),
 							       Pos);
 
 	      /* Add the weighted contribution of the current GQP to the total 
@@ -2981,6 +3004,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							     ICl,j,
 							     Ul,Ur,
 							     GaussQuadPoints[GQPoint],
+							     Grid.nfaceW(ICl,j),
 							     Pos);
 
 	    /* Add the weighted contribution of the current GQP to the total 
@@ -3154,8 +3178,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
  * \param [in]  GradUr   the right interface gradient obtained with the high-order interpolant
  * \param [out] GradU_face solution gradient at the interface
  * \param [in]  CalculationPoint the flux calculation point
+ * \param [in]  NormalDirection  the unit normal vector at the flux calculation point
  *
  * \return The solution state and the solution gradient that are used to calculate the elliptic flux.
+ *
+ * \todo Revisit this routine. Change the BC function calls to boundary reference states.
  */
 void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder(const int &BOUNDARY,
 										 const int &ii, const int &jj,
@@ -3165,7 +3192,8 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
 										 const Vector2D &GradUl,
 										 const Vector2D &GradUr,
 										 Vector2D &GradU_face,
-										 const Vector2D &CalculationPoint) const{
+										 const Vector2D &CalculationPoint,
+										 const Vector2D &NormalDirection) const{
 
   double Vn;
   AdvectDiffuse2D_State Value;
@@ -3176,7 +3204,7 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
     // === WEST boundary interface ===
     // *******************************
   case WEST :			
-    // Compute left interface state based on reconstruction or the particular boundary condition
+    // Compute right interface state based on reconstruction or the particular boundary condition
     switch (Grid.BCtypeW[jj]){
 
     case BC_NONE :
@@ -3194,19 +3222,47 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
       break;
 
     case BC_FROZEN :
-
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = Ur;
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
       
     case BC_INFLOW :
-      break;
+      // Calculate U_face based on the inflow field
+      if (Inflow->IsInflowFieldSet()){
+	U_face = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+      }
+      // Set GradU_face to the interior value (i.e. left unlimited reconstruction)
+      GradU_face = GradUl;
+     break;
 
     case BC_DIRICHLET :
+      // Assume that this boundary has a constant value for all flux calculation points along a cell face
+      U_face = UoW[jj];
+      // Set GradU_face to the interior value (i.e. left unlimited reconstruction)
+      GradU_face = GradUl;
       break;
 
     case BC_EXACT_SOLUTION :
+      // Calculate U_face based on the exact solution
+      if (ExactSoln->IsExactSolutionSet()){
+	U_face = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
       
     case BC_NEUMANN :
+      // Calculate U_face based on the interior value (i.e. left unlimited reconstruction)
+      U_face = Ul;
+      // Assume that this boundary has a constant gradient for all flux calculation points along a cell face
+      // Set GradU_face to the value imposed by the user
+      GradU_face = UoW[jj].u*NormalDirection;
       break;
 
     case BC_SYMMETRY_PLANE :
@@ -3219,12 +3275,43 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
       break;
 
     case BC_OUTFLOW :
+      // Calculate U_face based on the interior value (i.e. left unlimited reconstruction)
+      U_face = Ul;
+      // Set GradU_face to ZERO
+      GradU_face = 0.0;
       break;
 
     case BC_CONSTANT_EXTRAPOLATION :
       break;
       
     case BC_FARFIELD :
+      /* Farfield BC is implemented differently for flows that 
+	 enter the domain than for flows that leave the domain.
+	 Whether the flow enters or leaves the domain is decided based on
+	 the normal component of the velocity at the face midpoint.
+	 --> If the flow enters the domain then the reference data is used.
+	 --> If the flow leaves the domain then the interior value is used. */
+
+      // Compute the normal velocity
+      Vn = dot(VelocityAtLocation(CalculationPoint),
+	       NormalDirection);
+	  
+      if (Vn <= ZERO){
+	// The flow enters the domain
+	// Use the boundary condition value which is assumed to be constant for all flux calculation points along a cell face
+	// Set U_face to the value imposed by the user
+	U_face = UoW[jj];
+	// Calculate GradU_face based on the interior reconstruction
+	GradU_face = GradUl;
+
+      } else {
+	// The flow leaves the domain
+	// Use the interior domain value
+	// Calculate U_face based on the interior reconstruction
+	U_face = Ul;
+	// Calculate GradU_face in the same way as for an interior interface
+	GradU_face = 0.5*(GradUl + GradUr);
+      }
       break;
 
     default:
@@ -3255,18 +3342,47 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
       break;
 
     case BC_FROZEN :
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = Ur;
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
       
     case BC_INFLOW :
+      // Calculate U_face based on the inflow field
+      if (Inflow->IsInflowFieldSet()){
+	U_face = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+      }
+      // Set GradU_face to the interior value (i.e. left unlimited reconstruction)
+      GradU_face = GradUl;
       break;
 
     case BC_DIRICHLET :
+      // Assume that this boundary has a constant value for all flux calculation points along a cell face
+      U_face = UoE[jj];
+      // Set GradU_face to the interior value (i.e. left unlimited reconstruction)
+      GradU_face = GradUl;
       break;
 
     case BC_EXACT_SOLUTION :
+      // Calculate U_face based on the exact solution
+      if (ExactSoln->IsExactSolutionSet()){
+	U_face = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
       
     case BC_NEUMANN : 
+      // Calculate U_face based on the interior value (i.e. left unlimited reconstruction)
+      U_face = Ul;
+      // Assume that this boundary has a constant gradient for all flux calculation points along a cell face
+      // Set GradU_face to the value imposed by the user
+      GradU_face = UoE[jj].u*NormalDirection;
       break;
 
     case BC_SYMMETRY_PLANE :
@@ -3279,12 +3395,43 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
       break;
 
     case BC_OUTFLOW :
+      // Calculate U_face based on the interior value (i.e. left unlimited reconstruction)
+      U_face = Ul;
+      // Set GradU_face to ZERO
+      GradU_face = 0.0;
       break;
 
     case BC_CONSTANT_EXTRAPOLATION :
       break;
       
     case BC_FARFIELD :
+      /* Farfield BC is implemented differently for flows that 
+	 enter the domain than for flows that leave the domain.
+	 Whether the flow enters or leaves the domain is decided based on
+	 the normal component of the velocity at the face midpoint.
+	 --> If the flow enters the domain then the reference data is used.
+	 --> If the flow leaves the domain then the interior value is used. */
+
+      // Compute the normal velocity
+      Vn = dot(VelocityAtLocation(CalculationPoint),
+	       NormalDirection);
+	  
+      if (Vn <= ZERO){
+	// The flow enters the domain
+	// Use the boundary condition value which is assumed to be constant for all flux calculation points along a cell face
+	// Set U_face to the value imposed by the user
+	U_face = UoE[jj];
+	// Calculate GradU_face based on the interior reconstruction
+	GradU_face = GradUl;
+
+      } else {
+	// The flow leaves the domain
+	// Use the interior domain value
+	// Calculate U_face based on the interior reconstruction
+	U_face = Ul;
+	// Calculate GradU_face in the same way as for an interior interface
+	GradU_face = 0.5*(GradUl + GradUr);
+      }
       break;
 
     default:
@@ -3296,7 +3443,7 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
     // === SOUTH boundary interface ===
     // ********************************
   case SOUTH :
-    // Compute left interface state based on reconstruction or the particular boundary condition
+    // Compute right interface state based on reconstruction or the particular boundary condition
     switch (Grid.BCtypeS[ii]){
 
     case BC_NONE :
@@ -3314,18 +3461,47 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
       break;
 
     case BC_FROZEN :
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = Ur;
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
       
     case BC_INFLOW :
+      // Calculate U_face based on the inflow field
+      if (Inflow->IsInflowFieldSet()){
+	U_face = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+      }
+      // Set GradU_face to the interior value (i.e. left unlimited reconstruction)
+      GradU_face = GradUl;
       break;
 
     case BC_DIRICHLET :
+      // Assume that this boundary has a constant value for all flux calculation points along a cell face
+      U_face = UoS[ii];
+      // Set GradU_face to the interior value (i.e. left unlimited reconstruction)
+      GradU_face = GradUl;
       break;
 
     case BC_EXACT_SOLUTION :
+      // Calculate U_face based on the exact solution
+      if (ExactSoln->IsExactSolutionSet()){
+	U_face = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
       
     case BC_NEUMANN : 
+      // Calculate U_face based on the interior value (i.e. left unlimited reconstruction)
+      U_face = Ul;
+      // Assume that this boundary has a constant gradient for all flux calculation points along a cell face
+      // Set GradU_face to the value imposed by the user
+      GradU_face = UoS[ii].u*NormalDirection;
       break;
 
     case BC_SYMMETRY_PLANE :
@@ -3338,12 +3514,43 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
       break;
 
     case BC_OUTFLOW :
+      // Calculate U_face based on the interior value (i.e. left unlimited reconstruction)
+      U_face = Ul;
+      // Set GradU_face to ZERO
+      GradU_face = 0.0;
       break;
 
     case BC_CONSTANT_EXTRAPOLATION :
       break;
       
     case BC_FARFIELD :
+      /* Farfield BC is implemented differently for flows that 
+	 enter the domain than for flows that leave the domain.
+	 Whether the flow enters or leaves the domain is decided based on
+	 the normal component of the velocity at the face midpoint.
+	 --> If the flow enters the domain then the reference data is used.
+	 --> If the flow leaves the domain then the interior value is used. */
+
+      // Compute the normal velocity
+      Vn = dot(VelocityAtLocation(CalculationPoint),
+	       NormalDirection);
+	  
+      if (Vn <= ZERO){
+	// The flow enters the domain
+	// Use the boundary condition value which is assumed to be constant for all flux calculation points along a cell face
+	// Set U_face to the value imposed by the user
+	U_face = UoS[ii];
+	// Calculate GradU_face based on the interior reconstruction
+	GradU_face = GradUl;
+
+      } else {
+	// The flow leaves the domain
+	// Use the interior domain value
+	// Calculate U_face based on the interior reconstruction
+	U_face = Ul;
+	// Calculate GradU_face in the same way as for an interior interface
+	GradU_face = 0.5*(GradUl + GradUr);
+      }
       break;
 
     default:
@@ -3373,18 +3580,47 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
       break;
 
     case BC_FROZEN :
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = Ur;
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
       
     case BC_INFLOW :
+      // Calculate U_face based on the inflow field
+      if (Inflow->IsInflowFieldSet()){
+	U_face = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+      }
+      // Set GradU_face to the interior value (i.e. left unlimited reconstruction)
+      GradU_face = GradUl;
       break;
 
     case BC_DIRICHLET :
+      // Assume that this boundary has a constant value for all flux calculation points along a cell face
+      U_face = UoN[ii];
+      // Set GradU_face to the interior value (i.e. left unlimited reconstruction)
+      GradU_face = GradUl;
       break;
 
     case BC_EXACT_SOLUTION :
+      // Calculate U_face based on the exact solution
+      if (ExactSoln->IsExactSolutionSet()){
+	U_face = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = 0.5*(GradUl + GradUr);
       break;
       
     case BC_NEUMANN : 
+      // Calculate U_face based on the interior value (i.e. left unlimited reconstruction)
+      U_face = Ul;
+      // Assume that this boundary has a constant gradient for all flux calculation points along a cell face
+      // Set GradU_face to the value imposed by the user
+      GradU_face = UoN[ii].u*NormalDirection;
       break;
 
     case BC_SYMMETRY_PLANE :
@@ -3397,12 +3633,43 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
       break;
 
     case BC_OUTFLOW :
+      // Calculate U_face based on the interior value (i.e. left unlimited reconstruction)
+      U_face = Ul;
+      // Set GradU_face to ZERO
+      GradU_face = 0.0;
       break;
 
     case BC_CONSTANT_EXTRAPOLATION :
       break;
       
     case BC_FARFIELD :
+      /* Farfield BC is implemented differently for flows that 
+	 enter the domain than for flows that leave the domain.
+	 Whether the flow enters or leaves the domain is decided based on
+	 the normal component of the velocity at the face midpoint.
+	 --> If the flow enters the domain then the reference data is used.
+	 --> If the flow leaves the domain then the interior value is used. */
+
+      // Compute the normal velocity
+      Vn = dot(VelocityAtLocation(CalculationPoint),
+	       NormalDirection);
+	  
+      if (Vn <= ZERO){
+	// The flow enters the domain
+	// Use the boundary condition value which is assumed to be constant for all flux calculation points along a cell face
+	// Set U_face to the value imposed by the user
+	U_face = UoN[ii];
+	// Calculate GradU_face based on the interior reconstruction
+	GradU_face = GradUl;
+
+      } else {
+	// The flow leaves the domain
+	// Use the interior domain value
+	// Calculate U_face based on the interior reconstruction
+	U_face = Ul;
+	// Calculate GradU_face in the same way as for an interior interface
+	GradU_face = 0.5*(GradUl + GradUr);
+      }
       break;
 
     default:
@@ -3437,6 +3704,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
 										  AdvectDiffuse2D_State &Ul,
 										  AdvectDiffuse2D_State &Ur,
 										  const Vector2D &CalculationPoint,
+										  const Vector2D &NormalDirection,
 										  const unsigned short int Pos) const{
 
   double Vn;
@@ -3448,7 +3716,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
     // === WEST boundary interface ===
     // *******************************
   case WEST :			
-    // Compute left interface state based on reconstruction or the particular boundary condition
+    // Compute right interface state based on reconstruction or the particular boundary condition
     switch (Grid.BCtypeW[jj]){
 
     case BC_NONE :
@@ -3462,37 +3730,83 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
       break;
 
     case BC_FROZEN :
-
+      // Calculate Ur based on the reconstruction in the ghost cell
+      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ii-1,jj,CalculationPoint);
       break;
       
     case BC_INFLOW :
+      // Calculate Ur based on the inflow field
+      if (Inflow->IsInflowFieldSet()){
+	Ur = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+      }
       break;
 
     case BC_DIRICHLET :
+      // Assume that this boundary has a constant value for all flux calculation points along a cell face
+      Ur = Ul = UoW[jj];
       break;
 
     case BC_EXACT_SOLUTION :
+      // Calculate U_face based on the exact solution
+      if (ExactSoln->IsExactSolutionSet()){
+	Ur = Ul = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
       break;
       
     case BC_NEUMANN :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
 
     case BC_SYMMETRY_PLANE :
       break;
 
     case BC_EXTRAPOLATE :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
 
     case BC_LINEAR_EXTRAPOLATION :
       break;
 
     case BC_OUTFLOW :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
 
     case BC_CONSTANT_EXTRAPOLATION :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
       
     case BC_FARFIELD :
+      /* Farfield BC is implemented differently for flows that 
+	 enter the domain than for flows that leave the domain.
+	 Whether the flow enters or leaves the domain is decided based on
+	 the normal component of the velocity at the face midpoint.
+	 --> If the flow enters the domain then the reference data is used.
+	 --> If the flow leaves the domain then the interior value is used. */
+
+      // Compute the normal velocity
+      Vn = dot(VelocityAtLocation(CalculationPoint),
+	       NormalDirection);
+	  
+      if (Vn <= ZERO){
+	// The flow enters the domain
+	// Use the boundary condition value which is assumed to be constant for all flux calculation points along a cell face
+	// Set Ur to the value imposed by the user
+	Ur = UoW[jj];
+
+      } else {
+	// The flow leaves the domain
+	// Use the interior domain value
+	// Set Ur to the value of the interior reconstruction
+	Ur = Ul;
+      }
       break;
 
     default:
@@ -3519,36 +3833,83 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
       break;
 
     case BC_FROZEN :
+      // Compute Ur based on the high-order reconstruction in the ghost cell
+      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ii+1,jj,CalculationPoint);
       break;
       
     case BC_INFLOW :
+      // Calculate Ur based on the inflow field
+      if (Inflow->IsInflowFieldSet()){
+	Ur = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+      }
       break;
 
     case BC_DIRICHLET :
+      // Assume that this boundary has a constant value for all flux calculation points along a cell face
+      Ur = Ul = UoE[jj];
       break;
 
     case BC_EXACT_SOLUTION :
+      // Calculate U_face based on the exact solution
+      if (ExactSoln->IsExactSolutionSet()){
+	Ur = Ul = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
       break;
       
     case BC_NEUMANN : 
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
 
     case BC_SYMMETRY_PLANE :
       break;
 
     case BC_EXTRAPOLATE :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
 
     case BC_LINEAR_EXTRAPOLATION :
       break;
 
     case BC_OUTFLOW :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
 
     case BC_CONSTANT_EXTRAPOLATION :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
       
     case BC_FARFIELD :
+      /* Farfield BC is implemented differently for flows that 
+	 enter the domain than for flows that leave the domain.
+	 Whether the flow enters or leaves the domain is decided based on
+	 the normal component of the velocity at the face midpoint.
+	 --> If the flow enters the domain then the reference data is used.
+	 --> If the flow leaves the domain then the interior value is used. */
+
+      // Compute the normal velocity
+      Vn = dot(VelocityAtLocation(CalculationPoint),
+	       NormalDirection);
+	  
+      if (Vn <= ZERO){
+	// The flow enters the domain
+	// Use the boundary condition value which is assumed to be constant for all flux calculation points along a cell face
+	// Set Ur to the value imposed by the user
+	Ur = UoE[jj];
+
+      } else {
+	// The flow leaves the domain
+	// Use the interior domain value
+	// Set Ur to the value of the interior reconstruction
+	Ur = Ul;
+      }
       break;
 
     default:
@@ -3574,36 +3935,83 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
       break;
 
     case BC_FROZEN :
+      // Compute Ur based on the high-order reconstruction in the ghost cell
+      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj-1,CalculationPoint);
       break;
       
     case BC_INFLOW :
+      // Calculate Ur based on the inflow field
+      if (Inflow->IsInflowFieldSet()){
+	Ur = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+      }
       break;
 
     case BC_DIRICHLET :
+      // Assume that this boundary has a constant value for all flux calculation points along a cell face
+      Ur = Ul = UoS[ii];
       break;
 
     case BC_EXACT_SOLUTION :
+      // Calculate U_face based on the exact solution
+      if (ExactSoln->IsExactSolutionSet()){
+	Ur = Ul = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
       break;
       
     case BC_NEUMANN : 
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
 
     case BC_SYMMETRY_PLANE :
       break;
 
     case BC_EXTRAPOLATE :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
 
     case BC_LINEAR_EXTRAPOLATION :
       break;
 
     case BC_OUTFLOW :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
 
     case BC_CONSTANT_EXTRAPOLATION :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
       
     case BC_FARFIELD :
+      /* Farfield BC is implemented differently for flows that 
+	 enter the domain than for flows that leave the domain.
+	 Whether the flow enters or leaves the domain is decided based on
+	 the normal component of the velocity at the face midpoint.
+	 --> If the flow enters the domain then the reference data is used.
+	 --> If the flow leaves the domain then the interior value is used. */
+
+      // Compute the normal velocity
+      Vn = dot(VelocityAtLocation(CalculationPoint),
+	       NormalDirection);
+	  
+      if (Vn <= ZERO){
+	// The flow enters the domain
+	// Use the boundary condition value which is assumed to be constant for all flux calculation points along a cell face
+	// Set Ur to the value imposed by the user
+	Ur = UoS[ii];
+
+      } else {
+	// The flow leaves the domain
+	// Use the interior domain value
+	// Set Ur to the value of the interior reconstruction
+	Ur = Ul;
+      }
       break;
 
     default:
@@ -3629,36 +4037,83 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
       break;
 
     case BC_FROZEN :
+      // Compute Ur based on the high-order reconstruction in the ghost cell
+      Ur = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj+1,CalculationPoint);
       break;
       
     case BC_INFLOW :
+      // Calculate Ur based on the inflow field
+      if (Inflow->IsInflowFieldSet()){
+	Ur = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+      }
       break;
 
     case BC_DIRICHLET :
+      // Assume that this boundary has a constant value for all flux calculation points along a cell face
+      Ur = Ul = UoN[ii];
       break;
 
     case BC_EXACT_SOLUTION :
+      // Calculate U_face based on the exact solution
+      if (ExactSoln->IsExactSolutionSet()){
+	Ur = Ul = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
       break;
       
     case BC_NEUMANN : 
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
 
     case BC_SYMMETRY_PLANE :
       break;
 
     case BC_EXTRAPOLATE :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
 
     case BC_LINEAR_EXTRAPOLATION :
       break;
 
     case BC_OUTFLOW :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
 
     case BC_CONSTANT_EXTRAPOLATION :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
       break;
       
     case BC_FARFIELD :
+      /* Farfield BC is implemented differently for flows that 
+	 enter the domain than for flows that leave the domain.
+	 Whether the flow enters or leaves the domain is decided based on
+	 the normal component of the velocity at the face midpoint.
+	 --> If the flow enters the domain then the reference data is used.
+	 --> If the flow leaves the domain then the interior value is used. */
+
+      // Compute the normal velocity
+      Vn = dot(VelocityAtLocation(CalculationPoint),
+	       NormalDirection);
+	  
+      if (Vn <= ZERO){
+	// The flow enters the domain
+	// Use the boundary condition value which is assumed to be constant for all flux calculation points along a cell face
+	// Set Ur to the value imposed by the user
+	Ur = UoN[ii];
+
+      } else {
+	// The flow leaves the domain
+	// Use the interior domain value
+	// Set Ur to the value of the interior reconstruction
+	Ur = Ul;
+      }
       break;
 
     default:

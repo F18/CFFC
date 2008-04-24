@@ -34,6 +34,12 @@ public:
   template<typename FO, class ReturnType>
   ReturnType IntegrateFunctionOverCell(const int &ii, const int &jj, const FO FuncObj,
 				       int digits, ReturnType _dummy_param) const;
+
+  //! Compute the integral of a general function over the potentially curved domain of cell (ii,jj)
+  template<typename FO, class ReturnType>
+  ReturnType IntegrateFunctionOverCell(const int &ii, const int &jj, const FO FuncObj,
+				       const FO ContourIntegrand, int digits,
+				       ReturnType _dummy_param) const;
   
   //! Compute the integral of a polynomial function over the domain of cell (ii,jj)
   template<typename FO, class ReturnType>
@@ -100,6 +106,60 @@ ReturnType Grid2DQuadIntegration<Grid2DQuadType>::IntegratePolynomialOverCell(co
 					     Grid->nodeNE(ii,jj),
 					     Grid->nodeSE(ii,jj),
 					     _dummy_param);
+}
+
+/*!
+ * Integrate a general function (i.e. any function or pointer function)
+ * over the domain of a cell (ii,jj). The boundaries of the cell can    
+ * be straight or curved.
+ * If all boundaries are straight then the function is integrated with
+ * the QuadrilateralQuadrature routine.
+ * If curved boundaries are detected then Gauss integration along the
+ * boundary contour is applied using the ContourIntegrand function.
+ *
+ * \param ii the i-index of the cell over which the integration is performed
+ * \param jj the j-index of the cell over which the integration is performed
+ * \param FuncObj the function to be integrated
+ * \param ContourIntegrand the integrand with respect to x of FuncObj
+ * \param digits the number of exact digits with which the result is computed (i.e. the accuracy of the calculation)
+ * \param _dummy_param a parameter used only to determine the return type of the function FuncObj
+ */
+template<class Grid2DQuadType>
+template<typename FO, class ReturnType> inline
+ReturnType Grid2DQuadIntegration<Grid2DQuadType>::IntegrateFunctionOverCell(const int &ii, const int &jj, const FO FuncObj,
+									    const FO ContourIntegrand, int digits,
+									    ReturnType _dummy_param) const{
+  
+  // == check if high-order boundary treatment is required
+  if ( Grid->IsHighOrderBoundary() ){
+
+    // === Decide whether to use contour integration or surface integration
+
+#if 0
+    if ( (ii > Grid->ICl) && (ii < Grid->ICu) && (jj > Grid->JCl) && (jj < Grid->JCu) ){
+      // This is an interior cell unaffected by curved boundaries
+      return IntegrateFunctionOverCell(ii,jj,FuncObj,digits,_dummy_param);
+
+    } else if ( (ii < Grid->ICl) || (ii > Grid->ICu) || (jj < Grid->JCl) || (jj > Grid->JCu) ){
+      // This is a ghost cell unaffected by curved boundaries
+      return IntegrateFunctionOverCell(ii,jj,FuncObj,digits,_dummy_param);
+
+    } else if ( ( (ii == Grid->ICl  && Grid->BndWestSplineInfo != NULL)  || 
+		( (ii == Grid->ICu  && Grid->BndEastSplineInfo != NULL)  || 
+		( (jj == Grid->JCl  && Grid->BndSouthSplineInfo != NULL)  || 
+		( (jj == Grid->JCu  && Grid->BndNorthSplineInfo != NULL)   ){
+
+      // This cell needs Gauss contour integration
+      
+    } else {
+      // This is a cell 
+    }
+#endif
+
+  } else {
+    // all cells are treated with low-order accuracy so use the integration over quadrilaterals.
+    return IntegrateFunctionOverCell(ii,jj,FuncObj,digits,_dummy_param);
+  } // endif
 }
 
 #endif
