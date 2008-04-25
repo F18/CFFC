@@ -57,7 +57,7 @@ public:
   typedef typename GeometryType::GeometricMoments GeometricMoments;
   typedef typename GeometryType::GeomMoment       GeomMoment;
   //! Type for monotonicity information of each reconstructed variable.
-  typedef std::vector<short int> FlagType;
+  typedef std::vector<int> FlagType;
   //! Type for smoothness indicator associated with each reconstructed variable.
   typedef std::vector<double> DoubleArrayType;
   //@}
@@ -159,11 +159,11 @@ public:
    * Get the monotonicity flag for reconstruction of cell (ii,jj) and the variable stored in the position 'VarPosition'.
    * It is assumed that 'VarPosition' starts from ONE!
    */
-  const short int & CellInadequateFitValue(const int & ii, const int & jj,
-					   const int VarPosition) const { return LimitedCell[ii][jj][VarPosition-1];}
+  const int & CellInadequateFitValue(const int & ii, const int & jj,
+				     const int VarPosition) const { return LimitedCell[ii][jj][VarPosition-1];}
   //! Get the monotonicity flag for reconstruction of cell (ii,jj) and the variable stored in the position 'VarPosition'.
-  short int & CellInadequateFitValue(const int & ii, const int & jj,
-				     const int VarPosition){ return LimitedCell[ii][jj][VarPosition-1];}
+  int & CellInadequateFitValue(const int & ii, const int & jj,
+			       const int VarPosition){ return LimitedCell[ii][jj][VarPosition-1];}
   //@}
 
   //! @name Smoothness indicator
@@ -289,7 +289,7 @@ public:
   static int getNghostHighOrder(const int &ReconstructionOrder);
   //! Return the number of high-order ghost cells for the current CENO reconstruction block.
   int getNghostHighOrder(void) const { return getNghostHighOrder(OrderOfReconstruction); }
-  const short int & NghostHO(void) const { return Nghost_HO; }
+  const int & NghostHO(void) const { return Nghost_HO; }
   void ResetMonotonicityData(void);
   void ResetMonotonicityData(const int & ii, const int & jj);
   void InitializeMonotonicityVariables(const int & ii, const int & jj);
@@ -545,7 +545,7 @@ private:
     JCl,		       //!< Index of first interior cell in j-direction 
     JCu;                       //!< Index of last interior cell in j-direction 
   int OrderOfReconstruction;   //!< The order of reconstruction of the high-order object.
-  short int Nghost_HO;	       //!< Number of ghost cells in which high-order reconstruction is performed. 
+  int Nghost_HO;	       //!< Number of ghost cells in which high-order reconstruction is performed. 
   int StartI,		       //!< Index of the first cell in i-direction in which NO constrained reconstruction is performed. 
     EndI,                      //!< Index of the last cell in i-direction in which NO constrained reconstruction is performed. 
     StartJ,                    //!< Index of the first cell in j-direction in which NO constrained reconstruction is performed. 
@@ -582,7 +582,7 @@ private:
   int rings;                   //!< Number of rings used to generate the reconstruction stencil
   int rings_SI;		       //!< Number of rings used to compute the smoothness indicator
   bool _calculated_psinv;      //!< Flag to indicate whether the pseudo-inverse has been already computed or not.
-  short int _si_calculation;   /*!< Flag to store the method for smoothness indicator calculation. Set to the 
+  int _si_calculation;         /*!< Flag to store the method for smoothness indicator calculation. Set to the 
 				* same value as CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS. */
   //@}
 
@@ -2278,7 +2278,7 @@ template<class SOLN_STATE>
 void HighOrder2D<SOLN_STATE>::Read_Object(istream & in_file) {
 
   bool _alloc_block_, _alloc_cells_, _alloc_psinv_;
-  short int _si_calc_;
+  int _si_calc_;
   int _Ni_, _Nj_, _Ng_, ReconstructionOrder;
   int i,j;
 

@@ -222,7 +222,7 @@ void AdvectDiffuse2D_Quad_Block::allocate(const int &Ni, const int &Nj, const in
  *       reconstructions more memory efficient.
  ********************************************/
 void AdvectDiffuse2D_Quad_Block::allocate_HighOrder(const int & NumberOfReconstructions,
-						    const vector<short int> & ReconstructionOrders){
+						    const vector<int> & ReconstructionOrders){
 
   bool _pseudo_inverse_allocation_(false);
   int i;

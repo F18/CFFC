@@ -532,7 +532,7 @@ namespace tut
     ensure_equals("Third High-order ", SolnBlk[0].HighOrderVariable(2).RecOrder(), 4);
 
     // Change the reconstruction orders of the objects
-    vector<short int> RecOrders(3);
+    vector<int> RecOrders(3);
     RecOrders[0] = 0; RecOrders[1] = 4; RecOrders[2] = 3; 
 
     SolnBlk[0].allocate_HighOrder(3,RecOrders);
@@ -1213,9 +1213,9 @@ namespace tut
 
     // === check errors
     L1_M = 1.893420021730188e-06; L2_M = 3.843827746933967e-06; LMax_M = 1.646626337714271e-05;
-    ensure_distance("L1, k=4"  , L1, L1_M, AcceptedError(L1_M) );
-    ensure_distance("L2, k=4"  , L2, L2_M, AcceptedError(L2_M) );
-    ensure_distance("LMax, k=4", LMax, LMax_M, AcceptedError(LMax_M) );
+    ensure_distance("L1, k=4"  , L1, L1_M, AcceptedError(L1_M, 1.0e-7) );
+    ensure_distance("L2, k=4"  , L2, L2_M, AcceptedError(L2_M, 1.0e-7) );
+    ensure_distance("LMax, k=4", LMax, LMax_M, AcceptedError(LMax_M, 1.0e-7) );
 
 
     // ========= Compute with HighOrderVariable(1) ========
@@ -1228,9 +1228,9 @@ namespace tut
 
     // === check errors
     L1_M = 0.0001285957220702368; L2_M = 0.0001736157714376252; LMax_M = 0.0005888891194135541;
-    ensure_distance("L1, k=1"  , L1, L1_M, AcceptedError(L1_M) );
-    ensure_distance("L2, k=1"  , L2, L2_M, AcceptedError(L2_M) );
-    ensure_distance("LMax, k=1", LMax, LMax_M, AcceptedError(LMax_M) );
+    ensure_distance("L1, k=1"  , L1, L1_M, AcceptedError(L1_M, 1.0e-7) );
+    ensure_distance("L2, k=1"  , L2, L2_M, AcceptedError(L2_M, 1.0e-7) );
+    ensure_distance("LMax, k=1", LMax, LMax_M, AcceptedError(LMax_M, 1.0e-7) );
 
     // ========= Compute with HighOrderVariable(2) ========
 
@@ -1242,9 +1242,9 @@ namespace tut
 
     // === check errors
     L1_M = 0.0002726793258866349; L2_M = 0.0004199290419628109; LMax_M = 0.001404192919094511;
-    ensure_distance("L1, k=2"  , L1, L1_M, AcceptedError(L1_M) );
-    ensure_distance("L2, k=2"  , L2, L2_M, AcceptedError(L2_M) );
-    ensure_distance("LMax, k=2", LMax, LMax_M, AcceptedError(LMax_M) );
+    ensure_distance("L1, k=2"  , L1, L1_M, AcceptedError(L1_M, 1.0e-7) );
+    ensure_distance("L2, k=2"  , L2, L2_M, AcceptedError(L2_M, 1.0e-7) );
+    ensure_distance("LMax, k=2", LMax, LMax_M, AcceptedError(LMax_M, 1.0e-7) );
 
     // ========= Compute with HighOrderVariable(3) ========
 
@@ -1256,9 +1256,9 @@ namespace tut
 
     // === check errors
     L1_M = 4.32976294122695e-06; L2_M = 7.498140474432567e-06; LMax_M = 3.275058817210977e-05;
-    ensure_distance("L1, k=3"  , L1, L1_M, AcceptedError(L1_M) );
-    ensure_distance("L2, k=3"  , L2, L2_M, AcceptedError(L2_M) );
-    ensure_distance("LMax, k=3", LMax, LMax_M, AcceptedError(LMax_M) );
+    ensure_distance("L1, k=3"  , L1, L1_M, AcceptedError(L1_M, 1.0e-7) );
+    ensure_distance("L2, k=3"  , L2, L2_M, AcceptedError(L2_M, 1.0e-7) );
+    ensure_distance("LMax, k=3", LMax, LMax_M, AcceptedError(LMax_M, 1.0e-7) );
 
     if (RunRegression == OFF){ 
       // Print errors
@@ -1333,9 +1333,9 @@ namespace tut
 
     // === check errors
     L1_M = 1.893420021730188e-06; L2_M = 3.843827746933967e-06; LMax_M = 1.646626337714271e-05;
-    ensure_distance("L1, k=4"  , L1, L1_M, AcceptedError(L1_M) );
-    ensure_distance("L2, k=4"  , L2, L2_M, AcceptedError(L2_M) );
-    ensure_distance("LMax, k=4", LMax, LMax_M, AcceptedError(LMax_M) );
+    ensure_distance("L1, k=4"  , L1, L1_M, AcceptedError(L1_M, 1.0e-7) );
+    ensure_distance("L2, k=4"  , L2, L2_M, AcceptedError(L2_M, 1.0e-7) );
+    ensure_distance("LMax, k=4", LMax, LMax_M, AcceptedError(LMax_M, 1.0e-7) );
 
 
     // ========= Compute with HighOrderVariable(1) ========
@@ -1348,9 +1348,9 @@ namespace tut
 
     // === check errors
     L1_M = 0.0001285957220702368; L2_M = 0.0001736157714376252; LMax_M = 0.0005888891194135541;
-    ensure_distance("L1, k=1"  , L1, L1_M, AcceptedError(L1_M) );
-    ensure_distance("L2, k=1"  , L2, L2_M, AcceptedError(L2_M) );
-    ensure_distance("LMax, k=1", LMax, LMax_M, AcceptedError(LMax_M) );
+    ensure_distance("L1, k=1"  , L1, L1_M, AcceptedError(L1_M, 1.0e-7) );
+    ensure_distance("L2, k=1"  , L2, L2_M, AcceptedError(L2_M, 1.0e-7) );
+    ensure_distance("LMax, k=1", LMax, LMax_M, AcceptedError(LMax_M, 1.0e-7) );
 
     // ========= Compute with HighOrderVariable(2) ========
 
@@ -1362,9 +1362,9 @@ namespace tut
 
     // === check errors
     L1_M = 0.0002726793258866349; L2_M = 0.0004199290419628109; LMax_M = 0.001404192919094511;
-    ensure_distance("L1, k=2"  , L1, L1_M, AcceptedError(L1_M) );
-    ensure_distance("L2, k=2"  , L2, L2_M, AcceptedError(L2_M) );
-    ensure_distance("LMax, k=2", LMax, LMax_M, AcceptedError(LMax_M) );
+    ensure_distance("L1, k=2"  , L1, L1_M, AcceptedError(L1_M, 1.0e-7) );
+    ensure_distance("L2, k=2"  , L2, L2_M, AcceptedError(L2_M, 1.0e-7) );
+    ensure_distance("LMax, k=2", LMax, LMax_M, AcceptedError(LMax_M, 1.0e-7) );
 
     // ========= Compute with HighOrderVariable(3) ========
 
@@ -1376,9 +1376,9 @@ namespace tut
 
     // === check errors
     L1_M = 4.32976294122695e-06; L2_M = 7.498140474432567e-06; LMax_M = 3.275058817210977e-05;
-    ensure_distance("L1, k=3"  , L1, L1_M, AcceptedError(L1_M) );
-    ensure_distance("L2, k=3"  , L2, L2_M, AcceptedError(L2_M) );
-    ensure_distance("LMax, k=3", LMax, LMax_M, AcceptedError(LMax_M) );
+    ensure_distance("L1, k=3"  , L1, L1_M, AcceptedError(L1_M, 1.0e-7) );
+    ensure_distance("L2, k=3"  , L2, L2_M, AcceptedError(L2_M, 1.0e-7) );
+    ensure_distance("LMax, k=3", LMax, LMax_M, AcceptedError(LMax_M, 1.0e-7) );
 
     if (RunRegression == OFF){ 
       // Print errors

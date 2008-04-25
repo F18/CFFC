@@ -228,7 +228,7 @@ public:
 
   //! Allocate memory for high-order variables
   void allocate_HighOrder(const int & NumberOfReconstructions,
-			  const vector<short int> & ReconstructionOrders);
+			  const vector<int> & ReconstructionOrders);
 
   //! Deallocate memory for structured quadrilateral solution block.
   void deallocate(void);

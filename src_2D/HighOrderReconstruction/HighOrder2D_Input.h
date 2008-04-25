@@ -49,10 +49,10 @@ protected:
   HighOrder2D_Input(const HighOrder2D_Input&); //!< Private copy constructor
   HighOrder2D_Input& operator=(const HighOrder2D_Input&); //!< Private assignment operator
 
-  static vector<short int> OrdersOfReconstruction;
-  static short int NumberOfAuxiliaryReconstructions;
-  static short int NumberOfHighOrderReconstructions;
-  static short int MaxReconstructionOrder;
+  static vector<int> OrdersOfReconstruction;
+  static int NumberOfAuxiliaryReconstructions;
+  static int NumberOfHighOrderReconstructions;
+  static int MaxReconstructionOrder;
 
   // declaration of friend classes
   friend class HighOrder2D_MultiBlock;
@@ -127,7 +127,7 @@ void HighOrder2D_Input::Set_Final_Parameters(Input_Parameters_Type & IP){
 
   // Create temporary array.
   // The first order should always be -1 if high-order is NOT used to advance the solution in time!
-  vector<short int> Temp(1,-1);
+  vector<int> Temp(1,-1);
 
   /* Set the first reconstruction order based on the spatial accuracy required by the user
    * if the solution is calculated with high-order reconstruction.

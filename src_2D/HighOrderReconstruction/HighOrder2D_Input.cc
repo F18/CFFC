@@ -13,10 +13,10 @@
 #include "../Utilities/Utilities.h"
 
 // ===  Static member variables ===
-vector<short int> HighOrder2D_Input::OrdersOfReconstruction(1,-1); //!< Set to no high-order reconstruction.
-short int HighOrder2D_Input::NumberOfAuxiliaryReconstructions(0); //!< Set to ZERO. No auxiliary reconstructions.
-short int HighOrder2D_Input::NumberOfHighOrderReconstructions(0); //!< Set to ZERO. No high-order reconstruction.
-short int HighOrder2D_Input::MaxReconstructionOrder(0);		  //!< Set to ZERO (i.e piecewise constant ).
+vector<int> HighOrder2D_Input::OrdersOfReconstruction(1,-1); //!< Set to no high-order reconstruction.
+int HighOrder2D_Input::NumberOfAuxiliaryReconstructions(0); //!< Set to ZERO. No auxiliary reconstructions.
+int HighOrder2D_Input::NumberOfHighOrderReconstructions(0); //!< Set to ZERO. No high-order reconstruction.
+int HighOrder2D_Input::MaxReconstructionOrder(0);		  //!< Set to ZERO (i.e piecewise constant ).
 
 
 // ===  Member functions ===
@@ -24,7 +24,7 @@ short int HighOrder2D_Input::MaxReconstructionOrder(0);		  //!< Set to ZERO (i.e
  * Reset class variables to default values.
  */
 void HighOrder2D_Input::SetDefaults(void){
-  OrdersOfReconstruction = vector<short int>(1,-1); // Set to no high-order reconstruction.
+  OrdersOfReconstruction = vector<int>(1,-1); // Set to no high-order reconstruction.
   NumberOfAuxiliaryReconstructions = 0; // Set to ZERO. No auxiliary reconstructions.
   NumberOfHighOrderReconstructions = 0; // Set to ZERO. No high-order reconstruction.
   MaxReconstructionOrder = 0;		// Set to ZERO (i.e piecewise constant ).
@@ -55,8 +55,8 @@ void HighOrder2D_Input::Broadcast(void){
 #ifdef _MPI_VERSION
   
   int i;
-  short int buffer_size;
-  short int *buffer;
+  int buffer_size;
+  int *buffer;
 
   // On primary CPU
   if (CFFC_Primary_MPI_Processor()) {
@@ -64,7 +64,7 @@ void HighOrder2D_Input::Broadcast(void){
     buffer_size = 2 + OrdersOfReconstruction.size();
 
     // allocate and load buffer
-    buffer = new short int [buffer_size];
+    buffer = new int [buffer_size];
 
     buffer[0] = NumberOfHighOrderReconstructions;
     buffer[1] = NumberOfAuxiliaryReconstructions;
@@ -80,7 +80,7 @@ void HighOrder2D_Input::Broadcast(void){
   /* On non-primary MPI processors, allocate 
      memory for the buffer. */
   if (!CFFC_Primary_MPI_Processor()) {
-    buffer = new short int [buffer_size];
+    buffer = new int [buffer_size];
   } /* endif */
 
 

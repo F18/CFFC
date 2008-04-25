@@ -363,7 +363,7 @@ namespace tut
     ensure_equals("RecOrder", HO.RecOrder(), 1);
 
     // check monotonicity containers
-    std::vector<short int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
+    std::vector<int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
     std::vector<double> MonotonicityValue(1); MonotonicityValue[0] = 0.0;
     ensure("LimitedCell", HO.InadequateFit() != NULL);
     ensure("Monotonicity container", HO.CellInadequateFit(1,1) == MonotonicityContainer);
@@ -445,7 +445,7 @@ namespace tut
     ensure_equals("RecOrder", HO.RecOrder(), 1);
 
     // check monotonicity containers
-    std::vector<short int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
+    std::vector<int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
     std::vector<double> MonotonicityValue(1); MonotonicityValue[0] = 0.0;
     ensure("LimitedCell", HO.InadequateFit() != NULL);
     ensure("Monotonicity container", HO.CellInadequateFit(1,1) == MonotonicityContainer);
@@ -531,7 +531,7 @@ namespace tut
     ensure_equals("RecOrder", HO.RecOrder(), 4);
 
     // check monotonicity containers
-    std::vector<short int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
+    std::vector<int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
     std::vector<double> MonotonicityValue(1); MonotonicityValue[0] = 0.0;
     ensure("LimitedCell", HO.InadequateFit() != NULL);
     ensure("Monotonicity container", HO.CellInadequateFit(2,2) == MonotonicityContainer);
@@ -627,7 +627,7 @@ namespace tut
     ensure_equals("RecOrder", HO.RecOrder(), 4);
 
     // check monotonicity containers
-    std::vector<short int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
+    std::vector<int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
     std::vector<double> MonotonicityValue(1); MonotonicityValue[0] = 0.0;
     ensure("LimitedCell", HO.InadequateFit() != NULL);
     ensure("Monotonicity container", HO.CellInadequateFit(3,3) == MonotonicityContainer);
@@ -723,7 +723,7 @@ namespace tut
     ensure_equals("RecOrder", HO.RecOrder(), 2);
 
     // check monotonicity containers
-    std::vector<short int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
+    std::vector<int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
     std::vector<double> MonotonicityValue(1); MonotonicityValue[0] = 0.0;
     ensure("LimitedCell", HO.InadequateFit() != NULL);
     ensure("Monotonicity container", HO.CellInadequateFit(3,3) == MonotonicityContainer);
@@ -862,9 +862,11 @@ namespace tut
 	ensure("LimitedCell", HO_Copy.CellInadequateFit(i,j) == HO.CellInadequateFit(i,j));
 	ensure("SI", HO_Copy.CellSmoothnessIndicator(i,j) == HO.CellSmoothnessIndicator(i,j));
 	ensure_equals("LHS", HO_Copy.Cell_LHS_Inv(i,j), HO.Cell_LHS_Inv(i,j));
-	ensure("GeomWeights", HO_Copy.GeomWeights(i,j) == HO.GeomWeights(i,j));
+ 	ensure("GeomWeights", HO_Copy.GeomWeights(i,j) == HO.GeomWeights(i,j));
       }
     }
+
+
   }
 
   /* Test 19:*/
