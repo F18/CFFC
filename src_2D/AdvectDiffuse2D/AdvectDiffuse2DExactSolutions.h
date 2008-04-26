@@ -40,6 +40,7 @@ public:
   double operator()(const double &x, const double &y) const;
   double Solution(const double &x, const double &y) const;
   Vector2D Gradient(const double &x, const double &y) const;
+  double XDependencyIntegrated_Solution(const double &x, const double &y) const;
   double PDE_RightHandSide(const double &x, const double &y) const;
   double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const;
   //@}
@@ -91,6 +92,18 @@ inline double AdvectDiffuse2D_ExactSolutions::Solution(const double &x, const do
  */
 inline Vector2D AdvectDiffuse2D_ExactSolutions::Gradient(const double &x, const double &y) const{
   return ExactSoln->EvaluateGradientAt(x,y);
+}
+
+/*! 
+ * Evaluate the integral of the solution 
+ * with respect to x-coordinate.
+ * This function can be use to calculate the 
+ * integral of the solution over domains 
+ * with curved boundaries.
+ * \param x,y Cartesian coordinates
+ */
+inline double AdvectDiffuse2D_ExactSolutions::XDependencyIntegrated_Solution(const double &x, const double &y) const{
+  return ExactSoln->XDependencyIntegrated_Solution(x,y);
 }
 
 /*! 

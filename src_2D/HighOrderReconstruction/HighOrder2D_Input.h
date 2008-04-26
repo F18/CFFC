@@ -28,7 +28,7 @@ public:
 
   //! @name Field access
   //@{
-  static const short int & MaximumReconstructionOrder(void) { return MaxReconstructionOrder; }
+  static const int & MaximumReconstructionOrder(void) { return MaxReconstructionOrder; }
   //@}
 
   //! @name Functions for input-output and broadcast
