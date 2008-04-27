@@ -184,6 +184,10 @@ namespace tut
 											 &AdvectDiffuse2D_ExactSolutions::
 											 PDE_RightHandSide,
 											 IntResult),
+								 wrapped_member_function(_SolnBlk_.ExactSoln,
+											 &AdvectDiffuse2D_ExactSolutions::
+											 XDependencyIntegrated_PDE_RightHandSide,
+											 IntResult),
 								 IP.Exact_Integration_Digits,
 								 IntResult)/_SolnBlk_.Grid.Cell[i][j].A;
 	  _SolnBlk_.dUdt[i][j][k_residual] = IntResult;
@@ -1394,6 +1398,114 @@ namespace tut
       
       SolnBlk[0].Output_Nodes_Tecplot_HighOrder(0,0,0, 1, out(), 0);
     }
+
+  }
+
+
+  /* Test 17:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<17>()
+  {
+
+    set_test_name("Check AnalyseCellFaces");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    RunRegression = ON;
+
+    // Set input file name
+    Open_Input_File("HighOrder_CurvedBoundaries_Residual_Study.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // Study interior cell
+    SolnBlk[0].Grid.Integration.AnalyseCellFaces(8,10);
+
+    ensure_equals("W face, Interior", SolnBlk[0].Grid.Integration.getWestFaceInfo(), false);
+    ensure_equals("S face, Interior", SolnBlk[0].Grid.Integration.getSouthFaceInfo(), false);
+    ensure_equals("E face, Interior", SolnBlk[0].Grid.Integration.getEastFaceInfo(), false);
+    ensure_equals("N face, Interior", SolnBlk[0].Grid.Integration.getNorthFaceInfo(), false);
+    ensure_equals("Face-block, Interior", SolnBlk[0].Grid.Integration.getFaceBlockEdgeCorrelation(), true);
+
+    // Study SW corner
+    SolnBlk[0].Grid.Integration.AnalyseCellFaces(4,4);
+
+    ensure_equals("W face, I", SolnBlk[0].Grid.Integration.getWestFaceInfo(), true);
+    ensure_equals("S face, I", SolnBlk[0].Grid.Integration.getSouthFaceInfo(), true);
+    ensure_equals("E face, I", SolnBlk[0].Grid.Integration.getEastFaceInfo(), false);
+    ensure_equals("N face, I", SolnBlk[0].Grid.Integration.getNorthFaceInfo(), false);
+    ensure_equals("Face-block, I", SolnBlk[0].Grid.Integration.getFaceBlockEdgeCorrelation(), true);
+
+    // Study ghost cell near West block edge
+    SolnBlk[0].Grid.Integration.AnalyseCellFaces(3,4);
+
+    ensure_equals("W face, II", SolnBlk[0].Grid.Integration.getWestFaceInfo(), false);
+    ensure_equals("S face, II", SolnBlk[0].Grid.Integration.getSouthFaceInfo(), false);
+    ensure_equals("E face, II", SolnBlk[0].Grid.Integration.getEastFaceInfo(), true);
+    ensure_equals("N face, II", SolnBlk[0].Grid.Integration.getNorthFaceInfo(), false);
+    ensure_equals("Face-block, II", SolnBlk[0].Grid.Integration.getFaceBlockEdgeCorrelation(), false);
+
+    // Study SE corner
+    SolnBlk[0].Grid.Integration.AnalyseCellFaces(19,4);
+
+    ensure_equals("W face, III", SolnBlk[0].Grid.Integration.getWestFaceInfo(), false);
+    ensure_equals("S face, III", SolnBlk[0].Grid.Integration.getSouthFaceInfo(), true);
+    ensure_equals("E face, III", SolnBlk[0].Grid.Integration.getEastFaceInfo(), true);
+    ensure_equals("N face, III", SolnBlk[0].Grid.Integration.getNorthFaceInfo(), false);
+    ensure_equals("Face-block, III", SolnBlk[0].Grid.Integration.getFaceBlockEdgeCorrelation(), true);
+
+    // Study ghost cell near East block edge
+    SolnBlk[0].Grid.Integration.AnalyseCellFaces(20,4);
+
+    ensure_equals("W face, IV", SolnBlk[0].Grid.Integration.getWestFaceInfo(), true);
+    ensure_equals("S face, IV", SolnBlk[0].Grid.Integration.getSouthFaceInfo(), false);
+    ensure_equals("E face, IV", SolnBlk[0].Grid.Integration.getEastFaceInfo(), false);
+    ensure_equals("N face, IV", SolnBlk[0].Grid.Integration.getNorthFaceInfo(), false);
+    ensure_equals("Face-block, IV", SolnBlk[0].Grid.Integration.getFaceBlockEdgeCorrelation(), false);
+
+    // Study NE corner
+    SolnBlk[0].Grid.Integration.AnalyseCellFaces(19,19);
+
+    ensure_equals("W face, V", SolnBlk[0].Grid.Integration.getWestFaceInfo(), false);
+    ensure_equals("S face, V", SolnBlk[0].Grid.Integration.getSouthFaceInfo(), false);
+    ensure_equals("E face, V", SolnBlk[0].Grid.Integration.getEastFaceInfo(), true);
+    ensure_equals("N face, V", SolnBlk[0].Grid.Integration.getNorthFaceInfo(), true);
+    ensure_equals("Face-block, V", SolnBlk[0].Grid.Integration.getFaceBlockEdgeCorrelation(), true);
+
+    // Study ghost cell near North block edge
+    SolnBlk[0].Grid.Integration.AnalyseCellFaces(9,20);
+
+    ensure_equals("W face, VI", SolnBlk[0].Grid.Integration.getWestFaceInfo(), false);
+    ensure_equals("S face, VI", SolnBlk[0].Grid.Integration.getSouthFaceInfo(), true);
+    ensure_equals("E face, VI", SolnBlk[0].Grid.Integration.getEastFaceInfo(), false);
+    ensure_equals("N face, VI", SolnBlk[0].Grid.Integration.getNorthFaceInfo(), false);
+    ensure_equals("Face-block, VI", SolnBlk[0].Grid.Integration.getFaceBlockEdgeCorrelation(), false);
+
+    // Study NW corner
+    SolnBlk[0].Grid.Integration.AnalyseCellFaces(4,19);
+
+    ensure_equals("W face, VII", SolnBlk[0].Grid.Integration.getWestFaceInfo(), true);
+    ensure_equals("S face, VII", SolnBlk[0].Grid.Integration.getSouthFaceInfo(), false);
+    ensure_equals("E face, VII", SolnBlk[0].Grid.Integration.getEastFaceInfo(), false);
+    ensure_equals("N face, VII", SolnBlk[0].Grid.Integration.getNorthFaceInfo(), true);
+    ensure_equals("Face-block, VII", SolnBlk[0].Grid.Integration.getFaceBlockEdgeCorrelation(), true);
+
+    // Study ghost cell near South block edge
+    SolnBlk[0].Grid.Integration.AnalyseCellFaces(9,3);
+
+    ensure_equals("W face, VIII", SolnBlk[0].Grid.Integration.getWestFaceInfo(), false);
+    ensure_equals("S face, VIII", SolnBlk[0].Grid.Integration.getSouthFaceInfo(), false);
+    ensure_equals("E face, VIII", SolnBlk[0].Grid.Integration.getEastFaceInfo(), false);
+    ensure_equals("N face, VIII", SolnBlk[0].Grid.Integration.getNorthFaceInfo(), true);
+    ensure_equals("Face-block, VIII", SolnBlk[0].Grid.Integration.getFaceBlockEdgeCorrelation(), false);
 
   }
 
