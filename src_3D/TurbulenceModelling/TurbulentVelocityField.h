@@ -784,8 +784,8 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 	  // use least squares to reconstruct the turbulent velocity field 
           //------------------------------------------------------------------
 	
-	  Velocity_Field.Vel_Blks[nBlk].LeastSquares_Reconstruction(ii, jj, kk,
-								    dVdx, dVdy, dVdz);
+/* 	  Velocity_Field.Vel_Blks[nBlk].LeastSquares_Reconstruction(ii, jj, kk, */
+/* 								    dVdx, dVdy, dVdz); */
            
 	  Position_on_Slice.x = Solution_Block.Grid.Cell[i][j][k].Xc.x;  
 	  Position_on_Slice.y = Solution_Block.Grid.Cell[i][j][k].Xc.y;  
