@@ -223,7 +223,8 @@ SRC_LES_POLYTROPIC += $(SRC_LES_FILTERS)
 SRC_PHYSICS = $(PHYSICS_DIR)SpeciesInput.cc
 SRC_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModellingInput.cc \
                  $(TURBULENCE_DIR)TurbulenceModelling.cc \
-                 $(TURBULENCE_DIR)TurbulentVelocityField.cc
+                 $(TURBULENCE_DIR)TurbulentVelocityField.cc \
+                 $(TURBULENCE_DIR)SpectralAnalysis.cc
 SRC_EOS = $(EOS_DIR)tgas.f \
           $(EOS_DIR)ugas.f
 SRC_NASADATA = $(NASADATA_DIR)NASARP1311data.cc

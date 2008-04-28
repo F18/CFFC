@@ -259,8 +259,34 @@ template<>
 int Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::
 ICs_Specializations(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> &IPs){
     
-    /* Determine initial values for the subfilter scale
-     turbulent kinetic energy. */
+    if (CFFC_Primary_MPI_Processor()) {
+        cout << endl;
+        cout << " ------------------------------------------------" << endl;
+        cout << "    Explicitly filtering the initial condition   " << endl;
+        cout << " ------------------------------------------------" << endl;        
+    }
+    LES3D_Polytropic_cState *** (Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::*U_ptr) = &Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::U;
+    double (LES3D_Polytropic_pState::*p_ptr) = p_ptr = &LES3D_Polytropic_pState::p; 
+    LES_Filter<LES3D_Polytropic_pState,LES3D_Polytropic_cState> Explicit_Filter(*this,LES_FILTER_HASELBACHER);
+//    Explicit_Filter.filter(U_ptr);
+    for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+        for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+            for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                W[i][j][k] = U[i][j][k].W();
+            }	  
+        }
+    }
+   // cout << " now filtering p " << endl;
+//    Explicit_Filter.Set_Filter_Variables(p_ptr);
+//    Explicit_Filter.filter();
+//    for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+//        for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+//            for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+//                U[i][j][k] = W[i][j][k].U();
+//            }	  
+//        }
+//    }
+    cout << " Finished explicit filtering " << endl;
     
     Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
     for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
@@ -270,17 +296,6 @@ ICs_Specializations(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cS
             } /* endfor */ 	  
         } /* endfor */
     } /* endfor */
-    
-    cout << endl;
-    cout << " ------------------------------------------------" << endl;
-    cout << "|    Explicitly filtering the conserved state    |" << endl;
-    cout << " ------------------------------------------------" << endl;
-    LES3D_Polytropic_cState *** (Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::*U_ptr) = NULL;
-    U_ptr = &Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::U;
-    LES_Filter<LES3D_Polytropic_pState,LES3D_Polytropic_cState> Explicit_Filter(*this,LES_FILTER_HASELBACHER);
-    Explicit_Filter.Set_Filter_Variables(U_ptr);
-    Explicit_Filter.filter();
-    
     
     /* Set default values for the boundary conditions
      reference states. */

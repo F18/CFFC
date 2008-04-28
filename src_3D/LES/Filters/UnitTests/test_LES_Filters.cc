@@ -3,7 +3,7 @@
 
 #include "TestData.h"
 #include "../LES_Filters.h"
-#include "../SpectralAnalysis.h"
+#include "../../../TurbulenceModelling/SpectralAnalysis.h"
 
 // Change this file to your
 #include "../../LES_Polytropic/LES3DPolytropic.h"
@@ -142,20 +142,6 @@ namespace tut
     void LES_Filters_object::test<1>()
     {
         
-        set_test_name("Test Haselbacher functions");
-        
-        Haselbacher_Filter<Soln_pState,Soln_cState> filter;
-        
-        cout << endl << endl << endl;
-        ensure("fac(0)",filter.fac(0)==1);
-        ensure("fac(1)",filter.fac(1)==1);
-        ensure("fac(2)",filter.fac(2)==2);
-        ensure("fac(3)",filter.fac(3)==6);
-        
-        ensure("trinomial(0,0,0)",filter.trinomial_coefficient(0,0,0)==1);
-        ensure("trinomial(0,0,0)",filter.trinomial_coefficient(1,2,1)==12);
-        ensure("trinomial(0,0,0)",filter.trinomial_coefficient(3,2,1)==60);
-
 
         
     }
@@ -174,8 +160,8 @@ namespace tut
         
         
         
-        //LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
-       // myfilter.transfer_function();
+        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
+        myfilter.transfer_function();
         
         
         /* Function pointers:
@@ -202,33 +188,33 @@ namespace tut
         // cout << endl << "return_it = " << endl;
         // cout << return_it(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr) << endl;
        
-        double (Soln_pState::*function_ptr2)(void) = NULL; 
-        function_ptr2 = &Soln_pState::E;
-        cout << endl << "return_it_2 = " << endl;
-        cout << return_it_2(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr2) << endl;
-        
-        double (Soln_pState::*function_ptr22) = NULL; 
-        function_ptr22 = &Soln_pState::p;
-        cout << endl << "return_it_2_2 = " << endl;
-        cout << return_it_2(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr22) << endl;
-        
-        
-        double (Soln_pState::*function_ptr3) = NULL; 
-        function_ptr3 = &Soln_pState::p;
-        cout << endl << "return_it_3 = " << endl;
-        cout << return_it_3(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr3) << endl;  
-        
-        Soln_pState *** (Hexa_Block<Soln_pState,Soln_cState>::*function_ptr4) = NULL; 
-        function_ptr4 = &Hexa_Block<Soln_pState,Soln_cState>::W;
-        cout << endl << "return_it_4 = " << endl;
-        cout << return_it_4(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr4) << endl;  
-        cout << return_it_44(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr4) << endl;  
-
-        Soln_cState **** (Hexa_Block<Soln_pState,Soln_cState>::*function_ptr5) = NULL; 
-        function_ptr5 = &Hexa_Block<Soln_pState,Soln_cState>::dUdt;
-        cout << endl << "return_it_5 = " << endl;
-        cout << return_it_5(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr5 , 0) << endl;  
-        
+//        double (Soln_pState::*function_ptr2)(void) = NULL; 
+//        function_ptr2 = &Soln_pState::E;
+//        cout << endl << "return_it_2 = " << endl;
+//        cout << return_it_2(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr2) << endl;
+//        
+//        double (Soln_pState::*function_ptr22) = NULL; 
+//        function_ptr22 = &Soln_pState::p;
+//        cout << endl << "return_it_2_2 = " << endl;
+//        cout << return_it_2(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr22) << endl;
+//        
+//        
+//        double (Soln_pState::*function_ptr3) = NULL; 
+//        function_ptr3 = &Soln_pState::p;
+//        cout << endl << "return_it_3 = " << endl;
+//        cout << return_it_3(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr3) << endl;  
+//        
+//        Soln_pState *** (Hexa_Block<Soln_pState,Soln_cState>::*function_ptr4) = NULL; 
+//        function_ptr4 = &Hexa_Block<Soln_pState,Soln_cState>::W;
+//        cout << endl << "return_it_4 = " << endl;
+//        cout << return_it_4(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr4) << endl;  
+//        cout << return_it_44(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr4) << endl;  
+//
+//        Soln_cState **** (Hexa_Block<Soln_pState,Soln_cState>::*function_ptr5) = NULL; 
+//        function_ptr5 = &Hexa_Block<Soln_pState,Soln_cState>::dUdt;
+//        cout << endl << "return_it_5 = " << endl;
+//        cout << return_it_5(Solution_Data.Local_Solution_Blocks.Soln_Blks[0], function_ptr5 , 0) << endl;  
+//        
         
 //        double (Vector3D::*member_ptr) = NULL;
 //       // Vector3D (Soln_pState::*vector_ptr); 
@@ -273,29 +259,29 @@ namespace tut
         
         
 
-        Initialize();
-        
-        SpectralAnalysis<Soln_pState,Soln_cState> Spectrum(Data,Solution_Data);
-        typedef double (Soln_pState::*member_ptr);
-        member_ptr rho_member = &Soln_pState::rho;
-        member_ptr p_member = &Soln_pState::p;
-
-        Spectrum.Set_Spectrum(p_member);
-        Spectrum.Set_Spectrum(rho_member);
-                
-        //cout << endl<< endl << endl << "FILTERING..." << endl;
-        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
-        Soln_cState **** (Hexa_Block<Soln_pState,Soln_cState>::*dUdt_ptr) = NULL;
-        dUdt_ptr = &Hexa_Block<Soln_pState,Soln_cState>::dUdt;
-        myfilter.Set_Filter_Variables(dUdt_ptr,0);
-        myfilter.filter();
-        
-
-        Spectrum.Get_Spectrum(rho_member,"density");
-        Spectrum.Get_Spectrum(p_member,"pressure");
-
-        error_flag = Hexa_Post_Processing(Data,Solution_Data);
-        ensure("Post_Processing",error_flag==false);
+  //      Initialize();
+//        
+//        SpectralAnalysis<Soln_pState,Soln_cState> Spectrum(Data,Solution_Data);
+//        typedef double (Soln_pState::*member_ptr);
+//        member_ptr rho_member = &Soln_pState::rho;
+//        member_ptr p_member = &Soln_pState::p;
+//
+//        Spectrum.Set_Spectrum(p_member);
+//        Spectrum.Set_Spectrum(rho_member);
+//                
+//        //cout << endl<< endl << endl << "FILTERING..." << endl;
+//        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
+//        Soln_cState **** (Hexa_Block<Soln_pState,Soln_cState>::*dUdt_ptr) = NULL;
+//        dUdt_ptr = &Hexa_Block<Soln_pState,Soln_cState>::dUdt;
+//        myfilter.Set_Filter_Variables(dUdt_ptr,0);
+//        myfilter.filter();
+//        
+//
+//        Spectrum.Get_Spectrum(rho_member,"density");
+//        Spectrum.Get_Spectrum(p_member,"pressure");
+//
+//        error_flag = Hexa_Post_Processing(Data,Solution_Data);
+//        ensure("Post_Processing",error_flag==false);
     
     }
     
@@ -308,26 +294,26 @@ namespace tut
         
         set_test_name("Test DiagonalMatrix");
         
-        DenseMatrix A(3,2);
-        A(0,0) = 1;
-        A(1,0) = 2;
-        A(2,0) = 3;
-        A(0,1) = 4;
-        A(1,1) = 5;
-        A(2,1) = 6;
-        RowVector rv(3);
-        rv(0) = 1;
-        rv(1) = 2;
-        rv(2) = 3;
-        
-        ColumnVector cv(2);
-        cv(0) = 1;
-        cv(1) = 2;
-        
-        RowVector resrow = rv*A;
-        ColumnVector rescolumn = A*cv;
-        cout << "rv * A = " << resrow;
-        cout << "A * cv = " << rescolumn;
+ //       DenseMatrix A(3,2);
+//        A(0,0) = 1;
+//        A(1,0) = 2;
+//        A(2,0) = 3;
+//        A(0,1) = 4;
+//        A(1,1) = 5;
+//        A(2,1) = 6;
+//        RowVector rv(3);
+//        rv(0) = 1;
+//        rv(1) = 2;
+//        rv(2) = 3;
+//        
+//        ColumnVector cv(2);
+//        cv(0) = 1;
+//        cv(1) = 2;
+//        
+//        RowVector resrow = rv*A;
+//        ColumnVector rescolumn = A*cv;
+//        cout << "rv * A = " << resrow;
+//        cout << "A * cv = " << rescolumn;
         
         
         //        DiagonalMatrix D(3);

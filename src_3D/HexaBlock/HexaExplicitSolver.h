@@ -13,11 +13,9 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 				    HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
   
-    SOLN_cSTATE **** (Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::*dUdt_ptr) = NULL;
-    dUdt_ptr = &Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::dUdt;
+    SOLN_cSTATE **** (Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::*dUdt_ptr) = &Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::dUdt;
     LES_Filter<SOLN_pSTATE,SOLN_cSTATE> Explicit_Filter(Data,Solution_Data,LES_FILTER_HASELBACHER);
-    Explicit_Filter.Set_Filter_Variables(dUdt_ptr,0);
-    
+
   int error_flag(0);
    
   double dTime;
@@ -225,8 +223,9 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 
 	/*******************************************************************/
           
+
           if (i_stage == Solution_Data.Input.N_Stage) {
-              Explicit_Filter.filter();
+              Explicit_Filter.filter(dUdt_ptr,0);
           }      
           
 	// 7. Update solution for stage.

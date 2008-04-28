@@ -199,7 +199,15 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
                                w_ave,
                                sqr_u,
                                Data.batch_flag);
-      
+    
+    SpectralAnalysis<LES3D_Polytropic_pState,LES3D_Polytropic_cState> Spectral_Analysis(Data,Solution_Data);
+    typedef double (LES3D_Polytropic_pState::*member_ptr);
+    member_ptr rho_member = &LES3D_Polytropic_pState::rho;
+    member_ptr p_member = &LES3D_Polytropic_pState::p;
+    
+    Spectral_Analysis.Get_Spectrum(rho_member,"density");
+    Spectral_Analysis.Get_Spectrum(p_member,"pressure");
+    
    return error_flag;
 
 }

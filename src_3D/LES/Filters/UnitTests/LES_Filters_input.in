@@ -41,11 +41,11 @@ OFF
 Grid_Type =
 Periodic_Box
 Number_of_Cells_Idir = 
-48
+32
 Number_of_Cells_Jdir =
-48
+32
 Number_of_Cells_Kdir =
-48
+32
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =
