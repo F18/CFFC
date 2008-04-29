@@ -18,6 +18,8 @@
 #include "../CFD/CFD1DInput.h"
 #endif // _CFD1DINPUT_INCLUDED
 
+#define   PREDICTED_MOMENT_NUMBER (Levermore1D_Vector::get_length())
+
 /* Define the classes. */
 
 /******************************************************//**
@@ -70,6 +72,11 @@ public:
   Levermore1D_cState   Uo;   //!< Initial solution state.
   Levermore1D_weights  Ao;   //!< Initial weights.
   double         detector;   //!< The detector to determine syncronization of U and A
+  double       detector_l;   //!< The detector to determine syncronization of U and A at left boundary
+  double       detector_r;   //!< The detector to determine syncronization of U and A at right boundary
+  double predicted_moment;   //!< Predicted moment used in detector
+  double predicted_moment_l;   //!< Predicted moment used in detector at left boundary
+  double predicted_moment_r;   //!< Predicted moment used in detector at right boundary
   int   number_of_resyncs;   //!< The number of times a resync was done
   Levermore1D_cState Ul_old, Ur_old;  //!< Remember left and right reconstructed states
   Levermore1D_weights Al_old, Ar_old; //!< Remember left and right reconstructed weights
@@ -120,12 +127,16 @@ public:
 
   /* Set gas state */
   void set_state(const Levermore1D_pState &W0) {
-    W = W0; U = Levermore1D_cState(W); A = Levermore1D_weights(U); detector = 0.0;
+    W = W0; U = Levermore1D_cState(W); A = Levermore1D_weights(U);
+    detector = 0.0; detector_l = 0.0; detector_r = 0.0;
     Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
+    reset_predicted_moments();
   }
   void set_state(const Levermore1D_cState &U0) {
-    U = U0; W = Levermore1D_pState(U); A = Levermore1D_weights(U); detector = 0.0;
+    U = U0; W = Levermore1D_pState(U); A = Levermore1D_weights(U);
+    detector = 0.0; detector_l = 0.0; detector_r = 0.0;
     Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
+    reset_predicted_moments();
   }
 //  void set_state(const Levermore1D_weights &A0) {
 //    A = A0; U = Levermore1D_cState(A); W = Levermore1D_pState(U);
@@ -134,8 +145,9 @@ public:
 		 const Levermore1D_cState &U0,
 		 const Levermore1D_weights &A0) {
     W = W0; U = U0; A = A0;
-    detector = 0.0;
+    detector = 0.0; detector_l = 0.0; detector_r = 0.0;
     Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
+    reset_predicted_moments();
   }
 
   void calculate_Hessians() {
@@ -153,8 +165,63 @@ public:
     }
   }
 
+  void reset_predicted_moment() {
+    double us = U[2]/U[1];
+    predicted_moment = U.moment(PREDICTED_MOMENT_NUMBER,A,us);
+  }
+
+  void reset_predicted_moment_l() {
+    double us = Ul_old[2]/Ur_old[1];
+    predicted_moment_l = Ul_old.moment(PREDICTED_MOMENT_NUMBER,Al_old,us);
+  }
+
+  void reset_predicted_moment_r() {
+    double us = Ur_old[2]/Ur_old[1];
+    predicted_moment_r = Ur_old.moment(PREDICTED_MOMENT_NUMBER,Ar_old,us);
+  }
+  void reset_predicted_moments() {
+    reset_predicted_moment();
+    reset_predicted_moment_l();
+    reset_predicted_moment_r();
+  }
+
+  void update_predicted_moment(const ColumnVector &Update) {
+    static Levermore1D_Vector temp;
+    double us = U[2]/U[1];
+    for(int i=1; i<=Levermore1D_Vector::get_length(); ++i) {
+      temp[i] = U.moment(i+PREDICTED_MOMENT_NUMBER-1,A,us);
+    }
+    predicted_moment += temp*Update;
+  }
+
+  void update_predicted_moment_l(const ColumnVector &Update) {
+    static Levermore1D_Vector temp;
+    double us = Ul_old[2]/Ul_old[1];
+    for(int i=1; i<=Levermore1D_Vector::get_length(); ++i) {
+      temp[i] = Ul_old.moment(i+PREDICTED_MOMENT_NUMBER-1,Al_old,us);
+    }
+    predicted_moment_l += temp*Update;
+  }
+
+  void update_predicted_moment_r(const ColumnVector &Update) {
+    static Levermore1D_Vector temp;
+    double us = Ur_old[2]/Ur_old[1];
+    for(int i=1; i<=Levermore1D_Vector::get_length(); ++i) {
+      temp[i] = Ur_old.moment(i+PREDICTED_MOMENT_NUMBER-1,Ar_old,us);
+    }
+    predicted_moment_r += temp*Update;
+  }
+
   void calculate_detector() {
-    detector = U.detector_value(A);
+    detector = U.detector_value(A,predicted_moment);
+  }
+
+  void calculate_detector_l() {
+    detector_l = Ul_old.detector_value(Al_old,predicted_moment_l);
+  }
+
+  void calculate_detector_r() {
+    detector_r = Ur_old.detector_value(Ar_old,predicted_moment_r);
   }
 
   /* Input-output operators. */
@@ -177,8 +244,10 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(void){
   X = Cell1D_Uniform_ONE; dt = ZERO;
   dUdt.zero(); dWdx.zero(); phi.zero();
   Uo.zero(); Ao.zero();
-  detector = 0.0; number_of_resyncs = 0;
   Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
+  detector = 0.0; detector_l = 0.0; detector_r = 0.0;
+  number_of_resyncs = 0;
+  reset_predicted_moments();
 }
 
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_UniformMesh &Soln) {
@@ -189,7 +258,12 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_Unifor
   lambda_max = Soln.lambda_max;
   lambda_min = Soln.lambda_min;
   detector = Soln.detector;
+  detector_l = Soln.detector_l;
+  detector_r = Soln.detector_r;
   number_of_resyncs = Soln.number_of_resyncs;
+  predicted_moment = Soln.predicted_moment;
+  predicted_moment_l = Soln.predicted_moment_l;
+  predicted_moment_r = Soln.predicted_moment_r;
   Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
 }
 
@@ -200,8 +274,10 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_pState
   W = W0; U = U0; A = A0; X = X0;
   dt = ZERO; dUdt.zero();
   dWdx.zero(); phi.zero(); Uo.zero(); Ao.zero();
-  detector = 0.0; number_of_resyncs = 0;
   Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
+  detector = 0.0; detector_l = 0.0; detector_r = 0.0;
+  number_of_resyncs = 0;
+  reset_predicted_moments();
 }
 
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_pState &W0,
@@ -209,8 +285,10 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_pState
   W = W0; U = Levermore1D_cState(W0); A = Levermore1D_weights(W0);
   X = X0; dt = ZERO; dUdt.zero();
   dWdx.zero(); phi.zero(); Uo.zero(); Ao.zero();
-  detector = 0.0; number_of_resyncs = 0;
   Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
+  detector = 0.0; number_of_resyncs = 0;
+  number_of_resyncs = 0;
+  reset_predicted_moments();
 }
 
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_cState &U0,
@@ -218,8 +296,10 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_cState
   W = Levermore1D_pState(U0); U = U0; A = Levermore1D_weights(U0);
   X = X0; dt = ZERO; dUdt.zero();
   dWdx.zero(); phi.zero(); Uo.zero(); Ao.zero();
-  detector = 0.0; number_of_resyncs = 0;
   Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
+  detector = 0.0; detector_l = 0.0; detector_r = 0.0;
+  number_of_resyncs = 0;
+  reset_predicted_moments();
 }
 
 ////! Return the solution of the piecewise limited linear reconstruction at the coordinate X_Coord,

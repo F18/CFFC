@@ -320,14 +320,13 @@ double Levermore1D_cState::moment_series_L(const Levermore1D_weights &A, const d
  * Calculate detector to see if U and A are in sync.    *
  *                                                      *
  ********************************************************/
-double Levermore1D_cState::detector_value(const Levermore1D_weights &A) const {
-  double moment1, moment2, ref;
+double Levermore1D_cState::detector_value(const Levermore1D_weights &A, double predicted) const {
+  double moment1, ref;
   double us(m_values[1]/m_values[0]);
   moment1 = moment_series_L(A,us);
-  moment2 = A.integrate_conserved_moment(length,us);
   ref = moment_series(length+1,A,us);
   ref = sqrt( ref * m_values[length-1] );
-  return fabs((moment1-moment2)/ref);
+  return fabs((moment1-predicted)/ref);
 }
 
 /********************************************************
@@ -337,9 +336,9 @@ double Levermore1D_cState::detector_value(const Levermore1D_weights &A) const {
  * close to being syncronized.                          *
  *                                                      *
  ********************************************************/
-int Levermore1D_cState::in_sync_with(const Levermore1D_weights &A) const {
-  return detector_below_tolerance(detector_value(A));
-}
+//int Levermore1D_cState::in_sync_with(const Levermore1D_weights &A) const {
+//  return detector_below_tolerance(detector_value(A));
+//}
 
 /********************************************************
  * Function: Levermore1D_cState::relative_error         *

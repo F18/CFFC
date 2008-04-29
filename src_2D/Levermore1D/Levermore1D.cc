@@ -639,7 +639,9 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
       Solve_LU_Decomposition(LHS,RHS,Update);
 
       Soln[i].U += Update;
-      Soln[i].A += Soln[i].dUdA_inv * Update;
+      Update = Soln[i].dUdA_inv * Update; //now update for A
+      Soln[i].A += Update;
+      Soln[i].update_predicted_moment(Update); //for detector
       Soln[i].calculate_detector();
 
       if ( ! detector_below_tolerance(Soln[i].detector) ) {
@@ -651,6 +653,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 	  return 1;
 	}
 	Soln[i].number_of_resyncs++;
+	Soln[i].reset_predicted_moment();
 	cout << "%";cout.flush();
 	++count;
       }
@@ -928,6 +931,8 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	    Al = Soln[i].Ar_old + delta_A;
 	    Soln[i].Ar_old = Al;
 	    Soln[i].Ur_old = Ul;
+	    Soln[i].update_predicted_moment_r(delta_A);
+	    Soln[i].calculate_detector_r();
 
 	    us = Soln[i+1].Ul_old[2]/Soln[i+1].Ul_old[1];
 	    dUdA_interface = Soln[i+1].Ul_old.d2hda2(Soln[i+1].Al_old,us);
@@ -936,11 +941,13 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	    Ar = Soln[i+1].Al_old + delta_A;
 	    Soln[i+1].Al_old = Ar;
 	    Soln[i+1].Ul_old = Ur;
+	    Soln[i+1].update_predicted_moment_l(delta_A);
+	    Soln[i+1].calculate_detector_l();
 
 //	    Al = Soln[i].A + Soln[i].dUdA_inv * (Ul-Soln[i].U);
 //	    Ar = Soln[i+1].A + Soln[i+1].dUdA_inv * (Ur-Soln[i+1].U);
 
-	    if ( ! Ul.in_sync_with(Al) ) {
+	    if ( ! detector_below_tolerance(Soln[i].detector_r) ) {
 	      if(Al.set_from_U(Ul)) { //returns 1 if fail
 		cout << endl << "Error, Cannot resync at left interface:" << endl
 		     << "U =   " << Ul << endl
@@ -949,10 +956,11 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 		return 1;
 	      }
 	      Soln[i].Ar_old = Al;
+	      Soln[i].reset_predicted_moment_r();
 	      cout << "L";cout.flush();
 	      ++count;
 	    }
-	    if ( ! Ur.in_sync_with(Ar) ) {
+	    if ( ! detector_below_tolerance(Soln[i+1].detector_l) ) {
 	      if(Ar.set_from_U(Ur)) { //returns 1 if fail
 		cout << endl << "Error, Cannot resync at right interface:" << endl
 		     << "U =   " << Ur << endl
@@ -961,6 +969,7 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 		return 1;
 	      }
 	      Soln[i+1].Al_old = Ar;
+	      Soln[i+1].reset_predicted_moment_l();
 	      cout << "R";cout.flush();
 	      ++count;
 	    }
@@ -1029,7 +1038,9 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	  Solve_LU_Decomposition(LHS,RHS,Update);
 
 	  Soln[i].U = Soln[i].Uo + Update;
-	  Soln[i].A = Soln[i].Ao + Soln[i].dUdA_inv * Update;
+	  Update = Soln[i].dUdA_inv * Update; //now update for A
+	  Soln[i].A = Soln[i].Ao + Update;
+	  Soln[i].update_predicted_moment(Update); //for detector
 	  Soln[i].calculate_detector();
 
 	  if ( ! detector_below_tolerance(Soln[i].detector) ) {
@@ -1041,7 +1052,7 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	      return 1;
 	    }
 	    Soln[i].number_of_resyncs++;
-	    //cout << Soln[i].number_of_resyncs;
+	    Soln[i].reset_predicted_moment();
 	    cout << "%";cout.flush();
 	    ++count;
 	  }

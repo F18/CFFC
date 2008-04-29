@@ -123,7 +123,7 @@ class Levermore1D_cState : public Levermore1D_Vector{
   DenseMatrix d2jda2(const Levermore1D_weights &A, const double &us) const;
   Levermore1D_Vector F(const Levermore1D_weights &A) const;
   int in_sync_with(const Levermore1D_weights &A) const;
-  double detector_value(const Levermore1D_weights &A) const;
+  double detector_value(const Levermore1D_weights &A, double predicted) const;
   double relative_error(const Levermore1D_cState &U2) const;
   double relaxation_time() const;
 
