@@ -1509,6 +1509,116 @@ namespace tut
 
   }
 
+  /* Test 18:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<18>()
+  {
+
+    set_test_name("Check integration with curved boundaries");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    RunRegression = ON;
+
+    // Set input file name
+    Open_Input_File("HighOrder_CurvedBoundaries_Residual_Study.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+    // Compute integral of the RHS term and write it to the k_residual = 0
+    ComputeEquationRightHandSideTerm(SolnBlk[0], IP, 0);
+
+    if (RunRegression){
+      // Output solution
+      MasterFile = "HighOrder_CurvedBoundaries_Study.dat";
+      CurrentFile = "Current_HighOrder_CurvedBoundaries_Study.dat";
+      Open_Output_File(CurrentFile);
+    
+      SolnBlk[0].Output_Cells_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+      
+      // === check cell values
+      RunRegressionTest("Cells Tecplot Output", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+    } else {
+      // == Generate the master file
+
+      // Output solution
+      MasterFile = "HighOrder_CurvedBoundaries_Study.dat";
+      Open_Output_File(MasterFile);
+    
+      SolnBlk[0].Output_Cells_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+    }
+  }
+
+  /* Test 19:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<19>()
+  {
+
+    set_test_name("Check integration with high-order straight boundaries");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    RunRegression = ON;
+
+    // Set input file name
+    Open_Input_File("HighOrder_StraightBoundaries_Residual_Study.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);    
+
+    // Compute integral of the RHS term and write it to the k_residual = 0
+    ComputeEquationRightHandSideTerm(SolnBlk[0], IP, 0);
+
+    if (RunRegression){
+
+      // === Generate these files with high-order boundaries ===
+
+      // Output solution
+      MasterFile = "HighOrder_StraightBoundaries_Study_Cells.dat";
+      CurrentFile = "Current_HighOrder_StraightBoundaries_Study_Cells.dat";
+      Open_Output_File(CurrentFile);
+      
+      SolnBlk[0].Output_Cells_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+
+      // === check cell values
+      RunRegressionTest("Cells Tecplot Output", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+      
+    } else {
+
+      // === Generate master files with low-order boundaries (toggle OFF high-order bnds. in the input file) ===
+
+      // Output solution
+      MasterFile = "HighOrder_StraightBoundaries_Study_Cells.dat";
+      Open_Output_File(MasterFile);
+      
+      SolnBlk[0].Output_Cells_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+      
+    }
+
+  }
+
 
 }
 

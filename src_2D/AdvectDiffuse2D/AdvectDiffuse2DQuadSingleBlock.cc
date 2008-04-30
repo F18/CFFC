@@ -1037,6 +1037,10 @@ void ICs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 							       wrapped_member_function(IP.ExactSoln,
 										       &AdvectDiffuse2D_ExactSolutions::Solution,
 										       Ul.u),
+							       wrapped_member_function(IP.ExactSoln,
+										       &AdvectDiffuse2D_ExactSolutions::
+										       XDependencyIntegrated_Solution,
+										       Ul.u),
 							       IP.Exact_Integration_Digits,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	  SolnBlk.U[i][j] = Ul;
 	} /* endfor */

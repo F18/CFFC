@@ -36,7 +36,7 @@ public:
   bool getSouthFaceInfo(void){ return CellFacesInfo[1]; }
   bool getEastFaceInfo(void){ return CellFacesInfo[2]; }
   bool getNorthFaceInfo(void){ return CellFacesInfo[3]; }
-  const bool getFaceBlockEdgeCorrelation(void) { if (IsTheSameBlockEdge == 1) { return true;} else { return false;} }
+  bool getFaceBlockEdgeCorrelation(void) const { if (IsTheSameBlockEdge == 1) { return true;} else { return false;} }
 
   //! Get the type of this cell (i.e. the type of each edge)
   void AnalyseCellFaces(const int &ii, const int &jj);
@@ -52,14 +52,23 @@ public:
   //! Compute the integral of a general function over the potentially curved domain of cell (ii,jj)
   template<typename FO, class ReturnType>
   ReturnType IntegrateFunctionOverCell(const int &ii, const int &jj, const FO FuncObj,
-				       const FO ContourIntegrand, int digits,
+				       FO ContourIntegrand, int digits,
 				       ReturnType _dummy_param);
 
   //! Compute the integral of a general function over the domain of cell (ii,jj) which has curved faces
   template<typename FO, class ReturnType>
   ReturnType IntegrateFunctionOverCellUsingContourIntegrand(const int &ii, const int &jj,
-							    const FO FuncObj, const FO ContourIntegrand,
-							    int digits, ReturnType _dummy_param) const;
+							    const FO FuncObj, FO ContourIntegrand,
+							    int digits, ReturnType _dummy_param) const {
+    throw runtime_error("Grid2DQuadIntegration()::IntegrateFunctionOverCellUsingContourIntegrand() not implemented for this Grid type");
+  }
+
+  //! Compute the integral of an arbitrary function using Gauss quadrature rule with the provided data.
+  template<typename FO, class ReturnType>
+  ReturnType CalculateFunctionIntegralWithGaussQuadratures(FO FuncObj, 
+							   const Vector2D * GaussQuads, const double * GaussWeights,
+							   const int & NumGQPs, const double & DeltaY,
+							   ReturnType _dummy_param) const;
   
   //! Compute the integral of a polynomial function over the domain of cell (ii,jj)
   template<typename FO, class ReturnType>
@@ -287,19 +296,19 @@ void Grid2DQuadIntegration<Grid2DQuadType>::PrintCellInfo(ostream & os) const {
  * \param ii the i-index of the cell over which the integration is performed
  * \param jj the j-index of the cell over which the integration is performed
  * \param FuncObj the function to be integrated
- * \param ContourIntegrand the integrand with respect to x of FuncObj
+ * \param ContourIntegrand the primitive with respect to x of FuncObj
  * \param digits the number of exact digits with which the result is computed (i.e. the accuracy of the calculation)
  * \param _dummy_param a parameter used only to determine the return type of the function FuncObj
  */
 template<class Grid2DQuadType>
 template<typename FO, class ReturnType> inline
 ReturnType Grid2DQuadIntegration<Grid2DQuadType>::IntegrateFunctionOverCell(const int &ii, const int &jj, const FO FuncObj,
-									    const FO ContourIntegrand, int digits,
+									    FO ContourIntegrand, int digits,
 									    ReturnType _dummy_param) {
-  
+
   // === Analyse cell faces
   AnalyseCellFaces(ii,jj);
-
+  
   // === Decide whether to use contour integration or surface integration
   if (AtLeastOneCurvedFace){
     // This cell needs Gauss contour integration (i.e. at least one of the faces is curved)
@@ -316,28 +325,33 @@ ReturnType Grid2DQuadIntegration<Grid2DQuadType>::IntegrateFunctionOverCell(cons
 }
 
 /*!
- * Integrate a general function (i.e. any function or pointer function)
- * over the domain of a cell (ii,jj) using a contour integration.
- * The contour integrand of the function is used for this purpose.
+ * Integrate a general integrand with the x-dependency integrated
+ * along a straight segment line with respect to the y-coordinate.
  *
- * \param ii the i-index of the cell over which the integration is performed
- * \param jj the j-index of the cell over which the integration is performed
- * \param FuncObj the function to be integrated
- * \param ContourIntegrand the integrand with respect to x of FuncObj
- * \param digits the number of exact digits with which the result is computed (i.e. the accuracy of the calculation)
+ * \param FuncObj the primitive with respect to x of the integrand
+ * \param GaussQuads the array of Gauss quadrature points used for integration
+ * \param GaussWeights the array of Gauss weights for the Gauss quadrature points
+ * \param NumGQPs the number of GQPs used for integration (i.e. useful array size)
+ * \param DeltaY the y-difference of the end points.
  * \param _dummy_param a parameter used only to determine the return type of the function FuncObj
+ *
+ * \note The relationship is customized for line segments! That's why DeltaY is used instead of dYdS and Length.
  */
 template<class Grid2DQuadType>
 template<typename FO, class ReturnType> inline
 ReturnType Grid2DQuadIntegration<Grid2DQuadType>::
-IntegrateFunctionOverCellUsingContourIntegrand(const int &ii, const int &jj,
-					       const FO FuncObj, const FO ContourIntegrand,
-					       int digits, ReturnType _dummy_param) const {
+CalculateFunctionIntegralWithGaussQuadratures(FO FuncObj, 
+					      const Vector2D * GaussQuads, const double * GaussWeights,
+					      const int & NumGQPs, const double & DeltaY,
+					      ReturnType _dummy_param) const {
 
-  // Detect the type of of each cell face (i.e. curved or straight)
+  ReturnType Result(0);
 
-  return _dummy_param;
-  
+  for (int n=0; n<NumGQPs; ++n){
+    Result += GaussWeights[n] * FuncObj(GaussQuads[n].x, GaussQuads[n].y);
+  }
+
+  return Result * DeltaY;
 }
 
 #endif

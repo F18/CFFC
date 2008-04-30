@@ -96,7 +96,7 @@ public:
     by using a Gauss quadrature along the domain contour.
   */
   virtual double XDependencyIntegrated_Solution(const double &x, const double &y) const {
-    throw runtime_error("XDependencyIntegrated_Solution() ERROR! The current exact solution doesn't have the x-dependency integrand of the solution defined");
+    throw runtime_error("XDependencyIntegrated_Solution() ERROR! The current exact solution doesn't have the x-dependency integrated function of the solution defined");
   }
 
   /*! Calculate the right hand side (RHS) of the partial differential equation (PDE) at the location of interest */
@@ -107,7 +107,7 @@ public:
     This function can be used to integrate the RHS over domain with curved boundaries,
     by using a Gauss quadrature along the domain contour. */
   virtual double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const {
-    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! The current exact solution doesn't have the x-dependency integrand of the pde righ-hand-side defined");
+    throw runtime_error("XDependencyIntegrated_PDE_RightHandSide() ERROR! The current exact solution doesn't have the x-dependency integrated function of the pde righ-hand-side defined");
   }
 
   //! Update internal variables
@@ -559,6 +559,9 @@ inline double Poisson_V_ExactSolution::XDependencyIntegrated_Solution(const doub
   double T, sqrtT, xPlusA, Term;
   
   T = sqr(y) + 2*y*B + sqr(B) - C;
+  if (T < 0){
+    throw runtime_error("Poisson_V_ExactSolution::XDependencyIntegrated_Solution() ERROR! sqrt() of negative number encountered");
+  }
   sqrtT = sqrt(T);
   xPlusA = x + A;
   Term = sqr(xPlusA) + T;
@@ -568,11 +571,16 @@ inline double Poisson_V_ExactSolution::XDependencyIntegrated_Solution(const doub
 
 inline double Poisson_V_ExactSolution::XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const {
 
-  double Term;
+  double T, sqrtT, xPlusA;
 
-  Term = sqrt(sqr(y) + 2*y*B + sqr(B) - C);
+  T = sqr(y) + 2*y*B + sqr(B) - C;
+  if (T < 0){
+    throw runtime_error("Poisson_V_ExactSolution::XDependencyIntegrated_PDE_RightHandSide() ERROR! sqrt() of negative number encountered");
+  }
+  sqrtT = sqrt(T);
+  xPlusA = x + A;
 
-  return 8*C/(beta * Term)*arctan((x + A),Term);
+  return 4.0*C*( xPlusA/(sqr(xPlusA)+T) + arctan((x + A),sqrtT)/sqrtT)/(beta * T);
 }
 
 /*! 

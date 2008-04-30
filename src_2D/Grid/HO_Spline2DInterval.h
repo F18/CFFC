@@ -88,6 +88,8 @@ public:
   int NumGQPoints(void) const {return N_GQP*N_SubIntervals; }
   //! Get the total number of Gauss quadrature points used for contour integration
   int NumGQPoints_ContourIntegral(void) const {return NUMBER_OF_GQP_CONTOURINT * N_SubIntervals; }
+  //! Get the number of Gauss quadrature points used for contour integration along each subinterval
+  static const int& get_NumGQPoints_ContourIntegral(void) {return NUMBER_OF_GQP_CONTOURINT; }
 
   //! Get the array of subinterval length
   const double* IntLength(void) const {return SubIntervalLength; }
@@ -192,7 +194,7 @@ public:
 
   //! Integrate the desired function with respect to the y-coordinate along the contour of this spline interval.
   template<typename FO, class ReturnType>
-  ReturnType IntegrateFunctionWithRespectToY(const FO FuncObj, ReturnType _dummy_param);
+  ReturnType IntegrateFunctionWithRespectToY(FO FuncObj, ReturnType _dummy_param) const;
   //@}
 
   //! @name Set the number of Gauss quadrature points for contour integration
@@ -389,7 +391,7 @@ inline void Spline2DInterval_HO::UpdateInterval(const Spline2D_HO & SupportCurve
  * be function only of the 2D Cartesian coordinates.
  */
 template<typename FO, class ReturnType> inline
-ReturnType Spline2DInterval_HO::IntegrateFunctionWithRespectToY(const FO FuncObj, ReturnType _dummy_param){
+ReturnType Spline2DInterval_HO::IntegrateFunctionWithRespectToY(FO FuncObj, ReturnType _dummy_param) const {
 
   ReturnType Result(0.0);
 

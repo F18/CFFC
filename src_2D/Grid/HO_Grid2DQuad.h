@@ -1760,6 +1760,25 @@ inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceN(const int &ii, const i
     GQPoints[2] = Node[ii+1][jj+1].X + GaussQuadratureData::GQ3_Abscissa[2]*GQPoints[2];
     break;
 
+  case 5:
+    GQPoints[0] = GQPoints[1] = GQPoints[2] = GQPoints[3] = GQPoints[4] = Node[ii][jj+1].X-Node[ii+1][jj+1].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = Node[ii+1][jj+1].X + GaussQuadratureData::GQ5_Abscissa[0]*GQPoints[0];
+   
+    /* final value GQPoints[1] */
+    GQPoints[1] = Node[ii+1][jj+1].X + GaussQuadratureData::GQ5_Abscissa[1]*GQPoints[1];
+
+    /* final value GQPoints[2] */
+    GQPoints[2] = Node[ii+1][jj+1].X + GaussQuadratureData::GQ5_Abscissa[2]*GQPoints[2];
+
+    /* final value GQPoints[3] */
+    GQPoints[3] = Node[ii+1][jj+1].X + GaussQuadratureData::GQ5_Abscissa[3]*GQPoints[3];
+
+    /* final value GQPoints[4] */
+    GQPoints[4] = Node[ii+1][jj+1].X + GaussQuadratureData::GQ5_Abscissa[4]*GQPoints[4];
+    break;
+
   default:
     throw runtime_error("Grid2D_Quad_Block_HO::getGaussQuadPointsFaceN() ERROR! \
                          Not implemented number of Gauss quadrature points!");
@@ -1804,6 +1823,25 @@ inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceS(const int &ii, const i
 
     /* final value GQPoints[2] */
     GQPoints[2] = Node[ii][jj].X + GaussQuadratureData::GQ3_Abscissa[2]*GQPoints[2];
+    break;
+
+  case 5:
+    GQPoints[0] = GQPoints[1] = GQPoints[2] = GQPoints[3] = GQPoints[4] = Node[ii+1][jj].X-Node[ii][jj].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = Node[ii][jj].X + GaussQuadratureData::GQ5_Abscissa[0]*GQPoints[0];
+    
+    /* final value GQPoints[1] */
+    GQPoints[1] = Node[ii][jj].X + GaussQuadratureData::GQ5_Abscissa[1]*GQPoints[1];
+
+    /* final value GQPoints[2] */
+    GQPoints[2] = Node[ii][jj].X + GaussQuadratureData::GQ5_Abscissa[2]*GQPoints[2];
+
+    /* final value GQPoints[3] */
+    GQPoints[3] = Node[ii][jj].X + GaussQuadratureData::GQ5_Abscissa[3]*GQPoints[3];
+
+    /* final value GQPoints[4] */
+    GQPoints[4] = Node[ii][jj].X + GaussQuadratureData::GQ5_Abscissa[4]*GQPoints[4];
     break;
 
   default:
@@ -1852,6 +1890,25 @@ inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceE(const int &ii, const i
     GQPoints[2] = Node[ii+1][jj].X + GaussQuadratureData::GQ3_Abscissa[2]*GQPoints[2];
     break;
 
+  case 5:
+    GQPoints[0] = GQPoints[1] = GQPoints[2] = GQPoints[3] = GQPoints[4] = Node[ii+1][jj+1].X-Node[ii+1][jj].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = Node[ii+1][jj].X + GaussQuadratureData::GQ5_Abscissa[0]*GQPoints[0];
+    
+    /* final value GQPoints[1] */
+    GQPoints[1] = Node[ii+1][jj].X + GaussQuadratureData::GQ5_Abscissa[1]*GQPoints[1];
+
+    /* final value GQPoints[2] */
+    GQPoints[2] = Node[ii+1][jj].X + GaussQuadratureData::GQ5_Abscissa[2]*GQPoints[2];
+
+    /* final value GQPoints[3] */
+    GQPoints[3] = Node[ii+1][jj].X + GaussQuadratureData::GQ5_Abscissa[3]*GQPoints[3];
+
+    /* final value GQPoints[4] */
+    GQPoints[4] = Node[ii+1][jj].X + GaussQuadratureData::GQ5_Abscissa[4]*GQPoints[4];
+    break;
+
   default:
     throw runtime_error("Grid2D_Quad_Block_HO::getGaussQuadPointsFaceE() ERROR! \
                          Not implemented number of Gauss quadrature points!");
@@ -1896,6 +1953,25 @@ inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceW(const int &ii, const i
 
     /* final value GQPoints[2] */
     GQPoints[2] = Node[ii][jj+1].X + GaussQuadratureData::GQ3_Abscissa[2]*GQPoints[2];
+    break;
+
+  case 5:
+    GQPoints[0] = GQPoints[1] = GQPoints[2] = GQPoints[3] = GQPoints[4] = Node[ii][jj].X-Node[ii][jj+1].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = Node[ii][jj+1].X + GaussQuadratureData::GQ5_Abscissa[0]*GQPoints[0];
+    
+    /* final value GQPoints[1] */
+    GQPoints[1] = Node[ii][jj+1].X + GaussQuadratureData::GQ5_Abscissa[1]*GQPoints[1];
+
+    /* final value GQPoints[2] */
+    GQPoints[2] = Node[ii][jj+1].X + GaussQuadratureData::GQ5_Abscissa[2]*GQPoints[2];
+
+    /* final value GQPoints[3] */
+    GQPoints[3] = Node[ii][jj+1].X + GaussQuadratureData::GQ5_Abscissa[3]*GQPoints[3];
+
+    /* final value GQPoints[4] */
+    GQPoints[4] = Node[ii][jj+1].X + GaussQuadratureData::GQ5_Abscissa[4]*GQPoints[4];
     break;
 
   default:
@@ -2646,5 +2722,13 @@ inline bool Grid2D_Quad_Block_HO::IsNorthBoundaryReconstructionConstrained(void)
     return true;
   }
 }
+
+
+
+/* ---------------------------------------------------------------------------------------------- 
+ * ===============        INCLUDE TEMPLATE SPECIALIZATIONS FOR THIS CLASS      ==================
+ * ---------------------------------------------------------------------------------------------*/
+#include "HO_Grid2DQuad_Specializations.h"
+
 
 #endif /* _GRID2D_QUAD_BLOCK_INCLUDED  */

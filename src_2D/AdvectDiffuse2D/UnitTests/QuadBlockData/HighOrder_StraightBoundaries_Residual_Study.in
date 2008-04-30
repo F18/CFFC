@@ -16,22 +16,22 @@
 Flow_Geometry_Type = 
 		Planar
 Grid_Type =
-       Annulus
-Cylinder_Radius =
-       2.0
-Cylinder_Radius2 =
-       4.0
-Annulus_Start_Angle =
-       0.0
-Annulus_End_Angle = 
-       90.0
-X_Shift =
-       0.0 4.0
+       Deformed_Box
+VertexSW =
+   2.0 1.0
+VertexSE =
+   3.8 -1.8
+VertexNE =
+   3.3 5.6
+VertexNW =
+   2.3 3.8
+X_Shift = 
+   0.0 4.0
 
 High_Order_Boundary =
               On
 Gauss_Points_For_Boundary_Integration =
-              3
+              5
 
 	###############################
 	#  VELOCITY FIELD PARAMETERS  #

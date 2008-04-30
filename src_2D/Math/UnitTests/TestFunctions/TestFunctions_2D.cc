@@ -49,13 +49,15 @@ double Test_Example1 (double x, double y) {
 double Test_Example1_Integral (double x1, double x2, double y1, double y2) {
   assert((x1<x2)&&(y1<y2));
   double f;
-  //f = 1.0/3.0*((pow(x2,3) - pow(x1,3))*(y2-y1) +(x2-x1)*(pow(y2,3) - pow(y1,3)));
-  // for x^2+y^2 
 
   f = 1.0/3.0*(x2-x1)*(pow(y2,3)-pow(y1,3)) + 0.25*(x2*x2-x1*x1)*(y2*y2-y1*y1) + 
     1.0/3.0*(pow(x2,3)- pow(x1,3))*(y2-y1);
 
   return f;
+}
+
+double Test_Example1_XDependencyIntegrated(double x, double y) {
+  return x*x*x/3.0 + y*y*x + 0.5*y*x*x;
 }
 
 /**********************************************************************

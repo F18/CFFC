@@ -128,6 +128,9 @@ namespace tut
 
     Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
     Grid2D_Quad_Block_HO::setNoSpecialTreatmentForNumericalError();
+    // Set 3-point Gauss integration
+    Spline2DInterval_HO::setThreePointGaussQuadContourIntegration();
+
     Tecplot_Execution_Mode::SetDefaults();
     HighOrder2D_Input::SetDefaults();
   }

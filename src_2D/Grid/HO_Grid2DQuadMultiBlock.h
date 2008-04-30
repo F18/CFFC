@@ -145,6 +145,22 @@ public:
 			    const int Number_of_Ghost_Cells,
 			    const int Highest_Order_of_Reconstruction);
 
+  void Grid_Deformed_Box(int &_Number_of_Blocks_Idir_,
+			 int &_Number_of_Blocks_Jdir_,
+			 const Vector2D &VertexSW,
+			 const Vector2D &VertexSE,
+			 const Vector2D &VertexNE,
+			 const Vector2D &VertexNW,					
+			 const int Stretching_Flag,
+			 const int Stretching_Type_Idir,
+			 const int Stretching_Type_Jdir,
+			 const double &Stretching_Factor_Idir,
+			 const double &Stretching_Factor_Jdir,
+			 const int Number_of_Cells_Idir,
+			 const int Number_of_Cells_Jdir,
+			 const int Number_of_Ghost_Cells,
+			 const int Highest_Order_of_Reconstruction);
+
   void Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
 		       int &_Number_of_Blocks_Jdir_,
 		       const double &Length,
@@ -1549,6 +1565,47 @@ inline void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Bloc
   
   /* Update geometric properties of multi-block quadrilateral mesh cells. */
   Update_All_Cells();
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Deformed_Box(int &_Number_of_Blocks_Idir_,
+							 int &_Number_of_Blocks_Jdir_,
+							 const Vector2D &VertexSW,
+							 const Vector2D &VertexSE,
+							 const Vector2D &VertexNE,
+							 const Vector2D &VertexNW,					
+							 const int Stretching_Flag,
+							 const int Stretching_Type_Idir,
+							 const int Stretching_Type_Jdir,
+							 const double &Stretching_Factor_Idir,
+							 const double &Stretching_Factor_Jdir,
+							 const int Number_of_Cells_Idir,
+							 const int Number_of_Cells_Jdir,
+							 const int Number_of_Ghost_Cells,
+							 const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Deformed_Box_Without_Update(_Number_of_Blocks_Idir_,
+				   _Number_of_Blocks_Jdir_,
+				   VertexSW,
+				   VertexSE,
+				   VertexNE,
+				   VertexNW,		
+				   Stretching_Flag,
+				   Stretching_Type_Idir,
+				   Stretching_Type_Jdir,
+				   Stretching_Factor_Idir,
+				   Stretching_Factor_Jdir,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
 }
 
 inline void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
