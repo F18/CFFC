@@ -69,6 +69,213 @@ namespace tut
      Obs: "ConditionName" is optional
   */
 
+  /* Test 1:*/
+  template<>
+  template<>
+  void BGK1DVector_object::test<1>()
+  {
+    set_test_name("Copy Constructor");
+
+    int i(0);
+    BGK1D_Vector V1;
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      //set to a value for copy constructor test
+      V1[i] = pow((double)i,1.23456) / 98.765;
+    }
+
+    BGK1D_Vector V2(V1);
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      ensure_distance("V2=V1",V2[i],V1[i],fabs(V1[i])*tol);
+    }
+
+  }
+
+  /* Test 2:*/
+  template<>
+  template<>
+  void BGK1DVector_object::test<2>()
+  {
+    set_test_name("Assignment Operator");
+
+    int i(0);
+    BGK1D_Vector V1, V2, V3;
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      V1[i] = pow((double)i,1.23456) / 98.765;
+    }
+
+    V3 = V2 = V1;
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      ensure_distance("V2=V1",V2[i],V1[i],fabs(V1[i])*tol);
+      ensure_distance("V3=V1",V3[i],V1[i],fabs(V1[i])*tol);
+    }
+  }
+
+  /* Test 3:*/
+  template<>
+  template<>
+  void BGK1DVector_object::test<3>()
+  {
+    set_test_name("Addition Operator");
+
+    int i(0);
+    double a(0.0), b(0.0);
+    BGK1D_Vector V1, V2, V3;
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      V1[i] = a;
+      V2[i] = b;
+    }
+
+    V3 = V1 + V2;
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      ensure_distance("V3 = V1 + V2", V3[i], a+b, fabs(a+b)*tol);
+    }
+  }
+
+  /* Test 4:*/
+  template<>
+  template<>
+  void BGK1DVector_object::test<4>()
+  {
+    set_test_name("Addition and Assignment Operator");
+
+    int i(0);
+    double a(0.0), b(0.0);
+    BGK1D_Vector V1, V2, V3;
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      V1[i] = a;
+      V2[i] = b;
+    }
+
+    V3 = (V2 += V1);
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+
+      ensure_distance("V2 += V1",V2[i],a+b,fabs(a+b)*tol);
+      ensure_distance("V3 = (V2+=V1)",V3[i],a+b,fabs(a+b)*tol);
+    }
+  }
+
+  /* Test 5:*/
+  template<>
+  template<>
+  void BGK1DVector_object::test<5>()
+  {
+    set_test_name("Subtraction Operator");
+
+    int i(0);
+    double a(0.0), b(0.0);
+    BGK1D_Vector V1, V2, V3;
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      V1[i] = a;
+      V2[i] = b;
+    }
+
+    V3 = V1 - V2;
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      ensure_distance("V3 = V1 - V2", V3[i], a-b, fabs(a-b)*tol);
+    }
+  }
+
+  /* Test 6:*/
+  template<>
+  template<>
+  void BGK1DVector_object::test<6>()
+  {
+    set_test_name("Subtraction and Assignment Operator");
+
+    int i(0);
+    double a(0.0), b(0.0);
+    BGK1D_Vector V1, V2, V3;
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      V1[i] = a;
+      V2[i] = b;
+    }
+
+    V3 = (V2 -= V1);
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+
+      ensure_distance("V2 -= V1",V2[i],b-a,fabs(b-a)*tol);
+      ensure_distance("V3 = (V2-=V1)",V3[i],b-a,fabs(b-a)*tol);
+    }
+  }
+
+  /* Test 7:*/
+  template<>
+  template<>
+  void BGK1DVector_object::test<7>()
+  {
+    set_test_name("Dot Product Operator");
+
+    int i(0);
+    double a(0.0), b(0.0), dot(0.0), dot_levermore(0.0);
+    BGK1D_Vector V1, V2;
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      dot += (a*b);
+      V1[i] = a;
+      V2[i] = b;
+    }
+
+    dot_levermore = V1 * V2;
+    ensure_distance("dot_prod = V1*V2)", dot_levermore, dot, fabs(dot)*tol);
+    dot_levermore = V2 * V1;
+    ensure_distance("dot_prod = V2*V1)", dot_levermore, dot, fabs(dot)*tol);
+
+  }
+
+  /* Test 8:*/
+  template<>
+  template<>
+  void BGK1DVector_object::test<8>()
+  {
+    set_test_name("zero and one functions");
+    int i(0);
+    BGK1D_Vector V1, V2;
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      V1[i] = pow((double)(i+1),1.23456) / 98.765;
+      V2[i] = pow((double)(i+1),1.23456) / 98.765;
+      ensure("V1!=0.0", V1[i] != 0.0);
+      ensure("V2!=1.0", V2[i] != 1.0);
+    }
+
+    V1.zero();
+    V2.one();
+
+    for(i=0;i<BGK1D_Vector::get_length();++i) {
+      ensure_distance("V1 == 0.0",V1[i],0.0,tol);
+      ensure_distance("V2 == 1.0",V2[i],1.0,tol);
+    }
+  }
 
 
   //end tests

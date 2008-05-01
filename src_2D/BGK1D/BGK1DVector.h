@@ -37,6 +37,10 @@ class BGK1D_Vector : public ColumnVector {
   BGK1D_Vector(const BGK1D_Vector &B) : ColumnVector(B) {}
   BGK1D_Vector(const ColumnVector &C) : ColumnVector(C) {}
 
+  /* Assignment operators */
+  ColumnVector& operator=(const ColumnVector &V) {return ColumnVector::operator=(V);}
+  ColumnVector& operator=(const BGK1D_Vector &V) {return ColumnVector::operator=(V);}
+
   /* Static Functions */
   static void set_length(int l){
     //ensure length has not previously been set
