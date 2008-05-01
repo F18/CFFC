@@ -3,3 +3,6 @@
 
 /* define useful constants for tests */
 #define BGK1D_TEST_VECTOR_LENGTH    50
+#define BGK1D_TEST_VECTOR_V_MIN    -1000.0
+#define BGK1D_TEST_VECTOR_V_MAX     1000.0
+

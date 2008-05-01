@@ -24,8 +24,10 @@ namespace tut
 
     // Constructor
     Data_BGK1DVector(){
-      if(!BGK1D_Vector::length_is_set())
-	BGK1D_Vector::set_length(BGK1D_TEST_VECTOR_LENGTH);
+      if(!BGK1D_Vector::setup_done())
+	BGK1D_Vector::setup(BGK1D_TEST_VECTOR_LENGTH,
+			    BGK1D_TEST_VECTOR_V_MIN,
+			    BGK1D_TEST_VECTOR_V_MAX);
     }
 
   private:
@@ -127,7 +129,7 @@ namespace tut
 
     for(i=0;i<BGK1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i);
       V1[i] = a;
       V2[i] = b;
     }
@@ -136,7 +138,7 @@ namespace tut
 
     for(i=0;i<BGK1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i);
       ensure_distance("V3 = V1 + V2", V3[i], a+b, fabs(a+b)*tol);
     }
   }
@@ -154,7 +156,7 @@ namespace tut
 
     for(i=0;i<BGK1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i);
       V1[i] = a;
       V2[i] = b;
     }
@@ -163,7 +165,7 @@ namespace tut
 
     for(i=0;i<BGK1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i);
 
       ensure_distance("V2 += V1",V2[i],a+b,fabs(a+b)*tol);
       ensure_distance("V3 = (V2+=V1)",V3[i],a+b,fabs(a+b)*tol);
@@ -183,7 +185,7 @@ namespace tut
 
     for(i=0;i<BGK1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i);
       V1[i] = a;
       V2[i] = b;
     }
@@ -192,8 +194,8 @@ namespace tut
 
     for(i=0;i<BGK1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
-      ensure_distance("V3 = V1 - V2", V3[i], a-b, fabs(a-b)*tol);
+      b = sqrt((double)i);
+      ensure_distance("V3 = V1 - V2", V3[i], a-b, max(fabs(a), fabs(b))*tol);
     }
   }
 
@@ -210,7 +212,7 @@ namespace tut
 
     for(i=0;i<BGK1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i);
       V1[i] = a;
       V2[i] = b;
     }
@@ -219,10 +221,10 @@ namespace tut
 
     for(i=0;i<BGK1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i);
 
-      ensure_distance("V2 -= V1",V2[i],b-a,fabs(b-a)*tol);
-      ensure_distance("V3 = (V2-=V1)",V3[i],b-a,fabs(b-a)*tol);
+      ensure_distance("V2 -= V1",V2[i],b-a,max(fabs(b),fabs(a))*tol);
+      ensure_distance("V3 = (V2-=V1)",V3[i],b-a,max(fabs(b),fabs(a))*tol);
     }
   }
 
@@ -239,7 +241,7 @@ namespace tut
 
     for(i=0;i<BGK1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i);
       dot += (a*b);
       V1[i] = a;
       V2[i] = b;
@@ -276,6 +278,28 @@ namespace tut
       ensure_distance("V2 == 1.0",V2[i],1.0,tol);
     }
   }
+
+  /* Test 9:*/
+  template<>
+  template<>
+  void BGK1DVector_object::test<9>()
+  {
+    set_test_name("Check velocity space setup");
+
+    double v, delta_v;
+    BGK1D_Vector V;
+
+    delta_v = (BGK1D_TEST_VECTOR_V_MAX-BGK1D_TEST_VECTOR_V_MIN)/(double)(BGK1D_TEST_VECTOR_LENGTH);
+    v = BGK1D_TEST_VECTOR_V_MIN+(delta_v/2.0);
+
+    for(int i=0;i<BGK1D_Vector::get_length();++i) {
+      ensure_distance("v = v",V.velocity(i),v,1e-12*fabs(v));
+      v += delta_v;
+    }
+
+  }
+
+
 
 
   //end tests

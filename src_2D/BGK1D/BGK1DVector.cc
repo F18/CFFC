@@ -9,5 +9,6 @@ int BGK1D_Vector::m_length = -1; //default value of -1
                                  //the length (which must be 
                                  //constant throughout the simulation).
 
-int BGK1D_Vector::m_length_set = 0;
+int BGK1D_Vector::m_set = 0;
 
+ColumnVector BGK1D_Vector::m_velocities = ColumnVector();
