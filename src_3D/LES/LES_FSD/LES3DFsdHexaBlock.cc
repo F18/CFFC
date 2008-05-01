@@ -2641,3 +2641,209 @@ Update_Solution_Multistage_Explicit(const int i_stage,
 
 }
 
+/********************************************************
+ * Routine: Linear_Reconstruction_LeastSquares          *
+ *                                                      *
+ * Performs the reconstruction of a limited piecewise   *
+ * linear solution state within a given cell (i,j,k) of *
+ * the computational mesh for the specified             *
+ * Hexahedral solution block.  A least squares          *
+ * approach is used in the evaluation of the unlimited  *
+ * solution gradients.  Several slope limiters may be   *
+ * used.                                                *
+ *                                                      *
+ ********************************************************/
+template<>
+void Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::
+Linear_Reconstruction_LeastSquares(const int i,
+				   const int j,
+				   const int k,
+				   const int Limiter) {      
+  
+
+  int n, n2, n_pts, i_index[26], j_index[26], k_index[26];
+
+  if (i ==  ICl- Nghost || i ==  ICu+ Nghost ||
+      j ==  JCl- Nghost || j ==  JCu+ Nghost ||
+      k ==  KCl- Nghost || k ==  KCu+ Nghost) {
+    n_pts = 0;
+  } else {
+    n_pts = 26;
+    // k plane
+    i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
+    i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
+    i_index[2] = i+1; j_index[2] = j-1; k_index[2] = k;
+    i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k;
+    i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k;
+    i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k;
+    i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k;
+    i_index[7] = i+1; j_index[7] = j+1; k_index[7] = k;
+    //k-1 plane
+    i_index[8] = i-1; j_index[8] = j-1; k_index[8] = k-1;
+    i_index[9] = i  ; j_index[9] = j-1; k_index[9] = k-1;
+    i_index[10] = i+1; j_index[10] = j-1; k_index[10] = k-1;
+    i_index[11] = i-1; j_index[11] = j  ; k_index[11] = k-1;
+    i_index[12] = i  ; j_index[12] = j  ; k_index[12] = k-1;
+    i_index[13] = i+1; j_index[13] = j  ; k_index[13] = k-1;
+    i_index[14] = i-1; j_index[14] = j+1; k_index[14] = k-1;
+    i_index[15] = i  ; j_index[15] = j+1; k_index[15] = k-1;
+    i_index[16] = i+1; j_index[16] = j+1; k_index[16] = k-1;
+    //k+1 plane
+    i_index[17] = i-1; j_index[17] = j-1; k_index[17] = k+1;
+    i_index[18] = i  ; j_index[18] = j-1; k_index[18] = k+1;
+    i_index[19] = i+1; j_index[19] = j-1; k_index[19] = k+1;
+    i_index[20] = i-1; j_index[20] = j  ; k_index[20] = k+1;
+    i_index[21] = i  ; j_index[21] = j  ; k_index[21] = k+1;
+    i_index[22] = i+1; j_index[22] = j  ; k_index[22] = k+1;
+    i_index[23] = i-1; j_index[23] = j+1; k_index[23] = k+1;
+    i_index[24] = i  ; j_index[24] = j+1; k_index[24] = k+1;
+    i_index[25] = i+1; j_index[25] = j+1; k_index[25] = k+1;
+  } /* endif */
+     
+  if (n_pts > 0) {
+     
+    double u0Min, u0Max, uHexa[6], PHI;
+    double DxDx_ave(ZERO), DxDy_ave(ZERO), DyDy_ave(ZERO), 
+           DxDz_ave(ZERO), DyDz_ave(ZERO), DzDz_ave(ZERO);
+
+    LES3DFsd_pState DU, DUDx_ave(ZERO), DUDy_ave(ZERO), DUDz_ave(ZERO);
+    Vector3D dX;
+
+    int num_vars = NumVar(); 
+     
+    for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
+      dX =  Grid.Cell[ i_index[n2] ][ j_index[n2] ][ k_index[n2] ].Xc -
+	Grid.Cell[i][j][k].Xc;
+
+      DU =  W[ i_index[n2] ][ j_index[n2] ][ k_index[n2] ] -  W[i][j][k];
+         
+      DUDx_ave += DU*dX.x;
+      DUDy_ave += DU*dX.y;
+      DUDz_ave += DU*dX.z;
+      DxDx_ave += dX.x*dX.x;
+      DxDy_ave += dX.x*dX.y;
+      DxDz_ave += dX.x*dX.z;
+      DyDy_ave += dX.y*dX.y;
+      DyDz_ave += dX.y*dX.z;
+      DzDz_ave += dX.z*dX.z;
+         
+    } /* endfor */
+      
+    DUDx_ave = DUDx_ave/n_pts;
+    DUDy_ave = DUDy_ave/n_pts;
+    DUDz_ave = DUDz_ave/n_pts;
+    DxDx_ave /= n_pts;
+    DxDy_ave /= n_pts;
+    DxDz_ave /= n_pts;
+    DyDy_ave /= n_pts;
+    DyDz_ave /= n_pts;
+    DzDz_ave /= n_pts;
+      
+    // (1) Either write a linear solver for 3x3 linear system
+    // (2) Or simplely use cramer's rule for this simple system
+
+    double D( DxDx_ave*(DyDy_ave*DzDz_ave - DyDz_ave*DyDz_ave) +
+	      DxDy_ave*(DxDz_ave*DyDz_ave - DxDy_ave*DzDz_ave) +
+	      DxDz_ave*(DxDy_ave*DyDz_ave - DxDz_ave*DyDy_ave) );
+      
+    LES3DFsd_pState D1( DUDx_ave*(DyDy_ave*DzDz_ave - DyDz_ave*DyDz_ave) +
+			DUDy_ave*(DxDz_ave*DyDz_ave - DxDy_ave*DzDz_ave) +
+			DUDz_ave*(DxDy_ave*DyDz_ave - DxDz_ave*DyDy_ave) );
+      
+    LES3DFsd_pState D2( DxDx_ave*(DUDy_ave*DzDz_ave - DUDz_ave*DyDz_ave) +
+			DxDy_ave*(DxDz_ave*DUDz_ave - DUDx_ave*DzDz_ave) +
+			DxDz_ave*(DUDx_ave*DyDz_ave - DxDz_ave*DUDy_ave) );
+
+    LES3DFsd_pState D3( DxDx_ave*(DyDy_ave*DUDz_ave - DyDz_ave*DUDy_ave) +
+			DxDy_ave*(DUDx_ave*DyDz_ave - DxDy_ave*DUDz_ave) +
+			DxDz_ave*(DxDy_ave*DUDy_ave - DUDx_ave*DyDy_ave) );
+
+    dWdx[i][j][k] = D1/D;
+    dWdy[i][j][k] = D2/D;
+    dWdz[i][j][k] = D3/D;
+      
+    
+    if (! Freeze_Limiter) {
+      for ( n = 1 ; n <= num_vars ; ++n ) {
+            
+	u0Min =  W[i][j][k][n];
+	u0Max = u0Min;
+	for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
+	  u0Min = min(u0Min,
+		      W[ i_index[n2] ][ j_index[n2] ][ k_index[n2] ][n]);
+	  u0Max = max(u0Max,
+		      W[ i_index[n2] ][ j_index[n2] ][ k_index[n2] ][n]);
+	} /* endfor */
+            
+	dX =  Grid.xfaceE(i, j, k)- Grid.Cell[i][j][k].Xc;
+	uHexa[0] =  W[i][j][k][n] +
+	  dWdx[i][j][k][n]*dX.x +
+	  dWdy[i][j][k][n]*dX.y +
+	  dWdz[i][j][k][n]*dX.z ;
+	dX =  Grid.xfaceW(i, j, k)- Grid.Cell[i][j][k].Xc;
+	uHexa[1] =  W[i][j][k][n] +
+	  dWdx[i][j][k][n]*dX.x +
+	  dWdy[i][j][k][n]*dX.y +
+	  dWdz[i][j][k][n]*dX.z ;
+	dX =  Grid.xfaceN(i, j, k)- Grid.Cell[i][j][k].Xc;
+	uHexa[2] =  W[i][j][k][n] +
+	  dWdx[i][j][k][n]*dX.x +
+	  dWdy[i][j][k][n]*dX.y +
+	  dWdz[i][j][k][n]*dX.z ;
+	dX =  Grid.xfaceS(i, j, k)- Grid.Cell[i][j][k].Xc;
+	uHexa[3] =  W[i][j][k][n] +
+	  dWdx[i][j][k][n]*dX.x +
+	  dWdy[i][j][k][n]*dX.y +
+	  dWdz[i][j][k][n]*dX.z ;
+	dX =  Grid.xfaceTop(i, j, k)- Grid.Cell[i][j][k].Xc;
+	uHexa[4] =  W[i][j][k][n] +
+	  dWdx[i][j][k][n]*dX.x +
+	  dWdy[i][j][k][n]*dX.y +
+	  dWdz[i][j][k][n]*dX.z ;
+	dX =  Grid.xfaceBot(i, j, k)- Grid.Cell[i][j][k].Xc;
+	uHexa[5] =  W[i][j][k][n] +
+	  dWdx[i][j][k][n]*dX.x +
+	  dWdy[i][j][k][n]*dX.y +
+	  dWdz[i][j][k][n]*dX.z ;
+	    
+	switch(Limiter) {
+	case LIMITER_ONE :
+	  PHI = ONE;
+	  break;
+	case LIMITER_ZERO :
+	  PHI = ZERO;
+	  break;
+	case LIMITER_BARTH_JESPERSEN :
+	  PHI = Limiter_BarthJespersen(uHexa,  W[i][j][k][n],
+				       u0Min, u0Max, 6);
+	  break;
+	case LIMITER_VENKATAKRISHNAN :
+	  PHI = Limiter_Venkatakrishnan(uHexa,  W[i][j][k][n],
+					u0Min, u0Max, 6);
+	  break;
+	case LIMITER_VANLEER :
+	  PHI = Limiter_VanLeer(uHexa,  W[i][j][k][n],
+				u0Min, u0Max, 6);
+	  break;
+	case LIMITER_VANALBADA :
+	  PHI = Limiter_VanAlbada(uHexa,  W[i][j][k][n],
+				  u0Min, u0Max, 6);
+	  break;
+	default:
+	  PHI = Limiter_BarthJespersen(uHexa,  W[i][j][k][n],
+				       u0Min, u0Max, 6);
+	  break;
+	}// endswitch
+	    
+	phi[i][j][k][n] = PHI;
+                        
+      } /* endfor */
+    } /* endif */
+  } else {
+    dWdx[i][j][k].Vacuum();
+    dWdy[i][j][k].Vacuum();
+    dWdz[i][j][k].Vacuum();
+    phi[i][j][k].Vacuum();
+  } /* endif */
+    
+}

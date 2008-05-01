@@ -1041,6 +1041,12 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
    //! Shortcut subtraction operator
    LES3DFsd_pState& operator -=(const LES3DFsd_pState &W);
   
+   //! Shortcut multiplication operator
+   LES3DFsd_pState& operator *=(const double &a);
+
+   //! Shortcut division operator
+   LES3DFsd_pState& operator /=(const double &a);
+
    //! Equal relational operator
    friend int operator ==(const LES3DFsd_pState &W1,
                           const LES3DFsd_pState &W2);
@@ -1388,6 +1394,12 @@ class LES3DFsd_cState : public NavierStokes3D_ThermallyPerfect_cState {
    //! Shortcut subtraction operator
    LES3DFsd_cState& operator -=(const LES3DFsd_cState &U);
   
+   //! Shortcut multiplication operator
+   LES3DFsd_cState& operator *=(const double &a);
+
+   //! Shortcut division operator
+   LES3DFsd_cState& operator /=(const double &a);
+
    //! Equal relational operator
    friend int operator ==(const LES3DFsd_cState &U1,
                           const LES3DFsd_cState &U2);
@@ -1597,6 +1609,32 @@ inline LES3DFsd_pState& LES3DFsd_pState::operator -=(const LES3DFsd_pState &W) {
       spec[i].c -= W.spec[i].c;
    } /* endfor */
    return (*this); 
+}
+
+inline LES3DFsd_pState& LES3DFsd_pState::operator *=(const double &a) {
+   rho *= a;
+   v.x *= a;  v.y *= a;  v.z *= a; 
+   p *= a;
+   C *= a;
+   Fsd *= a;
+   k *= a;
+   for (int i = 0; i < ns; ++i) {
+      spec[i].c *= a;
+   } /* endfor */
+   return (*this);
+}
+
+inline LES3DFsd_pState& LES3DFsd_pState::operator /=(const double &a) {
+   rho /= a;
+   v.x /= a;  v.y /= a;  v.z /= a; 
+   p /= a;
+   C /= a;
+   Fsd /= a;
+   k /= a;
+   for (int i = 0; i < ns; ++i) {
+     spec[i].c /= a;
+   } /* endfor */
+   return (*this);
 }
 
 /*****************************************************
@@ -1867,6 +1905,32 @@ inline LES3DFsd_cState& LES3DFsd_cState::operator -=(const LES3DFsd_cState &U) {
      rhospec[i].c -= U.rhospec[i].c;
    } /* endfor */
    return (*this); 
+}
+
+inline LES3DFsd_cState& LES3DFsd_cState::operator *=(const double  &a) {
+   rho *= a;
+   rhov.x *= a;  rhov.y *= a;  rhov.z *= a;
+   E *= a;
+   rhoC *= a;
+   rhoFsd *= a;
+   rhok *= a;
+   for (int i = 0; i < ns; ++i) {
+      rhospec[i].c *= a;
+   } /* endfor */
+   return (*this);
+}
+
+inline LES3DFsd_cState& LES3DFsd_cState::operator /=(const double  &a) {
+   rho /= a;
+   rhov.x /= a;  rhov.y /= a;  rhov.z /= a;
+   E /= a;
+   rhoC /= a;
+   rhoFsd /= a;
+   rhok /= a;
+   for (int i = 0; i < ns; ++i) {
+      rhospec[i].c /= a;
+   } /* endfor */
+   return (*this);
 }
 
 /***************************************************

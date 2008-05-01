@@ -93,6 +93,13 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                                     Input_Parameters<LES3DFsd_pState,
                                                      LES3DFsd_cState> &IPs);
 
+template<>
+void Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::
+Linear_Reconstruction_LeastSquares(const int i,
+				   const int j,
+				   const int k,
+				   const int Limiter);
+
 class HexaBlock_Node : public Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> {
 
   public:

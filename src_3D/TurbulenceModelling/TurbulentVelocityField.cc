@@ -54,17 +54,6 @@ void Turbulent_Velocity_Field_Block::LeastSquares_Reconstruction(const int &i,
     DyDz_ave /= n_pts;
     DzDz_ave /= n_pts;
 
-//       DUDx_ave = DUDx_ave/double(n_pts);
-//       DUDy_ave = DUDy_ave/double(n_pts);
-//       DUDz_ave = DUDz_ave/double(n_pts);
-//       DxDx_ave = DxDx_ave/double(n_pts);
-//       DxDy_ave = DxDy_ave/double(n_pts);
-//       DxDz_ave = DxDz_ave/double(n_pts);
-//       DyDy_ave = DyDy_ave/double(n_pts);
-//       DyDz_ave = DyDz_ave/double(n_pts);
-//       DzDz_ave = DzDz_ave/double(n_pts);
-     
-   
     // use cramer's rule for this simple system
 
     double D( DxDx_ave*(DyDy_ave*DzDz_ave - DyDz_ave*DyDz_ave) +
