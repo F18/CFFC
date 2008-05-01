@@ -34,6 +34,7 @@ EOS_DIR = EquationOfState/
 EULER_1D_DIR = Euler1D/
 EULER_2D_DIR = Euler2D/
 LEVERMORE_1D_DIR = Levermore1D/
+BGK_1D_DIR = BGK1D/
 GRID_DIR = Grid/
 HIGHTEMP_DIR = HighTemp2D/
 ICEMCFD_DIR = ICEM/
@@ -237,15 +238,39 @@ endif
 
 SRC_LEVERMORE1D_EXE = $(LEVERMORE_1D_DIR)Levermore1DMain.cc
 
-# Levermore 1D:
+# Levermore 1D solver:
 SRC_LEVERMORE1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
                          $(SRC_SYSTEM) $(SRC_LEVERMORE1D) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) \
 	                 $(SRC_HIGH_ORDER_RECONSTRUCTION_1D)\
                          $(SRC_LEVERMORE1D_EXE) $(SRC_MPI) Euler1D/ExactSolutions/ExactSolutions.cc
-
 # Add Unit Testing to Levermore 1D:
 ifeq ($(TUT_TESTING),ON)
   SRC_LEVERMORE1D_SOLVER += $(SRC_TUT)
+endif
+
+# BGK 1D:
+SRC_BGK1D = BGK1DVector.cc
+SRC_BGK1D := $(addprefix $(BGK_1D_DIR), $(SRC_BGK1D))
+
+# Add BGK 1D Testing If Required:
+SRC_BGK1D_TESTS = test_BGK1DVector.cc
+SRC_BGK1D_TESTS := $(addprefix $(BGK_1D_DIR)UnitTests/, $(SRC_BGK1D_TESTS))
+
+ifeq ($(TUT_TESTING),ON)
+  SRC_BGK1D += $(SRC_BGK1D_TESTS)
+endif
+
+SRC_BGK1D_EXE = $(BGK_1D_DIR)BGK1DMain.cc
+
+# BGK 1D solver:
+SRC_BGK1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D)\
+                   $(SRC_SYSTEM) $(SRC_BGK1D) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) \
+	           $(SRC_HIGH_ORDER_RECONSTRUCTION_1D)\
+                   $(SRC_BGK1D_EXE) $(SRC_MPI) Euler1D/ExactSolutions/ExactSolutions.cc
+
+# Add Unit Testing to bgk 1D:
+ifeq ($(TUT_TESTING),ON)
+  SRC_BGK1D_SOLVER += $(SRC_TUT)
 endif
 
 # Advectdiffuse2D:
@@ -480,7 +505,7 @@ SRC_CFFC = $(SRC_BASE) \
            $(SRC_CFD1D_INPUT) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D) $(SRC_MHD1D) \
            $(SRC_ADVECTDIFFUSE) $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_CHEM) $(SRC_HIGHTEMP) \
            $(SRC_DUSTY) $(SRC_LESPREMIXED) $(SRC_GAUSSIAN) $(SRC_ION) $(SRC_ELECTROSTATIC) \
-           $(SRC_RTE) $(SRC_INTERFACE) $(SRC_LEVELSET) $(SRC_LEVERMORE1D)\
+           $(SRC_RTE) $(SRC_INTERFACE) $(SRC_LEVELSET) $(SRC_LEVERMORE1D) $(SRC_BGK1D)\
            $(SRC_TURBULENT) $(SRC_EOS) $(SRC_NASADATA) $(SRC_REACTIONS) $(SRC_SNBCK) $(SRC_ICEMCFD) \
            $(SRC_HIGH_ORDER_RECONSTRUCTION_1D)
 
@@ -518,6 +543,7 @@ OBJ_HEAT = $(SRC_HEAT:.cc=.o)
 OBJ_HYPERHEAT = $(SRC_HYPERHEAT:.cc=.o)
 OBJ_EULER1D = $(SRC_EULER1D:.cc=.o)
 OBJ_LEVERMORE1D = $(SRC_LEVERMORE1D:.cc=.o)
+OBJ_BGK1D = $(SRC_BGK1D:.cc=.o)
 OBJ_MHD1D = $(SRC_MHD1D:.cc=.o)
 OBJ_CFD1D_INPUT := $(SRC_CFD1D_INPUT:.cc=.o)
 
@@ -535,6 +561,11 @@ OBJ_EULER1D_SOLVER := $(patsubst %.cc,%.o, $(filter %.cc, $(SRC_EULER1D_SOLVER))
 OBJ_LEVERMORE1D_SOLVER := $(patsubst %.cc,%.o, $(filter %.cc, $(SRC_LEVERMORE1D_SOLVER))) \
 		          $(patsubst %.c,%.o, $(filter %.c, $(SRC_LEVERMORE1D_SOLVER))) \
 		          $(patsubst %.f,%.o, $(filter %.f, $(SRC_LEVERMORE1D_SOLVER)))
+
+# BGK1D solver objects:
+OBJ_BGK1D_SOLVER := $(patsubst %.cc,%.o, $(filter %.cc, $(SRC_BGK1D_SOLVER))) \
+	            $(patsubst %.c,%.o, $(filter %.c, $(SRC_BGK1D_SOLVER))) \
+                    $(patsubst %.f,%.o, $(filter %.f, $(SRC_BGK1D_SOLVER)))
 
 # Solvers1D solver objects:
 OBJ_SOLVERS1D_SOLVER := $(patsubst %.cc,%.o, $(filter %.cc, $(SRC_SOLVERS1D_SOLVER))) \
@@ -652,6 +683,7 @@ EXE_ICEMCFD_UTIL2 = icemcfd2grid2dquad
 EXE_EULER1D = euler1D
 EXE_SOLVERS1D = solvers1D
 EXE_LEVERMORE1D = levermore1D
+EXE_BGK1D = bgk1D
 EXE_ADVECTDIFFUSE2D = advectdiffuse2D
 EXE_EULER2D = euler2D
 EXE_NAVIERSTOKES2D = navierstokes2D
@@ -687,6 +719,7 @@ help:
 	@echo "|        make euler1D              compile euler1D stand alone program              |"
 	@echo "|        make euler1D-new          compile euler1D program from scratch             |"
 	@echo "|        make levermore1D          compile levermore1D stand alone program          |"
+	@echo "|        make bgk1D                compile bgk1D stand alone program                |"
 	@echo "|        make solvers1D            compile solvers1D stand alone program            |"
 	@echo "|        make solvers1D-new        compile solvers1D program from scratch           |"
 	@echo "|        make advectdiffuse2D      compile advectdiffuse2D stand alone program      |"
@@ -738,7 +771,7 @@ all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
      $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
      $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
      $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-     $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D)
+     $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D) $(EXE_BGK1D)
 	@echo ' '
 	@echo All programs have been brought up to date.
 	@echo '------------------------------------------'
@@ -855,6 +888,17 @@ $(EXE_LEVERMORE1D): $(OBJ_LEVERMORE1D_SOLVER)
 	$(LD) -o $(EXE_LEVERMORE1D) $(OBJ_LEVERMORE1D_SOLVER) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_LEVERMORE1D) has been brought up to date.
+	@echo '---------------------------------------------------'
+	@echo ' '
+
+$(EXE_BGK1D): $(OBJ_BGK1D_SOLVER)
+	@echo ' '
+	@echo Building program $(EXE_BGK1D) for a $(PLATFORM) platform.
+	@echo '-----------------------------------------------------------'
+	@echo ' '
+	$(LD) -o $(EXE_BGK1D) $(OBJ_BGK1D_SOLVER) $(LDFLAGS)
+	@echo ' '
+	@echo Program $(EXE_BGK1D) has been brought up to date.
 	@echo '---------------------------------------------------'
 	@echo ' '
 
@@ -1049,12 +1093,12 @@ install-all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_EULER1D
         $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D)
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D) $(EXE_BGK1D)
 	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_EULER1D) $(EXE_SOLVERS1D) \
         $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D); \
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D) $(EXE_BGK1D); \
 	do \
 	  echo "Installing $$f"; \
 	  cp $$f $(CFFC_BIN_DIR); \
@@ -1077,7 +1121,7 @@ uninstall-all:
         $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D); \
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D) $(EXE_BGK1D); \
 	do \
 	  echo "Uninstalling $$f"; \
 	  cd $(CFFC_BIN_DIR); \
@@ -1137,6 +1181,8 @@ clean:
 	rm -f $(EULER_1D_DIR)*.o $(EULER_1D_DIR)*.il $(EULER_1D_DIR)*~ $(EULER_1D_DIR)*.bak
 	rm -f $(LEVERMORE_1D_DIR)*.o $(LEVERMORE_1D_DIR)*.il $(LEVERMORE_1D_DIR)*~ $(LEVERMORE_1D_DIR)*.bak
 	rm -f $(LEVERMORE_1D_DIR)UnitTests/*.o $(LEVERMORE_1D_DIR)UnitTests/*.il $(LEVERMORE_1D_DIR)UnitTests/*~ $(LEVERMORE_1D_DIR)UnitTests/*.bak
+	rm -f $(BGK_1D_DIR)*.o $(BGK_1D_DIR)*.il $(BGK_1D_DIR)*~ $(BGK_1D_DIR)*.bak
+	rm -f $(BGK_1D_DIR)UnitTests/*.o $(BGK_1D_DIR)UnitTests/*.il $(BGK_1D_DIR)UnitTests/*~ $(BGK_1D_DIR)UnitTests/*.bak
 	rm -f $(EULER_1D_DIR)ExactSolutions/*.o $(EULER_1D_DIR)ExactSolutions/*.il $(EULER_1D_DIR)ExactSolutions/*~ $(EULER_1D_DIR)ExactSolutions/*.bak
 	rm -f $(EULER_1D_DIR)UnitTests/*.o $(EULER_1D_DIR)UnitTests/*.il $(EULER_1D_DIR)UnitTests/*~ $(EULER_1D_DIR)UnitTests/*.bak
 	rm -f $(SOLVERS1D_DIR)*.o $(SOLVERS1D_DIR)*.il $(SOLVERS1D_DIR)*~ $(SOLVERS1D_DIR)*.depend
@@ -1173,6 +1219,7 @@ clean:
 	rm -f $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2)
 	rm -f $(EXE_EULER1D)
 	rm -f $(EXE_LEVERMORE1D)
+	rm -f $(EXE_BGK1D)
 	rm -f $(EXE_SOLVERS1D)
 	rm -f $(EXE_ADVECTDIFFUSE2D)
 	rm -f $(EXE_EULER2D)
@@ -1277,6 +1324,7 @@ ifeq ($(strip $(filter $(MAKECMDGOALS), $(NODEP_LIST)) ), )
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_SOLVERS1D_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_EULER1D_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_LEVERMORE1D_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_BGK1D_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_ADVECTDIFFUSE_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_EULER_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_NAVIERSTOKES_EXE)))

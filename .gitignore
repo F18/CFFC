@@ -62,6 +62,7 @@ tags
 solvers1D
 euler1D
 levermore1D
+bgk1D
 
 # 2D executables
 cffc2D
