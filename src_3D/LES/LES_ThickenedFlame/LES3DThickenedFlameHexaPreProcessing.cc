@@ -57,6 +57,9 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
 	error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Auxiliary_Mesh, 
 										      Data.batch_flag,
 										      Data.Velocity_Field);
+	// the auxiliary mesh is not needed anymore, thus deallocate it
+	Data.Auxiliary_Mesh.Deallocate();
+
       }
 
       if (error_flag) return error_flag;
@@ -338,22 +341,27 @@ int Initialize_Solution_Blocks_Specializations(HexaSolver_Data &Data,
 
   } /* endif */
 
-  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  //---------------------------------------------------------------------
+  // As the primary processor is creating the turbulent velocity field, 
+  // there is no need to broadcast the auxiliary mesh
+  //---------------------------------------------------------------------
+
+//   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
   
-  /* Broadcast the auxiliary mesh to other MPI processors. */
+//   /* Broadcast the auxiliary mesh to other MPI processors. */
 
-  if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER) {
+//   if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER) {
 
-    Solution_Data.Input.Grid_IP.i_Grid = GRID_TURBULENCE_BOX;
-    Data.Auxiliary_Mesh.Broadcast();
-    Solution_Data.Input.Grid_IP.i_Grid = GRID_BUNSEN_BURNER;
+//     Solution_Data.Input.Grid_IP.i_Grid = GRID_TURBULENCE_BOX;
+//     Data.Auxiliary_Mesh.Broadcast();
+//     Solution_Data.Input.Grid_IP.i_Grid = GRID_BUNSEN_BURNER;
 
-  } else if(Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BOX) {
+//   } else if(Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BOX) {
 
-    Solution_Data.Input.Grid_IP.i_Grid = GRID_TURBULENCE_BOX;
-    Data.Auxiliary_Mesh.Broadcast();
-    Solution_Data.Input.Grid_IP.i_Grid = GRID_BUNSEN_BOX;
-  }                  
+//     Solution_Data.Input.Grid_IP.i_Grid = GRID_TURBULENCE_BOX;
+//     Data.Auxiliary_Mesh.Broadcast();
+//     Solution_Data.Input.Grid_IP.i_Grid = GRID_BUNSEN_BOX;
+//   }                  
  
   return error_flag;
 
@@ -378,7 +386,7 @@ double Turbulent_Burning_Rate(Hexa_Block<LES3DTF_pState, LES3DTF_cState> *Soluti
       for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
         for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
            for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
-	     local_vol = Solution_Block[p].Grid.volume(i,j,k);
+	     local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
 	     burning_rate += Solution_Block[p].W[i][j][k].Sw(Solution_Block[p].W[i][j][k].React.reactset_flag).rhospec[0].c
 	                     *local_vol;
 	     if (Solution_Block[p].W[i][j][k].flame.iso_c_05) {
@@ -402,7 +410,7 @@ double Turbulent_Burning_Rate(Hexa_Block<LES3DTF_pState, LES3DTF_cState> *Soluti
     ref_area = Ly*Lz;
   } else if ( IPs.Grid_IP.i_Grid == GRID_BUNSEN_BOX ) {
     Lx = IPs.Grid_IP.Box_Width;
-    ref_area = (0.025 + 2.0*0.02)*Lx;
+    ref_area = (0.025 + 2.0*IPs.Fresh_Gas_Height)*Lx;
   }
 
   if ( iso_surface_area > ref_area ) {

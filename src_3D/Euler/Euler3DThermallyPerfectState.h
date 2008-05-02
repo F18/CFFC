@@ -187,7 +187,7 @@ class Euler3D_ThermallyPerfect_pState {
    //! Default creation constructor (assign default values)
    Euler3D_ThermallyPerfect_pState(void): 
      rho(DENSITY_STDATM), p(PRESSURE_STDATM) {
-     v.zero(); species_null(); set_initial_values();
+       species_null(); set_initial_values();
    }
    
    //! Assignment constructor
@@ -238,8 +238,7 @@ class Euler3D_ThermallyPerfect_pState {
                                    const double &vy, 
                                    const double &vz,
                                    const double &pre) :
-     rho(d), p(pre) {
-     v.x = vx;  v.y = vy; v.z = vz;
+     rho(d), v(vx, vy, vz), p(pre) {
      species_null(); set_initial_values(); 
    }
 
@@ -250,8 +249,7 @@ class Euler3D_ThermallyPerfect_pState {
                                    const double &vz, 
                                    const double &pre, 
                                    const double &frac) :
-     rho(d), p(pre) {
-     v.x = vx; v.y = vy; v.z = vz; 
+     rho(d), v(vx, vy, vz), p(pre) { 
      species_null(); set_initial_values(frac); 
    }
                     
@@ -262,8 +260,7 @@ class Euler3D_ThermallyPerfect_pState {
                                    const double &vz,
                                    const double &pre, 
                                    const Species *mfrac) :
-     rho(d), p (pre) {
-     v.x=vx; v.y=vy; v.z = vz; 
+     rho(d), v(vx, vy, vz), p(pre) { 
      species_null(); set_initial_values(mfrac); 
    }
   
@@ -852,7 +849,7 @@ class Euler3D_ThermallyPerfect_cState {
    //! Default creation constructor (assign default values)
    Euler3D_ThermallyPerfect_cState(void): 
     rho(DENSITY_STDATM), E(PRESSURE_STDATM/(rho*(0.4))) {
-     rhospec_null(); rhov.zero(); set_initial_values(); 
+     rhospec_null(); set_initial_values(); 
    }   
 
    //! Assignment constructor
@@ -894,8 +891,7 @@ class Euler3D_ThermallyPerfect_cState {
                                    const double &vy, 
                                    const double &vz,
                                    const double &En) :
-    rho(d), E(En) {
-      rhov.x=vx; rhov.y=vy; rhov.z=vz; 
+    rho(d), rhov(vx, vy, vz), E(En) { 
       rhospec_null(); set_initial_values(); 
    }
   
@@ -906,8 +902,7 @@ class Euler3D_ThermallyPerfect_cState {
                                    const double &vz, 
                                    const double &En,	
                                    const Species *rhomfrac) : 
-    rho(d), E(En) { 
-      rhov.x=vx; rhov.y=vy; rhov.z = vz;
+    rho(d), rhov(vx, vy, vz), E(En) { 
       rhospec_null(); set_initial_values(rhomfrac); 
    }
 
@@ -918,8 +913,7 @@ class Euler3D_ThermallyPerfect_cState {
                                    const double &vz, 
                                    const double &En,	
                                    const double &rhomfrac) : 
-    rho(d), E(En) { 
-      rhov.x=vx; rhov.y=vy; rhov.z = vz;
+    rho(d), rhov(vx, vy, vz), E(En) { 
       rhospec_null(); set_initial_values(rhomfrac); 
    }
   

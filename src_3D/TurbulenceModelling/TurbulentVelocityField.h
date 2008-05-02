@@ -555,12 +555,12 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
       if (L_convected >= ZERO) break;
     }
   }
-  
+
   int nBlk, k, ii, jj, kk;
   double new_z, delta, dmin, dmin1, delta1, zmax, zmin, delta_z;  	      
   Vector3D Position_on_Slice, dX;
 
-/*   Vector3D dVdx, dVdy, dVdz; */
+  Vector3D dVdx, dVdy, dVdz;
 
   for (int n_ghost = 1; n_ghost <= Solution_Block.Nghost; ++n_ghost) {
     // loop over the cells on the boundary  of the solution block
@@ -591,9 +591,9 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 			 + Solution_Block.Grid.AfaceBot(i, j, Solution_Block.KCl));
 	  }
 	  new_z = L_convected - delta_z;
-	  if (new_z<=NANO) {new_z = ZERO;}
-	  Solution_Block.W[i][j][k].v = IPs.Mean_Velocity;
+	  if (new_z < NANO) new_z = ZERO;
 
+	  Solution_Block.W[i][j][k].v = IPs.Mean_Velocity;
 
 	  // find the appropriate turbulent field block to interpolate the fluctuations
 	  for (nBlk = 0; nBlk < Velocity_Field.NBlk; ++nBlk) {
@@ -605,18 +605,17 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 	    if ( new_z >= zmin  &&  new_z <= zmax ) {
 
 	      // Reconstruct gradients of the velocity field if necessary
-	      if ( !Velocity_Field.Vel_Blks[nBlk]._Allocated ) {
-		Velocity_Field.Vel_Blks[nBlk].allocate_gradients();
-		Velocity_Field.Vel_Blks[nBlk].LeastSquares_Reconstruction();
-	      }
+/* 	      if ( !Velocity_Field.Vel_Blks[nBlk]._Allocated ) { */
+/* 		Velocity_Field.Vel_Blks[nBlk].allocate_gradients(); */
+/* 		Velocity_Field.Vel_Blks[nBlk].LeastSquares_Reconstruction(); */
+/* 	      } */
 	      break;
 	    }
 	
 	    if ( (nBlk == Velocity_Field.NBlk-1) && (new_z < zmin  ||  new_z > zmax) ) {
 	      cout << "\n --> n_ghost = " << n_ghost  << " i = " << i 
-		   << " j = " << j << " k = " << k << flush << endl;
-	      cerr << "\n new_z = " << new_z << " not found in turbulence blocks";
-	      exit(1);
+		   << " j = " << j << " k = " << k;
+	      cout << "\n WARNING: new_z = " << new_z << " not found in turbulence blocks.";
 	    }   
 	  }
 
@@ -669,8 +668,8 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 	  // use least squares to reconstruct the turbulent velocity field 
           //------------------------------------------------------------------
 	
-/* 	  Velocity_Field.Vel_Blks[nBlk].LeastSquares_Reconstruction(ii, jj, kk, */
-/* 								    dVdx, dVdy, dVdz); */
+	  Velocity_Field.Vel_Blks[nBlk].LeastSquares_Reconstruction(ii, jj, kk,
+								    dVdx, dVdy, dVdz);
            
 	  Position_on_Slice.x = Solution_Block.Grid.Cell[i][j][k].Xc.x;  
 	  Position_on_Slice.y = Solution_Block.Grid.Cell[i][j][k].Xc.y;  
@@ -678,13 +677,9 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 
 	  dX = Position_on_Slice - Velocity_Field.Vel_Blks[nBlk].Position[ii][jj][kk];
 	
-/* 	  Solution_Block.W[i][j][k].v += Velocity_Field.Vel_Blks[nBlk].Velocity[ii][jj][kk] */
-/* 	                                 + dVdx*dX.x + dVdy*dX.y + dVdz*dX.z; */
-
 	  Solution_Block.W[i][j][k].v += Velocity_Field.Vel_Blks[nBlk].Velocity[ii][jj][kk]
-	                                 + Velocity_Field.Vel_Blks[nBlk].dVdx[ii][jj][kk]*dX.x
-	                                 + Velocity_Field.Vel_Blks[nBlk].dVdy[ii][jj][kk]*dX.y
-	                                 + Velocity_Field.Vel_Blks[nBlk].dVdz[ii][jj][kk]*dX.z;
+	                                 + dVdx*dX.x + dVdy*dX.y + dVdz*dX.z;
+
 	} /* end if */
       } /* end for */
     } /* end for */ 

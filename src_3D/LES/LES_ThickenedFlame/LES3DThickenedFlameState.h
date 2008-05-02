@@ -30,10 +30,23 @@
 
 /* Define the classes. */
 
-class LES3DTF_cState;
 class LES3DTF_pState;
+class LES3DTF_cState;
 
-#define NUM_LES3DTF_VAR_EXTRA 1  //k
+#define NUM_LES3DTF_VAR_EXTRA 1  // k
+
+
+/* Define some constants. */
+const double   GRAVITY_Z(-9.81);      // acceleration due to gravity [m/s^2]
+
+const double   Cv_CONSTANT(0.086);    // constant used in k-equation (eddy viscosity)
+const double   Ceps_CONSTANT(0.845);  // constant used in k-equation (dissipation term)
+
+const double   Cs_CONSTANT(0.18);     // Smagorinsky constant
+const double   CI_CONSTANT(0.005);    // constant used in Yoshizawa's model for the SFS k
+
+const double   TWO_THIRDS(2.0/3.0); 
+const double   FIVE_THIRDS(5.0/3.0);
 
 /*!
  * Class: LES3DTF_pState
@@ -167,7 +180,8 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
 /*        ---------------------------- */
 //@{
    //! Default creation constructor (assign default values)
-   LES3DTF_pState(void): NavierStokes3D_ThermallyPerfect_pState(), k(ZERO) { }
+   LES3DTF_pState(void): 
+     NavierStokes3D_ThermallyPerfect_pState(), k(ZERO) { }
 
    //! Constructor from base class (allows return of derived type)
    LES3DTF_pState(const NavierStokes3D_ThermallyPerfect_pState &W1) : 
@@ -210,8 +224,7 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
                   const Vector3D &V,
                   const double &pre, 
                   const double *mfrac) :
-     NavierStokes3D_ThermallyPerfect_pState(d, V, pre, mfrac) { k = ONE; set_initial_values(mfrac); 
-   }
+     NavierStokes3D_ThermallyPerfect_pState(d, V, pre, mfrac), k(ZERO) { set_initial_values(mfrac); }
 
    //! Assignment constructor
    LES3DTF_pState(const double &d, 
@@ -219,8 +232,7 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
                   const double &pre, 
                   const double &ke, 
                   const double *mfrac) :
-     NavierStokes3D_ThermallyPerfect_pState(d, V, pre, mfrac), k(ke) { set_initial_values(mfrac); 
-   }
+     NavierStokes3D_ThermallyPerfect_pState(d, V, pre, mfrac), k(ke) { set_initial_values(mfrac); }
 
    //! Assignment constructor
    LES3DTF_pState(const double &d, 
@@ -252,8 +264,10 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
      NavierStokes3D_ThermallyPerfect_pState(d, vx, vy, vz, pre, mfrac), k(ke) { }
 
    //! Copy constructor (this is needed for the operator overload returns)
-   LES3DTF_pState(const  LES3DTF_pState &W) {
-      species_null(); rho = DENSITY_STDATM; set_initial_values(); Copy(W);
+   LES3DTF_pState(const  LES3DTF_pState &W) { 
+     species_null();
+     set_initial_values(); 
+     Copy(W); 
    }
 
    //! Default destructor
@@ -307,7 +321,7 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
 
    //! Check for physical validity of scalars
    void Realizable_Scalar_Check(void) {
-     if ( k < NANO ) { k = ZERO; }
+     if ( k < MICRO ) { k = ZERO; }
    }
 
    //! Check for physical validity of the solution vector
@@ -493,7 +507,7 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
    //! Returns conserved solution state
    LES3DTF_cState U(void);
    //! Returns conserved solution state
-   LES3DTF_cState U(void)const;
+   LES3DTF_cState U(void) const;
    //! Returns conserved solution state
    LES3DTF_cState U(const LES3DTF_pState &W); 
 //@}
@@ -735,10 +749,13 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
                              const double &Volume);
 
    //! Source terms associated with finite-rate chemistry 
-   /*static*/ LES3DTF_cState Sw(const int &REACT_SET_FLAG);
+   LES3DTF_cState Sw(const int &REACT_SET_FLAG);
    double dSwdU_max_diagonal(void) const;
 
-   //! Soure term for k-equation
+   //! Source terms associated with gravitational forces
+   LES3DTF_cState Sg(void) const;
+
+   //! Source term for k-equation
    double K_equ_sources(const LES3DTF_pState &dWdx,
                         const LES3DTF_pState &dWdy,
                         const LES3DTF_pState &dWdz,
@@ -939,7 +956,10 @@ class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
    
    //! Copy constructor (this is needed for the operator overload returns)
    LES3DTF_cState(const LES3DTF_cState &U) {
-     rhospec_null(); rho = DENSITY_STDATM; set_initial_values(); Copy(U);
+     rhospec_null();
+     rho = DENSITY_STDATM;
+     set_initial_values(); 
+     Copy(U);
    }
                            
    //! Default destructor
@@ -992,7 +1012,7 @@ class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
 
    //! Check for physical validity of scalars
    void Realizable_Scalar_Check(void) {
-     if ( rhok < NANO ) { rhok = ZERO; }
+     if ( rhok < MICRO ) { rhok = ZERO; }
    }
 
    //! Check for physical validity of the solution vector
@@ -1052,7 +1072,7 @@ class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
 /*        ------------------------ */
 //@{
    //! Returns primitive solution state
-   LES3DTF_pState W(void) ; 
+   LES3DTF_pState W(void);
    //! Returns primitive solution state
    LES3DTF_pState W(void) const;
    //! Returns primitive solution state
@@ -1187,24 +1207,21 @@ inline const double& LES3DTF_pState::operator[](int index) const {
  ***************************************************************************/
 //------------------ Addition ------------------------//
 inline LES3DTF_pState LES3DTF_pState::operator +(const LES3DTF_pState &W) const { 
-   LES3DTF_pState Temp;
-   Temp.Copy(*this);
+   LES3DTF_pState Temp(*this);
    Temp += W;
    return Temp;
 }
 
 //------------------ Subtraction ------------------------//
 inline LES3DTF_pState LES3DTF_pState::operator -(const LES3DTF_pState &W) const {
-   LES3DTF_pState Temp;
-   Temp.Copy(*this);
+   LES3DTF_pState Temp(*this);
    Temp -= W;
    return Temp;
 }
 
 //---------------- Scalar Multiplication ------------------//
 inline LES3DTF_pState LES3DTF_pState::operator *(const double &a) const {
-   LES3DTF_pState Temp;
-   Temp.Copy(*this);
+   LES3DTF_pState Temp(*this);
    Temp.rho = rho*a;  
    Temp.v = v*a; 
    Temp.p = p*a;
@@ -1233,8 +1250,7 @@ inline LES3DTF_pState operator *(const double &a,
 
 //--------------- Scalar Division ------------------------//
 inline LES3DTF_pState LES3DTF_pState::operator /(const double &a) const {
-   LES3DTF_pState Temp(rho,v,p, k);
-   Temp.Copy(*this);
+   LES3DTF_pState Temp(*this);
    Temp.rho = rho/a; 
    Temp.v = v/a; 
    Temp.p = p/a; 
@@ -1248,7 +1264,7 @@ inline LES3DTF_pState LES3DTF_pState::operator /(const double &a) const {
 
 //----------------- Inner Product ------------------------//
 inline double LES3DTF_pState::operator *(const LES3DTF_pState &W) const {
-   double sum=0.0;
+   double sum(0.0);
    for (int i=0; i < ns; ++i) {
       sum += spec[i]*W.spec[i];
    } /* endfor */
@@ -1257,8 +1273,7 @@ inline double LES3DTF_pState::operator *(const LES3DTF_pState &W) const {
 
 //----------- Solution state product operator ------------//
 inline LES3DTF_pState LES3DTF_pState::operator ^(const LES3DTF_pState &W) const {
-   LES3DTF_pState Temp(rho,v,p, k);
-   Temp.Copy(*this);
+   LES3DTF_pState Temp(*this);
    Temp.rho = rho*W.rho;
    Temp.v.x = v.x*W.v.x;
    Temp.v.y = v.y*W.v.y;
@@ -1277,16 +1292,9 @@ inline LES3DTF_pState LES3DTF_pState::operator ^(const LES3DTF_pState &W) const 
 inline LES3DTF_pState& LES3DTF_pState::operator =(const LES3DTF_pState &W) {
    //self assignment protection
    if (this != &W){   
-      //copy assignment
-      rho = W.rho;
-      v = W.v; 
-      p = W.p; 
-      k = W.k;
-      for (int i = 0; i < ns; ++i) {
-         spec[i] = W.spec[i];
-      } /* endfor */ 
-   } /* endif */
-   flame = W.flame;
+     //copy assignment
+     Copy(W);
+   } 
    return (*this);
 }
 
@@ -1325,7 +1333,7 @@ inline LES3DTF_pState operator -(const LES3DTF_pState &W) {
    for (int i = 0; i < W.ns; ++i) {
       spt[i] = -W.spec[i]; 
    } /* endfor */ 
-   LES3DTF_pState Temp(-W.rho, -W.v, -W.p, W.k, spt);
+   LES3DTF_pState Temp(-W.rho, -W.v, -W.p, -W.k, spt);
    Temp.flame = -W.flame;
    delete[] spt;
    return(Temp);
@@ -1461,24 +1469,21 @@ inline const double& LES3DTF_cState::operator[](int index) const {
  ***************************************************************************/
 //------------------ Addition ------------------------//
 inline LES3DTF_cState LES3DTF_cState::operator +(const LES3DTF_cState &U) const { 
-   LES3DTF_cState Temp;
-   Temp.Copy(*this);
+   LES3DTF_cState Temp(*this);
    Temp += U;
    return Temp;
 }
 
 //------------------ Subtraction ------------------------//
 inline LES3DTF_cState LES3DTF_cState::operator -(const LES3DTF_cState &U) const {
-   LES3DTF_cState Temp;
-   Temp.Copy(*this);
+   LES3DTF_cState Temp(*this);
    Temp -= U;
    return Temp;
 }
 
 //---------------- Scalar Multiplication ------------------//
 inline LES3DTF_cState LES3DTF_cState::operator *(const double &a) const {
-   LES3DTF_cState Temp;
-   Temp.Copy(*this);
+   LES3DTF_cState Temp(*this);
    Temp.rho = rho*a;  
    Temp.rhov = rhov*a; 
    Temp.E = E*a;
@@ -1493,7 +1498,9 @@ inline LES3DTF_cState LES3DTF_cState::operator *(const double &a) const {
 inline LES3DTF_cState operator *(const double &a, 
                                  const LES3DTF_cState &U) {
    LES3DTF_cState Temp;
-   Temp.rho = U.rho*a;  Temp.rhov = U.rhov*a; Temp.E = U.E*a;
+   Temp.rho = U.rho*a;  
+   Temp.rhov = U.rhov*a; 
+   Temp.E = U.E*a;
    Temp.rhok = U.rhok*a; 
    for (int i = 0; i < U.ns; ++i) {
       Temp.rhospec[i] = U.rhospec[i]*a;
@@ -1504,9 +1511,10 @@ inline LES3DTF_cState operator *(const double &a,
 
 //--------------- Scalar Division ------------------------//
 inline LES3DTF_cState LES3DTF_cState::operator /(const double &a) const {
-   LES3DTF_cState Temp;
-   Temp.Copy(*this);
-   Temp.rho = rho/a; Temp.rhov = rhov/a; Temp.E = E/a;
+   LES3DTF_cState Temp(*this);
+   Temp.rho = rho/a; 
+   Temp.rhov = rhov/a; 
+   Temp.E = E/a;
    Temp.rhok = rhok/a; 
    for (int i = 0; i < ns; ++i) {
       Temp.rhospec[i] = rhospec[i]/a; 
@@ -1517,7 +1525,7 @@ inline LES3DTF_cState LES3DTF_cState::operator /(const double &a) const {
 
 //----------------- Inner Product ------------------------//
 inline double LES3DTF_cState::operator *(const LES3DTF_cState &U) const {
-   double sum=0.0;
+   double sum(0.0);
    for (int i = 0; i < ns; ++i) {
       sum += rhospec[i]*U.rhospec[i];
    } /* endfor */
@@ -1526,8 +1534,7 @@ inline double LES3DTF_cState::operator *(const LES3DTF_cState &U) const {
 
 //----------- Solution state product operator ------------//
 inline LES3DTF_cState LES3DTF_cState::operator ^(const LES3DTF_cState &U) const {
-   LES3DTF_cState Temp;
-   Temp.Copy(*this);
+   LES3DTF_cState Temp(*this);
    Temp.rho = rho*U.rho;
    Temp.rhov.x = rhov.x*U.rhov.x;
    Temp.rhov.y = rhov.y*U.rhov.y;
@@ -1546,16 +1553,9 @@ inline LES3DTF_cState LES3DTF_cState::operator ^(const LES3DTF_cState &U) const 
 inline LES3DTF_cState& LES3DTF_cState::operator =(const LES3DTF_cState &U) {
    //self assignment protection
    if (this != &U) {   
-      //copy assignment
-      rho = U.rho;
-      rhov = U.rhov; 
-      E = U.E; 
-      rhok = U.rhok;
-      for (int i = 0; i < ns; ++i) {
-         rhospec[i] = U.rhospec[i];
-      } /* endfor */
-      flame = U.flame;
-   } /* endif */
+     //copy assignment
+     Copy(U);
+   } 
    return (*this);
 }
 
