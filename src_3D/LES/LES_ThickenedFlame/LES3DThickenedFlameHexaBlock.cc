@@ -1600,7 +1600,7 @@ CFL(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
 
              W[i][j][k].SemiImplicitSourceJacobi(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
                                                  d_dWdx_dW[i][j][k][0],d_dWdy_dW[i][j][k][0],
-                                                 d_dWdz_dW[i][j][k][0],dSwdU,Grid.volume(i,j,k)); 
+                                                 d_dWdz_dW[i][j][k][0],dSwdU,Grid.Cell[i][j][k].V); 
 
              if(IPs.Preconditioning == 1){
  	      DenseMatrix Pinv(nn,nn);

@@ -1619,7 +1619,7 @@ int Longitudinal_Correlation(const Octree_DataStructure &OcTree,
 			    }
 			    // correlated u
 			    ucorr = Vcorr.x;
-			    local_vol = Solution_Block[q].Grid.volume(i,j,k);
+			    local_vol = Solution_Block[q].Grid.Cell[i][j][k].V;
 			    count1 ++;
 			    flag = true;
 
@@ -1644,7 +1644,7 @@ int Longitudinal_Correlation(const Octree_DataStructure &OcTree,
 /* 						   Xcorr, Vcorr); */
 			    // correlated u
 			    ucorr = Vcorr.x;
-			    local_vol = Solution_Block[q].Grid.volume(i,j,k);
+			    local_vol = Solution_Block[q].Grid.Cell[i][j][k].V;
 			    count1 ++;
 			    flag = true;
 			  } // end if

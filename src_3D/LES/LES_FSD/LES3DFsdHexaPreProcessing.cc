@@ -386,7 +386,7 @@ double Turbulent_Burning_Rate(Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> *Solu
       for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
         for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
            for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
-	     local_vol = Solution_Block[p].Grid.volume(i,j,k);
+	     local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
  	     burning_rate +=  Solution_Block[p].W[i][j][k].Fsd*Solution_Block[p].W[i][j][k].rho*local_vol; 
 	     if (Solution_Block[p].W[i][j][k].C <= 0.53 && Solution_Block[p].W[i][j][k].C >= 0.47) {
 	       iso_surface_area += propagation_dir_area(Solution_Block[p], i, j, k);
