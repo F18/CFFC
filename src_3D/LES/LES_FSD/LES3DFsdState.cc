@@ -240,7 +240,7 @@ double LES3DFsd_pState::mu_t(const LES3DFsd_pState &dWdx,
     return(rho*sqr(Cs*filter)*abs_strain_rate(dWdx,dWdy,dWdz));
   } else if(Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
     double Cv = 0.086;
-    if (k < MICRO) k = ZERO;
+    if (k < NANO) k = ZERO;
     return(rho*Cv*sqrt(k)*filter);
   }
 }
@@ -633,7 +633,7 @@ LES3DFsd_cState LES3DFsd_pState::U(const LES3DFsd_pState &W) {
     Temp.rhoFsd = W.rho*W.Fsd;
     Temp.rhok = W.rho*W.k;
    for (int i = 0; i < ns; i++) {
-      Temp.rhospec[i] = rho*spec[i];
+      Temp.rhospec[i] = W.rho*W.spec[i];
    } /* endfor */
     return Temp;
 }
@@ -2486,12 +2486,16 @@ double LES3DFsd_pState::M_x(const LES3DFsd_pState &dWdx,
 //    tau_fsd = HeatRelease_Parameter();
 
    if ( C < 0.99 && C > 0.01 ) {
-     Mx = dWdx.C/sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
+
+     Mx = -dWdx.C/sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
+
 //  Mx = -((1.0+tau_fsd)*(1-exp(-0.2*1.28))/sqr(1.0+tau_fsd*C)+exp(-0.2*1.28))*dWdx.C/Fsd/rho;
 //  Mx = -(1.0+tau_fsd)*dWdx.C/sqr(1.0+tau_fsd*C)/Fsd/rho;
 //  Mx = -dWdx.C/Fsd/rho;
 // if ( Mx < -1.0 ) { Mx = -1.0; }
-//      return Mx;
+
+     return (Mx);
+
    }else {
     return (ZERO);
    } /* endif */
@@ -2507,13 +2511,18 @@ double LES3DFsd_pState::M_y(const LES3DFsd_pState &dWdx,
 
    double My, tau_fsd;
 //    tau_fsd = HeatRelease_Parameter();
+
    if ( C < 0.99 && C > 0.01 ) {
+
      My = -dWdy.C/sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
+
 //  My = -((1.0+tau_fsd)*(1-exp(-0.2*1.28))/sqr(1.0+tau_fsd*C)+exp(-0.2*1.28))*dWdy.C/Fsd/rho;
 //  My = -(1.0+tau_fsd)*dWdy.C/sqr(1.0+tau_fsd*C)/Fsd/rho;
 //  My = -dWdy.C/Fsd/rho;
 //  if ( My < -1.0 ) { My = -1.0; }
-//      return My;
+
+     return (My);
+
    } else {
      return (ZERO);
    } /* endif */
@@ -2531,12 +2540,16 @@ double LES3DFsd_pState::M_z(const LES3DFsd_pState &dWdx,
 //     tau_fsd = HeatRelease_Parameter();
 
     if ( C < 0.99 && C > 0.01 ) {
+
       Mz = -dWdz.C/sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
+
 //  Mx = -((1.0+tau_fsd)*(1-exp(-0.2*1.28))/sqr(1.0+tau_fsd*C)+exp(-0.2*1.28))*dWdx.C/Fsd/rho;
 //  Mx = -(1.0+tau_fsd)*dWdx.C/sqr(1.0+tau_fsd*C)/Fsd/rho;
 //  Mx = -dWdx.C/Fsd/rho;
 //  if ( Mx < -1.0 ) { Mx = -1.0; }
-//       return Mz;
+
+      return (Mz);
+
     }else {
       return (ZERO);
    } /* endif */
@@ -2553,26 +2566,29 @@ double LES3DFsd_pState::Resolved_Strain(const LES3DFsd_pState &dWdx,
    double Mx, My, Mz, n_xx, n_yy, n_zz, n_xy, n_xz, n_yz, alpha_fsd;
    double resolved_strain_xx, resolved_strain_yy, resolved_strain_zz, resolved_strain_xy, resolved_strain_xz, resolved_strain_yz;
 
-   Mx = M_x(dWdx,dWdy,dWdz);
-   My = M_y(dWdx,dWdy,dWdz);
-   Mz = M_z(dWdx,dWdy,dWdz);
-   alpha_fsd = ONE - sqr(Mx) - sqr(My) - sqr(Mz);
-   n_xx = sqr(Mx)+ONE/THREE*alpha_fsd;
-   n_yy = sqr(My)+ONE/THREE*alpha_fsd;
-   n_zz = sqr(Mz)+ONE/THREE*alpha_fsd;
-   n_xy = Mx*My;
-   n_xz = Mx*Mz;
-   n_yz = My*Mz;
-
    if ( C < 0.99 && C > 0.01 ) {
+
+     Mx = M_x(dWdx,dWdy,dWdz);
+     My = M_y(dWdx,dWdy,dWdz);
+     Mz = M_z(dWdx,dWdy,dWdz);
+     alpha_fsd = ONE - sqr(Mx) - sqr(My) - sqr(Mz);
+     n_xx = sqr(Mx)+ONE/THREE*alpha_fsd;
+     n_yy = sqr(My)+ONE/THREE*alpha_fsd;
+     n_zz = sqr(Mz)+ONE/THREE*alpha_fsd;
+     n_xy = Mx*My;
+     n_xz = Mx*Mz;
+     n_yz = My*Mz;
+
      resolved_strain_xx = (ONE - n_xx)*dWdx.v.x*Fsd*rho;
      resolved_strain_yy = (ONE - n_yy)*dWdy.v.y*Fsd*rho;
      resolved_strain_zz = (ONE - n_zz)*dWdz.v.z*Fsd*rho;
      resolved_strain_xy = -n_xy*(dWdx.v.y + dWdy.v.x)*Fsd*rho;
      resolved_strain_xz = -n_xz*(dWdx.v.z + dWdz.v.x)*Fsd*rho;
      resolved_strain_yz = -n_yz*(dWdz.v.y + dWdy.v.y)*Fsd*rho;
+
      return (resolved_strain_xx + resolved_strain_yy + resolved_strain_zz + 
              resolved_strain_xy + resolved_strain_xz + resolved_strain_yz);
+
    } else {
      return (ZERO);
    } /* endif */
@@ -2588,18 +2604,22 @@ double LES3DFsd_pState::Resolved_Propagation_Curvature(const LES3DFsd_pState &dW
    double tau_fsd, Mx, My, Mz, 
           resolved_propagation_curvature_x, resolved_propagation_curvature_y, resolved_propagation_curvature_z;
 
-   tau_fsd = HeatRelease_Parameter();
-   Mx = M_x(dWdx,dWdy,dWdz);
-   My = M_y(dWdx,dWdy,dWdz);
-   Mz = M_z(dWdx,dWdy,dWdz);
    if ( C < 0.99 && C > 0.01 ) {
+
+      tau_fsd = HeatRelease_Parameter();
+      Mx = M_x(dWdx,dWdy,dWdz);
+      My = M_y(dWdx,dWdy,dWdz);
+      Mz = M_z(dWdx,dWdy,dWdz);
+
       resolved_propagation_curvature_x = -_laminar_flame_speed*(ONE+tau_fsd*C)*Mx*(rho*dWdx.Fsd+Fsd*dWdx.rho)-
                                           _laminar_flame_speed*tau_fsd*Fsd*rho*Mx*dWdx.C;
       resolved_propagation_curvature_y = -_laminar_flame_speed*(ONE+tau_fsd*C)*My*(rho*dWdy.Fsd+Fsd*dWdy.rho)-
                                           _laminar_flame_speed*tau_fsd*Fsd*rho*My*dWdy.C;
       resolved_propagation_curvature_z = -_laminar_flame_speed*(ONE+tau_fsd*C)*Mz*(rho*dWdz.Fsd+Fsd*dWdz.rho)-
                                           _laminar_flame_speed*tau_fsd*Fsd*rho*Mz*dWdz.C;
+
       return ( resolved_propagation_curvature_x + resolved_propagation_curvature_y + resolved_propagation_curvature_z );
+
     } else {
       return (ZERO);
     } /* endif */
@@ -2616,12 +2636,15 @@ double LES3DFsd_pState::SFS_Strain(const LES3DFsd_pState &dWdx,
                                    const double &Volume) {
 
    double filter, kappa_fsd, k_fsd;
-   filter = filter_width();
-   k_fsd = SFS_Kinetic_Energy(dWdx,dWdy,dWdz,Flow_Type,Volume); 
-   kappa_fsd = Efficiency_Function(dWdx,dWdy,dWdz,Flow_Type,Volume);   
 
-   if (C < 0.99 && C > 0.01) {
+   if ( C < 0.99 && C > 0.01 ) {
+
+     filter = filter_width();
+     k_fsd = SFS_Kinetic_Energy(dWdx,dWdy,dWdz,Flow_Type,Volume); 
+     kappa_fsd = Efficiency_Function(dWdx,dWdy,dWdz,Flow_Type,Volume);   
+
      return ( kappa_fsd*sqrt(k_fsd)*Fsd*rho/filter );
+
    } else {
     return (ZERO);
    } /* endif */
@@ -2637,12 +2660,14 @@ double LES3DFsd_pState::SFS_Curvature(const LES3DFsd_pState &dWdx,
 
     double Mx, My, Mz, alpha_fsd, beta_fsd;
     beta_fsd = 1.0;
-    Mx = M_x(dWdx,dWdy,dWdz);
-    My = M_y(dWdx,dWdy,dWdz);
-    Mz = M_z(dWdx,dWdy,dWdz);
-    alpha_fsd = ONE - sqr(Mx) - sqr(My) - sqr(Mz);
 
     if ( C < 0.99 && C > 0.01 ) {
+
+      Mx = M_x(dWdx,dWdy,dWdz);
+      My = M_y(dWdx,dWdy,dWdz);
+      Mz = M_z(dWdx,dWdy,dWdz);
+      alpha_fsd = ONE - sqr(Mx) - sqr(My) - sqr(Mz);
+ 
       return ( -beta_fsd*_laminar_flame_speed*sqr(Fsd*rho)/(ONE-C) );
 
 //     if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE ){
@@ -2666,11 +2691,14 @@ double LES3DFsd_pState::M_xx(const LES3DFsd_pState &dWdx,
                              const LES3DFsd_pState &d_dWdx_dz) const {
 
     double Mxx, magnitude_C;
-    magnitude_C = sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
 
-    if (C < 0.99 && C > 0.01 && dWdx.C != ZERO ) { 
-      Mxx = d_dWdx_dx.C/magnitude_C-dWdx.C*(dWdx.C*d_dWdx_dx.C+dWdy.C*d_dWdx_dy.C+dWdz.C*d_dWdx_dz.C)/pow(magnitude_C,3.0);
-      return ( Mxx );
+    if ( C < 0.99 && C > 0.01 ) { 
+
+      magnitude_C = sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
+      Mxx = -d_dWdx_dx.C/magnitude_C+dWdx.C*(dWdx.C*d_dWdx_dx.C+dWdy.C*d_dWdx_dy.C+dWdz.C*d_dWdx_dz.C)/pow(magnitude_C,3.0);
+
+      return  (Mxx);
+
    }else{
       return (ZERO);
    } /* endif */
@@ -2688,10 +2716,14 @@ double LES3DFsd_pState::M_yy(const LES3DFsd_pState &dWdx,
                              const LES3DFsd_pState &d_dWdy_dz) const {
 
     double Myy, magnitude_C;
-    magnitude_C = sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
+
     if ( C < 0.99 && C > 0.01 ) { 
+
+      magnitude_C = sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
       Myy = -d_dWdy_dy.C/magnitude_C+dWdy.C*(dWdx.C*d_dWdx_dy.C+dWdy.C*d_dWdy_dy.C+dWdz.C*d_dWdy_dz.C)/pow(magnitude_C,3.0);
-      return ( Myy );
+
+      return (Myy);
+
     } else {
       return (ZERO);
     } /* endif */
@@ -2709,10 +2741,14 @@ double LES3DFsd_pState::M_zz(const LES3DFsd_pState &dWdx,
                              const LES3DFsd_pState &d_dWdy_dz) const {
 
     double Mzz, magnitude_C;
-    magnitude_C = sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
+
     if ( C < 0.99 && C > 0.01 ) { 
+
+      magnitude_C = sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
       Mzz = -d_dWdz_dz.C/magnitude_C+dWdz.C*(dWdx.C*d_dWdx_dz.C+dWdy.C*d_dWdy_dz.C+dWdz.C*d_dWdz_dz.C)/pow(magnitude_C,3.0);
-      return ( Mzz );
+
+      return (Mzz);
+
     } else {
       return (ZERO);
     } /* endif */
@@ -2730,10 +2766,14 @@ double LES3DFsd_pState::M_xy(const LES3DFsd_pState &dWdx,
                              const LES3DFsd_pState &d_dWdy_dz) const {
 
     double Mxy, magnitude_C;
-    magnitude_C = sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
+
     if ( C < 0.99 && C > 0.01 ) { 
+
+      magnitude_C = sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
       Mxy = -d_dWdx_dy.C/magnitude_C+dWdx.C*(dWdx.C*d_dWdx_dy.C+dWdy.C*d_dWdy_dy.C+dWdz.C*d_dWdy_dz.C)/pow(magnitude_C,3.0);
+
       return (Mxy);
+
     } else {
       return (ZERO);
     } /* endif */
@@ -2751,10 +2791,14 @@ double LES3DFsd_pState::M_xz(const LES3DFsd_pState &dWdx,
                              const LES3DFsd_pState &d_dWdy_dz) const {
 
     double Mxz, magnitude_C;
-    magnitude_C = sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
+
     if ( C < 0.99 && C > 0.01 ) { 
+
+      magnitude_C = sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
       Mxz = -d_dWdx_dz.C/magnitude_C+dWdx.C*(dWdx.C*d_dWdx_dz.C+dWdy.C*d_dWdy_dz.C+dWdz.C*d_dWdz_dz.C)/pow(magnitude_C,3.0);
-      return ( Mxz );
+
+      return (Mxz);
+
    }else{
       return (ZERO);
    } /* endif */
@@ -2772,10 +2816,14 @@ double LES3DFsd_pState::M_yz(const LES3DFsd_pState &dWdx,
                              const LES3DFsd_pState &d_dWdy_dz) const {
 
     double Myz, magnitude_C;
-    magnitude_C = sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
+
     if ( C < 0.99 && C > 0.01 ) { 
+
+      magnitude_C = sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
       Myz = -d_dWdy_dz.C/magnitude_C+dWdy.C*(dWdx.C*d_dWdx_dz.C+dWdy.C*d_dWdy_dz.C+dWdz.C*d_dWdz_dz.C)/pow(magnitude_C,3.0);
-      return ( Myz );
+
+      return (Myz);
+
    }else{
       return (ZERO);
    } /* endif */
@@ -2798,16 +2846,19 @@ double LES3DFsd_pState::Resolved_Curvature(const LES3DFsd_pState &dWdx,
    double tau_fsd, Mxx, Myy, Mzz, 
           resolved_curvature_xx, resolved_curvature_yy, resolved_curvature_zz;
 
-   tau_fsd = HeatRelease_Parameter();
-   Mxx = M_xx(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdx_dy,d_dWdx_dz);
-   Myy = M_yy(dWdx,dWdy,dWdz,d_dWdy_dy,d_dWdx_dy,d_dWdy_dz);
-   Mzz = M_zz(dWdx,dWdy,dWdz,d_dWdz_dz,d_dWdx_dz,d_dWdy_dz);
-
    if ( C < 0.99 && C > 0.01 ) {
+
+     tau_fsd = HeatRelease_Parameter();
+     Mxx = M_xx(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdx_dy,d_dWdx_dz);
+     Myy = M_yy(dWdx,dWdy,dWdz,d_dWdy_dy,d_dWdx_dy,d_dWdy_dz);
+     Mzz = M_zz(dWdx,dWdy,dWdz,d_dWdz_dz,d_dWdx_dz,d_dWdy_dz);
+
      resolved_curvature_xx = _laminar_flame_speed*(1.0+tau_fsd*C)*Fsd*rho*Mxx;
      resolved_curvature_yy = _laminar_flame_speed*(1.0+tau_fsd*C)*Fsd*rho*Myy;
      resolved_curvature_zz = _laminar_flame_speed*(1.0+tau_fsd*C)*Fsd*rho*Mzz;
+
      return ( resolved_curvature_xx + resolved_curvature_yy + resolved_curvature_zz);
+
    } else {
      return (ZERO);
    } /* endif */
@@ -2827,9 +2878,9 @@ double LES3DFsd_pState::Resolved_Propagation(const LES3DFsd_pState &dWdx,
                                              const LES3DFsd_pState &d_dWdx_dz,
                                              const LES3DFsd_pState &d_dWdy_dz) const {
 
-   if (C < 0.99 && C > 0.01 ) {
-      return (Resolved_Propagation_Curvature(dWdx,dWdy,dWdz)
-              -Resolved_Curvature(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdy_dy,d_dWdz_dz,
+   if ( C < 0.99 && C > 0.01 ) {
+      return (Resolved_Propagation_Curvature(dWdx,dWdy,dWdz)-
+              Resolved_Curvature(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdy_dy,d_dWdz_dz,
                                   d_dWdx_dy,d_dWdx_dz,d_dWdy_dz) );
    } else {
       return (ZERO);
@@ -2846,12 +2897,15 @@ double LES3DFsd_pState::Resolved_Convection_Progvar(const LES3DFsd_pState &dWdx,
 
     double resolved_convection_progvar_x, resolved_convection_progvar_y, resolved_convection_progvar_z;
 
-   if (C < 0.99 && C > 0.01 ) {
+   if ( C < 0.99 && C > 0.01 ) {
+
      resolved_convection_progvar_x = -(dWdx.rho*v.x*C+rho*dWdx.v.x*C+rho*v.x*dWdx.C);
      resolved_convection_progvar_y = -(dWdy.rho*v.y*C+rho*dWdy.v.y*C+rho*v.y*dWdy.C);
      resolved_convection_progvar_z = -(dWdz.rho*v.z*C+rho*dWdz.v.z*C+rho*v.z*dWdz.C);
+
      return(resolved_convection_progvar_x+resolved_convection_progvar_y+
-             resolved_convection_progvar_z );
+            resolved_convection_progvar_z );
+
    } else {
       return (ZERO);
    } /* endif */
@@ -2867,11 +2921,14 @@ double LES3DFsd_pState::Resolved_Convection_Fsd(const LES3DFsd_pState &dWdx,
 
     double resolved_convection_fsd_x, resolved_convection_fsd_y, resolved_convection_fsd_z;
 
-    if (C < 0.99 && C > 0.01 ) {
+    if ( C < 0.99 && C > 0.01 ) {
+
       resolved_convection_fsd_x = -(dWdx.rho*v.x*Fsd+rho*dWdx.v.x*Fsd+rho*v.x*dWdx.Fsd);
       resolved_convection_fsd_y = -(dWdy.rho*v.y*Fsd+rho*dWdy.v.y*Fsd+rho*v.y*dWdy.Fsd);
       resolved_convection_fsd_z = -(dWdz.rho*v.z*Fsd+rho*dWdz.v.z*Fsd+rho*v.z*dWdz.Fsd);
+
       return( resolved_convection_fsd_x+resolved_convection_fsd_y+resolved_convection_fsd_z );
+
    }else{
       return (ZERO);
    } /* endif */
@@ -2889,10 +2946,13 @@ double LES3DFsd_pState::NGT_Progvar(const LES3DFsd_pState &dWdx,
    tau_fsd = HeatRelease_Parameter();
 
    if ( C < 0.99 && C > 0.01 ) {
+
      NGT_progvar_x = -tau_fsd*_laminar_flame_speed*(rho*(1-2*C)*dWdx.C+C*(1-C)*dWdx.rho);
      NGT_progvar_y = -tau_fsd*_laminar_flame_speed*(rho*(1-2*C)*dWdy.C+C*(1-C)*dWdy.rho);
      NGT_progvar_z = -tau_fsd*_laminar_flame_speed*(rho*(1-2*C)*dWdz.C+C*(1-C)*dWdz.rho);
+
      return ( NGT_progvar_x+NGT_progvar_y+NGT_progvar_z );
+
    } else {
      return (ZERO);
    } /* endif */
@@ -2914,22 +2974,25 @@ double LES3DFsd_pState::NGT_Fsd(const LES3DFsd_pState &dWdx,
 
    double tau_fsd, Mx, My, Mz, Mxx, Myy, Mzz, NGT_fsd_x, NGT_fsd_y, NGT_fsd_z;
 
-   tau_fsd = HeatRelease_Parameter();
-   Mx = M_x(dWdx,dWdy,dWdz);
-   My = M_y(dWdx,dWdy,dWdz);
-   Mz = M_z(dWdx,dWdy,dWdz);
-   Mxx = M_xx(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdx_dy,d_dWdx_dz);
-   Myy = M_yy(dWdx,dWdy,dWdz,d_dWdy_dy,d_dWdx_dy,d_dWdy_dz);
-   Mzz = M_zz(dWdx,dWdy,dWdz,d_dWdz_dz,d_dWdx_dz,d_dWdy_dz);
+   if ( C < 0.99 && C > 0.01 ) {
 
-   if (C < 0.99 && C > 0.01 ) {
+      tau_fsd = HeatRelease_Parameter();
+      Mx = M_x(dWdx,dWdy,dWdz);
+      My = M_y(dWdx,dWdy,dWdz);
+      Mz = M_z(dWdx,dWdy,dWdz);
+      Mxx = M_xx(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdx_dy,d_dWdx_dz);
+      Myy = M_yy(dWdx,dWdy,dWdz,d_dWdy_dy,d_dWdx_dy,d_dWdy_dz);
+      Mzz = M_zz(dWdx,dWdy,dWdz,d_dWdz_dz,d_dWdx_dz,d_dWdy_dz);
+
       NGT_fsd_x = -tau_fsd*_laminar_flame_speed*((0.5-C)*
                   (Fsd*Mx*dWdx.rho+rho*Mx*dWdx.Fsd+rho*Fsd*Mxx)-rho*Fsd*Mx*dWdx.C);
       NGT_fsd_y = -tau_fsd*_laminar_flame_speed*((0.5-C)*
                   (Fsd*My*dWdy.rho+rho*My*dWdy.Fsd+rho*Fsd*Myy)-rho*Fsd*My*dWdy.C);
       NGT_fsd_z = -tau_fsd*_laminar_flame_speed*((0.5-C)*
                   (Fsd*Mz*dWdz.rho+rho*Mz*dWdz.Fsd+rho*Fsd*Mzz)-rho*Fsd*Mz*dWdz.C);
+
       return (NGT_fsd_x+NGT_fsd_y+NGT_fsd_z);
+
    } else {
       return (ZERO);
    } /* endif */ 
@@ -2955,6 +3018,8 @@ double LES3DFsd_pState::SFS_Diffusion_Progvar(const LES3DFsd_pState &dWdx,
           sfs_diffusion_progvar_x, sfs_diffusion_progvar_y, sfs_diffusion_progvar_z;
    double Cv = 0.0184, Cs = 0.086, Schmidt_sfs = 1.0;
 
+   if ( C < 0.99 && C > 0.01 ) {
+
    if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
       double SS = abs_strain_rate(dWdx,dWdy,dWdz);
       Vector3D grad_rate = grad_abs_strain_rate(dWdx,dWdy,dWdz,d_dWdx_dx,
@@ -2969,20 +3034,18 @@ double LES3DFsd_pState::SFS_Diffusion_Progvar(const LES3DFsd_pState &dWdx,
       grad_eddyviscosity_z = HALF*Cv*filter_width()*dWdz.k/sqrt(k);
    } /* endif */
 
-   if (C < 0.99 && C > 0.01 ) {
       sfs_diffusion_progvar_x = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*
                                  dWdx.C*dWdx.rho+rho*dWdx.C*grad_eddyviscosity_x+
-                                 mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.C)/
-                                Schmidt_sfs;
+                                 mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.C)/Schmidt_sfs;
       sfs_diffusion_progvar_y = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdy.C*
                                  dWdy.rho+rho*dWdy.C*grad_eddyviscosity_y+
-                                 mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdy_dy.C)/
-                                Schmidt_sfs;
+                                 mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdy_dy.C)/Schmidt_sfs;
       sfs_diffusion_progvar_z = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*
                                  dWdz.C*dWdz.rho+rho*dWdz.C*grad_eddyviscosity_z+
-                                 mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdz_dz.C)/
-                                Schmidt_sfs;
+                                 mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdz_dz.C)/Schmidt_sfs;
+
       return (sfs_diffusion_progvar_x+sfs_diffusion_progvar_y+sfs_diffusion_progvar_z);
+
    } else {
       return (ZERO);
    } /* endif */
@@ -3008,6 +3071,8 @@ double LES3DFsd_pState::SFS_Diffusion_Fsd(const LES3DFsd_pState &dWdx,
            sfs_diffusion_fsd_x, sfs_diffusion_fsd_y, sfs_diffusion_fsd_z;
     double Cv = 0.0184, Cs = 0.086, Schmidt_sfs = 1.0;
 
+    if ( C < 0.99 && C > 0.01 ) {
+
     if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
       double SS = abs_strain_rate(dWdx,dWdy,dWdz);
       Vector3D grad_rate = grad_abs_strain_rate(dWdx,dWdy,dWdz,d_dWdx_dx,
@@ -3021,11 +3086,19 @@ double LES3DFsd_pState::SFS_Diffusion_Fsd(const LES3DFsd_pState &dWdx,
       grad_eddyviscosity_y = HALF*Cv*filter_width()*dWdy.k/sqrt(k);
       grad_eddyviscosity_z = HALF*Cv*filter_width()*dWdz.k/sqrt(k);
     } /* endif */
-    if ( C < 0.99 && C > 0.01 ) {
-      sfs_diffusion_fsd_x = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.Fsd*dWdx.rho+rho*dWdx.Fsd*grad_eddyviscosity_x+mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.Fsd)/Schmidt_sfs;
-      sfs_diffusion_fsd_y = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdy.Fsd*dWdy.rho+rho*dWdy.Fsd*grad_eddyviscosity_y+mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdy_dy.Fsd)/Schmidt_sfs;
-      sfs_diffusion_fsd_z = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.Fsd*dWdx.rho+rho*dWdx.Fsd*grad_eddyviscosity_x+mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.Fsd)/Schmidt_sfs;
+
+      sfs_diffusion_fsd_x = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.Fsd*dWdx.rho+
+                             rho*dWdx.Fsd*grad_eddyviscosity_x+
+                             mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.Fsd)/Schmidt_sfs;
+      sfs_diffusion_fsd_y = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdy.Fsd*dWdy.rho+
+                             rho*dWdy.Fsd*grad_eddyviscosity_y+
+                             mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdy_dy.Fsd)/Schmidt_sfs;
+      sfs_diffusion_fsd_z = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.Fsd*dWdx.rho+
+                             rho*dWdx.Fsd*grad_eddyviscosity_x+
+                             mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.Fsd)/Schmidt_sfs;
+
       return ( sfs_diffusion_fsd_x+sfs_diffusion_fsd_y+sfs_diffusion_fsd_z );
+
     }else{
       return (ZERO);
     } /* endif */
@@ -3047,17 +3120,20 @@ double LES3DFsd_pState::Heat_Release_Strain(const LES3DFsd_pState &dWdx,
 
      double tau_fsd, Mxx, Myy, Mzz, heat_release_strain_xx, 
             heat_release_strain_yy, heat_release_strain_zz;
-     tau_fsd = HeatRelease_Parameter();
-
-     Mxx = M_xx(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdx_dy,d_dWdx_dz);
-     Myy = M_yy(dWdx,dWdy,dWdz,d_dWdy_dy,d_dWdx_dy,d_dWdy_dz);
-     Mzz = M_zz(dWdx,dWdy,dWdz,d_dWdz_dz,d_dWdx_dz,d_dWdy_dz);
 
      if ( C < 0.99 && C > 0.01 ) {
+
+       tau_fsd = HeatRelease_Parameter();
+       Mxx = M_xx(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdx_dy,d_dWdx_dz);
+       Myy = M_yy(dWdx,dWdy,dWdz,d_dWdy_dy,d_dWdx_dy,d_dWdy_dz);
+       Mzz = M_zz(dWdx,dWdy,dWdz,d_dWdz_dz,d_dWdx_dz,d_dWdy_dz);
+
        heat_release_strain_xx = (0.5-C)*tau_fsd*_laminar_flame_speed*Fsd*rho*Mxx;
        heat_release_strain_yy = (0.5-C)*tau_fsd*_laminar_flame_speed*Fsd*rho*Myy;
        heat_release_strain_zz = (0.5-C)*tau_fsd*_laminar_flame_speed*Fsd*rho*Mzz;
+
        return ( heat_release_strain_xx + heat_release_strain_yy + heat_release_strain_zz );
+
     }else{
        return (ZERO);
     } /* endif */
@@ -3103,11 +3179,11 @@ double LES3DFsd_pState::Net_Rate_Change_Fsd(const LES3DFsd_pState &dWdx,
 
   return(Resolved_Convection_Fsd(dWdx,dWdy,dWdz)+
          SFS_Diffusion_Fsd(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdy_dy,d_dWdz_dz,
-                           d_dWdx_dy,d_dWdx_dz,d_dWdy_dz,Flow_Type,Volume)
-	 +Resolved_Strain(dWdx,dWdy,dWdz)
-	 +Resolved_Propagation_Curvature(dWdx,dWdy,dWdz)
-	 +SFS_Strain(dWdx,dWdy,dWdz,Flow_Type,Volume)
-	 +SFS_Curvature(dWdx,dWdy,dWdz) );
+                           d_dWdx_dy,d_dWdx_dz,d_dWdy_dz,Flow_Type,Volume)+
+	 Resolved_Strain(dWdx,dWdy,dWdz)+
+	 Resolved_Propagation_Curvature(dWdx,dWdy,dWdz)+
+	 SFS_Strain(dWdx,dWdy,dWdz,Flow_Type,Volume)+
+	 SFS_Curvature(dWdx,dWdy,dWdz));
 
 }
 
@@ -3153,7 +3229,7 @@ LES3DFsd_cState LES3DFsd_pState::Sturbchem(LES3DFsd_pState &Wc,
   double resolved_strain, resolved_propagation_curvature, sfs_strain, sfs_curvature;
   LES3DFsd_cState Temp; Temp.Vacuum();
 
-  if (Wc.C < 0.99 && Wc.C > 0.01 ) {
+  if ( Wc.C < 0.99 && Wc.C > 0.01 ) {
       
       // Reaction Rate for Progress Variable Equation --- Source term
       Temp.rhoC = Wc.Reaction_Rate_Fsd(dWdx,dWdy,dWdz);
@@ -3537,7 +3613,7 @@ LES3DFsd_pState LES3DFsd_cState::W(const LES3DFsd_cState &U) const {
    Temp.Fsd = U.Fsd();
    Temp.k = U.k();
    for (int i = 0; i < ns; i++) {
-      Temp.spec[i] = rhospec[i]/rho;
+      Temp.spec[i] = U.rhospec[i]/U.rho;
    } /* endfor */
    return Temp;
 }

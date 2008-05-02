@@ -40,7 +40,7 @@ void Time_Averaging_of_Velocity_Field(HEXA_BLOCK *Solution_Block,
            for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
 	       local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
 	       vel += Solution_Block[p].W[i][j][k].v * local_vol;
-	       Volume += Solution_Block[p].Grid.Cell[i][j][k].V; 
+	       Volume += local_vol; 
 	   } /* endfor */
 	} /* endfor */
       } /* endfor*/
@@ -376,7 +376,7 @@ void Conditional_Averaging_of_Velocity_Field(HEXA_BLOCK *Solution_Block,
 	     if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
 	       local_vol = Solution_Block[p].Grid.Cell[i][j][k].V;
 	       vel += Solution_Block[p].W[i][j][k].v * local_vol;
-	       Volume += Solution_Block[p].Grid.Cell[i][j][k].V; 
+	       Volume += local_vol; 
 	     } /* endif */
 	   } /* endfor */
 	} /* endfor */

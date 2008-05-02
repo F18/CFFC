@@ -1688,39 +1688,40 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
                                             ZERO);//1.25);
     
     Grid2D_Bunsen_Burner_Inner_XYplane = Grid_Annulus_2D(Grid2D_Bunsen_Burner_Inner_XYplane,
-                                                         numblk_idir_bunsenburner,
-                                                         numblk_jdir_bunsenburner,
-                                                         Input.Radius_Bunsen_Burner_Fuel_Line,
-                                                         HALF*(Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line),
-                                                         Input.NCells_Idir,
-                                                         Input.NCells_Jdir,
-                                                         Input.Nghost,
-                                                         STRETCHING_FCN_LINEAR,//MIN_CLUSTERING,
-                                                         ZERO);//1.10);
-    
-    //     Grid2D_Bunsen_Burner_Middle_XYplane = Grid_Annulus_2D(Grid2D_Bunsen_Burner_Middle_XYplane,
-    // 							 numblk_idir_bunsenburner,
-    // 							 numblk_jdir_bunsenburner,
-    // 							 0.1*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
-    // 							 0.45*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
-    // 							 HALF*Input.Radius_Bunsen_Burner,
-    // 							 Input.NCells_Idir,
-    // 							 Input.NCells_Jdir,
-    // 							 Input.Nghost,
-    // 							 STRETCHING_FCN_MIN_CLUSTERING,
-    // 							 1.10);
-    
-    Grid2D_Bunsen_Burner_Outer_XYplane = Grid_Annulus_2D(Grid2D_Bunsen_Burner_Outer_XYplane,
-                                                         numblk_idir_bunsenburner,
-                                                         numblk_jdir_bunsenburner,
-                                                         HALF*(Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line),
-                                                         Input.Radius_Bunsen_Burner,
-                                                         Input.NCells_Idir,
-                                                         Input.NCells_Jdir,
-                                                         Input.Nghost,
-                                                         STRETCHING_FCN_LINEAR,//MAX_CLUSTERING,
-                                                         ZERO);//1.10);
-    
+							 numblk_idir_bunsenburner,
+							 numblk_jdir_bunsenburner,
+							 Input.Radius_Bunsen_Burner_Fuel_Line,
+							 Input.Radius_Bunsen_Burner,
+// 							 HALF*(Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line),
+							 Input.NCells_Idir,
+							 Input.NCells_Jdir,
+							 Input.Nghost,
+							 STRETCHING_FCN_LINEAR,//MIN_CLUSTERING,
+							 ZERO);//1.10);
+
+//     Grid2D_Bunsen_Burner_Middle_XYplane = Grid_Annulus_2D(Grid2D_Bunsen_Burner_Middle_XYplane,
+// 							 numblk_idir_bunsenburner,
+// 							 numblk_jdir_bunsenburner,
+// 							 0.1*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
+// 							 0.45*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
+// 							 HALF*Input.Radius_Bunsen_Burner,
+// 							 Input.NCells_Idir,
+// 							 Input.NCells_Jdir,
+// 							 Input.Nghost,
+// 							 STRETCHING_FCN_MIN_CLUSTERING,
+// 							 1.10);
+
+//     Grid2D_Bunsen_Burner_Outer_XYplane = Grid_Annulus_2D(Grid2D_Bunsen_Burner_Outer_XYplane,
+// 							 numblk_idir_bunsenburner,
+// 							 numblk_jdir_bunsenburner,
+// 							 HALF*(Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line),
+// 							 Input.Radius_Bunsen_Burner,
+// 							 Input.NCells_Idir,
+// 							 Input.NCells_Jdir,
+// 							 Input.Nghost,
+// 							 STRETCHING_FCN_LINEAR,//MAX_CLUSTERING,
+// 							 ZERO);//1.10);
+
     /* Create the mesh for each block representing
      the complete grid. */
     
@@ -1729,371 +1730,619 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
         /* Extrude each of the grid blocks from the
          appropriate 2D grid in XY-plane. */
         
+        /* fuel lines */
+
         // iBlk = 72;
-	    /* fuel lines */
         if (iBlk <= 4) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
-                                    ZERO,//1.10,//1.25,
-                                    ZERO*Input.Height_Bunsen_Burner,
-                                    0.125*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_INFLOW_TURBULENCE);
-            
-        } else if (iBlk >= 5 && iBlk <= 9) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-5][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
-                                    ZERO,//1.10,//1.25,
-                                    0.125*Input.Height_Bunsen_Burner,
-                                    0.25*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 10 && iBlk <= 14) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-10][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
-                                    ZERO,//1.10,//1.25,
-                                    0.25*Input.Height_Bunsen_Burner,
-                                    0.375*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 15 && iBlk <= 19) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-15][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
-                                    ZERO,//1.10,//1.25,
-                                    0.375*Input.Height_Bunsen_Burner,
-                                    0.5*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 20 && iBlk <= 24) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-20][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
-                                    ZERO,//1.10,//1.25,
-                                    0.5*Input.Height_Bunsen_Burner,
-                                    0.625*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 25 && iBlk <= 29) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-25][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
-                                    ZERO,//1.10,//1.25,
-                                    0.625*Input.Height_Bunsen_Burner,
-                                    0.75*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 30 && iBlk <= 34) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-30][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
-                                    ZERO,//1.10,//1.25,
-                                    0.75*Input.Height_Bunsen_Burner,
-                                    0.875*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 35 && iBlk <= 39) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-35][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
-                                    ZERO,//1.10,//1.25,
-                                    0.875*Input.Height_Bunsen_Burner,
-                                    Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE);
-            
-            /* first ring of air line */
-            
-        } else if (iBlk >= 40 && iBlk <= 43) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-40][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
-                                    ZERO,//1.10,//1.25,
-                                    ZERO*Input.Height_Bunsen_Burner,
-                                    0.125*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_INFLOW_SUBSONIC);
-            
-        } else if (iBlk >= 44 && iBlk <= 47) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-44][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,
-                                    ZERO,//1.10,//1.25,
-                                    0.125*Input.Height_Bunsen_Burner,
-                                    0.25*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 48 && iBlk <= 51) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-48][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,
-                                    ZERO,//1.10,//1.25,
-                                    0.25*Input.Height_Bunsen_Burner,
-                                    0.375*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 52 && iBlk <= 55) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-52][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,
-                                    ZERO,//1.10,//1.25,
-                                    0.375*Input.Height_Bunsen_Burner,
-                                    0.5*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 56 && iBlk <= 59) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-56][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,
-                                    ZERO,//1.10,//1.25,
-                                    0.5*Input.Height_Bunsen_Burner,
-                                    0.625*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 60 && iBlk <= 63) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-60][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,
-                                    ZERO,//1.10,//1.25,
-                                    0.625*Input.Height_Bunsen_Burner,
-                                    0.75*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 64 && iBlk <= 67) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-64][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,
-                                    ZERO,//1.10,//1.25,
-                                    0.75*Input.Height_Bunsen_Burner,
-                                    0.875*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 68 && iBlk <= 71) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-68][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,
-                                    ZERO,//1.10,//1.25,
-                                    0.875*Input.Height_Bunsen_Burner,
-                                    Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE);
-            
-            /* second ring of air line */
-            
-        } else if (iBlk >= 72 && iBlk <= 75) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-72][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
-                                    ZERO,//1.10,//1.25,
-                                    ZERO*Input.Height_Bunsen_Burner,
-                                    0.125*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_INFLOW_SUBSONIC);
-            
-        } else if (iBlk >= 76 && iBlk <= 79) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-76][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,
-                                    ZERO,//1.10,//1.25,
-                                    0.125*Input.Height_Bunsen_Burner,
-                                    0.25*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 80 && iBlk <= 83) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-80][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,
-                                    ZERO,//1.10,//1.25,
-                                    0.25*Input.Height_Bunsen_Burner,
-                                    0.375*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 84 && iBlk <= 87) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-84][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,
-                                    ZERO,//1.10,//1.25,
-                                    0.375*Input.Height_Bunsen_Burner,
-                                    0.5*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 88 && iBlk <= 91) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-88][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,
-                                    ZERO,//1.10,//1.25,
-                                    0.5*Input.Height_Bunsen_Burner,
-                                    0.625*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 92 && iBlk <= 95) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-92][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,
-                                    ZERO,//1.10,//1.25,
-                                    0.625*Input.Height_Bunsen_Burner,
-                                    0.75*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 96 && iBlk <= 99) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-96][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,
-                                    ZERO,//1.10,//1.25,
-                                    0.75*Input.Height_Bunsen_Burner,
-                                    0.875*Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_NONE,
-                                    BC_NONE);
-            
-        } else if (iBlk >= 100 && iBlk <= 103) {
-            Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-100][0],
-                                    Input.NCells_Kdir,
-                                    STRETCHING_FCN_LINEAR,
-                                    ZERO,//1.10,//1.25,
-                                    0.875*Input.Height_Bunsen_Burner,
-                                    Input.Height_Bunsen_Burner);
-            
-            Grid_Blks[iBlk].Set_BCs(BC_NONE,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE,
-                                    BC_OUTFLOW_SUBSONIC,
-                                    BC_NONE);
+             Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk][0],
+				     Input.NCells_Kdir,
+				     STRETCHING_FCN_LINEAR,
+				     ZERO,
+				     ZERO*Input.Height_Bunsen_Burner,
+				     0.125*Input.Height_Bunsen_Burner);
+
+	      Grid_Blks[iBlk].Set_BCs(BC_NONE,
+		                      BC_NONE,
+                                      BC_NONE,
+		                      BC_NONE,
+                                      BC_NONE,
+                                      BC_INFLOW_TURBULENCE);
+
+           } else if (iBlk >= 5 && iBlk <= 9) {
+             Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-5][0],
+				     Input.NCells_Kdir,
+				     STRETCHING_FCN_LINEAR,
+				     ZERO,
+				     0.125*Input.Height_Bunsen_Burner,
+				     0.25*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 10 && iBlk <= 14) {
+             Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-10][0],
+				     Input.NCells_Kdir,
+				     STRETCHING_FCN_LINEAR,
+				     ZERO,
+				     0.25*Input.Height_Bunsen_Burner,
+				     0.375*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 15 && iBlk <= 19) {
+             Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-15][0],
+				     Input.NCells_Kdir,
+				     STRETCHING_FCN_LINEAR,
+				     ZERO,
+				     0.375*Input.Height_Bunsen_Burner,
+				     0.5*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 20 && iBlk <= 24) {
+             Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-20][0],
+				     Input.NCells_Kdir,
+				     STRETCHING_FCN_LINEAR,
+				     ZERO,
+				     0.5*Input.Height_Bunsen_Burner,
+				     0.625*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 25 && iBlk <= 29) {
+             Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-25][0],
+				     Input.NCells_Kdir,
+				     STRETCHING_FCN_LINEAR,
+				     ZERO,
+				     0.625*Input.Height_Bunsen_Burner,
+				     0.75*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 30 && iBlk <= 34) {
+             Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-30][0],
+				     Input.NCells_Kdir,
+				     STRETCHING_FCN_LINEAR,
+				     ZERO,
+				     0.75*Input.Height_Bunsen_Burner,
+				     0.875*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 35 && iBlk <= 39) {
+             Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-35][0],
+				     Input.NCells_Kdir,
+				     STRETCHING_FCN_LINEAR,
+				     ZERO,
+				     0.875*Input.Height_Bunsen_Burner,
+				     Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_OUTFLOW_SUBSONIC,
+				       BC_NONE);
+
+
+	      /* air line */
+
+           } else if (iBlk >= 40 && iBlk <= 43) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-40][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_LINEAR,
+				      ZERO,
+				      ZERO*Input.Height_Bunsen_Burner,
+				      0.125*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_OUTFLOW_SUBSONIC,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_INFLOW_SUBSONIC);
+
+           } else if (iBlk >= 44 && iBlk <= 47) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-44][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_LINEAR,
+				      ZERO,
+				      0.125*Input.Height_Bunsen_Burner,
+				      0.25*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_OUTFLOW_SUBSONIC,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 48 && iBlk <= 51) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-48][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_LINEAR,
+				      ZERO,
+				      0.25*Input.Height_Bunsen_Burner,
+				      0.375*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_OUTFLOW_SUBSONIC,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 52 && iBlk <= 55) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-52][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_LINEAR,
+				      ZERO,
+				      0.375*Input.Height_Bunsen_Burner,
+				      0.5*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_OUTFLOW_SUBSONIC,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 56 && iBlk <= 59) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-56][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_LINEAR,
+				      ZERO,
+				      0.5*Input.Height_Bunsen_Burner,
+				      0.625*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_OUTFLOW_SUBSONIC,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 60 && iBlk <= 63) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-60][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_LINEAR,
+				      ZERO,
+				      0.625*Input.Height_Bunsen_Burner,
+				      0.75*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_OUTFLOW_SUBSONIC,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 64 && iBlk <= 67) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-64][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_LINEAR,
+				      ZERO,
+				      0.75*Input.Height_Bunsen_Burner,
+				      0.875*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_OUTFLOW_SUBSONIC,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 68 && iBlk <= 71) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-68][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_LINEAR,
+				      ZERO,
+				      0.875*Input.Height_Bunsen_Burner,
+				      Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_OUTFLOW_SUBSONIC,
+				       BC_NONE,
+				       BC_INFLOW_SUBSONIC,
+				       BC_NONE);
+
+
+            // iBlk = 104;
+	    /* fuel lines */
+//           if (iBlk <= 4) {
+//              Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk][0],
+// 				     Input.NCells_Kdir,
+// 				     STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
+// 				     ZERO,//1.10,//1.25,
+// 				     ZERO*Input.Height_Bunsen_Burner,
+// 				     0.125*Input.Height_Bunsen_Burner);
+
+// 	      Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 		                      BC_NONE,
+//                                       BC_NONE,
+// 		                      BC_NONE,
+//                                       BC_NONE,
+//                                       BC_INFLOW_TURBULENCE);
+
+//            } else if (iBlk >= 5 && iBlk <= 9) {
+//              Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-5][0],
+// 				     Input.NCells_Kdir,
+// 				     STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
+// 				     ZERO,//1.10,//1.25,
+// 				     0.125*Input.Height_Bunsen_Burner,
+// 				     0.25*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 10 && iBlk <= 14) {
+//              Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-10][0],
+// 				     Input.NCells_Kdir,
+// 				     STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
+// 				     ZERO,//1.10,//1.25,
+// 				     0.25*Input.Height_Bunsen_Burner,
+// 				     0.375*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 15 && iBlk <= 19) {
+//              Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-15][0],
+// 				     Input.NCells_Kdir,
+// 				     STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
+// 				     ZERO,//1.10,//1.25,
+// 				     0.375*Input.Height_Bunsen_Burner,
+// 				     0.5*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 20 && iBlk <= 24) {
+//              Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-20][0],
+// 				     Input.NCells_Kdir,
+// 				     STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
+// 				     ZERO,//1.10,//1.25,
+// 				     0.5*Input.Height_Bunsen_Burner,
+// 				     0.625*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 25 && iBlk <= 29) {
+//              Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-25][0],
+// 				     Input.NCells_Kdir,
+// 				     STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
+// 				     ZERO,//1.10,//1.25,
+// 				     0.625*Input.Height_Bunsen_Burner,
+// 				     0.75*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 30 && iBlk <= 34) {
+//              Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-30][0],
+// 				     Input.NCells_Kdir,
+// 				     STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
+// 				     ZERO,//1.10,//1.25,
+// 				     0.75*Input.Height_Bunsen_Burner,
+// 				     0.875*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 35 && iBlk <= 39) {
+//              Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-35][0],
+// 				     Input.NCells_Kdir,
+// 				     STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
+// 				     ZERO,//1.10,//1.25,
+// 				     0.875*Input.Height_Bunsen_Burner,
+// 				     Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE);
+
+// 	      /* first ring of air line */
+
+//            } else if (iBlk >= 40 && iBlk <= 43) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-40][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
+// 				      ZERO,//1.10,//1.25,
+// 				      ZERO*Input.Height_Bunsen_Burner,
+// 				      0.125*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_INFLOW_SUBSONIC);
+
+//            } else if (iBlk >= 44 && iBlk <= 47) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-44][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,
+// 				      ZERO,//1.10,//1.25,
+// 				      0.125*Input.Height_Bunsen_Burner,
+// 				      0.25*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 48 && iBlk <= 51) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-48][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,
+// 				      ZERO,//1.10,//1.25,
+// 				      0.25*Input.Height_Bunsen_Burner,
+// 				      0.375*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 52 && iBlk <= 55) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-52][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,
+// 				      ZERO,//1.10,//1.25,
+// 				      0.375*Input.Height_Bunsen_Burner,
+// 				      0.5*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 56 && iBlk <= 59) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-56][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,
+// 				      ZERO,//1.10,//1.25,
+// 				      0.5*Input.Height_Bunsen_Burner,
+// 				      0.625*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 60 && iBlk <= 63) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-60][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,
+// 				      ZERO,//1.10,//1.25,
+// 				      0.625*Input.Height_Bunsen_Burner,
+// 				      0.75*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 64 && iBlk <= 67) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-64][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,
+// 				      ZERO,//1.10,//1.25,
+// 				      0.75*Input.Height_Bunsen_Burner,
+// 				      0.875*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 68 && iBlk <= 71) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-68][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,
+// 				      ZERO,//1.10,//1.25,
+// 				      0.875*Input.Height_Bunsen_Burner,
+// 				      Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE);
+
+// 	      /* second ring of air line */
+
+//            } else if (iBlk >= 72 && iBlk <= 75) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-72][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,//_FCN_MIN_CLUSTERING,
+// 				      ZERO,//1.10,//1.25,
+// 				      ZERO*Input.Height_Bunsen_Burner,
+// 				      0.125*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_INFLOW_SUBSONIC);
+
+//            } else if (iBlk >= 76 && iBlk <= 79) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-76][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,
+// 				      ZERO,//1.10,//1.25,
+// 				      0.125*Input.Height_Bunsen_Burner,
+// 				      0.25*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 80 && iBlk <= 83) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-80][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,
+// 				      ZERO,//1.10,//1.25,
+// 				      0.25*Input.Height_Bunsen_Burner,
+// 				      0.375*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 84 && iBlk <= 87) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-84][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,
+// 				      ZERO,//1.10,//1.25,
+// 				      0.375*Input.Height_Bunsen_Burner,
+// 				      0.5*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 88 && iBlk <= 91) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-88][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,
+// 				      ZERO,//1.10,//1.25,
+// 				      0.5*Input.Height_Bunsen_Burner,
+// 				      0.625*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 92 && iBlk <= 95) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-92][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,
+// 				      ZERO,//1.10,//1.25,
+// 				      0.625*Input.Height_Bunsen_Burner,
+// 				      0.75*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 96 && iBlk <= 99) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-96][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,
+// 				      ZERO,//1.10,//1.25,
+// 				      0.75*Input.Height_Bunsen_Burner,
+// 				      0.875*Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_NONE,
+// 				       BC_NONE);
+
+//            } else if (iBlk >= 100 && iBlk <= 103) {
+//               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-100][0],
+// 				      Input.NCells_Kdir,
+// 				      STRETCHING_FCN_LINEAR,
+// 				      ZERO,//1.10,//1.25,
+// 				      0.875*Input.Height_Bunsen_Burner,
+// 				      Input.Height_Bunsen_Burner);
+
+//                Grid_Blks[iBlk].Set_BCs(BC_NONE,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE,
+// 				       BC_OUTFLOW_SUBSONIC,
+// 				       BC_NONE);
+
             // iBlk = 90;
             /* fuel lines */
             
