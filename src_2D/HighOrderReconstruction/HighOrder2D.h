@@ -390,6 +390,14 @@ public:
 
   //! @name Cell Level Reconstructions:
   //@{
+  //! @brief Compute the unlimited high-order solution reconstruction of cell (iCell,jCell). 
+  template<class Soln_Block_Type>
+  void ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
+					      const int &iCell, const int &jCell,
+					      const Soln_State & 
+					      (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const  = 
+					      &Soln_Block_Type::CellSolution );
+
   //! @brief Compute the unconstrained unlimited high-order solution reconstruction of cell (iCell,jCell). 
   template<class Soln_Block_Type>
   void ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
@@ -424,6 +432,9 @@ public:
   void SetCentralStencil(const int &iCell, const int &jCell,
 			 IndexType & i_index, IndexType & j_index,
 			 const int &rings, int &StencilSize) const;
+  /*! @brief Set a stencil with all cells used for the reconstructions of the cells in the passed index arrays. */
+  void getEnlargedReconstructionStencil(const int &iCell, const int &jCell,
+					IndexType & i_index, IndexType & j_index) const;
   //@} (Helper Functions)
 
   //! @name CENO Analysis:
@@ -1868,6 +1879,124 @@ void HighOrder2D<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const i
 
   // Call set central stencil
   SetCentralStencil(iCell,jCell,i_index,j_index,rings,_dummy_);
+}
+
+/*! 
+ * Write the 'i' and 'j' indexes of the cells that are part of
+ * the reconstruction of the given cell and the cells that have
+ * common face with it.
+ *
+ * \param [in]  iCell The i-index of the given cell
+ * \param [in]  jCell The j-index of the given cell
+ * \param [out] i_index The i-index of the cells.
+ * \param [out] j_index The j-index of the cells.
+ *
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::getEnlargedReconstructionStencil(const int &iCell, const int &jCell,
+							       IndexType & i_index, IndexType & j_index) const{
+
+  if ( IsConstrainedReconstructionRequired() ) {
+    throw runtime_error("HighOrder2D<SOLN_STATE>::getEnlargedReconstructionStencil() doesn't support constrained reconstruction!");
+  }
+
+  // Set stencil based on the central one
+
+  // Reset the output index array
+  i_index.clear();
+  j_index.clear();
+
+  switch(rings){
+
+  case 2: 
+
+    i_index.push_back(iCell);   j_index.push_back(jCell); /* cell (iCell,jCell) */
+
+    /* First ring */
+    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
+    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
+    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
+    i_index.push_back(iCell-1); j_index.push_back(jCell  );
+    i_index.push_back(iCell+1); j_index.push_back(jCell  );
+    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
+    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
+    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
+
+    /* Second ring */
+    i_index.push_back(iCell-2); j_index.push_back(jCell-2);
+    i_index.push_back(iCell-1); j_index.push_back(jCell-2);
+    i_index.push_back(iCell  ); j_index.push_back(jCell-2);
+    i_index.push_back(iCell+1); j_index.push_back(jCell-2);
+    i_index.push_back(iCell+2); j_index.push_back(jCell-2);
+    i_index.push_back(iCell-2); j_index.push_back(jCell-1);
+    i_index.push_back(iCell+2); j_index.push_back(jCell-1);
+    i_index.push_back(iCell-2); j_index.push_back(jCell  );
+    i_index.push_back(iCell+2); j_index.push_back(jCell  );
+    i_index.push_back(iCell-2); j_index.push_back(jCell+1);
+    i_index.push_back(iCell+2); j_index.push_back(jCell+1);
+    i_index.push_back(iCell-2); j_index.push_back(jCell+2);
+    i_index.push_back(iCell-1); j_index.push_back(jCell+2);
+    i_index.push_back(iCell  ); j_index.push_back(jCell+2);
+    i_index.push_back(iCell+1); j_index.push_back(jCell+2);
+    i_index.push_back(iCell+2); j_index.push_back(jCell+2);
+
+    /* Third ring incomplete (i.e. skip the corners) */
+    i_index.push_back(iCell-2); j_index.push_back(jCell-3);
+    i_index.push_back(iCell-1); j_index.push_back(jCell-3);
+    i_index.push_back(iCell  ); j_index.push_back(jCell-3);
+    i_index.push_back(iCell+1); j_index.push_back(jCell-3);
+    i_index.push_back(iCell+2); j_index.push_back(jCell-3);
+    i_index.push_back(iCell-3); j_index.push_back(jCell-2);
+    i_index.push_back(iCell+3); j_index.push_back(jCell-2);
+    i_index.push_back(iCell-3); j_index.push_back(jCell-1);
+    i_index.push_back(iCell+3); j_index.push_back(jCell-1);
+    i_index.push_back(iCell-3); j_index.push_back(jCell  );
+    i_index.push_back(iCell+3); j_index.push_back(jCell  );
+    i_index.push_back(iCell-3); j_index.push_back(jCell+1);
+    i_index.push_back(iCell+3); j_index.push_back(jCell+1);
+    i_index.push_back(iCell-3); j_index.push_back(jCell+2);
+    i_index.push_back(iCell+3); j_index.push_back(jCell+2);
+    i_index.push_back(iCell-2); j_index.push_back(jCell+3);
+    i_index.push_back(iCell-1); j_index.push_back(jCell+3);
+    i_index.push_back(iCell  ); j_index.push_back(jCell+3);
+    i_index.push_back(iCell+1); j_index.push_back(jCell+3);
+    i_index.push_back(iCell+2); j_index.push_back(jCell+3);
+
+    break;
+
+  case 1: // one ring of cells around (iCell,jCell)
+
+    i_index[0]=iCell;   j_index[0]=jCell; /* cell (iCell,jCell) */
+
+    /* First ring */
+    i_index[1]=iCell-1; j_index[1]=jCell-1;
+    i_index[2]=iCell;   j_index[2]=jCell-1;
+    i_index[3]=iCell+1; j_index[3]=jCell-1;
+    i_index[4]=iCell-1; j_index[4]=jCell;
+    i_index[5]=iCell+1; j_index[5]=jCell;
+    i_index[6]=iCell-1; j_index[6]=jCell+1;
+    i_index[7]=iCell;   j_index[7]=jCell+1;
+    i_index[8]=iCell+1; j_index[8]=jCell+1;
+
+    /* Second ring incomplete (i.e. skip the corners) */
+    i_index.push_back(iCell-1); j_index.push_back(jCell-2);
+    i_index.push_back(iCell  ); j_index.push_back(jCell-2);
+    i_index.push_back(iCell+1); j_index.push_back(jCell-2);
+    i_index.push_back(iCell-2); j_index.push_back(jCell-1);
+    i_index.push_back(iCell+2); j_index.push_back(jCell-1);
+    i_index.push_back(iCell-2); j_index.push_back(jCell  );
+    i_index.push_back(iCell+2); j_index.push_back(jCell  );
+    i_index.push_back(iCell-2); j_index.push_back(jCell+1);
+    i_index.push_back(iCell+2); j_index.push_back(jCell+1);
+    i_index.push_back(iCell-1); j_index.push_back(jCell+2);
+    i_index.push_back(iCell  ); j_index.push_back(jCell+2);
+    i_index.push_back(iCell+1); j_index.push_back(jCell+2);
+
+    break;
+
+  default: // general expression
+    throw runtime_error("HighOrder2D<SOLN_STATE>::getEnlargedReconstructionStencil() doesn't support the current number of rings!");
+  }//endswitch  
 }
 
 /*! 

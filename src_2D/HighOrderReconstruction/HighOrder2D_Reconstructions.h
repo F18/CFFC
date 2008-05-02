@@ -912,4 +912,48 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
 }
 
 
+/*! 
+ * Compute the unlimited k-exact high-order reconstruction
+ * proposed by Barth (1993) for the given cell.
+ *
+ * \param SolnBlk the quad block for which the solution reconstruction is done.
+ * \param ReconstructedSoln member function of Soln_Block_Type which returns the solution.
+ * \param iCell i-index of the reconstructed cell
+ * \param jCell j-index of the reconstructed cell
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::
+ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
+				       const int &iCell, const int &jCell,
+				       const Soln_State & 
+				       (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const){
+
+  if ( iCell >= StartI && iCell <= EndI && jCell >= StartJ && jCell <= EndJ ){
+
+    /***************************************************************************
+     *    Perform unconstrained unlimited high-order solution reconstruction   *
+     **************************************************************************/
+
+    // Set the stencil of points used for reconstruction
+    SetReconstructionStencil(iCell, jCell, i_index, j_index);
+
+    // Compute the reconstruction for the current cell
+    ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
+							iCell, jCell, i_index, j_index);
+    
+  } else {
+    
+    /***************************************************************************
+     *    Perform constrained unlimited high-order solution reconstruction     *
+     **************************************************************************/
+
+    // Add constrained reconstruction here
+
+    throw runtime_error("HighOrder2D<SOLN_STATE>::ComputeUnlimitedSolutionReconstruction() doesn't know how to handle constrained reconstruction!");
+
+  }
+
+}
+
 #endif
