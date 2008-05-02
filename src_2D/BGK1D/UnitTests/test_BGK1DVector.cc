@@ -299,8 +299,86 @@ namespace tut
 
   }
 
+  /* Test 10:*/
+  template<>
+  template<>
+  void BGK1DVector_object::test<10>()
+  {
+    set_test_name("v_min && v_max");
+    BGK1D_Vector V;
+    double v;
 
+    v = BGK1D_TEST_VECTOR_V_MIN+(BGK1D_Vector::delta_v()/2.0);
+    ensure_distance("v_min",V.v_min(),v,tol*fabs(v));
+    v = BGK1D_TEST_VECTOR_V_MAX-(BGK1D_Vector::delta_v()/2.0);
+    ensure_distance("v_max",V.v_max(),v,tol*fabs(v));
+  }
 
+  /* Test 11:*/
+  template<>
+  template<>
+  void BGK1DVector_object::test<11>()
+  {
+    set_test_name("Check moment function");
+    double expected(0.0), 
+           delta_v((BGK1D_TEST_VECTOR_V_MAX-BGK1D_TEST_VECTOR_V_MIN)/(double)BGK1D_TEST_VECTOR_LENGTH);
+    BGK1D_Vector V;
+
+    V.one();
+
+    for(int i=0; i<2; ++i) { //can only go to 2 and be exact due to discretization
+      expected = 1.0/(double)(i+1) * (pow(BGK1D_TEST_VECTOR_V_MAX,(i+1))-pow(BGK1D_TEST_VECTOR_V_MIN,(i+1)));
+      ensure_distance("moment == moment, test 1", V.moment(i), expected, fabs(expected)*tol);
+    }
+
+    V.zero();
+
+    //make a wierd distribution function
+
+    for(int i=0; i<BGK1D_Vector::get_length(); ++i) {
+      V[i] = sqrt(fabs(V.velocity(i)-20.5));
+    }
+
+    for(int i=0; i<20; ++i) {
+      expected = 0.0;
+      for(int j=0; j<BGK1D_Vector::get_length(); ++j) {
+	expected += V[j] * delta_v * pow(V.velocity(j),i);
+      }
+      ensure_distance("moment == moment, test 2", V.moment(i), expected, fabs(expected)*tol);
+    }
+
+  }
+
+  /* Test 12:*/
+  template<>
+  template<>
+  void BGK1DVector_object::test<12>()
+  {
+    set_test_name("Maxwell_Boltzmann");
+
+    double v, expected,
+      delta_v((BGK1D_TEST_VECTOR_V_MAX-BGK1D_TEST_VECTOR_V_MIN)/(double)BGK1D_TEST_VECTOR_LENGTH);
+
+    double rho(1.554);
+    double u(-223.1);
+    double p(97322.1);
+
+    double B(rho/(2.0*p));
+
+    double AA(-B*u*u+log(rho*sqrt(B/PI)));
+    double BB(2.0*B*u);
+    double CC(-B);
+
+    BGK1D_Vector V;
+
+    V.Maxwell_Boltzmann(rho,u,p);
+
+    for(int i=0; i<BGK1D_Vector::get_length(); ++i) {
+      v = BGK1D_TEST_VECTOR_V_MIN + ( (double)i + 0.5 ) * delta_v;
+      expected = exp(AA+BB*v+CC*v*v);
+      ensure_distance("distribution functions are equal", V[i], expected, fabs(expected)*tol);
+    }
+  }
 
   //end tests
 }
