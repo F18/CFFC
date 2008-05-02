@@ -1013,13 +1013,15 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	   --> ( i.e. North Flux for cell (i,JCu) ) */
 	for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
 
+	  // Reset North flux for the current cell
+	  FluxN[i].Vacuum();
+
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndNorthSplineInfo[i].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
 
 	    // Reset Flux
 	    Flux.Vacuum();
-	    FluxN[i].Vacuum();
 	  
 	    // Calculate total flux through the spline subinterval
 	    for (GQPoint = 0;
@@ -1055,7 +1057,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	    dUdt[i][JCu][k_residual] -= ( FluxN[i]/Grid.Cell[i][JCu].A );
 	  }
 
-	}	// endfor (i)
+	} // endfor (i)
 
       } else {
 	/* Low-order boundary representation is required.
@@ -1115,13 +1117,15 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	   --> ( i.e. North Flux for cell (i,JCu) ) */
 	for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
 
+	  // Reset North flux for the current cell
+	  FluxN[i].Vacuum();
+
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndNorthSplineInfo[i].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
 
 	    // Reset Flux
 	    Flux.Vacuum();
-	    FluxN[i].Vacuum();
 	  
 	    // Calculate total flux through the spline subinterval
 	    for (GQPoint = 0;
@@ -1175,7 +1179,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	    dUdt[i][JCu][k_residual] -= ( FluxN[i]/Grid.Cell[i][JCu].A );
 	  }
 
-	}	// endfor (i)
+	} // endfor (i)
       
       } else {
 	/* Low-order boundary representation is required.
@@ -1188,7 +1192,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  // Determine the location of the Gauss Quadrature Points
 	  Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);
 
-	  // Reset Flux
+	  // Reset North flux for the current cell
 	  FluxN[i].Vacuum();
 
 	  // Calculate total flux through the cell face in the normal direction
@@ -1233,7 +1237,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	    dUdt[i][JCu][k_residual] -= ( FluxN[i]/Grid.Cell[i][JCu].A );
 	  }
 
-	}	// endfor (i)
+	} // endfor (i)
       
       } // endif (Grid.BndNorthSplineInfo != NULL)
     
@@ -1256,13 +1260,15 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	   --> ( i.e. South Flux for cell (i,JCl) ) */
 	for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
 
+	  // Reset South flux for the current cell
+	  FluxS[i].Vacuum();
+
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndSouthSplineInfo[i].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
 
 	    // Reset Flux
 	    Flux.Vacuum();
-	    FluxS[i].Vacuum();
 	  
 	    // Calculate total flux through the spline subinterval
 	    for (GQPoint = 0;
@@ -1358,13 +1364,15 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	   --> ( i.e. South Flux for cell (i,JCl) ) */
 	for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
 
+	  // Reset South flux for the current cell	  
+	  FluxS[i].Vacuum();
+
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndSouthSplineInfo[i].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
 
 	    // Reset Flux
 	    Flux.Vacuum();
-	    FluxS[i].Vacuum();
 	  
 	    // Calculate total flux through the spline subinterval
 	    for (GQPoint = 0;
@@ -1476,7 +1484,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	    dUdt[i][JCl][k_residual] -= ( FluxS[i]/Grid.Cell[i][JCl].A );
 	  }
 
-	}	// endfor (i)
+	} // endfor (i)
       
       } // endif (Grid.BndSouthSplineInfo != NULL)
     
@@ -1499,13 +1507,15 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	   --> ( i.e. East Flux for cell (ICu,j) ) */
 	for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
 
+	  // Reset East flux for the current cell
+	  FluxE[j].Vacuum();
+
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndEastSplineInfo[j].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
 
 	    // Reset Flux
 	    Flux.Vacuum();
-	    FluxE[j].Vacuum();
 	  
 	    // Calculate total flux through the spline subinterval
 	    for (GQPoint = 0;
@@ -1601,13 +1611,15 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	   --> ( i.e. East Flux for cell (ICu,j) ) */
 	for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
 
+	  // Reset East flux for the current cell
+	  FluxE[j].Vacuum();
+
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndEastSplineInfo[j].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
 
 	    // Reset Flux
 	    Flux.Vacuum();
-	    FluxE[j].Vacuum();
 	  
 	    // Calculate total flux through the spline subinterval
 	    for (GQPoint = 0;
@@ -1742,13 +1754,15 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	   --> ( i.e. West Flux for cell (ICl,j) ) */
 	for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
 
+	  // Reset West flux for the current cell
+	  FluxW[j].Vacuum();
+
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndWestSplineInfo[j].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
 
 	    // Reset Flux
 	    Flux.Vacuum();
-	    FluxW[j].Vacuum();
 	  
 	    // Calculate total flux through the spline subinterval
 	    for (GQPoint = 0;
@@ -1844,13 +1858,15 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	   --> ( i.e. West Flux for cell (ICl,j) ) */
 	for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
 
+	  // Reset West flux for the current cell
+	  FluxW[j].Vacuum();
+
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndWestSplineInfo[j].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
 
 	    // Reset Flux
 	    Flux.Vacuum();
-	    FluxW[j].Vacuum();
 	  
 	    // Calculate total flux through the spline subinterval
 	    for (GQPoint = 0;
@@ -2095,13 +2111,15 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  // Determine if the solution reconstruction was detected as non-smooth for the current cell.
 	  IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(i,JCu);
 
+	  // Reset face flux
+	  FaceFlux.Vacuum();
+	    
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndNorthSplineInfo[i].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
 
 	    // Reset Flux
 	    Flux.Vacuum();
-	    FaceFlux.Vacuum();
 	  
 	    // Calculate total flux through the spline subinterval
 	    for (GQPoint = 0;
@@ -2249,6 +2267,9 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	   --> ( i.e. North Flux for cell (i,JCu) ) */
 	for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
 
+	  // Reset face flux
+	  FaceFlux.Vacuum();
+
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndNorthSplineInfo[i].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
@@ -2374,13 +2395,15 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  // Determine if the solution reconstruction was detected as non-smooth for the current cell.
 	  IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(i,JCl);
 
+	  // Reset face flux
+	  FaceFlux.Vacuum();
+
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndSouthSplineInfo[i].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
 
 	    // Reset Flux
 	    Flux.Vacuum();
-	    FaceFlux.Vacuum();
 	  
 	    // Calculate total flux through the spline subinterval
 	    for (GQPoint = 0;
@@ -2528,6 +2551,9 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	   --> ( i.e. South Flux for cell (i,JCl) ) */
 	for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
 
+	  // Reset face flux
+	  FaceFlux.Vacuum();
+
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndSouthSplineInfo[i].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
@@ -2653,13 +2679,15 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  // Determine if the solution reconstruction was detected as non-smooth for the current cell.
 	  IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(ICu,j);
 
+	  // Reset face flux
+	  FaceFlux.Vacuum();
+
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndEastSplineInfo[j].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
 
 	    // Reset Flux
 	    Flux.Vacuum();
-	    FaceFlux.Vacuum();
 	  
 	    // Calculate total flux through the spline subinterval
 	    for (GQPoint = 0;
@@ -2807,6 +2835,9 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	   --> ( i.e. East Flux for cell (ICu,j) ) */
 	for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
 
+	  // Reset face flux
+	  FaceFlux.Vacuum();
+
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndEastSplineInfo[j].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
@@ -2932,13 +2963,15 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  // Determine if the solution reconstruction was detected as non-smooth for the current cell.
 	  IsNonSmoothHighOrderReconstruction = HighOrderVariable(Pos).IsThereAnyNonSmoothHighOrderReconstruction(ICl,j);
 
+	  // Reset face flux
+	  FaceFlux.Vacuum();
+
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndWestSplineInfo[j].NumOfSubIntervals();
 	       ++SplineSegment){  // for each continuous spline subinterval
 
 	    // Reset Flux
 	    Flux.Vacuum();
-	    FaceFlux.Vacuum();
 	  
 	    // Calculate total flux through the spline subinterval
 	    for (GQPoint = 0;
@@ -3085,6 +3118,9 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	/* Evaluate the cell interface i-direction fluxes.
 	   --> ( i.e. West Flux for cell (ICl,j) ) */
 	for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
+
+	  // Reset face flux
+	  FaceFlux.Vacuum();
 
 	  for (SplineSegment = 1, Position = 1; 
 	       SplineSegment <= Grid.BndWestSplineInfo[j].NumOfSubIntervals();
