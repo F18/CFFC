@@ -141,13 +141,13 @@ else
             $(AMR_DIR)QuadTree.cc
 endif
 
-# HighOrderReconstruction common for both 1D and 2D
+# HighOrderReconstruction common for both 1D and 2D:
 SRC_HIGH_ORDER_RECONSTRUCTION_COMMON = ReconstructionHelpers.cc \
                                        CENO_Tolerances.cc \
 				       CENO_ExecutionMode.cc 
 SRC_HIGH_ORDER_RECONSTRUCTION_COMMON := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON))
 
-# HighOrderReconstruction only for 1D
+# HighOrderReconstruction only for 1D:
 SRC_HIGH_ORDER_RECONSTRUCTION_1D = ENO_ExecutionMode.cc \
 				   AccuracyAssessment1D.cc
 SRC_HIGH_ORDER_RECONSTRUCTION_1D := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION_1D))
@@ -158,7 +158,7 @@ ifeq ($(TUT_TESTING),ON)
   SRC_HIGH_ORDER_RECONSTRUCTION_1D += $(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_1D)
 endif
 
-# HighOrderReconstruction only for 2D
+# HighOrderReconstruction only for 2D:
 SRC_HIGH_ORDER_RECONSTRUCTION_2D = AccuracyAssessment2DMultiBlock.cc \
 				   HighOrder2D_Input.cc
 SRC_HIGH_ORDER_RECONSTRUCTION_2D := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION_2D))
@@ -205,12 +205,12 @@ endif
 SRC_EULER1D_EXE = $(EULER_1D_DIR)Euler1DMain.cc
 
 SRC_EULER1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
-                     $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION) \
+                     $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) $(SRC_HIGH_ORDER_RECONSTRUCTION_1D) \
                      $(SRC_EULER1D) $(SRC_EULER1D_EXE) $(SRC_MPI)
 
 # Solvers 1D:
 SRC_SOLVERS1D = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
-                $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION) \
+                $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) $(SRC_HIGH_ORDER_RECONSTRUCTION_1D) \
 		$(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) \
                 $(SRC_MHD1D) $(SRC_EULER1D) $(SRC_MPI)
 
@@ -439,7 +439,7 @@ SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
 
 # Base and CFFC sources:
 SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
-           $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) $(SRC_HIGH_ORDER_RECONSTRUCTION_2D)
+           $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) $(SRC_HIGH_ORDER_RECONSTRUCTION_2D) $(SRC_SYSTEM) 
 ifeq ($(TUT_TESTING),ON) 
   SRC_BASE += $(SRC_TUT)
   SRC_SOLVERS1D += $(SRC_TUT)
@@ -457,30 +457,6 @@ SRC_CFFC = $(SRC_BASE) \
 SRC_MAIN = cffc2D.cc
 SRC_ICEMCFD_UTIL1 = $(ICEMCFD_DIR)icemcfd2tecplot.cc 
 SRC_ICEMCFD_UTIL2 = $(ICEMCFD_DIR)icemcfd2grid2dquad.cc
-
-# Solvers 1D:
-SRC_SOLVERS1D = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
-                $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) $(SRC_HIGH_ORDER_RECONSTRUCTION_1D) \
-		$(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) \
-                $(SRC_MHD1D) $(SRC_EULER1D) $(SRC_MPI)
-
-# Add Unit Testing to Solvers 1D:
-ifeq ($(TUT_TESTING),ON) 
-  SRC_SOLVERS1D += $(SRC_TUT)
-endif
-
-SRC_SOLVERS1D_EXE = $(SOLVERS1D_DIR)Solvers1D.cc
-SRC_SOLVERS1D_SOLVER = $(SRC_SOLVERS1D_EXE) $(SRC_SOLVERS1D)
-
-# Euler 1D:
-SRC_EULER1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
-                     $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) $(SRC_HIGH_ORDER_RECONSTRUCTION_1D) \
-                     $(SRC_EULER1D) $(SRC_EULER1D_EXE) $(SRC_MPI)
-
-# Add Unit Testing to Euler 1D:
-ifeq ($(TUT_TESTING),ON) 
-  SRC_EULER1D_SOLVER += $(SRC_TUT)
-endif
 
 #################################################################################
 # Compiled object code files (automatically generated with pattern substitution)

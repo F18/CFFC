@@ -667,7 +667,6 @@ install-les3Dpolytropic: $(EXE_LES_POLYTROPIC)
 	@echo "---------------------"
 	@echo " "
 
-
 #
 # Create code documentation using doxygen and latex.
 documentation:
