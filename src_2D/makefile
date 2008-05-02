@@ -141,21 +141,34 @@ else
             $(AMR_DIR)QuadTree.cc
 endif
 
-# HighOrderReconstruction
-SRC_HIGH_ORDER_RECONSTRUCTION = ReconstructionHelpers.cc \
-                                CENO_Tolerances.cc \
-				CENO_ExecutionMode.cc \
-                                ENO_ExecutionMode.cc \
-				AccuracyAssessment1D.cc \
-				AccuracyAssessment2DMultiBlock.cc
-SRC_HIGH_ORDER_RECONSTRUCTION := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION))
+# HighOrderReconstruction common for both 1D and 2D
+SRC_HIGH_ORDER_RECONSTRUCTION_COMMON = ReconstructionHelpers.cc \
+                                       CENO_Tolerances.cc \
+				       CENO_ExecutionMode.cc 
+SRC_HIGH_ORDER_RECONSTRUCTION_COMMON := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON))
+
+# HighOrderReconstruction only for 1D
+SRC_HIGH_ORDER_RECONSTRUCTION_1D = ENO_ExecutionMode.cc \
+				   AccuracyAssessment1D.cc
+SRC_HIGH_ORDER_RECONSTRUCTION_1D := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION_1D))
+# Add High-Order Reconstruction Testing If Required:
+SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_1D := test_HighOrder1D_Double.cc
+SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_1D := $(addprefix $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/,$(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_1D))
+ifeq ($(TUT_TESTING),ON) 
+  SRC_HIGH_ORDER_RECONSTRUCTION_1D += $(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_1D)
+endif
+
+# HighOrderReconstruction only for 2D
+SRC_HIGH_ORDER_RECONSTRUCTION_2D = AccuracyAssessment2DMultiBlock.cc \
+				   HighOrder2D_Input.cc
+SRC_HIGH_ORDER_RECONSTRUCTION_2D := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION_2D))
 
 # Add High-Order Reconstruction Testing If Required:
-SRC_HIGH_ORDER_RECONSTRUCTION_TESTS := test_HighOrder1D_Double.cc \
-                                       test_TaylorDerivatives2D_Double.cc
-SRC_HIGH_ORDER_RECONSTRUCTION_TESTS := $(addprefix $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/,$(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS))
+SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_2D := test_TaylorDerivatives2D_Double.cc \
+				          test_HighOrder2D_Double.cc
+SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_2D := $(addprefix $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/,$(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_2D))
 ifeq ($(TUT_TESTING),ON) 
-  SRC_HIGH_ORDER_RECONSTRUCTION += $(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS)
+  SRC_HIGH_ORDER_RECONSTRUCTION_2D += $(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_2D)
 endif
 
 # 1D:
@@ -208,6 +221,7 @@ SRC_SOLVERS1D_SOLVER = $(SRC_SOLVERS1D_EXE) $(SRC_SOLVERS1D)
 SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
 	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DInput.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad.cc \
+                    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad_HighOrder.cc \
 	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSingleBlock.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadMultiBlock.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadGrid.cc \
@@ -425,7 +439,7 @@ SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
 
 # Base and CFFC sources:
 SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
-           $(SRC_HIGH_ORDER_RECONSTRUCTION) $(SRC_SYSTEM)
+           $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) $(SRC_HIGH_ORDER_RECONSTRUCTION_2D)
 ifeq ($(TUT_TESTING),ON) 
   SRC_BASE += $(SRC_TUT)
   SRC_SOLVERS1D += $(SRC_TUT)
@@ -436,12 +450,37 @@ SRC_CFFC = $(SRC_BASE) \
            $(SRC_ADVECTDIFFUSE) $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_CHEM) $(SRC_HIGHTEMP) \
            $(SRC_DUSTY) $(SRC_LESPREMIXED) $(SRC_GAUSSIAN) $(SRC_ION) $(SRC_ELECTROSTATIC) \
            $(SRC_RTE) $(SRC_INTERFACE) $(SRC_LEVELSET) \
-           $(SRC_TURBULENT) $(SRC_EOS) $(SRC_NASADATA) $(SRC_REACTIONS) $(SRC_SNBCK) $(SRC_ICEMCFD)
+           $(SRC_TURBULENT) $(SRC_EOS) $(SRC_NASADATA) $(SRC_REACTIONS) $(SRC_SNBCK) $(SRC_ICEMCFD) \
+           $(SRC_HIGH_ORDER_RECONSTRUCTION_1D)
 
 # Executable sources:
 SRC_MAIN = cffc2D.cc
 SRC_ICEMCFD_UTIL1 = $(ICEMCFD_DIR)icemcfd2tecplot.cc 
 SRC_ICEMCFD_UTIL2 = $(ICEMCFD_DIR)icemcfd2grid2dquad.cc
+
+# Solvers 1D:
+SRC_SOLVERS1D = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
+                $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) $(SRC_HIGH_ORDER_RECONSTRUCTION_1D) \
+		$(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) \
+                $(SRC_MHD1D) $(SRC_EULER1D) $(SRC_MPI)
+
+# Add Unit Testing to Solvers 1D:
+ifeq ($(TUT_TESTING),ON) 
+  SRC_SOLVERS1D += $(SRC_TUT)
+endif
+
+SRC_SOLVERS1D_EXE = $(SOLVERS1D_DIR)Solvers1D.cc
+SRC_SOLVERS1D_SOLVER = $(SRC_SOLVERS1D_EXE) $(SRC_SOLVERS1D)
+
+# Euler 1D:
+SRC_EULER1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
+                     $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) $(SRC_HIGH_ORDER_RECONSTRUCTION_1D) \
+                     $(SRC_EULER1D) $(SRC_EULER1D_EXE) $(SRC_MPI)
+
+# Add Unit Testing to Euler 1D:
+ifeq ($(TUT_TESTING),ON) 
+  SRC_EULER1D_SOLVER += $(SRC_TUT)
+endif
 
 #################################################################################
 # Compiled object code files (automatically generated with pattern substitution)
@@ -475,7 +514,9 @@ OBJ_MHD1D = $(SRC_MHD1D:.cc=.o)
 OBJ_CFD1D_INPUT := $(SRC_CFD1D_INPUT:.cc=.o)
 
 # HighOrderReconstruction: (substitute *.o for *.cc)
-OBJ_HIGH_ORDER_RECONSTRUCTION := $(SRC_HIGH_ORDER_RECONSTRUCTION:.cc=.o)
+OBJ_HIGH_ORDER_RECONSTRUCTION_COMMON := $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON:.cc=.o)
+OBJ_HIGH_ORDER_RECONSTRUCTION_1D := $(SRC_HIGH_ORDER_RECONSTRUCTION_1D:.cc=.o)
+OBJ_HIGH_ORDER_RECONSTRUCTION_2D := $(SRC_HIGH_ORDER_RECONSTRUCTION_2D:.cc=.o)
 
 # Euler1D solver objects:
 OBJ_EULER1D_SOLVER := $(patsubst %.cc,%.o, $(filter %.cc, $(SRC_EULER1D_SOLVER))) \
@@ -579,9 +620,11 @@ OBJ_CFFC += $(patsubst %.f,%.o,$(filter %.f,$(SRC_CFFC)))
 # Executable objects:
 OBJ_MAIN = $(SRC_MAIN:.cc=.o)
 OBJ_ICEMCFD_UTIL1 = $(SRC_ICEMCFD_UTIL1:.cc=.o) \
-                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD)
+                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD) \
+		    $(OBJ_HIGH_ORDER_RECONSTRUCTION_2D) $(OBJ_HIGH_ORDER_RECONSTRUCTION_COMMON)
 OBJ_ICEMCFD_UTIL2 = $(SRC_ICEMCFD_UTIL2:.cc=.o) \
-                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD)
+                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD) \
+		    $(OBJ_HIGH_ORDER_RECONSTRUCTION_2D) $(OBJ_HIGH_ORDER_RECONSTRUCTION_COMMON)
 ifeq ($(TUT_TESTING),ON) 
   OBJ_ICEMCFD_UTIL1 += $(OBJ_TUT)
   OBJ_ICEMCFD_UTIL2 += $(OBJ_TUT)
@@ -1052,6 +1095,8 @@ clean:
 	@echo '---------------------------------'
 	@echo ' '
 	rm -f *.depend *.o *.bak *.il *~
+	rm -f journal.tut log.tut
+	rm -f gmon.out tecplot.phy
 	rm -f $(MATH_DIR)*.o $(MATH_DIR)*.il $(MATH_DIR)*~
 	rm -f $(MATH_DIR)Polyfit/*.o $(MATH_DIR)Polyfit/*.il $(MATH_DIR)Polyfit/*~
 	rm -f $(MATH_DIR)UnitTests/*.o $(MATH_DIR)UnitTests/*.il $(MATH_DIR)UnitTests/*~

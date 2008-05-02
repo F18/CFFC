@@ -86,8 +86,10 @@ public:
   const int& GQPointsPerSubInterval(void) const {return N_GQP; }
   //! Get the total number of Gauss quadrate points used for flux evaluation
   int NumGQPoints(void) const {return N_GQP*N_SubIntervals; }
-  //! Get the total number of Gauss quadrate points used for contour integration
+  //! Get the total number of Gauss quadrature points used for contour integration
   int NumGQPoints_ContourIntegral(void) const {return NUMBER_OF_GQP_CONTOURINT * N_SubIntervals; }
+  //! Get the number of Gauss quadrature points used for contour integration along each subinterval
+  static const int& get_NumGQPoints_ContourIntegral(void) {return NUMBER_OF_GQP_CONTOURINT; }
 
   //! Get the array of subinterval length
   const double* IntLength(void) const {return SubIntervalLength; }
@@ -100,6 +102,10 @@ public:
 
   //! Get the array of Gauss quadrature points
   const Vector2D* GQPoint(void) const {return GQP;}
+
+  //! Copy the array of Gauss quadrature points used for flux calculation in the provided container
+  void CopyGQPoints(Vector2D *CopyGQP){ for (int i=0; i<NumGQPoints(); ++i) CopyGQP[i] = GQP[i]; }
+
   /*! 
    * Get a specific Gauss quadrature point location. 
    * \param Position index specifying which GQP is retrieved. Position >= ONE!!!
@@ -185,6 +191,10 @@ public:
   double AreaContribution(const Vector2D &RefPoint){ return IntegratePolynomialTerm(RefPoint, 0, 0); }
   double XCentroidContribution(const Vector2D &RefPoint){ return IntegratePolynomialTerm(RefPoint, 1, 0); }
   double YCentroidContribution(const Vector2D &RefPoint){ return IntegratePolynomialTerm(RefPoint, 0, 1); }
+
+  //! Integrate the desired function with respect to the y-coordinate along the contour of this spline interval.
+  template<typename FO, class ReturnType>
+  ReturnType IntegrateFunctionWithRespectToY(FO FuncObj, ReturnType _dummy_param) const;
   //@}
 
   //! @name Set the number of Gauss quadrature points for contour integration
@@ -366,5 +376,57 @@ inline void Spline2DInterval_HO::UpdateInterval(const Spline2D_HO & SupportCurve
   InitializeInterval(SupportCurve,StartPoint,EndPoint,NumGQPoints);
 }
 
+/*!
+ * Compute the expression \f$ I = \oint F(x,y) dy \f$.
+ * The expression is rewritten only as a function of the curvilinear coordinate:
+ * \f$ I = \oint F(x,y) \frac{\partial y(s)}{ds} ds \f$
+ * The function to be integrated along the contour of 
+ * this spline interval must be differentiable, such that
+ * Gauss quadrature integration can be applied.
+ * The accuracy of this integration is determined by the 
+ * number of Gauss quadrature points used in the integration
+ * process (NUMBER_OF_GQP_CONTOURINT).
+ * Some operators and constructors are required to be defined
+ * for the ReturnType class, and the function is assumed to
+ * be function only of the 2D Cartesian coordinates.
+ */
+template<typename FO, class ReturnType> inline
+ReturnType Spline2DInterval_HO::IntegrateFunctionWithRespectToY(FO FuncObj, ReturnType _dummy_param) const {
+
+  ReturnType Result(0.0);
+
+  switch(NUMBER_OF_GQP_CONTOURINT){
+
+  case 3:
+    for (int i=0; i<NumOfSubIntervals(); ++i){
+      // Calculate the contribution of each subinterval
+      Result +=  IntLength(i+1)*( GaussQuadratureData::GQ3_Weight[0] * dYdS(3*i+1) * FuncObj(GQPointContourIntegral(3*i+1).x,
+											     GQPointContourIntegral(3*i+1).y) + 
+				  GaussQuadratureData::GQ3_Weight[1] * dYdS(3*i+2) * FuncObj(GQPointContourIntegral(3*i+2).x,
+											     GQPointContourIntegral(3*i+2).y) +
+				  GaussQuadratureData::GQ3_Weight[2] * dYdS(3*i+3) * FuncObj(GQPointContourIntegral(3*i+3).x,
+											     GQPointContourIntegral(3*i+3).y) );
+    }
+    break;
+
+  case 5:
+    for (int i=0; i<NumOfSubIntervals(); ++i){
+      // Calculate the contribution of each subinterval
+      Result +=  IntLength(i+1)*( GaussQuadratureData::GQ5_Weight[0] * dYdS(5*i+1) * FuncObj(GQPointContourIntegral(5*i+1).x,
+											     GQPointContourIntegral(5*i+1).y) + 
+				  GaussQuadratureData::GQ5_Weight[1] * dYdS(5*i+2) * FuncObj(GQPointContourIntegral(5*i+2).x,
+											     GQPointContourIntegral(5*i+2).y) +
+				  GaussQuadratureData::GQ5_Weight[2] * dYdS(5*i+3) * FuncObj(GQPointContourIntegral(5*i+3).x,
+											     GQPointContourIntegral(5*i+3).y) +
+				  GaussQuadratureData::GQ5_Weight[3] * dYdS(5*i+4) * FuncObj(GQPointContourIntegral(5*i+4).x,
+											     GQPointContourIntegral(5*i+4).y) +
+				  GaussQuadratureData::GQ5_Weight[4] * dYdS(5*i+5) * FuncObj(GQPointContourIntegral(5*i+5).x,
+											     GQPointContourIntegral(5*i+5).y) );
+    }
+    break;
+  }
+
+  return Result;
+}
 
 #endif /* _HO_SPLINE2DINTERVAL_INCLUDED  */

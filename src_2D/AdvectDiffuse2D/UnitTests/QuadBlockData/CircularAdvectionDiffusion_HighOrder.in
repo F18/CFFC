@@ -1,0 +1,255 @@
+						##############################
+						# AdvectDiffuse2D input file #
+						##############################
+
+#
+# SOLVED PROBLEM: Pure circular advection in a rectangular box
+# 
+
+			###########################
+			# SET EQUATION PARAMETERS #
+			###########################
+
+	#####################
+	#  DEFINE GEOMETRY  #
+	#####################
+Flow_Geometry_Type = 
+		Planar
+Grid_Type =
+	 Interior_Inflow_Outflow_Box
+Box_Width =
+	2.00
+Box_Height =
+	2.00
+X_Shift =
+	0.0 0.0
+
+	###############################
+	#  VELOCITY FIELD PARAMETERS  #
+	###############################
+Velocity_Field =
+	Rotational
+Angular_Velocity = 
+	5.00
+Center_Of_Rotation = 
+	0.0  0.0
+Angular_Velocity_Variation =
+	Constant
+
+	################################
+	#  DIFFUSION FIELD PARAMETERS  #
+	################################
+Diffusion_Field = 
+	No_Diffusion
+
+	############################
+	#  SOURCE TERM PARAMETERS  #
+	############################
+Source_Field =
+	No_Source
+
+	#########################
+	# SET INITIAL CONDITION #
+	#########################
+ICs_Type =
+	 Exact_Solution
+
+Exact_Integration_Digits =
+    6
+
+
+	################################
+	#  DEFINE BOUNDARY CONDITIONS  #
+	################################
+Boundary_Conditions_Specified =
+		 On
+		# Off
+BC_North =
+	Farfield
+	#Dirichlet
+
+BC_South =
+	Farfield
+	#Dirichlet
+
+BC_East =
+	Farfield
+	#Dirichlet
+
+BC_West =
+	Farfield
+	#Dirichlet
+
+Inflow_Field =
+	 Inflow_Sinusoidal_IV
+
+
+	###########################
+	#  DEFINE EXACT SOLUTION  #
+	###########################
+Exact_Solution =
+		Pure_Circular_Advection
+Center_Of_Rotation =
+	    0.0 0.0
+
+
+
+
+			###########################################
+			# SET NUMERICAL DISCRETIZATION PARAMETERS #
+			##########################################
+
+
+	#########################
+	#  SET MESH PARAMETERS  #
+	#########################
+
+Number_of_Cells_Idir = 
+	12
+Number_of_Cells_Jdir =
+	12
+Number_of_Blocks_Idir = 
+	2
+Number_of_Blocks_Jdir =
+	2
+Number_of_Ghost_Cells =
+	5
+Number_of_Blocks_Per_Processor =
+	10
+
+
+	###########################################
+	#  SET SPATIAL DISCRETIZATION PARAMETERS  #
+	###########################################
+Reconstruction_Type =
+	CENO
+
+Space_Accuracy =
+        3
+
+Number_of_Auxiliary_Reconstructions =
+        2
+
+Auxiliary_Reconstruction_Orders =
+      2   4
+
+CENO_Smoothness_Indicator =
+     Use_First_Neighbours
+
+Limiter_Type = 
+	 One
+	# Barth_Jespersen
+	# Venkatakrishnan
+	# Zero
+
+
+	################################
+	# SET TIME STEPPING PARAMETERS #
+	################################
+Time_Integration_Type =
+	 Explicit_Predictor_Corrector
+	# Multigrid
+
+Time_Accurate = 
+		0
+
+Local_Time_Stepping =
+		0
+CFL_Number =
+	0.50
+
+Maximum_Number_of_Time_Steps =
+	0
+Time_Max = 
+	1.00
+
+Full_Multigrid =
+	100
+	
+Multigrid_Smoothing_Type =
+	Explicit_Predictor_Corrector
+
+# MULTIGRID PARAMETERS:
+Multigrid_Levels =
+    4
+Multigrid_Cycle_Type =
+    V
+Multigrid_Number_of_Smooths_on_Finest_Level =
+    2
+Multigrid_Number_of_Pre_Smooths =
+    2
+Multigrid_Number_of_Post_Smooths =
+    2
+Multigrid_Number_of_Smooths_on_Coarsest_Level =
+    4
+
+Maximum_Number_of_NKS_Iterations = 
+    0
+
+
+	######################
+	# SET AMR PARAMETERS #
+	######################
+
+# INITIAL AMR PARAMETERS:
+Number_of_Initial_Mesh_Refinements =
+    0
+Number_of_Uniform_Mesh_Refinements =
+    0
+Number_of_Boundary_Mesh_Refinements =
+    0
+
+# UNSTEADY AMR PARAMETERS:
+AMR =
+     # ON
+      OFF
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+    7
+Minimum_Refinement_Level =
+    2
+Threshold_for_Refinement =
+    0.80
+Threshold_for_Coarsening =
+    0.40
+AMR_Frequency =
+    1001
+
+	#########################
+	# SET OUTPUT PARAMETERS #
+	#########################
+Output_File_Name = 
+	AdvectDiffuse2D/UnitTests/QuadBlockData/Current_Circular_Advection_In_Rectangular_Box
+
+Restart_Solution_Save_Frequency = 
+	600
+
+	#########################
+	#  ACCURACY ASSESSMENT  #
+	#########################
+Accuracy_Assessment_Exact_Digits =
+	6
+
+
+	#######################
+	#   Execute program   #
+	#######################
+Execute
+
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+Print_Accuracy
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+Write_Restart
+##Write_Mesh_Definition
+
+#######################
+# Terminate program
+#######################
+Terminate

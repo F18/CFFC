@@ -12,6 +12,7 @@
 
 /* Include CFFC header files */
 #include "HO_Grid2DQuad.h"	    // Include high-order quadrilateral block grid header file.
+#include "../HighOrderReconstruction/HighOrder2D_Input.h"	// Include 2D high-order input header file
 
 
 /* Define the high-order quadrilateral 2D grid multi-block class. */
@@ -143,6 +144,22 @@ public:
 			    const int Number_of_Cells_Jdir,
 			    const int Number_of_Ghost_Cells,
 			    const int Highest_Order_of_Reconstruction);
+
+  void Grid_Deformed_Box(int &_Number_of_Blocks_Idir_,
+			 int &_Number_of_Blocks_Jdir_,
+			 const Vector2D &VertexSW,
+			 const Vector2D &VertexSE,
+			 const Vector2D &VertexNE,
+			 const Vector2D &VertexNW,					
+			 const int Stretching_Flag,
+			 const int Stretching_Type_Idir,
+			 const int Stretching_Type_Jdir,
+			 const double &Stretching_Factor_Idir,
+			 const double &Stretching_Factor_Jdir,
+			 const int Number_of_Cells_Idir,
+			 const int Number_of_Cells_Jdir,
+			 const int Number_of_Ghost_Cells,
+			 const int Highest_Order_of_Reconstruction);
 
   void Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
 		       int &_Number_of_Blocks_Jdir_,
@@ -1127,7 +1144,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 					Input_Parameters.Number_of_Cells_Idir,
 					Input_Parameters.Number_of_Cells_Jdir,
 					Input_Parameters.Number_of_Ghost_Cells,
-					Input_Parameters.ReconstructionOrder());
+					HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_RECTANGULAR_BOX :
     if (!Input_Parameters.i_Mesh_Stretching) {
@@ -1138,7 +1155,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 					  Input_Parameters.Number_of_Cells_Idir,
 					  Input_Parameters.Number_of_Cells_Jdir,
 					  Input_Parameters.Number_of_Ghost_Cells,
-					  Input_Parameters.ReconstructionOrder());
+					  HighOrder2D_Input::MaximumReconstructionOrder());
     } else {
       Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
 					  Input_Parameters.Number_of_Blocks_Jdir,
@@ -1152,7 +1169,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 					  Input_Parameters.Number_of_Cells_Idir,
 					  Input_Parameters.Number_of_Cells_Jdir,
 					  Input_Parameters.Number_of_Ghost_Cells,
-					  Input_Parameters.ReconstructionOrder());
+					  HighOrder2D_Input::MaximumReconstructionOrder());
     }
     break;
   case GRID_DEFORMED_BOX :
@@ -1170,7 +1187,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 				     Input_Parameters.Number_of_Cells_Idir,
 				     Input_Parameters.Number_of_Cells_Jdir,
 				     Input_Parameters.Number_of_Ghost_Cells,
-				     Input_Parameters.ReconstructionOrder());
+				     HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_PERIODIC_BOX :
     Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
@@ -1185,7 +1202,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 					Input_Parameters.Number_of_Cells_Idir,
 					Input_Parameters.Number_of_Cells_Jdir,
 					Input_Parameters.Number_of_Ghost_Cells,
-					Input_Parameters.ReconstructionOrder());
+					HighOrder2D_Input::MaximumReconstructionOrder());
 
     // Impose the proper boundary conditions for periodic grid
     for ( jBlk = 0; jBlk <= Input_Parameters.Number_of_Blocks_Jdir-1; ++jBlk ) {
@@ -1258,7 +1275,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 					Input_Parameters.Number_of_Cells_Idir,
 					Input_Parameters.Number_of_Cells_Jdir,
 					Input_Parameters.Number_of_Ghost_Cells,
-					Input_Parameters.ReconstructionOrder());
+					HighOrder2D_Input::MaximumReconstructionOrder());
     
     // Impose the proper boundary conditions for the current grid type.
     HiBlk = Input_Parameters.Number_of_Blocks_Idir/2;
@@ -1290,7 +1307,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 				   Input_Parameters.Number_of_Cells_Idir,
 				   Input_Parameters.Number_of_Cells_Jdir,
 				   Input_Parameters.Number_of_Ghost_Cells,
-				   Input_Parameters.ReconstructionOrder());
+				   HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_PIPE :
     Grid_Pipe_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
@@ -1302,7 +1319,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 			     Input_Parameters.Number_of_Cells_Idir,
 			     Input_Parameters.Number_of_Cells_Jdir,
 			     Input_Parameters.Number_of_Ghost_Cells,
-			     Input_Parameters.ReconstructionOrder());
+			     HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_BLUNT_BODY :
     Grid_Blunt_Body_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
@@ -1312,7 +1329,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 				   Input_Parameters.Number_of_Cells_Idir,
 				   Input_Parameters.Number_of_Cells_Jdir,
 				   Input_Parameters.Number_of_Ghost_Cells,
-				   Input_Parameters.ReconstructionOrder());
+				   HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_ROCKET_MOTOR :
     Grid_Rocket_Motor_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
@@ -1333,7 +1350,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 				     Input_Parameters.Number_of_Cells_Idir,
 				     Input_Parameters.Number_of_Cells_Jdir,
 				     Input_Parameters.Number_of_Ghost_Cells,
-				     Input_Parameters.ReconstructionOrder());
+				     HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_NOZZLELESS_ROCKET_MOTOR :
     Grid_Nozzleless_Rocket_Motor_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
@@ -1350,7 +1367,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 						Input_Parameters.Number_of_Cells_Idir,
 						Input_Parameters.Number_of_Cells_Jdir,
 						Input_Parameters.Number_of_Ghost_Cells,
-						Input_Parameters.ReconstructionOrder());
+						HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_CIRCULAR_CYLINDER :
     Grid_Circular_Cylinder_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
@@ -1364,7 +1381,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 					  Input_Parameters.Number_of_Cells_Idir,
 					  Input_Parameters.Number_of_Cells_Jdir,
 					  Input_Parameters.Number_of_Ghost_Cells,
-					  Input_Parameters.ReconstructionOrder());
+					  HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_ANNULUS :
     Grid_Annulus_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
@@ -1380,7 +1397,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 				Input_Parameters.Number_of_Cells_Idir,
 				Input_Parameters.Number_of_Cells_Jdir,
 				Input_Parameters.Number_of_Ghost_Cells,
-				Input_Parameters.ReconstructionOrder());
+				HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_ELLIPSE :
     Grid_Ellipse_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
@@ -1390,7 +1407,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 				Input_Parameters.Number_of_Cells_Idir,
 				Input_Parameters.Number_of_Cells_Jdir,
 				Input_Parameters.Number_of_Ghost_Cells,
-				Input_Parameters.ReconstructionOrder());
+				HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_NACA_AEROFOIL :
     Grid_NACA_Aerofoil_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
@@ -1400,7 +1417,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 				      Input_Parameters.Number_of_Cells_Idir,
 				      Input_Parameters.Number_of_Cells_Jdir,
 				      Input_Parameters.Number_of_Ghost_Cells,
-				      Input_Parameters.ReconstructionOrder());
+				      HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_FREE_JET :
     Grid_Free_Jet_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
@@ -1409,13 +1426,13 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 				 Input_Parameters.Number_of_Cells_Idir,
 				 Input_Parameters.Number_of_Cells_Jdir,
 				 Input_Parameters.Number_of_Ghost_Cells,
-				 Input_Parameters.ReconstructionOrder());
+				 HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_ICEMCFD :
     ICEMCFD_Read(Input_Parameters.ICEMCFD_FileNames,
 		 *this,
 		 Input_Parameters.Number_of_Ghost_Cells,
-		 Input_Parameters.ReconstructionOrder(),
+		 HighOrder2D_Input::MaximumReconstructionOrder(),
 		 &Input_Parameters.Number_of_Blocks_Idir,
 		 &Input_Parameters.Number_of_Blocks_Jdir);
     break;
@@ -1427,7 +1444,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 					Input_Parameters.Number_of_Cells_Idir,
 					Input_Parameters.Number_of_Cells_Jdir,
 					Input_Parameters.Number_of_Ghost_Cells,
-					Input_Parameters.ReconstructionOrder());
+					HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   } /* endswitch */
 
@@ -1548,6 +1565,47 @@ inline void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Bloc
   
   /* Update geometric properties of multi-block quadrilateral mesh cells. */
   Update_All_Cells();
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Deformed_Box(int &_Number_of_Blocks_Idir_,
+							 int &_Number_of_Blocks_Jdir_,
+							 const Vector2D &VertexSW,
+							 const Vector2D &VertexSE,
+							 const Vector2D &VertexNE,
+							 const Vector2D &VertexNW,					
+							 const int Stretching_Flag,
+							 const int Stretching_Type_Idir,
+							 const int Stretching_Type_Jdir,
+							 const double &Stretching_Factor_Idir,
+							 const double &Stretching_Factor_Jdir,
+							 const int Number_of_Cells_Idir,
+							 const int Number_of_Cells_Jdir,
+							 const int Number_of_Ghost_Cells,
+							 const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Deformed_Box_Without_Update(_Number_of_Blocks_Idir_,
+				   _Number_of_Blocks_Jdir_,
+				   VertexSW,
+				   VertexSE,
+				   VertexNE,
+				   VertexNW,		
+				   Stretching_Flag,
+				   Stretching_Type_Idir,
+				   Stretching_Type_Jdir,
+				   Stretching_Factor_Idir,
+				   Stretching_Factor_Jdir,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
 }
 
 inline void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
@@ -2757,7 +2815,7 @@ inline void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_2D(int &_Number_of_Blocks_Id
 template<typename Input_Parameters_Type>
 int Grid2D_Quad_MultiBlock_HO::Write_Multi_Block_Grid_Definition_Using_IP(const Input_Parameters_Type &Input_Parameters){
 
-  char *mesh_definition_file_name_ptr;
+  const char *mesh_definition_file_name_ptr;
   ofstream mesh_definition_file;
 
   /* Open the grid definition file. */

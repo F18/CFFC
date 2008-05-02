@@ -17,6 +17,7 @@
 #include "../Utilities/TypeDefinition.h" // Include TypeDefinition header file.
 #include "AdvectDiffuse2DParameterFields.h" /* Include 2D advection diffusion parameter fields */
 #include "../NewtonKrylovSchwarz2D/NKSInput2D.h" /* Include file for NKS */
+#include "../HighOrderReconstruction/HighOrder2D_Input.h" /* Include file for high-order */
 
 /* Define the structures and classes. */
 
@@ -119,6 +120,9 @@ public:
   //@{
   char Flow_Geometry_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   int Axisymmetric;
+  int Include_Source_Term;
+  int Include_Diffusion_Term;
+  int Include_Advection_Term;
   //@}
 
   //! @name Grid type indicator and related input parameters:
@@ -245,7 +249,10 @@ public:
 
   //! @name Reconstruction related member functions:
   //@{
-  int ReconstructionOrder(void) {return (Space_Accuracy-1);} //!< return order of reconstruction based on Space_Accuracy
+  /*! Return order of reconstruction based on Space_Accuracy.
+    To obtain a certain global space accuracy (i.e. convective, diffusive and source term)
+    a piecewise polynomial reconstruction of the same order as the space accuracy must be performed. */
+  int ReconstructionOrder(void) {return (Space_Accuracy);}
   int & Limiter(void) {return i_Limiter;}                    //!< write/read selected limiter
   const int & Limiter(void) const {return i_Limiter;}        //!< return selected limiter (read only)
   /*!

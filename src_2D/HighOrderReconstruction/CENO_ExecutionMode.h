@@ -57,6 +57,11 @@ public:
       ---------------------------------------------------------------------------------------- */
   static short CENO_PADDING;
 
+  /*! Turn ON this flag if the geometric weighting is applied. (default) \n
+      Turn OFF if the geometric weighting is not applied. \n
+      ---------------------------------------------------------------------------------------- */
+  static short CENO_APPLY_GEOMETRIC_WEIGHTING;
+
   /*! Turn ON this flag if the geometric weighting used in the least-squares problem is 1.0/(Distance^2). \n
       Turn OFF if the geometric weighting is 1.0/fabs(Distance) (default) \n
       ---------------------------------------------------------------------------------------- */
@@ -80,6 +85,35 @@ public:
       --------------------------------------------------------------------------------------- */
   static short FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE;
 
+  /*! This flag is used to switch between two methods of performing the CENO reconstruction. \n
+      The first method tries to reduce the number of necessary ghost cells by using message
+      passing to the overlapping layers of ghost cells in order to decide the smoothness properties
+      of the cells used to compute the interface flux. This method has not been explored in practice yet. \n
+      The second method uses enough layers of ghost cells to compute all necessary reconstructions
+      for either flux calculation or smoothness properties assessment. \n
+      Turn ON if the message passing is going to be used (i.e. first method). Not implemented yet!!! \n
+      Turn OFF if no message passing is used in the reconstruction process. (default) \n
+      \note Message passing might still be used for cell reconstructions at boundaries between
+      blocks with mesh resolution change! This is subject to a different flag. \n
+      --------------------------------------------------------------------------------------- */
+  static short CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING;
+
+  /*! Use the only the first neighbour cells to calculate the value of the smoothness indicator,
+      instead of using all the cells used in the reconstruction process. \n
+      Turn ON if this feature is desired. \n
+      Turn OFF if you don't want to use this feature.  (default) \n
+      --------------------------------------------------------------------------------------- */
+  static short CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS;
+
+  /*! The high-order k-Exact reconstruction involves the solution of a linear least-squares problem,
+      which can be obtained with different subroutines. Currently, a Lapack subroutine and an 
+      internal one (L. Ivan's implementation) can be used. The Lapack one is faster but assumes the 
+      rank of the matrix equal to the number of columns whereas the internal one can be configured to
+      detect ranks smaller than this (i.e. it still gives a solution) but it's slower. \n
+      Turn ON to use the Lapack library subroutine. (default) \n
+      Turn OFF to use the internal one.  
+      --------------------------------------------------------------------------------------- */
+  static short USE_LAPACK_LEAST_SQUARES;
 
   static int Limiter;   //!< the limiter used for the limited linear reconstruction performed for non-smooth solutions
 
@@ -136,6 +170,22 @@ void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Ty
       CENO_PADDING = OFF;
     }
     i_command = 0;
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Apply_Geom_Weighting") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
+      CENO_APPLY_GEOMETRIC_WEIGHTING = ON;
+    } else {
+      CENO_APPLY_GEOMETRIC_WEIGHTING = OFF;
+    }
+    i_command = 0;
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Use_Geom_Weighting_For_Smoothness_Analysis") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
+      CENO_CONSIDER_WEIGHTS = ON;
+    } else {
+      CENO_CONSIDER_WEIGHTS = OFF;
+    }
+    i_command = 0;
   } else if (strcmp(IP.Next_Control_Parameter, "CENO_Square_Geom_Weighting") == 0) {
     IP.Get_Next_Input_Control_Parameter();
     if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
@@ -152,6 +202,34 @@ void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Ty
       FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE = OFF;
     }
     i_command = 0;
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_With_Message_Passing") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
+      CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = ON;
+      throw runtime_error("CENO_Execution_Mode ERROR! CENO reconstruction with message passing has not been implemented yet!");
+    } else {
+      CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Smoothness_Indicator") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Use_First_Neighbours") == 0 ){
+      CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+    } else if ( strcmp(IP.Next_Control_Parameter, "Use_All_Neighbours") == 0 ){
+      CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Least_Squares_Solver") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Lapack") == 0 ){
+      USE_LAPACK_LEAST_SQUARES = ON;
+    } else if ( strcmp(IP.Next_Control_Parameter, "Internal") == 0 ){
+      USE_LAPACK_LEAST_SQUARES = OFF;
+    }
+    i_command = 0;
+
   } else {
     i_command = INVALID_INPUT_CODE;
   } // endif

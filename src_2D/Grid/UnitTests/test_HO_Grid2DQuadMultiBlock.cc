@@ -128,7 +128,11 @@ namespace tut
 
     Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
     Grid2D_Quad_Block_HO::setNoSpecialTreatmentForNumericalError();
+    // Set 3-point Gauss integration
+    Spline2DInterval_HO::setThreePointGaussQuadContourIntegration();
+
     Tecplot_Execution_Mode::SetDefaults();
+    HighOrder2D_Input::SetDefaults();
   }
 
   Data_Grid2DQuadMultiBlock_HO::~Data_Grid2DQuadMultiBlock_HO(void){
@@ -141,6 +145,9 @@ namespace tut
   template<class Input_Parameters>
   void Data_Grid2DQuadMultiBlock_HO::CreateMesh(Grid2D_Quad_MultiBlock_HO & _MeshBlk_,
 						Input_Parameters & IP) throw(std::runtime_error){
+    
+    // Ensure that the highest reconstruction order was set correctly
+    HighOrder2D_Input::Set_Final_Parameters(IP);
 
     /* Initialize all static variables within the class */
     if (IP.IncludeHighOrderBoundariesRepresentation == ON){
@@ -949,6 +956,7 @@ namespace tut
     IP.BC_South = BC_REFLECTION;
     IP.BC_East = BC_REFLECTION;
     IP.BC_West = BC_REFLECTION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -1007,6 +1015,7 @@ namespace tut
     IP.BC_South = BC_REFLECTION;
     IP.BC_East = BC_REFLECTION;
     IP.BC_West = BC_REFLECTION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -1064,6 +1073,7 @@ namespace tut
     IP.BC_South = BC_REFLECTION;
     IP.BC_East = BC_REFLECTION;
     IP.BC_West = BC_REFLECTION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -1121,6 +1131,7 @@ namespace tut
     IP.BC_South = BC_REFLECTION;
     IP.BC_East = BC_REFLECTION;
     IP.BC_West = BC_REFLECTION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -1290,6 +1301,7 @@ namespace tut
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
     IP.Mesh_Stretching_Factor_Idir = 1.025;
     IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
     
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -1340,6 +1352,7 @@ namespace tut
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
     IP.Mesh_Stretching_Factor_Idir = 1.025;
     IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -1390,6 +1403,7 @@ namespace tut
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
     IP.Mesh_Stretching_Factor_Idir = 1.025;
     IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -1440,6 +1454,7 @@ namespace tut
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
     IP.Mesh_Stretching_Factor_Idir = 1.025;
     IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -1516,6 +1531,17 @@ namespace tut
       ensure_equals("Constaints East", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
       ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
       ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 0);
+
+      bool face_type;
+      ensure_equals("Flux GQPs North", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_North(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs North face", face_type, false);
+      ensure_equals("Flux GQPs South", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_South(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs South face", face_type, false);
+      ensure_equals("Flux GQPs East" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_East(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs East face", face_type, false);
+      ensure_equals("Flux GQPs West" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_West(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs West face", face_type, false);
+      ensure_equals("Total Flux GQPs", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints(iCell,jCell), 8);
 
       // Check update state
       ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);
@@ -1605,6 +1631,7 @@ namespace tut
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
     IP.Mesh_Stretching_Factor_Idir = 1.025;
     IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -1696,6 +1723,17 @@ namespace tut
       ensure_equals("Constaints East", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
       ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
       ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 2);
+
+      bool face_type;
+      ensure_equals("Flux GQPs North", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_North(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs North face", face_type, false);
+      ensure_equals("Flux GQPs South", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_South(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs South face", face_type, true);
+      ensure_equals("Flux GQPs East" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_East(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs East face", face_type, false);
+      ensure_equals("Flux GQPs West" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_West(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs West face", face_type, false);
+      ensure_equals("Total Flux GQPs", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints(iCell,jCell), 8);
 
       // Check update state
       ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);
@@ -1797,6 +1835,7 @@ namespace tut
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
     IP.Mesh_Stretching_Factor_Idir = 1.025;
     IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -1846,6 +1885,7 @@ namespace tut
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
     IP.Mesh_Stretching_Factor_Idir = 1.025;
     IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -1880,6 +1920,7 @@ namespace tut
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
     IP.Mesh_Stretching_Factor_Idir = 1.025;
     IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -1923,6 +1964,7 @@ namespace tut
     IP.BC_South = BC_REFLECTION;
     IP.BC_East = BC_REFLECTION;
     IP.BC_West = BC_REFLECTION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -1968,6 +2010,7 @@ namespace tut
     IP.Chord_Length = ONE;
     IP.IncludeHighOrderBoundariesRepresentation = OFF;
     IP.i_Smooth_Quad_Block = ON;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -2028,7 +2071,8 @@ namespace tut
     IP.BC_South = BC_REFLECTION;
     IP.BC_East = BC_REFLECTION;
     IP.BC_West = BC_REFLECTION;
- 
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+
     // Build the mesh
     CreateMesh(MeshBlk,IP);
 
@@ -2081,6 +2125,7 @@ namespace tut
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
     IP.Mesh_Stretching_Factor_Idir = 1.025;
     IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -2124,6 +2169,7 @@ namespace tut
     IP.BC_South = BC_REFLECTION;
     IP.BC_East = BC_REFLECTION;
     IP.BC_West = BC_REFLECTION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -2168,6 +2214,7 @@ namespace tut
     IP.BC_South = BC_REFLECTION;
     IP.BC_East = BC_REFLECTION;
     IP.BC_West = BC_REFLECTION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -2256,6 +2303,7 @@ namespace tut
     IP.BC_South = BC_REFLECTION;
     IP.BC_East = BC_REFLECTION;
     IP.BC_West = BC_REFLECTION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -2345,6 +2393,7 @@ namespace tut
     IP.BC_South = BC_REFLECTION;
     IP.BC_East = BC_REFLECTION;
     IP.BC_West = BC_REFLECTION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -2389,6 +2438,7 @@ namespace tut
     IP.BC_South = BC_REFLECTION;
     IP.BC_East = BC_REFLECTION;
     IP.BC_West = BC_REFLECTION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -2475,6 +2525,7 @@ namespace tut
     IP.BC_South = BC_REFLECTION;
     IP.BC_East = BC_REFLECTION;
     IP.BC_West = BC_REFLECTION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -2561,6 +2612,7 @@ namespace tut
     IP.BC_South = BC_REFLECTION;
     IP.BC_East = BC_REFLECTION;
     IP.BC_West = BC_REFLECTION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
@@ -2639,6 +2691,17 @@ namespace tut
       ensure_equals("Constaints East", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
       ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
       ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 0);
+
+      bool face_type;
+      ensure_equals("Flux GQPs North", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_North(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs North face", face_type, false);
+      ensure_equals("Flux GQPs South", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_South(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs South face", face_type, false);
+      ensure_equals("Flux GQPs East" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_East(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs East face", face_type, false);
+      ensure_equals("Flux GQPs West" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_West(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs West face", face_type, false);
+      ensure_equals("Total Flux GQPs", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints(iCell,jCell), 8);
 
       // Check boundary conditions
       ensure_equals("BCtypeS", MeshBlk(0,0).BCtypeS[iCell], BC_REFLECTION);
@@ -2724,6 +2787,7 @@ namespace tut
     IP.Chord_Length = ONE;
     IP.IncludeHighOrderBoundariesRepresentation = OFF;
     IP.i_Smooth_Quad_Block = ON;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     Vector2D X[4], Centroid, CentroidResult;
     double area, areaResult;
@@ -2798,6 +2862,7 @@ namespace tut
     IP.Chord_Length = ONE;
     IP.IncludeHighOrderBoundariesRepresentation = OFF;
     IP.i_Smooth_Quad_Block = ON;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     Vector2D X[4], Centroid, CentroidResult;
     double area, areaResult;
@@ -2944,6 +3009,7 @@ namespace tut
     IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
     IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
     IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     MasterFile = "CurvedBoundaries_For_RectangularBox.dat";
     CurrentFile = "Current_CurvedBoundaries_For_RectangularBox.dat";
@@ -3005,6 +3071,7 @@ namespace tut
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
     IP.Mesh_Stretching_Factor_Idir = 1.025;
     IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     MasterFile = "GaussQuad_For_GridCircularCylinder_GeomProperties_BoundaryCell.dat";
     CurrentFile = "Current_GaussQuad_For_GridCircularCylinder_GeomProperties_BoundaryCell.dat";
@@ -3098,6 +3165,17 @@ namespace tut
       ensure_equals("Constaints East", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
       ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
       ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 2);
+
+      bool face_type;
+      ensure_equals("Flux GQPs North", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_North(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs North face", face_type, false);
+      ensure_equals("Flux GQPs South", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_South(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs South face", face_type, true);
+      ensure_equals("Flux GQPs East" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_East(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs East face", face_type, false);
+      ensure_equals("Flux GQPs West" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_West(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs West face", face_type, false);
+      ensure_equals("Total Flux GQPs", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints(iCell,jCell), 8);
 
       // Check update state
       ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);
@@ -3206,6 +3284,7 @@ namespace tut
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
     IP.Mesh_Stretching_Factor_Idir = 1.025;
     IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     MasterFile = "GaussQuad_For_Grid_Output_Operator.dat";
     CurrentFile = "Current_GaussQuad_For_Grid_Output_Operator.dat";
@@ -3263,6 +3342,7 @@ namespace tut
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
     IP.Mesh_Stretching_Factor_Idir = 1.025;
     IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     MasterFile = "GaussQuad_3Points_For_Grid_Output_Operator.dat";
     CurrentFile = "Current_GaussQuad_3Points_For_Grid_Output_Operator.dat";
@@ -3320,6 +3400,7 @@ namespace tut
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
     IP.Mesh_Stretching_Factor_Idir = 1.025;
     IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     MasterFile = "GaussQuad_5Points_For_Grid_Output_Operator_LargeMesh.dat";
     CurrentFile = "Current_GaussQuad_5Points_For_Grid_Output_Operator_LargeMesh.dat";
@@ -3381,6 +3462,7 @@ namespace tut
     IP.VertexNW = Vector2D(0.5,5.0);
 
     IP.X_Scale = 50;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     MasterFile = "Large_Deformed_Box.dat";
     CurrentFile = "Current_Large_Deformed_Box.dat";
@@ -3466,6 +3548,7 @@ namespace tut
     IP.VertexNW = Vector2D(0.5,5.0);
 
     IP.X_Scale = 50;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     MasterFile = "Large_Deformed_Box.dat";
     CurrentFile = "Current_Large_Deformed_Box_LineBasedIntegration.dat";
@@ -3544,6 +3627,7 @@ namespace tut
     IP.VertexNW = Vector2D(0.0,2.0);
 
     IP.X_Scale = 50;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     MasterFile = "Cartesian_Box_4thOrder_Geom_Moments.dat";
     CurrentFile = "Current_Cartesian_Box_4thOrder_Geom_Moments.dat";
@@ -3619,6 +3703,7 @@ namespace tut
     IP.VertexNW = Vector2D(0.0,2.0);
 
     IP.X_Scale = 50;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     MasterFile = "Cartesian_Box_4thOrder_Geom_Moments.dat";
     CurrentFile = "Current_Cartesian_Box_4thOrder_Geom_Moments_LineBasedIntegration.dat";
@@ -3693,6 +3778,7 @@ namespace tut
     IP.VertexNW = Vector2D(0.5,5.0);
     
     IP.X_Scale = 50;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     MasterFile = "Large_Deformed_Box_4thOrder_Geom_Moments.dat";
     CurrentFile = "Current_Large_Deformed_Box_4thOrder_Geom_Moments.dat";
@@ -3778,6 +3864,7 @@ namespace tut
     IP.VertexNW = Vector2D(0.5,5.0);
 
     IP.X_Scale = 50;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     MasterFile = "Large_Deformed_Box_4thOrder_Geom_Moments.dat";
     CurrentFile = "Current_Large_Deformed_Box_4thOrder_Geom_Moments_LineBasedIntegration.dat";
@@ -3847,6 +3934,7 @@ namespace tut
     IP.VertexSE = Vector2D(4.0,0.0);
     IP.VertexNE = Vector2D(4.0,2.0);
     IP.VertexNW = Vector2D(0.0,2.0);
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     MasterFile = "Cartesian_Box_4thOrder_Geom_Moments_Without_Translation.dat";
     CurrentFile = "Current_Translated_Cartesian_Box_4thOrder_Geom_Moments.dat";
@@ -3911,6 +3999,7 @@ namespace tut
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
     IP.Mesh_Stretching_Factor_Idir = 1.025;
     IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     // Set special treatment for this mesh
     Grid2D_Quad_Block_HO::setTreatMeshWithExtraCareForNumericalError();
@@ -3991,6 +4080,17 @@ namespace tut
       ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
       ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 0);
 
+      bool face_type;
+      ensure_equals("Flux GQPs North", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_North(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs North face", face_type, false);
+      ensure_equals("Flux GQPs South", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_South(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs South face", face_type, false);
+      ensure_equals("Flux GQPs East" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_East(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs East face", face_type, false);
+      ensure_equals("Flux GQPs West" , MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints_West(iCell,jCell,face_type), 2);
+      ensure_equals("Flux GQPs West face", face_type, false);
+      ensure_equals("Total Flux GQPs", MeshBlk(0,0).NumOfFluxCalculationGaussQuadPoints(iCell,jCell), 8);
+
       // Check update state
       ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);
       ensure_equals("GhostCells", MeshBlk(0,0).Value_GhostCellsUpdate_Flag(), OFF);
@@ -4031,6 +4131,7 @@ namespace tut
     IP.VertexNW = Vector2D(0.5,5.0);
 
     IP.X_Scale = 1.0e3;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 
     MasterFile = "Large_Large_Deformed_Box_4thOrder_Geom_Moments.dat";
     CurrentFile = "Current_Large_Large_Deformed_Box_4thOrder_Geom_Moments_LineBasedIntegration.dat";
@@ -4086,6 +4187,130 @@ namespace tut
     }
   }
 
+  // Test 57:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<57>()
+  {
+    set_test_name("Check boundary reconstruction type");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 2;
+    IP.Space_Accuracy = 4;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = -6;
+    IP.X_Shift.y = -6;
+    IP.X_Scale = 1.0;
+    IP.X_Rotate = 45.0;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+
+    // Build the mesh without high-order representation
+    CreateMesh(MeshBlk,IP);
+
+    // == check 
+    ensure_equals("South Bnd", MeshBlk(0,0).IsSouthBoundaryReconstructionConstrained(), false);
+    ensure_equals("North Bnd", MeshBlk(0,0).IsNorthBoundaryReconstructionConstrained(), false);
+    ensure_equals("East Bnd", MeshBlk(0,0).IsEastBoundaryReconstructionConstrained(), false);
+    ensure_equals("West Bnd", MeshBlk(0,0).IsWestBoundaryReconstructionConstrained(), false);
+
+    // Switch to high-order representation but no spline type set to ReconstructionBasedFlux
+    MeshBlk(0,0).setHighOrderBoundaryRepresentation();
+    ensure_equals("South Bnd", MeshBlk(0,0).IsSouthBoundaryReconstructionConstrained(), false);
+    ensure_equals("North Bnd", MeshBlk(0,0).IsNorthBoundaryReconstructionConstrained(), false);
+    ensure_equals("East Bnd", MeshBlk(0,0).IsEastBoundaryReconstructionConstrained(), false);
+    ensure_equals("West Bnd", MeshBlk(0,0).IsWestBoundaryReconstructionConstrained(), false);
+
+    // Switch the type of the flux calculation method
+    MeshBlk(0,0).BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    MeshBlk(0,0).BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    MeshBlk(0,0).BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    MeshBlk(0,0).BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    ensure_equals("South Bnd", MeshBlk(0,0).IsSouthBoundaryReconstructionConstrained(), true);
+    ensure_equals("North Bnd", MeshBlk(0,0).IsNorthBoundaryReconstructionConstrained(), true);
+    ensure_equals("East Bnd", MeshBlk(0,0).IsEastBoundaryReconstructionConstrained(), true);
+    ensure_equals("West Bnd", MeshBlk(0,0).IsWestBoundaryReconstructionConstrained(), true);
+  }
+
+
+  // Test 58:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<58>()
+  {
+    set_test_name("Check geometric moments on Cartesian mesh");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_INTERIOR_INFLOW_OUTFLOW_BOX;
+    IP.Number_of_Blocks_Jdir = 2;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 12;
+    IP.Number_of_Cells_Jdir = 12;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 5;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 0.0;
+    IP.X_Shift.y = 0.0;
+    IP.X_Scale = 1.0;
+    IP.X_Rotate = 0.0;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_FARFIELD;
+    IP.BC_South = BC_FARFIELD;
+    IP.BC_East = BC_FARFIELD;
+    IP.BC_West = BC_FARFIELD;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+
+    // Build the mesh without high-order representation
+    CreateMesh(MeshBlk,IP);
+
+    // Get geometric moments based on analytic expressions for Cartesian meshes.
+    double DeltaX, DeltaY, AnalyticGeomMoment;
+    int p1,p2,i,j;
+
+    DeltaX = MeshBlk(0,0).nodeSE(5,5).x() - MeshBlk(0,0).nodeSW(5,5).x();
+    DeltaY = MeshBlk(0,0).nodeNW(5,5).y() - MeshBlk(0,0).nodeSW(5,5).y();
+    
+    // == check all cells of MeshBlk(0,0)
+    for (i = 0; i<= MeshBlk(0,0).ICu + MeshBlk(0,0).Nghost; ++i){
+      for (j = 0; j<= MeshBlk(0,0).JCu + MeshBlk(0,0).Nghost; ++j){
+	for (p1 = 0; p1 <= MeshBlk(0,0).MaxRecOrder(); ++p1){
+	  for (p2 = 0; p2 <= MeshBlk(0,0).MaxRecOrder(); ++p2){
+	    if ( p1 + p2 <= MeshBlk(0,0).MaxRecOrder() ){
+	      // Compute the geometric moment
+	      AnalyticGeomMoment = GeomCoeffCartesian(p1, p2, DeltaX, DeltaY, 0.0, 0.0);
+	      
+	      // == check the mesh value
+	      ensure_distance("Geom moment", MeshBlk(0,0).Cell[5][5].GeomCoeffValue(p1,p2), AnalyticGeomMoment,
+			      AcceptedError(AnalyticGeomMoment) );
+	    }
+	  }
+	}
+      }
+    }
+  }
 
 }
 

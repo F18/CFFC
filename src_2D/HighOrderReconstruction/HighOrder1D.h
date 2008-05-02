@@ -216,6 +216,11 @@ public:
 				  const int iCell,
 				  HighOrder1D<Soln_State> & (Soln_Block_Type::*AccessToHighOrderVar)(void) = 
 				  &Soln_Block_Type::CellHighOrder);
+  template<class Soln_Block_Type>
+  void ComputeSmoothnessIndicatorWithFirstNeighbours(Soln_Block_Type *SolnBlk,
+						     const int iCell,
+						     HighOrder1D<Soln_State> & (Soln_Block_Type::*AccessToHighOrderVar)(void) = 
+						     &Soln_Block_Type::CellHighOrder);  
   //@}
 
 
@@ -631,11 +636,10 @@ ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk,
   }
 }
 
-// ComputeUnlimitedSolutionReconstruction()
+// ComputeReconstructionPseudoInverse()
 /*! 
- * Compute the unlimited high-order reconstruction for 
- * the computational cell iCell, using information provided by
- * the SolnBlk domain and the 'ReconstructionMethod' algorithm.
+ * Compute the pseudo-inverse matrix (i.e. the inverse of the LHS matrix
+ * of the overdetermined system of equations formed in the least-squares reconstruction).
  */
 template<class SOLN_STATE>
 template<class Soln_Block_Type> inline
@@ -753,6 +757,9 @@ void HighOrder1D<SOLN_STATE>::ComputeLowOrderReconstruction(Soln_Block_Type *Sol
       case LIMITER_VENKATAKRISHNAN :
 	phi = Limiter_Venkatakrishnan(uQuad, SolnBlk[iCell].CellSolutionPrimVar(n), u0Min, u0Max, 2);
 	break;
+      case LIMITER_VENKATAKRISHNAN_CORRECTED :
+	phi = Limiter_Venkatakrishnan_Modified(uQuad, SolnBlk[iCell].CellSolutionPrimVar(n), u0Min, u0Max, 2);
+	break;
       case LIMITER_VANLEER :
 	phi = Limiter_VanLeer(uQuad, SolnBlk[iCell].CellSolutionPrimVar(n), u0Min, u0Max, 2);
 	break;
@@ -776,11 +783,10 @@ void HighOrder1D<SOLN_STATE>::ComputeLowOrderReconstruction(Soln_Block_Type *Sol
 
 }
 
-// ComputeUnlimitedSolutionReconstruction()
+// ComputeComputeSmoothnessIndicator()
 /*! 
- * Compute the unlimited high-order reconstruction for 
- * the computational cell iCell, using information provided by
- * the SolnBlk domain and the 'ReconstructionMethod' algorithm.
+ * Compute the smoothness indicator characteristic to each variable.
+ * This indicator is used for differentiating between smooth and non-smooth solutions.
  */
 template<class SOLN_STATE>
 template<class Soln_Block_Type>
@@ -872,12 +878,113 @@ void HighOrder1D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type *SolnBl
       alpha = 1.0;
     }
 
-    (SolnBlk[iCell].*AccessToHighOrderVar)().CellSmoothnessIndicator(parameter) = 
-      (alpha/(max(CENO_Tolerances::epsilon,1.0 - alpha))) * AdjustmentCoeff;
+    (SolnBlk[iCell].*AccessToHighOrderVar)().CellSmoothnessIndicator(parameter) = (alpha/(max(CENO_Tolerances::epsilon,
+											      1.0 - alpha))) * AdjustmentCoeff;
 
   }//endfor -> parameter
 }
 
+// ComputeComputeSmoothnessIndicatorWithFirstNeighbours()
+/*! 
+ * Compute the smoothness indicator characteristic to each variable using only the first neighbours.
+ * This indicator is used for differentiating between smooth and non-smooth solutions.
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type>
+void HighOrder1D<SOLN_STATE>::ComputeSmoothnessIndicatorWithFirstNeighbours(Soln_Block_Type *SolnBlk,
+									    const int iCell,
+									    HighOrder1D<Soln_State> &
+									    (Soln_Block_Type::*AccessToHighOrderVar)(void)){
+
+  static double SS_Regression, SS_Residual; // regression sum of squares, residual sum of squares
+  static double MeanSolution, alpha, SolAtNeighbourCentroid;
+  static double Temp, DeltaTol, DeltaSolution;
+  static int parameter, cell, ComputeSI;
+  int _StencilSize_(3);
+  vector<int> i_index(_StencilSize_); 
+
+  // Make Stencil
+  i_index[0] = iCell;
+  i_index[1] = iCell-1;
+  i_index[2] = iCell+1;
+
+  /* Compute the CENO smoothness indicator for the current cell */
+
+  for (parameter=1; parameter<=Soln_State::NumberOfVariables; ++parameter){
+    
+    // Assign the Mean Solution
+    MeanSolution = SolnBlk[iCell].CellSolutionPrimVar(parameter);
+
+    /* DeltaTolerance */
+    DeltaTol = CENO_Tolerances::ToleranceAroundValue(MeanSolution);
+
+    // Compute the regression and residual sums
+    ComputeSI = OFF;		/* assume that the smoothness indicator is not computed but assigned */
+
+    /* Initialize SS_Regression & SS_Residual with the values obtained for iCell */
+    Temp = (SolnBlk[iCell].*AccessToHighOrderVar)().CellDeriv(0,parameter) - MeanSolution;
+    DeltaSolution = fabs(Temp);
+    Temp *= Temp;		/* compute Temp square */
+    SS_Regression = Temp;
+    
+    /* Check if DeltaSolution is greater than DeltaTol */
+    if (DeltaSolution > DeltaTol){
+      ComputeSI = ON; 	        /* Decide to compute the smoothness indicator */
+    }
+    SS_Residual = 0.0;		/* for iCell this term is 0.0 */
+    
+    /* compute S(quare)S(sum)_Regression and SS_Residual for the rest of the stencil */
+    for(cell=1; cell<_StencilSize_; ++cell){
+
+      Temp = (SolnBlk[i_index[cell]].*AccessToHighOrderVar)().CellDeriv(0,parameter) - MeanSolution;
+      Temp *= Temp;		/* compute Temp square */
+
+      if (CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS){
+	if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
+	  /* the weighting works only with the speed efficient CENO */
+	  SS_Regression += (SolnBlk[iCell].*AccessToHighOrderVar)().GeomWeights(cell) * Temp;
+	}
+      } else {
+	SS_Regression += Temp;
+      }
+
+      // compute reconstruction solution at the centroid of the current neighbour cell
+      SolAtNeighbourCentroid = (SolnBlk[iCell].*AccessToHighOrderVar)().SolutionAtCoordinates( (SolnBlk[i_index[cell]].*AccessToHighOrderVar)().CellCenter(),parameter);
+
+      // compute the parameter used to determine whether the smoothness indicator is computed or not
+      DeltaSolution = fabs(SolAtNeighbourCentroid - MeanSolution);
+      
+      /* Check if any of the DeltaSolution(s) is greater than DeltaTol */
+      if (DeltaSolution > DeltaTol){
+	ComputeSI = ON; 	/* Decide to compute the smoothness indicator */
+      }
+
+      // Compute the difference between the adjacent reconstructions.
+      Temp = ( (SolnBlk[i_index[cell]].*AccessToHighOrderVar)().CellDeriv(0,parameter) - SolAtNeighbourCentroid);
+
+      if (CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS){
+	if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
+	  /* the weighting works only with the speed efficient CENO */
+	  SS_Residual += (SolnBlk[iCell].*AccessToHighOrderVar)().GeomWeights(cell) * Temp * Temp;
+	}
+      } else {
+	SS_Residual += Temp * Temp;
+      }
+    }
+    
+    // Decide if the smoothness indicator is computed or not
+    if (ComputeSI){ 
+      alpha = 1.0 - SS_Residual/SS_Regression;
+    } else {
+      // Assign the perfect fit value to the smoothness indicator
+      alpha = 1.0;
+    }
+
+    (SolnBlk[iCell].*AccessToHighOrderVar)().CellSmoothnessIndicator(parameter) = (alpha/(max(CENO_Tolerances::epsilon,
+											      1.0 - alpha)));
+
+  }//endfor -> parameter
+}
 
 //! Compute the solution at the left cell interface
 template<class SOLN_STATE> inline
@@ -1110,7 +1217,11 @@ void HighOrderSolutionReconstructionOverDomain(Soln_Block_Type *SolnBlk,
     for (i=ICl-1; i<=ICu+1; ++i){
       
       //Step 2: Compute the Smoothness Indicator for the cells used to compute the Riemann problem.
-      (SolnBlk[i].*AccessToHighOrderVar)().ComputeSmoothnessIndicator(SolnBlk,i,AccessToHighOrderVar);
+      if (CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS){
+	(SolnBlk[i].*AccessToHighOrderVar)().ComputeSmoothnessIndicatorWithFirstNeighbours(SolnBlk,i,AccessToHighOrderVar);
+      } else {
+	(SolnBlk[i].*AccessToHighOrderVar)().ComputeSmoothnessIndicator(SolnBlk,i,AccessToHighOrderVar);
+      }
       
       //Step 3: Do a post-reconstruction analysis
       /* Check the smoothness condition */

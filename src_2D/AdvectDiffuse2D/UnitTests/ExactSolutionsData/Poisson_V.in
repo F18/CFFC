@@ -1,0 +1,24 @@
+
+	###########################
+	#  DEFINE EXACT SOLUTION  #
+	###########################
+Exact_Solution =
+		Poisson_V
+
+A_Coeff =
+  2.0
+B_Coeff =
+  3.0
+C_Coeff =
+  1.0
+a_Coeff =
+  1.5
+beta_Coeff =
+  3.0
+
+
+	#######################
+	#   Execute program   #
+	#######################
+Execute
+

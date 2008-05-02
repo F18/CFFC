@@ -111,6 +111,22 @@ int AdvectDiffuse2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr
 
   // Perform update of the internal variables of the inflow field
   Inflow->Set_InflowField_Parameters();
+
+  // Perform update of the internal variables of the high-order input parameters
+  HighOrder2D_Input::Set_Final_Parameters(*this);
+
+  // Set reference state in the AdvectDiffuse2D_Quad_Block class
+  AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(RefU);
+
+  // Set flag for including/excluding source term in the model equation
+  AdvectDiffuse2D_Quad_Block::Include_Source_Term = Include_Source_Term;
+
+  // Set flag for including/excluding advection term in the model equation
+  AdvectDiffuse2D_Quad_Block::Include_Advection_Term = Include_Advection_Term;
+
+  // Set flag for including/excluding diffusion term in the model equation
+  AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = Include_Diffusion_Term;
+
 }
 
 /******************************************************//**
@@ -184,12 +200,27 @@ ostream &operator << (ostream &out_file,
     }
 
     // ====    Velocity field parameters ====
+    if (IP.Include_Advection_Term) {
+      out_file << "\n  -> Advection Term Included in Equation: Yes ";
+    } else {
+      out_file << "\n  -> Advection Term Included in Equation: No ";
+    }
     VelocityFields::Print_Info(out_file);
 
     // ====    Diffusion field parameters ====
+    if (IP.Include_Diffusion_Term) {
+      out_file << "\n  -> Diffusion Term Included in Equation: Yes ";
+    } else {
+      out_file << "\n  -> Diffusion Term Included in Equation: No ";
+    }
     DiffusionFields::Print_Info(out_file);
 
     // ====    Source field parameters ====
+    if (IP.Include_Source_Term) {
+      out_file << "\n  -> Source Term Included in Equation: Yes ";
+    } else {
+      out_file << "\n  -> Source Term Included in Equation: No ";
+    }
     IP.SourceTerm->Print_Info(out_file);
 
     // ====    Boundary conditions ====
@@ -306,6 +337,10 @@ ostream &operator << (ostream &out_file,
       out_file << "\n     -> Reference State: "
 	       << IP.RefU;
     }
+
+    // output information related to auxiliary reconstructions.
+    HighOrder2D_Input::Print_Info(out_file);
+
     out_file << "\n  -> Limiter: " 
              << IP.Limiter_Type;
     if (IP.Limiter_Type != LIMITER_ZERO && IP.Freeze_Limiter) {
@@ -573,6 +608,7 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Space_Accuracy = 1;
     IP.IncludeHighOrderBoundariesRepresentation = OFF;
     IP.i_ReconstructionMethod = RECONSTRUCTION_LEAST_SQUARES;
+    CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF;
 
     // Viscous gradient reconstruction type:
     string_ptr = "Diamond_Path";
@@ -605,6 +641,9 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     string_ptr = "Planar";
     strcpy(IP.Flow_Geometry_Type, string_ptr);
     IP.Axisymmetric = 0;
+    IP.Include_Source_Term = ON;
+    IP.Include_Advection_Term = ON;
+    IP.Include_Diffusion_Term = ON;
 
     // Grid parameters:
     string_ptr = "Square";
@@ -720,6 +759,8 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Accuracy_Assessment_Exact_Digits = 10;
     IP.Accuracy_Assessment_Parameter = 1;
 
+    // High-order parameters:
+    HighOrder2D_Input::SetDefaults();
 }
 
 /******************************************************//**
@@ -829,6 +870,15 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
                           INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Axisymmetric), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Include_Source_Term), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Include_Advection_Term), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Include_Diffusion_Term), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.Grid_Type, 
@@ -1169,6 +1219,33 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     // Tecplot_Execution_Mode variables
     Tecplot_Execution_Mode::Broadcast();
 
+    // HighOrder2D_Input variables
+    HighOrder2D_Input::Broadcast();    
+
+    // Update all dependent variables
+    if (!CFFC_Primary_MPI_Processor()) {
+      // Perform update of the internal variables of the exact solution
+      IP.ExactSoln->Set_ParticularSolution_Parameters();
+
+      // Perform update of the internal variables of the inflow field
+      IP.Inflow->Set_InflowField_Parameters();
+
+      // Perform update of the internal variables of the high-order input parameters
+      HighOrder2D_Input::Set_Final_Parameters(IP);
+
+      // Set reference state in the AdvectDiffuse2D_Quad_Block class
+      AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(IP.RefU);
+
+      // Set flag for including/excluding source term in the model equation
+      AdvectDiffuse2D_Quad_Block::Include_Source_Term = IP.Include_Source_Term;
+
+      // Set flag for including/excluding advection term in the model equation
+      AdvectDiffuse2D_Quad_Block::Include_Advection_Term = IP.Include_Advection_Term;
+      
+      // Set flag for including/excluding diffusion term in the model equation
+      AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = IP.Include_Diffusion_Term;
+    }
+
 #endif
 
 }
@@ -1284,6 +1361,15 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
                        INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
                        MPI::CHAR, Source_Rank);
     Communicator.Bcast(&(IP.Axisymmetric), 
+                       1, 
+                       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Include_Source_Term), 
+                       1, 
+                       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Include_Advection_Term), 
+                       1, 
+                       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Include_Diffusion_Term), 
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(IP.Grid_Type, 
@@ -1660,12 +1746,15 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     if (strcmp(IP.Reconstruction_Type, "Green_Gauss") == 0) {
       IP.i_Reconstruction = RECONSTRUCTION_GREEN_GAUSS;
       IP.i_ReconstructionMethod = RECONSTRUCTION_GREEN_GAUSS;
+      CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF;
     } else if (strcmp(IP.Reconstruction_Type, "Least_Squares") == 0) {
       IP.i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
       IP.i_ReconstructionMethod = RECONSTRUCTION_LEAST_SQUARES;
+      CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF;
     } else if (strcmp(IP.Reconstruction_Type, "CENO") == 0) {
       IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
       IP.i_ReconstructionMethod = RECONSTRUCTION_CENO;
+      CENO_Execution_Mode::USE_CENO_ALGORITHM = ON;
     } else {
       std::cout << "\n ==> Unknown reconstruction method!";
       i_command = INVALID_INPUT_VALUE;
@@ -2190,6 +2279,33 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.Axisymmetric = 1;
     } else {
       IP.Axisymmetric = 0;
+    } /* endif */
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Include_Source_Term_In_Equation") == 0) {
+    i_command = 0;
+    IP.Get_Next_Input_Control_Parameter();
+    if (strcmp(IP.Next_Control_Parameter, "Yes") == 0) {
+      IP.Include_Source_Term = ON;
+    } else {
+      IP.Include_Source_Term = OFF;
+    } /* endif */
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Include_Advection_Term_In_Equation") == 0) {
+    i_command = 0;
+    IP.Get_Next_Input_Control_Parameter();
+    if (strcmp(IP.Next_Control_Parameter, "Yes") == 0) {
+      IP.Include_Advection_Term = ON;
+    } else {
+      IP.Include_Advection_Term = OFF;
+    } /* endif */
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Include_Diffusion_Term_In_Equation") == 0) {
+    i_command = 0;
+    IP.Get_Next_Input_Control_Parameter();
+    if (strcmp(IP.Next_Control_Parameter, "Yes") == 0) {
+      IP.Include_Diffusion_Term = ON;
+    } else {
+      IP.Include_Diffusion_Term = OFF;
     } /* endif */
 
   } else if (strcmp(IP.Next_Control_Parameter, "Restart_Solution_Save_Frequency") == 0) {
@@ -2746,6 +2862,13 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Input_File.setf(ios::skipws);
     IP.Input_File.getline(buffer, sizeof(buffer));
 
+  } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_Normalization") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.RefU;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
   } else if (strcmp(IP.Next_Control_Parameter, "Space_Accuracy") == 0) {
     i_command = 210;
     IP.Line_Number = IP.Line_Number + 1;
@@ -2846,6 +2969,9 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
   /* Parse next control parameter with Tecplot_Execution_Mode parser */
   Tecplot_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
 
+  /* Parse next control parameter with HighOrder2D_Input parser */
+  HighOrder2D_Input::Parse_Next_Input_Control_Parameter(IP,i_command);
+
   if (i_command == INVALID_INPUT_CODE){
     // that is, we have an input line which:
     //  - is not a comment (that's COMMENT_CODE), and,
@@ -2936,6 +3062,9 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
     // Perform update of the internal variables of the inflow field
     Input_Parameters.Inflow->Set_InflowField_Parameters();
 
+    // Perform update of the internal variables of the high-order input parameters
+    HighOrder2D_Input::Set_Final_Parameters(Input_Parameters);
+
     // Set reference states
     // Uo state
     Input_Parameters.Uo = AdvectDiffuse2D_State(ONE);
@@ -2946,6 +3075,18 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
     // U2 state
     Input_Parameters.U2 = Input_Parameters.Uo;
     Input_Parameters.U2.u = -ONE;
+
+    // Set reference state in the AdvectDiffuse2D_Quad_Block class
+    AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(Input_Parameters.RefU);
+
+    // Set flag for including/excluding source term in the model equation
+    AdvectDiffuse2D_Quad_Block::Include_Source_Term = Input_Parameters.Include_Source_Term;
+
+    // Set flag for including/excluding advection term in the model equation
+    AdvectDiffuse2D_Quad_Block::Include_Advection_Term = Input_Parameters.Include_Advection_Term;
+    
+    // Set flag for including/excluding diffusion term in the model equation
+    AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = Input_Parameters.Include_Diffusion_Term;
 
     /* Initial processing of input control parameters complete.  
        Return the error indicator flag. */

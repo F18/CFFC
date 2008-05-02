@@ -15,6 +15,9 @@
 namespace tut
 {
 
+  // Define a test function
+  inline double TestFunction(const double & x, const double & y){ return exp(y); }
+
   /* Define the test-specific data class and add data members 
      when tests have complex or repeating creation phase. */
   class Data_Spline2DInterval_HO : public TestData {
@@ -1749,6 +1752,38 @@ namespace tut
     ensure_distance("Check Coeff 7", GeomCoeff(7).D(), MapleSolution[7], AcceptedError(MapleSolution[7],tol));
     ensure_distance("Check Coeff 8", GeomCoeff(8).D(), MapleSolution[8], AcceptedError(MapleSolution[8],tol));
     ensure_distance("Check Coeff 9", GeomCoeff(9).D(), MapleSolution[9], AcceptedError(MapleSolution[9],tol));
+  }
+
+  /* Test 37: */
+  template<>
+  template<>
+  void Spline2DInterval_HO_object::test<37>()
+  {
+    set_test_name("IntegrateFunctionWithRespectToY() along a line");
+
+    // Set 5-point Gauss integration
+    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+    V1 = Vector2D(0.0);
+    V2 = Vector2D(4.0,3.0);
+
+    // Create Spline
+    S.Create_Spline_Line(V1,V2,10);
+
+    // Initialize interval
+    SInfo.InitializeInterval(S,S.Xp[0],S.Xp[9],2);
+
+    double Int;
+
+    // Analytic result
+    AnalyticResult = exp(V1.y)*(exp(V2.y - V1.y) - 1.0);
+
+    // Numerical result
+    Int = SInfo.IntegrateFunctionWithRespectToY(TestFunction,Int);
+
+    // == check
+    ensure_distance("Integral value", Int, AnalyticResult, AcceptedError(AnalyticResult, 1.0e-6));
+
   }
 
 }

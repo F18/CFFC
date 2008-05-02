@@ -813,6 +813,64 @@ namespace tut
     ensure_distance("Fd at Point III", Fd(Ul,Ur,GradU,Vector2D(8.5,-12.5),Normal), Result, AcceptedError(Result));
   }
 
+  /* Test 40:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<40>()
+  {
+
+    set_test_name("Max member function");
+
+    // Set initial data
+    AdvectDiffuse2D_State Ul(12.2323), Ur(5.34), Um(-34.56);
+
+    // === check max
+    ensure_equals("Max I"  , max(Ul,Ur), 12.2323);
+    ensure_equals("Max II" , max(Ul,Um), 12.2323);
+    ensure_equals("Max III", max(Ur,Um), 5.34);
+  }
+
+  /* Test 41:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<41>()
+  {
+
+    set_test_name("Upwind advective flux");
+
+    // Set velocity field
+    VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State::V);
+
+    // Set initial data
+    AdvectDiffuse2D_State A(12.0), B(5.0);
+    Vector2D Normal(1,0);
+    
+    // === check advective flux
+    ensure_distance("Fa I", Fa(B,Vector2D(8.5,12.5),Normal), AdvectDiffuse2D_State(-40.0), AdvectDiffuse2D_State(tol));
+  }
+
+  /* Test 42:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<42>()
+  {
+
+    set_test_name("Upwind advective flux");
+
+    // Set velocity field
+    VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State::V);
+
+    // Set initial data
+    AdvectDiffuse2D_State A(12.0), B(5.0);
+    Vector2D Normal(0,1);
+    
+    // === check advective flux
+    ensure_distance("Fa I", Fa(A,Vector2D(8.5,12.5),Normal), AdvectDiffuse2D_State(72.0), AdvectDiffuse2D_State(tol));
+  }
+
+
 }
 
 

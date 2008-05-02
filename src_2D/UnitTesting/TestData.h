@@ -82,6 +82,7 @@ namespace tut {
     void Open_Output_File(const char * file_name);
     void Open_Output_File(char * file_name){const char * ptr = file_name; return Open_Output_File(ptr);}
     void Close_Output_File(void);
+    void Remove_Output_File(void);
     // Initialize output file name
     void InitializeOutputFileName(void);
     // Access to OutputFileReady
@@ -313,6 +314,26 @@ namespace tut {
   inline void TestData::Close_Output_File(void){
     if (OFR()){
       output_file.close();
+      InitializeOutputFileName();
+    }
+  }
+
+  /* Remove the file associated with the output stream */
+  inline void TestData::Remove_Output_File(void){
+    int stat;
+    string FailureMsg;
+
+    if (OFR()){
+      // close the file
+      output_file.close();
+      
+      // remove the file
+      stat = remove(output_file_name);
+      if (stat !=0){
+	FailureMsg = "Remove_Output_File() WARNING: The file " + string(output_file_name) + " couldn't be deleted\n";
+	throw tut::warning(FailureMsg);
+      }
+
       InitializeOutputFileName();
     }
   }
