@@ -1715,10 +1715,10 @@ CFL(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             } else {
                d_i = TWO*(Grid.volume(i,j,k)/
                           (Grid.AfaceE(i, j, k)+ Grid.AfaceW(i, j, k)));
-               d_j = TWO*( Grid.volume(i, j, k)/
-                           (Grid.AfaceN(i, j, k)+ Grid.AfaceS(i, j, k)));
-               d_k = TWO*( Grid.volume(i, j, k)/
-                           (Grid.AfaceTop(i, j, k)+ Grid.AfaceBot(i, j, k)));
+               d_j = TWO*(Grid.volume(i, j, k)/
+                          (Grid.AfaceN(i, j, k)+ Grid.AfaceS(i, j, k)));
+               d_k = TWO*(Grid.volume(i, j, k)/
+                          (Grid.AfaceTop(i, j, k)+ Grid.AfaceBot(i, j, k)));
                v_i = HALF*(W[i][j][k].rhov()/W[i][j][k].rho*
                            (Grid.nfaceE(i, j, k)- Grid.nfaceW(i, j, k)));
                v_j = HALF*(W[i][j][k].rhov()/W[i][j][k].rho*
@@ -1986,21 +1986,20 @@ dUdt_Multistage_Explicit(const int i_stage,
                Flux -=  FANS3D_ThermallyPerfect_KOmega_pState::FluxViscous_n(Wl, Wr,W[i][j][k], W[i+1][j][k], 
                                                                              dWdx[i][j][k], dWdy[i][j][k],dWdz[i][j][k],
                                                                              dWdx[i+1][j][k], dWdy[i+1][j][k],dWdz[i+1][j][k],
-                                                                             Grid.nfaceE(i, j, k), Grid.Voe(i, j, k),  
+                                                                             Grid.nfaceE(i, j, k), 
+                                                                             Grid.Voe(i, j, k),  
                                                                              Grid.delta_oe(i, j, k),
                                                                              Grid.volume(i, j, k), 
-                                                                            Grid.volume(i+1, j, k));
+                                                                             Grid.volume(i+1, j, k));
 
                /* Evaluate cell-averaged solution changes. */
                
                dUdt[i][j][k][k_residual] -= 
                   (IPs.CFL_Number* dt[i][j][k])*
-                  Flux* Grid.AfaceE(i, j, k)/
-                  Grid.volume(i, j, k);
+                  Flux* Grid.AfaceE(i, j, k) / Grid.volume(i, j, k);
                dUdt[i+1][j][k][k_residual] += 
                   (IPs.CFL_Number* dt[i+1][j][k])*
-                  Flux* Grid.AfaceW(i+1, j, k)/
-                  Grid.volume(i+1, j ,k);
+                  Flux* Grid.AfaceW(i+1, j, k) / Grid.volume(i+1, j ,k);
                                  
                /* Include source terms associated with turbulence model */
 
@@ -2123,19 +2122,19 @@ dUdt_Multistage_Explicit(const int i_stage,
              Flux -=  FANS3D_ThermallyPerfect_KOmega_pState::FluxViscous_n(Wl, Wr, W[i][j][k], W[i][j+1][k],
                                                                            dWdx[i][j][k], dWdy[i][j][k],dWdz[i][j][k],
                                                                            dWdx[i][j+1][k], dWdy[i][j+1][k],dWdz[i][j+1][k],
-                                                                           Grid.nfaceN(i, j, k),  Grid.Von(i, j, k),
-                                                                           Grid.delta_on(i, j, k), Grid.volume(i, j, k), 
+                                                                           Grid.nfaceN(i, j, k),  
+                                                                           Grid.Von(i, j, k),
+                                                                           Grid.delta_on(i, j, k), 
+                                                                           Grid.volume(i, j, k), 
                                                                            Grid.volume(i, j+1, k));
              
              /* Evaluate cell-averaged solution changes. */
              dUdt[i][j][k][k_residual] -= 
                 (IPs.CFL_Number* dt[i][j][k])*
-                Flux* Grid.AfaceN(i, j, k)/
-                Grid.volume(i, j, k);
+                Flux* Grid.AfaceN(i, j, k) / Grid.volume(i, j, k);
               dUdt[i][j+1][k][k_residual] += 
                 (IPs.CFL_Number* dt[i][j+1][k])*
-                Flux* Grid.AfaceS(i, j+1, k)/
-                 Grid.volume(i, j+1, k);
+                Flux* Grid.AfaceS(i, j+1, k) / Grid.volume(i, j+1, k);
     
               
           /* Save south and north face boundary flux. */
@@ -2234,21 +2233,22 @@ dUdt_Multistage_Explicit(const int i_stage,
              
              // add viscous flux in k direction
              Flux -=  FANS3D_ThermallyPerfect_KOmega_pState::FluxViscous_n(Wl, Wr,W[i][j][k], W[i][j][k+1], 
-                                   dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k],
-                                   dWdx[i][j][k+1], dWdy[i][j][k+1], dWdz[i][j][k+1],
-                                   Grid.nfaceTop(i, j, k), Grid.Vot(i, j, k), 
-                                   Grid.delta_ot(i, j, k), Grid.volume(i, j, k), Grid.volume(i, j, k+1));
+                                                                           dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k],
+                                                                           dWdx[i][j][k+1], dWdy[i][j][k+1], dWdz[i][j][k+1],
+                                                                           Grid.nfaceTop(i, j, k), 
+                                                                           Grid.Vot(i, j, k), 
+                                                                           Grid.delta_ot(i, j, k), 
+                                                                           Grid.volume(i, j, k), 
+                                                                           Grid.volume(i, j, k+1));
 
              /* Evaluate cell-averaged solution changes. */
              
              dUdt[i][j][k][k_residual] -= 
                 (IPs.CFL_Number* dt[i][j][k])*
-                Flux* Grid.AfaceTop(i, j, k)/
-                Grid.volume(i, j, k);
+                Flux* Grid.AfaceTop(i, j, k)/ Grid.volume(i, j, k);
              dUdt[i][j][k+1][k_residual] += 
                 (IPs.CFL_Number* dt[i][j][k+1])*
-                Flux* Grid.AfaceBot(i, j, k+1)/
-                Grid.volume(i, j, k+1);
+                Flux* Grid.AfaceBot(i, j, k+1)/ Grid.volume(i, j, k+1);
              
              /* Save top and bottom face boundary flux. */
              
