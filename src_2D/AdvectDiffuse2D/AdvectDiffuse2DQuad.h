@@ -419,6 +419,20 @@ public:
 					 const unsigned short int Pos = 0);
   //@}
 
+  //! @name Functions for estimating positivity of elliptic term discretization:
+  //@{
+  void Analyse_HighOrder_Positivity_For_LaplacianOperator(const int &iCell, const int &jCell,
+							  const unsigned short int Pos = 0);
+  void Calculate_HighOrder_SolutionCoefficients_For_LaplacianOperator(const int &iCell, const int &jCell,
+								      const unsigned short int Pos = 0);
+  void Set_HighOrder_InfluenceDomain_For_LaplacianOperator(const int &iCell, const int &jCell,
+							   const unsigned short int Pos = 0);
+  void Calculate_HighOrder_Discretization_LaplacianOperator(const int &iCell, const int &jCell,
+							    const int & k_residual,
+							    const unsigned short int Pos = 0);
+  void Output_HighOrder_InfluenceDomain_For_LaplacianOperator(ostream &os);
+  //@}
+
   //! @name Input-output operators.
   //@{
   friend ostream &operator << (ostream &out_file,
@@ -582,6 +596,13 @@ private:
 
   //! Allocate high-order variables array.
   void allocate_HighOrder_Array(const int & NumberOfReconstructions);
+  //@}
+
+  //! @name Variables for estimating positivity of elliptic term discretization:
+  //@{
+  IndexType i_index, j_index;	     //!< Storage for indexes of cells that influence the discretization of the Laplace operator.
+  std::vector<double>  Laplacian_Coeffs; /*!< The coefficient for each cell in the stencil that
+					   appears in the discretization of the Laplace operator. */
   //@}
 };
 
