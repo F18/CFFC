@@ -814,6 +814,7 @@ void AdvectDiffuse2D_Quad_Block::Output_Cells_Tecplot_HighOrder_Debug_Mode(Adapt
  */
 int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_Input_Parameters &IP,
 							const int & k_residual,
+							const bool & UseTimeStep,
 							const unsigned short int Pos){
 
   // SET VARIABLES USED IN THE RESIDUAL CALCULATION PROCESS
@@ -906,11 +907,17 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } //endfor (GQPoint)
       
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number * dt[i  ][j])*
-					Flux * Grid.lfaceE(i  , j)/Grid.Cell[i  ][j].A );
-
-	  dUdt[i+1][j][k_residual] += ( (IP.CFL_Number * dt[i+1][j])*
-					Flux * Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A );
+	  if (UseTimeStep) {
+	    dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number * dt[i  ][j])*
+					  Flux * Grid.lfaceE(i  , j)/Grid.Cell[i  ][j].A );
+	    
+	    dUdt[i+1][j][k_residual] += ( (IP.CFL_Number * dt[i+1][j])*
+					  Flux * Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A );
+	  } else {
+	    dUdt[i  ][j][k_residual] -= ( Flux * Grid.lfaceE(i  , j)/Grid.Cell[i  ][j].A );
+	    
+	    dUdt[i+1][j][k_residual] += ( Flux * Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A );
+	  }
 
 	}	//endif (i != ICu)
 
@@ -949,11 +956,17 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number * dt[i][j  ])*
-					Flux * Grid.lfaceN(i, j  )/Grid.Cell[i][j  ].A );
-
-	  dUdt[i][j+1][k_residual] += ( (IP.CFL_Number * dt[i][j+1])*
-					Flux * Grid.lfaceS(i, j+1)/Grid.Cell[i][j+1].A );
+	  if (UseTimeStep) {
+	    dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number * dt[i][j  ])*
+					  Flux * Grid.lfaceN(i, j  )/Grid.Cell[i][j  ].A );
+	    
+	    dUdt[i][j+1][k_residual] += ( (IP.CFL_Number * dt[i][j+1])*
+					  Flux * Grid.lfaceS(i, j+1)/Grid.Cell[i][j+1].A );
+	  } else {
+	    dUdt[i][j  ][k_residual] -= ( Flux * Grid.lfaceN(i, j  )/Grid.Cell[i][j  ].A );
+	    
+	    dUdt[i][j+1][k_residual] += ( Flux * Grid.lfaceS(i, j+1)/Grid.Cell[i][j+1].A );
+	  }
 
 	} //endif (j != JCu)
 
@@ -961,13 +974,21 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 
       /* Include regular source terms. */
       if (Include_Source_Term) {
-	dUdt[i][j][k_residual] += (IP.CFL_Number*dt[i][j])*SourceTerm(i,j);
+	if (UseTimeStep) {
+	  dUdt[i][j][k_residual] += (IP.CFL_Number*dt[i][j])*SourceTerm(i,j);
+	} else {
+	  dUdt[i][j][k_residual] += SourceTerm(i,j);
+	}
       }
 	
       /* Include axisymmetric source terms as required. */
       if (Axisymmetric) {
-	dUdt[i][j][k_residual] += ( (IP.CFL_Number*dt[i][j])*
-				    AxisymmetricSourceTerm(i,j) );
+	if (UseTimeStep) {
+	  dUdt[i][j][k_residual] += ( (IP.CFL_Number*dt[i][j])*
+				      AxisymmetricSourceTerm(i,j) );
+	} else {
+	  dUdt[i][j][k_residual] += ( AxisymmetricSourceTerm(i,j) );
+	}
       } /* endif */
 
     } // endfor (i)
@@ -1028,7 +1049,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FluxN[i]/Grid.Cell[i][JCu].A );
+	  if (UseTimeStep) {
+	    dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FluxN[i]/Grid.Cell[i][JCu].A );
+	  } else {
+	    dUdt[i][JCu][k_residual] -= ( FluxN[i]/Grid.Cell[i][JCu].A );
+	  }
 
 	}	// endfor (i)
 
@@ -1066,9 +1091,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxN[i] *= Grid.lfaceN(i,JCu);
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* FluxN[i]/Grid.Cell[i][JCu].A );
+	  if (UseTimeStep){
+	    dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* FluxN[i]/Grid.Cell[i][JCu].A );
+	  } else {
+	    dUdt[i][JCu][k_residual] -= ( FluxN[i]/Grid.Cell[i][JCu].A );
+	  }
 
-	}	// endfor (i)
+	} // endfor (i)
 
       } // endif (Grid.BndNorthSplineInfo != NULL)
 
@@ -1140,7 +1169,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FluxN[i]/Grid.Cell[i][JCu].A );
+	  if (UseTimeStep){
+	    dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FluxN[i]/Grid.Cell[i][JCu].A );
+	  } else {
+	    dUdt[i][JCu][k_residual] -= ( FluxN[i]/Grid.Cell[i][JCu].A );
+	  }
 
 	}	// endfor (i)
       
@@ -1194,7 +1227,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxN[i] *= Grid.lfaceN(i,JCu);
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* FluxN[i]/Grid.Cell[i][JCu].A );
+	  if (UseTimeStep){
+	    dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* FluxN[i]/Grid.Cell[i][JCu].A );
+	  } else {
+	    dUdt[i][JCu][k_residual] -= ( FluxN[i]/Grid.Cell[i][JCu].A );
+	  }
 
 	}	// endfor (i)
       
@@ -1255,9 +1292,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FluxS[i]/Grid.Cell[i][JCl].A );
+	  if (UseTimeStep){
+	    dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FluxS[i]/Grid.Cell[i][JCl].A );
+	  } else {
+	    dUdt[i][JCl][k_residual] -= ( FluxS[i]/Grid.Cell[i][JCl].A );
+	  }
 
-	}	// endfor (i)
+	} // endfor (i)
 
       } else {
 	/* Low-order boundary representation is required.
@@ -1293,9 +1334,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxS[i] *= Grid.lfaceS(i,JCl);
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* FluxS[i]/Grid.Cell[i][JCl].A );
+	  if (UseTimeStep) {
+	    dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* FluxS[i]/Grid.Cell[i][JCl].A );
+	  } else {
+	    dUdt[i][JCl][k_residual] -= ( FluxS[i]/Grid.Cell[i][JCl].A );
+	  }
 
-	}	// endfor (i)
+	} // endfor (i)
 
       } // endif (Grid.BndSouthSplineInfo != NULL)
 
@@ -1367,9 +1412,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FluxS[i]/Grid.Cell[i][JCl].A );
+	  if (UseTimeStep){
+	    dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FluxS[i]/Grid.Cell[i][JCl].A );
+	  } else {
+	    dUdt[i][JCl][k_residual] -= ( FluxS[i]/Grid.Cell[i][JCl].A );
+	  }
 
-	}	// endfor (i)
+	} // endfor (i)
       
       } else {
 	/* Low-order boundary representation is required.
@@ -1421,7 +1470,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxS[i] *= Grid.lfaceS(i,JCl);
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* FluxS[i]/Grid.Cell[i][JCl].A );
+	  if (UseTimeStep){
+	    dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* FluxS[i]/Grid.Cell[i][JCl].A );
+	  } else {
+	    dUdt[i][JCl][k_residual] -= ( FluxS[i]/Grid.Cell[i][JCl].A );
+	  }
 
 	}	// endfor (i)
       
@@ -1482,9 +1535,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FluxE[j]/Grid.Cell[ICu][j].A );
-
-	}	// endfor (j)
+	  if (UseTimeStep){
+	    dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FluxE[j]/Grid.Cell[ICu][j].A );
+	  } else {
+	    dUdt[ICu][j][k_residual] -= ( FluxE[j]/Grid.Cell[ICu][j].A );
+	  }
+	  
+	} // endfor (j)
 
       } else {
 	/* Low-order boundary representation is required.
@@ -1520,9 +1577,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxE[j] *= Grid.lfaceE(ICu,j);
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* FluxE[j]/Grid.Cell[ICu][j].A );
+	  if (UseTimeStep){
+	    dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* FluxE[j]/Grid.Cell[ICu][j].A );
+	  } else {
+	    dUdt[ICu][j][k_residual] -= ( FluxE[j]/Grid.Cell[ICu][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
 
       } // endif (Grid.BndEastSplineInfo != NULL)
 
@@ -1594,9 +1655,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FluxE[j]/Grid.Cell[ICu][j].A );
+	  if (UseTimeStep) {
+	    dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FluxE[j]/Grid.Cell[ICu][j].A );
+	  } else {
+	    dUdt[ICu][j][k_residual] -= ( FluxE[j]/Grid.Cell[ICu][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
       
       } else {
 	/* Low-order boundary representation is required.
@@ -1648,9 +1713,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxE[j] *= Grid.lfaceE(ICu,j);
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* FluxE[j]/Grid.Cell[ICu][j].A );
+	  if (UseTimeStep){
+	    dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* FluxE[j]/Grid.Cell[ICu][j].A );
+	  } else {
+	    dUdt[ICu][j][k_residual] -= ( FluxE[j]/Grid.Cell[ICu][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
       
       } // endif (Grid.BndEastSplineInfo != NULL)
     
@@ -1709,9 +1778,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FluxW[j]/Grid.Cell[ICl][j].A );
+	  if (UseTimeStep){
+	    dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FluxW[j]/Grid.Cell[ICl][j].A );
+	  } else {
+	    dUdt[ICl][j][k_residual] -= ( FluxW[j]/Grid.Cell[ICl][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
 
       } else {
 	/* Low-order boundary representation is required.
@@ -1747,9 +1820,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxW[j] *= Grid.lfaceW(ICl,j);
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* FluxW[j]/Grid.Cell[ICl][j].A );
+	  if (UseTimeStep){
+	    dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* FluxW[j]/Grid.Cell[ICl][j].A );
+	  } else {
+	    dUdt[ICl][j][k_residual] -= ( FluxW[j]/Grid.Cell[ICl][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
 
       } // endif (Grid.BndWestSplineInfo != NULL)
 
@@ -1821,9 +1898,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FluxW[j]/Grid.Cell[ICl][j].A );
+	  if (UseTimeStep){
+	    dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FluxW[j]/Grid.Cell[ICl][j].A );
+	  } else {
+	    dUdt[ICl][j][k_residual] -= ( FluxW[j]/Grid.Cell[ICl][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
       
       } else {
 	/* Low-order boundary representation is required.
@@ -1875,9 +1956,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxW[j] *= Grid.lfaceW(ICl,j);
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* FluxW[j]/Grid.Cell[ICl][j].A );
+	  if (UseTimeStep){
+	    dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* FluxW[j]/Grid.Cell[ICl][j].A );
+	  } else {
+	    dUdt[ICl][j][k_residual] -= ( FluxW[j]/Grid.Cell[ICl][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
       
       } // endif (Grid.BndWestSplineInfo != NULL)
     
@@ -1931,13 +2016,19 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } //endfor (GQPoint)
       
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number * dt[i  ][j])*
-					Flux * Grid.lfaceE(i  , j)/Grid.Cell[i  ][j].A );
+	  if (UseTimeStep){
+	    dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number * dt[i  ][j])*
+					  Flux * Grid.lfaceE(i  , j)/Grid.Cell[i  ][j].A );
 
-	  dUdt[i+1][j][k_residual] += ( (IP.CFL_Number * dt[i+1][j])*
-					Flux * Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A );
+	    dUdt[i+1][j][k_residual] += ( (IP.CFL_Number * dt[i+1][j])*
+					  Flux * Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A );
+	  } else {
+	    dUdt[i  ][j][k_residual] -= ( Flux * Grid.lfaceE(i  , j)/Grid.Cell[i  ][j].A );
 
-	}	//endif (i != ICu)
+	    dUdt[i+1][j][k_residual] += ( Flux * Grid.lfaceW(i+1, j)/Grid.Cell[i+1][j].A );
+	  }
+
+	} //endif (i != ICu)
 
 
 	if ( j != JCu) {		// (j == JCu) corresponds to the North block boundary which will be considered separately!
@@ -1964,11 +2055,17 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number * dt[i][j  ])*
-					Flux * Grid.lfaceN(i, j  )/Grid.Cell[i][j  ].A );
+	  if (UseTimeStep){
+	    dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number * dt[i][j  ])*
+					  Flux * Grid.lfaceN(i, j  )/Grid.Cell[i][j  ].A );
 
-	  dUdt[i][j+1][k_residual] += ( (IP.CFL_Number * dt[i][j+1])*
-					Flux * Grid.lfaceS(i, j+1)/Grid.Cell[i][j+1].A );
+	    dUdt[i][j+1][k_residual] += ( (IP.CFL_Number * dt[i][j+1])*
+					  Flux * Grid.lfaceS(i, j+1)/Grid.Cell[i][j+1].A );
+	  } else {
+	    dUdt[i][j  ][k_residual] -= ( Flux * Grid.lfaceN(i, j  )/Grid.Cell[i][j  ].A );
+
+	    dUdt[i][j+1][k_residual] += ( Flux * Grid.lfaceS(i, j+1)/Grid.Cell[i][j+1].A );
+	  }
 
 	} //endif (j != JCu)
 
@@ -2056,9 +2153,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxN[i] += FaceFlux;
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
-	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FaceFlux/Grid.Cell[i][JCu].A );
+	  if (UseTimeStep){
+	    dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FaceFlux/Grid.Cell[i][JCu].A );
+	  } else {
+	    dUdt[i][JCu][k_residual] -= ( FaceFlux/Grid.Cell[i][JCu].A );
+	  }
 
-	}	// endfor (i)
+	} // endfor (i)
 
       } else {
 	/* Low-order boundary representation is required.
@@ -2123,9 +2224,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxN[i] += Flux;
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
-	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* Flux/Grid.Cell[i][JCu].A );
+	  if (UseTimeStep){
+	    dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* Flux/Grid.Cell[i][JCu].A );
+	  } else {
+	    dUdt[i][JCu][k_residual] -= ( Flux/Grid.Cell[i][JCu].A );
+	  }
 
-	}	// endfor (i)
+	} // endfor (i)
 
       } // endif (Grid.BndNorthSplineInfo != NULL)
 
@@ -2185,9 +2290,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxN[i] += FaceFlux;
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
-	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FaceFlux/Grid.Cell[i][JCu].A );
+	  if (UseTimeStep){
+	    dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu]) * FaceFlux/Grid.Cell[i][JCu].A );
+	  } else {
+	    dUdt[i][JCu][k_residual] -= ( FaceFlux/Grid.Cell[i][JCu].A );
+	  }
 
-	}	// endfor (i)
+	} // endfor (i)
       
       } else {
 	/* Low-order boundary representation is required.
@@ -2230,9 +2339,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxN[i] += Flux;
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* Flux/Grid.Cell[i][JCu].A );
+	  if (UseTimeStep){
+	    dUdt[i][JCu][k_residual] -= ( (IP.CFL_Number * dt[i][JCu])* Flux/Grid.Cell[i][JCu].A );
+	  } else {
+	    dUdt[i][JCu][k_residual] -= ( Flux/Grid.Cell[i][JCu].A );
+	  }
 
-	}	// endfor (i)
+	} // endfor (i)
       
       } // endif (Grid.BndNorthSplineInfo != NULL)
     
@@ -2319,9 +2432,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxS[i] += FaceFlux;
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
-	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FaceFlux/Grid.Cell[i][JCl].A );
+	  if (UseTimeStep){
+	    dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FaceFlux/Grid.Cell[i][JCl].A );
+	  } else {
+	    dUdt[i][JCl][k_residual] -= ( FaceFlux/Grid.Cell[i][JCl].A );
+	  }
 
-	}	// endfor (i)
+	} // endfor (i)
 
       } else {
 	/* Low-order boundary representation is required.
@@ -2386,9 +2503,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxS[i] += Flux;
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
-	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* Flux/Grid.Cell[i][JCl].A );
+	  if (UseTimeStep){
+	    dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* Flux/Grid.Cell[i][JCl].A );
+	  } else {
+	    dUdt[i][JCl][k_residual] -= ( Flux/Grid.Cell[i][JCl].A );
+	  }
 
-	}	// endfor (i)
+	} // endfor (i)
 
       } // endif (Grid.BndSouthSplineInfo != NULL)
 
@@ -2448,9 +2569,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxS[i] += FaceFlux;
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
-	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FaceFlux/Grid.Cell[i][JCl].A );
+	  if (UseTimeStep){
+	    dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl]) * FaceFlux/Grid.Cell[i][JCl].A );
+	  } else {
+	    dUdt[i][JCl][k_residual] -= ( FaceFlux/Grid.Cell[i][JCl].A );
+	  }
 
-	}	// endfor (i)
+	} // endfor (i)
       
       } else {
 	/* Low-order boundary representation is required.
@@ -2493,9 +2618,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxS[i] += Flux;
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* Flux/Grid.Cell[i][JCl].A );
+	  if (UseTimeStep){
+	    dUdt[i][JCl][k_residual] -= ( (IP.CFL_Number * dt[i][JCl])* Flux/Grid.Cell[i][JCl].A );
+	  } else {
+	    dUdt[i][JCl][k_residual] -= ( Flux/Grid.Cell[i][JCl].A );
+	  }
 
-	}	// endfor (i)
+	} // endfor (i)
       
       } // endif (Grid.BndSouthSplineInfo != NULL)
     
@@ -2582,9 +2711,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxE[j] += FaceFlux;
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
-	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FaceFlux/Grid.Cell[ICu][j].A );
+	  if (UseTimeStep){
+	    dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FaceFlux/Grid.Cell[ICu][j].A );
+	  } else {
+	    dUdt[ICu][j][k_residual] -= ( FaceFlux/Grid.Cell[ICu][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
 
       } else {
 	/* Low-order boundary representation is required.
@@ -2649,9 +2782,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxE[j] += Flux;
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
-	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* Flux/Grid.Cell[ICu][j].A );
+	  if (UseTimeStep){
+	    dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* Flux/Grid.Cell[ICu][j].A );
+	  } else {
+	    dUdt[ICu][j][k_residual] -= ( Flux/Grid.Cell[ICu][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
 
       } // endif (Grid.BndEastSplineInfo != NULL)
 
@@ -2711,9 +2848,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxE[j] += FaceFlux;
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
-	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FaceFlux/Grid.Cell[ICu][j].A );
+	  if (UseTimeStep){
+	    dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j]) * FaceFlux/Grid.Cell[ICu][j].A );
+	  } else {
+	    dUdt[ICu][j][k_residual] -= ( FaceFlux/Grid.Cell[ICu][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
       
       } else {
 	/* Low-order boundary representation is required.
@@ -2756,9 +2897,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxE[j] += Flux;
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* Flux/Grid.Cell[ICu][j].A );
+	  if (UseTimeStep){
+	    dUdt[ICu][j][k_residual] -= ( (IP.CFL_Number * dt[ICu][j])* Flux/Grid.Cell[ICu][j].A );
+	  } else {
+	    dUdt[ICu][j][k_residual] -= ( Flux/Grid.Cell[ICu][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
       
       } // endif (Grid.BndEastSplineInfo != NULL)
     
@@ -2845,9 +2990,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxW[j] += FaceFlux;
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
-	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FaceFlux/Grid.Cell[ICl][j].A );
+	  if (UseTimeStep){
+	    dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FaceFlux/Grid.Cell[ICl][j].A );
+	  } else {
+	    dUdt[ICl][j][k_residual] -= ( FaceFlux/Grid.Cell[ICl][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
 
       } else {
 	/* Low-order boundary representation is required.
@@ -2912,9 +3061,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxW[j] += Flux;
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
-	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* Flux/Grid.Cell[ICl][j].A );
+	  if (UseTimeStep){
+	    dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* Flux/Grid.Cell[ICl][j].A );
+	  } else {
+	    dUdt[ICl][j][k_residual] -= ( Flux/Grid.Cell[ICl][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
 
       } // endif (Grid.BndWestSplineInfo != NULL)
 
@@ -2974,9 +3127,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxW[j] += FaceFlux;
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
-	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FaceFlux/Grid.Cell[ICl][j].A );
+	  if (UseTimeStep){
+	    dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j]) * FaceFlux/Grid.Cell[ICl][j].A );
+	  } else {
+	    dUdt[ICl][j][k_residual] -= ( FaceFlux/Grid.Cell[ICl][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
       
       } else {
 	/* Low-order boundary representation is required.
@@ -3019,9 +3176,13 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  FluxW[j] += Flux;
 
 	  /* Evaluate cell-averaged solution changes. */
-	  dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* Flux/Grid.Cell[ICl][j].A );
+	  if (UseTimeStep){
+	    dUdt[ICl][j][k_residual] -= ( (IP.CFL_Number * dt[ICl][j])* Flux/Grid.Cell[ICl][j].A );
+	  } else {
+	    dUdt[ICl][j][k_residual] -= ( Flux/Grid.Cell[ICl][j].A );
+	  }
 
-	}	// endfor (j)
+	} // endfor (j)
       
       } // endif (Grid.BndWestSplineInfo != NULL)
     
@@ -3064,7 +3225,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_Evaluation_HighOrder(const AdvectD
 
   // ** Step 2. Compute high-order spatial residual and write it to k_residual = 0 **
   // ********************************************************************************
-  return dUdt_Residual_HighOrder(IP, 0, Pos);
+  return dUdt_Residual_HighOrder(IP, 0, false, Pos);
 }
 
 
@@ -3157,7 +3318,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_
 
   // ** Step 2. Compute high-order spatial residual for the current time step fraction **
   // ************************************************************************************
-  return dUdt_Residual_HighOrder(IP, k_residual, Pos);
+  return dUdt_Residual_HighOrder(IP, k_residual, true, Pos);
 }
 
 /*!

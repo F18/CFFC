@@ -408,6 +408,7 @@ public:
   //@{
   int dUdt_Residual_HighOrder(const AdvectDiffuse2D_Input_Parameters &IP,
 			      const int & k_residual,
+			      const bool & UseTimeStep,
 			      const unsigned short int Pos = 0);
   int dUdt_Residual_Evaluation(const AdvectDiffuse2D_Input_Parameters &IP);
   int dUdt_Residual_Evaluation_HighOrder(const AdvectDiffuse2D_Input_Parameters &IP,
