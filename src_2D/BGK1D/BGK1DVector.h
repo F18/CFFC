@@ -57,6 +57,8 @@ class BGK1D_Vector : public ColumnVector {
   int discrete_Maxwell_Boltzmann(double rho, double u, double p);
   int discrete_Maxwell_Boltzmann(const BGK1D_Vector &V_in);
   double moment(int n) const;
+  double random_moment(int n) const;
+  double random_moment(int n, double u) const;
 
   /* Static Functions */
   static void setup(int l, double v_min, double v_max){

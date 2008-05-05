@@ -354,6 +354,37 @@ namespace tut
   template<>
   void BGK1DVector_object::test<12>()
   {
+    set_test_name("Check random moment function");
+
+    double moment0, moment1, moment2,
+      random_moment0, random_moment1, random_moment2;
+    BGK1D_Vector V;
+
+    //make a wierd distribution function
+    for(int i=0; i<BGK1D_Vector::get_length(); ++i) {
+      V[i] = sqrt(fabs(V.velocity(i)-10.221));
+    }
+
+    //check first few moments
+    moment0 = V.moment(0);
+    moment1 = V.moment(1);
+    moment2 = V.moment(2);
+    random_moment0 = V.random_moment(0);
+    random_moment1 = V.random_moment(1);
+    random_moment2 = V.random_moment(2);
+
+    ensure_distance("density==density", random_moment0, moment0, fabs(moment0)*tol);
+    ensure_distance("random_moment(1) == 0", random_moment1, 0.0, fabs(moment1)*tol*TEN);
+    ensure_distance("pressure == pressure", random_moment2,
+		    moment2 - moment1*moment1/moment0, fabs(random_moment2)*tol);
+
+  }
+
+  /* Test 13:*/
+  template<>
+  template<>
+  void BGK1DVector_object::test<13>()
+  {
     set_test_name("Maxwell_Boltzmann");
 
     double v, expected,
@@ -380,10 +411,10 @@ namespace tut
     }
   }
 
-  /* Test 13:*/
+  /* Test 14:*/
   template<>
   template<>
-  void BGK1DVector_object::test<13>()
+  void BGK1DVector_object::test<14>()
   {
     set_test_name("discrete_Maxwell_Boltzmann");
 

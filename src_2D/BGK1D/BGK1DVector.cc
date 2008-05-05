@@ -34,6 +34,21 @@ double BGK1D_Vector::moment(int n) const {
   return moment;
 }
 
+double BGK1D_Vector::random_moment(int n) const {
+  double u(moment(1)/moment(0));
+  return random_moment(n,u);
+}
+
+double BGK1D_Vector::random_moment(int n, double u) const {
+  double random_moment(0.0);
+
+  for(int i=0; i<m_length; ++i) {
+    random_moment += (*this)[i] * m_delta_v * pow(velocity(i)-u,n);
+  }
+
+  return random_moment;
+}
+
 /********************************************************
  * Function: BGK1D_Vector::Maxwell_Bolzmann(rho,u,p)    *
  *                                                      *
