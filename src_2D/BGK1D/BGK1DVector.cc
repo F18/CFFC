@@ -47,17 +47,98 @@ double BGK1D_Vector::moment(int n) const {
  *                                                      *
  ********************************************************/
 void BGK1D_Vector::Maxwell_Boltzmann(double rho, double u, double p) {
-  double v;
+  ColumnVector V(MB_coefs(rho,u,p));
+  fill_with_MB(V(0), V(1), V(2));
+  return;
+}
+
+ColumnVector BGK1D_Vector::MB_coefs(double rho, double u, double p) const {
   double B(rho/(2.0*p));
+  ColumnVector V(3);
 
-  double AA(-B*u*u+log(rho*sqrt(B/PI)));
-  double BB(2.0*B*u);
-  double CC(-B);
+  V(0) = -B*u*u+log(rho*sqrt(B/PI));
+  V(1) = 2.0*B*u;
+  V(2) = -B;
 
-    for(int i=0; i<m_length; ++i) {
-      v = m_velocities[i];
-      (*this)[i] = exp (AA + BB*v + CC*v*v);
+  return V;
+}
+
+void BGK1D_Vector::fill_with_MB(double AA, double BB, double CC) {
+  double v;
+  for(int i=0; i<m_length; ++i) {
+    v = m_velocities[i];
+    (*this)[i] = exp (AA + BB*v + CC*v*v);
+  }
+  return;
+}
+
+/********************************************************
+ * Function: BGK1D_Vector::discrete_Maxwell_Bolzmann    *
+ *                                                      *
+ * Creates a discretization which has density rho,      *
+ * velocity u, and pressure p and maximizes entropy.    *
+ * Note: It is a Gaussian distribution function but     *
+ *       has different coefficients than the continuous *
+ *       case.                                          *
+ *                                                      *
+ ********************************************************/
+int BGK1D_Vector::discrete_Maxwell_Boltzmann(const BGK1D_Vector &V_in) {
+  double rho, u, p;
+  rho = V_in.moment(0);
+  u = V_in.moment(1)/rho;
+  p = V_in.moment(2) - rho * u * u;
+  return discrete_Maxwell_Boltzmann(rho, u, p);
+}
+
+int BGK1D_Vector::discrete_Maxwell_Boltzmann(double rho, double u, double p) {
+
+  int count(0), j_max, j_min;
+  double term;
+  ColumnVector coefs(3), want(3), have(3), rhs(3), update(3);
+  DenseMatrix  lhs(3,3);
+
+  coefs = MB_coefs(rho,u,p);
+  fill_with_MB(coefs(0), coefs(1), coefs(2));
+
+  want[0] = rho;
+  want[1] = rho*u;
+  want[2] = p + rho*u*u;
+
+  have[0] = moment(0);
+  have[1] = moment(1);
+  have[2] = moment(2);
+
+  while( fabs( (want[0]-have[0])/want[0] ) > tolerance() ||
+	 fabs( (want[1]-have[1])/want[1] ) > tolerance() ||
+	 fabs( (want[2]-have[2])/want[2] ) > tolerance() ) {
+
+    rhs = want-have;
+
+    for(int i = 0; i <= 4; ++i) {
+      term = moment(i);
+      j_min = max(0,i-2);
+      j_max = min(i,2);
+      for(int j = j_min; j <= j_max; ++j) lhs(i-j,j) = term;
     }
 
-  return;
+    Solve_LU_Decomposition(lhs,rhs,update);
+
+    coefs += update;
+    fill_with_MB(coefs(0), coefs(1), coefs(2));
+
+    have[0] = moment(0);
+    have[1] = moment(1);
+    have[2] = moment(2);
+
+    ++count;
+    if(count > 100) {
+      cout << endl << endl << "Error, could not create discrete distribution function" << endl
+	   << "with a pressure of " << p << " Pa, a bulk velocity of" << endl
+	   << u << " m/s, and a density of " << rho << " Kg/m^3." << endl << endl;
+      return 1;
+    }
+
+  }
+
+  return 0;
 }

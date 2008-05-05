@@ -380,6 +380,32 @@ namespace tut
     }
   }
 
+  /* Test 13:*/
+  template<>
+  template<>
+  void BGK1DVector_object::test<13>()
+  {
+    set_test_name("discrete_Maxwell_Boltzmann");
+
+    double rho(1.554);
+    double u(-223.1);
+    double p(97322.1);
+
+    double B(rho/(2.0*p));
+
+    double AA(-B*u*u+log(rho*sqrt(B/PI)));
+    double BB(2.0*B*u);
+    double CC(-B);
+
+    BGK1D_Vector V;
+
+    V.discrete_Maxwell_Boltzmann(rho,u,p);
+
+    ensure_distance("moment0 is equal", V.moment(0), rho, fabs(rho)*BGK1D_Vector::tolerance());
+    ensure_distance("moment1 is equal", V.moment(1), rho*u, fabs(rho*u)*BGK1D_Vector::tolerance());
+    ensure_distance("moment2 is equal", V.moment(2), p+rho*u*u, fabs(p+rho*u*u)*BGK1D_Vector::tolerance());
+  }
+
   //end tests
 }
 

@@ -29,6 +29,14 @@ using namespace std;
 #include "../Physics/GasConstants.h"
 #endif // _GAS_CONSTANTS_INCLUDED
 
+#define  BGK1D_TOLERANCE    1.0e-10
+
+/********************************************************
+ * Class: BGK1D_Vector : public ColumnVector            *
+ *                                                      *
+ * Solution class containing discretized DF.            *
+ *                                                      *
+ ********************************************************/
 class BGK1D_Vector : public ColumnVector {
 
  public:
@@ -44,6 +52,10 @@ class BGK1D_Vector : public ColumnVector {
 
   /* Member Functions */
   void Maxwell_Boltzmann(double rho, double u, double p);
+  ColumnVector MB_coefs(double rho, double u, double p) const;
+  void fill_with_MB(double AA, double BB, double CC);
+  int discrete_Maxwell_Boltzmann(double rho, double u, double p);
+  int discrete_Maxwell_Boltzmann(const BGK1D_Vector &V_in);
   double moment(int n) const;
 
   /* Static Functions */
@@ -72,9 +84,8 @@ class BGK1D_Vector : public ColumnVector {
   static double v_min(void) {return m_velocities[0];}
   static double delta_v(void) {return m_delta_v;}
   static int get_length() {return m_length;}
-  static int setup_done() {
-    return m_set;
-  }
+  static int setup_done() {return m_set;}
+  static double tolerance() {return BGK1D_TOLERANCE;}
 
  protected:
 
