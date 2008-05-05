@@ -249,7 +249,7 @@ ifeq ($(TUT_TESTING),ON)
 endif
 
 # BGK 1D:
-SRC_BGK1D = BGK1DVector.cc
+SRC_BGK1D = BGK1DVector.cc BGK1D.cc BGK1DSolvers.cc
 SRC_BGK1D := $(addprefix $(BGK_1D_DIR), $(SRC_BGK1D))
 
 # Add BGK 1D Testing If Required:

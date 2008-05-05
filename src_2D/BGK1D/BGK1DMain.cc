@@ -28,7 +28,7 @@ using namespace std;
 
 // Include CFFC header files.
 #include "BGK1DVector.h"
-//#include "BGK1D.h"
+#include "BGK1D.h"
 #include "../UnitTesting/UnitTesting1D.h"
 
 /* Begin BGK1D program. */
@@ -223,8 +223,8 @@ int main(int num_arg, char *arg_ptr[]) {
    * PERFORM REQUIRED CALCULATIONS.                          *
    ***********************************************************/
 
-//  error_flag = BGK1DSolver(Input_File_Name_ptr,
-//				 batch_flag);
+  error_flag = BGK1DSolver(Input_File_Name_ptr,
+				 batch_flag);
 
   if (error_flag) {
      return (error_flag);
