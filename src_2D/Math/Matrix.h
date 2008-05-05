@@ -454,6 +454,8 @@ class ColumnVector: public MV_Vector_double{
     friend double operator *(const ColumnVector &CVec1, const ColumnVector &CVec2);
     friend double operator *(const RowVector &RVec, const ColumnVector &CVec);
     friend ColumnVector operator *(const double &a, const ColumnVector &CVec1);
+    /* term-wise product */
+    ColumnVector  operator ^(const ColumnVector &CVec2);
 
     /* Relational operators. */
     friend int operator ==(const ColumnVector &CVec1, const ColumnVector &CVec2);
@@ -595,6 +597,14 @@ inline ColumnVector operator /(const ColumnVector &CVec, const double &a) {
       cv(i) = xx*CVec(i);
    } /* endfor */
    return (cv);
+}
+
+inline ColumnVector ColumnVector::operator ^(const ColumnVector &CVec2) {
+  int i, m; m = size(); ColumnVector cv(m);
+  for ( i = 0; i <= m-1; ++i ) {
+    cv(i) = (*this)(i)*CVec2(i);
+  } /* endfor */
+  return (cv);
 }
 
 inline ColumnVector operator *(const double &a, const ColumnVector &CVec) {
