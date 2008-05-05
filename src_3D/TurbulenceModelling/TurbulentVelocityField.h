@@ -530,12 +530,12 @@ void Assign_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK &Solution_Block,
 }
 
 
-/****************************************************//**
- * Routine: Inflow_Turbulence_XY_Plane                  
- *                                                      
- * Feeds turbulent velocity fluctuations on a XY-plane  
- * of a 3D grid. It applies a turbulent inflow BC.      
- *                                                      
+/********************************************************
+ * Routine: Inflow_Turbulence_XY_Plane                  *
+ *                                                      *
+ * Feeds turbulent velocity fluctuations on a XY-plane  *
+ * of a 3D grid. It applies a turbulent inflow BC.      *
+ *                                                      *
  ********************************************************/
 template<typename HEXA_BLOCK>
 void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
@@ -831,13 +831,13 @@ int Inflow_Turbulence_XY_Plane(HEXA_BLOCK *Solution_Block,
 }
 
 
-/****************************************************//**
- * Routine: IC_Assign_Turbulence_Fresh_Gas              
- *                                                      
- * Assigns turbulent velocity fluctuations to a volume  
- * of a 3D domain. It is used with the slot and Bunsen    
- * burner configurations.                                                        
- *                                                      
+/********************************************************
+ * Routine: IC_Assign_Turbulence_Fresh_Gas              *
+ *                                                      *
+ * Assigns turbulent velocity fluctuations to a volume  *
+ * of a 3D domain. It is used with the slot and Bunsen  *  
+ * burner configurations.                               *                         
+ *                                                      *
  ********************************************************/
 template<typename HEXA_BLOCK>
 void IC_Assign_Turbulence_Fresh_Gas(HEXA_BLOCK &Solution_Block,

@@ -138,6 +138,12 @@ double polyfit_smoothing(int N, double *x, double *y, int order, double window, 
         
     }
     
+    delete[] x_temp;
+    delete[] y_temp;
+    delete[] indexes;
+    delete[] weight;
+    delete[] coeff;
+
     return eps;
     
 }
