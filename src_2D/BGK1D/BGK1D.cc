@@ -204,7 +204,7 @@ void ICs(BGK1D_UniformMesh *Soln,
   } /* endswitch */
 
   //set relaxation times
-  //BGK1D_Vector::set_relaxation_time(IP.relaxation_time);
+  BGK1D_Vector::set_relaxation_time(IP.relaxation_time);
 }
 
 /******************************************************//**

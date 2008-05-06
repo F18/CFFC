@@ -88,6 +88,8 @@ class BGK1D_Vector : public ColumnVector {
   static int get_length() {return m_length;}
   static int setup_done() {return m_set;}
   static double tolerance() {return BGK1D_TOLERANCE;}
+  static void set_relaxation_time(double tau) {m_relaxation_time = tau;}
+  static double relaxation_time() {return m_relaxation_time;}
 
  protected:
 
@@ -95,6 +97,7 @@ class BGK1D_Vector : public ColumnVector {
   static int m_set;
   static double m_delta_v;
   static ColumnVector m_velocities;
+  static double m_relaxation_time;
 };
 
 #endif //_BGK1D_VECTOR_INCLUDED

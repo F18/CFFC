@@ -17,6 +17,7 @@ int BGK1D_Vector::m_set = 0;
 
 double BGK1D_Vector::m_delta_v          = ZERO;
 ColumnVector BGK1D_Vector::m_velocities = ColumnVector();
+double BGK1D_Vector::m_relaxation_time  = 1.0e-10; //always overwritten by ICs
 
 /********************************************************
  * Function: BGK1D_Vector::moment(i)                    *
