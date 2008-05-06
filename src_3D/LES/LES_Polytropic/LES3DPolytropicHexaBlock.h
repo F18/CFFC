@@ -82,20 +82,6 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                                     Input_Parameters<LES3D_Polytropic_pState,
                                                      LES3D_Polytropic_cState> &IPs);
 
-template<>
-int Hexa_Block<LES3D_Polytropic_pState, LES3D_Polytropic_cState>::
-UnloadReceiveBuffer_Solution(double *buffer,
-                             int &buffer_count,
-                             const int buffer_size,
-                             const int i_min, 
-                             const int i_max,
-                             const int i_inc,
-                             const int j_min, 
-                             const int j_max,
-                             const int j_inc,
-                             const int k_min, 
-                             const int k_max,
-                             const int k_inc);
 
 
 /********************************************************

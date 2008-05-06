@@ -267,8 +267,8 @@ ICs_Specializations(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cS
     }
     LES3D_Polytropic_cState *** (Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::*U_ptr) = &Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::U;
     double (LES3D_Polytropic_pState::*p_ptr) = p_ptr = &LES3D_Polytropic_pState::p; 
-    LES_Filter<LES3D_Polytropic_pState,LES3D_Polytropic_cState> Explicit_Filter(*this,LES_FILTER_HASELBACHER);
-//    Explicit_Filter.filter(U_ptr);
+    LES_Filter<LES3D_Polytropic_pState,LES3D_Polytropic_cState> Explicit_Filter(*this,IPs,FILTER_TYPE_VASILYEV);
+    Explicit_Filter.filter(U_ptr);
     for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
         for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
             for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
@@ -1156,41 +1156,5 @@ Update_Solution_Multistage_Explicit(const int i_stage,
     /* Solution successfully updated. */
     
     return (0);   
-    
-}
-
-/*******************************************************************************
- * Routine: UnloadReceiveBuffer_Solution -- Unloads solution data from the     *
- *                                          receive message buffer.            *
- *******************************************************************************/
-template<>
-int Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::
-UnloadReceiveBuffer_Solution(double *buffer,
-                             int &buffer_count,
-                             const int buffer_size,
-                             const int i_min, 
-                             const int i_max,
-                             const int i_inc,
-                             const int j_min, 
-                             const int j_max,
-                             const int j_inc,
-                             const int k_min, 
-                             const int k_max,
-                             const int k_inc) {
-    
-    for (int k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
-        for (int j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
-            for (int i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
-                for (int nV = 1; nV <=NumVar(); ++ nV) {
-                    buffer_count++;
-                    if (buffer_count >= buffer_size) return(1);    
-                    U[i][j][k][nV] = buffer[buffer_count];
-                } /* endfor */
-                W[i][j][k] = U[i][j][k].W();
-            } /* endfor */
-        } /* endfor */
-    } /* endfor */ 
-    
-    return (0);
     
 }

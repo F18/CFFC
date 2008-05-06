@@ -151,6 +151,10 @@ class Hexa_Multi_Block {
 
    void BCs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                              typename HEXA_BLOCK::Soln_cState> &Input);
+    
+    void BCs_dUdt(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                   typename HEXA_BLOCK::Soln_cState> &Input,
+                  int residual_index);
 
    double CFL(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                typename HEXA_BLOCK::Soln_cState> &Input);
@@ -773,6 +777,29 @@ void Hexa_Multi_Block<HEXA_BLOCK>::BCs(Input_Parameters<typename HEXA_BLOCK::Sol
       } /* endif */
    }  /* endfor */
    
+}
+
+/********************************************************
+ * Routine: BCs_dUdt                                    *
+ *                                                      *
+ * Apply boundary conditions at boundaries of a 1D      *
+ * array of 3D hexahedral multi-block solution          *
+ * blocks.                                              *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::BCs_dUdt(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                                             typename HEXA_BLOCK::Soln_cState> &Input,
+                                            int residual_index) {
+    
+    /* Prescribe boundary data for each solution block. */
+    
+    for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+        if (Block_Used[nblk]) {
+            Soln_Blks[nblk].BCs_dUdt(Input,residual_index);
+        } /* endif */
+    }  /* endfor */
+    
 }
 
 /********************************************************
