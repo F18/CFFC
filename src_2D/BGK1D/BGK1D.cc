@@ -228,7 +228,8 @@ double CFL(BGK1D_UniformMesh *Soln,
   double l_max= max(fabs(BGK1D_Vector::velocity(0)),
 		    fabs(BGK1D_Vector::velocity(BGK1D_Vector::get_length()-1)));
 
-  return Soln[0].X.dx/l_max; //always uniform mesh?
+  return min(Soln[0].X.dx/l_max,
+	     BGK1D_Vector::relaxation_time());
 }
 
 /******************************************************//**
