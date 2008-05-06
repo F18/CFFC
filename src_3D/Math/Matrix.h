@@ -11,6 +11,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <cassert>
+#include <cmath>
 
 using namespace std;
 
@@ -27,6 +28,8 @@ using namespace std;
 #ifndef _MV_MATRIX_ALL_H_
 #include "mvm.h"
 #endif // _MV_MATRIX_ALL_H_
+
+
 
 /* Define the row vector class, 
    a derived class based on MV++ MV_Vector_double class. */
@@ -47,6 +50,8 @@ class ColumnVector;
  *      one        -- Assign one to every element of    *
  *                    the vector.                       *
  *      unitvec    -- Assign unit vector.               *
+ *      append     -- append an element to the vector   *
+ *      permute    -- swap 2 elements in the vector     *
  *      abs        -- Absolute value (length) of        *
  *                    vector.                           *
  *      sqr        -- Square of vector.                 *
@@ -105,7 +110,13 @@ class RowVector: public MV_Vector_double{
 
     /* Assign the unit vector with value of one for Nth element. */
     void unitvec(const int N);
+    
+    /* Add an element to the vector */
+    void append(double x);
 
+    /* swap to elements in the vector */
+    void permute(int index_1, int index_2); 
+    
     /* Absolute value (magnitude) of row vector. */
     double abs(void);
     double abs(void) const;
@@ -175,6 +186,26 @@ inline void RowVector::one(void) {
 inline void RowVector::unitvec(const int N) {
    int i, m; m = size(); assert( N >= 0 && N <= m-1 );
    for ( i = 0; i <= m-1; ++i ) p_[i]=ZERO; p_[N]=ONE;
+}
+
+/********************************************************
+ * RowVector::append -- Add new element to the row      *
+ ********************************************************/
+inline void RowVector::append(double x) {
+    int m = size();
+    RowVector rv(*this);
+    *this = RowVector(m + 1);
+    for (int i = 0; i < m; i++ ) p_[i]=rv(i);
+    p_[m] = x;
+}
+
+/********************************************************
+ * RowVector::permute -- swap 2 elements in the row     *
+ ********************************************************/
+inline void RowVector::permute(int index_1, int index_2) {
+    double temp = p_[index_2];
+    p_[index_2] = p_[index_1];
+    p_[index_1] = temp;
 }
 
 /********************************************************
@@ -380,6 +411,8 @@ inline istream &operator >> (istream &in_file, RowVector &RVec) {
  *      one        -- Assign one to every element of    *
  *                    the vector.                       *
  *      unitvec    -- Assign unit vector.               *
+ *      append     -- append an element to the vector   *
+ *      permute    -- swap 2  elements in the vector    *
  *      abs        -- Absolute value (length) of        *
  *                    vector.                           *
  *      sqr        -- Square of vector.                 *
@@ -439,6 +472,12 @@ class ColumnVector: public MV_Vector_double{
 
     /* Assign the unit vector with value of one for Nth element. */
     void unitvec(const int N);
+    
+    /* add an element to the vector */
+    ColumnVector& append(double x);
+    
+    /* swap 2 elements in the vector */
+    void permute(int index_1, int index_2);
 
     /* Absolute value (magnitude) of row vector. */
     double abs(void);
@@ -509,6 +548,28 @@ inline void ColumnVector::unitvec(const int N) {
    int i, m; m = size(); assert( N >= 0 && N <= m-1 );
    for ( i = 0; i <= m-1; ++i ) p_[i]=ZERO; p_[N]=ONE;
 }
+
+/********************************************************
+ * ColumnVector::append -- add an element to the vector *
+ ********************************************************/
+inline ColumnVector& ColumnVector::append(double x) {
+    int m = size();
+    ColumnVector cv(*this);
+    newsize(m+1);
+    for (int i = 0; i < m; i++ ) p_[i]=cv(i);
+    p_[m] = x;
+}
+
+
+/**********************************************************
+ * ColumnVector::permute -- swap 2 elements in the vector *
+ **********************************************************/
+inline void ColumnVector::permute(int index_1, int index_2) {
+    double temp = p_[index_2];
+    p_[index_2] = p_[index_1];
+    p_[index_1] = temp;
+}
+
 
 /********************************************************
  * ColumnVector::abs -- Absolute value of a vector.     *
@@ -723,47 +784,10 @@ inline RowVector transpose(const ColumnVector &CVec) {
 /* Define the n x n square diagonal matrix class.
  Uses the MV++ MV_Vector_double class. */
 
-/********************************************************
- * Class: DiagonalMatrix                             *
- *                                                      *
- * Member functions                                     *
- *      n          -- Return number of rows and columns.*
- *      D          -- Return array of diagonal elements.*
- *      A          -- Return array of elements above    *
- *                    main diagonal.                    *
- *      B          -- Return array of elements below    *
- *                    main diagonal.                    *
- *      allocate   -- Allocate memory for matrix.       *
- *      deallocate -- Deallocate memory for matrix.     *
- *      zero       -- Assign zero matrix.               *
- *      identity   -- Assign identity matrix.           *
- *      trace      -- Return the trace of matrix.       *
- *      transpose  -- Return the transpose of matrix.   *
- *                                                      *
- * Member operators                                     *
- *      M  -- a tridiagonal matrix                      *
- *      RV -- a row vector                              *
- *      CV -- a column vector                           *
- *      a  -- a scalar (double)                         *
- *                                                      *
- * M = M;                                               *
- * a = M[i];                                            * 
- * M = M + M;                                           *
- * M = M - M;                                           *
- * CV = M * CV;                                         *
- * M = a * M;                                           *
- * M = M * a;                                           *
- * M = M / a;                                           *
- * M = +M;                                              *
- * M = -M;                                              *
- * M += M;                                              *
- * M -= M;                                              *
- * M == M;                                              *
- * M != M;                                              *
- * cout << M; (output function)                         *
- * cin  >> M; (input function)                          *
- *                                                      *
- ********************************************************/
+/*
+ * Class: DiagonalMatrix                             
+ */
+class DenseMatrix;// : public MV_ColMat_double;
 class DiagonalMatrix : public MV_Vector_double {
 public:
     
@@ -783,6 +807,15 @@ public:
     
     /* Assign the identity matrix. */
     void identity(void);
+    
+    DiagonalMatrix inverse();
+    DiagonalMatrix power(double x);
+    
+    void permute(int index_1, int index_2) {
+        double temp = p_[index_2];
+        p_[index_2] = p_[index_1];
+        p_[index_1] = temp;
+    }
     
     /* Compute the trace of the matrix. */
     double trace(void);
@@ -845,6 +878,18 @@ inline void DiagonalMatrix::identity(void) {
     int i, m; m = size(); for ( i = 0; i <= m-1; ++i ) p_[i]=ONE;
 }
 
+inline DiagonalMatrix DiagonalMatrix::inverse(void) {
+    DiagonalMatrix D(*this);
+    int m = size(); for (int i = 0; i < m; ++i ) D(i)=ONE/p_[i];
+    return D;
+}
+
+inline DiagonalMatrix DiagonalMatrix::power(double x) {
+    DiagonalMatrix D(*this);
+    int m = size(); for (int i = 0; i < m; ++i ) D(i)=pow(p_[i],x);
+    return D;
+}
+
 /********************************************************
  * DiagonalMatrix::trace -- Trace of a matrix.       *
  ********************************************************/
@@ -868,6 +913,8 @@ inline double trace(const DiagonalMatrix &M) {
     for ( i = 0; i <= m-1; ++i ) xx+=M(i);
     return (xx);
 }
+
+
 
 /********************************************************
  * DiagonalMatrix -- Unary arithmetic operators.     *
@@ -924,6 +971,7 @@ inline DiagonalMatrix operator /(const DiagonalMatrix &M, const double &a) {
     }
     return (DM);
 }
+
 
 /********************************************************
  * DiagonalMatrix -- Shortcut arithmetic operators.  *
@@ -1011,6 +1059,11 @@ inline istream &operator >> (istream &in_file, DiagonalMatrix &M) {
  *                    col_1 permuted with col_2         *
  *      permute_row-- Return the matrix having the      *
  *                    row_1 permuted with row_2         *
+ *      append     -- add a row or column to the matrix *
+ *      assignRow  -- Fill a row of the matrix with     *
+ *                    a RowVector                       *
+ *      diagonal   -- Return a DiagonalMatrix made      *
+ *                    from the diagonal of the matrix   *
  * pseudo_inverse_override -- Computes the              *
  *                        pseudo-inverse of             *
  *                        a dense matrix MxN and writes *
@@ -1095,6 +1148,9 @@ class DenseMatrix: public MV_ColMat_double{
 
     /* Assign the identity matrix. */
     void identity(void);
+    
+    /* Return a DiagonalMatrix from the diagonal */
+    DiagonalMatrix diagonal(void);
 
     /* Compute the trace of the matrix. */
     double trace(void);
@@ -1127,17 +1183,18 @@ class DenseMatrix: public MV_ColMat_double{
     friend DenseMatrix permute_col(const DenseMatrix &M, const int col1_,
 				   const int col2_);
     
+    /* add a RowVector to the matrix */
+    void append(RowVector &rv);
+    
+    /* add a ColumnVector to the matrix */
+    void append(ColumnVector &cv);
+    
     /* Assignment operator. */
     // DenseMatrix operator = (const DenseMatrix &M1);
     // Use automatically generated assignment operator.
 
-    void assignRow(int index, RowVector &RVec) {
-        assert( index >= 0 && index <= dim0_-1);
-        assert( RVec.size() == dim1_ );
-        for (int j = 0; j<= dim1_-1; j++) {
-            v_(j*lda_+index) = RVec(j);
-        }
-    }
+    /* Fill a row of the matrix with a RowVector */
+    void assignRow(int index, RowVector &RVec);
     
     /* Index operator. */
     RowVector &operator[](int index) {
@@ -1222,6 +1279,69 @@ inline void DenseMatrix::identity(void) {
          k=j*lda_+i; v_(k)=double(i==j)*ONE;
       } /* endfor */
    } /* endfor */
+}
+
+inline void DenseMatrix::append(RowVector &rv) {
+    assert(rv.size()==dim1_); // number of elements in vector == number of columns
+    int m = dim0_;
+    int n = dim1_;
+    DenseMatrix M(*this);
+    int k;
+    *this = DenseMatrix(m + 1,dim1_);
+    for (int i = 0; i < m; i++) {
+        for (int j=0; j< n; j++) {
+            k = j*lda_+i;  
+            v_(k) = M(i,j);
+        }
+    } 
+    for (int j=0; j<n; j++) {
+        k = j*lda_+m;
+        v_(k) = rv(j);
+    }
+}
+
+inline void DenseMatrix::append(ColumnVector &cv) {
+    assert(cv.size()==dim0_); // number of elements in vector == number of rows
+    int m = dim0_;
+    int n = dim1_;
+    DenseMatrix M(*this);
+    int k;
+    *this = DenseMatrix(m, n+1);
+    for (int i = 0; i < m; i++) {
+        for (int j=0; j< n; j++) {
+            k = j*lda_+i;
+            v_(k) = M(i,j);
+        }
+    } 
+    for (int i=0; i<m; i++) {
+        k = n*lda_+i;
+        v_(k) = cv(i);
+    }
+}
+
+/**********************************************************************
+ * DenseMatrix::diagonal -- Return a DiagonalMatrix from the diagonal *
+ **********************************************************************/
+inline DiagonalMatrix DenseMatrix::diagonal(void) {
+    assert(dim0_ == dim1_);
+    DiagonalMatrix D(dim0_);
+    int k;
+    for (int i = 0; i < dim0_; ++i ) {
+        k = i*(lda_+1);
+        D(i) = v_(k);
+    }
+    return D;
+}
+
+/*********************************************************
+ * DenseMatrix::assignRow -- Fill a row with a RowVector *
+ *********************************************************/
+inline void DenseMatrix::assignRow(int index, RowVector &RVec) {
+    assert( index >= 0 && index <= dim0_-1);
+    assert( RVec.size() == dim1_ );
+    for (int j = 0; j<= dim1_-1; j++) {
+        v_(j*lda_+index) = RVec(j);
+    }
 }
 
 /********************************************************
@@ -1657,6 +1777,7 @@ inline istream &operator >> (istream &in_file, DenseMatrix &M) {
   in_file.unsetf(ios::skipws);
   return (in_file);
 }
+
 
 /* Define the n x n square tridiagonal matrix class.
    Uses the MV++ MV_Vector_double class. */
