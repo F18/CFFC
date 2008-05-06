@@ -142,8 +142,45 @@ namespace tut
     void LES_Filters_object::test<1>()
     {
         
+        ColumnVector cv(2);
+        cv(0) = 2;  cv(1) = 12;        
+        
+        cv.append(22);
+        cout << " cv = " << endl << cv << endl;
+        
+        
+        RowVector rv(2);
+        rv(0) = 30; rv(2) = 31;
+        rv.append(32);
+        cout << " rv = "  << rv << endl;
 
         
+        DenseMatrix M(3,2);
+        M(0,0) = 0;    M(0,1) = 1;
+        M(1,0) = 10;   M(1,1) = 11;
+        M(2,0) = 20;   M(2,1) = 21;
+        
+        cout << " M = " << endl << M << endl;
+        M.append(cv);
+        cout << " M = " << endl << M << endl;
+        M.append(rv);
+        cout << " M = " << endl << M << endl;
+        
+        cv.append(34);
+        cout << " cv = " << endl << cv << endl;
+
+        rv.append(44);
+        cout << " rv = "  << rv << endl;
+
+        M.append(cv);
+        cout << " M = " << endl << M << endl;
+
+        M.append(rv);
+        cout << " M = " << endl << M << endl;
+        
+        cv.append(10.020200202);
+        cout << " cv = " << endl << cv << endl;
+
     }
 
 
@@ -159,9 +196,14 @@ namespace tut
          Initialize();
         
         
+        LES_Filter<Soln_pState,Soln_cState> Haselbacher_filter(Data,Solution_Data,FILTER_TYPE_HASELBACHER);
+        LES_Filter<Soln_pState,Soln_cState> Vasilyev_filter(Data,Solution_Data,FILTER_TYPE_VASILYEV);
+
+        Haselbacher_filter.transfer_function();
+        Haselbacher_filter.test();
         
-        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
-        myfilter.transfer_function();
+        Vasilyev_filter.transfer_function();
+
         
         
         /* Function pointers:
@@ -259,25 +301,29 @@ namespace tut
         
         
 
-  //      Initialize();
+        Initialize();
 //        
-//        SpectralAnalysis<Soln_pState,Soln_cState> Spectrum(Data,Solution_Data);
-//        typedef double (Soln_pState::*member_ptr);
-//        member_ptr rho_member = &Soln_pState::rho;
+        SpectralAnalysis<Soln_pState,Soln_cState> Spectrum(Data,Solution_Data);
+        typedef double (Soln_pState::*member_ptr);
+        member_ptr rho_member = &Soln_pState::rho;
 //        member_ptr p_member = &Soln_pState::p;
 //
 //        Spectrum.Set_Spectrum(p_member);
-//        Spectrum.Set_Spectrum(rho_member);
+        Spectrum.Set_Spectrum(rho_member);
 //                
 //        //cout << endl<< endl << endl << "FILTERING..." << endl;
-//        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
+        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,FILTER_TYPE_VASILYEV);
+        //LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
+
 //        Soln_cState **** (Hexa_Block<Soln_pState,Soln_cState>::*dUdt_ptr) = NULL;
 //        dUdt_ptr = &Hexa_Block<Soln_pState,Soln_cState>::dUdt;
 //        myfilter.Set_Filter_Variables(dUdt_ptr,0);
-//        myfilter.filter();
+        myfilter.test();
+       // myfilter.reset();   // make sure that we will use the new filter
+        myfilter.filter(rho_member);
 //        
 //
-//        Spectrum.Get_Spectrum(rho_member,"density");
+        Spectrum.Get_Spectrum(rho_member,"density");
 //        Spectrum.Get_Spectrum(p_member,"pressure");
 //
 //        error_flag = Hexa_Post_Processing(Data,Solution_Data);

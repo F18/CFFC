@@ -16,10 +16,6 @@
 #include "Haselbacher_Filter.h"
 #include "Vasilyev_Filter.h"
 
-#define LES_FILTER_HASELBACHER  1
-#define LES_FILTER_VASILYEV     2
-
-
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
 /**
@@ -44,6 +40,10 @@ public:
     static int dUdt_k_residual;
     static int filter_variable_type;
     
+    static int commutation_order;
+    static double FGR;
+    static int number_of_rings;
+    
     AdaptiveBlock3D_List *LocalSolnBlkList_ptr;                     // List with properties of SolnBlks
     Hexa_Block<Soln_pState,Soln_cState> *Solution_Blocks_ptr;       // array of SolnBlks
     /* ----- constructor ----- */
@@ -54,32 +54,82 @@ public:
         Solution_Blocks_ptr  = Solution_Data.Local_Solution_Blocks.Soln_Blks;
         LocalSolnBlkList_ptr = &(Data.Local_Adaptive_Block_List);
         FILTER_ONLY_ONE_SOLNBLK = false;
+        FGR = Solution_Data.Input.Turbulence_IP.FGR;
+        commutation_order = Solution_Data.Input.Turbulence_IP.commutation_order;
+        number_of_rings = Solution_Data.Input.Turbulence_IP.number_of_rings;
 
         switch (filter_flag) {
-            case LES_FILTER_HASELBACHER:
+            case FILTER_TYPE_HASELBACHER:
                 filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;
                 break;
-            case LES_FILTER_VASILYEV:
+            case FILTER_TYPE_VASILYEV:
+                filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>;
+                break;
+        }
+    }
+    
+    LES_Filter(HexaSolver_Data &Data,
+               HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data) {
+        
+        int filter_flag;
+        Solution_Blocks_ptr  = Solution_Data.Local_Solution_Blocks.Soln_Blks;
+        LocalSolnBlkList_ptr = &(Data.Local_Adaptive_Block_List);
+        FILTER_ONLY_ONE_SOLNBLK = false;
+        FGR = Solution_Data.Input.Turbulence_IP.FGR;
+        commutation_order = Solution_Data.Input.Turbulence_IP.commutation_order;
+        number_of_rings = Solution_Data.Input.Turbulence_IP.number_of_rings;
+        filter_flag = Solution_Data.Input.Turbulence_IP.i_filter_type;
+
+        switch (filter_flag) {
+            case FILTER_TYPE_HASELBACHER:
+                filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;
+                break;
+            case FILTER_TYPE_VASILYEV:
                 filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>;
                 break;
         }
     }
     
     LES_Filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk,
+               Input_Parameters<Soln_pState,Soln_cState> &IPs,
                int filter_flag) {
         FILTER_ONLY_ONE_SOLNBLK = true;
         Solution_Blocks_ptr  = &SolnBlk;
+        FGR = IPs.Turbulence_IP.FGR;
+        commutation_order = IPs.Turbulence_IP.commutation_order;
+        number_of_rings = IPs.Turbulence_IP.number_of_rings;
         
         switch (filter_flag) {
-            case LES_FILTER_HASELBACHER:
+            case FILTER_TYPE_HASELBACHER:
                 filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;
                 break;
-            case LES_FILTER_VASILYEV:
+            case FILTER_TYPE_VASILYEV:
                 filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>;
                 break;
-        }
+        }        
     }
+    
+    
+    LES_Filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk,
+               Input_Parameters<Soln_pState,Soln_cState> &IPs) {
+        int filter_flag;
+        FILTER_ONLY_ONE_SOLNBLK = true;
+        Solution_Blocks_ptr  = &SolnBlk;
+        FGR = IPs.Turbulence_IP.FGR;
+        commutation_order = IPs.Turbulence_IP.commutation_order;
+        number_of_rings = IPs.Turbulence_IP.number_of_rings;
+        filter_flag = IPs.Turbulence_IP.i_filter_type;
 
+        switch (filter_flag) {
+            case FILTER_TYPE_HASELBACHER:
+                filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;
+                break;
+            case FILTER_TYPE_HASELBACHER:
+                filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>;
+                break;
+        }        
+    }
+    
     ~LES_Filter() {
         delete filter_ptr;
     }
@@ -103,6 +153,7 @@ public:
     }
     
     static void what_to_filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, int i, int j, int k, RowVector &x);
+    static void what_to_filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, int i, int j, int k, DenseMatrix &b, int row_index);
 
     
     General_Filter<Soln_pState,Soln_cState> *filter_ptr;
@@ -112,9 +163,9 @@ public:
     double filter_width;
     void transfer_function();
     
-    double gaussian();
-    double tophat();
-
+    void reset(void);
+    void test(void);
+    
     double maximum_wavenumber();
     bool FILTER_ONLY_ONE_SOLNBLK;
     RowVector ***Filtered;
@@ -142,6 +193,15 @@ public:
 };
 
 template<typename Soln_pState, typename Soln_cState>
+int LES_Filter<Soln_pState,Soln_cState>::commutation_order = 2;
+
+template<typename Soln_pState, typename Soln_cState>
+int LES_Filter<Soln_pState,Soln_cState>::number_of_rings = 2;
+
+template<typename Soln_pState, typename Soln_cState>
+double LES_Filter<Soln_pState,Soln_cState>::FGR = 2.0;
+
+template<typename Soln_pState, typename Soln_cState>
 int LES_Filter<Soln_pState,Soln_cState>::filter_variable_type = SOLN_CSTATE_4D;
 
 template<typename Soln_pState, typename Soln_cState>
@@ -157,28 +217,52 @@ template<typename Soln_pState, typename Soln_cState>
 Soln_cState **** Hexa_Block<Soln_pState,Soln_cState>::* LES_Filter<Soln_pState,Soln_cState>::Soln_cState_4D_ptr = NULL;
 
 template<typename Soln_pState, typename Soln_cState>
-inline void LES_Filter<Soln_pState,Soln_cState>::what_to_filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, int i, int j, int k , RowVector &x) {
-    switch (filter_variable_type) {
+ void LES_Filter<Soln_pState,Soln_cState>::what_to_filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, int i, int j, int k , RowVector &x) {
+     int numvar;
+     switch (filter_variable_type) {
         case SOLN_PSTATE_DOUBLE:
             x = RowVector(1);
             x(0) = SolnBlk.W[i][j][k].*Soln_pState_member_ptr;
             break;
         case SOLN_CSTATE_3D:
-            x = RowVector(SolnBlk.NumVar());
-            for (int n=1; n<=SolnBlk.NumVar(); n++) {
+            numvar = SolnBlk.NumVar();
+            x = RowVector(numvar);
+            for (int n=1; n<=numvar; n++) {
                 x(n-1) = (SolnBlk.*Soln_cState_3D_ptr)[i][j][k][n];
             }
             break;
         case SOLN_CSTATE_4D:
-            x = RowVector(SolnBlk.NumVar());
-            for (int n=1; n<=SolnBlk.NumVar(); n++) {
+            numvar = SolnBlk.NumVar();
+            x = RowVector(numvar);
+            for (int n=1; n<=numvar; n++) {
                 x(n-1) = (SolnBlk.*Soln_cState_4D_ptr)[i][j][k][dUdt_k_residual][n];
             }
             break;
     }
-
 }
 
+
+template<typename Soln_pState, typename Soln_cState>
+void LES_Filter<Soln_pState,Soln_cState>::what_to_filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, int i, int j, int k , DenseMatrix &b, int row_index) {
+    int numvar;
+    switch (filter_variable_type) {
+        case SOLN_PSTATE_DOUBLE:
+            b(row_index,0) = SolnBlk.W[i][j][k].*Soln_pState_member_ptr;
+            break;
+        case SOLN_CSTATE_3D:
+            numvar = SolnBlk.NumVar();
+            for (int n=1; n<=numvar; n++) {
+                b(row_index,n-1) = (SolnBlk.*Soln_cState_3D_ptr)[i][j][k][n];
+            }
+            break;
+            case SOLN_CSTATE_4D:
+            numvar = SolnBlk.NumVar();
+            for (int n=1; n<=numvar; n++) {
+                b(row_index,n-1) = (SolnBlk.*Soln_cState_4D_ptr)[i][j][k][dUdt_k_residual][n];
+            }
+            break;
+    }
+}
 
 
 template<typename Soln_pState, typename Soln_cState>
@@ -195,15 +279,39 @@ void LES_Filter<Soln_pState,Soln_cState>::transfer_function() {
     if (LocalSolnBlkList_ptr->Nused() >= 1) {
         for (int nBlk = 0; nBlk <= LocalSolnBlkList_ptr->Nused(); ++nBlk ) {
             if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
-            
-                filter_ptr->transfer_function(Solution_Blocks_ptr[nBlk],Solution_Blocks_ptr[nBlk].Grid.Cell[6][6][6],kmax);
-            
+                filter_ptr->transfer_function(Solution_Blocks_ptr[nBlk],Solution_Blocks_ptr[nBlk].Grid.Cell[12][12][12]);            
                 return;
             }
         }
     }
 
 }
+
+template<typename Soln_pState, typename Soln_cState>
+void LES_Filter<Soln_pState,Soln_cState>::reset() {
+    if (LocalSolnBlkList_ptr->Nused() >= 1) {
+        for (int nBlk = 0; nBlk <= LocalSolnBlkList_ptr->Nused(); ++nBlk ) {
+            if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
+                filter_ptr->Reset_Filter_Weights(Solution_Blocks_ptr[nBlk]);
+                return;
+            }
+        }
+    }
+}
+
+template<typename Soln_pState, typename Soln_cState>
+void LES_Filter<Soln_pState,Soln_cState>::test() {
+    double kmax = maximum_wavenumber();
+    if (LocalSolnBlkList_ptr->Nused() >= 1) {
+        for (int nBlk = 0; nBlk <= LocalSolnBlkList_ptr->Nused(); ++nBlk ) {
+            if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {                
+                filter_ptr->filter_tests(Solution_Blocks_ptr[nBlk],Solution_Blocks_ptr[nBlk].Grid.Cell[12][12][12]);
+                return;
+            }
+        }
+    }
+}
+
 
 template<typename Soln_pState, typename Soln_cState>
 void LES_Filter<Soln_pState,Soln_cState>::filter_Blocks(void) {
