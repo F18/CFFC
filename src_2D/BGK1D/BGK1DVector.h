@@ -100,4 +100,16 @@ class BGK1D_Vector : public ColumnVector {
   static double m_relaxation_time;
 };
 
+
+/********************************************************
+ *                Inline  Functions                     *
+ ********************************************************/
+inline BGK1D_Vector BGK_Flux(const BGK1D_Vector &Vl,
+			     const BGK1D_Vector &Vr){
+  BGK1D_Vector Flux;
+  for(int i=0;i<BGK1D_Vector::get_length();++i)
+    Flux(i) = ( (BGK1D_Vector::velocity(i)>0) ? Vl(i):Vr(i) ) * BGK1D_Vector::velocity(i);
+  return Flux;
+}
+
 #endif //_BGK1D_VECTOR_INCLUDED

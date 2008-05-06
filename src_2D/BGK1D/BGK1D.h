@@ -122,11 +122,11 @@ extern void Output_Tecplot(BGK1D_UniformMesh *Soln,
                            const double &Time,
 	                   ostream &out_file);
 
-void Output_Tecplot(BGK1D_UniformMesh *Soln,
-		    const CFD1D_Input_Parameters &IP,
-		    const int Number_of_Time_Steps,
-		    const double &Time,
-		    ostream &out_file);
+extern void Output_Tecplot(BGK1D_UniformMesh *Soln,
+			   const CFD1D_Input_Parameters &IP,
+			   const int Number_of_Time_Steps,
+			   const double &Time,
+			   ostream &out_file);
 
 extern void Grid(BGK1D_UniformMesh *Soln,
                  const double &xmin,

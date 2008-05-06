@@ -493,99 +493,46 @@ int dVdt_explicitEuler_upwind(BGK1D_UniformMesh *Soln,
 			      const double &CFL_Number,
                               const int Flux_Function_Type,
 			      const int Local_Time_Stepping) {
-//    int i, count(0);
-//    BGK1D_cState Flux;
-//    BGK1D_Vector temp;
-//    ColumnVector Update(BGK1D_Vector::get_length());
-//    ColumnVector RHS(BGK1D_Vector::get_length());
-//    DenseMatrix LHS(BGK1D_Vector::get_length(),
-//		    BGK1D_Vector::get_length());
-//
-//    /* Evaluate the time rate of change of the solution
-//       (i.e., the solution residuals) using the first-order
-//       upwind scheme with a variety of flux functions. */
-//
-//    Soln[0].dUdt.zero();
-//    for ( i = 0 ; i <= Number_of_Cells ; ++i ) {
-//        Soln[i+1].dUdt.zero();
-//
-//        switch(Flux_Function_Type) {
-//          case FLUX_FUNCTION_HLLE :
-//            Flux = FluxHLLE(Soln[i].U,
-//			    Soln[i].A,
-//			    Soln[i].lambda_min,
-//			    Soln[i+1].U,
-//			    Soln[i+1].A,
-//			    Soln[i+1].lambda_max);
-//            break;
-//          case FLUX_FUNCTION_KINETIC :
-//            Flux = FluxKinetic(Soln[i].A,
-//			       Soln[i].U[2]/Soln[i].U[1],
-//			       Soln[i+1].A,
-//			       Soln[i+1].U[2]/Soln[i+1].U[1]);
-//            break;
-//	  default:
-//	    cout << "Error, bad flux function." << endl;
-//	    return(1);
-//            break;
-//        } /* endswitch */
-//
-//        Soln[i].dUdt -= Flux/Soln[i].X.dx;
-//        Soln[i+1].dUdt += Flux/Soln[i+1].X.dx;
-//    } /* endfor */
-//    Soln[Number_of_Cells+1].dUdt.zero();
-//
-//    /* Update conserved and primitive solution and closure weights
-//       using explicit Euler method. */
-//
-//    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
-//      if ( !Local_Time_Stepping ) Soln[i].dt = dtMin;
-//      temp = (Soln[i].dUdt + Collision_RHS(Soln[i].U) ); //store here temporarily
-//
-//      LHS.zero();
-//      for(int j = 0; j < BGK1D_Vector::get_length(); ++j) {
-//	LHS(j,j) = 1/(CFL_Number*Soln[i].dt);
-//	RHS(j) = temp[j+1];
-//      }
-//      LHS -= Soln[i].W.dSdU();
-//
-//      Solve_LU_Decomposition(LHS,RHS,Update);
-//
-//      Soln[i].U += Update;
-//      Update = Soln[i].dUdA_inv * Update; //now update for A
-//      Soln[i].A += Update;
-//      Soln[i].update_predicted_moment(Update); //for detector
-//      Soln[i].calculate_detector();
-//
-//      if ( ! detector_below_tolerance(Soln[i].detector) ) {
-//	if(Soln[i].A.set_from_U(Soln[i].U)) { //returns 1 if fail
-//	  cout << endl << "Error, Cannot resync:" << endl
-//	       << "U =   " << Soln[i].U << endl
-//	       << "A =   " << Soln[i].A << endl
-//	       << "U_A = " <<  BGK1D_cState(Soln[i].A,Soln[i].U[2]/Soln[i].U[1]) << endl;
-//	  return 1;
-//	}
-//	Soln[i].number_of_resyncs++;
-//	Soln[i].reset_predicted_moment();
-//	cout << "%";cout.flush();
-//	++count;
-//      }
-//      Soln[i].W = BGK1D_pState(Soln[i].U);
-//      Soln[i].calculate_Hessians();
-//    } /* endfor */
-//
-//    /* By default, constant extrapolation boundary
-//       conditions are applied at either end of the mesh. */
-//
-//    Soln[0].U = Soln[1].U;
-//    Soln[0].W = Soln[1].W;
-//    Soln[0].A = Soln[1].A;
-//
-//    Soln[Number_of_Cells+1].U = Soln[Number_of_Cells].U;
-//    Soln[Number_of_Cells+1].W = Soln[Number_of_Cells].W;
-//    Soln[Number_of_Cells+1].A = Soln[Number_of_Cells].A;
-//    cout << count; cout.flush();
-//    /* Solution successfully updated. */
+
+    int i, count(0);
+    BGK1D_Vector Flux, MB;
+
+    /* Evaluate the time rate of change of the solution
+       (i.e., the solution residuals) using the first-order
+       upwind scheme. */
+
+    Soln[0].dVdt.zero();
+    for ( i = 0 ; i <= Number_of_Cells ; ++i ) {
+        Soln[i+1].dVdt.zero();
+
+	/* hyperbolic part */
+	Flux = BGK_Flux(Soln[i].V, Soln[i+1].V);
+
+        Soln[i].dVdt -= Flux/Soln[i].X.dx;
+        Soln[i+1].dVdt += Flux/Soln[i+1].X.dx;
+
+	/* Relaxation part */
+	MB.discrete_Maxwell_Boltzmann(Soln[i].V);
+	Soln[i].dVdt += (MB-Soln[i].V)/BGK1D_Vector::relaxation_time();
+
+    } /* endfor */
+    Soln[Number_of_Cells+1].dVdt.zero();
+
+    /* Update solution using explicit Euler method. */
+
+    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
+
+      Soln[i].V += (CFL_Number*dtMin)*Soln[i].dVdt;
+
+    } /* endfor */
+
+    /* By default, constant extrapolation boundary
+       conditions are applied at either end of the mesh. */
+
+    Soln[0].V = Soln[1].V;
+    Soln[Number_of_Cells+1].V = Soln[Number_of_Cells].V;
+
+    /* Solution successfully updated. */
 
     return (0);
 
