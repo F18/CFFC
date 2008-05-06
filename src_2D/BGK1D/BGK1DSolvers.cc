@@ -32,9 +32,6 @@ int BGK1DSolver(char *Input_File_Name_ptr,
   // Output file stream:
   ofstream Output_File;
 
-  // Gnuplot macro file stream:
-  ofstream Gnuplot_File;
-
   /* Solution variables. */
 
   BGK1D_UniformMesh *Soln_ptr = NULL;
@@ -113,8 +110,10 @@ int BGK1DSolver(char *Input_File_Name_ptr,
 
   execute_new_calculation: ;
 
-  /* Set number of moments used in calculation. */
-  //BGK1D_Vector::set_length(Input_Parameters.number_of_moments);
+  /* Setup distribution function discretization used in calculation. */
+  BGK1D_Vector::setup(Input_Parameters.bgk_v_number,
+		      Input_Parameters.bgk_v_min,
+		      Input_Parameters.bgk_v_max);
 
   /* Allocate memory for 1D BGK equation solution on
      uniform mesh. */
@@ -159,11 +158,16 @@ int BGK1DSolver(char *Input_File_Name_ptr,
     cout << "\n Prescribing BGK1D initial data.";
     cout.flush();
   }
-  ICs(Soln_ptr,
-      "ZB",
-      Input_Parameters.i_ICs,
-      Input_Parameters.Number_of_Cells,
-      Input_Parameters);
+  error_flag = ICs(Soln_ptr,
+		   "ZB",
+		   Input_Parameters.i_ICs,
+		   Input_Parameters.Number_of_Cells,
+		   Input_Parameters);
+
+  if(error_flag) {
+    cout << "Unable to set desired ICs, exiting." << endl;
+    return 1;
+  }
 
   /********************************************************
    * Solve conservation form of 1D BGK equations for    *
@@ -182,8 +186,8 @@ int BGK1DSolver(char *Input_File_Name_ptr,
     }
      while (1) {
          /* Determine local and global time steps. */
-         //dtime = CFL(Soln_ptr,
-         //            Input_Parameters.Number_of_Cells);
+         dtime = CFL(Soln_ptr, Input_Parameters.Number_of_Cells);
+
          if (time + Input_Parameters.CFL_Number*dtime >
              Input_Parameters.Time_Max) {
             dtime = (Input_Parameters.Time_Max-time)/Input_Parameters.CFL_Number;
@@ -254,7 +258,7 @@ int BGK1DSolver(char *Input_File_Name_ptr,
          /* Update time and time step counter. */
          number_of_time_steps = number_of_time_steps + 1;
          time = time + Input_Parameters.CFL_Number*dtime;
-	 cout << "[" << time << "]";cout.flush();
+
      } /* endwhile */
      if (! batch_flag){
        cout << "\n\n BGK1D computations complete.\n";

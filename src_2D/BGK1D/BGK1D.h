@@ -133,11 +133,14 @@ extern void Grid(BGK1D_UniformMesh *Soln,
 		 const double &xmax,
 		 const int Number_of_Cells);
 
-extern void ICs(BGK1D_UniformMesh *Soln,
+extern int ICs(BGK1D_UniformMesh *Soln,
                 char *gas_ptr,
 		const int i_ICtype,
 		const int Number_of_Cells,
 		CFD1D_Input_Parameters &IP);
+
+extern double CFL(BGK1D_UniformMesh *Soln,
+		  const int Number_of_Cells);
 
 extern void Linear_Reconstruction_MUSCL(BGK1D_UniformMesh *Soln,
                                         const int Number_of_Cells,

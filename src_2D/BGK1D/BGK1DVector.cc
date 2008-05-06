@@ -125,7 +125,7 @@ int BGK1D_Vector::discrete_Maxwell_Boltzmann(double rho, double u, double p) {
   have[2] = moment(2);
 
   while( fabs( (want[0]-have[0])/want[0] ) > tolerance() ||
-	 fabs( (want[1]-have[1])/want[1] ) > tolerance() ||
+	 fabs( (want[1]-have[1])/sqrt(want[0]*want[2]) ) > tolerance() ||
 	 fabs( (want[2]-have[2])/want[2] ) > tolerance() ) {
 
     rhs = want-have;
@@ -150,7 +150,9 @@ int BGK1D_Vector::discrete_Maxwell_Boltzmann(double rho, double u, double p) {
     if(count > 100) {
       cout << endl << endl << "Error, could not create discrete distribution function" << endl
 	   << "with a pressure of " << p << " Pa, a bulk velocity of" << endl
-	   << u << " m/s, and a density of " << rho << " Kg/m^3." << endl << endl;
+	   << u << " m/s, and a density of " << rho << " Kg/m^3." << endl << endl
+	   << "Best try has p = " << moment(2) - moment(1)*moment(1)/moment(0)
+	   << ", u = " << moment(1)/moment(0) << ", and rho = " << moment(0) << "." << endl;
       return 1;
     }
 

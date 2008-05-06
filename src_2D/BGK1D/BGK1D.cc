@@ -111,7 +111,7 @@ void Output_Tecplot(BGK1D_UniformMesh *Soln,
       for(int j=0; j < num_moments; ++j) {
 	out_file << " " << Soln[i].V.random_moment(j);
       }
-      cout << endl;
+      out_file << endl;
   } /* endfor */
 
   out_file << "\n";
@@ -160,7 +160,7 @@ void Grid(BGK1D_UniformMesh *Soln,
  * solution variables.
  *
  ********************************************************/
-void ICs(BGK1D_UniformMesh *Soln,
+int ICs(BGK1D_UniformMesh *Soln,
          char *gas_ptr,
 	 const int i_ICtype,
          const int Number_of_Cells,
@@ -172,6 +172,7 @@ void ICs(BGK1D_UniformMesh *Soln,
   int ICl, ICu, TC;
   double xmin, xmax;
   double a, b, dx;
+  int error(0);
 
   ICl = Soln[0].ICl;
   ICu = Soln[0].ICu;
@@ -181,10 +182,14 @@ void ICs(BGK1D_UniformMesh *Soln,
 
   switch(i_ICtype) {
   case IC_SOD :
-    Vl.discrete_Maxwell_Boltzmann(DENSITY_STDATM, ZERO, PRESSURE_STDATM);
-    Vr.discrete_Maxwell_Boltzmann(DENSITY_STDATM/EIGHT,
+    error = Vl.discrete_Maxwell_Boltzmann(DENSITY_STDATM, ZERO, PRESSURE_STDATM);
+    if(error) return error;
+
+    error = Vr.discrete_Maxwell_Boltzmann(DENSITY_STDATM/EIGHT,
 				  ZERO,
 				  PRESSURE_STDATM/TEN);
+    if(error) return error;
+
     for ( i = 0 ; i <= TC-1 ; ++i ) {
       if (Soln[i].X.x <= ZERO) {
 	Soln[i].V = Vl;
@@ -196,7 +201,8 @@ void ICs(BGK1D_UniformMesh *Soln,
   case IC_CONSTANT :
   case IC_UNIFORM :
   default:
-    Vl.discrete_Maxwell_Boltzmann(DENSITY_STDATM, ZERO, PRESSURE_STDATM);
+    error = Vl.discrete_Maxwell_Boltzmann(DENSITY_STDATM, ZERO, PRESSURE_STDATM);
+    if(error) return error;
     for ( i = 0 ; i <= TC-1 ; ++i ) {
       Soln[i].V = Vl;
     } /* endfor */
@@ -205,6 +211,24 @@ void ICs(BGK1D_UniformMesh *Soln,
 
   //set relaxation times
   BGK1D_Vector::set_relaxation_time(IP.relaxation_time);
+  return 0;
+}
+
+/******************************************************//**
+ * Routine: CFL
+ *
+ * Determines the allowable global and local time steps
+ * (for explicit Euler time stepping scheme) according
+ * to the Courant-Friedrichs-Lewy condition.
+ *
+ ********************************************************/
+double CFL(BGK1D_UniformMesh *Soln,
+           const int Number_of_Cells) {
+
+  double l_max= max(fabs(BGK1D_Vector::velocity(0)),
+		    fabs(BGK1D_Vector::velocity(BGK1D_Vector::get_length()-1)));
+
+  return Soln[0].X.dx/l_max; //always uniform mesh?
 }
 
 /******************************************************//**
