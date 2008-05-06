@@ -266,6 +266,11 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
     IP.relaxation_time = 1.0e10;
     IP.resync_tol = 1.0e-4;
 
+    // bgk1D-specific inputs
+    IP.bgk_v_min = -2000.0;
+    IP.bgk_v_max = 2000.0;
+    IP.bgk_v_number = 100;
+
 }
 
 /********************************************************
@@ -690,7 +695,7 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
 	IP.Reconstruction_In_Each_Stage = false;
       } /* endif */
 
-      /********************** levermore1D-specific inputs **************************/
+      /********************** levermore1D- and bgk-specific inputs **************************/
     } else if (strcmp(IP.Next_Control_Parameter, "Number_Of_Moments") == 0) {
        i_command = 30;
        IP.Line_Number = IP.Line_Number + 1;
@@ -718,6 +723,36 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.resync_tol <= 0.0 ){
 	 cout << "\n Error! Re-synchronization tolerance must be greater than zero.";
+	 i_command = INVALID_INPUT_VALUE;
+       }/* endif */
+
+    } else if (strcmp(IP.Next_Control_Parameter, "BGK_v_min") == 0) {
+       i_command = 33;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.bgk_v_min;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.bgk_v_min >= IP.bgk_v_max ){
+	 cout << "\n Error! BGK_v_min must be less than BGK_v_max.";
+	 i_command = INVALID_INPUT_VALUE;
+       }/* endif */
+
+    } else if (strcmp(IP.Next_Control_Parameter, "BGK_v_max") == 0) {
+       i_command = 32;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.bgk_v_max;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.bgk_v_max <= IP.bgk_v_min ){
+	 cout << "\n Error! BGK_v_max must be greater than BGK_v_min.";
+	 i_command = INVALID_INPUT_VALUE;
+       }/* endif */
+
+    } else if (strcmp(IP.Next_Control_Parameter, "BGK_v_number") == 0) {
+       i_command = 32;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.bgk_v_number;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.bgk_v_number <= 3 ){
+	 cout << "\n Error! BGK_v_number must be greater than three..";
 	 i_command = INVALID_INPUT_VALUE;
        }/* endif */
 
