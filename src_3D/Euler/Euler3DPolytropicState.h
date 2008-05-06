@@ -164,7 +164,7 @@ public:
 	static double    gm1i;      //!< 1/(g-1) 
 	static double       R;      //!< Gas constant R  
 	static char* gas_type;      //!< Gas type
-    static double    Mref;      //!< Reference Mach number for low-Mach-number precondtioning (normally set to incoming freestream Mach)
+        static double    Mref;      //!< Reference Mach number for low-Mach-number precondtioning (normally set to incoming freestream Mach)
 
 
 /** @name Constructors and desctructors */
