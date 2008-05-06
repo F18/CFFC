@@ -55,6 +55,8 @@ class Turbulence_Modelling_Input_Parameters{
     int i_filter_type;                                          //!< Filter type : default = implicit filtering
     double FGR;                                                 //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
     double Filter_Width;                                        //!< Constant filter width
+    int commutation_order;                                      //!< Commutation order of explicit filter
+    int number_of_rings;                                        //!< Number of rings used in the explicit filter
     //@}
     
     //@{ @name Spectrum related input parameters:
@@ -87,6 +89,8 @@ class Turbulence_Modelling_Input_Parameters{
       i_filter_type = FILTER_TYPE_IMPLICIT;
       FGR = TWO;
       Filter_Width = ZERO;
+      commutation_order = 3;
+      number_of_rings = 2;
     
       // Spectrum parameters
       strcpy(spectrum,"Pope");

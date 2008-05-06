@@ -39,6 +39,12 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(Filter_Width),
                           1,
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(commutation_order),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(number_of_rings),
+                          1,
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(spectrum,
                           TURBULENCEMODEL_INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
@@ -126,14 +132,24 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
           
     /* ---- LES : filter type ---- */
   } else if (strcmp(code, "Filter_Type") == 0) {
-    i_command = 130;
-    value >> value_string;
-    strcpy(filter_type, value_string.c_str());
-    if (strcmp(filter_type, "Implicit") == 0) {
-      i_filter_type = FILTER_TYPE_IMPLICIT;
-    } else {
-      i_command = INVALID_INPUT_VALUE;
-    } /* endif */
+      i_command = 130;
+      value >> value_string;
+      strcpy(filter_type, value_string.c_str());
+      if (strcmp(filter_type, "Implicit") == 0) {
+          i_filter_type = FILTER_TYPE_IMPLICIT;
+      } else {
+          i_command = INVALID_INPUT_VALUE;
+      } /* endif */
+      if (strcmp(filter_type, "Haselbacher") == 0) {
+          i_filter_type = FILTER_TYPE_HASELBACHER;
+      } else {
+          i_command = INVALID_INPUT_VALUE;
+      } /* endif */
+      if (strcmp(filter_type, "Vasilyev") == 0) {
+          i_filter_type = FILTER_TYPE_VASILYEV;
+      } else {
+          i_command = INVALID_INPUT_VALUE;
+      } /* endif */
       
   } else if (strcmp(code, "Filter_Grid_Ratio") == 0) {
     i_command = 131;
@@ -146,6 +162,18 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
     value >> Filter_Width;
     if ( Filter_Width < 0.0 )
       i_command = INVALID_INPUT_VALUE;
+      
+  } else if (strcmp(code, "Commutation_Order") == 0) {
+      i_command = 131;
+      value >> commutation_order;
+      if (commutation_order < 1)
+          i_command = INVALID_INPUT_VALUE;
+      
+  } else if (strcmp(code, "Number_of_Rings") == 0) {
+      i_command = 131;
+      value >> number_of_rings;
+      if (number_of_rings < 1)
+          i_command = INVALID_INPUT_VALUE;
         
     /* ---- Spectrum Parameters ---- */
   } else if (strcmp(code, "Spectrum_Model") == 0) {

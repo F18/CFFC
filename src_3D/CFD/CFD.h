@@ -451,6 +451,9 @@ inline char *Date_And_Time() {
 #define SFS_MODEL_K_EQUATION                          5
 /* --------- filter type -----------*/
 #define FILTER_TYPE_IMPLICIT                          10
+#define FILTER_TYPE_HASELBACHER                       11
+#define FILTER_TYPE_VASILYEV                          12
+
 
 /**********************************************************************
  * CFD -- Particle-phase formulation.                                 *
