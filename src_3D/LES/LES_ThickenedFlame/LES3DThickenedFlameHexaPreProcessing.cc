@@ -302,11 +302,15 @@ int Hexa_BCs_Specializations(HexaSolver_Data &Data,
 			                              LES3DTF_cState> &Solution_Data) {
   int error_flag(0);
   
-  error_flag = Inflow_Turbulence_XY_Plane(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-					  Data.Local_Adaptive_Block_List,
-					  Data.Velocity_Field,
-					  Solution_Data.Input,
-					  Data.Time);
+  if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BOX  ||
+      Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER) {
+
+    error_flag = Inflow_Turbulence_XY_Plane(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+					    Data.Local_Adaptive_Block_List,
+					    Data.Velocity_Field,
+					    Solution_Data.Input,
+					    Data.Time);
+  }
 
   return error_flag;
 
@@ -381,6 +385,8 @@ double Turbulent_Burning_Rate(Hexa_Block<LES3DTF_pState, LES3DTF_cState> *Soluti
   Yf_u = 0.05518;//Fresh_Fuel_Mass_Fraction;
   rho_u = 1.13;//Fresh_Density;
 
+  double H_iso_c05(ZERO); // Maximum height of flame iso-surface c=0.5
+    
   for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
     if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
       for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
@@ -390,7 +396,9 @@ double Turbulent_Burning_Rate(Hexa_Block<LES3DTF_pState, LES3DTF_cState> *Soluti
 	     burning_rate += Solution_Block[p].W[i][j][k].Sw(Solution_Block[p].W[i][j][k].React.reactset_flag).rhospec[0].c
 	                     *local_vol;
 	     if (Solution_Block[p].W[i][j][k].flame.iso_c_05) {
-	       iso_surface_area += propagation_dir_area(Solution_Block[p], i, j, k);
+	       //iso_surface_area += propagation_dir_area(Solution_Block[p], i, j, k);
+	       if ( Solution_Block[p].Grid.Cell[i][j][k].Xc.z > H_iso_c05 )
+		 H_iso_c05  = Solution_Block[p].Grid.Cell[i][j][k].Xc.z;
 	     }
 	   }
 	}
@@ -399,7 +407,8 @@ double Turbulent_Burning_Rate(Hexa_Block<LES3DTF_pState, LES3DTF_cState> *Soluti
   }
 
   burning_rate = CFFC_Summation_MPI(burning_rate);
-  iso_surface_area = CFFC_Summation_MPI(iso_surface_area);
+  //iso_surface_area = CFFC_Summation_MPI(iso_surface_area);
+  H_iso_c05 = CFFC_Maximum_MPI(H_iso_c05);
   
   double ref_area, Lx, Ly, Lz;
 
@@ -408,9 +417,14 @@ double Turbulent_Burning_Rate(Hexa_Block<LES3DTF_pState, LES3DTF_cState> *Soluti
     Ly = IPs.Grid_IP.Box_Height;
     Lz = IPs.Grid_IP.Box_Length;
     ref_area = Ly*Lz;
+    iso_surface_area = ref_area; 
   } else if ( IPs.Grid_IP.i_Grid == GRID_BUNSEN_BOX ) {
+    double Slot_Width(0.025);
     Lx = IPs.Grid_IP.Box_Width;
-    ref_area = (0.025 + 2.0*IPs.Fresh_Gas_Height)*Lx;
+    ref_area = (Slot_Width + 2.0*IPs.Fresh_Gas_Height)*Lx;
+    // use triangular shape to approximate the are of the flame iso-surface
+    double L( sqrt(H_iso_c05*H_iso_c05 + 0.25*Slot_Width*Slot_Width) );
+    iso_surface_area = Lx*(TWO*L);
   }
 
   if ( iso_surface_area > ref_area ) {
