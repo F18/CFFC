@@ -29,7 +29,8 @@ using namespace std;
 #include "../Physics/GasConstants.h"
 #endif // _GAS_CONSTANTS_INCLUDED
 
-#define  BGK1D_TOLERANCE    1.0e-10
+#define  BGK1D_TOLERANCE                 1.0e-10
+#define  BGK_NUMBER_OF_OUTPUT_MOMENTS         10
 
 /********************************************************
  * Class: BGK1D_Vector : public ColumnVector            *
@@ -59,6 +60,11 @@ class BGK1D_Vector : public ColumnVector {
   double moment(int n) const;
   double random_moment(int n) const;
   double random_moment(int n, double u) const;
+  double rho() const {return moment(0);};
+  double u() const {return moment(1)/moment(0);}
+  double p() const {return random_moment(2);}
+  double q() const {return random_moment(3);}
+  double r() const {return random_moment(4);}
 
   /* Static Functions */
   static void setup(int l, double v_min, double v_max){
