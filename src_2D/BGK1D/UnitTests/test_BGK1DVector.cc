@@ -433,7 +433,7 @@ namespace tut
     V.discrete_Maxwell_Boltzmann(rho,u,p);
 
     ensure_distance("moment0 is equal", V.moment(0), rho, fabs(rho)*BGK1D_Vector::tolerance());
-    ensure_distance("moment1 is equal", V.moment(1), rho*u, fabs(rho*u)*BGK1D_Vector::tolerance());
+    ensure_distance("moment1 is equal", V.moment(1), rho*u, (fabs(rho*u)+1.0)*BGK1D_Vector::tolerance());
     ensure_distance("moment2 is equal", V.moment(2), p+rho*u*u, fabs(p+rho*u*u)*BGK1D_Vector::tolerance());
   }
 
