@@ -87,7 +87,7 @@ void Output_Tecplot(BGK1D_UniformMesh *Soln,
                     const double &Time,
 	            ostream &out_file) {
 
-  int ICl, ICu, num_moments(3);
+  int ICl, ICu, num_moments(BGK_NUMBER_OF_OUTPUT_MOMENTS);
 
   // Set the limits of the plotted domain
   ICl = Soln[0].ICl;
@@ -100,20 +100,37 @@ void Output_Tecplot(BGK1D_UniformMesh *Soln,
 	   << Number_of_Time_Steps
 	   << ", Time = " << Time*THOUSAND << " (ms)\"" << "\n"
 	   << "VARIABLES = \"x\" \\ \n"
-	   << "\"dx\" \n";
+	   << "\"dx\" \n"
+	   << "\"rho\" \n"
+	   << "\"u\" \n"
+	   << "\"p\" \n"
+	   << "\"q\" \n"
+	   << "\"r\" \n";
+  for(i = 0; i < num_moments; ++i) {
+    out_file << "\"moment_" << i << "\" \\ \n";
+  }
   for(i = 0; i < num_moments; ++i) {
     out_file << "\"random_moment_" << i << "\" \\ \n";
   }
   out_file << "ZONE \n";
 
+  out_file.precision(14);
   for ( i = ICl ; i <= ICu ; ++i ) {
-    out_file << " " << Soln[i].X;
+    out_file << " " << setw(25) << Soln[i].X
+	     << " " << setw(25) << Soln[i].V.rho()
+	     << " " << setw(25) << Soln[i].V.u()
+	     << " " << setw(25) << Soln[i].V.p()
+	     << " " << setw(25) << Soln[i].V.q()
+	     << " " << setw(25) << Soln[i].V.r();
       for(int j=0; j < num_moments; ++j) {
-	out_file << " " << Soln[i].V.random_moment(j);
+	out_file << " " << setw(25) << Soln[i].V.moment(j);
+      }
+      for(int j=0; j < num_moments; ++j) {
+	out_file << " " << setw(25) << Soln[i].V.random_moment(j);
       }
       out_file << endl;
   } /* endfor */
-
+  out_file.precision(6);
   out_file << "\n";
 
 }
