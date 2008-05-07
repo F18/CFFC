@@ -149,6 +149,30 @@ double Euler3D_Polytropic_pState::E(void) const {
     return (p*gm1i + HALF*rho*v.sqr());
 }
 
+// Kinetic energy.
+/*!
+ * \f$ E =  \frac{1}{2} \rho \boldmath{\bar{v}}^2 \f$
+ */
+double Euler3D_Polytropic_pState::Ek(void) {
+    return (HALF*rho*v.sqr());
+}
+
+double Euler3D_Polytropic_pState::Ek(void) const {
+    return (HALF*rho*v.sqr());
+}
+
+// specific kinetic energy.
+/*!
+ * \f$ E =  \frac{1}{2} \boldmath{\bar{v}}^2 \f$
+ */
+double Euler3D_Polytropic_pState::ek(void) {
+    return (HALF*v.sqr());
+}
+
+double Euler3D_Polytropic_pState::ek(void) const {
+    return (HALF*v.sqr());
+}
+
 // Specific enthalpy. 
 /*!
  * \f$ h = \frac{p \gamma}{\rho (\gamma - 1)} + \frac{1}{2}\boldmath{\bar{v}}^2 \f$

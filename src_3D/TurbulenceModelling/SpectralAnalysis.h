@@ -489,7 +489,7 @@ private:
     //! Grid dimensions
     double L1, L2, L3, Ls;  
     //!< Number of grid nodes
-    int Nx, Ny, Nz, nz;
+    int Nx, Ny, Nz, nx, ny, nz;
     //!< Number of cells per block
     int NCells_Idir, NCells_Jdir, NCells_Kdir;
     //! wave numbers
@@ -549,7 +549,8 @@ private:
     //@{
     const char *File_Name;
     const char *scalar_name;
-    ofstream Spectrum_File;
+    ofstream Spectrum_File_gnuplot;
+    ofstream Spectrum_File_tecplot;
     int Open_Spectrum_File(char *file_suffix);
     int Output_Spectrum_to_File(void);
     int Close_Spectrum_File(void);
@@ -825,10 +826,9 @@ SpectralAnalysis(HexaSolver_Data &Data,
     Ls = min(min(L1,L2),L3);
     
     
-    Nx = NCells_Idir * Data.Initial_Mesh.NBlk_Idir;
-    Ny = NCells_Jdir * Data.Initial_Mesh.NBlk_Idir;
-    Nz = NCells_Kdir * Data.Initial_Mesh.NBlk_Kdir;
-    nz = Nz/2+1;
+    Nx = NCells_Idir * Data.Initial_Mesh.NBlk_Idir;     nx = Nx/2+1;
+    Ny = NCells_Jdir * Data.Initial_Mesh.NBlk_Idir;     ny = Ny/2+1;
+    Nz = NCells_Kdir * Data.Initial_Mesh.NBlk_Kdir;     nz = Nz/2+1;
     
     // Allocation of arrays used in the transforms
     s  = (double *) malloc(Nx*Ny*Nz * sizeof(double));
@@ -907,11 +907,10 @@ Average_Spectrum(void) {
             K[ii].realS += ss[index][0];
             K[ii].imagS += ss[index][1];
             K[ii].absS += sqrt( sqr(ss[index][0]) + sqr(ss[index][1]) );
-
         }
         K[ii].realS /= K[ii].N;
         K[ii].imagS /= K[ii].N;
-        K[ii].absS /= K[ii].N;
+        K[ii].absS  /= K[ii].N;
 
     } 
 
@@ -1008,16 +1007,24 @@ Open_Spectrum_File(char *suffix) {
     strcat(prefix, suffix);
     strcat(prefix, "_spectrum");
     
+    /* Open the turbulence spectrum file. */
+    // For tecplot
     strcpy(extension, ".dat");
     strcpy(spectrum_file_name, prefix);
     strcat(spectrum_file_name, extension);
-    
     spectrum_file_name_ptr = spectrum_file_name;
     
-    /* Open the turbulence spectrum file. */
+    Spectrum_File_tecplot.open(spectrum_file_name, ios::out);
+    if (Spectrum_File_tecplot.bad()) return (1);
     
-    Spectrum_File.open(spectrum_file_name_ptr, ios::out);
-    if (Spectrum_File.bad()) return (1);
+    // For gnuplot
+    strcpy(extension, "_gnuplot.dat");
+    strcpy(spectrum_file_name, prefix);
+    strcat(spectrum_file_name, extension);
+    spectrum_file_name_ptr = spectrum_file_name;
+
+    Spectrum_File_gnuplot.open(spectrum_file_name_ptr, ios::out);
+    if (Spectrum_File_gnuplot.bad()) return (1);
     
     /* Write the appropriate GNUPLOT command file for 
      plotting turbulence progress file information. */
@@ -1060,18 +1067,61 @@ template<typename Soln_pState, typename Soln_cState>
 int SpectralAnalysis<Soln_pState, Soln_cState>::
 Output_Spectrum_to_File() {
     
-    Spectrum_File << setprecision(6);
-    Spectrum_File.setf(ios::scientific);
+    
+    /* ----------------------- For gnuplot ---------------------------- */
+    Spectrum_File_gnuplot << setprecision(6);
+    Spectrum_File_gnuplot.setf(ios::scientific);
     
     for (int ii=0; ii <nK; ii++) {
-        Spectrum_File    << K[ii].k  << " " << K[ii].realS 
-                                     << " " << K[ii].imagS
-                                     << " " << K[ii].absS
-                         << "\n";
+        Spectrum_File_gnuplot    << K[ii].k  << " " << K[ii].realS 
+                                             << " " << K[ii].imagS
+                                             << " " << K[ii].absS
+                                             << "\n";
     } 
     
-    Spectrum_File.unsetf(ios::scientific);
-    Spectrum_File.flush();
+    Spectrum_File_gnuplot.unsetf(ios::scientific);
+    Spectrum_File_gnuplot.flush();
+    
+    /* ----------------------- For tecplot ---------------------------- */
+    Spectrum_File_tecplot << setprecision(14);
+    Spectrum_File_tecplot.setf(ios::scientific);
+    
+    Spectrum_File_tecplot
+    << "TITLE = \"" << "Fourier transform of " << scalar_name << ", "
+    << "\"" << "\n"
+    << "VARIABLES = "
+    << "\"kx\" \\ \n"
+    << "\"ky\" \\ \n"
+    << "\"kz\" \\ \n"
+    << "\"" << scalar_name << " abs\" \\ \n"
+    << "\"" << scalar_name << " real\" \\ \n"
+    << "\"" << scalar_name << " imag\" \\ \n";
+    
+    Spectrum_File_tecplot
+    << "ZONE T =  \"Block Number = 0" 
+    << "\" \\ \n"
+    << "I = " << nx << " \\ \n"
+    << "J = " << ny << " \\ \n"
+    << "K = " << nz << " \\ \n"
+    << "DATAPACKING = POINT \n";
+    
+    int index;
+    for (int l=0; l<nz; l++) {
+        for (int j=0; j<ny; j++) {
+            for (int i=0; i<nx ; i++) {
+                index = l + nz*(j+Ny*i);
+                Spectrum_File_tecplot
+                << " " << k_1(i) << " " << k_2(j) << " " << k_3(l) 
+                << " " << sqrt(sqr(ss[index][0])+sqr(ss[index][1]))
+                << " " << ss[index][0]
+                << " " << ss[index][1]
+                << "\n";
+            } 
+        } 
+    }
+    Spectrum_File_tecplot << setprecision(6);
+    Spectrum_File_tecplot.unsetf(ios::scientific);
+
     
     return(0);
 }
@@ -1082,14 +1132,10 @@ Output_Spectrum_to_File() {
 template<typename Soln_pState, typename Soln_cState>
 int SpectralAnalysis<Soln_pState, Soln_cState>::
 Close_Spectrum_File( ) {
-    Spectrum_File.close();
+    Spectrum_File_gnuplot.close();
+    Spectrum_File_tecplot.close();
     return(0);
 }
-
-
-
-
-
 
 
 

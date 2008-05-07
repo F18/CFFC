@@ -260,6 +260,8 @@ public:
     double Rtot(void);                  //!< gasconstant. (for compatibility)
     double e(void);                     //!< Specific internal energy.
     double E(void);                     //!< Total energy.
+    double Ek(void);                    //!< Kinetic energy only.
+    double ek(void);                    //!< Specific kinetic energy only.
     double h(void);                     //!< Specific enthalpy.
     double H(void);                     //!< Total enthalpy.
     double a(void);                     //!< Sound speed.
@@ -280,6 +282,8 @@ public:
     double Rtot(void) const;
     double e(void) const;
     double E(void) const;
+    double Ek(void) const;
+    double ek(void) const;
     double h(void) const;
     double H(void) const;
     double a(void) const;

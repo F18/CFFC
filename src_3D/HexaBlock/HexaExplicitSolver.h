@@ -231,7 +231,12 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
               (Solution_Data.Local_Solution_Blocks.Soln_Blks,
                Data.Local_Adaptive_Block_List,0);
               
-            Explicit_Filter.filter(dUdt_ptr,0);
+              Explicit_Filter.filter(dUdt_ptr,0);
+              
+              error_flag = Send_Messages_Residual<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >
+              (Solution_Data.Local_Solution_Blocks.Soln_Blks,
+               Data.Local_Adaptive_Block_List,0);
+              Solution_Data.Local_Solution_Blocks.BCs_dUdt(Solution_Data.Input,0);
           }      
           
 	// 7. Update solution for stage.

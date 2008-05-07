@@ -202,11 +202,19 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
     
     SpectralAnalysis<LES3D_Polytropic_pState,LES3D_Polytropic_cState> Spectral_Analysis(Data,Solution_Data);
     typedef double (LES3D_Polytropic_pState::*member_ptr);
+    typedef double (LES3D_Polytropic_pState::*member_function_ptr)(void);
     member_ptr rho_member = &LES3D_Polytropic_pState::rho;
     member_ptr p_member = &LES3D_Polytropic_pState::p;
-    
+    member_function_ptr E_member = &LES3D_Polytropic_pState::E;
+    member_function_ptr ek_member = &LES3D_Polytropic_pState::ek;
+
+
     Spectral_Analysis.Get_Spectrum(rho_member,"density");
     Spectral_Analysis.Get_Spectrum(p_member,"pressure");
+    Spectral_Analysis.Get_Spectrum(E_member,"total_energy");
+    Spectral_Analysis.Get_Spectrum(ek_member,"kinetic_energy");
+
+
     
    return error_flag;
 

@@ -12,7 +12,7 @@
 
 #include "Discrete_Filter.h"
 
-#include "../../Math/math.h"
+#include "../../Math/Math.h"
 #include "../../Math/LinearSystems.h"
 #include "../../Math/Matrix.h"
 

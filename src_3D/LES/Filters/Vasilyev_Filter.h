@@ -15,7 +15,7 @@
 #include <complex>
 #include <cmath> 
 
-#include "../../Math/math.h"
+#include "../../Math/Math.h"
 #include "../../Math/LinearSystems.h"
 #include "../../Math/Matrix.h"
 
@@ -280,18 +280,18 @@ inline void Vasilyev_Filter<Soln_pState,Soln_cState>::Set_extra_constraints(Neig
     
     int number_of_extra_constraints = 2*number_of_rings+1 - commutation_order;
     if (number_of_extra_constraints <= 0){
-        if (Output_Constraints) {
+        if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
             cout << "Can not set filter width with " << number_of_rings << " number of rings and commutation order " << commutation_order << " ." << endl;
         }
         while (number_of_extra_constraints <= 0) {
             commutation_order--;
             number_of_extra_constraints = 2*number_of_rings+1 - commutation_order;
         }
-        if (Output_Constraints) {
+        if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
             cout << "Commutation order lowered to " << commutation_order << " ." << endl;
         }
     }
-    if (Output_Constraints) {
+    if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
         cout << "Setting extra constraints on discrete filter:" << endl;
         cout << "   --> Number of rings = " << number_of_rings << endl;
         cout << "   --> Commutation order = " << commutation_order << endl;
@@ -305,7 +305,7 @@ inline void Vasilyev_Filter<Soln_pState,Soln_cState>::Set_extra_constraints(Neig
     
     k = k_FGR;
     Add_extra_constraints(type, target, k);
-    if (Output_Constraints) {
+    if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
         cout << "   --> Filter grid ratio = " << FGR << endl;
     }
     
@@ -317,7 +317,7 @@ inline void Vasilyev_Filter<Soln_pState,Soln_cState>::Set_extra_constraints(Neig
         
         k = kmax;
         Add_extra_constraints(type, target, k);
-        if (Output_Constraints) {
+        if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
             cout << "   --> Transfer function at grid cut off = " << target << endl;
         }
         number_of_remaining_constraints--;
@@ -331,7 +331,7 @@ inline void Vasilyev_Filter<Soln_pState,Soln_cState>::Set_extra_constraints(Neig
         target = ZERO;
         k = kmax;
         Add_extra_constraints(type, target, k, p);
-        if (Output_Constraints) {
+        if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
             cout << "   --> Derivative " << p << " of transfer function at grid cut off = " << target << endl;
         }
         number_of_remaining_constraints--;
