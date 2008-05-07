@@ -225,8 +225,8 @@ int ICs(BGK1D_UniformMesh *Soln,
 double CFL(BGK1D_UniformMesh *Soln,
            const int Number_of_Cells) {
 
-  double l_max= max(fabs(BGK1D_Vector::velocity(0)),
-		    fabs(BGK1D_Vector::velocity(BGK1D_Vector::get_length()-1)));
+  double l_max = max(fabs(BGK1D_Vector::velocity(0)),
+		     fabs(BGK1D_Vector::velocity(BGK1D_Vector::get_length()-1)));
 
   return min(Soln[0].X.dx/l_max,
 	     BGK1D_Vector::relaxation_time());
@@ -478,7 +478,7 @@ void Linear_Reconstruction_LeastSquares(BGK1D_UniformMesh *Soln,
 }
 
 /******************************************************//**
- * Routine: dUdt_explicitEuler_upwind
+ * Routine: dVdt_explicitEuler_upwind
  *
  * This routine updates the solution using a 1st-order
  * explicit BGK time integration and 1st-order upwind
@@ -494,7 +494,7 @@ int dVdt_explicitEuler_upwind(BGK1D_UniformMesh *Soln,
                               const int Flux_Function_Type,
 			      const int Local_Time_Stepping) {
 
-    int i, count(0);
+    int i;
     BGK1D_Vector Flux, MB;
 
     /* Evaluate the time rate of change of the solution
@@ -516,6 +516,7 @@ int dVdt_explicitEuler_upwind(BGK1D_UniformMesh *Soln,
 	Soln[i].dVdt += (MB-Soln[i].V)/BGK1D_Vector::relaxation_time();
 
     } /* endfor */
+    Soln[0].dVdt.zero();
     Soln[Number_of_Cells+1].dVdt.zero();
 
     /* Update solution using explicit Euler method. */
@@ -539,7 +540,7 @@ int dVdt_explicitEuler_upwind(BGK1D_UniformMesh *Soln,
 }
 
 /******************************************************//**
- * Routine: dUdt_2stage_2ndOrder_upwind
+ * Routine: dVdt_2stage_2ndOrder_upwind
  *
  * This routine updates the solution using a two-stage
  * second-order explicit time integration scheme
@@ -556,234 +557,110 @@ int dVdt_2stage_2ndOrder_upwind(BGK1D_UniformMesh *Soln,
                                 const int Limiter_Type,
                                 const int Flux_Function_Type,
 			        const int Local_Time_Stepping) {
-//    int i, n_stage, count(0);
-//    double us;
-//    double omega;
-//    BGK1D_pState Wl, Wr;
-//    BGK1D_cState Ul, Ur;
-//    BGK1D_cState Flux;
-//    BGK1D_weights Al, Ar;
-//    BGK1D_Vector temp;
-//    ColumnVector Update(BGK1D_Vector::get_length());
-//    ColumnVector RHS(BGK1D_Vector::get_length());
-//    DenseMatrix LHS(BGK1D_Vector::get_length(),
-//		    BGK1D_Vector::get_length());
-//    ColumnVector delta_A(BGK1D_Vector::get_length());
-//    DenseMatrix dUdA_interface(BGK1D_Vector::get_length(),
-//			       BGK1D_Vector::get_length());
-//
-//    /* Perform second-order two-stage semi-implicit update of solution
-//       varibles for new time level. */
-//
-//    for ( n_stage = 1 ; n_stage <= 2 ; ++n_stage ) {
-//
-//        /* Evaluate the time step fraction for stage. */
-//
-//        omega = ONE/double(n_stage);
-//
-//	if ( IP.Reconstruction_In_Each_Stage == true || n_stage == 1 ){
-//
-//	  /* Perform the linear reconstruction within each cell
-//	     of the computational grid for the current stage if
-//	     Reconstruction_In_Each_Stage is true, or only in
-//	     the first stage if Reconstruction_In_Each_Stage is false */
-//
-//	  /* Apply boundary conditions for stage. */
-//	  //BCs(Soln,IP);  I may need BCs at some point
-//
-//	  switch(Reconstruction_Type) {
-//	  case RECONSTRUCTION_MUSCL :
-//	    Linear_Reconstruction_MUSCL(Soln,
-//					IP.Number_of_Cells,
-//					Limiter_Type);
-//	    break;
-//	  case RECONSTRUCTION_GREEN_GAUSS :
-//	    Linear_Reconstruction_GreenGauss(Soln,
-//					     IP.Number_of_Cells,
-//					     Limiter_Type);
-//	    break;
-//	  case RECONSTRUCTION_LEAST_SQUARES :
-//	    Linear_Reconstruction_LeastSquares(Soln,
-//					       IP.Number_of_Cells,
-//					       Limiter_Type);
-//	    break;
-//	  default:
-//	    cout << "Bad reconstruction type chosen";
-//	    return 1;
-//	    break;
-//	  } /* endswitch */
-//	}
-//
-//        /* Evaluate the time rate of change of the solution
-//           (i.e., the solution residuals) using a second-order
-//           limited upwind scheme with a variety of flux functions. */
-//
-//        if ( !Local_Time_Stepping && n_stage == 1 ) Soln[0].dt = dtMin;
-//        if ( n_stage == 1 ) {
-//	  Soln[0].Uo = Soln[0].U;
-//	  Soln[0].Ao = Soln[0].A;
-//	  Soln[0].dUdt.zero();
-//	}
-//
-//        for ( i = 0 ; i <= IP.Number_of_Cells ; ++i ) {
-//            if ( !Local_Time_Stepping && n_stage == 1 ) Soln[i+1].dt = dtMin;
-//            if ( n_stage == 1 ) {
-//               Soln[i+1].Uo = Soln[i+1].U;
-//               Soln[i+1].Ao = Soln[i+1].A;
-//               Soln[i+1].dUdt.zero();
-//            } else {
-//               Soln[i+1].dUdt = Soln[i+1].dUdt*HALF;
-//            } /* endif */
-//
-//            /* Evaluate the cell interface flux. */
-//	    Wl = Soln[i].W +
-//	      (Soln[i].phi^Soln[i].dWdx)*HALF*Soln[i].X.dx;
-//	    Wr = Soln[i+1].W -
-//	      (Soln[i+1].phi^Soln[i+1].dWdx)*HALF*Soln[i+1].X.dx;
-//
-//	    Ul = BGK1D_cState(Wl);
-//	    Ur = BGK1D_cState(Wr);
-//
-//	    us = Soln[i].Ur_old[2]/Soln[i].Ur_old[1];
-//	    dUdA_interface = Soln[i].Ur_old.d2hda2(Soln[i].Ar_old,us);
-//	    for(int iii=1;iii<=BGK1D_Vector::get_length(); ++iii) RHS[iii-1] = Ul[iii]-Soln[i].Ur_old[iii];
-//	    Solve_LU_Decomposition(dUdA_interface,RHS,delta_A);
-//	    Al = Soln[i].Ar_old + delta_A;
-//	    Soln[i].Ar_old = Al;
-//	    Soln[i].Ur_old = Ul;
-//	    Soln[i].update_predicted_moment_r(delta_A);
-//	    Soln[i].calculate_detector_r();
-//
-//	    us = Soln[i+1].Ul_old[2]/Soln[i+1].Ul_old[1];
-//	    dUdA_interface = Soln[i+1].Ul_old.d2hda2(Soln[i+1].Al_old,us);
-//	    for(int iii=1;iii<=BGK1D_Vector::get_length(); ++iii) RHS[iii-1] = Ur[iii]-Soln[i+1].Ul_old[iii];
-//	    Solve_LU_Decomposition(dUdA_interface,RHS,delta_A);
-//	    Ar = Soln[i+1].Al_old + delta_A;
-//	    Soln[i+1].Al_old = Ar;
-//	    Soln[i+1].Ul_old = Ur;
-//	    Soln[i+1].update_predicted_moment_l(delta_A);
-//	    Soln[i+1].calculate_detector_l();
-//
-////	    Al = Soln[i].A + Soln[i].dUdA_inv * (Ul-Soln[i].U);
-////	    Ar = Soln[i+1].A + Soln[i+1].dUdA_inv * (Ur-Soln[i+1].U);
-//
-//	    if ( ! detector_below_tolerance(Soln[i].detector_r) ) {
-//	      if(Al.set_from_U(Ul)) { //returns 1 if fail
-//		cout << endl << "Error, Cannot resync at left interface:" << endl
-//		     << "U =   " << Ul << endl
-//		     << "A =   " << Al << endl
-//		     << "U_A = " <<  BGK1D_cState(Al, Ul[2]/Ul[1]) << endl;
-//		return 1;
-//	      }
-//	      Soln[i].Ar_old = Al;
-//	      Soln[i].reset_predicted_moment_r();
-//	      cout << "L";cout.flush();
-//	      ++count;
-//	    }
-//	    if ( ! detector_below_tolerance(Soln[i+1].detector_l) ) {
-//	      if(Ar.set_from_U(Ur)) { //returns 1 if fail
-//		cout << endl << "Error, Cannot resync at right interface:" << endl
-//		     << "U =   " << Ur << endl
-//		     << "A =   " << Ar << endl
-//		     << "U_A = " <<  BGK1D_cState(Ar, Ur[2]/Ur[1]) << endl;
-//		return 1;
-//	      }
-//	      Soln[i+1].Al_old = Ar;
-//	      Soln[i+1].reset_predicted_moment_l();
-//	      cout << "R";cout.flush();
-//	      ++count;
-//	    }
-//
-//
-//	    /* Apply the BCs before the flux evaluation */
-//	    // ***** Left boundary **********
-//	    if (i == 0){
-//	      // extrapolation BC (by default)
-//	      Ul = Ur;
-//	      Wl = Wr;
-//	      Al = Ar;
-//	    }
-//
-//	    // *****  Right boundary *********
-//	    if (i == IP.Number_of_Cells){
-//	      // extrapolation BC (by default)
-//	      Ur = Ul;
-//	      Wr = Wl;
-//	      Ar = Al;
-//	    }
-//
-//	    switch(Flux_Function_Type) {
-//	    case FLUX_FUNCTION_HLLE :
-//	      Flux = FluxHLLE(Ul,
-//			      Al,
-//			      Soln[i].lambda_min,
-//			      Ur,
-//			      Ar,
-//			      Soln[i+1].lambda_max);
-//	      break;
-//	    case FLUX_FUNCTION_KINETIC :
-//	      Flux = FluxKinetic(Al,
-//				 Ul[2]/Ul[1],
-//				 Ar,
-//				 Ur[2]/Ur[1]);
-//	      break;
-//	    default:
-//	      cout << "Error, bad flux function." << endl;
-//	      return(1);
-//	      break;
-//            } /* endswitch */
-//
-//            /* Evaluate cell-averaged solution changes. */
-//
-//            Soln[i].dUdt -= Flux*omega/Soln[i].X.dx;
-//            Soln[i+1].dUdt += Flux*omega/Soln[i+1].X.dx;
-//
-//        } /* endfor */
-//
-//        Soln[0].dUdt.zero();
-//        Soln[IP.Number_of_Cells+1].dUdt.zero();
-//
-//        /* Update solution variables for this stage. */
-//
-//        for ( i = 1 ; i <= IP.Number_of_Cells ; ++i ) {
-//	  temp = (Soln[i].dUdt + Collision_RHS(Soln[i].Uo) ); //store here temporarily
-//
-//	  LHS.zero();
-//	  for(int j = 0; j < BGK1D_Vector::get_length(); ++j) {
-//	    LHS(j,j) = 1/(CFL_Number*Soln[i].dt);
-//	    RHS(j) = temp[j+1];
-//	  }
-//	  LHS -= Soln[i].Uo.dSdU()*omega;
-//
-//	  Solve_LU_Decomposition(LHS,RHS,Update);
-//
-//	  Soln[i].U = Soln[i].Uo + Update;
-//	  Update = Soln[i].dUdA_inv * Update; //now update for A
-//	  Soln[i].A = Soln[i].Ao + Update;
-//	  Soln[i].update_predicted_moment(Update); //for detector
-//	  Soln[i].calculate_detector();
-//
-//	  if ( ! detector_below_tolerance(Soln[i].detector) ) {
-//	    if(Soln[i].A.set_from_U(Soln[i].U)) { //returns 1 if fail
-//	      cout << endl << "Error, Cannot resync:" << endl
-//		   << "U =   " << Soln[i].U << endl
-//		   << "A =   " << Soln[i].A << endl
-//		   << "U_A = " <<  BGK1D_cState(Soln[i].A, Soln[i].U[2]/Soln[i].U[1]) << endl;
-//	      return 1;
-//	    }
-//	    Soln[i].number_of_resyncs++;
-//	    Soln[i].reset_predicted_moment();
-//	    cout << "%";cout.flush();
-//	    ++count;
-//	  }
-//	  Soln[i].W = BGK1D_pState(Soln[i].U);
-//	  Soln[i].calculate_Hessians();
-//        } /* endfor */
-//
-//    } /* endfor */
-//    cout << count; cout.flush();
-//    /* Solution successfully updated. */
-//
+    int i, n_stage;
+    double omega;
+    BGK1D_Vector Vl, Vr;
+    BGK1D_Vector Flux, MB;
+
+    /* Perform second-order two-stage semi-implicit update of solution
+       varibles for new time level. */
+
+    for ( n_stage = 1 ; n_stage <= 2 ; ++n_stage ) {
+
+        /* Evaluate the time step fraction for stage. */
+
+        omega = ONE/double(n_stage);
+
+	if ( IP.Reconstruction_In_Each_Stage == true || n_stage == 1 ){
+
+	  /* Perform the linear reconstruction within each cell
+	     of the computational grid for the current stage if
+	     Reconstruction_In_Each_Stage is true, or only in
+	     the first stage if Reconstruction_In_Each_Stage is false */
+
+	  switch(Reconstruction_Type) {
+	  case RECONSTRUCTION_MUSCL :
+	    Linear_Reconstruction_MUSCL(Soln,
+					IP.Number_of_Cells,
+					Limiter_Type);
+	    break;
+	  case RECONSTRUCTION_GREEN_GAUSS :
+	    Linear_Reconstruction_GreenGauss(Soln,
+					     IP.Number_of_Cells,
+					     Limiter_Type);
+	    break;
+	  case RECONSTRUCTION_LEAST_SQUARES :
+	    Linear_Reconstruction_LeastSquares(Soln,
+					       IP.Number_of_Cells,
+					       Limiter_Type);
+	    break;
+	  default:
+	    cout << "Bad reconstruction type chosen";
+	    return 1;
+	    break;
+	  } /* endswitch */
+	}
+
+        /* Evaluate the time rate of change of the solution
+           (i.e., the solution residuals) using a second-order
+           limited upwind scheme with a variety of flux functions. */
+
+        if ( n_stage == 1 ) {
+	  Soln[0].Vo = Soln[0].V;
+	  Soln[0].dVdt.zero();
+	}
+
+        for ( i = 0 ; i <= IP.Number_of_Cells ; ++i ) {
+            if ( n_stage == 1 ) {
+               Soln[i+1].Vo = Soln[i+1].V;
+               Soln[i+1].dVdt.zero();
+            } else {
+	      Soln[i+1].dVdt *= HALF;
+            } /* endif */
+
+            /* Evaluate the cell interface flux. */
+	    Vl = Soln[i].V +
+	      Soln[i].X.dx/2.0*(Soln[i].phi^Soln[i].dVdx);
+	    Vr = Soln[i+1].V -
+	      Soln[i+1].X.dx/2.0*(Soln[i+1].phi^Soln[i+1].dVdx);
+
+	    /* Apply the BCs before the flux evaluation */
+	    // ***** Left boundary **********
+	    if (i == 0){
+	      // extrapolation BC (by default)
+	      Vl = Vr;
+	    }
+
+	    // *****  Right boundary *********
+	    if (i == IP.Number_of_Cells){
+	      // extrapolation BC (by default)
+	      Vr = Vl;
+	    }
+
+	    /* hyperbolic part */
+	    Flux = BGK_Flux(Vl, Vr);
+
+            Soln[i].dVdt -= omega*Flux/Soln[i].X.dx;
+            Soln[i+1].dVdt += omega*Flux/Soln[i+1].X.dx;
+
+	    /* Relaxation part */
+	    MB.discrete_Maxwell_Boltzmann(Soln[i].V);
+	    Soln[i].dVdt += (MB-Soln[i].V)/BGK1D_Vector::relaxation_time()*omega;
+
+        } /* endfor */
+	Soln[0].dVdt.zero();
+	Soln[IP.Number_of_Cells+1].dVdt.zero();
+
+        /* Update solution variables for this stage. */
+
+        for ( i = 1 ; i <= IP.Number_of_Cells ; ++i ) {
+	  Soln[i].V = Soln[i].Vo + (CFL_Number*dtMin)*Soln[i].dVdt;
+        } /* endfor */
+
+    } /* endfor */
+
+    /* Solution successfully updated. */
+
     return (0);
 }
 
