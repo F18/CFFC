@@ -68,6 +68,11 @@ void AdvectDiffuse2D_Quad_Block::Output_Tecplot_HighOrder(const int &Number_of_T
 	Out_File  << "\"ResidualU\" \\ \n";
       }
 
+      // Add more variables for the Extended format
+      if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+	Out_File  << "\"NonPositivity\" \\ \n";
+      }
+
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
 	       << "\" \\ \n"
 	       << "I = " << (NCi - 2*Nghost)*3  << " \\ \n"
@@ -96,6 +101,11 @@ void AdvectDiffuse2D_Quad_Block::Output_Tecplot_HighOrder(const int &Number_of_T
 
       // Full format
       if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+	Out_File << "DOUBLE ";
+      }
+
+      // Extended format
+      if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
 	Out_File << "DOUBLE ";
       }
 
@@ -193,6 +203,11 @@ void AdvectDiffuse2D_Quad_Block::Output_Tecplot_HighOrder(const int &Number_of_T
 	    // Add more variables for the Full format
 	    if (Tecplot_Execution_Mode::IsFullOutputRequired()){
 	      Out_File << " " << dUdt[i][j][0];
+	    }
+
+	    // Add more variables for the Extended format
+	    if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+	      Out_File << " " << Positivity_Coeffs[i][j];
 	    }
 
 	    // Close line
@@ -334,6 +349,11 @@ void AdvectDiffuse2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Numbe
 	Out_File  << "\"ResidualU\" \\ \n";
       }
 
+      // Add more variables for the Extended format
+      if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+	Out_File  << "\"NonPositivity\" \\ \n";
+      }
+
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
 	       << "\" \\ \n"
 	       << "I = " << ( ICu - ICl + 1 + 2*HighOrderVariable(IndexHO).NghostHO() )*3  << " \\ \n"
@@ -362,6 +382,11 @@ void AdvectDiffuse2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Numbe
 
       // Full format
       if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+	Out_File << "DOUBLE ";
+      }
+
+      // Extended format
+      if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
 	Out_File << "DOUBLE ";
       }
 
@@ -459,6 +484,11 @@ void AdvectDiffuse2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Numbe
 	    // Add more variables for the Full format
 	    if (Tecplot_Execution_Mode::IsFullOutputRequired()){
 	      Out_File << " " << dUdt[i][j][0];
+	    }
+
+	    // Add more variables for the Extended format
+	    if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+	      Out_File << " " << Positivity_Coeffs[i][j];
 	    }
 
 	    // Close line
@@ -603,6 +633,11 @@ void AdvectDiffuse2D_Quad_Block::Output_Cells_Tecplot_HighOrder(const int &Numbe
 	Out_File  << "\"ResidualU\" \\ \n";
       }
 
+      // Add more variables for the Extended format
+      if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+	Out_File  << "\"NonPositivity\" \\ \n";
+      }
+
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
 	       << "\" \\ \n"
 	       << "I = " << ( ICu - ICl + 2*Nghost + 1 ) << " \\ \n"
@@ -631,6 +666,11 @@ void AdvectDiffuse2D_Quad_Block::Output_Cells_Tecplot_HighOrder(const int &Numbe
 
       // Full format
       if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+	Out_File << "DOUBLE ";
+      }
+
+      // Extended format
+      if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
 	Out_File << "DOUBLE ";
       }
 
@@ -678,6 +718,11 @@ void AdvectDiffuse2D_Quad_Block::Output_Cells_Tecplot_HighOrder(const int &Numbe
 	    Out_File << " " << dUdt[i][j][0];
 	  }
 
+	  // Add more variables for the Extended format
+	  if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+	    Out_File << " " << Positivity_Coeffs[i][j];
+	  }
+
 	  // Close line
 	  Out_File << "\n";
 	  Out_File.unsetf(ios::scientific);
@@ -709,6 +754,11 @@ void AdvectDiffuse2D_Quad_Block::Output_Cells_Tecplot_HighOrder(const int &Numbe
 	  // Add more variables for the Full format
 	  if (Tecplot_Execution_Mode::IsFullOutputRequired()){
 	    Out_File << " " << dUdt[i][j][0];
+	  }
+
+	  // Add more variables for the Extended format
+	  if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+	    Out_File << " " << Positivity_Coeffs[i][j];
 	  }
 
 	  // Close line
@@ -796,6 +846,102 @@ void AdvectDiffuse2D_Quad_Block::Output_Cells_Tecplot_HighOrder_Debug_Mode(Adapt
   output_file.close();
   
   /* Writing of output data files complete. */
+}
+
+/*!
+ * Writes the coefficient values characteristic
+ * to each cell that is part of the calculation stencil
+ * for the Laplacian operator to the specified output
+ * stream suitable for plotting with TECPLOT.
+ */
+void AdvectDiffuse2D_Quad_Block::Output_Tecplot_InfluenceDomain_And_SolutionCoefficients(ostream &Out_File) {
+
+    /* Output node solution data. */
+
+    Out_File << setprecision(14);
+    // Set the Brief format
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Advection Diffusion Equation Solution, "
+	     << " Elliptic Term Positivity Study for cell ("
+	     << i_index[0] << "," << j_index[0] << ")\"" << "\n"
+	     << "VARIABLES = \"x\" \\ \n"
+	     << "\"y\" \\ \n"
+	     << "\"Coeff\" \\ \n";
+    
+    Out_File << "DATASETAUXDATA Positivity_Measure = \"  " 
+	     << CellPositivityMeasure(i_index[0], j_index[0]) 
+	     << "     \" \n ";
+
+    for (int cell = 0; cell < i_index.size(); ++cell){
+
+      // Output each cell of the stencil in one zone
+
+      Out_File << "ZONE T =  \" Cell = [" << i_index[cell] << "," << j_index[cell] << "] \" \\ \n"
+	       << "I = " << 3  << " \\ \n"
+	       << "J = " << 3 << " \\ \n"
+	       << "F = POINT \n";
+
+      // Set the accuracy properly
+      if (Tecplot_Execution_Mode::IsDoublePrecision()){
+	Out_File << "DT = (DOUBLE DOUBLE DOUBLE ";
+	
+	// Close line
+	Out_File << " ) \n";
+      } // endif (DoublePrecision)
+
+
+      // Output data
+      
+      // output the 1st row of nodes (i.e. NodeSW(i_index[cell],j_index[cell]),
+      //                                   xfaceS(i_index[cell],j_index[cell]),
+      //                                   NodeSE(i_index[cell],j_index[cell]))
+      // output NodeSW(i_index[cell],j_index[cell])
+      Out_File << " "  << Grid.nodeSW(i_index[cell],j_index[cell]).X
+	       << " "  << Laplacian_Coeffs[cell] << "\n"; 
+
+      // output xfaceS(i_index[cell],j_index[cell])
+      Out_File << " "  << Grid.xfaceS(i_index[cell],j_index[cell])
+	       << " "  << Laplacian_Coeffs[cell] << "\n"; 
+      
+      // output NodeSE(i_index[cell],j_index[cell])
+      Out_File << " "  << Grid.nodeSE(i_index[cell],j_index[cell]).X
+	       << " "  << Laplacian_Coeffs[cell] << "\n"; 
+
+
+      // output the 2nd row of nodes (i.e. xfaceW(i_index[cell],j_index[cell]),
+      //                                   Grid.CellCentroid(i_index[cell],j_index[cell]),
+      //                                   xfaceE(i_index[cell],j_index[cell]))
+      // output xfaceW(i_index[cell],j_index[cell])
+      Out_File << " "  << Grid.xfaceW(i_index[cell],j_index[cell])
+	       << " "  << Laplacian_Coeffs[cell] << "\n"; 
+
+      // output Grid.CellCentroid(i_index[cell],j_index[cell])
+      Out_File << " "  << Grid.CellCentroid(i_index[cell],j_index[cell])
+	       << " "  << Laplacian_Coeffs[cell] << "\n"; 
+
+      // output xfaceE(i_index[cell],j_index[cell])
+      Out_File << " "  << Grid.xfaceE(i_index[cell],j_index[cell])
+	       << " "  << Laplacian_Coeffs[cell] << "\n"; 
+
+
+      // output the 3rd row of nodes (i.e. NodeNW(i_index[cell],j_index[cell]),
+      //                                   xfaceN(i_index[cell],j_index[cell]),
+      //                                   NodeNE(i_index[cell],j_index[cell]))
+      // output NodeNW(i_index[cell],j_index[cell])
+      Out_File << " "  << Grid.nodeNW(i_index[cell],j_index[cell]).X
+	       << " "  << Laplacian_Coeffs[cell] << "\n"; 
+
+      // output xfaceN(i_index[cell],j_index[cell])
+      Out_File << " "  << Grid.xfaceN(i_index[cell],j_index[cell])
+	       << " "  << Laplacian_Coeffs[cell] << "\n"; 
+
+      // output NodeNE(i_index[cell],j_index[cell])
+      Out_File << " "  << Grid.nodeNE(i_index[cell],j_index[cell]).X
+	       << " "  << Laplacian_Coeffs[cell] << "\n"; 
+
+    } /* endfor */
+
+    Out_File << setprecision(6);
+    
 }
 
 /*!
@@ -4363,19 +4509,35 @@ void AdvectDiffuse2D_Quad_Block::Output_HighOrder_InfluenceDomain_For_LaplacianO
 }
 
 /*!
+ * Output the influence domain and the solution coefficients.
+ */
+void AdvectDiffuse2D_Quad_Block::Output_HighOrder_InfluenceDomain_And_SolutionCoefficients_For_LaplacianOperator(ostream &os){
+
+  // Output stencil size
+  os << "Stencil Size = " << i_index.size() << "\n";
+
+  // Output indexes and coefficient
+  for (int n = 0; n < i_index.size(); ++n){
+    os << "i = "    << setw(4) << right << i_index[n]
+       << "\t j = " << setw(4) << right << j_index[n] 
+       << "\t Coeff = " << setw(12) << right << setprecision(12) << Laplacian_Coeffs[n] << "\n";
+  }
+}
+
+/*!
  * Calculate the high-order finite-volume discretization of the
  * Laplace operator for a given cell and a high-order object.
  *
- * \param k_residual index to identify the residual storage location
+ * \return The value of the discretized Laplacian operator
  */
-void AdvectDiffuse2D_Quad_Block::Calculate_HighOrder_Discretization_LaplacianOperator(const int &iCell, const int &jCell,
-										      const int & k_residual,
-										      const unsigned short int Pos){
+AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::
+Calculate_HighOrder_Discretization_LaplacianOperator(const int &iCell, const int &jCell,
+						     const unsigned short int Pos){
 
   // SET VARIABLES USED IN THE RESIDUAL CALCULATION PROCESS
 
   int  GQPoint, Position, SplineSegment;
-  AdvectDiffuse2D_State U_face(1.0), Flux, FaceFlux;
+  AdvectDiffuse2D_State U_face(1.0), Flux, FaceFlux, Laplacian;
   Vector2D GradU_face, GradUl, GradUr;		// Solution gradient at the inter-cellular face
   int NumGQP(Grid.getNumGQP());	  // Number of Gauss quadrature points per face used to compute the flux integral
 
@@ -4393,20 +4555,25 @@ void AdvectDiffuse2D_Quad_Block::Calculate_HighOrder_Discretization_LaplacianOpe
   DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State::k);
 
 
-  /* Evaluate the Laplacian and write it to dUdt[iCell][jCell][k_residual]. */
-  dUdt[iCell][jCell][k_residual].Vacuum();
+  /* Evaluate the Laplacian. */
+  Laplacian.Vacuum();
 
   /* Perform the unlimited high-order reconstructions for all 5 cells involved in the calculation. */
   HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this,
-								iCell  ,jCell  );
+								iCell  ,jCell,
+								UseSpecialStencil[iCell][jCell] );
   HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this,
-								iCell-1,jCell  );
+								iCell-1,jCell,
+								UseSpecialStencil[iCell][jCell] );
   HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this,
-								iCell+1,jCell  );
+								iCell+1,jCell,
+								UseSpecialStencil[iCell][jCell] );
   HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this,
-								iCell  ,jCell-1);
+								iCell  ,jCell-1,
+								UseSpecialStencil[iCell][jCell] );
   HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this,
-								iCell  ,jCell+1);
+								iCell  ,jCell+1,
+								UseSpecialStencil[iCell][jCell] );
 
   
   // ****** Step 1. Compute contribution from the North face to Laplacian *******
@@ -4472,7 +4639,7 @@ void AdvectDiffuse2D_Quad_Block::Calculate_HighOrder_Discretization_LaplacianOpe
     } // endfor (SplineSegment)
 
     /* Evaluate face contribution to Laplacian. */
-    dUdt[iCell][jCell][k_residual] -= FaceFlux/Grid.Cell[iCell][jCell].A;
+    Laplacian -= FaceFlux/Grid.Cell[iCell][jCell].A;
 
   } else {
     /* Low-order boundary representation is required.
@@ -4514,7 +4681,7 @@ void AdvectDiffuse2D_Quad_Block::Calculate_HighOrder_Discretization_LaplacianOpe
     } //endfor (GQPoint)
 	
     /* Evaluate face contribution to Laplacian. */
-    dUdt[iCell][jCell][k_residual] -= FaceFlux*Grid.lfaceN(iCell,jCell)/Grid.Cell[iCell][jCell].A;
+    Laplacian -= FaceFlux*Grid.lfaceN(iCell,jCell)/Grid.Cell[iCell][jCell].A;
     
   } // endif (jCell == JCu && Grid.BndNorthSplineInfo != NULL)
 
@@ -4581,7 +4748,7 @@ void AdvectDiffuse2D_Quad_Block::Calculate_HighOrder_Discretization_LaplacianOpe
     } // endfor (SplineSegment)
 
     /* Evaluate face contribution to Laplacian. */
-    dUdt[iCell][jCell][k_residual] -= FaceFlux/Grid.Cell[iCell][jCell].A;
+    Laplacian -= FaceFlux/Grid.Cell[iCell][jCell].A;
 
   } else {
     /* Low-order boundary representation is required.
@@ -4623,7 +4790,7 @@ void AdvectDiffuse2D_Quad_Block::Calculate_HighOrder_Discretization_LaplacianOpe
     } //endfor (GQPoint)
 	
     /* Evaluate face contribution to Laplacian. */
-    dUdt[iCell][jCell][k_residual] -= FaceFlux*Grid.lfaceS(iCell,jCell)/Grid.Cell[iCell][jCell].A;
+    Laplacian -= FaceFlux*Grid.lfaceS(iCell,jCell)/Grid.Cell[iCell][jCell].A;
     
   } // endif (jCell == JCl && Grid.BndSouthSplineInfo != NULL)
 
@@ -4690,7 +4857,7 @@ void AdvectDiffuse2D_Quad_Block::Calculate_HighOrder_Discretization_LaplacianOpe
     } // endfor (SplineSegment)
 
     /* Evaluate face contribution to Laplacian. */
-    dUdt[iCell][jCell][k_residual] -= FaceFlux/Grid.Cell[iCell][jCell].A;
+    Laplacian -= FaceFlux/Grid.Cell[iCell][jCell].A;
 
   } else {
     /* Low-order boundary representation is required.
@@ -4732,7 +4899,7 @@ void AdvectDiffuse2D_Quad_Block::Calculate_HighOrder_Discretization_LaplacianOpe
     } //endfor (GQPoint)
 	
     /* Evaluate face contribution to Laplacian. */
-    dUdt[iCell][jCell][k_residual] -= FaceFlux*Grid.lfaceE(iCell,jCell)/Grid.Cell[iCell][jCell].A;
+    Laplacian -= FaceFlux*Grid.lfaceE(iCell,jCell)/Grid.Cell[iCell][jCell].A;
     
   } // endif (iCell == ICu && Grid.BndEastSplineInfo != NULL)
 
@@ -4799,7 +4966,7 @@ void AdvectDiffuse2D_Quad_Block::Calculate_HighOrder_Discretization_LaplacianOpe
     } // endfor (SplineSegment)
 
     /* Evaluate face contribution to Laplacian. */
-    dUdt[iCell][jCell][k_residual] -= FaceFlux/Grid.Cell[iCell][jCell].A;
+    Laplacian -= FaceFlux/Grid.Cell[iCell][jCell].A;
 
   } else {
     /* Low-order boundary representation is required.
@@ -4841,7 +5008,7 @@ void AdvectDiffuse2D_Quad_Block::Calculate_HighOrder_Discretization_LaplacianOpe
     } //endfor (GQPoint)
 	
     /* Evaluate face contribution to Laplacian. */
-    dUdt[iCell][jCell][k_residual] -= FaceFlux*Grid.lfaceW(iCell,jCell)/Grid.Cell[iCell][jCell].A;
+    Laplacian -= FaceFlux*Grid.lfaceW(iCell,jCell)/Grid.Cell[iCell][jCell].A;
     
   } // endif (iCell == ICl && Grid.BndWestSplineInfo != NULL)
 
@@ -4851,4 +5018,269 @@ void AdvectDiffuse2D_Quad_Block::Calculate_HighOrder_Discretization_LaplacianOpe
   // Reset pointer to the original diffusion field
   DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State::k);
 
+  // return discretized Laplacian
+  return Laplacian;
 }
+
+/*!
+ * Calculate the solution coefficient for each cell that has
+ * an influence on the finite-volume discretization of the
+ * Laplace operator for a given cell and a high-order object.
+ */
+void AdvectDiffuse2D_Quad_Block::
+Calculate_HighOrder_SolutionCoefficients_For_LaplacianOperator(const int &iCell, const int &jCell,
+							       const unsigned short int Pos){
+
+  int cell;
+  AdvectDiffuse2D_State OriginalUave, DeltaUave, Laplacian, DeltaLaplacian;
+  double FiniteDiffTol, AbsoluteTol;
+
+  FiniteDiffTol = 1.00005;
+  AbsoluteTol   = 1.0e-5; 
+
+  // Determine domain of influence for Laplacian operator
+  Set_HighOrder_InfluenceDomain_For_LaplacianOperator(iCell,jCell,Pos);
+
+  // Calculate the Laplacian operator with unperturbed solution states
+  Laplacian = Calculate_HighOrder_Discretization_LaplacianOperator(iCell,jCell,Pos);
+
+  // Perturb the solution in each cell and calculate the influence coefficients.
+  Laplacian_Coeffs.resize(i_index.size());
+
+  for (cell = 0; cell < i_index.size(); ++cell){
+    // Set the original average solution
+    OriginalUave = U[i_index[cell]][j_index[cell]];
+
+    // Perturb the current solution state
+    U[i_index[cell]][j_index[cell]] = FiniteDiffTol*OriginalUave + AbsoluteTol;
+    DeltaUave = U[i_index[cell]][j_index[cell]] - OriginalUave;
+
+    // Calculate delta Laplacian
+    DeltaLaplacian = Calculate_HighOrder_Discretization_LaplacianOperator(iCell,jCell,Pos) - Laplacian;
+
+    // Calculate solution coefficient
+    Laplacian_Coeffs[cell] = DeltaLaplacian.u/DeltaUave.u;
+
+    // Restore the original average solution
+    U[i_index[cell]][j_index[cell]] = OriginalUave;
+  }
+
+}
+
+/*!
+ * Analyse the positivity of the high-order finite-volume 
+ * discretization for the elliptic term.
+ * 
+ * \param iCell i-index of the given cell
+ * \param jCell j-index of the given cell
+ * \param Pos   the high-order object 
+ */
+void AdvectDiffuse2D_Quad_Block::Analyse_HighOrder_Positivity_For_LaplacianOperator(const int &iCell, const int &jCell,
+										    const unsigned short int Pos){
+  
+  int cell;
+  double alpha_min(0), alpha_sum(0);
+
+  // Calculate solution coefficients.
+  Calculate_HighOrder_SolutionCoefficients_For_LaplacianOperator(iCell,jCell,Pos);
+
+  // Calculate positivity coefficient.
+  // Use only the coefficients of the neighbour cells
+  for (cell = 1; cell<i_index.size(); ++cell){
+    
+    // Determine minimum alpha (i.e. min(Laplacian_Coeffs[cell],0.0))
+    if (Laplacian_Coeffs[cell] < alpha_min ){
+      alpha_min = Laplacian_Coeffs[cell];
+    }
+
+    alpha_sum += sqr(Laplacian_Coeffs[cell]);    
+  }
+
+  alpha_sum /= i_index.size() - 1;
+
+  Positivity_Coeffs[iCell][jCell] = alpha_min/sqrt(alpha_sum);
+
+}
+
+/*!
+ * Analyse the positivity of the high-order finite-volume 
+ * discretization for the elliptic term for all block quadrilatral cells.
+ * Determine also the minimum and maximum values over the block.
+ * The best that a scheme can do is to get a minimum value equal to ZERO,
+ * which means that the scheme is positive.
+ * 
+ * \param Pos  the high-order object 
+ */
+void AdvectDiffuse2D_Quad_Block::Analyse_HighOrder_Positivity_For_LaplacianOperator(const unsigned short int Pos){
+
+  int i,j, n;
+  double DecouplingTolerance(1.0e-14);
+
+  MinNonPositivity = ZERO;
+  MaxNonPositivity = ZERO;
+  i_index_decoupled.clear();
+  j_index_decoupled.clear();
+
+  bool FirstValue(true);
+
+
+  // Set use central stencil everywhere
+  for (j = JCl ; j <= JCu; ++j){
+    for (i = ICl ; i <= ICu; ++i){
+      UseSpecialStencil[i][j] = false;
+    } // endfor
+  }// endfor
+
+  for (j = JCl ; j <= JCu; ++j){
+    for (i = ICl ; i <= ICu; ++i){
+
+      // Estimate non-positivity for the current cell with the central stencil
+      Analyse_HighOrder_Positivity_For_LaplacianOperator(i,j,Pos);
+
+      if (FirstValue){
+	// Set the minimum non-positivity
+	MinNonPositivity = Positivity_Coeffs[i][j];
+
+	// Set the maximum non-positivity
+	MaxNonPositivity = Positivity_Coeffs[i][j];
+
+	FirstValue = false;
+      } else {
+	// Determine the minimum non-positivity (i.e. the closest value to ZERO)
+	MinNonPositivity = max(MinNonPositivity,Positivity_Coeffs[i][j]);
+
+	// Determine the maximum non-positivity (i.e. the largest negative)
+	MaxNonPositivity = min(MaxNonPositivity,Positivity_Coeffs[i][j]);
+      }
+
+      // Check for decoupling
+      for (n = 0; n < Laplacian_Coeffs.size(); ++n){
+	if ( fabs(Laplacian_Coeffs[n]) < DecouplingTolerance){
+	  i_index_decoupled.push_back(i);
+	  j_index_decoupled.push_back(j);
+	  break;
+	}
+      }	// endfor
+
+    } // endfor
+  }// endfor
+
+}
+
+/*!
+ * Analyse the positivity of the high-order finite-volume 
+ * discretization for the elliptic term for all block quadrilatral
+ * cells.
+ * Determine also the minimum and maximum values over the block.
+ * The best that a scheme can do is to get a minimum value equal to ZERO,
+ * which means that the scheme is positive.
+ * Try to improve the stencil selection by searching for a more positive
+ * discretization.
+ * 
+ * \param Pos  the high-order object 
+ */
+void AdvectDiffuse2D_Quad_Block::Analyse_HighOrder_Positivity_For_LaplacianOperator_And_Modify_Stencil(const unsigned short int Pos){
+
+  int i,j, n;
+  double DecouplingTolerance(1.0e-14);
+
+  // allocate memory for the copy
+  double ** Coeffs_Copy;
+  Coeffs_Copy = new double *[NCi]; for (i = 0; i<NCi; ++i){ Coeffs_Copy[i] = new double [NCj]; }
+
+  MinNonPositivity = ZERO;
+  MaxNonPositivity = ZERO;
+  i_index_decoupled.clear();
+  j_index_decoupled.clear();
+
+  bool FirstValue(true);
+
+  // === First pass
+  for (j = JCl ; j <= JCu; ++j){
+    for (i = ICl ; i <= ICu; ++i){
+      // Set central stencil everywhere
+      UseSpecialStencil[i][j] = false;
+    } // endfor
+  }// endfor
+
+
+  for (j = JCl ; j <= JCu; ++j){
+    for (i = ICl ; i <= ICu; ++i){
+      // Estimate non-positivity for the current cell with the central stencil
+      Analyse_HighOrder_Positivity_For_LaplacianOperator(i,j,Pos);
+
+      // Copy non-positivity measure value
+      Coeffs_Copy[i][j] = Positivity_Coeffs[i][j];
+    } // endfor
+  }// endfor
+
+
+  // === Second pass
+  for (j = JCl ; j <= JCu; ++j){
+    for (i = ICl ; i <= ICu; ++i){
+      // Set special stencil everywhere
+      UseSpecialStencil[i][j] = true;
+    } // endfor
+  }// endfor
+
+
+  for (j = JCl ; j <= JCu; ++j){
+    for (i = ICl ; i <= ICu; ++i){
+      // Estimate non-positivity for the current cell with the special stencil
+      Analyse_HighOrder_Positivity_For_LaplacianOperator(i,j,Pos);
+    } // endfor
+  }// endfor
+
+
+  // === Third pass
+  for (j = JCl ; j <= JCu; ++j){
+    for (i = ICl ; i <= ICu; ++i){
+      // Decide which stencil to use
+      if ( Coeffs_Copy[i][j] > Positivity_Coeffs[i][j]){
+	// We got better results with the central stencil
+	UseSpecialStencil[i][j] = false;
+      } else {
+	// We got better results with the special stencil
+	UseSpecialStencil[i][j] = true;
+      }
+    } // endfor
+  }// endfor
+
+
+  // Assess how the combination behaves
+  for (j = JCl ; j <= JCu; ++j){
+    for (i = ICl ; i <= ICu; ++i){
+
+      // Estimate non-positivity for the current cell
+      Analyse_HighOrder_Positivity_For_LaplacianOperator(i,j,Pos);
+
+      if (FirstValue){
+	// Set the minimum non-positivity
+	MinNonPositivity = Positivity_Coeffs[i][j];
+
+	// Set the maximum non-positivity
+	MaxNonPositivity = Positivity_Coeffs[i][j];
+
+	FirstValue = false;
+      } else {
+	// Determine the minimum non-positivity (i.e. the closest value to ZERO)
+	MinNonPositivity = max(MinNonPositivity,Positivity_Coeffs[i][j]);
+
+	// Determine the maximum non-positivity (i.e. the largest negative)
+	MaxNonPositivity = min(MaxNonPositivity,Positivity_Coeffs[i][j]);
+      }
+
+      // Check for decoupling
+      for (n = 0; n < Laplacian_Coeffs.size(); ++n){
+	if ( fabs(Laplacian_Coeffs[n]) < DecouplingTolerance){
+	  i_index_decoupled.push_back(i);
+	  j_index_decoupled.push_back(j);
+	  break;
+	}
+      }	// endfor
+
+    } // endfor
+  }// endfor
+
+}
+

@@ -34,6 +34,8 @@ void Tecplot_Execution_Mode::Print_Info(std::ostream & out_file){
     out_file << "\n     -> Tecplot Output Level: " << "Detailed";
   } else if (OUTPUT_LEVEL == Full){
     out_file << "\n     -> Tecplot Output Level: " << "Full";
+  } else if (OUTPUT_LEVEL == Extended){
+    out_file << "\n     -> Tecplot Output Level: " << "Extended";
   } // endif
 
   if (OUTPUT_ACCURACY == SinglePrec){

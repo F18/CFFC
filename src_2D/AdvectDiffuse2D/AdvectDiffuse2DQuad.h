@@ -422,16 +422,30 @@ public:
 
   //! @name Functions for estimating positivity of elliptic term discretization:
   //@{
+  const double & CellPositivityMeasure(const int &iCell, const int &jCell) const { return Positivity_Coeffs[iCell][jCell]; }
+  int StencilSize_For_LaplacianEstimation(void) const { return Laplacian_Coeffs.size(); }
+  const double & LaplacianCoefficient(const int &Pos) const {return Laplacian_Coeffs[Pos]; }
+  const double & CellSolution_LaplacianInfluenceCoefficient(const int &iCell, const int &jCell) const;
+  const IndexType & LaplacianStencil_I(void) const { return i_index; }
+  const IndexType & LaplacianStencil_J(void) const { return j_index; }
+  const double & MaximumNonPositivity(void) const { return MaxNonPositivity; }
+  const double & MinimumNonPositivity(void) const { return MinNonPositivity; }
+  bool IsAnyStencilDecoupled(void) const { if (i_index_decoupled.size() != 0){ return true; } else { return false; } }
+  const IndexType & DecoupledCells_IndexI(void) const { return i_index_decoupled; }
+  const IndexType & DecoupledCells_IndexJ(void) const { return j_index_decoupled; }  
+  void Analyse_HighOrder_Positivity_For_LaplacianOperator(const unsigned short int Pos = 0);
+  void Analyse_HighOrder_Positivity_For_LaplacianOperator_And_Modify_Stencil(const unsigned short int Pos = 0);
   void Analyse_HighOrder_Positivity_For_LaplacianOperator(const int &iCell, const int &jCell,
 							  const unsigned short int Pos = 0);
   void Calculate_HighOrder_SolutionCoefficients_For_LaplacianOperator(const int &iCell, const int &jCell,
 								      const unsigned short int Pos = 0);
   void Set_HighOrder_InfluenceDomain_For_LaplacianOperator(const int &iCell, const int &jCell,
 							   const unsigned short int Pos = 0);
-  void Calculate_HighOrder_Discretization_LaplacianOperator(const int &iCell, const int &jCell,
-							    const int & k_residual,
-							    const unsigned short int Pos = 0);
+  AdvectDiffuse2D_State Calculate_HighOrder_Discretization_LaplacianOperator(const int &iCell, const int &jCell,
+									     const unsigned short int Pos = 0);
   void Output_HighOrder_InfluenceDomain_For_LaplacianOperator(ostream &os);
+  void Output_HighOrder_InfluenceDomain_And_SolutionCoefficients_For_LaplacianOperator(ostream &os);
+  void Output_Tecplot_InfluenceDomain_And_SolutionCoefficients(ostream &Out_File);
   //@}
 
   //! @name Input-output operators.
@@ -604,6 +618,10 @@ private:
   IndexType i_index, j_index;	     //!< Storage for indexes of cells that influence the discretization of the Laplace operator.
   std::vector<double>  Laplacian_Coeffs; /*!< The coefficient for each cell in the stencil that
 					   appears in the discretization of the Laplace operator. */
+  double **Positivity_Coeffs;	//!< Storage for the coefficients which measure scheme positivity for the elliptic term discretization
+  double MaxNonPositivity, MinNonPositivity; //!< Storage for the maximum and minimum non-positivity values over the whole block
+  IndexType i_index_decoupled, j_index_decoupled; //!< indexes of cells found with decoupled stencils.
+  bool  **UseSpecialStencil;			  //!< Flag to set the type of reconstruction stencil (i.e. central or special)
   //@}
 };
 
@@ -1160,6 +1178,23 @@ inline void AdvectDiffuse2D_Quad_Block::SetPiecewiseLinearReconstructionStencil(
     i_index[6] = i  ; j_index[6] = j+1;
     i_index[7] = i+1; j_index[7] = j+1;
   } /* endif */
+}
+
+/*!
+ * \return The influence coefficient of cell (iCell,jCell) to
+ * the Laplacian operator.
+ * \note This operator uses the variables in the memory pool!
+ */
+inline const double & AdvectDiffuse2D_Quad_Block::CellSolution_LaplacianInfluenceCoefficient(const int &iCell,
+											     const int &jCell) const{
+  
+  int i,j, pos;
+  
+  for (pos = 0; pos <= i_index.size(); ++pos){
+    if (i_index[pos] == iCell && j_index[pos] == jCell){
+      return Laplacian_Coeffs[pos];
+    }
+  } // endfor
 }
 
 /**************************************************************************

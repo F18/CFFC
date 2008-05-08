@@ -1663,7 +1663,7 @@ namespace tut
     // ========= Compute with HighOrderVariable(0) ========
     for (int i = SolnBlk[0].ICl; i <= SolnBlk[0].ICu; ++i){
       for (int j = SolnBlk[0].JCl; j <= SolnBlk[0].JCu; ++j){
-	SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,0,0);
+	SolnBlk[0].dUdt[i][j][0] = SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,0);
       }
     }
 
@@ -1679,7 +1679,7 @@ namespace tut
     // ========= Compute with HighOrderVariable(1) ========
     for (int i = SolnBlk[0].ICl; i <= SolnBlk[0].ICu; ++i){
       for (int j = SolnBlk[0].JCl; j <= SolnBlk[0].JCu; ++j){
-	SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,0,1);
+	SolnBlk[0].dUdt[i][j][0] = SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,1);
       }
     }
 
@@ -1695,7 +1695,7 @@ namespace tut
     // ========= Compute with HighOrderVariable(2) ========
     for (int i = SolnBlk[0].ICl; i <= SolnBlk[0].ICu; ++i){
       for (int j = SolnBlk[0].JCl; j <= SolnBlk[0].JCu; ++j){
-	SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,0,2);
+	SolnBlk[0].dUdt[i][j][0] = SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,2);
       }
     }
 
@@ -1712,7 +1712,7 @@ namespace tut
     // ========= Compute with HighOrderVariable(3) ========
     for (int i = SolnBlk[0].ICl; i <= SolnBlk[0].ICu; ++i){
       for (int j = SolnBlk[0].JCl; j <= SolnBlk[0].JCu; ++j){
-	SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,0,3);
+	SolnBlk[0].dUdt[i][j][0] = SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,3);
       }
     }
 
@@ -1749,11 +1749,16 @@ namespace tut
   void AdvectDiffuse2D_Quad_Block_object::test<21>()
   {
 
-    set_test_name("Compute positivity coefficient ");
+    set_test_name("Perform scheme positivity analysis ");
     set_local_input_path("QuadBlockData");
     set_local_output_path("QuadBlockData");
 
-    RunRegression = OFF;
+    // == Local variables == 
+    bool LocalAnalysis, GlobalAnalysis, StencilOptimization;
+    unsigned short int HighOrderVar;
+    int iCell,jCell;
+    double ErrorL1, ErrorL2 ;
+
 
     // Set input file name
     Open_Input_File("HighOrder_EllipticTermDiscretization_PositivityStudy.in");
@@ -1778,22 +1783,101 @@ namespace tut
     ICs(SolnBlk,LocalList_Soln_Blocks,IP);
 
 
-    // ========= Compute with HighOrderVariable(0) ========
+    // ===== Execution control =====
+    RunRegression = ON;
+    LocalAnalysis = false;
+    GlobalAnalysis = true;
+    StencilOptimization = false;
+    verbose = false;
+    HighOrderVar = 0;      // Set high-order object
 
-    // Determine domain of influence for Laplacian operator
-    SolnBlk[0].Set_HighOrder_InfluenceDomain_For_LaplacianOperator(4,4,0);
 
-    // Calculate Laplace operator
-    SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(4,4,0,0);
+    // ========= Perform local analysis ========
+    if (LocalAnalysis) {
     
-    if (RunRegression == OFF){ 
+      // Set cell indexes
+      iCell = 20;
+      jCell = 18;
 
-      // Output solution to check residual errors
-      CurrentFile = "Current_HighOrder_PositivityStudy.dat";
-      Open_Output_File(CurrentFile);
+      // Do analysis
+      SolnBlk[0].Analyse_HighOrder_Positivity_For_LaplacianOperator(iCell,jCell,HighOrderVar);
       
-      SolnBlk[0].Output_Nodes_Tecplot_HighOrder(0,0,0, 1, out(), 0);
-    }
+      if (verbose){
+	SolnBlk[0].Output_HighOrder_InfluenceDomain_And_SolutionCoefficients_For_LaplacianOperator(cout);
+	Print_(SolnBlk[0].CellPositivityMeasure(iCell,jCell));
+      }
+    
+      if (RunRegression == OFF){
+	// Output solution to check non-positivity
+	CurrentFile = "Current_HighOrder_LocalNonPositivity_Study.dat";
+	Open_Output_File(CurrentFile);
+    
+	SolnBlk[0].Output_Tecplot_InfluenceDomain_And_SolutionCoefficients(out());
+      }
+
+      // Estimate errors against the exact solution
+      ErrorL1 = ( SolnBlk[0].HighOrderVariable(HighOrderVar).
+		  ComputeSolutionErrorL1(iCell,jCell,
+					 wrapped_member_function(SolnBlk[0].ExactSolution(),
+								 &AdvectDiffuse2D_Quad_Block::
+								 Exact_Solution_Type::Solution,
+								 ErrorL1),
+					 1, 12) );
+		
+
+      ErrorL2 = ( SolnBlk[0].HighOrderVariable(HighOrderVar).
+		  ComputeSolutionErrorL2(iCell,jCell,
+					 wrapped_member_function(SolnBlk[0].ExactSolution(),
+								 &AdvectDiffuse2D_Quad_Block::
+								 Exact_Solution_Type::Solution,
+								 ErrorL2),
+					 1, 12) );
+
+      if (verbose){
+	Print_2(ErrorL1, ErrorL2);
+      }
+
+    }// endif (LocalAnalysis)
+
+
+    // ========= Perform global analysis ========
+    if (GlobalAnalysis){
+
+      if (StencilOptimization){
+	// Do analysis and optimization
+	SolnBlk[0].Analyse_HighOrder_Positivity_For_LaplacianOperator_And_Modify_Stencil(HighOrderVar);
+      } else {
+	// Do analysis
+	SolnBlk[0].Analyse_HighOrder_Positivity_For_LaplacianOperator(HighOrderVar);
+      }
+
+      if (verbose){
+	Print_(SolnBlk[0].IsAnyStencilDecoupled());
+	Print_(SolnBlk[0].MaximumNonPositivity());
+	Print_(SolnBlk[0].MinimumNonPositivity()); 
+      }
+
+      // Estimate errors against the exact solution
+      SolnBlk[0].HighOrderVariable(HighOrderVar).ComputeSolutionErrors(wrapped_member_function(SolnBlk[0].ExactSolution(),
+											       &AdvectDiffuse2D_Quad_Block::
+											       Exact_Solution_Type::Solution,
+											       ErrorL1),
+								       1, 12);
+      if (verbose){
+	Print_(SolnBlk[0].HighOrderVariable(HighOrderVar).BlockL1Norm());
+	Print_(SolnBlk[0].HighOrderVariable(HighOrderVar).BlockL2Norm());
+	Print_(SolnBlk[0].HighOrderVariable(HighOrderVar).BlockLMaxNorm());
+      }
+
+      if (RunRegression == OFF){ 
+
+	// Output solution to check non-positivity
+	CurrentFile = "Current_HighOrder_PositivityStudy.dat";
+	Open_Output_File(CurrentFile);
+	SolnBlk[0].Output_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+      }
+
+    } //endif (GlobalAnalysis)
 
   }
 

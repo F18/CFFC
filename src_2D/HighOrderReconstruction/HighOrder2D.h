@@ -394,6 +394,7 @@ public:
   template<class Soln_Block_Type>
   void ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
 					      const int &iCell, const int &jCell,
+					      const bool & UseSpecialStencil,
 					      const Soln_State & 
 					      (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const  = 
 					      &Soln_Block_Type::CellSolution );
@@ -428,6 +429,8 @@ public:
   /*! @brief Set the central stencil of cells used for reconstruction.  */
   void SetReconstructionStencil(const int &iCell, const int &jCell,
 				IndexType & i_index, IndexType & j_index) const;
+  void SetSpecialReconstructionStencil(const int &iCell, const int &jCell,
+				       IndexType & i_index, IndexType & j_index) const;
   /*! @brief Set a central stencil of cells with a given extend for a particular cell. */
   void SetCentralStencil(const int &iCell, const int &jCell,
 			 IndexType & i_index, IndexType & j_index,
@@ -1881,6 +1884,57 @@ void HighOrder2D<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const i
   SetCentralStencil(iCell,jCell,i_index,j_index,rings,_dummy_);
 }
 
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::SetSpecialReconstructionStencil(const int &iCell, const int &jCell,
+							      IndexType & i_index, IndexType & j_index) const{
+  
+  i_index.clear();
+  j_index.clear();
+
+  i_index.push_back(iCell);   j_index.push_back(jCell); /* cell (iCell,jCell) */
+
+  switch(rings){
+
+  case 2: // two rings of cells around (iCell,jCell)
+
+    /* Second ring */
+    //    i_index.push_back(iCell-2); j_index.push_back(jCell-2);
+    i_index.push_back(iCell-1); j_index.push_back(jCell-2);
+    //    i_index.push_back(iCell  ); j_index.push_back(jCell-2);
+    i_index.push_back(iCell+1); j_index.push_back(jCell-2);
+    //    i_index.push_back(iCell+2); j_index.push_back(jCell-2);
+    i_index.push_back(iCell-2); j_index.push_back(jCell-1);
+    i_index.push_back(iCell+2); j_index.push_back(jCell-1);
+    //    i_index.push_back(iCell-2); j_index.push_back(jCell  );
+    //    i_index.push_back(iCell+2); j_index.push_back(jCell  );
+    i_index.push_back(iCell-2); j_index.push_back(jCell+1);
+    i_index.push_back(iCell+2); j_index.push_back(jCell+1);
+    //    i_index.push_back(iCell-2); j_index.push_back(jCell+2);
+    i_index.push_back(iCell-1); j_index.push_back(jCell+2);
+    //    i_index.push_back(iCell  ); j_index.push_back(jCell+2);
+    i_index.push_back(iCell+1); j_index.push_back(jCell+2);
+    //    i_index.push_back(iCell+2); j_index.push_back(jCell+2);
+
+  case 1: // one ring of cells around (iCell,jCell)
+
+    /* First ring */
+    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
+    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
+    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
+    i_index.push_back(iCell-1); j_index.push_back(jCell  );
+    i_index.push_back(iCell+1); j_index.push_back(jCell  );
+    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
+    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
+    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
+
+    break;
+
+  default: // general expression
+
+    break;
+  }//endswitch  
+}
+
 /*! 
  * Write the 'i' and 'j' indexes of the cells that are part of
  * the reconstruction of the given cell and the cells that have
@@ -1966,17 +2020,17 @@ void HighOrder2D<SOLN_STATE>::getEnlargedReconstructionStencil(const int &iCell,
 
   case 1: // one ring of cells around (iCell,jCell)
 
-    i_index[0]=iCell;   j_index[0]=jCell; /* cell (iCell,jCell) */
+    i_index.push_back(iCell);   j_index.push_back(jCell); /* cell (iCell,jCell) */
 
     /* First ring */
-    i_index[1]=iCell-1; j_index[1]=jCell-1;
-    i_index[2]=iCell;   j_index[2]=jCell-1;
-    i_index[3]=iCell+1; j_index[3]=jCell-1;
-    i_index[4]=iCell-1; j_index[4]=jCell;
-    i_index[5]=iCell+1; j_index[5]=jCell;
-    i_index[6]=iCell-1; j_index[6]=jCell+1;
-    i_index[7]=iCell;   j_index[7]=jCell+1;
-    i_index[8]=iCell+1; j_index[8]=jCell+1;
+    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
+    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
+    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
+    i_index.push_back(iCell-1); j_index.push_back(jCell  );
+    i_index.push_back(iCell+1); j_index.push_back(jCell  );
+    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
+    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
+    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
 
     /* Second ring incomplete (i.e. skip the corners) */
     i_index.push_back(iCell-1); j_index.push_back(jCell-2);

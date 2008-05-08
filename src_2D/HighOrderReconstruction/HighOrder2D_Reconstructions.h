@@ -442,6 +442,13 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
     double MaxWeight(0.0);
     double IntSum(0.0);
 
+    // Ensure that enough memory is allocated for the current least-squares problem.
+    if (A.size(0) != StencilSize) {
+      // Resize the matrices accordingly
+      A.newsize(StencilSize-1,NumberOfTaylorDerivatives()-1);
+      All_Delta_U.newsize(StencilSize-1,NumberOfVariables());
+    }
+
     // START:   Set the LHS and RHS of the linear system 
     // ***************************************************
 
@@ -915,6 +922,9 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
 /*! 
  * Compute the unlimited k-exact high-order reconstruction
  * proposed by Barth (1993) for the given cell.
+ * The reconstruction stencil in these routine is not necessarily
+ * the central one. Therefore, this routines is designed more for
+ * testing purposes than for regular reconstructions.
  *
  * \param SolnBlk the quad block for which the solution reconstruction is done.
  * \param ReconstructedSoln member function of Soln_Block_Type which returns the solution.
@@ -926,8 +936,11 @@ template<class Soln_Block_Type> inline
 void HighOrder2D<SOLN_STATE>::
 ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
 				       const int &iCell, const int &jCell,
+				       const bool & UseSpecialStencil,
 				       const Soln_State & 
 				       (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const){
+
+  IndexType Special_I_Index(i_index.size()), Special_J_Index(j_index.size());
 
   if ( iCell >= StartI && iCell <= EndI && jCell >= StartJ && jCell <= EndJ ){
 
@@ -935,12 +948,20 @@ ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
      *    Perform unconstrained unlimited high-order solution reconstruction   *
      **************************************************************************/
 
-    // Set the stencil of points used for reconstruction
-    SetReconstructionStencil(iCell, jCell, i_index, j_index);
+    if (UseSpecialStencil){
+
+      // Set the stencil of points used for reconstruction with the special routine
+      SetSpecialReconstructionStencil(iCell, jCell, Special_I_Index, Special_J_Index);
+
+    } else {
+
+      // Set the stencil of points used for reconstruction with the regular routine
+      SetReconstructionStencil(iCell, jCell, Special_I_Index, Special_J_Index);
+    }
 
     // Compute the reconstruction for the current cell
     ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
-							iCell, jCell, i_index, j_index);
+							iCell, jCell, Special_I_Index, Special_J_Index);
     
   } else {
     

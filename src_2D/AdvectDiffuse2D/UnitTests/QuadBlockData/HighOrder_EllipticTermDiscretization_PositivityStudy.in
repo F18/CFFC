@@ -266,7 +266,7 @@ AMR_Frequency =
 	# SET OUTPUT PARAMETERS #
 	#########################
 Tecplot_Output_Format =
-        Full
+        Extended
 Output_File_Name = 
 	AdvectDiffuse2D/UnitTests/QuadBlockData/Current_HighOrder_Residual_Study
 
