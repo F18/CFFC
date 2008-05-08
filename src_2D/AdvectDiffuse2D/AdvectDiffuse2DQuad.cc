@@ -45,7 +45,8 @@ AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(void):
   AssessAccuracy(this),
   Ref_State_BC_North(0.0), Ref_State_BC_South(0.0),
   Ref_State_BC_East(0.0), Ref_State_BC_West(0.0),
-  HO_Ptr(NULL), NumberOfHighOrderVariables(0)
+  HO_Ptr(NULL), NumberOfHighOrderVariables(0),
+  Positivity_Coeffs(NULL), UseSpecialStencil(NULL)
 {
 
   Freeze_Limiter = OFF;
@@ -89,6 +90,8 @@ AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(const AdvectDiffuse2D_Qua
   Freeze_Limiter = Soln.Freeze_Limiter;
   HO_Ptr = Soln.HO_Ptr;
   NumberOfHighOrderVariables = Soln.NumberOfHighOrderVariables;
+  Positivity_Coeffs = Soln.Positivity_Coeffs;
+  UseSpecialStencil = Soln.UseSpecialStencil;
 }
 
 /*****************************************************//**
@@ -183,6 +186,8 @@ void AdvectDiffuse2D_Quad_Block::allocate(const int &Ni, const int &Nj, const in
     U = new AdvectDiffuse2D_State*[NCi]; dt = new double*[NCi]; dUdt = new AdvectDiffuse2D_State**[NCi]; 
     dUdx = new AdvectDiffuse2D_State*[NCi]; dUdy = new AdvectDiffuse2D_State*[NCi]; 
     phi = new AdvectDiffuse2D_State*[NCi]; Uo = new AdvectDiffuse2D_State*[NCi];
+    Positivity_Coeffs = new double*[NCi]; 
+    UseSpecialStencil = new bool*[NCi];
     for ( i = 0; i <= NCi-1 ; ++i ) {
       U[i] = new AdvectDiffuse2D_State[NCj]; 
       dt[i] = new double[NCj]; dUdt[i] = new AdvectDiffuse2D_State*[NCj];
@@ -191,6 +196,8 @@ void AdvectDiffuse2D_Quad_Block::allocate(const int &Ni, const int &Nj, const in
       dUdx[i] = new AdvectDiffuse2D_State[NCj]; dUdy[i] = new AdvectDiffuse2D_State[NCj]; 
       phi[i] = new AdvectDiffuse2D_State[NCj];
       Uo[i] = new AdvectDiffuse2D_State[NCj];
+      Positivity_Coeffs[i] = new double [NCj];
+      UseSpecialStencil[i] = new bool [NCj];
     } /* endfor */
     FluxN = new AdvectDiffuse2D_State[NCi]; FluxS = new AdvectDiffuse2D_State[NCi];
     FluxE = new AdvectDiffuse2D_State[NCj]; FluxW = new AdvectDiffuse2D_State[NCj];
@@ -206,6 +213,8 @@ void AdvectDiffuse2D_Quad_Block::allocate(const int &Ni, const int &Nj, const in
 	phi[i][j].Vacuum();
 	Uo[i][j].Vacuum();
 	dt[i][j] = ZERO;
+	Positivity_Coeffs[i][j] = ONE; // When calculated, these coefficients can be maximum ZERO!
+	UseSpecialStencil[i][j] = false; // Use the central stencil
       } /* endfor */
     } /* endfor */
 
@@ -270,6 +279,8 @@ void AdvectDiffuse2D_Quad_Block::deallocate(void) {
       delete []dUdt[i]; dUdt[i] = NULL;
       delete []dUdx[i]; dUdx[i] = NULL; delete []dUdy[i]; dUdy[i] = NULL;
       delete []phi[i]; phi[i] = NULL; delete []Uo[i]; Uo[i] = NULL;
+      delete []Positivity_Coeffs[i]; Positivity_Coeffs[i] = NULL;
+      delete []UseSpecialStencil[i]; UseSpecialStencil[i] = NULL;
     } /* endfor */
     delete []U; U = NULL; delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
     delete []dUdx; dUdx = NULL; delete []dUdy; dUdy = NULL; 
@@ -278,6 +289,8 @@ void AdvectDiffuse2D_Quad_Block::deallocate(void) {
     delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
     delete []UoN; UoN = NULL; delete []UoS; UoS = NULL;
     delete []UoE; UoE = NULL; delete []UoW; UoW = NULL;
+    delete []Positivity_Coeffs; Positivity_Coeffs = NULL;
+    delete []UseSpecialStencil; UseSpecialStencil = NULL;
     NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
 
     deallocate_HighOrder();
