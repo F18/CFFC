@@ -3,6 +3,7 @@
 
 /* Include 1D BGK solution header file. */
 #include "BGK1D.h"
+#include "../Physics/Perfect_Gas_Shocks.h"
 
 /******************************************************//**
  * Routine: Allocate
@@ -188,7 +189,7 @@ int ICs(BGK1D_UniformMesh *Soln,
 
   int ICl, ICu, TC;
   double xmin, xmax;
-  double a, b, dx;
+  double rho_l, u_l, p_l;
   int error(0);
 
   ICl = Soln[0].ICl;
@@ -203,8 +204,29 @@ int ICs(BGK1D_UniformMesh *Soln,
     if(error) return error;
 
     error = Vr.discrete_Maxwell_Boltzmann(DENSITY_STDATM/EIGHT,
-				  ZERO,
-				  PRESSURE_STDATM/TEN);
+					  ZERO,
+					  PRESSURE_STDATM/TEN);
+    if(error) return error;
+
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      if (Soln[i].X.x <= ZERO) {
+	Soln[i].V = Vl;
+      } else {
+	Soln[i].V = Vr;
+      } /* end if */
+    } /* endfor */
+    break;
+  case IC_STATIONARY_SHOCK_STRUCTURE :
+    rho_l = DENSITY_STDATM;
+    p_l   = PRESSURE_STDATM;
+    u_l   = IP.mach_number * sqrt(3.0 * p_l / rho_l);
+
+    error = Vl.discrete_Maxwell_Boltzmann(rho_l, u_l, p_l);
+    if(error) return error;
+
+    error = Vr.discrete_Maxwell_Boltzmann(rho_l * normal_shock_density_ratio(IP.mach_number,3.0),
+					  u_l   * normal_shock_velocity_ratio(IP.mach_number,3.0),
+					  p_l   * normal_shock_pressure_ratio(IP.mach_number,3.0));
     if(error) return error;
 
     for ( i = 0 ; i <= TC-1 ; ++i ) {

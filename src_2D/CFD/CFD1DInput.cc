@@ -524,6 +524,8 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
 	  IP.ExactFunction = ConvectionShapes;
        } else if (strcmp(IP.ICs_Type, "Density_Step_IVP") == 0) {
           IP.i_ICs = IC_DENSITY_STEP_WAVE;
+       } else if (strcmp(IP.ICs_Type, "Stationary_Shock_Structure") == 0) {
+          IP.i_ICs = IC_STATIONARY_SHOCK_STRUCTURE;
        } else {
 	 i_command = INVALID_INPUT_CODE;
        } /* endif */
@@ -694,6 +696,16 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
       } else {
 	IP.Reconstruction_In_Each_Stage = false;
       } /* endif */
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Mach_Number") == 0) {
+       i_command = 26;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.mach_number;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.mach_number < 0.0 ){
+	 cout << "\n Error! Mach number must be greater than or equal to zero.";
+	 i_command = INVALID_INPUT_VALUE;
+       }/* endif */
 
       /********************** levermore1D- and bgk-specific inputs **************************/
     } else if (strcmp(IP.Next_Control_Parameter, "Number_Of_Moments") == 0) {

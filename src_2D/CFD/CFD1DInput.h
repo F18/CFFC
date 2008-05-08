@@ -56,6 +56,7 @@ class CFD1D_Input_Parameters{
   char ICs_Type[INPUT_PARAMETER_LENGTH_CFD1D];
   int i_ICs;
   FunctionType1D ExactFunction; // pointer to the exact function
+  double mach_number; //mach number for shock-structure ics
 
   // Grid type indicator and related input parameters:
   char Grid_Type[INPUT_PARAMETER_LENGTH_CFD1D];
@@ -210,6 +211,10 @@ inline ostream &operator << (ostream &out_file,
         break;
       case IC_EINFELDT :
         break;
+      case IC_STATIONARY_SHOCK_STRUCTURE :
+	out_file << "\n  -> Mach Number: "
+		 << IP.mach_number;
+	break;
       default:
         break;
     } /* endswitch */

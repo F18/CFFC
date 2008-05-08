@@ -605,6 +605,7 @@ inline char *Date_And_Time() {
 #define IC_PIPE                       307
 #define IC_COUETTE                    308
 #define IC_BLUNT_BODY                 309
+#define IC_STATIONARY_SHOCK_STRUCTURE 310
 
 #define IC_SPECIFIED                  400
 #define IC_DISCONTINUOUS              401
