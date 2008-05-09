@@ -12,20 +12,6 @@
 
 #include "Discrete_Filter.h"
 
-#include "../../Math/Math.h"
-#include "../../Math/LinearSystems.h"
-#include "../../Math/Matrix.h"
-
-
-#ifndef _GNUPLOT
-#define _GNUPLOT
-#include "../../System/gnuplot.h"
-#endif
-#include "../../Utilities/Utilities.h"
-
-
-typedef complex<double> Complex;
-
 template <typename Soln_pState, typename Soln_cState>
 class LES_Filter;
 

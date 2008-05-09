@@ -276,6 +276,9 @@ ICs_Specializations(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cS
             }	  
         }
     }
+    if (CFFC_Primary_MPI_Processor()) {
+        Explicit_Filter.transfer_function();
+    }
    // cout << " now filtering p " << endl;
 //    Explicit_Filter.Set_Filter_Variables(p_ptr);
 //    Explicit_Filter.filter();
@@ -286,7 +289,9 @@ ICs_Specializations(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cS
 //            }	  
 //        }
 //    }
-    cout << " Finished explicit filtering " << endl;
+    if (CFFC_Primary_MPI_Processor()) {
+        cout << " Finished explicit filtering " << endl;
+    }
     
     Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
     for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
@@ -415,7 +420,7 @@ template<>
 double Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::
 CFL(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> &IPs){
     
-    double dtMin, d_i, d_j, d_k, v_i, v_j, v_k, a, dt_vis, nv, nv_t;
+    double dtMin, d_i, d_j, d_k, v_i, v_j, v_k, a, dt_vis, nu;
     double mr, aa_i, aa_j, aa_k;
     double length_n, delta_n, dTime;
     
@@ -457,12 +462,10 @@ CFL(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> &IPs){
                     }  /* endif */
                     
                     if (Flow_Type != FLOWTYPE_INVISCID) {  
-                        nv = W[i][j][k].nu();
-                        
-                        dt_vis = min(min((d_i*d_i)/(3.0*nv), (d_j*d_j)/(3.0*nv)), (d_k*d_k)/(3.0*nv)); 
+                        nu = W[i][j][k].nu();
+                        nu += W[i][j][k].nu_t(dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k], Grid.Cell[i][j][k].V);
+                        dt_vis = min(min((d_i*d_i)/nu, (d_j*d_j)/nu), (d_k*d_k)/nu)/THREE; 
                         dt[i][j][k]  = min(dt_vis, dt[i][j][k]);
-                        
-                        
                     } /* endif */       
                     
                     dtMin = min(dtMin,  dt[i][j][k]);

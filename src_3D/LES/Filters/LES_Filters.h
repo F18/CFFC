@@ -275,16 +275,17 @@ double LES_Filter<Soln_pState,Soln_cState>::maximum_wavenumber() {
 
 template<typename Soln_pState, typename Soln_cState>
 void LES_Filter<Soln_pState,Soln_cState>::transfer_function() {
-    double kmax = maximum_wavenumber();
-    if (LocalSolnBlkList_ptr->Nused() >= 1) {
+    if (FILTER_ONLY_ONE_SOLNBLK) {
+        filter_ptr->transfer_function(*Solution_Blocks_ptr,Solution_Blocks_ptr->Grid.Cell[12][12][12]);            
+    }
+    else if (LocalSolnBlkList_ptr->Nused() >= 1) {
         for (int nBlk = 0; nBlk <= LocalSolnBlkList_ptr->Nused(); ++nBlk ) {
             if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
                 filter_ptr->transfer_function(Solution_Blocks_ptr[nBlk],Solution_Blocks_ptr[nBlk].Grid.Cell[12][12][12]);            
-                return;
+                return; // This makes sure it is called only once
             }
         }
     }
-
 }
 
 template<typename Soln_pState, typename Soln_cState>

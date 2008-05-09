@@ -9,26 +9,8 @@
 #ifndef _VASILYEV_FIlTER_INCLUDED
 #define _VASILYEV_FILTER_INCLUDED
 
-
-#include "General_Filter.h"
-
-#include <complex>
-#include <cmath> 
-
-#include "../../Math/Math.h"
-#include "../../Math/LinearSystems.h"
-#include "../../Math/Matrix.h"
-
-#ifndef _GNUPLOT
-#define _GNUPLOT
-#include "../../System/gnuplot.h"
-#endif
-
-#include "../../Utilities/Utilities.h"
-
-#include <cstdlib>
-
 #include "Discrete_Filter.h"
+
 
 template <typename Soln_pState, typename Soln_cState>
 class LES_Filter;
