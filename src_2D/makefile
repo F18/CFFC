@@ -165,7 +165,8 @@ SRC_HIGH_ORDER_RECONSTRUCTION_2D := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR
 
 # Add High-Order Reconstruction Testing If Required:
 SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_2D := test_TaylorDerivatives2D_Double.cc \
-				          test_HighOrder2D_Double.cc
+				          test_HighOrder2D_Double.cc \
+					  test_Cauchy_BoundaryConditions.cc
 SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_2D := $(addprefix $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/,$(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_2D))
 ifeq ($(TUT_TESTING),ON) 
   SRC_HIGH_ORDER_RECONSTRUCTION_2D += $(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_2D)
