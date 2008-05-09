@@ -268,7 +268,7 @@ ICs_Specializations(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cS
     LES3D_Polytropic_cState *** (Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::*U_ptr) = &Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::U;
     double (LES3D_Polytropic_pState::*p_ptr) = p_ptr = &LES3D_Polytropic_pState::p; 
     LES_Filter<LES3D_Polytropic_pState,LES3D_Polytropic_cState> Explicit_Filter(*this,IPs,FILTER_TYPE_VASILYEV);
-    Explicit_Filter.filter(U_ptr);
+    // turn off filter for test Explicit_Filter.filter(U_ptr);
     for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
         for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
             for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {

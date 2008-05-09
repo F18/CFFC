@@ -231,7 +231,7 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
               (Solution_Data.Local_Solution_Blocks.Soln_Blks,
                Data.Local_Adaptive_Block_List,0);
               
-              Explicit_Filter.filter(dUdt_ptr,0);
+              // test unity filter -->  turn off Explicit_Filter.filter(dUdt_ptr,0);
 
           //}      
           
