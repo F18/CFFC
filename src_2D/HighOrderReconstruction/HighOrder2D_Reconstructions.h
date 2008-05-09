@@ -977,4 +977,140 @@ ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 
 }
 
+
+/*!
+ * Generate the LHS and RHS of the least-squares problem associated 
+ * with the reconstruction procedure and write the values at the specified
+ * locations.
+ * This matrix reflects the conservation of mean value in the control       
+ * volumes of cells specified by (i_index,j_index).                         
+ * The row associated with cell (iCell,jCell) represents a constraint and    
+ * therefore it must be satisfied exactly.
+ * The rest of the system is approximately solved in the least squares sense.
+ *                                                                          
+ * \note It is assumed that the (i_index[0],j_index[0]) is equal to          
+ *       (iCell,jCell). That is, the first line of A is a constrain!!!            
+ * The constraint is filled in the matrix A at the position (RowConstraint, StartCol).                                     
+ * The approximate equations are filled in the matrix starting from (StartRow, StartCol) position. 
+ *
+ * \param SolnBlk the quad block for which the solution reconstruction is done.
+ * \param ReconstructedSoln member function of Soln_Block_Type which returns the solution.
+ * \param iCell i-index of the reconstructed cell
+ * \param jCell j-index of the reconstructed cell
+ * \param ParameterIndex related to the indexes of the solution
+ * \param A the LHS assemble matrix 
+ * \param B the RHS assemble matrix
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::
+Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
+				    const Soln_State & 
+				    (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const,
+				    const int &iCell, const int &jCell,
+				    const IndexType & i_index, const IndexType & j_index,
+				    DenseMatrix & A, DenseMatrix & All_U,
+				    const IndexType & ParameterIndex,
+				    const int &RowConstraint,
+				    const int &StartRow, const int &StartCol){
+
+
+  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+
+  int StencilSize(i_index.size());
+  int ParameterIndexSize(ParameterIndex.size());
+  ColumnVector GeomWeights(StencilSize);   // The column vector of the geometric weights
+  Vector2D *DeltaCellCenters;              /* stores the difference between the cell center of
+					      neighbour cells and the one of (i,j) cell.
+					      The first value is 0!!! */
+  int IndexSumY, IndexSumX, P1, P2;
+  double CombP1X, CombP2Y;
+  double PowDistanceYC, PowDistanceXC;
+  int cell, i, parameter;
+  double MaxWeight(0.0);
+  double IntSum(0.0);
+
+  // Allocate memory
+  DeltaCellCenters = new Vector2D [StencilSize];
+
+  // START:   Set the bottom part of the LHS and RHS of the linear system 
+  // *********************************************************************
+
+  // Step1. Set the constraint equation
+  for (i=0; i <= CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+    A(RowConstraint,i+StartCol) = Geom->CellGeomCoeffValue(iCell,jCell,i);
+  }
+
+  for (parameter=0; parameter<ParameterIndexSize; ++parameter){
+    All_U(RowConstraint,parameter) = (SolnBlk.*ReconstructedSoln)(iCell,jCell)[ParameterIndex[parameter]];
+  }
+
+  // Step2. Compute the normalized geometric weights
+  for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
+
+    /* Compute the X and Y component of the distance between
+       the cell center of the neighbours and the reconstructed cell */
+    DeltaCellCenters[cell] = CellCenter(i_index[cell],j_index[cell]) - CellCenter(iCell,jCell);
+
+    /* Compute the geometric weight based on the centroid distance */
+    CENO_Geometric_Weighting(GeomWeights[cell], DeltaCellCenters[cell].abs());
+
+    /* Compute the maximum geometric weight (this is used for normalization) */
+    MaxWeight = max(MaxWeight, GeomWeights[cell]);
+  }
+
+  // Step3. Set the approximate equations
+  for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
+
+    // compute the normalized geometric weight
+    GeomWeights[cell] /= MaxWeight;
+
+    // *** SET the matrix A of the linear system (LHS) ***
+    /* compute for each derivative the corresponding entry in the matrix of the linear system */
+    for (i=0; i<=CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+      // build the row of the matrix
+      P1 = CellTaylorDeriv(iCell,jCell,i).P1();  // identify P1
+      P2 = CellTaylorDeriv(iCell,jCell,i).P2();  // identify P2
+      A(cell+StartRow-1,i+StartCol) = 0.0;  // set sumation variable to zero
+      CombP2Y = 1.0;                        // the binomial coefficient "nC k" for k=0 is 1
+      PowDistanceYC = 1.0; 	            // initialize PowDistanceYC
+
+      // Compute geometric integral over the neighbour's domain
+      for (IndexSumY = 0; IndexSumY<=P2; ++IndexSumY){
+	CombP1X = 1.0;       // the binomial coefficient "nC k" for k=0 is 1
+	PowDistanceXC = 1.0; // initialize PowDistanceXC
+	IntSum = 0.0;	     // reset internal sumation variable
+
+	for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
+	  IntSum += ( CombP1X*PowDistanceXC*
+		      Geom->CellGeomCoeffValue(i_index[cell],j_index[cell],P1-IndexSumX,P2-IndexSumY) );
+	    
+	  // update the binomial coefficients
+	  CombP1X = (P1-IndexSumX)*CombP1X/(IndexSumX+1);  // The index is still the old one => expression for "nC k+1"
+	  PowDistanceXC *= DeltaCellCenters[cell].x;       // Update PowDistanceXC
+	}//endfor (IndexSumX)
+
+	A(cell+StartRow-1,i+StartCol) += CombP2Y*PowDistanceYC*IntSum; // update the external sum
+
+	CombP2Y = (P2-IndexSumY)*CombP2Y/(IndexSumY+1); // the index is still the old one => expression for "nC k+1"
+	PowDistanceYC *= DeltaCellCenters[cell].y;      // Update PowDistanceYC
+      }//endfor (IndexSumY)
+
+      // apply geometric weighting
+      A(cell+StartRow-1,i+StartCol) *= GeomWeights(cell);
+
+    }//endfor (i)
+      
+    // *** SET the matrix All_U of the linear system (RHS) ***
+    for (parameter=0; parameter < ParameterIndexSize; ++parameter){
+      All_U(cell+StartRow-1,parameter) = ( GeomWeights(cell)*
+					   (SolnBlk.*ReconstructedSoln)(i_index[cell],j_index[cell])[ParameterIndex[parameter]] );
+    }
+  } //endfor (cell)
+
+
+  delete [] DeltaCellCenters;
+
+}
+
 #endif
