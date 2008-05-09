@@ -8,7 +8,7 @@
 # Set some default platform and version options
 PLATFORM = generic
 
-# NoMPI, MPICH, MPICH2, MPT (SG), OPENMPI
+# NoMPI, MPICH, MPICH2, MPT (SGI), OPENMPI
 
 MPI_VERSION = NoMPI
 
