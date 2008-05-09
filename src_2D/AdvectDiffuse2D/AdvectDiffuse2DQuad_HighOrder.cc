@@ -5284,3 +5284,614 @@ void AdvectDiffuse2D_Quad_Block::Analyse_HighOrder_Positivity_For_LaplacianOpera
 
 }
 
+/*!
+ * Set high-order boundary conditions.
+ */
+void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
+
+  int i, j, Vertex;
+  double Vn;
+  Vector2D PointOfInterest, Normal;
+  int NumGQP(Grid.getNumGQP());
+  Vector2D *GaussQuadPoints = new Vector2D [NumGQP]; // the GQPs for flux calculation points if low-order geometry is used
+
+  for ( j = JCl ; j <= JCu ; ++j ) {
+
+    // Prescribe West boundary conditions.
+    if (BC_WestCell() != NULL){
+      for (Vertex = 1; Vertex <= BC_WestCell(j).NumOfPoints(); ++Vertex){
+
+	switch(Grid.BCtypeW[j]) {	
+	case BC_FROZEN :
+	  throw runtime_error("BCs_HighOrder() ERROR! Frozen BC hasn't been implemented yet!");
+	  break;
+	case BC_NONE :
+	  break;
+
+	case BC_PERIODIC :
+	  throw runtime_error("BCs_HighOrder() ERROR! Periodic BC hasn't been implemented yet!");
+	  break;
+
+	case BC_INFLOW :	// Inflow BC is similar to a Dirichlet BC.
+	  // Use the inflow field to set up the reference states for this boundary type
+	  if (Inflow->IsInflowFieldSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( Grid.BndWestSplineInfo != NULL){
+	      PointOfInterest = Grid.BndWestSplineInfo[j].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_WestCell(j).DirichletBC(Vertex) = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_WestCell(j).a(Vertex) = 1.0;
+	    BC_WestCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_WestCell(j).b(Vertex) = 0.0;      
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+	  }
+	  break;
+
+	case BC_DIRICHLET :	// Use UoW as reference value
+	  // Dirichlet constraint
+	  BC_WestCell(j).DirichletBC(Vertex) = UoW[j];
+	  BC_WestCell(j).a(Vertex) = 1.0;
+	  BC_WestCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	  BC_WestCell(j).b(Vertex) = 0.0;
+	  break;
+
+	case BC_NEUMANN :
+	  // Neumann constraint
+	  BC_WestCell(j).DirichletBC(Vertex) = 0.0; // this value doesn't matter
+	  BC_WestCell(j).a(Vertex) = 0.0;
+	  BC_WestCell(j).NeumannBC(Vertex) =  UoW[j];
+	  BC_WestCell(j).b(Vertex) = 1.0;
+	  break;
+
+	case BC_FARFIELD :
+	  /* Farfield BC is implemented differently for flows that 
+	     enter the domain than for flows that leave the domain.
+	     Whether the flow enters of leaves the domain is decided based on
+	     the normal component of the velocity at the face midpoint.
+	     --> If the flow enters the domain then the reference data is used.
+	     --> If the flow leaves the domain then an outflow boundary condition is used. */
+
+	  // Compute the normal velocity
+	  // Determine the PointOfInterest if high-order boundaries are used
+	  if ( Grid.BndWestSplineInfo != NULL){
+	    PointOfInterest = Grid.BndWestSplineInfo[j].GQPoint(Vertex);
+	    Normal = Grid.BndWestSplineInfo[j].NormalGQPoint(Vertex);
+	  } else {
+	    // Determine the PointOfInterest if low-order boundaries are used
+	    Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
+	    PointOfInterest = GaussQuadPoints[Vertex-1];
+	    Normal = Grid.nfaceW(ICl,j);
+	  }
+	
+	  Vn = dot(VelocityAtLocation(PointOfInterest),
+		   Normal);
+	  
+	  if (Vn <= ZERO){
+	    // The flow enters the domain
+	    // Use UoW as reference value
+	    
+	    // Dirichlet constraint
+	    BC_WestCell(j).DirichletBC(Vertex) = UoW[j];
+	    BC_WestCell(j).a(Vertex) = 1.0;
+	    BC_WestCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_WestCell(j).b(Vertex) = 0.0;
+
+	  } else {
+	    // The flow leaves the domain
+	    // Impose outflow constraint
+
+	    // Neumann constraint
+	    BC_WestCell(j).DirichletBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_WestCell(j).a(Vertex) = 0.0;
+	    BC_WestCell(j).NeumannBC(Vertex) =  0.0;
+	    BC_WestCell(j).b(Vertex) = 1.0;
+	  }
+	  break;
+
+	case BC_SYMMETRY_PLANE :
+	  throw runtime_error("BCs_HighOrder() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_OUTFLOW :
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_WestCell(j).DirichletBC(Vertex) = 0.0; // this value doesn't matter
+	  BC_WestCell(j).a(Vertex) = 0.0;
+	  BC_WestCell(j).NeumannBC(Vertex) =  0.0;
+	  BC_WestCell(j).b(Vertex) = 1.0;
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXACT_SOLUTION :
+	  // Use the exact solution to set up the reference states for this boundary type
+	  if (ExactSoln->IsExactSolutionSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( Grid.BndWestSplineInfo != NULL){
+	      PointOfInterest = Grid.BndWestSplineInfo[j].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_WestCell(j).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_WestCell(j).a(Vertex) = 1.0;
+	    BC_WestCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_WestCell(j).b(Vertex) = 0.0;      
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	  break;
+
+	default:		
+	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");
+	  break;
+	} /* endswitch */
+      } /* endfor (Vertex) */
+    } // endif
+
+    // Prescribe East boundary conditions.
+    if (BC_EastCell() != NULL){
+      for (Vertex = 1; Vertex <= BC_EastCell(j).NumOfPoints(); ++Vertex){
+      
+	switch(Grid.BCtypeE[j]) {
+	case BC_FROZEN :
+	  throw runtime_error("BCs_HighOrder() ERROR! Frozen BC hasn't been implemented yet!");
+	case BC_NONE :
+	  break;
+	  
+	case BC_PERIODIC :
+	  throw runtime_error("BCs_HighOrder() ERROR! Periodic BC hasn't been implemented yet!");
+	  break;
+	  
+	case BC_INFLOW :	// Inflow BC is treated similar to a Dirichlet BC.
+	  // Use the inflow field to set up the reference states for this boundary type
+	  if (Inflow->IsInflowFieldSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( Grid.BndEastSplineInfo != NULL){
+	      PointOfInterest = Grid.BndEastSplineInfo[j].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_EastCell(j).DirichletBC(Vertex) = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_EastCell(j).a(Vertex) = 1.0;
+	    BC_EastCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_EastCell(j).b(Vertex) = 0.0;      
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+	  }
+	  break;
+	
+	case BC_DIRICHLET :	// Use UoE as reference value
+	  // Dirichlet constraint
+	  BC_EastCell(j).DirichletBC(Vertex) = UoE[j];
+	  BC_EastCell(j).a(Vertex) = 1.0;
+	  BC_EastCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	  BC_EastCell(j).b(Vertex) = 0.0;
+	  break;
+	  
+	case BC_NEUMANN :
+	  // Neumann constraint
+	  BC_EastCell(j).DirichletBC(Vertex) = 0.0; // this value doesn't matter
+	  BC_EastCell(j).a(Vertex) = 0.0;
+	  BC_EastCell(j).NeumannBC(Vertex) =  UoE[j];
+	  BC_EastCell(j).b(Vertex) = 1.0;
+	  break;
+
+	case BC_FARFIELD :
+	  /* Farfield BC is implemented differently for flows that 
+	     enter the domain than for flows that leave the domain.
+	     Whether the flow enters of leaves the domain is decided based on
+	     the normal component of the velocity at the face midpoint.
+	     --> If the flow enters the domain then the reference data is used.
+	     --> If the flow leaves the domain then an outflow boundary condition is used. */
+
+	  // Compute the normal velocity
+	  // Determine the PointOfInterest if high-order boundaries are used
+	  if ( Grid.BndEastSplineInfo != NULL){
+	    PointOfInterest = Grid.BndEastSplineInfo[j].GQPoint(Vertex);
+	    Normal = Grid.BndEastSplineInfo[j].NormalGQPoint(Vertex);
+	  } else {
+	    // Determine the PointOfInterest if low-order boundaries are used
+	    Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
+	    PointOfInterest = GaussQuadPoints[Vertex-1];
+	    Normal = Grid.nfaceE(ICu,j);
+	  }
+	
+	  Vn = dot(VelocityAtLocation(PointOfInterest),
+		   Normal);
+	  
+	  if (Vn <= ZERO){
+	    // The flow enters the domain
+	    // Use UoE as reference value
+	    
+	    // Dirichlet constraint
+	    BC_EastCell(j).DirichletBC(Vertex) = UoE[j];
+	    BC_EastCell(j).a(Vertex) = 1.0;
+	    BC_EastCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_EastCell(j).b(Vertex) = 0.0;
+
+	  } else {
+	    // The flow leaves the domain
+	    // Impose outflow constraint
+
+	    // Neumann constraint
+	    BC_EastCell(j).DirichletBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_EastCell(j).a(Vertex) = 0.0;
+	    BC_EastCell(j).NeumannBC(Vertex) =  0.0;
+	    BC_EastCell(j).b(Vertex) = 1.0;
+	  }
+	  break;
+
+	case BC_SYMMETRY_PLANE :
+	  throw runtime_error("BCs_HighOrder() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_OUTFLOW :
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_EastCell(j).DirichletBC(Vertex) = 0.0; // this value doesn't matter
+	  BC_EastCell(j).a(Vertex) = 0.0;
+	  BC_EastCell(j).NeumannBC(Vertex) =  0.0;
+	  BC_EastCell(j).b(Vertex) = 1.0;
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXACT_SOLUTION :
+	  // Use the exact solution to set up the reference states for this boundary type
+	  if (ExactSoln->IsExactSolutionSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( Grid.BndEastSplineInfo != NULL){
+	      PointOfInterest = Grid.BndEastSplineInfo[j].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_EastCell(j).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_EastCell(j).a(Vertex) = 1.0;
+	    BC_EastCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_EastCell(j).b(Vertex) = 0.0;      
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	  break;
+
+	default:	
+	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");	
+	  break;
+	} /* endswitch */
+      } /* endfor (Vertex) */	
+    } // endif
+
+  } /* endfor (j) */
+
+
+  for ( i = ICl ; i <= ICu ; ++i ) {
+
+    // Prescribe South boundary conditions.
+    if (BC_SouthCell() != NULL){
+      for (Vertex = 1; Vertex <= BC_SouthCell(i).NumOfPoints(); ++Vertex){
+
+	switch(Grid.BCtypeS[i]) {
+	case BC_FROZEN :
+	  throw runtime_error("BCs_HighOrder() ERROR! Frozen BC hasn't been implemented yet!");
+	  break;
+	case BC_NONE :
+	  break;
+      
+	case BC_PERIODIC :
+	  throw runtime_error("BCs_HighOrder() ERROR! Periodic BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC.
+	  // Use the inflow field to set up the reference states for this boundary type
+	  if (Inflow->IsInflowFieldSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( Grid.BndSouthSplineInfo != NULL){
+	      PointOfInterest = Grid.BndSouthSplineInfo[i].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_SouthCell(i).DirichletBC(Vertex) = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_SouthCell(i).a(Vertex) = 1.0;
+	    BC_SouthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_SouthCell(i).b(Vertex) = 0.0;      
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+	  }
+	  break;
+
+	case BC_DIRICHLET :	// Use UoS as reference value
+	  // Dirichlet constraint
+	  BC_SouthCell(i).DirichletBC(Vertex) = UoS[i];
+	  BC_SouthCell(i).a(Vertex) = 1.0;
+	  BC_SouthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	  BC_SouthCell(i).b(Vertex) = 0.0;
+	  break;
+      
+	case BC_NEUMANN :
+	  // Neumann constraint
+	  BC_SouthCell(i).DirichletBC(Vertex) = 0.0; // this value doesn't matter
+	  BC_SouthCell(i).a(Vertex) = 0.0;
+	  BC_SouthCell(i).NeumannBC(Vertex) =  UoS[i];
+	  BC_SouthCell(i).b(Vertex) = 1.0;
+	  break;
+
+	case BC_FARFIELD :
+	  /* Farfield BC is implemented differently for flows that 
+	     enter the domain than for flows that leave the domain.
+	     Whether the flow enters of leaves the domain is decided based on
+	     the normal component of the velocity at the face midpoint.
+	     --> If the flow enters the domain then the reference data is used.
+	     --> If the flow leaves the domain then an outflow boundary condition is used. */
+	
+	  // Compute the normal velocity
+	  // Determine the PointOfInterest if high-order boundaries are used
+	  if ( Grid.BndSouthSplineInfo != NULL){
+	    PointOfInterest = Grid.BndSouthSplineInfo[i].GQPoint(Vertex);
+	    Normal = Grid.BndSouthSplineInfo[i].NormalGQPoint(Vertex);
+	  } else {
+	    // Determine the PointOfInterest if low-order boundaries are used
+	    Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
+	    PointOfInterest = GaussQuadPoints[Vertex-1];
+	    Normal = Grid.nfaceS(i,JCl);
+	  }
+	
+	  Vn = dot(VelocityAtLocation(PointOfInterest),
+		   Normal);
+	
+	  if (Vn <= ZERO){
+	    // The flow enters the domain
+	    // Use UoS as reference value
+	  
+	    // Dirichlet constraint
+	    BC_SouthCell(i).DirichletBC(Vertex) = UoS[i];
+	    BC_SouthCell(i).a(Vertex) = 1.0;
+	    BC_SouthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_SouthCell(i).b(Vertex) = 0.0;
+	  
+	  } else {
+	    // The flow leaves the domain
+	    // Impose outflow constraint
+	  
+	    // Neumann constraint
+	    BC_SouthCell(i).DirichletBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_SouthCell(i).a(Vertex) = 0.0;
+	    BC_SouthCell(i).NeumannBC(Vertex) =  0.0;
+	    BC_SouthCell(i).b(Vertex) = 1.0;
+	  }
+	  break;
+	
+	case BC_SYMMETRY_PLANE :
+	  throw runtime_error("BCs_HighOrder() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_OUTFLOW :
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_SouthCell(i).DirichletBC(Vertex) = 0.0; // this value doesn't matter
+	  BC_SouthCell(i).a(Vertex) = 0.0;
+	  BC_SouthCell(i).NeumannBC(Vertex) =  0.0;
+	  BC_SouthCell(i).b(Vertex) = 1.0;
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  break;
+	
+	case BC_EXACT_SOLUTION :
+	  // Use the exact solution to set up the reference states for this boundary type
+	  if (ExactSoln->IsExactSolutionSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( Grid.BndSouthSplineInfo != NULL){
+	      PointOfInterest = Grid.BndSouthSplineInfo[i].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_SouthCell(i).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_SouthCell(i).a(Vertex) = 1.0;
+	    BC_SouthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_SouthCell(i).b(Vertex) = 0.0;      
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	  break;
+	
+	default:	
+	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");		
+	  break;
+	} /* endswitch */
+      } /* endfor (Vertex) */
+    } // endif    
+
+    // Prescribe North boundary conditions.
+    if (BC_NorthCell() != NULL){
+      for (Vertex = 1; Vertex <= BC_NorthCell(i).NumOfPoints(); ++Vertex){
+
+	switch(Grid.BCtypeN[i]) {
+	case BC_FROZEN :
+	  throw runtime_error("BCs_HighOrder() ERROR! Frozen BC hasn't been implemented yet!");
+	  break;
+	
+	case BC_NONE :
+	  break;
+      
+	case BC_PERIODIC :
+	  throw runtime_error("BCs_HighOrder() ERROR! Periodic BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC.
+	  // Use the inflow field to set up the reference states for this boundary type
+	  if (Inflow->IsInflowFieldSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( Grid.BndNorthSplineInfo != NULL){
+	      PointOfInterest = Grid.BndNorthSplineInfo[i].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_NorthCell(i).DirichletBC(Vertex) = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_NorthCell(i).a(Vertex) = 1.0;
+	    BC_NorthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_NorthCell(i).b(Vertex) = 0.0;      
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+	  }
+	  break;
+
+	case BC_DIRICHLET :	// Use UoN as reference value
+	  // Dirichlet constraint
+	  BC_NorthCell(i).DirichletBC(Vertex) = UoN[i];
+	  BC_NorthCell(i).a(Vertex) = 1.0;
+	  BC_NorthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	  BC_NorthCell(i).b(Vertex) = 0.0;
+	  break;
+      
+	case BC_NEUMANN :
+	  // Neumann constraint
+	  BC_NorthCell(i).DirichletBC(Vertex) = 0.0; // this value doesn't matter
+	  BC_NorthCell(i).a(Vertex) = 0.0;
+	  BC_NorthCell(i).NeumannBC(Vertex) =  UoN[i];
+	  BC_NorthCell(i).b(Vertex) = 1.0;
+	  break;
+      
+	case BC_FARFIELD :
+	  /* Farfield BC is implemented differently for flows that 
+	     enter the domain than for flows that leave the domain.
+	     Whether the flow enters of leaves the domain is decided based on
+	     the normal component of the velocity at the face midpoint.
+	     --> If the flow enters the domain then the reference data is used.
+	     --> If the flow leaves the domain then an outflow boundary condition is used. */
+
+	  // Compute the normal velocity
+	  // Determine the PointOfInterest if high-order boundaries are used
+	  if ( Grid.BndNorthSplineInfo != NULL){
+	    PointOfInterest = Grid.BndNorthSplineInfo[i].GQPoint(Vertex);
+	    Normal = Grid.BndNorthSplineInfo[i].NormalGQPoint(Vertex);
+	  } else {
+	    // Determine the PointOfInterest if low-order boundaries are used
+	    Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);
+	    PointOfInterest = GaussQuadPoints[Vertex-1];
+	    Normal = Grid.nfaceN(i,JCu);
+	  }
+	
+	  Vn = dot(VelocityAtLocation(PointOfInterest),
+		   Normal);
+	
+	  if (Vn <= ZERO){
+	    // The flow enters the domain
+	    // Use UoN as reference value
+	  
+	    // Dirichlet constraint
+	    BC_NorthCell(i).DirichletBC(Vertex) = UoN[i];
+	    BC_NorthCell(i).a(Vertex) = 1.0;
+	    BC_NorthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_NorthCell(i).b(Vertex) = 0.0;
+	  
+	  } else {
+	    // The flow leaves the domain
+	    // Impose outflow constraint
+	  
+	    // Neumann constraint
+	    BC_NorthCell(i).DirichletBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_NorthCell(i).a(Vertex) = 0.0;
+	    BC_NorthCell(i).NeumannBC(Vertex) =  0.0;
+	    BC_NorthCell(i).b(Vertex) = 1.0;
+	  }
+	  break;
+      
+	case BC_SYMMETRY_PLANE :
+	  throw runtime_error("BCs_HighOrder() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_OUTFLOW :
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_NorthCell(i).DirichletBC(Vertex) = 0.0; // this value doesn't matter
+	  BC_NorthCell(i).a(Vertex) = 0.0;
+	  BC_NorthCell(i).NeumannBC(Vertex) =  0.0;
+	  BC_NorthCell(i).b(Vertex) = 1.0;
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXACT_SOLUTION :
+	  // Use the exact solution to set up the reference states for this boundary type
+	  if (ExactSoln->IsExactSolutionSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( Grid.BndNorthSplineInfo != NULL){
+	      PointOfInterest = Grid.BndNorthSplineInfo[i].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_NorthCell(i).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_NorthCell(i).a(Vertex) = 1.0;
+	    BC_NorthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
+	    BC_NorthCell(i).b(Vertex) = 0.0;      
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	  break;
+
+	default:	
+	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");			
+	  break;
+	} /* endswitch */
+      } /* endfor (Vertex) */
+    } // endif    
+
+  } /* endfor */
+
+  delete [] GaussQuadPoints;
+  
+}

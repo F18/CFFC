@@ -60,8 +60,12 @@ void HighOrder2D_MultiBlock::Create_Initial_HighOrder_Variables(Quad_Soln_Block 
   if (HighOrder2D_Input::NumberOfHighOrderReconstructions != 0){
     for (i = 0 ; i <= LocalSolnBlockList.Nblk-1 ; ++i ) {
       if (LocalSolnBlockList.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+	// allocate high-order objects
 	Soln_ptr[i].allocate_HighOrder(HighOrder2D_Input::NumberOfHighOrderReconstructions,
 				       HighOrder2D_Input::OrdersOfReconstruction);
+	// allocate high-order boundary conditions
+	Soln_ptr[i].allocate_HighOrder_BoundaryConditions();
+
       } /* endif */
     }  /* endfor */
 

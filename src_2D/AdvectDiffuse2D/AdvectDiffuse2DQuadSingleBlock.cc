@@ -1564,6 +1564,10 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
     } /* endswitch */
   } /* endfor */
 
+
+  // Impose high-order boundary conditions
+  SolnBlk.BCs_HighOrder();
+
 }
 
 /******************************************************//**
