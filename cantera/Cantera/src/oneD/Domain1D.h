@@ -2,8 +2,8 @@
  *  @file Domain1D.h
  *
  *  $Author: dggoodwin $
- *  $Date: 2006/04/28 17:22:23 $
- *  $Revision: 1.17 $
+ *  $Date: 2007/05/04 14:41:27 $
+ *  $Revision: 1.23 $
  *
  *  Copyright 2002 California Institute of Technology
  *
@@ -13,8 +13,8 @@
 #define CT_DOMAIN1D_H
 
 
-#include "../xml.h"
-#include "../ctexceptions.h"
+#include "xml.h"
+#include "ctexceptions.h"
 #include "refine.h"
 
 
@@ -28,7 +28,8 @@ namespace Cantera {
     const int cSymmType         = 105;
     const int cOutletType       = 106;
     const int cEmptyType        = 107;
-    const int cOutletResType       = 108;
+    const int cOutletResType    = 108;
+    const int cPorousType       = 109;
 
     class MultiJac;
     class OneDim;
@@ -45,19 +46,19 @@ namespace Cantera {
          * @param nv      Number of variables at each grid point.
          * @param points  Number of grid points.
          */
-        Domain1D(int nv=1, int points=1, 
+        Domain1D(int nv=1, int points=1,
             doublereal time = 0.0) :
-            m_rdt(0.0),  
+            m_rdt(0.0),
             m_time(time),
-            m_container(0), 
+            m_container(0),
             m_index(-1),
             m_type(0),
             m_iloc(0),
             m_jstart(0),
-            m_left(0), 
+            m_left(0),
             m_right(0),
             m_id("-"), m_desc("-"),
-            m_refiner(0) {
+            m_refiner(0), m_bw(-1) {
             resize(nv, points);
         }
 
@@ -91,7 +92,33 @@ namespace Cantera {
             m_index = index;
         }
 
-        /** 
+        /*
+         * Set the Jacobian bandwidth. See the discussion of method bandwidth. 
+         */
+        void setBandwidth(int bw = -1) {
+            m_bw = bw;
+        }
+
+        /**
+         * Set the Jacobian bandwith for this domain.  When class
+         * OneDim computes the bandwidth of the overall multi-domain
+         * problem (in OneDim::resize()), it calls this method for the
+         * bandwidth of each domain. If setBandwidth has not been
+         * called, then a negative bandwidth is returned, in which
+         * case OneDim assumes that this domain is dense -- that is,
+         * at each point, all components depend on the value of all
+         * other components at that point. In this case, the bandwidth
+         * is bw = 2*nComponents() - 1. However, if this domain
+         * contains some components that are uncoupled from other
+         * components at the same point, then this default bandwidth
+         * may greatly overestimate the true bandwidth, with a
+         * substantial penalty in performance. For such domains, use
+         * method setBandwidth to specify the bandwidth before passing
+         * this domain to the Sim1D or OneDim constructor.
+         */
+        int bandwidth() { return m_bw; }
+
+        /**
          * Initialize. This method is called by OneDim::init() for
          * each domain once at the beginning of a simulation. Base
          * class method does nothing, but may be overloaded.
@@ -139,12 +166,12 @@ namespace Cantera {
         int nPoints() const { return m_points; }
 
         /// Name of the nth component. May be overloaded.
-        virtual string componentName(int n) const { 
+        virtual std::string componentName(int n) const {
             if (m_name[n] != "") return m_name[n];
-            else return "component " + int2str(n); 
+            else return "component " + int2str(n);
         }
 
-        void setComponentName(int n, string name) {
+        void setComponentName(int n, std::string name) {
             m_name[n] = name;
         }
 
@@ -153,7 +180,7 @@ namespace Cantera {
         }
 
         /// index of component with name \a name.
-        int componentIndex(string name) {
+        int componentIndex(std::string name) {
             int nc = nComponents();
             for (int n = 0; n < nc; n++) {
                 if (name == componentName(n)) return n;
@@ -165,14 +192,14 @@ namespace Cantera {
         /**
          * Set the lower and upper bounds for each solution component.
          */
-        void setBounds(int nl, const doublereal* lower, 
+        void setBounds(int nl, const doublereal* lower,
             int nu, const doublereal* upper) {
             if (nl < m_nv || nu < m_nv)
                 throw CanteraError("Domain1D::setBounds",
                     "wrong array size for solution bounds. "
                     "Size should be at least "+int2str(m_nv));
-            copy(upper, upper + m_nv, m_max.begin());
-            copy(lower, lower + m_nv, m_min.begin());
+            std::copy(upper, upper + m_nv, m_max.begin());
+            std::copy(lower, lower + m_nv, m_min.begin());
         }
 
         void setBounds(int n, doublereal lower, doublereal upper) {
@@ -180,8 +207,8 @@ namespace Cantera {
             m_max[n] = upper;
         }
 
-        /// set the error tolerances for all solution components. 
-        void setTolerances(int nr, const doublereal* rtol, 
+        /// set the error tolerances for all solution components.
+        void setTolerances(int nr, const doublereal* rtol,
             int na, const doublereal* atol, int ts = 0);
 
         /// set the error tolerances for solution component \a n.
@@ -197,7 +224,7 @@ namespace Cantera {
 
         //added by Karl Meredith
         void setTolerancesSS(doublereal rtol, doublereal atol);
-				
+
         /// Relative tolerance of the nth component.
         doublereal rtol(int n) { return (m_rdt == 0.0 ? m_rtol_ss[n] : m_rtol_ts[n]); }
 
@@ -217,10 +244,10 @@ namespace Cantera {
          * x0.
          */
         void initTimeInteg(doublereal dt, const doublereal* x0) {
-            copy(x0 + loc(), x0 + loc() + size(), m_slast.begin());
+          std::copy(x0 + loc(), x0 + loc() + size(), m_slast.begin());
             m_rdt = 1.0/dt;
-        } 
-        
+        }
+
         /**
          * Prepare to solve the steady-state problem.
          * Set the internally-stored reciprocal of the time step to 0,0
@@ -242,7 +269,7 @@ namespace Cantera {
         void needJacUpdate();
 
         /**
-         * Evaluate the steady-state residual at all points, even if in 
+         * Evaluate the steady-state residual at all points, even if in
          * transient mode. Used only to print diagnostic output.
          */
         void evalss(doublereal* x, doublereal* r, integer* mask) {
@@ -252,12 +279,12 @@ namespace Cantera {
         /**
          * Evaluate the residual function at point j. If j < 0,
          * evaluate the residual function at all points.
-         */         
-        virtual void eval(int j, doublereal* x, doublereal* r, 
+         */
+        virtual void eval(int j, doublereal* x, doublereal* r,
             integer* mask, doublereal rdt=0.0);
 
         virtual doublereal residual(doublereal* x, int n, int j) {
-            throw CanteraError("Domain1D::residual","residual function must be overloaded in derived class");
+            throw CanteraError("Domain1D::residual","residual function must be overloaded in derived class "+id());
         }
 
         int timeDerivativeFlag(int n) { return m_td[n];}
@@ -301,7 +328,7 @@ namespace Cantera {
                 m_jstart = 0;
                 m_iloc = 0;
             }
-            // if there is a domain to the right of this one, then 
+            // if there is a domain to the right of this one, then
             // repeat this for it
             if (m_right) m_right->locate();
         }
@@ -329,13 +356,13 @@ namespace Cantera {
          * called to update the global positions of this domain and
          * all those to its right.
          */
-        void linkLeft(Domain1D* left) { 
+        void linkLeft(Domain1D* left) {
             m_left = left;
             locate();
         }
 
         /**
-         * Set the right neighbor to domain 'right.' 
+         * Set the right neighbor to domain 'right.'
          */
         void linkRight(Domain1D* right) { m_right = right; }
 
@@ -363,26 +390,26 @@ namespace Cantera {
         double prevSoln(int n, int j) const {
             return m_slast[m_nv*j + n];
         }
-        
+
         /**
          * Specify an identifying tag for this domain.
          */
-        void setID(const string& s) {m_id = s;}
+        void setID(const std::string& s) {m_id = s;}
 
-        string id() { 
+        std::string id() {
             if (m_id != "") return m_id;
-            else return string("domain ") + int2str(m_index);
+            else return std::string("domain ") + int2str(m_index);
         }
 
         /**
          * Specify descriptive text for this domain.
          */
-        void setDesc(const string& s) {m_desc = s;}
-        const string& desc() { return m_desc; }
+        void setDesc(const std::string& s) {m_desc = s;}
+        const std::string& desc() { return m_desc; }
 
         virtual void getTransientMask(integer* mask){}
 
-        virtual void showSolution_s(ostream& s, const doublereal* x) {}
+        virtual void showSolution_s(std::ostream& s, const doublereal* x) {}
         virtual void showSolution(const doublereal* x);
 
         virtual void restore(const XML_Node& dom, doublereal* soln) {}
@@ -394,7 +421,7 @@ namespace Cantera {
         doublereal zmax() const { return m_z[m_points - 1]; }
 
 
-        void setProfile(string name, doublereal* values, doublereal* soln) {
+        void setProfile(std::string name, doublereal* values, doublereal* soln) {
             int n, j;
             for (n = 0; n < m_nv; n++) {
                 if (name == componentName(n)) {
@@ -440,13 +467,13 @@ namespace Cantera {
          * this domain that will be used as the initial guess. If no
          * such parameters need to be set, then method _finalize does
          * not need to be overloaded.
-         */ 
+         */
         virtual void _finalize(const doublereal* x) {}
 
         //added by Karl Meredith
         doublereal m_zfixed;
         doublereal m_tfixed;
-        
+
         bool m_adiabatic;
 
     protected:
@@ -467,10 +494,11 @@ namespace Cantera {
         int m_iloc;
         int m_jstart;
         Domain1D *m_left, *m_right;
-        string m_id, m_desc;
+        std::string m_id, m_desc;
         Refiner* m_refiner;
         vector_int m_td;
-        vector<string> m_name;
+        std::vector<std::string> m_name;
+        int m_bw;
 
     private:
 
@@ -478,5 +506,3 @@ namespace Cantera {
 }
 
 #endif
-
-

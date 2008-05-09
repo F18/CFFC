@@ -40,6 +40,9 @@ public:
   double operator()(const double &x, const double &y) const;
   double Solution(const double &x, const double &y) const;
   Vector2D Gradient(const double &x, const double &y) const;
+  double XDependencyIntegrated_Solution(const double &x, const double &y) const;
+  double PDE_RightHandSide(const double &x, const double &y) const;
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const;
   //@}
 
   //! Update the internal variables of the exact solution
@@ -91,4 +94,39 @@ inline Vector2D AdvectDiffuse2D_ExactSolutions::Gradient(const double &x, const 
   return ExactSoln->EvaluateGradientAt(x,y);
 }
 
+/*! 
+ * Evaluate the integral of the solution 
+ * with respect to x-coordinate.
+ * This function can be use to calculate the 
+ * integral of the solution over domains 
+ * with curved boundaries.
+ * \param x,y Cartesian coordinates
+ */
+inline double AdvectDiffuse2D_ExactSolutions::XDependencyIntegrated_Solution(const double &x, const double &y) const{
+  return ExactSoln->XDependencyIntegrated_Solution(x,y);
+}
+
+/*! 
+ * Evaluate the right-hand-side term of
+ * the equation to which the provided
+ * function is a solution.
+ * \param x,y Cartesian coordinates
+ */
+inline double AdvectDiffuse2D_ExactSolutions::PDE_RightHandSide(const double &x, const double &y) const{
+  return ExactSoln->PDE_RightHandSide(x,y);
+}
+
+/*! 
+ * Evaluate the integral of right-hand-side term 
+ * with respect to x-coordinate of the equation 
+ * to which the provided function is a solution.
+ * This function can be use to calculate the 
+ * integral of the right-hand-side term over 
+ * domains with curved boundaries.
+ * \param x,y Cartesian coordinates
+ */
+inline double AdvectDiffuse2D_ExactSolutions::XDependencyIntegrated_PDE_RightHandSide(const double &x,
+										      const double &y) const{
+  return ExactSoln->XDependencyIntegrated_PDE_RightHandSide(x,y);
+}
 #endif

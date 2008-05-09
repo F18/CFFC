@@ -8,7 +8,8 @@
 # Set some default platform and version options
 PLATFORM = generic
 
-# NoMPI, MPICH, MPICH2, MPT (SG)
+# NoMPI, MPICH, MPICH2, MPT (SGI), OPENMPI
+
 MPI_VERSION = NoMPI
 
 # NoICEMCFD, V41, V42. V43, V50, V10, V11
@@ -37,13 +38,19 @@ PROFILING = OFF
 # Do Checking:
 # Set to ON for checking conditions controled by the _DO_CHECKS macro
 # Set to OFF in order to run faster (no condition checking)
-DO_CHECKS = ON
+DO_CHECKS = OFF
 
 # Use 'assert' : Set to OFF if you want to use the 'assert' macro.
 #
 #                Set to ON if you want to DEACTIVATE the 'assert' macro (runs faster)!
 #                ATTENTION: All your checks with 'assert' will be turned OFF!!!!
 NO_ASSERT = OFF
+
+# Compile Chem2D coupled with Rte2D:
+# Set to ON for coupled solver
+# Set to OFF for Chem2D without Rte capability
+CHEM2D_WITH_RTE = OFF
+FLAME2D_WITH_RTE = OFF
 
 #-----------------------------------------------------------#
 #       Platform Specific Compiler Flags                    #
@@ -170,7 +177,7 @@ ifeq ($(PLATFORM),Linux_ia64)
   BLAS_LD_FLAGS   	  = -lblas -llapack -lg2c -lifcore
 endif	
 ifeq ($(PLATFORM),Linux_x86_64)
-  BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
+  BLAS_LD_FLAGS           = -lblas -llapack -lgcc 
 endif
 
 #
@@ -204,7 +211,10 @@ ifeq ($(CANTERA_VERSION),NoCANTERA)
 endif
 ifeq ($(CANTERA_VERSION),V70)
   CANTERA_CPP_FLAGS       =  -D_CANTERA_VERSION -D_CANTERA_V70 -I$(CANTERA_INC_DIR)
-  CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lctcxx
+  CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -lequil -lkinetics \
+                             -ltransport -lthermo -lctnumerics -lcvode -lctbase -lctlapack \
+                             -lctblas -lctmath -ltpx -lctspectra -lctf2c -lconverters \
+                             -lctcxx -lctf2c
 endif
 
 #
@@ -313,6 +323,24 @@ ifeq ($(PLATFORM),Linux_i386)
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
     DEPENDSFLAGS = 
   endif
+  ifeq ($(MPI_VERSION),OPENMPI)
+    FC = mpif77
+    F90 = mpif90
+    CC = mpicc
+    CXX = mpiCC
+    CPPFLAGS = -D_MPI_VERSION -D_MPI_VERSION2 -D_GNU_GCC_296 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
+    ifeq ($(GCC_VERSION),V3+)
+       CPPFLAGS = -D_MPI_VERSION -D_MPI_VERSION2 -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
+    endif
+    FFLAGS = -O -w
+    F90FLAGS = $(FFLAGS) -fdefault-real-8
+    MODFLAG = -M
+    CFLAGS = -O
+    CXXFLAGS = -O
+    LD = $(CXX)
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
+    DEPENDSFLAGS = 
+   endif
 endif
 
 #
@@ -327,8 +355,8 @@ ifeq ($(PLATFORM),Linux_alpha)
     FFLAGS = -arch host -tune host -fast -w
     F90FLAGS = $(FFLAGS) -r8
     MODFLAG = -module
-    CFLAGS = -arch host -tune host -fast -w 
-    CXXFLAGS = -arch host -tune host -fast -w -std gnu
+    CFLAGS = -arch host -tune host -fast -w -pending_instantiations 500
+    CXXFLAGS = -arch host -tune host -fast -w -std gnu -pending_instantiations 500
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm 
     ifeq ($(PROFILING),ON)
       FFLAGS   += -pg
@@ -348,8 +376,8 @@ ifeq ($(PLATFORM),Linux_alpha)
     FFLAGS = -arch host -tune host -fast -w
     F90FLAGS = $(FFLAGS) -r8
     MODFLAG = -module
-    CFLAGS = -arch host -tune host -fast -w
-    CXXFLAGS = -arch host -tune host -fast -w -std gnu
+    CFLAGS = -arch host -tune host -fast -w -pending_instantiations 500
+    CXXFLAGS = -arch host -tune host -fast -w -std gnu -pending_instantiations 500
     LD = $(CXX)
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
     ifeq ($(PROFILING),ON)
@@ -438,7 +466,14 @@ ifeq ($(PLATFORM),Linux_x86_64)
     F90FLAGS = $(FFLAGS) -fdefault-real-8
     MODFLAG = -M
     CFLAGS = -O2 
-    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
+    # Profiling with gprof 
+    ifeq ($(PROFILING),ON)
+      FFLAGS = -g -pg
+      CFLAGS = -g -pg 
+      CXXFLAGS = -g -pg 
+      LDFLAGS += -pg
+    endif
     LD = $(CXX)
     DEPENDSFLAGS =
   endif
@@ -528,7 +563,6 @@ ifeq ($(NO_ASSERT),ON)
   CPPFLAGS += -DNDEBUG
 endif
 
-#
 # Add proper precompile flag for solvers that include high-order ENO with CHARACTERISTICS
 # If you want your solver to include this feature add its name to the SOLVERS_LIST.
 SOLVERS_LIST := euler1D 
@@ -536,4 +570,13 @@ ifdef MAKECMDGOALS
 ifneq ($(strip $(filter $(MAKECMDGOALS), $(SOLVERS_LIST)) ), )
   CPPFLAGS += -D__INCLUDE_ENO_CHARACTERISTICS__
 endif
+endif
+
+#
+# Add 
+ifeq ($(CHEM2D_WITH_RTE),ON)
+  CPPFLAGS += -D_CHEM2D_WITH_RTE
+endif
+ifeq ($(FLAME2D_WITH_RTE),ON)
+  CPPFLAGS += -D_FLAME2D_WITH_RTE
 endif

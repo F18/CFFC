@@ -726,6 +726,21 @@ namespace tut
   }
 
 
+  /* Test 33:*/
+  template<>
+  template<>
+  void GLQ_Object::test<33>()
+  {
+ 
+    // Check
+    ensure_equals("GQ2 abscissa 1", GaussQuadratureData::GQ2_Abscissa[0], 0.2113248654051871177454256);
+    ensure_equals("GQ2 abscissa 2", GaussQuadratureData::GQ2_Abscissa[1], 0.7886751345948128822545744);
+
+    ensure_equals("GQ2 weight 1", GaussQuadratureData::GQ2_Weight[0], 0.5);
+    ensure_equals("GQ2 weight 2", GaussQuadratureData::GQ2_Weight[1], 0.5);
+  }
+
+
   // **********************************************
   //                 TEST SUITE: AGQ_TestSuite
   // **********************************************
@@ -2442,8 +2457,8 @@ namespace tut
     // Use error object
     NumericResultB = AdaptiveGaussianQuadrature(error,StartPointX,EndPointX,DummyParam);
 
-    ensure_distance("NumericResultA", NumericResultA, 466.7619047619047619, 1.0e-13);
-    ensure_distance("NumericResultB", NumericResultB, 47.2950836148489, 1.0e-13);
+    ensure_distance("NumericResultA", NumericResultA, 466.7619047619047619, AcceptedError(466.7619047619047619,1.0e-3));
+    ensure_distance("NumericResultB", NumericResultB, 47.2950836148489, AcceptedError(47.2950836148489,1.0e-13));
   }
 
 

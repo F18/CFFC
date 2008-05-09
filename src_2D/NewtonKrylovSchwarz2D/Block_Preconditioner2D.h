@@ -28,6 +28,7 @@ class Block_Preconditioner {
 
   void Get_Block_Index(const int &i, int *);
   void Get_Block_Index(const int &,const int &, int *, int *);
+  void Pre_Precon_SolnBlk_Init(void);
   void Setup_Jacobian_approximation();          //called from Create_Preconditioner
   void Setup_Preconditioner();                  //called from Update_Jacobian
   void Implicit_Euler(const int&,const int&, DenseMatrix*, const double& );     //called from Update_Jacobian       
@@ -90,6 +91,12 @@ class Block_Preconditioner {
  *  dFdU needs to be Provided By _Quad_Block Specialization  *
  *  otherwise the following errors will be shown.            *
  *************************************************************/ 
+template<typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
+inline void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
+Pre_Precon_SolnBlk_Init(void) {
+  // Do Nothing
+}
+
 template<typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 inline void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
 Preconditioner_dFIdU(DenseMatrix &dFdU, SOLN_VAR_TYPE W) {
@@ -362,6 +369,10 @@ Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
     if (SolnBlk->Grid.BCtypeE[SolnBlk->JCu] == BC_NONE)  ICu_overlap = Input_Parameters->NKS_IP.GMRES_Overlap;
     if (SolnBlk->Grid.BCtypeW[SolnBlk->JCl] == BC_NONE)  ICl_overlap = Input_Parameters->NKS_IP.GMRES_Overlap;
   }
+
+  //! Perform any specialized initialization of the solution block
+  //! before building the preconditioner
+  Pre_Precon_SolnBlk_Init();
 
   //*********************************************************************************//
   /*! Calculate Jacobians for each cell and Update Global Jacobian Block Matrix

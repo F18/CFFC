@@ -604,15 +604,15 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
   //Center calculated from neighbours
   //! Using the fact that dF/dU(right) = - dF/dU(left) 
   Jacobian[STENCIL_CENTER] += (Jacobian[STENCIL_NORTH] + Jacobian[STENCIL_SOUTH] + Jacobian[STENCIL_EAST]  + Jacobian[STENCIL_WEST] +
-			       Jacobian[STENCIL_BOTTOM] + Jacobian[STENCIL_TOP])/SolnBlk->Grid.volume(cell_index_i,cell_index_j,cell_index_k);
+			       Jacobian[STENCIL_BOTTOM] + Jacobian[STENCIL_TOP])/
+                              SolnBlk->Grid.Cell[cell_index_i][cell_index_j][cell_index_k].V;
 
-  Jacobian[STENCIL_NORTH] = -Jacobian[STENCIL_NORTH]/SolnBlk->Grid.volume(cell_index_i,cell_index_j-1,cell_index_k);
-  Jacobian[STENCIL_SOUTH] = -Jacobian[STENCIL_SOUTH]/SolnBlk->Grid.volume(cell_index_i,cell_index_j+1,cell_index_k);
-  Jacobian[STENCIL_EAST] = -Jacobian[STENCIL_EAST]/SolnBlk->Grid.volume(cell_index_i-1,cell_index_j,cell_index_k);
-  Jacobian[STENCIL_WEST] = -Jacobian[STENCIL_WEST]/SolnBlk->Grid.volume(cell_index_i+1,cell_index_j,cell_index_k);
-  Jacobian[STENCIL_TOP] = -Jacobian[STENCIL_TOP]/SolnBlk->Grid.volume(cell_index_i,cell_index_j,cell_index_k-1);
-  Jacobian[STENCIL_BOTTOM] = -Jacobian[STENCIL_BOTTOM]/SolnBlk->Grid.volume(cell_index_i,cell_index_j,cell_index_k+1);
-
+  Jacobian[STENCIL_NORTH] = -Jacobian[STENCIL_NORTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1][cell_index_k].V;
+  Jacobian[STENCIL_SOUTH] = -Jacobian[STENCIL_SOUTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1][cell_index_k].V;
+  Jacobian[STENCIL_EAST] = -Jacobian[STENCIL_EAST]/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j][cell_index_k].V;
+  Jacobian[STENCIL_WEST] = -Jacobian[STENCIL_WEST]/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j][cell_index_k].V;
+  Jacobian[STENCIL_TOP] = -Jacobian[STENCIL_TOP]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j][cell_index_k-1].V;
+  Jacobian[STENCIL_BOTTOM] = -Jacobian[STENCIL_BOTTOM]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j][cell_index_k+1].V;
 
 }
 

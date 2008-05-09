@@ -44,6 +44,10 @@ using namespace std;
 #include "../Physics/GasConstants.h"
 #endif // _GAS_CONSTANTS_INCLUDED
 
+#ifndef _INPUT_INCLUDED
+#include "../CFD/Input.h"
+#endif // INPUT_INCLUDED
+
 /* Define the classes. */
 
 class Euler3D_Polytropic_pState;
@@ -85,7 +89,7 @@ class Euler3D_Polytropic_cState;
  *  - ao            -- Return stagnation sound speed.
  *  - ho            -- Return stagnation enthalpy.
  *  - U             -- Return conserved solution state.
- *  - Fx            -- Return x-direction solution flux.
+ *  - F, Fx         -- Return x-direction solution flux.
  *  - Fy            -- Return y-direction solution flux.
  *  - Fz            -- Return z-direction solution flux.
  *  - dFxdU         -- Return x-direction jacobian.
@@ -93,21 +97,22 @@ class Euler3D_Polytropic_cState;
  *  - dFzdU         -- Return z-direction jacobian.
  *  - dUdW          -- Return solution variable jacobian.
  *  - dWdU          -- Return solution variable jacobian.
+ *  - lambda        -- Return x-direction eigenvalue.
  *  - lambda_x      -- Return x-direction eigenvalue.
  *  - lambda_y      -- Return y-direction eigenvalue.
  *  - lambda_z      -- Return z-direction eigenvalue.
- *  - rp_x          -- Return x-direction primitive right eigenvector.
+ *  - rp, rp_x      -- Return x-direction primitive right eigenvector.
  *  - rp_y          -- Return y-direction primitive right eigenvector.
  *  - rp_z          -- Return z-direction primitive right eigenvector.
- *  - rc_x          -- Return x-direction conserved right eigenvector.
+ *  - rc, rc_x      -- Return x-direction conserved right eigenvector.
  *  - rc_y          -- Return y-direction conserved right eigenvector.
  *  - rc_z          -- Return z-direction conserved right eigenvector.
- *  - lp_x          -- Return x-direction primitive left eigenvector.
+ *  - lp, lp_x      -- Return x-direction primitive left eigenvector.
  *  - lp_y          -- Return y-direction primitive left eigenvector.
  *  - lp_z          -- Return z-direction primitive left eigenvector.
  *  - RoeAverage    -- Return Roe average.
- *  - HartenFixPos  -- Return positive entropy fix of Harten.
- *  - HartenFixNeg  -- Return negative entropy fix of Harten.
+ *  - lambda_minus  -- Return negative eigenvalues, applying Harten entropy fix
+ *  - lambda_plus   -- Return positive eigenvalues, applying Harten entropy fix
  *  - FluxRoe_x     -- Return Roe's solution of Riemann problem in x-direction.
  *  - FluxRoe_y     -- Return Roe's solution of Riemann problem in y-direction.
  *  - FluxRoe_z     -- Return Roe's solution of Riemann problem in z-direction.
@@ -116,6 +121,10 @@ class Euler3D_Polytropic_cState;
  *  - FluxHLLE_y    -- Return HLLE solution of Riemann problem in y-direction.
  *  - FluxHLLE_z    -- Return HLLE solution of Riemann problem in z-direction.
  *  - FluxHLLE_n    -- Return HLLE solution of Riemann problem in n-direction.
+ *  - Reflect       -- Return reflected solution state after application of reflection BC
+ *  - MovingWall    -- Return wall solution state after application of moving wall BC
+ *  - NoSlip        -- Return wall solution state after application of no-slip BC
+ *
  *
  * Member operators \n
  *  W         -- a primitive solution state \n
@@ -147,7 +156,6 @@ class Euler3D_Polytropic_cState;
  */
 class Euler3D_Polytropic_pState{
 public: 
-	static int   num_vars;      //!< Number of variables 
 	double            rho;      //!< Density                   kg/m^3
 	Vector3D            v;      //!< Velocity                  m/s
 	double              p;      //!< Pressure                  Pa 
@@ -156,6 +164,8 @@ public:
 	static double    gm1i;      //!< 1/(g-1) 
 	static double       R;      //!< Gas constant R  
 	static char* gas_type;      //!< Gas type
+        static double    Mref;      //!< Reference Mach number for low-Mach-number precondtioning (normally set to incoming freestream Mach)
+
 
 /** @name Constructors and desctructors */
 /*        ----------------------------- */
@@ -203,6 +213,9 @@ public:
 //@{
     //! Return the number of variables.
     int NumVar(void) {
+        return NUM_VAR_EULER3D;
+    }
+    int NumVar(void) const {
         return NUM_VAR_EULER3D;
     }
 
@@ -295,7 +308,7 @@ public:
 /** @name Fluxes */
 /*        ------ */
 //@{
-    Euler3D_Polytropic_cState F(void);         //!< x-direction inviscid solution flux
+    Euler3D_Polytropic_cState F(void);          //!< x-direction inviscid solution flux
     Euler3D_Polytropic_cState Fx(void);         //!< x-direction inviscid solution flux
     Euler3D_Polytropic_cState Fy(void);         //!< y-direction inviscid solution flux
     Euler3D_Polytropic_cState Fz(void);         //!< z-direction inviscid solution flux
@@ -444,7 +457,9 @@ public:
     //! W = -W 
     friend Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W);
 
-// Shortcut arithmetic operators. 
+// Shortcut arithmetic operators.
+    //! W = W
+    Euler3D_Polytropic_pState &operator  =(const Euler3D_Polytropic_pState &W);
     //! W += W
     Euler3D_Polytropic_pState &operator +=(const Euler3D_Polytropic_pState &W);
     //! W -= W
@@ -478,7 +493,6 @@ public:
 /** @name Numerical Flux Functions */
 /*        ------------------------ */
 //@{
-//@{
     //! HLLE flux function in x-direction given 2 primitive states
     static Euler3D_Polytropic_cState FluxHLLE_x(const Euler3D_Polytropic_pState &Wl,
                                                 const Euler3D_Polytropic_pState &Wr);
@@ -505,7 +519,7 @@ public:
     static Euler3D_Polytropic_cState FluxHLLE_n(const Euler3D_Polytropic_cState &Ul,
                                                 const Euler3D_Polytropic_cState &Ur,
                                                 const Vector3D &norm_dir);
- 
+
     //! Roe flux function in x-direction given 2 primitive states
     static Euler3D_Polytropic_cState FluxRoe_x(const Euler3D_Polytropic_pState &Wl, 
                                                const Euler3D_Polytropic_pState &Wr);
@@ -528,7 +542,7 @@ public:
     static Euler3D_Polytropic_cState FluxRoe_n(const Euler3D_Polytropic_pState &Wl,
                                                const Euler3D_Polytropic_pState &Wr,
                                                const Vector3D &norm_dir);
-    //! Roe flux function in n-direction given 2 conservative states and a direction 
+    //! Roe flux function in n-direction given 2 conservative states and a direction
     static Euler3D_Polytropic_cState FluxRoe_n(const Euler3D_Polytropic_cState &Ul,
                                                const Euler3D_Polytropic_cState &Ur,
                                                const Vector3D &norm_dir);
@@ -555,6 +569,21 @@ public:
     static Vector2D HLLE_wavespeeds(const Euler3D_Polytropic_pState &Wl,
 				    const Euler3D_Polytropic_pState &Wr,
 				    const Vector3D &norm_dir);
+    
+    //! AUSM+-up flux function in x-direction given 2 primitive states
+    static Euler3D_Polytropic_cState FluxAUSMplus_up_x(const Euler3D_Polytropic_pState &Wl,
+                                                       const Euler3D_Polytropic_pState &Wr);
+    //! AUSM+-up flux function in x-direction given 2 conservative states
+    static Euler3D_Polytropic_cState FluxAUSMplus_up_x(const Euler3D_Polytropic_cState &Wl,
+                                                       const Euler3D_Polytropic_cState &Wr); 
+    //! AUSM+-up flux function in n-direction given 2 primitive states and a direction
+    static Euler3D_Polytropic_cState FluxAUSMplus_up_n(const Euler3D_Polytropic_pState &Wl,
+                                                       const Euler3D_Polytropic_pState &Wr,
+                                                       const Vector3D &norm_dir);
+    //! AUSM+-up flux function in n-direction given 2 conservative states and a direction
+    static Euler3D_Polytropic_cState FluxAUSMplus_up_n(const Euler3D_Polytropic_cState &Wl,
+                                                       const Euler3D_Polytropic_cState &Wr,
+                                                       const Vector3D &norm_dir);    
 
     //! Returns rotated primitive state aligned with a local x-direction
     Euler3D_Polytropic_pState Rotate(const Vector3D &norm_dir) const;
@@ -585,6 +614,25 @@ public:
                                             const Vector3D &pressure_gradient,
                                             const int &TEMPERATURE_BC_FLAG);
 //@}
+    
+/** @name Initial Conditions */
+/*        ------------------ */
+//@{
+    //! Return a fixed velocity profile depending on the input parameters
+    template<class SOLN_pSTATE, class SOLN_cSTATE>
+	static Euler3D_Polytropic_pState VelocityProfile(
+                                                     const Euler3D_Polytropic_pState &Wdum,
+                                                     Vector3D Xc,
+                                                     Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+    
+    //! Return a fixed pressure profile depending on the input parameters
+    template<class SOLN_pSTATE, class SOLN_cSTATE>
+    static Euler3D_Polytropic_pState PressureProfile(
+                                                     const Euler3D_Polytropic_pState &Wdum,
+                                                     Vector3D Xc,
+                                                     Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+//@}
+    
 };
 
 /*! 
@@ -644,7 +692,6 @@ public:
  */
 class Euler3D_Polytropic_cState{
 public:
-    static int     num_vars;      //!< Number of variables.
     double              rho;      //!< Density.
     Vector3D           rhov;      //!< Momentum.
     double                E;      //!< Total Energy.
@@ -701,6 +748,9 @@ public:
 //@{
     //! Return the number of variables.
     int NumVar(void) {
+        return NUM_VAR_EULER3D;
+    }
+    int NumVar(void) const {
         return NUM_VAR_EULER3D;
     }
 
@@ -833,14 +883,13 @@ public:
 /** @name Numerical Flux Functions */
 /*        ------------------------ */
 //@{
-//@{
     //! Returns rotated conserved state aligned with a local x-direction
     Euler3D_Polytropic_cState Rotate(const Vector3D &norm_dir) const;
 
     //! Returns un-rotated conserved state aligned with x-direction for global problem
     Euler3D_Polytropic_cState RotateBack(const Vector3D &norm_dir) const;
 //@}
-
+    
 /** @name Operators. */
 /*        ---------- */
 //@{
@@ -870,6 +919,8 @@ public:
     friend Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U);
 
 // Shortcut arithmetic operators.
+    //! U = U
+    Euler3D_Polytropic_cState& operator =(const Euler3D_Polytropic_cState &U);
     //! U += U
     Euler3D_Polytropic_cState& operator +=(const Euler3D_Polytropic_cState &U);
     //! U -= U
@@ -899,7 +950,6 @@ public:
     //! istream >> U
     friend istream& operator >> (istream &in_file,  Euler3D_Polytropic_cState &U);
 //@}
-
 };
 
 /***************************************************************************************
@@ -918,7 +968,7 @@ inline Euler3D_Polytropic_pState::Euler3D_Polytropic_pState(const Euler3D_Polytr
  * Euler3D_Polytropic_pState -- Index operators.                                       *
  ***************************************************************************************/
 inline double& Euler3D_Polytropic_pState::operator[](int index) {
-    assert( index >= 1 && index <= NUM_VAR_EULER3D );
+    assert( index >= 1 && index <= NumVar() );
     switch(index) {
         case 1 :
             return (rho);
@@ -936,7 +986,7 @@ inline double& Euler3D_Polytropic_pState::operator[](int index) {
 }
 
 inline const double& Euler3D_Polytropic_pState::operator[](int index) const {
-    assert( index >= 1 && index <= NUM_VAR_EULER3D );
+    assert( index >= 1 && index <= NumVar() );
     switch(index) {
         case 1 :
             return (rho);
@@ -958,12 +1008,12 @@ inline const double& Euler3D_Polytropic_pState::operator[](int index) const {
  ***************************************************************************************/
 inline Euler3D_Polytropic_pState operator +(const Euler3D_Polytropic_pState &W1, 
                                             const Euler3D_Polytropic_pState &W2) {
-    return (Euler3D_Polytropic_pState(W1.rho+W2.rho,W1.v+W2.v,W1.p+W2.p));
+    return (Euler3D_Polytropic_pState(W1.rho+W2.rho, W1.v+W2.v, W1.p+W2.p));
 }
 
 inline Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W1, 
                                             const Euler3D_Polytropic_pState &W2) {
-    return (Euler3D_Polytropic_pState(W1.rho-W2.rho,W1.v-W2.v, W1.p-W2.p));
+    return (Euler3D_Polytropic_pState(W1.rho-W2.rho, W1.v-W2.v, W1.p-W2.p));
 }
 
 inline double operator *(const Euler3D_Polytropic_pState &W1, 
@@ -973,17 +1023,17 @@ inline double operator *(const Euler3D_Polytropic_pState &W1,
 
 inline Euler3D_Polytropic_pState operator *(const Euler3D_Polytropic_pState &W, 
                                             const double &a) {
-    return (Euler3D_Polytropic_pState(a*W.rho,a*W.v.x,a*W.v.y, a*W.v.z, a*W.p));
+    return (Euler3D_Polytropic_pState(a*W.rho, a*W.v, a*W.p));
 }
 
 inline Euler3D_Polytropic_pState operator *(const double &a, 
                                             const Euler3D_Polytropic_pState &W) {
-    return (Euler3D_Polytropic_pState(a*W.rho,a*W.v.x,a*W.v.y, a*W.v.z,a*W.p));
+    return (Euler3D_Polytropic_pState(a*W.rho, a*W.v, a*W.p));
 }
 
 inline Euler3D_Polytropic_pState operator /(const Euler3D_Polytropic_pState &W, 
                                             const double &a) {
-    return (Euler3D_Polytropic_pState(W.rho/a, W.v.x/a, W.v.y/a, W.v.z/a,W.p/a));
+    return (Euler3D_Polytropic_pState(W.rho/a, W.v/a, W.p/a));
 }
 
 inline Euler3D_Polytropic_pState operator ^(const Euler3D_Polytropic_pState &W1, 
@@ -998,30 +1048,39 @@ inline Euler3D_Polytropic_pState operator ^(const Euler3D_Polytropic_pState &W1,
 /***************************************************************************************
  * Euler3D_Polytropic_pState -- Shortcut arithmetic operators.                         *
  ***************************************************************************************/
+inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator =(const Euler3D_Polytropic_pState &W) {
+    if(this != &W) {
+        rho = W.rho; 
+        v = W.v;
+        p = W.p;
+    }
+    return *this;
+}
+
 inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator +=(const Euler3D_Polytropic_pState &W) {
     rho += W.rho; 
-    v.x += W.v.x; v.y += W.v.y;	v.z += W.v.z;
+    v += W.v;
     p += W.p;
     return *this;
 }
 
 inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator -=(const Euler3D_Polytropic_pState &W) {
     rho -= W.rho; 
-    v.x -= W.v.x; v.y -= W.v.y;	v.z -= W.v.z;
+    v -= W.v;
     p -= W.p;
     return *this;
 }
 
 inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator *=(const double &a) {
     rho *= a; 
-    v.x *= a; v.y *= a;	v.z *= a; 
+    v *= a; 
     p *= a;
     return *this;
 }
 
 inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator /=(const double &a) {
     rho /= a; 
-    v.x /= a; v.y /= a; v.z /= a;
+    v /= a;
     p /= a;
     return *this;
 }
@@ -1030,7 +1089,7 @@ inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator /=(const d
  * Euler3D_Polytropic_pState -- Unary arithmetic operators.                            *
  ***************************************************************************************/
 inline Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W) {
-    return (Euler3D_Polytropic_pState(-W.rho,-W.v.x, -W.v.y, -W.v.z, -W.p));
+    return (Euler3D_Polytropic_pState(-W.rho, -W.v, -W.p));
 }
 
 /***************************************************************************************
@@ -1080,8 +1139,7 @@ inline ostream& operator << (ostream &out_file,
 inline istream& operator >> (istream &in_file,  
                              Euler3D_Polytropic_pState &W) {
     in_file.setf(ios::skipws);
-    in_file >> W.rho >> W.v.x >> W.v.y >> W.v.z 
-        >> W.p;
+    in_file >> W.rho >> W.v.x >> W.v.y >> W.v.z >> W.p;
     in_file.unsetf(ios::skipws);
     return (in_file);
 }
@@ -1094,7 +1152,7 @@ inline istream& operator >> (istream &in_file,
  * Euler3D_Polytropic_cState -- Index operators.                                       *
  ***************************************************************************************/
 inline double& Euler3D_Polytropic_cState::operator[](int index) {
-    assert( index >= 1 && index <= NUM_VAR_EULER3D );
+    assert( index >= 1 && index <= NumVar() );
     switch(index) {
         case 1 :
             return (rho);
@@ -1112,7 +1170,7 @@ inline double& Euler3D_Polytropic_cState::operator[](int index) {
 }
 
 inline const double& Euler3D_Polytropic_cState::operator[](int index) const {
-    assert( index >= 1 && index <= NUM_VAR_EULER3D );
+    assert( index >= 1 && index <= NumVar() );
     switch(index) {
         case 1 :
             return (rho);
@@ -1134,12 +1192,12 @@ inline const double& Euler3D_Polytropic_cState::operator[](int index) const {
  ***************************************************************************************/
 inline Euler3D_Polytropic_cState operator +(const Euler3D_Polytropic_cState &U1, 
                                             const Euler3D_Polytropic_cState &U2) {
-    return (Euler3D_Polytropic_cState(U1.rho+U2.rho,U1.rhov+U2.rhov,U1.E+U2.E));
+    return (Euler3D_Polytropic_cState(U1.rho+U2.rho, U1.rhov+U2.rhov, U1.E+U2.E));
 }
 
 inline Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U1, 
                                             const Euler3D_Polytropic_cState &U2) {
-    return (Euler3D_Polytropic_cState(U1.rho-U2.rho,U1.rhov-U2.rhov,U1.E-U2.E));
+    return (Euler3D_Polytropic_cState(U1.rho-U2.rho, U1.rhov-U2.rhov, U1.E-U2.E));
 }
 
 inline double operator *(const Euler3D_Polytropic_cState &U1, 
@@ -1174,6 +1232,15 @@ inline Euler3D_Polytropic_cState operator ^(const Euler3D_Polytropic_cState &U1,
 /***************************************************************************************
  * Euler3D_Polytropic_cState -- Shortcut arithmetic operators.                         *
  ***************************************************************************************/
+inline Euler3D_Polytropic_cState& Euler3D_Polytropic_cState::operator =(const Euler3D_Polytropic_cState &U) {
+    if(this != &U) {
+        rho = U.rho; 
+        rhov = U.rhov;
+        E = U.E;
+    }
+    return *this;
+}
+
 inline Euler3D_Polytropic_cState& Euler3D_Polytropic_cState::operator +=(const Euler3D_Polytropic_cState &U) {
     rho += U.rho;
     rhov += U.rhov;
@@ -1190,14 +1257,14 @@ inline Euler3D_Polytropic_cState& Euler3D_Polytropic_cState::operator -=(const E
 
 inline Euler3D_Polytropic_cState& Euler3D_Polytropic_cState::operator *=(const double &a) {
     rho *= a;
-    rhov.x *= a; rhov.y *= a; rhov.z *= a;
+    rhov *= a;
     E *= a;
     return *this;
 }
 
 inline Euler3D_Polytropic_cState& Euler3D_Polytropic_cState::operator /=(const double &a) {
     rho /= a;
-    rhov.x /= a; rhov.y /= a; rhov.z /= a;
+    rhov /= a;
     E /= a;
     return *this;
 }
@@ -1206,7 +1273,7 @@ inline Euler3D_Polytropic_cState& Euler3D_Polytropic_cState::operator /=(const d
  * Euler3D_Polytropic_cState -- Unary arithmetic operators.                            *
  ***************************************************************************************/
 inline Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U) {
-    return (Euler3D_Polytropic_cState(-U.rho,-U.rhov,-U.E));
+    return (Euler3D_Polytropic_cState(-U.rho, -U.rhov, -U.E));
 }
 
 /***************************************************************************************
@@ -1278,5 +1345,29 @@ const Euler3D_Polytropic_cState Euler3D_U_STDATM(Euler3D_W_STDATM);
 //! Vacuum conservative state
 const Euler3D_Polytropic_cState Euler3D_U_VACUUM(Euler3D_W_VACUUM);
 //@}
+
+
+/* ----------------------------------------------------------------------------- *
+ *                      Some templated functions.                                *
+ * ----------------------------------------------------------------------------- */
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+Euler3D_Polytropic_pState Euler3D_Polytropic_pState::PressureProfile(
+                                                                     const Euler3D_Polytropic_pState &Wdum,
+                                                                     Vector3D Xc,
+                                                                     Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+	/* No Pressure profile implemented for Euler3D */
+	return Wdum;
+}
+
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+Euler3D_Polytropic_pState Euler3D_Polytropic_pState::VelocityProfile(
+                                                                     const Euler3D_Polytropic_pState &Wdum,
+                                                                     Vector3D Xc,
+                                                                     Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+    /* No Velocity profile implemented for Euler3D */
+    return Wdum;
+}
+
+
 
 #endif /* _EULER3D_POLYTROPIC_STATE_INCLUDED  */

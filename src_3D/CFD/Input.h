@@ -44,7 +44,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
   Input_Parameters(const CFD_Input_Parameters &IP) : CFD_Input_Parameters() { }
 
   //! Destructor
-  ~Input_Parameters(void){ }
+  ~Input_Parameters(void){ Deallocate_Static(); }
   //@}
 
   //@{ @name Other Member functions:
@@ -61,6 +61,8 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
   void Read_Reference_Solution_States(istream &restart_file);
   //! Write reference solution states
   void Write_Reference_Solution_States(ostream &restart_file);
+  //! Deallocate static data of reference solution states
+  void Deallocate_Static(void);
   //@}
 
   //@{ @name Input-output operators:
@@ -120,7 +122,7 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Broadcast(void) {
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
-                    Parse_Next_Input_Control_Parameter(void) {
+Parse_Next_Input_Control_Parameter(void) {
 
    int i_command;
 
@@ -143,8 +145,8 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Input_Parameters<SOLN_pSTATE,SOLN_cSTATE>::
-                    Process_Input_Control_Parameter_File(char *Input_File_Name_ptr,
-                                                         int &Command_Flag) {
+Process_Input_Control_Parameter_File(char *Input_File_Name_ptr,
+                                     int &Command_Flag) {
 
    int error_flag;
    
@@ -176,7 +178,7 @@ int Input_Parameters<SOLN_pSTATE,SOLN_cSTATE>::
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
-                     Set_Reference_Solution_States(void) {
+Set_Reference_Solution_States(void) {
 
    cerr << "\n Explicit Specialization of "
         << "Input_Parameters::Set_Reference_Solution_States "
@@ -193,7 +195,7 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
-                     Read_Reference_Solution_States(istream &restart_file) {
+Read_Reference_Solution_States(istream &restart_file) {
 
    cerr << "\n Explicit Specialization of "
         << "Input_Parameters::Read_Reference_Solution_States "
@@ -210,11 +212,29 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
-                     Write_Reference_Solution_States(ostream &restart_file) {
+Write_Reference_Solution_States(ostream &restart_file) {
 
    cerr << "\n Explicit Specialization of "
         << "Input_Parameters::Write_Reference_Solution_States "
         << "in Input.h requried.\n";
+   exit(1);
+
+}
+
+/********************************************************
+ * Routine: Deallocate_Static                           *
+ *                                                      *
+ * Deallocate static data of the reference solution     * 
+ * states.                                              *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
+                     Deallocate_Static(void) {
+
+   cerr << "\n Explicit Specialization of "
+        << "Input_Parameters::Deallocate_Static "
+        << "in Input.h required.\n";
    exit(1);
 
 }

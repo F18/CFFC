@@ -4,9 +4,9 @@
  *   Header file defining class SolidTransport
  */
 
-/* $Author: dggoodwin $
- * $Revision: 1.1 $
- * $Date: 2003/07/04 06:37:44 $
+/* $Author: hkmoffa $
+ * $Revision: 1.3 $
+ * $Date: 2007/07/26 21:55:32 $
  */
 
 // Copyright 2003  California Institute of Technology
@@ -29,11 +29,10 @@
 #include <numeric>
 #include <algorithm>
 
-using namespace std;
 
 // Cantera includes
 #include "TransportBase.h"
-#include "../DenseMatrix.h"
+#include "DenseMatrix.h"
 
 namespace Cantera {
 

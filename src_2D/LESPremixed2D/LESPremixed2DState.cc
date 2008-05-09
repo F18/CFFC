@@ -3226,7 +3226,7 @@ LESPremixed2D_cState LESPremixed2D_pState::Sw(int &REACT_SET_FLAG,
   //Adds concentration rate of change for species 1->N
   if( REACT_SET_FLAG != NO_REACTIONS){
     //bool test = negative_speccheck();            //FOR TESTING 
-    React.omega<LESPremixed2D_pState,LESPremixed2D_cState>(NEW,*this,Flow_Type );  
+    React.omega<LESPremixed2D_pState,LESPremixed2D_cState>(NEW,*this, Flow_Type);  
   }
 
 #ifdef THICKENED_FLAME_ON
@@ -3238,7 +3238,7 @@ LESPremixed2D_cState LESPremixed2D_pState::Sw(int &REACT_SET_FLAG,
 
 /************* Chemical Source Term Jacobian ****************************/
 void LESPremixed2D_pState::dSwdU(DenseMatrix &dSwdU, const int &Flow_Type,const int &solver_type) const {
-  React.dSwdU<LESPremixed2D_pState,LESPremixed2D_cState>(dSwdU,*this,false, Flow_Type,solver_type);
+  React.dSwdU<LESPremixed2D_pState,LESPremixed2D_cState>(dSwdU, *this, false, Flow_Type, solver_type);
 
 #ifdef THICKENED_FLAME_ON
   dSwdU = (flame.WF/flame.TF)*dSwdU;

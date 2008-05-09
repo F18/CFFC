@@ -28,7 +28,7 @@ class Kinetics:
                     the specification of the parameters.
         """
         np = len(phases)
-        self._np = np
+        #self._np = np
         self._sp = []
         self._phnum = {}
 
@@ -54,9 +54,10 @@ class Kinetics:
 
         self.ckin = _cantera.KineticsFromXML(xml_phase,
                                                  p0, p1, p2, p3, p4)
-        
+
+        self._np = self.nPhases()
         for nn in range(self._np):
-                p = phases[nn] # self.phase(nn)
+                p = self.phase(nn)
                 self._phnum[p.thermophase()] = nn
                 self._end.append(self._end[-1]+p.nSpecies())
                 for k in range(p.nSpecies()):
@@ -101,6 +102,14 @@ class Kinetics:
         """The starting location of phase n in production rate arrays."""
         return _cantera.kin_start(self.ckin, n)
 
+    def nPhases(self):
+        """Number of phases."""
+        return _cantera.kin_nPhases(self.ckin)
+
+    def reactionPhaseIndex(self):
+        """The phase in which the reactions take place."""
+        return _cantera.kin_reactionPhaseIndex(self)
+    
     def phase(self, n):
         """Return an object representing the nth phase."""
         return ThermoPhase(index = _cantera.kin_phase(self.ckin, n))
@@ -265,6 +274,24 @@ class Kinetics:
     def sourceTerms(self):
         return _cantera.kin_getarray(self.ckin,80)        
 
+    def delta_H(self):
+        return _cantera.kin_getarray(self.ckin,90)
+
+    def delta_G(self):
+        return _cantera.kin_getarray(self.ckin,91)
+    
+    def delta_S(self):
+        return _cantera.kin_getarray(self.ckin,92)    
+    
+    def delta_H0(self):
+        return _cantera.kin_getarray(self.ckin,93)
+
+    def delta_G0(self):
+        return _cantera.kin_getarray(self.ckin,94)    
+
+    def delta_S0(self):
+        return _cantera.kin_getarray(self.ckin,95)
+    
     def multiplier(self,i):
         return _cantera.kin_multiplier(self.ckin,i)
 

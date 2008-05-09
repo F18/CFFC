@@ -199,6 +199,7 @@ class NavierStokes3D_ThermallyPerfect_pState : public Euler3D_ThermallyPerfect_p
    //! Mixture dynamic viscosity
    double mu(void);    
    double dmudT(void);
+   double nu(void);
 
    //! Mixture thermal conductivity
    double kappa(void);
@@ -538,6 +539,7 @@ class NavierStokes3D_ThermallyPerfect_cState : public Euler3D_ThermallyPerfect_c
    //! Mixture dynamic viscosity
    double mu(void);    
    double dmudT(void);
+   double nu(void);
 
    //! Mixture thermal conductivity
    double kappa(void);

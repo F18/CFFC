@@ -3,6 +3,23 @@
 #include "LES3DThickenedFlameInput.h"
 #endif // _LES3DTF_INPUT_INCLUDED
 
+
+/********************************************************
+ * Routine: Deallocate_Static                           *
+ *                                                      *
+ * Deallocate static data of the reference solution     * 
+ * states.                                              *
+ *                                                      *
+ ********************************************************/
+template<>
+void Input_Parameters<LES3DTF_pState, 
+                      LES3DTF_cState>::Deallocate_Static(void) {
+
+  Wo.Deallocate_static(); 
+  Uo.Deallocate_static();
+
+}
+
 /********************************************************
  * Routine: Set_Reference_Solution_States               *
  *                                                      *
@@ -47,6 +64,16 @@ void Input_Parameters<LES3DTF_pState,
     Wo.set_initial_values(Species_IP.mass_fractions);
     Uo.set_initial_values(Species_IP.mass_fractions);
 
+    // Set some modelling parameters.
+    Wo.set_modelling_data(Turbulence_IP.Laminar_Flame_Speed,
+			  Turbulence_IP.Laminar_Flame_Thickness,
+			  Turbulence_IP.Thickening_Factor,
+			  Turbulence_IP.Filter_Width);
+    Uo.set_modelling_data(Turbulence_IP.Laminar_Flame_Speed,
+			  Turbulence_IP.Laminar_Flame_Thickness,
+			  Turbulence_IP.Thickening_Factor,
+			  Turbulence_IP.Filter_Width);  
+      
     // Set reference solution states.
     Wo.rho = 1.13; 
     Wo.p = Pressure;	
@@ -100,6 +127,12 @@ void Input_Parameters<LES3DTF_pState,
        restart_file >> Species_IP.mass_fractions[i] >> Species_IP.Schmidt[i];
     } /* endfor */
 
+    // Read in modelling data.
+    restart_file >> Turbulence_IP.Laminar_Flame_Speed 
+		 >> Turbulence_IP.Laminar_Flame_Thickness
+		 >> Turbulence_IP.Thickening_Factor
+		 >> Turbulence_IP.Filter_Width;
+
     restart_file.unsetf(ios::skipws);
 
     // Set reference solution states.
@@ -136,6 +169,12 @@ void Input_Parameters<LES3DTF_pState,
       restart_file << Species_IP.mass_fractions[i] << " " 
                    << Species_IP.Schmidt[i] << endl;
     } /* endfor */
+
+    // Write out modelling data.
+    restart_file << Turbulence_IP.Laminar_Flame_Speed     << " "
+		 << Turbulence_IP.Laminar_Flame_Thickness << " "
+		 << Turbulence_IP.Thickening_Factor       << " "
+		 << Turbulence_IP.Filter_Width            << endl;
 
     // Write reference solution states.
     restart_file << Wo << endl << Uo << endl;

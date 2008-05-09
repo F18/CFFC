@@ -559,6 +559,12 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_RAREFACTION_WAVE_YDIR;
        } else if (strcmp(ICs_Type, "ShockBox") == 0) {
           i_ICs = IC_SHOCK_BOX;
+       } else if (strcmp(ICs_Type, "ShockBox_XY") == 0) {
+           i_ICs = IC_SHOCK_BOX_XY;
+       } else if (strcmp(ICs_Type, "ShockBox_XZ") == 0) {
+           i_ICs = IC_SHOCK_BOX_XZ;
+       } else if (strcmp(ICs_Type, "ShockBox_YZ") == 0) {
+           i_ICs = IC_SHOCK_BOX_YZ;
        } else if (strcmp(ICs_Type, "High_Pressure_Reservoir") == 0) {
           i_ICs = IC_HIGH_PRESSURE_RESERVOIR;
        } else if (strcmp(ICs_Type, "Low_Pressure_Reservoir") == 0) {
@@ -592,7 +598,9 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        } else if (strcmp(ICs_Type, "Couette_Pressure_Gradient_z") == 0 ) {
           i_ICs = IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Z;
        } else if (strcmp(ICs_Type, "1DPremixedFlame") == 0 ) {
-          i_ICs = IC_CHEM_1DFLAME;  
+          i_ICs = IC_CHEM_1DFLAME; 
+       } else if (strcmp(ICs_Type, "Flat_Plate") == 0) {
+          i_ICs = IC_VISCOUS_FLAT_PLATE;
        } else if (strcmp(ICs_Type, "Pipe_Flow") == 0) {
           i_ICs = IC_TURBULENT_PIPE_FLOW;
        } else if (strcmp(ICs_Type, "Coflow") == 0) {
@@ -601,6 +609,8 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_VISCOUS_DRIVEN_CAVITY_FLOW;
        } else if (strcmp(ICs_Type, "Turbulent_Dump_Combustor") == 0) {
           i_ICs = IC_TURBULENT_DUMP_COMBUSTOR;
+       } else if (strcmp(ICs_Type, "Channel_Flow") == 0) {
+          i_ICs = IC_CHANNEL_FLOW;
        } else if (strcmp(ICs_Type, "Laminar_Channel_Flow") == 0) {
           i_ICs = IC_CHANNEL_FLOW;
        } else if (strcmp(ICs_Type, "Turbulent_Channel_Flow") == 0) {
@@ -609,13 +619,134 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_TURBULENT_DIFFUSION_FLAME;
        } else if (strcmp(ICs_Type, "Turbulent_Free_Jet_Flame") == 0) {
           i_ICs = IC_FREE_JET_FLAME;
-       }else if (strcmp(ICs_Type, "Turbulent_Premixed_Flame") == 0) {
+       } else if (strcmp(ICs_Type, "Turbulent_Premixed_Flame") == 0) {
           i_ICs = IC_TURBULENT_PREMIXED_FLAME;
+       }else if (strcmp(ICs_Type, "Turbulent_Bunsen_Flame") == 0) {
+          i_ICs = IC_TURBULENT_BUNSEN_FLAME;
+       }else if (strcmp(ICs_Type, "Turbulent_Bunsen_Box") == 0) {
+          i_ICs = IC_TURBULENT_BUNSEN_BOX;
+       }else if (strcmp(ICs_Type, "Turbulent_Box") == 0) {
+          i_ICs = IC_TURBULENT_BOX;
        } else if (strcmp(ICs_Type, "Restart") == 0) {
           i_ICs = IC_RESTART;
        } else {
           i_command = INVALID_INPUT_VALUE;
        } /* endif */
+       if (i_ICs != IC_RESTART) {
+           i_Original_ICs = i_ICs;
+           strcpy(Original_ICs_Type, ICs_Type);
+       }
+        
+    } else if (strcmp(code, "Original_ICs_Type") == 0) {
+        i_command = 100;
+        value_stream >> value_string;
+        strcpy(Original_ICs_Type, value_string.c_str());
+        if (strcmp(Original_ICs_Type, "Constant") == 0) {
+            i_Original_ICs = IC_CONSTANT;
+        } else if (strcmp(Original_ICs_Type, "Uniform") == 0) {
+            i_Original_ICs = IC_UNIFORM;
+        } else if (strcmp(Original_ICs_Type, "Sod") == 0) {
+            i_Original_ICs = IC_SOD;
+        } else if (strcmp(Original_ICs_Type, "Sod_Xdir") == 0) {
+            i_Original_ICs = IC_SOD_XDIR;
+        } else if (strcmp(Original_ICs_Type, "Sod_Ydir") == 0) {
+            i_Original_ICs = IC_SOD_YDIR;
+        } else if (strcmp(Original_ICs_Type, "Sod_Zdir") == 0) {
+            i_Original_ICs = IC_SOD_ZDIR;
+        } else if (strcmp(Original_ICs_Type, "Groth") == 0) {
+            i_Original_ICs = IC_GROTH;
+        } else if (strcmp(Original_ICs_Type, "Groth_Xdir") == 0) {
+            i_Original_ICs = IC_GROTH_XDIR;
+        } else if (strcmp(Original_ICs_Type, "Groth_Ydir") == 0) {
+            i_Original_ICs = IC_GROTH_YDIR;
+        } else if (strcmp(Original_ICs_Type, "Einfeldt") == 0) {
+            i_Original_ICs = IC_EINFELDT;
+        } else if (strcmp(Original_ICs_Type, "Einfeldt_Xdir") == 0) {
+            i_Original_ICs = IC_EINFELDT_XDIR;
+        } else if (strcmp(Original_ICs_Type, "Einfeldt_Ydir") == 0) {
+            i_Original_ICs = IC_EINFELDT_YDIR;
+        } else if (strcmp(Original_ICs_Type, "Shock_Wave_Xdir") == 0) {
+            i_Original_ICs = IC_SHOCK_WAVE_XDIR;
+        } else if (strcmp(Original_ICs_Type, "Shock_Wave_Ydir") == 0) {
+            i_Original_ICs = IC_SHOCK_WAVE_YDIR;
+        } else if (strcmp(Original_ICs_Type, "Contact_Surface_Xdir") == 0) {
+            i_Original_ICs = IC_CONTACT_SURFACE_XDIR;
+        } else if (strcmp(Original_ICs_Type, "Contact_Surface_Ydir") == 0) {
+            i_Original_ICs = IC_CONTACT_SURFACE_YDIR;
+        } else if (strcmp(Original_ICs_Type, "Rarefaction_Wave_Xdir") == 0) {
+            i_Original_ICs = IC_RAREFACTION_WAVE_XDIR;
+        } else if (strcmp(Original_ICs_Type, "Rarefaction_Wave_Ydir") == 0) {
+            i_Original_ICs = IC_RAREFACTION_WAVE_YDIR;
+        } else if (strcmp(Original_ICs_Type, "ShockBox") == 0) {
+            i_Original_ICs = IC_SHOCK_BOX;
+        } else if (strcmp(Original_ICs_Type, "ShockBox_XY") == 0) {
+            i_Original_ICs = IC_SHOCK_BOX_XY;
+        } else if (strcmp(Original_ICs_Type, "ShockBox_XZ") == 0) {
+            i_Original_ICs = IC_SHOCK_BOX_XZ;
+        } else if (strcmp(Original_ICs_Type, "ShockBox_YZ") == 0) {
+            i_Original_ICs = IC_SHOCK_BOX_YZ;
+        } else if (strcmp(Original_ICs_Type, "High_Pressure_Reservoir") == 0) {
+            i_Original_ICs = IC_HIGH_PRESSURE_RESERVOIR;
+        } else if (strcmp(Original_ICs_Type, "Low_Pressure_Reservoir") == 0) {
+            i_Original_ICs = IC_LOW_PRESSURE_RESERVOIR;
+        } else if (strcmp(Original_ICs_Type, "Riemann") == 0) {
+            i_Original_ICs = IC_RIEMANN;
+        } else if (strcmp(Original_ICs_Type, "Riemann_Xdir") == 0) {
+            i_Original_ICs = IC_RIEMANN_XDIR;
+        } else if (strcmp(Original_ICs_Type, "Riemann_Ydir") == 0) {
+            i_Original_ICs = IC_RIEMANN_YDIR;  
+        } else if (strcmp(Original_ICs_Type, "Wedge_Flow") == 0) {
+            i_Original_ICs = IC_WEDGE_FLOW;	 
+        } else if (strcmp(Original_ICs_Type, "Mix") == 0) {
+            i_Original_ICs = IC_GAS_MIX;
+        } else if (strcmp(Original_ICs_Type, "Core_Flame") == 0 ) {
+            i_Original_ICs = IC_CHEM_CORE_FLAME ;
+        } else if (strcmp(Original_ICs_Type, "Inverse_Flame") == 0 ) {
+            i_Original_ICs = IC_CHEM_INVERSE_FLAME ; 
+        } else if (strcmp(Original_ICs_Type, "Pressure_Gradient_x") == 0 ) {
+            i_Original_ICs = IC_PRESSURE_GRADIENT_X;
+        } else if (strcmp(Original_ICs_Type, "Pressure_Gradient_y") == 0 ) {
+            i_Original_ICs = IC_PRESSURE_GRADIENT_Y;
+        } else if (strcmp(Original_ICs_Type, "Pressure_Gradient_z") == 0 ) {
+            i_Original_ICs = IC_PRESSURE_GRADIENT_Z;
+        } else if (strcmp(Original_ICs_Type, "Couette") == 0 ) {
+            i_Original_ICs = IC_VISCOUS_COUETTE; 
+        } else if (strcmp(Original_ICs_Type, "Couette_Pressure_Gradient_x") == 0 ) {
+            i_Original_ICs = IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_X;
+        } else if (strcmp(Original_ICs_Type, "Couette_Pressure_Gradient_y") == 0 ) {
+            i_Original_ICs = IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Y;
+        } else if (strcmp(Original_ICs_Type, "Couette_Pressure_Gradient_z") == 0 ) {
+            i_Original_ICs = IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Z;
+        } else if (strcmp(Original_ICs_Type, "1DPremixedFlame") == 0 ) {
+            i_Original_ICs = IC_CHEM_1DFLAME; 
+        } else if (strcmp(Original_ICs_Type, "Flat_Plate") == 0) {
+            i_Original_ICs = IC_VISCOUS_FLAT_PLATE;
+        } else if (strcmp(Original_ICs_Type, "Pipe_Flow") == 0) {
+            i_Original_ICs = IC_TURBULENT_PIPE_FLOW;
+        } else if (strcmp(Original_ICs_Type, "Coflow") == 0) {
+            i_Original_ICs = IC_TURBULENT_COFLOW;
+        } else if (strcmp(Original_ICs_Type, "Driven_Cavity_Flow") == 0) {
+            i_Original_ICs = IC_VISCOUS_DRIVEN_CAVITY_FLOW;
+        } else if (strcmp(Original_ICs_Type, "Turbulent_Dump_Combustor") == 0) {
+            i_Original_ICs = IC_TURBULENT_DUMP_COMBUSTOR;
+        } else if (strcmp(Original_ICs_Type, "Channel_Flow") == 0) {
+            i_Original_ICs = IC_CHANNEL_FLOW;
+        } else if (strcmp(Original_ICs_Type, "Laminar_Channel_Flow") == 0) {
+            i_Original_ICs = IC_CHANNEL_FLOW;
+        } else if (strcmp(Original_ICs_Type, "Turbulent_Channel_Flow") == 0) {
+            i_Original_ICs = IC_CHANNEL_FLOW;
+        } else if (strcmp(Original_ICs_Type, "Turbulent_Diffusion_Flame") == 0) {
+            i_Original_ICs = IC_TURBULENT_DIFFUSION_FLAME;
+        } else if (strcmp(Original_ICs_Type, "Turbulent_Free_Jet_Flame") == 0) {
+            i_Original_ICs = IC_FREE_JET_FLAME;
+        } else if (strcmp(Original_ICs_Type, "Turbulent_Premixed_Flame") == 0) {
+            i_Original_ICs = IC_TURBULENT_PREMIXED_FLAME;
+        } else if (strcmp(Original_ICs_Type, "Restart") == 0) {
+            i_Original_ICs = IC_RESTART;
+        } else {
+            i_command = INVALID_INPUT_VALUE;
+        } /* endif */
+        
 
     } else if (strcmp(code, "Gas_Type") == 0) {
        i_command = 101;
@@ -665,6 +796,14 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
     } else if (strcmp(code, "Pressure_Gradient") == 0) {
        i_command = 111;
        value_stream >> Pressure_Gradient;
+
+    } else if (strcmp(code, "Mean_Velocity") == 0) {
+       i_command = 112;
+       value_stream >> Mean_Velocity;
+
+    } else if (strcmp(code, "Fresh_Gas_Height") == 0) {
+       i_command = 113;
+       value_stream >> Fresh_Gas_Height;
 
     //
     // Invalid input parameter code:
@@ -941,6 +1080,12 @@ void CFD_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(i_ICs),
                           1,
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(Original_ICs_Type,
+                          INPUT_PARAMETER_LENGTH,
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(i_Original_ICs),
+                          1,
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(Gas_Type, 
                           INPUT_PARAMETER_LENGTH, 
                           MPI::CHAR, 0);
@@ -968,6 +1113,18 @@ void CFD_Input_Parameters::Broadcast(void) {
                           1,
 			  MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Moving_Wall_Velocity.z),
+                          1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Mean_Velocity.x),
+                          1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Mean_Velocity.y),
+                          1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Mean_Velocity.z),
+                          1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Fresh_Gas_Height),
                           1,
 			  MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Pressure_Gradient.x),
@@ -1105,8 +1262,12 @@ void CFD_Input_Parameters::Output_Problem_Type(ostream &out_file) const {
       out_file << "\n  -> Turbulent flow: LES with C-Fsd-k model";
    } else if (i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
       out_file << "\n  -> Turbulent flow: LES with C-Fsd-Smagorinsky model";
+   } else if (i_Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+      out_file << "\n  -> Turbulent flow: LES with TF-k model";
+   } else if (i_Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY) {
+      out_file << "\n  -> Turbulent flow: LES with TF-Smagorinsky model";	 
    } else if (i_Flow_Type == FLOWTYPE_TURBULENT_DES_K_OMEGA) {
-      out_file << "\n  -> Turbulent flow: DES with k-oemga SGS turbulence model ";
+      out_file << "\n  -> Turbulent flow: DES with k-omega SGS turbulence model ";
    } else if (i_Flow_Type == FLOWTYPE_TURBULENT_DNS) {
       out_file << "\n  -> Turbulent flow: DNS ";
    } /* endif */
@@ -1200,6 +1361,35 @@ void CFD_Input_Parameters::Output_ICsBCs_Types(ostream &out_file) const {
    out_file << "\n  -> Flow Angle: " 
             << Flow_Angle;
 
+   if (i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+       i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
+      out_file << "\n\n Laminar Flame Parameters";
+      out_file << "\n  -> Fuel Equivalence Ratio: " 
+               << Turbulence_IP.Fuel_Equivalence_Ratio;
+      out_file << "\n  -> Unburnt Fuel Mass Fraction: " 
+               << Turbulence_IP.Unburnt_Fuel_Mass_Fraction;
+      out_file << "\n  -> Reactants Density: " 
+               << Turbulence_IP.Reactants_Density;
+      out_file << "\n  -> Laminar Flame Speed: " 
+               << Turbulence_IP.Laminar_Flame_Speed;
+      out_file << "\n  -> Laminar Flame Thickness: " 
+               << Turbulence_IP.Laminar_Flame_Thickness;
+      out_file << "\n  -> Adiabatic Flame Temperature: " 
+               << Turbulence_IP.Adiabatic_Flame_Temperature;
+      out_file << "\n  -> Filter Width: " 
+               << Turbulence_IP.Filter_Width;
+   }
+   if (i_ICs == IC_TURBULENT_BUNSEN_FLAME) {
+      out_file << "\n\n Flame Parameters";
+      out_file << "\n  -> Mean Flow Velocity -- X Direction: " 
+               << Mean_Velocity.x;
+      out_file << "\n  -> Mean Flow Velocity -- Y Direction: " 
+               << Mean_Velocity.y;
+      out_file << "\n  -> Mean Flow Velocity -- Z Direction: " 
+               << Mean_Velocity.z;
+      out_file << "\n  -> Initial Flame Height: " 
+               << Fresh_Gas_Height;
+   }
 }
 
 void CFD_Input_Parameters::Output_Solution_Type(ostream &out_file) const {

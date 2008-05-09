@@ -1991,7 +1991,7 @@ Chem2D_cState Chem2D_pState::Sw(int &REACT_SET_FLAG, const int Flow_Type) const 
   //Adds concentration rate of change for species 1->N
   if( REACT_SET_FLAG != NO_REACTIONS){
     //bool test = negative_speccheck();            //FOR TESTING 
-    React.omega<Chem2D_pState,Chem2D_cState>(NEW,*this,Flow_Type );  
+    React.omega<Chem2D_pState,Chem2D_cState>(NEW,*this,Flow_Type);  
   }
      
   return NEW;

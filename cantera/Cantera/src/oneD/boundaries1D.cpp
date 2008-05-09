@@ -4,8 +4,8 @@
 
 /*
  * $Author: dggoodwin $
- * $Revision: 1.17 $
- * $Date: 2006/04/28 17:22:23 $
+ * $Revision: 1.18 $
+ * $Date: 2006/11/27 21:43:34 $
  */
 
 // Copyright 2002-3  California Institute of Technology
@@ -17,6 +17,8 @@
 #endif
 
 #include "Inlet1D.h"
+
+using namespace std;
 
 namespace Cantera {
 

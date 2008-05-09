@@ -111,11 +111,17 @@
  *                 south-west node.
  *    UnSE      -- Return conserved variable solution at the
  *                 south-east node.
+ *      Mn      -- Return medium state at the specified node.              
+ *    MnNW      -- Return medium state at the north-west node.              
+ *    MnNE      -- Return medium state at the north-east node.              
+ *    MnSW      -- Return medium state at the south-west node.              
+ *    MnSE      -- Return medium state at the south-east node.              
  * evaluate_limiters -- Set flag to evaluate limiters.
  * freeze_limiters -- Set flag to freeze limiters.
  * Member functions required for message passing.
  *    NumVar    -- Returns number of solution variables in primitive
  *                 and conserved solution state vectors.
+ *  NumVarMedium-- Returns number of variables in medium state vectors.
  * LoadSendBuffer -- Loads send buffer.
  * LoadSendBuffer_F2C -- Loads send buffer for fine to coarse block 
  *                       messages.
@@ -148,6 +154,7 @@ private:
 public:
   //@{ @name Solution state arrays:
   Rte2D_State             **U; //!< Conserved solution state.
+  Medium2D_State          **M; //!< Participating medium state.
   //@}
 
   //@{ @name Grid block information:
@@ -163,8 +170,8 @@ public:
 
   //@{ @name Residual and time-stepping arrays:
   double                  **dt; //!< Local time step.
-  Rte2D_State         ***dUdt; //!< Solution residual.
-  Rte2D_State            **Uo; //!< Initial solution state.
+  Rte2D_State          ***dUdt; //!< Solution residual.
+  Rte2D_State             **Uo; //!< Initial solution state.
   static int residual_variable; //!< Static integer that indicates which variable is used for residual calculations.  
   static int Number_of_Residual_Norms; //!< How many Residual norms to plot?
   //@}
@@ -173,9 +180,9 @@ public:
   Rte2D_State           **dUdx; //!< Unlimited solution gradient (x-direction).
   Rte2D_State           **dUdy; //!< Unlimited solution gradient (y-direction).
   Rte2D_State            **phi; //!< Solution slope limiter.
-  Rte2D_State        **dUdpsi;  // Unlimited solution gradient
+  Rte2D_State         **dUdpsi; // Unlimited solution gradient
                                 // (azimuthal-direction).
-  Rte2D_State       **phi_psi;  // Solution slope limiter 
+  Rte2D_State        **phi_psi; // Solution slope limiter 
                                 // (azimuthal-direction).
   //@}
 
@@ -191,6 +198,7 @@ public:
   int           Freeze_Limiter; //!< Limiter freezing indicator.
   static int         Flow_Type; //!< Flow type flag (always inviscid).
   static char*   solutionTitle; //!< Solution title info
+  int        Medium_Field_Type; //!< medium descriptor type (analytic, discrete).
   //@}
 
   //@{ @name Boundary condtion reference states:
@@ -225,12 +233,13 @@ public:
   //! Creation constructor.
   Rte2D_Quad_Block(void) {
       NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
-      U = NULL; dt = NULL; dUdt = NULL; 
+      U = NULL; M = NULL; dt = NULL; dUdt = NULL; 
       dUdx = NULL; dUdy = NULL; phi = NULL; Uo = NULL;
       dUdpsi = NULL; phi_psi = NULL;
       FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
       UoN = NULL; UoS = NULL; UoE = NULL; UoW = NULL;
       Axisymmetric = 0; Freeze_Limiter = OFF;
+      Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
       Sp = NULL; SpN = NULL; SpS = NULL; SpE = NULL; SpW = NULL; 
       NorthWallTemp  = ZERO;   SouthWallTemp  = ZERO;  
       EastWallTemp   = ZERO;   WestWallTemp   = ZERO;  
@@ -242,12 +251,13 @@ public:
   Rte2D_Quad_Block(const Rte2D_Quad_Block &Soln) {
     NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu; 
     NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu; Nghost = Soln.Nghost;
-    Grid = Soln.Grid; U = Soln.U; dt = Soln.dt; dUdt = Soln.dUdt; 
+    Grid = Soln.Grid; U = Soln.U; M = Soln.M; dt = Soln.dt; dUdt = Soln.dUdt; 
     dUdx = Soln.dUdx; dUdy = Soln.dUdy; phi = Soln.phi; Uo = Soln.Uo;
     dUdpsi = Soln.dUdpsi; phi_psi = Soln.phi_psi;
     FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
     UoN = Soln.UoN; UoS = Soln.UoS; UoE = Soln.UoE; UoW = Soln.UoW;
-    Axisymmetric = 0; Freeze_Limiter = Soln.Freeze_Limiter;
+    Axisymmetric = Soln.Axisymmetric; Freeze_Limiter = Soln.Freeze_Limiter;
+    Medium_Field_Type = Soln.Medium_Field_Type;
     Sp = Soln.Sp; SpN = Soln.SpN; SpS = Soln.SpS; SpE = Soln.SpE; SpW = Soln.SpW; 
     NorthWallTemp  = Soln.NorthWallTemp;    SouthWallTemp  = Soln.SouthWallTemp;  
     EastWallTemp   = Soln.EastWallTemp;     WestWallTemp   = Soln.WestWallTemp;  
@@ -280,7 +290,15 @@ public:
   Rte2D_State UnNE(const int &ii, const int &jj); //!< Return conserved solution state at cell NE node.
   Rte2D_State UnSE(const int &ii, const int &jj); //!< Return conserved solution state at cell SE node.
   Rte2D_State UnSW(const int &ii, const int &jj); //!< Return conserved solution state at cell SW node.
-  //@}
+ 
+  //! Return medium state at specified node.
+  Medium2D_State Mn(const int &ii, const int &jj);
+
+  Medium2D_State MnNW(const int &ii, const int &jj); //!< Return medium state at cell NW node.
+  Medium2D_State MnNE(const int &ii, const int &jj); //!< Return medium state at cell NE node.
+  Medium2D_State MnSE(const int &ii, const int &jj); //!< Return medium state at cell SE node.
+  Medium2D_State MnSW(const int &ii, const int &jj); //!< Return medium state at cell SW node.
+ //@}
 
   //@{ @name Member functions for limiter freezing.
   void evaluate_limiters(void); //!< Set flags for limiter evaluation.
@@ -295,6 +313,8 @@ public:
   //@{ @name Member functions required for message passing.
   //! Number of solution state variables.
   int NumVar(void);
+  //! Number of medium state variables.
+  int NumVarMedium(void);
   //! Load send message passing buffer.
   int LoadSendBuffer(double *buffer,
 		     int &buffer_count,
@@ -464,6 +484,7 @@ inline void Rte2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng)
    NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; 
    NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
    U = new Rte2D_State*[NCi];
+   M = new Medium2D_State*[NCi];
    dt = new double*[NCi]; dUdt = new Rte2D_State**[NCi];
    dUdx = new Rte2D_State*[NCi]; dUdy = new Rte2D_State*[NCi];
    phi = new Rte2D_State*[NCi]; Uo = new Rte2D_State*[NCi];
@@ -473,6 +494,7 @@ inline void Rte2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng)
    SpE = new double*[NCi]; SpW = new double*[NCi]; 
    for ( i = 0; i <= NCi-1 ; ++i ) {
       U[i] = new Rte2D_State[NCj];
+      M[i] = new Medium2D_State[NCj];
       dt[i] = new double[NCj]; dUdt[i] = new Rte2D_State*[NCj];
       for ( j = 0; j <= NCj-1 ; ++j ) 
         { dUdt[i][j] = new Rte2D_State[NUMBER_OF_RESIDUAL_VECTORS_RTE2D]; }
@@ -512,6 +534,7 @@ inline void Rte2D_Quad_Block::deallocate(void) {
    int i, j; Grid.deallocate(); 
    for ( i = 0; i <= NCi-1 ; ++i ) {
       delete []U[i]; U[i] = NULL;
+      delete []M[i]; M[i] = NULL;
       delete []dt[i]; dt[i] = NULL; 
       for ( j = 0; j <= NCj-1 ; ++j ) { delete []dUdt[i][j]; dUdt[i][j] = NULL; }
       delete []dUdt[i]; dUdt[i] = NULL;
@@ -525,6 +548,7 @@ inline void Rte2D_Quad_Block::deallocate(void) {
       delete[] SpW[i]; SpW[i] = NULL; 
    } /* endfor */
    delete []U; U = NULL;
+   delete []M; M = NULL;
    delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
    delete []dUdx; dUdx = NULL; delete []dUdy; dUdy = NULL; 
    delete []phi; phi = NULL; delete []Uo; Uo = NULL;
@@ -613,6 +637,87 @@ inline Rte2D_State Rte2D_Quad_Block::UnSW(const int &ii, const int &jj) {
 }
 
 /**************************************************************************
+ * Medium2D_Quad_Block::Un -- Node conservative solution.                 *
+ **************************************************************************/
+inline Medium2D_State Rte2D_Quad_Block::Mn(const int &ii, const int &jj) {
+ 
+  //
+  // if the medium is prescribed analytically, compute it
+  //
+  if (Medium_Field_Type == MEDIUM2D_FIELD_ANALYTIC)
+    return Medium2D_State::GetState(Grid.Node[ii][jj].X);
+  
+  //
+  // otherwise, interpolate it
+  //
+
+  double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
+    eta1, zeta1, eta2, zeta2, eta, zeta;
+ 
+  x=Grid.Node[ii][jj].X.x; y=Grid.Node[ii][jj].X.y;
+  ax=Grid.Cell[ii-1][jj-1].Xc.x;
+  bx=Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
+  cx=Grid.Cell[ii][jj-1].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
+  dx=Grid.Cell[ii][jj].Xc.x+Grid.Cell[ii-1][jj-1].Xc.x-
+    Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii][jj-1].Xc.x;
+  ay=Grid.Cell[ii-1][jj-1].Xc.y;
+  by=Grid.Cell[ii-1][jj].Xc.y-Grid.Cell[ii-1][jj-1].Xc.y;
+  cy=Grid.Cell[ii][jj-1].Xc.y-Grid.Cell[ii-1][jj-1].Xc.y;
+  dy=Grid.Cell[ii][jj].Xc.y+Grid.Cell[ii-1][jj-1].Xc.y-
+    Grid.Cell[ii-1][jj].Xc.y-Grid.Cell[ii][jj-1].Xc.y;
+  aa=bx*dy-dx*by; bb=dy*(ax-x)+bx*cy-cx*by+dx*(y-ay); cc=cy*(ax-x)+cx*(y-ay);
+  if (fabs(aa) < TOLER*TOLER) {
+    if (fabs(bb) >= TOLER*TOLER) { zeta1=-cc/bb; }
+    else { zeta1 = -cc/sgn(bb)*(TOLER*TOLER); }
+    if (fabs(cy+dy*zeta1) >= TOLER*TOLER) { eta1=(y-ay-by*zeta1)/(cy+dy*zeta1); }
+    else { eta1 = HALF; } zeta2=zeta1; eta2=eta1;
+  } else {
+    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { zeta1=HALF*(-bb+sqrt(bb*bb-FOUR*aa*cc))/aa; }
+    else { zeta1 = -HALF*bb/aa; }
+    if (fabs(cy+dy*zeta1) < TOLER*TOLER) { eta1=-ONE; }
+    else { eta1=(y-ay-by*zeta1)/(cy+dy*zeta1); }
+    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { zeta2=HALF*(-bb-sqrt(bb*bb-FOUR*aa*cc))/aa; }
+    else { zeta2 = -HALF*bb/aa; }
+    if (fabs(cy+dy*zeta2) < TOLER*TOLER) { eta2=-ONE; }
+    else { eta2=(y-ay-by*zeta2)/(cy+dy*zeta2); }
+  } /* end if */
+  if (zeta1 > -TOLER && zeta1 < ONE + TOLER &&
+      eta1  > -TOLER && eta1  < ONE + TOLER) {
+    zeta=zeta1; eta=eta1;
+  } else if (zeta2 > -TOLER && zeta2 < ONE + TOLER &&
+	     eta2  > -TOLER && eta2  < ONE + TOLER) {
+    zeta=zeta2; eta=eta2;
+  } else {
+    zeta=HALF; eta=HALF;
+  } /* endif */
+  
+  return (M[ii-1][jj-1] +(M[ii-1][jj]-M[ii-1][jj-1])*zeta+  
+	  (M[ii][jj-1]-M[ii-1][jj-1])*eta + 
+	  (M[ii][jj]+M[ii-1][jj-1]-M[ii-1][jj]-M[ii][jj-1])*zeta*eta);
+
+}
+
+/**************************************************************************
+ * Medium2D_Quad_Block::Un -- Get cell node conserved solution states.    *
+ **************************************************************************/
+inline Medium2D_State Rte2D_Quad_Block::MnNW(const int &ii, const int &jj) {
+  return (Mn(ii, jj+1));
+}
+
+inline Medium2D_State Rte2D_Quad_Block::MnNE(const int &ii, const int &jj) {
+  return (Mn(ii+1, jj+1));
+}
+
+inline Medium2D_State Rte2D_Quad_Block::MnSE(const int &ii, const int &jj) {
+  return (Mn(ii+1, jj));
+}
+
+inline Medium2D_State Rte2D_Quad_Block::MnSW(const int &ii, const int &jj) {
+  return (Mn(ii, jj));
+}
+
+
+/**************************************************************************
  * Rte2D_Quad_Block::evaluate_limiters -- Set flag to evaluate limiters.*
  **************************************************************************/
 inline void Rte2D_Quad_Block::evaluate_limiters(void) {
@@ -637,6 +742,7 @@ inline ostream &operator << (ostream &out_file,
 	   << SolnBlk.ICu << " " << SolnBlk.Nghost << "\n";
   out_file << SolnBlk.NCj << " " << SolnBlk.JCl << " " << SolnBlk.JCu << "\n";
   out_file << SolnBlk.Axisymmetric << "\n";
+  out_file << SolnBlk.Medium_Field_Type <<"\n";
   out_file << SolnBlk.NorthWallTemp << "\n";
   out_file << SolnBlk.SouthWallTemp << "\n";
   out_file << SolnBlk.EastWallTemp << "\n";
@@ -648,6 +754,7 @@ inline ostream &operator << (ostream &out_file,
   if (SolnBlk.NCi == 0 || SolnBlk.NCj == 0) return(out_file);
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+         out_file << SolnBlk.M[i][j] << "\n";
          out_file << SolnBlk.U[i][j] << "\n";
      } /* endfor */
   } /* endfor */
@@ -671,6 +778,7 @@ inline istream &operator >> (istream &in_file,
   in_file.setf(ios::skipws);
   in_file >> ni >> il >> iu >> ng; in_file >> nj >> jl >> ju;
   in_file >> SolnBlk.Axisymmetric;
+  in_file >> SolnBlk.Medium_Field_Type;
   in_file >> SolnBlk.NorthWallTemp;
   in_file >> SolnBlk.SouthWallTemp;
   in_file >> SolnBlk.EastWallTemp;
@@ -691,6 +799,7 @@ inline istream &operator >> (istream &in_file,
   Copy_Quad_Block(SolnBlk.Grid, New_Grid); New_Grid.deallocate();
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+         in_file >> SolnBlk.M[i][j];
          in_file >> SolnBlk.U[i][j];
          for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_RTE2D-1 ; ++k ) {
 	   SolnBlk.dUdt[i][j][k].Zero();
@@ -727,6 +836,9 @@ inline istream &operator >> (istream &in_file,
  *******************************************************************************/
 inline int Rte2D_Quad_Block::NumVar(void) {
   return (int(U[0][0].NUM_VAR_RTE2D));
+}
+inline int Rte2D_Quad_Block::NumVarMedium(void) {
+  return (int(M[0][0].NUM_VAR_MEDIUM2D));
 }
 
 /*******************************************************************************
@@ -2500,14 +2612,13 @@ extern void Output_Exact(Rte2D_Quad_Block &SolnBlk,
 extern void ICs(Rte2D_Quad_Block &SolnBlk,
 		Rte2D_Input_Parameters &IP);
 
+extern void PrescribeFields(Rte2D_Quad_Block &SolnBlk);
+
 extern void BCs(Rte2D_Quad_Block &SolnBlk,
 		Rte2D_Input_Parameters &IP);
 
 extern void BCs_Space_March(Rte2D_Quad_Block &SolnBlk, 
 			    Rte2D_Input_Parameters &IP);
-
-// extern void Prescribe_NonSol(Rte2D_Quad_Block &SolnBlk,
-// 			     Rte2D_Input_Parameters &Input_Parameters);
 
 extern double CFL(Rte2D_Quad_Block &SolnBlk,
                   Rte2D_Input_Parameters &Input_Parameters);
@@ -2700,10 +2811,6 @@ extern int Output_Exact(Rte2D_Quad_Block *Soln_ptr,
 			AdaptiveBlock2D_List &Soln_Block_List,
 			Rte2D_Input_Parameters &IP);
 
-// extern void Prescribe_NonSol(Rte2D_Quad_Block *Soln_ptr,
-// 			     AdaptiveBlock2D_List &Soln_Block_List,
-// 			     Rte2D_Input_Parameters &Input_Parameters);
-
 extern void BCs(Rte2D_Quad_Block *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,
 		Rte2D_Input_Parameters &IP);
@@ -2786,6 +2893,10 @@ extern void ScaleGridTo3D( Rte2D_Quad_Block *Soln_ptr,
 
 extern Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
                                             Rte2D_Input_Parameters &Input_Parameters);
+
+extern Grid2D_Quad_Block** Set_Multi_Block_Grid_BCs(Grid2D_Quad_Block **Grid_ptr,
+						    Rte2D_Input_Parameters &Input_Parameters);
+
 
 extern Grid2D_Quad_Block** Broadcast_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
                                                       Rte2D_Input_Parameters &Input_Parameters);

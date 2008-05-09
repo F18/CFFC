@@ -2,8 +2,8 @@
  *  @file FlowDevice.h
  *
  *  $Author: dggoodwin $
- *  $Date: 2005/06/18 17:01:12 $
- *  $Revision: 1.3 $
+ *  $Date: 2007/05/04 14:41:28 $
+ *  $Revision: 1.6 $
  */
 
 // Copyright 2001  California Institute of Technology
@@ -16,7 +16,9 @@
 #pragma warning(disable:4503)
 #endif
 
-#include "../ct_defs.h"
+#include "ct_defs.h"
+#include "global.h"
+#include "stringUtils.h"
 
 namespace Cantera {
     class Func1;
@@ -76,7 +78,7 @@ namespace CanteraZeroD {
             return m_mdot;
         }
 
-        // Update the mass flow rate at time 'time'. This must be 
+        // Update the mass flow rate at time 'time'. This must be
         // overloaded in subclassess to update m_mdot.
         virtual void updateMassFlowRate(doublereal time) {}
 
@@ -86,7 +88,7 @@ namespace CanteraZeroD {
         // specific enthalpy
         doublereal enthalpy_mass();
 
-//         /** 
+//         /**
 //          * Setpoint. Default = 0.0.
 //          */
 //         virtual doublereal setpoint() { warn("setpoint"); return 0.0; }
@@ -106,7 +108,7 @@ namespace CanteraZeroD {
 //         virtual void reset() {warn("reset");}
 
 //         /**
-//          * Set the setpoint. May be changed at any time. By default, 
+//          * Set the setpoint. May be changed at any time. By default,
 //          * this does nothing.
 //          */
 //         virtual void setSetpoint(doublereal value) {warn("setSetpoint");}
@@ -120,7 +122,7 @@ namespace CanteraZeroD {
 //             return true;
 //         }
 
-//         /** 
+//         /**
 //          * Get the controller gains. Returns false if the 'gains'
 //          * array is too small.
 //          */
@@ -129,8 +131,8 @@ namespace CanteraZeroD {
 //             return true;
 //         }
 
-//         /** 
-//          * Maximum difference between input and setpoint since 
+//         /**
+//          * Maximum difference between input and setpoint since
 //          * last call to 'reset'.
 //          */
 //         virtual doublereal maxError() {warn("maxError"); return 0.0;}
@@ -153,7 +155,7 @@ namespace CanteraZeroD {
         /// set parameters
         virtual void setParameters(int n, doublereal* coeffs) {
             m_coeffs.resize(n);
-            copy(coeffs, coeffs + n, m_coeffs.begin());
+            std::copy(coeffs, coeffs + n, m_coeffs.begin());
         }
 
         void setFunction(Cantera::Func1* f);
@@ -174,9 +176,9 @@ namespace CanteraZeroD {
         ReactorBase* m_out;
         vector_int m_in2out, m_out2in;
 
-        void warn(string meth) {
-            cerr << "Warning: method " << meth << " of base class "
-                 << " FlowDevice called. Nothing done.";
+        void warn(std::string meth) {
+            writelog(std::string("Warning: method ") + meth + " of base class "
+                + " FlowDevice called. Nothing done.\n");
         }
     };
 

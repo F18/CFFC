@@ -414,6 +414,8 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
           IP.i_Limiter = LIMITER_BARTH_JESPERSEN;
        } else if (strcmp(IP.Limiter_Type, "Venkatakrishnan") == 0) {
           IP.i_Limiter = LIMITER_VENKATAKRISHNAN;
+       } else if (strcmp(IP.Limiter_Type, "Venkatakrishnan_Modified") == 0) {
+          IP.i_Limiter = LIMITER_VENKATAKRISHNAN_CORRECTED;
        } else {
 	 i_command = INVALID_INPUT_CODE;
        } /* endif */

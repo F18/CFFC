@@ -110,8 +110,8 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
     SolnBlk.Uo[ii][jj].W().dWdU(dWdU, SolnBlk.Flow_Type); 
     dSdU += dRdW*dWdU;
 
-  // Add Source Jacobians (inviscid axisymmetric, chemistry, gravity)
-  SemiImplicitBlockJacobi_dSdU(dSdU,SolnBlk,EXPLICIT,ii,jj);                 
+    // Add Source Jacobians (inviscid axisymmetric, chemistry, gravity)
+    SemiImplicitBlockJacobi_dSdU(dSdU,SolnBlk,EXPLICIT,ii,jj);                 
 
 }
 
@@ -134,13 +134,6 @@ void SemiImplicitBlockJacobi_dSdW(DenseMatrix &dSdW,
 			      d_dWdx_dW_C,d_dWdy_dW_C);
   }
 
-
-  /////////////////////////////////////////////////////////////////
-  //
-  // dS_tdW should be added here for the k-equation and Wen's stuff
-  //
-  ////////////////////////////////////////////////////////////////
-
    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
@@ -154,13 +147,6 @@ void SemiImplicitBlockJacobi_dSdW(DenseMatrix &dSdW,
 	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
      dS_tdW(dSdW,SolnBlk, d_dWdx_dW_C, d_dWdy_dW_C, ii,jj);
    }
-  
-  // Add Jacobian for turbulence k-omega
-  // if((SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ) ||
-//      (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON )){    
-//     dS_tdW(dSdW,SolnBlk, d_dWdx_dW_C, d_dWdy_dW_C, ii,jj);
-//   }
-  
 }
 
 void SemiImplicitBlockJacobi_dSdU(DenseMatrix &dSdU,
@@ -235,7 +221,7 @@ void dFIdW_Inviscid(DenseMatrix &dRdW, LESPremixed2D_Quad_Block &SolnBlk, LESPre
 }
 
 /*********************************************************
- * Routine: Rotation_matrix2                             *
+ * Routine: Rotation_Matrix_PM2D                         *
  *                                                       *
  * This function returns either the rotation matrix, A,  *
  * or the inverse of A.                                  *
@@ -245,7 +231,7 @@ void dFIdW_Inviscid(DenseMatrix &dRdW, LESPremixed2D_Quad_Block &SolnBlk, LESPre
  *                                                       *
  *********************************************************/
 /*The rotation matrix is used for the inviscid flux calculations */
-DenseMatrix Rotation_matrix2(Vector2D nface, int Size,  int A_matrix) 
+DenseMatrix Rotation_Matrix_PM2D(Vector2D nface, int Size,  int A_matrix) 
 {
   double cos_angle = nface.x; 
   double sin_angle = nface.y;
@@ -330,8 +316,8 @@ void dFIdW_Inviscid_HLLE(DenseMatrix &dRdW, LESPremixed2D_Quad_Block &SolnBlk,
 			       SolnBlk.Uo[ii][jj].W(), nface);
    }
 
-   DenseMatrix A( Rotation_matrix2(nface,NUM_VAR_LESPREMIXED2D, 1));
-   DenseMatrix AI( Rotation_matrix2(nface,NUM_VAR_LESPREMIXED2D, 0));
+   DenseMatrix A(Rotation_Matrix_PM2D(nface, NUM_VAR_LESPREMIXED2D, 1));
+   DenseMatrix AI(Rotation_Matrix_PM2D(nface, NUM_VAR_LESPREMIXED2D, 0));
    DenseMatrix II(NUM_VAR_LESPREMIXED2D, NUM_VAR_LESPREMIXED2D,ZERO); 
    II.identity();
    
@@ -421,8 +407,8 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &SolnBlk,
        lface = SolnBlk.Grid.lfaceW(Ri, Rj);
      }
      
-     DenseMatrix A( Rotation_matrix2(nface,NUM_VAR_LESPREMIXED2D, 1));
-     DenseMatrix AI( Rotation_matrix2(nface,NUM_VAR_LESPREMIXED2D, 0));
+     DenseMatrix A(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 1));
+     DenseMatrix AI(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 0));
      
      //Left and Right States                                                       ///Ri ,Rj fixed not ii, jj 
      Inviscid_Flux_Used_Reconstructed_LeftandRight_States(Wl, Wr, DX, SolnBlk, Orient, Ri, Rj );   
@@ -559,8 +545,8 @@ void dFIdW_Inviscid_ROE_FD(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &SolnBlk,
        lface = SolnBlk.Grid.lfaceW(Ri, Rj);
      }
      
-     DenseMatrix A( Rotation_matrix2(nface,NUM_VAR_LESPREMIXED2D, 1));
-     DenseMatrix AI( Rotation_matrix2(nface,NUM_VAR_LESPREMIXED2D, 0));
+     DenseMatrix A(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 1));
+     DenseMatrix AI(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 0));
      
      //Left and Right States 
      Inviscid_Flux_Used_Reconstructed_LeftandRight_States(Wl, Wr, DX, SolnBlk, Orient, Ri, Rj );   
@@ -865,8 +851,8 @@ void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &So
        lface = SolnBlk.Grid.lfaceW(Ri, Rj);
      }
      
-     DenseMatrix A( Rotation_matrix2(nface,NUM_VAR_LESPREMIXED2D, 1));
-     DenseMatrix AI( Rotation_matrix2(nface,NUM_VAR_LESPREMIXED2D, 0));
+     DenseMatrix A(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 1));
+     DenseMatrix AI(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 0));
           
      //********** FILL IN AUSM SPECIFIC STUFF HERE ********************//
      Left  = Rotate(Wl, nface);
@@ -918,7 +904,7 @@ void dGVdW_Viscous(DenseMatrix &dRdW, LESPremixed2D_Quad_Block &SolnBlk,
 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
 	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
-        NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
+        NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
 	matrix_size = 2*NUM_VAR_LESPREMIXED2D+2;
    }else{
      matrix_size = 14+ns;
@@ -988,8 +974,8 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
    double  *h, *dcdx, *dcdy, *dhdT;
    double dUdx,dUdy, dVdx,dVdy;
    //double dkdx, dkdy, domegadx, domegady;
-   double *dscalardx, *dscalardy;
    double drhodx, drhody, dpdx, dpdy, Temp;
+   double *dscalardx, *dscalardy;
    double radius;
    
    LESPremixed2D_pState QuadraturePoint_W;
@@ -997,11 +983,11 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
 
    int ns_values = SolnBlk.W[ii][jj].ns;
    int ns_species = SolnBlk.W[ii][jj].ns-1;
+   int num = SolnBlk.W[ii][jj].nscal;
    h  = new double [ns_values];
    dcdx = new double [ns_values]; 
    dcdy = new double [ns_values];
    dhdT = new double [ns_values];
-   int num = SolnBlk.W[ii][jj].nscal;
    dscalardx = new double [num];
    dscalardy = new double [num];
    switch(Orient){

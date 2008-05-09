@@ -27,6 +27,7 @@ ADVECTDIFFUSE_DIR = AdvectDiffuse2D/
 AMR_DIR = AMR/
 CFD_DIR = CFD/
 CHEM_DIR = Chem2D/
+FLAME_DIR = Flame2D/
 DUSTY_DIR = Dusty2D/
 ELECTROSTATIC_DIR = Electrostatic2D/
 EOS_DIR = EquationOfState/
@@ -51,6 +52,7 @@ SYSTEM_DIR = System/
 TURBULENT_DIR = Turbulent2D/
 GAUSSIAN_DIR = Gaussian2D/
 NASADATA_DIR = $(PHYSICS_DIR)NASAData/
+SNBCK_DIR = $(PHYSICS_DIR)SNBCK/
 REACTIONS_DIR = Reactions/
 HIGH_ORDER_RECONSTRUCTION_DIR = HighOrderReconstruction/
 
@@ -103,12 +105,26 @@ SRC_GRID = $(GRID_DIR)Cell1D.cc \
            $(GRID_DIR)Grid2DQuadSingleBlock.cc \
            $(GRID_DIR)Grid2DQuadMultiBlock.cc \
            $(GRID_DIR)Grid3DHexaSingleBlock.cc \
-           $(GRID_DIR)Grid3DHexaMultiBlock.cc
+           $(GRID_DIR)Grid3DHexaMultiBlock.cc \
+           $(GRID_DIR)HO_Cell2D.cc \
+           $(GRID_DIR)HO_Spline2D.cc \
+           $(GRID_DIR)HO_Spline2DInterval.cc \
+	   $(GRID_DIR)HO_Grid2DQuad.cc \
+           $(GRID_DIR)HO_Grid2DQuadMultiBlock.cc \
+	   $(GRID_DIR)HO_Grid2DQuad_ExecutionMode.cc \
+	   $(GRID_DIR)Tecplot_ExecutionMode.cc
 SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
 	      $(ICEMCFD_DIR)ICEMCFD_ctype.c
 
 # Add Grid Testing If Required:
-SRC_GRID_TESTS := test_Grid2DQuadIntegration.cc
+SRC_GRID_TESTS := test_Grid2DQuadIntegration.cc \
+		  test_HO_Grid2DQuad.cc \
+		  test_HO_Grid2DQuadMultiBlock.cc \
+		  test_HO_Spline2D.cc \
+		  test_HO_Spline2D_Integration.cc \
+		  test_HO_Spline2DInterval.cc \
+		  test_HO_Cell2D.cc \
+		  HO_Grid2DQuadMultiBlock_InputForTesting.cc
 SRC_GRID_TESTS := $(addprefix $(GRID_DIR)UnitTests/,$(SRC_GRID_TESTS))
 ifeq ($(TUT_TESTING),ON) 
   SRC_GRID += $(SRC_GRID_TESTS)
@@ -125,21 +141,34 @@ else
             $(AMR_DIR)QuadTree.cc
 endif
 
-# HighOrderReconstruction
-SRC_HIGH_ORDER_RECONSTRUCTION = ReconstructionHelpers.cc \
-                                CENO_Tolerances.cc \
-				CENO_ExecutionMode.cc \
-                                ENO_ExecutionMode.cc \
-				AccuracyAssessment1D.cc \
-				AccuracyAssessment2DMultiBlock.cc
-SRC_HIGH_ORDER_RECONSTRUCTION := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION))
+# HighOrderReconstruction common for both 1D and 2D:
+SRC_HIGH_ORDER_RECONSTRUCTION_COMMON = ReconstructionHelpers.cc \
+                                       CENO_Tolerances.cc \
+				       CENO_ExecutionMode.cc 
+SRC_HIGH_ORDER_RECONSTRUCTION_COMMON := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON))
+
+# HighOrderReconstruction only for 1D:
+SRC_HIGH_ORDER_RECONSTRUCTION_1D = ENO_ExecutionMode.cc \
+				   AccuracyAssessment1D.cc
+SRC_HIGH_ORDER_RECONSTRUCTION_1D := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION_1D))
+# Add High-Order Reconstruction Testing If Required:
+SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_1D := test_HighOrder1D_Double.cc
+SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_1D := $(addprefix $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/,$(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_1D))
+ifeq ($(TUT_TESTING),ON) 
+  SRC_HIGH_ORDER_RECONSTRUCTION_1D += $(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_1D)
+endif
+
+# HighOrderReconstruction only for 2D:
+SRC_HIGH_ORDER_RECONSTRUCTION_2D = AccuracyAssessment2DMultiBlock.cc \
+				   HighOrder2D_Input.cc
+SRC_HIGH_ORDER_RECONSTRUCTION_2D := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION_2D))
 
 # Add High-Order Reconstruction Testing If Required:
-SRC_HIGH_ORDER_RECONSTRUCTION_TESTS := test_HighOrder1D_Double.cc \
-                                       test_TaylorDerivatives2D_Double.cc
-SRC_HIGH_ORDER_RECONSTRUCTION_TESTS := $(addprefix $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/,$(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS))
+SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_2D := test_TaylorDerivatives2D_Double.cc \
+				          test_HighOrder2D_Double.cc
+SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_2D := $(addprefix $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/,$(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_2D))
 ifeq ($(TUT_TESTING),ON) 
-  SRC_HIGH_ORDER_RECONSTRUCTION += $(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS)
+  SRC_HIGH_ORDER_RECONSTRUCTION_2D += $(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_2D)
 endif
 
 # 1D:
@@ -175,10 +204,24 @@ endif
 
 SRC_EULER1D_EXE = $(EULER_1D_DIR)Euler1DMain.cc
 
+SRC_EULER1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
+                     $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) $(SRC_HIGH_ORDER_RECONSTRUCTION_1D) \
+                     $(SRC_EULER1D) $(SRC_EULER1D_EXE) $(SRC_MPI)
+
+# Solvers 1D:
+SRC_SOLVERS1D = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
+                $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) $(SRC_HIGH_ORDER_RECONSTRUCTION_1D) \
+		$(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) \
+                $(SRC_MHD1D) $(SRC_EULER1D) $(SRC_MPI)
+
+SRC_SOLVERS1D_EXE = $(SOLVERS1D_DIR)Solvers1D.cc
+SRC_SOLVERS1D_SOLVER = $(SRC_SOLVERS1D_EXE) $(SRC_SOLVERS1D)
+
 # Advectdiffuse2D:
 SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
 	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DInput.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad.cc \
+                    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad_HighOrder.cc \
 	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSingleBlock.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadMultiBlock.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadGrid.cc \
@@ -197,7 +240,8 @@ SRC_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.cc
 SRC_ADVECTDIFFUSE_TESTS = test_AdvectDiffuse2DState.cc \
                           test_SourceTermFields.cc \
                           test_AdvectDiffuse2DQuad.cc \
-			  test_AdvectDiffuse2DExactSolutions.cc
+			  test_AdvectDiffuse2DExactSolutions.cc \
+			  test_AdvectDiffuse2D_Simulations.cc
 SRC_ADVECTDIFFUSE_TESTS := $(addprefix $(ADVECTDIFFUSE_DIR)UnitTests/, $(SRC_ADVECTDIFFUSE_TESTS))
 ifeq ($(TUT_TESTING),ON) 
   SRC_ADVECTDIFFUSE += $(SRC_ADVECTDIFFUSE_TESTS)
@@ -239,6 +283,20 @@ SRC_CHEM = $(CHEM_DIR)Chem2DState.cc \
 	   $(CHEM_DIR)Chem2DQuadSingleBlock.cc \
 	   $(CHEM_DIR)Chem2DQuadSolvers.cc
 SRC_CHEM_EXE = $(CHEM_DIR)Chem2D.cc  
+
+# Flame2D:
+SRC_FLAME = $(FLAME_DIR)Flame2DState.cc \
+	    $(FLAME_DIR)Mixture.cc \
+	    $(FLAME_DIR)Flame2DTools.cc \
+	    $(FLAME_DIR)Flame2DInput.cc \
+	    $(FLAME_DIR)Flame2DQuad.cc \
+	    $(FLAME_DIR)Flame2DQuadGrid.cc \
+	    $(FLAME_DIR)Flame2DdRdU.cc \
+	    $(FLAME_DIR)Flame2DQuadMultiBlock.cc \
+	    $(FLAME_DIR)Flame2DQuadSingleBlock.cc \
+	    $(FLAME_DIR)Flame2DQuadSolvers.cc \
+	    $(FLAME_DIR)Soot2DState.cc
+SRC_FLAME_EXE = $(FLAME_DIR)Flame2D.cc  
 
 # HighTemp2D:
 SRC_HIGHTEMP = $(HIGHTEMP_DIR)HighTemp2DState.cc \
@@ -322,14 +380,14 @@ SRC_ELECTROSTATIC_EXE = $(ELECTROSTATIC_DIR)Electrostatic2D.cc
 
 # Rte2D:
 SRC_RTE = $(RTE_DIR)Rte2DState.cc \
+	  $(RTE_DIR)Medium2DState.cc \
           $(RTE_DIR)Rte2DInput.cc \
           $(RTE_DIR)Rte2DQuad.cc \
           $(RTE_DIR)Rte2DQuadSingleBlock.cc \
           $(RTE_DIR)Rte2DQuadMultiBlock.cc \
           $(RTE_DIR)Rte2DQuadGrid.cc \
           $(RTE_DIR)Rte2DQuadSolvers.cc \
-          $(RTE_DIR)Rte2DTools.cc \
-          $(RTE_DIR)SNBCK.cc 
+          $(RTE_DIR)Rte2DTools.cc
 SRC_RTE_EXE = $(RTE_DIR)Rte2D.cc
 
 # EmbeddedBoundaries2D:
@@ -366,6 +424,8 @@ SRC_REACTIONS = $(REACTIONS_DIR)Reactions.cc \
 SRC_REACTIONS_F90 = $(REACTIONS_DIR)c_15step_GRI211.f90 \
                     $(REACTIONS_DIR)c_15step_GRI3.f90
 SRC_REACTIONS += $(SRC_REACTIONS_F90)
+SRC_SNBCK = $(SNBCK_DIR)SNBCK.cc \
+	    $(SNBCK_DIR)PlanckMean.cc
 
 # TUT testing:
 SRC_TUT = TestRun.cc \
@@ -379,45 +439,24 @@ SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
 
 # Base and CFFC sources:
 SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
-           $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION)
+           $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) $(SRC_HIGH_ORDER_RECONSTRUCTION_2D) $(SRC_SYSTEM) 
 ifeq ($(TUT_TESTING),ON) 
   SRC_BASE += $(SRC_TUT)
+  SRC_SOLVERS1D += $(SRC_TUT)
+  SRC_EULER1D_SOLVER += $(SRC_TUT)
 endif
 SRC_CFFC = $(SRC_BASE) \
            $(SRC_CFD1D_INPUT) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D) $(SRC_MHD1D) \
            $(SRC_ADVECTDIFFUSE) $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_CHEM) $(SRC_HIGHTEMP) \
            $(SRC_DUSTY) $(SRC_LESPREMIXED) $(SRC_GAUSSIAN) $(SRC_ION) $(SRC_ELECTROSTATIC) \
            $(SRC_RTE) $(SRC_INTERFACE) $(SRC_LEVELSET) \
-           $(SRC_TURBULENT) $(SRC_EOS) $(SRC_NASADATA) $(SRC_REACTIONS) $(SRC_ICEMCFD)
+           $(SRC_TURBULENT) $(SRC_EOS) $(SRC_NASADATA) $(SRC_REACTIONS) $(SRC_SNBCK) $(SRC_ICEMCFD) \
+           $(SRC_HIGH_ORDER_RECONSTRUCTION_1D)
 
 # Executable sources:
 SRC_MAIN = cffc2D.cc
 SRC_ICEMCFD_UTIL1 = $(ICEMCFD_DIR)icemcfd2tecplot.cc 
 SRC_ICEMCFD_UTIL2 = $(ICEMCFD_DIR)icemcfd2grid2dquad.cc
-
-# Solvers 1D:
-SRC_SOLVERS1D = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
-                $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION) \
-		$(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) \
-                $(SRC_MHD1D) $(SRC_EULER1D) $(SRC_MPI)
-
-# Add Unit Testing to Solvers 1D:
-ifeq ($(TUT_TESTING),ON) 
-  SRC_SOLVERS1D += $(SRC_TUT)
-endif
-
-SRC_SOLVERS1D_EXE = $(SOLVERS1D_DIR)Solvers1D.cc
-SRC_SOLVERS1D_SOLVER = $(SRC_SOLVERS1D_EXE) $(SRC_SOLVERS1D)
-
-# Euler 1D:
-SRC_EULER1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
-                     $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION) \
-                     $(SRC_EULER1D) $(SRC_EULER1D_EXE) $(SRC_MPI)
-
-# Add Unit Testing to Euler 1D:
-ifeq ($(TUT_TESTING),ON) 
-  SRC_EULER1D_SOLVER += $(SRC_TUT)
-endif
 
 #################################################################################
 # Compiled object code files (automatically generated with pattern substitution)
@@ -451,7 +490,9 @@ OBJ_MHD1D = $(SRC_MHD1D:.cc=.o)
 OBJ_CFD1D_INPUT := $(SRC_CFD1D_INPUT:.cc=.o)
 
 # HighOrderReconstruction: (substitute *.o for *.cc)
-OBJ_HIGH_ORDER_RECONSTRUCTION := $(SRC_HIGH_ORDER_RECONSTRUCTION:.cc=.o)
+OBJ_HIGH_ORDER_RECONSTRUCTION_COMMON := $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON:.cc=.o)
+OBJ_HIGH_ORDER_RECONSTRUCTION_1D := $(SRC_HIGH_ORDER_RECONSTRUCTION_1D:.cc=.o)
+OBJ_HIGH_ORDER_RECONSTRUCTION_2D := $(SRC_HIGH_ORDER_RECONSTRUCTION_2D:.cc=.o)
 
 # Euler1D solver objects:
 OBJ_EULER1D_SOLVER := $(patsubst %.cc,%.o, $(filter %.cc, $(SRC_EULER1D_SOLVER))) \
@@ -478,6 +519,10 @@ OBJ_NAVIERSTOKES_EXE = $(SRC_NAVIERSTOKES_EXE:.cc=.o)
 # Chem2D:
 OBJ_CHEM = $(SRC_CHEM:.cc=.o)
 OBJ_CHEM_EXE = $(SRC_CHEM_EXE:.cc=.o)
+
+# Flame2D:
+OBJ_FLAME = $(SRC_FLAME:.cc=.o)
+OBJ_FLAME_EXE = $(SRC_FLAME_EXE:.cc=.o)
 
 # HighTemp2D:
 OBJ_HIGHTEMP = $(SRC_HIGHTEMP:.cc=.o)
@@ -506,6 +551,12 @@ OBJ_ELECTROSTATIC_EXE = $(SRC_ELECTROSTATIC_EXE:.cc=.o)
 # Rte2D:
 OBJ_RTE = $(SRC_RTE:.cc=.o)
 OBJ_RTE_EXE = $(SRC_RTE_EXE:.cc=.o)
+ifeq ($(CHEM2D_WITH_RTE),ON)
+  OBJ_CHEM += $(OBJ_RTE)
+endif
+ifeq ($(FLAME2D_WITH_RTE),ON)
+  OBJ_FLAME += $(OBJ_RTE)
+endif
 
 # EmbeddedBoundaries2D:
 OBJ_INTERFACE = $(SRC_INTERFACE:.cc=.o)
@@ -523,6 +574,7 @@ OBJ_REACTIONS = $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_REACTIONS)))
 OBJ_REACTIONS += $(patsubst %.f,%.o,$(filter %.f,$(SRC_REACTIONS)))
 OBJ_REACTIONS += $(patsubst %.f90,%.o,$(filter %.f90,$(SRC_REACTIONS)))
 OBJ_REACTIONS_F90 = $(SRC_REACTIONS_F90:.f90=.o)
+OBJ_SNBCK = $(SRC_SNBCK:.cc=.o)
 
 # TUT testing:
 OBJ_TUT := $(SRC_TUT:.cc=.o)
@@ -544,9 +596,15 @@ OBJ_CFFC += $(patsubst %.f,%.o,$(filter %.f,$(SRC_CFFC)))
 # Executable objects:
 OBJ_MAIN = $(SRC_MAIN:.cc=.o)
 OBJ_ICEMCFD_UTIL1 = $(SRC_ICEMCFD_UTIL1:.cc=.o) \
-                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD) $(OBJ_TUT)
+                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD) \
+		    $(OBJ_HIGH_ORDER_RECONSTRUCTION_2D) $(OBJ_HIGH_ORDER_RECONSTRUCTION_COMMON)
 OBJ_ICEMCFD_UTIL2 = $(SRC_ICEMCFD_UTIL2:.cc=.o) \
-                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD) $(OBJ_TUT)
+                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD) \
+		    $(OBJ_HIGH_ORDER_RECONSTRUCTION_2D) $(OBJ_HIGH_ORDER_RECONSTRUCTION_COMMON)
+ifeq ($(TUT_TESTING),ON) 
+  OBJ_ICEMCFD_UTIL1 += $(OBJ_TUT)
+  OBJ_ICEMCFD_UTIL2 += $(OBJ_TUT)
+endif
 
 ###############################################################################
 # Define the executables
@@ -560,6 +618,7 @@ EXE_ADVECTDIFFUSE2D = advectdiffuse2D
 EXE_EULER2D = euler2D
 EXE_NAVIERSTOKES2D = navierstokes2D
 EXE_CHEM2D = chem2D
+EXE_FLAME2D = flame2D
 EXE_HIGHTEMP2D = hightemp2D
 EXE_DUSTY2D = dusty2D
 EXE_LESPREMIXED2D = lespremixed2D
@@ -595,6 +654,7 @@ help:
 	@echo "|        make euler2D              compile euler2D stand alone program              |"
 	@echo "|        make navierstokes2D       compile navierstokes2D stand alone program       |"
 	@echo "|        make chem2D               compile chem2D stand alone program               |"
+	@echo "|        make flame2D              compile flame2D stand alone program              |"
 	@echo "|        make hightemp2D           compile hightemp2D stand alone program           |"
 	@echo "|        make dusty2D              compile dusty2D stand alone program              |"
 	@echo "|        make lespremixed2D        compile lespremixed2D stand alone program        |"
@@ -613,7 +673,7 @@ help:
 	@echo "|        make superclean           clean up documentation and library directories   |"
 	@echo "|        make help                 display makefile usage information               |"
 	@echo "|                                                                                   |"
-	@echo "| Package Options: MPI_VERSION = NoMPI (default), MPICH, MPICH2, MPT (sgi)          |"
+	@echo "| Package Options: MPI_VERSION = NoMPI (default), MPICH, MPICH2, OPENMPI, MPT (sgi  |"
 	@echo "|                  ICEMCFD_VERSION = NoICEMCFD (default),V41,V42,V43,V50,V10,V11    |"
 	@echo "|                  GCC_VERSION = V296, V3+ (default), ICC                           |"
 	@echo "|                  CANTERA_VERSION = NoCANTERA (default), V70                       |"
@@ -781,14 +841,25 @@ $(EXE_NAVIERSTOKES2D): $(OBJ_NAVIERSTOKES_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES) $
 	@echo '----------------------------------------------------------'
 	@echo ' '
 
-$(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_CHEM) $(OBJ_ICEMCFD)
+$(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_SNBCK) $(OBJ_CHEM) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_CHEM2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_CHEM2D) $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_CHEM) $(OBJ_ICEMCFD) $(LDFLAGS)
+	$(LD) -o $(EXE_CHEM2D) $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_SNBCK) $(OBJ_CHEM) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_CHEM2D) has been brought up to date.
+	@echo '--------------------------------------------------'
+	@echo ' '
+
+$(EXE_FLAME2D): $(OBJ_FLAME_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_SNBCK) $(OBJ_FLAME) $(OBJ_ICEMCFD)
+	@echo ' '
+	@echo Building program $(EXE_FLAME2D) for a $(PLATFORM) platform.
+	@echo '----------------------------------------------------------'
+	@echo ' '
+	$(LD) -o $(EXE_FLAME2D) $(OBJ_FLAME_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_SNBCK) $(OBJ_FLAME) $(OBJ_ICEMCFD) $(LDFLAGS)
+	@echo ' '
+	@echo Program $(EXE_FLAME2D) has been brought up to date.
 	@echo '--------------------------------------------------'
 	@echo ' '
 
@@ -858,23 +929,23 @@ $(EXE_ELECTROSTATIC2D): $(OBJ_ELECTROSTATIC_EXE) $(OBJ_BASE) $(OBJ_ELECTROSTATIC
 	@echo '---------------------------------------------------'
 	@echo ' '
 
-$(EXE_RTE2D): $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_RTE) $(OBJ_ICEMCFD)
+$(EXE_RTE2D): $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_SNBCK) $(OBJ_RTE) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_RTE2D) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_RTE2D) $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_RTE) $(OBJ_ICEMCFD) $(LDFLAGS)
+	$(LD) -o $(EXE_RTE2D) $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_SNBCK) $(OBJ_RTE) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_RTE2D) has been brought up to date.
 	@echo '---------------------------------------------------'
 	@echo ' '
 
-$(EXE_LEVELSET2D): $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE)
+$(EXE_LEVELSET2D): $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_LEVELSET2D) for a $(PLATFORM) platform.
 	@echo '------------------------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_LEVELSET2D) $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE) $(LDFLAGS)
+	$(LD) -o $(EXE_LEVELSET2D) $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_LEVELSET2D) has been brought up to date.
 	@echo '------------------------------------------------------------------------'
@@ -924,7 +995,7 @@ install: $(EXE_MAIN)
 	@echo "---------------------"
 	@echo " "
 
-install-all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_EULER1D) $(EXE_SOLVERS1D)\
+install-all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_EULER1D) $(EXE_SOLVERS1D) \
         $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
@@ -1000,6 +1071,8 @@ clean:
 	@echo '---------------------------------'
 	@echo ' '
 	rm -f *.depend *.o *.bak *.il *~
+	rm -f journal.tut log.tut
+	rm -f gmon.out tecplot.phy
 	rm -f $(MATH_DIR)*.o $(MATH_DIR)*.il $(MATH_DIR)*~
 	rm -f $(MATH_DIR)Polyfit/*.o $(MATH_DIR)Polyfit/*.il $(MATH_DIR)Polyfit/*~
 	rm -f $(MATH_DIR)UnitTests/*.o $(MATH_DIR)UnitTests/*.il $(MATH_DIR)UnitTests/*~
@@ -1020,6 +1093,7 @@ clean:
 	rm -f $(EULER_2D_DIR)*.o $(EULER_2D_DIR)*.il $(EULER_2D_DIR)*~ $(EULER_2D_DIR)*.depend $(EULER_2D_DIR)*.bak
 	rm -f $(NAVIERSTOKES_DIR)*.o $(NAVIERSTOKES_DIR)*.il $(NAVIERSTOKES_DIR)*~ $(NAVIERSTOKES_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(CHEM_DIR)*.o $(CHEM_DIR)*.il $(CHEM_DIR)*~ $(CHEM_DIR)*.depend $(CHEM_DIR)*.bak
+	rm -f $(FLAME_DIR)*.o $(FLAME_DIR)*.il $(FLAME_DIR)*~ $(FLAME_DIR)*.depend $(FLAME_DIR)*.bak
 	rm -f $(HIGHTEMP_DIR)*.o $(HIGHTEMP_DIR)*.il $(HIGHTEMP_DIR)*~ $(HIGHTEMP_DIR)*.depend $(HIGHTEMP_DIR)*.bak
 	rm -f $(DUSTY_DIR)*.o $(DUSTY_DIR)*.il $(DUSTY_DIR)*~ $(DUSTY_DIR)*.depend $(DUSTY_DIR)*.bak
 	rm -f $(LESPREMIXED_DIR)*.o $(LESPREMIXED_DIR)*.il $(LESPREMIXED_DIR)*~ $(LESPREMIXED_DIR)*.depend $(LESPREMIXED_DIR)*.bak
@@ -1034,6 +1108,7 @@ clean:
 	rm -f $(EOS_DIR)*.o $(EOS_DIR)*.il $(EOS_DIR)*~
 	rm -f $(NASADATA_DIR)*.o $(NASADATA_DIR)*.il $(NASADATA_DIR)*~
 	rm -f $(REACTIONS_DIR)*.o $(REACTIONS_DIR)*.il $(REACTIONS_DIR)*~
+	rm -f $(SNBCK_DIR)*.o $(SNBCK_DIR)*.il $(SNBCK_DIR)*~
 	rm -f $(HIGH_ORDER_RECONSTRUCTION_DIR)*.o $(HIGH_ORDER_RECONSTRUCTION_DIR)*.il $(HIGH_ORDER_RECONSTRUCTION_DIR)*~
 	rm -f $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/*.o $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/*.il $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/*~
 	rm -f $(UNIT_TESTING_DIR)*.o $(UNIT_TESTING_DIR)*.il $(UNIT_TESTING_DIR)*~
@@ -1050,6 +1125,7 @@ clean:
 	rm -f $(EXE_EULER2D)
 	rm -f $(EXE_NAVIERSTOKES2D)
 	rm -f $(EXE_CHEM2D)
+	rm -f $(EXE_FLAME2D)
 	rm -f $(EXE_HIGHTEMP2D)
 	rm -f $(EXE_DUSTY2D)
 	rm -f $(EXE_LESPREMIXED2D)
@@ -1151,6 +1227,7 @@ ifeq ($(strip $(filter $(MAKECMDGOALS), $(NODEP_LIST)) ), )
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_EULER_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_NAVIERSTOKES_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_CHEM_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_FLAME_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_HIGHTEMP_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_DUSTY_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_LESPREMIXED_EXE)))

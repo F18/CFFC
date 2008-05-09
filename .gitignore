@@ -17,6 +17,7 @@
 *.tree
 *.log
 *.gplt
+*_residual.dat
 *.plt
 tecplot.phy
 *.e*
@@ -78,6 +79,7 @@ navierstokes2D
 embeddedboundaries2D
 gaussian2D
 rte2D
+flame2D
 
 # 3D executables
 cffc3D
@@ -87,6 +89,7 @@ navierstokes3Dpolytropic
 navierstokes3Dthermallyperfect
 fans3Dpolytropic
 fans3Dthermallyperfect
+les3Dpolytropic
 les3Dfsd
 les3Dtf
 

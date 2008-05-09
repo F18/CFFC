@@ -2,11 +2,11 @@ TITLE = "CFFC: 2D Advection Diffusion Equation Solution, Time Step/Iteration Lev
 VARIABLES = "x" \ 
 "y" \ 
 "u" \ 
-"Vx" 
-"Vy" 
-"k" 
-"s" 
-"ExactSoln" 
+"Vx" \ 
+"Vy" \ 
+"k" \ 
+"s" \ 
+"ExactSoln" \ 
 ZONE T =  "Block Number = 0" \ 
 I = 7 \ 
 J = 7 \ 

@@ -346,61 +346,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
  ********************************************************/
 void Copy_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk1,
                          const AdvectDiffuse2D_Quad_Block &SolnBlk2) {
-
-  int i, j, k;
-
-  /* Allocate (re-allocate) memory for the solution
-     of the quadrilateral solution block SolnBlk1 as necessary. */
-
-  if (SolnBlk1.NCi != SolnBlk2.NCi || 
-      SolnBlk1.NCj != SolnBlk2.NCj ||
-      SolnBlk1.Nghost != SolnBlk2.Nghost) {
-    if (SolnBlk1.U != NULL) SolnBlk1.deallocate();
-    if (SolnBlk2.U != NULL) SolnBlk1.allocate(SolnBlk2.NCi-2*SolnBlk2.Nghost,
-					      SolnBlk2.NCj-2*SolnBlk2.Nghost,
-					      SolnBlk2.Nghost);
-  } /* endif */
-
-    /* Set the axisymmetric/planar flow indicator. */
-
-  SolnBlk1.Axisymmetric = SolnBlk2.Axisymmetric;
-
-  /* Copy the grid of the second solution block
-     to the first solution block. */
-
-  Copy_Quad_Block(SolnBlk1.Grid, SolnBlk2.Grid);
-
-  /* Copy the solution information from SolnBlk2 to SolnBlk1. */
-
-  if (SolnBlk2.U != NULL) {
-    for ( j  = SolnBlk1.JCl-SolnBlk1.Nghost ; j <= SolnBlk1.JCu+SolnBlk1.Nghost ; ++j ) {
-      for ( i = SolnBlk1.ICl-SolnBlk1.Nghost ; i <= SolnBlk1.ICu+SolnBlk1.Nghost ; ++i ) {
-	SolnBlk1.U[i][j] = SolnBlk2.U[i][j];
-	for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D-1 ; ++k ) {
-	  SolnBlk1.dUdt[i][j][k] = SolnBlk2.dUdt[i][j][k];
-	} /* endfor */
-	SolnBlk1.dUdx[i][j] = SolnBlk2.dUdx[i][j];
-	SolnBlk1.dUdy[i][j] = SolnBlk2.dUdy[i][j];
-	SolnBlk1.phi[i][j] = SolnBlk2.phi[i][j];
-	SolnBlk1.Uo[i][j] = SolnBlk2.Uo[i][j];
-	SolnBlk1.dt[i][j] = SolnBlk2.dt[i][j];
-      } /* endfor */
-    } /* endfor */
-
-    for (j  = SolnBlk1.JCl-SolnBlk1.Nghost ; j <= SolnBlk1.JCu+SolnBlk1.Nghost ; ++j ) {
-      SolnBlk1.UoW[j] = SolnBlk2.UoW[j];
-      SolnBlk1.UoE[j] = SolnBlk2.UoE[j];
-    } /* endfor */
-
-    for ( i = SolnBlk1.ICl-SolnBlk1.Nghost ; i <= SolnBlk1.ICu+SolnBlk1.Nghost ; ++i ) {
-      SolnBlk1.UoS[i] = SolnBlk2.UoS[i];
-      SolnBlk1.UoN[i] = SolnBlk2.UoN[i];
-    } /* endfor */
-  } /* endif */
-
-  // Reset accuracy assessment flag
-  SolnBlk1.AssessAccuracy.ResetForNewCalculation();
-
+  SolnBlk1.makeCopy(SolnBlk2);
 }
 
 /******************************************************//**
@@ -834,12 +780,12 @@ void Output_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n"
 	     << "\"u\" \\ \n"
-	     << "\"Vx\" \n"
-	     << "\"Vy\" \n"
-	     << "\"k\" \n"
-	     << "\"s\" \n";
+	     << "\"Vx\" \\ \n"
+	     << "\"Vy\" \\ \n"
+	     << "\"k\" \\ \n"
+	     << "\"s\" \\ \n";
     if (SolnBlk.ExactSoln->IsExactSolutionSet()){
-      Out_File << "\"ExactSoln\" \n";
+      Out_File << "\"ExactSoln\" \\ \n";
     }
  
     Out_File << "ZONE T =  \"Block Number = " << Block_Number
@@ -905,10 +851,10 @@ void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	     << "\"u\" \\ \n"
 	     << "\"Vx\" \\ \n"
 	     << "\"Vy\" \\ \n"
-	     << "\"k\" \n"
-	     << "\"s\" \n";
+	     << "\"k\" \\ \n"
+	     << "\"s\" \\ \n";
     if (SolnBlk.ExactSoln->IsExactSolutionSet()){
-      Out_File << "\"ExactSoln\" \n";
+      Out_File << "\"ExactSoln\" \\ \n";
     }
     Out_File << "ZONE T =  \"Block Number = " << Block_Number
 	     << "\" \\ \n"
@@ -1090,6 +1036,10 @@ void ICs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	    SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
 							       wrapped_member_function(IP.ExactSoln,
 										       &AdvectDiffuse2D_ExactSolutions::Solution,
+										       Ul.u),
+							       wrapped_member_function(IP.ExactSoln,
+										       &AdvectDiffuse2D_ExactSolutions::
+										       XDependencyIntegrated_Solution,
 										       Ul.u),
 							       IP.Exact_Integration_Digits,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	  SolnBlk.U[i][j] = Ul;
@@ -1393,7 +1343,7 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	  }
 	  break;
 	} /* endswitch */
-    } /* endif */
+      } /* endif */
   } /* endfor */
 
 
@@ -2216,225 +2166,11 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block &SolnBlk,
   // Determine the number of neighbouring cells to
   // be used in the reconstruction procedure.  Away from
   // boundaries this 8 neighbours will be used.
-  if (i <= SolnBlk.ICl-2 || i >= SolnBlk.ICu+2 || j <= SolnBlk.JCl-2 || j >= SolnBlk.JCu+2) {
-    n_pts = 0;
-  } else if ((i == SolnBlk.ICl-1) && (SolnBlk.Grid.BCtypeW[j] != BC_NONE)) {
-    if (j == SolnBlk.JCl-1 || j == SolnBlk.JCu+1) {
-      n_pts = 0;
-    } else if (SolnBlk.Grid.BCtypeW[j] == BC_PERIODIC ||
-	       SolnBlk.Grid.BCtypeW[j] == BC_NEUMANN ||
-	       SolnBlk.Grid.BCtypeW[j] == BC_ROBIN) {
-      if (j == SolnBlk.JCl) {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j  ;
-	i_index[1] = i+1; j_index[1] = j  ;
-	i_index[2] = i-1; j_index[2] = j+1;
-	i_index[3] = i  ; j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j+1;
-      } else if (j == SolnBlk.JCu) {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i  ; j_index[1] = j-1;
-	i_index[2] = i+1; j_index[2] = j-1;
-	i_index[3] = i-1; j_index[3] = j  ;
-	i_index[4] = i+1; j_index[4] = j  ;
-      } else {
-	n_pts = 8;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i  ; j_index[1] = j-1;
-	i_index[2] = i+1; j_index[2] = j-1;
-	i_index[3] = i-1; j_index[3] = j  ;
-	i_index[4] = i+1; j_index[4] = j  ;
-	i_index[5] = i-1; j_index[5] = j+1;
-	i_index[6] = i  ; j_index[6] = j+1;
-	i_index[7] = i+1; j_index[7] = j+1;
-      } /* endif */
-    } else {
-      if (j == SolnBlk.JCl) {
-	n_pts = 3;
-	i_index[0] = i+1; j_index[0] = j  ;
-	i_index[1] = i  ; j_index[1] = j+1;
-	i_index[2] = i+1; j_index[2] = j+1;
-      } else if (j == SolnBlk.JCu) {
-	n_pts = 3;
-	i_index[0] = i  ; j_index[0] = j-1;
-	i_index[1] = i+1; j_index[1] = j-1;
-	i_index[2] = i+1; j_index[2] = j  ;
-      } else {
-	n_pts = 5;
-	i_index[0] = i  ; j_index[0] = j-1;
-	i_index[1] = i+1; j_index[1] = j-1;
-	i_index[2] = i+1; j_index[2] = j  ;
-	i_index[3] = i  ; j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j+1;
-      } /* endif */
-    } /* endif */           
-  } else if ((i == SolnBlk.ICu+1) && (SolnBlk.Grid.BCtypeE[j] != BC_NONE)) {
-    if (j == SolnBlk.JCl-1 || j == SolnBlk.JCu+1) {
-      n_pts = 0;
-    } else if (SolnBlk.Grid.BCtypeE[j] == BC_PERIODIC ||
-	       SolnBlk.Grid.BCtypeE[j] == BC_NEUMANN ||
-	       SolnBlk.Grid.BCtypeE[j] == BC_ROBIN) {
-      if (j == SolnBlk.JCl) {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j  ;
-	i_index[1] = i+1; j_index[1] = j  ;
-	i_index[2] = i-1; j_index[2] = j+1;
-	i_index[3] = i  ; j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j+1;
-      } else if (j == SolnBlk.JCu) {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i  ; j_index[1] = j-1;
-	i_index[2] = i+1; j_index[2] = j-1;
-	i_index[3] = i-1; j_index[3] = j  ;
-	i_index[4] = i+1; j_index[4] = j  ;
-      } else {
-	n_pts = 8;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i  ; j_index[1] = j-1;
-	i_index[2] = i+1; j_index[2] = j-1;
-	i_index[3] = i-1; j_index[3] = j  ;
-	i_index[4] = i+1; j_index[4] = j  ;
-	i_index[5] = i-1; j_index[5] = j+1;
-	i_index[6] = i  ; j_index[6] = j+1;
-	i_index[7] = i+1; j_index[7] = j+1;
-      } /* endif */
-    } else {
-      if (j == SolnBlk.JCl) {
-	n_pts = 3;
-	i_index[0] = i-1; j_index[0] = j  ;
-	i_index[1] = i-1; j_index[1] = j+1;
-	i_index[2] = i  ; j_index[2] = j+1;
-      } else if (j == SolnBlk.JCu) {
-	n_pts = 3;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i  ; j_index[1] = j-1;
-	i_index[2] = i-1; j_index[2] = j  ;
-      } else {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i  ; j_index[1] = j-1;
-	i_index[2] = i-1; j_index[2] = j  ;
-	i_index[3] = i-1; j_index[3] = j+1;
-	i_index[4] = i  ; j_index[4] = j+1;
-      } /* endif */
-    } /* endif */
-  } else if ((j == SolnBlk.JCl-1) && (SolnBlk.Grid.BCtypeS[i] != BC_NONE)) {
-    if (i == SolnBlk.ICl-1 || i == SolnBlk.ICu+1) {
-      n_pts = 0;
-    } else if (SolnBlk.Grid.BCtypeS[i] == BC_PERIODIC ||
-	       SolnBlk.Grid.BCtypeS[i] == BC_NEUMANN ||
-	       SolnBlk.Grid.BCtypeS[i] == BC_ROBIN) {
-      if (i == SolnBlk.ICl) {
-	n_pts = 5;
-	i_index[0] = i  ; j_index[0] = j-1;
-	i_index[1] = i+1; j_index[1] = j-1;
-	i_index[2] = i+1; j_index[2] = j  ;
-	i_index[3] = i  ; j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j+1;
-      } else if (i == SolnBlk.ICu) {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i  ; j_index[1] = j-1;
-	i_index[2] = i-1; j_index[2] = j  ;
-	i_index[3] = i-1; j_index[3] = j+1;
-	i_index[4] = i  ; j_index[4] = j+1;
-      } else {
-	n_pts = 8;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i  ; j_index[1] = j-1;
-	i_index[2] = i+1; j_index[2] = j-1;
-	i_index[3] = i-1; j_index[3] = j  ;
-	i_index[4] = i+1; j_index[4] = j  ;
-	i_index[5] = i-1; j_index[5] = j+1;
-	i_index[6] = i  ; j_index[6] = j+1;
-	i_index[7] = i+1; j_index[7] = j+1;
-      } /* endif */
-    } else {
-      if (i == SolnBlk.ICl) {
-	n_pts = 3;
-	i_index[0] = i+1; j_index[0] = j  ;
-	i_index[1] = i  ; j_index[1] = j+1;
-	i_index[2] = i+1; j_index[2] = j+1;
-      } else if (i == SolnBlk.ICu) {
-	n_pts = 3;
-	i_index[0] = i-1; j_index[0] = j  ;
-	i_index[1] = i-1; j_index[1] = j+1;
-	i_index[2] = i  ; j_index[2] = j+1;
-      } else {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j  ;
-	i_index[1] = i+1; j_index[1] = j  ;
-	i_index[2] = i-1; j_index[2] = j+1;
-	i_index[3] = i  ; j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j+1;
-      } /* endif */
-    } /* endif */
-  } else if ((j == SolnBlk.JCu+1) && (SolnBlk.Grid.BCtypeN[i] != BC_NONE)) {
-    if (i == SolnBlk.ICl-1 || i == SolnBlk.ICu+1) {
-      n_pts = 0;
-    } else if (SolnBlk.Grid.BCtypeN[i] == BC_PERIODIC ||
-	       SolnBlk.Grid.BCtypeN[i] == BC_NEUMANN ||
-	       SolnBlk.Grid.BCtypeN[i] == BC_ROBIN) {
-      if (i == SolnBlk.ICl) {
-	n_pts = 5;
-	i_index[0] = i  ; j_index[0] = j-1;
-	i_index[1] = i+1; j_index[1] = j-1;
-	i_index[2] = i+1; j_index[2] = j  ;
-	i_index[3] = i  ; j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j+1;
-      } else if (i == SolnBlk.ICu) {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i  ; j_index[1] = j-1;
-	i_index[2] = i-1; j_index[2] = j  ;
-	i_index[3] = i-1; j_index[3] = j+1;
-	i_index[4] = i  ; j_index[4] = j+1;
-      } else {
-	n_pts = 8;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i  ; j_index[1] = j-1;
-	i_index[2] = i+1; j_index[2] = j-1;
-	i_index[3] = i-1; j_index[3] = j  ;
-	i_index[4] = i+1; j_index[4] = j  ;
-	i_index[5] = i-1; j_index[5] = j+1;
-	i_index[6] = i  ; j_index[6] = j+1;
-	i_index[7] = i+1; j_index[7] = j+1;
-      } /* endif */
-    } else {
-      if (i == SolnBlk.ICl) {
-	n_pts = 3;
-	i_index[0] = i  ; j_index[0] = j-1;
-	i_index[1] = i+1; j_index[1] = j-1;
-	i_index[2] = i+1; j_index[2] = j  ;
-      } else if (i == SolnBlk.ICu) {
-	n_pts = 3;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i  ; j_index[1] = j-1;
-	i_index[2] = i-1; j_index[2] = j  ;
-      } else {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i  ; j_index[1] = j-1;
-	i_index[2] = i+1; j_index[2] = j-1;
-	i_index[3] = i-1; j_index[3] = j  ;
-	i_index[4] = i+1; j_index[4] = j  ;
-      } /* endif */
-    } /* endif */
-  } else {
-    n_pts = 8;
-    i_index[0] = i-1; j_index[0] = j-1;
-    i_index[1] = i  ; j_index[1] = j-1;
-    i_index[2] = i+1; j_index[2] = j-1;
-    i_index[3] = i-1; j_index[3] = j  ;
-    i_index[4] = i+1; j_index[4] = j  ;
-    i_index[5] = i-1; j_index[5] = j+1;
-    i_index[6] = i  ; j_index[6] = j+1;
-    i_index[7] = i+1; j_index[7] = j+1;
-  } /* endif */
-    
-    // Perform reconstruction.
+  SolnBlk.SetPiecewiseLinearReconstructionStencil(i,j,
+						  i_index,j_index,
+						  n_pts);
+
+  // Perform reconstruction.
   if (n_pts > 0) {
     DuDx_ave = ZERO;
     DuDy_ave = ZERO;
@@ -2773,16 +2509,13 @@ void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk,
     } /* endfor */
   } /* endif */
 
-    /* Reset the boundary condition types at the block boundaries. */
- 
+  /* Reset the boundary condition types at the block boundaries. */
   Set_BCs(SolnBlk.Grid);
 
   /* Recompute the exterior nodes for the block quadrilateral mesh. */
-
   Update_Exterior_Nodes(SolnBlk.Grid);
 
   /* Recompute the cells for the block quadrilateral mesh. */
-
   Update_Cells(SolnBlk.Grid);
 
 }
@@ -2892,16 +2625,13 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
     } /* endfor */
   } /* endif */
 
-    /* Reset the boundary condition types at the block boundaries. */
- 
+  /* Reset the boundary condition types at the block boundaries. */
   Set_BCs(SolnBlk.Grid);
 
   /* Recompute the exterior nodes for the block quadrilateral mesh. */
-
   Update_Exterior_Nodes(SolnBlk.Grid);
 
   /* Recompute the cells for the block quadrilateral mesh. */
-
   Update_Cells(SolnBlk.Grid);
 
 }
@@ -3058,224 +2788,23 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 /******************************************************//**
  * Routine: dUdt_Residual_Evaluation                    
  *                                                      
- * This routine evaluate the residual for the specified 
- * solution block using a 2nd-ororder limited upwind    
- * finite-volume spatial discretization scheme for the  
- * convective flux coupled with a centrally-weighted    
- * finite-volume discretization for the diffused flux.  
+ * This routine evaluates the residual for the specified 
+ * solution block using a 2nd-order or a high-order (up to 4th-order)
+ * finite-volume spatial discretization scheme, whichever
+ * is required in the input parameters.
  * The residual is stored in dUdt[][][0].               
  *                                                      
  ********************************************************/
 int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block &SolnBlk,
 			     AdvectDiffuse2D_Input_Parameters &IP) {
 
-  int i, j;
-  Vector2D dX;
-  AdvectDiffuse2D_State Ul, Ur, U_face, Flux;
-  Vector2D GradU_face;		// Solution gradient at the inter-cellular face
-  /* Set the stencil flag for the gradient reconstruction to the most common case. */
-  int GradientReconstructionStencilFlag(DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
-
-  /* Perform the linear reconstruction within each cell
-     of the computational grid for this stage. */
-    
-  switch(IP.i_Reconstruction) {
-  case RECONSTRUCTION_GREEN_GAUSS :
-    Linear_Reconstruction_GreenGauss(SolnBlk,
-				     IP.i_Limiter);    
-    break;
-  case RECONSTRUCTION_LEAST_SQUARES :
-    Linear_Reconstruction_LeastSquares(SolnBlk,
-				       IP.i_Limiter);
-    break;
-  default:
-    Linear_Reconstruction_LeastSquares(SolnBlk,
-				       IP.i_Limiter);
-    break;
-  } /* endswitch */
-
-
-  /* Calculate the solution values at the mesh nodes
-     using a bilinear interpolation procedure . */
-  SolnBlk.Calculate_Nodal_Solutions();
-
-  /* Evaluate the time rate of change of the solution
-     (i.e., the solution residuals) using a second-order
-     limited upwind finite-volume scheme for the convective 
-     fluxes and a diamond-path gradient reconstruction 
-     for the diffusive fluxes. */
-    
-  // Add i-direction (zeta-direction) fluxes.
-  for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu+1 ; ++j ) {
-    SolnBlk.dUdt[SolnBlk.ICl-1][j][0].Vacuum();	// set to zero
-          
-    for ( i = SolnBlk.ICl-1 ; i <= SolnBlk.ICu ; ++i ) {
-      SolnBlk.dUdt[i+1][j][0].Vacuum();	// set to zero
-	 
-      if ( j >= SolnBlk.JCl && j <= SolnBlk.JCu ) {
-    
-	/* Evaluate the cell interface i-direction fluxes. */
-
-	if (i == SolnBlk.ICl-1){ // This is a WEST boundary interface
-	  // Compute the right interface state based on reconstruction
-	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
-
-	  /* Compute the left interface state for inviscid flux calculation,
-	     the solution state for calculation of the diffusion coefficient 
-	     and the solution gradient such that to satisfy the WEST boundary 
-	     condition at the Gauss quadrature point. */
-	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(WEST,
-								    i,j,
-								    Ul,Ur,
-								    U_face,
-								    GradU_face,IP.i_Viscous_Reconstruction);
-	  
-	} else if (i == SolnBlk.ICu){ // This is a EAST boundary interface
-	  // Compute the left interface state based on reconstruction
-	  Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
-	  
-	  /* Compute the left interface state for inviscid flux calculation,
-	     the solution state for calculation of the diffusion coefficient 
-	     and the solution gradient such that to satisfy the EAST boundary 
-	     condition at the Gauss quadrature point. */
-	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(EAST,
-								    i,j,
-								    Ul,Ur,
-								    U_face,
-								    GradU_face,IP.i_Viscous_Reconstruction);
-
-	} else {		// This is an interior interface
-	  // Compute left and right interface states at 
-	  // the face midpoint based on reconstruction
-	  Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
-	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
-
-	  // Determine the solution state at the Gauss quadrature
-	  // point for the calculation of the diffusion coefficient
-	  SolnBlk.EllipticFluxStateAtInteriorInterface(i  ,j,
-						       i+1,j,
-						       SolnBlk.Grid.xfaceE(i,j),U_face);
-
-	  // Calculate gradient at the face midpoint
-	  GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
-							 i+1,j,
-							 IP.i_Viscous_Reconstruction,
-							 GradientReconstructionStencilFlag);
-	}
-
-	// Compute the advective flux 'Fa' in the normal direction at the face midpoint 
-	Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
-	  
-	// Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
-	Flux += Fd(U_face, GradU_face, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
-
-	/* Evaluate cell-averaged solution changes. */
-	SolnBlk.dUdt[i  ][j][0] -= Flux*SolnBlk.Grid.lfaceE(i  , j)/SolnBlk.Grid.Cell[i  ][j].A;
-	SolnBlk.dUdt[i+1][j][0] += Flux*SolnBlk.Grid.lfaceW(i+1, j)/SolnBlk.Grid.Cell[i+1][j].A;
-	   
-	/* Include regular source terms. */
-	SolnBlk.dUdt[i][j][0] += SolnBlk.SourceTerm(i,j);
-
-	/* Include axisymmetric source terms as required. */
-	if (SolnBlk.Axisymmetric) {
-	  SolnBlk.dUdt[i][j][0] += SolnBlk.AxisymmetricSourceTerm(i,j);
-	} /* endif */
-
-	/* Save west and east face boundary flux. */
-	if (i == SolnBlk.ICl-1) {
-	  SolnBlk.FluxW[j] = -Flux*SolnBlk.Grid.lfaceW(i+1, j);
-	} else if (i == SolnBlk.ICu) {
-	  SolnBlk.FluxE[j] =  Flux*SolnBlk.Grid.lfaceE(i  , j);
-	} /* endif */
-
-      } /* endif */
-    } /* endfor */
-    
-    if ( j >= SolnBlk.JCl && j <= SolnBlk.JCu ) {
-      SolnBlk.dUdt[SolnBlk.ICl-1][j][0].Vacuum();	// set to zero
-      SolnBlk.dUdt[SolnBlk.ICu+1][j][0].Vacuum();	// set to zero
-    } /* endif */
-  } /* endfor */
-    
-    // Add j-direction (eta-direction) fluxes.
-  for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-    for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu ; ++j ) {
-    
-      /* Evaluate the cell interface j-direction fluxes. */
-
-      if (j == SolnBlk.JCl-1){ // This is a SOUTH boundary interface
-	// Compute the right interface state based on reconstruction
-	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
-	
-	/* Compute the left interface state for inviscid flux calculation,
-	   the solution state for calculation of the diffusion coefficient 
-	   and the solution gradient such that to satisfy the SOUTH boundary 
-	   condition at the Gauss quadrature point. */
-	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(SOUTH,
-								  i,j,
-								  Ul,Ur,
-								  U_face,
-								  GradU_face,IP.i_Viscous_Reconstruction);
-	  
-      } else if (j == SolnBlk.JCu){ // This is a NORTH boundary interface
-	// Compute the left interface state based on reconstruction
-	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
-	  
-	/* Compute the left interface state for inviscid flux calculation,
-	   the solution state for calculation of the diffusion coefficient 
-	   and the solution gradient such that to satisfy the NORTH boundary 
-	   condition at the Gauss quadrature point. */
-	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(NORTH,
-								  i,j,
-								  Ul,Ur,
-								  U_face,
-								  GradU_face,IP.i_Viscous_Reconstruction);
-	  
-      } else {		// This is an interior interface
-	// Compute left and right interface states at 
-	// the face midpoint based on reconstruction
-	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
-	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
-
-	// Determine the solution state at the Gauss quadrature
-	// point for the calculation of the diffusion coefficient
-	SolnBlk.EllipticFluxStateAtInteriorInterface(i  ,j,
-						     i  ,j+1,
-						     SolnBlk.Grid.xfaceN(i,j),U_face);
-
-	// Calculate gradient at the face midpoint
-	GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
-						       i  ,j+1,
-						       IP.i_Viscous_Reconstruction,
-						       GradientReconstructionStencilFlag);
-      }
-
-      // Compute the advective flux in the normal direction at the face midpoint 
-      Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i, j));
-         
-      // Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
-      Flux += Fd(U_face, GradU_face, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i,j));
-
-      /* Evaluate cell-averaged solution changes. */
-      SolnBlk.dUdt[i][j  ][0] -= Flux*SolnBlk.Grid.lfaceN(i, j  )/SolnBlk.Grid.Cell[i][j  ].A;
-      SolnBlk.dUdt[i][j+1][0] += Flux*SolnBlk.Grid.lfaceS(i, j+1)/SolnBlk.Grid.Cell[i][j+1].A;
-          
-      /* Save south and north face boundary flux. */
-      if (j == SolnBlk.JCl-1) {
-	SolnBlk.FluxS[i] = -Flux*SolnBlk.Grid.lfaceS(i, j+1);
-      } else if (j == SolnBlk.JCu) {
-	SolnBlk.FluxN[i] =  Flux*SolnBlk.Grid.lfaceN(i, j  );
-      } /* endif */
-
-    } /* endfor */
-
-    SolnBlk.dUdt[i][SolnBlk.JCl-1][0].Vacuum();	// set to zero
-    SolnBlk.dUdt[i][SolnBlk.JCu+1][0].Vacuum();	// set to zero
-  } /* endfor */
-    
-    /* residual evaluation successful. */
-  return 0;
-    
+  if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+    // calculate the high-order residual
+    return SolnBlk.dUdt_Residual_Evaluation_HighOrder(IP);
+  } else {
+    // calculate the 2nd-order residual
+    return SolnBlk.dUdt_Residual_Evaluation(IP);
+  }
 }
 
 /******************************************************//**
@@ -3290,292 +2819,13 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block &SolnBlk,
                              const int i_stage,
                              AdvectDiffuse2D_Input_Parameters &IP) {
 
-  int i, j, k_residual;
-  double omega;
-  Vector2D dX;
-  AdvectDiffuse2D_State Ul, Ur, U_face, Flux;
-  Vector2D GradU_face;		// Solution gradient at the inter-cellular face
-  /* Set the stencil flag for the gradient reconstruction to the most common case. */
-  int GradientReconstructionStencilFlag(DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
-
-
-  /* Evaluate the solution residual for stage 
-     i_stage of an N stage scheme. */
-
-  /* Evaluate the time step fraction and residual storage location for the stage. */
-    
-  switch(IP.i_Time_Integration) {
-  case TIME_STEPPING_EXPLICIT_EULER :
-    omega = Runge_Kutta(i_stage, IP.N_Stage);
-    k_residual = 0;
-    break;
-  case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-    omega = Runge_Kutta(i_stage, IP.N_Stage);
-    k_residual = 0;
-    break;
-  case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-    omega = Runge_Kutta(i_stage, IP.N_Stage);
-    k_residual = 0;
-    if (IP.N_Stage == 4) {
-      if (i_stage == 4) {
-	k_residual = 0;
-      } else {
-	k_residual = i_stage - 1;
-      } /* endif */
-    } /* endif */
-    break;
-  case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-    omega = MultiStage_Optimally_Smoothing(i_stage, 
-					   IP.N_Stage,
-					   IP.i_Limiter);
-    k_residual = 0;
-    break;
-  default:
-    omega = Runge_Kutta(i_stage, IP.N_Stage);
-    k_residual = 0;
-    break;
-  } /* endswitch */
-    
-  /* Perform the linear reconstruction within each cell
-     of the computational grid for this stage. */
-    
-  switch(IP.i_Reconstruction) {
-  case RECONSTRUCTION_GREEN_GAUSS :
-    Linear_Reconstruction_GreenGauss(SolnBlk,
-				     IP.i_Limiter);    
-    break;
-  case RECONSTRUCTION_LEAST_SQUARES :
-    Linear_Reconstruction_LeastSquares(SolnBlk,
-				       IP.i_Limiter);
-    break;
-  default:
-    Linear_Reconstruction_LeastSquares(SolnBlk,
-				       IP.i_Limiter);
-    break;
-  } /* endswitch */
-
-  /* Calculate the solution values at the mesh nodes
-     using a bilinear interpolation procedure . */
-  SolnBlk.Calculate_Nodal_Solutions();
-
-  /* Evaluate the time rate of change of the solution
-     (i.e., the solution residuals) using a second-order
-     limited upwind finite-volume scheme for the convective 
-     fluxes and a diamond-path gradient reconstruction 
-     for the diffusive fluxes. */
-    
-  // Add i-direction (zeta-direction) fluxes.
-  for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu+1 ; ++j ) {
-
-    // Set Uo for cell (ICl-1,j)
-    if ( i_stage == 1 ) {
-      SolnBlk.Uo[SolnBlk.ICl-1][j] = SolnBlk.U[SolnBlk.ICl-1][j];
-    } /* endif */
-
-    // Reset dUdt of cell (ICl-1,j) for the current stage
-    SolnBlk.dUdt[SolnBlk.ICl-1][j][k_residual].Vacuum();
-
-    for ( i = SolnBlk.ICl-1 ; i <= SolnBlk.ICu ; ++i ) {
-      if ( i_stage == 1 ) {
-	SolnBlk.Uo[i+1][j] = SolnBlk.U[i+1][j];
-	SolnBlk.dUdt[i+1][j][k_residual].Vacuum(); // set to zero
-      } else if ( j >= SolnBlk.JCl && j <= SolnBlk.JCu ) {
-	switch(IP.i_Time_Integration) {
-	case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-	  // 
-	  break;
-	case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-	  if (IP.N_Stage == 2) {
-	    // 
-	  } else if (IP.N_Stage == 4 && i_stage == 4) {
-	    SolnBlk.dUdt[i+1][j][k_residual] = ( SolnBlk.dUdt[i+1][j][0] + 
-						 TWO*SolnBlk.dUdt[i+1][j][1] +
-						 TWO*SolnBlk.dUdt[i+1][j][2] );
-	  } else {
-	    SolnBlk.dUdt[i+1][j][k_residual].Vacuum(); // set to zero
-	  } /* endif */
-	  break;
-	case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-	  SolnBlk.dUdt[i+1][j][k_residual].Vacuum(); // set to zero
-	  break;
-	default:
-	  SolnBlk.dUdt[i+1][j][k_residual].Vacuum(); // set to zero
-	  break;
-	} /* endswitch */
-      } /* endif */
-    
-      if ( j >= SolnBlk.JCl && j <= SolnBlk.JCu ) {
-    
-	/* Evaluate the cell interface i-direction fluxes. */
-
-	if (i == SolnBlk.ICl-1){ // This is a WEST boundary interface
-	  // Compute the right interface state based on reconstruction
-	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
-
-	  /* Compute the left interface state for inviscid flux calculation,
-	     the solution state for calculation of the diffusion coefficient 
-	     and the solution gradient such that to satisfy the WEST boundary 
-	     condition at the Gauss quadrature point. */
-	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(WEST,
-								    i,j,
-								    Ul,Ur,
-								    U_face,
-								    GradU_face,IP.i_Viscous_Reconstruction);
-	  
-	} else if (i == SolnBlk.ICu){ // This is a EAST boundary interface
-	  // Compute the left interface state based on reconstruction
-	  Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
-
-	  /* Compute the left interface state for inviscid flux calculation,
-	     the solution state for calculation of the diffusion coefficient 
-	     and the solution gradient such that to satisfy the EAST boundary 
-	     condition at the Gauss quadrature point. */
-	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(EAST,
-								    i,j,
-								    Ul,Ur,
-								    U_face,
-								    GradU_face,IP.i_Viscous_Reconstruction);
-	  
-	} else {		// This is an interior interface
-	  // Compute left and right interface states at 
-	  // the face midpoint based on reconstruction
-	  Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
-	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
-
-	  // Determine the solution state at the Gauss quadrature
-	  // point for the calculation of the diffusion coefficient
-	  SolnBlk.EllipticFluxStateAtInteriorInterface(i  ,j,
-						       i+1,j,
-						       SolnBlk.Grid.xfaceE(i,j),U_face);
-
-	  // Calculate gradient at the face midpoint
-	  GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
-							 i+1,j,
-							 IP.i_Viscous_Reconstruction,
-							 GradientReconstructionStencilFlag);
-   	}
-	
-	// Compute the advective flux in the normal direction at the face midpoint 
-	Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
-
-	// Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
-	Flux += Fd(U_face, GradU_face, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
-
-	/* Evaluate cell-averaged solution changes. */
-	SolnBlk.dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number*SolnBlk.dt[i  ][j])* 
-					      Flux*SolnBlk.Grid.lfaceE(i  , j)/SolnBlk.Grid.Cell[i  ][j].A );
-
-	SolnBlk.dUdt[i+1][j][k_residual] += ( (IP.CFL_Number*SolnBlk.dt[i+1][j])* 
-					      Flux*SolnBlk.Grid.lfaceW(i+1, j)/SolnBlk.Grid.Cell[i+1][j].A );
-	   
-	/* Include regular source terms. */
-	SolnBlk.dUdt[i][j][k_residual] += (IP.CFL_Number*SolnBlk.dt[i][j])*SolnBlk.SourceTerm(i,j);
-
-	/* Include axisymmetric source terms as required. */
-	if (SolnBlk.Axisymmetric) {
-	  SolnBlk.dUdt[i][j][k_residual] += ( (IP.CFL_Number*SolnBlk.dt[i][j])*
-					      SolnBlk.AxisymmetricSourceTerm(i,j) );
-	} /* endif */
-
-
-	/* Save west and east face boundary flux. */
-	if (i == SolnBlk.ICl-1) {
-	  SolnBlk.FluxW[j] = -Flux*SolnBlk.Grid.lfaceW(i+1, j);
-	} else if (i == SolnBlk.ICu) {
-	  SolnBlk.FluxE[j] =  Flux*SolnBlk.Grid.lfaceE(i  , j);
-	} /* endif */
-
-      } /* endif */
-    } /* endfor */
-    
-    if ( j >= SolnBlk.JCl && j <= SolnBlk.JCu ) {
-      SolnBlk.dUdt[SolnBlk.ICl-1][j][k_residual].Vacuum();
-      SolnBlk.dUdt[SolnBlk.ICu+1][j][k_residual].Vacuum();
-    } /* endif */
-  } /* endfor */
-    
-    // Add j-direction (eta-direction) fluxes.
-  for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-    for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu ; ++j ) {
-    
-      /* Evaluate the cell interface j-direction fluxes. */
-
-      if (j == SolnBlk.JCl-1){ // This is a SOUTH boundary interface
-	// Compute the right interface state based on reconstruction
-	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
-
-	/* Compute the left interface state for inviscid flux calculation 
-	   and the solution state at the Gauss quadrature point 
-	   for calculation of the diffusion coefficient
-	   such that to satisfy the SOUTH boundary condition */
-	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(SOUTH,
-								  i,j,
-								  Ul,Ur,
-								  U_face,
-								  GradU_face,IP.i_Viscous_Reconstruction);
-	  
-      } else if (j == SolnBlk.JCu){ // This is a NORTH boundary interface
-	// Compute the left interface state based on reconstruction
-	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
-
-	/* Compute the left interface state for inviscid flux calculation 
-	   and the solution state at the Gauss quadrature point 
-	   for calculation of the diffusion coefficient
-	   such that to satisfy the NORTH boundary condition */
-	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(NORTH,
-								  i,j,
-								  Ul,Ur,
-								  U_face,
-								  GradU_face,IP.i_Viscous_Reconstruction);
-	  
-      } else {		// This is an interior interface
-	// Compute left and right interface states at 
-	// the face midpoint based on reconstruction
-	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
-	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
-
-	// Determine the solution state at the Gauss quadrature
-	// point for the calculation of the diffusion coefficient
-	SolnBlk.EllipticFluxStateAtInteriorInterface(i  ,j,
-						     i  ,j+1,
-						     SolnBlk.Grid.xfaceN(i,j),U_face);
-
-	// Calculate gradient at the face midpoint
-	GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
-						       i  ,j+1,
-						       IP.i_Viscous_Reconstruction,
-						       GradientReconstructionStencilFlag);
-      }
-
-      // Compute the advective flux in the normal direction at the face midpoint 
-      Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i, j));
-
-      // Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
-      Flux += Fd(U_face, GradU_face, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i,j));
-    
-      /* Evaluate cell-averaged solution changes. */
-      SolnBlk.dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number*SolnBlk.dt[i][j  ])*
-					    Flux*SolnBlk.Grid.lfaceN(i, j  )/SolnBlk.Grid.Cell[i][j  ].A );
-      SolnBlk.dUdt[i][j+1][k_residual] += ( (IP.CFL_Number*SolnBlk.dt[i][j+1])*
-					    Flux*SolnBlk.Grid.lfaceS(i, j+1)/SolnBlk.Grid.Cell[i][j+1].A );
-          
-      /* Save south and north face boundary flux. */
-      if (j == SolnBlk.JCl-1) {
-	SolnBlk.FluxS[i] = -Flux*SolnBlk.Grid.lfaceS(i, j+1);
-      } else if (j == SolnBlk.JCu) {
-	SolnBlk.FluxN[i] =  Flux*SolnBlk.Grid.lfaceN(i, j  );
-      } /* endif */
-
-    } /* endfor */
-
-    SolnBlk.dUdt[i][SolnBlk.JCl-1][k_residual].Vacuum(); // set to zero
-    SolnBlk.dUdt[i][SolnBlk.JCu+1][k_residual].Vacuum(); // set to zero
-  } /* endfor */
-    
-    /* Residual for the stage successfully calculated. */
-
-  return (0);
-
+  if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+    // calculate the high-order residual
+    return SolnBlk.dUdt_Multistage_Explicit_HighOrder(i_stage,IP);
+  } else {
+    // calculate the 2nd-order residual
+    return SolnBlk.dUdt_Multistage_Explicit(i_stage,IP);
+  }
 }
 
 /******************************************************//**

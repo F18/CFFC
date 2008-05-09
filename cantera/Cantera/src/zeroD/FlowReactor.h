@@ -2,8 +2,8 @@
  *  @file FlowReactor.h
  *
  * $Author: dggoodwin $
- * $Revision: 1.2 $
- * $Date: 2005/11/26 16:08:40 $
+ * $Revision: 1.3 $
+ * $Date: 2006/11/27 21:43:34 $
  */
 
 // Copyright 2001  California Institute of Technology
@@ -68,7 +68,7 @@ namespace CanteraZeroD {
 
         double speed() const { return m_speed; }
         double distance() const { return m_dist; }
-        virtual int componentIndex(string nm) const;
+        virtual int componentIndex(std::string nm) const;
 
     protected:
         

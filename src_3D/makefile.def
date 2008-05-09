@@ -8,7 +8,7 @@
 # Set some default platform and version options
 PLATFORM = generic
 
-# NoMPI, MPICH, MPICH2, MPT (SG)
+# NoMPI, MPICH, MPICH2, MPT (SGI)
 MPI_VERSION = NoMPI
 
 # NoICEMCFD, V41, V42. V43, V50, V10, V11
@@ -25,6 +25,9 @@ FFTW_VERSION = V32
 
 # Set to ON in order to run the TUT unit testing on
 TUT_TESTING = ON
+
+# Set to ON to get gnuplot output at runtime, default = OFF
+GNUPLOT = OFF
 
 # Set to ON for use with "gprof"
 # <x86  >  gprof cffc3D gmon.out > output.txt
@@ -160,7 +163,7 @@ ifeq ($(PLATFORM),Linux_ia64)
   BLAS_LD_FLAGS   	  = -lblas -llapack -lg2c -lifcore
 endif	
 ifeq ($(PLATFORM),Linux_x86_64)
-  BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
+  BLAS_LD_FLAGS           = -lblas -llapack -lgcc
 endif
 ifeq ($(PLATFORM),Darwin_i386)
   BLAS_LD_FLAGS           = -lblas -llapack -lgcc -lgfortran
@@ -210,7 +213,10 @@ ifeq ($(CANTERA_VERSION),NoCANTERA)
 endif
 ifeq ($(CANTERA_VERSION),V70)
   CANTERA_CPP_FLAGS       =  -D_CANTERA_VERSION -D_CANTERA_V70 -I$(CANTERA_INC_DIR)
-  CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lctcxx
+  CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -lequil -lkinetics \
+                             -ltransport -lthermo -lctnumerics -lcvode -lctbase -lctlapack \
+                             -lctblas -lctmath -ltpx -lctspectra -lctf2c -lconverters \
+                             -lctcxx -lctf2c
 endif
 
 #
@@ -444,7 +450,7 @@ ifeq ($(PLATFORM),Linux_x86_64)
     F90FLAGS = $(FFLAGS) -fdefault-real-8
     MODFLAG = -M
     CFLAGS = -O2 
-    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(BLKCLIB_CPP_FLAGS) $(FFTW_LD_FLAGS) -lm
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(BLKCLIB_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
     LD = $(CXX)
     DEPENDSFLAGS =
   endif
@@ -551,4 +557,10 @@ ifeq ($(TUT_TESTING),ON)
   CPPFLAGS += $(TUT_CPP_FLAGS)
 else
   CPPFLAGS += -D_NO_TUT_TESTING
+endif
+
+#
+# Add GNUPLOT flags
+ifeq ($(GNUPLOT),ON) 
+  CPPFLAGS += -D_GNUPLOT
 endif

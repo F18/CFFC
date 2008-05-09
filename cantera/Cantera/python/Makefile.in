@@ -1,8 +1,8 @@
 #/bin/sh
 ###############################################################
-#  $Author: hkmoffa $
-#  $Date: 2006/04/30 23:10:42 $
-#  $Revision: 1.23 $
+#  $Author: dggoodwin $
+#  $Date: 2007/05/04 15:18:41 $
+#  $Revision: 1.25 $
 #
 #  Copyright 2001 California Institute of Technology
 #  See file License.txt for licensing information
@@ -13,7 +13,7 @@ have_python_site_package_topdir=@local_python_inst@
 python_site_package_topdir=@python_prefix@
 
 CANTERA_LIBDIR= @buildlib@
-LIB_DEPS = $(CANTERA_LIBDIR)/libcantera.a $(CANTERA_LIBDIR)/libzeroD.a \
+LIB_DEPS = $(CANTERA_LIBDIR)/libctbase.a $(CANTERA_LIBDIR)/libzeroD.a \
            $(CANTERA_LIBDIR)/liboneD.a \
            $(CANTERA_LIBDIR)/libtransport.a \
            $(CANTERA_LIBDIR)/libclib.a \
@@ -50,6 +50,7 @@ win: _winbuild
 #
 _build: $(SRCS) $(LIB_DEPS) Makefile setup.py
 	touch src/pycantera.cpp 
+	/bin/rm -f _build
 	(CXX="@CXX@"; export CXX; CC="@CXX@"; export CC; @PYTHON_CMD@ setup.py build)
 	echo 'ok' > _build
 

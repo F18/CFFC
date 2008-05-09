@@ -15,7 +15,7 @@
 
 // ==== Member variables ====
 InflowFieldBasicType * AdvectDiffuse2D_InflowField::Inflow = NULL;   //!< no associated inflow field
-short AdvectDiffuse2D_InflowField::i_Inflow_Field_Type = -1;         //!< value for no associated inflow field
+short AdvectDiffuse2D_InflowField::i_Inflow_Field_Type = NO_INFLOW_FIELD;  //!< value for no associated inflow field
 
 // ==== Member functions ====
 /*! Default constructor is used to create the unique object of this class */
@@ -25,7 +25,7 @@ AdvectDiffuse2D_InflowField::AdvectDiffuse2D_InflowField(void){ }
 void AdvectDiffuse2D_InflowField::DestroyInflowFieldObject(void){
   delete Inflow;
   Inflow = NULL;		// set to no associated inflow field
-  i_Inflow_Field_Type = -1;	// set to value for no associated inflow field
+  i_Inflow_Field_Type = NO_INFLOW_FIELD; // set to value for no associated inflow field
 }
 
 /*!
@@ -48,6 +48,9 @@ void AdvectDiffuse2D_InflowField::SetInflowField(const short &InflowIndex){
 
   // create the proper exact solution and set the index accordingly
   switch (InflowIndex){
+    case NO_INFLOW_FIELD:
+      // Don't do anything. The values were set by DestroyInflowFieldObject() routine.
+      break;
     case SINUSOIDAL_I:
       Inflow = new Sinusoidal_I_InflowField;
     break;
@@ -67,7 +70,15 @@ void AdvectDiffuse2D_InflowField::SetInflowField(const short &InflowIndex){
     case CONSTANT_INFLOW_FIELD:
       Inflow = new Constant_InflowField;
     break;
-    
+
+    case HYPERBOLIC_TANGENT_I:
+      Inflow = new Hyperbolic_Tangent_I_InflowField;
+    break;
+
+    case EXPONENTIAL_SINUSOIDAL:
+      Inflow = new Squared_Exponential_Times_Sinusoidal_InflowField;
+    break;
+
   default:
     throw runtime_error("AdvectDiffuse2D_InflowField::SetInflowField() ERROR! Unknown inflow field index.");
   }
@@ -106,6 +117,10 @@ void AdvectDiffuse2D_InflowField::Parse_Next_Input_Control_Parameter(AdvectDiffu
       SetInflowField(SINUSOIDAL_IV);
     } else if ( strcmp(IP.Next_Control_Parameter, "Inflow_Constant") == 0 ) {
       SetInflowField(CONSTANT_INFLOW_FIELD);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Inflow_HyperTan_I") == 0 ) {
+      SetInflowField(HYPERBOLIC_TANGENT_I);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Inflow_ExpSinusoidal") == 0 ) {
+      SetInflowField(EXPONENTIAL_SINUSOIDAL);
     } else {
       i_command = INVALID_INPUT_CODE;
       return;
@@ -170,7 +185,9 @@ void AdvectDiffuse2D_InflowField::Broadcast(void){
   }
 
   // Broadcast the characteristic parameters for the inflow field object
-  Inflow->Broadcast();
+  if (IsInflowFieldSet()){
+    Inflow->Broadcast();
+  }
   
 #endif
 }

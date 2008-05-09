@@ -116,6 +116,7 @@ class NKS_Input_Parameters{
   double Min_Number_of_Newton_Steps_Requiring_Jacobian_Update; //!< force Jacobian updates for "N" Newton steps       
   double Min_L2_Norm_Requiring_Jacobian_Update;                //!< force Jacobian update for L2 < "N"
   double Min_Finite_Time_Step_Norm_Ratio;                      //!< ramp over to full newton over 8 orders of L2 magnitude
+  int Jacobian_Update_Frequency;                               //!< update every 'n' intervals
   //@}
 
   
@@ -165,7 +166,7 @@ class NKS_Input_Parameters{
     Min_Number_of_Newton_Steps_Requiring_Jacobian_Update = 100; 
     Min_L2_Norm_Requiring_Jacobian_Update = 1.0e-08 ;
     Min_Finite_Time_Step_Norm_Ratio = 1.0e-10; 
-
+    Jacobian_Update_Frequency = 1;
   };
   //@}
 
@@ -256,7 +257,7 @@ class NKS_Input_Parameters{
     MPI::COMM_WORLD.Bcast(&(Min_Number_of_Newton_Steps_Requiring_Jacobian_Update), 1, MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&( Min_L2_Norm_Requiring_Jacobian_Update), 1, MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&( Min_Finite_Time_Step_Norm_Ratio), 1, MPI::DOUBLE, 0);
-
+    MPI::COMM_WORLD.Bcast(&(Jacobian_Update_Frequency), 1, MPI::INT, 0);
 #endif
   };
 
@@ -340,6 +341,7 @@ class NKS_Input_Parameters{
     Communicator.Bcast(&(Min_Number_of_Newton_Steps_Requiring_Jacobian_Update), 1, MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(Min_L2_Norm_Requiring_Jacobian_Update), 1, MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(Min_Finite_Time_Step_Norm_Ratio), 1, MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(Jacobian_Update_Frequency), 1, MPI::INT, Source_Rank);
 
   };
 #endif
@@ -617,6 +619,11 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
     Min_Finite_Time_Step_Norm_Ratio = strtod(value, &ptr);
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
  
+  } else if (strcmp(code, "NKS_Jacobian_Update_Frequency") == 0) {
+    i_command = 77;
+    Jacobian_Update_Frequency = static_cast<int>(strtol(value, &ptr, 10));
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+
   } else {
     i_command = INVALID_INPUT_CODE;
   }

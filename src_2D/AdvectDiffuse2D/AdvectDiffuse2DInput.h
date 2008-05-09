@@ -12,16 +12,17 @@
 
 /* Include CFFC header files */
 #include "AdvectDiffuse2DState.h" // Include 2D advection diffusion equation solution state header file
-#include "../Grid/Grid2DQuad.h"   // Include 2D quadrilateral multiblock grid header file
 #include "../FASMultigrid2D/FASMultigrid2DInput.h" // Include multigrid input header file.
 #include "../ICEM/ICEMCFD.h"      // Include ICEMCFD input header file.
 #include "../Utilities/TypeDefinition.h" // Include TypeDefinition header file.
 #include "AdvectDiffuse2DParameterFields.h" /* Include 2D advection diffusion parameter fields */
 #include "../NewtonKrylovSchwarz2D/NKSInput2D.h" /* Include file for NKS */
+#include "../HighOrderReconstruction/HighOrder2D_Input.h" /* Include file for high-order */
 
 /* Define the structures and classes. */
 
 #define	INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D    128
+#define	LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D    256
 
 // Enviroment flag for CFFC root directory path
 #define PATHVAR_ADVECTDIFFUSE2D "CFFC_Path"
@@ -40,7 +41,7 @@ public:
   //! CFFC root directory path:
   char CFFC_Path[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Input file name:
-  char Input_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Input_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Input file stream:
   ifstream Input_File;
   //! Input file line number:
@@ -119,6 +120,9 @@ public:
   //@{
   char Flow_Geometry_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   int Axisymmetric;
+  int Include_Source_Term;
+  int Include_Diffusion_Term;
+  int Include_Advection_Term;
   //@}
 
   //! @name Grid type indicator and related input parameters:
@@ -137,6 +141,7 @@ public:
          Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
          Annulus_Theta_Start, Annulus_Theta_End;
   int Nozzle_Type;
+  Vector2D VertexSW, VertexSE, VertexNE, VertexNW;
   double X_Scale, X_Rotate;
   Vector2D X_Shift;
   char **ICEMCFD_FileNames;
@@ -202,14 +207,14 @@ public:
   //! @name Output parameters:
   //@{
   //! Output file name:
-  char Output_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Output_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Multi-block mesh definition input file names:
-  char Grid_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
-  char Grid_Definition_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Grid_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Grid_Definition_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Restart file name:
-  char Restart_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Restart_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Gnuplot file name:
-  char Gnuplot_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Gnuplot_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Next_Control_Parameter:
   char Next_Control_Parameter[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Output format type indicator:
@@ -244,7 +249,10 @@ public:
 
   //! @name Reconstruction related member functions:
   //@{
-  int ReconstructionOrder(void) {return (Space_Accuracy-1);} //!< return order of reconstruction based on Space_Accuracy
+  /*! Return order of reconstruction based on Space_Accuracy.
+    To obtain a certain global space accuracy (i.e. convective, diffusive and source term)
+    a piecewise polynomial reconstruction of the same order as the space accuracy must be performed. */
+  int ReconstructionOrder(void) {return (Space_Accuracy);}
   int & Limiter(void) {return i_Limiter;}                    //!< write/read selected limiter
   const int & Limiter(void) const {return i_Limiter;}        //!< return selected limiter (read only)
   /*!

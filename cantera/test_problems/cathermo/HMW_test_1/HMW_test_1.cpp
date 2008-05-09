@@ -1,8 +1,8 @@
 /* ======================================================================= */
 /* $RCSfile: HMW_test_1.cpp,v $ */
-/* $Author: hkmoffa $ */
-/* $Date: 2006/08/20 00:09:08 $ */
-/* $Revision: 1.2 $ */
+/* $Author: dggoodwin $ */
+/* $Date: 2007/05/04 15:18:43 $ */
+/* $Revision: 1.6 $ */
 /* ======================================================================= */
 
 #include <stdio.h>
@@ -11,10 +11,11 @@
 #include "ct_defs.h"
 #include "HMWSoln.h"
 #else
-#include "cantera/Cantera.h"
+#include "Cantera.h"
 #include "HMWSoln.h"
 #endif
 
+using namespace std;
 using namespace Cantera;
 
 int CHECK_DEBUG_MODE = 0;
@@ -31,7 +32,9 @@ void pAtable(HMWSoln *HMW) {
     double activities[100]; 
     double moll[100];
     
-    HMW->m_debugCalc = 1;
+    if (CHECK_DEBUG_MODE == 1) {
+      HMW->m_debugCalc = 1;
+    }
     HMW->getMolalityActivityCoefficients(acMol);
     HMW->getMoleFractions(mf);
     HMW->getActivities(activities);
@@ -55,14 +58,20 @@ int main(int argc, char **argv)
 
    try {
   
-#ifdef DEBUG_MODE
-       CHECK_DEBUG_MODE = 1;
-#endif
-     if (CHECK_DEBUG_MODE != 1) {
-       printf("Check can only be done if DEBUG_MODE is defined\n");
-       exit(-1);
-     }
      HMWSoln *HMW = new HMWSoln(1);
+
+#ifdef DEBUG_MODE
+     CHECK_DEBUG_MODE = 1;
+#endif
+     if (CHECK_DEBUG_MODE == 1) {
+       HMW->m_debugCalc = 1;
+       if (HMW->debugPrinting()) {
+         FILE *ff = fopen("CheckDebug.txt", "w");
+         fprintf(ff,"%1d\n", 1);
+         fclose(ff);
+       }
+       HMW->m_debugCalc = 0;
+     }
      
      int nsp = HMW->nSpecies();
     

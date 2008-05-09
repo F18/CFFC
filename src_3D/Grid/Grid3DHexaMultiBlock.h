@@ -215,13 +215,23 @@ class Grid3D_Hexa_Multi_Block_List {
     void Create_Grid_Cube(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Periodic_Box(Grid3D_Input_Parameters &Input);
+    
+    void Create_Grid_Flat_Plate(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_Turbulence_Box(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_Bunsen_Inflow(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_Bunsen_Burner(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_Bunsen_Box(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Channel(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Couette(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Pipe(Grid3D_Input_Parameters &Input);
-  
+
     void Create_Grid_Bluff_Body_Burner(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Bump_Channel_Flow(Grid3D_Input_Parameters &Input);
@@ -286,6 +296,8 @@ class Grid3D_Hexa_Multi_Block {
     void Create_Grid_Cube(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Channel(Grid3D_Input_Parameters &Input);
+    
+    void Create_Grid_Flat_Plate(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Couette(Grid3D_Input_Parameters &Input);
 
@@ -294,6 +306,14 @@ class Grid3D_Hexa_Multi_Block {
     void Create_Grid_Bump_Channel_Flow(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Bluff_Body_Burner(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_Turbulence_Box(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_Bunsen_Inflow(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_Bunsen_Burner(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_Bunsen_Box(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_ICEMCFD(Grid3D_Input_Parameters &Input);
 

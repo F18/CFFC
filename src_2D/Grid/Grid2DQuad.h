@@ -341,12 +341,17 @@ class Grid2D_Quad_Block{
     //@}
 
     //@{ @name Calculate centroid of cell.
+    Vector2D quadConvexCentroid(const int &ii, const int &jj) const;
     Vector2D centroid(const Cell2D &Cell) const;
     Vector2D centroid(const int ii, const int jj) const;
-    Vector2D centroidSW(const int ii, const int jj) const;
-    Vector2D centroidSE(const int ii, const int jj) const;
-    Vector2D centroidNW(const int ii, const int jj) const;
-    Vector2D centroidNE(const int ii, const int jj) const;
+    Vector2D centroidSW(const int &ii, const int &jj) const;
+    Vector2D centroidSE(const int &ii, const int &jj) const;
+    Vector2D centroidNW(const int &ii, const int &jj) const;
+    Vector2D centroidNE(const int &ii, const int &jj) const;
+    Vector2D centroidSW_ConvexQuad(const int &ii, const int &jj) const;
+    Vector2D centroidSE_ConvexQuad(const int &ii, const int &jj) const;
+    Vector2D centroidNW_ConvexQuad(const int &ii, const int &jj) const;
+    Vector2D centroidNE_ConvexQuad(const int &ii, const int &jj) const;
     //@}
 
     //! @name Calculate centroid of cell.
@@ -441,6 +446,11 @@ class Grid2D_Quad_Block{
 
     //@{Change current BC's
     void set_BCs(const int& FACE, const int& BC);
+    //@}
+
+    //@{Check validity of the block geometry
+    int Check_Quad_Block(void);
+    int Check_Quad_Block_Completely(void);
     //@}
 
     //@{ @name Binary arithmetic operators.
@@ -589,22 +599,40 @@ inline void Grid2D_Quad_Block::deallocateCells(void) {
    NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
 }
 
-/**********************************************************************
- * Grid2D_Quad_Block::centroid -- Cell centre.                        *
- *                                                                    *
- * The centroid of a triangular cell can be determined from the       *
- * average of the three distinct vertices.  However, this method is   *
- * not valid for all quadrilateral cells, especially not skewed or    *
- * oddly shaped quadrilaterals.  For these cells, the centroid can    *
- * be determined by the area-weighted average of the centroids of the *
- * sub-triangles.                                                     *
- *                                                                    *
- **********************************************************************/
+/*!
+ * Get centroid of Cell
+ */
 inline Vector2D Grid2D_Quad_Block::centroid(const Cell2D &Cell) const {
   return centroid(Cell.I,Cell.J);
 }
 
+/*!
+ * Calculate the centroid of cell (ii,jj).
+ * This subroutine assumes that no crossed quadrilateral
+ * is encountered.
+ */
 inline Vector2D Grid2D_Quad_Block::centroid(const int ii, const int jj) const {
+  double area;
+  Vector2D Centroid;
+  
+  // Cell nodes in counterclockwise order (SW, SE, NE, NW).
+  Vector2D X[4] = { Node[ii  ][jj  ].X,
+		    Node[ii+1][jj  ].X ,
+		    Node[ii+1][jj+1].X,
+		    Node[ii  ][jj+1].X };
+  
+  quadCentroid(X[0],X[1],X[2],X[3],Centroid,area);
+    
+  // Return the centroid
+  return Centroid;
+}
+
+/*!
+ * Alternative approach to get the centroid of a convex quadrilateral.
+ * If the quadrilateral is concave this subroutine gives an incorrect answer!
+ * However, this approach is fast for convex quadrilateral.
+ */
+inline Vector2D Grid2D_Quad_Block::quadConvexCentroid(const int &ii, const int &jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2, X;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -612,20 +640,49 @@ inline Vector2D Grid2D_Quad_Block::centroid(const int ii, const int jj) const {
   X2 = Node[ii+1][jj  ].X;
   X3 = Node[ii+1][jj+1].X;
   X4 = Node[ii  ][jj+1].X;
-  // Determine the centroid and area of the sub-triangles.
+  // Determine the centroid of the sub-triangles.
   Xc1 = (X1+X2+X3)/3.0;
   Xc2 = (X1+X3+X4)/3.0;
-//   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
-//   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
+
+  // Determine the area of the sub-triangles.
+  //   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
+  //   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
+
+  // These relationships are equivalent with the ones shown above.
   A1 = HALF*((X2-X1)^(X3-X1));
-  A2 = HALF*((X3-X4)^(X3-X2));
+  A2 = HALF*((X3-X4)^(X3-X1));
+
   // Return the area-weighted average of the centroids of the sub-triangles:
   if (A1 > ZERO && A2 > ZERO) return (A1*Xc1 + A2*Xc2)/(A1+A2);
   // Average of four nodes (not always correct):
   return 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii+1][jj+1].X + Node[ii][jj+1].X);
 }
 
-inline Vector2D Grid2D_Quad_Block::centroidSW(const int ii, const int jj) const {
+/*!
+ * Calculate the centroid of the South-West quarter of cell (ii,jj)
+ */
+inline Vector2D Grid2D_Quad_Block::centroidSW(const int &ii, const int &jj) const {
+
+  Vector2D X1,X2,X3,X4, Centroid;
+  double area;
+
+  // Cell nodes in counter-clockwise order.
+  X1 = Node[ii][jj].X;
+  X2 = HALF*(Node[ii][jj].X + Node[ii+1][jj].X);
+  X3 = 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii][jj+1].X + Node[ii+1][jj+1].X);
+  X4 = HALF*(Node[ii][jj].X + Node[ii][jj+1].X);
+
+  // Determine the centroid
+  quadCentroid(X1,X2,X3,X4,Centroid,area);
+
+  return Centroid;
+}
+
+/*!
+ * Alternative approach to calculate the centroid of the South-West 
+ * quarter of cell (ii,jj), when the formed quadrilateral is convex.
+ */
+inline Vector2D Grid2D_Quad_Block::centroidSW_ConvexQuad(const int &ii, const int &jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -636,17 +693,39 @@ inline Vector2D Grid2D_Quad_Block::centroidSW(const int ii, const int jj) const 
   // Determine the centroid and area of the sub-triangles.
   Xc1 = (X1+X2+X3)/3.0;
   Xc2 = (X1+X3+X4)/3.0;
-//   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
-//   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
+  //   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
+  //   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
   A1 = HALF*((X2-X1)^(X3-X1));
-  A2 = HALF*((X3-X4)^(X3-X2));
+  A2 = HALF*((X3-X4)^(X3-X1));
   // Return the area-weighted average of the centroids of the sub-triangles:
   if (A1 > ZERO && A2 > ZERO) return (A1*Xc1 + A2*Xc2)/(A1+A2);
   // Average of four nodes (not always correct):
-  return (X1 + X2 + X3 + X4)/4.0;
+  return 0.25*(X1 + X2 + X3 + X4);
 }
 
-inline Vector2D Grid2D_Quad_Block::centroidSE(const int ii, const int jj) const {
+/*!
+ * Calculate the centroid of the South-East quarter of cell (ii,jj)
+ */
+inline Vector2D Grid2D_Quad_Block::centroidSE(const int &ii, const int &jj) const {
+  Vector2D X1, X2, X3, X4, Centroid;
+  double area;
+
+  // Cell nodes in counter-clockwise order.
+  X1 = HALF*(Node[ii][jj].X + Node[ii+1][jj].X);
+  X2 = Node[ii+1][jj].X;
+  X3 = HALF*(Node[ii+1][jj].X + Node[ii+1][jj+1].X);
+  X4 = 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii][jj+1].X + Node[ii+1][jj+1].X);
+
+  // Determine the centroid
+  quadCentroid(X1,X2,X3,X4,Centroid,area);
+
+  return Centroid;
+}
+
+/*!
+ * Calculate the centroid of the South-East quarter of cell (ii,jj)
+ */
+inline Vector2D Grid2D_Quad_Block::centroidSE_ConvexQuad(const int &ii, const int &jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -657,17 +736,40 @@ inline Vector2D Grid2D_Quad_Block::centroidSE(const int ii, const int jj) const 
   // Determine the centroid and area of the sub-triangles.
   Xc1 = (X1+X2+X3)/3.0;
   Xc2 = (X1+X3+X4)/3.0;
-//   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
-//   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
+  //   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
+  //   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
   A1 = HALF*((X2-X1)^(X3-X1));
-  A2 = HALF*((X3-X4)^(X3-X2));
+  A2 = HALF*((X3-X4)^(X3-X1));
   // Return the area-weighted average of the centroids of the sub-triangles:
   if (A1 > ZERO && A2 > ZERO) return (A1*Xc1 + A2*Xc2)/(A1+A2);
   // Average of four nodes (not always correct):
-  return (X1 + X2 + X3 + X4)/4.0;
+  return 0.25*(X1 + X2 + X3 + X4);
 }
 
-inline Vector2D Grid2D_Quad_Block::centroidNW(const int ii, const int jj) const {
+/*!
+ * Calculate the centroid of the North-West quarter of cell (ii,jj)
+ */
+inline Vector2D Grid2D_Quad_Block::centroidNW(const int &ii, const int &jj) const {
+
+  Vector2D X1, X2, X3, X4, Centroid;
+  double area;
+
+  // Cell nodes in counter-clockwise order.
+  X1 = HALF*(Node[ii][jj].X + Node[ii][jj+1].X);
+  X2 = 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii][jj+1].X + Node[ii+1][jj+1].X);
+  X3 = HALF*(Node[ii][jj+1].X + Node[ii+1][jj+1].X);
+  X4 = Node[ii][jj+1].X;
+
+  // Determine the centroid.
+  quadCentroid(X1,X2,X3,X4,Centroid,area);
+
+  return Centroid;
+}
+
+/*!
+ * Calculate the centroid of the North-West quarter of cell (ii,jj)
+ */
+inline Vector2D Grid2D_Quad_Block::centroidNW_ConvexQuad(const int &ii, const int &jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -678,17 +780,40 @@ inline Vector2D Grid2D_Quad_Block::centroidNW(const int ii, const int jj) const 
   // Determine the centroid and area of the sub-triangles.
   Xc1 = (X1+X2+X3)/3.0;
   Xc2 = (X1+X3+X4)/3.0;
-//   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
-//   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
+  //   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
+  //   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
   A1 = HALF*((X2-X1)^(X3-X1));
-  A2 = HALF*((X3-X4)^(X3-X2));
+  A2 = HALF*((X3-X4)^(X3-X1));
   // Return the area-weighted average of the centroids of the sub-triangles:
   if (A1 > ZERO && A2 > ZERO) return (A1*Xc1 + A2*Xc2)/(A1+A2);
   // Average of four nodes (not always correct):
-  return (X1 + X2 + X3 + X4)/4.0;
+  return 0.25*(X1 + X2 + X3 + X4);
 }
 
-inline Vector2D Grid2D_Quad_Block::centroidNE(const int ii, const int jj) const {
+/*!
+ * Calculate the centroid of the North-East quarter of cell (ii,jj)
+ */
+inline Vector2D Grid2D_Quad_Block::centroidNE(const int &ii, const int &jj) const {
+
+  Vector2D X1, X2, X3, X4, Centroid;
+  double area;
+
+  // Cell nodes in counter-clockwise order.
+  X1 = 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii][jj+1].X + Node[ii+1][jj+1].X);
+  X2 = HALF*(Node[ii+1][jj].X + Node[ii+1][jj+1].X);
+  X3 = Node[ii+1][jj+1].X;
+  X4 = HALF*(Node[ii][jj+1].X + Node[ii+1][jj+1].X);
+
+  // Determine the centroid.
+  quadCentroid(X1,X2,X3,X4,Centroid,area);
+
+  return Centroid;
+}
+
+/*!
+ * Calculate the centroid of the North-East quarter of cell (ii,jj)
+ */
+inline Vector2D Grid2D_Quad_Block::centroidNE_ConvexQuad(const int &ii, const int &jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -699,10 +824,10 @@ inline Vector2D Grid2D_Quad_Block::centroidNE(const int ii, const int jj) const 
   // Determine the centroid and area of the sub-triangles.
   Xc1 = (X1+X2+X3)/3.0;
   Xc2 = (X1+X3+X4)/3.0;
-//   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
-//   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
+  //   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
+  //   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
   A1 = HALF*((X2-X1)^(X3-X1));
-  A2 = HALF*((X3-X4)^(X3-X2));
+  A2 = HALF*((X3-X4)^(X3-X1));
   // Return the area-weighted average of the centroids of the sub-triangles:
   if (A1 > ZERO && A2 > ZERO) return (A1*Xc1 + A2*Xc2)/(A1+A2);
   // Average of four nodes (not always correct):
@@ -1503,6 +1628,85 @@ inline Grid2D_Quad_Block operator ^(Grid2D_Quad_Block &G, const double &a) {
   return (G);
 }
 
+/*!
+ * Check the validity of the interior cells of the 
+ * quadrilateral mesh block.
+ * Returns a non-zero result if the interior mesh
+ * is not valid. 
+ */
+inline int Grid2D_Quad_Block::Check_Quad_Block(void) {
+
+    int i, j;
+    int QuadType;
+
+    for ( j = JCl ; j <= JCu ; ++j) {
+        for ( i = ICl ; i <= ICu ; ++i) {
+	  // Determine the type of the quadrilateral cell
+	  QuadType = Find_Quadrilateral_Type(Node[i  ][j  ].X,
+					     Node[i+1][j  ].X,
+					     Node[i+1][j+1].X,
+					     Node[i  ][j+1].X);
+	  // Test the geometry of each cell for crossed or degenerated quadrilateral
+	  if ( QuadType == 4 || QuadType == 0 ){
+	    cout << endl << i << " " << j;
+	    cout << endl << ICl << " " << ICu;
+	    cout << endl << JCl << " " << JCu;
+	    cout << endl << Cell[i][j].A;
+	    cout << endl << Cell[i][j].Xc;
+	    cout << endl << Node[i][j].X;
+	    cout << endl << Node[i+1][j].X;
+	    cout << endl << Node[i][j+1].X;
+	    cout << endl << Node[i+1][j+1].X;
+	    cout.flush();
+   	    return(1);
+          } /* endif */
+        } /* endfor */
+    } /* endfor */
+
+    return(0);
+
+}
+
+/*!
+ * Check the validity of all cells
+ * (i.e. including ghost cells) of 
+ * the quadrilateral mesh block.
+ * Returns a non-zero result if the mesh
+ * is not valid. 
+ */
+inline int Grid2D_Quad_Block::Check_Quad_Block_Completely(void) {
+
+    int i, j;
+    int QuadType;
+
+    for ( j = JCl - Nghost; j <= JCu - Nghost; ++j) {
+        for ( i = ICl - Nghost; i <= ICu - Nghost; ++i) {
+	  // Determine the type of the quadrilateral cell
+	  QuadType = Find_Quadrilateral_Type(Node[i  ][j  ].X,
+					     Node[i+1][j  ].X,
+					     Node[i+1][j+1].X,
+					     Node[i  ][j+1].X);
+	  // Test the geometry of each cell for crossed or degenerated quadrilateral
+	  if ( QuadType == 4 || QuadType == 0 ){
+	    cout << endl << i << " " << j;
+	    cout << endl << ICl << " " << ICu;
+	    cout << endl << JCl << " " << JCu;
+	    cout << endl << Cell[i][j].A;
+	    cout << endl << Cell[i][j].Xc;
+	    cout << endl << Node[i][j].X;
+	    cout << endl << Node[i+1][j].X;
+	    cout << endl << Node[i][j+1].X;
+	    cout << endl << Node[i+1][j+1].X;
+	    cout.flush();
+   	    return(1);
+          } /* endif */
+        } /* endfor */
+    } /* endfor */
+
+    return(0);
+}
+
+
 /*************************************************************************
  * Grid2D_Quad_Block -- Input-output operators.                          *
  *************************************************************************/
@@ -1731,8 +1935,6 @@ extern void Update_Corner_Ghost_Nodes(Grid2D_Quad_Block &Grid);
 
 extern void Update_Cells(Grid2D_Quad_Block &Grid);
 
-extern int Check_Quad_Block(Grid2D_Quad_Block &Grid);
-
 extern void Write_Quad_Block_Definition(Grid2D_Quad_Block &Grid,
                                         ostream &Out_File);
 
@@ -1803,6 +2005,10 @@ extern void Fix_Refined_Mesh_Boundaries(Grid2D_Quad_Block &Grid,
 
 extern void Unfix_Refined_Mesh_Boundaries(Grid2D_Quad_Block &Grid);
 
+extern int Seach_Mesh(Grid2D_Quad_Block &Grid,
+		      const Vector2D &X,
+		      int &ii, int &jj );
+
 /*************************************************************************
  * Grid2D_Quad_Block -- External subroutines for 2D array of grid blocks.*
  *************************************************************************/
@@ -1861,6 +2067,10 @@ extern void Reflect_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 extern int Check_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
                                   const int Number_of_Blocks_Idir,
                                   const int Number_of_Blocks_Jdir);
+
+extern Grid2D_Quad_Block** Copy_Multi_Block_Grid(Grid2D_Quad_Block **Grid,  // source
+						 const int Number_of_Blocks_Idir,
+						 const int Number_of_Blocks_Jdir);
 
 extern void Output_Tecplot(Grid2D_Quad_Block **Grid_ptr,
 			   const int Number_of_Blocks_Idir,

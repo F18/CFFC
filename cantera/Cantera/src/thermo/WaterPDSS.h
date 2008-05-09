@@ -9,8 +9,8 @@
  * U.S. Government retains certain rights in this software.
  */
 /*  $Author: hkmoffa $
- *  $Date: 2006/08/14 19:18:34 $
- *  $Revision: 1.2 $
+ *  $Date: 2007/06/01 23:44:24 $
+ *  $Revision: 1.4 $
  */
 
 #ifndef CT_WATERPDSS_H
@@ -64,13 +64,14 @@ namespace Cantera {
 	/**
 	 * Basic list of constructors and duplicators
 	 */
+      WaterPDSS(); 
         WaterPDSS(ThermoPhase *tp, int spindex); 
         WaterPDSS(const WaterPDSS &b);
         WaterPDSS& operator=(const WaterPDSS&b);
         WaterPDSS(ThermoPhase *tp, int spindex,
-		  string inputFile, string id = "");
+		  std::string inputFile, std::string id = "");
         WaterPDSS(ThermoPhase *tp, int spindex,
-		  XML_Node& phaseRef, string id = "");
+		  XML_Node& phaseRef, std::string id = "");
         virtual ~WaterPDSS();
         
        /**
@@ -142,10 +143,10 @@ namespace Cantera {
     
 	virtual void constructPDSS(ThermoPhase *tp, int spindex);
 	virtual void constructPDSSFile(ThermoPhase *tp, int spindex,
-				       string inputFile, string id);
+				       std::string inputFile, std::string id);
 	virtual void constructPDSSXML(ThermoPhase *tp, int spindex,
-				      XML_Node& phaseNode, string id);
-	virtual void initThermoXML(XML_Node& eosdata, string id);
+				      XML_Node& phaseNode, std::string id);
+	virtual void initThermoXML(XML_Node& eosdata, std::string id);
         virtual void initThermo();
         virtual void setParametersFromXML(const XML_Node& eosdata);
         WaterPropsIAPWS *getWater() const {
@@ -171,21 +172,6 @@ private:
 	 *   2 supercrit
 	 */
 	int m_iState;
-
-	/**
-	 * Thermophase which this species belongs to
-	 */
-	ThermoPhase *m_tp;
-
-	/**
-	 * Species index in the thermophase corresponding to this species.
-	 */
-	int m_spindex;
-
-	/*
-	 * Molecular Weight
-	 */
-        doublereal m_mw;
 
 	/**
 	 * Offset constants used to obtain consistency with the NIST database.

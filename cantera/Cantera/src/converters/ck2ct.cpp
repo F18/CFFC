@@ -1,7 +1,9 @@
 /**
  * @file ck2ct.cpp
- *
- * Convert CK-format reaction mechanism files to Cantera input format.
+ *   Convert CK-format reaction mechanism files to Cantera input format.
+ */
+/*
+ * $Id: ck2ct.cpp,v 1.25 2007/09/13 15:05:39 hkmoffa Exp $
  *
  */
 #ifdef WIN32
@@ -13,7 +15,7 @@
 #include <string>
 #include <ctype.h>
 
-#include "../config.h"
+#include "config.h"
 
 #ifdef HAS_SSTREAM
 #include <sstream>
@@ -26,8 +28,8 @@ using namespace std;
 
 #include "ck2ct.h"
 #include <time.h>
-#include "../ct_defs.h"
-#include "../ctml.h"
+#include "ct_defs.h"
+#include "ctml.h"
 
 
 using namespace Cantera;
@@ -65,8 +67,12 @@ namespace pip {
 #ifdef HAS_SSTREAM
 	  /*
 	   * Read a line from the file
+           *     
+           *  SOLARIS 10 NOTES: Optimized version of solaris seg faults 
+           *         without the '\n' argument for some reason, probably
+           *         an internal solaris stl bug.
 	   */
-	  getline(s, rest);
+	  getline(s, rest,'\n');
 	  /*
 	   * In the transport database, we allow comment lines that
 	   * consist of '#' and '!' as the first character in the
@@ -101,7 +107,7 @@ namespace pip {
 	      >> t.dipole >> t.polar >> t.rot;
 
 	    // get the rest of the line, in case there are comments
-	    getline(s, rest);
+	    getline(s, rest, '\n');
 	    if (nm != "") { 
 	      _trmap[nm] = t; // t.name] = t;
 	    }
@@ -111,23 +117,67 @@ namespace pip {
     }
 
 
-    // add a NASA polynomial parameterization
-    static void addNASA(FILE* f,   
-        const vector_fp& low, const vector_fp& high,  
-        doublereal minx, doublereal midx, 
-        doublereal maxx) {
+  // add a NASA polynomial parameterization
+  static void addNASA(FILE* f,   
+		      const vector_fp& low, const vector_fp& high,  
+		      doublereal minx, doublereal midx, 
+		      doublereal maxx) {
 
-        fprintf(f,"    thermo = (\n");
-        fprintf(f,"       NASA( [%8.2f, %8.2f], ", minx, midx);
-        fprintf(f,"[%17.9E, %17.9E, \n", low[0], low[1]);
-        fprintf(f,"              %17.9E, %17.9E, %17.9E,\n", low[2], low[3], low[4]);
-        fprintf(f,"              %17.9E, %17.9E] ),\n", low[5], low[6]);
-        fprintf(f,"       NASA( [%8.2f, %8.2f], ", midx, maxx);
-        fprintf(f,"[%17.9E, %17.9E, \n", high[0], high[1]);
-        fprintf(f,"              %17.9E, %17.9E, %17.9E,\n", high[2], high[3], high[4]);
-        fprintf(f,"              %17.9E, %17.9E] )\n", high[5], high[6]);
-        fprintf(f,"             )");
+    fprintf(f,"    thermo = (\n");
+    fprintf(f,"       NASA( [%8.2f, %8.2f], ", minx, midx);
+    fprintf(f,"[%17.9E, %17.9E, \n", low[0], low[1]);
+    fprintf(f,"              %17.9E, %17.9E, %17.9E,\n",
+	    low[2], low[3], low[4]);
+    fprintf(f,"              %17.9E, %17.9E] ),\n", low[5], low[6]);
+    fprintf(f,"       NASA( [%8.2f, %8.2f], ", midx, maxx);
+    fprintf(f,"[%17.9E, %17.9E, \n", high[0], high[1]);
+    fprintf(f,"              %17.9E, %17.9E, %17.9E,\n", 
+	    high[2], high[3], high[4]);
+    fprintf(f,"              %17.9E, %17.9E] )\n", high[5], high[6]);
+    fprintf(f,"             )");
+  }
+
+
+
+  //! Add a NASA polynomial parameterization to the cti file
+  /*!
+   * This little tidbit of code writes out the polynomials to the cti file
+   */
+  static void addNASA9(FILE* f,   
+		       const std::vector<vector_fp *> &region_coeffs,
+		       const vector_fp &minTemps, const vector_fp &maxTemps) 
+  {
+    int nReg = region_coeffs.size();
+    if ((int) minTemps.size() != nReg) {
+      throw CanteraError("addNASA9", "incompat");
     }
+    if ((int) maxTemps.size() != nReg) {
+      throw CanteraError("addNASA9", "incompat");
+    }
+
+    fprintf(f,"    thermo = (\n");
+    for (int i = 0; i < nReg; i++) {
+      double minT = minTemps[i];
+      double maxT = maxTemps[i];
+      const vector_fp &coeffs = *(region_coeffs[i]);
+      if ((int) coeffs.size() != 9) {
+	throw CanteraError("addNASA9", "incompat");
+      }
+      fprintf(f,"       NASA9( [%8.2f, %8.2f], ", minT, maxT);
+      fprintf(f,"[%17.9E, %17.9E, %17.9E,\n", coeffs[0], 
+	      coeffs[1], coeffs[2]);
+      fprintf(f,"              %17.9E, %17.9E, %17.9E,\n", 
+	      coeffs[3], coeffs[4], coeffs[5]);
+      fprintf(f,"              %17.9E, %17.9E, %17.9E] )", 
+	      coeffs[6], coeffs[7], coeffs[8]);
+      if (i < nReg - 1) {
+	fprintf(f,",\n");
+      } else {
+	fprintf(f,"\n");
+      }
+    }
+    fprintf(f,"             )");
+  }
 
 
     static void addTransportParams(FILE* f, string name) {
@@ -186,11 +236,15 @@ namespace pip {
     }
 
     /**
-     * addSpecies():
+     * Write out a species cti block to the output file.
      *
      */
     static void addSpecies(FILE* f, string idtag, const ckr::Species& sp) {
         string spname = sp.name;
+	if (spname.size() == 0) {
+	  throw CanteraError("addSpecies", 
+			     "Species name is empty");
+	}
         fprintf(f,"\nspecies(name = \"%s\",\n",spname.c_str());
         int nel = static_cast<int>(sp.elements.size());
         int m, num;
@@ -222,12 +276,42 @@ namespace pip {
         }
 
         fprintf(f,"    atoms = \"%s\",\n", str.c_str());
-        addNASA(f, sp.lowCoeffs, sp.highCoeffs, 
-            sp.tlow, sp.tmid, sp.thigh);
+	// Add the NASA block according to the thermoFormatType value
+	if (sp.thermoFormatType == 0) { 
+	  if (sp.lowCoeffs.size() == 0) {
+	    throw CanteraError("addSpecies", 
+			       "Low Nasa Thermo Polynomial was not found");
+	  }
+	  if (sp.highCoeffs.size() == 0) {
+	    throw CanteraError("addSpecies", 
+			       "High Nasa Thermo Polynomial was not found");
+	  }
+	  if (sp.tlow >= sp.thigh) {
+	  throw CanteraError("addSpecies", 
+			     "Low temp limit is greater or equal to high temp limit");
+	  }
+	  addNASA(f, sp.lowCoeffs, sp.highCoeffs, 
+		  sp.tlow, sp.tmid, sp.thigh);
+	} else if (sp.thermoFormatType == 1) {
+	  // This new typs is a multiregion 9 coefficient formulation
+	  addNASA9(f, sp.region_coeffs, sp.minTemps, sp.maxTemps);
+	} else {
+	  throw CanteraError("addSpecies", "Unknown thermoFormatType");
+	}
 
-        if (_with_transport)
-            addTransportParams(f, sp.name);
-        if (sp.id != "") fprintf(f,",\n    note = \"%s\"", sp.id.c_str());
+        if (_with_transport) {
+	  addTransportParams(f, sp.name);
+	}
+        if (sp.id != "" || sp.m_commentsRef != "") {
+	  fprintf(f,",\n    note = \"");
+	  if (sp.id != "") {
+	    fprintf(f, "%s", sp.id.c_str());
+	  }
+	  if (sp.m_commentsRef != "") {
+	    fprintf(f, " %s", sp.m_commentsRef.c_str());
+	  }
+	  fprintf(f, "\"");
+	}
         fprintf(f,"\n       )\n");
     }
 
@@ -273,7 +357,10 @@ namespace pip {
         else {
             if (rxn.kf.type == ckr::Arrhenius) {
                 fprintf(f,"  [%10.5E, %g, %g]", rxn.kf.A, rxn.kf.n, rxn.kf.E);
-            }
+            } else {
+	      throw CanteraError("addReaction",
+				 "unknown kf_type to reaction: " + int2str(rxn.kf.type));
+	    }
         }
     
         // reaction orders
@@ -342,7 +429,7 @@ namespace pip {
         doublereal version = 1.0;
 
         fprintf(f,  "units(length = \"cm\", time = \"s\", quantity = \"mol\", ");
-        string e_unit;
+        string e_unit = " ";
         int eunit = r.units.ActEnergy;
         if (eunit == ckr::Cal_per_Mole)
             e_unit = "cal/mol";
@@ -396,7 +483,7 @@ namespace pip {
         writeline(f);
 
         for (i = 0; i < nsp; i++) {
-            addSpecies(f, idtag, r.species[i]);
+	  addSpecies(f, idtag, r.species[i]);
         }
 
         fprintf(f,  "\n\n\n");
@@ -439,7 +526,7 @@ namespace pip {
         }
     }
 
-
+/*
     static int fixtext(string infile, string outfile) {
         ifstream fin(infile.c_str());
         ofstream fout(outfile.c_str());
@@ -470,6 +557,7 @@ namespace pip {
         fout.close();
         return 0;
     }
+*/
 
     int convert_ck(const char* in_file, const char* db_file,
         const char* tr_file, const char* id_tag, bool debug, bool validate) {

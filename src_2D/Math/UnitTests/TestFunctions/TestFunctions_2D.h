@@ -11,7 +11,7 @@
 // None
 
 /* Include CFFC header files */
-// None
+#include "../../../Utilities/Utilities.h"
 
 /********************************************************
  * Function Test_Default2D :                            *
@@ -30,6 +30,8 @@ double Test_Default2D_Integral (double x1, double x2, double y1, double y2);
 double Test_Example1 (double x, double y); 
 
 double Test_Example1_Integral (double x1, double x2, double y1, double y2);
+
+double Test_Example1_XDependencyIntegrated(double x, double y);
 
 /**********************************************************************
  * Function Test_Example2:                                            *

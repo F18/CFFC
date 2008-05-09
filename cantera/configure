@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS BITCOMPILE BITHARDWARE BITCHANGE ldemulationarg CVF_LIBDIR USE_CLIB_DLL local_inst local_python_inst python_prefix python_win_prefix ctversion homedir ct_libdir ct_bindir ct_incdir ct_incroot ct_datadir ct_demodir ct_templdir ct_tutdir ct_docdir ct_dir ct_mandir COMPACT_INSTALL build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os username ctroot buildinc buildlib buildbin MAKE GRAPHVIZDIR ARCHIVE DO_RANLIB RANLIB USERDIR INCL_USER_CODE CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT use_sundials CVODE_LIBS IDA_LIBS sundials_include CANTERA_DEBUG_MODE phase_object_files phase_header_files COMPILE_IDEAL_SOLUTIONS COMPILE_ELECTROLYTES NEED_CATHERMO WITH_REACTORS KERNEL KERNEL_OBJ BUILD_CK LIB_DIR build_lapack build_blas BLAS_LAPACK_LIBS BLAS_LAPACK_DIR build_with_f2c build_f2c_lib LOCAL_LIB_DIRS LOCAL_LIBS CT_SHARED_LIB PYTHON_CMD BUILD_PYTHON NUMARRAY_INC_DIR NUMARRAY_HOME CANTERA_PYTHON_HOME CVSTAG MATLAB_CMD BUILD_MATLAB BUILD_CLIB export_name INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS ac_ct_CC CXXCPP EGREP SOEXT SHARED PIC CXX_INCLUDES LCXX_FLAGS LCXX_END_LIBS HAVE_STRIPSYMBOLS F77 FFLAGS ac_ct_F77 F90 BUILD_F90 F90FLAGS F90BUILDFLAGS precompile_headers CXX_DEPENDS FLIBS OS_IS_DARWIN OS_IS_WIN OS_IS_CYGWIN SHARED_CTLIB mex_ext F77_EXT CXX_EXT OBJ_EXT EXE_EXT math_libs SO LDSHARED EXTRA_LINK TSCOMPARE_abs INSTALL_abs INSTALL_VERBOSE LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS BITCOMPILE BITHARDWARE BITCHANGE ldemulationarg CVF_LIBDIR USE_CLIB_DLL local_inst local_python_inst python_prefix python_win_prefix ctversion homedir ct_libdir ct_bindir ct_incdir ct_incroot ct_datadir ct_demodir ct_templdir ct_tutdir ct_docdir ct_dir ct_mandir COMPACT_INSTALL build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os username ctroot buildinc buildlib buildbin MAKE GRAPHVIZDIR ARCHIVE DO_RANLIB RANLIB CXX_DEPENDS USERDIR INCL_USER_CODE CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT use_sundials CVODE_LIBS IDA_LIBS sundials_include CANTERA_DEBUG_MODE COMPILE_PURE_FLUIDS phase_object_files phase_header_files COMPILE_IDEAL_SOLUTIONS COMPILE_ELECTROLYTES NEED_CATHERMO COMPILE_KINETICS COMPILE_HETEROKIN COMPILE_RXNPATH WITH_REACTORS KERNEL KERNEL_OBJ BUILD_CK LIB_DIR BOOST_INCLUDE BOOST_LIB build_lapack build_blas BLAS_LAPACK_LIBS BLAS_LAPACK_DIR build_with_f2c build_f2c_lib LOCAL_LIB_DIRS LOCAL_LIBS CT_SHARED_LIB PYTHON_CMD BUILD_PYTHON NUMARRAY_INC_DIR NUMARRAY_HOME CANTERA_PYTHON_HOME CVSTAG MATLAB_CMD BUILD_MATLAB BUILD_CLIB export_name PIC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS ac_ct_CC CXXCPP EGREP SOEXT SHARED CXX_INCLUDES LCXX_FLAGS LCXX_END_LIBS HAVE_STRIPSYMBOLS F77 FFLAGS ac_ct_F77 FLIBS F90 BUILD_F90 F90FLAGS F90BUILDFLAGS F90LIBS precompile_headers OS_IS_DARWIN OS_IS_WIN OS_IS_CYGWIN SHARED_CTLIB mex_ext F77_EXT CXX_EXT OBJ_EXT EXE_EXT math_libs SO LDSHARED EXTRA_LINK TSCOMPARE_abs INSTALL_abs INSTALL_VERBOSE LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1422,10 +1422,13 @@ mex_ext=mexglx
 
 case $ac_sys_system in
   Darwin*)  OS_IS_DARWIN=1;
+            hardware=`uname -m`;
             EXTRA_LINK="-framework Accelerate $EXTRA_LINK";
-#            CXX_INCLUDES="$CXX_INCLUDES -I/System/Library/Frameworks/Accelerate.framework/Headers"
-            mex_ext=mexmac;;
-  CYGWIN*)  OS_IS_CYGWIN=1; mex_ext=dll;;
+            #mex_ext=mexmac;
+            #if test "$hardware" = "i386" ; then
+            #   mex_ext=mexmaci
+            ;;#fi;;
+  CYGWIN*)  OS_IS_CYGWIN=1; mex_ext=mexw32;;
   Linux* )  case $BITHARDWARE in
              64 ) if test "$BITCHANGE" = "y" ; then
                      ldemulationarg='-melf_i386'
@@ -1511,7 +1514,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-homedir=${HOME}
+homedir="${HOME}"
 
 
 
@@ -1702,6 +1705,7 @@ GRAPHVIZDIR=" "
 fi
 
 
+
 #----------- ARCHIVE --------------------
 
 if test "x${OS_IS_DARWIN}" = "x1"; then
@@ -1717,6 +1721,15 @@ fi
 
 
 
+
+#----------- DEPENDS --------------------
+
+if test "x${CXX_DEPENDS}" = "x"; then
+CXX_DEPENDS='g++ -MM'
+fi
+
+
+#----------------------------------------
 
 #----------------------------------------
 
@@ -1747,14 +1760,16 @@ if test "x$SUNDIALS_HOME" = "x"; then
 SUNDIALS_LIB_DIR=/usr/local/lib
 SUNDIALS_INC_DIR=/usr/local/include
 else
-SUNDIALS_LIB_DIR=$SUNDIALS_HOME/lib
-SUNDIALS_INC_DIR=$SUNDIALS_HOME/include
+SUNDIALS_LIB_DIR="$SUNDIALS_HOME/lib"
+SUNDIALS_INC_DIR="$SUNDIALS_HOME/include"
 fi
 
 if test "$USE_SUNDIALS" = "default"; then
-ldsave=$LDFLAGS
-LDFLAGS='-L'$SUNDIALS_LIB_DIR' '$ldsave
-
+#
+# HKM Disabled this line as it was causing configure to fail when
+#     SUNDIALS_LIB_DIR had a space in it, despite use of double quotes everywhere
+#ldsave="$LDFLAGS"
+#LDFLAGS='-L'"$SUNDIALS_LIB_DIR"' '"$ldsave"
 ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -2384,7 +2399,19 @@ else
 fi
 
 
-LDFLAGS=$ldsave
+if test ${use_sundials} = 0 ; then
+  tmpFile="$SUNDIALS_LIB_DIR/libsundials_cvodes.a"
+  if test -f $tmpFile ; then
+     use_sundials=1
+  fi
+fi
+
+if test ${use_sundials} = 1 ; then
+   echo SUNDIALS: succeeded in finding a sundials installation
+else
+  echo SUNDIALS: failed at finding a sundials installation
+fi
+#LDFLAGS=$ldsave
 fi
 
 if test "x$USE_SUNDIALS" = "xy"; then
@@ -2453,8 +2480,8 @@ else
 fi
 
 
-KERNEL='base'
-KERNEL_OBJ='$(BASE_OBJ)'
+KERNEL=''
+KERNEL_OBJ=''
 BUILD_CK=
 
 NEED_CKREADER=
@@ -2466,10 +2493,10 @@ NEED_F2C=
 NEED_CVODE=
 NEED_ZEROD=
 
-if test "$ENABLE_THERMO" = "y"; then
-  KERNEL=$KERNEL' 'thermo;
-  KERNEL_OBJ=$KERNEL_OBJ' $(THERMO_OBJ)'
-fi
+#if test "$ENABLE_THERMO" = "y"; then
+#  KERNEL=$KERNEL' 'thermo;
+#  KERNEL_OBJ=$KERNEL_OBJ' $(THERMO_OBJ)'
+#fi
 
 if test "$WITH_METAL" = "y"; then
   cat >>confdefs.h <<\_ACEOF
@@ -2477,6 +2504,22 @@ if test "$WITH_METAL" = "y"; then
 _ACEOF
 
   hdrs=$hdrs' MetalPhase.h'
+fi
+
+if test "$WITH_SEMICONDUCTOR" = "y"; then
+  cat >>confdefs.h <<\_ACEOF
+#define WITH_SEMICONDUCTOR 1
+_ACEOF
+
+  hdrs=$hdrs' SemiconductorPhase.h'
+  objs=$objs' SemiconductorPhase.o'
+fi
+if test "$WITH_ADSORBATE" = "y"; then
+  cat >>confdefs.h <<\_ACEOF
+#define WITH_ADSORBATE 1
+_ACEOF
+
+  hdrs=$hdrs' AdsorbateThermo.h'
 fi
 if test "$WITH_STOICH_SUBSTANCE" = "y"; then
   cat >>confdefs.h <<\_ACEOF
@@ -2486,14 +2529,19 @@ _ACEOF
   hdrs=$hdrs' StoichSubstance.h'
   objs=$objs' StoichSubstance.o'
 fi
+
+COMPILE_PURE_FLUIDS=
 if test "$WITH_PURE_FLUIDS" = "y"; then
   cat >>confdefs.h <<\_ACEOF
 #define WITH_PURE_FLUIDS 1
 _ACEOF
 
+  COMPILE_PURE_FLUIDS=1
   hdrs=$hdrs' PureFluidPhase.h'
   objs=$objs' PureFluidPhase.o'
 fi
+
+
 if test "$WITH_LATTICE_SOLID" = "y"; then
   cat >>confdefs.h <<\_ACEOF
 #define WITH_LATTICE_SOLID 1
@@ -2534,10 +2582,45 @@ fi
 
 
 
-if test "$ENABLE_KINETICS" = "y"; then
-  KERNEL=$KERNEL' 'kinetics;
-  KERNEL_OBJ=$KERNEL_OBJ' $(KINETICS_OBJ) $(HETEROKIN_OBJ)'
+
+if test "$WITH_PRIME" = "y"; then
+   cat >>confdefs.h <<\_ACEOF
+#define WITH_PRIME 1
+_ACEOF
+
 fi
+
+COMPILE_KINETICS=0
+if test "$WITH_KINETICS" = "y"; then
+  cat >>confdefs.h <<\_ACEOF
+#define WITH_KINETICS 1
+_ACEOF
+
+  COMPILE_KINETICS=1
+fi
+
+
+
+COMPILE_HETEROKIN=0
+if test "$WITH_HETERO_KINETICS" = "y"; then
+  cat >>confdefs.h <<\_ACEOF
+#define WITH_HETEROKINETICS 1
+_ACEOF
+
+  COMPILE_HETEROKIN=1
+fi
+
+
+COMPILE_RXNPATH=0
+if test "$WITH_REACTION_PATHS" = "y"; then
+  cat >>confdefs.h <<\_ACEOF
+#define WITH_REACTIONPATHS 1
+_ACEOF
+
+  COMPILE_RXNPATH=1
+fi
+
+
 
 if test "$ENABLE_CK" = "y" ; then
   BUILD_CK=1
@@ -2570,26 +2653,12 @@ if test "$ENABLE_REACTORS" = "y" ; then
 fi
 
 
-if test "$ENABLE_SOLVERS" = "y" ; then
-  KERNEL=$KERNEL' 'solvers
-  KERNEL_OBJ=$KERNEL_OBJ' $(SOLVERS_OBJ)'
-  NEED_CVODE=1
-  NEED_MATH=1
-fi
-
 NEED_ONED=
 if test "$ENABLE_FLOW1D" = "y" ; then
   KERNEL=$KERNEL' 'flow1D
   NEED_LAPACK=1
   NEED_MATH=1
   NEED_ONED=1
-fi
-
-NEED_RXNPATH=
-if test "$ENABLE_RXNPATH" = "y" ; then
-  KERNEL=$KERNEL' 'rpath
-  KERNEL_OBJ=$KERNEL_OBJ' $(RPATH_OBJ)'
-  NEED_RXNPATH=1
 fi
 
 if test "$ENABLE_TPX" = "y" ; then
@@ -2601,7 +2670,38 @@ _ACEOF
 
 fi
 
+NEED_SPECTRA=0
+if test "$WITH_SPECTRA" = "y"; then
+  cat >>confdefs.h <<\_ACEOF
+#define WITH_SPECTRA 1
+_ACEOF
 
+  KERNEL=$KERNEL' 'spectra
+  NEED_SPECTRA=1
+fi
+
+
+
+
+
+
+if test "$WITH_HTML_LOG_FILES" = "y"; then
+  cat >>confdefs.h <<\_ACEOF
+#define WITH_HTML_LOGS 1
+_ACEOF
+
+fi
+
+BOOST_INCLUDE=
+BOOST_LIB=
+if test "$BUILD_THREAD_SAFE" = "y" ; then
+  cat >>confdefs.h <<\_ACEOF
+#define THREAD_SAFE_CANTERA 1
+_ACEOF
+
+  BOOST_INCLUDE=-I$BOOST_INC_DIR
+  BOOST_LIB=$BOOST_THREAD_LIB
+fi
 
 
 
@@ -2616,6 +2716,11 @@ if test "$CANTERA_DEBUG_MODE" = "1" ; then
   echo "        Cantera Debug Mode                    = ON"
 else
   echo "        Cantera Debug Mode                    = OFF"
+fi
+if test "$BUILD_THREAD_SAFE" = "y" ; then
+  echo "        Thread Safe                           = YES"
+else
+  echo "        Thread Safe                           = NO"
 fi
 if test "$NEED_TRANSPORT" = "1" ; then
   echo "        Calculation of Transport Props        = ON"
@@ -2642,11 +2747,6 @@ if test "$NEED_CKREADER" = "1" ; then
 else
   echo "        Chemkin File Reader Capability        = OFF"
 fi
-if test "$NEED_RXNPATH" = "1" ; then
-  echo "        Reaction Path Analysis                = ON"
-else
-  echo "        Reaction Path Analysis                = OFF"
-fi
 if test "$NEED_EQUIL" = "1" ; then
   echo "        MultiPhase Equilibrium Solver         = ON"
 else
@@ -2661,6 +2761,21 @@ if test "$COMPILE_ELECTROLYTES" = "1" ; then
   echo "        Electrolyte Thermodynamics            = ON"
 else
   echo "        Electrolyte Thermodynamics            = OFF"
+fi
+if test "$COMPILE_KINETICS" = "1" ; then
+  echo "        Homogeneous Kinetics                  = ON"
+else
+  echo "        Homogeneous Kinetics                  = OFF"
+fi
+if test "$COMPILE_HETEROKIN" = "1" ; then
+  echo "        Heterogeneous Kinetics                = ON"
+else
+  echo "        Heterogeneous Kinetics                = OFF"
+fi
+if test "$COMPILE_RXNPATH" = "1" ; then
+  echo "        Reaction Path Analysis                = ON"
+else
+  echo "        Reaction Path Analysis                = OFF"
 fi
 echo " "
 
@@ -2755,19 +2870,27 @@ if test -n "$NEED_ZEROD"
 then LOCAL_LIBS=$LOCAL_LIBS' '-lzeroD
 fi
 
-if test -n "$NEED_CATHERMO"
-then LOCAL_LIBS=$LOCAL_LIBS' '-lcaThermo
+LOCAL_LIBS=$LOCAL_LIBS' '-lequil
+
+if test -n "$COMPILE_KINETICS"
+then LOCAL_LIBS=$LOCAL_LIBS' '-lkinetics
 fi
 
 if test -n "$NEED_TRANSPORT"
 then LOCAL_LIBS=$LOCAL_LIBS' '-ltransport
 fi
 
-LOCAL_LIBS=$LOCAL_LIBS' '-lcantera
+if test -n "$NEED_CATHERMO"
+then LOCAL_LIBS=$LOCAL_LIBS' '-lthermo
+fi
+
+LOCAL_LIBS=$LOCAL_LIBS' '-lctnumerics
 
 if test -n "$NEED_CVODE"; then
 LOCAL_LIBS=$LOCAL_LIBS' '$CVODE_LIBS
 fi
+
+LOCAL_LIBS=$LOCAL_LIBS' '-lctbase
 
 if test -n "$NEED_LAPACK"
 then LOCAL_LIBS=$LOCAL_LIBS' '$BLAS_LAPACK_LIBS
@@ -2779,6 +2902,10 @@ fi
 
 if test -n "$NEED_TPX"
 then LOCAL_LIBS=$LOCAL_LIBS' '-ltpx
+fi
+
+if test -n "$NEED_SPECTRA"
+then LOCAL_LIBS=$LOCAL_LIBS' '-lctspectra
 fi
 
 if test -n "$NEED_F2C"
@@ -2803,12 +2930,43 @@ if test ${use_sundials} = 1; then
 LOCAL_LIB_DIRS=$LOCAL_LIB_DIRS' -L'$SUNDIALS_LIB_DIR
 fi
 
+if test ${BUILD_THREAD_SAFE} = "y"; then
+LOCAL_LIBS=$LOCAL_LIBS' '-l$BOOST_LIB
+LOCAL_LIB_DIRS=$LOCAL_LIB_DIRS' -L'$BOOST_LIB_DIR
+fi
+
+
 
 
 
 #-------------------------------------------------
 #      Language Interfaces
 #-------------------------------------------------
+# This define is needed to account for the variability for how
+# static variables in templated classes are defined. Right now
+# this is only turned on for the SunPro compiler on solaris.
+# in that system , you need to declare the static storage variable.
+# with the following line in the include file
+#
+#    template<class M> Cabinet<M>* Cabinet<M>::__storage;
+#
+# Note, on other systems that declaration is treated as a definition
+# and this leads to multiple defines at link time. This config.h addition
+# is needed because there were irreconcilable issues between
+# the Solaris SunPro compiler and the cygwin gcc compiler.
+#
+case $ac_sys_system in
+  SunOS* )
+      cat >>confdefs.h <<\_ACEOF
+#define NEEDS_GENERIC_TEMPL_STATIC_DECL 1
+_ACEOF
+
+      echo 'Turned on special handing of static definitions in templated classes'
+      ;;
+  * )
+      ;;
+esac
+
 
 
 
@@ -2922,26 +3080,49 @@ if test -n "$NUMARRAY_INC_DIR" ; then
 else
  NUMARRAY_INC_DIR=""
  if test -n "$NUMARRAY_HOME"; then
-  dir4="$NUMARRAY_HOME/include/python2.4"
-  if test -d $dir4 ; then
-    NUMARRAY_INC_DIR=$dir4
+  dir5="$NUMARRAY_HOME/include/python2.5"
+  if test -d $dir5 ; then
+    NUMARRAY_INC_DIR=$dir5
   else
-    dir3="$NUMARRAY_HOME/include/python2.3"
-    if test -d $dir3 ; then
-      NUMARRAY_INC_DIR=$dir3
+    dir4="$NUMARRAY_HOME/include/python2.4"
+    if test -d $dir4 ; then
+      NUMARRAY_INC_DIR=$dir4
     else
-      dir1="$NUMARRAY_HOME/include/python"
-      if test -d $dir1 ; then
-        NUMARRAY_INC_DIR=$dir1
+      dir3="$NUMARRAY_HOME/include/python2.3"
+      if test -d $dir3 ; then
+        NUMARRAY_INC_DIR=$dir3
       else
-        echo "WARNING: NUMARRAY include dir $dir1 does not exist."
-        NUMARRAY_INC_DIR=$dir1
+        dir1="$NUMARRAY_HOME/include/python"
+        if test -d $dir1 ; then
+          NUMARRAY_INC_DIR=$dir1
+        else
+          echo "WARNING: NUMARRAY include dir $dir1 does not exist."
+          NUMARRAY_INC_DIR=$dir1
+        fi
       fi
     fi
   fi
   echo "setting NUMARRAY_INC_DIR to $NUMARRAY_INC_DIR"
  fi
 fi
+
+# this fails, at least on a Mac. By default, numarray include files
+# are installed in the include directory in the Python framework. This
+# does not require setting NUMARRAY_INC_DIR, so testing that it is
+# non-null is not a valid test of whether numarray is
+# installed. Commented out 7/26/07 by DGG.
+#if test $BUILD_PYTHON = 2 ; then
+#if test x"$NUMARRAY_INC_DIR" = "x" ; then
+#if test ! "$USE_NUMERIC" = "y"; then
+#  echo 'NUMARRAY is being used but we can find it'
+#  if test "x$PYTHON_PACKAGE" = "xdefault"; then
+#    echo 'setting python package build back to minimal'
+#    BUILD_PYTHON=1
+#  fi
+#fi
+#fi
+#fi
+
 
 
 
@@ -2959,10 +3140,13 @@ fi
 #
 #     Matlab Interface
 #
+
 BUILD_MATLAB=0
+
 if test "$BUILD_MATLAB_TOOLBOX" != "n"; then
-  if test -z "$MATLAB_CMD"; then
-    # Extract the first word of "matlab", so it can be a program name with args.
+  if test "$MATLAB_CMD" =  "default" -o \
+        "$MATLAB_CMD"x = "x"; then
+      # Extract the first word of "matlab", so it can be a program name with args.
 set dummy matlab; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
@@ -3002,20 +3186,73 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-    if test "$MATLAB_CMD" != "none"; then BUILD_MATLAB=1; BUILD_CLIB=1; fi
+      if test "$MATLAB_CMD" = "none"; then
+        MATLAB_CMD=`find /*/MATLAB*/bin/m* -name matlab`
+      fi
+      if test "$MATLAB_CMD" != "none" -a "x$MATLAB_CMD" != "x"; then
+        BUILD_MATLAB=1
+        BUILD_CLIB=1
+        #echo 'HKM -> BUILD turned on 1'
+      fi
   else
-    echo "Matlab command preset to $(MATLAB_CMD)$"
+    echo "Matlab command preset to $MATLAB_CMD"
+    BUILD_MATLAB=1
+    BUILD_CLIB=1
   fi
   if test "x$OS_IS_WIN" = "x1"; then
     MATLAB_CMD=`cygpath -a -m "$MATLAB_CMD" `
     echo "Windows MATLAB command: ${MATLAB_CMD}"
   fi
+
+  echo "$as_me:$LINENO: checking MATLAB ($MATLAB_CMD)" >&5
+echo $ECHO_N "checking MATLAB ($MATLAB_CMD)... $ECHO_C" >&6
+  rm -f diary
+  cat >> testmat.m << EOF
+diary;
+try, mexext, catch, disp 'mex_unknown', end;
+diary off;
+exit;
+EOF
+  ${MATLAB_CMD} -nojvm -nosplash -r testmat &> /dev/null
+#  &> /dev/null`
+  if test -f diary; then
+    BUILD_MATLAB=1
+    echo $MATLAB_CMD
+    mex_ext=`grep mex* diary`
+    rm -f diary
+  else
+    BUILD_MATLAB=0
+    echo 'failed!'
+  fi
+  rm -f testmat.m
 else
   echo "MATLAB interface will not be installed"
   if test -z "$MATLAB_CMD"; then
     MATLAB_CMD="matlab"
   fi
 fi
+
+if test "$mex_ext" = "mex_unknown"; then
+case $ac_sys_system in
+  Darwin*)  hardware=`uname -m`;
+            mex_ext=mexmac;
+            if test "$hardware" = "i386" ; then
+               mex_ext=mexmaci
+            fi;;
+  CYGWIN*)  mex_ext=dll;;
+  Linux* )  mex_ext=mexglx;;
+esac
+fi
+
+if test "$BUILD_MATLAB" = "1"; then
+  echo " "
+  echo "----------------------------  MATLAB -------------------------------"
+  echo "MEX file extension: " $mex_ext
+  echo "MATLAB command: " $MATLAB_CMD
+  echo "--------------------------------------------------------------------"
+  echo " "
+fi
+
 
 
 
@@ -3030,7 +3267,30 @@ fi
 export_name=$target
 
 
+#
+# PIC
+#  Compiler flag for specifying position independent code.
+#  This flag is needed sometimes in the compilation step
+#  for code that will go into a shared library.
+#  If Cantera is used in the Full python installation
+#  mode, this means just about all of Cantera's code
+#  should be position independent.
+#
+if test -z "$PIC"; then
+  case $ac_sys_system in
+    SunOS* )
+      PIC=' ';;
+    * )
+      PIC='-fPIC';;
+  esac
+fi
+echo 'checking for Position independent code command ... ' $PIC
 
+
+#
+#  This script will find and set the $INSTALL
+#  environmental variable, and set a substitution
+#  rule for that variable
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
 # incompatible versions:
@@ -3110,6 +3370,24 @@ test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL}'
 
 test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
+#
+#  HKM -
+#  However, recently, I've had problems with
+#  the default LINUX /usr/bin/install program wrt
+#  files/directories which are group writeable, but
+#  which are not owned by the current user (this happens
+#  in a group environment). The default config/install-sh
+#  doesn't have this problem. So, I changed the default
+#  install program to config/install-sh, which should work
+#  on all platforms since its a bourne shell script
+
+# problem: install-sh does not handle wildcards in filename.
+# commenting this out (DGG)
+# INSTALL=${INSTALL_BIN:=config/install-sh}
+echo 'INSTALL program has been set to ' $INSTALL
+#
+#  precompile_headers still relevant?
+#
 precompile_headers=no
 #
 # CFLAGS: flags that get attached to the C compiler
@@ -3123,6 +3401,9 @@ precompile_headers=no
 #             statement. AFLAGS are base flags that
 #             get added to compilers and loaders.
 #
+if test -z "$AFLAGS" ; then
+  AFLAGS="$PIC"
+fi
 if test ! -z "$AFLAGS" ; then
   if test -z "$CXXFLAGS" ; then
     CXXFLAGS="$AFLAGS"
@@ -8057,9 +8338,7 @@ _ACEOF
 if test -z "$SHARED"; then SHARED='-shared'; fi
 
 
-if test -z "$PIC"; then PIC='-fPIC'; fi
-
-
+CXX_INCLUDES=$BOOST_INCLUDE
 
 #
 # LCXX_FLAGS: Flags that get attached to the CXX loader
@@ -8073,6 +8352,12 @@ if test ! -z "$AFLAGS" ; then
     LCXX_FLAGS="$LCXXFLAGS"" ""$AFLAGS"
   fi
 fi
+if test "$BUILD_WITH_F2C"="n"; then
+  if test ! -z "$LFORT_FLAGS"; then
+     LCXX_FLAGS="$LCXX_FLAGS"" ""$LFORT_FLAGS"
+  fi
+fi
+
 
 #
 # Ending Libs for compiling static applications and
@@ -8083,7 +8368,7 @@ case $ac_sys_system in
   SunOS* )
       case $CXX in
           CC* )
-            LCXX_END_LIBS="$LCXX_END_LIBS"" -lCrun -lCstd" ;;
+            LCXX_END_LIBS="$LCXX_END_LIBS"" -lCrun -lCstd -lfsu" ;;
       esac ;;
   Linux)
       LCXX_END_LIBS=" -lctf2c ""$LCXX_END_LIBS" ;;
@@ -8221,7 +8506,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:8224:" \
+echo "$as_me:8509:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8372,18 +8657,319 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     FFLAGS=$FFLAGS' -fno-second-underscore'
   fi
 
-# AC_F77_LIBRARY_LDFLAGS()
 
-override_f77_libs=0;
-case $ac_sys_system in
-  Darwin*)  FLIBS='-lSystem'; override_f77_libs=1; SHARED_CTLIB=0;;
+ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+echo "$as_me:$LINENO: checking how to get verbose linking output from $F77" >&5
+echo $ECHO_N "checking how to get verbose linking output from $F77... $ECHO_C" >&6
+if test "${ac_cv_prog_f77_v+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+      program main
+
+      end
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_f77_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_prog_f77_v=
+# Try some options frequently used verbose output
+for ac_verb in -v -verbose --verbose -V -\#\#\#; do
+  cat >conftest.$ac_ext <<_ACEOF
+      program main
+
+      end
+_ACEOF
+
+# Compile and link our simple test program by passing a flag (argument
+# 1 to this macro) to the Fortran compiler in order to get
+# "verbose" output that we can then parse for the Fortran linker
+# flags.
+ac_save_FFLAGS=$FFLAGS
+FFLAGS="$FFLAGS $ac_verb"
+(eval echo $as_me:8712: \"$ac_link\") >&5
+ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
+echo "$ac_f77_v_output" >&5
+FFLAGS=$ac_save_FFLAGS
+
+rm -f conftest*
+
+# On HP/UX there is a line like: "LPATH is: /foo:/bar:/baz" where
+# /foo, /bar, and /baz are search directories for the Fortran linker.
+# Here, we change these into -L/foo -L/bar -L/baz (and put it first):
+ac_f77_v_output="`echo $ac_f77_v_output |
+	grep 'LPATH is:' |
+	sed 's,.*LPATH is\(: *[^ ]*\).*,\1,;s,: */, -L/,g'` $ac_f77_v_output"
+
+case $ac_f77_v_output in
+  # If we are using xlf then replace all the commas with spaces.
+  *xlfentry*)
+    ac_f77_v_output=`echo $ac_f77_v_output | sed 's/,/ /g'` ;;
+
+  # With Intel ifc, ignore the quoted -mGLOB_options_string stuff (quoted
+  # $LIBS confuse us, and the libraries appear later in the output anyway).
+  *mGLOB_options_string*)
+    ac_f77_v_output=`echo $ac_f77_v_output | sed 's/\"-mGLOB[^\"]*\"/ /g'` ;;
+
+  # If we are using Cray Fortran then delete quotes.
+  # Use "\"" instead of '"' for font-lock-mode.
+  # FIXME: a more general fix for quoted arguments with spaces?
+  *cft90*)
+    ac_f77_v_output=`echo $ac_f77_v_output | sed "s/\"//g"` ;;
 esac
 
-if test $override_f77_libs -gt 0; then
-  echo The Fortran 77 libraries on this platform are not correctly determined by
-  echo the configuration process. They are being manually set to
-  echo     FLIBS = $FLIBS
+
+  # look for -l* and *.a constructs in the output
+  for ac_arg in $ac_f77_v_output; do
+     case $ac_arg in
+        [\\/]*.a | ?:[\\/]*.a | -[lLRu]*)
+          ac_cv_prog_f77_v=$ac_verb
+          break 2 ;;
+     esac
+  done
+done
+if test -z "$ac_cv_prog_f77_v"; then
+   { echo "$as_me:$LINENO: WARNING: cannot determine how to obtain linking information from $F77" >&5
+echo "$as_me: WARNING: cannot determine how to obtain linking information from $F77" >&2;}
 fi
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+{ echo "$as_me:$LINENO: WARNING: compilation failed" >&5
+echo "$as_me: WARNING: compilation failed" >&2;}
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+echo "$as_me:$LINENO: result: $ac_cv_prog_f77_v" >&5
+echo "${ECHO_T}$ac_cv_prog_f77_v" >&6
+echo "$as_me:$LINENO: checking for Fortran libraries of $F77" >&5
+echo $ECHO_N "checking for Fortran libraries of $F77... $ECHO_C" >&6
+if test "${ac_cv_f77_libs+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test "x$FLIBS" != "x"; then
+  ac_cv_f77_libs="$FLIBS" # Let the user override the test.
+else
+
+cat >conftest.$ac_ext <<_ACEOF
+      program main
+
+      end
+_ACEOF
+
+# Compile and link our simple test program by passing a flag (argument
+# 1 to this macro) to the Fortran compiler in order to get
+# "verbose" output that we can then parse for the Fortran linker
+# flags.
+ac_save_FFLAGS=$FFLAGS
+FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
+(eval echo $as_me:8790: \"$ac_link\") >&5
+ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
+echo "$ac_f77_v_output" >&5
+FFLAGS=$ac_save_FFLAGS
+
+rm -f conftest*
+
+# On HP/UX there is a line like: "LPATH is: /foo:/bar:/baz" where
+# /foo, /bar, and /baz are search directories for the Fortran linker.
+# Here, we change these into -L/foo -L/bar -L/baz (and put it first):
+ac_f77_v_output="`echo $ac_f77_v_output |
+	grep 'LPATH is:' |
+	sed 's,.*LPATH is\(: *[^ ]*\).*,\1,;s,: */, -L/,g'` $ac_f77_v_output"
+
+case $ac_f77_v_output in
+  # If we are using xlf then replace all the commas with spaces.
+  *xlfentry*)
+    ac_f77_v_output=`echo $ac_f77_v_output | sed 's/,/ /g'` ;;
+
+  # With Intel ifc, ignore the quoted -mGLOB_options_string stuff (quoted
+  # $LIBS confuse us, and the libraries appear later in the output anyway).
+  *mGLOB_options_string*)
+    ac_f77_v_output=`echo $ac_f77_v_output | sed 's/\"-mGLOB[^\"]*\"/ /g'` ;;
+
+  # If we are using Cray Fortran then delete quotes.
+  # Use "\"" instead of '"' for font-lock-mode.
+  # FIXME: a more general fix for quoted arguments with spaces?
+  *cft90*)
+    ac_f77_v_output=`echo $ac_f77_v_output | sed "s/\"//g"` ;;
+esac
+
+
+
+ac_cv_f77_libs=
+
+# Save positional arguments (if any)
+ac_save_positional="$@"
+
+set X $ac_f77_v_output
+while test $# != 1; do
+  shift
+  ac_arg=$1
+  case $ac_arg in
+        [\\/]*.a | ?:[\\/]*.a)
+            ac_exists=false
+  for ac_i in $ac_cv_f77_libs; do
+    if test x"$ac_arg" = x"$ac_i"; then
+      ac_exists=true
+      break
+    fi
+  done
+
+  if test x"$ac_exists" = xtrue; then
+  :
+else
+  ac_cv_f77_libs="$ac_cv_f77_libs $ac_arg"
+fi
+
+          ;;
+        -bI:*)
+            ac_exists=false
+  for ac_i in $ac_cv_f77_libs; do
+    if test x"$ac_arg" = x"$ac_i"; then
+      ac_exists=true
+      break
+    fi
+  done
+
+  if test x"$ac_exists" = xtrue; then
+  :
+else
+  if test "$ac_compiler_gnu" = yes; then
+  for ac_link_opt in $ac_arg; do
+    ac_cv_f77_libs="$ac_cv_f77_libs -Xlinker $ac_link_opt"
+  done
+else
+  ac_cv_f77_libs="$ac_cv_f77_libs $ac_arg"
+fi
+fi
+
+          ;;
+          # Ignore these flags.
+        -lang* | -lcrt[01].o | -lcrtbegin.o | -lc | -lgcc | -libmil | -LANG:=*)
+          ;;
+        -lkernel32)
+          test x"$CYGWIN" != xyes && ac_cv_f77_libs="$ac_cv_f77_libs $ac_arg"
+          ;;
+        -[LRuY])
+          # These flags, when seen by themselves, take an argument.
+          # We remove the space between option and argument and re-iterate
+          # unless we find an empty arg or a new option (starting with -)
+	  case $2 in
+	     "" | -*);;
+	     *)
+		ac_arg="$ac_arg$2"
+		shift; shift
+		set X $ac_arg "$@"
+		;;
+	  esac
+          ;;
+        -YP,*)
+          for ac_j in `echo $ac_arg | sed -e 's/-YP,/-L/;s/:/ -L/g'`; do
+              ac_exists=false
+  for ac_i in $ac_cv_f77_libs; do
+    if test x"$ac_j" = x"$ac_i"; then
+      ac_exists=true
+      break
+    fi
+  done
+
+  if test x"$ac_exists" = xtrue; then
+  :
+else
+  ac_arg="$ac_arg $ac_j"
+                               ac_cv_f77_libs="$ac_cv_f77_libs $ac_j"
+fi
+
+          done
+          ;;
+        -[lLR]*)
+            ac_exists=false
+  for ac_i in $ac_cv_f77_libs; do
+    if test x"$ac_arg" = x"$ac_i"; then
+      ac_exists=true
+      break
+    fi
+  done
+
+  if test x"$ac_exists" = xtrue; then
+  :
+else
+  ac_cv_f77_libs="$ac_cv_f77_libs $ac_arg"
+fi
+
+          ;;
+          # Ignore everything else.
+  esac
+done
+# restore positional arguments
+set X $ac_save_positional; shift
+
+# We only consider "LD_RUN_PATH" on Solaris systems.  If this is seen,
+# then we insist that the "run path" must be an absolute path (i.e. it
+# must begin with a "/").
+case `(uname -sr) 2>/dev/null` in
+   "SunOS 5"*)
+      ac_ld_run_path=`echo $ac_f77_v_output |
+                        sed -n 's,^.*LD_RUN_PATH *= *\(/[^ ]*\).*$,-R\1,p'`
+      test "x$ac_ld_run_path" != x &&
+        if test "$ac_compiler_gnu" = yes; then
+  for ac_link_opt in $ac_ld_run_path; do
+    ac_cv_f77_libs="$ac_cv_f77_libs -Xlinker $ac_link_opt"
+  done
+else
+  ac_cv_f77_libs="$ac_cv_f77_libs $ac_ld_run_path"
+fi
+      ;;
+esac
+fi # test "x$[]_AC_LANG_PREFIX[]LIBS" = "x"
+
+fi
+echo "$as_me:$LINENO: result: $ac_cv_f77_libs" >&5
+echo "${ECHO_T}$ac_cv_f77_libs" >&6
+FLIBS="$ac_cv_f77_libs"
+
+
+ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+override_f77_libs=0;
+#case $ac_sys_system in
+#  Darwin*)  FLIBS='-lSystem'; override_f77_libs=1; SHARED_CTLIB=0;;
+#esac
+#
+#if test $override_f77_libs -gt 0; then
+#  echo The Fortran 77 libraries on this platform are not correctly determined by
+#  echo the configuration process. They are being manually set to
+#  echo     FLIBS = $FLIBS
+#fi
 
 #fi
 
@@ -8472,12 +9058,15 @@ EOF
     f90type=unknown
   fi
 #
+F90LIBS=
+
   msg=`${F90} --version &> f90out`
-  isgfortran=`grep -c 'GNU Fortran 95' f90out`
+  isgfortran=`grep -c 'GNU Fortran' f90out`
   if test "x${isgfortran}" != "x0"; then
     f90type="gfortran"
     f90opts="-fno-second-underscore -I. -I${ct_incdir}"
     f90buildopts="-fno-second-underscore -I."
+    F90LIBS="-lgfortran"
   fi
 
   isg95=`grep -c 'G95' f90out`
@@ -8521,6 +9110,7 @@ fi
 savef90flags=${F90FLAGS}
 F90FLAGS=${f90opts}' '${F90FLAGS}
 F90BUILDFLAGS=${f90buildopts}' '${savef90flags}
+
 
 
 
@@ -8688,7 +9278,7 @@ fi
 
 
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ac_config_files="$ac_config_files Makefile Cantera/Makefile Cantera/src/Makefile Cantera/src/zeroD/Makefile Cantera/src/oneD/Makefile Cantera/src/converters/Makefile Cantera/src/transport/Makefile Cantera/src/thermo/Makefile Cantera/clib/src/Makefile Cantera/fortran/src/Makefile Cantera/fortran/f77demos/f77demos.mak Cantera/fortran/f77demos/isentropic.dsp Cantera/matlab/Makefile Cantera/matlab/setup_matlab.py Cantera/matlab/setup_winmatlab.py Cantera/python/Makefile Cantera/python/setup.py Cantera/cxx/Makefile Cantera/cxx/src/Makefile Cantera/cxx/demos/Makefile Cantera/user/Makefile Cantera/python/src/Makefile ext/lapack/Makefile ext/blas/Makefile ext/cvode/Makefile ext/math/Makefile ext/recipes/Makefile ext/tpx/Makefile ext/Makefile ext/f2c_libs/Makefile ext/f2c_blas/Makefile ext/f2c_lapack/Makefile ext/f2c_math/Makefile examples/Makefile examples/cxx/Makefile tools/Makefile tools/doc/Cantera.cfg tools/doc/Makefile tools/src/Makefile tools/src/sample.mak tools/src/finish_install.py tools/src/package4mac tools/templates/f77/demo.mak tools/templates/f90/demo.mak tools/templates/cxx/demo.mak tools/testtools/Makefile data/inputs/Makefile test_problems/Makefile test_problems/cxx_ex/Makefile test_problems/silane_equil/Makefile test_problems/surfkin/Makefile test_problems/diamondSurf/Makefile test_problems/ChemEquil_gri_matrix/Makefile test_problems/ChemEquil_gri_pairs/Makefile test_problems/fracCoeff/Makefile test_problems/negATest/Makefile test_problems/ck2cti_test/Makefile test_problems/ck2cti_test/runtest test_problems/min_python/Makefile test_problems/min_python/minDiamond/Makefile test_problems/min_python/negATest/Makefile test_problems/python/Makefile test_problems/cathermo/Makefile test_problems/cathermo/issp/Makefile test_problems/cathermo/ims/Makefile test_problems/cathermo/testIAPWS/Makefile test_problems/cathermo/testIAPWSPres/Makefile test_problems/cathermo/testIAPWSTripP/Makefile test_problems/cathermo/testWaterPDSS/Makefile test_problems/cathermo/testWaterTP/Makefile test_problems/cathermo/HMW_test_1/Makefile test_problems/cathermo/HMW_test_3/Makefile test_problems/cathermo/HMW_graph_GvT/Makefile test_problems/cathermo/HMW_graph_GvI/Makefile test_problems/cathermo/HMW_graph_HvT/Makefile test_problems/cathermo/HMW_graph_CpvT/Makefile test_problems/cathermo/HMW_graph_VvT/Makefile test_problems/cathermo/DH_graph_1/Makefile bin/install_tsc"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ac_config_files="$ac_config_files Makefile Cantera/Makefile Cantera/src/Makefile Cantera/src/base/Makefile Cantera/src/zeroD/Makefile Cantera/src/oneD/Makefile Cantera/src/converters/Makefile Cantera/src/transport/Makefile Cantera/src/thermo/Makefile Cantera/src/kinetics/Makefile Cantera/src/numerics/Makefile Cantera/src/spectra/Makefile Cantera/src/equil/Makefile Cantera/clib/src/Makefile Cantera/fortran/src/Makefile Cantera/fortran/f77demos/f77demos.mak Cantera/fortran/f77demos/isentropic.dsp Cantera/matlab/Makefile Cantera/matlab/setup_matlab.py Cantera/matlab/setup_winmatlab.py Cantera/python/Makefile Cantera/python/setup.py Cantera/cxx/Makefile Cantera/cxx/src/Makefile Cantera/cxx/demos/Makefile Cantera/user/Makefile Cantera/python/src/Makefile ext/lapack/Makefile ext/blas/Makefile ext/cvode/Makefile ext/math/Makefile ext/recipes/Makefile ext/tpx/Makefile ext/Makefile ext/f2c_libs/Makefile ext/f2c_blas/Makefile ext/f2c_lapack/Makefile ext/f2c_math/Makefile examples/Makefile examples/cxx/Makefile tools/Makefile tools/doc/Cantera.cfg tools/doc/Makefile tools/src/Makefile tools/src/sample.mak tools/src/finish_install.py tools/src/package4mac tools/templates/f77/demo.mak tools/templates/f90/demo.mak tools/templates/cxx/demo.mak tools/testtools/Makefile data/inputs/Makefile data/inputs/mkxml test_problems/Makefile test_problems/cxx_ex/Makefile test_problems/silane_equil/Makefile test_problems/surfkin/Makefile test_problems/spectroscopy/Makefile test_problems/surfSolverTest/Makefile test_problems/diamondSurf/Makefile test_problems/diamondSurf_dupl/Makefile test_problems/ChemEquil_gri_matrix/Makefile test_problems/ChemEquil_gri_pairs/Makefile test_problems/ChemEquil_ionizedGas/Makefile test_problems/ChemEquil_red1/Makefile test_problems/CpJump/Makefile test_problems/mixGasTransport/Makefile test_problems/multiGasTransport/Makefile test_problems/fracCoeff/Makefile test_problems/negATest/Makefile test_problems/NASA9poly_test/Makefile test_problems/ck2cti_test/Makefile test_problems/ck2cti_test/runtest test_problems/nasa9_reader/Makefile test_problems/nasa9_reader/runtest test_problems/min_python/Makefile test_problems/min_python/minDiamond/Makefile test_problems/min_python/negATest/Makefile test_problems/pureFluidTest/Makefile test_problems/python/Makefile test_problems/cathermo/Makefile test_problems/cathermo/issp/Makefile test_problems/cathermo/ims/Makefile test_problems/cathermo/stoichSubSSTP/Makefile test_problems/cathermo/testIAPWS/Makefile test_problems/cathermo/testIAPWSPres/Makefile test_problems/cathermo/testIAPWSTripP/Makefile test_problems/cathermo/testWaterPDSS/Makefile test_problems/cathermo/testWaterTP/Makefile test_problems/cathermo/HMW_test_1/Makefile test_problems/cathermo/HMW_test_3/Makefile test_problems/cathermo/HMW_graph_GvT/Makefile test_problems/cathermo/HMW_graph_GvI/Makefile test_problems/cathermo/HMW_graph_HvT/Makefile test_problems/cathermo/HMW_graph_CpvT/Makefile test_problems/cathermo/HMW_graph_VvT/Makefile test_problems/cathermo/DH_graph_1/Makefile test_problems/cathermo/DH_graph_acommon/Makefile test_problems/cathermo/DH_graph_NM/Makefile test_problems/cathermo/DH_graph_Pitzer/Makefile test_problems/cathermo/DH_graph_bdotak/Makefile test_problems/cathermo/HMW_dupl_test/Makefile bin/install_tsc"
 
 
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
@@ -9164,11 +9754,16 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "Cantera/Makefile" ) CONFIG_FILES="$CONFIG_FILES Cantera/Makefile" ;;
   "Cantera/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES Cantera/src/Makefile" ;;
+  "Cantera/src/base/Makefile" ) CONFIG_FILES="$CONFIG_FILES Cantera/src/base/Makefile" ;;
   "Cantera/src/zeroD/Makefile" ) CONFIG_FILES="$CONFIG_FILES Cantera/src/zeroD/Makefile" ;;
   "Cantera/src/oneD/Makefile" ) CONFIG_FILES="$CONFIG_FILES Cantera/src/oneD/Makefile" ;;
   "Cantera/src/converters/Makefile" ) CONFIG_FILES="$CONFIG_FILES Cantera/src/converters/Makefile" ;;
   "Cantera/src/transport/Makefile" ) CONFIG_FILES="$CONFIG_FILES Cantera/src/transport/Makefile" ;;
   "Cantera/src/thermo/Makefile" ) CONFIG_FILES="$CONFIG_FILES Cantera/src/thermo/Makefile" ;;
+  "Cantera/src/kinetics/Makefile" ) CONFIG_FILES="$CONFIG_FILES Cantera/src/kinetics/Makefile" ;;
+  "Cantera/src/numerics/Makefile" ) CONFIG_FILES="$CONFIG_FILES Cantera/src/numerics/Makefile" ;;
+  "Cantera/src/spectra/Makefile" ) CONFIG_FILES="$CONFIG_FILES Cantera/src/spectra/Makefile" ;;
+  "Cantera/src/equil/Makefile" ) CONFIG_FILES="$CONFIG_FILES Cantera/src/equil/Makefile" ;;
   "Cantera/clib/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES Cantera/clib/src/Makefile" ;;
   "Cantera/fortran/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES Cantera/fortran/src/Makefile" ;;
   "Cantera/fortran/f77demos/f77demos.mak" ) CONFIG_FILES="$CONFIG_FILES Cantera/fortran/f77demos/f77demos.mak" ;;
@@ -9208,24 +9803,38 @@ do
   "tools/templates/cxx/demo.mak" ) CONFIG_FILES="$CONFIG_FILES tools/templates/cxx/demo.mak" ;;
   "tools/testtools/Makefile" ) CONFIG_FILES="$CONFIG_FILES tools/testtools/Makefile" ;;
   "data/inputs/Makefile" ) CONFIG_FILES="$CONFIG_FILES data/inputs/Makefile" ;;
+  "data/inputs/mkxml" ) CONFIG_FILES="$CONFIG_FILES data/inputs/mkxml" ;;
   "test_problems/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/Makefile" ;;
   "test_problems/cxx_ex/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cxx_ex/Makefile" ;;
   "test_problems/silane_equil/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/silane_equil/Makefile" ;;
   "test_problems/surfkin/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/surfkin/Makefile" ;;
+  "test_problems/spectroscopy/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/spectroscopy/Makefile" ;;
+  "test_problems/surfSolverTest/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/surfSolverTest/Makefile" ;;
   "test_problems/diamondSurf/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/diamondSurf/Makefile" ;;
+  "test_problems/diamondSurf_dupl/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/diamondSurf_dupl/Makefile" ;;
   "test_problems/ChemEquil_gri_matrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/ChemEquil_gri_matrix/Makefile" ;;
   "test_problems/ChemEquil_gri_pairs/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/ChemEquil_gri_pairs/Makefile" ;;
+  "test_problems/ChemEquil_ionizedGas/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/ChemEquil_ionizedGas/Makefile" ;;
+  "test_problems/ChemEquil_red1/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/ChemEquil_red1/Makefile" ;;
+  "test_problems/CpJump/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/CpJump/Makefile" ;;
+  "test_problems/mixGasTransport/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/mixGasTransport/Makefile" ;;
+  "test_problems/multiGasTransport/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/multiGasTransport/Makefile" ;;
   "test_problems/fracCoeff/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/fracCoeff/Makefile" ;;
   "test_problems/negATest/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/negATest/Makefile" ;;
+  "test_problems/NASA9poly_test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/NASA9poly_test/Makefile" ;;
   "test_problems/ck2cti_test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/ck2cti_test/Makefile" ;;
   "test_problems/ck2cti_test/runtest" ) CONFIG_FILES="$CONFIG_FILES test_problems/ck2cti_test/runtest" ;;
+  "test_problems/nasa9_reader/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/nasa9_reader/Makefile" ;;
+  "test_problems/nasa9_reader/runtest" ) CONFIG_FILES="$CONFIG_FILES test_problems/nasa9_reader/runtest" ;;
   "test_problems/min_python/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/min_python/Makefile" ;;
   "test_problems/min_python/minDiamond/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/min_python/minDiamond/Makefile" ;;
   "test_problems/min_python/negATest/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/min_python/negATest/Makefile" ;;
+  "test_problems/pureFluidTest/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/pureFluidTest/Makefile" ;;
   "test_problems/python/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/python/Makefile" ;;
   "test_problems/cathermo/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/Makefile" ;;
   "test_problems/cathermo/issp/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/issp/Makefile" ;;
   "test_problems/cathermo/ims/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/ims/Makefile" ;;
+  "test_problems/cathermo/stoichSubSSTP/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/stoichSubSSTP/Makefile" ;;
   "test_problems/cathermo/testIAPWS/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/testIAPWS/Makefile" ;;
   "test_problems/cathermo/testIAPWSPres/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/testIAPWSPres/Makefile" ;;
   "test_problems/cathermo/testIAPWSTripP/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/testIAPWSTripP/Makefile" ;;
@@ -9239,6 +9848,11 @@ do
   "test_problems/cathermo/HMW_graph_CpvT/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/HMW_graph_CpvT/Makefile" ;;
   "test_problems/cathermo/HMW_graph_VvT/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/HMW_graph_VvT/Makefile" ;;
   "test_problems/cathermo/DH_graph_1/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/DH_graph_1/Makefile" ;;
+  "test_problems/cathermo/DH_graph_acommon/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/DH_graph_acommon/Makefile" ;;
+  "test_problems/cathermo/DH_graph_NM/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/DH_graph_NM/Makefile" ;;
+  "test_problems/cathermo/DH_graph_Pitzer/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/DH_graph_Pitzer/Makefile" ;;
+  "test_problems/cathermo/DH_graph_bdotak/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/DH_graph_bdotak/Makefile" ;;
+  "test_problems/cathermo/HMW_dupl_test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test_problems/cathermo/HMW_dupl_test/Makefile" ;;
   "bin/install_tsc" ) CONFIG_FILES="$CONFIG_FILES bin/install_tsc" ;;
   "config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -9371,6 +9985,7 @@ s,@GRAPHVIZDIR@,$GRAPHVIZDIR,;t t
 s,@ARCHIVE@,$ARCHIVE,;t t
 s,@DO_RANLIB@,$DO_RANLIB,;t t
 s,@RANLIB@,$RANLIB,;t t
+s,@CXX_DEPENDS@,$CXX_DEPENDS,;t t
 s,@USERDIR@,$USERDIR,;t t
 s,@INCL_USER_CODE@,$INCL_USER_CODE,;t t
 s,@CXX@,$CXX,;t t
@@ -9385,16 +10000,22 @@ s,@CVODE_LIBS@,$CVODE_LIBS,;t t
 s,@IDA_LIBS@,$IDA_LIBS,;t t
 s,@sundials_include@,$sundials_include,;t t
 s,@CANTERA_DEBUG_MODE@,$CANTERA_DEBUG_MODE,;t t
+s,@COMPILE_PURE_FLUIDS@,$COMPILE_PURE_FLUIDS,;t t
 s,@phase_object_files@,$phase_object_files,;t t
 s,@phase_header_files@,$phase_header_files,;t t
 s,@COMPILE_IDEAL_SOLUTIONS@,$COMPILE_IDEAL_SOLUTIONS,;t t
 s,@COMPILE_ELECTROLYTES@,$COMPILE_ELECTROLYTES,;t t
 s,@NEED_CATHERMO@,$NEED_CATHERMO,;t t
+s,@COMPILE_KINETICS@,$COMPILE_KINETICS,;t t
+s,@COMPILE_HETEROKIN@,$COMPILE_HETEROKIN,;t t
+s,@COMPILE_RXNPATH@,$COMPILE_RXNPATH,;t t
 s,@WITH_REACTORS@,$WITH_REACTORS,;t t
 s,@KERNEL@,$KERNEL,;t t
 s,@KERNEL_OBJ@,$KERNEL_OBJ,;t t
 s,@BUILD_CK@,$BUILD_CK,;t t
 s,@LIB_DIR@,$LIB_DIR,;t t
+s,@BOOST_INCLUDE@,$BOOST_INCLUDE,;t t
+s,@BOOST_LIB@,$BOOST_LIB,;t t
 s,@build_lapack@,$build_lapack,;t t
 s,@build_blas@,$build_blas,;t t
 s,@BLAS_LAPACK_LIBS@,$BLAS_LAPACK_LIBS,;t t
@@ -9414,6 +10035,7 @@ s,@MATLAB_CMD@,$MATLAB_CMD,;t t
 s,@BUILD_MATLAB@,$BUILD_MATLAB,;t t
 s,@BUILD_CLIB@,$BUILD_CLIB,;t t
 s,@export_name@,$export_name,;t t
+s,@PIC@,$PIC,;t t
 s,@INSTALL_PROGRAM@,$INSTALL_PROGRAM,;t t
 s,@INSTALL_SCRIPT@,$INSTALL_SCRIPT,;t t
 s,@INSTALL_DATA@,$INSTALL_DATA,;t t
@@ -9424,7 +10046,6 @@ s,@CXXCPP@,$CXXCPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@SOEXT@,$SOEXT,;t t
 s,@SHARED@,$SHARED,;t t
-s,@PIC@,$PIC,;t t
 s,@CXX_INCLUDES@,$CXX_INCLUDES,;t t
 s,@LCXX_FLAGS@,$LCXX_FLAGS,;t t
 s,@LCXX_END_LIBS@,$LCXX_END_LIBS,;t t
@@ -9432,13 +10053,13 @@ s,@HAVE_STRIPSYMBOLS@,$HAVE_STRIPSYMBOLS,;t t
 s,@F77@,$F77,;t t
 s,@FFLAGS@,$FFLAGS,;t t
 s,@ac_ct_F77@,$ac_ct_F77,;t t
+s,@FLIBS@,$FLIBS,;t t
 s,@F90@,$F90,;t t
 s,@BUILD_F90@,$BUILD_F90,;t t
 s,@F90FLAGS@,$F90FLAGS,;t t
 s,@F90BUILDFLAGS@,$F90BUILDFLAGS,;t t
+s,@F90LIBS@,$F90LIBS,;t t
 s,@precompile_headers@,$precompile_headers,;t t
-s,@CXX_DEPENDS@,$CXX_DEPENDS,;t t
-s,@FLIBS@,$FLIBS,;t t
 s,@OS_IS_DARWIN@,$OS_IS_DARWIN,;t t
 s,@OS_IS_WIN@,$OS_IS_WIN,;t t
 s,@OS_IS_CYGWIN@,$OS_IS_CYGWIN,;t t
@@ -9958,8 +10579,14 @@ fi
 if test -f "test_problems/ck2cti_test/runtest"; then
   chmod +x test_problems/ck2cti_test/runtest
 fi
+if test -f "test_problems/nasa9_reader/runtest"; then
+  chmod +x test_problems/nasa9_reader/runtest
+fi
 if test -f "bin/install_tsc"; then
   chmod +x bin/install_tsc
+fi
+if test -f "data/inputs/mkxml"; then
+  chmod +x data/inputs/mkxml
 fi
 
 

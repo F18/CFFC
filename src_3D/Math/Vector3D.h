@@ -58,6 +58,10 @@ using namespace std;
  * V -= V;                                              *
  * V == V;                                              *
  * V != V;                                              *
+ * V <= V;                                              *
+ * V >= V;                                              *
+ * V <  V;                                              *
+ * V >  V;                                              *
  * cout << V; (output function)                         *
  * cin  >> V; (input function)                          *
  *                                                      *
@@ -173,6 +177,8 @@ class Vector3D{
     /* Shortcut arithmetic operators. */
     friend Vector3D &operator +=(Vector3D &V1, const Vector3D &V2);
     friend Vector3D &operator -=(Vector3D &V1, const Vector3D &V2);
+    friend Vector3D &operator *=(Vector3D &V, const double &a);
+    friend Vector3D &operator /=(Vector3D &V, const double &a);
     
     /* Relational operators. */
     friend bool operator ==(const Vector3D &V1, const Vector3D &V2);
@@ -368,6 +374,20 @@ inline Vector3D &operator -=(Vector3D &V1, const Vector3D &V2) {
   V1.y -= V2.y;
   V1.z -= V2.z;
   return (V1);
+}
+
+inline Vector3D &operator *=(Vector3D &V, const double &a) {
+    V.x *= a;
+    V.y *= a;
+    V.z *= a;
+    return (V);
+}
+
+inline Vector3D &operator /=(Vector3D &V, const double &a) {
+    V.x /= a;
+    V.y /= a;
+    V.z /= a;
+    return (V);
 }
 
 /********************************************************

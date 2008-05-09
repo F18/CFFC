@@ -4,8 +4,8 @@
  *  Some flow devices derived from class FlowDevice.
  *
  * $Author: dggoodwin $
- * $Revision: 1.5 $
- * $Date: 2005/06/18 17:01:12 $
+ * $Revision: 1.6 $
+ * $Date: 2007/05/04 14:41:28 $
  */
 
 // Copyright 2001  California Institute of Technology
@@ -22,7 +22,7 @@
 #include "FlowDevice.h"
 #include "ReactorBase.h"
 //#include "PID_Controller.h"
-#include "../Func1.h"
+#include "Func1.h"
 
 namespace CanteraZeroD {
 

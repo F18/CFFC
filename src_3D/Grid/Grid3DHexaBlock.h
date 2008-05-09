@@ -216,10 +216,18 @@ class Grid3D_Hexa_Block {
     Vector3D Voe (const int ii, const int jj, const int kk);
     Vector3D Von (const int ii, const int jj, const int kk);
     Vector3D Vot (const int ii, const int jj, const int kk);
+
+    Vector3D Vow (const int ii, const int jj, const int kk);
+    Vector3D Vos (const int ii, const int jj, const int kk);
+    Vector3D Vob (const int ii, const int jj, const int kk);
     
     double delta_oe (const int ii, const int jj, const int kk);
     double delta_on (const int ii, const int jj, const int kk);
     double delta_ot (const int ii, const int jj, const int kk);
+
+    double delta_ow (const int ii, const int jj, const int kk);
+    double delta_os (const int ii, const int jj, const int kk);
+    double delta_ob (const int ii, const int jj, const int kk);
     
     /* Get cell nodes. For the 3D case there are 8 nodes that need to be found*/    
     Node3D nodeNWBot(const Cell3D &Cell);
@@ -604,9 +612,21 @@ inline Vector3D  Grid3D_Hexa_Block::Voe (const int ii, const int jj, const int k
    return (vector/vector.abs());
 }
 
+inline Vector3D  Grid3D_Hexa_Block::Vow (const int ii, const int jj, const int kk){
+   Vector3D vector;
+   vector = centroid(ii-1,jj, kk) - centroid(ii,jj, kk);
+   return (vector/vector.abs());
+}
+
 inline Vector3D  Grid3D_Hexa_Block::Von (const int ii, const int jj, const int kk){
    Vector3D vector;
    vector = centroid(ii,jj+1, kk) - centroid(ii,jj, kk);
+   return (vector/vector.abs());
+}
+
+inline Vector3D  Grid3D_Hexa_Block::Vos (const int ii, const int jj, const int kk){
+   Vector3D vector;
+   vector = centroid(ii,jj-1, kk) - centroid(ii,jj, kk);
    return (vector/vector.abs());
 }
 
@@ -616,9 +636,21 @@ inline Vector3D  Grid3D_Hexa_Block::Vot (const int ii, const int jj, const int k
    return (vector/vector.abs());
 }
 
+inline Vector3D  Grid3D_Hexa_Block::Vob (const int ii, const int jj, const int kk){
+   Vector3D vector;
+   vector = centroid(ii,jj, kk-1) - centroid(ii,jj, kk);
+   return (vector/vector.abs());
+}
+
 inline double  Grid3D_Hexa_Block::delta_oe (const int ii, const int jj, const int kk){
    Vector3D vector;
    vector = centroid(ii+1,jj, kk) - centroid(ii,jj, kk);
+   return (vector.abs());
+}
+
+inline double  Grid3D_Hexa_Block::delta_ow (const int ii, const int jj, const int kk){
+   Vector3D vector;
+   vector = centroid(ii-1,jj, kk) - centroid(ii,jj, kk);
    return (vector.abs());
 }
 
@@ -628,9 +660,21 @@ inline double  Grid3D_Hexa_Block::delta_on (const int ii, const int jj, const in
    return (vector.abs());
 }
 
+inline double  Grid3D_Hexa_Block::delta_os (const int ii, const int jj, const int kk){
+   Vector3D vector;
+   vector = centroid(ii,jj-1, kk) - centroid(ii,jj, kk);
+   return (vector.abs());
+}
+
 inline double  Grid3D_Hexa_Block::delta_ot (const int ii, const int jj, const int kk){
    Vector3D vector;
    vector = centroid(ii,jj, kk+1) - centroid(ii,jj, kk);
+   return (vector.abs());
+}
+
+inline double  Grid3D_Hexa_Block::delta_ob (const int ii, const int jj, const int kk){
+   Vector3D vector;
+   vector = centroid(ii,jj, kk-1) - centroid(ii,jj, kk);
    return (vector.abs());
 }
 

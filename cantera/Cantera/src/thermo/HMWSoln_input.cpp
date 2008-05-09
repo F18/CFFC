@@ -1,5 +1,11 @@
 /**
  *  @file HMWSoln_input.cpp
+ *    Definitions for the %HMWSoln ThermoPhase object, which models concentrated
+ *    electrolyte solutions
+ *    (see \ref thermoprops and \link Cantera::HMWSoln HMWSoln \endlink) .
+ *
+ * This file contains definitions for reading in the interaction terms
+ * in the formulation.
  */
 /*
  * Copywrite (2006) Sandia Corporation. Under the terms of 
@@ -7,23 +13,27 @@
  * U.S. Government retains certain rights in this software.
  */
 /*
- * $Id: HMWSoln_input.cpp,v 1.4 2006/07/13 20:05:11 hkmoffa Exp $
+ * $Id: HMWSoln_input.cpp,v 1.13 2007/10/02 00:49:55 hkmoffa Exp $
  */
 
 #include "HMWSoln.h"
-#include "importCTML.h"
+#include "ThermoFactory.h"
 #include "WaterProps.h"
 #include "WaterPDSS.h"
+#include <string.h>
+
+using namespace std;
+
 
 namespace Cantera {
 
-  /**
-   * interp_est()                          (static)
-   *
-   * utility function to assign an integer value from a string
-   * for the ElectrolyteSpeciesType field.
+
+  //! utility function to assign an integer value from a string
+  //! for the ElectrolyteSpeciesType field.
+  /*!
+   *  @param estString string name of the electrolyte species type
    */
-  static int interp_est(string estString) {
+  int HMWSoln::interp_est(std::string estString) {
     const char *cc = estString.c_str();
     if (!strcasecmp(cc, "solvent")) {
       return cEST_solvent;
@@ -45,7 +55,7 @@ namespace Cantera {
     return rval;
   }
 
-  /**
+  /*
    * Process an XML node called "SimpleSaltParameters. 
    * This node contains all of the parameters necessary to describe
    * the Pitzer model for that particular binary salt.
@@ -53,6 +63,11 @@ namespace Cantera {
    * it finds to an internal data structures.
    */
   void HMWSoln::readXMLBinarySalt(XML_Node &BinSalt) {
+    string xname = BinSalt.name();
+    if (xname != "binarySaltParameters") {
+      throw CanteraError("HMWSoln::readXMLBinarySalt",
+			 "Incorrect name for processing this routine: " + xname);
+    }
     double *charge = DATA_PTR(m_speciesCharge);
     string stemp;
     int nParamsFound, i;
@@ -156,7 +171,7 @@ namespace Cantera {
 	  m_Beta1MX_ij_coeff(1,counter) = vParams[1];
 	  m_Beta1MX_ij[counter] = vParams[0];
 	} else  if (m_formPitzerTemp == PITZER_TEMP_COMPLEX1) {
-	  if (nParamsFound < 3) {
+	  if (nParamsFound != 5) {
 	    throw CanteraError("HMWSoln::readXMLBinarySalt::beta1 for " + ispName 
 			       + "::" + jspName,
 			       "wrong number of params found");
@@ -166,11 +181,39 @@ namespace Cantera {
 	  }
 	  m_Beta1MX_ij[counter] = vParams[0];
 	}
-
       }
       if (nodeName == "beta2") {
-	stemp = xmlChild.value();
-	m_Beta2MX_ij[counter] = atofCheck(stemp.c_str());
+	getFloatArray(xmlChild, vParams, false, "", "beta2");
+	nParamsFound = vParams.size();
+	if (m_formPitzerTemp == PITZER_TEMP_CONSTANT) {
+	  if (nParamsFound != 1) {
+	    throw CanteraError("HMWSoln::readXMLBinarySalt::beta2 for " + ispName 
+			       + "::" + jspName,
+			       "wrong number of params found");
+	  }
+	  m_Beta2MX_ij[counter] = vParams[0];
+	  m_Beta2MX_ij_coeff(0,counter) = m_Beta2MX_ij[counter];
+	} else  if (m_formPitzerTemp == PITZER_TEMP_LINEAR) {
+	  if (nParamsFound != 2) {
+	    throw CanteraError("HMWSoln::readXMLBinarySalt::beta2 for " + ispName 
+			       + "::" + jspName,
+			       "wrong number of params found");
+	  }
+	  m_Beta2MX_ij_coeff(0,counter) = vParams[0];
+	  m_Beta2MX_ij_coeff(1,counter) = vParams[1];
+	  m_Beta2MX_ij[counter] = vParams[0];
+	} else  if (m_formPitzerTemp == PITZER_TEMP_COMPLEX1) {
+	  if (nParamsFound != 5) {
+	    throw CanteraError("HMWSoln::readXMLBinarySalt::beta2 for " + ispName 
+			       + "::" + jspName,
+			       "wrong number of params found");
+	  }
+	  for (i = 0; i < nParamsFound; i++) {
+	    m_Beta2MX_ij_coeff(i, counter) = vParams[i];
+	  }
+	  m_Beta2MX_ij[counter] = vParams[0];
+	}
+
       }
       if (nodeName == "cphi") {
 	/*
@@ -221,6 +264,11 @@ namespace Cantera {
    * the binary interactions between two anions.
    */
   void HMWSoln::readXMLThetaAnion(XML_Node &BinSalt) {
+    string xname = BinSalt.name();
+    if (xname != "thetaAnion") {
+      throw CanteraError("HMWSoln::readXMLThetaAnion",
+			 "Incorrect name for processing this routine: " + xname);
+    }
     double *charge = DATA_PTR(m_speciesCharge);
     string stemp;
     string iName = BinSalt.attrib("anion1");
@@ -276,6 +324,11 @@ namespace Cantera {
    * the binary interactions between two cation.
    */
   void HMWSoln::readXMLThetaCation(XML_Node &BinSalt) {
+    string xname = BinSalt.name();
+    if (xname != "thetaCation") {
+      throw CanteraError("HMWSoln::readXMLThetaCation",
+			 "Incorrect name for processing this routine: " + xname);
+    }
     double *charge = DATA_PTR(m_speciesCharge);
     string stemp;
     string iName = BinSalt.attrib("cation1");
@@ -325,12 +378,17 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * Process an XML node called "readXMLPsiCommonCation". 
    * This node contains all of the parameters necessary to describe
    * the binary interactions between two anions and one common cation.
    */
   void HMWSoln::readXMLPsiCommonCation(XML_Node &BinSalt) {
+    string xname = BinSalt.name();
+    if (xname != "psiCommonCation") {
+      throw CanteraError("HMWSoln::readXMLPsiCommonCation",
+			 "Incorrect name for processing this routine: " + xname);
+    }
     double *charge = DATA_PTR(m_speciesCharge);
     string stemp;
     string kName = BinSalt.attrib("cation");
@@ -373,7 +431,7 @@ namespace Cantera {
       throw CanteraError("HMWSoln::readXMLPsiCommonCation", 
 			 "anion2 charge problem");
     }
-	
+    
     int n = iSpecies * m_kk + jSpecies;
     int counter = m_CounterIJ[n];
     int num = BinSalt.nChildren();
@@ -419,6 +477,11 @@ namespace Cantera {
    * the binary interactions between two cations and one common anion.
    */
   void HMWSoln::readXMLPsiCommonAnion(XML_Node &BinSalt) {
+    string xname = BinSalt.name();
+    if (xname != "psiCommonAnion") {
+      throw CanteraError("HMWSoln::readXMLPsiCommonAnion",
+			 "Incorrect name for processing this routine: " + xname);
+    }
     double *charge = DATA_PTR(m_speciesCharge);
     string stemp;
     string kName = BinSalt.attrib("anion");
@@ -505,15 +568,20 @@ namespace Cantera {
    * any other species (neutral or otherwise) in the mechanism.
    */
   void HMWSoln::readXMLLambdaNeutral(XML_Node &BinSalt) {
+    string xname = BinSalt.name();
+    if (xname != "lambdaNeutral") {
+      throw CanteraError("HMWSoln::readXMLLanbdaNeutral",
+			 "Incorrect name for processing this routine: " + xname);
+    }
     double *charge = DATA_PTR(m_speciesCharge);
     string stemp;
-    string iName = BinSalt.attrib("neutral");
+    string iName = BinSalt.attrib("species1");
     if (iName == "") {
-      throw CanteraError("HMWSoln::readXMLLambdaNeutral", "no neutral attrib");
+      throw CanteraError("HMWSoln::readXMLLambdaNeutral", "no species1 attrib");
     }
-    string jName = BinSalt.attrib("speciesj");
+    string jName = BinSalt.attrib("species2");
     if (jName == "") {
-      throw CanteraError("HMWSoln::readXMLLambdaNeutral", "no speciesj attrib");
+      throw CanteraError("HMWSoln::readXMLLambdaNeutral", "no species2 attrib");
     }
     /*
      * Find the index of the species in the current phase. It's not
@@ -524,7 +592,8 @@ namespace Cantera {
       return;
     }
     if (charge[iSpecies] != 0) {
-      throw CanteraError("HMWSoln::readXMLLambdaNeutral", "neutral charge problem");
+      throw CanteraError("HMWSoln::readXMLLambdaNeutral", 
+			 "neutral charge problem");
     }
     int jSpecies = speciesIndex(jName);
     if (jSpecies < 0) {
@@ -542,14 +611,15 @@ namespace Cantera {
 	m_Lambda_ij(iSpecies,jSpecies) = atofCheck(stemp.c_str());
 	if (old != 0.0) {
 	  if (old != m_Lambda_ij(iSpecies,jSpecies)) {
-	    throw CanteraError("HMWSoln::readXMLLambdaNeutral", "conflicting values");
+	    throw CanteraError("HMWSoln::readXMLLambdaNeutral", 
+			       "conflicting values");
 	  }
 	}
       }
     }
   }
 
-  /**
+  /*
    *  Initialization routine for a HMWSoln phase.
    *
    * This is a virtual routine. This routine will call initThermo()
@@ -560,7 +630,7 @@ namespace Cantera {
     initLengths();
   }
 
-  /**
+  /*
    *   Import, construct, and initialize a HMWSoln phase 
    *   specification from an XML tree into the current object.
    *
@@ -574,14 +644,14 @@ namespace Cantera {
    *            phase. If none is given, the first XML
    *            phase element will be used.
    */
-  void HMWSoln::constructPhaseFile(string inputFile, string id) {
+  void HMWSoln::constructPhaseFile(std::string inputFile, std::string id) {
 
     if (inputFile.size() == 0) {
       throw CanteraError("HMWSoln:constructPhaseFile",
 			 "input file is null");
     }
     string path = findInputFile(inputFile);
-    ifstream fin(path.c_str());
+    std::ifstream fin(path.c_str());
     if (!fin) {
       throw CanteraError("HMWSoln:constructPhaseFile","could not open "
 			 +path+" for reading.");
@@ -604,7 +674,7 @@ namespace Cantera {
     delete fxml;
   }
   
-  /**
+  /*
    *   Import, construct, and initialize a HMWSoln phase 
    *   specification from an XML tree into the current object.
    *
@@ -631,7 +701,7 @@ namespace Cantera {
    *             to see if phaseNode is pointing to the phase
    *             with the correct id. 
    */
-  void HMWSoln::constructPhaseXML(XML_Node& phaseNode, string id) {
+  void HMWSoln::constructPhaseXML(XML_Node& phaseNode, std::string id) {
     string stemp;
     if (id.size() > 0) {
       string idp = phaseNode.id();
@@ -779,7 +849,7 @@ namespace Cantera {
    *             with the correct id.
    */
   void HMWSoln::
-  initThermoXML(XML_Node& phaseNode, string id) {
+  initThermoXML(XML_Node& phaseNode, std::string id) {
     int k;
     string stemp;
     /*
@@ -830,8 +900,8 @@ namespace Cantera {
       }
     }
     if (m_indexSolvent == -1) {
-      cout << "HMWSoln::initThermo: Solvent Name not found" 
-	   << endl;
+      std::cout << "HMWSoln::initThermo: Solvent Name not found" 
+		<< std::endl;
       throw CanteraError("HMWSoln::initThermoXML",
 			 "Solvent name not found");
     }

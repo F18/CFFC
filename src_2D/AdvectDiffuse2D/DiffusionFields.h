@@ -59,6 +59,12 @@ public:
   static void Connect_Pointer_To_Diffusion_Field(NonlinearDiffusionFieldTypeRef DiffusionField);
   //@}
 
+  //! @name Functions to switch temporary the diffusion field to Laplacian
+  //@{
+  static void Change_Temporary_Diffusion_Field_To_Laplacian(void);
+  static void Change_Diffusion_Field_To_Original(void);
+  //@}
+
 protected:
   DiffusionFields(void);   //!< Private default constructor
   DiffusionFields(const DiffusionFields&); //!< Private copy constructor
@@ -67,7 +73,9 @@ protected:
   //! @name Parameters used to determine a particular type of diffusion field
   //@{
   static short i_Diffusion_Field_Type;     //!< type indicator for the diffusion coefficient field
+  static short i_Diffusion_Field_Type_Copy;//!< copy of the type indicator for the diffusion coefficient field
   static double DiffusionCoefficient;      //!< reference diffusion coefficient
+  static double DiffusionCoefficient_Copy; //!< copy of the reference diffusion coefficient
   static double k_x, k_y, k_u;	           //!< coefficients for linear variation
   static Vector2D ReferencePoint;          //!< reference point for linear variation
   //@}
@@ -144,6 +152,42 @@ void DiffusionFields::Parse_Next_Input_Control_Parameter(Input_Parameters_Type &
   } else {
     i_command = INVALID_INPUT_CODE;
   } // endif
+
+}
+
+/*!
+ * Set the current diffusion field to match the Laplacian operator.
+ * That is 'Constant_Diffusion' with 'DiffusionCoefficient=1.0'.
+ * Save also the setup of the original diffusion field such that
+ * it can be restored back later.
+ */
+inline void DiffusionFields::Change_Temporary_Diffusion_Field_To_Laplacian(void){
+
+  // Save the value of the current field
+  i_Diffusion_Field_Type_Copy = i_Diffusion_Field_Type;
+
+  // Save the value of the current reference diffusion coefficient
+  DiffusionCoefficient_Copy = DiffusionCoefficient;
+
+  // Set to Laplacian field
+  i_Diffusion_Field_Type = DIFFUSION_FIELD_CONSTANT;
+ 
+  // Set DiffusionCoefficient
+  DiffusionCoefficient = 1.0;
+ 
+}
+
+/*!
+ * Set the current diffusion field to what has been saved.
+ * Restore back the original field.
+ */
+inline void DiffusionFields::Change_Diffusion_Field_To_Original(void){
+
+  // Restore the original diffusion field value
+  i_Diffusion_Field_Type = i_Diffusion_Field_Type_Copy;
+
+  // Restore the original reference diffusion coefficient value
+  DiffusionCoefficient = DiffusionCoefficient_Copy;
 
 }
 

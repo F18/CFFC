@@ -1,6 +1,6 @@
 /**
  * @file ck2cti.cpp
- * $Id: ck2cti.cpp,v 1.6 2005/06/18 17:01:38 dggoodwin Exp $
+ * $Id: ck2cti.cpp,v 1.7 2007/05/04 15:18:45 dggoodwin Exp $
  *
  * Program to convert Chemkin-II-format reaction mechanism files to
  * Cantera input format. The resulting Cantera input file contains a
@@ -42,7 +42,7 @@ using namespace std;
 
 #include "ct_defs.h"
 #include "global.h"
-#include "converters/ck2ct.h"
+#include "ck2ct.h"
 
 using namespace Cantera;
 

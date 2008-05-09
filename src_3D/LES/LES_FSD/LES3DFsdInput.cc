@@ -3,6 +3,23 @@
 #include "LES3DFsdInput.h"
 #endif // _LES3DFSD_INPUT_INCLUDED
 
+
+/********************************************************
+ * Routine: Deallocate_Static                           *
+ *                                                      *
+ * Deallocate static data of the reference solution     * 
+ * states.                                              *
+ *                                                      *
+ ********************************************************/
+template<>
+void Input_Parameters<LES3DFsd_pState, 
+                      LES3DFsd_cState>::Deallocate_Static(void) {
+
+  Wo.Deallocate_static(); 
+  Uo.Deallocate_static();
+
+}
+
 /********************************************************
  * Routine: Set_Reference_Solution_States               *
  *                                                      *
@@ -47,11 +64,26 @@ void Input_Parameters<LES3DFsd_pState,
     Wo.set_initial_values(Species_IP.mass_fractions);
     Uo.set_initial_values(Species_IP.mass_fractions);
 
+    // Set some modelling parameters.
+    Wo.set_modelling_data(Turbulence_IP.Fuel_Equivalence_Ratio,
+			  Turbulence_IP.Unburnt_Fuel_Mass_Fraction,
+			  Turbulence_IP.Reactants_Density,
+                          Turbulence_IP.Laminar_Flame_Speed,
+			  Turbulence_IP.Laminar_Flame_Thickness,
+			  Turbulence_IP.Adiabatic_Flame_Temperature,
+			  Turbulence_IP.Filter_Width);
+    Uo.set_modelling_data(Turbulence_IP.Fuel_Equivalence_Ratio,
+			  Turbulence_IP.Unburnt_Fuel_Mass_Fraction,
+			  Turbulence_IP.Reactants_Density,
+                          Turbulence_IP.Laminar_Flame_Speed,
+			  Turbulence_IP.Laminar_Flame_Thickness,
+			  Turbulence_IP.Adiabatic_Flame_Temperature,
+			  Turbulence_IP.Filter_Width);
+
     // Set reference solution states.
     Wo.rho = 1.13; 
     Wo.p = Pressure;	
     Wo.v.zero();
-    Wo.v.x = 0.3837;
     Wo.k = 0.0;
     Wo.C = 0.0;
     Wo.Fsd = 0.0;
@@ -100,6 +132,15 @@ void Input_Parameters<LES3DFsd_pState,
        restart_file >> Species_IP.mass_fractions[i] >> Species_IP.Schmidt[i];
     } /* endfor */
 
+    // Read in modelling data.
+    restart_file >> Turbulence_IP.Fuel_Equivalence_Ratio
+		 >> Turbulence_IP.Unburnt_Fuel_Mass_Fraction
+		 >> Turbulence_IP.Reactants_Density
+		 >> Turbulence_IP.Laminar_Flame_Speed
+		 >> Turbulence_IP.Laminar_Flame_Thickness
+		 >> Turbulence_IP.Adiabatic_Flame_Temperature
+		 >> Turbulence_IP.Filter_Width;
+
     restart_file.unsetf(ios::skipws);
 
     // Set reference solution states.
@@ -136,6 +177,15 @@ void Input_Parameters<LES3DFsd_pState,
       restart_file << Species_IP.mass_fractions[i] << " " 
                    << Species_IP.Schmidt[i] << endl;
     } /* endfor */
+
+    // Write out modelling data.
+    restart_file << Turbulence_IP.Fuel_Equivalence_Ratio      << " "
+		 << Turbulence_IP.Unburnt_Fuel_Mass_Fraction  << " "
+		 << Turbulence_IP.Reactants_Density           << " "
+		 << Turbulence_IP.Laminar_Flame_Speed         << " "
+		 << Turbulence_IP.Laminar_Flame_Thickness     << " "
+		 << Turbulence_IP.Adiabatic_Flame_Temperature << " "
+		 << Turbulence_IP.Filter_Width                << endl;
 
     // Write reference solution states.
     restart_file << Wo << endl << Uo << endl;

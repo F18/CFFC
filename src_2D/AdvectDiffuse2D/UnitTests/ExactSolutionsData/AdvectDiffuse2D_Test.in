@@ -58,8 +58,6 @@ ICs_Type =
 	# Restart 
 	 Riemann_Xdir
 	#Riemann
-Kappa =
-	1
 # Values for DiffusionFields
 Diffusion_Field = 
 	# No_Diffusion

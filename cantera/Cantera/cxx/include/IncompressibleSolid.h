@@ -4,14 +4,14 @@
 #include <string>
 
 #include "kernel/ConstDensityThermo.h"
-#include "kernel/importCTML.h"
+#include "kernel/importKinetics.h"
 
 namespace Cantera {
 
     class IncompressibleSolid : public ConstDensityThermo
     {
     public:
-        IncompressibleSolid(string infile, string id="") : m_ok(false), m_r(0) {
+        IncompressibleSolid(std::string infile, std::string id="") : m_ok(false), m_r(0) {
             
         m_r = get_XML_File(infile); 
         if (id == "-") id = "";
@@ -24,10 +24,10 @@ namespace Cantera {
         virtual ~IncompressibleSolid() {}
 
         bool operator!() { return !m_ok;}
-        bool ready() { return m_ok; }
+        bool ready() const { return m_ok; }
 
-        //friend ostream& operator<<(ostream& s, IdealGasMix& mix) {
-        //    string r = report(mix, true);
+        //friend std::ostream& operator<<(std::ostream& s, IdealGasMix& mix) {
+        //    std::string r = report(mix, true);
         //    s << r;
         //    return s;
 

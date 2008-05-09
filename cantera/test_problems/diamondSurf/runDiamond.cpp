@@ -25,28 +25,10 @@ int iDebug_HKM = 0;
 
 /*****************************************************************/
 /*****************************************************************/
-/*****************************************************************/
-static void printUsage()
-{
 
-}
-
-#ifdef SRCDIRTREE
-#include "ct_defs.h"
-#include "ctml.h"
-#include "GasKinetics.h"
-#include "importCTML.h"
-#include "ThermoPhase.h"
-#include "InterfaceKinetics.h"
-#else
 #include "Cantera.h"
-#include "kernel/ct_defs.h"
-#include "kernel/ctml.h"
-#include "kernel/GasKinetics.h"
-#include "kernel/importCTML.h"
-#include "kernel/ThermoPhase.h"
-#include "kernel/InterfaceKinetics.h"
-#endif
+#include "kinetics.h"
+
 
 using namespace Cantera;
 
@@ -80,6 +62,7 @@ int main(int argc, char** argv) {
 
       XML_Node * const xs = xc->findNameID("phase", "diamond_100");
       ThermoPhase *diamond100TP = newPhase(*xs);
+      //SurfPhase *diamond100TP = new SurfPhase(*xs);
       int nsp_d100 = diamond100TP->nSpecies();
       cout << "Number of species in diamond_100 = " << nsp_d100 << endl;
 
@@ -115,7 +98,11 @@ int main(int argc, char** argv) {
 
       iKin_ptr->advanceCoverages(100.);
 
-   
+      // Throw some asserts in here to test that they compile
+      AssertTrace(p == p); 
+      AssertThrow(p == p, "main"); 
+      AssertThrowMsg(i == 20, "main", "are you kidding"); 
+
       double src[20];
       for (i = 0; i < 20; i++) src[i] = 0.0;
       iKin_ptr->getNetProductionRates(src);

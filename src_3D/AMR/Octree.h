@@ -780,8 +780,7 @@ class Octree_DataStructure{
     }
 
     /* Destructor. */
-    // ~Octree_DataStructure(void);
-    // Use automatically generated destructor.
+    ~Octree_DataStructure(void) { deallocate(); }
 
     /* Assignment operator. */
     // Octree_DataStructure operator = (const Octree_DataStructure &QT);

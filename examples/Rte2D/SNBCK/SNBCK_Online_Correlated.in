@@ -81,9 +81,9 @@ Gauss_Legendre
 Number_of_Quad_Points =
 1
 Number_of_Lumped_Bands =
-40
+1
 Optimized_Lumping =
-ON
+OFF
 Overlap_Model =
 Correlated
 #######################

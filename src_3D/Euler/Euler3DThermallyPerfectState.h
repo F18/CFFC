@@ -61,6 +61,10 @@ using namespace std;
 #include "../Reactions/Reactions.h"
 #endif // _REACTIONS_INCLUDED
 
+#ifndef _INPUT_INCLUDED
+#include "../CFD/Input.h"
+#endif // INPUT_INCLUDED
+
 /* Define the classes. */
 
 class Euler3D_ThermallyPerfect_cState;
@@ -71,7 +75,7 @@ class Euler3D_ThermallyPerfect_pState;
 
 /*! If you define this variable, the number of species will be 
     predetermined for faster calculations.., however it is not as general */
-#define STATIC_NUMBER_OF_SPECIES 5 // set to 2 for air, 5 for 1-step CH4, 6 for 2-setp CH4
+#define STATIC_NUMBER_OF_SPECIES 5 // set to 2 for air, 5 for 1-step CH4, 6 for 2-step CH4
 
 /*! Convergence tolerance */
 #define CONV_TOLERANCE 1e-8
@@ -183,7 +187,7 @@ class Euler3D_ThermallyPerfect_pState {
    //! Default creation constructor (assign default values)
    Euler3D_ThermallyPerfect_pState(void): 
      rho(DENSITY_STDATM), p(PRESSURE_STDATM) {
-     v.zero(); species_null(); set_initial_values();
+       species_null(); set_initial_values();
    }
    
    //! Assignment constructor
@@ -234,8 +238,7 @@ class Euler3D_ThermallyPerfect_pState {
                                    const double &vy, 
                                    const double &vz,
                                    const double &pre) :
-     rho(d), p(pre) {
-     v.x = vx;  v.y = vy; v.z = vz;
+     rho(d), v(vx, vy, vz), p(pre) {
      species_null(); set_initial_values(); 
    }
 
@@ -246,8 +249,7 @@ class Euler3D_ThermallyPerfect_pState {
                                    const double &vz, 
                                    const double &pre, 
                                    const double &frac) :
-     rho(d), p(pre) {
-     v.x = vx; v.y = vy; v.z = vz; 
+     rho(d), v(vx, vy, vz), p(pre) { 
      species_null(); set_initial_values(frac); 
    }
                     
@@ -258,8 +260,7 @@ class Euler3D_ThermallyPerfect_pState {
                                    const double &vz,
                                    const double &pre, 
                                    const Species *mfrac) :
-     rho(d), p (pre) {
-     v.x=vx; v.y=vy; v.z = vz; 
+     rho(d), v(vx, vy, vz), p(pre) { 
      species_null(); set_initial_values(mfrac); 
    }
   
@@ -277,6 +278,14 @@ class Euler3D_ThermallyPerfect_pState {
 /** @name Some useful operators */
 /*        --------------------- */
 //@{
+    //! Return the number of variables.
+    int NumVar(void) {
+        return num_vars;
+    }
+    int NumVar(void) const {
+        return num_vars;
+    }
+    
    //! Allocate memory for species data
    void Allocate(void) {
 #ifdef STATIC_NUMBER_OF_SPECIES
@@ -682,6 +691,22 @@ class Euler3D_ThermallyPerfect_pState {
                                                  const Vector3D &pressure_gradient,
                                                  const int &TEMPERATURE_BC_FLAG);
 //@}
+    
+/** @name Initial Conditions */
+/*        ------------------ */
+//@{
+    //! Return a fixed velocity profile depending on the input parameters
+    template<class SOLN_pSTATE, class SOLN_cSTATE>
+	static Euler3D_ThermallyPerfect_pState VelocityProfile(const Euler3D_ThermallyPerfect_pState &Wdum,
+                                                           Vector3D Xc,
+                                                           Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+    
+    //! Return a fixed pressure profile depending on the input parameters
+    template<class SOLN_pSTATE, class SOLN_cSTATE>
+    static Euler3D_ThermallyPerfect_pState PressureProfile(const Euler3D_ThermallyPerfect_pState &Wdum,
+                                                           Vector3D Xc,
+                                                           Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+//@}     
 
 /** @name Finite-rate chemical kinetics */
 /*        ----------------------------- */
@@ -824,7 +849,7 @@ class Euler3D_ThermallyPerfect_cState {
    //! Default creation constructor (assign default values)
    Euler3D_ThermallyPerfect_cState(void): 
     rho(DENSITY_STDATM), E(PRESSURE_STDATM/(rho*(0.4))) {
-     rhospec_null(); rhov.zero(); set_initial_values(); 
+     rhospec_null(); set_initial_values(); 
    }   
 
    //! Assignment constructor
@@ -866,8 +891,7 @@ class Euler3D_ThermallyPerfect_cState {
                                    const double &vy, 
                                    const double &vz,
                                    const double &En) :
-    rho(d), E(En) {
-      rhov.x=vx; rhov.y=vy; rhov.z=vz; 
+    rho(d), rhov(vx, vy, vz), E(En) { 
       rhospec_null(); set_initial_values(); 
    }
   
@@ -878,8 +902,7 @@ class Euler3D_ThermallyPerfect_cState {
                                    const double &vz, 
                                    const double &En,	
                                    const Species *rhomfrac) : 
-    rho(d), E(En) { 
-      rhov.x=vx; rhov.y=vy; rhov.z = vz;
+    rho(d), rhov(vx, vy, vz), E(En) { 
       rhospec_null(); set_initial_values(rhomfrac); 
    }
 
@@ -890,8 +913,7 @@ class Euler3D_ThermallyPerfect_cState {
                                    const double &vz, 
                                    const double &En,	
                                    const double &rhomfrac) : 
-    rho(d), E(En) { 
-      rhov.x=vx; rhov.y=vy; rhov.z = vz;
+    rho(d), rhov(vx, vy, vz), E(En) { 
       rhospec_null(); set_initial_values(rhomfrac); 
    }
   
@@ -1201,7 +1223,6 @@ class Euler3D_ThermallyPerfect_cState {
    friend istream& operator >> (istream &in_file,  
                                 Euler3D_ThermallyPerfect_cState &U);
 //@}   
-
 };
 
 /***************************************************************************************
@@ -1672,5 +1693,29 @@ inline istream &operator >> (istream &in_file,
   in_file.unsetf(ios::skipws);
   return (in_file);
 }
+
+
+/* ----------------------------------------------------------------------------- *
+ *                      Some templated functions.                                *
+ * ----------------------------------------------------------------------------- */
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_pState::PressureProfile(
+                                                                                 const Euler3D_ThermallyPerfect_pState &Wdum,
+                                                                                 Vector3D Xc,
+                                                                                 Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+	/* No Pressure profile implemented for Euler3D */
+	return Wdum;
+}
+
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_pState::VelocityProfile(
+                                                                                 const Euler3D_ThermallyPerfect_pState &Wdum,
+                                                                                 Vector3D Xc,
+                                                                                 Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+    /* No Velocity profile implemented for Euler3D */
+    return Wdum;
+}
+
+
 
 #endif // _EULER3D_THERMALLYPERFECT_STATE_INCLUDED

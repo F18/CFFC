@@ -242,7 +242,7 @@ enum Reactions {NO_REACTIONS,
 		CH4_15STEP_ARM2,  // CH4 HARDCODED mechanisms based on GRI 2.11
 		CH4_15STEP_ARM3,  // CH4 HARDCODED mechanisms based on GRI 3
 		USER,             // User defined flag
-		CANTERA };        // cantera flag
+		CANTERA};        // cantera flag
 
 class Reaction_set{
 private:  
@@ -270,7 +270,7 @@ public:
   string ct_mech_name;     //Reaction mechanism file path
   string ct_mech_file;     //Reaction mechanism file path
 #ifdef _CANTERA_VERSION
-  IdealGasMix* ct_gas;     //the Cantera IdealGasMix object
+  Cantera::IdealGasMix* ct_gas;     //the Cantera IdealGasMix object
 #endif
 
   Reaction_set(){ 
@@ -969,7 +969,7 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU,
   //---------------------------------//
   case CANTERA:
 #ifdef _CANTERA_VERSION
-    Finite_Difference_dSwdU<SOLN_pSTATE,SOLN_cSTATE>(dSwdU, W);
+    //Finite_Difference_dSwdU<SOLN_pSTATE, SOLN_cSTATE>(dSwdU, W);
 #endif // _CANTERA_VERSION
     break;
 

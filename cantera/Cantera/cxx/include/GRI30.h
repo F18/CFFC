@@ -1,5 +1,5 @@
 /*
- * $Id: GRI30.h,v 1.3 2006/04/30 19:57:39 hkmoffa Exp $
+ * $Id: GRI30.h,v 1.5 2007/05/04 15:48:43 dggoodwin Exp $
  */
 #ifndef CXX_GRI30H
 #define CXX_GRI30H
@@ -8,7 +8,7 @@
 
 #include "kernel/IdealGasPhase.h"
 #include "kernel/GRI_30_Kinetics.h"
-#include "kernel/importCTML.h"
+#include "kernel/importKinetics.h"
 
 namespace Cantera {
 
@@ -28,8 +28,8 @@ namespace Cantera {
 
         bool operator!() { return !m_ok;}
         bool ready() const { return m_ok; }
-        friend ostream& operator<<(ostream& s, GRI30& mix) {
-            string r = report(mix, true);
+        friend std::ostream& operator<<(std::ostream& s, GRI30& mix) {
+            std::string r = report(mix, true);
             s << r;
             return s;
         }

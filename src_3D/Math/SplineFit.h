@@ -223,6 +223,108 @@ inline void splint( const double *xa, const double *ya, const double *y2a,
   y = a*ya[klo]+b*ya[khi]+((a*a*a-a)*y2a[klo]+(b*b*b-b)*y2a[khi])*(h*h)/6.0;
 }
 
+/**
+ * ThomasAlgorithm : Solves a tridiagonal system
+ * \verbatim
+ *    [ D0  C0                        ] [ X0   ]   [ B0   ]
+ *    [ A1  D1  C1                    ] [ X1   ]   [ B1   ]
+ *    [     A2  D2  C2                ] [ X2   ] = [      ]
+ *    [                               ] [      ]   [      ]
+ *    [             An-2   Dn-2  Cn-2 ] [ Xn-2 ]   [ Bn-2 ]
+ *    [                    An-1  Dn-1 ] [ Xn-1 ]   [ Bn-1 ]
+ * \endverbatim
+ */
+inline void ThomasAlgorithm(double *A, double *D, double *C, double *B, double *X, int N) {
+    
+    
+    /* Perform forward elimination. */
+    
+    D[0]=D[0];
+    B[0]=B[0];
+    for (int i=1; i<N; i++) {
+        D[i]=D[i]-A[i]*C[i-1]/D[i-1];
+        B[i]=B[i]-A[i]*B[i-1]/D[i-1];
+    }
+    
+    /* Perform back substitution. */
+    
+    X[N-1]=B[N-1]/D[N-1];
+    for (int i=N-2; i>=0; i--) {
+        X[i]=(B[i]-C[i]*X[i+1])/D[i];
+    }
+}
+
+
+inline double CubicSplinesIntegration(double *X, double *Y, int N) {
+    
+    double *A_Thomas, *B_Thomas, *C_Thomas, *D_Thomas;
+    A_Thomas = new double [N];
+    B_Thomas = new double [N];
+    C_Thomas = new double [N];
+    D_Thomas = new double [N];
+    
+    //spline coefficients:
+    double *a, *b, *c, *d;
+    a = new double [N];
+    b = new double [N];
+    c = new double [N];
+    d = new double [N];
+    
+    for (int i=0; i<N; i++) {
+        if (i == 0 || i == N-1) {
+            A_Thomas[i]=0.00;
+            D_Thomas[i]=1.00;
+            C_Thomas[i]=0.00;
+            B_Thomas[i]=0.00;
+        } else {
+            A_Thomas[i]=(X[i]-X[i-1])/3.00;
+            D_Thomas[i]=2.00*((X[i]-X[i-1])+(X[i+1]-X[i]))/3.00;
+            C_Thomas[i]=(X[i+1]-X[i])/3.0000;
+            B_Thomas[i]=(Y[i+1]-Y[i])/(X[i+1]-X[i])-(Y[i]-Y[i-1])/(X[i]-X[i-1]);
+        }
+    }
+    
+    /* Step 2. Solve tridiagonal system of equations using
+     subroutine THOMAS to determine coefficients C. */
+    
+    ThomasAlgorithm(A_Thomas, D_Thomas, C_Thomas, B_Thomas, c, N);
+    delete[] A_Thomas;
+    delete[] B_Thomas;
+    delete[] C_Thomas;
+    delete[] D_Thomas;
+    
+    /* Step 3. Determine the other coefficients a, b, and d. */
+    
+    for (int i=0; i<N-1; i++) {
+        a[i]=Y[i];
+        b[i]=(Y[i+1]-Y[i])/(X[i+1]-X[i])-(2.00*c[i]+c[i+1])*(X[i+1]-X[i])/3.00;
+        d[i]=(c[i+1]-c[i])/(3.00*(X[i+1]-X[i]));
+    }
+    
+    
+    
+    double I=0;
+    for (int i=0 ; i<N-1 ; i++) {
+        I += a[i]*(X[i+1]-X[i]) + b[i]*pow((X[i+1]-X[i]),2) + c[i]*pow((X[i+1]-X[i]),3) + d[i]*pow((X[i+1]-X[i]),4);
+    }
+    
+    delete[] a;
+    delete[] b;
+    delete[] c;
+    delete[] d;
+
+    return I;
+}
+
+inline double TrapezoidalIntegration(double *x, double *y, int n) {
+	double result=0;
+	int i;
+	
+	for (i=0 ; i < n-1 ; i++) {
+		result += (x[i+1]-x[i]) * (y[i+1]+y[i])/2;
+	}
+	return result;
+}
 
 
 #endif //_SPLINE1D_INCLUDED

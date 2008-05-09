@@ -1,5 +1,5 @@
-/* LES3DFsdInput.h:  Header file defining various specializations for 
-                     LES3DFsd solution input parameter class. */
+/* LES3DFsdInput.h:  Header file defining various specializations for
+   LES3DFsd solution input parameter class. */
 
 #ifndef _LES3DFSD_INPUT_INCLUDED
 #define _LES3DFSD_INPUT_INCLUDED
@@ -16,7 +16,11 @@
 
 /* Define the specializations. */
 
-//! Sets values of reference solution states
+//! Deallocate static data of reference solution states
+template<>
+void Input_Parameters<LES3DFsd_pState, 
+                      LES3DFsd_cState>::Deallocate_Static(void);
+//! Set values of reference solution states
 template<>
 void Input_Parameters<LES3DFsd_pState, 
                       LES3DFsd_cState>::Set_Reference_Solution_States(void);

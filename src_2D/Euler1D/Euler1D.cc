@@ -655,6 +655,9 @@ void Linear_Reconstruction_GreenGauss(Euler1D_UniformMesh *Soln,
              case LIMITER_VENKATAKRISHNAN :
                phi = Limiter_Venkatakrishnan(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
                break;
+             case LIMITER_VENKATAKRISHNAN_CORRECTED :
+               phi = Limiter_Venkatakrishnan_Modified(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               break;
              case LIMITER_VANLEER :
                phi = Limiter_VanLeer(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
                break;
@@ -817,6 +820,9 @@ void Linear_Reconstruction_LeastSquares(Euler1D_UniformMesh *Soln,
                break;
              case LIMITER_VENKATAKRISHNAN :
                phi = Limiter_Venkatakrishnan(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
+               break;
+             case LIMITER_VENKATAKRISHNAN_CORRECTED :
+               phi = Limiter_Venkatakrishnan_Modified(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
                break;
              case LIMITER_VANLEER :
                phi = Limiter_VanLeer(uQuad, Soln[i].W[n], u0Min, u0Max, 2);

@@ -985,6 +985,7 @@ Grid2D_Quad_Block** Grid_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
 				    int &Number_of_Blocks_Idir,
 				    int &Number_of_Blocks_Jdir,
 				    const double &Length,
+                    const double &Height,
 				    const int Flat_Plate_BC_Type,
 				    const int Stretching_Flag,
 				    const double &Stretching_Factor_Idir,
@@ -1018,18 +1019,18 @@ Grid2D_Quad_Block** Grid_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
     // rectangular box shaped domain representing each of the 
     // blocks in the grid.
     if (iBlk == 0) {
-      xc_NW = TWO*Vector2D(-Length,Length);
-      xc_NE = TWO*Vector2D(ZERO,Length);
+      xc_NW = TWO*Vector2D(-Length,Height);
+      xc_NE = TWO*Vector2D(ZERO,Height);
       xc_SE = TWO*Vector2D(ZERO,ZERO);
       xc_SW = TWO*Vector2D(-Length,ZERO);
     } else if (iBlk == 1) {
-      xc_NW = TWO*Vector2D(ZERO,Length);
-      xc_NE = TWO*Vector2D(Length,Length);
+      xc_NW = TWO*Vector2D(ZERO,Height);
+      xc_NE = TWO*Vector2D(Length,Height);
       xc_SE = TWO*Vector2D(Length,ZERO);
       xc_SW = TWO*Vector2D(ZERO,  ZERO);
     } else {
-      xc_NW = TWO*Vector2D(Length,Length);
-      xc_NE = TWO*Vector2D(TWO*Length,Length);
+      xc_NW = TWO*Vector2D(Length,Height);
+      xc_NE = TWO*Vector2D(TWO*Length,Height);
       xc_SE = TWO*Vector2D(TWO*Length,ZERO);
       xc_SW = TWO*Vector2D(Length,ZERO);
     }

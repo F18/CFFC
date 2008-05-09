@@ -137,7 +137,7 @@ void Euler3D_ThermallyPerfect_pState::Copy(const Euler3D_ThermallyPerfect_pState
  ***************************************************************************************/
 void Euler3D_ThermallyPerfect_pState::Temp_low_range(void) {  
    // Get max of the min temperature of the lowest region
-   double temp = specdata[0].Low_range();
+   double temp( specdata[0].Low_range() );
    for (int i = 0; i < ns; i++) {
       temp = max(specdata[i].Low_range(),temp);
    } /* endfor */
@@ -149,7 +149,7 @@ void Euler3D_ThermallyPerfect_pState::Temp_low_range(void) {
  ***************************************************************************************/
 void Euler3D_ThermallyPerfect_pState::Temp_high_range(void) {
    // Get min of the max temperature of the highest region
-   double temp = specdata[0].High_range();
+   double temp( specdata[0].High_range() );
    for (int i = 0; i < ns; i++) {
       temp = min(specdata[i].High_range(),temp);
    } /* endfor */
@@ -160,26 +160,25 @@ void Euler3D_ThermallyPerfect_pState::Temp_high_range(void) {
  * Euler3D_ThermallyPerfect_pState::negative_speccheck -- Check species mass fractions.*
  ***************************************************************************************/
 bool Euler3D_ThermallyPerfect_pState::negative_speccheck(void) {
-   double sum = ZERO;
-   double LOCAL_TOL = MICRO; 
+   double sum(ZERO), LOCAL_TOL(MICRO); 
    //-------- Negative Check ------------//
    for (int i=0; i < ns-1; i++){
       if (spec[i].c > ONE) { //check for > 1.0 
-         spec[i].c = ONE;
+	if (spec[i].c-LOCAL_TOL > ONE) {
+	  return false;
+	} else {
+	  spec[i].c = ONE;
+	}
       } else if (spec[i].c < ZERO) { //check for -ve
-         if(spec[i].c > -LOCAL_TOL) {  //check for small -ve and set to ZERO 
-            spec[i].c = ZERO;
-         } else {
-            spec[i].c = ZERO;
-         } /* endif */
+	spec[i].c = ZERO;
       } /* endif */
       sum += spec[i].c;
    } /* endfor */
-   spec[ns-1].c = max(ONE- sum, ZERO);
+   spec[ns-1].c = max(ONE-sum, ZERO);
    sum += spec[ns-1].c;
-   for(int i = 0; i < ns; i++) {
-      spec[i].c = spec[i].c*(ONE/sum);
-   } /* endfor */
+   if (sum != ONE) {
+     for(int i = 0; i < ns; i++) spec[i].c = spec[i].c/sum;
+   }
    return true;
 }
 
@@ -204,7 +203,7 @@ bool Euler3D_ThermallyPerfect_pState::Realizable_Solution_Check(void) {
  ***************************************************************************************/
 double Euler3D_ThermallyPerfect_pState::Mass(void) const{
    // = 1 / sum(mass fration/mol_mass)
-   double sum = ZERO;
+   double sum(ZERO);
    for (int i=0; i < ns; i++) {
       sum += spec[i].c/specdata[i].Mol_mass();
    } /* endfor */
@@ -216,7 +215,7 @@ double Euler3D_ThermallyPerfect_pState::Mass(void) const{
  ***************************************************************************************/
 double Euler3D_ThermallyPerfect_pState::Rtot(void) {
    // = sum ( mass fraction * species gas constant)
-   double sum = ZERO;
+   double sum(ZERO);
    for (int i = 0; i < ns; i++) {
       sum += spec[i].c * specdata[i].Rs();
    } /* endfor */
@@ -225,7 +224,7 @@ double Euler3D_ThermallyPerfect_pState::Rtot(void) {
 
 double Euler3D_ThermallyPerfect_pState::Rtot(void) const {
    // = sum ( mass fraction * species gas constant)
-   double sum = 0.0;
+   double sum(0.0);
    for (int i = 0; i < ns; i++) {
       sum += spec[i].c * specdata[i].Rs();
    } /* endfor */
@@ -236,7 +235,7 @@ double Euler3D_ThermallyPerfect_pState::Rtot(void) const {
  * Euler3D_ThermallyPerfect_pState::HeatofFormation -- Return mixture heat of formation. *
  *****************************************************************************************/
 double Euler3D_ThermallyPerfect_pState::HeatofFormation(void) {
-   double sum = ZERO;
+   double sum(ZERO);
    for (int i = 0; i < ns; i++) {
       sum += spec[i].c*specdata[i].Heatofform();
    } /* endfor */
@@ -244,7 +243,7 @@ double Euler3D_ThermallyPerfect_pState::HeatofFormation(void) {
 }
 
 double Euler3D_ThermallyPerfect_pState::HeatofFormation(void) const {
-   double sum = ZERO;
+   double sum(ZERO);
    for (int i = 0; i < ns; i++) {
       sum += spec[i].c*specdata[i].Heatofform();
    } /* endfor */
@@ -256,8 +255,8 @@ double Euler3D_ThermallyPerfect_pState::HeatofFormation(void) const {
  **************************************************************************************************/
 double Euler3D_ThermallyPerfect_pState::Cp(void) const {
    // = sum ( mass fraction * species Cp) 
-   double Temp = T();
-   double sum = ZERO;
+   double Temp( T() );
+   double sum(ZERO);
    for (int i = 0; i < ns; i++) {
       sum += spec[i].c*specdata[i].HeatCapacity_p(Temp);
    } /* endfor */
@@ -266,7 +265,7 @@ double Euler3D_ThermallyPerfect_pState::Cp(void) const {
 
 double Euler3D_ThermallyPerfect_pState::Cp(const double& TEMP) const {
    // = sum ( mass fraction * species Cp) 
-   double sum = 0.0;
+   double sum(0.0);
    for (int i = 0; i < ns; i++) {
       sum += spec[i].c*specdata[i].HeatCapacity_p(TEMP);
    } /* endfor */
@@ -278,8 +277,8 @@ double Euler3D_ThermallyPerfect_pState::Cp(const double& TEMP) const {
  **************************************************************************************************/
 double Euler3D_ThermallyPerfect_pState::Cv(void) const {
    // = sum ( mass fraction * species Cv)  
-   double Temp = T();
-   double sum = ZERO;
+   double Temp( T() );
+   double sum(ZERO);
    for (int i = 0; i < ns; i++) {
       sum += spec[i].c*specdata[i].HeatCapacity_v(Temp);
    } /* endfor */
@@ -299,8 +298,8 @@ double Euler3D_ThermallyPerfect_pState::g(void) const{
   assuming T=200K as the temperature.
 ***************************************************/
 double Euler3D_ThermallyPerfect_pState::gamma_guess(void) const{  
-  double sum1 = ZERO;     double sum2 = ZERO;
-  double gamma_s = ZERO;  double Temp = 200.0;
+  double sum1(ZERO);     double sum2(ZERO);
+  double gamma_s(ZERO);  double Temp(200.0);
   for (int i = 0; i < ns; i++) {
      sum1 += spec[i].c*specdata[i].Rs();
      gamma_s = ONE/(ONE - specdata[i].Rs()/ specdata[i].HeatCapacity_p(Temp));
@@ -315,8 +314,8 @@ double Euler3D_ThermallyPerfect_pState::gamma_guess(void) const{
 // etotal = sensible & chemical
 double Euler3D_ThermallyPerfect_pState::e(void) const{
    // = sum (mass fraction * species e) 
-   double sum = ZERO;
-   double Temp = T();
+   double sum(ZERO);
+   double Temp( T() );
    for (int i = 0; i < ns; i++) { //(Enthalpy(Temp) - (R/mol_mass)*Temp)
       sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - specdata[i].Rs()*Temp);
    } /* endfor */
@@ -329,8 +328,8 @@ double Euler3D_ThermallyPerfect_pState::e(void) const{
 // internal energy with no heat of formation included (sensible)
 double Euler3D_ThermallyPerfect_pState::es(void) const{
    // = sum (mass fraction * species e) 
-   double sum = ZERO;
-   double Temp = T();
+   double sum(ZERO);
+   double Temp( T() );
    for (int i=0; i < ns; i++) { //(Enthalpy(Temp) - (R/mol_mass)*Temp)
       sum += spec[i].c*(specdata[i].Enthalpy(Temp) - specdata[i].Rs()*Temp);
    } /* endfor */
@@ -343,8 +342,8 @@ double Euler3D_ThermallyPerfect_pState::es(void) const{
 // reference internal energy e + heat of formation - offset
 double Euler3D_ThermallyPerfect_pState::eref(void)const{
    // = sum (mass fraction * species e) 
-   double sum = ZERO;
-   double Temp = T();
+   double sum(ZERO);
+   double Temp( T() );
    for (int i = 0; i < ns; i++) { //(Enthalpy(Temp) - (R/mol_mass)*Temp)
       sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - specdata[i].DeltaHref() - 
                         specdata[i].Rs()*Temp);
@@ -358,8 +357,8 @@ double Euler3D_ThermallyPerfect_pState::eref(void)const{
 // Specific absolute enthalpy = mass fraction * (hsensible + heatofform)
 double Euler3D_ThermallyPerfect_pState::h(void) const{
    // = sum (mass fraction * species h) 
-   double sum = ZERO;  
-   double Temp = T();
+   double sum(ZERO);  
+   double Temp( T() );
    for (int i = 0; i < ns; i++) {
       sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform());
    } /* endfor */
@@ -368,7 +367,7 @@ double Euler3D_ThermallyPerfect_pState::h(void) const{
 
 double Euler3D_ThermallyPerfect_pState::h(const double &Temp) const{
    // = sum (mass fraction * species h) 
-   double sum = ZERO;  
+   double sum(ZERO);  
    for (int i = 0; i < ns; i++) {
       sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform());
    } /* endfor */
@@ -380,8 +379,8 @@ double Euler3D_ThermallyPerfect_pState::h(const double &Temp) const{
  **************************************************************************************************/
 double Euler3D_ThermallyPerfect_pState::hs(void) const{
    // = sum (mass fraction * species h) 
-   double sum = 0.0;  
-   double Temp = T();
+   double sum(0.0);  
+   double Temp( T() );
    for (int i = 0; i < ns; i++) {
       sum += spec[i].c*(specdata[i].Enthalpy(Temp));
    } /* endfor */
@@ -390,7 +389,7 @@ double Euler3D_ThermallyPerfect_pState::hs(void) const{
 
 double Euler3D_ThermallyPerfect_pState::hs(const double &Temp) const{
    // = sum (mass fraction * species h) 
-   double sum = 0.0;  
+   double sum(0.0);  
    for (int i = 0; i < ns; i++) {
       sum += spec[i].c*(specdata[i].Enthalpy(Temp));
    } /* endfor */
@@ -403,8 +402,8 @@ double Euler3D_ThermallyPerfect_pState::hs(const double &Temp) const{
 // mass fraction * (hsensible + heat of formation - offset)
 double Euler3D_ThermallyPerfect_pState::href(void)const{
    // = sum (mass fraction * species h) 
-   double sum = 0.0;  
-   double Temp = T();
+   double sum(0.0);  
+   double Temp( T() );
    for (int i = 0; i < ns; i++) { 
       sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - specdata[i].DeltaHref());
    } /* endfor */
@@ -419,8 +418,8 @@ double Euler3D_ThermallyPerfect_pState::href(void)const{
    actually is just Cp as Cp = (dh/dT)_p
 ***************************************************/
 double Euler3D_ThermallyPerfect_pState::hprime(void) const{
-   double sum = 0.0; 
-   double Temp = T();
+   double sum(0.0); 
+   double Temp( T() );
    for (int i = 0; i < ns; i++) {
       sum += spec[i].c*specdata[i].Enthalpy_prime(Temp);
    } /* endfor */
@@ -428,7 +427,7 @@ double Euler3D_ThermallyPerfect_pState::hprime(void) const{
 }
 
 double Euler3D_ThermallyPerfect_pState::hprime(double &Temp) const{
-   double sum = 0.0;  
+   double sum(0.0);  
    for(int i = 0; i < ns; i++) {
       sum += spec[i].c*specdata[i].Enthalpy_prime(Temp);
    } /* endfor */
@@ -448,18 +447,15 @@ double Euler3D_ThermallyPerfect_pState::E(void) const{
  **************************************************************************************************/
 double Euler3D_ThermallyPerfect_pState::H(void) const{
   // H = rho*(h + velocity^2)
-  double TotalEnthalpy = ZERO;
-  TotalEnthalpy = (rho*(h() + HALF*v.sqr()));
-  return (TotalEnthalpy);
+  return (rho*(h() + HALF*v.sqr()));
 }
 
 /**************************************************************************************************
  * Euler3D_ThermallyPerfect_pState::Hs -- Return total sensible enthalpy of the mixture.          *
  **************************************************************************************************/
 double Euler3D_ThermallyPerfect_pState::Hs(void) const{
-  // Hs = rho*(hs + velocity^2)
-  double H_S =  rho*(hs() + HALF*v.sqr() );
-  return (H_S);
+  // Hs = rho*(hs + velocity^2)  
+  return (rho*(hs() + HALF*v.sqr()));
 }
 
 /***************************************************************************************
@@ -478,7 +474,7 @@ double Euler3D_ThermallyPerfect_pState::T(void) const{
 
 // Temperature derived from specific sensible enthalpy
 double Euler3D_ThermallyPerfect_pState::T(double &h_s) const{
-   double T = ZERO;
+   double T(ZERO);
    //--------- Initial Guess ------------------------------//
    //using a polytropic gas assumption with gamma@200;
    double Tguess = (h_s/Rtot())*(ONE/(ONE/(gamma_guess() - ONE) +ONE));
@@ -572,7 +568,7 @@ double Euler3D_ThermallyPerfect_pState::SpecCon(int i) const {
   ps = cs(M/Ms)*p
 ***********************************************************/
 double Euler3D_ThermallyPerfect_pState::Gibbs(int species) const{
-   double Temp = T(); 
+   double Temp( T() ); 
    return specdata[species].GibbsFree(Temp);
 }
 
@@ -580,7 +576,7 @@ double Euler3D_ThermallyPerfect_pState::Gibbs(int species) const{
  * Euler3D_ThermallyPerfect_pState::diedip -- Returns de/dp.                           *
  ***************************************************************************************/
 double Euler3D_ThermallyPerfect_pState::diedip(void) const{
-   double Rlocal = Rtot();
+   double Rlocal( Rtot() );
    return (hprime() - Rlocal)/(rho*Rlocal);
 }
 
@@ -588,7 +584,7 @@ double Euler3D_ThermallyPerfect_pState::diedip(void) const{
  * Euler3D_ThermallyPerfect_pState::diedirho -- Returns de/drho.                       *
  ***************************************************************************************/
 double Euler3D_ThermallyPerfect_pState::diedirho(void) const{
-   double Rlocal = Rtot();
+   double Rlocal( Rtot() );
    return -p*(hprime() - Rlocal)/(rho*rho*Rlocal);
 }
 
@@ -1726,8 +1722,8 @@ void Euler3D_ThermallyPerfect_pState::dSchemistrydU(DenseMatrix &dSwdU) const {
 
    React.dSwdU<Euler3D_ThermallyPerfect_pState,
                Euler3D_ThermallyPerfect_cState>(dSwdU, *this, false);
-}
 
+}
 
 // Max Diagonal of Jacobian for CFL
 double Euler3D_ThermallyPerfect_pState::dSchemistrydU_max_diagonal(void) const {
@@ -1742,7 +1738,12 @@ double Euler3D_ThermallyPerfect_pState::dSchemistrydU_max_diagonal(void) const {
    } /* endfor */
 
    return max_diagonal;
+
 }
+
+/***************************************************************************************
+ * Euler3D_ThermallyPerfect_cState member functions                                    *
+ ***************************************************************************************/
 
 /***************************************************************************************
  * Euler3D_ThermallyPerfect_cState::set_species_data -- Assign species data.           *
@@ -1839,7 +1840,7 @@ void Euler3D_ThermallyPerfect_cState::Copy(const Euler3D_ThermallyPerfect_cState
  * Euler3D_ThermallyPerfect_cState::Temp_low_range -- Set the lower bound for valid T. *
  ***************************************************************************************/
 void Euler3D_ThermallyPerfect_cState::Temp_low_range(void) {
-  double temp = specdata[0].Low_range();
+  double temp( specdata[0].Low_range() );
   for (int i = 0; i < ns; i++) {
     temp = max(specdata[i].Low_range(),temp);
   } /* endfor */
@@ -1850,7 +1851,7 @@ void Euler3D_ThermallyPerfect_cState::Temp_low_range(void) {
  * Euler3D_ThermallyPerfect_cState::Temp_high_range -- Set the upper bound for valid T.*
  ***************************************************************************************/
 void Euler3D_ThermallyPerfect_cState::Temp_high_range(void) {
-  double temp = specdata[0].High_range();
+  double temp( specdata[0].High_range() );
   for (int i = 0; i < ns; i++) {
     temp = min(specdata[i].High_range(),temp);
   } /* endfor */
@@ -1861,32 +1862,29 @@ void Euler3D_ThermallyPerfect_cState::Temp_high_range(void) {
  * Euler3D_ThermallyPerfect_cState::negative_speccheck -- Check species mass fractions.*
  ***************************************************************************************/
 bool Euler3D_ThermallyPerfect_cState::negative_speccheck(void) {
-   double sum = ZERO;
-   double temp = ZERO;
-   double LOCAL_TOL = MICRO; 
+   double sum(ZERO), temp(ZERO), LOCAL_TOL(MICRO);
    //-------- Negative Check ------------//
    for (int i = 0; i < ns-1; i++) {
       temp = rhospec[i].c/rho;
       if (temp>ONE) { //check for > 1.0
-         rhospec[i].c =rho;
-         temp = ONE;
+	if (temp-LOCAL_TOL>ONE) {
+	  return false;
+	} else { 
+	  rhospec[i].c = rho;
+	  temp = ONE;
+	}  
       } else if (temp < ZERO) {  //check for -ve
-         if (temp > -LOCAL_TOL) {  //check for small -ve and set to ZERO 
-            rhospec[i].c = ZERO;
-            temp = ZERO;
-         } else {
-            rhospec[i].c = ZERO;
-            temp = ZERO;
-         } /* endif */
+	rhospec[i].c = ZERO;
+	temp = ZERO;  
       } /* endif */
       sum += temp;
    } /* endfor */
    temp = max(ONE-sum, ZERO);
    sum += temp;
    rhospec[ns-1].c = rho*temp;
-   for (int i = 0; i < ns; i++) {
-      rhospec[i].c = rhospec[i].c*(ONE/sum);
-   } /* endfor */
+   if (sum != ONE) {
+     for (int i = 0; i < ns; i++)  rhospec[i].c = rhospec[i].c/sum;
+   }
    return true;
 }
 
@@ -1911,7 +1909,7 @@ bool Euler3D_ThermallyPerfect_cState::Realizable_Solution_Check(void) {
  ***************************************************************************************/
 double Euler3D_ThermallyPerfect_cState::Rtot(void) const {
   // = sum ( mass fraction * species gas constant)
-  double sum = ZERO;
+  double sum(ZERO);
   for ( int i = 0; i < ns; i++) {
     sum += rhospec[i].c * specdata[i].Rs();
   } /* endfor */
@@ -1922,7 +1920,7 @@ double Euler3D_ThermallyPerfect_cState::Rtot(void) const {
  * Euler3D_ThermallyPerfect_cState::HeatofFormation -- Return mixture heat of formation. *
  *****************************************************************************************/
 double Euler3D_ThermallyPerfect_cState::HeatofFormation(void) const {
-   double sum = ZERO;
+   double sum(ZERO);
    for (int i = 0; i < ns; i++) {
       sum += rhospec[i].c*specdata[i].Heatofform();
    } /* endfor */
@@ -1934,8 +1932,8 @@ double Euler3D_ThermallyPerfect_cState::HeatofFormation(void) const {
  **************************************************************************************************/
 double Euler3D_ThermallyPerfect_cState::Cp(void) const {
   // = sum ( mass fraction * species Cp) 
-  double Temp = T();
-  double sum = ZERO;
+  double Temp( T() );
+  double sum(ZERO);
   for (int i = 0; i < ns; i++) {
     sum += rhospec[i].c*specdata[i].HeatCapacity_p(Temp);
   } /* endif */
@@ -1947,8 +1945,8 @@ double Euler3D_ThermallyPerfect_cState::Cp(void) const {
  **************************************************************************************************/
 double Euler3D_ThermallyPerfect_cState::Cv(void) const {
   // = sum ( mass fraction * species Cv)  
-  double Temp = T();
-  double sum = ZERO;
+  double Temp( T() );
+  double sum(ZERO);
   for (int i = 0; i < ns; i++) {
     sum += rhospec[i].c*specdata[i].HeatCapacity_v(Temp);
   } /* endfor */
@@ -1968,10 +1966,10 @@ double Euler3D_ThermallyPerfect_cState::g(void) const {
   assuming T=200K as the temperature.
 ***************************************************/
 double Euler3D_ThermallyPerfect_cState::gamma_guess(void) const {
-  double sum1 = ZERO;
-  double sum2 = ZERO;
-  double gamma_s = ZERO;  
-  double Temp = 200.0;
+  double sum1(ZERO);
+  double sum2(ZERO);
+  double gamma_s(ZERO);  
+  double Temp(200.0);
   for (int i = 0; i < ns; i++) {
     sum1 += (rhospec[i].c/rho)*specdata[i].Rs();
     gamma_s = ONE/(ONE - specdata[i].Rs()/ specdata[i].HeatCapacity_p(Temp));
@@ -2003,7 +2001,7 @@ double Euler3D_ThermallyPerfect_cState::h(void) const {
 
 double Euler3D_ThermallyPerfect_cState::h(const double &Temp) const {
   // = sum (mass fraction * species h) 
-  double sum = ZERO;  
+  double sum(ZERO);  
   for (int i = 0; i < ns; i++) {
     sum += rhospec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform());
   } /* endfor */
@@ -2019,7 +2017,7 @@ double Euler3D_ThermallyPerfect_cState::hs(void) const {
 
 double Euler3D_ThermallyPerfect_cState::hs(const double &Temp) const {
   // = sum (mass fraction * species h) 
-  double sum = ZERO;  
+  double sum(ZERO);  
   for (int i = 0; i < ns; i++) {
     sum += rhospec[i].c*(specdata[i].Enthalpy(Temp));
   } /* endfor */
@@ -2034,7 +2032,7 @@ double Euler3D_ThermallyPerfect_cState::hs(const double &Temp) const {
    actually is just Cp as Cp = (dh/dT)_p
 ***************************************************/
 double Euler3D_ThermallyPerfect_cState::hprime(const double &Temp) const {
-  double sum = ZERO;  
+  double sum(ZERO);  
   for (int i = 0; i < ns; i++) {
     sum += rhospec[i].c*specdata[i].Enthalpy_prime(Temp);
   } /* endfor */
@@ -2158,7 +2156,7 @@ double Euler3D_ThermallyPerfect_cState::M(void) const {
  * Euler3D_ThermallyPerfect_cState::sum_species -- Sum species mass fractions.         *
  ***************************************************************************************/
 double Euler3D_ThermallyPerfect_cState::sum_species(void) const {
-   double sum = ZERO;
+   double sum(ZERO);
    for(int i = 0; i < ns-1; i++) {
       sum += rhospec[i].c;
    } /* endfor */

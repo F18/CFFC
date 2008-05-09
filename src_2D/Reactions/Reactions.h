@@ -84,7 +84,7 @@ public:
   //get reaction rate coefficients
   double kf(const double &Temp) const;
   double dkf_dT(const double &Temp) const;
-  double kf(const double &Temp, const double &H2, const  double &O2, const double &N2)const; //for H2&O2
+  double kf(const double &Temp, const double &H2, const double &O2, const double &N2)const; //for H2&O2
   double kb(const double &Temp) const;
   double dkb_dT(const double &Temp) const;
 
@@ -128,9 +128,6 @@ inline double React_data::kf(const double &Temp, const double &H2, const double 
   } else if (react == "H2O2_2step_2"){ 
     Astar = A*(2.0 + (1.333/phi) - 0.833*phi)*1e64; 
   }
-
-//   cout<<endl<<phi<<" "<<A<<" "<<(-E/(R_UNIVERSAL*Temp))
-//       <<" "<<R_UNIVERSAL<<" "<<E<<" "<<Temp<<" "<<Astar*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
 
   return Astar*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
 }
@@ -263,7 +260,7 @@ public:
   string ct_mech_name;     //Reaction mechanism file path
   string ct_mech_file;     //Reaction mechanism file path
 #ifdef _CANTERA_VERSION
-  IdealGasMix* ct_gas;     //the Cantera IdealGasMix object
+  Cantera::IdealGasMix* ct_gas;     //the Cantera IdealGasMix object
 #endif
 
   Reaction_set(){ 
@@ -471,9 +468,6 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W,  const int
     kf[1] = reactions[1].kf(Temp)*(W.SpecCon(4)/MILLION)*pow(W.SpecCon(3)/MILLION,0.5)*pow(W.SpecCon(1)/MILLION,0.25); 
     kb[1] = reactions[1].kb(Temp)*(W.SpecCon(2)/MILLION);
 
-  
-    //cout<<"\n Sw "<<Temp<<" "<<reactions[0].kf(Temp)<<" "<<reactions[1].kf(Temp)<<" "<<reactions[1].kb(Temp);
-
     for(int index =0; index<num_react_species; index++){
       switch(index) {
       case 0 : //CH4
@@ -533,7 +527,6 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W,  const int
       kb[0] = kf[0]/(reactions[0].keq(W,Temp));
       kf[1] = reactions[1].kf(Temp,W.spec[0].c,W.spec[1].c,W.spec[4].c);
       kb[1] = kf[1]/(reactions[1].keq(W,Temp));
-      //cout<<"\n kf1 "<< kf[0]<<" kb1 "<< kb[0]<<" kf2 "<<kf[1]<<" kb2 "<< kb[1];
       
       for(int index =0; index<num_react_species; index++){
 	switch(index) {
@@ -981,13 +974,7 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     // 15 step CH4 based on GRI 2.11
   case CH4_15STEP_ARM2:
     Complex_Step_dSwdU<SOLN_pSTATE>(dSwdU, W);
-    
-    //cout << "\n Complex Step dSwdU: " << dSwdU;
-    //dSwdU.zero();
-    //Finite_Difference_dSwdU(dSwdU, W, Flow_Type, Simple_Chemistry);
-    //cout << "\n Finite Difference dSwdU: " << dSwdU;
     break;
-
 
     // 15 step CH4 based on GRI 3
   case CH4_15STEP_ARM3:
@@ -998,11 +985,9 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
   //------------ CANTERA ------------//
   //---------------------------------//
 #ifdef _CANTERA_VERSION
-
   case CANTERA:
-    Finite_Difference_dSwdU<SOLN_pSTATE,SOLN_cSTATE>(dSwdU, W, Flow_Type);
+    Finite_Difference_dSwdU<SOLN_pSTATE, SOLN_cSTATE>(dSwdU, W, Flow_Type);
     break;
-
 #endif // _CANTERA_VERSION
 
     //---------------------------------//

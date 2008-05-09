@@ -7,20 +7,21 @@
 
 #include "Euler3DPolytropicState.h"
 
-/*--------------------------------------------------------------------------------*
- *			     Euler3D_Polytropic_pState subroutines                *
- *--------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------*
+ *			     Euler3D_Polytropic_pState subroutines                         *
+ *-----------------------------------------------------------------------------*/
 
 /*
-* Set static variables
-* ---------------------------- 
-*/
-int Euler3D_Polytropic_pState::num_vars = NUM_VAR_EULER3D;
+ * Set static variables
+ * -------------------- 
+ */
 double Euler3D_Polytropic_pState::g = GAMMA_AIR;
 double Euler3D_Polytropic_pState::gm1 = GAMMA_AIR-ONE;
 double Euler3D_Polytropic_pState::gm1i = ONE/(GAMMA_AIR-ONE);
 double Euler3D_Polytropic_pState::R = R_UNIVERSAL/(MOLE_WT_AIR*MILLI);
 char* Euler3D_Polytropic_pState::gas_type = "AIR";
+double Euler3D_Polytropic_pState::Mref = 0.1;
+
 
 // Set gas constants.
 /*!
@@ -294,9 +295,9 @@ double Euler3D_Polytropic_pState::ho(void) const {
 }
 
 /* 
-* Conserved solution state. 
-* -------------------------
-*/
+ * Conserved solution state. 
+ * -------------------------
+ */
 /*! Compute the conserved solution state from the primitive solution state */
 Euler3D_Polytropic_cState Euler3D_Polytropic_pState::U(void) {
     return (Euler3D_Polytropic_cState(rho, rhov(), E()));
@@ -311,9 +312,9 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::U(const Euler3D_Polytropic_
 }
 
 /* 
-* Fluxes and Jacobians
-* --------------------
-*/
+ * Fluxes and Jacobians
+ * --------------------
+ */
 
 // x-direction
 /*!
@@ -324,7 +325,7 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::U(const Euler3D_Polytropic_
               \rho  u^2+p \\
               u v \rho  \\
               u w \rho  \\
-              H u
+              u H
               \end{array}
               \right)
         \f]
@@ -362,8 +363,8 @@ Euler3D_Polytropic_cState F(const Euler3D_Polytropic_pState &W) {
       \gamma  & w-w \gamma  & \gamma -1 \\
       -u v & v & u & 0 & 0 \\
       -u w & w & 0 & u & 0 \\
-      \frac{1}{2} u \: \boldmath{\bar{v}}^2 (\gamma -2)+\frac{p u \gamma }{\rho
-          -\gamma  \rho } & \frac{1}{2} \left(\boldmath{\bar{v}}^2 - 2(\gamma-1) u^2\right)+\frac{p
+      \frac{1}{2} u \: \boldmath{\bar{v}}^2 (\gamma -2) -\frac{p u \gamma }{\rho
+          (\gamma-1)} & \frac{1}{2} \boldmath{\bar{v}}^2 - (\gamma-1) u^2+\frac{p
               \gamma }{(\gamma -1) \rho } & -u v (\gamma -1) & -u w (\gamma -1) & u \gamma 
       \end{array}
       \right)
@@ -371,7 +372,7 @@ Euler3D_Polytropic_cState F(const Euler3D_Polytropic_pState &W) {
 */
 void Euler3D_Polytropic_pState::dFxdU(DenseMatrix &dFxdU) {
     dFxdU(0,1) += ONE;
-    dFxdU(1,0) += HALF*(v.sqr()*gm1 - TWO*sqr(v.x));
+    dFxdU(1,0) += HALF*v.sqr()*gm1 - sqr(v.x);
     dFxdU(1,1) -= v.x*(g-THREE);
     dFxdU(1,2) -= v.y*gm1;
     dFxdU(1,3) -= v.z*gm1;
@@ -383,7 +384,7 @@ void Euler3D_Polytropic_pState::dFxdU(DenseMatrix &dFxdU) {
     dFxdU(3,1) += v.z;
     dFxdU(3,3) += v.x;
     dFxdU(4,0) += HALF*v.x*v.sqr()*(g-TWO) - v.x*p/rho*g*gm1i;
-    dFxdU(4,1) += HALF*(v.sqr() - TWO*sqr(v.x)*gm1) + p/rho*g*gm1i;
+    dFxdU(4,1) += HALF*v.sqr() - sqr(v.x)*gm1 + p/rho*g*gm1i;
     dFxdU(4,2) -= v.x*v.y*gm1;
     dFxdU(4,3) -= v.x*v.z*gm1;
     dFxdU(4,4) += g*v.x;
@@ -391,7 +392,7 @@ void Euler3D_Polytropic_pState::dFxdU(DenseMatrix &dFxdU) {
 
 void Euler3D_Polytropic_pState::dFxdU(DenseMatrix &dFxdU) const {
     dFxdU(0,1) += ONE;
-    dFxdU(1,0) += HALF*(v.sqr()*gm1 - TWO*sqr(v.x));
+    dFxdU(1,0) += HALF*v.sqr()*gm1 - sqr(v.x);
     dFxdU(1,1) -= v.x*(g-THREE);
     dFxdU(1,2) -= v.y*gm1;
     dFxdU(1,3) -= v.z*gm1;
@@ -403,7 +404,7 @@ void Euler3D_Polytropic_pState::dFxdU(DenseMatrix &dFxdU) const {
     dFxdU(3,1) += v.z;
     dFxdU(3,3) += v.x;
     dFxdU(4,0) += HALF*v.x*v.sqr()*(g-TWO) - v.x*p/rho*g*gm1i;
-    dFxdU(4,1) += HALF*(v.sqr() - TWO*sqr(v.x)*gm1) + p/rho*g*gm1i;
+    dFxdU(4,1) += HALF*v.sqr() - sqr(v.x)*gm1 + p/rho*g*gm1i;
     dFxdU(4,2) -= v.x*v.y*gm1;
     dFxdU(4,3) -= v.x*v.z*gm1;
     dFxdU(4,4) += g*v.x;
@@ -411,7 +412,7 @@ void Euler3D_Polytropic_pState::dFxdU(DenseMatrix &dFxdU) const {
 
 void Euler3D_Polytropic_pState::dFxdU(DenseMatrix &dFxdU, const Euler3D_Polytropic_pState &W) {
     dFxdU(0,1) += ONE;
-    dFxdU(1,0) += HALF*(W.v.sqr()*W.gm1 - TWO*sqr(W.v.x));
+    dFxdU(1,0) += HALF*W.v.sqr()*W.gm1 - sqr(W.v.x);
     dFxdU(1,1) -= W.v.x*(W.g-THREE);
     dFxdU(1,2) -= W.v.y*W.gm1;
     dFxdU(1,3) -= W.v.z*W.gm1;
@@ -423,7 +424,7 @@ void Euler3D_Polytropic_pState::dFxdU(DenseMatrix &dFxdU, const Euler3D_Polytrop
     dFxdU(3,1) += W.v.z;
     dFxdU(3,3) += W.v.x;
     dFxdU(4,0) += HALF*W.v.x*W.v.sqr()*(W.g-TWO) - W.v.x*W.p/W.rho*W.g*W.gm1i;
-    dFxdU(4,1) += HALF*(W.v.sqr() - TWO*sqr(W.v.x)*W.gm1) + W.p/W.rho*W.g*W.gm1i;
+    dFxdU(4,1) += HALF*W.v.sqr() - sqr(W.v.x)*W.gm1 + W.p/W.rho*W.g*W.gm1i;
     dFxdU(4,2) -= W.v.x*W.v.y*W.gm1;
     dFxdU(4,3) -= W.v.x*W.v.z*W.gm1;
     dFxdU(4,4) += W.g*W.v.x;
@@ -462,8 +463,8 @@ Euler3D_Polytropic_cState Fy(const Euler3D_Polytropic_pState &W) {
            \frac{1}{2} \boldmath{\bar{v}}^2 (\gamma -1)-v^2 & u-u \gamma  & -v (\gamma -3) & w-w \gamma  & \gamma -1
            \\
            -v w & 0 & w & v & 0 \\
-           \frac{1}{2} v \: \boldmath{\bar{v}}^2 (\gamma -2)+\frac{p v \gamma }{\rho -\gamma  \rho } & -u v (\gamma -1)
-           & \frac{1}{2} \left(\boldmath{\bar{v}}^2 -2 (\gamma-1) v^2 \right)+\frac{p \gamma }{(\gamma -1) \rho } & -v w (\gamma -1)
+           \frac{1}{2} v \: \boldmath{\bar{v}}^2 (\gamma -2) - \frac{p v \gamma }{\rho (\gamma-1) } & -u v (\gamma -1)
+           & \frac{1}{2} \boldmath{\bar{v}}^2 - (\gamma-1) v^2 +\frac{p \gamma }{(\gamma -1) \rho } & -v w (\gamma -1)
            & v \gamma 
            \end{array}
            \right)
@@ -474,7 +475,7 @@ void Euler3D_Polytropic_pState::dFydU(DenseMatrix &dFydU) {
     dFydU(1,0) -= v.x*v.y;
     dFydU(1,1) += v.y;
     dFydU(1,2) += v.x;
-    dFydU(2,0) += HALF*(v.sqr()*gm1 - TWO*sqr(v.y));
+    dFydU(2,0) += HALF*v.sqr()*gm1 - sqr(v.y);
     dFydU(2,1) -= v.x*gm1;
     dFydU(2,2) -= v.y*(g-THREE);
     dFydU(2,3) -= v.z*gm1;
@@ -484,7 +485,7 @@ void Euler3D_Polytropic_pState::dFydU(DenseMatrix &dFydU) {
     dFydU(3,3) += v.y;
     dFydU(4,0) += HALF*v.y*v.sqr()*(g-TWO) - v.y*p/rho*g*gm1i;
     dFydU(4,1) -= v.x*v.y*gm1;
-    dFydU(4,2) += HALF*(v.sqr() - TWO*sqr(v.y)*gm1) + p/rho*g*gm1i;
+    dFydU(4,2) += HALF*v.sqr() - sqr(v.y)*gm1 + p/rho*g*gm1i;
     dFydU(4,3) -= v.y*v.z*gm1;
     dFydU(4,4) += g*v.y;
 }
@@ -494,7 +495,7 @@ void Euler3D_Polytropic_pState::dFydU(DenseMatrix &dFydU) const {
     dFydU(1,0) -= v.x*v.y;
     dFydU(1,1) += v.y;
     dFydU(1,2) += v.x;
-    dFydU(2,0) += HALF*(v.sqr()*gm1 - TWO*sqr(v.y));
+    dFydU(2,0) += HALF*v.sqr()*gm1 - sqr(v.y);
     dFydU(2,1) -= v.x*gm1;
     dFydU(2,2) -= v.y*(g-THREE);
     dFydU(2,3) -= v.z*gm1;
@@ -504,7 +505,7 @@ void Euler3D_Polytropic_pState::dFydU(DenseMatrix &dFydU) const {
     dFydU(3,3) += v.y;
     dFydU(4,0) += HALF*v.y*v.sqr()*(g-TWO) - v.y*p/rho*g*gm1i;
     dFydU(4,1) -= v.x*v.y*gm1;
-    dFydU(4,2) += HALF*(v.sqr() - TWO*sqr(v.y)*gm1) + p/rho*g*gm1i;
+    dFydU(4,2) += HALF*v.sqr() - sqr(v.y)*gm1 + p/rho*g*gm1i;
     dFydU(4,3) -= v.y*v.z*gm1;
     dFydU(4,4) += g*v.y;
 }
@@ -514,7 +515,7 @@ void dFydU(DenseMatrix &dFydU, const Euler3D_Polytropic_pState &W) {
     dFydU(1,0) -= W.v.x*W.v.y;
     dFydU(1,1) += W.v.y;
     dFydU(1,2) += W.v.x;
-    dFydU(2,0) += HALF*(W.v.sqr()*W.gm1 - TWO*sqr(W.v.y));
+    dFydU(2,0) += HALF*W.v.sqr()*W.gm1 - sqr(W.v.y);
     dFydU(2,1) -= W.v.x*W.gm1;
     dFydU(2,2) -= W.v.y*(W.g-THREE);
     dFydU(2,3) -= W.v.z*W.gm1;
@@ -524,7 +525,7 @@ void dFydU(DenseMatrix &dFydU, const Euler3D_Polytropic_pState &W) {
     dFydU(3,3) += W.v.y;
     dFydU(4,0) += HALF*W.v.y*W.v.sqr()*(W.g-TWO) - W.v.y*W.p/W.rho*W.g*W.gm1i;
     dFydU(4,1) -= W.v.x*W.v.y*W.gm1;
-    dFydU(4,2) += HALF*(W.v.sqr() - TWO*sqr(W.v.y)*W.gm1) + W.p/W.rho*W.g*W.gm1i;
+    dFydU(4,2) += HALF*W.v.sqr() - sqr(W.v.y)*W.gm1 + W.p/W.rho*W.g*W.gm1i;
     dFydU(4,3) -= W.v.y*W.v.z*W.gm1;
     dFydU(4,4) += W.g*W.v.y;
 }
@@ -561,8 +562,8 @@ Euler3D_Polytropic_cState Fz(const Euler3D_Polytropic_pState &W) {
               -v w & 0 & w & v & 0 \\
               \frac{1}{2} \boldmath{\bar{v}}^2 (\gamma -1)-w^2 & u-u \gamma  & v-v \gamma  & -w (\gamma -3) & \gamma -1
               \\
-              \frac{1}{2} w \: \boldmath{\bar{v}}^2 (\gamma -2)+\frac{p w \gamma }{\rho -\gamma  \rho } & -u w (\gamma -1)
-              & -v w (\gamma -1) & \frac{1}{2} \left(\boldmath{\bar{v}}^2 -2(\gamma-1) w^2\right)+\frac{p \gamma }{(\gamma -1) \rho }
+              \frac{1}{2} w \: \boldmath{\bar{v}}^2 (\gamma -2)-\frac{p w \gamma }{\rho (\gamma -1) } & -u w (\gamma -1)
+              & -v w (\gamma -1) & \frac{1}{2} \boldmath{\bar{v}}^2 -(\gamma-1) w^2 +\frac{p \gamma }{(\gamma -1) \rho }
               & w \gamma 
               \end{array}
               \right)
@@ -576,7 +577,7 @@ void Euler3D_Polytropic_pState::dFzdU(DenseMatrix &dFzdU) {
     dFzdU(2,0) -= v.y*v.z;
     dFzdU(2,2) += v.z;
     dFzdU(2,3) += v.y;
-    dFzdU(3,0) += HALF*(v.sqr()*gm1 - TWO*sqr(v.z));
+    dFzdU(3,0) += HALF*v.sqr()*gm1 - sqr(v.z);
     dFzdU(3,1) -= v.x*gm1;
     dFzdU(3,2) -= v.y*gm1;
     dFzdU(3,3) -= v.z*(g-THREE);
@@ -584,7 +585,7 @@ void Euler3D_Polytropic_pState::dFzdU(DenseMatrix &dFzdU) {
     dFzdU(4,0) += HALF*v.z*v.sqr()*(g-TWO) - v.z*p/rho*g*gm1i;
     dFzdU(4,1) -= v.x*v.z*gm1;
     dFzdU(4,2) -= v.y*v.z*gm1;
-    dFzdU(4,3) += HALF*(v.sqr() - TWO*sqr(v.z)*gm1) + p/rho*g*gm1i;
+    dFzdU(4,3) += HALF*v.sqr() - sqr(v.z)*gm1 + p/rho*g*gm1i;
     dFzdU(4,4) += g*v.z;
 }
 void Euler3D_Polytropic_pState::dFzdU(DenseMatrix &dFzdU) const {
@@ -595,7 +596,7 @@ void Euler3D_Polytropic_pState::dFzdU(DenseMatrix &dFzdU) const {
     dFzdU(2,0) -= v.y*v.z;
     dFzdU(2,2) += v.z;
     dFzdU(2,3) += v.y;
-    dFzdU(3,0) += HALF*(v.sqr()*gm1 - TWO*sqr(v.z));
+    dFzdU(3,0) += HALF*v.sqr()*gm1 - sqr(v.z);
     dFzdU(3,1) -= v.x*gm1;
     dFzdU(3,2) -= v.y*gm1;
     dFzdU(3,3) -= v.z*(g-THREE);
@@ -603,7 +604,7 @@ void Euler3D_Polytropic_pState::dFzdU(DenseMatrix &dFzdU) const {
     dFzdU(4,0) += HALF*v.z*v.sqr()*(g-TWO) - v.z*p/rho*g*gm1i;
     dFzdU(4,1) -= v.x*v.z*gm1;
     dFzdU(4,2) -= v.y*v.z*gm1;
-    dFzdU(4,3) += HALF*(v.sqr() - TWO*sqr(v.z)*gm1) + p/rho*g*gm1i;
+    dFzdU(4,3) += HALF*v.sqr() - sqr(v.z)*gm1 + p/rho*g*gm1i;
     dFzdU(4,4) += g*v.z;
 }
 void dFzdU(DenseMatrix &dFzdU, const Euler3D_Polytropic_pState &W) {
@@ -614,7 +615,7 @@ void dFzdU(DenseMatrix &dFzdU, const Euler3D_Polytropic_pState &W) {
     dFzdU(2,0) -= W.v.y*W.v.z;
     dFzdU(2,2) += W.v.z;
     dFzdU(2,3) += W.v.y;
-    dFzdU(3,0) += HALF*(W.v.sqr()*W.gm1 - TWO*sqr(W.v.z));
+    dFzdU(3,0) += HALF*W.v.sqr()*W.gm1 - sqr(W.v.z);
     dFzdU(3,1) -= W.v.x*W.gm1;
     dFzdU(3,2) -= W.v.y*W.gm1;
     dFzdU(3,3) -= W.v.z*(W.g-THREE);
@@ -622,14 +623,14 @@ void dFzdU(DenseMatrix &dFzdU, const Euler3D_Polytropic_pState &W) {
     dFzdU(4,0) += HALF*W.v.z*W.v.sqr()*(W.g-TWO) - W.v.z*W.p/W.rho*W.g*W.gm1i;
     dFzdU(4,1) -= W.v.x*W.v.z*W.gm1;
     dFzdU(4,2) -= W.v.y*W.v.z*W.gm1;
-    dFzdU(4,3) += HALF*(W.v.sqr() - TWO*sqr(W.v.z)*W.gm1) + W.p/W.rho*W.g*W.gm1i;
+    dFzdU(4,3) += HALF*W.v.sqr() - sqr(W.v.z)*W.gm1 + W.p/W.rho*W.g*W.gm1i;
     dFzdU(4,4) += W.g*W.v.z;
 }
 
 /* 
-* Solution variable Jacobians.
-* ----------------------------
-*/
+ * Solution variable Jacobians.
+ * ----------------------------
+ */
 
 // dUdW
 /*!
@@ -746,9 +747,9 @@ void Euler3D_Polytropic_pState::dWdU(DenseMatrix &dWdU, const Euler3D_Polytropic
 }
 
 /* 
-* Eigenvalues
-* ----------- 
-*/
+ * Eigenvalues
+ * ----------- 
+ */
 
 // x-direction
 /*!
@@ -950,7 +951,7 @@ double Euler3D_Polytropic_pState::lambda_z(int index) {
 }
 
 double Euler3D_Polytropic_pState::lambda_z(int index) const {
-    assert( index >= 1 && index <= NUM_VAR_EULER3D );
+    assert( index >= 1 && index <= NumVar() );
     switch(index) {
         case 1 :
             return (v.z-a());
@@ -1831,7 +1832,6 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_n(const Euler3D_Po
 
 }
 
-
 Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_n(const Euler3D_Polytropic_cState &Ul,
                                                                 const Euler3D_Polytropic_cState &Ur, 
                                                                 const Vector3D &norm_dir) {
@@ -1873,11 +1873,11 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxRoe_x(const Euler3D_Pol
     lambdas_a = Wa.lambda_x();
 
     /* Determine the intermediate state flux. */
-
+    int number_of_vars = Wl.NumVar();
     if (Wa.v.x >= ZERO) {
         Flux = Wl.Fx();   
         wavespeeds = lambda_minus(lambdas_a, lambdas_l, lambdas_r);
-        for (int i=1 ; i <= Wl.num_vars; i++) {
+        for (int i=1 ; i <= number_of_vars; i++) {
             if (wavespeeds[i] < ZERO) {
                 Flux += wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
             }
@@ -1886,7 +1886,7 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxRoe_x(const Euler3D_Pol
     } else {
         Flux = Wr.Fx();
         wavespeeds = lambda_plus(lambdas_a, lambdas_l, lambdas_r);
-        for (int i=1; i <= Wl.num_vars; i++) {
+        for (int i=1; i <= number_of_vars; i++) {
             if (wavespeeds[i] > ZERO) {
                 Flux -= wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i); 
             }
@@ -1939,10 +1939,11 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxRoe_y(const Euler3D_Pol
     lambdas_a = Wa.lambda_y();
 
     /* Determine the intermediate state flux. */
+    int number_of_vars = Wl.NumVar();
     if (Wa.v.x >= ZERO) {
         Flux = Wl.Fy();       
         wavespeeds = lambda_minus(lambdas_a, lambdas_l, lambdas_r);
-        for (int i=1 ; i <= Wl.num_vars; i++) {
+        for (int i=1 ; i <= number_of_vars; i++) {
             if (wavespeeds[i] < ZERO)
                 Flux += wavespeeds[i]*(Wa.lp_y(i)*dWrl)*Wa.rc_y(i);
         } 
@@ -1950,7 +1951,7 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxRoe_y(const Euler3D_Pol
     } else {
         Flux = Wr.Fy();
         wavespeeds = lambda_plus(lambdas_a, lambdas_l, lambdas_r);
-        for (int i=1; i <= Wl.num_vars; i++) {
+        for (int i=1; i <= number_of_vars; i++) {
             if (wavespeeds[i] > ZERO)
                 Flux -= wavespeeds[i]*(Wa.lp_y(i)*dWrl)*Wa.rc_y(i);  
         } 
@@ -2001,11 +2002,11 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxRoe_z(const Euler3D_Pol
     lambdas_a = Wa.lambda_z();
 
     /* Determine the intermediate state flux. */
-
+    int number_of_vars = Wl.NumVar();
     if (Wa.v.x >= ZERO) {
         Flux = Wl.Fz();   
         wavespeeds = lambda_minus(lambdas_a, lambdas_l, lambdas_r);
-        for (int i=1 ; i <= Wl.num_vars; i++) {
+        for (int i=1 ; i <= number_of_vars; i++) {
             if (wavespeeds[i] < ZERO)
                 Flux += wavespeeds[i]*(Wa.lp_z(i)*dWrl)*Wa.rc_z(i);
         } 
@@ -2013,7 +2014,7 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxRoe_z(const Euler3D_Pol
     } else {
         Flux = Wr.Fz();
         wavespeeds = lambda_plus(lambdas_a, lambdas_l, lambdas_r);
-        for (int i=1; i <= Wl.num_vars; i++) {
+        for (int i=1; i <= number_of_vars; i++) {
             if (wavespeeds[i] > ZERO)
                 Flux -= wavespeeds[i]*(Wa.lp_z(i)*dWrl)*Wa.rc_z(i); 
         } 
@@ -2152,6 +2153,118 @@ Vector2D Euler3D_Polytropic_pState::HLLE_wavespeeds(const Euler3D_Polytropic_pSt
     return (wavespeed);
 }
 
+
+
+/************************************************************************************************
+ * Euler3D_Polytropic_pState::AUSMplus_up_x -- AUSMplus_up flux function, x-direction flux.     *
+ ************************************************************************************************/
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxAUSMplus_up_x(const Euler3D_Polytropic_pState &Wl,
+                                                                       const Euler3D_Polytropic_pState &Wr) {
+    
+    Euler3D_Polytropic_cState Flux;
+    double beta = 0.125, sigma = 0.75, Kp =0.25, Ku = 0.75;
+    double alpha, rhohalf, mass_flux_half;
+    double ahalf, Ml, Mr, Mplus, Mminus, Mhalf, pplus, pminus, phalf;
+    
+    ahalf = HALF*(Wl.a() + Wr.a());
+    rhohalf = HALF*(Wl.rho + Wr.rho); 
+    
+    
+    // Determine the left and right state Mach numbers based on the intermediate state sound speed:
+    Ml = Wl.v.x/ahalf;
+    Mr = Wr.v.x/ahalf;
+    
+    // Determine the reference Mach number, scaling function and coefficient
+    double M2_bar, M2_ref, fa;
+    M2_bar = (Wl.v.x*Wl.v.x + Wr.v.x*Wr.v.x)/(TWO*ahalf*ahalf);
+    M2_ref = min(ONE, max(M2_bar, Wl.Mref*Wl.Mref));
+    if (M2_ref > ONE || M2_ref < 0.0) cout << "\nM2_ref out of range in AUSM+-up.";
+    //fa = sqrt(M2_ref)*(TWO - sqrt(M2_ref));
+    fa = sqrt(sqr(ONE - M2_ref)*M2_bar + FOUR*M2_ref)/(ONE + M2_ref);
+    if (fa > ONE || fa <= ZERO) cout << "\nfa out of range in AUSM+-up.";
+    alpha = (3.0/16.0)*(-4.0 + 5.0*fa*fa);
+    if (alpha < (-3.0/4.0)  ||  alpha > (3.0/16.0)) cout << "\nalpha out of range in AUSM+-up.";
+    
+    
+    // Determine the left state split Mach number:
+    if (fabs(Ml) >= ONE) {
+        Mplus = 0.5*(Ml+fabs(Ml));
+        pplus = 0.5*(Ml+fabs(Ml))/Ml;
+    } else {
+        Mplus = 0.25*sqr(Ml+1.0) * (1.0 - 16.0*beta*(-0.25*sqr(Ml-1.0)));
+        pplus = 0.25*sqr(Ml+1.0) * ((2.0 - Ml) - 16.0*alpha*Ml*(-0.25*sqr(Ml-1.0)));
+    } /* endif */
+    
+    // Determine the right state split Mach number:
+    if (fabs(Mr) >= ONE) {
+        Mminus = 0.5*(Mr-fabs(Mr));
+        pminus = 0.5*(Mr-fabs(Mr))/Mr;        
+    } else {
+        Mminus = -0.25*sqr(Mr-1.0) * (1.0 + 16.0*beta*0.25*sqr(Mr+1.0));
+        pminus = -0.25*sqr(Mr-1.0) * ((-2.0 - Mr) + 16.0*alpha*Mr*0.25*sqr(Mr+1.0));
+    } /* endif */
+    
+    // Determine the intermediate state Mach number, pressure and mass flux:
+    Mhalf = Mplus + Mminus - (Kp/fa)*max((ONE - sigma*M2_bar), ZERO)*(Wr.p - Wl.p)/(rhohalf*ahalf*ahalf);
+    phalf = pplus*Wl.p + pminus*Wr.p - Ku*pplus*pminus*TWO*rhohalf*(fa*ahalf)*(Wr.v.x - Wl.v.x);
+    mass_flux_half = (Mhalf > ZERO) ? ahalf*Mhalf*Wl.rho : ahalf*Mhalf*Wr.rho; 
+    
+    // Determine the intermediate state convective solution flux:
+    if (mass_flux_half > ZERO) {
+        Flux.rho = ONE;
+        Flux.rhov.x = Wl.v.x; 
+        Flux.rhov.y = Wl.v.y; 
+        Flux.rhov.z = Wl.v.z;
+        Flux.E = Wl.h();
+    } else {
+        Flux.rho = ONE;
+        Flux.rhov.x = Wr.v.x; 
+        Flux.rhov.y = Wr.v.y; 
+        Flux.rhov.z = Wr.v.z; 
+        Flux.E = Wr.h();
+    } /* endif */
+    
+    Flux = mass_flux_half*Flux;
+    
+    // Add the pressure contribution to the intermediate state solution flux:
+    Flux[2] += phalf;
+    
+    // Return solution flux.
+    return Flux;
+    
+}
+
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxAUSMplus_up_x(const Euler3D_Polytropic_cState &Ul,
+                                                                       const Euler3D_Polytropic_cState &Ur) {
+    return FluxAUSMplus_up_x(Ul.W(),Ur.W());
+}
+
+/****************************************************************************************************
+ * Euler3D_Polytropic_pState::FluxAUSMplus_up_n -- AUSMplus_up flux function, n-direction flux.     *
+ ****************************************************************************************************/
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxAUSMplus_up_n(const Euler3D_Polytropic_pState &Wl,
+                                                                       const Euler3D_Polytropic_pState &Wr,
+                                                                       const Vector3D &norm_dir) {
+    
+    // Determine the left and right solution states in the rotate frame.
+    Euler3D_Polytropic_pState Wl_rot(Wl.Rotate(norm_dir));
+    Euler3D_Polytropic_pState Wr_rot(Wr.Rotate(norm_dir));
+    
+    // Evaluate the intermediate state solution flux in the rotated frame.
+    Euler3D_Polytropic_cState Flux_rot = FluxAUSMplus_up_x(Wl_rot, Wr_rot);
+    
+    // Return numerical flux in un-rotated frame.
+    return (Flux_rot.RotateBack(norm_dir));
+    
+}
+
+Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxAUSMplus_up_n(const Euler3D_Polytropic_cState &Ul,
+                                                                       const Euler3D_Polytropic_cState &Ur,
+                                                                       const Vector3D &norm_dir) {
+    return FluxAUSMplus_up_n(Ul.W(),Ur.W(),norm_dir);
+}
+
+
 /*!
  * Routine: Rotate
  *                                                      
@@ -2289,9 +2402,9 @@ if (wall_velocity == Vector3D_ZERO){
 //  Fixed Wall Temperature or constant extrapolation for Adiabatic
 if(TEMPERATURE_BC_FLAG == FIXED_TEMPERATURE_WALL){
     if (pressure_gradient != Vector3D_ZERO){
-        Temp.rho = Wout.p/(Temp.Rtot()*Wout.T());
+        Temp.rho = Wout.p/(Temp.R*Wout.T());
     } else {
-        Temp.rho = Win.p/(Temp.Rtot()*Wout.T());
+        Temp.rho = Win.p/(Temp.R*Wout.T());
     }
 }
 
@@ -2314,6 +2427,8 @@ return (MovingWall(Win,
 
 }
 
+
+
 /*------------------------------------------------------------------------------------*
  *                    Euler3D_Polytropic_cState subroutines                           *
  *------------------------------------------------------------------------------------*/
@@ -2322,7 +2437,6 @@ return (MovingWall(Win,
 * Set static variables 
 * -------------------- 
 */
-int Euler3D_Polytropic_cState::num_vars = NUM_VAR_EULER3D;
 double Euler3D_Polytropic_cState::g = GAMMA_AIR;
 double Euler3D_Polytropic_cState::gm1 = GAMMA_AIR-ONE;
 double Euler3D_Polytropic_cState::gm1i = ONE/(GAMMA_AIR-ONE);
@@ -2588,27 +2702,27 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_cState::W(const Euler3D_Polytropic_
 // x-direction
 /*! see Euler3D_Polytropic_pState::Fx(void) */
 Euler3D_Polytropic_cState Euler3D_Polytropic_cState::Fx(void) {
-    return (Euler3D_Polytropic_cState(rhov.x, sqr(rhov.x)/rho + p(), rhov.x*rhov.y/rho, rhov.x*rhov.z/rho, rhov.x*H()/rho));
+    return (Euler3D_Polytropic_cState(rhov.x, sqr(rhov.x)/rho + p(), rhov.x*rhov.y/rho, rhov.x*rhov.z/rho, rhov.x*h()));
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_cState::Fx(void) const {
-    return (Euler3D_Polytropic_cState(rhov.x, sqr(rhov.x)/rho + p(), rhov.x*rhov.y/rho, rhov.x*rhov.z/rho, rhov.x*H()/rho));
+    return (Euler3D_Polytropic_cState(rhov.x, sqr(rhov.x)/rho + p(), rhov.x*rhov.y/rho, rhov.x*rhov.z/rho, rhov.x*h()));
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_cState::Fx(const Euler3D_Polytropic_cState &U) {
-    return (Euler3D_Polytropic_cState(U.rhov.x, sqr(U.rhov.x)/U.rho + U.p(), U.rhov.x*U.rhov.y/U.rho, U.rhov.x*U.rhov.z/U.rho, U.rhov.x*U.H()/U.rho));
+    return (Euler3D_Polytropic_cState(U.rhov.x, sqr(U.rhov.x)/U.rho + U.p(), U.rhov.x*U.rhov.y/U.rho, U.rhov.x*U.rhov.z/U.rho, U.rhov.x*U.h()));
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_cState::F(void) {
-    return (Euler3D_Polytropic_cState(rhov.x, sqr(rhov.x)/rho + p(), rhov.x*rhov.y/rho, rhov.x*rhov.z/rho, rhov.x*H()/rho));
+    return (Euler3D_Polytropic_cState(rhov.x, sqr(rhov.x)/rho + p(), rhov.x*rhov.y/rho, rhov.x*rhov.z/rho, rhov.x*h()));
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_cState::F(void) const {
-    return (Euler3D_Polytropic_cState(rhov.x, sqr(rhov.x)/rho + p(), rhov.x*rhov.y/rho, rhov.x*rhov.z/rho, rhov.x*H()/rho));
+    return (Euler3D_Polytropic_cState(rhov.x, sqr(rhov.x)/rho + p(), rhov.x*rhov.y/rho, rhov.x*rhov.z/rho, rhov.x*h()));
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_cState::F(const Euler3D_Polytropic_cState &U) {
-    return (Euler3D_Polytropic_cState(U.rhov.x, sqr(U.rhov.x)/U.rho + U.p(), U.rhov.x*U.rhov.y/U.rho, U.rhov.x*U.rhov.z/U.rho, U.rhov.x*U.H()/U.rho));
+    return (Euler3D_Polytropic_cState(U.rhov.x, sqr(U.rhov.x)/U.rho + U.p(), U.rhov.x*U.rhov.y/U.rho, U.rhov.x*U.rhov.z/U.rho, U.rhov.x*U.h()));
 }
 
 /*! see Euler3D_Polytropic_pState::dFxdU(DenseMatrix &dFxdU) */
@@ -2627,15 +2741,15 @@ void Euler3D_Polytropic_cState::dFxdU(DenseMatrix &dFxdU, const Euler3D_Polytrop
 // y-direction
 /*! see Euler3D_Polytropic_pState::Fy(void) */
 Euler3D_Polytropic_cState Euler3D_Polytropic_cState::Fy(void) {
-    return (Euler3D_Polytropic_cState(rhov.y, rhov.x*rhov.y/rho, sqr(rhov.y)/rho + p(), rhov.y*rhov.z/rho, rhov.y*H()/rho));
+    return (Euler3D_Polytropic_cState(rhov.y, rhov.x*rhov.y/rho, sqr(rhov.y)/rho + p(), rhov.y*rhov.z/rho, rhov.y*h()));
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_cState::Fy(void) const {
-    return (Euler3D_Polytropic_cState(rhov.y, rhov.x*rhov.y/rho, sqr(rhov.y)/rho + p(), rhov.y*rhov.z/rho, rhov.y*H()/rho));
+    return (Euler3D_Polytropic_cState(rhov.y, rhov.x*rhov.y/rho, sqr(rhov.y)/rho + p(), rhov.y*rhov.z/rho, rhov.y*h()));
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_cState::Fy(const Euler3D_Polytropic_cState &U) {
-    return (Euler3D_Polytropic_cState(U.rhov.y, U.rhov.x*U.rhov.y/U.rho, sqr(U.rhov.y)/U.rho + U.p(), U.rhov.y*U.rhov.z/U.rho, U.rhov.y*U.H()/U.rho));
+    return (Euler3D_Polytropic_cState(U.rhov.y, U.rhov.x*U.rhov.y/U.rho, sqr(U.rhov.y)/U.rho + U.p(), U.rhov.y*U.rhov.z/U.rho, U.rhov.y*U.h()));
 }
 
 /*! see Euler3D_Polytropic_pState::dFydU(DenseMatrix &dFydU) */
@@ -2654,15 +2768,15 @@ void Euler3D_Polytropic_cState::dFydU(DenseMatrix &dFydU, const Euler3D_Polytrop
 // z-direction
 /*! see Euler3D_Polytropic_pState::Fz(void) */
 Euler3D_Polytropic_cState Euler3D_Polytropic_cState::Fz(void) {
-    return (Euler3D_Polytropic_cState(rhov.z, rhov.x*rhov.z/rho, rhov.y*rhov.z/rho, sqr(rhov.z)/rho + p(), rhov.z*H()/rho));
+    return (Euler3D_Polytropic_cState(rhov.z, rhov.x*rhov.z/rho, rhov.y*rhov.z/rho, sqr(rhov.z)/rho + p(), rhov.z*h()));
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_cState::Fz(void) const {
-    return (Euler3D_Polytropic_cState(rhov.z, rhov.x*rhov.z/rho, rhov.y*rhov.z/rho, sqr(rhov.z)/rho + p(), rhov.z*H()/rho));
+    return (Euler3D_Polytropic_cState(rhov.z, rhov.x*rhov.z/rho, rhov.y*rhov.z/rho, sqr(rhov.z)/rho + p(), rhov.z*h()));
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_cState::Fz(const Euler3D_Polytropic_cState &U) {
-    return (Euler3D_Polytropic_cState(U.rhov.z, U.rhov.x*U.rhov.z/U.rho, U.rhov.y*U.rhov.z/U.rho, sqr(U.rhov.z)/U.rho + U.p(), U.rhov.z*U.H()/U.rho));
+    return (Euler3D_Polytropic_cState(U.rhov.z, U.rhov.x*U.rhov.z/U.rho, U.rhov.y*U.rhov.z/U.rho, sqr(U.rhov.z)/U.rho + U.p(), U.rhov.z*U.h()));
 }
 
 /*! see Euler3D_Polytropic_pState::dFzdU(DenseMatrix &dFzdU) */

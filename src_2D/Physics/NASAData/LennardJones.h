@@ -276,6 +276,9 @@ inline double LennardJonesData::ThermalConduct(const double &HeatCapacity_v, // 
  ************************************************************/
 inline double Omega11(const double &Ts) {
 
+  // declares
+  static int err_cnt(0);
+
   // constants
   static double A = 1.06036;
   static double B = 0.15610;
@@ -287,9 +290,11 @@ inline double Omega11(const double &Ts) {
   static double H = 3.89411;
   
   // make sure reduced temperature is within range
-  if ( Ts<0.3 || Ts>100.0 ) {
+  if ( (Ts<0.3 || Ts>100.0) && err_cnt<5 ) {
+    err_cnt++;
     cerr << "NASARP1311dataclass::Omega11() - Warning: Reduced temperature T*= " 
 	 << Ts << " outside applicable range (0.3 < T* < 100)." << endl;
+    if (err_cnt==5) cerr << "NASARP1311dataclass::Omega11() - Suppressing error output for now.\n";
     //exit(0);
   }
  
@@ -317,6 +322,9 @@ inline double Omega11(const double &Ts) {
  ************************************************************/
 inline double Omega22(const double &Ts) {
 
+  // declares
+  static int err_cnt(0);
+
   // constants
   static double A =  1.16145;
   static double B =  0.14874;
@@ -332,9 +340,11 @@ inline double Omega22(const double &Ts) {
   static double P =  7.27371;
   
   // make sure reduced temperature is within range
-  if ( Ts<0.3 || Ts>100.0 ) {
-    cerr << "NASARP1311dataclass::Omega11() - Warning: Reduced temperature T*= " 
+  if ( (Ts<0.3 || Ts>100.0) && err_cnt<5 ) {
+    err_cnt++;
+    cerr << "NASARP1311dataclass::Omega22() - Warning: Reduced temperature T*= " 
 	 << Ts << " outside applicable range (0.3 < T* < 100)." << endl;
+    if (err_cnt==5) cerr << "NASARP1311dataclass::Omega22() - Suppressing error output for now.\n";
     //exit(0);
   }
   
@@ -361,6 +371,9 @@ inline double Omega22(const double &Ts) {
  ************************************************************/
 inline double dOmega22dT(const double &T, const double &eps) {
   
+  // declares
+  static int err_cnt(0);
+
   // constants
   static double A =  1.16145;
   static double B =  0.14874;
@@ -379,9 +392,11 @@ inline double dOmega22dT(const double &T, const double &eps) {
   double Ts = T/ek;
   
   // make sure reduced temperature is within range
-  if ( Ts<0.3 || Ts>100.0 ) {
+  if ( (Ts<0.3 || Ts>100.0) && err_cnt<5 ) {
+    err_cnt++;
     cerr << "Warning: Reduced temperature T*= " << Ts 
 	 << " outside applicable range (0.3 < T* < 100)." << endl;
+    if (err_cnt==5) cerr << "NASARP1311dataclass::dOmega22dT() - Suppressing error output for now.\n";
     //exit(0);
   }
 

@@ -14,7 +14,9 @@
 
 // ===  Static member variables ===
 short DiffusionFields::i_Diffusion_Field_Type = DIFFUSION_FIELD_ZERO;  //!< no diffusion
+short DiffusionFields::i_Diffusion_Field_Type_Copy = DIFFUSION_FIELD_ZERO;  //!< no diffusion
 double DiffusionFields::DiffusionCoefficient = 0.0;   //!< diffusion coefficient set to ZERO (no diffusion)
+double DiffusionFields::DiffusionCoefficient_Copy = 0.0;   //!< diffusion coefficient copy set to ZERO (no diffusion)
 double DiffusionFields::k_x = 0.0; //!< diffusion coefficient in x-direction set to ZERO (no diffusion)
 double DiffusionFields::k_y = 0.0; //!< diffusion coefficient in y-direction set to ZERO (no diffusion)
 double DiffusionFields::k_u = 0.0; //!< diffusion coefficient set to ZERO (independent diffusion of the solution)
@@ -144,4 +146,3 @@ void DiffusionFields::Connect_Pointer_To_Diffusion_Field(DiffusionFields::Nonlin
   }
 
 }
-
