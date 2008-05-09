@@ -81,16 +81,16 @@ int Newton_Update(Chem2D_Quad_Block *SolnBlk,
 // 	double *norm = new double[Num_Var-1];
 // 	for(int i= 0; i< Num_Var-1; i++) norm[i]=ZERO;
 	
-	for (int j = SolnBlk[Bcount].JCl-SolnBlk[Bcount].Nghost; j <= SolnBlk[Bcount].JCu+SolnBlk[Bcount].Nghost; j++){
-	  for (int i = SolnBlk[Bcount].ICl-SolnBlk[Bcount].Nghost; i <= SolnBlk[Bcount].ICu+SolnBlk[Bcount].Nghost; i++){
-	    for(int varindex =1; varindex < Num_Var; varindex++){	  	   
-	      //SolnBlk[Bcount].dUdt[i][j][0][varindex] = GMRES.deltaU_test(Bcount,i,j,varindex-1);
-	      SolnBlk[Bcount].dUdt[i][j][0][varindex] = GMRES.b_test(Bcount,i,j,varindex-1);
-	      //norm[varindex-1] += sqr(SolnBlk[Bcount].dUdt[i][j][0][varindex]);
-	      // norm[varindex-1] = max(norm[varindex-1],fabs(SolnBlk[Bcount].dUdt[i][j][0][varindex]));
-	    }
-	  } 
-	}
+// 	for (int j = SolnBlk[Bcount].JCl-SolnBlk[Bcount].Nghost; j <= SolnBlk[Bcount].JCu+SolnBlk[Bcount].Nghost; j++){
+// 	  for (int i = SolnBlk[Bcount].ICl-SolnBlk[Bcount].Nghost; i <= SolnBlk[Bcount].ICu+SolnBlk[Bcount].Nghost; i++){
+// 	    for(int varindex =1; varindex < Num_Var; varindex++){	  	   
+// 	      //SolnBlk[Bcount].dUdt[i][j][0][varindex] = GMRES.deltaU_test(Bcount,i,j,varindex-1);
+// 	      SolnBlk[Bcount].dUdt[i][j][0][varindex] = GMRES.b_test(Bcount,i,j,varindex-1);
+// 	      //norm[varindex-1] += sqr(SolnBlk[Bcount].dUdt[i][j][0][varindex]);
+// 	      // norm[varindex-1] = max(norm[varindex-1],fabs(SolnBlk[Bcount].dUdt[i][j][0][varindex]));
+// 	    }
+// 	  } 
+// 	}
 // 	cout<<"\n *************** ";
 // 	for(int i= 0; i<11; i++){
 // 	  //cout<<"\n L2 norm of variable "<<i<<" = "<<sqrt(norm[i]);
@@ -162,6 +162,18 @@ int NKS_DTS_Output(Chem2D_Quad_Block *SolnBlk,
 					   Input_Parameters,
 					   Steps,
 					   Physical_Time);   
+  
+  // FOR DEBUGGING CHEMISTRY PRIMARILY
+//   ofstream time_accurate_data_file;
+//   int error_flag;
+//   error_flag = Open_Time_Accurate_File(time_accurate_data_file,
+// 				       Input_Parameters.Output_File_Name,
+// 				       Steps-1,
+// 				       SolnBlk[0].W[2][2]);
+//   Output_to_Time_Accurate_File(time_accurate_data_file,
+// 			       Physical_Time,
+// 			       SolnBlk[0].W[2][2]);  
+
   return error_flag;
 }
 
@@ -403,6 +415,40 @@ normalize_Preconditioner_dFdU(DenseMatrix &dFdU)
 /************************************************************************/   
 
 /**************************************************************************
+ * Routine: check_epsilon                                                 *
+ **************************************************************************/
+
+//Possible HACK to avoid -ve species
+template <>inline double GMRES_Block<Chem2D_pState,
+				     Chem2D_Quad_Block,
+				     Chem2D_Input_Parameters>::
+check_epsilon(double &epsilon_orig){
+
+  double epsilon_new(epsilon_orig);
+
+  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
+    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {   
+      for(int varindex = 6; varindex < blocksize; varindex++){	//don't really need to check all, only species!!!
+	// Uo + ep*W < 0
+	if( SolnBlk->Uo[i][j][varindex+1] + denormalizeU( epsilon_new*W[search_directions*scalar_dim+index(i,j,varindex)], varindex) < ZERO){
+	  epsilon_new =  -SolnBlk->Uo[i][j][varindex+1]/denormalizeU(W[search_directions*scalar_dim+index(i,j,varindex)], varindex);
+	  if(epsilon_new <= ZERO){
+	    cout<<"\n epsilon_fail @ "<<i<<" "<<j<<" "<<varindex<< " "<<epsilon_new;
+	    epsilon_new = epsilon_orig;
+	  } else {
+	    epsilon_new = min(epsilon_new,epsilon_orig);
+	    cout<<"\n new "<<epsilon_new<<" orig "<<epsilon_orig<<i<<" "<<j<<" "<<varindex;
+	  }
+	}
+      }
+    }
+  }
+     
+  return epsilon_new;
+}
+
+
+/**************************************************************************
  * Routine: calculate_pertubed_residual                                   *
  **************************************************************************/
 // Calculate SolnBlk.U =  SolnBlk.Uo + denormalize( epsilon * W(i) )
@@ -412,13 +458,27 @@ template <>inline void GMRES_Block<Chem2D_pState,
 calculate_perturbed_residual(const double &epsilon)
 {    
   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {         
+    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {   
+ 
       for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] +
-	  denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex);	    	
-      }     
+	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] 
+	  + denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex);	  	
+      } 
+ 
+  //     //TEST OF RESETTING W AS WELL AS Cs 
+//       double sum(ZERO);
+//       for(int q = SolnBlk->U[i][j].NUM_VAR_CHEM2D-SolnBlk->U[i][j].ns+1; q< SolnBlk->U[i][j].NUM_VAR_CHEM2D; q++){
+// 	if(SolnBlk->U[i][j][q] < ZERO){  //CHECK FOR -ve species
+// 	  SolnBlk->U[i][j][q] = SolnBlk->Uo[i][j][q];   //cout<<"\n Resetting "<<i<<" "<<j<<" "<<q;
+// 	  W[search_directions*scalar_dim+index(i,j,q-1)] = ZERO;   
+// 	}
+// 	sum += SolnBlk->U[i][j][q]/SolnBlk->U[i][j].rho;  
+//       }
+//       SolnBlk->U[i][j][SolnBlk->U[i][j].NUM_VAR_CHEM2D] = SolnBlk->U[i][j].rho*(ONE - sum);
+
       //Chem2D spec_check to make sure species (Uo + epsilon*W(i)) > ZERO , ie physical for dUdt calc 
-      if(!SolnBlk->U[i][j].negative_speccheck(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual"; exit(1); }       
+      if(!SolnBlk->U[i][j].negative_speccheck(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual"; exit(1); }    
+
       /* Update primitive variables. */
       SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
     }
@@ -427,7 +487,7 @@ calculate_perturbed_residual(const double &epsilon)
 
 // Calculate SolnBlk.U =  SolnBlk.Uo - denormalize( epsilon * W(i) )
 template <>inline void GMRES_Block<Chem2D_pState,
-				   Chem2D_Quad_Block,
+				   Chem2D_Quad_Block, 
 				   Chem2D_Input_Parameters>::
 calculate_perturbed_residual_2nd(const double &epsilon)
 {    
@@ -456,12 +516,26 @@ template <>inline void GMRES_Block<Chem2D_pState,
 calculate_perturbed_residual_Restart(const double &epsilon)
 {    
   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
+    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {  
+      
       for(int varindex = 0; varindex < blocksize; varindex++){	
 	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] + denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
       }  
+
+//       //TEST OF RESETTING W AS WELL AS Cs 
+//       double sum(ZERO);
+//       for(int q = SolnBlk->U[i][j].NUM_VAR_CHEM2D-SolnBlk->U[i][j].ns+1; q< SolnBlk->U[i][j].NUM_VAR_CHEM2D; q++){
+// 	if(SolnBlk->U[i][j][q]/SolnBlk->U[i][j].rho < ZERO){  //CHECK FOR -ve species
+// 	  SolnBlk->U[i][j][q] = SolnBlk->Uo[i][j][q]; //cout<<"\n Resetting "<<i<<" "<<j<<" "<<q;  //OR ZERO???
+// 	  x[index(i,j,q-1)] = ZERO;
+// 	}
+// 	sum += SolnBlk->U[i][j][q]/SolnBlk->U[i][j].rho;  
+//       }
+//       SolnBlk->U[i][j][SolnBlk->U[i][j].NUM_VAR_CHEM2D] = SolnBlk->U[i][j].rho*(ONE - sum);
+      
       if(!SolnBlk->U[i][j].negative_speccheck(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual_Restart "; exit(1); }
-      /* Update primitive variables. */
+
+      /* Update primitive variables. */      
       SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
     }
   }  
@@ -549,7 +623,8 @@ calculate_Matrix_Free(const double &epsilon)
 	} else { // z/h
 	  V[(search_directions+1)*scalar_dim+iter] -= normalizeUtoR( W[(search_directions)*scalar_dim + iter] 
 			      * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
-	}       
+	}      
+	
 
 // #ifdef _NKS_VERBOSE_NAN_CHECK
 // 	// nan check most commonly caused by nans in dUdt !!!!
@@ -604,10 +679,12 @@ calculate_Matrix_Free_Restart(const double &epsilon)
 	//Matrix Free V(i+1) 
 
 	if( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == FIRST_ORDER ){
-	  V[iter] = (normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) - b[iter]) / epsilon ;
+	  V[iter] = (normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) - b[iter])/ epsilon ;
 	} else if ( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == SECOND_ORDER ){
 	  V[iter] = normalizeR( SolnBlk->dUdt[i][j][1][k+1] - SolnBlk->dUdt[i][j][0][k+1],k)/(TWO*epsilon);
 	}
+
+	// FOR GMRES_CHECK, don't need the -x/h ????
 
 	//Finite Time Stepping
 	if(Input_Parameters->Preconditioning){   //gamma(nxn)*x(nx1)/h(1x)    

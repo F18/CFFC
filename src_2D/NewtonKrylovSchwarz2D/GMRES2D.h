@@ -97,7 +97,7 @@ public:
   int                  scalar_dim; // xpts * ypts * blocksize
 
   /* USED INTERNAL TO GMRES ROUTINE */
-  int               vector_switch; // to select the specified vector for message passing
+//   int               vector_switch; // to select the specified vector for message passing  // SHOULDN'T NEED THIS ANYMORE !!!
   int           search_directions; // number of search directions
 
   /* GMRES SOLUTION VECTORS ie DATA */
@@ -131,7 +131,8 @@ public:
     normalize_valuesR = NULL; normalize_valuesU = NULL; 
     s = NULL;  cs = NULL;  sn = NULL;  
     b = NULL;  x = NULL; H = NULL;  W = NULL;  V = NULL; 
-    vector_switch = 100; NCi = 0;  ICl = 0; ICu = 0; 
+    //vector_switch = 100; 
+    NCi = 0;  ICl = 0; ICu = 0; 
     NCj = 0;  JCl = 0; JCu = 0; Nghost = 0;
     SolnBlk = NULL;      
     DTS_ptr = NULL;
@@ -157,10 +158,9 @@ public:
   void calculate_Matrix_Free(const double &epsilon);
   void calculate_Matrix_Free_Restart(const double &epsilon);
 
-  //TESTING ie _NKS_VERBOSE functions
-  void Output_W(void) { for (int i=0;i< restart*scalar_dim;++i){ cout<<"\n W(i) "<<W[i]; }}
-  void Output_V(void) { for (int i=0;i<((restart + 1) * scalar_dim);++i) { cout<<"\n V(i) "<<V[i]; }}
-  void Output_U(int what);
+  double check_epsilon(double &epsilon){ return epsilon;} // does nothing be default.
+
+  //Diagnostic Output
   void Output_GMRES_vars_Tecplot(const int Number_of_Time_Steps,
 			         const int Block_Number,
 			         bool print_title,
@@ -189,90 +189,6 @@ public:
   /* Number of solution state variables. */
   int NumVar(void);
 
-  /* Load send message passing buffer. */
-  int LoadSendBuffer(double *buffer,
-                     int &buffer_count,
-                     const int buffer_size,
-                     const int i_min, 
-                     const int i_max,
-                     const int i_inc,
-                     const int j_min, 
-                     const int j_max,
-                     const int j_inc);
-  int LoadSendBuffer_F2C(double *buffer,
-                         int &buffer_count,
-                         const int buffer_size,
-                         const int i_min, 
-                         const int i_max,
-                         const int i_inc,
-                         const int j_min, 
-                         const int j_max,
-                         const int j_inc);
-  int LoadSendBuffer_C2F(double *buffer,
-                         int &buffer_count,
-                         const int buffer_size,
-                         const int i_min, 
-                         const int i_max,
-                         const int i_inc,
-                         const int j_min, 
-                         const int j_max,
-                         const int j_inc,
-			 const int face,
-			 const int sector);
-  /* Unload receive message passing buffer. */
-  int UnloadReceiveBuffer(double *buffer,
-                          int &buffer_count,
-                          const int buffer_size,
-                          const int i_min, 
-                          const int i_max,
-                          const int i_inc,
-                          const int j_min, 
-                          const int j_max,
-                          const int j_inc);
-  int UnloadReceiveBuffer_F2C(double *buffer,
-                              int &buffer_count,
-                              const int buffer_size,
-                              const int i_min, 
-                              const int i_max,
-                              const int i_inc,
-                              const int j_min, 
-                              const int j_max,
-                              const int j_inc);
-  int UnloadReceiveBuffer_C2F(double *buffer,
-                              int &buffer_count,
-                              const int buffer_size,
-                              const int i_min, 
-                              const int i_max,
-                              const int i_inc,
-                              const int j_min, 
-                              const int j_max,
-                              const int j_inc);
-
-  /* Subcell solution reconstruction within given computational cell. */
-  void SubcellReconstruction(const int i,
-                             const int j,
-                             const int Limiter);
-
-  // Load and unload conservative flux message passing buffer. 
-  // NOT USED just added for compatibility with Message Passing Templates.
-  int LoadSendBuffer_Flux_F2C(double *buffer,
-                              int &buffer_count,
-                              const int buffer_size,
-                              const int i_min, 
-                              const int i_max,
-                              const int i_inc,
-                              const int j_min, 
-                              const int j_max,
-                              const int j_inc){ return(0); }
-  int UnloadReceiveBuffer_Flux_F2C(double *buffer,
-				   int &buffer_count,
-				   const int buffer_size,
-				   const int i_min, 
-				   const int i_max,
-				   const int i_inc,
-				   const int j_min, 
-				   const int j_max,
-				   const int j_inc) { return(0);} 
 };
 
 
@@ -286,20 +202,6 @@ set_normalize_values(void) {
   exit(1);
 }
 
-/**************************************************************************
- * Routine: TESTING FUNCITON                                              *
- **************************************************************************/
-template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
-inline void GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-Output_U(int what) {    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
-      if(what == 1)cout<<"\n U ("<<i<<","<<j<<") = "<<SolnBlk->U[i][j];      
-      if(what == 2)cout<<"\n W ("<<i<<","<<j<<") = "<<SolnBlk->W[i][j];
-      if(what == 3)cout<<"\n dUdt ("<<i<<","<<j<<") = "<<SolnBlk->dUdt[i][j][0];
-    }
-  }  
-}
 
 template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
 void GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
@@ -322,13 +224,24 @@ Output_GMRES_vars_Tecplot (const int Number_of_Time_Steps,
 	 << setprecision(14);
     fout << "\"" << "\n"
 	 << "VARIABLES = \"x\" \\ \n"
-	 << "\"y\" \\ \n";
-    fout << "\"b_k" << kvar	<< "\" \\ \n";
+	 << "\"y\" \\ \n"; 
+    for (int q = 0; q < blocksize; q++) {
+      fout << "\"b_k" << q << "\" \\ \n";
+    }
     for (int q = 0; q < blocksize; q++) {
 	fout << "\"deltaU_k" << q << "\" \\ \n";
     }
     for (int q = 0; q < blocksize; q++) {
-	fout << "\"V0_" << q << "\" \\ \n";
+	fout << "\"V0_k" << q << "\" \\ \n";
+    }  
+    for (int q = 0; q < blocksize; q++) {
+	fout << "\"V1_k" << q << "\" \\ \n";
+    }  
+    for (int q = 0; q < blocksize; q++) {
+	fout << "\"W0_k" << q << "\" \\ \n";
+    }  
+    for (int q = 0; q < blocksize; q++) {
+	fout << "\"W1_k" << q << "\" \\ \n";
     }
   }
 
@@ -343,13 +256,24 @@ Output_GMRES_vars_Tecplot (const int Number_of_Time_Steps,
   fout.setf(ios::scientific);
   for (int j = JCl - Nghost*ng; j <= JCu + Nghost*ng; j++) {
       for (int i = ICl - Nghost*ng; i <= ICu + Nghost*ng; i++) {
-          fout << " " << SolnBlk->Grid.Cell[i][j].Xc;
-	  fout << " " << fabs(b[index(i,j,kvar)]); 
+          fout << " " << SolnBlk->Grid.Cell[i][j].Xc; 
 	  for (int q = 0; q < blocksize; q++) {
-	      fout << " " << fabs(deltaU(i,j,q)); 
+	    fout << " " << b[index(i,j,q)];      // R(U) normalized 
 	  }
 	  for (int q = 0; q < blocksize; q++) {
-	      fout << " " << fabs(V[0 + index(i, j, q)]);
+	    fout << " " << deltaU(i,j,q);   // deltaU ie 'x' update vector normalized
+	  }
+	  for (int q = 0; q < blocksize; q++) {
+	    fout << " " << V[0 + index(i, j, q)]; //first search vector (Ax with GMRES_CHECK on)
+	  }  
+	  for (int q = 0; q < blocksize; q++) {
+	    fout << " " << V[ 1*scalar_dim + index(i, j, q)]; //2nd  search vector (search_direction*scalar_dim+iter)
+	  } 
+	  for (int q = 0; q < blocksize; q++) {
+	    fout << " " << W[0 + index(i, j, q)]; 
+	  }  
+	  for (int q = 0; q < blocksize; q++) {
+	    fout << " " << W[ 1*scalar_dim + index(i, j, q)]; 
 	  }
       fout << endl;
       }
@@ -546,7 +470,7 @@ calculate_Matrix_Free(const double &epsilon) {
   }
 	   
   // Non-Overlap Ghost Cells R(U) already set to zero by dUdt calculation  
-  /* V(i+1) = ( R(U+epsilon*W) - b) / epsilon - z / h */
+  /* V(i+1) = ( R(U+epsilon*W) - b) / epsilon - W / h */
   for (int j = JCl - JCl_overlap; j <= JCu + JCu_overlap; j++) {
     for (int i = ICl - ICl_overlap; i <= ICu + ICu_overlap; i++) {
       for(int k =0; k < blocksize; k++){	
@@ -647,12 +571,6 @@ Dotproduct(const double *v1, const double *v2) {
 }
 
 /*******************************************************************************
- *                                                                             *
- * MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING.                              *
- *                                                                             *
- *******************************************************************************/
-
-/*******************************************************************************
  * GMRES_Block::NumVar -- Returns number of state variables.                   *
  *******************************************************************************/
 template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
@@ -660,1239 +578,6 @@ inline int GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
 NumVar(void) {
   return (blocksize);             
 }
-
-/*******************************************************************************
- * GMRES_Block::LoadSendBuffer -- Loads send message buffer.                   *
- *******************************************************************************/
-template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
-inline int GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-LoadSendBuffer(double *buffer,
-	       int &buffer_count,
-	       const int buffer_size,
-	       const int i_min, 
-	       const int i_max,
-	       const int i_inc,
-	       const int j_min, 
-	       const int j_max,
-	       const int j_inc) {
-  
-  for (int j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-    for (int i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-      for (int  k = 0 ; k < blocksize; ++ k) {
-	buffer_count++;
-	if (buffer_count >= buffer_size) return(1);
-	if (vector_switch) {
-	  buffer[buffer_count] = W[(search_directions)*scalar_dim + index(i,j,k)];
-	} else {
-	  buffer[buffer_count] = x[index(i,j,k)];
-	}
-      } 
-    } 
-  } 
-  return(0);
-} 
-
-/*******************************************************************************
- * GMRES_Block::LoadSendBuffer_F2C -- Loads send message buffer for            *
- *                                    fine to coarse block message             *
- *                                    passing.                                 *
- *******************************************************************************/
-template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
-inline int GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-LoadSendBuffer_F2C(double *buffer,
-		   int &buffer_count,
-		   const int buffer_size,
-		   const int i_min, 
-		   const int i_max,
-		   const int i_inc,
-		   const int j_min, 
-		   const int j_max,
-		   const int j_inc) {
-  
-  for (int j  = j_min ; ((j_inc+2)/4) ? (j < j_max):(j > j_max) ; j += j_inc ) {
-    for (int i = i_min ;  ((i_inc+2)/4) ? (i < i_max):(i > i_max) ; i += i_inc ) {
-      for (int k = 0 ; k < blocksize; ++ k) {
-	buffer_count++;
-	if (buffer_count >= buffer_size) return(1);
-	if (vector_switch) {
-	  buffer[buffer_count] = (SolnBlk->Grid.Cell[i  ][j  ].A*W[(search_directions)*scalar_dim + index(i  ,j  ,k)]+
-				  SolnBlk->Grid.Cell[i+1][j  ].A*W[(search_directions)*scalar_dim + index(i+1,j  ,k)]+
-				  SolnBlk->Grid.Cell[i  ][j+1].A*W[(search_directions)*scalar_dim + index(i  ,j+1,k)]+
-				  SolnBlk->Grid.Cell[i+1][j+1].A*W[(search_directions)*scalar_dim + index(i+1,j+1,k)])/
-	                         (SolnBlk->Grid.Cell[i  ][j  ].A+
-				  SolnBlk->Grid.Cell[i+1][j  ].A+
-				  SolnBlk->Grid.Cell[i  ][j+1].A+
-				  SolnBlk->Grid.Cell[i+1][j+1].A);
-	} else {
-	  buffer[buffer_count] = (SolnBlk->Grid.Cell[i  ][j  ].A*x[index(i  ,j  ,k)]+
-				  SolnBlk->Grid.Cell[i+1][j  ].A*x[index(i+1,j  ,k)]+
-				  SolnBlk->Grid.Cell[i  ][j+1].A*x[index(i  ,j+1,k)]+
-				  SolnBlk->Grid.Cell[i+1][j+1].A*x[index(i+1,j+1,k)])/
-	                         (SolnBlk->Grid.Cell[i  ][j  ].A+
-				  SolnBlk->Grid.Cell[i+1][j  ].A+
-				  SolnBlk->Grid.Cell[i  ][j+1].A+
-				  SolnBlk->Grid.Cell[i+1][j+1].A);
-	} 
-      } 
-    } 
-  } 
-  return(0);
-}
-
-/*******************************************************************************
- * GMRES_Block::LoadSendBuffer_C2F -- Loads send message buffer for            *
- *                                    coarse to fine block message             *
- *                                    passing.                                 *
- *******************************************************************************/
-template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
-inline int GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-LoadSendBuffer_C2F(double *buffer,
-		   int &buffer_count,
-		   const int buffer_size,
-		   const int i_min, 
-		   const int i_max,
-		   const int i_inc,
-		   const int j_min, 
-		   const int j_max,
-		   const int j_inc,
-		   const int face,
-		   const int sector) {
-  int i, j, k;
-  Vector2D dX;
-  SOLN_VAR_TYPE Wcoarse, Wfine;
-  int LIMITER = LIMITER_ZERO; //LIMITER_VENKATAKRISHNAN 
-
-  if (j_min == j_max) { // North or south boundary.
-     // Four different orderings to consider depending on the value of i_inc & j_inc.
-    if (j_inc > 0) {             
-      if (i_inc > 0) {
-
-	/******************************* CASE #1 ***************************************/
-	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	  // Perform limited linear least squares reconstruction in cell (i, j_min).
-	  SubcellReconstruction(i, j_min, LIMITER);                    
-	  
-	  // Evaluate SW sub (fine) cell values.
-	  for (k = 0 ; k < blocksize; ++ k) {
-	    if (vector_switch) {
-	      Wcoarse[k+1] = W[(search_directions)*scalar_dim + index(i,j_min,k)];
-	    } else {
-	      Wcoarse[k+1] = x[index(i,j_min,k)];
-	    } 
-	  } 
-	  dX = (SolnBlk->Grid.Node[i][j_min].X+
-		HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i+1][j_min].X)+
-		HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i][j_min+1].X)+
-		SolnBlk->Grid.Cell[i][j_min].Xc)/FOUR -
-	        SolnBlk->Grid.Cell[i][j_min].Xc;
-	  Wfine = Wcoarse +
-	    (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-	    (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-
-	  for (k = 0 ; k < blocksize; ++ k) {
-	    buffer_count++;
-	    if (buffer_count >= buffer_size) return(1);
-	    buffer[buffer_count] = Wfine[k+1];
-	  } 
-	  
-	  // Evaluate SE sub (fine) cell values.
-	  dX = (HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i+1][j_min].X)+
-		SolnBlk->Grid.Node[i+1][j_min].X + SolnBlk->Grid.Cell[i][j_min].Xc+
-		HALF*(SolnBlk->Grid.Node[i+1][j_min].X+SolnBlk->Grid.Node[i+1][j_min+1].X))/FOUR -
-	        SolnBlk->Grid.Cell[i][j_min].Xc;
-	  Wfine = Wcoarse +
-	    (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-	    (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-            
-	  for ( k = 0 ; k < blocksize; ++ k) {
-	    buffer_count++;
-	    if (buffer_count >= buffer_size) return(1);
-	    buffer[buffer_count] = Wfine[k+1];
-	  }
-	} 
-	
-	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	  // Evaluate NW sub (fine) cell values.
-	  for (k = 0 ; k < blocksize; ++ k) {
-	    if (vector_switch) {
-	      Wcoarse[k+1] = W[(search_directions)*scalar_dim + index(i,j_min,k)];
-	    } else {
-	      Wcoarse[k+1] = x[index(i,j_min,k)];
-	    } /* endif */
-	  } /* endfor */
-	  dX = (HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i][j_min+1].X)+
-                    SolnBlk->Grid.Cell[i][j_min].Xc+
-                    SolnBlk->Grid.Node[i][j_min+1].X+
-                    HALF*(SolnBlk->Grid.Node[i][j_min+1].X+SolnBlk->Grid.Node[i+1][j_min+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i][j_min].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-          
-	      for (k = 0 ; k < blocksize; ++ k) {
-                 buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate NE sub (fine) cell values.
-              dX = (SolnBlk->Grid.Cell[i][j_min].Xc+
-                    HALF*(SolnBlk->Grid.Node[i+1][j_min].X+SolnBlk->Grid.Node[i+1][j_min+1].X)+
-                    HALF*(SolnBlk->Grid.Node[i][j_min+1].X+SolnBlk->Grid.Node[i+1][j_min+1].X)+
-                    SolnBlk->Grid.Node[i+1][j_min+1].X)/FOUR -
-                   SolnBlk->Grid.Cell[i][j_min].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-           } /* endfor */
-	
-	/******************************* CASE #2 ***************************************/
-      } else {
-           for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-              // Perform limited linear least squares reconstruction in cell (i, j_min).
-              SubcellReconstruction(i, j_min, LIMITER);
-              // Evaluate SE sub (fine) cell values.
-              for (k = 0 ; k < blocksize; ++ k) {
-   	         if (vector_switch) {
-	            Wcoarse[k+1] = W[(search_directions)*scalar_dim + index(i,j_min,k)];
-	         } else {
-	            Wcoarse[k+1] = x[index(i,j_min,k)];
-	         } /* endif */
-	      } /* endfor */
-              dX = (HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i+1][j_min].X)+
-                    SolnBlk->Grid.Node[i+1][j_min].X+
-                    SolnBlk->Grid.Cell[i][j_min].Xc+
-                    HALF*(SolnBlk->Grid.Node[i+1][j_min].X+SolnBlk->Grid.Node[i+1][j_min+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i][j_min].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate SW sub (fine) cell values.
-              dX = (SolnBlk->Grid.Node[i][j_min].X+
-                    HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i+1][j_min].X)+
-                    HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i][j_min+1].X)+
-                    SolnBlk->Grid.Cell[i][j_min].Xc)/FOUR -
-                   SolnBlk->Grid.Cell[i][j_min].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-              for ( k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-           } /* endfor */
-           for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-              // Evaluate NE sub (fine) cell values.
-              for (k = 0 ; k < blocksize; ++ k) {
-   	         if (vector_switch) {
-	           Wcoarse[k+1] = W[(search_directions)*scalar_dim + index(i,j_min,k)];
-	         } else {
-	            Wcoarse[k+1] = x[index(i,j_min,k)];
-	         } /* endif */
-	      } /* endfor */
-              dX = (SolnBlk->Grid.Cell[i][j_min].Xc+
-                    HALF*(SolnBlk->Grid.Node[i+1][j_min].X+SolnBlk->Grid.Node[i+1][j_min+1].X)+
-                    HALF*(SolnBlk->Grid.Node[i][j_min+1].X+SolnBlk->Grid.Node[i+1][j_min+1].X)+
-                    SolnBlk->Grid.Node[i+1][j_min+1].X)/FOUR -
-                   SolnBlk->Grid.Cell[i][j_min].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate NW sub (fine) cell values.
-              dX = (HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i][j_min+1].X)+
-                    SolnBlk->Grid.Cell[i][j_min].Xc+
-                    SolnBlk->Grid.Node[i][j_min+1].X+
-                    HALF*(SolnBlk->Grid.Node[i][j_min+1].X+SolnBlk->Grid.Node[i+1][j_min+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i][j_min].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-                 buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-           } /* endfor */
-        } /* endif */
-
-      /******************************* CASE #3 ***************************************/
-    } else {
-        if (i_inc > 0) {
-           for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-              // Perform limited linear least squares reconstruction in cell (i, j_min).
-              SubcellReconstruction(i, j_min, LIMITER);
-              // Evaluate NW sub (fine) cell values.
-              for (k = 0 ; k < blocksize; ++ k) {
-   	         if (vector_switch) {
-	            Wcoarse[k+1] = W[(search_directions)*scalar_dim + index(i,j_min,k)];
-	         } else {
-	            Wcoarse[k+1] = x[index(i,j_min,k)];
-	         } /* endif */
-	      } /* endfor */
-              dX = (HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i][j_min+1].X)+
-                    SolnBlk->Grid.Cell[i][j_min].Xc+
-                    SolnBlk->Grid.Node[i][j_min+1].X+
-                    HALF*(SolnBlk->Grid.Node[i][j_min+1].X+SolnBlk->Grid.Node[i+1][j_min+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i][j_min].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-                 buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate NE sub (fine) cell values.
-              dX = (SolnBlk->Grid.Cell[i][j_min].Xc+
-                    HALF*(SolnBlk->Grid.Node[i+1][j_min].X+SolnBlk->Grid.Node[i+1][j_min+1].X)+
-                    HALF*(SolnBlk->Grid.Node[i][j_min+1].X+SolnBlk->Grid.Node[i+1][j_min+1].X)+
-                    SolnBlk->Grid.Node[i+1][j_min+1].X)/FOUR -
-                   SolnBlk->Grid.Cell[i][j_min].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-           } /* endfor */
-           for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-              // Evaluate SW sub (fine) cell values.
-             for (k = 0 ; k < blocksize; ++ k) {
-   	         if (vector_switch) {
-	            Wcoarse[k+1] = W[(search_directions)*scalar_dim + index(i,j_min,k)];
-	         } else {
-	            Wcoarse[k+1] = x[index(i,j_min,k)];
-	         } /* endif */
-	      } /* endfor */
-              dX = (SolnBlk->Grid.Node[i][j_min].X+
-                    HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i+1][j_min].X)+
-                    HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i][j_min+1].X)+
-                    SolnBlk->Grid.Cell[i][j_min].Xc)/FOUR -
-                   SolnBlk->Grid.Cell[i][j_min].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-              for ( k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate SE sub (fine) cell values.
-              dX = (HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i+1][j_min].X)+
-                    SolnBlk->Grid.Node[i+1][j_min].X+
-                    SolnBlk->Grid.Cell[i][j_min].Xc+
-                    HALF*(SolnBlk->Grid.Node[i+1][j_min].X+SolnBlk->Grid.Node[i+1][j_min+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i][j_min].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-           } /* endfor */
-	   /******************************* CASE #4 ***************************************/
-        } else {
-           for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-              // Perform limited linear least squares reconstruction in cell (i, j_min).
-              SubcellReconstruction(i, j_min, LIMITER);
-              // Evaluate NE sub (fine) cell values.
-              for (k = 0 ; k < blocksize; ++ k) {
-   	         if (vector_switch) {
-	            Wcoarse[k+1] = W[(search_directions)*scalar_dim + index(i,j_min,k)];
-	         } else {
-	            Wcoarse[k+1] = x[index(i,j_min,k)];
-	         } /* endif */
-	      } /* endfor */
-              dX = (SolnBlk->Grid.Cell[i][j_min].Xc+
-                    HALF*(SolnBlk->Grid.Node[i+1][j_min].X+SolnBlk->Grid.Node[i+1][j_min+1].X)+
-                    HALF*(SolnBlk->Grid.Node[i][j_min+1].X+SolnBlk->Grid.Node[i+1][j_min+1].X)+
-                    SolnBlk->Grid.Node[i+1][j_min+1].X)/FOUR -
-                   SolnBlk->Grid.Cell[i][j_min].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-
-	      // Wfine = Wfine.U();  ??MISTAKE MADE IN KALVINS ORIGINAL ?????
-
-             for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate NW sub (fine) cell values.
-              dX = (HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i][j_min+1].X)+
-                    SolnBlk->Grid.Cell[i][j_min].Xc+
-                    SolnBlk->Grid.Node[i][j_min+1].X+
-                    HALF*(SolnBlk->Grid.Node[i][j_min+1].X+SolnBlk->Grid.Node[i+1][j_min+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i][j_min].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-                 buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-           } /* endfor */
-           for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-              // Evaluate SE sub (fine) cell values.
-              for (k = 0 ; k < blocksize; ++ k) {
-   	         if (vector_switch) {
-	            Wcoarse[k+1] = W[(search_directions)*scalar_dim + index(i,j_min,k)];
-	         } else {
-	            Wcoarse[k+1] = x[index(i,j_min,k)];
-	         } /* endif */
-	      } /* endfor */
-              dX = (HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i+1][j_min].X)+
-                    SolnBlk->Grid.Node[i+1][j_min].X+
-                    SolnBlk->Grid.Cell[i][j_min].Xc+
-                    HALF*(SolnBlk->Grid.Node[i+1][j_min].X+SolnBlk->Grid.Node[i+1][j_min+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i][j_min].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-              for ( k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate SW sub (fine) cell values.
-              dX = (SolnBlk->Grid.Node[i][j_min].X+
-                    HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i+1][j_min].X)+
-                    HALF*(SolnBlk->Grid.Node[i][j_min].X+SolnBlk->Grid.Node[i][j_min+1].X)+
-                    SolnBlk->Grid.Cell[i][j_min].Xc)/FOUR -
-                   SolnBlk->Grid.Cell[i][j_min].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdx[i][j_min])*dX.x +
-                      (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-           } /* endfor */
-        } /* endif */
-     } /* endif */
-
-
-    /******************************* CASE #5 ***************************************/
-  } else { // East or west boundary.
-     // Four different orderings to consider depending on the value of i_inc & j_inc.
-     if (j_inc > 0) {
-        if (i_inc > 0) {
-           for ( j = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-              // Perform limited linear least squares reconstruction in cell (i_min, j).
-              SubcellReconstruction(i_min, j, LIMITER);
-              // Evaluate SW sub (fine) cell values.
-              for (k = 0 ; k < blocksize; ++ k) {
-   	         if (vector_switch) {
-	            Wcoarse[k+1] = W[(search_directions)*scalar_dim + index(i_min,j,k)];
-	         } else {
-	            Wcoarse[k+1] = x[index(i_min,j,k)];
-	         } /* endif */
-	      } /* endfor */
-              dX = (SolnBlk->Grid.Node[i_min][j].X+
-                    HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min+1][j].X)+
-                    HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min][j+1].X)+
-                    SolnBlk->Grid.Cell[i_min][j].Xc)/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate SE sub (fine) cell values.
-              dX = (HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min+1][j].X)+
-                    SolnBlk->Grid.Node[i_min+1][j].X+
-                    SolnBlk->Grid.Cell[i_min][j].Xc+
-                    HALF*(SolnBlk->Grid.Node[i_min+1][j].X+SolnBlk->Grid.Node[i_min+1][j+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate NW sub (fine) cell values.
-              dX = (HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min][j+1].X)+
-                    SolnBlk->Grid.Cell[i_min][j].Xc+
-                    SolnBlk->Grid.Node[i_min][j+1].X+
-                    HALF*(SolnBlk->Grid.Node[i_min][j+1].X+SolnBlk->Grid.Node[i_min+1][j+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-                 buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate NE sub (fine) cell values.
-              dX = (SolnBlk->Grid.Cell[i_min][j].Xc+
-                    HALF*(SolnBlk->Grid.Node[i_min+1][j].X+SolnBlk->Grid.Node[i_min+1][j+1].X)+
-                    HALF*(SolnBlk->Grid.Node[i_min][j+1].X+SolnBlk->Grid.Node[i_min+1][j+1].X)+
-                    SolnBlk->Grid.Node[i_min+1][j+1].X)/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-                 buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-           } /* endfor */
-	   /******************************* CASE #6 ***************************************/
-        } else {
-           for ( j = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-              // Perform limited linear least squares reconstruction in cell (i_min, j).
-              SubcellReconstruction(i_min, j, LIMITER);
-              // Evaluate SE sub (fine) cell values.
-              for (k = 0 ; k < blocksize; ++ k) {
-   	         if (vector_switch) {
-	            Wcoarse[k+1] = W[(search_directions)*scalar_dim + index(i_min,j,k)];
-	         } else {
-	            Wcoarse[k+1] = x[index(i_min,j,k)];
-	         } /* endif */
-	      } /* endfor */
-              dX = (HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min+1][j].X)+
-                    SolnBlk->Grid.Node[i_min+1][j].X+
-                    SolnBlk->Grid.Cell[i_min][j].Xc+
-                    HALF*(SolnBlk->Grid.Node[i_min+1][j].X+SolnBlk->Grid.Node[i_min+1][j+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate SW sub (fine) cell values.
-              dX = (SolnBlk->Grid.Node[i_min][j].X+
-                    HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min+1][j].X)+
-                    HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min][j+1].X)+
-                    SolnBlk->Grid.Cell[i_min][j].Xc)/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate NE sub (fine) cell values.
-              dX = (SolnBlk->Grid.Cell[i_min][j].Xc+
-                    HALF*(SolnBlk->Grid.Node[i_min+1][j].X+SolnBlk->Grid.Node[i_min+1][j+1].X)+
-                    HALF*(SolnBlk->Grid.Node[i_min][j+1].X+SolnBlk->Grid.Node[i_min+1][j+1].X)+
-                    SolnBlk->Grid.Node[i_min+1][j+1].X)/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-                 buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate NW sub (fine) cell values.
-              dX = (HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min][j+1].X)+
-                    SolnBlk->Grid.Cell[i_min][j].Xc+
-                    SolnBlk->Grid.Node[i_min][j+1].X+
-                    HALF*(SolnBlk->Grid.Node[i_min][j+1].X+SolnBlk->Grid.Node[i_min+1][j+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-                 buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-           } /* endfor */
-        } /* endif */	
-	/******************************* CASE #7 ***************************************/
-     } else {
-        if (i_inc > 0) {
-           for ( j = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-              // Perform limited linear least squares reconstruction in cell (i_min, j).
-              SubcellReconstruction(i_min, j, LIMITER);
-              // Evaluate NW sub (fine) cell values.
-              for (k = 0 ; k < blocksize; ++ k) {
-   	         if (vector_switch) {
-	            Wcoarse[k+1] = W[(search_directions)*scalar_dim + index(i_min,j,k)];
-	         } else {
-	            Wcoarse[k+1] = x[index(i_min,j,k)];
-	         } /* endif */
-	      } /* endfor */
-              dX = (HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min][j+1].X)+
-                    SolnBlk->Grid.Cell[i_min][j].Xc+
-                    SolnBlk->Grid.Node[i_min][j+1].X+
-                    HALF*(SolnBlk->Grid.Node[i_min][j+1].X+SolnBlk->Grid.Node[i_min+1][j+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-                 buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate NE sub (fine) cell values.
-              dX = (SolnBlk->Grid.Cell[i_min][j].Xc+
-                    HALF*(SolnBlk->Grid.Node[i_min+1][j].X+SolnBlk->Grid.Node[i_min+1][j+1].X)+
-                    HALF*(SolnBlk->Grid.Node[i_min][j+1].X+SolnBlk->Grid.Node[i_min+1][j+1].X)+
-                    SolnBlk->Grid.Node[i_min+1][j+1].X)/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-                 buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate SW sub (fine) cell values.
-              dX = (SolnBlk->Grid.Node[i_min][j].X+
-                    HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min+1][j].X)+
-                    HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min][j+1].X)+
-                    SolnBlk->Grid.Cell[i_min][j].Xc)/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate SE sub (fine) cell values.
-              dX = (HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min+1][j].X)+
-                    SolnBlk->Grid.Node[i_min+1][j].X+
-                    SolnBlk->Grid.Cell[i_min][j].Xc+
-                    HALF*(SolnBlk->Grid.Node[i_min+1][j].X+SolnBlk->Grid.Node[i_min+1][j+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-           } /* endfor */
-
-	   /******************************* CASE #8 ***************************************/
-        } else {
-           for ( j = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-              // Perform limited linear least squares reconstruction in cell (i_min, j).
-              SubcellReconstruction(i_min, j, LIMITER);
-              // Evaluate NE sub (fine) cell values.
-              for (k = 0 ; k < blocksize; ++ k) {
-   	         if (vector_switch) {
-	            Wcoarse[k+1] = W[(search_directions)*scalar_dim + index(i_min,j,k)];
-	         } else {
-	            Wcoarse[k+1] = x[index(i_min,j,k)];
-	         } /* endif */
-	      } /* endfor */
-              dX = (SolnBlk->Grid.Cell[i_min][j].Xc+
-                    HALF*(SolnBlk->Grid.Node[i_min+1][j].X+SolnBlk->Grid.Node[i_min+1][j+1].X)+
-                    HALF*(SolnBlk->Grid.Node[i_min][j+1].X+SolnBlk->Grid.Node[i_min+1][j+1].X)+
-                    SolnBlk->Grid.Node[i_min+1][j+1].X)/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-                 buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate NW sub (fine) cell values.
-              dX = (HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min][j+1].X)+
-                    SolnBlk->Grid.Cell[i_min][j].Xc+
-                    SolnBlk->Grid.Node[i_min][j+1].X+
-                    HALF*(SolnBlk->Grid.Node[i_min][j+1].X+SolnBlk->Grid.Node[i_min+1][j+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-                 buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate SE sub (fine) cell values.
-              dX = (HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min+1][j].X)+
-                    SolnBlk->Grid.Node[i_min+1][j].X+
-                    SolnBlk->Grid.Cell[i_min][j].Xc+
-                    HALF*(SolnBlk->Grid.Node[i_min+1][j].X+SolnBlk->Grid.Node[i_min+1][j+1].X))/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-              // Evaluate SW sub (fine) cell values.
-              dX = (SolnBlk->Grid.Node[i_min][j].X+
-                    HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min+1][j].X)+
-                    HALF*(SolnBlk->Grid.Node[i_min][j].X+SolnBlk->Grid.Node[i_min][j+1].X)+
-                    SolnBlk->Grid.Cell[i_min][j].Xc)/FOUR -
-                   SolnBlk->Grid.Cell[i_min][j].Xc;
-              Wfine = Wcoarse +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdx[i_min][j])*dX.x +
-                      (SolnBlk->phi[i_min][j]^SolnBlk->dWdy[i_min][j])*dX.y;
-              for (k = 0 ; k < blocksize; ++ k) {
-  	         buffer_count = buffer_count + 1;
-                 if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Wfine[k+1];
-              } /* endfor */
-           } /* endfor */
-        } /* endif */
-     } /* endif */
-  } /* endif */
-  return(0);
-
-}
-
-/*******************************************************************************
- * GMRES_Block::UnloadReceiveBuffer -- Unloads receive message buffer.         *
- *******************************************************************************/
-template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
-inline int GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-UnloadReceiveBuffer(double *buffer,
-		    int &buffer_count,
-		    const int buffer_size,
-		    const int i_min, 
-		    const int i_max,
-		    const int i_inc,
-		    const int j_min, 
-		    const int j_max,
-		    const int j_inc) {
-  int i, j, k;
-  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-        for ( k = 0 ; k < blocksize; ++ k) {
-	  buffer_count++;
-           if (buffer_count >= buffer_size) return(1);
-	   if (vector_switch) {
-	     W[(search_directions)*scalar_dim + index(i,j,k)] = buffer[buffer_count];  
-	   } else {
-	     x[index(i,j,k)] = buffer[buffer_count];
-	   }
-        } 
-     } 
-  } 
-  return(0);
-}
-
-/*******************************************************************************
- * GMRES_Block::UnloadReceiveBuffer_F2C -- Unloads receive message             *
- *                                         buffer for fine to coarse           *
- *                                         block message passing.              *
- *******************************************************************************/
-template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
-inline int GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-UnloadReceiveBuffer_F2C(double *buffer,
-			int &buffer_count,
-			const int buffer_size,
-			const int i_min, 
-			const int i_max,
-			const int i_inc,
-			const int j_min, 
-			const int j_max,
-			const int j_inc) {
-
-  for (int j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-     for (int i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-        for (int k = 0 ; k < blocksize; ++ k) {
-	  buffer_count++;
-           if (buffer_count >= buffer_size) return(1);
-	   if (vector_switch) {
-	      W[(search_directions)*scalar_dim + index(i,j,k)] = buffer[buffer_count];
-	   } else {
-	      x[index(i,j,k)] = buffer[buffer_count];
-	   } 
-        } 
-     } 
-  } 
-
-  return(0);
-}
-
-/*******************************************************************************
- * GMRES_Block::UnloadReceiveBuffer_C2F -- Unloads receive message             *
- *                                         buffer for coarse to fine           *
- *                                         block message passing.              *
- *******************************************************************************/
-template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
-inline int GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-UnloadReceiveBuffer_C2F(double *buffer,
-			int &buffer_count,
-			const int buffer_size,
-			const int i_min, 
-			const int i_max,
-			const int i_inc,
-			const int j_min, 
-			const int j_max,
-			const int j_inc) {
-
-  for (int j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-     for (int i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-        for (int k = 0 ; k < blocksize; ++ k) {
-	  buffer_count++;
-	  if (buffer_count >= buffer_size) return(1);
-	  if (vector_switch) {
-	    W[(search_directions)*scalar_dim + index(i,j,k)] = buffer[buffer_count];
-	  } else {
-	    x[index(i,j,k)] = buffer[buffer_count];
-	  }	  
-        } 
-     } 
-  }
-
-  return(0);
-}
-
-/**************************************************************************
- * GMRES_Block::SubcellReconstruction --                                  *
- *              Performs the subcell reconstruction of solution state     *
- *              within a given cell (i,j) of the computational mesh for   *
- *              the specified quadrilateral solution block.               *
- **************************************************************************/
-template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
-inline void GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-SubcellReconstruction(const int i, 
-		      const int j,
-		      const int Limiter) {
-  
-  int n, n2, n_pts, i_index[8], j_index[8], k;
-  double u0, u0Min, u0Max, uQuad[4], phi_n;
-  double DxDx_ave, DxDy_ave, DyDy_ave;
-  Vector2D dX;
-  SOLN_VAR_TYPE U0, DU, DUDx_ave, DUDy_ave, W_VACUUM;
-  W_VACUUM.Vacuum();
-  
-  /* Carry out the limited solution reconstruction in
-     each cell of the computational mesh. */
-
-//   if (i == ICl-Nghost || i == ICu+Nghost ||
-//       j == JCl-Nghost || j == JCu+Nghost) {
-//     n_pts = 0;
-//   } else if ((i == ICl-Nghost+1) && 
-// 	     (Grid.BCtypeW[j] != BC_NONE)) {
-//     if (j == JCl-Nghost+1 || j == JCu+Nghost-1) {
-//       n_pts = 0;
-//     } else if (SolnBlk->Grid.BCtypeW[j] == BC_PERIODIC ||
-//                  SolnBlk->Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-//                  SolnBlk->Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-//                  SolnBlk->Grid.BCtypeW[j] == BC_CHARACTERISTIC) {
-//          if (j == JCl) {
-//             n_pts = 5;
-//             i_index[0] = i-1; j_index[0] = j  ;
-//             i_index[1] = i+1; j_index[1] = j  ;
-//             i_index[2] = i-1; j_index[2] = j+1;
-//             i_index[3] = i  ; j_index[3] = j+1;
-//             i_index[4] = i+1; j_index[4] = j+1;
-//          } else if (j == JCu) {
-//             n_pts = 5;
-//             i_index[0] = i-1; j_index[0] = j-1;
-//             i_index[1] = i  ; j_index[1] = j-1;
-//             i_index[2] = i+1; j_index[2] = j-1;
-//             i_index[3] = i-1; j_index[3] = j  ;
-//             i_index[4] = i+1; j_index[4] = j  ;
-//          } else {
-//             n_pts = 8;
-//             i_index[0] = i-1; j_index[0] = j-1;
-//             i_index[1] = i  ; j_index[1] = j-1;
-//             i_index[2] = i+1; j_index[2] = j-1;
-//             i_index[3] = i-1; j_index[3] = j  ;
-//             i_index[4] = i+1; j_index[4] = j  ;
-//             i_index[5] = i-1; j_index[5] = j+1;
-//             i_index[6] = i  ; j_index[6] = j+1;
-//             i_index[7] = i+1; j_index[7] = j+1;
-//          } /* endif */
-//       } else {
-//          if (j == JCl) {
-//             n_pts = 3;
-//             i_index[0] = i+1; j_index[0] = j  ;
-//             i_index[1] = i  ; j_index[1] = j+1;
-//             i_index[2] = i+1; j_index[2] = j+1;
-//          } else if (j == JCu) {
-//             n_pts = 3;
-//             i_index[0] = i  ; j_index[0] = j-1;
-//             i_index[1] = i+1; j_index[1] = j-1;
-//             i_index[2] = i+1; j_index[2] = j  ;
-//          } else {
-//             n_pts = 5;
-//             i_index[0] = i  ; j_index[0] = j-1;
-//             i_index[1] = i+1; j_index[1] = j-1;
-//             i_index[2] = i+1; j_index[2] = j  ;
-//             i_index[3] = i  ; j_index[3] = j+1;
-//             i_index[4] = i+1; j_index[4] = j+1;
-//          } /* endif */
-//       } /* endif */           
-//     } else if ((i == ICu+Nghost-1) && 
-//                (SolnBlk->Grid.BCtypeE[j] != BC_NONE)) {
-//       if (j == JCl-Nghost+1 || j == JCu+Nghost-1) {
-//          n_pts = 0;
-//       } else if (SolnBlk->Grid.BCtypeE[j] == BC_PERIODIC ||
-//                  SolnBlk->Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-//                  SolnBlk->Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-//                  SolnBlk->Grid.BCtypeE[j] == BC_CHARACTERISTIC) {
-//          if (j == JCl) {
-//             n_pts = 5;
-//             i_index[0] = i-1; j_index[0] = j  ;
-//             i_index[1] = i+1; j_index[1] = j  ;
-//             i_index[2] = i-1; j_index[2] = j+1;
-//             i_index[3] = i  ; j_index[3] = j+1;
-//             i_index[4] = i+1; j_index[4] = j+1;
-//          } else if (j == JCu) {
-//             n_pts = 5;
-//             i_index[0] = i-1; j_index[0] = j-1;
-//             i_index[1] = i  ; j_index[1] = j-1;
-//             i_index[2] = i+1; j_index[2] = j-1;
-//             i_index[3] = i-1; j_index[3] = j  ;
-//             i_index[4] = i+1; j_index[4] = j  ;
-//          } else {
-//             n_pts = 8;
-//             i_index[0] = i-1; j_index[0] = j-1;
-//             i_index[1] = i  ; j_index[1] = j-1;
-//             i_index[2] = i+1; j_index[2] = j-1;
-//             i_index[3] = i-1; j_index[3] = j  ;
-//             i_index[4] = i+1; j_index[4] = j  ;
-//             i_index[5] = i-1; j_index[5] = j+1;
-//             i_index[6] = i  ; j_index[6] = j+1;
-//             i_index[7] = i+1; j_index[7] = j+1;
-//          } /* endif */
-//       } else {
-//          if (j == JCl) {
-//             n_pts = 3;
-//             i_index[0] = i-1; j_index[0] = j  ;
-//             i_index[1] = i-1; j_index[1] = j+1;
-//             i_index[2] = i  ; j_index[2] = j+1;
-//          } else if (j == JCu) {
-//             n_pts = 3;
-//             i_index[0] = i-1; j_index[0] = j-1;
-//             i_index[1] = i  ; j_index[1] = j-1;
-//             i_index[2] = i-1; j_index[2] = j  ;
-//          } else {
-//             n_pts = 5;
-//             i_index[0] = i-1; j_index[0] = j-1;
-//             i_index[1] = i  ; j_index[1] = j-1;
-//             i_index[2] = i-1; j_index[2] = j  ;
-//             i_index[3] = i-1; j_index[3] = j+1;
-//             i_index[4] = i  ; j_index[4] = j+1;
-//          } /* endif */
-//       } /* endif */
-//     } else if ((j == JCl-Nghost+1) && 
-//                (SolnBlk->Grid.BCtypeS[i] != BC_NONE)) {
-//       if (i == ICl-Nghost+1 || i == ICu+Nghost-1) {
-//          n_pts = 0;
-//       } else if (SolnBlk->Grid.BCtypeS[i] == BC_PERIODIC ||
-//                  SolnBlk->Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-//                  SolnBlk->Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-//                  SolnBlk->Grid.BCtypeS[i] == BC_CHARACTERISTIC) {
-//          if (i == ICl) {
-//             n_pts = 5;
-//             i_index[0] = i  ; j_index[0] = j-1;
-//             i_index[1] = i+1; j_index[1] = j-1;
-//             i_index[2] = i+1; j_index[2] = j  ;
-//             i_index[3] = i  ; j_index[3] = j+1;
-//             i_index[4] = i+1; j_index[4] = j+1;
-//          } else if (i == ICu) {
-//             n_pts = 5;
-//             i_index[0] = i-1; j_index[0] = j-1;
-//             i_index[1] = i  ; j_index[1] = j-1;
-//             i_index[2] = i-1; j_index[2] = j  ;
-//             i_index[3] = i-1; j_index[3] = j+1;
-//             i_index[4] = i  ; j_index[4] = j+1;
-//          } else {
-//             n_pts = 8;
-//             i_index[0] = i-1; j_index[0] = j-1;
-//             i_index[1] = i  ; j_index[1] = j-1;
-//             i_index[2] = i+1; j_index[2] = j-1;
-//             i_index[3] = i-1; j_index[3] = j  ;
-//             i_index[4] = i+1; j_index[4] = j  ;
-//             i_index[5] = i-1; j_index[5] = j+1;
-//             i_index[6] = i  ; j_index[6] = j+1;
-//             i_index[7] = i+1; j_index[7] = j+1;
-//          } /* endif */
-//       } else {
-//          if (i == ICl) {
-//             n_pts = 3;
-//             i_index[0] = i+1; j_index[0] = j  ;
-//             i_index[1] = i  ; j_index[1] = j+1;
-//             i_index[2] = i+1; j_index[2] = j+1;
-//          } else if (i == ICu) {
-//             n_pts = 3;
-//             i_index[0] = i-1; j_index[0] = j  ;
-//             i_index[1] = i-1; j_index[1] = j+1;
-//             i_index[2] = i  ; j_index[2] = j+1;
-//          } else {
-//             n_pts = 5;
-//             i_index[0] = i-1; j_index[0] = j  ;
-//             i_index[1] = i+1; j_index[1] = j  ;
-//             i_index[2] = i-1; j_index[2] = j+1;
-//             i_index[3] = i  ; j_index[3] = j+1;
-//             i_index[4] = i+1; j_index[4] = j+1;
-//          } /* endif */
-//       } /* endif */
-//     } else if ((j == JCu+Nghost-1) && 
-//                (SolnBlk->Grid.BCtypeN[i] != BC_NONE)) {
-//       if (i == ICl-Nghost+1 || i == ICu+Nghost-1) {
-//          n_pts = 0;
-//       } else if (SolnBlk->Grid.BCtypeN[i] == BC_PERIODIC ||
-//                  SolnBlk->Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-//                  SolnBlk->Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-//                  SolnBlk->Grid.BCtypeN[i] == BC_CHARACTERISTIC) {
-//          if (i == ICl) {
-//             n_pts = 5;
-//             i_index[0] = i  ; j_index[0] = j-1;
-//             i_index[1] = i+1; j_index[1] = j-1;
-//             i_index[2] = i+1; j_index[2] = j  ;
-//             i_index[3] = i  ; j_index[3] = j+1;
-//             i_index[4] = i+1; j_index[4] = j+1;
-//          } else if (i == ICu) {
-//             n_pts = 5;
-//             i_index[0] = i-1; j_index[0] = j-1;
-//             i_index[1] = i  ; j_index[1] = j-1;
-//             i_index[2] = i-1; j_index[2] = j  ;
-//             i_index[3] = i-1; j_index[3] = j+1;
-//             i_index[4] = i  ; j_index[4] = j+1;
-//          } else {
-//             n_pts = 8;
-//             i_index[0] = i-1; j_index[0] = j-1;
-//             i_index[1] = i  ; j_index[1] = j-1;
-//             i_index[2] = i+1; j_index[2] = j-1;
-//             i_index[3] = i-1; j_index[3] = j  ;
-//             i_index[4] = i+1; j_index[4] = j  ;
-//             i_index[5] = i-1; j_index[5] = j+1;
-//             i_index[6] = i  ; j_index[6] = j+1;
-//             i_index[7] = i+1; j_index[7] = j+1;
-//          } /* endif */
-//       } else {
-//          if (i == ICl) {
-//             n_pts = 3;
-//             i_index[0] = i  ; j_index[0] = j-1;
-//             i_index[1] = i+1; j_index[1] = j-1;
-//             i_index[2] = i+1; j_index[2] = j  ;
-//          } else if (i == ICu) {
-//             n_pts = 3;
-//             i_index[0] = i-1; j_index[0] = j-1;
-//             i_index[1] = i  ; j_index[1] = j-1;
-//             i_index[2] = i-1; j_index[2] = j  ;
-//          } else {
-//             n_pts = 5;
-//             i_index[0] = i-1; j_index[0] = j-1;
-//             i_index[1] = i  ; j_index[1] = j-1;
-//             i_index[2] = i+1; j_index[2] = j-1;
-//             i_index[3] = i-1; j_index[3] = j  ;
-//             i_index[4] = i+1; j_index[4] = j  ;
-//          } /* endif */
-//       } /* endif */
-
-  //FOR VISCOUS -> CHANGED TO USE ALL 8
-  if (i == ICl-Nghost || i == ICu+Nghost ||
-      j == JCl-Nghost || j == JCu+Nghost) {
-    n_pts = 0;
-  } else {
-    n_pts = 8;
-    i_index[0] = i-1; j_index[0] = j-1;
-    i_index[1] = i  ; j_index[1] = j-1;
-    i_index[2] = i+1; j_index[2] = j-1;
-    i_index[3] = i-1; j_index[3] = j  ;
-    i_index[4] = i+1; j_index[4] = j  ;
-    i_index[5] = i-1; j_index[5] = j+1;
-    i_index[6] = i  ; j_index[6] = j+1;
-    i_index[7] = i+1; j_index[7] = j+1;
-  } /* endif */
-
-  if (n_pts > 0) {
-      DUDx_ave = W_VACUUM;
-      DUDy_ave = W_VACUUM;
-      DxDx_ave = ZERO;
-      DxDy_ave = ZERO;
-      DyDy_ave = ZERO;
-
-      for ( k = 0 ; k < blocksize; ++ k) {
-	if (vector_switch) {
-	  U0[k+1] = W[(search_directions)*scalar_dim + index(i,j,k)];
-	} else {
-	  U0[k+1] = x[index(i,j,k)];
-	}
-      } 
-
-      for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
-	dX = SolnBlk->Grid.Cell[ i_index[n2] ][ j_index[n2] ].Xc - SolnBlk->Grid.Cell[i][j].Xc;
-	for ( k = 0 ; k < blocksize; ++ k) {
-	  if (vector_switch) {
-	    DU[k+1] = W[(search_directions)*scalar_dim + index(i_index[n2] , j_index[n2] , k)] -  U0[k+1];
-	  } else {
-	    DU[k+1] = x[index( i_index[n2] , j_index[n2] , k)] -  U0[k+1];
-	  } /* endif */
-	} /* endfor */
-	
-	DUDx_ave += DU*dX.x;
-	DUDy_ave += DU*dX.y;
-	DxDx_ave += dX.x*dX.x;
-	DxDy_ave += dX.x*dX.y;
-	DyDy_ave += dX.y*dX.y;
-      } /* endfor */
-  					    
-      DUDx_ave = DUDx_ave/double(n_pts);
-      DUDy_ave = DUDy_ave/double(n_pts);
-      DxDx_ave = DxDx_ave/double(n_pts);
-      DxDy_ave = DxDy_ave/double(n_pts);
-      DyDy_ave = DyDy_ave/double(n_pts);
-
-      SolnBlk->dWdx[i][j] = (DUDx_ave*DyDy_ave-DUDy_ave*DxDy_ave)/
-                            (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-      SolnBlk->dWdy[i][j] = (DUDy_ave*DxDx_ave-DUDx_ave*DxDy_ave)/
-                            (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-  
-      // Calculate slope limiters. 
-      if (!SolnBlk->Freeze_Limiter) {
-         for ( n = 1 ; n <= blocksize ; ++n ) {
-	    u0 = U0[n];
-            u0Min = U0[n];
-            u0Max = u0Min;
-            for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
-               if (vector_switch) {
-                  u0Min = min(u0Min, W[(search_directions)*scalar_dim + index(i_index[n2] , j_index[n2] ,n-1)]);
-                  u0Max = max(u0Max, W[(search_directions)*scalar_dim + index(i_index[n2] , j_index[n2] ,n-1)]);
-               } else {
-                  u0Min = min(u0Min, x[index(i_index[n2] , j_index[n2] , n-1)]);
-                  u0Max = max(u0Max, x[index(i_index[n2] , j_index[n2] , n-1)]);
-               } /* endif */
-            } /* endfor */
-    
-            dX = SolnBlk->Grid.xfaceE(i, j)-SolnBlk->Grid.Cell[i][j].Xc;
-            uQuad[0] = u0 + 
-                       SolnBlk->dWdx[i][j][n]*dX.x +
-                       SolnBlk->dWdy[i][j][n]*dX.y ;
-            dX = SolnBlk->Grid.xfaceW(i, j)-SolnBlk->Grid.Cell[i][j].Xc;
-            uQuad[1] = u0 + 
-                       SolnBlk->dWdx[i][j][n]*dX.x +
-                       SolnBlk->dWdy[i][j][n]*dX.y ;
-            dX = SolnBlk->Grid.xfaceN(i, j)-SolnBlk->Grid.Cell[i][j].Xc;
-            uQuad[2] = u0 + 
-                       SolnBlk->dWdx[i][j][n]*dX.x +
-                       SolnBlk->dWdy[i][j][n]*dX.y ;
-            dX = SolnBlk->Grid.xfaceS(i, j)-SolnBlk->Grid.Cell[i][j].Xc;
-            uQuad[3] = u0 + 
-                       SolnBlk->dWdx[i][j][n]*dX.x +
-                       SolnBlk->dWdy[i][j][n]*dX.y ;
-    
-            switch(Limiter) {
-              case LIMITER_ONE :
-                phi_n = ONE;
-                break;
-              case LIMITER_ZERO :
-                phi_n = ZERO;
-                break;
-              case LIMITER_BARTH_JESPERSEN :
-                phi_n = Limiter_BarthJespersen(uQuad, u0, 
-                                               u0Min, u0Max, 4);
-                break;
-              case LIMITER_VENKATAKRISHNAN :
-                phi_n = Limiter_Venkatakrishnan(uQuad, u0, 
-                                                u0Min, u0Max, 4);
-                break;
-              case LIMITER_VANLEER :
-                phi_n = Limiter_VanLeer(uQuad, u0, 
-                                        u0Min, u0Max, 4);
-                break;
-              case LIMITER_VANALBADA :
-                phi_n = Limiter_VanAlbada(uQuad, u0, 
-                                          u0Min, u0Max, 4);
-                break;
-              default:
-                phi_n = Limiter_BarthJespersen(uQuad, u0, 
-                                               u0Min, u0Max, 4);
-                break;
-            } /* endswitch */
-
-	    SolnBlk->phi[i][j][n] = phi_n;
-
-         } /* endfor */
-      } /* endif */
-  } else {
-      SolnBlk->dWdx[i][j] = W_VACUUM;
-      SolnBlk->dWdy[i][j] = W_VACUUM; 
-      SolnBlk->phi[i][j]  = W_VACUUM;
-  } /* endif */
-
-}
-
-// /*******************************************************************************
-//  * GMRES_Block::LoadSendBuffer_Flux_F2C -- Loads send message buffer for       *
-//  *                                         fine to coarse block message        *
-//  *                                         passing of conservative             *
-//  *                                         solution fluxes.                    *
-//  *******************************************************************************/
-// template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
-// inline int GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-// LoadSendBuffer_Flux_F2C(double *buffer,
-// 			int &buffer_count,
-// 			const int buffer_size,
-// 			const int i_min, 
-// 			const int i_max,
-// 			const int i_inc,
-// 			const int j_min, 
-// 			const int j_max,
-// 			const int j_inc) {
-//   return(0); //SOMETHING MISSING ?????
-// }
-
-// /*******************************************************************************
-//  * GMRES_Block::UnloadReceiveBuffer_Flux_F2C -- Unloads receive message        *
-//  *                                              buffer for fine to coarse      *
-//  *                                              block message passing of       *
-//  *                                              conservative solution fluxes.  *
-//  *******************************************************************************/
-// template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
-// inline int GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-// UnloadReceiveBuffer_Flux_F2C(double *buffer,
-// 			     int &buffer_count,
-// 			     const int buffer_size,
-// 			     const int i_min, 
-// 			     const int i_max,
-// 			     const int i_inc,
-// 			     const int j_min, 
-// 			     const int j_max,
-// 			     const int j_inc) {
-//   return(0);
-// }
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -2134,33 +819,6 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	     default: break;
 	 }
       } 
-      
-      /************************************************************************/
-      /* Set vector switch for message passing or x (solution) instead of W. */
-      for (int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
-	if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED){  
-	  G[Bcount].vector_switch = 0;
-	}
-      }
-      /************************************************************************/
-
-      /************************************************************************/
-      /* MPI barrier to ensure processor synchronization. */
-      CFFC_Barrier_MPI();  
-      
-      /* Send "x" solution information between neighbouring blocks.*/          
-      error_flag = Send_All_Messages(G, 
-				     *List_of_Local_Solution_Blocks,
-				     G[0].NumVar(), 
-				     OFF);
-      if (error_flag) {
-	cout << "\n GMRES2D ERROR: GMRES message passing error on processor "
-	     << List_of_Local_Solution_Blocks->ThisCPU
-	     << ".\n";
-	cout.flush();
-      } 
-      error_flag = CFFC_OR_MPI(error_flag);
-      /************************************************************************/
 
       /**************************************************************************/
       /* Calculate global epsilon based on 2-norm of x. */  
@@ -2177,14 +835,44 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       /******* BEGIN MATRIX-FREE FOR RESTART ************************************/
       /**************************************************************************/
       for (int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
-	if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
-	  
-	  //Calculate R(U+epsilon*(Minv*x(i))) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * W(i)
+	if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {	  
+	  //Calculate R(U+epsilon*x(i)) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * x(i)
 	  G[Bcount].calculate_perturbed_residual_Restart(epsilon);	  
-	  BCs(Soln_ptr[Bcount],*Input_Parameters);
-		
+	}
+      }
+
+
+      /**************************************************************************/
+      /* MPI barrier to ensure processor synchronization. */
+      CFFC_Barrier_MPI();  
+      
+      /* Send solution information between neighbouring blocks.*/
+      /* Passes "U = Uo + epsilon*W"  information in ghost cells */       
+      error_flag = Send_All_Messages_NKS(Soln_ptr, 
+					 *List_of_Local_Solution_Blocks,
+					 Soln_ptr[0].NumVar(), 
+					 OFF,
+					 *Input_Parameters);
+
+      if (error_flag) {
+	cout << "\n GMRES2D ERROR: GMRES message passing error on processor "
+	     << List_of_Local_Solution_Blocks->ThisCPU
+	     << ".\n";
+	cout.flush();
+      } /* endif */
+      error_flag = CFFC_OR_MPI(error_flag);
+      /**************************************************************************/
+    
+      
+      /**************************************************************************/
+      for (int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
+	if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
+	  //Apply BC's to U
+	  BCs(Soln_ptr[Bcount],*Input_Parameters);	
+	  
 	  t0 = clock();
 	  
+	  //Caculate R(U)
 	  error_flag = dUdt_Residual_Evaluation_NKS<SOLN_BLOCK_TYPE,INPUT_TYPE>
 	               (Soln_ptr[Bcount],DTS_ptr[Bcount],*Input_Parameters);
 	  
@@ -2206,12 +894,13 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	cout.flush();
       } 
       error_flag = CFFC_OR_MPI(error_flag);
-      
+      if (error_flag) return (error_flag);
+
       // Apply boundary flux corrections to residual to ensure that method is conservative.
       Apply_Boundary_Flux_Corrections(Soln_ptr, *List_of_Local_Solution_Blocks);
       /**************************************************************************/
 
-			*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
+      *res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
       (*res_nevals)++;
       
       /////////////////////////// 2ND /////////////////////////////////// 
@@ -2220,6 +909,32 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	  if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {	    
 	    //Calculate R(U+epsilon*(Minv*x(i))) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * W(i)
 	    G[Bcount].calculate_perturbed_residual_2nd_Restart(epsilon);	  
+	  }
+	}
+
+	/**************************************************************************/
+	/* MPI barrier to ensure processor synchronization. */
+	CFFC_Barrier_MPI();  
+      
+	/* Send solution information between neighbouring blocks.*/
+	/* Passes "U = Uo + epsilon*W"  information in ghost cells */       
+	error_flag = Send_All_Messages_NKS(Soln_ptr, 
+					   *List_of_Local_Solution_Blocks,
+					   Soln_ptr[0].NumVar(), 
+					   OFF,
+					   *Input_Parameters);
+
+	if (error_flag) {
+	  cout << "\n GMRES2D ERROR: GMRES message passing error on processor "
+	       << List_of_Local_Solution_Blocks->ThisCPU
+	       << ".\n";
+	  cout.flush();
+	} /* endif */
+	error_flag = CFFC_OR_MPI(error_flag);
+	/**************************************************************************/
+	
+	for (int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
+	  if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {	   
 	    BCs(Soln_ptr[Bcount],*Input_Parameters);
 	   
 	    t0 = clock();
@@ -2245,12 +960,13 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	  cout.flush();
 	} 
 	error_flag = CFFC_OR_MPI(error_flag);
-	
+	if (error_flag) return (error_flag);
+
 	// Apply boundary flux corrections to residual to ensure that method is conservative.
 	Apply_Boundary_Flux_Corrections(Soln_ptr, *List_of_Local_Solution_Blocks);
 
 			*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
-      (*res_nevals)++;
+			(*res_nevals)++;
 	/**************************************************************************/
       }
       //////////////////////////////////////////////////////////////////////////
@@ -2315,9 +1031,6 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	  G[Bcount].s[i] = ZERO;  
 	
 	G[Bcount].s[0] = beta;
-	
-	//Set vector switch to pass W 
-	G[Bcount].vector_switch  = 1;  
       } 
     } 
     /**************************************************************************/
@@ -2355,26 +1068,6 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       } 
       /**************************************************************************/
 
-    
-      /**************************************************************************/
-      /* MPI barrier to ensure processor synchronization. */
-      CFFC_Barrier_MPI();  
-      
-      /* Send solution information between neighbouring blocks.*/
-      /* Passes "W = Minv * V(i) = z"  information in ghost cells */       
-      error_flag = Send_All_Messages(G, 
-				     *List_of_Local_Solution_Blocks,
-				     G[0].NumVar(), 
-				     OFF); if (error_flag) {
-	cout << "\n GMRES2D ERROR: GMRES message passing error on processor "
-	     << List_of_Local_Solution_Blocks->ThisCPU
-	     << ".\n";
-	cout.flush();
-      } /* endif */
-      error_flag = CFFC_OR_MPI(error_flag);
-      /**************************************************************************/
-  
-
       /**************************************************************************/
       /* Calculate global epsilon base on 2-norm of z. */
       double total_norm_z = ZERO; 
@@ -2395,14 +1088,45 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       // Calculate perturbed Residual R(U+epsilon*(Minv*V(i)))
       for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) { 
 	if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) { 
- 	  //Calculate R(U+epsilon*(Minv*V(i))) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * W(i)
- 	  G[Bcount].calculate_perturbed_residual(epsilon);
-	  //Apply Regular Soln_ptr BC'S 
-	  BCs(Soln_ptr[Bcount],*Input_Parameters);
 
+	  //Possible correction method for -ve values (Chem2D)
+	  //epsilon = min(epsilon, G[Bcount].check_epsilon(epsilon));
+ 	  
+	  //Calculate R(U+epsilon*(Minv*V(i))) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * W(i)
+ 	  G[Bcount].calculate_perturbed_residual(epsilon);
+	}
+      }
+
+
+      /**************************************************************************/
+      /* MPI barrier to ensure processor synchronization. */
+      CFFC_Barrier_MPI();  
+      
+      /* Send solution information between neighbouring blocks.*/
+      /* Passes "U = Uo + epsilon*W"  information in ghost cells */       
+      error_flag = Send_All_Messages_NKS(Soln_ptr, 
+					 *List_of_Local_Solution_Blocks,
+					 Soln_ptr[0].NumVar(), 
+					 OFF,
+					 *Input_Parameters);
+
+      if (error_flag) {
+	cout << "\n GMRES2D ERROR: GMRES message passing error on processor "
+	     << List_of_Local_Solution_Blocks->ThisCPU<< ".\n";
+	cout.flush();
+      } 
+      error_flag = CFFC_OR_MPI(error_flag);
+      /**************************************************************************/
+           
+      /**************************************************************************/ 
+      for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) { 
+	if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) { 	  
+	  //Apply Regular Soln_ptr BC'S 
+ 	  BCs(Soln_ptr[Bcount],*Input_Parameters);	  
+	  
 	  t0 = clock();
 
-	  //modified to calculate in "overlap" cells as well
+	  //R(U) modified to calculate in "overlap" cells as well
 	  error_flag = dUdt_Residual_Evaluation_NKS<SOLN_BLOCK_TYPE,INPUT_TYPE>
 	               (Soln_ptr[Bcount],DTS_ptr[Bcount],*Input_Parameters);
 
@@ -2410,7 +1134,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	 } 
       }
       /**************************************************************************/
-
+   
       t0 = clock();
     
       /**************************************************************************/
@@ -2423,7 +1147,8 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	     << List_of_Local_Solution_Blocks->ThisCPU << ".\n"; cout.flush();
       } 
       error_flag = CFFC_OR_MPI(error_flag);
-	  
+      if (error_flag) return (error_flag);
+
       // Apply boundary flux corrections to residual to ensure that method is conservative.
       Apply_Boundary_Flux_Corrections(Soln_ptr,*List_of_Local_Solution_Blocks);
 
@@ -2439,7 +1164,33 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) { 
 	  if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) { 
 	    //Calculate R(U+epsilon*(Minv*V(i))) -> Soln_ptr.U =  Soln_ptr.Uo - epsilon * W(i)
-	    G[Bcount].calculate_perturbed_residual_2nd(epsilon);
+	    G[Bcount].calculate_perturbed_residual_2nd(epsilon);  
+	  }
+	}
+
+	/**************************************************************************/
+	/* MPI barrier to ensure processor synchronization. */
+	CFFC_Barrier_MPI();  
+      
+	/* Send solution information between neighbouring blocks.*/
+	/* Passes "U = Uo + epsilon*W"  information in ghost cells */       
+	error_flag = Send_All_Messages_NKS(Soln_ptr, 
+					   *List_of_Local_Solution_Blocks,
+					   Soln_ptr[0].NumVar(), 
+					   OFF,
+					   *Input_Parameters);
+
+	if (error_flag) {
+	  cout << "\n GMRES2D ERROR: GMRES message passing error on processor "
+	       << List_of_Local_Solution_Blocks->ThisCPU
+	       << ".\n";
+	  cout.flush();
+	} /* endif */
+	error_flag = CFFC_OR_MPI(error_flag);
+	/**************************************************************************/
+	
+	for (int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
+	  if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {	 
 	    //Apply Regular Soln_ptr BC'S 
 	    BCs(Soln_ptr[Bcount],*Input_Parameters);
 	    
@@ -2464,7 +1215,8 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	       << List_of_Local_Solution_Blocks->ThisCPU << ".\n"; cout.flush();
 	} 
 	error_flag = CFFC_OR_MPI(error_flag);
-	
+	if (error_flag) return (error_flag);
+
 	// Apply boundary flux corrections to residual to ensure that method is conservative.
 	Apply_Boundary_Flux_Corrections(Soln_ptr,*List_of_Local_Solution_Blocks);
 			*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
@@ -2480,7 +1232,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) { 
 	  G[Bcount].calculate_Matrix_Free(epsilon);	  	  
 	} 
-      }
+      } 
 
       /**************************************************************************/
       /******************* END OF MATRIX-FREE ***********************************/
@@ -2695,8 +1447,9 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	total_norm_b += sqr(G[Bcount].L2_Norm( G[Bcount].b));	
 	for(int i=0; i< blocksize; i++){	
 	  total_norm_eqn_b[i] += sqr(G[Bcount].L2_Norm(i, G[Bcount].b));	
-	  total_norm_eqn_r[i] += sqr(G[Bcount].L2_Norm(i, G[Bcount].V));		  
-	}
+	  total_norm_eqn_r[i] += sqr(G[Bcount].L2_Norm(i, G[Bcount].V));  //V[0]
+	                        	  
+	}                                      
       }
     } 
      
@@ -2761,6 +1514,12 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
   return error_flag;
 
 } /* End of GMRES_RightPrecon_MatrixFree::solve. */ 
+
+
+/****************************************************************************
+ * GMRES_RightPrecon_MatrixFree::Output_GMRES_vars_Tecplot                  *
+ *           Outputs GMRES Vars such as W, V, x, etc...                     *
+ ****************************************************************************/
 
 template <typename SOLN_VAR_TYPE,typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 int GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
