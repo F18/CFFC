@@ -14,7 +14,7 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 				    HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
   
     SOLN_cSTATE **** (Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::*dUdt_ptr) = &Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::dUdt;
-    LES_Filter<SOLN_pSTATE,SOLN_cSTATE> Explicit_Filter(Data,Solution_Data,FILTER_TYPE_VASILYEV);
+    LES_Filter<SOLN_pSTATE,SOLN_cSTATE> Explicit_Filter(Data,Solution_Data);
 
   int error_flag(0);
    
@@ -222,20 +222,18 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	// 6. Smooth the solution residual using implicit residual smoothing. */
 
 	/*******************************************************************/
-          
+    // 7. Explicit filtering of the solution residual.      
 
-          //if (i_stage == Solution_Data.Input.N_Stage) {
-              Solution_Data.Local_Solution_Blocks.BCs_dUdt(Solution_Data.Input,0);
-              
-              error_flag = Send_Messages_Residual<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >
-              (Solution_Data.Local_Solution_Blocks.Soln_Blks,
-               Data.Local_Adaptive_Block_List,0);
-              
-              // test unity filter -->  turn off Explicit_Filter.filter(dUdt_ptr,0);
+    if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT) {
+        Solution_Data.Local_Solution_Blocks.BCs_dUdt(Solution_Data.Input,0);
+        error_flag = Send_Messages_Residual<Hexa_Block<SOLN_pSTATE,SOLN_cSTATE> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+                                                                                  Data.Local_Adaptive_Block_List,
+                                                                                  0);
+        Explicit_Filter.filter(dUdt_ptr,0);
+    }
 
-          //}      
-          
-	// 7. Update solution for stage.
+    /*******************************************************************/
+	// 8. Update solution for stage.
 	error_flag = 
            Solution_Data.Local_Solution_Blocks.Update_Solution_Multistage_Explicit(Solution_Data.Input, 
                                                                                            i_stage);

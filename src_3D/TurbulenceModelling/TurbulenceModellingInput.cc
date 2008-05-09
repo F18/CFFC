@@ -137,15 +137,9 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
       strcpy(filter_type, value_string.c_str());
       if (strcmp(filter_type, "Implicit") == 0) {
           i_filter_type = FILTER_TYPE_IMPLICIT;
-      } else {
-          i_command = INVALID_INPUT_VALUE;
-      } /* endif */
-      if (strcmp(filter_type, "Haselbacher") == 0) {
+      } else if (strcmp(filter_type, "Haselbacher") == 0) {
           i_filter_type = FILTER_TYPE_HASELBACHER;
-      } else {
-          i_command = INVALID_INPUT_VALUE;
-      } /* endif */
-      if (strcmp(filter_type, "Vasilyev") == 0) {
+      } else if (strcmp(filter_type, "Vasilyev") == 0) {
           i_filter_type = FILTER_TYPE_VASILYEV;
       } else {
           i_command = INVALID_INPUT_VALUE;

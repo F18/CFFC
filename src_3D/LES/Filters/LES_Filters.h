@@ -124,7 +124,7 @@ public:
             case FILTER_TYPE_HASELBACHER:
                 filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;
                 break;
-            case FILTER_TYPE_HASELBACHER:
+            case FILTER_TYPE_VASILYEV:
                 filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>;
                 break;
         }        

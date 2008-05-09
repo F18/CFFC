@@ -259,38 +259,38 @@ template<>
 int Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::
 ICs_Specializations(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> &IPs){
     
-    if (CFFC_Primary_MPI_Processor()) {
-        cout << endl;
-        cout << " ------------------------------------------------" << endl;
-        cout << "    Explicitly filtering the initial condition   " << endl;
-        cout << " ------------------------------------------------" << endl;        
-    }
-    LES3D_Polytropic_cState *** (Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::*U_ptr) = &Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::U;
-    double (LES3D_Polytropic_pState::*p_ptr) = p_ptr = &LES3D_Polytropic_pState::p; 
-    LES_Filter<LES3D_Polytropic_pState,LES3D_Polytropic_cState> Explicit_Filter(*this,IPs,FILTER_TYPE_VASILYEV);
-    // turn off filter for test Explicit_Filter.filter(U_ptr);
-    for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-        for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-            for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-                W[i][j][k] = U[i][j][k].W();
-            }	  
+    if (IPs.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT) {
+        if (CFFC_Primary_MPI_Processor()) {
+            cout << endl;
+            cout << " ------------------------------------------------" << endl;
+            cout << "    Explicitly filtering the initial condition   " << endl;
+            cout << " ------------------------------------------------" << endl;        
         }
-    }
-    if (CFFC_Primary_MPI_Processor()) {
-        Explicit_Filter.transfer_function();
-    }
-   // cout << " now filtering p " << endl;
-//    Explicit_Filter.Set_Filter_Variables(p_ptr);
-//    Explicit_Filter.filter();
-//    for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-//        for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-//            for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-//                U[i][j][k] = W[i][j][k].U();
-//            }	  
-//        }
-//    }
-    if (CFFC_Primary_MPI_Processor()) {
-        cout << " Finished explicit filtering " << endl;
+        LES3D_Polytropic_cState *** (Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::*U_ptr) = &Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::U;
+        double (LES3D_Polytropic_pState::*p_ptr) = p_ptr = &LES3D_Polytropic_pState::p; 
+        LES_Filter<LES3D_Polytropic_pState,LES3D_Polytropic_cState> Explicit_Filter(*this,IPs);
+        Explicit_Filter.filter(U_ptr);
+        for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+            for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+                for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                    W[i][j][k] = U[i][j][k].W();
+                }	  
+            }
+        }
+        if (CFFC_Primary_MPI_Processor()) {
+            Explicit_Filter.transfer_function();
+        }
+        Explicit_Filter.filter(p_ptr);
+        for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+            for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+                for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                    U[i][j][k] = W[i][j][k].U();
+                }	  
+            }
+        }
+        if (CFFC_Primary_MPI_Processor()) {
+            cout << "    Finished explicit filtering " << endl;
+        }
     }
     
     Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
@@ -420,6 +420,8 @@ template<>
 double Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::
 CFL(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> &IPs){
     
+    double dt_acoustic(MILLION), dt_viscous(MILLION);
+    
     double dtMin, d_i, d_j, d_k, v_i, v_j, v_k, a, dt_vis, nu;
     double mr, aa_i, aa_j, aa_k;
     double length_n, delta_n, dTime;
@@ -453,7 +455,7 @@ CFL(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> &IPs){
                                    IPs.Grid_IP.Box_Height);  
                     delta_n = min(min(fabs(d_i),fabs(d_j)),fabs(d_k));
                     
-                    //no preconditioning
+                    /* ---------- Acoustic limitation ----------- */
                     if(IPs.Preconditioning == 0){
                         a =  W[i][j][k].a();
                         dt[i][j][k] = min(min(d_i/(a+fabs(v_i)), d_j/(a+fabs(v_j))),
@@ -461,13 +463,11 @@ CFL(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> &IPs){
                         
                     }  /* endif */
                     
-                    if (Flow_Type != FLOWTYPE_INVISCID) {  
-                        nu = W[i][j][k].nu();
-                        nu += W[i][j][k].nu_t(dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k], Grid.Cell[i][j][k].V);
-                        dt_vis = min(min((d_i*d_i)/nu, (d_j*d_j)/nu), (d_k*d_k)/nu)/THREE; 
-                        dt[i][j][k]  = min(dt_vis, dt[i][j][k]);
-                    } /* endif */       
-                    
+                    /* ---------- Viscous limitation ------------ */
+                    nu  = W[i][j][k].nu();
+                    nu += W[i][j][k].nu_t(dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k], Grid.Cell[i][j][k].V);
+                    dt_vis = min(min((d_i*d_i)/nu, (d_j*d_j)/nu), (d_k*d_k)/nu)/THREE; 
+                    dt[i][j][k]  = min(dt_vis, dt[i][j][k]);                        
                     dtMin = min(dtMin,  dt[i][j][k]);
                     
                 } /* endif */
@@ -475,6 +475,7 @@ CFL(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> &IPs){
             } /* endfor */
         } /* endfor */
     } /* endfor */
+    
     
     for (int k  =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k ) {
         for (int j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
