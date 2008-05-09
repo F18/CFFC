@@ -56,7 +56,12 @@ namespace tut
 				       AdaptiveBlockResourceList & _GlobalList_Soln_Blocks_,
 				       AdaptiveBlock2D_List & _LocalList_Soln_Blocks_,
 				       AdvectDiffuse2D_Quad_Block *& _SolnBlk_,
-				       AdvectDiffuse2D_Input_Parameters & _IP_) throw(std::runtime_error);
+				       AdvectDiffuse2D_Input_Parameters & _IP_,
+				       int FluxMethod = SolveRiemannProblem) throw(std::runtime_error);
+
+    // set the fluc calculation method
+    void SetFluxCalculationMethod(Grid2D_Quad_MultiBlock_HO & _MeshBlk_,
+				  int FluxMethod);
 
     // Output_Block()
     void Output_Block(AdvectDiffuse2D_Quad_Block & SolnBlock,
@@ -110,7 +115,8 @@ namespace tut
 								      AdaptiveBlockResourceList & _GlobalList_Soln_Blocks_,
 								      AdaptiveBlock2D_List & _LocalList_Soln_Blocks_,
 								      AdvectDiffuse2D_Quad_Block *& _SolnBlk_,
-								      AdvectDiffuse2D_Input_Parameters & _IP_)
+								      AdvectDiffuse2D_Input_Parameters & _IP_,
+								      int FluxMethod)
     throw(std::runtime_error){
 
     error_flag = _MeshBlk_.Multi_Block_Grid(_IP_);
@@ -118,6 +124,9 @@ namespace tut
     if (error_flag) {
       throw runtime_error("CreateMesh() ERROR: Unable to create valid Euler2D multi-block mesh.");
     }
+
+    // set the flux calculation method
+    SetFluxCalculationMethod(_MeshBlk_, FluxMethod);
 
     _SolnBlk_ = Create_Initial_Solution_Blocks(_MeshBlk_.Grid_ptr,
 					       _SolnBlk_,
@@ -144,6 +153,33 @@ namespace tut
     }  /* endfor */
 
     Status = ON;
+  }
+
+
+  // ==== Set flux calculation method
+  void Data_AdvectDiffuse2D_Quad_Block::SetFluxCalculationMethod(Grid2D_Quad_MultiBlock_HO & MeshBlk,
+								 int FluxMethod){
+
+    int iBlock, jBlock;
+
+    for (iBlock = 0; iBlock <= MeshBlk.Last_iBlock() ; ++iBlock){
+      for (jBlock = 0; jBlock <= MeshBlk.Last_jBlock() ; ++jBlock){
+
+	if(MeshBlk(iBlock,jBlock).BndNorthSpline.bc[0] != BC_NONE){
+	  MeshBlk(iBlock,jBlock).BndNorthSpline.setFluxCalcMethod(FluxMethod);
+	}
+	if(MeshBlk(iBlock,jBlock).BndSouthSpline.bc[0] != BC_NONE){
+	  MeshBlk(iBlock,jBlock).BndSouthSpline.setFluxCalcMethod(FluxMethod);
+	}
+	if(MeshBlk(iBlock,jBlock).BndEastSpline.bc[0] != BC_NONE){
+	  MeshBlk(iBlock,jBlock).BndEastSpline.setFluxCalcMethod(FluxMethod);
+	}
+	if(MeshBlk(iBlock,jBlock).BndWestSpline.bc[0] != BC_NONE){
+	  MeshBlk(iBlock,jBlock).BndWestSpline.setFluxCalcMethod(FluxMethod);
+	}
+      }	// endfor
+    } // endfor
+
   }
 
   // === SetLocalTimeStepToValue()
@@ -1945,6 +1981,67 @@ namespace tut
       ensure_distance("Deriv", X(i,0), SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,i)[1],
 		      AcceptedError(SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,i)[1], 1.0e-10));
     }
+  }
+
+  /* Test 23:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<23>()
+  {
+
+    set_test_name("Check initialization of high-order boundary conditions");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    RunRegression = OFF;
+
+    // Set input file name
+    Open_Input_File("HighOrder_StraightBoundaries_ConstraintBCs_Study.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP, ReconstructionBasedFlux);
+
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);   
+
+    // Set high-order BCs
+    SolnBlk[0].BCs_HighOrder();
+
+    // Compute integral of the RHS term and write it to the k_residual = 0
+    ComputeEquationRightHandSideTerm(SolnBlk[0], IP, 0);
+
+    if (RunRegression){
+
+      // === Generate these files with high-order boundaries ===
+
+      // Output solution
+      MasterFile = "HighOrder_StraightBoundaries_ReconstructionBasedFlux_Study_Cells.dat";
+      CurrentFile = "Current_HighOrder_StraightBoundaries_ReconstructionBasedFlux_Study_Cells.dat";
+      Open_Output_File(CurrentFile);
+      
+      SolnBlk[0].Output_Cells_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+
+      // === check cell values
+      RunRegressionTest("Cells Tecplot Output", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+      
+    } else {
+
+      // === Generate master files with low-order boundaries (toggle OFF high-order bnds. in the input file) ===
+
+      // Output solution
+      MasterFile = "HighOrder_StraightBoundaries_ReconstructionBasedFlux_Study_Cells.dat";
+      //      Open_Output_File(MasterFile);
+      
+      //      SolnBlk[0].Output_Cells_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+      
+    }
+
   }
 
 

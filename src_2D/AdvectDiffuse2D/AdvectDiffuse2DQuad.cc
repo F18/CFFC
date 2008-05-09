@@ -58,6 +58,7 @@ AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(void):
   dUdx = NULL; dUdy = NULL; phi = NULL; Uo = NULL;
   FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
   UoN = NULL; UoS = NULL; UoE = NULL; UoW = NULL;
+  HO_UoN = NULL; HO_UoS = NULL; HO_UoE = NULL; HO_UoW = NULL;
 
   // Set the pointers in the solution state to the velocity, diffusion and source term fields.
   // These pointes are static variables in the state class.
@@ -83,6 +84,7 @@ AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(const AdvectDiffuse2D_Qua
   Uo = Soln.Uo;
   FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
   UoN = Soln.UoN; UoS = Soln.UoS; UoE = Soln.UoE; UoW = Soln.UoW;
+  HO_UoN = Soln.HO_UoN; HO_UoS = Soln.HO_UoS; HO_UoE = Soln.HO_UoE; HO_UoW = Soln.HO_UoW;
   Ref_State_BC_North = Soln.Ref_State_BC_North;
   Ref_State_BC_South = Soln.Ref_State_BC_South;
   Ref_State_BC_East = Soln.Ref_State_BC_East;
@@ -152,6 +154,33 @@ AdvectDiffuse2D_Quad_Block & AdvectDiffuse2D_Quad_Block::operator =(const Advect
       UoS[i] = Soln.UoS[i];
       UoN[i] = Soln.UoN[i];
     }/* endfor */
+
+    // allocate memory for high-order boundary conditions.
+    allocate_HighOrder_BoundaryConditions();
+
+    for (j  = JCl ; j <= JCu ; ++j ) {
+      // Copy West high-order BCs
+      if (HO_UoW != NULL){
+	HO_UoW[j] = Soln.HO_UoW[j];
+      }
+
+      // Copy East high-order BCs
+      if (HO_UoE != NULL){
+	HO_UoE[j] = Soln.HO_UoE[j];
+      }
+    }
+
+    for ( i = ICl ; i <= ICu ; ++i ) {
+      // Copy South high-order BCs
+      if (HO_UoS != NULL){
+	HO_UoS[i] = Soln.HO_UoS[i];
+      }
+      
+      // Copy North high-order BCs
+      if (HO_UoN != NULL){
+	HO_UoN[i] = Soln.HO_UoN[i];
+      }
+    }
     
     // Copy the high-order objects
     for (k = 1; k <= NumberOfHighOrderVariables; ++k){
@@ -265,6 +294,59 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder(const int & NumberOfReconstr
   }// endif
 }
 
+/***************************************************//**
+ * Allocate memory for high-order boundary conditions
+ * if the corresponding boundary reconstruction is 
+ * constrained.
+ * Assume that Grid and block indexes have been setup!
+ *******************************************************/
+void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
+
+  int i,j;
+
+  // allocate North BCs
+  if ( Grid.IsNorthBoundaryReconstructionConstrained() ){
+
+    HO_UoN = new BC_Type[NCi];
+
+    // allocate BC memory for each flux calculation point
+    for (i=ICl; i<=ICu; ++i){
+      BC_NorthCell(i).allocate(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu));
+    }
+  }
+
+  // allocate South BCs
+  if ( Grid.IsSouthBoundaryReconstructionConstrained() ){
+    
+    HO_UoS = new BC_Type[NCi];
+    
+    // allocate BC memory for each flux calculation point
+    for (i=ICl; i<=ICu; ++i){
+      BC_SouthCell(i).allocate(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl));
+    }    
+  }
+
+  // allocate East BCs
+  if ( Grid.IsEastBoundaryReconstructionConstrained() ){
+    HO_UoE = new BC_Type[NCj];
+
+    // allocate BC memory for each flux calculation point
+    for (j=JCl; j<=JCu; ++j){
+      BC_EastCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j));
+    }
+  }
+
+  // allocate West BCs
+  if ( Grid.IsWestBoundaryReconstructionConstrained() ){
+    HO_UoW = new BC_Type[NCj];
+
+    // allocate BC memory for each flux calculation point
+    for (j=JCl; j<=JCu; ++j){
+      BC_WestCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j));
+    }
+  }
+}
+
 /*********************//**
  * Deallocate memory.   
  ***********************/
@@ -294,6 +376,7 @@ void AdvectDiffuse2D_Quad_Block::deallocate(void) {
     NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
 
     deallocate_HighOrder();
+    deallocate_HighOrder_BoundaryConditions();
     deallocate_U_Nodes();
   }
 }
@@ -304,6 +387,24 @@ void AdvectDiffuse2D_Quad_Block::deallocate(void) {
 void AdvectDiffuse2D_Quad_Block::deallocate_HighOrder(void) {
   delete []HO_Ptr; HO_Ptr = NULL;
   NumberOfHighOrderVariables = 0;
+}
+
+/****************************************************//**
+ * Deallocate memory for high-order boundary conditions
+ *******************************************************/
+void AdvectDiffuse2D_Quad_Block::deallocate_HighOrder_BoundaryConditions(void) {
+  if (HO_UoN != NULL){
+    delete [] HO_UoN; HO_UoN = NULL;
+  }
+  if (HO_UoS != NULL){
+    delete [] HO_UoS; HO_UoS = NULL;
+  }
+  if (HO_UoE != NULL){
+    delete [] HO_UoE; HO_UoE = NULL;
+  }
+  if (HO_UoW != NULL){
+    delete [] HO_UoW; HO_UoW = NULL;
+  }
 }
 
 /***********************//**
@@ -2347,6 +2448,10 @@ istream &operator >> (istream &in_file,
     in_file >> SolnBlk.UoS[i];
     in_file >> SolnBlk.UoN[i];
   } /* endfor */
+
+  // Allocate memory for the high-order boundary conditions (the values don't need to be read)
+  SolnBlk.allocate_HighOrder_BoundaryConditions();
+
   in_file.setf(ios::skipws);
 
   // Read the high-order variables
