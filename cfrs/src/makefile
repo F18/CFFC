@@ -80,6 +80,10 @@ SRC_COMMON		:= $(addprefix  $(COMMON_DIR)/, $(SRC_COMMON))
 # Common from CFFC_2D:
 SRC_COMMON              += $(CFFC_2D_Path)/Utilities/EpsilonTol.cc
 
+# Common from other directories:
+SRC_COMMON              += Reconstruction/CENO_Tolerances.cc
+
+
 #--- SRC_COMMON_TESTS ----
 SRC_COMMON_TESTS  = 
 #
