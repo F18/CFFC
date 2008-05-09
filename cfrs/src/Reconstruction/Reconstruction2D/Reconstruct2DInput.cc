@@ -5,6 +5,7 @@
 
 #ifndef _RECONSTRUCT2D_INPUT_INCLUDED
 #include "Reconstruct2DInput.h"
+#include "../CENO_Tolerances.h" // Include high-order CENO tolerances header file
 #endif // _RECONSTRUCT2D_INPUT_INCLUDED
 
 /***************************************************************
@@ -40,7 +41,7 @@ ostream &operator << (ostream &out_file,
       out_file << "\n  -> Limiter: "
 	       << IP.Limiter_Type; 
       out_file << "\n  -> Fit Tolerance: "
-	       << IP.FitTolerance();
+	       << CENO_Tolerances::Fit_Tolerance;
       break;
     } /* endswitch */
 
@@ -168,7 +169,7 @@ ostream &operator << (ostream &out_file,
 
   }
 
-    return (out_file);
+  return (out_file);
 }
 
 istream &operator >> (istream &in_file,
@@ -873,14 +874,6 @@ int Parse_Next_Input_Control_Parameter(Reconstruct2D_Input_Parameters &IP) {
           IP.i_Limiter = LIMITER_VANLEER ;
        } /* endif */
 
-    } else if (strcmp(IP.Next_Control_Parameter, "CENO_Tolerance") == 0){
-      i_command = 44;
-      IP.Line_Number ++;
-      if(!(IP.Input_File >> IP.FitTolerance()))
-	i_command = INVALID_INPUT_VALUE;
-      IP.Input_File.setf(ios::skipws);
-      IP.Input_File.getline(buffer, sizeof(buffer));
-
     } else if (strcmp(IP.Next_Control_Parameter, "Stretch_I") == 0) {
        i_command = 45;
        Get_Next_Input_Control_Parameter(IP);
@@ -1012,6 +1005,10 @@ int Parse_Next_Input_Control_Parameter(Reconstruct2D_Input_Parameters &IP) {
       i_command = INVALID_INPUT_CODE;
       
     } /* endif */
+
+    /* Parse next control parameter with CENO_Tolerances parser */
+    CENO_Tolerances::Parse_Next_Input_Control_Parameter(IP,i_command);
+
     
     /* Return the parser command type indicator. */
     

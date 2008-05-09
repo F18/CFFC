@@ -5,6 +5,7 @@
 
 #ifndef _RECONSTRUCT1D_INPUT_INCLUDED
 #include "Reconstruct1DInput.h"
+#include "../CENO_Tolerances.h" // Include high-order CENO tolerances header file
 #endif // _RECONSTRUCT1D_INPUT_INCLUDED 
 
 /***************************************************************
@@ -42,7 +43,7 @@ ostream &operator << (ostream &out_file,
     out_file << "\n  -> Limiter: "
 	     << IP.Limiter_Type;
     out_file << "\n  -> Fit Tolerance: "
-	     << IP.FitTolerance();
+	     << CENO_Tolerances::Fit_Tolerance;
     break;
   } /* endswitch */
 
@@ -79,6 +80,7 @@ ostream &operator << (ostream &out_file,
 	   << IP.Integration_Type << " Integration";
     
   out_file << "\n";
+
   return (out_file);
 }
 
@@ -542,14 +544,6 @@ int Parse_Next_Input_Control_Parameter(Reconstruct1D_Input_Parameters &IP) {
           IP.i_Limiter = LIMITER_VANLEER ;
        } /* endif */
 
-    } else if (strcmp(IP.Next_Control_Parameter, "CENO_Tolerance") == 0){
-      i_command = 20;
-      IP.Line_Number ++;
-      if(!(IP.Input_File >> IP.FitTolerance()))
-	i_command = INVALID_INPUT_VALUE;
-      IP.Input_File.setf(ios::skipws);
-      IP.Input_File.getline(buffer, sizeof(buffer));
-
     } else if (strcmp(IP.Next_Control_Parameter, "Execute") == 0) {
       i_command = EXECUTE_CODE;
       
@@ -627,6 +621,10 @@ int Parse_Next_Input_Control_Parameter(Reconstruct1D_Input_Parameters &IP) {
       
     } /* endif */
     
+
+    /* Parse next control parameter with CENO_Tolerances parser */
+    CENO_Tolerances::Parse_Next_Input_Control_Parameter(IP,i_command);
+
     /* Return the parser command type indicator. */
     
     return (i_command);

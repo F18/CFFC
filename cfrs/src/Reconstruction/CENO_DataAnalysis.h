@@ -6,7 +6,7 @@
 #include <vector>
 #include "../../../src_2D/Utilities/Utilities.h"
 #include "include/TypeDefinition.h"
-#include "../../../src_2D/Utilities/EpsilonTol.h"
+#include "CENO_Tolerances.h"
 
 
 /**********************************************************************************************************************
@@ -35,7 +35,7 @@ void ComputeSmoothnessIndicator(SolutionContainer & SolnBlk, IndexType & i_index
     MeanSolution = SolnBlk(iCell).CellSolution(parameter);
 
     /* DeltaTol */
-    DeltaTol = CENO_EpsilonTol::SquareToleranceAroundValue(MeanSolution);
+    DeltaTol = CENO_Tolerances::SquareToleranceAroundValue(MeanSolution);
 
     /* Compute the regression and residual sums */
     SS_Regression = 0.0;
@@ -71,7 +71,7 @@ void ComputeSmoothnessIndicator(SolutionContainer & SolnBlk, IndexType & i_index
     }
 
     // Compute the smoothness indicator
-    SolnBlk(iCell).CellMCC(parameter) = (alpha*(StencilSize - DOF))/(max(CENO_EpsilonTol::epsilon,1.0 - alpha)*(DOF - 1));
+    SolnBlk(iCell).CellMCC(parameter) = (alpha*(StencilSize - DOF))/(max(CENO_Tolerances::epsilon,1.0 - alpha)*(DOF - 1));
   }
 }
 
@@ -105,7 +105,7 @@ void ComputeSmoothnessIndicator(SolutionContainer & SolnBlk, const int *i_index,
     MeanSolution = SolnBlk(iCell,jCell).CellSolution(parameter);
 
     /* DeltaTol */
-    DeltaTol = CENO_EpsilonTol::SquareToleranceAroundValue(MeanSolution);
+    DeltaTol = CENO_Tolerances::SquareToleranceAroundValue(MeanSolution);
 
     /* Compute the regression and residual sums */
     SS_Regression = 0.0;
@@ -141,7 +141,7 @@ void ComputeSmoothnessIndicator(SolutionContainer & SolnBlk, const int *i_index,
     }
  
     // Compute the smoothness indicator
-    SolnBlk(iCell,jCell).CellMCC(parameter) = (alpha*(StencilSize - DOF))/(max(CENO_EpsilonTol::epsilon,1.0 - alpha)*(DOF - 1.0));
+    SolnBlk(iCell,jCell).CellMCC(parameter) = (alpha*(StencilSize - DOF))/(max(CENO_Tolerances::epsilon,1.0 - alpha)*(DOF - 1.0));
   }
 }
 
