@@ -1785,8 +1785,8 @@ namespace tut
 
     // ===== Execution control =====
     RunRegression = ON;
-    LocalAnalysis = false;
-    GlobalAnalysis = true;
+    LocalAnalysis = true;
+    GlobalAnalysis = false;
     StencilOptimization = false;
     verbose = false;
     HighOrderVar = 0;      // Set high-order object
@@ -1880,6 +1880,73 @@ namespace tut
     } //endif (GlobalAnalysis)
 
   }
+
+  /* Test 22:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<22>()
+  {
+
+    set_test_name("HighOrder2D<>::Set_MeanValueConservation_Equations()");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    // Set input file name
+    Open_Input_File("HighOrder_CurvedBoundaries_Constraints.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+    HighOrder2D_Input::Set_Final_Parameters(IP);
+    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = OFF;
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // == check correct initialization
+    ensure("High-order variables", SolnBlk[0].HighOrderVariables() != NULL);
+    
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+    // Reconstruct solution
+    IndexType i_index(25), j_index(25), ParameterIndex(1,1);
+    int iCell, jCell;
+    int TotalNumConstraints(1);
+
+    iCell = 5;
+    jCell = 5;
+
+    DenseMatrix A(25,15), All_U(25,1), X(15,1);
+    A.zero();  All_U.zero();  X.zero();
+
+    // Calculate reconstruction by explicitly enforcing the mean constraint
+    SolnBlk[0].HighOrderVariable(0).SetReconstructionStencil(iCell, jCell, i_index, j_index);
+    SolnBlk[0].HighOrderVariable(0).ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk[0],
+											&AdvectDiffuse2D_Quad_Block::
+											CellSolution,
+											iCell, jCell,
+											i_index, j_index);
+
+    // Calculate reconstruction by enforcing the mean constraint numerically
+    SolnBlk[0].HighOrderVariable(0).Set_MeanValueConservation_Equations(SolnBlk[0],
+									&AdvectDiffuse2D_Quad_Block::CellSolution,
+									iCell,jCell,
+									i_index, j_index,
+									A, All_U,
+									ParameterIndex,
+									0, 1, 0 );
+
+    Solve_Constrained_LS_Householder(A,All_U,X,TotalNumConstraints);
+
+    for (int i=0; i<=SolnBlk[0].HighOrderVariable(0).CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+      ensure_distance("Deriv", X(i,0), SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,i)[1],
+		      AcceptedError(SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,i)[1], 1.0e-10));
+    }
+  }
+
 
 }
 
