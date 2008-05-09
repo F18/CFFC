@@ -1801,9 +1801,9 @@ Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
        //PREMIXED GRID
      } else if( (Flame_Type_Flag == IC_RESTART || Flame_Type_Flag == IC_CHEM_PREMIXED_FLAME) && Number_of_Blocks_Idir == 8 ){    
 
-       fuel_spacing = 0.011;                  //m 
-       tube_spacing = fuel_spacing+0.001;     //m 
-       air_spacing = 0.04 - tube_spacing;     //m 
+       fuel_spacing = 0.01;                  //m 
+       tube_spacing =  fuel_spacing+ 0.001;    //m 
+       air_spacing = Length - tube_spacing;     //m 
 
        Number_of_Blocks_Fuel = 4;
        Number_of_Blocks_Gap  = 1;
@@ -1942,17 +1942,24 @@ Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
  	  if (iBlk == 0 ) {
  	    Bnd_Spline_West.setBCtype(BC_REFLECTION);    //centerline
  	    Bnd_Spline_East.setBCtype(BC_NONE);
- 	  } else if (iBlk == Number_of_Blocks_Idir-1 )  {
- 	    Bnd_Spline_West.setBCtype(BC_NONE);      
- 	    Bnd_Spline_East.setBCtype(BC_REFLECTION); //FIXED   //farfield right  
+ 	  } else if (iBlk == Number_of_Blocks_Idir-1 )  {     //farfield right  
+ 	    Bnd_Spline_West.setBCtype(BC_NONE); 
+	    if (Flame_Type_Flag == IC_CHEM_PREMIXED_FLAME) {        
+	      Bnd_Spline_East.setBCtype(BC_2DFLAME_OUTFLOW); //PREMIXED
+	    } else {
+	      Bnd_Spline_East.setBCtype(BC_REFLECTION);          //Else
+	    }
  	  } else { 
  	    Bnd_Spline_West.setBCtype(BC_NONE);      
  	    Bnd_Spline_East.setBCtype(BC_NONE);
  	  }
 	  
- 	  if (jBlk == 0 && iBlk == Number_of_Blocks_Gap + Number_of_Blocks_Fuel - 1 && Number_of_Blocks_Gap!=0) {
- 	    Bnd_Spline_South.setBCtype(BC_FIXED); // BC_WALL_VISCOUS_HEATFLUX);      //Gap wall 
- 	    Bnd_Spline_North.setBCtype(BC_NONE);
+	  if (jBlk == 0 && Flame_Type_Flag == IC_CHEM_PREMIXED_FLAME) {
+	    Bnd_Spline_South.setBCtype(BC_FIXED);  //PREMIXED
+	    Bnd_Spline_North.setBCtype(BC_NONE);	  
+	  } else if (jBlk == 0 && iBlk == Number_of_Blocks_Gap + Number_of_Blocks_Fuel-1 && Number_of_Blocks_Gap!=0) {
+	    Bnd_Spline_South.setBCtype(BC_WALL_VISCOUS_HEATFLUX); //BC_FIXED   //BC_WALL_VISCOUS_ISOTHERMAL  //Gap wall 
+	    Bnd_Spline_North.setBCtype(BC_NONE);	
  	  } else if (jBlk == 0 && iBlk < Number_of_Blocks_Gap + Number_of_Blocks_Fuel + Number_of_Blocks_Air ) {
  	    Bnd_Spline_South.setBCtype(BC_2DFLAME_INFLOW);     //BC_FIXED);    //Bottom Inflow Left
  	    Bnd_Spline_North.setBCtype(BC_NONE);

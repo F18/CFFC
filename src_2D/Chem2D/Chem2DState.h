@@ -17,10 +17,6 @@
            in order to avoid seg faults. In Chem2D it is done by calling
            the deallocate function from the Input destructor as it is kept
            until the end of the program.
-
-  TODO:  - Unphysical_properties & negativespec_check functions need to be  
-           worked through
-
                    
 ***********************************************************************/
 #ifndef _CHEM2D_STATE_INCLUDED 
@@ -328,19 +324,20 @@ class Chem2D_pState {
 			const Chem2D_pState &dWdy,
 			const int Flow_Type,
 			const int Axisymmetric,
-			const Vector2D X);
+			const Vector2D &X);
 
    void Laminar_Stress(const Chem2D_pState &dWdx,
 		       const Chem2D_pState &dWdy,
 		       const int Flow_Type,
 		       const int Axisymmetric,
-		       const Vector2D X);
+		       const double mu,
+		       const Vector2D &X);
 
    void Reynolds_Stress(const Chem2D_pState &dWdx,
 			const Chem2D_pState &dWdy,
 			const int Flow_Type,
 			const int Axisymmetric,
-			const Vector2D X);
+			const Vector2D &X);
 
    /************ Heat Flux vector thermal Diffusion ***********/
    Vector2D thermal_diffusion(const Chem2D_pState &dWdx,
@@ -708,8 +705,8 @@ class Chem2D_pState {
 
    /**************** Fluxes ***********************************/
    //Viscous Flux (laminar+turbulent)
-   Chem2D_cState Viscous_Flux_x(const Chem2D_pState &dWdx, const int Flow_Type) const;
-   Chem2D_cState Viscous_Flux_y(const Chem2D_pState &dWdy, const int Flow_Type) const;
+   Chem2D_cState Viscous_Flux_x(const Chem2D_pState &dWdx, const int Flow_Type,const double &Vcorr=0.0) const;
+   Chem2D_cState Viscous_Flux_y(const Chem2D_pState &dWdy, const int Flow_Type,const double &Vcorr=0.0) const;
 
    /*************** Preconditioner ****************************/
    void Low_Mach_Number_Preconditioner(DenseMatrix &P,const int &flow_type_flag, const double &deltax) const; 
@@ -771,6 +768,10 @@ class Chem2D_pState {
 
 
  };
+
+ /************* Axisymmetric Radius check ***********************************/
+ // Ensure no divide by zero with 1/r terms 
+ extern double check_radius(const int Axisymmetric, const Vector2D &X);
 
  /**************************************************************************
  ********************* CHEM2D_PSTATE CONSTRUCTORS **************************
@@ -898,17 +899,17 @@ inline void Chem2D_pState::set_turbulence_variables(const double &C_constant,
  					   const Chem2D_pState &dWdy,
  					   const int Flow_Type,
  					   const int Axisymmetric,
- 					   const Vector2D X){
+ 					   const Vector2D &X){
    Tensor2D strain_rate;
-   double radius, div_v;
-
+   double div_v;
+   double radius = check_radius(Axisymmetric,X);
+   
    /***************** Strain rate (+dilatation) **********************/	
    div_v = dWdx.v.x + dWdy.v.y;
+
    if (Axisymmetric == AXISYMMETRIC_X) {
-     radius = (X.x < MICRO) ? MICRO : X.x;    //fabs(X.x) ??
      div_v += v.x/radius;
    } else if (Axisymmetric == AXISYMMETRIC_Y) {    
-     radius = (X.y < MICRO) ? MICRO : X.y;
      div_v += v.y/radius;
    } 
 
@@ -926,15 +927,16 @@ inline void Chem2D_pState::set_turbulence_variables(const double &C_constant,
 
    return strain_rate;  
  }
-
+  
  /***************** Laminar (molecular) fluid stress ***********************/
  inline void Chem2D_pState::Laminar_Stress(const Chem2D_pState &dWdx,
- 					  const Chem2D_pState &dWdy,
- 					  const int Flow_Type,
- 					  const int Axisymmetric,
- 					  const Vector2D X){
+					   const Chem2D_pState &dWdy,
+					   const int Flow_Type,
+					   const int Axisymmetric,
+					   const double mu,
+					   const Vector2D &X){
 
-   tau = TWO*mu()*Strain_Rate(dWdx,dWdy, Flow_Type,Axisymmetric,X); 
+   tau = TWO*mu*Strain_Rate(dWdx,dWdy, Flow_Type,Axisymmetric,X); 
  }
 
  /***************** Turbulent Reynolds stress ******************************/
@@ -942,7 +944,7 @@ inline void Chem2D_pState::set_turbulence_variables(const double &C_constant,
  					   const Chem2D_pState &dWdy,
  					   const int Flow_Type,
  					   const int Axisymmetric,
- 					   const Vector2D X){
+ 					   const Vector2D &X){
 
    lambda = TWO*eddy_viscosity()*Strain_Rate(dWdx,dWdy, Flow_Type,Axisymmetric, X);
    lambda.xx -= (TWO/THREE)*rho*k;

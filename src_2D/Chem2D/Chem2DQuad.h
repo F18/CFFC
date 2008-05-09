@@ -329,6 +329,9 @@ class Chem2D_Quad_Block{
   
   void set_v_zero(void);
 
+  // recompute last species gradient
+  void FixSpecGrad(const int i,const int j, const bool&visc, const int nsp);
+
   /*****************************************************************************
      dWn_dWc is the derivative of node solution w.r.t. cell center solution
      which is used by calculating the viscous Jacobians
@@ -914,8 +917,6 @@ inline ostream &operator << (ostream &out_file,
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
        out_file << SolnBlk.U[i][j] << "\n";
-// 	          << SolnBlk.Ut[i][j] << "\n"
-// 		  << SolnBlk.Uold[i][j] << "\n";
      } /* endfor */
   } /* endfor */
   for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
@@ -1746,7 +1747,7 @@ inline void Chem2D_Quad_Block::SubcellReconstruction(const int i,
  
 
   //NEED TO CHANGE TO AVOID USING GHOST CELLS THAT ARE ON THE EDGE OF 
-  // BCS  WITH RES CHANGE (C2F) ISSUES
+  // BCS  WITH RES CHANGE (C2F) ISSUES !!!
 
   /* Carry out the limited solution reconstruction in
      each cell of the computational mesh. */

@@ -602,7 +602,7 @@ double Chem2D_pState::a(void){
 }
 
 double Chem2D_pState::a(void) const{
-  double sum;
+  double sum; 
   double RTOT= Rtot();
   sum = (p/rho)*(RTOT/( hprime() - RTOT) + ONE);
   //could also just call sqrt(g()*Rtot()*T());
@@ -1620,36 +1620,37 @@ Chem2D_cState Chem2D_pState::Sa_inviscid(const Vector2D &X,
                                          const int Axisymmetric) const{
 
   Chem2D_cState Temp; Temp.Vacuum();
+  double radius = check_radius(Axisymmetric,X);
 
   //x is radial
   if (Axisymmetric == AXISYMMETRIC_X) {
-     Temp.rho = -rho*v.x/X.x;
-     Temp.rhov.x = -rho*v.x*v.x/X.x; 
-     Temp.rhov.y = -rho*v.x*v.y/X.x;
-     Temp.E =  -v.x*H()/X.x;
+     Temp.rho = -rho*v.x/radius;
+     Temp.rhov.x = -rho*v.x*v.x/radius;        
+     Temp.rhov.y = -rho*v.x*v.y/radius;
+     Temp.E =  -v.x*H()/radius;
      //species contributions
      for(int i=0; i<ns;i++){
-       Temp.rhospec[i].c = -rho*v.x*spec[i].c/X.x;         //correct for ns-1 ????
+       Temp.rhospec[i].c = -rho*v.x*spec[i].c/radius;         
      }
      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
          Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-        Temp.rhok =  -v.x*rho*k/X.x;
-        Temp.rhoomega = -v.x*rho*omega/X.x;
+        Temp.rhok =  -v.x*rho*k/radius;
+        Temp.rhoomega = -v.x*rho*omega/radius;
      } 
      //y is radial
   } else if (Axisymmetric == AXISYMMETRIC_Y) {
-     Temp.rho = -rho*v.y/X.y;
-     Temp.rhov.x = -rho*v.x*v.y/X.y; 
-     Temp.rhov.y = -rho*v.y*v.y/X.y;
-     Temp.E =  -v.y*H()/X.y;
+     Temp.rho = -rho*v.y/radius;
+     Temp.rhov.x = -rho*v.x*v.y/radius; 
+     Temp.rhov.y = -rho*v.y*v.y/radius;
+     Temp.E =  -v.y*H()/radius;
      //species contributions
      for(int i=0; i<ns;i++){
-       Temp.rhospec[i].c = -rho*v.y*spec[i].c/X.y;
+       Temp.rhospec[i].c = -rho*v.y*spec[i].c/radius;
      }
      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
          Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-        Temp.rhok =  -v.y*rho*k/X.y;
-        Temp.rhoomega = -v.y*rho*omega/X.y;
+        Temp.rhok =  -v.y*rho*k/radius;
+        Temp.rhoomega = -v.y*rho*omega/radius;
      }
   }
 
@@ -1699,6 +1700,8 @@ void Chem2D_pState::dSa_idU(DenseMatrix &dSa_IdU, const Vector2D &X, const int F
   double phi = ZERO;
   double Temp = p/(rho*RTOT);
 
+  double radius = check_radius(Axisymmetric,X);
+
   for(int j=0; j<ns-1; j++){   
 #ifdef _NS_MINUS_ONE
     phi += spec[j].c*(specdata[j].Enthalpy(Temp) + specdata[j].Heatofform() - CP*Temp*specdata[j].Rs()/RTOT
@@ -1713,24 +1716,24 @@ void Chem2D_pState::dSa_idU(DenseMatrix &dSa_IdU, const Vector2D &X, const int F
     //end of axisymmetric case 1  -- y radial direction 
   } else if(Axisymmetric == AXISYMMETRIC_X){ 
     
-    dSa_IdU(0,1) -= ONE/X.x;
-    dSa_IdU(1,0) += v.x*v.x/X.x;
-    dSa_IdU(1,1) -= TWO*v.x/X.x;
-    dSa_IdU(2,0) += v.x*v.y/X.x;
-    dSa_IdU(2,1) -= v.y/X.x;
-    dSa_IdU(2,2) -= v.x/X.x;
+    dSa_IdU(0,1) -= ONE/radius;
+    dSa_IdU(1,0) += v.x*v.x/radius;
+    dSa_IdU(1,1) -= TWO*v.x/radius;
+    dSa_IdU(2,0) += v.x*v.y/radius;
+    dSa_IdU(2,1) -= v.y/radius;
+    dSa_IdU(2,2) -= v.x/radius;
    
 //     if((Flow_Type ==FLOWTYPE_INVISCID)||(Flow_Type ==FLOWTYPE_LAMINAR)){    
-//     dSa_IdU(3,0) -= v.x*( - CP*(HALF*(v.x*v.x+v.y*v.y)-enthalpy+phi-CP*Temp)/(RTOT-CP) - (phi +v.x*v.x +v.y*v.y + CP*Temp))/X.x;
-//     dSa_IdU(3,1) -= (v.x*v.x + H()/rho + CP*v.x*v.x/(RTOT-CP))/X.x;
-//     dSa_IdU(3,2) -= (v.x*v.y + CP*v.x*v.y/(RTOT-CP))/X.x ;    
-//     dSa_IdU(3,3) -= CP/(CP-RTOT)*v.x/X.x;     
+//     dSa_IdU(3,0) -= v.x*( - CP*(HALF*(v.x*v.x+v.y*v.y)-enthalpy+phi-CP*Temp)/(RTOT-CP) - (phi +v.x*v.x +v.y*v.y + CP*Temp))/radius;
+//     dSa_IdU(3,1) -= (v.x*v.x + H()/rho + CP*v.x*v.x/(RTOT-CP))/radius;
+//     dSa_IdU(3,2) -= (v.x*v.y + CP*v.x*v.y/(RTOT-CP))/radius ;    
+//     dSa_IdU(3,3) -= CP/(CP-RTOT)*v.x/radius;     
 
     // XINFENGS ORIGINAL
-    dSa_IdU(3,0) -= RTOT/(CP-RTOT)*(v.x*(phi + v.sqr()) + v.x*CP*( p/rho - enthalpy - HALF*v.sqr())/RTOT)/X.x;
-    dSa_IdU(3,1) -= (enthalpy + CP/(CP-RTOT)*HALF*v.sqr() - RTOT/(CP-RTOT)*HALF*(THREE*v.x*v.x +v.y*v.y))/X.x;
-    dSa_IdU(3,2) += RTOT/(CP-RTOT)*v.x*v.y/X.x;
-    dSa_IdU(3,3) -= CP/(CP-RTOT)*v.x/X.x;      
+    dSa_IdU(3,0) -= RTOT/(CP-RTOT)*(v.x*(phi + v.sqr()) + v.x*CP*( p/rho - enthalpy - HALF*v.sqr())/RTOT)/radius;
+    dSa_IdU(3,1) -= (enthalpy + CP/(CP-RTOT)*HALF*v.sqr() - RTOT/(CP-RTOT)*HALF*(THREE*v.x*v.x +v.y*v.y))/radius;
+    dSa_IdU(3,2) += RTOT/(CP-RTOT)*v.x*v.y/radius;
+    dSa_IdU(3,3) -= CP/(CP-RTOT)*v.x/radius;      
     //}//end of laminar case
     
     //Multispecies terms
@@ -1738,29 +1741,29 @@ void Chem2D_pState::dSa_idU(DenseMatrix &dSa_IdU, const Vector2D &X, const int F
     for(int i=0; i<(ns-1);i++){
 #ifdef _NS_MINUS_ONE     
       dSa_IdU(3,i+NUM_VAR) += v.x*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - CP*Temp*specdata[i].Rs()/RTOT
-				   -(specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/RTOT))/(CP/RTOT - ONE)/X.x; 
+				   -(specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - CP*Temp*specdata[ns-1].Rs()/RTOT))/(CP/RTOT - ONE)/radius; 
 #else
-      dSa_IdU(3,i+NUM_VAR) += v.x*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - CP*Temp*specdata[i].Rs()/RTOT)/(CP/RTOT - ONE)/X.x; 
+      dSa_IdU(3,i+NUM_VAR) += v.x*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - CP*Temp*specdata[i].Rs()/RTOT)/(CP/RTOT - ONE)/radius; 
 #endif
-      dSa_IdU(NUM_VAR+i,0) += v.x*spec[i].c/X.x;
-      dSa_IdU(NUM_VAR+i,1) -= spec[i].c/X.x;
-      dSa_IdU(NUM_VAR+i,NUM_VAR+i) -= v.x/X.x;
+      dSa_IdU(NUM_VAR+i,0) += v.x*spec[i].c/radius;
+      dSa_IdU(NUM_VAR+i,1) -= spec[i].c/radius;
+      dSa_IdU(NUM_VAR+i,NUM_VAR+i) -= v.x/radius;
     }
     
     if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
 	Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
       cout<<"\n SCOTT BROKE THE TURBULENCE, dSa_idU ;)";
-//       dSa_IdU(3,0) -= (-(v.x*v.x +v.y*v.y)*v.x+ Gamma*v.x*(v.x*v.x+v.y*v.y+2.0*RTOT*Temp)/2.0-k*v.x -v.x*h())/X.x;
-//       dSa_IdU(3,1) -= (THREE/TWO*v.x*v.x +HALF*v.y*v.y +h() +k -Gamma*v.x*v.x)/X.x;
-//       dSa_IdU(3,2) -= (v.x*v.y- Gamma*v.y*v.x)/X.x;      
-//       dSa_IdU(3,3) -= Gamma*v.x/X.x;
-//       dSa_IdU(3,4) -= (-dSa_IdU(3,3)+v.x)/X.x;    
-//       dSa_IdU(4,0) = k*v.x/X.x;
-//       dSa_IdU(4,1) -= k/X.x;
-//       dSa_IdU(4,4) -= v.x/X.x;
-//       dSa_IdU(5,0) = omega*v.x/X.x;
-//       dSa_IdU(5,1) = omega/X.x;
-//       dSa_IdU(5,5) -= v.x/X.x;  
+//       dSa_IdU(3,0) -= (-(v.x*v.x +v.y*v.y)*v.x+ Gamma*v.x*(v.x*v.x+v.y*v.y+2.0*RTOT*Temp)/2.0-k*v.x -v.x*h())/radius;
+//       dSa_IdU(3,1) -= (THREE/TWO*v.x*v.x +HALF*v.y*v.y +h() +k -Gamma*v.x*v.x)/radius;
+//       dSa_IdU(3,2) -= (v.x*v.y- Gamma*v.y*v.x)/radius;      
+//       dSa_IdU(3,3) -= Gamma*v.x/radius;
+//       dSa_IdU(3,4) -= (-dSa_IdU(3,3)+v.x)/radius;    
+//       dSa_IdU(4,0) = k*v.x/radius;
+//       dSa_IdU(4,1) -= k/radius;
+//       dSa_IdU(4,4) -= v.x/radius;
+//       dSa_IdU(5,0) = omega*v.x/radius;
+//       dSa_IdU(5,1) = omega/radius;
+//       dSa_IdU(5,5) -= v.x/radius;  
     }//end of turbulent case
 
   }//end of axisymmetric case   -- x radial 
@@ -1774,16 +1777,13 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
                                         const Vector2D &X,
                                         const int Flow_Type,
                                         const int Axisymmetric){
-  double Mu, Temperature, Rmix;
-  double mu_t, Dm_t;
-  double rhohsDs;
-  Vector2D grad_T;
-  Chem2D_cState Temp; Temp.Vacuum();
 
-  //Transport and thermodynamic properties
-  Mu = mu();
-  Temperature = T();
-  Rmix = Rtot();
+  double Mu(mu()), Temperature(T()), Rmix(Rtot());
+  double mu_t, Dm_t, tmp;
+  static Vector2D grad_T, Vcorr; Vcorr.zero();
+  static Chem2D_cState Temp; Temp.Vacuum(); 
+  double radius = check_radius(Axisymmetric,X);
+
 
   //Temperature gradient
   //dT/dx = 1/rho*R *( dP/dx - P/rho * drho/dx)
@@ -1791,18 +1791,26 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
   grad_T.y = (ONE/(rho*Rmix))*(dWdy.p - (p/rho)*dWdy.rho);
 
   //Molecular (laminar) stress tensor
-  Laminar_Stress(dWdx,dWdy, Flow_Type,Axisymmetric, X);
-
+  Laminar_Stress(dWdx,dWdy, Flow_Type,Axisymmetric,Mu, X);
+ 
   //Molecular (laminar) heat flux
   //Thermal conduction, q = - kappa * grad(T)
   qflux = - kappa()*grad_T;
   //Thermal diffusion, q -= rho * sum ( hs * Ds *gradcs)
   for(int i=0; i<ns; i++){ 
-    rhohsDs = rho*(Mu/(rho*Schmidt[i]))*(specdata[i].Enthalpy(Temperature) + specdata[i].Heatofform());
-    qflux.x -= rhohsDs*dWdx.spec[i].c;
-    qflux.y -= rhohsDs*dWdy.spec[i].c;
+    tmp = rho*(Mu/(rho*Schmidt[i]))*(specdata[i].Enthalpy(Temperature) + specdata[i].Heatofform());
+    qflux.x -= tmp*dWdx.spec[i].c;
+    qflux.y -= tmp*dWdy.spec[i].c;
   }
-  
+
+  /****************** Diffusion Correction Velocity ****************/
+  //  Vc = \sum_{i=0}^N { D_k * dY_i/dx_i }
+  for(int i=0; i<ns; i++){
+    tmp = Mu/(rho*Schmidt[i]);
+    Vcorr.x += tmp*dWdx.spec[i].c;
+    Vcorr.y += tmp*dWdy.spec[i].c;
+  }
+
   //Turbulent heat flux
   //Thermal conduction, q = - kappa * grad(T)
   if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
@@ -1813,53 +1821,55 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
     theta = - mu_t*Cp()/Pr_turb()*grad_T;
     //Thermal Diffusion, q -= rho * sum ( hs * Ds *gradcs)  
     for (int i=0; i<ns; i++) {
-      rhohsDs = rho*Dm_t*(specdata[i].Enthalpy(Temperature)+specdata[i].Heatofform());
-      theta.x -= rhohsDs*dWdx.spec[i].c;
-      theta.y -= rhohsDs*dWdy.spec[i].c;
+      tmp = rho*Dm_t*(specdata[i].Enthalpy(Temperature)+specdata[i].Heatofform());
+      theta.x -= tmp*dWdx.spec[i].c;
+      theta.y -= tmp*dWdy.spec[i].c;
     }
     Reynolds_Stress(dWdx,dWdy, Flow_Type,Axisymmetric, X);  
   } 
 
   /////////////////////////////////////////////////////////////
   //Determine axisymmetric source terms
-  /////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////  
+
   if (Axisymmetric == AXISYMMETRIC_X) {
-    Temp.rhov.x = (tau.xx - tau.zz)/X.x;
-    Temp.rhov.y = tau.xy/X.x;
-    Temp.E = (- qflux.x + v.x*tau.xx + v.y*tau.xy)/X.x;
+    Temp.rhov.x = (tau.xx - tau.zz)/radius;                    //OK
+    Temp.rhov.y = tau.xy/radius;                              //OK
+    Temp.E = (- qflux.x + v.x*tau.xx + v.y*tau.xy)/radius;      //ISSUES with Qflux!
     for(int i=0; i<ns;i++){
-      Temp.rhospec[i].c = rho*(Mu/(rho*Schmidt[i]))*dWdx.spec[i].c/X.x;
+      Temp.rhospec[i].c = rho*(Mu/(rho*Schmidt[i]))*dWdx.spec[i].c/radius;  //ISSUES
+      Temp.rhospec[i].c -= rho * spec[i].c * Vcorr.x / radius;
     }
     if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
 	Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-      Temp.rhov.x += (lambda.xx - lambda.zz)/X.x;
-      Temp.rhov.y += lambda.xy/X.x;
-      Temp.E += (- theta.x + v.x*lambda.xx + v.y*lambda.xy)/X.x 
-	+(Mu + mu_t*sigma_star)*dWdx.k/X.x;
-      Temp.rhok = (Mu + mu_t*sigma_star)*dWdx.k/X.x;
-      Temp.rhoomega = (Mu + mu_t*sigma)*dWdx.omega/X.x;
+      Temp.rhov.x += (lambda.xx - lambda.zz)/radius;
+      Temp.rhov.y += lambda.xy/radius;
+      Temp.E += (- theta.x + v.x*lambda.xx + v.y*lambda.xy)/radius 
+	+(Mu + mu_t*sigma_star)*dWdx.k/radius;
+      Temp.rhok = (Mu + mu_t*sigma_star)*dWdx.k/radius;
+      Temp.rhoomega = (Mu + mu_t*sigma)*dWdx.omega/radius;
       for(int i=0; i<ns;i++){
-	Temp.rhospec[i].c = rho*Dm_t*dWdx.spec[i].c/X.x;
+	Temp.rhospec[i].c = rho*Dm_t*dWdx.spec[i].c/radius;
       }
     }
     
   } else if (Axisymmetric == AXISYMMETRIC_Y) {
-    Temp.rhov.x = tau.xy/X.y;
-    Temp.rhov.y = (tau.xx - tau.zz)/X.y;
-    Temp.E = (- qflux.y + v.x*tau.xy + v.y*tau.yy)/X.y;
+    Temp.rhov.x = tau.xy/radius;
+    Temp.rhov.y = (tau.xx - tau.zz)/radius;
+    Temp.E = (- qflux.y + v.x*tau.xy + v.y*tau.yy)/radius;
     for(int i=0; i<ns;i++){
-      Temp.rhospec[i].c = rho*(Mu/(rho*Schmidt[i]))*dWdy.spec[i].c/X.y;
+      Temp.rhospec[i].c = rho*(Mu/(rho*Schmidt[i]))*dWdy.spec[i].c/radius;
     }
     if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
 	Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-      Temp.rhov.x += lambda.xy/X.y;
-      Temp.rhov.y += (lambda.xx - lambda.zz)/X.y;
-      Temp.E += (- theta.y + v.x*lambda.xy + v.y*lambda.yy)/X.y 
-	+(Mu + mu_t*sigma_star)*dWdy.k/X.y ;
-      Temp.rhok = (Mu + mu_t*sigma_star)*dWdy.k/X.y;
-      Temp.rhoomega = (Mu + mu_t*sigma)*dWdy.omega/X.y;
+      Temp.rhov.x += lambda.xy/radius;
+      Temp.rhov.y += (lambda.xx - lambda.zz)/radius;
+      Temp.E += (- theta.y + v.x*lambda.xy + v.y*lambda.yy)/radius 
+	+(Mu + mu_t*sigma_star)*dWdy.k/radius ;
+      Temp.rhok = (Mu + mu_t*sigma_star)*dWdy.k/radius;
+      Temp.rhoomega = (Mu + mu_t*sigma)*dWdy.omega/radius;
       for(int i=0; i<ns;i++){
-	Temp.rhospec[i].c = rho*Dm_t*dWdy.spec[i].c/X.y;
+	Temp.rhospec[i].c = rho*Dm_t*dWdy.spec[i].c/radius;
       }
     }
     
@@ -1883,11 +1893,12 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
   double Temp = T();
   double Mu = mu();
   double Kappa = kappa();
-  
-  if(Axisymmetric == AXISYMMETRIC_X){   
-    double radius = X.x;
 
-    dSa_VdW(2,2) += TWO*Mu*(d_dWdx_dW - ONE/radius)/radius;    
+  double radius = check_radius(Axisymmetric,X);
+
+  if(Axisymmetric == AXISYMMETRIC_X){   
+
+    dSa_VdW(1,1) += TWO*Mu*(d_dWdx_dW - ONE/radius)/radius;    
     dSa_VdW(2,1) += Mu*d_dWdy_dW/radius;
     dSa_VdW(2,2) += Mu*d_dWdx_dW/radius ;
     
@@ -1932,23 +1943,14 @@ Chem2D_cState Chem2D_pState::S_turbulence_model(const Chem2D_pState &dWdx,
                                                 const Vector2D &X,
                                                 const int Flow_Type,
                                                 const int Axisymmetric){
-  double radius;
   double mu_t, production;
   Chem2D_cState Temp; Temp.Vacuum();
 
   //Turbulence model eddy viscosity
   mu_t = eddy_viscosity();
- 
-  if (Axisymmetric == AXISYMMETRIC_X) {
-    if(X.x !=0){
-       radius = X.x;
-     }
-  } else if (Axisymmetric == AXISYMMETRIC_Y) {
-     if(X.y !=0){
-        radius = X.y;
-     }
-  } /* endif */
   
+  double radius = check_radius(Axisymmetric,X);
+ 
   production = lambda.xx*dWdx.v.x + 
     lambda.xy*(dWdy.v.x + dWdx.v.y) + 
     lambda.yy*dWdy.v.y;
@@ -2399,10 +2401,11 @@ Vector2D Chem2D_cState::thermal_diffusion(const double &Temp,
  * Viscous fluxes  (laminar flow)                                * 
  * Viscous fluxes  (turbulent flows) are defined in single block * 
  ****************************************************************/
-Chem2D_cState Chem2D_cState::Viscous_Flux_x(const Chem2D_pState &dWdx, 
-                                            const int Flow_Type) const{
+Chem2D_cState Chem2D_cState::Viscous_Flux_x(const Chem2D_pState &dWdx,
+                                            const int Flow_Type,
+					    const double &Vcorr) const{
  
-  Chem2D_cState temp;
+  static Chem2D_cState temp;
 
   temp[1] = ZERO;
   temp[2] = tau.xx;
@@ -2412,6 +2415,7 @@ Chem2D_cState Chem2D_cState::Viscous_Flux_x(const Chem2D_pState &dWdx,
   //rho * Diffusion_Coef * grad cn 
   for( int i=0; i<ns; i++){
     temp.rhospec[i].c = (rhospec[i].diffusion_coef * dWdx.spec[i].c);
+    temp.rhospec[i].c -= rhospec[i].c * Vcorr ;
   }
 
   if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
@@ -2434,9 +2438,10 @@ Chem2D_cState Chem2D_cState::Viscous_Flux_x(const Chem2D_pState &dWdx,
   return(temp);  
 }
 
-Chem2D_cState Chem2D_cState::Viscous_Flux_y(const Chem2D_pState &dWdy, 
-                                            const int Flow_Type) const {
-  Chem2D_cState temp;
+Chem2D_cState Chem2D_cState::Viscous_Flux_y(const Chem2D_pState &dWdy,   
+                                            const int Flow_Type,
+					    const double &Vcorr) const {
+  static Chem2D_cState temp;
 
   temp[1] = ZERO;
   temp[2] = tau.xy; 
@@ -2444,7 +2449,8 @@ Chem2D_cState Chem2D_cState::Viscous_Flux_y(const Chem2D_pState &dWdy,
   temp[4] = - qflux.y + v().x*tau.xy + v().y*tau.yy;		
   //rho * Diffusion_Coef * grad cn 
   for( int i=0; i<ns; i++){
-    temp.rhospec[i].c = (rhospec[i].diffusion_coef * dWdy.spec[i].c);     
+    temp.rhospec[i].c = (rhospec[i].diffusion_coef * dWdy.spec[i].c);
+    temp.rhospec[i].c -= rhospec[i].c * Vcorr ;     
   }
 
   if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
@@ -2760,7 +2766,7 @@ Chem2D_pState No_Slip(const Chem2D_pState &Win,
 		      const Vector2D &norm_dir,
 		      const int &TEMPERATURE_BC_FLAG) {  
   
-  return(Moving_Wall(Win,Wout,norm_dir,ZERO,TEMPERATURE_BC_FLAG));        //USED FOR GAP, CORRECT ??
+  return(Moving_Wall(Win,Wout,norm_dir,ZERO,TEMPERATURE_BC_FLAG));        
 
 }
 
@@ -2795,11 +2801,10 @@ Chem2D_pState Moving_Wall(const Chem2D_pState &Win,
   Temp.v.x = ur*cos_angle - vr*sin_angle;
   Temp.v.y = ur*sin_angle + vr*cos_angle;
    
- //   /* Fixed Wall Temperature */
-//    if(TEMPERATURE_BC_FLAG == FIXED_TEMPERATURE_WALL){
-//      Temp.rho = Temp.p/(Temp.Rtot()*Wout.T());
-//    }
-   
+   /* Fixed Wall Temperature */
+   if(TEMPERATURE_BC_FLAG == FIXED_TEMPERATURE_WALL){
+     Temp.rho = Temp.p/(Temp.Rtot()*Wout.T());
+   } 
    //ADIABATIC_WALL -> constant extrapolation for Adiabatic */
 
 
@@ -2878,12 +2883,10 @@ Chem2D_pState BC_2DFlame_Inflow(const Chem2D_pState &Wi,
 				const Vector2D &norm_dir,
 				const double &radius,
 				const double &physical_time){ 
-//   return Wo;
-  
    //fixed rho, v, p, and species
   Chem2D_pState Wnew(Wo);
   
-  //Periodic fuel velocity for Unsteady ( Vz if physical_time = 0)
+  //Periodic fuel velocity for Unsteady ( Vz if physical_time = 0)   //THIS ONLY WORKS FOR DIFFUSION FLAME !!!
   // Vz = fuel_max*( 1 + r^2/R^2)*(1 + alpha*sin(omega*t))
   // R = 0.002,
   // fuel_max = 70 cm/s
@@ -2911,9 +2914,9 @@ Chem2D_pState BC_2DFlame_Outflow(const Chem2D_pState &Wi,
   //2D Coreflame OUTFLOW hold pressure
   Chem2D_pState Wnew(Wi);  
   Wnew.p = Wo.p;  
-  if(Wnew.v.y < ZERO){ 
-    Wnew.v.y = ZERO;
-  }
+//   if(Wnew.v.y < ZERO){ 
+//     Wnew.v.y = ZERO;
+//   }
   return Wnew;
 
 //   Chem2D_pState Wi_rotated(Wi), Wo_rotated(Wo), Wnew;
@@ -4220,9 +4223,9 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
 			     const Vector2D X,
 			     const Vector2D &norm_dir) {
 
-  Chem2D_cState U;
-  double Temperature, Rmix;
-  Vector2D grad_T;
+  static Chem2D_cState U;
+  static double Temperature, Rmix;
+  static Vector2D grad_T, Vcorr; Vcorr.zero();
   Vector2D i = Vector2D(1,0), j = Vector2D(0,1);
   double mu = W.mu();
 
@@ -4251,13 +4254,16 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
     /***************** Diffusion coefficients **********************/
     // using global Schmidt number relation Scs = mu/rho*Ds
     U.rhospec[k].diffusion_coef = mu/U.Schmidt[k];
-    /***************** mass fraction gradients *********************/
-//     U.rhospec[k].gradc.x = U.rho * dWdx.spec[k].c;
-//     U.rhospec[k].gradc.y = U.rho * dWdy.spec[k].c;
   }
-  
+  /****************** Diffusion Correction Velocity ****************/
+  //  Vc = \sum_{i=0}^N { D_k * dY_i/dx_i }
+  for(int k=0; k<U.ns; k++){ 
+    Vcorr.x += U.rhospec[k].diffusion_coef*dWdx.spec[k].c/U.rho;
+    Vcorr.y += U.rhospec[k].diffusion_coef*dWdy.spec[k].c/U.rho;
+  }
+
   //Molecular (laminar) stress tensor
-  W.Laminar_Stress(dWdx,dWdy, Flow_Type,Axisymmetric, X);
+  W.Laminar_Stress(dWdx,dWdy, Flow_Type,Axisymmetric,mu, X);
   U.tau = W.tau;
 
   //Molecular (laminar) heat flux
@@ -4284,8 +4290,8 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
 
   } 
 
-  return (U.Viscous_Flux_x(dWdx, Flow_Type)*dot(i,norm_dir) 
-	  + U.Viscous_Flux_y(dWdy, Flow_Type)*dot(j,norm_dir));
+  return (U.Viscous_Flux_x(dWdx, Flow_Type,Vcorr.x)*dot(i,norm_dir) 
+	  + U.Viscous_Flux_y(dWdy, Flow_Type,Vcorr.y)*dot(j,norm_dir));
 
 }
 
@@ -4337,4 +4343,19 @@ double WallShearStress(const Chem2D_pState &W1,
   // Return the wall shear stress.
   return W1.mu()*dWdn;
 
+}
+
+/************* Axisymmetric Radius check ***********************************/
+// Ensure no divide by zero with 1/r terms 
+double check_radius(const int Axisymmetric, const Vector2D &X){
+  double radius;  
+  double VAL = 0.001; //MICRO
+  if (Axisymmetric == AXISYMMETRIC_X) {
+    radius = (fabs(X.x) < VAL) ? VAL : X.x;   
+    //if( fabs(radius) < VAL) cout<<"\n Radius "<<X.x;
+
+  } else if (Axisymmetric == AXISYMMETRIC_Y) {    
+    radius = (X.y < VAL) ? VAL : X.y;
+  } 
+  return radius;
 }

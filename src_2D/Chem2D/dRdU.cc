@@ -67,7 +67,7 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
     
     DenseMatrix dWdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);     
     // Transformation Jacobian 
-    SolnBlk.Uo[ii][jj].W().dWdU(dWdU, SolnBlk.Flow_Type);   //WHY HERE !!!!! ONLY 
+    SolnBlk.W[ii][jj].dWdU(dWdU, SolnBlk.Flow_Type);   
     dSdU += dRdW*dWdU;
   }
 
