@@ -19,6 +19,7 @@ using std::vector;
 #include "CENO_ExecutionMode.h"
 #include "../Grid/HO_Grid2DQuad.h"
 #include "ReconstructionHelpers.h"
+#include "Cauchy_BoundaryConditions.h"
 
 /*********************************
  * Declare the HighOrder2D class *
@@ -60,6 +61,12 @@ public:
   typedef std::vector<int> FlagType;
   //! Type for smoothness indicator associated with each reconstructed variable.
   typedef std::vector<double> DoubleArrayType;
+  //! Type for array of Vector2D
+  typedef vector<Vector2D> Vector2DArray;
+  //! Type for high-order Cauchy boundary conditions
+  typedef Cauchy_BCs<Soln_State> BC_Type;
+  //! Type for the array of high-order solution boundary conditions
+  typedef vector<BC_Type *> BC_Type_Array;
   //@}
   
   //! @name Constructors:
@@ -421,6 +428,14 @@ public:
 							   (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const = 
 							   &Soln_Block_Type::CellSolution);
 
+  //! @brief Compute the constrained unlimited high-order solution reconstruction of cell (iCell,jCell). 
+  template<class Soln_Block_Type>
+  void ComputeConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
+							 const Soln_State & 
+							 (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const,
+							 const int &iCell, const int &jCell,
+							 const IndexType & i_index, const IndexType & j_index);
+
   //! @brief Set the mean value conservation equations in the assemble matrix
   template<class Soln_Block_Type>
   void Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
@@ -633,7 +648,7 @@ private:
   //! @name Reconstruction memory pools:
   //@{
   // === Helper variables (i.e. memory pools which are overwritten for each cell in the reconstruction process) ===
-  vector<Vector2D> DeltaCellCenters; // Storage for distances between centroids.
+  Vector2DArray DeltaCellCenters;    // Storage for distances between centroids.
   IndexType i_index, j_index;	     // Storage for indexes of cells that are part of the reconstruction stencil.
   DenseMatrix A;		     // Storage for the LHS matrix of the k-Exact reconstruction.
   DoubleArrayType GeometricWeights;  // Storage for the geometric weights calculated in the k-Exact reconstruction.
@@ -646,6 +661,22 @@ private:
   int I_Index[8], J_Index[8];
   double geom_weights[8];
   Vector2D dX[8];
+
+  // === Helper variables for constrained reconstruction
+  // (i.e. memory pools which are overwritten for each cell in the constrained reconstruction process) ===
+  IndexType i_index_ave, j_index_ave;	/* Storage for indexes of cells that contribute to the reconstruction stencil 
+					   with conservation of average solution values */
+  Vector2DArray Constraints_Loc;	// Storage for the locations where constraints are imposed
+  Vector2DArray Constraints_Normals;	// Storage for the normal vectors at the locations where constraints are imposed
+  BC_Type_Array Constraints_BCs;	// Storage for the high-order boundary conditions that are imposed as constraints
+
+  Vector2DArray Approx_Constraints_Loc;	     // Storage for the locations where approximate constraints are imposed
+  Vector2DArray Approx_Constraints_Normals;  // Storage for the normal vectors at the locations where approx. constraints are imposed
+  BC_Type_Array Approx_Constraints_BCs;	     // Storage for the high-order boundary conditions that are imposed as approx. constraints
+
+  DenseMatrix A_Assembled;	 // Storage for the LHS matrix of the constrained k-Exact reconstruction.
+  DenseMatrix All_U_Assembled;   // Storage for the RHS matrix (i.e. solution dependent) of the constrained k-Exact reconstruction.
+  DenseMatrix X_Assembled;       // Storage for the solution to the constrained least-square problem.
   //@}
 
   //! @name Error calculation variables and internal functions:
@@ -1035,7 +1066,18 @@ void HighOrder2D<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder
   GeometricWeights.assign(StencilSize, 0.0);
   All_Delta_U.newsize(StencilSize - 1, NumberOfVariables());
   Delta_U.newsize(StencilSize - 1);
-  X.newsize(StencilSize - 1);
+  X.newsize(NumberOfTaylorDerivatives() - 1);
+
+  // Set the constrained reconstruction helper variables
+  i_index_ave.reserve(StencilSize);
+  j_index_ave.reserve(StencilSize);
+  Constraints_Loc.reserve(8);
+  Constraints_Normals.reserve(8);
+  Constraints_BCs.reserve(8);
+  Approx_Constraints_Loc.reserve(32);
+  Approx_Constraints_Normals.reserve(32);
+  Approx_Constraints_BCs.reserve(32);
+  X_Assembled.newsize(NumberOfTaylorDerivatives(), NumberOfVariables());
 
   // Confirm allocation
   _allocated_cells = true;
@@ -1156,6 +1198,20 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
     All_Delta_U.newsize(0,0);
     Delta_U.newsize(0);
     X.newsize(0);
+
+    // Deallocate constrained reconstruction helper variables
+    i_index_ave.clear();
+    j_index_ave.clear();
+    Constraints_Loc.clear();
+    Constraints_Normals.clear();
+    Constraints_BCs.clear();
+    Approx_Constraints_Loc.clear();
+    Approx_Constraints_Normals.clear();
+    Approx_Constraints_BCs.clear();
+    A_Assembled.newsize(0,0);
+    All_U_Assembled.newsize(0,0);
+    X_Assembled.newsize(0,0);
+    
 
     // Confirm the deallocation
     OrderOfReconstruction = -1;
