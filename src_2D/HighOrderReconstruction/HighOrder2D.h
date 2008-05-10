@@ -459,6 +459,8 @@ public:
 				IndexType & i_index, IndexType & j_index) const;
   void SetSpecialReconstructionStencil(const int &iCell, const int &jCell,
 				       IndexType & i_index, IndexType & j_index) const;
+  void SetConstrainedReconstructionStencil(const int &iCell, const int &jCell,
+					   IndexType & i_index, IndexType & j_index) const;  
   /*! @brief Set a central stencil of cells with a given extend for a particular cell. */
   void SetCentralStencil(const int &iCell, const int &jCell,
 			 IndexType & i_index, IndexType & j_index,
@@ -1953,6 +1955,17 @@ void HighOrder2D<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const i
   SetCentralStencil(iCell,jCell,i_index,j_index,rings,_dummy_);
 }
 
+/*! 
+ * Write the 'i' and 'j' indexes of the cells that are part of
+ * the reconstruction of cell (iCell,jCell) for special tests.
+ * Use the number of rings set in the class to determine how far the stencil extends.
+ * This routine doesn't modify the stencil due to existence 
+ * of curved boundaries.
+ * \param [out] i_index The i-index of the cells.
+ * \param [out] j_index The j-index of the cells.
+ *
+ * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
+ */
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::SetSpecialReconstructionStencil(const int &iCell, const int &jCell,
 							      IndexType & i_index, IndexType & j_index) const{
@@ -2120,6 +2133,71 @@ void HighOrder2D<SOLN_STATE>::getEnlargedReconstructionStencil(const int &iCell,
   default: // general expression
     throw runtime_error("HighOrder2D<SOLN_STATE>::getEnlargedReconstructionStencil() doesn't support the current number of rings!");
   }//endswitch  
+}
+
+/*! 
+ * Write the 'i' and 'j' indexes of the cells that are part of
+ * the constrained reconstruction of cell (iCell,jCell).
+ * Use the number of rings and the class variables caring information
+ * about constrained boundaries to determine how far the stencil extends.
+ * This routine DOES'T generate a central stencil!
+ * The stencil is biased to the mesh interior but it doesn't extend
+ * further than a central stencil.
+ *
+ * \param [out] i_index The i-index of the cells.
+ * \param [out] j_index The j-index of the cells.
+ *
+ * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::SetConstrainedReconstructionStencil(const int &iCell, const int &jCell,
+								  IndexType & i_index, IndexType & j_index) const{
+
+  // Reset indexes
+  i_index.clear();
+  j_index.clear();
+  
+  int i,j, Imin, Imax, Jmin, Jmax;
+
+  /* Set Imin, Imax, Jmin, Jmax for a central stencil. */
+  Imin = iCell-rings; Imax = iCell+rings;
+  Jmin = jCell-rings; Jmax = jCell+rings;
+
+  // Check WEST boundary
+  if (_constrained_WEST_reconstruction && Imin < ICl){
+    Imin = ICl;		/* limit Imin */
+  } 
+
+  // Check EAST boundary
+  if (_constrained_EAST_reconstruction && Imax > ICu){
+    Imax = ICu;		/* limit Imax */
+  } 
+
+  // Check NORTH boundary
+  if (_constrained_NORTH_reconstruction && Jmax > JCu){
+    Jmax = JCu;		/* limit Jmax */
+  } 
+
+  // Check SOUTH boundary
+  if (_constrained_SOUTH_reconstruction && Jmin < JCl){
+    Jmin = JCl;		/* limit Jmin */
+  }
+
+  /* Form stencil */
+  i_index.push_back(iCell);
+  j_index.push_back(jCell);
+
+  for (i=Imin; i<=Imax; ++i){
+    for (j=Jmin; j<=Jmax; ++j){
+
+      if (  i!=iCell || j!=jCell ){
+	i_index.push_back(i);
+	j_index.push_back(j);
+      }//endif
+
+    }// endfor
+  }// endfor
+
 }
 
 /*! 

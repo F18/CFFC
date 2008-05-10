@@ -978,6 +978,274 @@ ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 }
 
 
+/*! 
+ * Compute the unlimited k-exact high-order reconstruction
+ * proposed by Barth (1993) combined with equations satisfied 
+ * exactly (i.e. constraints) which account for boundary conditions.
+ * This reconstruction procedure should be used for computational cells
+ * affected by the presence of a boundary condition enforced with constrained 
+ * reconstruction.
+ * The mean quantity conservation is also enforced as a constraint.
+ *
+ * \note This routine is customized for advection-diffusion state class!
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type>
+void HighOrder2D<SOLN_STATE>::
+ComputeConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
+						  const Soln_State & 
+						  (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const,
+						  const int &iCell, const int &jCell,
+						  const IndexType & i_index,
+						  const IndexType & j_index) {
+
+  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+  int TotalNumberOfExactlySatisfiedConstraints(0),
+    TotalNumberOfExactlySatisfiedEquations(1), // account for average conservation in cell (iCell,jCell)
+    TotalNumberOfApproximatelySatisfiedConstraints(0),
+    TotalNumberOfApproximatelySatisfiedEquations(i_index.size() - 1); // account for average conservation in neighbour cells
+
+  int Temp, cell, n;
+  int NumGQP(Geom->getNumGQP());
+
+  IndexType ParameterIndex(1,1); //< for advection-diffusion!!!
+
+
+
+  // == Check if the reconstruction polynomial is piecewise constant
+  if (RecOrder() == 0){
+    // *********  Assign the average solution to D00 ***********
+    CellTaylorDerivState(iCell,jCell,0) = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
+    // There is no need to calculate the reconstruction
+    return;
+  }
+
+  // Reset the memory pools
+  Constraints_Loc.clear();
+  Constraints_Normals.clear();
+  Constraints_BCs.clear();
+  Approx_Constraints_Loc.clear();
+  Approx_Constraints_Normals.clear();
+  Approx_Constraints_BCs.clear();
+  
+
+  // ========  Determine the number of exactly satisfied constraints and fetch the data  ==========
+  // Check North cell face
+  Temp = Geom->NumOfConstrainedGaussQuadPoints_North(iCell,jCell);
+  if (Temp > 0){
+    // Constraints detected on the North face
+    TotalNumberOfExactlySatisfiedConstraints += Temp;
+
+    // Fetch the data
+    if (Geom->BndNorthSplineInfo != NULL){
+      Geom->BndNorthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndNorthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else {
+      Geom->addGaussQuadPointsFaceN(iCell,jCell,Constraints_Loc,NumGQP);
+      for (n = 0; n < NumGQP; ++n){
+	Constraints_Normals.push_back(Geom->nfaceN(iCell,jCell));
+      }
+    }
+    
+    Constraints_BCs.push_back(&SolnBlk.BC_NorthCell(iCell));
+  }
+
+  // Check South cell face
+  Temp = Geom->NumOfConstrainedGaussQuadPoints_South(iCell,jCell);
+  if (Temp > 0){
+    // Constraints detected on the South face
+    TotalNumberOfExactlySatisfiedConstraints += Temp;
+
+    // Fetch the data
+    if (Geom->BndSouthSplineInfo != NULL){
+      Geom->BndSouthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndSouthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else {
+      Geom->addGaussQuadPointsFaceS(iCell,jCell,Constraints_Loc,NumGQP);
+      for (n = 0; n < NumGQP; ++n){
+	Constraints_Normals.push_back(Geom->nfaceS(iCell,jCell));
+      }
+    }
+    
+    Constraints_BCs.push_back(&SolnBlk.BC_SouthCell(iCell));
+  }
+  
+  // Check East cell face
+  Temp = Geom->NumOfConstrainedGaussQuadPoints_East(iCell,jCell);
+  if (Temp > 0){
+    // Constraints detected on the East face
+    TotalNumberOfExactlySatisfiedConstraints += Temp;
+
+    // Fetch the data
+    if (Geom->BndEastSplineInfo != NULL){
+      Geom->BndEastSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndEastSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else {
+      Geom->addGaussQuadPointsFaceE(iCell,jCell,Constraints_Loc,NumGQP);
+      for (n = 0; n < NumGQP; ++n){
+	Constraints_Normals.push_back(Geom->nfaceE(iCell,jCell));
+      }
+    }
+    
+    Constraints_BCs.push_back(&SolnBlk.BC_EastCell(jCell));
+  }
+
+  // Check West cell face
+  Temp = Geom->NumOfConstrainedGaussQuadPoints_West(iCell,jCell);
+  if (Temp > 0){
+    // Constraints detected on the West face
+    TotalNumberOfExactlySatisfiedConstraints += Temp;
+
+    // Fetch the data
+    if (Geom->BndWestSplineInfo != NULL){
+      Geom->BndWestSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndWestSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else {
+      Geom->addGaussQuadPointsFaceW(iCell,jCell,Constraints_Loc,NumGQP);
+      for (n = 0; n < NumGQP; ++n){
+	Constraints_Normals.push_back(Geom->nfaceW(iCell,jCell));
+      }
+    }
+    
+    Constraints_BCs.push_back(&SolnBlk.BC_WestCell(jCell));
+  }
+
+  
+
+  // ======= Determine the number of approximately satisfied constraints and fetch the data ======
+  for (cell = 1; cell < i_index.size(); ++cell){ // for each neighbour cell
+    
+    // Check North neighbour cell face
+    Temp = Geom->NumOfConstrainedGaussQuadPoints_North(i_index[cell],j_index[cell]);
+    if (Temp > 0){
+      // Constraints detected on the North face
+      TotalNumberOfApproximatelySatisfiedConstraints += Temp;
+
+      // Fetch the data
+      if (Geom->BndNorthSplineInfo != NULL){
+	Geom->BndNorthSplineInfo[i_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
+	Geom->BndNorthSplineInfo[i_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
+      } else {
+	Geom->addGaussQuadPointsFaceN(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
+	for (n = 0; n < NumGQP; ++n){
+	  Approx_Constraints_Normals.push_back(Geom->nfaceN(i_index[cell],j_index[cell]));
+	}
+      }
+    
+      Approx_Constraints_BCs.push_back(&SolnBlk.BC_NorthCell(i_index[cell]));
+    }
+
+    // Check South neighbour cell face
+    Temp = Geom->NumOfConstrainedGaussQuadPoints_South(i_index[cell],j_index[cell]);
+    if (Temp > 0){
+      // Constraints detected on the South face
+      TotalNumberOfApproximatelySatisfiedConstraints += Temp;
+
+      // Fetch the data
+      if (Geom->BndSouthSplineInfo != NULL){
+	Geom->BndSouthSplineInfo[i_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
+	Geom->BndSouthSplineInfo[i_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
+      } else {
+	Geom->addGaussQuadPointsFaceS(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
+	for (n = 0; n < NumGQP; ++n){
+	  Approx_Constraints_Normals.push_back(Geom->nfaceS(i_index[cell],j_index[cell]));
+	}
+      }
+    
+      Approx_Constraints_BCs.push_back(&SolnBlk.BC_SouthCell(i_index[cell]));
+    }
+  
+    // Check East neighbour cell face
+    Temp = Geom->NumOfConstrainedGaussQuadPoints_East(i_index[cell],j_index[cell]);
+    if (Temp > 0){
+      // Constraints detected on the East face
+      TotalNumberOfApproximatelySatisfiedConstraints += Temp;
+
+      // Fetch the data
+      if (Geom->BndEastSplineInfo != NULL){
+	Geom->BndEastSplineInfo[j_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
+	Geom->BndEastSplineInfo[j_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
+      } else {
+	Geom->addGaussQuadPointsFaceE(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
+	for (n = 0; n < NumGQP; ++n){
+	  Approx_Constraints_Normals.push_back(Geom->nfaceE(i_index[cell],j_index[cell]));
+	}
+      }
+    
+      Approx_Constraints_BCs.push_back(&SolnBlk.BC_EastCell(j_index[cell]));
+    }
+
+    // Check West neighbour cell face
+    Temp = Geom->NumOfConstrainedGaussQuadPoints_West(i_index[cell],j_index[cell]);
+    if (Temp > 0){
+      // Constraints detected on the West face
+      TotalNumberOfApproximatelySatisfiedConstraints += Temp;
+
+      // Fetch the data
+      if (Geom->BndWestSplineInfo != NULL){
+	Geom->BndWestSplineInfo[j_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
+	Geom->BndWestSplineInfo[j_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
+      } else {
+	Geom->addGaussQuadPointsFaceW(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
+	for (n = 0; n < NumGQP; ++n){
+	  Approx_Constraints_Normals.push_back(Geom->nfaceW(i_index[cell],j_index[cell]));
+	}
+      }
+    
+      Approx_Constraints_BCs.push_back(&SolnBlk.BC_WestCell(j_index[cell]));
+    }
+  } // endfor (cell)
+
+
+  /******** Determine dimensions of the least-squares problem and set matrices accordingly ************/
+  /****************************************************************************************************/
+  TotalNumberOfExactlySatisfiedEquations += TotalNumberOfExactlySatisfiedConstraints;
+  TotalNumberOfApproximatelySatisfiedEquations += TotalNumberOfApproximatelySatisfiedConstraints;
+
+  A_Assembled.newsize(TotalNumberOfExactlySatisfiedEquations + TotalNumberOfApproximatelySatisfiedEquations,
+		      NumberOfTaylorDerivatives());
+  A_Assembled.zero();		// delete this
+
+  All_U_Assembled.newsize(TotalNumberOfExactlySatisfiedEquations + TotalNumberOfApproximatelySatisfiedEquations,
+			  NumberOfVariables());
+  All_U_Assembled.zero();	// delete this
+
+  Set_MeanValueConservation_Equations(SolnBlk,
+				      ReconstructedSoln,
+				      iCell,jCell,
+				      i_index, j_index,
+				      A_Assembled, All_U_Assembled,
+				      ParameterIndex,
+				      TotalNumberOfExactlySatisfiedConstraints,
+				      TotalNumberOfExactlySatisfiedEquations + TotalNumberOfApproximatelySatisfiedConstraints,
+				      0);
+
+
+
+  //   Print_(A_Assembled);
+
+  //   cout << endl << endl;
+  
+  //   Print_(All_U_Assembled);
+
+  //   int p;
+  
+  //    for (n = 0 , p=0; n < Constraints_BCs.size(); ++n){
+  //      Print_2(Constraints_Loc[p], Constraints_Normals[p]);
+  //      Print_2(Constraints_Loc[p+1], Constraints_Normals[p+1]);
+  //      Print_(*Constraints_BCs[n]);
+  //      p += 2;
+  //    }
+  
+  //    for (n = 0 , p=0; n < Approx_Constraints_BCs.size(); ++n){
+  //      Print_2(Approx_Constraints_Loc[p],   Approx_Constraints_Normals[p]);
+  //      Print_2(Approx_Constraints_Loc[p+1], Approx_Constraints_Normals[p+1]);
+  //      Print_(*Approx_Constraints_BCs[n]);
+  //      p += 2;
+  //    }
+
+}
+
 /*!
  * Generate the LHS and RHS of the least-squares problem associated 
  * with the reconstruction procedure and write the values at the specified
