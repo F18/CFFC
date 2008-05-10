@@ -454,15 +454,19 @@ public:
   //@{
   void getGaussQuadPointsFaceN(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
   void getGaussQuadPointsFaceN(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+  void addGaussQuadPointsFaceN(const int &ii, const int &jj, std::vector<Vector2D> &GQPoints, const int & NumberOfGQPs) const;
 
   void getGaussQuadPointsFaceS(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
   void getGaussQuadPointsFaceS(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+  void addGaussQuadPointsFaceS(const int &ii, const int &jj, std::vector<Vector2D> &GQPoints, const int & NumberOfGQPs) const;
 
   void getGaussQuadPointsFaceE(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
   void getGaussQuadPointsFaceE(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+  void addGaussQuadPointsFaceE(const int &ii, const int &jj, std::vector<Vector2D> &GQPoints, const int & NumberOfGQPs) const;
 
   void getGaussQuadPointsFaceW(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
   void getGaussQuadPointsFaceW(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+  void addGaussQuadPointsFaceW(const int &ii, const int &jj, std::vector<Vector2D> &GQPoints, const int & NumberOfGQPs) const;
   //@}
   
   //! @name Number of Gauss quadrature points used for flux calculation.
@@ -1786,6 +1790,73 @@ inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceN(const int &ii, const i
 }
 
 /*!
+ * Get the number of Gauss quadrature points for the North face.
+ * 
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param GQPoints storage array for the Gauss quadrature points. The memory IS NOT overwritten!
+ * \param NumberOfGQPs specifies how many points are returned. This number is typically dictated 
+ *                     by the accuracy of the flux calculation.
+ */
+inline void Grid2D_Quad_Block_HO::addGaussQuadPointsFaceN(const int &ii, const int &jj,
+							  std::vector<Vector2D> &GQPoints, const int & NumberOfGQPs) const{
+
+  Vector2D Temp;
+
+  switch (NumberOfGQPs){
+  case 1:
+    GQPoints.push_back(xfaceN(ii,jj));
+    break;
+
+  case 2:
+    Temp = Node[ii][jj+1].X-Node[ii+1][jj+1].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints.push_back(Node[ii+1][jj+1].X + GaussQuadratureData::GQ2_Abscissa[0]*Temp);
+    
+    /* final value GQPoints[1] */
+    GQPoints.push_back(Node[ii+1][jj+1].X + GaussQuadratureData::GQ2_Abscissa[1]*Temp);
+    break;
+
+  case 3:
+    Temp = Node[ii][jj+1].X-Node[ii+1][jj+1].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints.push_back(Node[ii+1][jj+1].X + GaussQuadratureData::GQ3_Abscissa[0]*Temp);
+   
+    /* final value GQPoints[1] */
+    GQPoints.push_back(Node[ii+1][jj+1].X + GaussQuadratureData::GQ3_Abscissa[1]*Temp);
+
+    /* final value GQPoints[2] */
+    GQPoints.push_back(Node[ii+1][jj+1].X + GaussQuadratureData::GQ3_Abscissa[2]*Temp);
+    break;
+
+  case 5:
+    Temp = Node[ii][jj+1].X-Node[ii+1][jj+1].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints.push_back(Node[ii+1][jj+1].X + GaussQuadratureData::GQ5_Abscissa[0]*Temp);
+   
+    /* final value GQPoints[1] */
+    GQPoints.push_back(Node[ii+1][jj+1].X + GaussQuadratureData::GQ5_Abscissa[1]*Temp);
+
+    /* final value GQPoints[2] */
+    GQPoints.push_back(Node[ii+1][jj+1].X + GaussQuadratureData::GQ5_Abscissa[2]*Temp);
+
+    /* final value GQPoints[3] */
+    GQPoints.push_back(Node[ii+1][jj+1].X + GaussQuadratureData::GQ5_Abscissa[3]*Temp);
+
+    /* final value GQPoints[4] */
+    GQPoints.push_back(Node[ii+1][jj+1].X + GaussQuadratureData::GQ5_Abscissa[4]*Temp);
+    break;
+
+  default:
+    throw runtime_error("Grid2D_Quad_Block_HO::getGaussQuadPointsFaceN() ERROR! \
+                         Not implemented number of Gauss quadrature points!");
+  }
+}
+
+/*!
  * Get the number of Gauss quadrature points for the South face.
  * 
  * \param ii i-index of the cell
@@ -1842,6 +1913,73 @@ inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceS(const int &ii, const i
 
     /* final value GQPoints[4] */
     GQPoints[4] = Node[ii][jj].X + GaussQuadratureData::GQ5_Abscissa[4]*GQPoints[4];
+    break;
+
+  default:
+    throw runtime_error("Grid2D_Quad_Block_HO::getGaussQuadPointsFaceS() ERROR! \
+                         Not implemented number of Gauss quadrature points!");
+  }
+}
+
+/*!
+ * Get the number of Gauss quadrature points for the South face.
+ * 
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param GQPoints storage array for the Gauss quadrature points. This memory IS NOT overwritten!
+ * \param NumberOfGQPs specifies how many points are returned. This number is typically dictated 
+ *                     by the accuracy of the flux calculation.
+ */							  
+inline void Grid2D_Quad_Block_HO::addGaussQuadPointsFaceS(const int &ii, const int &jj,
+							  std::vector<Vector2D> &GQPoints, const int & NumberOfGQPs) const {
+
+  Vector2D Temp;
+
+  switch (NumberOfGQPs){
+  case 1:
+    GQPoints.push_back(xfaceS(ii,jj));
+    break;
+
+  case 2:
+    Temp = Node[ii+1][jj].X-Node[ii][jj].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints.push_back(Node[ii][jj].X + GaussQuadratureData::GQ2_Abscissa[0]*Temp);
+    
+    /* final value GQPoints[1] */
+    GQPoints.push_back(Node[ii][jj].X + GaussQuadratureData::GQ2_Abscissa[1]*Temp);
+    break;
+
+  case 3:
+    Temp = Node[ii+1][jj].X-Node[ii][jj].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints.push_back(Node[ii][jj].X + GaussQuadratureData::GQ3_Abscissa[0]*Temp);
+    
+    /* final value GQPoints[1] */
+    GQPoints.push_back(Node[ii][jj].X + GaussQuadratureData::GQ3_Abscissa[1]*Temp);
+
+    /* final value GQPoints[2] */
+    GQPoints.push_back(Node[ii][jj].X + GaussQuadratureData::GQ3_Abscissa[2]*Temp);
+    break;
+
+  case 5:
+    Temp = Node[ii+1][jj].X-Node[ii][jj].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints.push_back(Node[ii][jj].X + GaussQuadratureData::GQ5_Abscissa[0]*Temp);
+    
+    /* final value GQPoints[1] */
+    GQPoints.push_back(Node[ii][jj].X + GaussQuadratureData::GQ5_Abscissa[1]*Temp);
+
+    /* final value GQPoints[2] */
+    GQPoints.push_back(Node[ii][jj].X + GaussQuadratureData::GQ5_Abscissa[2]*Temp);
+
+    /* final value GQPoints[3] */
+    GQPoints.push_back(Node[ii][jj].X + GaussQuadratureData::GQ5_Abscissa[3]*Temp);
+
+    /* final value GQPoints[4] */
+    GQPoints.push_back(Node[ii][jj].X + GaussQuadratureData::GQ5_Abscissa[4]*Temp);
     break;
 
   default:
@@ -1916,6 +2054,73 @@ inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceE(const int &ii, const i
 }
 
 /*!
+ * Get the number of Gauss quadrature points for the East face.
+ * 
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param GQPoints storage array for the Gauss quadrature points. This memory IS NOT overwritten!
+ * \param NumberOfGQPs specifies how many points are returned. This number is typically dictated 
+ *                     by the accuracy of the flux calculation.
+ */
+inline void Grid2D_Quad_Block_HO::addGaussQuadPointsFaceE(const int &ii, const int &jj,
+							  std::vector<Vector2D> & GQPoints, const int & NumberOfGQPs) const {
+  
+  Vector2D Temp;
+  
+  switch (NumberOfGQPs){
+  case 1:
+    GQPoints.push_back(xfaceE(ii,jj));
+    break;
+
+  case 2:
+    Temp = Node[ii+1][jj+1].X-Node[ii+1][jj].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints.push_back(Node[ii+1][jj].X + GaussQuadratureData::GQ2_Abscissa[0]*Temp);
+    
+    /* final value GQPoints[1] */
+    GQPoints.push_back(Node[ii+1][jj].X + GaussQuadratureData::GQ2_Abscissa[1]*Temp);
+    break;
+
+  case 3:
+    Temp = Node[ii+1][jj+1].X-Node[ii+1][jj].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints.push_back(Node[ii+1][jj].X + GaussQuadratureData::GQ3_Abscissa[0]*Temp);
+    
+    /* final value GQPoints[1] */
+    GQPoints.push_back(Node[ii+1][jj].X + GaussQuadratureData::GQ3_Abscissa[1]*Temp);
+
+    /* final value GQPoints[2] */
+    GQPoints.push_back(Node[ii+1][jj].X + GaussQuadratureData::GQ3_Abscissa[2]*Temp);
+    break;
+
+  case 5:
+    Temp = Node[ii+1][jj+1].X-Node[ii+1][jj].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints.push_back(Node[ii+1][jj].X + GaussQuadratureData::GQ5_Abscissa[0]*Temp);
+    
+    /* final value GQPoints[1] */
+    GQPoints.push_back(Node[ii+1][jj].X + GaussQuadratureData::GQ5_Abscissa[1]*Temp);
+
+    /* final value GQPoints[2] */
+    GQPoints.push_back(Node[ii+1][jj].X + GaussQuadratureData::GQ5_Abscissa[2]*Temp);
+
+    /* final value GQPoints[3] */
+    GQPoints.push_back(Node[ii+1][jj].X + GaussQuadratureData::GQ5_Abscissa[3]*Temp);
+
+    /* final value GQPoints[4] */
+    GQPoints.push_back(Node[ii+1][jj].X + GaussQuadratureData::GQ5_Abscissa[4]*Temp);
+    break;
+
+  default:
+    throw runtime_error("Grid2D_Quad_Block_HO::getGaussQuadPointsFaceE() ERROR! \
+                         Not implemented number of Gauss quadrature points!");
+  }
+}
+
+/*!
  * Get the number of Gauss quadrature points for the West face.
  * 
  * \param ii i-index of the cell
@@ -1972,6 +2177,73 @@ inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceW(const int &ii, const i
 
     /* final value GQPoints[4] */
     GQPoints[4] = Node[ii][jj+1].X + GaussQuadratureData::GQ5_Abscissa[4]*GQPoints[4];
+    break;
+
+  default:
+    throw runtime_error("Grid2D_Quad_Block_HO::getGaussQuadPointsFaceW() ERROR! \
+                         Not implemented number of Gauss quadrature points!");
+  }
+}
+
+/*!
+ * Get the number of Gauss quadrature points for the West face.
+ * 
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param GQPoints storage array for the Gauss quadrature points. This memory IS NOT overwritten!
+ * \param NumberOfGQPs specifies how many points are returned. This number is typically dictated 
+ *                     by the accuracy of the flux calculation.
+ */
+inline void Grid2D_Quad_Block_HO::addGaussQuadPointsFaceW(const int &ii, const int &jj,
+							  std::vector<Vector2D> & GQPoints, const int & NumberOfGQPs) const {
+
+  Vector2D Temp;
+
+  switch (NumberOfGQPs){
+  case 1:
+    GQPoints.push_back(xfaceW(ii,jj));
+    break;
+
+  case 2:
+    Temp = Node[ii][jj].X-Node[ii][jj+1].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints.push_back(Node[ii][jj+1].X + GaussQuadratureData::GQ2_Abscissa[0]*Temp);
+    									  
+    /* final value GQPoints[1] */					  
+    GQPoints.push_back(Node[ii][jj+1].X + GaussQuadratureData::GQ2_Abscissa[1]*Temp);
+    break;
+
+  case 3:
+    Temp = Node[ii][jj].X-Node[ii][jj+1].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints.push_back(Node[ii][jj+1].X + GaussQuadratureData::GQ3_Abscissa[0]*Temp);
+    									  
+    /* final value GQPoints[1] */					  
+    GQPoints.push_back(Node[ii][jj+1].X + GaussQuadratureData::GQ3_Abscissa[1]*Temp);
+									  
+    /* final value GQPoints[2] */					  
+    GQPoints.push_back(Node[ii][jj+1].X + GaussQuadratureData::GQ3_Abscissa[2]*Temp);
+    break;
+
+  case 5:
+    Temp = Node[ii][jj].X-Node[ii][jj+1].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints.push_back(Node[ii][jj+1].X + GaussQuadratureData::GQ5_Abscissa[0]*Temp);
+    									  
+    /* final value GQPoints[1] */					  
+    GQPoints.push_back(Node[ii][jj+1].X + GaussQuadratureData::GQ5_Abscissa[1]*Temp);
+									  
+    /* final value GQPoints[2] */					  
+    GQPoints.push_back(Node[ii][jj+1].X + GaussQuadratureData::GQ5_Abscissa[2]*Temp);
+									  
+    /* final value GQPoints[3] */					  
+    GQPoints.push_back(Node[ii][jj+1].X + GaussQuadratureData::GQ5_Abscissa[3]*Temp);
+									  
+    /* final value GQPoints[4] */					  
+    GQPoints.push_back(Node[ii][jj+1].X + GaussQuadratureData::GQ5_Abscissa[4]*Temp);
     break;
 
   default:
@@ -2108,7 +2380,7 @@ inline void Grid2D_Quad_Block_HO::operator ^(const double &a) {
  * cell face which have boundary conditions enforced by constraints.
  */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_North(const int &ii, const int &jj){
-  if (jj != JCu || BndNorthSpline.getFluxCalcMethod() == SolveRiemannProblem ){
+  if (jj != JCu || ii < ICl || ii > ICu || BndNorthSpline.getFluxCalcMethod() == SolveRiemannProblem ){
     /* cell is not on the interior North boundary
        OR
        the North boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
@@ -2128,7 +2400,7 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_North(const int
  * cell face which have boundary conditions enforced by constraints.
  */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_South(const int &ii, const int &jj){
-  if (jj != JCl || BndSouthSpline.getFluxCalcMethod() == SolveRiemannProblem ){
+  if (jj != JCl || ii < ICl || ii > ICu || BndSouthSpline.getFluxCalcMethod() == SolveRiemannProblem ){
     /* cell is not on the interior South boundary
        OR
        the South boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
@@ -2148,7 +2420,7 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_South(const int
  * cell face which have boundary conditions enforced by constraints.
  */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_East(const int &ii, const int &jj){
-  if (ii != ICu || BndEastSpline.getFluxCalcMethod() == SolveRiemannProblem ){
+  if (ii != ICu || jj < JCl || jj > JCu || BndEastSpline.getFluxCalcMethod() == SolveRiemannProblem ){
     /* cell is not on the interior East boundary
        OR
        the East boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
@@ -2168,7 +2440,7 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_East(const int 
  * cell face which have boundary conditions enforced by constraints.
  */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_West(const int &ii, const int &jj){
-  if (ii != ICl || BndWestSpline.getFluxCalcMethod() == SolveRiemannProblem ){
+  if (ii != ICl || jj < JCl || jj > JCu || BndWestSpline.getFluxCalcMethod() == SolveRiemannProblem ){
     /* cell is not on the interior West boundary
        OR
        the West boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
