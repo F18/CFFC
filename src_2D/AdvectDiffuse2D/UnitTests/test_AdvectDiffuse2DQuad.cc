@@ -2016,6 +2016,34 @@ namespace tut
     // Compute integral of the RHS term and write it to the k_residual = 0
     ComputeEquationRightHandSideTerm(SolnBlk[0], IP, 0);
 
+    int iCell, jCell;
+    iCell = 4;
+    jCell = 4;
+
+    IndexType i_index, j_index;
+    i_index.reserve(25); j_index.reserve(25);
+
+    SolnBlk[0].Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    // form stencil
+    SolnBlk[0].HighOrderVariable(0).SetConstrainedReconstructionStencil(iCell,jCell,i_index,j_index);
+
+    SolnBlk[0].HighOrderVariable(0).ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk[0],
+										      &AdvectDiffuse2D_Quad_Block::CellSolution,
+										      iCell,jCell,
+										      i_index, j_index);
+
+    iCell = 5;
+    jCell = 4;
+
+    SolnBlk[0].HighOrderVariable(0).SetConstrainedReconstructionStencil(iCell,jCell,i_index,j_index);
+
+    SolnBlk[0].HighOrderVariable(0).ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk[0],
+										      &AdvectDiffuse2D_Quad_Block::CellSolution,
+										      iCell,jCell,
+										      i_index, j_index);
+
+
     if (RunRegression){
 
       // === Generate these files with high-order boundaries ===
@@ -2035,10 +2063,10 @@ namespace tut
       // === Generate master files with low-order boundaries (toggle OFF high-order bnds. in the input file) ===
 
       // Output solution
-      MasterFile = "HighOrder_StraightBoundaries_ReconstructionBasedFlux_Study_Cells.dat";
-      //      Open_Output_File(MasterFile);
+      MasterFile = "HighOrder_StraightBoundaries_ReconstructionBasedFlux_Study_Nodes.dat";
+      Open_Output_File(MasterFile);
       
-      //      SolnBlk[0].Output_Cells_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+      SolnBlk[0].Output_Tecplot_HighOrder(0,0,0, 1, out(), 0);
       
     }
 
