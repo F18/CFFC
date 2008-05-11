@@ -1053,6 +1053,27 @@ namespace tut
     ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
     ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
     ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
+    // == check indexes for West constraints
+    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), 0);
+    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), 0);
+    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), 0);
+    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), 0);
+    // == check indexes for East constraints
+    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), 0);
+    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), 0);
+    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), 0);
+    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), 0);
+    // == check indexes for South constraints
+    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), 0);
+    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), 0);
+    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), 0);
+    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), 0);
+    // == check indexes for North constraints
+    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), 0);
+    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), 0);
+    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), 0);
+    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), 0);
+
 
     // == check solution
     double Result = 0.59509999999999985;
@@ -1113,6 +1134,26 @@ namespace tut
     ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
     ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
     ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
+    // == check indexes for West constraints
+    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), 0);
+    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), 0);
+    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), 0);
+    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), 0);
+    // == check indexes for East constraints
+    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), 0);
+    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), 0);
+    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), 0);
+    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), 0);
+    // == check indexes for South constraints
+    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), 0);
+    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), 0);
+    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), 0);
+    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), 0);
+    // == check indexes for North constraints
+    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), 0);
+    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), 0);
+    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), 0);
+    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), 0);
 
     // Change spline type
     Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
@@ -1138,6 +1179,26 @@ namespace tut
     ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid());
     ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
     ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid());
+    // == check indexes for West constraints
+    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), 0);
+    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), 0);
+    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), 0);
+    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), 0);
+    // == check indexes for East constraints
+    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), HO.ICu_Grid()-1);
+    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), HO.ICu_Grid());
+    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), HO.JCl_Grid()-3);
+    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), HO.JCu_Grid() - 2);
+    // == check indexes for South constraints
+    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), 0);
+    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), 0);
+    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), 0);
+    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), 0);
+    // == check indexes for North constraints
+    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), HO.ICl_Grid()-3);
+    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), HO.ICu_Grid());
+    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), HO.JCu_Grid()-1);
+    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), HO.JCu_Grid());
 
     // Change spline types again
     Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
@@ -1165,6 +1226,26 @@ namespace tut
     ensure_equals("EndI_LPWL, II", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
     ensure_equals("StartJ_LPWL, II", HO.StartJdir_LPWL(), HO.JCl_Grid());
     ensure_equals("EndJ_LPWL, II", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
+    // == check indexes for West constraints
+    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), HO.ICl_Grid());
+    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), HO.ICl_Grid()+1);
+    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), HO.JCl_Grid()+2);
+    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), HO.JCu_Grid()+3);
+    // == check indexes for East constraints
+    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), 0);
+    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), 0);
+    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), 0);
+    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), 0);
+    // == check indexes for South constraints
+    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), HO.ICl_Grid());
+    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), HO.ICu_Grid()+3);
+    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), HO.JCl_Grid());
+    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), HO.JCl_Grid()+1);
+    // == check indexes for North constraints
+    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), 0);
+    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), 0);
+    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), 0);
+    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), 0);
   }
 
   /* Test 24:*/
@@ -1232,6 +1313,381 @@ namespace tut
       // output the pseudo-inverse of cell (5,7)
       Print_File(HO.Cell_LHS_Inv(5,7), out());
     }
+  }
+
+  /* Test 25:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<25>()
+  {
+    set_test_name("Check loop indexes influenced by constraints, all sides constrained");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(4);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Change spline type
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    // == check that constrained reconstruction is required
+    ensure_equals("Block Flag", HO.IsConstrainedReconstructionRequired(), true);
+    ensure_equals("West Bnd Flag", HO.IsWestConstrainedReconstructionRequired(), true);
+    ensure_equals("East Bnd Flag", HO.IsEastConstrainedReconstructionRequired(), true);
+    ensure_equals("North Bnd Flag", HO.IsNorthConstrainedReconstructionRequired(), true);
+    ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), true);
+
+    // == check indexes for smoothness indicator
+    ensure_equals("Rings SI", HO.RingsSI(), 2);
+    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()+2);
+    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()-2);
+    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()+2);
+    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()-2);
+    // == check indexes for limited piecewise linear
+    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid());
+    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid());
+    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid());
+    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid());
+    // == check indexes for West constraints
+    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), HO.ICl_Grid());
+    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), HO.ICl_Grid()+1);
+    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), HO.JCl_Grid()+2);
+    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), HO.JCu_Grid()-2);
+    // == check indexes for East constraints
+    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), HO.ICu_Grid()-1);
+    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), HO.ICu_Grid());
+    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), HO.JCl_Grid()+2);
+    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), HO.JCu_Grid()-2);
+    // == check indexes for South constraints
+    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), HO.ICl_Grid());
+    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), HO.ICu_Grid());
+    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), HO.JCl_Grid());
+    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), HO.JCl_Grid()+1);
+    // == check indexes for North constraints
+    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), HO.ICl_Grid());
+    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), HO.ICu_Grid());
+    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), HO.JCu_Grid()-1);
+    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), HO.JCu_Grid());
+  }
+
+  /* Test 26:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<26>()
+  {
+    set_test_name("Check loop indexes influenced by constraints, W and E sides constrained");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(4);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Change spline type
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    // == check that constrained reconstruction is required
+    ensure_equals("Block Flag", HO.IsConstrainedReconstructionRequired(), true);
+    ensure_equals("West Bnd Flag", HO.IsWestConstrainedReconstructionRequired(), true);
+    ensure_equals("East Bnd Flag", HO.IsEastConstrainedReconstructionRequired(), true);
+    ensure_equals("North Bnd Flag", HO.IsNorthConstrainedReconstructionRequired(), false);
+    ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), false);
+
+    // == check indexes for smoothness indicator
+    ensure_equals("Rings SI", HO.RingsSI(), 2);
+    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()+2);
+    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()-2);
+    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()-1);
+    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()+1);
+    // == check indexes for limited piecewise linear
+    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid());
+    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid());
+    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
+    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
+    // == check indexes for West constraints
+    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), HO.ICl_Grid());
+    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), HO.ICl_Grid()+1);
+    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), HO.JCl_Grid()-3);
+    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), HO.JCu_Grid()+3);
+    // == check indexes for East constraints
+    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), HO.ICu_Grid()-1);
+    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), HO.ICu_Grid());
+    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), HO.JCl_Grid()-3);
+    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), HO.JCu_Grid()+3);
+    // == check indexes for South constraints
+    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), 0);
+    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), 0);
+    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), 0);
+    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), 0);
+    // == check indexes for North constraints
+    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), 0);
+    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), 0);
+    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), 0);
+    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), 0);
+  }
+
+  /* Test 27:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<27>()
+  {
+    set_test_name("Check loop indexes influenced by constraints, N and S sides constrained");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Change spline type
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    // == check that constrained reconstruction is required
+    ensure_equals("Block Flag", HO.IsConstrainedReconstructionRequired(), true);
+    ensure_equals("West Bnd Flag", HO.IsWestConstrainedReconstructionRequired(), false);
+    ensure_equals("East Bnd Flag", HO.IsEastConstrainedReconstructionRequired(), false);
+    ensure_equals("North Bnd Flag", HO.IsNorthConstrainedReconstructionRequired(), true);
+    ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), true);
+
+    // == check indexes for smoothness indicator
+    ensure_equals("Rings SI", HO.RingsSI(), 2);
+    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()-1);
+    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()+1);
+    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()+2);
+    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()-2);
+    // == check indexes for limited piecewise linear
+    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid()-1);
+    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
+    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid());
+    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid());
+    // == check indexes for West constraints
+    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), 0);
+    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), 0);
+    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), 0);
+    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), 0);
+    // == check indexes for East constraints
+    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), 0);
+    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), 0);
+    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), 0);
+    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), 0);
+    // == check indexes for South constraints
+    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), HO.ICl_Grid()-3);
+    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), HO.ICu_Grid()+3);
+    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), HO.JCl_Grid());
+    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), HO.JCl_Grid()+1);
+    // == check indexes for North constraints
+    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), HO.ICl_Grid()-3);
+    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), HO.ICu_Grid()+3);
+    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), HO.JCu_Grid()-1);
+    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), HO.JCu_Grid());
+  }
+
+  /* Test 28:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<28>()
+  {
+    set_test_name("Check loop indexes influenced by constraints, W and E sides constrained, SI with first neighbours");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Change spline type
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    // == check that constrained reconstruction is required
+    ensure_equals("Block Flag", HO.IsConstrainedReconstructionRequired(), true);
+    ensure_equals("West Bnd Flag", HO.IsWestConstrainedReconstructionRequired(), true);
+    ensure_equals("East Bnd Flag", HO.IsEastConstrainedReconstructionRequired(), true);
+    ensure_equals("North Bnd Flag", HO.IsNorthConstrainedReconstructionRequired(), false);
+    ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), false);
+
+    // == check indexes for smoothness indicator
+    ensure_equals("Rings SI", HO.RingsSI(), 1);
+    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()+1);
+    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()-1);
+    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()-1);
+    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()+1);
+    // == check indexes for limited piecewise linear
+    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid());
+    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid());
+    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
+    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
+    // == check indexes for West constraints
+    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), HO.ICl_Grid());
+    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), HO.ICl_Grid()+1);
+    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), HO.JCl_Grid()-2);
+    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), HO.JCu_Grid()+2);
+    // == check indexes for East constraints
+    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), HO.ICu_Grid()-1);
+    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), HO.ICu_Grid());
+    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), HO.JCl_Grid()-2);
+    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), HO.JCu_Grid()+2);
+    // == check indexes for South constraints
+    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), 0);
+    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), 0);
+    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), 0);
+    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), 0);
+    // == check indexes for North constraints
+    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), 0);
+    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), 0);
+    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), 0);
+    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), 0);
+  }
+
+  /* Test 29:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<29>()
+  {
+    set_test_name("Check loop indexes influenced by constraints, N and S sides constrained, SI with first neighbours");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Change spline type
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    // == check that constrained reconstruction is required
+    ensure_equals("Block Flag", HO.IsConstrainedReconstructionRequired(), true);
+    ensure_equals("West Bnd Flag", HO.IsWestConstrainedReconstructionRequired(), false);
+    ensure_equals("East Bnd Flag", HO.IsEastConstrainedReconstructionRequired(), false);
+    ensure_equals("North Bnd Flag", HO.IsNorthConstrainedReconstructionRequired(), true);
+    ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), true);
+
+    // == check indexes for smoothness indicator
+    ensure_equals("Rings SI", HO.RingsSI(), 1);
+    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()-1);
+    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()+1);
+    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()+1);
+    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()-1);
+    // == check indexes for limited piecewise linear
+    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid()-1);
+    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
+    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid());
+    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid());
+    // == check indexes for West constraints
+    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), 0);
+    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), 0);
+    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), 0);
+    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), 0);
+    // == check indexes for East constraints
+    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), 0);
+    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), 0);
+    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), 0);
+    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), 0);
+    // == check indexes for South constraints
+    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), HO.ICl_Grid()-2);
+    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), HO.ICu_Grid()+2);
+    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), HO.JCl_Grid());
+    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), HO.JCl_Grid()+1);
+    // == check indexes for North constraints
+    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), HO.ICl_Grid()-2);
+    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), HO.ICu_Grid()+2);
+    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), HO.JCu_Grid()-1);
+    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), HO.JCu_Grid());
   }
 
 }
