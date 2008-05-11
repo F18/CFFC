@@ -448,6 +448,17 @@ public:
 					   const int &RowConstraint,
 					   const int &StartRow, const int &StartCol);
 
+  //! @brief Set the individual constraint equations in the assemble matrix
+  template<class Soln_Block_Type>
+  void Generalized_IndividualConstraints_Equations(Soln_Block_Type & SolnBlk,
+						   const int &iCell, const int &jCell,
+						   Vector2DArray & Constraints_Loc,
+						   Vector2DArray & Constraints_Normals,
+						   BC_Type_Array & Constraints_BCs,
+						   DenseMatrix & A, DenseMatrix & All_U,
+						   const IndexType & ParameterIndex,
+						   const int &StartRow, const int &StartCol);
+
   //@} (Cell Level Reconstructions)
 
   //! @name Helper Functions:

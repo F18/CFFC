@@ -2017,13 +2017,13 @@ namespace tut
     ComputeEquationRightHandSideTerm(SolnBlk[0], IP, 0);
 
     int iCell, jCell;
+    double ErrorL1, ErrorL2 ;
+    verbose = false;
     iCell = 4;
     jCell = 4;
 
     IndexType i_index, j_index;
     i_index.reserve(25); j_index.reserve(25);
-
-    SolnBlk[0].Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
 
     // form stencil
     SolnBlk[0].HighOrderVariable(0).SetConstrainedReconstructionStencil(iCell,jCell,i_index,j_index);
@@ -2032,6 +2032,30 @@ namespace tut
 										      &AdvectDiffuse2D_Quad_Block::CellSolution,
 										      iCell,jCell,
 										      i_index, j_index);
+
+    
+    // Estimate errors against the exact solution
+    ErrorL1 = ( SolnBlk[0].HighOrderVariable(0).
+		ComputeSolutionErrorL1(iCell,jCell,
+				       wrapped_member_function(SolnBlk[0].ExactSolution(),
+							       &AdvectDiffuse2D_Quad_Block::
+							       Exact_Solution_Type::Solution,
+							       ErrorL1),
+				       1, 12) );
+		
+
+    ErrorL2 = ( SolnBlk[0].HighOrderVariable(0).
+		ComputeSolutionErrorL2(iCell,jCell,
+				       wrapped_member_function(SolnBlk[0].ExactSolution(),
+							       &AdvectDiffuse2D_Quad_Block::
+							       Exact_Solution_Type::Solution,
+							       ErrorL2),
+				       1, 12) );
+
+    if (verbose){
+      Print_2(ErrorL1, ErrorL2);
+    }
+ 
 
     iCell = 5;
     jCell = 4;
@@ -2042,6 +2066,29 @@ namespace tut
 										      &AdvectDiffuse2D_Quad_Block::CellSolution,
 										      iCell,jCell,
 										      i_index, j_index);
+
+
+    // Estimate errors against the exact solution
+    ErrorL1 = ( SolnBlk[0].HighOrderVariable(0).
+		ComputeSolutionErrorL1(iCell,jCell,
+				       wrapped_member_function(SolnBlk[0].ExactSolution(),
+							       &AdvectDiffuse2D_Quad_Block::
+							       Exact_Solution_Type::Solution,
+							       ErrorL1),
+				       1, 12) );
+		
+
+    ErrorL2 = ( SolnBlk[0].HighOrderVariable(0).
+		ComputeSolutionErrorL2(iCell,jCell,
+				       wrapped_member_function(SolnBlk[0].ExactSolution(),
+							       &AdvectDiffuse2D_Quad_Block::
+							       Exact_Solution_Type::Solution,
+							       ErrorL2),
+				       1, 12) );
+
+    if (verbose){
+      Print_2(ErrorL1, ErrorL2);
+    }
 
 
     if (RunRegression){
@@ -2064,14 +2111,13 @@ namespace tut
 
       // Output solution
       MasterFile = "HighOrder_StraightBoundaries_ReconstructionBasedFlux_Study_Nodes.dat";
-      Open_Output_File(MasterFile);
+      //       Open_Output_File(MasterFile);
       
-      SolnBlk[0].Output_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+      //       SolnBlk[0].Output_Tecplot_HighOrder(0,0,0, 1, out(), 0);
       
     }
 
   }
-
 
 }
 

@@ -1204,12 +1204,34 @@ ComputeConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 
   A_Assembled.newsize(TotalNumberOfExactlySatisfiedEquations + TotalNumberOfApproximatelySatisfiedEquations,
 		      NumberOfTaylorDerivatives());
-  A_Assembled.zero();		// delete this
-
   All_U_Assembled.newsize(TotalNumberOfExactlySatisfiedEquations + TotalNumberOfApproximatelySatisfiedEquations,
 			  NumberOfVariables());
-  All_U_Assembled.zero();	// delete this
 
+  /************ Generate exactly satisfied individual constraints for UNCOUPLED variables *************/
+  /****************************************************************************************************/
+  Generalized_IndividualConstraints_Equations(SolnBlk,
+					      iCell, jCell,
+					      Constraints_Loc,
+					      Constraints_Normals,
+					      Constraints_BCs,
+					      A_Assembled, All_U_Assembled,
+					      ParameterIndex,
+					      0, 0);
+
+
+  /******** Generate approximately satisfied individual constraints for UNCOUPLED variables ***********/
+  /****************************************************************************************************/
+  Generalized_IndividualConstraints_Equations(SolnBlk,
+					      iCell, jCell,
+					      Approx_Constraints_Loc,
+					      Approx_Constraints_Normals,
+					      Approx_Constraints_BCs,
+					      A_Assembled, All_U_Assembled,
+					      ParameterIndex,
+					      TotalNumberOfExactlySatisfiedEquations, 0);
+
+  /******************** Generate the exact and approximate mean conservation equations ***************************/
+  /***************************************************************************************************************/
   Set_MeanValueConservation_Equations(SolnBlk,
 				      ReconstructedSoln,
 				      iCell,jCell,
@@ -1221,28 +1243,18 @@ ComputeConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 				      0);
 
 
+  /************* Obtain solution to the constrained least-square problem *************/
+  /***********************************************************************************/
+  Solve_Constrained_LS_Householder(A_Assembled,
+				   All_U_Assembled,
+				   X_Assembled,
+				   TotalNumberOfExactlySatisfiedEquations);
 
-  //   Print_(A_Assembled);
-
-  //   cout << endl << endl;
-  
-  //   Print_(All_U_Assembled);
-
-  //   int p;
-  
-  //    for (n = 0 , p=0; n < Constraints_BCs.size(); ++n){
-  //      Print_2(Constraints_Loc[p], Constraints_Normals[p]);
-  //      Print_2(Constraints_Loc[p+1], Constraints_Normals[p+1]);
-  //      Print_(*Constraints_BCs[n]);
-  //      p += 2;
-  //    }
-  
-  //    for (n = 0 , p=0; n < Approx_Constraints_BCs.size(); ++n){
-  //      Print_2(Approx_Constraints_Loc[p],   Approx_Constraints_Normals[p]);
-  //      Print_2(Approx_Constraints_Loc[p+1], Approx_Constraints_Normals[p+1]);
-  //      Print_(*Approx_Constraints_BCs[n]);
-  //      p += 2;
-  //    }
+  // Update the coefficients D (derivatives)
+  //**************************************************
+  for (n=0; n<=CellTaylorDeriv(iCell,jCell).LastElem(); ++n){
+    CellTaylorDerivState(iCell,jCell,n)[1] = X_Assembled(n,0);
+  }//endfor
 
 }
 
@@ -1378,6 +1390,102 @@ Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
 
 
   delete [] DeltaCellCenters;
+
+}
+
+/*!
+ * Set the constraints equations in the constrained least-square reconstruction.
+ * This constraints are called individual because they are independent of
+ * other solution parameters
+ * (i.e they don't express any relationship between solution parameters).
+ * The starting position for the entries in the LHS and RHS of the linear
+ * system are specified by the (StartRow, StartCol) input parameters.   \n                                
+ *                                                                          
+ * The BCs handled by this subroutine have the mixed form:                  
+ *   F(GQP, A_GQP, B_GQP) = A_GQP*F1(GQP) + B_GQP*F2(GQP)                   
+ *                                                                          
+ * where: GQP      -- Gauss Quadrature Point Locations (i.e. flux calculation points)
+ *        A_GQP    -- The coefficient for the Dirichlet boundary condition at GQP                                                
+ *        B_GQP    -- The coefficient for the Neumann boundary condition at GQP                                                
+ *        F1(GQP)  -- The value of the Dirichlet boundary condition at GQP  
+ *        F2(GQP)  -- The value of the Neumann boundary condition at GQP    
+ *
+ * \param SolnBlk the quad block for which the solution reconstruction is done.
+ * \param iCell i-index of the reconstructed cell
+ * \param jCell j-index of the reconstructed cell
+ * \param Constraints_Loc GQP array
+ * \param Constraints_Normals normal vectors at GQP locations
+ * \param Constraints_BCs provide the boundary condition coefficients (i.e. A_GQP, B_GQP, F1, F2)
+ * \param ParameterIndex related to the indexes of the solution
+ * \param A the LHS assemble matrix 
+ * \param B the RHS assemble matrix
+ *
+ * \note This routine is customized for advection-diffusion state class!
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::
+Generalized_IndividualConstraints_Equations(Soln_Block_Type & SolnBlk,
+					    const int &iCell, const int &jCell,
+					    Vector2DArray & Constraints_Loc,
+					    Vector2DArray & Constraints_Normals,
+					    BC_Type_Array & Constraints_BCs,
+					    DenseMatrix & A, DenseMatrix & All_U,
+					    const IndexType & ParameterIndex,
+					    const int &StartRow, const int &StartCol) {
+  
+  int P1, P2, i;
+  int BCs, BCs_Entry, Eq;			// equation
+  double PowXC, PowYC;		/* PowXC = DistXi^(P1-1); PowYC = DistYi^(P2-1) */
+  double DistXi, DistYi;
+  int IndexP1, IndexP2;
+
+  
+  for (BCs_Entry = 0, Eq = 0; BCs_Entry < Constraints_BCs.size(); ++BCs_Entry){ // for each boundary condition entry
+
+    for (BCs = 1; BCs <= Constraints_BCs[BCs_Entry]->NumOfPoints(); ++BCs, ++Eq){ // for each flux calculation point
+
+      // Compute entrie in the LHS and RHS for the current equation
+      
+      // Determine distance between the current GQP and the centroid of cell (iCell,jCell)
+      DistXi = Constraints_Loc[Eq].x - XCellCenter(iCell,jCell);
+      DistYi = Constraints_Loc[Eq].y - YCellCenter(iCell,jCell);
+      
+      // Step 1. Form the LHS  -- build the row of the matrix A associated with the current GQP
+      for (i=0; i<=CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+	// build the row of the matrix
+	P1 = CellTaylorDeriv(iCell,jCell,i).P1();  // identify P1
+	P2 = CellTaylorDeriv(iCell,jCell,i).P2();  // identify P2
+
+	/* Initialize PowXC & PowYC */
+	PowXC = 1.0/DistXi;
+	PowYC = 1.0/DistYi;
+
+	/* Update PowXC & PowYC */
+	for (IndexP1 = 1; IndexP1 <= P1; ++IndexP1){ PowXC *= DistXi; }
+	for (IndexP2 = 1; IndexP2 <= P2; ++IndexP2){ PowYC *= DistYi; }
+
+	A(Eq+StartRow,i+StartCol) = ( PowXC * PowYC * 
+				      ( Constraints_BCs[BCs_Entry]->a(BCs)[ParameterIndex[0]] * DistXi * DistYi + 
+					Constraints_BCs[BCs_Entry]->b(BCs)[ParameterIndex[0]] * (P1 * DistYi * 
+												 Constraints_Normals[Eq].x  + 
+												 P2 * DistXi * 
+												 Constraints_Normals[Eq].y )) );
+      } //endfor (i)
+       
+
+      // Step 2. Form the RHS  -- build the row of the matrix All_U associated with the current GQP
+      for (i=0; i<ParameterIndex.size(); ++i){
+	All_U(Eq+StartRow, i) = ( ( Constraints_BCs[BCs_Entry]->a(BCs)[ParameterIndex[0]] * 
+				    Constraints_BCs[BCs_Entry]->DirichletBC(BCs)[ParameterIndex[0]] ) + 
+				  ( Constraints_BCs[BCs_Entry]->b(BCs)[ParameterIndex[0]] * 
+				    Constraints_BCs[BCs_Entry]->NeumannBC(BCs)[ParameterIndex[0]] ) );
+
+      }//endfor (i)
+
+    } // endfor (BCs)
+
+  }// endfor (BCs_Entry) 
 
 }
 
