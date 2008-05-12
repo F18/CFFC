@@ -22,6 +22,7 @@ short CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS = OFF;	// computation of smooth
 short CENO_Execution_Mode::FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE = ON; // try to use the PWC at interface
 short CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF; // use enough layers of ghost cells
 short CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF; // compute SI with all neighbours
+short CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS = ON; // use additional constraints
 short CENO_Execution_Mode::USE_LAPACK_LEAST_SQUARES = ON; // use Lapack least-squares subroutine
 int CENO_Execution_Mode::Limiter = LIMITER_VANLEER;
 
@@ -40,6 +41,7 @@ void CENO_Execution_Mode::SetDefaults(void){
   FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE = ON; // try to use the PWC at interface
   CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF; // use enough layers of ghost cells to compute everything that is needed
   CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF; // compute SI with all neighbours
+  CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS = ON; // use additional constraints
   USE_LAPACK_LEAST_SQUARES = ON; // use Lapack least-squares subroutine
 }
 
@@ -107,6 +109,14 @@ void CENO_Execution_Mode::Print_Info(std::ostream & out_file){
   } else {
     out_file << "\n     -> CENO Smoothness Indicator: " << "With all neighbours";
   }
+
+  // output behaviour in for cells with constrained reconstruction
+  if (CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS == ON){
+    out_file << "\n     -> CENO Additional Constraints: " << "Yes";
+  } else {
+    out_file << "\n     -> CENO Additional Constraints: " << "No";
+  }
+
 }
 
 /*!
@@ -146,6 +156,9 @@ void CENO_Execution_Mode::Broadcast(void){
  			1, 
  			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS,
  			1, 
  			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&USE_LAPACK_LEAST_SQUARES,

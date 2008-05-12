@@ -105,6 +105,12 @@ public:
       --------------------------------------------------------------------------------------- */
   static short CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS;
 
+  /*! Generate approximate constraints from the neighbour cells that are near constrained boundaries. \n
+      Turn ON if this feature is desired. (default) \n
+      Turn OFF if you don't want to use this feature. \n
+      --------------------------------------------------------------------------------------- */
+  static short CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS;
+
   /*! The high-order k-Exact reconstruction involves the solution of a linear least-squares problem,
       which can be obtained with different subroutines. Currently, a Lapack subroutine and an 
       internal one (L. Ivan's implementation) can be used. The Lapack one is faster but assumes the 
@@ -227,6 +233,15 @@ void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Ty
       USE_LAPACK_LEAST_SQUARES = ON;
     } else if ( strcmp(IP.Next_Control_Parameter, "Internal") == 0 ){
       USE_LAPACK_LEAST_SQUARES = OFF;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Additional_Approximate_Constraints") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
+      CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS = ON;
+    } else if ( strcmp(IP.Next_Control_Parameter, "No") == 0 ){
+      CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS = OFF;
     }
     i_command = 0;
 

@@ -71,21 +71,81 @@ void HighOrder2D<SOLN_STATE>::ComputeUnlimitedSolutionReconstruction(Soln_Block_
   // Check WEST boundary
   if (_constrained_WEST_reconstruction){
     // Add constrained reconstruction here
+    for (j = StartJ_ConstrWest; j <= EndJ_ConstrWest; ++j){
+      for (i = StartI_ConstrWest; i <= EndI_ConstrWest; ++i){
+	
+	// Reset the monotonicity data
+	ResetMonotonicityData(i,j);
+	
+	// Set the modified stencil of points used for reconstruction
+	SetConstrainedReconstructionStencil(i, j, i_index_ave, j_index_ave);
+	
+	// Compute the constrained reconstruction for the current cell
+	ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
+							  i, j, i_index_ave, j_index_ave);
+
+      }	// endfor
+    }// endfor
   } 
 
   // Check EAST boundary
   if (_constrained_EAST_reconstruction){
     // Add constrained reconstruction here
+    for (j = StartJ_ConstrEast; j <= EndJ_ConstrEast; ++j){
+      for (i = StartI_ConstrEast; i <= EndI_ConstrEast; ++i){
+	
+	// Reset the monotonicity data
+	ResetMonotonicityData(i,j);
+	
+	// Set the modified stencil of points used for reconstruction
+	SetConstrainedReconstructionStencil(i, j, i_index_ave, j_index_ave);
+	
+	// Compute the constrained reconstruction for the current cell
+	ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
+							  i, j, i_index_ave, j_index_ave);
+
+      }	// endfor
+    }// endfor
   } 
 
   // Check NORTH boundary
   if (_constrained_NORTH_reconstruction){
     // Add constrained reconstruction here
+    for (j = StartJ_ConstrNorth; j <= EndJ_ConstrNorth; ++j){
+      for (i = StartI_ConstrNorth; i <= EndI_ConstrNorth; ++i){
+	
+	// Reset the monotonicity data
+	ResetMonotonicityData(i,j);
+	
+	// Set the modified stencil of points used for reconstruction
+	SetConstrainedReconstructionStencil(i, j, i_index_ave, j_index_ave);
+	
+	// Compute the constrained reconstruction for the current cell
+	ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
+							  i, j, i_index_ave, j_index_ave);
+
+      }	// endfor
+    }// endfor
   } 
 
   // Check SOUTH boundary
   if (_constrained_SOUTH_reconstruction){
     // Add constrained reconstruction here
+    for (j = StartJ_ConstrSouth; j <= EndJ_ConstrSouth; ++j){
+      for (i = StartI_ConstrSouth; i <= EndI_ConstrSouth; ++i){
+	
+	// Reset the monotonicity data
+	ResetMonotonicityData(i,j);
+	
+	// Set the modified stencil of points used for reconstruction
+	SetConstrainedReconstructionStencil(i, j, i_index_ave, j_index_ave);
+	
+	// Compute the constrained reconstruction for the current cell
+	ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
+							  i, j, i_index_ave, j_index_ave);
+
+      }	// endfor
+    }// endfor
   }
 
 }
@@ -1110,92 +1170,94 @@ ComputeConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
     Constraints_BCs.push_back(&SolnBlk.BC_WestCell(jCell));
   }
 
+
+  if (CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS) {
+
+    // ======= Determine the number of approximately satisfied constraints and fetch the data ======
+    for (cell = 1; cell < i_index.size(); ++cell){ // for each neighbour cell
+    
+      // Check North neighbour cell face
+      Temp = Geom->NumOfConstrainedGaussQuadPoints_North(i_index[cell],j_index[cell]);
+      if (Temp > 0){
+	// Constraints detected on the North face
+	TotalNumberOfApproximatelySatisfiedConstraints += Temp;
+
+	// Fetch the data
+	if (Geom->BndNorthSplineInfo != NULL){
+	  Geom->BndNorthSplineInfo[i_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
+	  Geom->BndNorthSplineInfo[i_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
+	} else {
+	  Geom->addGaussQuadPointsFaceN(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
+	  for (n = 0; n < NumGQP; ++n){
+	    Approx_Constraints_Normals.push_back(Geom->nfaceN(i_index[cell],j_index[cell]));
+	  }
+	}
+    
+	Approx_Constraints_BCs.push_back(&SolnBlk.BC_NorthCell(i_index[cell]));
+      }
+
+      // Check South neighbour cell face
+      Temp = Geom->NumOfConstrainedGaussQuadPoints_South(i_index[cell],j_index[cell]);
+      if (Temp > 0){
+	// Constraints detected on the South face
+	TotalNumberOfApproximatelySatisfiedConstraints += Temp;
+
+	// Fetch the data
+	if (Geom->BndSouthSplineInfo != NULL){
+	  Geom->BndSouthSplineInfo[i_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
+	  Geom->BndSouthSplineInfo[i_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
+	} else {
+	  Geom->addGaussQuadPointsFaceS(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
+	  for (n = 0; n < NumGQP; ++n){
+	    Approx_Constraints_Normals.push_back(Geom->nfaceS(i_index[cell],j_index[cell]));
+	  }
+	}
+    
+	Approx_Constraints_BCs.push_back(&SolnBlk.BC_SouthCell(i_index[cell]));
+      }
   
+      // Check East neighbour cell face
+      Temp = Geom->NumOfConstrainedGaussQuadPoints_East(i_index[cell],j_index[cell]);
+      if (Temp > 0){
+	// Constraints detected on the East face
+	TotalNumberOfApproximatelySatisfiedConstraints += Temp;
 
-  // ======= Determine the number of approximately satisfied constraints and fetch the data ======
-  for (cell = 1; cell < i_index.size(); ++cell){ // for each neighbour cell
-    
-    // Check North neighbour cell face
-    Temp = Geom->NumOfConstrainedGaussQuadPoints_North(i_index[cell],j_index[cell]);
-    if (Temp > 0){
-      // Constraints detected on the North face
-      TotalNumberOfApproximatelySatisfiedConstraints += Temp;
-
-      // Fetch the data
-      if (Geom->BndNorthSplineInfo != NULL){
-	Geom->BndNorthSplineInfo[i_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
-	Geom->BndNorthSplineInfo[i_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
-      } else {
-	Geom->addGaussQuadPointsFaceN(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
-	for (n = 0; n < NumGQP; ++n){
-	  Approx_Constraints_Normals.push_back(Geom->nfaceN(i_index[cell],j_index[cell]));
+	// Fetch the data
+	if (Geom->BndEastSplineInfo != NULL){
+	  Geom->BndEastSplineInfo[j_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
+	  Geom->BndEastSplineInfo[j_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
+	} else {
+	  Geom->addGaussQuadPointsFaceE(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
+	  for (n = 0; n < NumGQP; ++n){
+	    Approx_Constraints_Normals.push_back(Geom->nfaceE(i_index[cell],j_index[cell]));
+	  }
 	}
-      }
     
-      Approx_Constraints_BCs.push_back(&SolnBlk.BC_NorthCell(i_index[cell]));
-    }
+	Approx_Constraints_BCs.push_back(&SolnBlk.BC_EastCell(j_index[cell]));
+      }
 
-    // Check South neighbour cell face
-    Temp = Geom->NumOfConstrainedGaussQuadPoints_South(i_index[cell],j_index[cell]);
-    if (Temp > 0){
-      // Constraints detected on the South face
-      TotalNumberOfApproximatelySatisfiedConstraints += Temp;
+      // Check West neighbour cell face
+      Temp = Geom->NumOfConstrainedGaussQuadPoints_West(i_index[cell],j_index[cell]);
+      if (Temp > 0){
+	// Constraints detected on the West face
+	TotalNumberOfApproximatelySatisfiedConstraints += Temp;
 
-      // Fetch the data
-      if (Geom->BndSouthSplineInfo != NULL){
-	Geom->BndSouthSplineInfo[i_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
-	Geom->BndSouthSplineInfo[i_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
-      } else {
-	Geom->addGaussQuadPointsFaceS(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
-	for (n = 0; n < NumGQP; ++n){
-	  Approx_Constraints_Normals.push_back(Geom->nfaceS(i_index[cell],j_index[cell]));
+	// Fetch the data
+	if (Geom->BndWestSplineInfo != NULL){
+	  Geom->BndWestSplineInfo[j_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
+	  Geom->BndWestSplineInfo[j_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
+	} else {
+	  Geom->addGaussQuadPointsFaceW(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
+	  for (n = 0; n < NumGQP; ++n){
+	    Approx_Constraints_Normals.push_back(Geom->nfaceW(i_index[cell],j_index[cell]));
+	  }
 	}
-      }
     
-      Approx_Constraints_BCs.push_back(&SolnBlk.BC_SouthCell(i_index[cell]));
-    }
-  
-    // Check East neighbour cell face
-    Temp = Geom->NumOfConstrainedGaussQuadPoints_East(i_index[cell],j_index[cell]);
-    if (Temp > 0){
-      // Constraints detected on the East face
-      TotalNumberOfApproximatelySatisfiedConstraints += Temp;
-
-      // Fetch the data
-      if (Geom->BndEastSplineInfo != NULL){
-	Geom->BndEastSplineInfo[j_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
-	Geom->BndEastSplineInfo[j_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
-      } else {
-	Geom->addGaussQuadPointsFaceE(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
-	for (n = 0; n < NumGQP; ++n){
-	  Approx_Constraints_Normals.push_back(Geom->nfaceE(i_index[cell],j_index[cell]));
-	}
+	Approx_Constraints_BCs.push_back(&SolnBlk.BC_WestCell(j_index[cell]));
       }
-    
-      Approx_Constraints_BCs.push_back(&SolnBlk.BC_EastCell(j_index[cell]));
-    }
+    } // endfor (cell)
 
-    // Check West neighbour cell face
-    Temp = Geom->NumOfConstrainedGaussQuadPoints_West(i_index[cell],j_index[cell]);
-    if (Temp > 0){
-      // Constraints detected on the West face
-      TotalNumberOfApproximatelySatisfiedConstraints += Temp;
-
-      // Fetch the data
-      if (Geom->BndWestSplineInfo != NULL){
-	Geom->BndWestSplineInfo[j_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
-	Geom->BndWestSplineInfo[j_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
-      } else {
-	Geom->addGaussQuadPointsFaceW(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
-	for (n = 0; n < NumGQP; ++n){
-	  Approx_Constraints_Normals.push_back(Geom->nfaceW(i_index[cell],j_index[cell]));
-	}
-      }
-    
-      Approx_Constraints_BCs.push_back(&SolnBlk.BC_WestCell(j_index[cell]));
-    }
-  } // endfor (cell)
-
+  } // endif
 
   /******** Determine dimensions of the least-squares problem and set matrices accordingly ************/
   /****************************************************************************************************/
@@ -1280,6 +1342,8 @@ ComputeConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
  * \param ParameterIndex related to the indexes of the solution
  * \param A the LHS assemble matrix 
  * \param B the RHS assemble matrix
+ *
+ * \note This routine doesn't normalize the geometric weights.
  */
 template<class SOLN_STATE>
 template<class Soln_Block_Type> inline
@@ -1307,7 +1371,6 @@ Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
   double CombP1X, CombP2Y;
   double PowDistanceYC, PowDistanceXC;
   int cell, i, parameter;
-  double MaxWeight(0.0);
   double IntSum(0.0);
 
   // Allocate memory
@@ -1325,7 +1388,7 @@ Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
     All_U(RowConstraint,parameter) = (SolnBlk.*ReconstructedSoln)(iCell,jCell)[ParameterIndex[parameter]];
   }
 
-  // Step2. Compute the normalized geometric weights
+  // Step3. Set the approximate equations
   for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
 
     /* Compute the X and Y component of the distance between
@@ -1334,16 +1397,6 @@ Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
 
     /* Compute the geometric weight based on the centroid distance */
     CENO_Geometric_Weighting(GeomWeights[cell], DeltaCellCenters[cell].abs());
-
-    /* Compute the maximum geometric weight (this is used for normalization) */
-    MaxWeight = max(MaxWeight, GeomWeights[cell]);
-  }
-
-  // Step3. Set the approximate equations
-  for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
-
-    // compute the normalized geometric weight
-    GeomWeights[cell] /= MaxWeight;
 
     // *** SET the matrix A of the linear system (LHS) ***
     /* compute for each derivative the corresponding entry in the matrix of the linear system */
@@ -1439,6 +1492,7 @@ Generalized_IndividualConstraints_Equations(Soln_Block_Type & SolnBlk,
   double PowXC, PowYC;		/* PowXC = DistXi^(P1-1); PowYC = DistYi^(P2-1) */
   double DistXi, DistYi;
   int IndexP1, IndexP2;
+  double GeometricWeight;
 
   
   for (BCs_Entry = 0, Eq = 0; BCs_Entry < Constraints_BCs.size(); ++BCs_Entry){ // for each boundary condition entry
@@ -1450,6 +1504,10 @@ Generalized_IndividualConstraints_Equations(Soln_Block_Type & SolnBlk,
       // Determine distance between the current GQP and the centroid of cell (iCell,jCell)
       DistXi = Constraints_Loc[Eq].x - XCellCenter(iCell,jCell);
       DistYi = Constraints_Loc[Eq].y - YCellCenter(iCell,jCell);
+
+      /* Compute the geometric weight based on the centroid distance */
+      CENO_Geometric_Weighting(GeometricWeight, Vector2D(DistXi,DistYi).abs());
+
       
       // Step 1. Form the LHS  -- build the row of the matrix A associated with the current GQP
       for (i=0; i<=CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
@@ -1471,6 +1529,9 @@ Generalized_IndividualConstraints_Equations(Soln_Block_Type & SolnBlk,
 												 Constraints_Normals[Eq].x  + 
 												 P2 * DistXi * 
 												 Constraints_Normals[Eq].y )) );
+
+	// Apply geometric weighting
+	A(Eq+StartRow,i+StartCol) *= GeometricWeight;
       } //endfor (i)
        
 
@@ -1480,6 +1541,9 @@ Generalized_IndividualConstraints_Equations(Soln_Block_Type & SolnBlk,
 				    Constraints_BCs[BCs_Entry]->DirichletBC(BCs)[ParameterIndex[0]] ) + 
 				  ( Constraints_BCs[BCs_Entry]->b(BCs)[ParameterIndex[0]] * 
 				    Constraints_BCs[BCs_Entry]->NeumannBC(BCs)[ParameterIndex[0]] ) );
+
+	// Apply geometric weighting
+	All_U(Eq+StartRow, i) *= GeometricWeight;
 
       }//endfor (i)
 
