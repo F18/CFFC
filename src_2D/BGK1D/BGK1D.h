@@ -142,6 +142,9 @@ extern int ICs(BGK1D_UniformMesh *Soln,
 extern double CFL(BGK1D_UniformMesh *Soln,
 		  const int Number_of_Cells);
 
+extern double l2_residual(BGK1D_UniformMesh *Soln,
+			  const int Number_of_Cells);
+
 extern void Linear_Reconstruction_MUSCL(BGK1D_UniformMesh *Soln,
                                         const int Number_of_Cells,
 					const int Limiter);

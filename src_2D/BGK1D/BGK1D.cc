@@ -272,6 +272,23 @@ double CFL(BGK1D_UniformMesh *Soln,
 }
 
 /******************************************************//**
+ * Routine: l2_residual
+ *
+ * Calculate L2 norm of solution residual
+ *
+ ********************************************************/
+extern double l2_residual(BGK1D_UniformMesh *Soln,
+			  const int Number_of_Cells) {
+  double norm(0.0);
+  for(int i = 1 ; i <= Number_of_Cells ; ++i ) {
+    for(int j=0; j < BGK1D_Vector::get_length(); ++j) {
+      norm += Soln[i].dVdt[j]*Soln[i].dVdt[j];
+    }
+  }
+  return sqrt(norm);
+}
+
+/******************************************************//**
  * Routine: Linear_Reconstruction_MUSCL
  *
  * Peforms the reconstruction of a limited piecewise

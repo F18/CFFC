@@ -200,7 +200,9 @@ int BGK1DSolver(char *Input_File_Name_ptr,
 	     cout.flush();
          } else if (! batch_flag && number_of_time_steps%100 == 0 ) {
 	     cout << "\n" << " Time Step = " << number_of_time_steps
-	          << " Time = " << time*THOUSAND << "\n .";
+	          << " Time = " << time*THOUSAND
+		  << " L2 Residual Norm= " << l2_residual(Soln_ptr,Input_Parameters.Number_of_Cells)
+		  << "\n .";
 	     cout.flush();
          } else if (! batch_flag && number_of_time_steps%50 == 0 ) {
 	     cout << "\n .";
