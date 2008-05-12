@@ -179,6 +179,8 @@ CENO_Padding =
          No
 CENO_Smoothness_Indicator =
          Use_First_Neighbours
+CENO_Additional_Approximate_Constraints =
+         Yes
 CENO_Use_Geom_Weighting_For_Smoothness_Analysis =
          Yes
 CENO_Square_Geom_Weighting =
