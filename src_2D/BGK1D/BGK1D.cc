@@ -569,8 +569,8 @@ int dVdt_explicitEuler_upwind(BGK1D_UniformMesh *Soln,
     /* By default, constant extrapolation boundary
        conditions are applied at either end of the mesh. */
 
-    Soln[0].V = Soln[1].V;
-    Soln[Number_of_Cells+1].V = Soln[Number_of_Cells].V;
+//    Soln[0].V = Soln[1].V;
+//    Soln[Number_of_Cells+1].V = Soln[Number_of_Cells].V;
 
     /* Solution successfully updated. */
 
@@ -664,17 +664,17 @@ int dVdt_2stage_2ndOrder_upwind(BGK1D_UniformMesh *Soln,
 	      Soln[i+1].X.dx/2.0*(Soln[i+1].phi^Soln[i+1].dVdx);
 
 	    /* Apply the BCs before the flux evaluation */
-	    // ***** Left boundary **********
-	    if (i == 0){
-	      // extrapolation BC (by default)
-	      Vl = Vr;
-	    }
-
-	    // *****  Right boundary *********
-	    if (i == IP.Number_of_Cells){
-	      // extrapolation BC (by default)
-	      Vr = Vl;
-	    }
+//	    // ***** Left boundary **********
+//	    if (i == 0){
+//	      // extrapolation BC (by default)
+//	      Vl = Vr;
+//	    }
+//
+//	    // *****  Right boundary *********
+//	    if (i == IP.Number_of_Cells){
+//	      // extrapolation BC (by default)
+//	      Vr = Vl;
+//	    }
 
 	    /* hyperbolic part */
 	    Flux = BGK_Flux(Vl, Vr);
