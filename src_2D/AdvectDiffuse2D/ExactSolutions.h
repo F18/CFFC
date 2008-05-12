@@ -153,8 +153,14 @@ public:
   //! Return the exact solution gradient
   Vector2D EvaluateGradientAt(const double &x, const double &y) const {return Vector2D(A,B); }
 
+  //! Calculate the integral of the solution with respect to x-coordinate
+  double XDependencyIntegrated_Solution(const double &x, const double &y) const { return 0.5*A*sqr(x) + (B*y+C)*x; }
+
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const { return 0.0; }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -192,8 +198,14 @@ public:
   //! Return the exact solution gradient
   Vector2D EvaluateGradientAt(const double &x, const double &y) const {return Vector2D(2.0*A*x + B*y, -2.0*A*y + B*x); }
 
+  //! Calculate the integral of the solution with respect to x-coordinate
+  double XDependencyIntegrated_Solution(const double &x, const double &y) const { return A*x*x*x/3.0 - A*y*y*x + 0.5*B*y*x*x; }
+
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const { return 0.0; }
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -236,6 +248,9 @@ public:
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
 
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const { return 0.0; }
+
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
 
@@ -274,8 +289,14 @@ public:
     return (mu*exp(mu*x))*Vector2D( A*cos(mu*y) + B*sin(mu*y), -A*sin(mu*y) + B*cos(mu*y));
   }
 
+  //! Calculate the integral of the solution with respect to x-coordinate
+  double XDependencyIntegrated_Solution(const double &x, const double &y) const {return exp(mu*x)*(A*cos(mu*y) + B*sin(mu*y))/mu;}
+
   //! Calculate the PDE RHS
   double PDE_RightHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Calculate the integral of PDE RHS with respect to x-coordinate
+  double XDependencyIntegrated_PDE_RightHandSide(const double &x, const double &y) const {return 0.0;}
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
