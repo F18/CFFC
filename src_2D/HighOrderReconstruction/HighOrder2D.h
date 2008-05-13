@@ -1169,12 +1169,12 @@ void HighOrder2D<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder
   // Set the constrained reconstruction helper variables
   i_index_ave.reserve(StencilSize);
   j_index_ave.reserve(StencilSize);
-  Constraints_Loc.reserve(8);
-  Constraints_Normals.reserve(8);
-  Constraints_BCs.reserve(8);
-  Approx_Constraints_Loc.reserve(32);
-  Approx_Constraints_Normals.reserve(32);
-  Approx_Constraints_BCs.reserve(32);
+  Constraints_Loc.reserve(12);
+  Constraints_Normals.reserve(12);
+  Constraints_BCs.reserve(12);
+  Approx_Constraints_Loc.reserve(50);
+  Approx_Constraints_Normals.reserve(50);
+  Approx_Constraints_BCs.reserve(50);
   X_Assembled.newsize(NumberOfTaylorDerivatives(), NumberOfVariables());
 
   // Confirm allocation

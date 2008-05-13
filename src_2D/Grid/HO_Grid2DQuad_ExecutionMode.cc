@@ -18,6 +18,7 @@ short HO_Grid2D_Execution_Mode::EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THI
 short HO_Grid2D_Execution_Mode::CHECK_FOR_INCORRECT_QUADRILATERALS = ON; // check for incorrect quads
 short HO_Grid2D_Execution_Mode::REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = OFF; // stop on detecting incorrect quads
 short HO_Grid2D_Execution_Mode::USE_BROADCAST_MORE_THAN_RECOMPUTING = ON; // broadcast the majority of geometric properties
+short HO_Grid2D_Execution_Mode::SET_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
 
 
 //! Set all flags to default values
@@ -31,6 +32,7 @@ void HO_Grid2D_Execution_Mode::SetDefaults(void){
   CHECK_FOR_INCORRECT_QUADRILATERALS = ON; // check for incorrect quads
   REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = OFF; // stop on detecting incorrect quads
   USE_BROADCAST_MORE_THAN_RECOMPUTING = ON; // broadcast the majority of geometric properties
+  SET_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
 }
 
 //! Print the current execution mode
@@ -67,6 +69,12 @@ void HO_Grid2D_Execution_Mode::Print_Info(std::ostream & out_file){
     } // endif
 
   } // endif
+
+  if (SET_RECONSTRUCTION_BASED_FLUX == OFF){
+    out_file << "\n     -> Flux Calculation Method: " << "Solve a 'Riemann' problem";
+  } else {
+    out_file << "\n     -> Flux Calculation Method: " << "Use constrained reconstruction";
+  }
 
   if (EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH == ON){
     out_file << "\n     -> Geometric properties: " << "Special attention to Round Offs";
@@ -115,6 +123,9 @@ void HO_Grid2D_Execution_Mode::Broadcast(void){
  			1, 
  			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&USE_BROADCAST_MORE_THAN_RECOMPUTING,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&SET_RECONSTRUCTION_BASED_FLUX,
  			1, 
  			MPI::SHORT, 0);
 

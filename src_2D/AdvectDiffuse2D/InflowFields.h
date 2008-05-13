@@ -384,11 +384,12 @@ inline double Squared_Exponential_Times_Sinusoidal_InflowField::EvaluateSolution
   double R;
   double Func(1.0), TempFunc;
   int i;
+  Vector2D PointOfInterest(x,y);
 
   // Calculate the distance R relative to the reference point
-  R = abs(Vector2D(x,y) - ReferencePoint);
+  R = PointOfInterest.abs() - ReferencePoint.abs();
 
-  if (R <= 1){
+  if (R >= 0 && R <= 1){
     // Calculate the sinusoidal
     TempFunc = sin(SteepnessFrequency * PI * R);
 

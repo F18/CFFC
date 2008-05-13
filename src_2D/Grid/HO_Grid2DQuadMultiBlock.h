@@ -13,6 +13,7 @@
 /* Include CFFC header files */
 #include "HO_Grid2DQuad.h"	    // Include high-order quadrilateral block grid header file.
 #include "../HighOrderReconstruction/HighOrder2D_Input.h"	// Include 2D high-order input header file
+#include "HO_Grid2DQuad_ExecutionMode.h"
 
 
 /* Define the high-order quadrilateral 2D grid multi-block class. */
@@ -104,6 +105,10 @@ public:
 
   void Disturb_Interior_Nodes_Without_Update(const int &Number_of_Iterations);
   void Disturb_Interior_Nodes(const int &Number_of_Iterations);
+
+  void SetFluxCalculationMethod(const int & FluxMethod,
+				const bool & WestBnd, const bool & SouthBnd,
+				const bool & EastBnd, const bool & NorthBnd);
   //@}
   
   //!@name Update exterior nodes and cell geometric properties
@@ -1464,6 +1469,11 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 	Set_BCs(Grid_ptr[iBlk][jBlk]);
       }
     }
+  }
+
+  /* Set flux calculation method .*/
+  if (HO_Grid2D_Execution_Mode::SET_RECONSTRUCTION_BASED_FLUX){
+    SetFluxCalculationMethod(ReconstructionBasedFlux,true,true,true,true);
   }
 
   /* Update multi-block quadrilateral mesh exterior nodes.*/

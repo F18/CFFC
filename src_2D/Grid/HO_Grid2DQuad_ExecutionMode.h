@@ -105,6 +105,8 @@ public:
       ----------------------------------------------------------------------------------------  */
   static short USE_BROADCAST_MORE_THAN_RECOMPUTING;
 
+  static short SET_RECONSTRUCTION_BASED_FLUX;
+
   template<class Input_Parameters_Type>
   static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);
 
@@ -243,6 +245,18 @@ void HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Paramete
       USE_BROADCAST_MORE_THAN_RECOMPUTING = ON;
     } else if ( strcmp(IP.Next_Control_Parameter, "Recompute") == 0 ) {
       USE_BROADCAST_MORE_THAN_RECOMPUTING = OFF;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Flux_Calculation_Method") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Constrained_Reconstruction") == 0 ){
+      SET_RECONSTRUCTION_BASED_FLUX = ON;
+    } else if ( strcmp(IP.Next_Control_Parameter, "Riemann_Problem") == 0 ) {
+      SET_RECONSTRUCTION_BASED_FLUX = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
       return;

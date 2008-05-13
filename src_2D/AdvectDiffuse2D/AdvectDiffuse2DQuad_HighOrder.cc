@@ -963,6 +963,9 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							const bool & UseTimeStep,
 							const unsigned short int Pos){
 
+  //#define TEST_RESIDUAL_WITH_EXACT_SOLUTION
+  //#define CHANGE_NUMBER_OF_GQP_AT_BOUNDARY
+
   // SET VARIABLES USED IN THE RESIDUAL CALCULATION PROCESS
 
   int i, j, GQPoint, Position, SplineSegment;
@@ -1010,6 +1013,7 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
      each cell of the computational grid for this stage. 
      NOTE: This solution reconstruction IS NOT recommended for computing hyperbolic fluxes!
   */
+
   HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this);
 
   // ** Step 1. Compute interior diffusive fluxes and any source contributions for cells between (ICl,JCl)-->(ICu,JCu) **
@@ -1045,6 +1049,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 				      HighOrderVariable(Pos).XGradientStateAtLocation(i+1,j,GaussQuadPoints[GQPoint])[1] ,
 				      HighOrderVariable(Pos).YGradientStateAtLocation(i  ,j,GaussQuadPoints[GQPoint])[1] + 
 				      HighOrderVariable(Pos).YGradientStateAtLocation(i+1,j,GaussQuadPoints[GQPoint])[1]);
+
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	    GradU_face = ExactSoln->Gradient(GaussQuadPoints[GQPoint].x,
+					     GaussQuadPoints[GQPoint].y);
+#endif
 
 	    /* Add the weighted contribution of the current GQP to the total 
 	       diffusive flux in the normal direction through the face. */
@@ -1095,6 +1104,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 				      HighOrderVariable(Pos).YGradientStateAtLocation(i,j  ,GaussQuadPoints[GQPoint])[1] + 
 				      HighOrderVariable(Pos).YGradientStateAtLocation(i,j+1,GaussQuadPoints[GQPoint])[1]);
 
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	    GradU_face = ExactSoln->Gradient(GaussQuadPoints[GQPoint].x,
+					     GaussQuadPoints[GQPoint].y);
+#endif
+
 	    /* Add the weighted contribution of the current GQP to the total 
 	       diffusive flux through the face in the normal direction. */
 	    Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceN(i, j));
@@ -1140,6 +1154,19 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
     } // endfor (i)
   } // endfor (j)
 
+  
+#ifdef CHANGE_NUMBER_OF_GQP_AT_BOUNDARY
+  delete [] GaussQuadPoints;
+  delete [] GaussQuadWeights;
+
+  NumGQP = 3;
+
+  GaussQuadPoints = new Vector2D [NumGQP]; // the GQPs at which a Riemann-like problem is solved
+  GaussQuadWeights = new double [NumGQP];   // the Gauss integration weights for each Gauss quadrature
+
+  /* Set the GaussQuadWeights. */
+  GaussQuadratureData::getGaussQuadWeights(GaussQuadWeights, NumGQP);
+#endif
 
   if (Include_Diffusion_Term){
 
@@ -1154,7 +1181,6 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
       if ( Grid.BndNorthSplineInfo != NULL){
 	/* High-order boundary representation is required.
 	   Use all geometric information from the correspondent BndSplineInfo */
-     
 	/* Evaluate the cell interface j-direction fluxes.
 	   --> ( i.e. North Flux for cell (i,JCu) ) */
 	for (i = ICl; i <= ICu; ++i){ // for each cell on the North block boundary
@@ -1183,6 +1209,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 										    Grid.BndNorthSplineInfo[i].GQPoint(Position))[1],
 				    HighOrderVariable(Pos).YGradientStateAtLocation(i,JCu,
 										    Grid.BndNorthSplineInfo[i].GQPoint(Position))[1]);
+
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	      GradU_face = ExactSoln->Gradient(Grid.BndNorthSplineInfo[i].GQPoint(Position).x,
+					       Grid.BndNorthSplineInfo[i].GQPoint(Position).y);
+#endif
 
 	      /* Add the weighted contribution of the current GQP to the total 
 		 diffusive flux through the spline segment in the local normal direction. */
@@ -1229,6 +1260,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	    // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
 	    GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCu,GaussQuadPoints[GQPoint])[1],
 				  HighOrderVariable(Pos).YGradientStateAtLocation(i,JCu,GaussQuadPoints[GQPoint])[1]);
+
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	    GradU_face = ExactSoln->Gradient(GaussQuadPoints[GQPoint].x,
+					     GaussQuadPoints[GQPoint].y);
+#endif
 
 	    /* Add the weighted contribution of the current GQP to the total 
 	       diffusive flux through the face in the normal direction. */
@@ -1306,6 +1342,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							      Grid.BndNorthSplineInfo[i].GQPoint(Position),
 							      Grid.BndNorthSplineInfo[i].NormalGQPoint(Position));
 
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	      GradU_face = ExactSoln->Gradient(Grid.BndNorthSplineInfo[i].GQPoint(Position).x,
+					       Grid.BndNorthSplineInfo[i].GQPoint(Position).y);
+#endif
+
 	      /* Add the weighted contribution of the current GQP to the total 
 		 diffusive flux through the spline segment in the local normal direction. */
 	      Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
@@ -1367,6 +1408,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							    GradU_face,
 							    GaussQuadPoints[GQPoint],
 							    Grid.nfaceN(i,JCu));
+	    
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	    GradU_face = ExactSoln->Gradient(GaussQuadPoints[GQPoint].x,
+					     GaussQuadPoints[GQPoint].y);
+#endif
 
 	    /* Add the weighted contribution of the current GQP to the total 
 	       diffusive flux through the face in the normal direction. */
@@ -1401,7 +1447,6 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
       if ( Grid.BndSouthSplineInfo != NULL){
 	/* High-order boundary representation is required.
 	   Use all geometric information from the correspondent BndSplineInfo */
-     
 	/* Evaluate the cell interface j-direction fluxes.
 	   --> ( i.e. South Flux for cell (i,JCl) ) */
 	for (i = ICl; i <= ICu; ++i){ // for each cell on the South block boundary
@@ -1430,6 +1475,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 										    Grid.BndSouthSplineInfo[i].GQPoint(Position))[1],
 				    HighOrderVariable(Pos).YGradientStateAtLocation(i,JCl,
 										    Grid.BndSouthSplineInfo[i].GQPoint(Position))[1]);
+
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	      GradU_face = ExactSoln->Gradient(Grid.BndSouthSplineInfo[i].GQPoint(Position).x,
+					       Grid.BndSouthSplineInfo[i].GQPoint(Position).y);
+#endif
 
 	      /* Add the weighted contribution of the current GQP to the total 
 		 diffusive flux through the spline segment in the local normal direction. */
@@ -1476,6 +1526,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	    // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
 	    GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(i,JCl,GaussQuadPoints[GQPoint])[1],
 				  HighOrderVariable(Pos).YGradientStateAtLocation(i,JCl,GaussQuadPoints[GQPoint])[1]);
+
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	    GradU_face = ExactSoln->Gradient(GaussQuadPoints[GQPoint].x,
+					     GaussQuadPoints[GQPoint].y);
+#endif
 
 	    /* Add the weighted contribution of the current GQP to the total 
 	       diffusive flux through the face in the normal direction. */
@@ -1553,6 +1608,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							      Grid.BndSouthSplineInfo[i].GQPoint(Position),
 							      Grid.BndSouthSplineInfo[i].NormalGQPoint(Position));
 
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	      GradU_face = ExactSoln->Gradient(Grid.BndSouthSplineInfo[i].GQPoint(Position).x,
+					       Grid.BndSouthSplineInfo[i].GQPoint(Position).y);
+#endif
+
 	      /* Add the weighted contribution of the current GQP to the total 
 		 diffusive flux through the spline segment in the local normal direction. */
 	      Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
@@ -1615,6 +1675,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							    GaussQuadPoints[GQPoint],
 							    Grid.nfaceS(i,JCl));
 
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	    GradU_face = ExactSoln->Gradient(GaussQuadPoints[GQPoint].x,
+					     GaussQuadPoints[GQPoint].y);
+#endif
+
 	    /* Add the weighted contribution of the current GQP to the total 
 	       diffusive flux through the face in the normal direction. */
 	    FluxS[i] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceS(i,JCl));
@@ -1648,7 +1713,6 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
       if ( Grid.BndEastSplineInfo != NULL){
 	/* High-order boundary representation is required.
 	   Use all geometric information from the correspondent BndSplineInfo */
-     
 	/* Evaluate the cell interface i-direction fluxes.
 	   --> ( i.e. East Flux for cell (ICu,j) ) */
 	for (j = JCl; j <= JCu; ++j){ // for each cell on the East block boundary
@@ -1677,6 +1741,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 										    Grid.BndEastSplineInfo[j].GQPoint(Position))[1],
 				    HighOrderVariable(Pos).YGradientStateAtLocation(ICu,j,
 										    Grid.BndEastSplineInfo[j].GQPoint(Position))[1]);
+
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	      GradU_face = ExactSoln->Gradient(Grid.BndEastSplineInfo[j].GQPoint(Position).x,
+					       Grid.BndEastSplineInfo[j].GQPoint(Position).y);
+#endif
 
 	      /* Add the weighted contribution of the current GQP to the total 
 		 diffusive flux through the spline segment in the local normal direction. */
@@ -1723,6 +1792,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	    // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
 	    GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICu,j,GaussQuadPoints[GQPoint])[1],
 				  HighOrderVariable(Pos).YGradientStateAtLocation(ICu,j,GaussQuadPoints[GQPoint])[1]);
+
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	    GradU_face = ExactSoln->Gradient(GaussQuadPoints[GQPoint].x,
+					     GaussQuadPoints[GQPoint].y);
+#endif
 
 	    /* Add the weighted contribution of the current GQP to the total 
 	       diffusive flux through the face in the normal direction. */
@@ -1800,6 +1874,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							      Grid.BndEastSplineInfo[j].GQPoint(Position),
 							      Grid.BndEastSplineInfo[j].NormalGQPoint(Position));
 
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	      GradU_face = ExactSoln->Gradient(Grid.BndEastSplineInfo[j].GQPoint(Position).x,
+					       Grid.BndEastSplineInfo[j].GQPoint(Position).y);
+#endif
+
 	      /* Add the weighted contribution of the current GQP to the total 
 		 diffusive flux through the spline segment in the local normal direction. */
 	      Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
@@ -1862,6 +1941,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							    GaussQuadPoints[GQPoint],
 							    Grid.nfaceE(ICu,j));
 
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	    GradU_face = ExactSoln->Gradient(GaussQuadPoints[GQPoint].x,
+					     GaussQuadPoints[GQPoint].y);
+#endif
+
 	    /* Add the weighted contribution of the current GQP to the total 
 	       diffusive flux through the face in the normal direction. */
 	    FluxE[j] += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face, GaussQuadPoints[GQPoint], Grid.nfaceE(ICu,j));
@@ -1895,7 +1979,6 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
       if ( Grid.BndWestSplineInfo != NULL){
 	/* High-order boundary representation is required.
 	   Use all geometric information from the correspondent BndSplineInfo */
-     
 	/* Evaluate the cell interface i-direction fluxes.
 	   --> ( i.e. West Flux for cell (ICl,j) ) */
 	for (j = JCl; j <= JCu; ++j){ // for each cell on the West block boundary
@@ -1924,6 +2007,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 										    Grid.BndWestSplineInfo[j].GQPoint(Position))[1],
 				    HighOrderVariable(Pos).YGradientStateAtLocation(ICl,j,
 										    Grid.BndWestSplineInfo[j].GQPoint(Position))[1]);
+
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	      GradU_face = ExactSoln->Gradient(Grid.BndWestSplineInfo[j].GQPoint(Position).x,
+					       Grid.BndWestSplineInfo[j].GQPoint(Position).y);
+#endif
 
 	      /* Add the weighted contribution of the current GQP to the total 
 		 diffusive flux through the spline segment in the local normal direction. */
@@ -1970,6 +2058,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	    // Calculate gradient at the Gauss quadrature point based on the constrained reconstruction.
 	    GradU_face = Vector2D(HighOrderVariable(Pos).XGradientStateAtLocation(ICl,j,GaussQuadPoints[GQPoint])[1],
 				  HighOrderVariable(Pos).YGradientStateAtLocation(ICl,j,GaussQuadPoints[GQPoint])[1]);
+
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	    GradU_face = ExactSoln->Gradient(GaussQuadPoints[GQPoint].x,
+					     GaussQuadPoints[GQPoint].y);
+#endif
 
 	    /* Add the weighted contribution of the current GQP to the total 
 	       diffusive flux through the face in the normal direction. */
@@ -2047,6 +2140,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							      Grid.BndWestSplineInfo[j].GQPoint(Position),
 							      Grid.BndWestSplineInfo[j].NormalGQPoint(Position));
 
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	      GradU_face = ExactSoln->Gradient(Grid.BndWestSplineInfo[j].GQPoint(Position).x,
+					       Grid.BndWestSplineInfo[j].GQPoint(Position).y);
+#endif
+
 	      /* Add the weighted contribution of the current GQP to the total 
 		 diffusive flux through the spline segment in the local normal direction. */
 	      Flux += GaussQuadWeights[GQPoint] * Fd(U_face, GradU_face,
@@ -2108,6 +2206,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 							    GradU_face,
 							    GaussQuadPoints[GQPoint],
 							    Grid.nfaceW(ICl,j));
+
+#ifdef TEST_RESIDUAL_WITH_EXACT_SOLUTION
+	    GradU_face = ExactSoln->Gradient(GaussQuadPoints[GQPoint].x,
+					     GaussQuadPoints[GQPoint].y);
+#endif
 
 	    /* Add the weighted contribution of the current GQP to the total 
 	       diffusive flux through the face in the normal direction. */

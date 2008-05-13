@@ -482,6 +482,36 @@ void Grid2D_Quad_MultiBlock_HO::Disturb_Interior_Nodes(const int &Number_of_Iter
 }
 
 /*!
+ * Setup the required flux calculation method to all indicated
+ * boundaries for each 2D quadrilateral block of the multi-block grids.
+ */
+void Grid2D_Quad_MultiBlock_HO::SetFluxCalculationMethod(const int & FluxMethod,
+							 const bool & WestBnd, const bool & SouthBnd,
+							 const bool & EastBnd, const bool & NorthBnd){
+  
+  int iBlock, jBlock;
+
+  for (iBlock = 0; iBlock <= Last_iBlock() ; ++iBlock){
+    for (jBlock = 0; jBlock <= Last_jBlock() ; ++jBlock){
+
+      if(Grid_ptr[iBlock][jBlock].BndNorthSpline.bc[0] != BC_NONE){
+	Grid_ptr[iBlock][jBlock].BndNorthSpline.setFluxCalcMethod(FluxMethod);
+      }
+      if(Grid_ptr[iBlock][jBlock].BndSouthSpline.bc[0] != BC_NONE){
+	Grid_ptr[iBlock][jBlock].BndSouthSpline.setFluxCalcMethod(FluxMethod);
+      }
+      if(Grid_ptr[iBlock][jBlock].BndEastSpline.bc[0] != BC_NONE){
+	Grid_ptr[iBlock][jBlock].BndEastSpline.setFluxCalcMethod(FluxMethod);
+      }
+      if(Grid_ptr[iBlock][jBlock].BndWestSpline.bc[0] != BC_NONE){
+	Grid_ptr[iBlock][jBlock].BndWestSpline.setFluxCalcMethod(FluxMethod);
+      }
+    }	// endfor
+  } // endfor
+
+}
+
+/*!
  * Update the exterior nodes in all 
  * mesh blocks.
  */
