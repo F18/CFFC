@@ -2379,25 +2379,65 @@ void HighOrder2D<SOLN_STATE>::SetConstrainedReconstructionStencil(const int &iCe
   Imin = iCell-rings; Imax = iCell+rings;
   Jmin = jCell-rings; Jmax = jCell+rings;
 
-  // Check WEST boundary
-  if (_constrained_WEST_reconstruction && Imin < ICl){
-    Imin = ICl;		/* limit Imin */
-  } 
+  if (CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS == ON &&
+      CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL == OFF) {
 
-  // Check EAST boundary
-  if (_constrained_EAST_reconstruction && Imax > ICu){
-    Imax = ICu;		/* limit Imax */
-  } 
+    // Additional equations come from approximate constraints.
+    
+    // Check WEST boundary
+    if (_constrained_WEST_reconstruction && Imin < ICl){
+      Imin = ICl;		/* limit Imin */
+    } 
+    
+    // Check EAST boundary
+    if (_constrained_EAST_reconstruction && Imax > ICu){
+      Imax = ICu;		/* limit Imax */
+    } 
+    
+    // Check NORTH boundary
+    if (_constrained_NORTH_reconstruction && Jmax > JCu){
+      Jmax = JCu;		/* limit Jmax */
+    } 
+    
+    // Check SOUTH boundary
+    if (_constrained_SOUTH_reconstruction && Jmin < JCl){
+      Jmin = JCl;		/* limit Jmin */
+    }
 
-  // Check NORTH boundary
-  if (_constrained_NORTH_reconstruction && Jmax > JCu){
-    Jmax = JCu;		/* limit Jmax */
-  } 
+  } else {
 
-  // Check SOUTH boundary
-  if (_constrained_SOUTH_reconstruction && Jmin < JCl){
-    Jmin = JCl;		/* limit Jmin */
-  }
+    // Additional equations come from extending the stencil in the opposite direction of the constrained boundary
+
+    // Check WEST boundary
+    if (_constrained_WEST_reconstruction && Imin < ICl){
+      Imin = ICl;		/* limit Imin */
+      
+      Imax += 1;		/* extend Imax */
+    } 
+    
+    // Check EAST boundary
+    if (_constrained_EAST_reconstruction && Imax > ICu){
+      Imax = ICu;		/* limit Imax */
+
+      Imin -= 1;                /* extend Imin */
+    } 
+    
+    // Check NORTH boundary
+    if (_constrained_NORTH_reconstruction && Jmax > JCu){
+      Jmax = JCu;		/* limit Jmax */
+
+      Jmin -= 1;                /* extend Jmin */
+    } 
+    
+    // Check SOUTH boundary
+    if (_constrained_SOUTH_reconstruction && Jmin < JCl){
+      Jmin = JCl;		/* limit Jmin */
+
+      Jmax += 1;                /* extend Jmax */
+    }
+
+  } // endif
+
 
   /* Form stencil */
   i_index.push_back(iCell);

@@ -111,6 +111,13 @@ public:
       --------------------------------------------------------------------------------------- */
   static short CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS;
 
+  /*! Extend the stencil to get more equations instead of using approximate constraints with
+      the boundary conditions of the neighbour cells that are near constrained boundaries. \n
+      Turn ON if this feature is desired. \n
+      Turn OFF if you don't want to use this feature. (default) \n
+      --------------------------------------------------------------------------------------- */
+  static short CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL;
+
   /*! The high-order k-Exact reconstruction involves the solution of a linear least-squares problem,
       which can be obtained with different subroutines. Currently, a Lapack subroutine and an 
       internal one (L. Ivan's implementation) can be used. The Lapack one is faster but assumes the 
@@ -240,8 +247,10 @@ void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Ty
     IP.Get_Next_Input_Control_Parameter();
     if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
       CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS = ON;
+      CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = OFF;
     } else if ( strcmp(IP.Next_Control_Parameter, "No") == 0 ){
       CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS = OFF;
+      CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = ON;
     }
     i_command = 0;
 
