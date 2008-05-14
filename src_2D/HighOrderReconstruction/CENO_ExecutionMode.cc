@@ -26,7 +26,7 @@ short CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPRO
 short CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = OFF; // don't extend the stencil
 short CENO_Execution_Mode::USE_LAPACK_LEAST_SQUARES = ON; // use Lapack least-squares subroutine
 int CENO_Execution_Mode::Limiter = LIMITER_VANLEER;
-
+short CENO_Execution_Mode::IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT = OFF; // don't ignore curved boundaries
 
 //! Set all flags to default values
 // add all flag default values to this function
@@ -45,6 +45,7 @@ void CENO_Execution_Mode::SetDefaults(void){
   CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS = ON; // use additional constraints
   CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = OFF; // don't extend the stencil
   USE_LAPACK_LEAST_SQUARES = ON; // use Lapack least-squares subroutine
+  IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT = OFF; // don't ignore curved boundaries
 }
 
 //! Print the current execution mode
@@ -122,7 +123,12 @@ void CENO_Execution_Mode::Print_Info(std::ostream & out_file){
     out_file << "\n     -> CENO Extended Biased Stencil: " << "Yes";
   }
 
-
+  // output accuracy assessment behaviour close to curved boundaries
+  if ( IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT == ON ){
+    out_file << "\n     -> Accuracy Measurement Near Curved Boundaries: " << "Ignore cells";
+  } else {		   
+    out_file << "\n     -> Accuracy Measurement Near Curved Boundaries: " << "Include cells";
+  }
 
 }
 
@@ -174,6 +180,8 @@ void CENO_Execution_Mode::Broadcast(void){
   MPI::COMM_WORLD.Bcast(&USE_LAPACK_LEAST_SQUARES,
  			1, 
  			MPI::SHORT, 0);
-
+  MPI::COMM_WORLD.Bcast(&IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT,
+ 			1, 
+ 			MPI::SHORT, 0);
 #endif
 }

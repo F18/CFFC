@@ -2509,12 +2509,47 @@ void HighOrder2D<SOLN_STATE>::ComputeSolutionErrors(const Function_Object_Type F
 
   // Decide the range of integration
   if (Geom->IsHighOrderBoundary()){
-    StartI_Int = ICl + 1;
-    EndI_Int   = ICu - 1;
-    StartJ_Int = JCl + 1;
-    EndJ_Int   = JCu - 1;
-    _integrate_with_curved_boundaries = true;
-    throw runtime_error("HighOrder2D<SOLN_STATE>::ComputeSolutionErrors() Warning! Integration with curved bnds is not setup!");
+    if (CENO_Execution_Mode::IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT){
+      // Check if West spline has more than 2 control points
+      if (Geom->BndWestSpline.np > 2){
+	// Ignore cells near this boundary
+	StartI_Int = ICl + 1;
+      } else {
+	// Include cells near this boundary
+	StartI_Int = ICl;
+      }
+
+      // Check if East spline has more than 2 control points
+      if (Geom->BndEastSpline.np > 2){
+	// Ignore cells near this boundary
+	EndI_Int   = ICu - 1;
+      } else {
+	// Include cells near this boundary
+	EndI_Int   = ICu;
+      }
+
+      // Check if South spline has more than 2 control points
+      if (Geom->BndSouthSpline.np > 2){
+	// Ignore cells near this boundary
+	StartJ_Int = JCl + 1;
+      } else {
+	// Include cells near this boundary
+	StartJ_Int = JCl;
+      }
+
+      // Check if North spline has more than 2 control points
+      if (Geom->BndNorthSpline.np > 2){
+	// Ignore cells near this boundary
+	EndJ_Int   = JCu - 1;
+      } else {
+	// Include cells near this boundary
+	EndJ_Int   = JCu;
+      }
+
+    } else {
+      _integrate_with_curved_boundaries = true;
+      throw runtime_error("HighOrder2D<SOLN_STATE>::ComputeSolutionErrors() Warning! Integration with curved bnds is not setup!");
+    }
   } else {
     StartI_Int = ICl;
     EndI_Int   = ICu;
