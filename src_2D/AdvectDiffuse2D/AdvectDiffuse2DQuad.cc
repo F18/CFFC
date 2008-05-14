@@ -307,43 +307,82 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
   // allocate North BCs
   if ( Grid.IsNorthBoundaryReconstructionConstrained() ){
 
+    if (HO_UoN != NULL){
+      // deallocate memory
+      delete [] HO_UoN; HO_UoN = NULL;
+    }
+
+    // allocate new memory
     HO_UoN = new BC_Type[NCi];
 
     // allocate BC memory for each flux calculation point
     for (i=ICl; i<=ICu; ++i){
       BC_NorthCell(i).allocate(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu));
     }
+
+  } else if ( HO_UoN != NULL){
+    // deallocate memory
+    delete [] HO_UoN; HO_UoN = NULL;
   }
 
   // allocate South BCs
   if ( Grid.IsSouthBoundaryReconstructionConstrained() ){
-    
+
+    if (HO_UoS != NULL){
+      // deallocate memory
+      delete [] HO_UoS; HO_UoS = NULL;
+    }
+
+    // allocate new memory    
     HO_UoS = new BC_Type[NCi];
     
     // allocate BC memory for each flux calculation point
     for (i=ICl; i<=ICu; ++i){
       BC_SouthCell(i).allocate(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl));
     }    
+  } else if (HO_UoS != NULL){
+    // deallocate memory
+    delete [] HO_UoS; HO_UoS = NULL;
   }
 
   // allocate East BCs
   if ( Grid.IsEastBoundaryReconstructionConstrained() ){
+
+    if (HO_UoE != NULL){
+      // deallocate memory
+      delete [] HO_UoE; HO_UoE = NULL;
+    }
+
+    // allocate new memory    
     HO_UoE = new BC_Type[NCj];
 
     // allocate BC memory for each flux calculation point
     for (j=JCl; j<=JCu; ++j){
       BC_EastCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j));
     }
+  } else if (HO_UoE != NULL){
+    // deallocate memory
+    delete [] HO_UoE; HO_UoE = NULL;
   }
 
   // allocate West BCs
   if ( Grid.IsWestBoundaryReconstructionConstrained() ){
+
+    if (HO_UoW != NULL){
+      // deallocate memory
+      delete [] HO_UoW; HO_UoW = NULL;
+    }
+
+    // allocate new memory    
     HO_UoW = new BC_Type[NCj];
 
     // allocate BC memory for each flux calculation point
     for (j=JCl; j<=JCu; ++j){
       BC_WestCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j));
     }
+  } else if (HO_UoW != NULL){
+    // deallocate memory
+    delete [] HO_UoW; HO_UoW = NULL;
   }
 
 }
