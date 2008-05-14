@@ -285,6 +285,8 @@ public:
   //! Return the high-order variable in the "Pos" position of the current block
   HighOrderType & HighOrderVariable(const unsigned short int & Pos) { return HO_Ptr[Pos]; }
   const HighOrderType & HighOrderVariable(const unsigned short int & Pos) const { return HO_Ptr[Pos]; }
+  //! Return the number of high-order variables
+  const unsigned short int & NumberOfHighOrderObjects(void) const { return NumberOfHighOrderVariables; }
   //@}
 
   //! @name High-order boundary conditions (used mostly for constrained reconstruction)

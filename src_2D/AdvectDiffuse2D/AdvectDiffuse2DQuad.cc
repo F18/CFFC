@@ -345,6 +345,7 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
       BC_WestCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j));
     }
   }
+
 }
 
 /*********************//**

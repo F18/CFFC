@@ -60,6 +60,10 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
   int i, j, ni, nj, ng, block_allocated, buffer_size;
   double *buffer;
 
+  // High-order related variables
+  int NumberOfHighOrderVariables;
+  vector<int> ReconstructionOrders;
+
   /* Broadcast the number of cells in each direction. */
 
   if (CFFC_Primary_MPI_Processor()) {
@@ -71,12 +75,28 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
     } else {
       block_allocated = 0;
     } /* endif */ 
+
+    // High-order variables and their reconstruction order
+    NumberOfHighOrderVariables = SolnBlk.NumberOfHighOrderObjects();
+    for (i = 0; i < NumberOfHighOrderVariables; ++i){
+      ReconstructionOrders.push_back(SolnBlk.HighOrderVariable(i).RecOrder());
+    }
   } /* endif */
 
   MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&ng, 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&block_allocated, 1, MPI::INT, 0);
+
+  // Broadcast the number of high-order variables and their reconstruction order
+  MPI::COMM_WORLD.Bcast(&NumberOfHighOrderVariables, 1, MPI::INT, 0);
+  if (!CFFC_Primary_MPI_Processor()) {
+    // reserve memory for the reconstruction orders
+    ReconstructionOrders.reserve(NumberOfHighOrderVariables);
+  }
+  for (i = 0; i < NumberOfHighOrderVariables; ++i){
+    MPI::COMM_WORLD.Bcast(&ReconstructionOrders[i], 1, MPI::INT, 0);
+  }
 
   /* On non-primary MPI processors, allocate (re-allocate) 
      memory for the quadrilateral solution block as necessary. */
@@ -95,6 +115,17 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
   /* Broadcast the grid. */
 
   Broadcast_Quad_Block(SolnBlk.Grid);
+
+  /* Allocate memory for high-order variables
+     on non-primary MPI processors. */
+  if (!CFFC_Primary_MPI_Processor()) {
+    // allocate memory for high-order variables AFTER grid broadcast!
+    SolnBlk.allocate_HighOrder(NumberOfHighOrderVariables,
+			       ReconstructionOrders);
+    // allocate memory for high-order boundary conditions if necessary
+    SolnBlk.allocate_HighOrder_BoundaryConditions();
+  }
+
 
   /* Broadcast the solution state variables. */
 
@@ -184,6 +215,12 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
 
     delete []buffer; 
     buffer = NULL;
+
+    /* Broadcast the high-order variables. */
+    for (i = 0; i < NumberOfHighOrderVariables; ++i){
+      SolnBlk.HighOrderVariable(i).Broadcast_HighOrder_Data(SolnBlk.Grid);
+    }
+
   } /* endif */
 #endif
 
@@ -207,6 +244,10 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
   int i, j, ni, nj, ng, block_allocated, buffer_size;
   double *buffer;
 
+  // High-order related variables
+  int NumberOfHighOrderVariables;
+  vector<int> ReconstructionOrders;
+
   /* Broadcast the number of cells in each direction. */
 
   if (CFFC_MPI::This_Processor_Number == Source_CPU) {
@@ -218,12 +259,28 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
     } else {
       block_allocated = 0;
     } /* endif */ 
+
+    // High-order variables and their reconstruction order
+    NumberOfHighOrderVariables = SolnBlk.NumberOfHighOrderObjects();
+    for (i = 0; i < NumberOfHighOrderVariables; ++i){
+      ReconstructionOrders.push_back(SolnBlk.HighOrderVariable(i).RecOrder());
+    }
   } /* endif */
 
   Communicator.Bcast(&ni, 1, MPI::INT, Source_Rank);
   Communicator.Bcast(&nj, 1, MPI::INT, Source_Rank);
   Communicator.Bcast(&ng, 1, MPI::INT, Source_Rank);
   Communicator.Bcast(&block_allocated, 1, MPI::INT, Source_Rank);
+
+  // Broadcast the number of high-order variables and their reconstruction order
+  Communicator.Bcast(&NumberOfHighOrderVariables, 1, MPI::INT, Source_Rank);
+  if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+    // reserve memory for the reconstruction orders
+    ReconstructionOrders.reserve(NumberOfHighOrderVariables);
+  }
+  for (i = 0; i < NumberOfHighOrderVariables; ++i){
+    Communicator.Bcast(&ReconstructionOrders[i], 1, MPI::INT, Source_Rank);
+  }
 
   /* On non-source MPI processors, allocate (re-allocate) 
      memory for the quadrilateral solution block as necessary. */
@@ -242,6 +299,16 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
   /* Broadcast the grid. */
 
   Broadcast_Quad_Block(SolnBlk.Grid, Communicator, Source_CPU);
+
+  /* Allocate memory for high-order variables
+     on non-source MPI processors. */
+  if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+    // allocate memory for high-order variables AFTER grid broadcast!
+    SolnBlk.allocate_HighOrder(NumberOfHighOrderVariables,
+			       ReconstructionOrders);
+    // allocate memory for high-order boundary conditions if necessary
+    SolnBlk.allocate_HighOrder_BoundaryConditions();
+  }
 
   /* Broadcast the solution state variables. */
 
@@ -331,6 +398,14 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
 
     delete []buffer; 
     buffer = NULL;
+
+    /* Broadcast the high-order variables. */
+    for (i = 0; i < NumberOfHighOrderVariables; ++i){
+      SolnBlk.HighOrderVariable(i).Broadcast_HighOrder_Data(Communicator,
+							    Source_CPU,
+							    SolnBlk.Grid);
+    }
+
   } /* endif */
 
 }
@@ -365,6 +440,10 @@ int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Fine,
   int i, j, k, i_min, i_max, j_min, j_max, mesh_refinement_permitted;
   double area_total_fine;
 
+  // High-order related variables
+  int SolnBlk_Original_NumberOfHighOrderVariables(SolnBlk_Original.NumberOfHighOrderObjects());
+  vector<int> SolnBlk_Original_ReconstructionOrders; 
+
   /* Allocate (re-allocate) memory for the solution
      of the refined quadrilateral solution block as necessary. */
 
@@ -391,6 +470,16 @@ int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Fine,
 		  SolnBlk_Original.Grid,
 		  Sector);
     } /* endif */
+
+    // Allocate high-order objects if necessary
+    for (i = 0; i < SolnBlk_Original_NumberOfHighOrderVariables; ++i){
+      SolnBlk_Original_ReconstructionOrders.push_back(SolnBlk_Original.HighOrderVariable(i).RecOrder());
+    }
+    SolnBlk_Fine.allocate_HighOrder(SolnBlk_Original_NumberOfHighOrderVariables,
+				    SolnBlk_Original_ReconstructionOrders);
+    // allocate memory for high-order boundary conditions if necessary
+    SolnBlk_Fine.allocate_HighOrder_BoundaryConditions();
+
   } /* endif */
 
   if (mesh_refinement_permitted) {
@@ -492,7 +581,6 @@ int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Fine,
   } /* endif */
   
   
-  
     // Prolongation of solution block was successful.
   return 0;
 }
@@ -512,6 +600,10 @@ int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Coarse,
 			    AdvectDiffuse2D_Quad_Block &SolnBlk_Original_NE) {
 
   int i, j, i_coarse, j_coarse, mesh_coarsening_permitted;
+
+  // High-order related variables
+  int SolnBlk_Original_NumberOfHighOrderVariables(SolnBlk_Original_SW.NumberOfHighOrderObjects());
+  vector<int> SolnBlk_Original_ReconstructionOrders; 
  
   /* Allocate memory for the cells and nodes for the 
      coarsened quadrilateral mesh block. */
@@ -554,6 +646,16 @@ int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Coarse,
 		   SolnBlk_Original_NW.Grid,
 		   SolnBlk_Original_NE.Grid);
     } /* endif */
+
+    // Allocate high-order objects if necessary
+    for (i = 0; i < SolnBlk_Original_NumberOfHighOrderVariables; ++i){
+      SolnBlk_Original_ReconstructionOrders.push_back(SolnBlk_Original_SW.HighOrderVariable(i).RecOrder());
+    }
+    SolnBlk_Coarse.allocate_HighOrder(SolnBlk_Original_NumberOfHighOrderVariables,
+				      SolnBlk_Original_ReconstructionOrders);
+    // allocate memory for high-order boundary conditions if necessary
+    SolnBlk_Coarse.allocate_HighOrder_BoundaryConditions();
+
   } /* endif */
 
   if (mesh_coarsening_permitted) {
