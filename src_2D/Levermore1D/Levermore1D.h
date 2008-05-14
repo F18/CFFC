@@ -240,7 +240,8 @@ private:
  ******************************************************/
 /* Constructor */
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(void){
-  W.zero(); U.zero(); A.zero();
+  W = Levermore1D_pState(DENSITY_STDATM, ZERO, PRESSURE_STDATM);
+  U.set_from_W(W); A.set_from_U(U);
   X = Cell1D_Uniform_ONE; dt = ZERO;
   dUdt.zero(); dWdx.zero(); phi.zero();
   Uo.zero(); Ao.zero();

@@ -3,6 +3,7 @@
 
 /* Include 1D Levermore solution header file. */
 #include "Levermore1D.h"
+#include "../Physics/Perfect_Gas_Shocks.h"
 
 /******************************************************//**
  * Routine: Allocate
@@ -226,6 +227,7 @@ void ICs(Levermore1D_UniformMesh *Soln,
   int ICl, ICu, TC;
   double xmin, xmax;
   double a, b, dx;
+  double rho_l, p_l, u_l;
 
   ICl = Soln[0].ICl;
   ICu = Soln[0].ICu;
@@ -267,6 +269,38 @@ void ICs(Levermore1D_UniformMesh *Soln,
       } /* end if */
     } /* endfor */
     break;
+
+  case IC_STATIONARY_SHOCK_STRUCTURE :
+    rho_l = DENSITY_STDATM;
+    p_l   = PRESSURE_STDATM;
+    u_l   = IP.mach_number * sqrt(3.0 * p_l / rho_l);
+
+    Wl = Levermore1D_pState(rho_l, u_l, p_l);
+    Wr = Levermore1D_pState(rho_l * normal_shock_density_ratio(IP.mach_number,3.0),
+			    u_l   * normal_shock_velocity_ratio(IP.mach_number,3.0),
+			    p_l   * normal_shock_pressure_ratio(IP.mach_number,3.0));
+    Ul = Levermore1D_cState(Wl);
+    Ur = Levermore1D_cState(Wr);
+    Al = Levermore1D_weights(Ul);
+    Ar = Levermore1D_weights(Ur);
+    cout << endl << endl << "Ul  = " << Ul << endl
+	 << "Ual = " << Levermore1D_cState(Al,Wl[2])<< endl
+	 << "Al  = " << Al << endl
+	 << "Wl  = " << Wl << endl << endl;
+    cout << "Ur  = " << Ur << endl
+	 << "Uar = " << Levermore1D_cState(Ar,Wr[2])<< endl
+	 << "Ar  = " << Ar << endl
+	 << "Wr  = " << Wr << endl << endl;
+
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      if (Soln[i].X.x <= ZERO) {
+	Soln[i].set_state(Wl,Ul,Al);
+      } else {
+	Soln[i].set_state(Wr,Ur,Ar);
+      } /* end if */
+    } /* endfor */
+    break;
+
   case IC_CONSTANT :
   case IC_UNIFORM :
   default:

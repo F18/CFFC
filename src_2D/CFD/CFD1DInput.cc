@@ -733,8 +733,8 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.resync_tol;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.resync_tol <= 0.0 ){
-	 cout << "\n Error! Re-synchronization tolerance must be greater than zero.";
+       if (IP.resync_tol < 0.0 ){
+	 cout << "\n Error! Re-synchronization tolerance must be greater than or equal to zero.";
 	 i_command = INVALID_INPUT_VALUE;
        }/* endif */
 
