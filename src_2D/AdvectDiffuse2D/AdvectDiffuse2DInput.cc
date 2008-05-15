@@ -3088,6 +3088,9 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
     // Set flag for including/excluding diffusion term in the model equation
     AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = Input_Parameters.Include_Diffusion_Term;
 
+    // Set limiter in CENO class
+    CENO_Execution_Mode::Limiter = Input_Parameters.i_Limiter;
+
     /* Initial processing of input control parameters complete.  
        Return the error indicator flag. */
 

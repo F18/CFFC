@@ -476,6 +476,13 @@ public:
   void Output_Tecplot_InfluenceDomain_And_SolutionCoefficients(ostream &Out_File);
   //@}
 
+  //! @name Functions for AMR:
+  //@{
+  void Calculate_Refinement_Criteria_HighOrder(double *refinement_criteria,
+					       AdvectDiffuse2D_Input_Parameters &IP,
+					       int &number_refinement_criteria);
+  //@}
+
   //! @name Input-output operators.
   //@{
   friend ostream &operator << (ostream &out_file,

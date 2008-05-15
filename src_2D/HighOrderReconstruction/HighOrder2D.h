@@ -599,6 +599,12 @@ public:
 
   //@} (Error Evaluation)
 
+  //! @name AMR functions:
+  //@{
+  template<class Soln_Block_Type>
+  double AMR_Criteria_Based_On_Minimum_Smoothness_Indicator(Soln_Block_Type &SolnBlk);
+  //@}
+
   //! @name Input/Output functions:
   //@{
   void Output_Object(ostream & out_file) const;
@@ -3259,6 +3265,46 @@ void HighOrder2D<SOLN_STATE>::Broadcast_HighOrder_Data(MPI::Intracomm &Communica
   
 }
 #endif
+
+/*!
+ * Compute the AMR criteria for the block based on the 
+ * minimum smoothness indicator value encountered over the
+ * block cells and all solution variables.
+ * \todo Add more comments here!
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+double HighOrder2D<SOLN_STATE>::AMR_Criteria_Based_On_Minimum_Smoothness_Indicator(Soln_Block_Type &SolnBlk){
+
+  if (CENO_Tolerances::Fit_Tolerance <= ZERO){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::AMR_Criteria_Based_On_Minimum_Smoothness_Indicator() ERROR! Negative/zero CENO tolerance is not allowed for refinement!");
+  }
+
+  int i, j, parameter;
+
+  double SI_Min;		//< minimum smoothness indicator value
+
+  // Reconstruct the block solution (i.e. high-order, data analysis and monotonicity enforcement).
+  ComputeHighOrderSolutionReconstruction(SolnBlk,
+					 CENO_Execution_Mode::Limiter);
+
+  /* Initialize the minimum smoothness indicator value for the block. */
+  SI_Min = CellSmoothnessIndicatorValue(ICl,JCl,1);
+
+  /* Calculate the minimum smoothness indicator value for 
+     all block interior cells and solution variables. */
+  for ( j  = JCl ; j <= JCu ; ++j ) {
+    for ( i = ICl ; i <= ICu ; ++i ) {
+      for(parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+	SI_Min = min(SI_Min, CellSmoothnessIndicatorValue(i,j,parameter));
+      } /* endfor (parameter) */
+    } /* endfor (i) */
+  } /* endfor (j) */
+
+  // Evaluate the block refinement criteria based on the minimum encountered SI.
+  return ( exp( -max(ZERO, SI_Min) / (CENO_Tolerances::AMR_Smoothness_Units * CENO_Tolerances::Fit_Tolerance )) );
+  
+}
 
 // Friend functions
 

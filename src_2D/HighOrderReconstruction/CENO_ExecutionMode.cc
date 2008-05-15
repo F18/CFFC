@@ -27,6 +27,7 @@ short CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_
 short CENO_Execution_Mode::USE_LAPACK_LEAST_SQUARES = ON; // use Lapack least-squares subroutine
 int CENO_Execution_Mode::Limiter = LIMITER_VANLEER;
 short CENO_Execution_Mode::IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT = OFF; // don't ignore curved boundaries
+short CENO_Execution_Mode::USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA = ON; // use the smoothness indicator for CENO AMR
 
 //! Set all flags to default values
 // add all flag default values to this function
@@ -46,6 +47,8 @@ void CENO_Execution_Mode::SetDefaults(void){
   CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = OFF; // don't extend the stencil
   USE_LAPACK_LEAST_SQUARES = ON; // use Lapack least-squares subroutine
   IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT = OFF; // don't ignore curved boundaries
+  USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA = ON; // use the smoothness indicator for CENO AMR
+  Limiter = LIMITER_VANLEER;
 }
 
 //! Print the current execution mode
@@ -130,6 +133,12 @@ void CENO_Execution_Mode::Print_Info(std::ostream & out_file){
     out_file << "\n     -> Accuracy Measurement Near Curved Boundaries: " << "Include cells";
   }
 
+  // output high-order AMR criteria
+  if ( USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA == ON ){
+    out_file << "\n     -> High-order AMR: " << "Use Smoothness Indicator";
+  } else {
+    out_file << "\n     -> High-order AMR: " << "DON'T Use Smoothness Indicator";
+  }
 }
 
 /*!
@@ -183,5 +192,11 @@ void CENO_Execution_Mode::Broadcast(void){
   MPI::COMM_WORLD.Bcast(&IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT,
  			1, 
  			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&Limiter,
+ 			1, 
+ 			MPI::SHORT, 0);  
 #endif
 }

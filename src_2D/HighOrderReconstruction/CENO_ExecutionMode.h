@@ -126,6 +126,14 @@ public:
       --------------------------------------------------------------------------------------- */  
   static short IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT;
 
+  /*! Error functions might be hard or impossible to be integrated accurately over domains with
+      curved boundaries. Therefore, this flag controls whether the cells near these boundaries 
+      are included or ignored. \n
+      Turn ON if this feature is desired. \n
+      Turn OFF if you don't want to use this feature. (default) \n
+      --------------------------------------------------------------------------------------- */  
+  static short USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA;  
+
   /*! The high-order k-Exact reconstruction involves the solution of a linear least-squares problem,
       which can be obtained with different subroutines. Currently, a Lapack subroutine and an 
       internal one (L. Ivan's implementation) can be used. The Lapack one is faster but assumes the 
@@ -268,6 +276,15 @@ void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Ty
       IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT = ON;
     } else if ( strcmp(IP.Next_Control_Parameter, "Include_Cells") == 0 ){
       IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT = OFF;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "AMR_High_Order_Criteria") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Smoothness_Indicator") == 0 ){
+      USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA = ON;
+    } else {
+      USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA = OFF;
     }
     i_command = 0;
 

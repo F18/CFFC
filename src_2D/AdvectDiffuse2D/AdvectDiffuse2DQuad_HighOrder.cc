@@ -5998,3 +5998,18 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
   delete [] GaussQuadPoints;
   
 }
+
+/*!
+ * Calculate refinement criteria for AMR
+ * based on the CENO smoothness indicator.
+ */
+void AdvectDiffuse2D_Quad_Block::Calculate_Refinement_Criteria_HighOrder(double *refinement_criteria,
+									 AdvectDiffuse2D_Input_Parameters &IP,
+									 int &number_refinement_criteria){
+  
+  number_refinement_criteria = 1;
+
+  /* Return the refinement criteria. */
+  refinement_criteria[0] = HighOrderVariable(0).AMR_Criteria_Based_On_Minimum_Smoothness_Indicator(*this);
+
+}

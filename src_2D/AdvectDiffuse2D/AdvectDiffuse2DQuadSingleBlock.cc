@@ -2467,11 +2467,20 @@ void Residual_Smoothing(AdvectDiffuse2D_Quad_Block &SolnBlk,
  * Calculate refinement criteria for the solution       
  * block.                                               
  *                                                      
+ * \todo Refactor this function!
  ********************************************************/
 void Calculate_Refinement_Criteria(double *refinement_criteria,
 				   AdvectDiffuse2D_Input_Parameters &IP,
                                    int &number_refinement_criteria,
                                    AdvectDiffuse2D_Quad_Block &SolnBlk) {
+
+  // Calculate refinement criteria based on smoothness indicator
+  if (CENO_Execution_Mode::USE_CENO_ALGORITHM && 
+      CENO_Execution_Mode::USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA) {
+    return SolnBlk.Calculate_Refinement_Criteria_HighOrder(refinement_criteria,
+							   IP,
+							   number_refinement_criteria);
+  }
 
   int i, j;
 
