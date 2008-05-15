@@ -19,6 +19,8 @@
 #include "QuadTree.h"
 #endif // _QUADTREE_INCLUDED
 
+#include "../HighOrderReconstruction/CENO_ExecutionMode.h"
+
 /******************************************************************
  * AMR -- Templated subroutines.                                  *
  ******************************************************************/
@@ -444,20 +446,30 @@ void Flag_Blocks_For_Refinement(Quad_Soln_Block             *Soln_ptr,
     } /* endfor */
 
     for ( i_criteria = 0; i_criteria < number_refinement_criteria; ++i_criteria ) {
-       if (fabs(global_max_refinement_criteria[i_criteria]-
-                global_min_refinement_criteria[i_criteria]) > TOLER) {
-          threshold_refinement[i_criteria] = global_min_refinement_criteria[i_criteria] +
-                                             scale_refinement[i_criteria]*
-                                             (global_max_refinement_criteria[i_criteria]-
-                                              global_min_refinement_criteria[i_criteria]);
-          threshold_coarsening[i_criteria] = global_min_refinement_criteria[i_criteria] +
-                                             scale_coarsening[i_criteria]*
-                                             (global_max_refinement_criteria[i_criteria]-
-                                              global_min_refinement_criteria[i_criteria]);
-       } else {
-	  threshold_refinement[i_criteria] = 0.90*global_min_refinement_criteria[i_criteria];
-          threshold_coarsening[i_criteria] = 1.10*global_min_refinement_criteria[i_criteria];
-       } /* endif */
+
+      if (CENO_Execution_Mode::USE_CENO_ALGORITHM && 
+	  CENO_Execution_Mode::USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA) {	
+	/* Set threshold refinement and coarsening based on an absolute scale (from 0 to 1) */
+	threshold_refinement[i_criteria] = scale_refinement[i_criteria];
+	threshold_coarsening[i_criteria] = scale_coarsening[i_criteria];
+      } else {
+      	 /* Set threshold refinement and coarsening based on an relative scale */
+	 if (fabs(global_max_refinement_criteria[i_criteria]-
+		  global_min_refinement_criteria[i_criteria]) > TOLER) {
+	   threshold_refinement[i_criteria] = global_min_refinement_criteria[i_criteria] +
+	     scale_refinement[i_criteria]*
+	     (global_max_refinement_criteria[i_criteria]-
+	      global_min_refinement_criteria[i_criteria]);
+	   threshold_coarsening[i_criteria] = global_min_refinement_criteria[i_criteria] +
+	     scale_coarsening[i_criteria]*
+	     (global_max_refinement_criteria[i_criteria]-
+	      global_min_refinement_criteria[i_criteria]);
+	 } else {
+	   threshold_refinement[i_criteria] = 0.90*global_min_refinement_criteria[i_criteria];
+	   threshold_coarsening[i_criteria] = 1.10*global_min_refinement_criteria[i_criteria];
+	 } /* endif */
+
+       }/* endif */
     } /* endfor */
 
     /* Finally, flag the blocks for coarsening and division. */
