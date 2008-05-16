@@ -381,6 +381,7 @@ public:
   //@{
   double area(const Cell2D_HO &Cell) const;
   double area(const int &ii, const int &jj) const;
+  double area(const Node2D_HO &SW, const Node2D_HO &NW, const Node2D_HO &NE, const Node2D_HO &SE);
   double area_CurvedBoundaries(const int &CellIndex, const int &Boundary) const;
   double area_GhostCell_CurvedBoundaries(const int &CellIndex, const int &Boundary) const;
   //@}
@@ -1396,6 +1397,18 @@ inline double Grid2D_Quad_Block_HO::area(const int &ii, const int &jj) const {
   return HALF*( ((Node[ii+1][jj].X-Node[ii][jj].X)^(Node[ii][jj+1].X-Node[ii][jj].X)) +
 		((Node[ii+1][jj+1].X-Node[ii][jj+1].X)^(Node[ii+1][jj+1].X-Node[ii+1][jj].X)) );
 }
+
+/*!
+ * Calculate the cell area of a quadrilateral cell with straight edges 
+ * defined by 4 vertexes (i.e. nodes SW, NW, NE, SE. )
+ * 
+ * \note The order in which the nodes are passed is important!
+ */
+inline double Grid2D_Quad_Block_HO::area(const Node2D_HO &SW, const Node2D_HO &NW,
+					 const Node2D_HO &NE, const Node2D_HO &SE){
+  return (HALF*(((SE.X-SW.X)^( NW.X-SW.X)) + ((NE.X-NW.X)^(NE.X-SE.X))));
+}
+
 
 /*!
  * Get North-West cell node.

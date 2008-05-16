@@ -75,6 +75,14 @@ public:
   ReturnType IntegratePolynomialOverCell(const int &ii, const int &jj, const FO FuncObj,
 					 ReturnType _dummy_param) const;
 
+  //! @brief Compute the integral of a polynomial function over an arbitrary quadrilateral domain
+  template<typename FO, typename Node2DType, class ReturnType>
+  ReturnType IntegratePolynomialOverQuadDomain(const FO FuncObj, 
+					       const Node2DType &SW, const Node2DType &NW,
+					       const Node2DType &NE, const Node2DType &SE,
+					       ReturnType _dummy_param) const;
+
+
 private:
   Grid2DQuadType *Grid;	        //!< pointer to the grid associated to this object
 
@@ -129,7 +137,6 @@ ReturnType Grid2DQuadIntegration<Grid2DQuadType>::IntegrateFunctionOverCell(cons
  * \param ii the i-index of the cell over which the integration is performed
  * \param jj the j-index of the cell over which the integration is performed
  * \param FuncObj the function to be integrated
- * \param digits the number of exact digits with which the result is computed (i.e. the accuracy of the calculation)
  * \param _dummy_param a parameter used only to determine the return type of the function FuncObj
  */
 template<class Grid2DQuadType>
@@ -142,6 +149,30 @@ ReturnType Grid2DQuadIntegration<Grid2DQuadType>::IntegratePolynomialOverCell(co
 					     Grid->nodeNW(ii,jj),
 					     Grid->nodeNE(ii,jj),
 					     Grid->nodeSE(ii,jj),
+					     _dummy_param);
+}
+
+/*!
+ * Integrate a polynomial function (i.e. any function or pointer function)
+ * over an arbitrary quadrilateral domain with straight edges.
+ * This subroutine is suitable for integrating exactly & efficiently polynomials of up to order 18.
+ *
+ * \param FuncObj the function to be integrated
+ * \param SW the South-West quadrilateral vertex
+ * \param SE the South-East quadrilateral vertex
+ * \param NE the North-East quadrilateral vertex
+ * \param NW the North-West quadrilateral vertex
+ * \param _dummy_param a parameter used only to determine the return type of the function FuncObj
+ */
+template<class Grid2DQuadType>
+template<typename FO, typename Node2DType, class ReturnType> inline
+ReturnType Grid2DQuadIntegration<Grid2DQuadType>::IntegratePolynomialOverQuadDomain(const FO FuncObj, 
+										    const Node2DType &SW, const Node2DType &NW,
+										    const Node2DType &NE, const Node2DType &SE,
+										    ReturnType _dummy_param) const {
+
+  return GaussLobattoQuadrilateralQuadrature(FuncObj,
+					     SW, NW, NE, SE,
 					     _dummy_param);
 }
 

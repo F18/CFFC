@@ -144,6 +144,12 @@ public:
       --------------------------------------------------------------------------------------- */
   static short USE_LAPACK_LEAST_SQUARES;
 
+  /*! Use high-order interpolant to transfer the solution between blocks with mesh resolution change. \n
+      Turn ON if this feature is desired. (default) \n
+      Turn OFF if you don't want to use this feature. \n
+      --------------------------------------------------------------------------------------- */
+  static short HIGH_ORDER_MESSAGE_PASSING;
+
   static int Limiter;   //!< the limiter used for the limited linear reconstruction performed for non-smooth solutions
 
   
@@ -285,6 +291,15 @@ void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Ty
       USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA = ON;
     } else {
       USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA = OFF;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "High_Order_Message_Passing") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
+      HIGH_ORDER_MESSAGE_PASSING = ON;
+    } else {
+      HIGH_ORDER_MESSAGE_PASSING = OFF;
     }
     i_command = 0;
 

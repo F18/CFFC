@@ -359,6 +359,14 @@ public:
 				   const double & X_Coord, const double & Y_Coord) const {
     return TD[ii][jj].ComputeSolutionFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
   }
+
+  //! Evaluate the interpolant at a given location (X_Coord,Y_Coord) for all solution variables,
+  //  using the reconstruction of cell (ii,jj)
+  Soln_State SolutionStateAtCoordinates(const int & ii, const int & jj,
+					const double & X_Coord, const double & Y_Coord) const {
+    return TD[ii][jj].ComputeSolutionFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
+  }
+
   //! Evaluate the interpolant at a given position vector for all solution variables, using the reconstruction of cell (ii,jj).
   Soln_State SolutionStateAtLocation(const int & ii, const int & jj, const Vector2D &CalculationPoint) const {
     return SolutionAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
@@ -393,7 +401,13 @@ public:
   template<typename FO, class ReturnType>
   ReturnType IntegrateOverTheCell(const int &ii, const int &jj, const FO FuncObj,
 				  const int & digits, ReturnType _dummy_param) const;
+
   
+  /*! @brief Integrate the reconstructed polynomial of cell (ii,jj) over an arbitrary quad domain. */
+  template<typename Node2DType>
+  Soln_State IntegrateCellReconstructionOverQuadDomain(const int &ii, const int &jj,
+						       const Node2DType &SW, const Node2DType &NW,
+						       const Node2DType &NE, const Node2DType &SE) const;
   //! @name Reconstructions:
   //@{
 
@@ -2002,6 +2016,35 @@ ReturnType HighOrder2D<SOLN_STATE>::IntegrateOverTheCell(const int &ii, const in
 							 const int & digits,
 							 ReturnType _dummy_param) const {
   return Geom->Integration.IntegrateFunctionOverCell(ii,jj, FuncObj, digits, _dummy_param);
+}
+
+/*! 
+ * Integrate the reconstruction of cell (ii,jj)
+ * over the specified quadrilateral domain.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param SW the South-West quadrilateral vertex
+ * \param SE the South-East quadrilateral vertex
+ * \param NE the North-East quadrilateral vertex
+ * \param NW the North-West quadrilateral vertex
+ */
+template<class SOLN_STATE>
+template<typename Node2DType> inline
+SOLN_STATE HighOrder2D<SOLN_STATE>::
+IntegrateCellReconstructionOverQuadDomain(const int &ii, const int &jj,
+					  const Node2DType &SW, const Node2DType &NW,
+					  const Node2DType &NE, const Node2DType &SE) const {
+
+  SOLN_STATE _dummy_result;
+
+  return ( Geom->Integration.
+	   IntegratePolynomialOverQuadDomain(wrapped_soln_block_member_function(this,
+										&ClassType::SolutionStateAtCoordinates,
+										ii, jj,
+										_dummy_result),
+					     SW, NW, NE, SE,
+					     _dummy_result) );
 }
 
 /*! 
