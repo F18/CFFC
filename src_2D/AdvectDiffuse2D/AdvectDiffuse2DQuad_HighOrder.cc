@@ -2417,7 +2417,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  // Update North face boundary flux with the contribution of the hyperbolic term
-	  FluxN[i] += FaceFlux;
+	  if (Include_Diffusion_Term){
+	    FluxN[i] += FaceFlux;
+	  } else {
+	    FluxN[i] = FaceFlux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
 	  if (UseTimeStep){
@@ -2488,7 +2492,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  Flux *= Grid.lfaceN(i,JCu);
 
 	  // Update North face boundary flux with the contribution of this cell face
-	  FluxN[i] += Flux;
+	  if (Include_Diffusion_Term){
+	    FluxN[i] += Flux;
+	  } else {
+	    FluxN[i]  = Flux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
 	  if (UseTimeStep){
@@ -2557,7 +2565,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  // Update North face boundary flux with the contribution of the hyperbolic term
-	  FluxN[i] += FaceFlux;
+	  if (Include_Diffusion_Term){
+	    FluxN[i] += FaceFlux;
+	  } else {
+	    FluxN[i]  = FaceFlux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
 	  if (UseTimeStep){
@@ -2606,7 +2618,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  Flux *= Grid.lfaceN(i,JCu);
 
 	  // Update North face boundary flux with the contribution of this cell face
-	  FluxN[i] += Flux;
+	  if (Include_Diffusion_Term){
+	    FluxN[i] += Flux;
+	  } else {
+	    FluxN[i]  = Flux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes. */
 	  if (UseTimeStep){
@@ -2701,7 +2717,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  // Update South face boundary flux with the contribution of the hyperbolic term
-	  FluxS[i] += FaceFlux;
+	  if (Include_Diffusion_Term){
+	    FluxS[i] += FaceFlux;
+	  } else {
+	    FluxS[i]  = FaceFlux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
 	  if (UseTimeStep){
@@ -2772,7 +2792,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  Flux *= Grid.lfaceS(i,JCl);
 
 	  // Update South face boundary flux with the contribution of this cell face
-	  FluxS[i] += Flux;
+	  if (Include_Diffusion_Term){
+	    FluxS[i] += Flux;
+	  } else {
+	    FluxS[i]  = Flux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
 	  if (UseTimeStep){
@@ -2841,7 +2865,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  // Update South face boundary flux with the contribution of the hyperbolic term
-	  FluxS[i] += FaceFlux;
+	  if (Include_Diffusion_Term){
+	    FluxS[i] += FaceFlux;
+	  } else {
+	    FluxS[i]  = FaceFlux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
 	  if (UseTimeStep){
@@ -2890,7 +2918,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  Flux *= Grid.lfaceS(i,JCl);
 
 	  // Update South face boundary flux with the contribution of this cell face
-	  FluxS[i] += Flux;
+	  if (Include_Diffusion_Term){
+	    FluxS[i] += Flux;
+	  } else {
+	    FluxS[i]  = Flux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes. */
 	  if (UseTimeStep){
@@ -2985,7 +3017,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  // Update East face boundary flux with the contribution of the hyperbolic term
-	  FluxE[j] += FaceFlux;
+	  if (Include_Diffusion_Term){
+	    FluxE[j] += FaceFlux;
+	  } else {
+	    FluxE[j]  = FaceFlux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
 	  if (UseTimeStep){
@@ -3056,7 +3092,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  Flux *= Grid.lfaceE(ICu,j);
 
 	  // Update East face boundary flux with the contribution of this cell face
-	  FluxE[j] += Flux;
+	  if (Include_Diffusion_Term){
+	    FluxE[j] += Flux;
+	  } else {
+	    FluxE[j]  = Flux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
 	  if (UseTimeStep){
@@ -3125,7 +3165,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  // Update East face boundary flux with the contribution of the hyperbolic term
-	  FluxE[j] += FaceFlux;
+	  if (Include_Diffusion_Term){
+	    FluxE[j] += FaceFlux;
+	  } else {
+	    FluxE[j]  = FaceFlux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
 	  if (UseTimeStep){
@@ -3174,7 +3218,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  Flux *= Grid.lfaceE(ICu,j);
 
 	  // Update East face boundary flux with the contribution of this cell face
-	  FluxE[j] += Flux;
+	  if (Include_Diffusion_Term){
+	    FluxE[j] += Flux;
+	  } else {
+	    FluxE[j]  = Flux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes. */
 	  if (UseTimeStep){
@@ -3269,7 +3317,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  // Update West face boundary flux with the contribution of the hyperbolic term
-	  FluxW[j] += FaceFlux;
+	  if (Include_Diffusion_Term){
+	    FluxW[j] += FaceFlux;
+	  } else {
+	    FluxW[j]  = FaceFlux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
 	  if (UseTimeStep){
@@ -3340,7 +3392,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  Flux *= Grid.lfaceW(ICl,j);
 
 	  // Update West face boundary flux with the contribution of this cell face
-	  FluxW[j] += Flux;
+	  if (Include_Diffusion_Term){
+	    FluxW[j] += Flux;
+	  } else {
+	    FluxW[j]  = Flux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
 	  if (UseTimeStep){
@@ -3409,7 +3465,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  } // endfor (SplineSegment)
 
 	  // Update West face boundary flux with the contribution of the hyperbolic term
-	  FluxW[j] += FaceFlux;
+	  if (Include_Diffusion_Term){
+	    FluxW[j] += FaceFlux;
+	  } else {
+	    FluxW[j]  = FaceFlux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes due to convective flux. */
 	  if (UseTimeStep){
@@ -3458,7 +3518,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
 	  Flux *= Grid.lfaceW(ICl,j);
 
 	  // Update West face boundary flux with the contribution of this cell face
-	  FluxW[j] += Flux;
+	  if (Include_Diffusion_Term){
+	    FluxW[j] += Flux;
+	  } else {
+	    FluxW[j]  = Flux;
+	  }
 
 	  /* Evaluate cell-averaged solution changes. */
 	  if (UseTimeStep){
