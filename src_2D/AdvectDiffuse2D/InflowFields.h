@@ -33,6 +33,7 @@
 #define CONSTANT_INFLOW_FIELD        4
 #define HYPERBOLIC_TANGENT_I         5
 #define EXPONENTIAL_SINUSOIDAL       6
+#define TOP_HAT                      7
 
 
 
@@ -403,6 +404,60 @@ inline double Squared_Exponential_Times_Sinusoidal_InflowField::EvaluateSolution
 
     // Calculate final expression
     return A + Magnitude * Func;
+  } else {
+    return A;
+  }
+}
+
+/*! 
+ * \class Top_Hat_InflowField
+ * 
+ * \brief Implements a top hat inflow field between r0 and r1.
+ *
+ */
+class Top_Hat_InflowField: public InflowFieldBasicType{
+public:
+  
+  //! Basic Constructor
+  Top_Hat_InflowField(void): ReferencePoint(0.0),
+			     R0(0.7), R1(1.0),
+			     A(0.0), Magnitude(1.0)
+  { 
+    // Name the inflow field
+    InflowFieldName = "Top hat, Inflow(x,y) = A + M between r0 and r1, otherwise 0"; 
+  }
+  
+  //! Return value of the inflow field
+  double EvaluateSolutionAt(const double &x, const double &y) const;
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+  
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+  
+private:
+  Vector2D ReferencePoint;	//!< 2D-space location used as reference for the field
+  double R0, R1;	        //!< References for the field
+  double A;			//!< Constant parameter of the inflow field
+  double Magnitude; 	        //!< Function magnitude
+};
+
+//! Return value of the inflow field
+inline double Top_Hat_InflowField::EvaluateSolutionAt(const double &x, const double &y) const {
+
+  double R;
+  Vector2D PointOfInterest(x,y);
+
+  // Calculate the distance R relative to the reference point
+  R = PointOfInterest.abs() - ReferencePoint.abs();
+
+  if ( R >= R0 && R <= R1 ){
+    return A + Magnitude;
+
   } else {
     return A;
   }

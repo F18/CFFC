@@ -48,37 +48,41 @@ void AdvectDiffuse2D_InflowField::SetInflowField(const short &InflowIndex){
 
   // create the proper exact solution and set the index accordingly
   switch (InflowIndex){
-    case NO_INFLOW_FIELD:
-      // Don't do anything. The values were set by DestroyInflowFieldObject() routine.
-      break;
-    case SINUSOIDAL_I:
-      Inflow = new Sinusoidal_I_InflowField;
+  case NO_INFLOW_FIELD:
+    // Don't do anything. The values were set by DestroyInflowFieldObject() routine.
+    break;
+  case SINUSOIDAL_I:
+    Inflow = new Sinusoidal_I_InflowField;
     break;
     
-    case SINUSOIDAL_II:
-      Inflow = new Sinusoidal_II_InflowField;
+  case SINUSOIDAL_II:
+    Inflow = new Sinusoidal_II_InflowField;
     break;
     
-    case SINUSOIDAL_III:
-      Inflow = new Sinusoidal_III_InflowField;
+  case SINUSOIDAL_III:
+    Inflow = new Sinusoidal_III_InflowField;
     break;
 
-    case SINUSOIDAL_IV:
-      Inflow = new Sinusoidal_IV_InflowField;
+  case SINUSOIDAL_IV:
+    Inflow = new Sinusoidal_IV_InflowField;
     break;
 
-    case CONSTANT_INFLOW_FIELD:
-      Inflow = new Constant_InflowField;
+  case CONSTANT_INFLOW_FIELD:
+    Inflow = new Constant_InflowField;
     break;
 
-    case HYPERBOLIC_TANGENT_I:
-      Inflow = new Hyperbolic_Tangent_I_InflowField;
+  case HYPERBOLIC_TANGENT_I:
+    Inflow = new Hyperbolic_Tangent_I_InflowField;
     break;
 
-    case EXPONENTIAL_SINUSOIDAL:
-      Inflow = new Squared_Exponential_Times_Sinusoidal_InflowField;
+  case EXPONENTIAL_SINUSOIDAL:
+    Inflow = new Squared_Exponential_Times_Sinusoidal_InflowField;
     break;
 
+  case TOP_HAT:
+    Inflow = new Top_Hat_InflowField;
+    break;
+      
   default:
     throw runtime_error("AdvectDiffuse2D_InflowField::SetInflowField() ERROR! Unknown inflow field index.");
   }
@@ -121,6 +125,8 @@ void AdvectDiffuse2D_InflowField::Parse_Next_Input_Control_Parameter(AdvectDiffu
       SetInflowField(HYPERBOLIC_TANGENT_I);
     } else if ( strcmp(IP.Next_Control_Parameter, "Inflow_ExpSinusoidal") == 0 ) {
       SetInflowField(EXPONENTIAL_SINUSOIDAL);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Inflow_TopHat") == 0 ) {
+      SetInflowField(TOP_HAT);
     } else {
       i_command = INVALID_INPUT_CODE;
       return;
