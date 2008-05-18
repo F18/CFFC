@@ -575,6 +575,12 @@ int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Fine,
       SolnBlk_Fine.UoN[2*(i-i_min)+SolnBlk_Fine.ICl+1]	= SolnBlk_Original.UoN[i];
     } /* endfor */
 
+    // \todo Refactor this. It might not always work.
+    SolnBlk_Fine.Set_Reference_Values_For_Boundary_States(SolnBlk_Original.Ref_State_BC_North,
+							  SolnBlk_Original.Ref_State_BC_South,
+							  SolnBlk_Original.Ref_State_BC_East,
+							  SolnBlk_Original.Ref_State_BC_West);
+
     // Enforce analytic values for the boundary reference states if defined
     SolnBlk_Fine.Set_Boundary_Reference_States();
     
@@ -834,6 +840,12 @@ int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Coarse,
 	SolnBlk_Coarse.UoN[i_coarse+1] = SolnBlk_Original_NE.UoN[i];
       } /* endif */
     } /* endfor */
+
+    // \todo Refactor this. It might not always work.
+    SolnBlk_Coarse.Set_Reference_Values_For_Boundary_States(SolnBlk_Original_NW.Ref_State_BC_North,
+							    SolnBlk_Original_SE.Ref_State_BC_South,
+							    SolnBlk_Original_NE.Ref_State_BC_East,
+							    SolnBlk_Original_SW.Ref_State_BC_West);
 
     // Enforce analytic values for the boundary reference states if defined
     SolnBlk_Coarse.Set_Boundary_Reference_States();
@@ -1235,6 +1247,13 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	  break;
 
 	case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoW has the right inflow data!
+	  if (SolnBlk.Grid.BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+	    for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.UoW[j];
+	    }
+	    break;
+	  }
+
 	case BC_DIRICHLET :	// Use UoW as reference value
 	  // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
 	  dx_normal = ( SolnBlk.Grid.xfaceW(SolnBlk.ICl,j) - 
@@ -1276,18 +1295,27 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	  if (Vn <= ZERO){
 	    // The flow enters the domain
 	    // Use UoW as reference value
-	    
-	    // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
-	    dx_normal = ( SolnBlk.Grid.xfaceW(SolnBlk.ICl,j) - 
-			  SolnBlk.Grid.CellCentroid(SolnBlk.ICl,j) ) * SolnBlk.Grid.nfaceW(SolnBlk.ICl,j);
-	    // Estimate the solution gradient in the normal direction
-	    dUdn = (SolnBlk.UoW[j] - SolnBlk.U[SolnBlk.ICl][j])/dx_normal;
 
-	    // Fill in the ghost cells.
-	    for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	      dx_normal = ( SolnBlk.Grid.CellCentroid(SolnBlk.ICl-ghost,j) -
-			    SolnBlk.Grid.xfaceW(SolnBlk.ICl,j)) * SolnBlk.Grid.nfaceW(SolnBlk.ICl,j);
-	      SolnBlk.U[SolnBlk.ICl-ghost][j] = ( SolnBlk.UoW[j] + dUdn * dx_normal );
+	    if (SolnBlk.Grid.BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux) {
+	      // Fill in the ghost cells.
+	      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+		SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.UoW[j];
+	      }
+	      
+	    } else {
+
+	      // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+	      dx_normal = ( SolnBlk.Grid.xfaceW(SolnBlk.ICl,j) - 
+			    SolnBlk.Grid.CellCentroid(SolnBlk.ICl,j) ) * SolnBlk.Grid.nfaceW(SolnBlk.ICl,j);
+	      // Estimate the solution gradient in the normal direction
+	      dUdn = (SolnBlk.UoW[j] - SolnBlk.U[SolnBlk.ICl][j])/dx_normal;
+	      
+	      // Fill in the ghost cells.
+	      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+		dx_normal = ( SolnBlk.Grid.CellCentroid(SolnBlk.ICl-ghost,j) -
+			      SolnBlk.Grid.xfaceW(SolnBlk.ICl,j)) * SolnBlk.Grid.nfaceW(SolnBlk.ICl,j);
+		SolnBlk.U[SolnBlk.ICl-ghost][j] = ( SolnBlk.UoW[j] + dUdn * dx_normal );
+	      }
 	    }
 
 	  } else {
@@ -1352,6 +1380,13 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	  break;
 	  
 	case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoE has the right inflow data!
+	  if (SolnBlk.Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+	    for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.UoE[j];
+	    }
+	    break;
+	  }
+
 	case BC_DIRICHLET :	// Use UoE as reference value
 	  // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
 	  dx_normal = ( SolnBlk.Grid.xfaceE(SolnBlk.ICu,j) - 
@@ -1394,17 +1429,26 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	    // The flow enters the domain
 	    // Use UoE as reference value
 
-	    // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
-	    dx_normal = ( SolnBlk.Grid.xfaceE(SolnBlk.ICu,j) - 
-			  SolnBlk.Grid.CellCentroid(SolnBlk.ICu,j) ) * SolnBlk.Grid.nfaceE(SolnBlk.ICu,j);
-	    // Estimate the solution gradient in the normal direction
-	    dUdn = (SolnBlk.UoE[j] - SolnBlk.U[SolnBlk.ICu][j])/dx_normal;
+	    if (SolnBlk.Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux) {
+	      // Fill in the ghost cells.
+	      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+		SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.UoE[j];
+	      }
+
+	    } else {
+
+	      // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+	      dx_normal = ( SolnBlk.Grid.xfaceE(SolnBlk.ICu,j) - 
+			    SolnBlk.Grid.CellCentroid(SolnBlk.ICu,j) ) * SolnBlk.Grid.nfaceE(SolnBlk.ICu,j);
+	      // Estimate the solution gradient in the normal direction
+	      dUdn = (SolnBlk.UoE[j] - SolnBlk.U[SolnBlk.ICu][j])/dx_normal;
 	    
-	    // Fill in the ghost cells.
-	    for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	      dx_normal = ( SolnBlk.Grid.CellCentroid(SolnBlk.ICu+ghost,j) -
-			    SolnBlk.Grid.xfaceW(SolnBlk.ICu,j)) * SolnBlk.Grid.nfaceE(SolnBlk.ICu,j);
-	      SolnBlk.U[SolnBlk.ICu+ghost][j] = ( SolnBlk.UoE[j] + dUdn * dx_normal );
+	      // Fill in the ghost cells.
+	      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+		dx_normal = ( SolnBlk.Grid.CellCentroid(SolnBlk.ICu+ghost,j) -
+			      SolnBlk.Grid.xfaceW(SolnBlk.ICu,j)) * SolnBlk.Grid.nfaceE(SolnBlk.ICu,j);
+		SolnBlk.U[SolnBlk.ICu+ghost][j] = ( SolnBlk.UoE[j] + dUdn * dx_normal );
+	      }
 	    }
 
 	  } else {
@@ -1469,6 +1513,13 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
       break;
       
     case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoS has the right inflow data!
+      if (SolnBlk.Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+	for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	  SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.UoS[i];
+	}
+	break;
+      }
+      
     case BC_DIRICHLET :	// Use UoS as reference value
       // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
       dx_normal = ( SolnBlk.Grid.xfaceS(i,SolnBlk.JCl) - 
@@ -1511,17 +1562,26 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	// The flow enters the domain
 	// Use UoS as reference value
 
-	// Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
-	dx_normal = ( SolnBlk.Grid.xfaceS(i,SolnBlk.JCl) - 
-		      SolnBlk.Grid.CellCentroid(i,SolnBlk.JCl) ) * SolnBlk.Grid.nfaceS(i,SolnBlk.JCl);
-	// Estimate the solution gradient in the normal direction
-	dUdn = (SolnBlk.UoS[i] - SolnBlk.U[i][SolnBlk.JCl])/dx_normal;
+	if (SolnBlk.Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux) {
+	  // Fill in the ghost cells.
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.UoS[i];
+	  }
+	  
+	} else {
+
+	  // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+	  dx_normal = ( SolnBlk.Grid.xfaceS(i,SolnBlk.JCl) - 
+			SolnBlk.Grid.CellCentroid(i,SolnBlk.JCl) ) * SolnBlk.Grid.nfaceS(i,SolnBlk.JCl);
+	  // Estimate the solution gradient in the normal direction
+	  dUdn = (SolnBlk.UoS[i] - SolnBlk.U[i][SolnBlk.JCl])/dx_normal;
       
-	// Fill in the ghost cells.
-	for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	  dx_normal = ( SolnBlk.Grid.CellCentroid(i,SolnBlk.JCl-ghost) -
-			SolnBlk.Grid.xfaceS(i,SolnBlk.JCl)) * SolnBlk.Grid.nfaceS(i,SolnBlk.JCl);
-	  SolnBlk.U[i][SolnBlk.JCl-ghost] = ( SolnBlk.UoS[i] + dUdn * dx_normal );
+	  // Fill in the ghost cells.
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    dx_normal = ( SolnBlk.Grid.CellCentroid(i,SolnBlk.JCl-ghost) -
+			  SolnBlk.Grid.xfaceS(i,SolnBlk.JCl)) * SolnBlk.Grid.nfaceS(i,SolnBlk.JCl);
+	    SolnBlk.U[i][SolnBlk.JCl-ghost] = ( SolnBlk.UoS[i] + dUdn * dx_normal );
+	  }
 	}
 
       } else {
@@ -1581,6 +1641,13 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
       break;
       
     case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoN has the right inflow data!
+      if (SolnBlk.Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+	for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	  SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.UoN[i];
+	}
+	break;
+      }
+
     case BC_DIRICHLET :	// Use UoN as reference value
       // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
       dx_normal = ( SolnBlk.Grid.xfaceN(i,SolnBlk.JCu) - 
@@ -1622,10 +1689,29 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
       if (Vn <= ZERO){
 	// The flow enters the domain
 	// Use UoN as reference value
-	for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	  SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.UoN[i];
-	}
 
+	if (SolnBlk.Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux) {
+	  // Fill in the ghost cells.
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.UoN[i];
+	  }
+	  
+	} else {
+
+	  // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+	  dx_normal = ( SolnBlk.Grid.xfaceN(i,SolnBlk.JCu) - 
+			SolnBlk.Grid.CellCentroid(i,SolnBlk.JCu) ) * SolnBlk.Grid.nfaceN(i,SolnBlk.JCu);
+	  // Estimate the solution gradient in the normal direction
+	  dUdn = (SolnBlk.UoN[i] - SolnBlk.U[i][SolnBlk.JCu])/dx_normal;
+	      
+	  // Fill in the ghost cells.
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    dx_normal = ( SolnBlk.Grid.CellCentroid(i,SolnBlk.JCu+ghost) -
+			  SolnBlk.Grid.xfaceN(i,SolnBlk.JCu)) * SolnBlk.Grid.nfaceN(i,SolnBlk.JCu);	    
+	    SolnBlk.U[i][SolnBlk.JCu+ghost] = ( SolnBlk.UoN[i] + dUdn * dx_normal );
+	  }
+
+	}
       } else {
 	// The flow leaves the domain
 	// Impose constant extrapolation

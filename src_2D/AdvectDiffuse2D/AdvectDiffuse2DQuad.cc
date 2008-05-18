@@ -189,6 +189,12 @@ AdvectDiffuse2D_Quad_Block & AdvectDiffuse2D_Quad_Block::operator =(const Advect
     
   }/* endif */
 
+  // Copy boundary reference states
+  Ref_State_BC_North = Soln.Ref_State_BC_North;
+  Ref_State_BC_South = Soln.Ref_State_BC_South;
+  Ref_State_BC_East = Soln.Ref_State_BC_East;
+  Ref_State_BC_West = Soln.Ref_State_BC_West;  
+
   // Reset accuracy assessment flag
   AssessAccuracy.ResetForNewCalculation();
 
