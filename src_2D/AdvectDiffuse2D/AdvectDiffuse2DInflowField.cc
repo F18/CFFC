@@ -83,6 +83,10 @@ void AdvectDiffuse2D_InflowField::SetInflowField(const short &InflowIndex){
     Inflow = new Top_Hat_InflowField;
     break;
       
+  case DISCONTINUOUS_EXPONENTIAL_SINUSOIDAL:
+    Inflow = new Discontinuous_Exponential_Times_Sinusoidal_InflowField;
+    break;
+
   default:
     throw runtime_error("AdvectDiffuse2D_InflowField::SetInflowField() ERROR! Unknown inflow field index.");
   }
@@ -127,6 +131,8 @@ void AdvectDiffuse2D_InflowField::Parse_Next_Input_Control_Parameter(AdvectDiffu
       SetInflowField(EXPONENTIAL_SINUSOIDAL);
     } else if ( strcmp(IP.Next_Control_Parameter, "Inflow_TopHat") == 0 ) {
       SetInflowField(TOP_HAT);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Inflow_DiscontinuousExpSinusoidal") == 0 ) {
+      SetInflowField(DISCONTINUOUS_EXPONENTIAL_SINUSOIDAL);
     } else {
       i_command = INVALID_INPUT_CODE;
       return;

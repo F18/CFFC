@@ -34,7 +34,7 @@
 #define HYPERBOLIC_TANGENT_I         5
 #define EXPONENTIAL_SINUSOIDAL       6
 #define TOP_HAT                      7
-
+#define DISCONTINUOUS_EXPONENTIAL_SINUSOIDAL     8
 
 
 // Declare the input parameters class
@@ -458,6 +458,82 @@ inline double Top_Hat_InflowField::EvaluateSolutionAt(const double &x, const dou
   if ( R >= R0 && R <= R1 ){
     return A + Magnitude;
 
+  } else {
+    return A;
+  }
+}
+
+/*! 
+ * \class Discontinuous_Exponential_Times_Sinusoidal_InflowField
+ * 
+ * \brief Implements an inflow field with the following expression: 
+ *        \f$ Inflow(x,y) = M \left\{ A + \left( e^{S (r - r_{0})} \sin [S \pi (r - r_{0})] \right)^2 \right\} \f$ \n
+ * combined with a discontinuity at a specified location,
+ * 
+ * where r is the location of interest, \f$r_{0}\f$ is the reference point,
+ * M is the magnitude of the function, A is a shift coefficient and S controls the
+ * steepness and frequency. \n
+ */
+class Discontinuous_Exponential_Times_Sinusoidal_InflowField: public InflowFieldBasicType{
+public:
+  
+  //! Basic Constructor
+  Discontinuous_Exponential_Times_Sinusoidal_InflowField(void): ReferencePoint(0.0),
+								A(0.0), Magnitude(1.0),
+								SteepnessFrequency(1.0), Power(2),
+								DiscontinuityLocation(0.9)
+  { 
+    // Name the inflow field
+    InflowFieldName = "Discontinuous Exponential Sinusoidal, d=r-r0  [0:1], Inflow(x,y) = A + M*[exp(S*d)(sin(S*PI*d))^P], otherwise 0"; }
+  
+  //! Return value of the inflow field
+  double EvaluateSolutionAt(const double &x, const double &y) const;
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+  
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+  
+private:
+  Vector2D ReferencePoint;	//!< 2D-space location used as reference for the field
+  double DiscontinuityLocation;	//!< Distance relative to the reference point where the discontinuity is located
+  double A;			//!< Constant parameter of the inflow field
+  double Magnitude, SteepnessFrequency; 	//!< Function magnitude and steepness-frequency control
+  int Power;			//!< Function power
+};
+
+//! Return value of the inflow field
+inline double Discontinuous_Exponential_Times_Sinusoidal_InflowField::EvaluateSolutionAt(const double &x, const double &y) const {
+
+  double R;
+  double Func(1.0), TempFunc;
+  int i;
+  Vector2D PointOfInterest(x,y);
+
+  // Calculate the distance R relative to the reference point
+  R = PointOfInterest.abs() - ReferencePoint.abs();
+
+  if (R >= DiscontinuityLocation){
+    return A;
+
+  } else if (R >= 0 && R <= 1){
+    // Calculate the sinusoidal
+    TempFunc = sin(SteepnessFrequency * PI * R);
+
+    // Calculate the power
+    for (i = 1; i<= Power; ++i){
+      Func *= TempFunc;
+    }
+
+    // Calculate main expression
+    Func  *= exp(SteepnessFrequency*R);
+
+    // Calculate final expression
+    return A + Magnitude * Func;
   } else {
     return A;
   }
