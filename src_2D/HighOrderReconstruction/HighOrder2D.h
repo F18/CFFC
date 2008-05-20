@@ -171,6 +171,10 @@ public:
   //! Get the monotonicity flag for reconstruction of cell (ii,jj) and the variable stored in the position 'VarPosition'.
   int & CellInadequateFitValue(const int & ii, const int & jj,
 			       const int VarPosition){ return LimitedCell[ii][jj][VarPosition-1];}
+  const int & Previous_CellInadequateFitValue(const int & ii, const int & jj,
+					      const int VarPosition) const { return PreviousLimitedCell[ii][jj][VarPosition-1];}
+  int & Previous_CellInadequateFitValue(const int & ii, const int & jj,
+					const int VarPosition){ return PreviousLimitedCell[ii][jj][VarPosition-1];}
   //@}
 
   //! @name Smoothness indicator
@@ -331,6 +335,8 @@ public:
   const int & NghostHO(void) const { return Nghost_HO; }
   void ResetMonotonicityData(void);
   void ResetMonotonicityData(const int & ii, const int & jj);
+  void ResetMonotonicityDataBackup(void);
+  void ResetMonotonicityDataBackup(const int & ii, const int & jj);
   void InitializeMonotonicityVariables(const int & ii, const int & jj);
   void InitializeVariable(int ReconstructionOrder, GeometryType & Block,
 			  const bool &_pseudo_inverse_allocation_ = false);
@@ -700,12 +706,19 @@ private:
   bool _allocated_psinv;       //!< Flag indicating if the pseudo-inverse related containers have been allocated or not. 
   //@}
 
+  //! @name Member functions for limiter freezing:
+  //@{
+  bool _freeze_limiter;	       //!< Flag indicating if the limiter value must be frozen. Set based on the solution block flag.
+  //@}
+
   //! @name Reconstruction containers:
   //@{
   DerivativesContainer **TD;   //!< High-order TaylorDerivatives
   DoubleArrayType **SI;        //!< The values of the smoothness indicator calculated for each reconstructed variable
   FlagType **LimitedCell;      //!< Monotonicity flag: Values --> OFF - high-order reconstruction,
                                //                                  ON - limited linear reconstruction
+  FlagType **PreviousLimitedCell;      //!< Copy of the LimitedCell variable from the previous reconstruction
+
   DenseMatrix **CENO_LHS;      //!< Storage for the pseudo-inverse of the LHS term in the CENO reconstruction.
   DoubleArrayType **CENO_Geometric_Weights;   //!< Storage for the geometric weights used in CENO reconstruction.
   //@}
@@ -855,7 +868,8 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(void):
   StartI_SI_ConstrSouth(0), EndI_SI_ConstrSouth(0),
   StartJ_SI_ConstrEast(0),  EndJ_SI_ConstrEast(0),
   _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
-  TD(NULL), SI(NULL), LimitedCell(NULL),
+  _freeze_limiter(false),
+  TD(NULL), SI(NULL), LimitedCell(NULL), PreviousLimitedCell(NULL),
   rings(0), rings_SI(0), _calculated_psinv(false),
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
   Geom(NULL), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
@@ -886,7 +900,8 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder,
   StartI_SI_ConstrSouth(0), EndI_SI_ConstrSouth(0),
   StartJ_SI_ConstrEast(0),  EndJ_SI_ConstrEast(0),
   _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
-  TD(NULL), SI(NULL), LimitedCell(NULL), 
+  _freeze_limiter(false),
+  TD(NULL), SI(NULL), LimitedCell(NULL), PreviousLimitedCell(NULL),
   rings(0), rings_SI(0), _calculated_psinv(false),
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL), 
   Geom(&Block), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
@@ -915,7 +930,8 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
     ICl(0), ICu(0), JCl(0), JCu(0),
     OrderOfReconstruction(-1), Nghost_HO(0),
     _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
-    TD(NULL), SI(NULL), LimitedCell(NULL),
+    _freeze_limiter(false),
+    TD(NULL), SI(NULL), LimitedCell(NULL), PreviousLimitedCell(NULL),
     rings(0), rings_SI(0), _calculated_psinv(false),
     CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
     Geom(rhs.Geom), _si_calculation(rhs._si_calculation)
@@ -941,7 +957,8 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
 	for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {
 	  TD[i][j] = rhs.TD[i][j];
 	  SI[i][j] = rhs.SI[i][j];
-	  LimitedCell[i][j] = LimitedCell[i][j];
+	  LimitedCell[i][j] = rhs.LimitedCell[i][j];
+	  PreviousLimitedCell[i][j] = rhs.PreviousLimitedCell[i][j];
 
 	  // copy the pseudo-inverse data
 	  if (rhs._allocated_psinv){
@@ -1056,7 +1073,8 @@ HighOrder2D<SOLN_STATE> & HighOrder2D<SOLN_STATE>::operator=(const HighOrder2D<S
 	for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {
 	  TD[i][j] = rhs.TD[i][j];
 	  SI[i][j] = rhs.SI[i][j];
-	  LimitedCell[i][j] = LimitedCell[i][j];
+	  LimitedCell[i][j] = rhs.LimitedCell[i][j];
+	  PreviousLimitedCell[i][j] = rhs.PreviousLimitedCell[i][j];
 
 	  // copy the pseudo-inverse data
 	  if (rhs._allocated_psinv){
@@ -1136,6 +1154,7 @@ void HighOrder2D<SOLN_STATE>::allocate(const int &NC_IDir,
       TD = new DerivativesContainer* [Ni];
       SI = new DoubleArrayType* [Ni];
       LimitedCell = new FlagType* [Ni];
+      PreviousLimitedCell = new FlagType* [Ni];
       if (_pseudo_inverse_allocation_){
 	CENO_LHS = new DenseMatrix* [Ni];
 	CENO_Geometric_Weights = new DoubleArrayType* [Ni];
@@ -1145,6 +1164,7 @@ void HighOrder2D<SOLN_STATE>::allocate(const int &NC_IDir,
 	TD[i] = new DerivativesContainer [Nj];
 	SI[i] = new DoubleArrayType [Nj];
 	LimitedCell[i] = new FlagType [Nj];
+	PreviousLimitedCell[i] = new FlagType [Nj];
 	if (_pseudo_inverse_allocation_){
 	  CENO_LHS[i] = new DenseMatrix [Nj];
 	  CENO_Geometric_Weights[i] = new DoubleArrayType [Nj];
@@ -1164,6 +1184,10 @@ void HighOrder2D<SOLN_STATE>::allocate(const int &NC_IDir,
       allocate_CellMemory(ReconstructionOrder,
 			  _pseudo_inverse_allocation_);
  
+    } else {
+      // Reset the backup of the monotonicity data
+      ResetMonotonicityDataBackup();
+
     }//endif
 
   }//endif
@@ -1259,6 +1283,7 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
       delete [] TD[i]; TD[i] = NULL;  // deallocate TD
       delete [] SI[i]; SI[i] = NULL;  // deallocate SI
       delete [] LimitedCell[i]; LimitedCell[i] = NULL; // deallocate monotonicity flag
+      delete [] PreviousLimitedCell[i]; PreviousLimitedCell[i] = NULL; // deallocate monotonicity flag copy 
 
       if (_allocated_psinv){
 	delete [] CENO_LHS[i]; CENO_LHS[i] = NULL; // deallocate pseudo-inverse
@@ -1269,6 +1294,7 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
     delete [] TD; TD = NULL;
     delete [] SI; SI = NULL;
     delete [] LimitedCell; LimitedCell = NULL;
+    delete [] PreviousLimitedCell; PreviousLimitedCell = NULL;
 
     if (_allocated_psinv){
       delete [] CENO_LHS; CENO_LHS = NULL;
@@ -1314,6 +1340,9 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
     _allocated_cells = false;
     _allocated_psinv = false;
     _calculated_psinv = false;
+
+    // Set other flags
+    _freeze_limiter = false;
   }
 }
 
@@ -1339,6 +1368,9 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
 
 	// deallocate LimitedCell
 	LimitedCell[ii][jj].clear();
+
+	// deallocate PreviousLimitedCell
+	PreviousLimitedCell[ii][jj].clear();
 	
 	// deallocate SmoothnessIndicator
 	SI[ii][jj].clear();
@@ -1658,7 +1690,6 @@ void HighOrder2D<SOLN_STATE>::ResetMonotonicityData(void){
 /*!
  * Reset the monotonicity data (i.e. flag + limiter)
  * for the specified cell.
- * \todo Add logic for when NOT to reset the monotonicity data (e.g. limiter frozen )
  */
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::ResetMonotonicityData(const int & ii, const int & jj){
@@ -1672,6 +1703,38 @@ void HighOrder2D<SOLN_STATE>::ResetMonotonicityData(const int & ii, const int & 
   TD[ii][jj].ResetLimiter(); 
 }
 
+/*! Reset the backup of monotonicity data (i.e. flag + limiter)
+ *  throughout the block. 
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::ResetMonotonicityDataBackup(void){
+
+  int i,j;
+
+  for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
+    for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i ) {    
+      ResetMonotonicityDataBackup(i,j);
+    } /* endfor */
+  } /* endfor */
+
+}
+
+/*!
+ * Reset the backup of monotonicity data 
+ * (i.e. flag copy + frozen limiter) for the specified cell.
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::ResetMonotonicityDataBackup(const int & ii, const int & jj){
+
+  /* Reset the CENO smoothness indicator flag copy to OFF (i.e. smooth solution) */
+  for (int k = 0; k <= NumberOfVariables() - 1; ++k){
+    PreviousLimitedCell[ii][jj][k] = OFF;
+  } /* endfor */
+  
+  // Reset the value of the frozen limiter (i.e. no limiting)
+  TD[ii][jj].ResetFrozenLimiter();
+}
+
 /*! 
  * Allocate memory and initialize the variables 
  * used for storing monotonicity information.
@@ -1682,6 +1745,7 @@ void HighOrder2D<SOLN_STATE>::InitializeMonotonicityVariables(const int & ii, co
   // Allocate memory and initialize containers
   SI[ii][jj].assign(NumberOfVariables(), 0.0);
   LimitedCell[ii][jj].assign(NumberOfVariables(), OFF);
+  PreviousLimitedCell[ii][jj].assign(NumberOfVariables(), OFF);
 
 }
 
@@ -1695,13 +1759,18 @@ template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::AssessInterpolantsSmoothness(const int &iCell, const int &jCell){
 
   int parameter;
-  
+
   for(parameter=1; parameter<=NumberOfVariables(); ++parameter){
 
-    if( CellSmoothnessIndicatorValue(iCell,jCell,parameter) < CENO_Tolerances::Fit_Tolerance ){
+    if ( CellSmoothnessIndicatorValue(iCell,jCell,parameter) < CENO_Tolerances::Fit_Tolerance  || 
+	 ( Previous_CellInadequateFitValue(iCell,jCell,parameter) == ON && 
+	   CellSmoothnessIndicatorValue(iCell,jCell,parameter) < CENO_Tolerances::Fit_Tolerance_Buffer ) ){
 
       // Flag the (iCell,jCell) cell with inadequate reconstruction for the current variable
       CellInadequateFitValue(iCell,jCell,parameter) = ON;
+
+      // Copy the flag
+      Previous_CellInadequateFitValue(iCell,jCell,parameter) = ON;
 
       if (CENO_Execution_Mode::CENO_PADDING){
 	/* Flag also all cells surrounding the (iCell,jCell) cell with inadequate reconstruction if CENO_Padding is ON */
@@ -1715,7 +1784,24 @@ void HighOrder2D<SOLN_STATE>::AssessInterpolantsSmoothness(const int &iCell, con
 	CellInadequateFitValue(iCell-1,jCell+1,parameter) = ON;
 	CellInadequateFitValue(iCell  ,jCell+1,parameter) = ON;
 	CellInadequateFitValue(iCell+1,jCell+1,parameter) = ON;
+
+	/* Copy the neighbour flags. */
+	Previous_CellInadequateFitValue(iCell-1,jCell-1,parameter) = ON;
+	Previous_CellInadequateFitValue(iCell  ,jCell-1,parameter) = ON;
+	Previous_CellInadequateFitValue(iCell+1,jCell-1,parameter) = ON;
+
+	Previous_CellInadequateFitValue(iCell-1,jCell ,parameter) = ON;
+	Previous_CellInadequateFitValue(iCell+1,jCell ,parameter) = ON;
+
+	Previous_CellInadequateFitValue(iCell-1,jCell+1,parameter) = ON;
+	Previous_CellInadequateFitValue(iCell  ,jCell+1,parameter) = ON;
+	Previous_CellInadequateFitValue(iCell+1,jCell+1,parameter) = ON;
       }//endif
+
+    } else {
+      // Reset copy flag
+      Previous_CellInadequateFitValue(iCell,jCell,parameter) = OFF;
+
     }//endif
 
   }//endfor(parameter)
@@ -1839,7 +1925,7 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
 
   // === Check SOUTH boundary
   if (_constrained_SOUTH_reconstruction){
-    for ( j  = JCl ; j <= StartJ_SI ; ++j ) {
+    for ( j  = JCl ; j < StartJ_SI ; ++j ) {
       for ( i = StartI_SI_ConstrSouth ; i <= EndI_SI_ConstrSouth ; ++i ) {
 
 	// Set the supporting stencil
@@ -3178,7 +3264,7 @@ double HighOrder2D<SOLN_STATE>::CalculateLimiter(double *uQuad, const int &nQuad
 template<class SOLN_STATE>
 void HighOrder2D<SOLN_STATE>::Output_Object(ostream & out_file) const {
 
-  int i,j;
+  int i,j, parameter;
 
   // Output allocation flags
   out_file << _allocated_block << " "
@@ -3200,6 +3286,13 @@ void HighOrder2D<SOLN_STATE>::Output_Object(ostream & out_file) const {
 	out_file << CellTaylorDeriv(i,j);
 	out_file.unsetf(ios::skipws);
 	out_file.unsetf(ios::scientific);
+
+	// Output cell inadequate fit flag from last reconstruction
+	for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+	  out_file << " " << Previous_CellInadequateFitValue(i,j,parameter);
+	}
+
+	out_file << endl;
       }
     }
   }
@@ -3215,7 +3308,7 @@ void HighOrder2D<SOLN_STATE>::Read_Object(istream & in_file) {
   bool _alloc_block_, _alloc_cells_, _alloc_psinv_;
   int _si_calc_;
   int _Ni_, _Nj_, _Ng_, ReconstructionOrder;
-  int i,j;
+  int i,j, parameter;
 
   // Read allocation flags
   in_file.setf(ios::skipws);
@@ -3251,6 +3344,15 @@ void HighOrder2D<SOLN_STATE>::Read_Object(istream & in_file) {
 	for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) { 
 	  in_file.setf(ios::skipws);   
 	  in_file >> CellTaylorDeriv(i,j);
+	  in_file.unsetf(ios::skipws);
+
+	  // Read cell inadequate fit flag for the last reconstruction
+	  for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+	    in_file.setf(ios::skipws);
+	    in_file >> Previous_CellInadequateFitValue(i,j,parameter);
+	    in_file.unsetf(ios::skipws);
+	  }
+
 	  in_file.unsetf(ios::skipws);
 	}
       }

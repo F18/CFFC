@@ -40,6 +40,9 @@ void HighOrder2D<SOLN_STATE>::ComputeUnlimitedSolutionReconstruction(Soln_Block_
    *    Perform unconstrained unlimited high-order solution reconstruction   *
    **************************************************************************/
 
+  // Set the freeze limiter flag. It's value affects the reset monotonicity data!
+  _freeze_limiter = SolnBlk.Freeze_Limiter;
+
   // Carry out the solution reconstruction for cells in the specified range.
   for ( j  = StartJ ; j <= EndJ ; ++j ) {
     for ( i = StartI ; i <= EndI ; ++i ) {
@@ -396,7 +399,9 @@ void HighOrder2D<SOLN_STATE>::ComputeHighOrderSolutionReconstruction(Soln_Block_
 								     (Soln_Block_Type::*ReconstructedSoln)(const int &,
 													   const int &) const ){
 
-  
+  cout << "\n Compute high-order solution reconstruction: Enter \n";
+
+
   // Step 1. Compute the unlimited solution reconstruction in all required computational cells.
   ComputeUnlimitedSolutionReconstruction(SolnBlk,
 					 ReconstructedSoln);
@@ -410,6 +415,8 @@ void HighOrder2D<SOLN_STATE>::ComputeHighOrderSolutionReconstruction(Soln_Block_
   EnforceMonotonicityToNonSmoothInterpolants(SolnBlk,
 					     Limiter,
 					     ReconstructedSoln);
+
+  cout << "\n Compute high-order solution reconstruction: Exit \n";
 }
 
 
@@ -806,7 +813,7 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
     
     // Perform piecewise linear reconstruction only if the reconstruction order is greater than 1
     if (RecOrder() > 1){
-
+      
       // Compute distance between centroids and the geometric weights
       for ( n = 0 ; n < n_pts ; ++n ) {
 	/* Compute the X and Y component of the distance between
@@ -849,9 +856,10 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
 
     }//endif(RecOrder())
 
-
-    // Calculate slope limiters.
+    // Calculate slope limiters or used the frozen ones.
     if (!SolnBlk.Freeze_Limiter) {
+
+      // Calculate the new slope limiters.
 
       // Get number of flux calculation points and edge type for each of the 4 cell faces.
       GQP_North = Geom->NumOfFluxCalculationGaussQuadPoints_North(iCell,jCell,faceNorth);
@@ -865,7 +873,7 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
       // Allocate memory for the location of the points and the solution
       uQuad = new double [NumGQP];
       GQP = new Vector2D [NumGQP];
-
+      
       // Get North face GQPs
       n = 0;
       if (faceNorth){
@@ -888,7 +896,7 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
       }
       // Update n
       n += GQP_West;
-
+      
       // Get South face GQPs
       if (faceSouth){
 	// used GQPs from BndSplineInfo
@@ -899,7 +907,7 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
       }
       // Update n
       n += GQP_South;
-
+      
       // Get East face GQPs
       if (faceEast){
 	// used GQPs from BndSplineInfo
@@ -908,27 +916,27 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
 	// used GQPs from straight edge
 	Geom->getGaussQuadPointsFaceE(iCell,jCell,&GQP[n],GQP_East);
       }
-
+    
       // Calculate the limiter for each solution variable (i.e. parameter)
       for (parameter = 1; parameter <= NumberOfVariables(); ++parameter) {
-
+      
 	// Drop the order only for the variables that are flagged as unfit
 	if ( CellInadequateFitValue(iCell,jCell,parameter) ){
-
+	
 	  if (RecOrder() > 1){
 	    // Zero all derivatives but D00 associated with this parameter.
 	    for (n = 1; n < NumberOfTaylorDerivatives(); ++n){
 	      CellTaylorDerivState(iCell,jCell,n)[parameter] = 0.0;
 	    }
-
+	  
 	    // Set D00 and U_ave(see memory pool) of the current parameter to the correspondent average solution.
 	    // U_ave is used in UnlimitedLinearSolutionAtLocation() (see below).
 	    U_ave[parameter] = CellTaylorDerivState(iCell,jCell,0)[parameter] = (SolnBlk.*ReconstructedSoln)(iCell,jCell)[parameter];
-
+	    
 	    // Set D01 and D10 to the values of the first-order derivatives.
 	    CellTaylorDerivValue(iCell,jCell,0,1,parameter) = dUdy[parameter];
 	    CellTaylorDerivValue(iCell,jCell,1,0,parameter) = dUdx[parameter];
-
+	    
 	  } else {
 	    // Set U_ave of the current parameter
 	    U_ave[parameter] = CellTaylorDerivState(iCell,jCell,0)[parameter];
@@ -943,7 +951,7 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
 	    u0Min = min(u0Min, (SolnBlk.*ReconstructedSoln)(I_Index[n],J_Index[n])[parameter]);
 	    u0Max = max(u0Max, (SolnBlk.*ReconstructedSoln)(I_Index[n],J_Index[n])[parameter]);
 	  }// endfor(n)
-
+	  
 	  // Evaluate the solution at all required points
 	  for (n = 0; n < NumGQP; ++n){
 	    uQuad[n] = UnlimitedLinearSolutionAtLocation(iCell,jCell,
@@ -954,18 +962,60 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
 	  // Evaluate limiter for the current parameter
 	  CellTaylorDeriv(iCell,jCell).Limiter(parameter) = CalculateLimiter(uQuad,NumGQP,U_ave[parameter],
 									     u0Min,u0Max,Limiter);
+
+	  // Save a copy of the limiter for the current parameter for later usage if limiter freezing is required
+	  CellTaylorDeriv(iCell,jCell).Make_Limiter_Copy(parameter);
 	
 	}// endif
 
       }//endfor(parameter)
 
       // Deallocate memory
-      delete [] uQuad;
-      delete [] GQP;
+      delete [] uQuad; uQuad = NULL;
+      delete [] GQP; GQP = NULL;
       NumGQP = 0;
-    }
+
+    } else {
+      // Set limiters to the frozen ones.
+
+      for (parameter = 1; parameter <= NumberOfVariables(); ++parameter) {
+      
+	// Drop the order only for the variables that are flagged as unfit
+	if ( CellInadequateFitValue(iCell,jCell,parameter) ){
+	
+	  if (RecOrder() > 1){
+	    // Zero all derivatives but D00 associated with this parameter.
+	    for (n = 1; n < NumberOfTaylorDerivatives(); ++n){
+	      CellTaylorDerivState(iCell,jCell,n)[parameter] = 0.0;
+	    }
+	  
+	    // Set D00 and U_ave(see memory pool) of the current parameter to the correspondent average solution.
+	    // U_ave is used in UnlimitedLinearSolutionAtLocation() (see below).
+	    U_ave[parameter] = CellTaylorDerivState(iCell,jCell,0)[parameter] = (SolnBlk.*ReconstructedSoln)(iCell,jCell)[parameter];
+	    
+	    // Set D01 and D10 to the values of the first-order derivatives.
+	    CellTaylorDerivValue(iCell,jCell,0,1,parameter) = dUdy[parameter];
+	    CellTaylorDerivValue(iCell,jCell,1,0,parameter) = dUdx[parameter];
+	    
+	  } else {
+	    // Set U_ave of the current parameter
+	    U_ave[parameter] = CellTaylorDerivState(iCell,jCell,0)[parameter];
+	    dUdy[parameter] = CellTaylorDerivState(iCell,jCell,1)[parameter];
+	    dUdx[parameter] = CellTaylorDerivState(iCell,jCell,2)[parameter];
+	  }
+
+	  // Set limiter for the current parameter to the frozen one
+	  CellTaylorDeriv(iCell,jCell).Limiter(parameter) = CellTaylorDeriv(iCell,jCell).Frozen_Limiter(parameter);
+
+	}// endif
+
+      }//endfor(parameter)      
+
+    } // endif (!SolnBlk.Freeze_Limiter)
 
   } else {
+    // Use piecewise constant
+
     // Set D00 to average solution
     CellTaylorDerivState(iCell,jCell,0) = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
     // Zero all derivatives
@@ -974,7 +1024,7 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
     }
     // Reset limiter
     CellTaylorDeriv(iCell,jCell).Limiter().Vacuum();
-
+    
   } /* endif */
 }
 

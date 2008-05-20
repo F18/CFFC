@@ -22,6 +22,16 @@
 double CENO_Tolerances::Fit_Tolerance = 4000;
 
 /*!
+ * This value is used to decrease the level of switching in the proximity of the Fit_Tolerance.
+ * It is used in the post-reconstruction analysis.
+ * Cells with values of smoothness indicator lower than Fit_Tolerance_Buffer which were previously 
+ * detected as non-smooth will have the reconstruction maintained to a piecewise limited linear one.
+ */
+double CENO_Tolerances::Fit_Tolerance_NonSensitivity = 5;
+
+double CENO_Tolerances::Fit_Tolerance_Buffer = CENO_Tolerances::Fit_Tolerance_NonSensitivity * CENO_Tolerances::Fit_Tolerance;
+
+/*!
  * This value is used in the computation of AMR criteria based on smoothness indicator
  */
 double CENO_Tolerances::AMR_Smoothness_Units = 1.0;
@@ -53,6 +63,7 @@ double CENO_Tolerances::epsilon_default = CENO_Tolerances::epsilon;
 double CENO_Tolerances::epsilon_absolute_default = CENO_Tolerances::epsilon_absolute;
 double CENO_Tolerances::epsilon_relative_default = CENO_Tolerances::epsilon_relative;
 double CENO_Tolerances::Fit_Tolerance_default = CENO_Tolerances::Fit_Tolerance;
+double CENO_Tolerances::Fit_Tolerance_NonSensitivity_default = CENO_Tolerances::Fit_Tolerance_NonSensitivity;
 double CENO_Tolerances::AMR_Smoothness_Units_default = CENO_Tolerances::AMR_Smoothness_Units;
 
 /*! Print the current execution mode
@@ -64,6 +75,9 @@ void CENO_Tolerances::Print_Info(std::ostream & out_file){
   // output Fit_Tolerance
   out_file << "\n     -> Fit Tolerance: " << Fit_Tolerance
 	   << "  (default value = " << Fit_Tolerance_default << ")";
+
+  // output Fit_Tolerance_Buffer
+  out_file << "\n     -> Fit Tolerance Buffer: " << Fit_Tolerance_Buffer;
 
   // output AMR_Smoothness_Units
   if (AMR_Smoothness_Units != AMR_Smoothness_Units_default){
@@ -98,6 +112,7 @@ void CENO_Tolerances::SetDefaults(void){
   epsilon_absolute = epsilon_absolute_default;
   epsilon_relative = epsilon_relative_default;
   Fit_Tolerance = Fit_Tolerance_default;
+  Fit_Tolerance_NonSensitivity = Fit_Tolerance_NonSensitivity_default;
   AMR_Smoothness_Units = AMR_Smoothness_Units_default;
 
   UpdateDependentTolerances();
@@ -109,7 +124,6 @@ void CENO_Tolerances::SetDefaults(void){
  * from the specified processor using the MPI broadcast 
  * routine.
  *
- * \todo Switch to a user-defined datatype
  */
 void CENO_Tolerances::Broadcast(void){
 #ifdef _MPI_VERSION
@@ -124,6 +138,9 @@ void CENO_Tolerances::Broadcast(void){
 			1, 
 			MPI::DOUBLE, 0);
   MPI::COMM_WORLD.Bcast(&Fit_Tolerance,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&Fit_Tolerance_NonSensitivity,
 			1, 
 			MPI::DOUBLE, 0);
   MPI::COMM_WORLD.Bcast(&AMR_Smoothness_Units,

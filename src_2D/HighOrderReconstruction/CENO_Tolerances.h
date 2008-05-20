@@ -30,6 +30,10 @@ class CENO_Tolerances: public EpsilonTol{
   static double cross_epsilon;            //!< equal to 2*epsilon_relative*epsilon_absolute
   static double Fit_Tolerance;	          //!< value used to distinguish between smooth and non-smooth solution reconstructions.
   static double AMR_Smoothness_Units;     //!< value used in computing the refinement criterion based on smoothness indicator
+  static double Fit_Tolerance_NonSensitivity; /*!< value used to create a buffer zone for switching a non-smooth solution
+					           to a smooth one. */
+  static double Fit_Tolerance_Buffer;     /*!< set a threshold for switching a previously identified non-smooth interpolant
+					       to a smooth one. */
 
   /* These functions can be used to determine what 
      an acceptable tolerance is around the quantity U. */
@@ -63,6 +67,8 @@ class CENO_Tolerances: public EpsilonTol{
   static double epsilon_absolute_default; //!< this is a copy of epsilon_absolute that cannot be modified at runtime
   static double Fit_Tolerance_default;    //!< this is a copy of Fit_Tolerance that cannot be modified at runtime
   static double AMR_Smoothness_Units_default;  //!< this is a copy of AMR_Smoothness_Units that cannot be modified at runtime
+  static double Fit_Tolerance_NonSensitivity_default;
+
 };
 
 /*!
@@ -78,6 +84,8 @@ inline void CENO_Tolerances::Print_CENO_Tolerances(ostream& os){
      << "cross_epsilon=" << cross_epsilon << "\n"
      << "MachineEpsilon=" << MachineEps << "\n"
      << "Fit_Tolerance=" << Fit_Tolerance << "\n"
+     << "Fit_Tolerance_NonSensitivity=" << Fit_Tolerance_NonSensitivity << "\n"
+     << "Fit_Tolerance_Buffer=" << Fit_Tolerance_Buffer << "\n"
      << "AMR_Smoothness_Units=" << AMR_Smoothness_Units << "\n";
 }
 
@@ -107,6 +115,7 @@ inline void CENO_Tolerances::UpdateDependentTolerances(void){
   epsilon_absolute_square = epsilon_absolute * epsilon_absolute;
   epsilon_relative_square = epsilon_relative * epsilon_relative;
   cross_epsilon = 2.0 * epsilon_absolute * epsilon_relative;
+  Fit_Tolerance_Buffer = Fit_Tolerance * Fit_Tolerance_NonSensitivity;
 }
 
 
@@ -148,6 +157,12 @@ inline void CENO_Tolerances::Parse_Next_Input_Control_Parameter(Input_Parameters
     i_command = 0;
     ++IP.Line_Number;
     IP.Input_File >> Fit_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_NonSensitivity") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> Fit_Tolerance_NonSensitivity;
     IP.Input_File.getline(buffer, sizeof(buffer));
 
   } else if (strcmp(IP.Next_Control_Parameter, "CENO_AMR_Units") == 0) {

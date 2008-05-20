@@ -218,6 +218,7 @@ class TaylorDerivativesContainer<TwoD,T>{
   short int ContainerSize;
   short int OrderOfRec;  	/* OrderOfReconstruction */
   T phi;			/* Limiter value */
+  T phi_copy;			/* Limiter value copied */
 
   // Memory Management
   void allocate(const int NumberOfObjects);
@@ -260,12 +261,20 @@ class TaylorDerivativesContainer<TwoD,T>{
 
   // Reset limiter --> set limiter to ONE for all parameters
   void ResetLimiter(void){ phi.One();}
+  void ResetFrozenLimiter(void){ phi_copy.One(); }
 
   /* Field access */
   const T & Limiter(void) const {return phi;}
   T & Limiter(void) {return phi;}
   const double & Limiter(const int Variable) const {return phi[Variable];}
   double & Limiter (const int Variable){return phi[Variable];}
+  const T & Frozen_Limiter(void) const {return phi_copy;}
+  T & Frozen_Limiter(void) {return phi_copy;}
+  const double & Frozen_Limiter(const int Variable) const {return phi_copy[Variable];}
+  double & Frozen_Limiter(const int Variable){return phi_copy[Variable];}
+  void Make_Limiter_Copy(void){ phi_copy = phi; }
+  void Make_Limiter_Copy(const int &Variable){ phi_copy[Variable] = phi[Variable]; }
+
 
   /* Overloaded Operators */
   Derivative & operator()(const int & position, const bool,
@@ -308,12 +317,12 @@ class TaylorDerivativesContainer<TwoD,T>{
 /* Default Constructor */
 template<class T> inline
 TaylorDerivativesContainer<TwoD,T>::TaylorDerivativesContainer(void):
-  DContainer(NULL), ContainerSize(0), OrderOfRec(-1), phi(1.0){ }
+  DContainer(NULL), ContainerSize(0), OrderOfRec(-1), phi(1.0), phi_copy(1.0){ }
 
 /* Overloaded constructor */
 template<class T> inline
 TaylorDerivativesContainer<TwoD,T>::TaylorDerivativesContainer(const int OrderOfReconstruction):
-  DContainer(NULL), ContainerSize(0), OrderOfRec(OrderOfReconstruction), phi(1.0)
+  DContainer(NULL), ContainerSize(0), OrderOfRec(OrderOfReconstruction), phi(1.0), phi_copy(1.0)
 {
   GenerateContainer(OrderOfRec);
 }
@@ -321,7 +330,7 @@ TaylorDerivativesContainer<TwoD,T>::TaylorDerivativesContainer(const int OrderOf
 /* Copy constructor  */
 template<class T> inline
 TaylorDerivativesContainer<TwoD,T>::TaylorDerivativesContainer(const TaylorDerivativesContainer<TwoD,T> & rhs)
-  :DContainer(NULL), ContainerSize(0), OrderOfRec(-1), phi(1.0) {
+  :DContainer(NULL), ContainerSize(0), OrderOfRec(-1), phi(1.0), phi_copy(1.0) {
 
   // allocate memory for the new container
   allocate(rhs.size());
@@ -331,6 +340,7 @@ TaylorDerivativesContainer<TwoD,T>::TaylorDerivativesContainer(const TaylorDeriv
 
   /* Copy phi */
   phi = rhs.Limiter();
+  phi_copy = rhs.phi_copy;
 
   // copy the values from the RHS
   for (int i=0; i<=rhs.LastElem(); ++i){
@@ -386,6 +396,7 @@ void TaylorDerivativesContainer<TwoD,T>::free_memory(void) {
     ContainerSize = 0;
     OrderOfRec = -1;
     phi = T(1.0);
+    phi_copy = T(1.0);
   }
 }
 
@@ -406,6 +417,7 @@ TaylorDerivativesContainer<TwoD,T>::operator=(const TaylorDerivativesContainer<T
 
   /* Copy phi */
   phi = rhs.Limiter();
+  phi_copy = rhs.phi_copy;
 
   // copy the value from the RHS
   for (int i=0; i<=LastElem() ; ++i){
@@ -711,8 +723,23 @@ double & TaylorDerivativesContainer<TwoD,double>::Limiter(const int ) {
 }
 
 template<> inline
+const double & TaylorDerivativesContainer<TwoD,double>::Frozen_Limiter(const int ) const {
+  return phi_copy;
+}
+
+template<> inline
+double & TaylorDerivativesContainer<TwoD,double>::Frozen_Limiter(const int ) {
+  return phi_copy;
+}
+
+template<> inline
 void TaylorDerivativesContainer<TwoD,double>::ResetLimiter(void){
   phi = 1.0;
+}
+
+template<> inline
+void TaylorDerivativesContainer<TwoD,double>::ResetFrozenLimiter(void){
+  phi_copy = 1.0;
 }
 
 // ComputeSolutionFor :-> Compute the solution of the Taylor series expansion for a particular distance (DeltaX,DeltaY)
