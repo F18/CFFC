@@ -4349,7 +4349,7 @@ double WallShearStress(const Chem2D_pState &W1,
 // Ensure no divide by zero with 1/r terms 
 double check_radius(const int Axisymmetric, const Vector2D &X){
   double radius;  
-  double VAL = 0.001; //MICRO
+  const double VAL = MICRO;
   if (Axisymmetric == AXISYMMETRIC_X) {
     radius = (fabs(X.x) < VAL) ? VAL : X.x;   
     //if( fabs(radius) < VAL) cout<<"\n Radius "<<X.x;

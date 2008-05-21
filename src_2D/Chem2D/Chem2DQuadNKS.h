@@ -191,7 +191,7 @@ Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jac
   //Low Mach # Preconditioning 
   if(Input_Parameters->Preconditioning){
 
-    DenseMatrix Low_Mach_Number_Preconditioner(blocksize,blocksize,ZERO);         
+    static DenseMatrix Low_Mach_Number_Preconditioner(blocksize,blocksize,ZERO);         
     
     double delta_n = min( TWO*(SolnBlk->Grid.Cell[cell_index_i][cell_index_j].A/
 			       (SolnBlk->Grid.lfaceE(cell_index_i, cell_index_j)
@@ -211,7 +211,7 @@ Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jac
 
   } else { // I/deltat
 
-    DenseMatrix II(blocksize,blocksize);  
+    static DenseMatrix II(blocksize,blocksize);  
     II.identity();    
     Jacobian[CENTER] -= II*LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters, SolnBlk->dt[cell_index_i][cell_index_j],DTS_dTime);
   }
@@ -246,13 +246,14 @@ template<> inline void Block_Preconditioner<Chem2D_pState,
 Preconditioner_dFIdU_Roe(DenseMatrix &_dFIdU, int ii, int jj, int Orient)
 { 
   int NUM_VAR_CHEM2D = SolnBlk->NumVar()-1;   
-  DenseMatrix dFI_dW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);
-  
+  static DenseMatrix dFI_dW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);
+  dFI_dW.zero();
   dFIdW_Inviscid_ROE(dFI_dW, *SolnBlk,*Input_Parameters, ii,jj,Orient);  
   //dFIdW_Inviscid_ROE_FD(dFI_dW, *SolnBlk,*Input_Parameters, ii,jj,Orient);
  
   //transformation Jacobian 
-  DenseMatrix dWdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO); 
+  static DenseMatrix dWdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);   
+  dWdU.zero();
   //transformation Jacobian  Wo == W here 
   SolnBlk->W[ii][jj].dWdU(dWdU, SolnBlk->Flow_Type);
   _dFIdU += dFI_dW*dWdU;
@@ -271,12 +272,13 @@ template<> inline void Block_Preconditioner<Chem2D_pState,
 Preconditioner_dFIdU_AUSM_plus_up(DenseMatrix &_dFIdU, int ii, int jj, int Orient)
 {   
   int NUM_VAR_CHEM2D = SolnBlk->NumVar()-1;   
-  DenseMatrix dFIdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);
-  
+  static DenseMatrix dFIdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);
+  dFIdW.zero();
   dFIdW_Inviscid_AUSM_plus_up(dFIdW, *SolnBlk,*Input_Parameters, ii,jj,Orient);
   
   //transformation Jacobian 
-  DenseMatrix dWdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);   
+  static DenseMatrix dWdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);
+  dWdU.zero();   
   SolnBlk->W[ii][jj].dWdU(dWdU, SolnBlk->Flow_Type);
   _dFIdU += dFIdW*dWdU;
 
@@ -322,11 +324,12 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU, const int Rii, const int Rjj,
   //int Matrix_size = 2*NUM_VAR_CHEM2D+2;      // 14+Ns ?????  for variable R,k,mu, ie functions of ci see dRdU.cc
   int Matrix_size = 14 + ns;
 
-  DenseMatrix dFvdWf(NUM_VAR_CHEM2D, Matrix_size,ZERO);
-  DenseMatrix dWfdWx(Matrix_size, NUM_VAR_CHEM2D,ZERO); 
-  DenseMatrix dGvdWf(NUM_VAR_CHEM2D, Matrix_size,ZERO);
-  DenseMatrix dWfdWy(Matrix_size, NUM_VAR_CHEM2D,ZERO);  
-  DenseMatrix dGVdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);
+  static DenseMatrix dFvdWf(NUM_VAR_CHEM2D, Matrix_size,ZERO);
+  static DenseMatrix dWfdWx(Matrix_size, NUM_VAR_CHEM2D,ZERO); 
+  static DenseMatrix dGvdWf(NUM_VAR_CHEM2D, Matrix_size,ZERO);
+  static DenseMatrix dWfdWy(Matrix_size, NUM_VAR_CHEM2D,ZERO);  
+  static DenseMatrix dGVdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);
+  dFvdWf.zero(); dWfdWx.zero(); dGvdWf.zero(); dWfdWy.zero(); 
 
   dFvdWf_Diamond(dFvdWf,dGvdWf,*SolnBlk, Orient_face, Rii, Rjj);
   dWfdWc_Diamond(dWfdWx,dWfdWy,*SolnBlk, Orient_face, Rii, Rjj, Orient_cell); 
@@ -334,8 +337,9 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU, const int Rii, const int Rjj,
   dGVdW = lface * (nface.x*(dFvdWf*dWfdWx) + nface.y*(dGvdWf*dWfdWy));
     
   //transformation Jacobian
-  DenseMatrix dWdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO); 
-
+  static DenseMatrix dWdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO); 
+  dWdU.zero();
+  
   //transformation Jacobian  Wo == W here 
   SolnBlk->W[Wii][Wjj].dWdU(dWdU, SolnBlk->Flow_Type);  
   dFvdU += dGVdW*dWdU;
@@ -584,8 +588,8 @@ calculate_Matrix_Free(const double &epsilon)
     if ( SolnBlk->Grid.BCtypeW[JCl] == BC_NONE)  ICl_overlap = overlap;
   }
 	   
-  DenseMatrix Precon(blocksize,blocksize,ZERO); //SHOULD MOVE THIS OUT OF HERE AND STORE SOMEWHERE TO AVOID RECREATING EACH TIME!!
-  
+  static DenseMatrix Precon(blocksize,blocksize,ZERO); //SHOULD MOVE THIS OUT OF HERE AND STORE SOMEWHERE TO AVOID RECREATING EACH TIME!!
+
   // Non-Overlap Ghost Cells R(U) already set to zero by dUdt calculation  
   /* V(i+1) = ( R(U+epsilon*W) - b) / epsilon - (gamma) z / h */
   for (int j = JCl - JCl_overlap; j <= JCu + JCu_overlap; j++) {
@@ -659,8 +663,8 @@ calculate_Matrix_Free_Restart(const double &epsilon)
     if ( SolnBlk->Grid.BCtypeW[JCl] == BC_NONE)  ICl_overlap = overlap;
   }
 	   
-  DenseMatrix Precon(blocksize,blocksize,ZERO);
-  
+  static DenseMatrix Precon(blocksize,blocksize,ZERO);
+
   // Non-Overlap Ghost Cells R(U) already set to zero by dUdt calculation  
   /* V(i+1) = ( R(U+epsilon*x) - b) / epsilon - (gamma) x / h */
   for (int j = JCl - JCl_overlap; j <= JCu + JCu_overlap; j++) {
