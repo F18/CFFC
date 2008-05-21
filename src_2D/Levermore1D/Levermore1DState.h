@@ -74,6 +74,11 @@ class Levermore1D_pState : public Levermore1D_Vector{
   DenseMatrix dU_MBdW(void) const;
   DenseMatrix dSdW(void) const;
   DenseMatrix dSdU(void) const;
+  int valid(void) const {
+    //this is hard-coded for the length == 5 case....must be changed later!!!
+    return (m_values[0] > 0 && m_values[2] > 0
+	    && m_values[4] > m_values[2]*m_values[2]/m_values[0]+m_values[3]*m_values[3]/m_values[2]);
+  }
 
  protected:
   double conserved_extras_recursive(int i, int &pf, int pf_num, int pf_den) const;
@@ -126,6 +131,9 @@ class Levermore1D_cState : public Levermore1D_Vector{
   double detector_value(const Levermore1D_weights &A, double predicted) const;
   double relative_error(const Levermore1D_cState &U2) const;
   double relaxation_time() const;
+  int valid(void) const {
+    return Levermore1D_pState(*this).valid();
+  }
 
   static double m_resync_tol;
 
