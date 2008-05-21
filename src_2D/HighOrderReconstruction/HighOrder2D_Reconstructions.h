@@ -399,8 +399,6 @@ void HighOrder2D<SOLN_STATE>::ComputeHighOrderSolutionReconstruction(Soln_Block_
 								     (Soln_Block_Type::*ReconstructedSoln)(const int &,
 													   const int &) const ){
 
-  cout << "\n Compute high-order solution reconstruction: Enter \n";
-
 
   // Step 1. Compute the unlimited solution reconstruction in all required computational cells.
   ComputeUnlimitedSolutionReconstruction(SolnBlk,
@@ -416,7 +414,6 @@ void HighOrder2D<SOLN_STATE>::ComputeHighOrderSolutionReconstruction(Soln_Block_
 					     Limiter,
 					     ReconstructedSoln);
 
-  cout << "\n Compute high-order solution reconstruction: Exit \n";
 }
 
 
