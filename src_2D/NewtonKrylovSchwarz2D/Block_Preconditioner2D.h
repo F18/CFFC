@@ -37,7 +37,8 @@ class Block_Preconditioner {
   void First_Order_Inviscid_Jacobian_AUSM_plus_up(const int&,const int&, DenseMatrix*);  //called from Update_Jacobian
   void Second_Order_Viscous_Jacobian(const int&,const int&, DenseMatrix*);      //called from Update_Jacobian
 
-  DenseMatrix Rotation_Matrix(const Vector2D &nface, const int &A_matrix); //Used in Jacobian_LocalBlock
+  //DenseMatrix Rotation_Matrix(const Vector2D &nface, const int &A_matrix); //Used in Jacobian_LocalBlock
+  void Rotation_Matrix(DenseMatrix &mat, const Vector2D &nface, const int &A_matrix); //Used in Jacobian_LocalBlock
   DenseMat DenseMatrix_to_DenseMat(const DenseMatrix &B); 
 
   protected:
@@ -474,7 +475,7 @@ template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 inline void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
 Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian,const double& DTS_dTime)
 {   
-  DenseMatrix Diag(blocksize,blocksize);      
+  static DenseMatrix Diag(blocksize,blocksize);      
   Diag.identity();    
   //Cacluate LHS depeneding on Steady State of Dual Time Stepping
   Diag *= LHS_Time<INPUT_TYPE>(*Input_Parameters, SolnBlk->dt[cell_index_i][cell_index_j],DTS_dTime);  
@@ -519,21 +520,41 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
   double gamma_W = (lambdas_W.x*lambdas_W.y)/(lambdas_W.y-lambdas_W.x);
   double beta_W  = - lambdas_W.x/(lambdas_W.y-lambdas_W.x);
 
-  //! Obtain rotation matrices with normal vector -> matrices in DenseMatrix format. 
-  DenseMatrix A_N( Rotation_Matrix(nface_N, 1) );           //TEMP VAR
-  DenseMatrix AI_N( Rotation_Matrix(nface_N, 0) );            //TEMP VAR
-  DenseMatrix A_S( Rotation_Matrix(nface_S, 1) );            //TEMP VAR
-  DenseMatrix AI_S( Rotation_Matrix(nface_S, 0) );            //TEMP VAR
-  DenseMatrix A_E( Rotation_Matrix(nface_E, 1) );             //TEMP VAR 
-  DenseMatrix AI_E( Rotation_Matrix(nface_E, 0) );            //TEMP VAR
-  DenseMatrix A_W( Rotation_Matrix(nface_W, 1) );             //TEMP VAR  
-  DenseMatrix AI_W( Rotation_Matrix(nface_W, 0) );            //TEMP VAR      
+//   //! Obtain rotation matrices with normal vector -> matrices in DenseMatrix format. 
+//   DenseMatrix A_N( Rotation_Matrix(nface_N, 1) );           //TEMP VAR
+//   DenseMatrix AI_N( Rotation_Matrix(nface_N, 0) );            //TEMP VAR
+//   DenseMatrix A_S( Rotation_Matrix(nface_S, 1) );            //TEMP VAR
+//   DenseMatrix AI_S( Rotation_Matrix(nface_S, 0) );            //TEMP VAR
+//   DenseMatrix A_E( Rotation_Matrix(nface_E, 1) );             //TEMP VAR 
+//   DenseMatrix AI_E( Rotation_Matrix(nface_E, 0) );            //TEMP VAR
+//   DenseMatrix A_W( Rotation_Matrix(nface_W, 1) );             //TEMP VAR  
+//   DenseMatrix AI_W( Rotation_Matrix(nface_W, 0) );            //TEMP VAR      
+
+
+  static DenseMatrix A_N(blocksize,blocksize,ZERO);         
+  Rotation_Matrix(A_N,nface_N, 1); 
+  static DenseMatrix AI_N(blocksize,blocksize,ZERO);   
+  Rotation_Matrix(AI_N,nface_N, 0);
+  static DenseMatrix A_S( blocksize,blocksize,ZERO);   
+  Rotation_Matrix(A_S,nface_S, 1);
+  static DenseMatrix AI_S(blocksize,blocksize,ZERO);   
+  Rotation_Matrix(AI_S,nface_S, 0);
+  static DenseMatrix A_E( blocksize,blocksize,ZERO);   
+  Rotation_Matrix(A_E,nface_E, 1);
+  static DenseMatrix AI_E(blocksize,blocksize,ZERO);   
+  Rotation_Matrix(AI_E,nface_E, 0);
+  static DenseMatrix A_W(blocksize,blocksize,ZERO);   
+  Rotation_Matrix(A_W,nface_W, 1);
+  static DenseMatrix AI_W(blocksize,blocksize,ZERO);   
+  Rotation_Matrix(AI_W,nface_W, 0);
 
   //! Calculate dFdU using solutions in the rotated frame -> matrix in DenseMatrix format. 
-  DenseMatrix dFdU_N(blocksize,blocksize,ZERO);            //TEMP VAR  
-  DenseMatrix dFdU_S(blocksize,blocksize,ZERO);            //TEMP VAR
-  DenseMatrix dFdU_E(blocksize,blocksize,ZERO);             //TEMP VAR
-  DenseMatrix dFdU_W(blocksize,blocksize,ZERO);             //TEMP VAR  
+  static DenseMatrix dFdU_N(blocksize,blocksize,ZERO);            //TEMP VAR  
+  static DenseMatrix dFdU_S(blocksize,blocksize,ZERO);            //TEMP VAR
+  static DenseMatrix dFdU_E(blocksize,blocksize,ZERO);             //TEMP VAR
+  static DenseMatrix dFdU_W(blocksize,blocksize,ZERO);             //TEMP VAR  
+
+  dFdU_N.zero(); dFdU_S.zero(); dFdU_E.zero(); dFdU_W.zero();
 
   //Solution Rotate provided in pState 
   Preconditioner_dFIdU(dFdU_N, Rotate(SolnBlk->W[cell_index_i][cell_index_j], nface_N)); 
@@ -541,7 +562,7 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
   Preconditioner_dFIdU(dFdU_E, Rotate(SolnBlk->W[cell_index_i][cell_index_j], nface_E));
   Preconditioner_dFIdU(dFdU_W, Rotate(SolnBlk->W[cell_index_i][cell_index_j], nface_W));
   
-  DenseMatrix II(blocksize,blocksize);  II.identity();    
+  static DenseMatrix II(blocksize,blocksize);  II.identity();    
 
   //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
   //North
@@ -638,6 +659,8 @@ Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, D
   DenseMatrix JacobianS(blocksize,blocksize,ZERO);    //TEMP VAR
   DenseMatrix JacobianE(blocksize,blocksize,ZERO);     //TEMP VAR 
   DenseMatrix JacobianW(blocksize,blocksize,ZERO);     //TEMP VAR 
+
+  JacobianN.zero(); JacobianS.zero(); JacobianE.zero(); JacobianW.zero(); 
 
   //Also should rewrite to minimize dR/dU calls and just 
   //call dWdU, but this needs to be done in Preconditioner_dFVdU
@@ -787,7 +810,7 @@ Apply_Preconditioner(int A, int B, const double *C, int D, double *E, int F)
 template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 inline DenseMat Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
 DenseMatrix_to_DenseMat(const DenseMatrix &B) {
-  DenseMat A(B.dim(0),B.dim(1));
+  static DenseMat A(B.dim(0),B.dim(1));
   for (int i=0; i<B.dim(0); i++) {
     for( int j=0; j<B.dim(1); j++) {
       A(i,j) = B(i,j); 
@@ -795,6 +818,44 @@ DenseMatrix_to_DenseMat(const DenseMatrix &B) {
   }
   return A;
 } 
+
+// /*********************************************************
+//  * Routine: Rotation_Matrix                              *
+//  *                                                       *
+//  * This function returns either the rotation matrix, A,  *
+//  * or the inverse of A.                                  *
+//  *                                                       *
+//  * Note: A_matrix = 1 for returning A.                   *
+//  *                = 0 for returning inverse of A.        *
+//  *                                                       *
+//  *********************************************************/
+// template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
+// inline DenseMatrix Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
+// Rotation_Matrix(const Vector2D &nface, const int &A_matrix) 
+// {
+//   double cos_angle = nface.x; 
+//   double sin_angle = nface.y;
+    
+//   static DenseMatrix mat(blocksize,blocksize);
+//   mat.identity();
+
+//   if (A_matrix) {             
+//     // Rotation Matrix, A   
+//     mat(1,1) = cos_angle;
+//     mat(1,2) = sin_angle;
+//     mat(2,1) = -sin_angle;
+//     mat(2,2) = cos_angle;
+//   } else {
+//     // Rotation Matrix, Inv A 
+//     mat(1,1) = cos_angle;
+//     mat(1,2) = -sin_angle;
+//     mat(2,1) = sin_angle;
+//     mat(2,2) = cos_angle;
+//   } /* endif */
+
+//   return mat;
+
+// } /* End of Rotation_Matrix. */
 
 /*********************************************************
  * Routine: Rotation_Matrix                              *
@@ -807,13 +868,12 @@ DenseMatrix_to_DenseMat(const DenseMatrix &B) {
  *                                                       *
  *********************************************************/
 template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
-inline DenseMatrix Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-Rotation_Matrix(const Vector2D &nface, const int &A_matrix) 
+inline void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
+Rotation_Matrix(DenseMatrix &mat, const Vector2D &nface, const int &A_matrix) 
 {
   double cos_angle = nface.x; 
   double sin_angle = nface.y;
     
-  DenseMatrix mat(blocksize,blocksize);
   mat.identity();
 
   if (A_matrix) {             
@@ -829,8 +889,6 @@ Rotation_Matrix(const Vector2D &nface, const int &A_matrix)
     mat(2,1) = sin_angle;
     mat(2,2) = cos_angle;
   } /* endif */
-
-  return mat;
 
 } /* End of Rotation_Matrix. */
 

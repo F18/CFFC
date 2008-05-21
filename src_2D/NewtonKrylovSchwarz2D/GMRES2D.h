@@ -97,7 +97,6 @@ public:
   int                  scalar_dim; // xpts * ypts * blocksize
 
   /* USED INTERNAL TO GMRES ROUTINE */
-//   int               vector_switch; // to select the specified vector for message passing  // SHOULDN'T NEED THIS ANYMORE !!!
   int           search_directions; // number of search directions
 
   /* GMRES SOLUTION VECTORS ie DATA */

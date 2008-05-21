@@ -364,8 +364,10 @@ First_Order_Inviscid_Jacobian_HLLE(const int &ci, const int &cj, DenseMatrix* J_
 			continue; 
 		} 
 
-		DenseMatrix RotMat(     Rotation_Matrix(nrml, 1) );
-		DenseMatrix RotMat_inv( Rotation_Matrix(nrml, 0) );
+		static DenseMatrix RotMat(blocksize,blocksize);
+		Rotation_Matrix(RotMat,nrml, 1) ;
+		static DenseMatrix RotMat_inv(blocksize,blocksize);
+		Rotation_Matrix(RotMat_inv,nrml, 0);
 
 		//  We want (an approximation for) the matrix on the LHS of:
 		//  
