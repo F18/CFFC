@@ -325,6 +325,7 @@ double Levermore1D_cState::detector_value(const Levermore1D_weights &A, double p
   double us(m_values[1]/m_values[0]);
   moment1 = moment_series_L(A,us);
   ref = moment_series(length+1,A,us);
+  if(ref <= 0.0) return MILLION;
   ref = sqrt( ref * m_values[length-1] );
   return fabs((moment1-predicted)/ref);
 }
@@ -354,7 +355,7 @@ double Levermore1D_cState::relative_error(const Levermore1D_cState &U2) const {
     error += sqr( ((*this)[i-1] - U2[i-1])/
 		  (*this)[i]*(*this)[1]/(*this)[3]);
   }
-  return sqrt(error)/(double)length;
+  return sqrt(error/(double)length);
 }
 
 /********************************************************
@@ -659,8 +660,8 @@ Levermore1D_Vector FluxHLLE(const Levermore1D_cState &Ul,
   Levermore1D_Vector Flux;
   double Wavel, Waver;
 
-  Wavel = wavespeed_l*1.0;  //artificial damping
-  Waver = wavespeed_r*1.0;
+  Wavel = wavespeed_l;
+  Waver = wavespeed_r;
 
   if (Wavel >= ZERO) {
     Flux = Ul.F(Al);

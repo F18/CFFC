@@ -171,7 +171,7 @@ public:
   }
 
   void reset_predicted_moment_l() {
-    double us = Ul_old[2]/Ur_old[1];
+    double us = Ul_old[2]/Ul_old[1];
     predicted_moment_l = Ul_old.moment(PREDICTED_MOMENT_NUMBER,Al_old,us);
   }
 
@@ -240,15 +240,14 @@ private:
  ******************************************************/
 /* Constructor */
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(void){
-  W = Levermore1D_pState(DENSITY_STDATM, ZERO, PRESSURE_STDATM);
-  U.set_from_W(W); A.set_from_U(U);
+  W.zero(); U.zero(); A.zero();
   X = Cell1D_Uniform_ONE; dt = ZERO;
   dUdt.zero(); dWdx.zero(); phi.zero();
   Uo.zero(); Ao.zero();
   Ul_old = U; Ur_old = U; Al_old = A; Ar_old = A;
   detector = 0.0; detector_l = 0.0; detector_r = 0.0;
   number_of_resyncs = 0;
-  reset_predicted_moments();
+  //reset_predicted_moments();
 }
 
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_UniformMesh &Soln) {
