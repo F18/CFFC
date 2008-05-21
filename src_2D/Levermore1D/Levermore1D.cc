@@ -621,6 +621,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
     ColumnVector RHS(Levermore1D_Vector::get_length());
     DenseMatrix LHS(Levermore1D_Vector::get_length(),
 		    Levermore1D_Vector::get_length());
+    double reduction;
 
     /* Evaluate the time rate of change of the solution
        (i.e., the solution residuals) using the first-order
@@ -629,6 +630,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
     Soln[0].dUdt.zero();
     for ( i = 0 ; i <= Number_of_Cells ; ++i ) {
         Soln[i+1].dUdt.zero();
+        Soln[i+1].Uo =Soln[i+1].U;
 
         switch(Flux_Function_Type) {
           case FLUX_FUNCTION_HLLE :
@@ -672,7 +674,14 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 
       Solve_LU_Decomposition(LHS,RHS,Update);
 
-      Soln[i].U += Update;
+      reduction = 1.0;
+      Soln[i].U = Soln[i].Uo+Update;
+      while(!Soln[i].U.valid()) {
+	reduction *= 0.5;
+	Soln[i].U = Soln[i].Uo+reduction*Update;
+      }
+      if(reduction <0.7) cout << "Q";
+
       Update = Soln[i].dUdA_inv * Update; //now update for A
       Soln[i].A += Update;
       Soln[i].update_predicted_moment(Update); //for detector
@@ -692,19 +701,30 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 	++count;
       }
       Soln[i].W = Levermore1D_pState(Soln[i].U);
+      if(Soln[i].W[5] <= 0.0) {
+	cout << endl << "Error, Invalid State:" << endl
+	     << "U =   " << Soln[i].U << endl
+	     << "A =   " << Soln[i].A << endl
+	     << "U_A = " <<  Levermore1D_cState(Soln[i].A,Soln[i].U[2]/Soln[i].U[1]) << endl
+	     << "W = " << Soln[i].W << endl
+	     << "r = " << Soln[i].W[5] << "   P^2/rho + q^2/p = " 
+	     << Soln[i].W[3]*Soln[i].W[3]/Soln[i].W[1] + Soln[i].W[4]*Soln[i].W[4]/Soln[i].W[3] << endl;
+	return 1;
+      }
       Soln[i].calculate_Hessians();
     } /* endfor */
 
     /* By default, constant extrapolation boundary
        conditions are applied at either end of the mesh. */
 
-    Soln[0].U = Soln[1].U;
-    Soln[0].W = Soln[1].W;
-    Soln[0].A = Soln[1].A;
+//    Soln[0].U = Soln[1].U;
+//    Soln[0].W = Soln[1].W;
+//    Soln[0].A = Soln[1].A;
+//
+//    Soln[Number_of_Cells+1].U = Soln[Number_of_Cells].U;
+//    Soln[Number_of_Cells+1].W = Soln[Number_of_Cells].W;
+//    Soln[Number_of_Cells+1].A = Soln[Number_of_Cells].A;
 
-    Soln[Number_of_Cells+1].U = Soln[Number_of_Cells].U;
-    Soln[Number_of_Cells+1].W = Soln[Number_of_Cells].W;
-    Soln[Number_of_Cells+1].A = Soln[Number_of_Cells].A;
     cout << count; cout.flush();
     /* Solution successfully updated. */
 
@@ -1011,20 +1031,20 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 
 	    /* Apply the BCs before the flux evaluation */
 	    // ***** Left boundary **********
-	    if (i == 0){
-	      // extrapolation BC (by default)
-	      Ul = Ur;
-	      Wl = Wr;
-	      Al = Ar;
-	    }
-
-	    // *****  Right boundary *********
-	    if (i == IP.Number_of_Cells){
-	      // extrapolation BC (by default)
-	      Ur = Ul;
-	      Wr = Wl;
-	      Ar = Al;
-	    }
+//	    if (i == 0){
+//	      // extrapolation BC (by default)
+//	      Ul = Ur;
+//	      Wl = Wr;
+//	      Al = Ar;
+//	    }
+//
+//	    // *****  Right boundary *********
+//	    if (i == IP.Number_of_Cells){
+//	      // extrapolation BC (by default)
+//	      Ur = Ul;
+//	      Wr = Wl;
+//	      Ar = Al;
+//	    }
 
 	    switch(Flux_Function_Type) {
 	    case FLUX_FUNCTION_HLLE :
