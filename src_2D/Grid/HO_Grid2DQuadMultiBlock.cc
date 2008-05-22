@@ -494,16 +494,20 @@ void Grid2D_Quad_MultiBlock_HO::SetFluxCalculationMethod(const int & FluxMethod,
   for (iBlock = 0; iBlock <= Last_iBlock() ; ++iBlock){
     for (jBlock = 0; jBlock <= Last_jBlock() ; ++jBlock){
 
-      if(Grid_ptr[iBlock][jBlock].BndNorthSpline.bc[0] != BC_NONE){
+      if(Grid_ptr[iBlock][jBlock].BndNorthSpline.bc[0] != BC_NONE ||
+	 Grid_ptr[iBlock][jBlock].BndNorthSpline.bc[0] != BC_OUTFLOW){
 	Grid_ptr[iBlock][jBlock].BndNorthSpline.setFluxCalcMethod(FluxMethod);
       }
-      if(Grid_ptr[iBlock][jBlock].BndSouthSpline.bc[0] != BC_NONE){
+      if(Grid_ptr[iBlock][jBlock].BndSouthSpline.bc[0] != BC_NONE || 
+	 Grid_ptr[iBlock][jBlock].BndSouthSpline.bc[0] != BC_OUTFLOW){
 	Grid_ptr[iBlock][jBlock].BndSouthSpline.setFluxCalcMethod(FluxMethod);
       }
-      if(Grid_ptr[iBlock][jBlock].BndEastSpline.bc[0] != BC_NONE){
+      if(Grid_ptr[iBlock][jBlock].BndEastSpline.bc[0] != BC_NONE || 
+	 Grid_ptr[iBlock][jBlock].BndEastSpline.bc[0] != BC_OUTFLOW){
 	Grid_ptr[iBlock][jBlock].BndEastSpline.setFluxCalcMethod(FluxMethod);
       }
-      if(Grid_ptr[iBlock][jBlock].BndWestSpline.bc[0] != BC_NONE){
+      if(Grid_ptr[iBlock][jBlock].BndWestSpline.bc[0] != BC_NONE ||
+	 Grid_ptr[iBlock][jBlock].BndWestSpline.bc[0] != BC_OUTFLOW){
 	Grid_ptr[iBlock][jBlock].BndWestSpline.setFluxCalcMethod(FluxMethod);
       }
     }	// endfor
