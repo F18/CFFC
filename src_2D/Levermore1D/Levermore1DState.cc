@@ -353,7 +353,7 @@ double Levermore1D_cState::relative_error(const Levermore1D_cState &U2) const {
   for(int i = 3; i <= length; i=i+2) {
     error += sqr( ((*this)[i] - U2[i])/(*this)[i] );
     error += sqr( ((*this)[i-1] - U2[i-1])/
-		  (*this)[i]*(*this)[1]/(*this)[3]);
+		  ((*this)[i]*(*this)[1]/(*this)[3]));
   }
   return sqrt(error/(double)length);
 }
@@ -501,7 +501,7 @@ int Levermore1D_weights::set_from_U(const Levermore1D_cState &U) {
 
   double damping(0.5); //0<=damping<1.0
 
-  if(U_temp.relative_error(U) > 0.05) {
+  if(U.relative_error(U_temp) > 5.0) {
     cout << "!";
     MaxBoltz(U); //this is probably a better first guess if you're far away
     U_temp = Levermore1D_cState(*this,us);
@@ -510,10 +510,10 @@ int Levermore1D_weights::set_from_U(const Levermore1D_cState &U) {
   for(int i=0; i < Levermore1D_Vector::get_length(); ++i) {
     rhs[i] = U[i+1]-U_temp[i+1];
   }
-  rel_err = U_temp.relative_error(U);
+  rel_err = U.relative_error(U_temp);
   rel_err_last = rel_err;
 
-  while( rel_err > 1e-14) { //fix tolerance later
+  while( rel_err > 1e-10) { //fix tolerance later
     d2hda2 = U_temp.d2hda2(*this,us);
 
     if(count > 100) {
@@ -546,7 +546,7 @@ int Levermore1D_weights::set_from_U(const Levermore1D_cState &U) {
 
     *this += A_step;
     U_temp.set_from_A(*this, us);
-    rel_err = U_temp.relative_error(U);
+    rel_err = U.relative_error(U_temp);
 
     count2 = 0;
     while(rel_err >= rel_err_last) {
@@ -554,26 +554,27 @@ int Levermore1D_weights::set_from_U(const Levermore1D_cState &U) {
       A_step *= damping;
       *this -= A_step;
       U_temp.set_from_A(*this, us);
-      rel_err = U_temp.relative_error(U);
+      rel_err = U.relative_error(U_temp);
       ++count2;
-      if(count2 > 100) {
+      if(count2 > 20) {
 	cout << "Error, can't find step size to decrease rel_err" << endl;
 	cout << "U = " << U << endl << "A = " << (*this) << endl 
 	     << "UA= " << U_temp << endl << "Astart = " << start << endl
-	     << "UAstart = " << Levermore1D_cState(start,us) << endl;
+	     << "UAstart = " << Levermore1D_cState(start,us) << endl
+	     << "rel_error = " << rel_err << "   rel_error_last = " << rel_err_last << endl;
 	MaxBoltz(U);
 	U_temp = Levermore1D_cState(*this,us);
-	rel_err = U_temp.relative_error(U);
+	rel_err = U.relative_error(U_temp);
 	break;
       }
     }
 
-    if(count == 50) {
-      cout << "^";
-      MaxBoltz(U); //try this?
-      U_temp = Levermore1D_cState(*this,us);
-      rel_err = U_temp.relative_error(U);
-    }
+//    if(count == 50) {
+//      cout << "^";
+//      MaxBoltz(U); //try this?
+//      U_temp = Levermore1D_cState(*this,us);
+//      rel_err = U.relative_error(U_temp);
+//    }
 
     for(int i=0; i < Levermore1D_Vector::get_length(); ++i) {
       rhs[i] = U[i+1]-U_temp[i+1];
