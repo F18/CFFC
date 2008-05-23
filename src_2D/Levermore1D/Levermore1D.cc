@@ -428,6 +428,12 @@ void Linear_Reconstruction_MUSCL(Levermore1D_UniformMesh *Soln,
            Soln[i].phi[n] = phi;
         } /* endfor */
 
+	if( !Levermore1D_pState(Soln[i].W+(Soln[i].phi^Soln[i].dWdx)*HALF*Soln[i].X.dx).valid() ||
+	    !Levermore1D_pState(Soln[i].W-(Soln[i].phi^Soln[i].dWdx)*HALF*Soln[i].X.dx).valid() ) {
+	  Soln[i].phi.zero();
+	  cout << "Z";
+	}
+
     } /* endfor */
 
     Soln[0].dWdx = Soln[1].phi^Soln[1].dWdx;
@@ -496,6 +502,12 @@ void Linear_Reconstruction_GreenGauss(Levermore1D_UniformMesh *Soln,
 
            Soln[i].phi[n] = phi;
         } /* endfor */
+
+	if( !Levermore1D_pState(Soln[i].W+(Soln[i].phi^Soln[i].dWdx)*HALF*Soln[i].X.dx).valid() ||
+	    !Levermore1D_pState(Soln[i].W-(Soln[i].phi^Soln[i].dWdx)*HALF*Soln[i].X.dx).valid() ) {
+	  Soln[i].phi.zero();
+	  cout << "Z";
+	}
 
     } /* endfor */
 
@@ -587,6 +599,12 @@ void Linear_Reconstruction_LeastSquares(Levermore1D_UniformMesh *Soln,
 
 	   Soln[i].phi[n] = phi;
         } /* endfor */
+
+	if( !Levermore1D_pState(Soln[i].W+(Soln[i].phi^Soln[i].dWdx)*HALF*Soln[i].X.dx).valid() ||
+	    !Levermore1D_pState(Soln[i].W-(Soln[i].phi^Soln[i].dWdx)*HALF*Soln[i].X.dx).valid() ) {
+	  Soln[i].phi.zero();
+	  cout << "Z";
+	}
 
     } /* endfor */
 

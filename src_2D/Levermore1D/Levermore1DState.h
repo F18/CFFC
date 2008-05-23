@@ -51,6 +51,7 @@ class Levermore1D_pState : public Levermore1D_Vector{
 
   Levermore1D_pState(void){}
   Levermore1D_pState(const Levermore1D_pState &W) : Levermore1D_Vector(W) {}
+  explicit Levermore1D_pState(const Levermore1D_Vector &V) : Levermore1D_Vector(V) {}
   explicit Levermore1D_pState(const Levermore1D_cState &U) {set_from_U(U);}
   explicit Levermore1D_pState(const Levermore1D_weights &A, double us) {set_from_A(A,us);}
   Levermore1D_pState(double rho, double u, double p) { //Maxwell-Boltzmann
@@ -95,6 +96,7 @@ class Levermore1D_cState : public Levermore1D_Vector{
 
   Levermore1D_cState(void){}
   Levermore1D_cState(const Levermore1D_cState &U) : Levermore1D_Vector(U) {}
+  explicit Levermore1D_cState(const Levermore1D_Vector &V) : Levermore1D_Vector(V) {}
   explicit Levermore1D_cState(const Levermore1D_pState &W) {set_from_W(W);}
   explicit Levermore1D_cState(const Levermore1D_weights &A, double us) {set_from_A(A,us);}
   Levermore1D_cState(double rho, double u, double p) { //Maxwell-Boltzmann
@@ -150,6 +152,7 @@ class Levermore1D_weights : public Levermore1D_Vector{
 
   Levermore1D_weights(void){}
   Levermore1D_weights(const Levermore1D_weights &A) : Levermore1D_Vector(A) {}
+  explicit Levermore1D_weights(const Levermore1D_Vector &V) : Levermore1D_Vector(V) {}
   Levermore1D_weights(const double &d, const double &u, const double &p) {MaxBoltz(d,u,p);}
   explicit Levermore1D_weights(const Levermore1D_pState &W) {MaxBoltz(W); set_from_W(W);}
   explicit Levermore1D_weights(const Levermore1D_cState &U) {MaxBoltz(U); set_from_U(U);}
