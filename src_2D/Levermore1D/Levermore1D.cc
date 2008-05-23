@@ -636,10 +636,10 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
           case FLUX_FUNCTION_HLLE :
             Flux = FluxHLLE(Soln[i].U,
 			    Soln[i].A,
-			    Soln[i].lambda_min,
+			    min(Soln[i].lambda_min,Soln[i+1].lambda_min),
 			    Soln[i+1].U,
 			    Soln[i+1].A,
-			    Soln[i+1].lambda_max);
+			    max(Soln[i].lambda_max,Soln[i+1].lambda_max));
             break;
           case FLUX_FUNCTION_KINETIC :
             Flux = FluxKinetic(Soln[i].A,
@@ -1050,10 +1050,10 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	    case FLUX_FUNCTION_HLLE :
 	      Flux = FluxHLLE(Ul,
 			      Al,
-			      Soln[i].lambda_min,
+			      min(Soln[i].lambda_min,Soln[i+1].lambda_min),
 			      Ur,
 			      Ar,
-			      Soln[i+1].lambda_max);
+			      max(Soln[i].lambda_max,Soln[i+1].lambda_max));
 	      break;
 	    case FLUX_FUNCTION_KINETIC :
 	      Flux = FluxKinetic(Al,
