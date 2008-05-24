@@ -163,6 +163,8 @@ class RowVector: public MV_Vector_double{
     /* Input-output operators. */
     friend ostream &operator << (ostream &out_file, const RowVector &RVec);
     friend istream &operator >> (istream &in_file, RowVector &RVec);
+    void write(ostream &out_file);
+    void read(istream &in_file);
 
 };
 
@@ -392,6 +394,27 @@ inline istream &operator >> (istream &in_file, RowVector &RVec) {
    } /* endfor */
    in_file.unsetf(ios::skipws);
    return (in_file);
+}
+
+inline void RowVector::write(ostream &out_file) {
+    int i, m; m = size();
+    out_file << m;
+    out_file.setf(ios::scientific);
+    for ( i = 0; i <= m-1; ++i ) {
+        out_file << " " << p_[i];
+    } /* endfor */
+    out_file.unsetf(ios::scientific); out_file << "\n";
+}
+
+inline void RowVector::read(istream &in_file) {
+    int i, m;
+    in_file.setf(ios::skipws);
+    in_file >> m;
+    newsize(m);
+    for ( i = 0; i <= m-1; ++i ) {
+        in_file >> p_[i];
+    } /* endfor */
+    in_file.unsetf(ios::skipws);
 }
 
 /* Define the column vector class, 

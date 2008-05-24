@@ -97,6 +97,25 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                                                      Data.Local_Adaptive_Block_List,
                                                      Velocity_Field);
         
+        //if (false) { 
+        if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT) {
+            if (CFFC_Primary_MPI_Processor()) {
+                cout << endl;
+                cout << " ------------------------------------------------" << endl;
+                cout << "    Explicitly filtering the initial condition   " << endl;
+                cout << " ------------------------------------------------" << endl;        
+            }
+            LES3D_Polytropic_cState *** (Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::*U_ptr) = &Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::U;
+            LES_Filter<LES3D_Polytropic_pState,LES3D_Polytropic_cState> Explicit_Filter(Data,Solution_Data);
+            Explicit_Filter.filter(U_ptr);
+            Explicit_Filter.Write_to_file();
+            if (CFFC_Primary_MPI_Processor()) {
+                cout << "    Finished explicit filtering " << endl;
+            }
+        }
+        
+        
+        
         /* -------------------- ICs Specializations --------------------- */
         error_flag = Solution_Data.Local_Solution_Blocks.ICs_Specializations(Solution_Data.Input);
         if (error_flag) return error_flag;
@@ -214,8 +233,6 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
     Spectral_Analysis.Get_Spectrum(E_member,"total_energy");
     Spectral_Analysis.Get_Spectrum(ek_member,"kinetic_energy");
 
-
-    
    return error_flag;
 
 }

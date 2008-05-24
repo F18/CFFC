@@ -14,16 +14,23 @@ Pressure =
 ##############################
 #       LES parameters       #
 ##############################
-Filter_Grid_Ratio =
-2.5
-Commutation_Order =
-3
-Number_of_Rings =
-3
 SFS_model = 
 Smagorinsky
 Smagorinsky_Coefficient = 
 0.18
+##############################
+#       LES parameters       #
+##############################
+Filter_Type =
+#Vasilyev
+Haselbacher
+#Restart
+Filter_Grid_Ratio =
+1.5
+Commutation_Order =
+4
+Number_of_Rings =
+2
 ##############################
 #     Spectrum parameters    #
 ##############################
@@ -45,17 +52,17 @@ OFF
 Grid_Type =
 Periodic_Box
 Number_of_Cells_Idir = 
-32
+16
 Number_of_Cells_Jdir =
 16
 Number_of_Cells_Kdir =
-32
+16
 Number_of_Blocks_Idir = 
-1
+2
 Number_of_Blocks_Jdir =
-1
+2
 Number_of_Blocks_Kdir =
-1
+2
 Box_Width = 
 #0.0366
 6.28

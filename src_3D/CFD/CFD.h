@@ -453,6 +453,8 @@ inline char *Date_And_Time() {
 #define FILTER_TYPE_IMPLICIT                          10
 #define FILTER_TYPE_HASELBACHER                       11
 #define FILTER_TYPE_VASILYEV                          12
+#define FILTER_TYPE_RESTART                           0
+
 
 
 /**********************************************************************

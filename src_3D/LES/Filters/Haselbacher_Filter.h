@@ -56,6 +56,7 @@ public:
 
     void Get_Neighbours(Cell3D &theCell) {
         theNeighbours.GetNeighbours(theCell, number_of_rings);
+        theNeighbours.append_theCell(theCell);
     }
     
 private:
@@ -127,6 +128,7 @@ private:
 
     void filter_tests(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell);
 
+    int filter_type(void) { return FILTER_TYPE_HASELBACHER; }
     
     
 };
@@ -134,7 +136,7 @@ private:
 
 template<typename Soln_pState, typename Soln_cState>
 inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &theCell, Neighbours &theNeighbours) {
-    
+    theNeighbours.delete_theCell();
     //cout << "theCell = (" << theCell.I << "," << theCell.J << "," << theCell.K << ")" << endl;
     int error_flag;
     DenseMatrix A = Matrix_A(theCell,theNeighbours);

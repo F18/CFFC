@@ -193,16 +193,16 @@ namespace tut
         set_test_name("Test transfer_function");
         
         
-         Initialize();
-        
-        
-        LES_Filter<Soln_pState,Soln_cState> Haselbacher_filter(Data,Solution_Data,FILTER_TYPE_HASELBACHER);
-        LES_Filter<Soln_pState,Soln_cState> Vasilyev_filter(Data,Solution_Data,FILTER_TYPE_VASILYEV);
-
-        Haselbacher_filter.transfer_function();
-        Haselbacher_filter.test();
-        
-        Vasilyev_filter.transfer_function();
+//         Initialize();
+//        
+//        
+//        LES_Filter<Soln_pState,Soln_cState> Haselbacher_filter(Data,Solution_Data,FILTER_TYPE_HASELBACHER);
+//        LES_Filter<Soln_pState,Soln_cState> Vasilyev_filter(Data,Solution_Data,FILTER_TYPE_VASILYEV);
+//
+//        Haselbacher_filter.transfer_function();
+//        Haselbacher_filter.test();
+//        
+//        Vasilyev_filter.transfer_function();
 
         
         
@@ -312,18 +312,24 @@ namespace tut
         Spectrum.Set_Spectrum(rho_member);
 //                
 //        //cout << endl<< endl << endl << "FILTERING..." << endl;
-        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,FILTER_TYPE_VASILYEV);
+        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data);
         //LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
 
 //        Soln_cState **** (Hexa_Block<Soln_pState,Soln_cState>::*dUdt_ptr) = NULL;
 //        dUdt_ptr = &Hexa_Block<Soln_pState,Soln_cState>::dUdt;
 //        myfilter.Set_Filter_Variables(dUdt_ptr,0);
-        myfilter.test();
+//        myfilter.test();
        // myfilter.reset();   // make sure that we will use the new filter
+        cout << "start filtering" << endl;
         myfilter.filter(rho_member);
 //        
 //
+        cout << "done filtering" << endl;
         Spectrum.Get_Spectrum(rho_member,"density");
+        
+        if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_RESTART)
+            myfilter.Write_to_file();
+        
 //        Spectrum.Get_Spectrum(p_member,"pressure");
 //
 //        error_flag = Hexa_Post_Processing(Data,Solution_Data);
@@ -389,7 +395,7 @@ namespace tut
 /*        cout << endl << "Spectral Analysis" << endl;
         
 
-        Initialize();
+        //Initialize();
         
         
         

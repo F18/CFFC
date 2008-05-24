@@ -44,8 +44,17 @@ public:
     static double FGR;
     static int number_of_rings;
     
+    static bool restarted;
+    
+    int filter_type;
+    
+    const char *output_file_name;
+    
+    General_Filter<Soln_pState,Soln_cState> *filter_ptr;
+    
     AdaptiveBlock3D_List *LocalSolnBlkList_ptr;                     // List with properties of SolnBlks
     Hexa_Block<Soln_pState,Soln_cState> *Solution_Blocks_ptr;       // array of SolnBlks
+    
     /* ----- constructor ----- */
     LES_Filter(HexaSolver_Data &Data,
                HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data,
@@ -57,37 +66,29 @@ public:
         FGR = Solution_Data.Input.Turbulence_IP.FGR;
         commutation_order = Solution_Data.Input.Turbulence_IP.commutation_order;
         number_of_rings = Solution_Data.Input.Turbulence_IP.number_of_rings;
-
-        switch (filter_flag) {
-            case FILTER_TYPE_HASELBACHER:
-                filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;
-                break;
-            case FILTER_TYPE_VASILYEV:
-                filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>;
-                break;
-        }
+        output_file_name = Solution_Data.Input.Output_File_Name;
+        filter_type = filter_flag;
+        
+        Create_filter();
     }
     
     LES_Filter(HexaSolver_Data &Data,
                HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data) {
         
-        int filter_flag;
         Solution_Blocks_ptr  = Solution_Data.Local_Solution_Blocks.Soln_Blks;
         LocalSolnBlkList_ptr = &(Data.Local_Adaptive_Block_List);
         FILTER_ONLY_ONE_SOLNBLK = false;
         FGR = Solution_Data.Input.Turbulence_IP.FGR;
         commutation_order = Solution_Data.Input.Turbulence_IP.commutation_order;
         number_of_rings = Solution_Data.Input.Turbulence_IP.number_of_rings;
-        filter_flag = Solution_Data.Input.Turbulence_IP.i_filter_type;
+        filter_type = Solution_Data.Input.Turbulence_IP.i_filter_type;
+        output_file_name = Solution_Data.Input.Output_File_Name;
 
-        switch (filter_flag) {
-            case FILTER_TYPE_HASELBACHER:
-                filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;
-                break;
-            case FILTER_TYPE_VASILYEV:
-                filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>;
-                break;
-        }
+        if (Solution_Data.Input.i_ICs == IC_RESTART && !restarted)
+            filter_type = FILTER_TYPE_RESTART;
+        
+        Create_filter();
+        Solution_Data.Input.Turbulence_IP.i_filter_type = filter_type;
     }
     
     LES_Filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk,
@@ -98,42 +99,141 @@ public:
         FGR = IPs.Turbulence_IP.FGR;
         commutation_order = IPs.Turbulence_IP.commutation_order;
         number_of_rings = IPs.Turbulence_IP.number_of_rings;
+        filter_type = filter_flag;
         
-        switch (filter_flag) {
-            case FILTER_TYPE_HASELBACHER:
-                filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;
-                break;
-            case FILTER_TYPE_VASILYEV:
-                filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>;
-                break;
-        }        
+        Create_filter();
     }
     
     
     LES_Filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk,
                Input_Parameters<Soln_pState,Soln_cState> &IPs) {
-        int filter_flag;
         FILTER_ONLY_ONE_SOLNBLK = true;
         Solution_Blocks_ptr  = &SolnBlk;
         FGR = IPs.Turbulence_IP.FGR;
         commutation_order = IPs.Turbulence_IP.commutation_order;
         number_of_rings = IPs.Turbulence_IP.number_of_rings;
-        filter_flag = IPs.Turbulence_IP.i_filter_type;
+        filter_type = IPs.Turbulence_IP.i_filter_type;
+        if (filter_type == FILTER_TYPE_RESTART) {
+            cerr << "Cannot read explicit filter from file with this constructor";
+        }
 
-        switch (filter_flag) {
-            case FILTER_TYPE_HASELBACHER:
-                filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;
-                break;
-            case FILTER_TYPE_VASILYEV:
-                filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>;
-                break;
-        }        
+        Create_filter();
     }
     
     ~LES_Filter() {
         delete filter_ptr;
     }
     
+    
+    void Create_filter(void) {
+        switch (filter_type) {
+            case FILTER_TYPE_HASELBACHER:
+                filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;
+                break;
+            case FILTER_TYPE_VASILYEV:
+                filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>;
+                break;
+            case FILTER_TYPE_RESTART:
+                int error_flag = Read_from_file();
+                if (error_flag == 1) cerr << "could not read filter_input_file" << endl;
+                break;
+            default:
+                cerr << "Filter not defined" << endl;
+                break;
+        }
+    }
+    
+    int Read_from_file(void) {
+        cout << "\n Reading explicit filter coefficients from file." << endl ;
+        int i;
+        char prefix[256], cpu_id[256], extension[256], in_file_name[256];
+        char *in_file_name_ptr;
+        
+        i = 0;
+        while (1) {
+            if (output_file_name[i] == ' ' ||
+                output_file_name[i] == '.') break;
+            prefix[i] = output_file_name[i];
+            i = i + 1;
+            if (i > strlen(output_file_name) ) break;
+        } /* endwhile */
+        prefix[i] = '\0';
+        strcat(prefix, "_explicit_filter");
+        strcpy(extension, ".dat");
+        
+        sprintf(cpu_id,"_cpu_%d",LocalSolnBlkList_ptr->ThisCPU);
+        
+        strcpy(in_file_name, prefix);
+        strcat(in_file_name, cpu_id);
+        strcat(in_file_name, extension);
+        in_file_name_ptr = in_file_name;
+        
+        
+        ifstream in_file;
+        in_file.open(in_file_name, ios::in);
+        if (in_file.bad()) return (1);        
+        in_file.setf(ios::skipws);
+                
+        in_file >> filter_type;
+        Create_filter();
+    
+        if (LocalSolnBlkList_ptr->Nused() >= 1) {
+            for (int nBlk = 0; nBlk < LocalSolnBlkList_ptr->Nused(); nBlk++ ) {
+                if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
+                    filter_ptr->Read_from_file(Solution_Blocks_ptr[nBlk],in_file);
+                }         
+            } 
+        } 
+        
+        
+        
+        in_file.unsetf(ios::skipws);
+        in_file.close();
+        restarted = true;
+        return (0);
+    }
+    
+    int Write_to_file(void){
+        
+        int i;
+        char prefix[256], cpu_id[256], extension[256], out_file_name[256];
+        char *out_file_name_ptr;
+                
+        i = 0;
+        while (1) {
+            if (output_file_name[i] == ' ' ||
+                output_file_name[i] == '.') break;
+            prefix[i] = output_file_name[i];
+            i = i + 1;
+            if (i > strlen(output_file_name) ) break;
+        } /* endwhile */
+        prefix[i] = '\0';
+        strcat(prefix, "_explicit_filter");
+        strcpy(extension, ".dat");
+
+        sprintf(cpu_id,"_cpu_%d",LocalSolnBlkList_ptr->ThisCPU);
+        
+        strcpy(out_file_name, prefix);
+        strcat(out_file_name, cpu_id);
+        strcat(out_file_name, extension);
+        out_file_name_ptr = out_file_name;
+        
+        ofstream out_file;
+        out_file.open(out_file_name, ios::out);
+        if (out_file.bad()) return (1);
+        
+        out_file << filter_ptr->filter_type() << "\n";                    
+
+        if (LocalSolnBlkList_ptr->Nused() >= 1) {
+            for (int nBlk = 0; nBlk < LocalSolnBlkList_ptr->Nused(); nBlk++ ) {
+                if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
+                    filter_ptr->Write_to_file(Solution_Blocks_ptr[nBlk],out_file);
+                }         
+            } 
+        } 
+        out_file.close();
+        return (0);
+    }
     
     void filter(double Soln_pState::*&member) {
         Soln_pState_member_ptr = member;
@@ -155,9 +255,6 @@ public:
     static void what_to_filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, int i, int j, int k, RowVector &x);
     static void what_to_filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, int i, int j, int k, DenseMatrix &b, int row_index);
 
-    
-    General_Filter<Soln_pState,Soln_cState> *filter_ptr;
-    
     void filter_Blocks(void);
     
     double filter_width;
@@ -215,6 +312,9 @@ Soln_cState *** Hexa_Block<Soln_pState,Soln_cState>::* LES_Filter<Soln_pState,So
 
 template<typename Soln_pState, typename Soln_cState>
 Soln_cState **** Hexa_Block<Soln_pState,Soln_cState>::* LES_Filter<Soln_pState,Soln_cState>::Soln_cState_4D_ptr = NULL;
+
+template<typename Soln_pState, typename Soln_cState>
+bool LES_Filter<Soln_pState,Soln_cState>::restarted = false;
 
 template<typename Soln_pState, typename Soln_cState>
  void LES_Filter<Soln_pState,Soln_cState>::what_to_filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, int i, int j, int k , RowVector &x) {

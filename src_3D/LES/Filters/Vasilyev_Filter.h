@@ -72,7 +72,7 @@ public:
     
     void filter_tests(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell);
 
-    
+    int filter_type(void) { return FILTER_TYPE_VASILYEV; }
 };
 
 
@@ -85,7 +85,7 @@ void Vasilyev_Filter<Soln_pState,Soln_cState>::filter_tests(Hexa_Block<Soln_pSta
 
 template <typename Soln_pState, typename Soln_cState>
 inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &theCell, Neighbours &theNeighbours) {
-    
+        
     int number_of_moment_combinations = number_of_combinations();
     int number_of_neighbours = theNeighbours.number_of_neighbours;
 

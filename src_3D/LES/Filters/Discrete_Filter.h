@@ -78,9 +78,12 @@ public:
     Vector3D Calculate_wavenumber_of_dGvalue(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmin, Vector3D &kmax, RowVector &w, double dG_value);
 
     
-    
     virtual void Get_Neighbours(Cell3D &theCell) = 0;
     virtual RowVector Get_Weights(Cell3D &theCell, Neighbours &theNeighbours) = 0;
+    
+    void Write_to_file(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, ofstream &out_file);
+    void Read_from_file(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, ifstream &in_file);
+    
     
 };
 
@@ -92,11 +95,13 @@ inline RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Hexa_Block<Sol
         SolnBlk.Filter_Weights_Allocated = true;
     }
     
+    
     theNeighbours.set_grid(SolnBlk.Grid);
     Get_Neighbours(theCell);
     
-    int I,J,K;
-    I = theCell.I;  J = theCell.J;  K = theCell.K;
+    int I(theCell.I);
+    int J(theCell.J);
+    int K(theCell.K);
     if (!SolnBlk.Filter_Weights_Assigned[I][J][K]) {
         SolnBlk.Filter_Weights[I][J][K] = Get_Weights(theCell,theNeighbours);
         SolnBlk.Filter_Weights_Assigned[I][J][K] = true;
@@ -604,6 +609,42 @@ double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio(Cell3D &theCe
     // the norm of the vector touching the ellipsoid connecting the boundaries of the spectral domain:
     //      kmax.abs()/sqrt(3)
     return (kmax.abs()/sqrt(THREE))/k_HALF.abs();
+}
+
+
+template<typename Soln_pState, typename Soln_cState>
+void Discrete_Filter<Soln_pState,Soln_cState>::Write_to_file(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, ofstream &out_file) {
+    for (int i=0; i<SolnBlk.NCi; i++) {
+        for (int j=0; j<SolnBlk.NCj; j++) {                
+            for (int k=0; k<SolnBlk.NCk; k++) {
+                out_file << SolnBlk.Filter_Weights_Assigned[i][j][k] << " ";
+                if (SolnBlk.Filter_Weights_Assigned[i][j][k]) {
+                    SolnBlk.Filter_Weights[i][j][k].write(out_file);
+                } else {
+                    out_file << "\n";
+                }
+            }
+        }
+    }
+    out_file << "\n"; // extra line to separate SolnBlks
+}
+
+template<typename Soln_pState, typename Soln_cState>
+void Discrete_Filter<Soln_pState,Soln_cState>::Read_from_file(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, ifstream &in_file) {
+    Allocate_Filter_Weights(SolnBlk);
+    for (int i=0; i<SolnBlk.NCi; i++) {
+        for (int j=0; j<SolnBlk.NCj; j++) {                
+            for (int k=0; k<SolnBlk.NCk; k++) {
+                in_file.setf(ios::skipws);
+                in_file >> SolnBlk.Filter_Weights_Assigned[i][j][k];
+                in_file.unsetf(ios::skipws);
+                if (SolnBlk.Filter_Weights_Assigned[i][j][k]) {
+                    SolnBlk.Filter_Weights[i][j][k].read(in_file);
+                }
+            }
+        }
+    }
+    SolnBlk.Filter_Weights_Allocated = true;
 }
 
 

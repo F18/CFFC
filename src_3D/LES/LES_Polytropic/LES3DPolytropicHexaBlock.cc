@@ -259,17 +259,17 @@ template<>
 int Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::
 ICs_Specializations(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> &IPs){
     
-    if (IPs.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT) {
-        if (CFFC_Primary_MPI_Processor()) {
-            cout << endl;
-            cout << " ------------------------------------------------" << endl;
-            cout << "    Explicitly filtering the initial condition   " << endl;
-            cout << " ------------------------------------------------" << endl;        
-        }
-        LES3D_Polytropic_cState *** (Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::*U_ptr) = &Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::U;
-        double (LES3D_Polytropic_pState::*p_ptr) = p_ptr = &LES3D_Polytropic_pState::p; 
-        LES_Filter<LES3D_Polytropic_pState,LES3D_Polytropic_cState> Explicit_Filter(*this,IPs);
-        Explicit_Filter.filter(U_ptr);
+//    if (false) { //(IPs.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT)*/ {
+//        if (CFFC_Primary_MPI_Processor()) {
+//            cout << endl;
+//            cout << " ------------------------------------------------" << endl;
+//            cout << "    Explicitly filtering the initial condition   " << endl;
+//            cout << " ------------------------------------------------" << endl;        
+//        }
+//        LES3D_Polytropic_cState *** (Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::*U_ptr) = &Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::U;
+//        double (LES3D_Polytropic_pState::*p_ptr) = p_ptr = &LES3D_Polytropic_pState::p; 
+//        LES_Filter<LES3D_Polytropic_pState,LES3D_Polytropic_cState> Explicit_Filter(*this,IPs);
+//        Explicit_Filter.filter(U_ptr);
         for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                 for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
@@ -277,21 +277,21 @@ ICs_Specializations(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cS
                 }	  
             }
         }
-        if (CFFC_Primary_MPI_Processor()) {
-            Explicit_Filter.transfer_function();
-        }
-        Explicit_Filter.filter(p_ptr);
-        for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-            for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-                for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-                    U[i][j][k] = W[i][j][k].U();
-                }	  
-            }
-        }
-        if (CFFC_Primary_MPI_Processor()) {
-            cout << "    Finished explicit filtering " << endl;
-        }
-    }
+//        if (CFFC_Primary_MPI_Processor()) {
+//            Explicit_Filter.transfer_function();
+//        }
+//        Explicit_Filter.filter(p_ptr);
+//        for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+//            for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+//                for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+//                    U[i][j][k] = W[i][j][k].U();
+//                }	  
+//            }
+//        }
+//        if (CFFC_Primary_MPI_Processor()) {
+//            cout << "    Finished explicit filtering " << endl;
+//        }
+//    }
     
     Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
     for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
