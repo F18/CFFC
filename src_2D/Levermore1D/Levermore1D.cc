@@ -910,7 +910,7 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 			        const int Local_Time_Stepping) {
     int i, n_stage, count(0);
     double us;
-    double omega;
+    double omega, reduction;
     Levermore1D_pState Wl, Wr;
     Levermore1D_cState Ul, Ur;
     Levermore1D_cState Flux;
@@ -1109,7 +1109,14 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 
 	  Solve_LU_Decomposition(LHS,RHS,Update);
 
-	  Soln[i].U = Soln[i].Uo + Update;
+	  reduction = 1.0;
+	  Soln[i].U = Soln[i].Uo+Update;
+	  while(!Soln[i].U.valid()) {
+	    reduction *= 0.5;
+	    Soln[i].U = Soln[i].Uo+reduction*Update;
+	  }
+	  if(reduction <0.7) cout << "Q";
+
 	  Update = Soln[i].dUdA_inv * Update; //now update for A
 	  Soln[i].A = Soln[i].Ao + Update;
 	  Soln[i].update_predicted_moment(Update); //for detector
