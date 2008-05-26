@@ -17,7 +17,9 @@ enum Jacobian_Orders { SOURCE_TERMS_ONLY,
                        SECOND_ORDER_OTHER };
 
 enum Frechet_Derivatives { FIRST_ORDER = 1,
-			   SECOND_ORDER = 2 };
+			   SECOND_ORDER = 2,
+                           FIRST_ORDER_RESTART = 3,
+                           SECOND_ORDER_RESTART = 4 };
 
 enum output_formats { OF_SCOTT, OF_ALISTAIR };
 
@@ -88,7 +90,8 @@ class NKS_Input_Parameters{
 
   //@{ @name Matrix Free
   bool   GMRES_CHECK;
-  int    GMRES_Frechet_Derivative_Order;
+  int    GMRES_Frechet_Derivative_Order; 
+  bool   GMRES_Frechet_Derivative_Chem;
   double Epsilon_Naught;
   //@}
 
@@ -147,8 +150,9 @@ class NKS_Input_Parameters{
     Normalization = true;
  
     GMRES_CHECK = false;
-    GMRES_Frechet_Derivative_Order = FIRST_ORDER; 
-    Epsilon_Naught = 1e-6; // 1e-8 original, 1e-10 fixed minimum, viscous stable @ 1e-6
+    GMRES_Frechet_Derivative_Order = FIRST_ORDER;   
+    GMRES_Frechet_Derivative_Chem = false;
+    Epsilon_Naught = 1.0e-6; // 1e-8 original, 1e-10 fixed minimum, viscous stable @ 1e-6
     
     GMRES_Block_Preconditioner = Block_Jacobi;
     Jacobian_Order = FIRST_ORDER_INVISCID_HLLE;
@@ -230,6 +234,9 @@ class NKS_Input_Parameters{
     MPI::COMM_WORLD.Bcast(&(GMRES_Frechet_Derivative_Order),
 			  1, 
 			  MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(GMRES_Frechet_Derivative_Chem),
+			  1, 
+			  MPI::INT, 0);  //BOOL
     MPI::COMM_WORLD.Bcast(&(Epsilon_Naught), 1, MPI::DOUBLE, 0);
 
     // GMRES Preconditioner Type
@@ -313,7 +320,10 @@ class NKS_Input_Parameters{
 			  MPI::INT, Source_Rank); //BOOL
     Communicator.Bcast(&(GMRES_Frechet_Derivative_Order),
 			  1, 
-			  MPI::INT, Source_Rank);
+			  MPI::INT, Source_Rank); 
+    Communicator.Bcast(&(GMRES_Frechet_Derivative_Chem),
+			  1,  
+		       MPI::INT, Source_Rank); //BOOL
     Communicator.Bcast(&(Epsilon_Naught), 1, MPI::DOUBLE, Source_Rank);
 
     // GMRES Preconditioner Type
@@ -498,6 +508,9 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
       GMRES_Frechet_Derivative_Order = FIRST_ORDER;
     } else if(strcmp(value, "Second_Order") == 0) {
       GMRES_Frechet_Derivative_Order = SECOND_ORDER;
+    } else if(strcmp(value, "Second_Order_Chem") == 0) {
+      GMRES_Frechet_Derivative_Order = SECOND_ORDER;
+      GMRES_Frechet_Derivative_Chem = true;
     } else {
       GMRES_Frechet_Derivative_Order = FIRST_ORDER;
     }
@@ -695,11 +708,17 @@ inline ostream& NKS_Input_Parameters::Output(ostream& fout) const {
   if (GMRES_CHECK) {
     fout <<" GMRES Check           ====> ON" << endl;
   }
+
   if( GMRES_Frechet_Derivative_Order == FIRST_ORDER) {
     fout<<   " Frechet Derivative    ====> First Order "<< endl;
   } else if ( GMRES_Frechet_Derivative_Order == SECOND_ORDER) {
-    fout<<   " Frechet Derivative    ====> Second Order "<< endl;
+    if (GMRES_Frechet_Derivative_Chem) {
+      fout<<   " Frechet Derivative    ====> Second Order Chem Mod "<< endl;
+    } else {
+      fout<<   " Frechet Derivative    ====> Second Order "<< endl;
+    }
   }
+
   fout <<" Matrix Free Epsilon0  ====> " << Epsilon_Naught << endl;
   
   // Precondtioner

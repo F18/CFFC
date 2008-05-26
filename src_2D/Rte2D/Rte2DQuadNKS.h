@@ -115,89 +115,19 @@ set_normalize_values(void)
 template <> inline void GMRES_Block<Rte2D_State,
                                     Rte2D_Quad_Block,
                                     Rte2D_Input_Parameters>::
-calculate_perturbed_residual(const double &epsilon)
+calculate_perturbed_residual(const double &epsilon, const int &order)
 {    
   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] + 
-	  denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex); 
-      }   
-      /* Update primitive variables. */
-      /***********************************************************************
-       *************************** RTE SPECIFIC ******************************/
-      // removed update primitive variables
-      // SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
-      /*************************************************************************
-       *************************************************************************/
-    }
-  }  
-}
+    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {  
 
-// Copy forward difference & calculate backwards for 2nd order derivative 
-template <> inline void GMRES_Block<Rte2D_State,
-                                    Rte2D_Quad_Block,
-                                    Rte2D_Input_Parameters>::
-calculate_perturbed_residual_2nd(const double &epsilon)
-{    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
-      //copy back R + epsilon * W(i)
-      SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
-
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] - 
-	  denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex); 
-      }   
-      /* Update primitive variables. */
-      /***********************************************************************
-       *************************** RTE SPECIFIC ******************************/
-      // removed update primitive variables
-      // SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
-      /*************************************************************************
-       *************************************************************************/
-    }
-  }  
-}
-
-// Calculate Restart Soln_ptr.U =  Soln_ptr.Uo + denormalize( epsilon * x(i) )
-template <> inline void GMRES_Block<Rte2D_State,
-                                    Rte2D_Quad_Block,
-                                    Rte2D_Input_Parameters>::
-calculate_perturbed_residual_Restart(const double &epsilon)
-{    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] + 
-	  denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
-      }  
-      /* Update primitive variables. */
-      /***********************************************************************
-       *************************** RTE SPECIFIC ******************************/
-      // removed update primitive variables
-      // SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
-      /*************************************************************************
-       *************************************************************************/
-    }
-  }  
-}
-
-// Copy forward difference & calculate backwards for 2nd order derivative  
-template <> inline void GMRES_Block<Rte2D_State,
-                                    Rte2D_Quad_Block,
-                                    Rte2D_Input_Parameters>::
-calculate_perturbed_residual_2nd_Restart(const double &epsilon)
-{    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) { 
-      //copy back R + epsilon * W(i)
-      SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
+      if(order == SECOND_ORDER){
+	//store R(Uo + perturb) 
+	SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
+      }
       
       for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] -
-	  denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
-      }  
+	SolnBlk->U[i][j][varindex+1] = perturbed_resiudal(epsilon,order,i,j,varindex);
+      }   
       /* Update primitive variables. */
       /***********************************************************************
        *************************** RTE SPECIFIC ******************************/
@@ -208,6 +138,81 @@ calculate_perturbed_residual_2nd_Restart(const double &epsilon)
     }
   }  
 }
+
+// // Copy forward difference & calculate backwards for 2nd order derivative 
+// template <> inline void GMRES_Block<Rte2D_State,
+//                                     Rte2D_Quad_Block,
+//                                     Rte2D_Input_Parameters>::
+// calculate_perturbed_residual_2nd(const double &epsilon)
+// {    
+//   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
+//     for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
+//       //copy back R + epsilon * W(i)
+//       SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
+
+//       for(int varindex = 0; varindex < blocksize; varindex++){	
+// 	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] - 
+// 	  denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex); 
+//       }   
+//       /* Update primitive variables. */
+//       /***********************************************************************
+//        *************************** RTE SPECIFIC ******************************/
+//       // removed update primitive variables
+//       // SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
+//       /*************************************************************************
+//        *************************************************************************/
+//     }
+//   }  
+// }
+
+// // Calculate Restart Soln_ptr.U =  Soln_ptr.Uo + denormalize( epsilon * x(i) )
+// template <> inline void GMRES_Block<Rte2D_State,
+//                                     Rte2D_Quad_Block,
+//                                     Rte2D_Input_Parameters>::
+// calculate_perturbed_residual_Restart(const double &epsilon)
+// {    
+//   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
+//     for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
+//       for(int varindex = 0; varindex < blocksize; varindex++){	
+// 	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] + 
+// 	  denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
+//       }  
+//       /* Update primitive variables. */
+//       /***********************************************************************
+//        *************************** RTE SPECIFIC ******************************/
+//       // removed update primitive variables
+//       // SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
+//       /*************************************************************************
+//        *************************************************************************/
+//     }
+//   }  
+// }
+
+// // Copy forward difference & calculate backwards for 2nd order derivative  
+// template <> inline void GMRES_Block<Rte2D_State,
+//                                     Rte2D_Quad_Block,
+//                                     Rte2D_Input_Parameters>::
+// calculate_perturbed_residual_2nd_Restart(const double &epsilon)
+// {    
+//   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
+//     for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) { 
+//       //copy back R + epsilon * W(i)
+//       SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
+      
+//       for(int varindex = 0; varindex < blocksize; varindex++){	
+// 	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] -
+// 	  denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
+//       }  
+//       /* Update primitive variables. */
+//       /***********************************************************************
+//        *************************** RTE SPECIFIC ******************************/
+//       // removed update primitive variables
+//       // SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
+//       /*************************************************************************
+//        *************************************************************************/
+//     }
+//   }  
+// }
 
 
 /**************************************************************************

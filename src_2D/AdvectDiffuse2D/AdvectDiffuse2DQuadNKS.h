@@ -187,82 +187,21 @@ template <> inline
 void GMRES_Block<AdvectDiffuse2D_State,
 		 AdvectDiffuse2D_Quad_Block,					    
 		 AdvectDiffuse2D_Input_Parameters>::
-calculate_perturbed_residual_Restart(const double &epsilon) {    
-  int i,j, varindex;
+calculate_perturbed_residual(const double &epsilon, const int &order) {    
 
+  int i,j, varindex;
   for ( j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
     for ( i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
-      for( varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] + 
-	  denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
+      if(order == SECOND_ORDER){
+	//store R(Uo + perturb) 
+	SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
+      }
+     
+      for( varindex = 0; varindex < blocksize; varindex++){
+	SolnBlk->U[i][j][varindex+1] = perturbed_resiudal(epsilon,order,i,j,varindex);	
       }  
-    }
-  }  
-}
 
-/*!******************************************************************************
- * Specialization of GMRES_Block::calculate_perturbed_residual_2nd_Restart      * 
- *                                                                              *
- * Copy forward difference & calculate backwards for 2nd order derivative       *
- ********************************************************************************/
-template <> inline 
-void GMRES_Block<AdvectDiffuse2D_State,
-		 AdvectDiffuse2D_Quad_Block,					    
-		 AdvectDiffuse2D_Input_Parameters>::
-calculate_perturbed_residual_2nd_Restart(const double &epsilon) {    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) { 
-      //copy back R + epsilon * W(i)
-      SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
-      
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] -
-	  denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
-      }  
-    }
-  }  
-}
-
-/*!******************************************************************************
- * Specialization of GMRES_Block::calculate_perturbed_residual                  * 
- *                                                                              *
- * Calculate Soln_ptr.U =  Soln_ptr.Uo + denormalize( epsilon * W(i) )          *
- ********************************************************************************/
-template <> inline 
-void GMRES_Block<AdvectDiffuse2D_State,
-		 AdvectDiffuse2D_Quad_Block,					    
-		 AdvectDiffuse2D_Input_Parameters>::
-calculate_perturbed_residual(const double &epsilon)
-{    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] + 
-	  denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex); 
-      }   
-    }
-  }  
-}
-
-/*!******************************************************************************
- * Specialization of GMRES_Block::calculate_perturbed_residual_2nd              *
- *                                                                              *
- * Copy forward difference & calculate backwards for 2nd order derivative       *
- ********************************************************************************/
-template <> inline 
-void GMRES_Block<AdvectDiffuse2D_State,
-		 AdvectDiffuse2D_Quad_Block,					    
-		 AdvectDiffuse2D_Input_Parameters>::
-calculate_perturbed_residual_2nd(const double &epsilon) {    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
-      //copy back R + epsilon * W(i)
-      SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
-
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] - 
-	  denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex); 
-      }   
+      //NO W for AdvectDiffuse2D
     }
   }  
 }

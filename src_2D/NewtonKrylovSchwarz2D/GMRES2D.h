@@ -150,13 +150,11 @@ public:
   void Initialize(void);
 
   //Member functions to manipulate data between GMRES vectors and Solution Block datastructure
-  void calculate_perturbed_residual(const double &epsilon); 
-  void calculate_perturbed_residual_2nd(const double &epsilon); 
-  void calculate_perturbed_residual_Restart(const double &epsilon);
-  void calculate_perturbed_residual_2nd_Restart(const double &epsilon);
+  void calculate_perturbed_residual(const double &epsilon, const int &order); 
+  double perturbed_resiudal(const double &epsilon,const int order, const int i, const int j, const int varindex);
   void calculate_Matrix_Free(const double &epsilon);
   void calculate_Matrix_Free_Restart(const double &epsilon);
-
+    
   double check_epsilon(double &epsilon){ return epsilon;} // does nothing be default.
 
   //Diagnostic Output
@@ -384,76 +382,59 @@ Initialize(void)
 /**************************************************************************
  * Routine: calculate_pertubed_residual                                   *
  **************************************************************************/
-// Calculate Soln_ptr.U =  Soln_ptr.Uo + denormalize( epsilon * W(i) )
+// Calculate U = Uo + pertubation
 template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
 inline void GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-calculate_perturbed_residual(const double &epsilon)
+calculate_perturbed_residual(const double &epsilon, const int &order)
 {    
   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] + 
-	  denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex); 
-      }   
-      /* Update primitive variables. */
-      SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
-    }
-  }  
-}
-
-// Copy forward difference & calculate backwards for 2nd order derivative 
-template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
-inline void GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-calculate_perturbed_residual_2nd(const double &epsilon) {    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
-      //copy back R + epsilon * W(i)
-      SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
-
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] - 
-	  denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex); 
-      }   
-      /* Update primitive variables. */
-      SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
-    }
-  }  
-}
-
-// Calculate Restart Soln_ptr.U =  Soln_ptr.Uo + denormalize( epsilon * x(i) )
-template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
-inline void GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-calculate_perturbed_residual_Restart(const double &epsilon) {    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] + 
-	  denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
-      }  
-      /* Update primitive variables. */
-      SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
-    }
-  }  
-}
-
-// Copy forward difference & calculate backwards for 2nd order derivative  
-template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
-inline void GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-calculate_perturbed_residual_2nd_Restart(const double &epsilon) {    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
     for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) { 
-      //copy back R + epsilon * W(i)
-      SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
-      
+
+      if(order == SECOND_ORDER){
+	//store R(Uo + perturb) 
+	SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
+      }
+
       for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] -
-	  denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
-      }  
+	SolnBlk->U[i][j][varindex+1] = perturbed_resiudal(epsilon,order,i,j,varindex);	
+      }   
       /* Update primitive variables. */
       SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
     }
   }  
 }
+
+/**************************************************************************
+ * Routine: pertubed_residual                                             *
+ **************************************************************************/
+// Returns  Soln_ptr.Uo +/-  epsilon*W
+template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
+inline double GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
+perturbed_resiudal(const double &epsilon, const int order, const int i, const int j, const int varindex){
+
+  switch(order){
+  case FIRST_ORDER:
+    return SolnBlk->Uo[i][j][varindex+1] + 
+      denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex);
+
+  case SECOND_ORDER:
+    return SolnBlk->Uo[i][j][varindex+1] - 
+      denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex); 
+
+  case FIRST_ORDER_RESTART:
+    return  SolnBlk->Uo[i][j][varindex+1] + 
+      denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
+
+  case SECOND_ORDER_RESTART:
+    return  SolnBlk->Uo[i][j][varindex+1] -
+	  denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
+  default:
+    cerr<<" \n NOT A VALID ORDER in GMRES_Block::perturbed_resiudal "; exit(1);
+  };
+ 
+  return ZERO;
+}
+
 
 /********************************************************
  * Routine: calculate_Matrix_Free                       *
@@ -883,7 +864,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       for (int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
 	if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {	  
 	  //Calculate R(U+epsilon*x(i)) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * x(i)
-	  G[Bcount].calculate_perturbed_residual_Restart(epsilon);	  
+	  G[Bcount].calculate_perturbed_residual(epsilon,FIRST_ORDER_RESTART);	  
 	}
       }
 
@@ -954,7 +935,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	for (int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
 	  if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {	    
 	    //Calculate R(U+epsilon*(Minv*x(i))) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * W(i)
-	    G[Bcount].calculate_perturbed_residual_2nd_Restart(epsilon);	  
+	    G[Bcount].calculate_perturbed_residual(epsilon,SECOND_ORDER_RESTART);	  
 	  }
 	}
 
@@ -1132,7 +1113,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	  //epsilon = min(epsilon, G[Bcount].check_epsilon(epsilon));
  	  
 	  //Calculate R(U+epsilon*(Minv*V(i))) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * W(i)
- 	  G[Bcount].calculate_perturbed_residual(epsilon);
+	  G[Bcount].calculate_perturbed_residual(epsilon,FIRST_ORDER);
 	}
       }
 
@@ -1203,7 +1184,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) { 
 	  if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) { 
 	    //Calculate R(U+epsilon*(Minv*V(i))) -> Soln_ptr.U =  Soln_ptr.Uo - epsilon * W(i)
-	    G[Bcount].calculate_perturbed_residual_2nd(epsilon);  
+	    G[Bcount].calculate_perturbed_residual(epsilon,SECOND_ORDER);
 	  }
 	}
 
@@ -1607,6 +1588,8 @@ Output_GMRES_vars_Tecplot(const int Number_of_Time_Steps,
   return 0;
 
 }
+
+
 
 /**************************************************************************
  * Routine: calculate_epsilon                                             *

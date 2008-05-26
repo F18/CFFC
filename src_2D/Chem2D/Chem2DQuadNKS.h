@@ -459,14 +459,18 @@ check_epsilon(double &epsilon_orig){
 template <>inline void GMRES_Block<Chem2D_pState,
 				   Chem2D_Quad_Block,
 				   Chem2D_Input_Parameters>::
-calculate_perturbed_residual(const double &epsilon)
+calculate_perturbed_residual(const double &epsilon, const int &order)
 {    
   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
     for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {   
- 
+
+      if(order == SECOND_ORDER){
+	//store R(Uo + perturb) 
+	SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
+      }
+
       for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] 
-	  + denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex);	  	
+	SolnBlk->U[i][j][varindex+1] = perturbed_resiudal(epsilon,order,i,j,varindex);
       } 
  
   //     //TEST OF RESETTING W AS WELL AS Cs 
@@ -489,84 +493,69 @@ calculate_perturbed_residual(const double &epsilon)
   }  
 }
 
-// Calculate SolnBlk.U =  SolnBlk.Uo - denormalize( epsilon * W(i) )
-template <>inline void GMRES_Block<Chem2D_pState,
-				   Chem2D_Quad_Block, 
-				   Chem2D_Input_Parameters>::
-calculate_perturbed_residual_2nd(const double &epsilon)
-{    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {      
-      
-      //copy back R + epsilon * W(i)
-      SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
+/**************************************************************************
+ * Routine: pertubed_residual                                             *
+ **************************************************************************/
+// Returns  Soln_ptr.Uo +/-  epsilon*W
+template <> inline double GMRES_Block<Chem2D_pState,
+				      Chem2D_Quad_Block,
+				      Chem2D_Input_Parameters>::
+perturbed_resiudal(const double &epsilon, const int order, const int i, const int j, const int varindex)
+{
 
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] -
-	  denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex);	    	
-      }     
-      //Chem2D spec_check to make sure species (Uo + epsilon*W(i)) > ZERO , ie physical for dUdt calc 
-      if(!SolnBlk->U[i][j].negative_speccheck(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual"; exit(1); }       
-      /* Update primitive variables. */
-      SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
-    }
-  }  
+  if(!Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Chem){
+
+    switch(order){
+    case FIRST_ORDER:
+      return SolnBlk->Uo[i][j][varindex+1] + 
+	denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex);
+      
+    case SECOND_ORDER:
+      return SolnBlk->Uo[i][j][varindex+1] - 
+	denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex); 
+      
+    case FIRST_ORDER_RESTART:
+      return  SolnBlk->Uo[i][j][varindex+1] + 
+	denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
+      
+    case SECOND_ORDER_RESTART:
+      return  SolnBlk->Uo[i][j][varindex+1] -
+	denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
+
+    default:
+      cerr<<" \n NOT A VALID ORDER in GMRES_Block::perturbed_resiudal "; exit(1);
+    };
+  
+    // Modification Attempt to avoid -ve species
+  } else {
+    
+    switch(order){
+    case FIRST_ORDER:
+      return SolnBlk->Uo[i][j][varindex+1] + 
+	epsilon*denormalizeU(W[search_directions*scalar_dim+index(i,j,varindex)] + 
+			     fabs(W[search_directions*scalar_dim+index(i,j,varindex)]), varindex);
+      
+    case SECOND_ORDER:
+      return SolnBlk->Uo[i][j][varindex+1] - 
+	epsilon*denormalizeU(fabs(W[search_directions*scalar_dim+index(i,j,varindex)]) -
+			     W[search_directions*scalar_dim+index(i,j,varindex)], varindex); 
+      
+    case FIRST_ORDER_RESTART:
+      return  SolnBlk->Uo[i][j][varindex+1] + 
+	epsilon*denormalizeU( x[index(i,j,varindex)] + fabs(x[index(i,j,varindex)]), varindex);
+      
+    case SECOND_ORDER_RESTART:
+      return  SolnBlk->Uo[i][j][varindex+1] -
+	epsilon*denormalizeU( fabs(x[index(i,j,varindex)]) - x[index(i,j,varindex)], varindex);
+
+    default:
+      cerr<<" \n NOT A VALID ORDER in GMRES_Block::perturbed_resiudal "; exit(1);
+    };
+   
+  }
+
+  return ZERO; //make compiler happy
 }
-
-// Calculate SolnBlk.U =  SolnBlk.Uo + denormalize( epsilon * x(i) )
-template <>inline void GMRES_Block<Chem2D_pState,
-				   Chem2D_Quad_Block,
-				   Chem2D_Input_Parameters>::
-calculate_perturbed_residual_Restart(const double &epsilon)
-{    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {  
-      
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] + denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
-      }  
-
-//       //TEST OF RESETTING W AS WELL AS Cs 
-//       double sum(ZERO);
-//       for(int q = SolnBlk->U[i][j].NUM_VAR_CHEM2D-SolnBlk->U[i][j].ns+1; q< SolnBlk->U[i][j].NUM_VAR_CHEM2D; q++){
-// 	if(SolnBlk->U[i][j][q]/SolnBlk->U[i][j].rho < ZERO){  //CHECK FOR -ve species
-// 	  SolnBlk->U[i][j][q] = SolnBlk->Uo[i][j][q]; //cout<<"\n Resetting "<<i<<" "<<j<<" "<<q;  //OR ZERO???
-// 	  x[index(i,j,q-1)] = ZERO;
-// 	}
-// 	sum += SolnBlk->U[i][j][q]/SolnBlk->U[i][j].rho;  
-//       }
-//       SolnBlk->U[i][j][SolnBlk->U[i][j].NUM_VAR_CHEM2D] = SolnBlk->U[i][j].rho*(ONE - sum);
-      
-      if(!SolnBlk->U[i][j].negative_speccheck(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual_Restart "; exit(1); }
-
-      /* Update primitive variables. */      
-      SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
-    }
-  }  
-}
-
-// Calculate SolnBlk.U =  SolnBlk.Uo + denormalize( epsilon * x(i) )
-template <>inline void GMRES_Block<Chem2D_pState,
-				   Chem2D_Quad_Block,
-				   Chem2D_Input_Parameters>::
-calculate_perturbed_residual_2nd_Restart(const double &epsilon)
-{    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {   
-      
-      //copy back R + epsilon * W(i)
-      SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
-      
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] - denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
-      }  
-      if(!SolnBlk->U[i][j].negative_speccheck(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual_Restart "; exit(1); }
-      /* Update primitive variables. */
-      SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
-    }
-  }  
-}
-
 
 /********************************************************
  * Routine: calculate_Matrix_Free with Preconditioning  *

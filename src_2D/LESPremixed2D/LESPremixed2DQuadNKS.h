@@ -69,7 +69,7 @@ int Newton_Update(LESPremixed2D_Quad_Block *SolnBlk,
 	SolnBlk[0].Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
        Num_Var =  SolnBlk[0].NumVar()-SolnBlk[0].W[0][0].ns;
    }else{
-  Num_Var = SolnBlk[0].NumVar();
+     Num_Var = SolnBlk[0].NumVar();
    }
 #endif  	
 
@@ -493,14 +493,20 @@ normalize_Preconditioner_dFdU(DenseMatrix &dFdU)
 template <>inline void GMRES_Block<LESPremixed2D_pState,
 				   LESPremixed2D_Quad_Block,
 				   LESPremixed2D_Input_Parameters>::
-calculate_perturbed_residual(const double &epsilon)
+calculate_perturbed_residual(const double &epsilon, const int &order)
 {    
   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
     for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {         
+      if(order == SECOND_ORDER){
+	//store R(Uo + perturb) 
+	SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
+      }
+
       for(int varindex = 0; varindex < blocksize; varindex++){	
 	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] +
 	  denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex);	    	
-      }     
+      }   
+      
       //LESPremixed2D spec_check to make sure species (Uo + epsilon*W(i)) > ZERO , ie physical for dUdt calc 
       if(!SolnBlk->U[i][j].negative_speccheck(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual"; exit(1); }       
       /* Update primitive variables. */
@@ -509,69 +515,6 @@ calculate_perturbed_residual(const double &epsilon)
   }  
 }
 
-// Calculate SolnBlk.U =  SolnBlk.Uo - denormalize( epsilon * W(i) )
-template <>inline void GMRES_Block<LESPremixed2D_pState,
-				   LESPremixed2D_Quad_Block,
-				   LESPremixed2D_Input_Parameters>::
-calculate_perturbed_residual_2nd(const double &epsilon)
-{    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {      
-      
-      //copy back R + epsilon * W(i)
-      SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
-
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] -
-	  denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex);	    	
-      }     
-      //LESPremixed2D spec_check to make sure species (Uo + epsilon*W(i)) > ZERO , ie physical for dUdt calc 
-      if(!SolnBlk->U[i][j].negative_speccheck(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual"; exit(1); }       
-      /* Update primitive variables. */
-      SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
-    }
-  }  
-}
-
-// Calculate SolnBlk.U =  SolnBlk.Uo + denormalize( epsilon * x(i) )
-template <>inline void GMRES_Block<LESPremixed2D_pState,
-				   LESPremixed2D_Quad_Block,
-				   LESPremixed2D_Input_Parameters>::
-calculate_perturbed_residual_Restart(const double &epsilon)
-{    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] + denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
-      }  
-      if(!SolnBlk->U[i][j].negative_speccheck(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual_Restart "; exit(1); }
-      /* Update primitive variables. */
-      SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
-    }
-  }  
-}
-
-// Calculate SolnBlk.U =  SolnBlk.Uo + denormalize( epsilon * x(i) )
-template <>inline void GMRES_Block<LESPremixed2D_pState,
-				   LESPremixed2D_Quad_Block,
-				   LESPremixed2D_Input_Parameters>::
-calculate_perturbed_residual_2nd_Restart(const double &epsilon)
-{    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {   
-      
-      //copy back R + epsilon * W(i)
-      SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
-      
-      for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] - denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
-      }  
-      if(!SolnBlk->U[i][j].negative_speccheck(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual_Restart "; exit(1); }
-      /* Update primitive variables. */
-      SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
-    }
-  }  
-}
 
 
 /********************************************************
