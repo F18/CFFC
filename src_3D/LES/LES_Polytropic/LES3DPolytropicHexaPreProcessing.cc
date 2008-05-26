@@ -112,6 +112,9 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             if (CFFC_Primary_MPI_Processor()) {
                 cout << "    Finished explicit filtering " << endl;
             }
+            if (CFFC_Primary_MPI_Processor()) {
+                Explicit_Filter.transfer_function();
+            }
         }
         
         
