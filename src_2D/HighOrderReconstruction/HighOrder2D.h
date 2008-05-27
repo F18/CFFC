@@ -1762,15 +1762,10 @@ void HighOrder2D<SOLN_STATE>::AssessInterpolantsSmoothness(const int &iCell, con
 
   for(parameter=1; parameter<=NumberOfVariables(); ++parameter){
 
-    if ( CellSmoothnessIndicatorValue(iCell,jCell,parameter) < CENO_Tolerances::Fit_Tolerance  || 
-	 ( Previous_CellInadequateFitValue(iCell,jCell,parameter) == ON && 
-	   CellSmoothnessIndicatorValue(iCell,jCell,parameter) < CENO_Tolerances::Fit_Tolerance_Buffer ) ){
+    if( CellSmoothnessIndicatorValue(iCell,jCell,parameter) < CENO_Tolerances::Fit_Tolerance ){
 
       // Flag the (iCell,jCell) cell with inadequate reconstruction for the current variable
       CellInadequateFitValue(iCell,jCell,parameter) = ON;
-
-      // Copy the flag
-      Previous_CellInadequateFitValue(iCell,jCell,parameter) = ON;
 
       if (CENO_Execution_Mode::CENO_PADDING){
 	/* Flag also all cells surrounding the (iCell,jCell) cell with inadequate reconstruction if CENO_Padding is ON */
@@ -1784,24 +1779,7 @@ void HighOrder2D<SOLN_STATE>::AssessInterpolantsSmoothness(const int &iCell, con
 	CellInadequateFitValue(iCell-1,jCell+1,parameter) = ON;
 	CellInadequateFitValue(iCell  ,jCell+1,parameter) = ON;
 	CellInadequateFitValue(iCell+1,jCell+1,parameter) = ON;
-
-	/* Copy the neighbour flags. */
-	Previous_CellInadequateFitValue(iCell-1,jCell-1,parameter) = ON;
-	Previous_CellInadequateFitValue(iCell  ,jCell-1,parameter) = ON;
-	Previous_CellInadequateFitValue(iCell+1,jCell-1,parameter) = ON;
-
-	Previous_CellInadequateFitValue(iCell-1,jCell ,parameter) = ON;
-	Previous_CellInadequateFitValue(iCell+1,jCell ,parameter) = ON;
-
-	Previous_CellInadequateFitValue(iCell-1,jCell+1,parameter) = ON;
-	Previous_CellInadequateFitValue(iCell  ,jCell+1,parameter) = ON;
-	Previous_CellInadequateFitValue(iCell+1,jCell+1,parameter) = ON;
       }//endif
-
-    } else {
-      // Reset copy flag
-      Previous_CellInadequateFitValue(iCell,jCell,parameter) = OFF;
-
     }//endif
 
   }//endfor(parameter)
