@@ -639,7 +639,12 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 	  if (error_flag) return (error_flag);
 	  cout << "\n";
 	  cout.flush();
-	} /* endif */
+
+	  if (CFFC_Primary_MPI_Processor()) {
+	    System::Remove_Restart_Flag();  //Remove flag to indicate the restart is finished
+	  }
+
+	} /* endif */  //end save_restart
 	
 	/* Output progress information for the calculation. */
 	 if (!batch_flag) Output_Progress_L2norm(number_of_time_steps,
