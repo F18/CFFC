@@ -398,6 +398,9 @@ extern void ICs(Levermore1D_UniformMesh *Soln,
 extern double CFL(Levermore1D_UniformMesh *Soln,
   		  const int Number_of_Cells);
 
+extern double l2_residual(Levermore1D_UniformMesh *Soln,
+			  const int Number_of_Cells);
+
 extern void Linear_Reconstruction_MUSCL(Levermore1D_UniformMesh *Soln,
                                         const int Number_of_Cells,
 					const int Limiter);

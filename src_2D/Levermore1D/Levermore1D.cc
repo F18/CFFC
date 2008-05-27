@@ -354,6 +354,22 @@ double CFL(Levermore1D_UniformMesh *Soln,
 }
 
 /******************************************************//**
+ * Routine: l2_residual
+ *
+ * Calculate L2 norm of solution residual (density component)
+ *
+ ********************************************************/
+extern double l2_residual(Levermore1D_UniformMesh *Soln,
+			  const int Number_of_Cells) {
+  double norm(0.0);
+  for(int i = 1 ; i <= Number_of_Cells ; ++i ) {
+      norm += Soln[i].dUdt[1]*Soln[i].dUdt[1];
+  }
+  return sqrt(norm);
+}
+
+
+/******************************************************//**
  * Routine: Linear_Reconstruction_MUSCL
  *
  * Peforms the reconstruction of a limited piecewise
