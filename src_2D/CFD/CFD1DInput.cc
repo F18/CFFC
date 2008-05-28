@@ -232,6 +232,9 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
     IP.a = ONE;
     IP.Tau = ONE;
 
+    IP.heat_transfer_flag = 0;
+    IP.thermal_conductivity = 0.0;
+
     string_ptr = "Uniform";
     strcpy(IP.Grid_Type, string_ptr);
     IP.i_Grid = GRID_CARTESIAN_UNIFORM;
@@ -651,6 +654,20 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
        IP.Input_File >> IP.Tau;
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Tau < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Thermal_Conductivity") == 0) {
+       i_command = 20;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.thermal_conductivity;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.thermal_conductivity < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Heat_Transfer") == 0) {
+       i_command = 20;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.heat_transfer_flag;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.heat_transfer_flag != 0 && IP.heat_transfer_flag != 1) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Output_Format_Type") == 0) {
        i_command = 21;

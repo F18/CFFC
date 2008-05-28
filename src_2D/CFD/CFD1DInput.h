@@ -68,6 +68,12 @@ class CFD1D_Input_Parameters{
   // Diffusion coefficient, wave speed, and relaxation time:
   double Kappa, a, Tau;
 
+  // Thermal Conductivity and flag to turn diffusive heat transfer
+  // on for euler1D.  This was used in my shock structure study
+  // for Levermore moment systems.
+  double thermal_conductivity;
+  int heat_transfer_flag;
+
   // levermore1D-specific input parameters
   int number_of_moments;
   double relaxation_time;
@@ -224,7 +230,12 @@ inline ostream &operator << (ostream &out_file,
              << IP.a;
     out_file << "\n  -> Relaxation Time : " 
              << IP.Tau;
-
+    if(IP.heat_transfer_flag) {
+      out_file << "\n -> Diffusive heat transfer for euler1D is active"
+	       << "\n    with thermal conductivity = " << IP.thermal_conductivity
+	       << "\n    (This is only implimented for explicit-Euler and predictor-corrector"
+	       << "\n    time marching).";
+    }
     out_file << "\n  -> Grid: " 
              << IP.Grid_Type;
     switch(IP.i_Grid) {
