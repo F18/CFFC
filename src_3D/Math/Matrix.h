@@ -1168,6 +1168,9 @@ class DenseMatrix: public MV_ColMat_double{
 
     /* Assign the zero matrix. */
     void zero(void);
+    
+    /* Assign the one matrix. */
+    void one(void);
 
     /* Assign the identity matrix. */
     void identity(void);
@@ -1290,6 +1293,18 @@ inline void DenseMatrix::zero(void) {
          k=j*lda_+i; v_(k)=ZERO;
       } /* endfor */
    } /* endfor */
+}
+
+/********************************************************
+ * DenseMatrix::one -- Assign one matrix.             *
+ ********************************************************/
+inline void DenseMatrix::one(void) {
+    int i, j, k;
+    for ( i = 0; i < dim0_; ++i ) {
+        for ( j = 0 ; j < dim1_; ++j ) {
+            k=j*lda_+i; v_(k)=ONE;
+        } /* endfor */
+    } /* endfor */
 }
 
 /********************************************************

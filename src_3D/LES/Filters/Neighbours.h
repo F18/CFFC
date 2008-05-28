@@ -38,6 +38,13 @@ public:
         allocate();
         theCell_included = false;
     }
+    Neighbours(Neighbours &anotherNeighbours){
+        Grid_ptr = anotherNeighbours.Grid_ptr;
+        theCell = anotherNeighbours.theCell;
+        Allocated = false;
+        theCell_included = false;
+    }
+    
     Neighbours(void) {
         Allocated = false;
         theCell_included = false;

@@ -141,6 +141,8 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
           i_filter_type = FILTER_TYPE_HASELBACHER;
       } else if (strcmp(filter_type, "Vasilyev") == 0) {
           i_filter_type = FILTER_TYPE_VASILYEV;
+      } else if (strcmp(filter_type, "Vasilyev_LS") == 0) {
+          i_filter_type = FILTER_TYPE_VASILYEV_LS;
       } else if (strcmp(filter_type, "Restart") == 0) {
           i_filter_type = FILTER_TYPE_RESTART;
       } else {

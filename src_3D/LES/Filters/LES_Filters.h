@@ -15,6 +15,7 @@
 #include "General_Filter.h"
 #include "Haselbacher_Filter.h"
 #include "Vasilyev_Filter.h"
+#include "Vasilyev_LS_Filter.h"
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -132,6 +133,9 @@ public:
                 break;
             case FILTER_TYPE_VASILYEV:
                 filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>;
+                break;
+            case FILTER_TYPE_VASILYEV_LS:
+                filter_ptr = new Vasilyev_LS_Filter<Soln_pState,Soln_cState>;
                 break;
             case FILTER_TYPE_RESTART:
                 int error_flag = Read_from_file();

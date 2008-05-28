@@ -3295,7 +3295,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Flat_Plate(Grid3D_Input_Parameter
                                                  Input.Plate_Length,
                                                  Input.Box_Height,
                                                  BC_ADIABATIC_WALL,
-                                                 OFF,
+                                                 ON,
                                                  Input.Stretching_Factor_Idir,
                                                  Input.Stretching_Factor_Jdir,
                                                  Input.NCells_Idir,

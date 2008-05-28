@@ -22,15 +22,17 @@ Smagorinsky_Coefficient =
 #       LES parameters       #
 ##############################
 Filter_Type =
+Implicit
 #Vasilyev
-Haselbacher
+#Vasilyev_LS
+#Haselbacher
 #Restart
 Filter_Grid_Ratio =
-1.5
+2.0
 Commutation_Order =
-4
-Number_of_Rings =
 2
+Number_of_Rings =
+4
 ##############################
 #     Spectrum parameters    #
 ##############################
