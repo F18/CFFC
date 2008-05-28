@@ -72,7 +72,22 @@ Gauss_Points_For_Boundary_Integration =
 ##              On
 ##Curved_Boundary_Integration =
 ##              Line_Segments
-Flux_Calculation_Method =
+
+	#############################
+	#  FLUX CALCULATION METHOD  #
+	#############################
+Flux_Calculation_Method_Specified =
+             Yes
+Flux_West_Method = 
+             # Riemann_Problem
+              Constrained_Reconstruction
+Flux_East_Method = 
+             # Riemann_Problem
+              Constrained_Reconstruction
+Flux_North_Method = 
+             # Riemann_Problem
+              Constrained_Reconstruction
+Flux_South_Method = 
              # Riemann_Problem
               Constrained_Reconstruction
 

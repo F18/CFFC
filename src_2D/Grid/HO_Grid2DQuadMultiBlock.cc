@@ -482,37 +482,53 @@ void Grid2D_Quad_MultiBlock_HO::Disturb_Interior_Nodes(const int &Number_of_Iter
 }
 
 /*!
- * Setup the required flux calculation method to all indicated
- * boundaries for each 2D quadrilateral block of the multi-block grids.
+ * Setup the required flux calculation method based on the flags set in 
+ * HO_Grid2D_Execution_Mode class for each 2D quadrilateral block of the multi-block grids.
  */
-void Grid2D_Quad_MultiBlock_HO::SetFluxCalculationMethod(const int & FluxMethod,
-							 const bool & WestBnd, const bool & SouthBnd,
-							 const bool & EastBnd, const bool & NorthBnd){
+void Grid2D_Quad_MultiBlock_HO::SetFluxCalculationMethod(void){
   
   int iBlock, jBlock;
 
-  for (iBlock = 0; iBlock <= Last_iBlock() ; ++iBlock){
-    for (jBlock = 0; jBlock <= Last_jBlock() ; ++jBlock){
+  if (HO_Grid2D_Execution_Mode::CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+    
+    for (iBlock = 0; iBlock <= Last_iBlock() ; ++iBlock){
+      for (jBlock = 0; jBlock <= Last_jBlock() ; ++jBlock){
 
-      if(Grid_ptr[iBlock][jBlock].BndNorthSpline.bc[0] != BC_NONE ||
-	 Grid_ptr[iBlock][jBlock].BndNorthSpline.bc[0] != BC_OUTFLOW){
-	Grid_ptr[iBlock][jBlock].BndNorthSpline.setFluxCalcMethod(FluxMethod);
-      }
-      if(Grid_ptr[iBlock][jBlock].BndSouthSpline.bc[0] != BC_NONE || 
-	 Grid_ptr[iBlock][jBlock].BndSouthSpline.bc[0] != BC_OUTFLOW){
-	Grid_ptr[iBlock][jBlock].BndSouthSpline.setFluxCalcMethod(FluxMethod);
-      }
-      if(Grid_ptr[iBlock][jBlock].BndEastSpline.bc[0] != BC_NONE || 
-	 Grid_ptr[iBlock][jBlock].BndEastSpline.bc[0] != BC_OUTFLOW){
-	Grid_ptr[iBlock][jBlock].BndEastSpline.setFluxCalcMethod(FluxMethod);
-      }
-      if(Grid_ptr[iBlock][jBlock].BndWestSpline.bc[0] != BC_NONE ||
-	 Grid_ptr[iBlock][jBlock].BndWestSpline.bc[0] != BC_OUTFLOW){
-	Grid_ptr[iBlock][jBlock].BndWestSpline.setFluxCalcMethod(FluxMethod);
-      }
-    }	// endfor
-  } // endfor
+	// North boundary
+	if ( HO_Grid2D_Execution_Mode::NORTH_RECONSTRUCTION_BASED_FLUX && 
+	     Grid_ptr[iBlock][jBlock].BndNorthSpline.bc[0] != BC_NONE ){
+	  Grid_ptr[iBlock][jBlock].BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	} else {
+	  Grid_ptr[iBlock][jBlock].BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+	}
 
+	// South boundary
+	if( HO_Grid2D_Execution_Mode::SOUTH_RECONSTRUCTION_BASED_FLUX && 
+	    Grid_ptr[iBlock][jBlock].BndSouthSpline.bc[0] != BC_NONE ){
+	  Grid_ptr[iBlock][jBlock].BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	} else {
+	  Grid_ptr[iBlock][jBlock].BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+	}
+
+	// East boundary
+	if( HO_Grid2D_Execution_Mode::EAST_RECONSTRUCTION_BASED_FLUX && 
+	    Grid_ptr[iBlock][jBlock].BndEastSpline.bc[0] != BC_NONE){
+	  Grid_ptr[iBlock][jBlock].BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	} else {
+	  Grid_ptr[iBlock][jBlock].BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+	}
+
+	// West boundary
+	if( HO_Grid2D_Execution_Mode::WEST_RECONSTRUCTION_BASED_FLUX && 
+	    Grid_ptr[iBlock][jBlock].BndWestSpline.bc[0] != BC_NONE){
+	  Grid_ptr[iBlock][jBlock].BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	} else {
+	  Grid_ptr[iBlock][jBlock].BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+	}
+      }	// endfor
+    } // endfor
+    
+  } // endif
 }
 
 /*!

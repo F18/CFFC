@@ -58,10 +58,6 @@ namespace tut
 				       AdvectDiffuse2D_Quad_Block *& _SolnBlk_,
 				       AdvectDiffuse2D_Input_Parameters & _IP_) throw(std::runtime_error);
 
-    // set the fluc calculation method
-    void SetFluxCalculationMethod(Grid2D_Quad_MultiBlock_HO & _MeshBlk_,
-				  int FluxMethod);
-
     // Output_Block()
     void Output_Block(AdvectDiffuse2D_Quad_Block & SolnBlock,
 		      AdvectDiffuse2D_Input_Parameters & _IP_){};
@@ -151,36 +147,6 @@ namespace tut
     Status = ON;
   }
 
-
-  // ==== Set flux calculation method
-  void Data_AdvectDiffuse2D_Quad_Block::SetFluxCalculationMethod(Grid2D_Quad_MultiBlock_HO & MeshBlk,
-								 int FluxMethod){
-
-    MeshBlk.SetFluxCalculationMethod(FluxMethod, true, true, true, true);
-
-#if 0
-    int iBlock, jBlock;
-
-    for (iBlock = 0; iBlock <= MeshBlk.Last_iBlock() ; ++iBlock){
-      for (jBlock = 0; jBlock <= MeshBlk.Last_jBlock() ; ++jBlock){
-
-	if(MeshBlk(iBlock,jBlock).BndNorthSpline.bc[0] != BC_NONE){
-	  MeshBlk(iBlock,jBlock).BndNorthSpline.setFluxCalcMethod(FluxMethod);
-	}
-	if(MeshBlk(iBlock,jBlock).BndSouthSpline.bc[0] != BC_NONE){
-	  MeshBlk(iBlock,jBlock).BndSouthSpline.setFluxCalcMethod(FluxMethod);
-	}
-	if(MeshBlk(iBlock,jBlock).BndEastSpline.bc[0] != BC_NONE){
-	  MeshBlk(iBlock,jBlock).BndEastSpline.setFluxCalcMethod(FluxMethod);
-	}
-	if(MeshBlk(iBlock,jBlock).BndWestSpline.bc[0] != BC_NONE){
-	  MeshBlk(iBlock,jBlock).BndWestSpline.setFluxCalcMethod(FluxMethod);
-	}
-      }	// endfor
-    } // endfor
-#endif
-
-  }
 
   // === SetLocalTimeStepToValue()
   void Data_AdvectDiffuse2D_Quad_Block::SetLocalTimeStepToValue(AdvectDiffuse2D_Quad_Block *& _SolnBlk_,

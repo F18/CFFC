@@ -106,9 +106,7 @@ public:
   void Disturb_Interior_Nodes_Without_Update(const int &Number_of_Iterations);
   void Disturb_Interior_Nodes(const int &Number_of_Iterations);
 
-  void SetFluxCalculationMethod(const int & FluxMethod,
-				const bool & WestBnd, const bool & SouthBnd,
-				const bool & EastBnd, const bool & NorthBnd);
+  void SetFluxCalculationMethod(void);
   //@}
   
   //!@name Update exterior nodes and cell geometric properties
@@ -1472,9 +1470,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
   }
 
   /* Set flux calculation method .*/
-  if (HO_Grid2D_Execution_Mode::SET_RECONSTRUCTION_BASED_FLUX){
-    SetFluxCalculationMethod(ReconstructionBasedFlux,true,true,true,true);
-  }
+  SetFluxCalculationMethod();
 
   /* Update multi-block quadrilateral mesh exterior nodes.*/
   Update_All_Exterior_Nodes();

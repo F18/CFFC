@@ -105,7 +105,40 @@ public:
       ----------------------------------------------------------------------------------------  */
   static short USE_BROADCAST_MORE_THAN_RECOMPUTING;
 
-  static short SET_RECONSTRUCTION_BASED_FLUX;
+  /*! This flag is used to control whether the user input is used to set the flux calculation method or not.\n
+      Turn ON if you want to specify the flux calculation method at block boundaries. \n
+      Turn OFF if you want to use the default behaviour. (default) \n
+      ----------------------------------------------------------------------------------------  */
+  static short CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES;
+
+  /*! This flag is used to set the method to compute the flux through cell faces at the West block boundary.
+      The flag becomes active only if the boundary condition imposed at the block boundary is different than BC_NONE.\n
+      Turn ON if you want to use reconstruction based flux (i.e. constrained reconstruction). \n
+      Turn OFF if you want to solve a Riemann-like problem. (default) \n
+      ----------------------------------------------------------------------------------------  */
+  static short WEST_RECONSTRUCTION_BASED_FLUX;
+
+  /*! This flag is used to set the method to compute the flux through cell faces at the South block boundary.
+      The flag becomes active only if the boundary condition imposed at the block boundary is different than BC_NONE.\n
+      Turn ON if you want to use reconstruction based flux (i.e. constrained reconstruction). \n
+      Turn OFF if you want to solve a Riemann-like problem. (default) \n
+      ----------------------------------------------------------------------------------------  */
+  static short SOUTH_RECONSTRUCTION_BASED_FLUX;
+
+  /*! This flag is used to set the method to compute the flux through cell faces at the East block boundary.
+      The flag becomes active only if the boundary condition imposed at the block boundary is different than BC_NONE.\n
+      Turn ON if you want to use reconstruction based flux (i.e. constrained reconstruction). \n
+      Turn OFF if you want to solve a Riemann-like problem. (default) \n
+      ----------------------------------------------------------------------------------------  */
+  static short EAST_RECONSTRUCTION_BASED_FLUX;
+
+  /*! This flag is used to set the method to compute the flux through cell faces at the North block boundary.
+      The flag becomes active only if the boundary condition imposed at the block boundary is different than BC_NONE.\n
+      Turn ON if you want to use reconstruction based flux (i.e. constrained reconstruction). \n
+      Turn OFF if you want to solve a Riemann-like problem. (default) \n
+      ----------------------------------------------------------------------------------------  */
+  static short NORTH_RECONSTRUCTION_BASED_FLUX;
+
 
   template<class Input_Parameters_Type>
   static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);
@@ -251,12 +284,62 @@ void HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Paramete
     }
     i_command = 0;
 
-  } else if (strcmp(IP.Next_Control_Parameter, "Flux_Calculation_Method") == 0) {
+  } else if (strcmp(IP.Next_Control_Parameter, "Flux_Calculation_Method_Specified") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 || strcmp(IP.Next_Control_Parameter, "YES") == 0 ||
+	 strcmp(IP.Next_Control_Parameter, "On") == 0  || strcmp(IP.Next_Control_Parameter, "ON") == 0){
+      CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = ON;
+    } else if ( strcmp(IP.Next_Control_Parameter, "No") == 0 || strcmp(IP.Next_Control_Parameter, "NO") == 0 ||
+		strcmp(IP.Next_Control_Parameter, "Off") == 0  || strcmp(IP.Next_Control_Parameter, "OFF") == 0){
+      CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = OFF;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Flux_West_Method") == 0) {
     IP.Get_Next_Input_Control_Parameter();
     if ( strcmp(IP.Next_Control_Parameter, "Constrained_Reconstruction") == 0 ){
-      SET_RECONSTRUCTION_BASED_FLUX = ON;
+      WEST_RECONSTRUCTION_BASED_FLUX = ON;
     } else if ( strcmp(IP.Next_Control_Parameter, "Riemann_Problem") == 0 ) {
-      SET_RECONSTRUCTION_BASED_FLUX = OFF;
+      WEST_RECONSTRUCTION_BASED_FLUX = OFF;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Flux_East_Method") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Constrained_Reconstruction") == 0 ){
+      EAST_RECONSTRUCTION_BASED_FLUX = ON;
+    } else if ( strcmp(IP.Next_Control_Parameter, "Riemann_Problem") == 0 ) {
+      EAST_RECONSTRUCTION_BASED_FLUX = OFF;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Flux_South_Method") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Constrained_Reconstruction") == 0 ){
+      SOUTH_RECONSTRUCTION_BASED_FLUX = ON;
+    } else if ( strcmp(IP.Next_Control_Parameter, "Riemann_Problem") == 0 ) {
+      SOUTH_RECONSTRUCTION_BASED_FLUX = OFF;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Flux_North_Method") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Constrained_Reconstruction") == 0 ){
+      NORTH_RECONSTRUCTION_BASED_FLUX = ON;
+    } else if ( strcmp(IP.Next_Control_Parameter, "Riemann_Problem") == 0 ) {
+      NORTH_RECONSTRUCTION_BASED_FLUX = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
       return;

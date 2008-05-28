@@ -18,7 +18,13 @@ short HO_Grid2D_Execution_Mode::EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THI
 short HO_Grid2D_Execution_Mode::CHECK_FOR_INCORRECT_QUADRILATERALS = ON; // check for incorrect quads
 short HO_Grid2D_Execution_Mode::REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = OFF; // stop on detecting incorrect quads
 short HO_Grid2D_Execution_Mode::USE_BROADCAST_MORE_THAN_RECOMPUTING = ON; // broadcast the majority of geometric properties
-short HO_Grid2D_Execution_Mode::SET_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
+
+// Block boundary flux calculation method
+short HO_Grid2D_Execution_Mode::CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = OFF; // use the default settings
+short HO_Grid2D_Execution_Mode::WEST_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
+short HO_Grid2D_Execution_Mode::SOUTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
+short HO_Grid2D_Execution_Mode::NORTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
+short HO_Grid2D_Execution_Mode::EAST_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
 
 
 //! Set all flags to default values
@@ -32,13 +38,49 @@ void HO_Grid2D_Execution_Mode::SetDefaults(void){
   CHECK_FOR_INCORRECT_QUADRILATERALS = ON; // check for incorrect quads
   REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = OFF; // stop on detecting incorrect quads
   USE_BROADCAST_MORE_THAN_RECOMPUTING = ON; // broadcast the majority of geometric properties
-  SET_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
+  CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = OFF; // use the default settings
+  WEST_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
+  SOUTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
+  NORTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
+  EAST_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
 }
 
 //! Print the current execution mode
 //  at the output stream
 // \param [in] out_file the output stream
 void HO_Grid2D_Execution_Mode::Print_Info(std::ostream & out_file){
+
+  // output flux calculation method through block boundaries
+  if (CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES == OFF){
+    out_file << "\n  -> Flux Calculation Method: " << "Solve a 'Riemann' problem everywhere";
+
+  } else {
+    out_file << "\n  -> Flux Calculation Method: " << "Customized for each boundary";
+
+    if (WEST_RECONSTRUCTION_BASED_FLUX == ON){
+      out_file << "\n     -> West Flux Method: " << "Based on constrained reconstruction";
+    } else {
+      out_file << "\n     -> West Flux Method: " << "Solve 'Riemann' problem";
+    }
+
+    if (SOUTH_RECONSTRUCTION_BASED_FLUX == ON){
+      out_file << "\n     -> South Flux Method: " << "Based on constrained reconstruction";
+    } else {	     	  
+      out_file << "\n     -> South Flux Method: " << "Solve a 'Riemann' problem";
+    }
+
+    if (EAST_RECONSTRUCTION_BASED_FLUX == ON){
+      out_file << "\n     -> East Flux Method: " << "Based on constrained reconstruction";
+    } else {	     	  
+      out_file << "\n     -> East Flux Method: " << "Solve a 'Riemann' problem";
+    }
+
+    if (NORTH_RECONSTRUCTION_BASED_FLUX == ON){
+      out_file << "\n     -> North Flux Method: " << "Based on constrained reconstruction";
+    } else {	     	  
+      out_file << "\n     -> North Flux Method: " << "Solve a 'Riemann' problem";
+    }
+  }
 
   // output boundary representation mode
   if (USE_HIGH_ORDER_GEOMETRIC_BOUNDARY_REPRESENTATION == OFF){
@@ -69,12 +111,6 @@ void HO_Grid2D_Execution_Mode::Print_Info(std::ostream & out_file){
     } // endif
 
   } // endif
-
-  if (SET_RECONSTRUCTION_BASED_FLUX == OFF){
-    out_file << "\n     -> Flux Calculation Method: " << "Solve a 'Riemann' problem";
-  } else {
-    out_file << "\n     -> Flux Calculation Method: " << "Use constrained reconstruction";
-  }
 
   if (EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH == ON){
     out_file << "\n     -> Geometric properties: " << "Special attention to Round Offs";
@@ -125,7 +161,21 @@ void HO_Grid2D_Execution_Mode::Broadcast(void){
   MPI::COMM_WORLD.Bcast(&USE_BROADCAST_MORE_THAN_RECOMPUTING,
  			1, 
  			MPI::SHORT, 0);
-  MPI::COMM_WORLD.Bcast(&SET_RECONSTRUCTION_BASED_FLUX,
+
+  // broadcast flux calculation methods
+  MPI::COMM_WORLD.Bcast(&CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&WEST_RECONSTRUCTION_BASED_FLUX,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&EAST_RECONSTRUCTION_BASED_FLUX,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&SOUTH_RECONSTRUCTION_BASED_FLUX,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&NORTH_RECONSTRUCTION_BASED_FLUX,
  			1, 
  			MPI::SHORT, 0);
 
