@@ -859,6 +859,7 @@ void Linear_Reconstruction_LeastSquares(Euler1D_UniformMesh *Soln,
  *                                                      
  ********************************************************/
 int dUdt_explicitEuler_upwind(Euler1D_UniformMesh *Soln,
+			      const CFD1D_Input_Parameters &IP,
 	                      const int Number_of_Cells,
 			      double &dtMin,
 			      const double &CFL_Number,
@@ -867,6 +868,7 @@ int dUdt_explicitEuler_upwind(Euler1D_UniformMesh *Soln,
 
     int i;
     Euler1D_cState Flux;
+    double d2Tdx2; //2nd derivative of temperature
 
     /* Evaluate the time rate of change of the solution
        (i.e., the solution residuals) using the first-order
@@ -907,6 +909,15 @@ int dUdt_explicitEuler_upwind(Euler1D_UniformMesh *Soln,
         Soln[i+1].dUdt += Flux/Soln[i+1].X.dx;
     } /* endfor */
     Soln[Number_of_Cells+1].dUdt = Euler1D_U_VACUUM;
+
+    /* If using diffusive heat transfer, add it to solution residual */
+    if(IP.heat_transfer_flag) {
+      for(int i = 1; i < Number_of_Cells; ++i) {
+	//assume uniform grid spacing
+	d2Tdx2 = ( Soln[i+1].W.T() - 2.0 * Soln[i].W.T() + Soln[i-1].W.T() ) / sqr(Soln[i].X.dx);
+	Soln[i].dUdt[3] += IP.thermal_conductivity*d2Tdx2;
+      }
+    }
 
     /* Update both conserved and primitive solution
        variables using explicit Euler method. */
@@ -1401,6 +1412,7 @@ int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
     double omega;
     Euler1D_pState Wl, Wr;
     Euler1D_cState Flux;
+    double d2Tdx2; //2nd derivative of temperature
 
     /* Perform second-order two-stage semi-implicit update of solution
        varibles for new time level. */
@@ -1554,6 +1566,15 @@ int dUdt_2stage_2ndOrder_upwind(Euler1D_UniformMesh *Soln,
 
         Soln[0].dUdt = Euler1D_U_VACUUM;
         Soln[IP.Number_of_Cells+1].dUdt = Euler1D_U_VACUUM;
+
+	/* If using diffusive heat transfer, add it to solution residual */
+	if(IP.heat_transfer_flag) {
+	  for(int i = 1; i < IP.Number_of_Cells; ++i) {
+	    //assume uniform grid spacing
+	    d2Tdx2 = ( Soln[i+1].W.T() - 2.0 * Soln[i].W.T() + Soln[i-1].W.T() ) / sqr(Soln[i].X.dx);
+	    Soln[i].dUdt[3] += IP.thermal_conductivity*d2Tdx2*omega*CFL_Number*Soln[i].dt;
+	  }
+	}
 
         /* Update solution variables for this stage. */
 

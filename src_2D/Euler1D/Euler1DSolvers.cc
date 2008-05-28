@@ -219,6 +219,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
          switch (Input_Parameters.i_Time_Integration) {
            case TIME_STEPPING_EXPLICIT_EULER:
              error_flag = dUdt_explicitEuler_upwind(Soln_ptr,
+						    Input_Parameters,
 						    Input_Parameters.Number_of_Cells,
 						    dtime,
 						    Input_Parameters.CFL_Number,
@@ -288,6 +289,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
              break;
            default:
              error_flag = dUdt_explicitEuler_upwind(Soln_ptr,
+						    Input_Parameters,
 						    Input_Parameters.Number_of_Cells,
 						    dtime,
 						    Input_Parameters.CFL_Number,
