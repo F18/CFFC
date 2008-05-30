@@ -5,6 +5,7 @@
 #include "Euler1D.h"
 #include "ExactSolutions/ExactSolutions.h"
 #include "Euler1D_HighOrder.h"
+#include "../Physics/Perfect_Gas_Shocks.h"
 
 /******************************************************//**
  * Routine: Allocate                                    
@@ -477,6 +478,22 @@ void ICs(Euler1D_UniformMesh *Soln,
       Soln[i].W[1] = AdaptiveGaussianQuadrature(ConvectionShapes,a,b,Soln[i].W[1],14)/Soln[i].X.dx;
       Soln[i].W[2] = 100.0;	// set velocity
       // set the conservative variables
+      Soln[i].U = U(Soln[i].W);
+    } /* endfor */
+    break;
+  case IC_STATIONARY_SHOCK_STRUCTURE :
+    Wl = Euler1D_pState(DENSITY_STDATM,
+			IP.mach_number * sqrt(Wl.g * PRESSURE_STDATM / DENSITY_STDATM),
+			PRESSURE_STDATM);
+    Wr = Euler1D_pState(Wl[1] * normal_shock_density_ratio(IP.mach_number,Wl.g),
+			Wl[2] * normal_shock_velocity_ratio(IP.mach_number,Wl.g),
+			Wl[3] * normal_shock_pressure_ratio(IP.mach_number,Wl.g));
+    for ( i = 0 ; i <= TC-1 ; ++i ) {
+      if (Soln[i].X.x <= ZERO) {
+	Soln[i].W = Wl;
+      } else {
+	Soln[i].W = Wr;
+      } /* end if */
       Soln[i].U = U(Soln[i].W);
     } /* endfor */
     break;
