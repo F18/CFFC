@@ -312,7 +312,7 @@ namespace tut
         Spectrum.Set_Spectrum(rho_member);
 //                
 //        //cout << endl<< endl << endl << "FILTERING..." << endl;
-        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,FILTER_TYPE_VASILYEV_LS);
+        LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data);
         //LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data,LES_FILTER_HASELBACHER);
 
 //        Soln_cState **** (Hexa_Block<Soln_pState,Soln_cState>::*dUdt_ptr) = NULL;
@@ -330,7 +330,7 @@ namespace tut
  //       if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_RESTART)
  //           myfilter.Write_to_file();
         
-        myfilter.transfer_function();
+        myfilter.transfer_function();//FILTER_CORNER_CELL);
 //        Spectrum.Get_Spectrum(p_member,"pressure");
 //
 //        error_flag = Hexa_Post_Processing(Data,Solution_Data);

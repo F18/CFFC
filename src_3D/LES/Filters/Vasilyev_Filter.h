@@ -18,7 +18,7 @@ class LES_Filter;
 #define G_CONSTRAINT 0
 #define DG_CONSTRAINT 1
 
-#define MAXIMUM_NUMBER_OF_EXTRA_CONSTRAINTS 10
+#define MAXIMUM_NUMBER_OF_EXTRA_CONSTRAINTS 20
 /**
  * CLASS: Vasilyev_Filter_Constraints
  */
@@ -72,7 +72,9 @@ public:
     
     void filter_tests(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell);
 
-    int filter_type(void) { return FILTER_TYPE_VASILYEV; }
+    int filter_type(void) { return FILTER_TYPE_VASILYEV; }    
+    string filter_name(void) { return "Vasilyev"; }
+
 };
 
 

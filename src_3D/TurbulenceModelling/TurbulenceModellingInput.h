@@ -57,6 +57,8 @@ class Turbulence_Modelling_Input_Parameters{
     double Filter_Width;                                        //!< Constant filter width
     int commutation_order;                                      //!< Commutation order of explicit filter
     int number_of_rings;                                        //!< Number of rings used in the explicit filter
+    double Target_Filter_Sharpness;                             //!< Sharpness of target filter
+    int Filter_Initial_Condition;                               //!< Flag defines to filter the initial condition
     //@}
     
     //@{ @name Spectrum related input parameters:
@@ -91,6 +93,8 @@ class Turbulence_Modelling_Input_Parameters{
       Filter_Width = ZERO;
       commutation_order = 3;
       number_of_rings = 2;
+      Target_Filter_Sharpness = -1;
+      Filter_Initial_Condition = ON;
     
       // Spectrum parameters
       strcpy(spectrum,"Pope");

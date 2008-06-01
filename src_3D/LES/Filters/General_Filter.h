@@ -25,6 +25,7 @@ public:
     virtual void filter_tests(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell) = 0;
     virtual void Reset_Filter_Weights(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk) = 0;
     virtual int filter_type(void) = 0;
+    virtual string filter_name(void) = 0;
     virtual void Write_to_file(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, ofstream &out_file) = 0;
     virtual void Read_from_file(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, ifstream &in_file) = 0;
 

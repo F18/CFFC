@@ -44,6 +44,7 @@ public:
     static int commutation_order;
     static double FGR;
     static int number_of_rings;
+    static double target_filter_sharpness;
     
     static bool restarted;
     
@@ -68,6 +69,7 @@ public:
         commutation_order = Solution_Data.Input.Turbulence_IP.commutation_order;
         number_of_rings = Solution_Data.Input.Turbulence_IP.number_of_rings;
         output_file_name = Solution_Data.Input.Output_File_Name;
+        target_filter_sharpness = Solution_Data.Input.Turbulence_IP.Target_Filter_Sharpness;
         filter_type = filter_flag;
         
         Create_filter();
@@ -84,6 +86,7 @@ public:
         number_of_rings = Solution_Data.Input.Turbulence_IP.number_of_rings;
         filter_type = Solution_Data.Input.Turbulence_IP.i_filter_type;
         output_file_name = Solution_Data.Input.Output_File_Name;
+        target_filter_sharpness = Solution_Data.Input.Turbulence_IP.Target_Filter_Sharpness;
 
         if (Solution_Data.Input.i_ICs == IC_RESTART && !restarted)
             filter_type = FILTER_TYPE_RESTART;
@@ -100,6 +103,7 @@ public:
         FGR = IPs.Turbulence_IP.FGR;
         commutation_order = IPs.Turbulence_IP.commutation_order;
         number_of_rings = IPs.Turbulence_IP.number_of_rings;
+        target_filter_sharpness = IPs.Turbulence_IP.Target_Filter_Sharpness;
         filter_type = filter_flag;
         
         Create_filter();
@@ -114,6 +118,7 @@ public:
         commutation_order = IPs.Turbulence_IP.commutation_order;
         number_of_rings = IPs.Turbulence_IP.number_of_rings;
         filter_type = IPs.Turbulence_IP.i_filter_type;
+        target_filter_sharpness = IPs.Turbulence_IP.Target_Filter_Sharpness;
         if (filter_type == FILTER_TYPE_RESTART) {
             cerr << "Cannot read explicit filter from file with this constructor";
         }
@@ -263,6 +268,9 @@ public:
     
     double filter_width;
     void transfer_function();
+    void transfer_function(int flag);
+    void transfer_function(int i, int j, int k);
+
     
     void reset(void);
     void test(void);
@@ -301,6 +309,9 @@ int LES_Filter<Soln_pState,Soln_cState>::number_of_rings = 2;
 
 template<typename Soln_pState, typename Soln_cState>
 double LES_Filter<Soln_pState,Soln_cState>::FGR = 2.0;
+
+template<typename Soln_pState, typename Soln_cState>
+double LES_Filter<Soln_pState,Soln_cState>::target_filter_sharpness = -1.0;
 
 template<typename Soln_pState, typename Soln_cState>
 int LES_Filter<Soln_pState,Soln_cState>::filter_variable_type = SOLN_CSTATE_4D;
@@ -376,20 +387,51 @@ double LES_Filter<Soln_pState,Soln_cState>::maximum_wavenumber() {
     return kmax;
 }
 
+#define FILTER_CORNER_CELL  0
+#define FILTER_FACE_CELL    1
+#define FILTER_EDGE_CELL    2
 
 template<typename Soln_pState, typename Soln_cState>
-void LES_Filter<Soln_pState,Soln_cState>::transfer_function() {
+void LES_Filter<Soln_pState,Soln_cState>::transfer_function(int flag) {
+    int Nghost;
     if (FILTER_ONLY_ONE_SOLNBLK) {
-        filter_ptr->transfer_function(*Solution_Blocks_ptr,Solution_Blocks_ptr->Grid.Cell[12][12][12]);            
+        Nghost = Solution_Blocks_ptr->Grid.Nghost;            
     }
     else if (LocalSolnBlkList_ptr->Nused() >= 1) {
         for (int nBlk = 0; nBlk <= LocalSolnBlkList_ptr->Nused(); ++nBlk ) {
             if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
-                filter_ptr->transfer_function(Solution_Blocks_ptr[nBlk],Solution_Blocks_ptr[nBlk].Grid.Cell[12][12][12]);            
+                Nghost = Solution_Blocks_ptr[nBlk].Grid.Nghost;            
+            }
+        }
+    }
+    switch (flag) {
+        case FILTER_CORNER_CELL:
+            transfer_function(Nghost, Nghost, Nghost);      break;
+        case FILTER_FACE_CELL:
+            transfer_function(Nghost, Nghost, number_of_rings);     break;
+        case FILTER_EDGE_CELL:
+            transfer_function(Nghost, number_of_rings, number_of_rings);    break;
+    }
+}
+
+template<typename Soln_pState, typename Soln_cState>
+void LES_Filter<Soln_pState,Soln_cState>::transfer_function(int i, int j, int k) {
+    if (FILTER_ONLY_ONE_SOLNBLK) {
+        filter_ptr->transfer_function(*Solution_Blocks_ptr,Solution_Blocks_ptr->Grid.Cell[i][j][k]);            
+    }
+    else if (LocalSolnBlkList_ptr->Nused() >= 1) {
+        for (int nBlk = 0; nBlk <= LocalSolnBlkList_ptr->Nused(); ++nBlk ) {
+            if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
+                filter_ptr->transfer_function(Solution_Blocks_ptr[nBlk],Solution_Blocks_ptr[nBlk].Grid.Cell[i][j][k]);            
                 return; // This makes sure it is called only once
             }
         }
     }
+}
+
+template<typename Soln_pState, typename Soln_cState>
+void LES_Filter<Soln_pState,Soln_cState>::transfer_function() {
+    transfer_function(number_of_rings,number_of_rings,number_of_rings);
 }
 
 template<typename Soln_pState, typename Soln_cState>

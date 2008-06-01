@@ -98,7 +98,7 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                                                      Velocity_Field);
         
         //if (false) { 
-        if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT) {
+        if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT && Solution_Data.Input.Turbulence_IP.Filter_Initial_Condition) {
             if (CFFC_Primary_MPI_Processor()) {
                 cout << endl;
                 cout << " ------------------------------------------------" << endl;

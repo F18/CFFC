@@ -14,7 +14,7 @@
 #include <cstdlib>     // defines the drand48() function
 #include <ctime>       // defines the time() function
 
-#define MAX_NUMBER_OF_NEIGHBOURING_RINGS_IN_LES_FILTER 6
+#define MAX_NUMBER_OF_NEIGHBOURING_RINGS_IN_LES_FILTER 8
 
 /**
  * CLASS : Neighbours

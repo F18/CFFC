@@ -19,20 +19,24 @@ Smagorinsky
 Smagorinsky_Coefficient = 
 0.18
 ##############################
-#       LES parameters       #
+#     Filter parameters      #
 ##############################
 Filter_Type =
-Implicit
+#Implicit
 #Vasilyev
 #Vasilyev_LS
-#Haselbacher
+Haselbacher
 #Restart
 Filter_Grid_Ratio =
 2.0
+Target_Filter_Sharpness = 
+0.1
+Filter_Initial_Condition =
+OFF
 Commutation_Order =
-2
+3
 Number_of_Rings =
-4
+3
 ##############################
 #     Spectrum parameters    #
 ##############################
@@ -54,11 +58,11 @@ OFF
 Grid_Type =
 Periodic_Box
 Number_of_Cells_Idir = 
-16
+32
 Number_of_Cells_Jdir =
-16
+32
 Number_of_Cells_Kdir =
-16
+32
 Number_of_Blocks_Idir = 
 2
 Number_of_Blocks_Jdir =
@@ -66,16 +70,19 @@ Number_of_Blocks_Jdir =
 Number_of_Blocks_Kdir =
 2
 Box_Width = 
-#0.0366
-6.28
+#20.37
+0.0366
+#6.28
 #3.14
 Box_Height =
-#0.0366
-6.28
+#20.37
+0.0366
+#6.28
 #3.14
 Box_Length = 
-#0.0366
-6.28
+#20.37
+0.0366
+#6.28
 #3.14
 ###################################
 #   Time stepping parameters      #

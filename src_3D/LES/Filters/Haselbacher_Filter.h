@@ -129,6 +129,7 @@ private:
     void filter_tests(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell);
 
     int filter_type(void) { return FILTER_TYPE_HASELBACHER; }
+    string filter_name(void) { return "Haselbacher"; }
     
     
 };
@@ -150,7 +151,10 @@ inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     DenseMatrix Z = (W*A).pseudo_inverse()*W;
     RowVector w = Z[0];
     
-    Vector3D kmax(16,16,16);
+    Vector3D kmax;
+    kmax.x = PI/theNeighbours.Delta.x;
+    kmax.y = PI/theNeighbours.Delta.y;
+    kmax.z = PI/theNeighbours.Delta.z;
     Apply_relaxation(theCell, theNeighbours, kmax, w);
     return w;
 }
@@ -624,24 +628,24 @@ template<typename Soln_pState, typename Soln_cState>
 double Haselbacher_Filter<Soln_pState,Soln_cState>::
 Calculate_relaxation_factor(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmax, RowVector &w) {
     
-    Complex G_max = G_function(theCell,theNeighbours,kmax,w);
+    double G_max = real(G_function(theCell,theNeighbours,kmax,w));
     
     double a,b,m,s,fa,fb,fm,f,w0;
     int counter;
-    a=-1.0, b=1.0;
+    a=-100, b=100;
     fa = real(a+(ONE-a)*G_max);
     fb = real(b+(ONE-b)*G_max);
     f = 100;
     counter = 0;
     while( fabs(f) >= 0.001 ) {
         m = a + (b-a)/TWO;
-        fm = real(m+(ONE-m)*G_max);
+        fm = m+(ONE-m)*G_max;
         
         if (fa<ZERO)    s = -ONE;
         else            s = ONE;
         w0 = m + (m-a)*s*fm/sqrt(fm*fm - fa*fb);
         
-        f = real(w0+(ONE-w0)*G_max);
+        f = (w0+(ONE-w0)*G_max);
         
         if (fa*fm < ZERO) { b = m ; fb = fm; } else { a = m ; fa = fm; }; 
         if (fa*f  < ZERO) { b = w0; fb = f ; } else { a = w0; fa = f; }; 
@@ -731,7 +735,7 @@ inline double Haselbacher_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio(int
             return temp; 
         }
         else {
-            cout << "commutation_order" << commutation_order << "with " << number_of_rings << " number of rings not supported, make curve fit." << endl;
+            cout << "commutation_order " << commutation_order << " with " << number_of_rings << " number of rings not supported, make curve fit." << endl;
         }
     } 
     

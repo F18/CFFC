@@ -45,6 +45,12 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(number_of_rings),
                           1,
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Filter_Initial_Condition),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Target_Filter_Sharpness),
+                          1,
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(spectrum,
                           TURBULENCEMODEL_INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
@@ -160,6 +166,21 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
     value >> Filter_Width;
     if ( Filter_Width < 0.0 )
       i_command = INVALID_INPUT_VALUE;
+      
+  } else if (strcmp(code, "Target_Filter_Sharpness") == 0) {
+      i_command = 132;
+      value >> Target_Filter_Sharpness;
+      
+  } else if (strcmp(code, "Filter_Initial_Condition") == 0) {
+      i_command = 132;
+      value >> value_string;
+      if (strcmp(value_string.c_str(), "ON") == 0) {
+          Filter_Initial_Condition = ON;
+      } else if(strcmp(value_string.c_str(), "OFF") == 0) {
+          Filter_Initial_Condition = OFF; 
+      } else {
+          i_command = INVALID_INPUT_VALUE;
+      }
       
   } else if (strcmp(code, "Commutation_Order") == 0) {
       i_command = 131;
