@@ -243,10 +243,6 @@ SRC_LEVERMORE1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D
                          $(SRC_SYSTEM) $(SRC_LEVERMORE1D) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) \
 	                 $(SRC_HIGH_ORDER_RECONSTRUCTION_1D)\
                          $(SRC_LEVERMORE1D_EXE) $(SRC_MPI) Euler1D/ExactSolutions/ExactSolutions.cc
-# Add Unit Testing to Levermore 1D:
-ifeq ($(TUT_TESTING),ON)
-  SRC_LEVERMORE1D_SOLVER += $(SRC_TUT)
-endif
 
 # BGK 1D:
 SRC_BGK1D = BGK1DVector.cc BGK1D.cc BGK1DSolvers.cc
@@ -267,11 +263,6 @@ SRC_BGK1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D)\
                    $(SRC_SYSTEM) $(SRC_BGK1D) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) \
 	           $(SRC_HIGH_ORDER_RECONSTRUCTION_1D)\
                    $(SRC_BGK1D_EXE) $(SRC_MPI) Euler1D/ExactSolutions/ExactSolutions.cc
-
-# Add Unit Testing to bgk 1D:
-ifeq ($(TUT_TESTING),ON)
-  SRC_BGK1D_SOLVER += $(SRC_TUT)
-endif
 
 # Advectdiffuse2D:
 SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
@@ -507,6 +498,8 @@ ifeq ($(TUT_TESTING),ON)
   SRC_BASE += $(SRC_TUT)
   SRC_SOLVERS1D += $(SRC_TUT)
   SRC_EULER1D_SOLVER += $(SRC_TUT)
+  SRC_LEVERMORE1D_SOLVER += $(SRC_TUT)
+  SRC_BGK1D_SOLVER += $(SRC_TUT)
 endif
 SRC_CFFC = $(SRC_BASE) \
            $(SRC_CFD1D_INPUT) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D) $(SRC_MHD1D) \
