@@ -563,6 +563,19 @@ public:
   const Soln_State & get_dUdy(void) { return dUdy; }
   //@}
 
+  //! @name Functions for positivity analysis of elliptic discretization:
+  //@{
+  //! @brief Compute Green-Gauss gradient at inter-cellular face for first parameter
+  template<class Soln_Block_Type>
+  void GreenGauss_FaceGradient_CentroidPathCartesianMesh(Soln_Block_Type &SolnBlk,
+							 const int &iCell, const int &jCell,
+							 const int &Face,
+							 Vector2D & GradU_face,
+							 const Soln_State &
+							 (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const = 
+							 &Soln_Block_Type::CellSolution);
+  //@}
+
   //! @name Error Evaluation:
   //@{
 
@@ -2852,6 +2865,125 @@ void HighOrder2D<SOLN_STATE>::SetSmoothnessIndicatorStencilForConstrainedReconst
 
     }// endfor
   }// endfor
+
+}
+
+
+/*! 
+ * Compute the gradient at an inter-cellular face using the first 
+ * solution parameter based on the Green-Gauss reconstruction.
+ * The path used to compute the gradient is formed by the centroids 
+ * of the first order neighbours.
+ * As an example, for EAST face the cells are: 0, S, SE, E, NE, N, 0
+ * where 0 is the (iCell,jCell) cell and the orientation of the other 
+ * cells is relative to 0 cell. 
+ * The last index repeats the first one to show that the path is closed. 
+ *
+ * \param [in] Face Specify which face the gradient is computed at.
+ * \param [out] GradU_face the gradient value is returned here 
+ *
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::
+GreenGauss_FaceGradient_CentroidPathCartesianMesh(Soln_Block_Type &SolnBlk,
+						  const int &iCell, const int &jCell,
+						  const int &Face,
+						  Vector2D & GradU_face,
+						  const Soln_State &
+						  (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const){
+
+  int StencilSize(7);		// the last entry is to close the path
+
+  int n;
+  int Info;
+  double PolygonArea, Length;
+  Vector2D Centroids[StencilSize], PolygonCentroid;
+  Vector2D normal;
+  IndexType i_index, j_index;
+  double Um;		// average solution along the current integration segment
+
+  i_index.reserve(StencilSize);
+  j_index.reserve(StencilSize);
+
+  // Form the supporting stencil differently for each face
+  switch (Face){
+
+  case NORTH:
+    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+    i_index.push_back(iCell+1); j_index.push_back(jCell  );
+    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
+    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
+    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
+    i_index.push_back(iCell-1); j_index.push_back(jCell  );
+    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+    break;
+
+  case SOUTH:
+    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+    i_index.push_back(iCell-1); j_index.push_back(jCell  );
+    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
+    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
+    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
+    i_index.push_back(iCell+1); j_index.push_back(jCell  );
+    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+    break;
+
+  case WEST:
+    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
+    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
+    i_index.push_back(iCell-1); j_index.push_back(jCell  );
+    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
+    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
+    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+
+    break;
+
+  case EAST:
+    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
+    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
+    i_index.push_back(iCell+1); j_index.push_back(jCell  );
+    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
+    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
+    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+
+    break;
+  }
+
+
+  // Form the array of the centroids
+  for (n = 0; n < i_index.size(); ++n){
+    Centroids[n] = CellCenter(i_index[n], j_index[n]);
+  }
+
+  // Determine the area and centroid of the closed centroid path
+  Info = polyCentroid(Centroids, StencilSize, PolygonCentroid, PolygonArea);
+
+  // Reset gradient
+  GradU_face = Vector2D(0);
+
+  // Calculate average gradient
+  for (n = 1; n < i_index.size(); ++n){
+
+    // Calculate segment length between centroids
+    Length = abs(Centroids[n] - Centroids[n-1]);
+
+    // Calculate normal
+    normal = Vector2D( (Centroids[n].y - Centroids[n-1].y),
+		       -(Centroids[n].x - Centroids[n-1].x ) )/Length;
+
+    // Calculate average solution with the first parameter
+    Um = 0.5*( (SolnBlk.*ReconstructedSoln)(i_index[n  ], j_index[n  ])[1] +
+	       (SolnBlk.*ReconstructedSoln)(i_index[n-1], j_index[n-1])[1] );
+
+    // Add segment contribution
+    GradU_face += normal * Um * Length;
+
+  }
+
+  GradU_face /= PolygonArea;
 
 }
 

@@ -1776,10 +1776,6 @@ namespace tut
 
     // == check correct initialization
     ensure("High-order variables", SolnBlk[0].HighOrderVariables() != NULL);
-    ensure_equals("Main High-order ", SolnBlk[0].HighOrderVariable(0).RecOrder(), 4);
-    ensure_equals("2nd High-order " , SolnBlk[0].HighOrderVariable(1).RecOrder(), 1);
-    ensure_equals("3rd High-order " , SolnBlk[0].HighOrderVariable(2).RecOrder(), 2);
-    ensure_equals("4th High-order " , SolnBlk[0].HighOrderVariable(3).RecOrder(), 3);
     
     // Apply initial condition
     ICs(SolnBlk,LocalList_Soln_Blocks,IP);
@@ -1787,7 +1783,7 @@ namespace tut
 
     // ===== Execution control =====
     RunRegression = ON;
-    LocalAnalysis = true;
+    LocalAnalysis = false;
     GlobalAnalysis = false;
     StencilOptimization = false;
     verbose = false;
@@ -1798,8 +1794,8 @@ namespace tut
     if (LocalAnalysis) {
     
       // Set cell indexes
-      iCell = 20;
-      jCell = 18;
+      iCell = 10;
+      jCell = 10;
 
       // Do analysis
       SolnBlk[0].Analyse_HighOrder_Positivity_For_LaplacianOperator(iCell,jCell,HighOrderVar);

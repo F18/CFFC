@@ -16,22 +16,22 @@
 Flow_Geometry_Type = 
 		Planar
 Grid_Type =
-       Deformed_Box
-      #   Rectangular_Box
-#Box_Width =
-#	2.00
-#Box_Height =
-#	2.00
-#X_Shift =
-#	3.0 0.0
-VertexSW =
-   2.0 1.0
-VertexSE =
-   3.8 -1.8
-VertexNE =
-   3.3 5.6
-VertexNW =
-   2.3 3.8
+      # Deformed_Box
+         Rectangular_Box
+Box_Width =
+	2.00
+Box_Height =
+	2.00
+X_Shift =
+	3.0 0.0
+# VertexSW =
+#    2.0 1.0
+# VertexSE =
+#    3.8 -1.8
+# VertexNE =
+#    3.3 5.6
+# VertexNW =
+#    2.3 3.8
 
 High_Order_Boundary =
               OFF
@@ -122,9 +122,9 @@ BC_West =
 	#########################
 
 Number_of_Cells_Idir = 
-	32
+	10
 Number_of_Cells_Jdir =
-	16
+	10
 Number_of_Blocks_Idir = 
 	1
 Number_of_Blocks_Jdir =
@@ -151,13 +151,13 @@ Reconstruction_Type =
 	CENO
 
 Space_Accuracy =
-        4
+        1
 
-Number_of_Auxiliary_Reconstructions =
-        3
-
-Auxiliary_Reconstruction_Orders =
-      1   2   3
+##Number_of_Auxiliary_Reconstructions =
+##        3
+##
+##Auxiliary_Reconstruction_Orders =
+##      1   2   3
 
 CENO_Smoothness_Indicator =
      Use_First_Neighbours
@@ -178,7 +178,7 @@ CENO_Smoothness_Indicator =
 CENO_Use_Geom_Weighting_For_Smoothness_Analysis =
          Yes
 CENO_Square_Geom_Weighting =
-         No
+         Yes
 CENO_Apply_Geom_Weighting =
          Yes
 CENO_Absolute_Epsilon =
