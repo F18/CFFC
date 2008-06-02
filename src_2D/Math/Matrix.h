@@ -454,6 +454,8 @@ class ColumnVector: public MV_Vector_double{
     friend double operator *(const ColumnVector &CVec1, const ColumnVector &CVec2);
     friend double operator *(const RowVector &RVec, const ColumnVector &CVec);
     friend ColumnVector operator *(const double &a, const ColumnVector &CVec1);
+    /* term-wise product */
+    ColumnVector  operator ^(const ColumnVector &CVec2);
 
     /* Relational operators. */
     friend int operator ==(const ColumnVector &CVec1, const ColumnVector &CVec2);
@@ -597,6 +599,14 @@ inline ColumnVector operator /(const ColumnVector &CVec, const double &a) {
    return (cv);
 }
 
+inline ColumnVector ColumnVector::operator ^(const ColumnVector &CVec2) {
+  int i, m; m = size(); ColumnVector cv(m);
+  for ( i = 0; i <= m-1; ++i ) {
+    cv(i) = (*this)(i)*CVec2(i);
+  } /* endfor */
+  return (cv);
+}
+
 inline ColumnVector operator *(const double &a, const ColumnVector &CVec) {
    int i, m; m = CVec.size(); ColumnVector cv(m);
    for ( i = 0; i <= m-1; ++i ) {
@@ -729,6 +739,11 @@ inline RowVector transpose(const ColumnVector &CVec) {
  * pseudo_inverse -- Returns the pseudo-inverse of      *
  *                   a dense matrix MxN.                *
  *                                                      *
+ *  eigenvalues   -- Return a vector containnig the     *
+ *                   eigenvalues of an NxN matrix.      *
+ *                                                      *
+ *    inverse     -- Return the inverse of a matrix     *
+ *                   using LAPACK's dgetri function.    *
  * Member operators                                     *
  *      M  -- a regular mxn dense matrix                *
  *      RV -- a row vector                              *
@@ -814,6 +829,14 @@ class DenseMatrix: public MV_ColMat_double{
     friend DenseMatrix pseudo_inverse(const DenseMatrix &A);
     void pseudo_inverse_override(void);
     friend void pseudo_inverse_override(DenseMatrix &A);
+
+    /* Get a vector containing the eigenvalues of an NxN matrix */
+    ColumnVector eigenvalues(void) const;
+    ColumnVector eigenvalues_overwrite(void);
+
+    /* Get matrix inverse */
+    DenseMatrix inverse(void) const;
+    void inverse_overwrite(void);
 
     /* Compute the Frobenious norm of the matrix ||A|| = sqrt(SUM_i SUM_j (A(i,j)^2) ) */
     double NormFro (void) const;
@@ -990,6 +1013,25 @@ inline DenseMatrix pseudo_inverse(const DenseMatrix &A){
  *******************************************************************/
 inline void pseudo_inverse_override(DenseMatrix &A){
   return A.pseudo_inverse_override();
+}
+
+/*************************************************************
+ * eigenvalues -- Return a ColumnVector containng the        *
+ *                eigenvalues of an NxN matrix.              *
+ *************************************************************/
+inline ColumnVector DenseMatrix::eigenvalues(void) const{
+  DenseMatrix Copy(*this);
+  return Copy.eigenvalues_overwrite();
+}
+
+/*************************************************************
+ * eigenvalues -- Return a ColumnVector containng the        *
+ *                eigenvalues of an NxN matrix.              *
+ *************************************************************/
+inline DenseMatrix DenseMatrix::inverse(void) const {
+  DenseMatrix Copy(*this);
+  Copy.inverse_overwrite();
+  return Copy;
 }
 
 /****************************************************************

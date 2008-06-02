@@ -30,7 +30,7 @@ int Read_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
     char prefix[256], extension[256], restart_file_name[256], gas_type[256];
     char *restart_file_name_ptr;
     ifstream restart_file;
-    double time0, alpha_m;
+    double time0, alpha_m, alpha_t, T_damping;
     CPUTime cpu_time0;
     double pr;
 
@@ -71,6 +71,8 @@ int Read_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
           restart_file.getline(gas_type, sizeof(gas_type));
           restart_file.setf(ios::skipws);
 	  restart_file >> alpha_m;
+	  restart_file >> alpha_t;
+	  restart_file >> T_damping;
 	  restart_file >> pr;
           restart_file.unsetf(ios::skipws);
           if (!i_new_time_set) {
@@ -78,12 +80,17 @@ int Read_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
              Input_Parameters.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;
 	     Time = time0;
              CPU_Time.cput = cpu_time0.cput;
-	     Input_Parameters.alpha_m    = alpha_m;
-	     Input_Parameters.Wo.alpha_m = alpha_m;
-	     Input_Parameters.Uo.alpha_m = alpha_m;
-	     Input_Parameters.pr    = pr;
-	     Input_Parameters.Wo.pr = pr;
-	     Input_Parameters.Uo.pr = pr;
+	     Input_Parameters.alpha_m      = alpha_m;
+	     Input_Parameters.Wo.alpha_m   = alpha_m;
+	     Input_Parameters.Uo.alpha_m   = alpha_m;
+	     Input_Parameters.alpha_t      = alpha_t;
+	     Input_Parameters.Wo.alpha_t   = alpha_t;
+	     Input_Parameters.Uo.alpha_t   = alpha_t;
+	     Input_Parameters.T_damping    = T_damping;
+	     Input_Parameters.Wo.T_damping = T_damping;
+	     Input_Parameters.pr           = pr;
+	     Input_Parameters.Wo.pr        = pr;
+	     Input_Parameters.Uo.pr        = pr;
              if (strcmp(gas_type, Input_Parameters.Gas_Type) != 0) {
                 strcpy(Input_Parameters.Gas_Type, 
                        gas_type);
@@ -179,6 +186,8 @@ int Write_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
           restart_file << Input_Parameters.Gas_Type << "\n";
           restart_file.setf(ios::scientific);
 	  restart_file << Input_Parameters.Wo.alpha_m << "\n";
+	  restart_file << Input_Parameters.Wo.alpha_t << "\n";
+	  restart_file << Input_Parameters.Wo.T_damping << "\n";
 	  restart_file << Input_Parameters.Wo.pr << "\n";
           restart_file.unsetf(ios::scientific);
           restart_file << setprecision(14) << Soln_ptr[i];
@@ -765,11 +774,14 @@ int Output_Shock_Structure(Gaussian2D_Quad_Block *Soln_ptr,
 			   const int Number_of_Time_Steps,
 			   const double &Time) {
 
-    int i, j, i_output_title;
+    int i, j, i_output_title, jj;
     char prefix[256], extension[256], output_file_name[256];
     char *output_file_name_ptr;
     ofstream output_file;    
     double y(MILLION), y_tol(ZERO);
+    double x_max(0.0), x_min(0.0);
+
+    Gaussian2D_pState Wu, Wd;  //up- and down-stream condition
 
     /* Determine prefix of output data file names. */
 
@@ -801,14 +813,29 @@ int Output_Shock_Structure(Gaussian2D_Quad_Block *Soln_ptr,
 
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+
 	for( j = Soln_ptr[i].Grid.JCl; j <= Soln_ptr[i].Grid.JCu; ++j) {
-	  if(Soln_ptr[i].Grid.Cell[Soln_ptr[i].ICl][j].Xc.y < y){
+	  if(Soln_ptr[i].Grid.Cell[Soln_ptr[i].ICl][j].Xc.y > 0.0 &&
+	     Soln_ptr[i].Grid.Cell[Soln_ptr[i].ICl][j].Xc.y < y){
 	    y = Soln_ptr[i].Grid.Cell[Soln_ptr[i].ICl][j].Xc.y;
 	    y_tol = Soln_ptr[i].Grid.lfaceE(Soln_ptr[i].ICl,j)/4.0;
+	  }
+
+	  jj = (Soln_ptr[i].Grid.JCl+Soln_ptr[i].Grid.JCu)/2;
+
+	  if(Soln_ptr[i].Grid.Node[Soln_ptr[i].Grid.INl][jj].X.x < x_min) {
+	    Wu = Soln_ptr[i].WoW[jj];
+	    x_min = Soln_ptr[i].Grid.Node[Soln_ptr[i].Grid.INl][jj].X.x;
+	  }
+	  if(Soln_ptr[i].Grid.Node[Soln_ptr[i].Grid.INu][jj].X.x > x_max) {
+	    Wd = Soln_ptr[i].WoE[jj];
+	    x_max = Soln_ptr[i].Grid.Node[Soln_ptr[i].Grid.INu][jj].X.x;
 	  }
 	}
       }
     }
+
+    cout << endl << "Upstream state:" << endl << Wu << endl << "Downstream state:" << endl << Wd << endl;
 
     /* Write the solution data for each solution block. */
 
@@ -823,7 +850,9 @@ int Output_Shock_Structure(Gaussian2D_Quad_Block *Soln_ptr,
 				i_output_title,
 				output_file,
 				y,
-				y_tol);
+				y_tol,
+				Wu,
+				Wd);
 	 //if (i_output_title) i_output_title = 0;
        } /* endif */
     }  /* endfor */

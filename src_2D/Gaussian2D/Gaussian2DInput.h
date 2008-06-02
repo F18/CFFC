@@ -174,6 +174,7 @@ class Gaussian2D_Input_Parameters{
 
   //Boundary information
   double alpha_m, alpha_t;
+  double T_damping;
   double Ramp_by_Mach_Number;
   int Number_of_Time_Steps_to_Ramp;
   char Boundary_Conditions_Specified[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
@@ -481,6 +482,8 @@ inline ostream &operator << (ostream &out_file,
       case GRID_CIRCULAR_CYLINDER :
         out_file << "\n  -> Cylinder Radius (m): " 
                  << IP.Cylinder_Radius;
+        out_file << "\n  -> Cylinder Outer Radius (m): " 
+                 << IP.Cylinder_Radius2;
         break;
       case GRID_ELLIPSE :
         out_file << "\n  -> Width of Ellipse along x-axis (m): " 
@@ -576,6 +579,8 @@ inline ostream &operator << (ostream &out_file,
 	     << IP.alpha_m;
     out_file << "\n  -> Thermal Accomodation Coefficient: "
 	     << IP.alpha_t;
+    out_file << "\n  -> Damping for Slip_T Boundary conditions: "
+	     << IP.T_damping;
     if(IP.Number_of_Initial_Mesh_Refinements >0)
     out_file << "\n  -> Number of Initial Mesh Refinements : " 
              << IP.Number_of_Initial_Mesh_Refinements;
