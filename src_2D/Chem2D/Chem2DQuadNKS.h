@@ -418,38 +418,38 @@ normalize_Preconditioner_dFdU(DenseMatrix &dFdU)
 /************ GMRES REQUIRED SPECIALIZATIONS & FUNCTIONS ****************/
 /************************************************************************/   
 
-/**************************************************************************
- * Routine: check_epsilon                                                 *
- **************************************************************************/
+// /**************************************************************************
+//  * Routine: check_epsilon                                                 *
+//  **************************************************************************/
 
-//Possible HACK to avoid -ve species
-template <>inline double GMRES_Block<Chem2D_pState,
-				     Chem2D_Quad_Block,
-				     Chem2D_Input_Parameters>::
-check_epsilon(double &epsilon_orig){
+// //Possible HACK to avoid -ve species
+// template <>inline double GMRES_Block<Chem2D_pState,
+// 				     Chem2D_Quad_Block,
+// 				     Chem2D_Input_Parameters>::
+// check_epsilon(double &epsilon_orig){
 
-  double epsilon_new(epsilon_orig);
+//   double epsilon_new(epsilon_orig);
 
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {   
-      for(int varindex = 6; varindex < blocksize; varindex++){	//don't really need to check all, only species!!!
-	// Uo + ep*W < 0
-	if( SolnBlk->Uo[i][j][varindex+1] + denormalizeU( epsilon_new*W[search_directions*scalar_dim+index(i,j,varindex)], varindex) < ZERO){
-	  epsilon_new =  -SolnBlk->Uo[i][j][varindex+1]/denormalizeU(W[search_directions*scalar_dim+index(i,j,varindex)], varindex);
-	  if(epsilon_new <= ZERO){
-	    cout<<"\n epsilon_fail @ "<<i<<" "<<j<<" "<<varindex<< " "<<epsilon_new;
-	    epsilon_new = epsilon_orig;
-	  } else {
-	    epsilon_new = min(epsilon_new,epsilon_orig);
-	    cout<<"\n new "<<epsilon_new<<" orig "<<epsilon_orig<<i<<" "<<j<<" "<<varindex;
-	  }
-	}
-      }
-    }
-  }
+//   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
+//     for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {   
+//       for(int varindex = 6; varindex < blocksize; varindex++){	//don't really need to check all, only species!!!
+// 	// Uo + ep*W < 0
+// 	if( SolnBlk->Uo[i][j][varindex+1] + denormalizeU( epsilon_new*W[search_directions*scalar_dim+index(i,j,varindex)], varindex) < ZERO){
+// 	  epsilon_new =  -SolnBlk->Uo[i][j][varindex+1]/denormalizeU(W[search_directions*scalar_dim+index(i,j,varindex)], varindex);
+// 	  if(epsilon_new <= ZERO){
+// 	    cout<<"\n epsilon_fail @ "<<i<<" "<<j<<" "<<varindex<< " "<<epsilon_new;
+// 	    epsilon_new = epsilon_orig;
+// 	  } else {
+// 	    epsilon_new = min(epsilon_new,epsilon_orig);
+// 	    cout<<"\n new "<<epsilon_new<<" orig "<<epsilon_orig<<i<<" "<<j<<" "<<varindex;
+// 	  }
+// 	}
+//       }
+//     }
+//   }
      
-  return epsilon_new;
-}
+//   return epsilon_new;
+// }
 
 
 /**************************************************************************
@@ -462,9 +462,9 @@ template <>inline void GMRES_Block<Chem2D_pState,
 calculate_perturbed_residual(const double &epsilon, const int &order)
 {    
   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {   
+    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {         
 
-      if(order == SECOND_ORDER){
+      if(order == SECOND_ORDER || order == SECOND_ORDER_RESTART){
 	//store R(Uo + perturb) 
 	SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
       }
@@ -473,89 +473,30 @@ calculate_perturbed_residual(const double &epsilon, const int &order)
 	SolnBlk->U[i][j][varindex+1] = perturbed_resiudal(epsilon,order,i,j,varindex);
       } 
  
-  //     //TEST OF RESETTING W AS WELL AS Cs 
-//       double sum(ZERO);
-//       for(int q = SolnBlk->U[i][j].NUM_VAR_CHEM2D-SolnBlk->U[i][j].ns+1; q< SolnBlk->U[i][j].NUM_VAR_CHEM2D; q++){
-// 	if(SolnBlk->U[i][j][q] < ZERO){  //CHECK FOR -ve species
-// 	  SolnBlk->U[i][j][q] = SolnBlk->Uo[i][j][q];   //cout<<"\n Resetting "<<i<<" "<<j<<" "<<q;
-// 	  W[search_directions*scalar_dim+index(i,j,q-1)] = ZERO;   
-// 	}
-// 	sum += SolnBlk->U[i][j][q]/SolnBlk->U[i][j].rho;  
-//       }
-//       SolnBlk->U[i][j][SolnBlk->U[i][j].NUM_VAR_CHEM2D] = SolnBlk->U[i][j].rho*(ONE - sum);
+      ///////////////////////////////////////////////////////////////////////    
+      double sum(ZERO);
+      for(int q = SolnBlk->U[i][j].NUM_VAR_CHEM2D-SolnBlk->U[i][j].ns+1; q< SolnBlk->U[i][j].NUM_VAR_CHEM2D; q++){
+	if(SolnBlk->U[i][j][q] < ZERO){                 //CHECK FOR -ve species
+	  SolnBlk->U[i][j][q] = SolnBlk->Uo[i][j][q];   //Flag for use later  
+//  	  U_mod_Flag[index(i,j,q-1)] = true;  
+// 	  //W[search_directions*scalar_dim+index(i,j,q-1)] = ZERO;   	  
+//  	} else {
+//  	  U_mod_Flag[index(i,j,q-1)] = false;  
+ 	}
+	sum += SolnBlk->U[i][j][q]/SolnBlk->U[i][j].rho;  
+      }
+      SolnBlk->U[i][j][SolnBlk->U[i][j].NUM_VAR_CHEM2D] = SolnBlk->U[i][j].rho*(ONE - sum);
+      ///////////////////////////////////////////////////////////////////////
 
-      //Chem2D spec_check to make sure species (Uo + epsilon*W(i)) > ZERO , ie physical for dUdt calc 
-      if(!SolnBlk->U[i][j].negative_speccheck(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual"; exit(1); }    
+// //       REGULAR/ORIGINAL
+// //       Chem2D spec_check to make sure species (Uo + epsilon*W(i)) > ZERO , ie physical for dUdt calc 
+// 	if(!SolnBlk->U[i][j].negative_speccheck(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual"; exit(1); }    
 
       /* Update primitive variables. */
       SolnBlk->W[i][j] = SolnBlk->U[i][j].W();      
     }
   }  
-}
-
-/**************************************************************************
- * Routine: pertubed_residual                                             *
- **************************************************************************/
-// Returns  Soln_ptr.Uo +/-  epsilon*W
-template <> inline double GMRES_Block<Chem2D_pState,
-				      Chem2D_Quad_Block,
-				      Chem2D_Input_Parameters>::
-perturbed_resiudal(const double &epsilon, const int order, const int i, const int j, const int varindex)
-{
-
-  if(!Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Chem){
-
-    switch(order){
-    case FIRST_ORDER:
-      return SolnBlk->Uo[i][j][varindex+1] + 
-	denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex);
-      
-    case SECOND_ORDER:
-      return SolnBlk->Uo[i][j][varindex+1] - 
-	denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex); 
-      
-    case FIRST_ORDER_RESTART:
-      return  SolnBlk->Uo[i][j][varindex+1] + 
-	denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
-      
-    case SECOND_ORDER_RESTART:
-      return  SolnBlk->Uo[i][j][varindex+1] -
-	denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
-
-    default:
-      cerr<<" \n NOT A VALID ORDER in GMRES_Block::perturbed_resiudal "; exit(1);
-    };
-  
-    // Modification Attempt to avoid -ve species
-  } else {
-    
-    switch(order){
-    case FIRST_ORDER:
-      return SolnBlk->Uo[i][j][varindex+1] + 
-	epsilon*denormalizeU(W[search_directions*scalar_dim+index(i,j,varindex)] + 
-			     fabs(W[search_directions*scalar_dim+index(i,j,varindex)]), varindex);
-      
-    case SECOND_ORDER:
-      return SolnBlk->Uo[i][j][varindex+1] - 
-	epsilon*denormalizeU(fabs(W[search_directions*scalar_dim+index(i,j,varindex)]) -
-			     W[search_directions*scalar_dim+index(i,j,varindex)], varindex); 
-      
-    case FIRST_ORDER_RESTART:
-      return  SolnBlk->Uo[i][j][varindex+1] + 
-	epsilon*denormalizeU( x[index(i,j,varindex)] + fabs(x[index(i,j,varindex)]), varindex);
-      
-    case SECOND_ORDER_RESTART:
-      return  SolnBlk->Uo[i][j][varindex+1] -
-	epsilon*denormalizeU( fabs(x[index(i,j,varindex)]) - x[index(i,j,varindex)], varindex);
-
-    default:
-      cerr<<" \n NOT A VALID ORDER in GMRES_Block::perturbed_resiudal "; exit(1);
-    };
-   
-  }
-
-  return ZERO; //make compiler happy
-}
+} 
 
 /********************************************************
  * Routine: calculate_Matrix_Free with Preconditioning  *
@@ -577,7 +518,7 @@ calculate_Matrix_Free(const double &epsilon)
     if ( SolnBlk->Grid.BCtypeW[JCl] == BC_NONE)  ICl_overlap = overlap;
   }
 	   
-  static DenseMatrix Precon(blocksize,blocksize,ZERO); //SHOULD MOVE THIS OUT OF HERE AND STORE SOMEWHERE TO AVOID RECREATING EACH TIME!!
+  static DenseMatrix Precon(blocksize,blocksize,ZERO); 
 
   // Non-Overlap Ghost Cells R(U) already set to zero by dUdt calculation  
   /* V(i+1) = ( R(U+epsilon*W) - b) / epsilon - (gamma) z / h */
@@ -598,11 +539,14 @@ calculate_Matrix_Free(const double &epsilon)
 	
 	if( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == FIRST_ORDER ){
 	  //forwards differenceing R(U+epsilon) - R(U) / epsilon
-	  V[(search_directions+1)*scalar_dim+iter] = (normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) - b[iter]) / epsilon ;
+	  V[(search_directions+1)*scalar_dim+iter] = (normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) - b[iter]) / epsilon ;	  
 	} else if ( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == SECOND_ORDER ){
 	  //2nd order R(U+epsilon) - R(U-epsilon) / 2*epsilon
 	  V[(search_directions+1)*scalar_dim+iter] = normalizeR( SolnBlk->dUdt[i][j][1][k+1] - SolnBlk->dUdt[i][j][0][k+1],k)/(TWO*epsilon);
 	}
+
+// 	// USE x which is 0 unless restart
+// 	if(U_mod_Flag[iter]) V[(search_directions+1)*scalar_dim+iter] = x[iter]; 
 
 	//Finite Time Stepping
 	if(Input_Parameters->Preconditioning){   //gamma(nxn)*z(nx1)/h(1x)    
@@ -618,15 +562,6 @@ calculate_Matrix_Free(const double &epsilon)
 			      * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
 	}      
 	
-
-// #ifdef _NKS_VERBOSE_NAN_CHECK
-// 	// nan check most commonly caused by nans in dUdt !!!!
-// 	if (V[(search_directions+1)*scalar_dim+iter] != V[(search_directions+1)*scalar_dim+iter] ){
-// 	  cout<<"\n nan in V[ "<<(search_directions+1)*scalar_dim+iter<<"] at "<<i<<" "<<j<<" "<<k
-// 	      <<" dUdt "<<  normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) <<" b "<< b[iter]
-// 	      <<" z "<<W[(search_directions)*scalar_dim + iter]<< " h "<<( SolnBlk->dt[i][j]*ao);
-// 	}
-// #endif
       } 
     } 
   } 
@@ -638,7 +573,7 @@ calculate_Matrix_Free(const double &epsilon)
 template <>inline void GMRES_Block<Chem2D_pState,
 				   Chem2D_Quad_Block,
 				   Chem2D_Input_Parameters>::
-calculate_Matrix_Free_Restart(const double &epsilon)
+calculate_Matrix_Free_Restart(const double &epsilon, const bool GMRES_check)
 {
   //Taking into acount NKS overlap
   int JCl_overlap = 0; int JCu_overlap = 0;
@@ -671,11 +606,14 @@ calculate_Matrix_Free_Restart(const double &epsilon)
 	int iter = index(i,j,k);		
 	//Matrix Free V(i+1) 
 
-	if( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == FIRST_ORDER ){
-	  V[iter] = (normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) - b[iter])/ epsilon ;
+	if( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == FIRST_ORDER || GMRES_check ){
+	  V[iter] = (normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) - b[iter])/ epsilon ; 
 	} else if ( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == SECOND_ORDER ){
 	  V[iter] = normalizeR( SolnBlk->dUdt[i][j][1][k+1] - SolnBlk->dUdt[i][j][0][k+1],k)/(TWO*epsilon);
 	}
+
+// 	// USE x instead of Zero ??
+// 	if(U_mod_Flag[iter]) V[iter] = x[iter];
 
 	// FOR GMRES_CHECK, don't need the -x/h ????
 

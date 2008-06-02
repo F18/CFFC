@@ -26,9 +26,7 @@ using namespace std;
  *       s      -- Return residual                         *
  *      cs      -- Return cos vector                       *
  *      sn      -- Return sin vector                       *
- *       W      -- Return Az vector                        *
- *       z      -- Return inversion of preconditioner      *
- *                  times v vector                         *
+ *       W      -- Return Az vector M^(-1)*z               *
  *       b      -- Return RHS vector                       *
  *       x      -- Return solution vector, delta u         *
  *       V      -- Return Krylov search direction vector   *
@@ -40,9 +38,6 @@ using namespace std;
  *                   iterations                            *
  *                                                         *
  * ** MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING **     *
- * vector_swtich -- Return vector switch                   *
- *                  Note: 0 for x vector (solution)        *
- *                        1 for z vector (z = Minv * v)    *
  * search_directions -- Return number of search            *
  *                      directions                         *
  *     NCi      -- Return number of cells in               *
@@ -93,21 +88,24 @@ public:
   /* Solutition INFORMATION THAT DOESN'T CHANGE , could be static ???*/
   int                     restart; // number of gmres iterations before restart
   int                     overlap; // level of overlap  
-  int                   blocksize; // number of variables            //Soln_ptr->NumVar();
+  int                   blocksize; // number of variables            
   int                  scalar_dim; // xpts * ypts * blocksize
 
   /* USED INTERNAL TO GMRES ROUTINE */
   int           search_directions; // number of search directions
 
   /* GMRES SOLUTION VECTORS ie DATA */
-  double *                      s; // residual vector -> I think
+  double *                      s; // residual vector 
   double *                     cs; // cos vector
   double *                     sn; // sin vector
   double *                      V; // Krylov search direction vector
   double *                      W; // A*z -> M^(-1)*x
   double *                      H; // Hessenberg matrix
-  double *                      b; // RHS vector R(U)
+  double *                      b; // RHS vector R(Uo)
   double *                      x; // initial guess of delta u
+
+  /* GMRES Bookkeeping array  */
+  bool *               U_mod_Flag;  // Flag for nonphysical Uo's from perturbation
     
   /* MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING. */
   int                 NCi,ICl,ICu; // i-direction cell counters.
@@ -130,11 +128,11 @@ public:
     normalize_valuesR = NULL; normalize_valuesU = NULL; 
     s = NULL;  cs = NULL;  sn = NULL;  
     b = NULL;  x = NULL; H = NULL;  W = NULL;  V = NULL; 
-    //vector_switch = 100; 
     NCi = 0;  ICl = 0; ICu = 0; 
     NCj = 0;  JCl = 0; JCu = 0; Nghost = 0;
     SolnBlk = NULL;      
     DTS_ptr = NULL;
+    U_mod_Flag = NULL;
   }
   
   // GMRES_Block(const GMRES_Block &G); //FIX so that it actually copies, not just passes pointers!!!!!!!!!!!!
@@ -153,7 +151,7 @@ public:
   void calculate_perturbed_residual(const double &epsilon, const int &order); 
   double perturbed_resiudal(const double &epsilon,const int order, const int i, const int j, const int varindex);
   void calculate_Matrix_Free(const double &epsilon);
-  void calculate_Matrix_Free_Restart(const double &epsilon);
+  void calculate_Matrix_Free_Restart(const double &epsilon, const bool GMRES_check);
     
   double check_epsilon(double &epsilon){ return epsilon;} // does nothing be default.
 
@@ -310,7 +308,7 @@ allocate( const int m, const int overlap_cells,
   //Check if a valid solution block and GMRES parameters
   assert(restart > 1);  assert(NCi > 1);  assert(NCj > 1);
   blocksize = _blocksize; 
-	// scalar_dim could be a static variable, yes...?
+  // scalar_dim could be a static variable, yes...?
   scalar_dim = NCi * NCj * blocksize;
 
   // Allocate Memory
@@ -324,6 +322,8 @@ allocate( const int m, const int overlap_cells,
    H = new double[restart*(restart+1)];
    W = new double[restart * scalar_dim];
    V = new double[(restart + 1) * scalar_dim];
+
+   U_mod_Flag = new bool[scalar_dim];
 
    //Setup Normalizing Values Based on Solution Block Type
    if(normalize){
@@ -353,6 +353,8 @@ deallocate()
   if(H != NULL)      delete [] H;      H = NULL;     
   if(W != NULL)      delete [] W;      W = NULL; 
   if(V != NULL)      delete [] V;      V = NULL; 
+  if(U_mod_Flag != NULL)   delete [] U_mod_Flag;  U_mod_Flag = NULL; 
+   
 }
 
 /**************************************************************************
@@ -364,7 +366,7 @@ Initialize(void)
 {
   /* Initialize all GMRES variables except b, which is copied from dUdt */  
   for (int i=0;i<restart;++i) {  cs[i] = ZERO; sn[i] = ZERO; s[i] = ZERO;  }
-  for (int i=0;i<scalar_dim;++i){  x[i] = ZERO; b[i] = ZERO; }
+  for (int i=0;i<scalar_dim;++i){  x[i] = ZERO; b[i] = ZERO; U_mod_Flag[i]=false; }
   for (int i=0;i<(restart*(restart+1));++i)         H[i] = ZERO;
   for (int i=0;i< restart*scalar_dim;++i)           W[i] = ZERO;
   for (int i=0;i<((restart + 1) * scalar_dim);++i)  V[i] = ZERO;
@@ -390,7 +392,7 @@ calculate_perturbed_residual(const double &epsilon, const int &order)
   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
     for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) { 
 
-      if(order == SECOND_ORDER){
+      if(order == SECOND_ORDER || order == SECOND_ORDER_RESTART ){
 	//store R(Uo + perturb) 
 	SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
       }
@@ -487,7 +489,7 @@ calculate_Matrix_Free(const double &epsilon) {
 
 template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE> 
 inline void GMRES_Block<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
-calculate_Matrix_Free_Restart(const double &epsilon) {
+calculate_Matrix_Free_Restart(const double &epsilon, const bool GMRES_check) {
   //Taking into acount NKS overlap
   int JCl_overlap = 0; int JCu_overlap = 0;
   int ICu_overlap = 0; int ICl_overlap = 0;		  
@@ -498,14 +500,14 @@ calculate_Matrix_Free_Restart(const double &epsilon) {
     if ( SolnBlk->Grid.BCtypeW[JCl] == BC_NONE)  ICl_overlap = overlap;
   }
 	  
-  // Non-Overlap Ghost Cells R(U) already set to zero by dUdt   
+  // Non-Overlap Ghost Cells R(U) already set to zero by dUdt    
   /* V(0) = ( R(U + epsilon*W) - b) / epsilon - x / h */
   for (int j = JCl - JCl_overlap; j <= JCu + JCu_overlap; j++) {
     for (int i = ICl - ICl_overlap; i <= ICu + ICu_overlap; i++) {
       for(int k =0; k < blocksize; k++){	
 	int iter = index(i,j,k);		
 	//Matrix Free V(0) 
-	if( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == FIRST_ORDER ){
+	if( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == FIRST_ORDER || GMRES_check ){
 	  //forwards differenceing R(U+epsilon) - R(U) / epsilon
 	  V[iter] = (normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) - b[iter]) / epsilon ;
 	} else if ( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == SECOND_ORDER ){
@@ -794,7 +796,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       double *res_cputime, 
       int *res_nevals) {
 
-  int m1 = Input_Parameters->NKS_IP.GMRES_Restart+1; //restart+1 used in H calculation
+  const int m1 = Input_Parameters->NKS_IP.GMRES_Restart+1; //restart+1 used in H calculation
   int error_flag(0);  
   double resid0(ZERO);
   double beta(ZERO);
@@ -802,7 +804,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
   double total_norm_z(ZERO);
 
   int met_tol(0);
-  bool do_one_more_iter_for_check(false);
+  bool do_one_more_iter_for_check(false); 
 
   //FORTRAN NAMES
   integer inc(1);  // vector stride is always 1
@@ -931,7 +933,8 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       (*res_nevals)++;
       
       /////////////////////////// 2ND /////////////////////////////////// 
-      if(Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == SECOND_ORDER) {
+      if(Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == SECOND_ORDER
+	 && !do_one_more_iter_for_check) {
 	for (int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
 	  if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {	    
 	    //Calculate R(U+epsilon*(Minv*x(i))) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * W(i)
@@ -992,8 +995,8 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 	// Apply boundary flux corrections to residual to ensure that method is conservative.
 	Apply_Boundary_Flux_Corrections(Soln_ptr, *List_of_Local_Solution_Blocks);
 
-			*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
-			(*res_nevals)++;
+	*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
+	(*res_nevals)++;
 	/**************************************************************************/
       }
       //////////////////////////////////////////////////////////////////////////
@@ -1002,7 +1005,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       //Calculate Matrix Free V(0) = ( R(U+epsilon*x) - b) / epsilon - x / h */
       for (int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk ; ++Bcount ) {
 	if ( List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {	  
-	  G[Bcount].calculate_Matrix_Free_Restart(epsilon);	  	   	  
+	  G[Bcount].calculate_Matrix_Free_Restart(epsilon,do_one_more_iter_for_check);	  	   	  
 	}
       }   
       /**************************************************************************/
@@ -1172,8 +1175,8 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       // Apply boundary flux corrections to residual to ensure that method is conservative.
       Apply_Boundary_Flux_Corrections(Soln_ptr,*List_of_Local_Solution_Blocks);
 
-			*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
-			(*res_nevals)++;
+      *res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
+      (*res_nevals)++;
       
       /**************************************************************************/
 
@@ -1239,8 +1242,9 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
 
 	// Apply boundary flux corrections to residual to ensure that method is conservative.
 	Apply_Boundary_Flux_Corrections(Soln_ptr,*List_of_Local_Solution_Blocks);
-			*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
-			(*res_nevals)++;
+
+	*res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC); 
+	(*res_nevals)++;
 	
       }
       ////////////////////////////////////////////////////////////////////////////

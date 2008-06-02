@@ -968,7 +968,7 @@ calculate_Matrix_Free(const double &epsilon)
 template <>inline void GMRES_Block<Flame2D_pState,
 				   Flame2D_Quad_Block,
 				   Flame2D_Input_Parameters>::
-calculate_Matrix_Free_Restart(const double &epsilon)
+calculate_Matrix_Free_Restart(const double &epsilon, const bool GMRES_check)
 {
   // declares
   static Flame2D_pState Wo;
@@ -1011,7 +1011,7 @@ calculate_Matrix_Free_Restart(const double &epsilon)
 	int iter = index(i,j,k);		
 	//Matrix Free V(i+1) 
 
-	if( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == FIRST_ORDER ){
+	if( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == FIRST_ORDER || GMRES_check ){
 	  V[iter] = (normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) - b[iter]) / epsilon ;
 	} else if ( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == SECOND_ORDER ){
 	  V[iter] = normalizeR( SolnBlk->dUdt[i][j][1][k+1] - SolnBlk->dUdt[i][j][0][k+1],k)/(TWO*epsilon);
