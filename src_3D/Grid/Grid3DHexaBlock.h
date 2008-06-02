@@ -89,6 +89,7 @@ using namespace std;
  *                    the k-direction                   *
  *      KCu        -- Return upper index for cells in   *
  *                    the k-direction                   *
+ *      Nghost     -- Returns number of ghost cells.    *
  *      Node       -- Return 3D node geometry.          *
  *      Cell       -- Return 3D cell geometry.          *
  *      Allocated  -- Indicates whether or not the block*
