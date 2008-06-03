@@ -392,7 +392,7 @@ Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
 	break;
       case FIRST_ORDER_INVISCID_HLLE : 
 	Implicit_Euler(i,j, Jacobian_Data,DTS_dTime);
-	First_Order_Inviscid_Jacobian_HLLE(i,j, Jacobian_Data);
+	First_Order_Inviscid_Jacobian_HLLE(i,j, Jacobian_Data);  
 	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);                       
 	break;
       case FIRST_ORDER_INVISCID_ROE :  
@@ -459,7 +459,7 @@ Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
     }
   }
 
-  //cout<<Block_Jacobian_approx; cout.flush();
+//    cout<<Block_Jacobian_approx; cout.flush();
 
   //Local Memory cleanup
   delete[] Jacobian_Data; delete[] block_i; delete[] block_j;
@@ -520,17 +520,7 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
   double gamma_W = (lambdas_W.x*lambdas_W.y)/(lambdas_W.y-lambdas_W.x);
   double beta_W  = - lambdas_W.x/(lambdas_W.y-lambdas_W.x);
 
-//   //! Obtain rotation matrices with normal vector -> matrices in DenseMatrix format. 
-//   DenseMatrix A_N( Rotation_Matrix(nface_N, 1) );           //TEMP VAR
-//   DenseMatrix AI_N( Rotation_Matrix(nface_N, 0) );            //TEMP VAR
-//   DenseMatrix A_S( Rotation_Matrix(nface_S, 1) );            //TEMP VAR
-//   DenseMatrix AI_S( Rotation_Matrix(nface_S, 0) );            //TEMP VAR
-//   DenseMatrix A_E( Rotation_Matrix(nface_E, 1) );             //TEMP VAR 
-//   DenseMatrix AI_E( Rotation_Matrix(nface_E, 0) );            //TEMP VAR
-//   DenseMatrix A_W( Rotation_Matrix(nface_W, 1) );             //TEMP VAR  
-//   DenseMatrix AI_W( Rotation_Matrix(nface_W, 0) );            //TEMP VAR      
-
-
+  //! Obtain rotation matrices with normal vector -> matrices in DenseMatrix format. 
   static DenseMatrix A_N(blocksize,blocksize,ZERO);         
   Rotation_Matrix(A_N,nface_N, 1); 
   static DenseMatrix AI_N(blocksize,blocksize,ZERO);   

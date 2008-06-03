@@ -1377,7 +1377,7 @@ solve(Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_prec
       // Output progress
 
       //Verbose Output for CHECKING
-      if (CFFC_Primary_MPI_Processor() && Number_of_GMRES_Iterations%5 == 0 && 
+      if (CFFC_Primary_MPI_Processor() && Number_of_GMRES_Iterations%5 == 0 &&  
           Input_Parameters->NKS_IP.GMRES_CHECK) { 
         if(Number_of_GMRES_Iterations == 5){    
           cout << "\n  GMRES Iter.  \t   resid0 \t   resid \t  rel_resid  \t   L2||z||   \t  epsilon ";
