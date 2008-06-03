@@ -30,8 +30,8 @@ template <> int set_blocksize(LESPremixed2D_Quad_Block &SolnBlk){
 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
 	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
         return (SolnBlk.NumVar()-SolnBlk.W[0][0].ns);
-   }else{
-  return (SolnBlk.NumVar()-1);
+   } else {
+     return (SolnBlk.NumVar()-1);
    }
 #endif 
 
@@ -114,36 +114,8 @@ int Newton_Update(LESPremixed2D_Quad_Block *SolnBlk,
  	  SolnBlk[Bcount].W[i][j] = W(SolnBlk[Bcount].U[i][j]); 
 	    
 	} 
-      }
-      
-// #ifdef _NKS_VERBOSE  
-//       if (CFFC_Primary_MPI_Processor()) { 
-// 	/**************************************************************************/
-// 	//FOR DEBUGGING OUTPUT GMRES deltaU set to "SCALED" residual
-// 	double *norm = new double[Num_Var-1];
-// 	for(int i= 0; i< Num_Var-1; i++) norm[i]=ZERO;
+      }    
 	
-	for (int j = SolnBlk[Bcount].JCl-SolnBlk[Bcount].Nghost; j <= SolnBlk[Bcount].JCu+SolnBlk[Bcount].Nghost; j++){
-	  for (int i = SolnBlk[Bcount].ICl-SolnBlk[Bcount].Nghost; i <= SolnBlk[Bcount].ICu+SolnBlk[Bcount].Nghost; i++){
-	    for(int varindex =1; varindex < Num_Var; varindex++){	  	   
-	      //SolnBlk[Bcount].dUdt[i][j][0][varindex] = GMRES.deltaU_test(Bcount,i,j,varindex-1);
-	      SolnBlk[Bcount].dUdt[i][j][0][varindex] = GMRES.b_test(Bcount,i,j,varindex-1);
-	      //norm[varindex-1] += sqr(SolnBlk[Bcount].dUdt[i][j][0][varindex]);
-	      // norm[varindex-1] = max(norm[varindex-1],fabs(SolnBlk[Bcount].dUdt[i][j][0][varindex]));
-	    }
-	  } 
-	}
-// 	cout<<"\n *************** ";
-// 	for(int i= 0; i<11; i++){
-// 	  //cout<<"\n L2 norm of variable "<<i<<" = "<<sqrt(norm[i]);
-// 	  cout<<"\n max norm of variable "<<i<<" = "<<norm[i];
-// 	}
-// 	cout<<"\n *************** ";
-// 	delete[] norm;
-	/**************************************************************************/
-//       }
-// #endif
-
     } 
   }   
   return error_flag; 
@@ -240,6 +212,8 @@ template<> inline void Block_Preconditioner<LESPremixed2D_pState,
 Preconditioner_dFIdU(DenseMatrix &_dFIdU, LESPremixed2D_pState W)
 {  
   dFIdU(_dFIdU,W,SolnBlk->Flow_Type);
+  //dFIdU_FD(_dFIdU,W,SolnBlk->Flow_Type);
+  
 }
 
 
@@ -393,7 +367,7 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU, const int Rii, const int Rjj,
   //  int Matrix_size = 14 + ns;
   //don't forget to put it back
   //  int Matrix_size = 10 + ns;
-  int Matrix_size = 14;
+  int Matrix_size = 14+ns;
 
   DenseMatrix dFvdWf(NUM_VAR_LESPREMIXED2D, Matrix_size,ZERO);
   DenseMatrix dWfdWx(Matrix_size, NUM_VAR_LESPREMIXED2D,ZERO); 
@@ -417,9 +391,9 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU, const int Rii, const int Rjj,
 
 /*!**************************************************************
  * Specialization of Block_Preconditioner::Preconditioner_dSdU  *
- *                                                              *
- * Calculates the dFdU matrix used to generate the approximate  *               
- * Jacobian for the Block Preconditioner.                       *
+ *                                                              * 
+ * Calculates the dFdU matrix used to generate the approximate  *                
+ * Jacobian for the Block Preconditioner.                       * 
  ****************************************************************/
 template<> inline void Block_Preconditioner<LESPremixed2D_pState,
 					    LESPremixed2D_Quad_Block,					    
@@ -459,14 +433,14 @@ inline void normalize_Preconditioner(DenseMatrix &dFdU)
 
   //scalars and cs's all have same normalization.
   for(int i=NUM_LESPREMIXED2D_VAR_SANS_SPECIES; 
-      i< NUM_LESPREMIXED2D_VAR_SANS_SPECIES + W_STD_ATM.nscal;/*put it back + W_STD_ATM.ns-1;*/ i++){   		  
+      i< NUM_LESPREMIXED2D_VAR_SANS_SPECIES + W_STD_ATM.nscal + W_STD_ATM.ns-1; i++){   		  
     dFdU(0,i) *= (ONE/ao);
     dFdU(1,i) *= (ONE/(ao*ao));
     dFdU(2,i) *= (ONE/(ao*ao));
     dFdU(3,i) *= (ONE/(ao*ao*ao));
     dFdU(i,0) *= (ONE/ao);
     dFdU(i,3) *= ao;
-    for(int j=NUM_LESPREMIXED2D_VAR_SANS_SPECIES; j< NUM_LESPREMIXED2D_VAR_SANS_SPECIES + W_STD_ATM.nscal;/*put it back + W_STD_ATM.ns-1;*/ j++){   
+    for(int j=NUM_LESPREMIXED2D_VAR_SANS_SPECIES; j< NUM_LESPREMIXED2D_VAR_SANS_SPECIES + W_STD_ATM.nscal + W_STD_ATM.ns-1;j++){   
       dFdU(i,j) *= (ONE/ao);            
     }
   } 
@@ -497,14 +471,13 @@ calculate_perturbed_residual(const double &epsilon, const int &order)
 {    
   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
     for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {         
-      if(order == SECOND_ORDER){
+      if(order == SECOND_ORDER || order == SECOND_ORDER_RESTART){
 	//store R(Uo + perturb) 
 	SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
       }
 
       for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] +
-	  denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex);	    	
+	SolnBlk->U[i][j][varindex+1] = perturbed_resiudal(epsilon,order,i,j,varindex);
       }   
       
       //LESPremixed2D spec_check to make sure species (Uo + epsilon*W(i)) > ZERO , ie physical for dUdt calc 

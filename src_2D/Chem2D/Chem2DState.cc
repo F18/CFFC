@@ -3627,7 +3627,6 @@ Vector2D HLLE_wavespeeds(const Chem2D_pState &Wl,
 
     Vector2D wavespeed;
     Chem2D_pState Wa_n, lambdas_l, lambdas_r, lambdas_a, Wl_n, Wr_n;  
-    int NUM_VAR_CHEM2D = (Wl.NUM_VAR_CHEM2D );
     /* Use rotated values to calculate eignvalues */
     Wl_n = Rotate(Wl, norm_dir);
     Wr_n = Rotate(Wr, norm_dir);
@@ -3646,10 +3645,7 @@ Vector2D HLLE_wavespeeds(const Chem2D_pState &Wl,
                       lambdas_a[1]);   //u-a
     wavespeed.y = max(lambdas_r[4],
                       lambdas_a[4]);   //u+a
- 
-  //   wavespeed.y = max(lambdas_r[NUM_VAR_CHEM2D],
-//                       lambdas_a[NUM_VAR_CHEM2D]);  //THIS IS u! not u+a WTF!!!
- 
+  
     wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
     wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 
 

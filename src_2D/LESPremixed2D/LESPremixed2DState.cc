@@ -9,7 +9,7 @@
 *********************************************************************/
 
 //DEBUGGING FLAG FOR FIGUREING OUT proper NS-1 setup.
-//#define _NS_MINUS_ONE
+#define _NS_MINUS_ONE
 
 #ifndef _LESPREMIXED2D_STATE_INCLUDED 
 #include "LESPremixed2DState.h"
@@ -710,8 +710,6 @@ LESPremixed2D_cState LESPremixed2D_pState::Fx(void) const{
  **********************************************************/
 void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type) {
   
-  //cout<<"\n USING DFIDU \n";
-  
   //int num_species = dFdU.get_n() - NUM_LESPREMIXED2D_VAR_SANS_SPECIES; 
   int num_species=W.ns-1;
 
@@ -791,6 +789,8 @@ void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type
     dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y*W.v.y) - ht - 5.0*kk/3.0 + C_p*pt/(W.rho*Rt) + phi )/denominator;
   } else if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
     dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y*W.v.y) - ht + C_p*pt/(W.rho*Rt) + phi )/denominator;
+  } else {
+    dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y*W.v.y) - ht + C_p*Temp + phi )/denominator;  
   }
 
   dFdU(1,1) += W.v.x*(TWO*C_p/Rt-THREE)/denominator; 
@@ -804,6 +804,8 @@ void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type
     dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y*W.v.y + C_p*pt/(W.rho*Rt) - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + 5.0*kk/3.0 + ht) + phi)/denominator;
   } else if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
     dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y*W.v.y + 5.0*kk/3.0 + C_p*pt/(W.rho*Rt) - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + 5.0*kk/3.0 + ht) + phi)/denominator;
+  } else {
+    dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y+W.v.y + C_p*Temp - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + ht) + phi)/denominator;
   }
 
   dFdU(3,1) += ht + HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + 5.0*kk/3.0 - W.v.x*W.v.x/denominator;
@@ -829,7 +831,6 @@ void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type
     dFdU(NUM_VAR+i,NUM_VAR+i) += W.v.x ;        
   }
 
-  
   //Scalars
   NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES;  
   for(int i = 0; i<W.nscal; ++i){ 
@@ -845,8 +846,9 @@ void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type
     // diagonal
     dFdU(NUM_VAR+i,NUM_VAR+i) += W.v.x;
   }
-  } 
+  }
 }
+
 
 // Finite difference check of dFxdU
 void dFIdU_FD(DenseMatrix &dFdU, const LESPremixed2D_pState &WW, const int Flow_Type) {
@@ -5238,7 +5240,6 @@ Vector2D HLLE_wavespeeds(const LESPremixed2D_pState &Wl,
 
     Vector2D wavespeed;
     LESPremixed2D_pState Wa_n, lambdas_l, lambdas_r, lambdas_a, Wl_n, Wr_n;  
-    int NUM_VAR_LESPREMIXED2D = (Wl.NUM_VAR_LESPREMIXED2D );
     /* Use rotated values to calculate eignvalues */
     Wl_n = Rotate(Wl, norm_dir);
     Wr_n = Rotate(Wr, norm_dir);
@@ -5257,9 +5258,6 @@ Vector2D HLLE_wavespeeds(const LESPremixed2D_pState &Wl,
                       lambdas_a[1]);   //u-a
     wavespeed.y = max(lambdas_r[4],
                       lambdas_a[4]);   //u+a
- 
-  //   wavespeed.y = max(lambdas_r[NUM_VAR_LESPREMIXED2D],
-//                       lambdas_a[NUM_VAR_LESPREMIXED2D]);  //THIS IS u! not u+a WTF!!!
  
     wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
     wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 

@@ -84,7 +84,7 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
 #else
      NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-1;
 #endif
-  }
+  
 
    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
@@ -109,9 +109,11 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
     // Transformation Jacobian 
     SolnBlk.Uo[ii][jj].W().dWdU(dWdU, SolnBlk.Flow_Type); 
     dSdU += dRdW*dWdU;
+    
+  }
 
-    // Add Source Jacobians (inviscid axisymmetric, chemistry, gravity)
-    SemiImplicitBlockJacobi_dSdU(dSdU,SolnBlk,EXPLICIT,ii,jj);                 
+  // Add Source Jacobians (inviscid axisymmetric, chemistry, gravity)
+  SemiImplicitBlockJacobi_dSdU(dSdU,SolnBlk,EXPLICIT,ii,jj);                 
 
 }
 
