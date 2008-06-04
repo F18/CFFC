@@ -575,7 +575,7 @@ int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Fine,
       SolnBlk_Fine.UoN[2*(i-i_min)+SolnBlk_Fine.ICl+1]	= SolnBlk_Original.UoN[i];
     } /* endfor */
 
-    // \todo Refactor this. It might not always work.
+    // Set the reference values for the boundary states to the ones from the Original solution block
     SolnBlk_Fine.Set_Reference_Values_For_Boundary_States(SolnBlk_Original.Ref_State_BC_North,
 							  SolnBlk_Original.Ref_State_BC_South,
 							  SolnBlk_Original.Ref_State_BC_East,
@@ -841,15 +841,12 @@ int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Coarse,
       } /* endif */
     } /* endfor */
 
-    // \todo Refactor this. It might not always work.
+    // Set the reference values for the boundary states
+    // This approach might not always give the proper reference values.
     SolnBlk_Coarse.Set_Reference_Values_For_Boundary_States(SolnBlk_Original_NW.Ref_State_BC_North,
 							    SolnBlk_Original_SE.Ref_State_BC_South,
 							    SolnBlk_Original_NE.Ref_State_BC_East,
 							    SolnBlk_Original_SW.Ref_State_BC_West);
-
-    // Enforce analytic values for the boundary reference states if defined
-    SolnBlk_Coarse.Set_Boundary_Reference_States();
-
   } /* endif */
 
   // Restriction of solution block was successful.

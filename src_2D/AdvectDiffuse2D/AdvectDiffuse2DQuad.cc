@@ -1669,7 +1669,7 @@ Set_Boundary_Reference_States_Based_On_Input(const AdvectDiffuse2D_Input_Paramet
 					   IP.Ref_State_BC_East,
 					   IP.Ref_State_BC_West);
 
-  // Set boundary reference states for particular bondary condition types
+  // Set boundary reference states for particular boundary condition types
   Set_Boundary_Reference_States();
 }
 
@@ -1769,7 +1769,8 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
 
     default:
       // Leave the values unchanged
-      UoW[j];
+      // UoW[j];
+      break;
     }
 
     // === Set reference data for UoE ===
@@ -1812,7 +1813,8 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
 
     default:
       // Leave the values unchanged
-      UoE[j];
+      // UoE[j];
+      break;
     } // endswitch
   } // endfor(j)
 
@@ -1858,7 +1860,8 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
 
     default:
       // Leave the values unchanged
-      UoS[i];
+      // UoS[i];
+      break;
     }
 
     // === Set reference data for UoN ===
@@ -1901,7 +1904,8 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
 
     default:
       // Leave the values unchanged
-      UoN[i];
+      // UoN[i];
+      break;
     } // endswitch
   } // enfor(i)
 

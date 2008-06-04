@@ -76,9 +76,6 @@ void CENO_Tolerances::Print_Info(std::ostream & out_file){
   out_file << "\n     -> Fit Tolerance: " << Fit_Tolerance
 	   << "  (default value = " << Fit_Tolerance_default << ")";
 
-  // output Fit_Tolerance_Buffer
-  out_file << "\n     -> Fit Tolerance Buffer: " << Fit_Tolerance_Buffer;
-
   // output AMR_Smoothness_Units
   if (AMR_Smoothness_Units != AMR_Smoothness_Units_default){
     out_file << "\n     -> AMR Smoothness Units: " << AMR_Smoothness_Units
