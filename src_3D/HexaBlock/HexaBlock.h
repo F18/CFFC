@@ -791,7 +791,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Copy(Hexa_Block<SOLN_pSTATE, SOLN_cST
       // Copy the freeze limite indicator.
       Freeze_Limiter = Block2.Freeze_Limiter;
 
-      // Copy the solution, solutioon residuals, gradients, limiters, and 
+      // Copy the solution, solution residuals, gradients, limiters, and 
       // other stored values.
       for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
          for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
@@ -1316,9 +1316,12 @@ Output_Nodes_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
                << "DATAPACKING = POINT \n";
    } /* endif */
    
-   for (int k = Grid.KNl - 1; k <= Grid.KNu + 1; ++k) {
-      for (int j = Grid.JNl - 1; j <= Grid.JNu + 1; ++j) {
-         for (int i = Grid.INl - 1; i <= Grid.INu + 1; ++i) {
+   for (int k = Grid.KNl-1; k <= Grid.KNu+1 ; ++k) {
+      for (int j = Grid.JNl-1; j <= Grid.JNu+1 ; ++j) {
+         for (int i = Grid.INl-1; i <= Grid.INu+1 ; ++i) {
+ /*   for (int k = Grid.KNl-Grid.Nghost-1; k <= Grid.KNu+Grid.Nghost-1 ; ++k) {
+      for (int j = Grid.JNl-Grid.Nghost-1; j <= Grid.JNu+Grid.Nghost-1 ; ++j) {
+      for (int i = Grid.INl-Grid.Nghost-1; i <= Grid.INu+Grid.Nghost-1 ; ++i) {  */
 	    W_node = Wn(i, j, k);
             Out_File << " "  << Grid.Node[i][j][k].X << W_node;
             Out_File.setf(ios::scientific);

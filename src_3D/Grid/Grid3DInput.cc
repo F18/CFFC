@@ -346,6 +346,10 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
      i_command = 3006;
      value >> NBlk_Idir;
      if (NBlk_Idir < 1) i_command = INVALID_INPUT_VALUE;
+ 
+  } else if (strcmp(code, "Number_of_Ghost_Cells") == 0) {
+     i_command = 3041;
+     value >> Nghost;
 
   } else if (strcmp(code, "Number_of_Blocks_Jdir") == 0) {
      i_command = 3007;
@@ -652,6 +656,8 @@ void Grid3D_Input_Parameters::Output(ostream &out_file) const {
             << NCells_Jdir;
    out_file << "\n  -> Number of Cells k-direction: " 
             << NCells_Kdir;
+   out_file << "\n  -> Number of Ghost Cells on each side: "
+            << Nghost;
 
    out_file << "\n  -> Mesh shift, scale, and rotate: " 
             << X_Shift << " " << X_Scale << " " << X_Rotate;
