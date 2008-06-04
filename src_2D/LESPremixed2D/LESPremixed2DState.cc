@@ -1079,6 +1079,8 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
     dWdQ(3,0) = (HALF*(v.x*v.x+v.y*v.y) - h() - 5.0*kk/3.0 + C_p*pt/(rho*Rt) + phi)/denominator;
   } else if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
     dWdQ(3,0) = (HALF*(v.x*v.x+v.y*v.y) - h() + C_p*pt/(rho*Rt) + phi)/denominator;
+  } else {
+    dWdQ(3,0) = (HALF*(v.x*v.x+v.y*v.y) - h() + C_p*Temp + phi)/denominator;
   }
   dWdQ(3,1) = -v.x/denominator;
   dWdQ(3,2) = -v.y/denominator;

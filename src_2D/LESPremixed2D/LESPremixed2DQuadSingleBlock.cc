@@ -2359,7 +2359,7 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
           SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_NGT_C_FSD &&
           SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY &&
           SolnBlk.Flow_Type != FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ) {
-	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= 0.01){ //spatial relation, grid independent 
+	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= 0.0){ //spatial relation, grid independent 
 	    SolnBlk.W[i][j] = Wl;  
 	  } else {
  	    SolnBlk.W[i][j] = Wr;	     
