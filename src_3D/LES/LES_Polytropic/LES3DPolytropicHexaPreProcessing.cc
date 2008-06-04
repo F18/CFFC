@@ -99,21 +99,11 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
         
         //if (false) { 
         if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT && Solution_Data.Input.Turbulence_IP.Filter_Initial_Condition) {
+            Solution_Data.Explicit_Filter.Initialize(Data,Solution_Data);
+            error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Initial_Condition(Solution_Data.Explicit_Filter);
+            error_flag = Solution_Data.Explicit_Filter.Write_to_file();
             if (CFFC_Primary_MPI_Processor()) {
-                cout << endl;
-                cout << " ------------------------------------------------" << endl;
-                cout << "    Explicitly filtering the initial condition   " << endl;
-                cout << " ------------------------------------------------" << endl;        
-            }
-            LES3D_Polytropic_cState *** (Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::*U_ptr) = &Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::U;
-            LES_Filter<LES3D_Polytropic_pState,LES3D_Polytropic_cState> Explicit_Filter(Data,Solution_Data);
-            Explicit_Filter.filter(U_ptr);
-            Explicit_Filter.Write_to_file();
-            if (CFFC_Primary_MPI_Processor()) {
-                cout << "    Finished explicit filtering " << endl;
-            }
-            if (CFFC_Primary_MPI_Processor()) {
-                Explicit_Filter.transfer_function();
+                Solution_Data.Explicit_Filter.transfer_function();
             }
         }
         

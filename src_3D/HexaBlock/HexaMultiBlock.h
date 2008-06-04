@@ -17,6 +17,10 @@
 #include "../AMR/AdaptiveBlock3D.h"
 #endif //_ADAPTIVEBLOCK3D_INCLUDED
 
+
+template <typename Soln_pState, typename Soln_cState>
+class LES_Filter;
+
 // A local list of solution blocks on a given processor.
 template<class HEXA_BLOCK> 
 class Hexa_Multi_Block {
@@ -25,11 +29,14 @@ class Hexa_Multi_Block {
   protected:
 
   public:
+   typedef typename HEXA_BLOCK::Soln_pState  Soln_pState;
+   typedef typename HEXA_BLOCK::Soln_cState  Soln_cState; 
+    
    HEXA_BLOCK *Soln_Blks;          // Array of hexahedral solution blocks.
    int Number_of_Soln_Blks;        // Number or size of array of hexahedral solution blocks. 
    int *Block_Used;                // Solution block usage indicator.
    int Allocated;                  // Indicates if the solution blocks have been allocated or not.
-
+    
    /* Creation constructors. */
    Hexa_Multi_Block(void) {
       Number_of_Soln_Blks = 0; Allocated = 0;
@@ -169,9 +176,14 @@ class Hexa_Multi_Block {
                                 typename HEXA_BLOCK::Soln_cState> &Input,
                                 const int I_Stage);
 
-   int Update_Solution_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                            typename HEXA_BLOCK::Soln_cState> &Input, 
+   int Update_Solution_Multistage_Explicit(Input_Parameters<Soln_pState, 
+                                                            Soln_cState> &Input, 
                                            const int I_Stage);
+    
+    
+    int Explicitly_Filter_Initial_Condition(LES_Filter<typename HEXA_BLOCK::Soln_pState, typename HEXA_BLOCK::Soln_cState> &Explicit_Filter);
+    
+    
 };
 
 /********************************************************
@@ -1368,6 +1380,63 @@ Output_Nodes_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
 
     return(0);
 
+}
+
+
+/********************************************************
+ * Routine: Explicitely_Filter_Initial_Condition        *
+ *                                                      *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+int Hexa_Multi_Block<HEXA_BLOCK>::
+Explicitly_Filter_Initial_Condition(LES_Filter<typename HEXA_BLOCK::Soln_pState,typename HEXA_BLOCK::Soln_cState> &Explicit_Filter) {
+    
+    int error_flag(0);
+    
+    Soln_cState *** (Hexa_Block<Soln_pState,Soln_cState>::*U_ptr) = &Hexa_Block<Soln_pState,Soln_cState>::U;
+    double Soln_pState::*p_ptr = p_ptr = &Soln_pState::p; 
+
+    if (CFFC_Primary_MPI_Processor()) {
+        cout << endl;
+        cout << " ------------------------------------------------" << endl;
+        cout << "    Explicitly filtering the initial condition   " << endl;
+        cout << " ------------------------------------------------" << endl;        
+    }
+    
+    Explicit_Filter.filter(U_ptr);
+    for (int nBlk = 0; nBlk < Number_of_Soln_Blks; ++nBlk) {
+        if (Block_Used[nBlk]) {
+            for (int k  = Soln_Blks[nBlk].KCl-Soln_Blks[nBlk].Nghost ; k <= Soln_Blks[nBlk].KCu+Soln_Blks[nBlk].Nghost ; ++k ) {
+                for ( int j  = Soln_Blks[nBlk].JCl-Soln_Blks[nBlk].Nghost ; j <= Soln_Blks[nBlk].JCu+Soln_Blks[nBlk].Nghost ; ++j ) {
+                    for ( int i = Soln_Blks[nBlk].ICl-Soln_Blks[nBlk].Nghost ; i <= Soln_Blks[nBlk].ICu+Soln_Blks[nBlk].Nghost ; ++i ) {
+                         Soln_Blks[nBlk].W[i][j][k] =  Soln_Blks[nBlk].U[i][j][k].W();
+                    }	  
+                }
+            }
+        }
+    }
+    
+    Explicit_Filter.filter(p_ptr);    
+    for (int nBlk = 0; nBlk < Number_of_Soln_Blks; ++nBlk) {
+        if (Block_Used[nBlk]) {
+            for (int k  = Soln_Blks[nBlk].KCl-Soln_Blks[nBlk].Nghost ; k <= Soln_Blks[nBlk].KCu+Soln_Blks[nBlk].Nghost ; ++k ) {
+                for ( int j  = Soln_Blks[nBlk].JCl-Soln_Blks[nBlk].Nghost ; j <= Soln_Blks[nBlk].JCu+Soln_Blks[nBlk].Nghost ; ++j ) {
+                    for ( int i = Soln_Blks[nBlk].ICl-Soln_Blks[nBlk].Nghost ; i <= Soln_Blks[nBlk].ICu+Soln_Blks[nBlk].Nghost ; ++i ) {
+                         Soln_Blks[nBlk].U[i][j][k] =  Soln_Blks[nBlk].W[i][j][k].U();
+                    }	  
+                }
+            }
+        }
+    }
+
+
+   if (CFFC_Primary_MPI_Processor()) {
+        cout << "    Finished explicitly filtering the initial condition" << endl;
+    }
+            
+
+    return (error_flag);    
 }
 
 #endif // _HEXA_MULTIBLOCK_INCLUDED

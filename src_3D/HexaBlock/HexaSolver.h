@@ -36,6 +36,11 @@
 #include "../NewtonKrylovSchwarz/NKS.h"
 #endif //_NKS_INCLUDED
 
+#ifndef _LES_FILTERS_INCLUDED
+#include "../LES/Filters/LES_Filters.h"
+#endif // _LES_FILTERS_INCLUDED
+
+
 /********************************************************
  * Routine: HexaSolver                                  *
  *                                                      *

@@ -9,7 +9,6 @@
 #ifndef _LES_FILTERS_INCLUDED
 #define _LES_FILTERS_INCLUDED
 
-
 #include "../../HexaBlock/HexaMultiBlock.h"
 #include "../../HexaBlock/HexaSolverClasses.h"
 #include "General_Filter.h"
@@ -22,6 +21,12 @@
 /**
  * CLASS : LES_Filter
  */
+
+template <typename Soln_pState, typename Soln_cState>
+class HexaSolver_Solution_Data;
+
+template <typename HEXA_BLOCK>
+class Hexa_Multi_Block;
 
 #define SOLN_CSTATE_3D      0
 #define SOLN_CSTATE_4D      1
@@ -48,6 +53,8 @@ public:
     
     static bool restarted;
     
+    bool initialized;
+    
     int filter_type;
     
     const char *output_file_name;
@@ -58,6 +65,38 @@ public:
     Hexa_Block<Soln_pState,Soln_cState> *Solution_Blocks_ptr;       // array of SolnBlks
     
     /* ----- constructor ----- */
+    
+    LES_Filter(void) { 
+        /* works together with 
+            initialize(HexaSolver_Data &Data,
+                       HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data) 
+         */
+        initialized = false;
+    }
+    void Initialize(HexaSolver_Data &Data,
+                    HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data) {
+        if (!initialized) {
+            Solution_Blocks_ptr  = Solution_Data.Local_Solution_Blocks.Soln_Blks;
+            LocalSolnBlkList_ptr = &(Data.Local_Adaptive_Block_List);
+            FILTER_ONLY_ONE_SOLNBLK = false;
+            FGR = Solution_Data.Input.Turbulence_IP.FGR;
+            commutation_order = Solution_Data.Input.Turbulence_IP.commutation_order;
+            number_of_rings = Solution_Data.Input.Turbulence_IP.number_of_rings;
+            filter_type = Solution_Data.Input.Turbulence_IP.i_filter_type;
+            output_file_name = Solution_Data.Input.Output_File_Name;
+            target_filter_sharpness = Solution_Data.Input.Turbulence_IP.Target_Filter_Sharpness;
+            
+            if (Solution_Data.Input.i_ICs == IC_RESTART && !restarted)
+                filter_type = FILTER_TYPE_RESTART;
+            
+            Create_filter();
+            Solution_Data.Input.Turbulence_IP.i_filter_type = filter_type;
+            initialized = true;
+        }
+    }
+    
+    
+    
     LES_Filter(HexaSolver_Data &Data,
                HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data,
                int filter_flag) {
@@ -73,6 +112,8 @@ public:
         filter_type = filter_flag;
         
         Create_filter();
+        initialized = true;
+
     }
     
     LES_Filter(HexaSolver_Data &Data,
@@ -93,6 +134,8 @@ public:
         
         Create_filter();
         Solution_Data.Input.Turbulence_IP.i_filter_type = filter_type;
+        initialized = true;
+
     }
     
     LES_Filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk,
@@ -107,6 +150,8 @@ public:
         filter_type = filter_flag;
         
         Create_filter();
+        initialized = true;
+
     }
     
     
@@ -124,6 +169,7 @@ public:
         }
 
         Create_filter();
+        initialized = true;
     }
     
     ~LES_Filter() {
@@ -203,7 +249,7 @@ public:
     }
     
     int Write_to_file(void){
-        
+        cout << "\n Writing explicit filter coefficients to file." << endl ;
         int i;
         char prefix[256], cpu_id[256], extension[256], out_file_name[256];
         char *out_file_name_ptr;
@@ -245,16 +291,28 @@ public:
     }
     
     void filter(double Soln_pState::*&member) {
+        if (!initialized) {
+            cout << "LES_Filter not initialized, can not filter" << endl;
+            return;
+        }
         Soln_pState_member_ptr = member;
         filter_variable_type = SOLN_PSTATE_DOUBLE;
         filter_Blocks();
     }
     void filter(Soln_cState *** Hexa_Block<Soln_pState,Soln_cState>::*&member) {
+        if (!initialized) {
+            cout << "LES_Filter not initialized, can not filter" << endl;
+            return;
+        }
         Soln_cState_3D_ptr = member;
         filter_variable_type = SOLN_CSTATE_3D;
         filter_Blocks();
     }
     void filter(Soln_cState **** Hexa_Block<Soln_pState,Soln_cState>::*&member,int k_residual) {
+        if (!initialized) {
+            cout << "LES_Filter not initialized, can not filter" << endl;
+            return;
+        }
         Soln_cState_4D_ptr = member;
         dUdt_k_residual = k_residual;
         filter_variable_type = SOLN_CSTATE_4D;
@@ -393,6 +451,10 @@ double LES_Filter<Soln_pState,Soln_cState>::maximum_wavenumber() {
 
 template<typename Soln_pState, typename Soln_cState>
 void LES_Filter<Soln_pState,Soln_cState>::transfer_function(int flag) {
+    if (!initialized) {
+        cout << "LES_Filter not initialized, can not return transfer_function" << endl;
+        return;
+    }
     int Nghost;
     if (FILTER_ONLY_ONE_SOLNBLK) {
         Nghost = Solution_Blocks_ptr->Grid.Nghost;            
@@ -416,6 +478,10 @@ void LES_Filter<Soln_pState,Soln_cState>::transfer_function(int flag) {
 
 template<typename Soln_pState, typename Soln_cState>
 void LES_Filter<Soln_pState,Soln_cState>::transfer_function(int i, int j, int k) {
+    if (!initialized) {
+        cout << "LES_Filter not initialized, can not return transfer_function" << endl;
+        return;
+    }
     if (FILTER_ONLY_ONE_SOLNBLK) {
         filter_ptr->transfer_function(*Solution_Blocks_ptr,Solution_Blocks_ptr->Grid.Cell[i][j][k]);            
     }
@@ -431,11 +497,19 @@ void LES_Filter<Soln_pState,Soln_cState>::transfer_function(int i, int j, int k)
 
 template<typename Soln_pState, typename Soln_cState>
 void LES_Filter<Soln_pState,Soln_cState>::transfer_function() {
+    if (!initialized) {
+        cout << "LES_Filter not initialized, can not return transfer_function" << endl;
+        return;
+    }
     transfer_function(number_of_rings,number_of_rings,number_of_rings);
 }
 
 template<typename Soln_pState, typename Soln_cState>
 void LES_Filter<Soln_pState,Soln_cState>::reset() {
+    if (!initialized) {
+        cout << "LES_Filter not initialized, can not reset" << endl;
+        return;
+    }
     if (LocalSolnBlkList_ptr->Nused() >= 1) {
         for (int nBlk = 0; nBlk <= LocalSolnBlkList_ptr->Nused(); ++nBlk ) {
             if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
@@ -448,6 +522,10 @@ void LES_Filter<Soln_pState,Soln_cState>::reset() {
 
 template<typename Soln_pState, typename Soln_cState>
 void LES_Filter<Soln_pState,Soln_cState>::test() {
+    if (!initialized) {
+        cout << "LES_Filter not initialized, can not test" << endl;
+        return;
+    }
     double kmax = maximum_wavenumber();
     if (LocalSolnBlkList_ptr->Nused() >= 1) {
         for (int nBlk = 0; nBlk <= LocalSolnBlkList_ptr->Nused(); ++nBlk ) {

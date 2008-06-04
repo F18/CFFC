@@ -14,7 +14,7 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 				    HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
   
     SOLN_cSTATE **** (Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::*dUdt_ptr) = &Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::dUdt;
-    LES_Filter<SOLN_pSTATE,SOLN_cSTATE> Explicit_Filter(Data,Solution_Data);
+    Solution_Data.Explicit_Filter.Initialize(Data,Solution_Data);
 
   int error_flag(0);
    
@@ -225,11 +225,13 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
     // 7. Explicit filtering of the solution residual.      
 
     if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT) {
+        int residual_index = 0;
         Solution_Data.Local_Solution_Blocks.BCs_dUdt(Solution_Data.Input,0);
-        error_flag = Send_Messages_Residual<Hexa_Block<SOLN_pSTATE,SOLN_cSTATE> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-                                                                                  Data.Local_Adaptive_Block_List,
-                                                                                  0);
-        Explicit_Filter.filter(dUdt_ptr,0);
+        error_flag = Send_Messages_Residual<Hexa_Block<SOLN_pSTATE,SOLN_cSTATE> >
+                     (Solution_Data.Local_Solution_Blocks.Soln_Blks,
+                      Data.Local_Adaptive_Block_List,
+                      residual_index);
+        Solution_Data.Explicit_Filter.filter(dUdt_ptr,residual_index);
     }
 
     /*******************************************************************/
