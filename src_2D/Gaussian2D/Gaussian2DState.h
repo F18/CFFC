@@ -167,6 +167,9 @@ class Gaussian2D_pState{
     static double         omega;   // Viscosity exponent
     static double        mu_not;   // Reference viscosity
     static double            pr;   // Prandtl number
+    static double         gamma;   // Gamma
+    static double         g_gm1;   // Gamma / (Gamma - 1)
+    static double     T_damping;   // Damping for slip_T boundary condition
                                    // Made public so can access them.
 		      
     /* Creation, copy, and assignment constructors. */
@@ -300,9 +303,10 @@ class Gaussian2D_pState{
     double sound(void);
     double sound(void) const;
 
+    void compute_gamma(void);
+
     /* Other gas properties */
     double R(void) const;
-    double Gamma(void) const;
     double Cv(void) const;
     double Cp(void) const;
     double K(void) const;
@@ -327,7 +331,7 @@ class Gaussian2D_pState{
     double burningrate(void) const; //needed for compatibility with embeddedboundaries2D
 
     /* Mean Free Path */
-    double mfp(void);
+    double mfp(void) const;
 
     /* Conserved solution state. */
     Gaussian2D_cState U(void);
@@ -899,12 +903,12 @@ inline void Gaussian2D_pState::setgas(char *string_ptr) {
   if(atoms == GAUSSIAN_MONATOMIC){
     erot = 0.0;
   }
+  compute_gamma();
 }
 
 /*********************************************************
  * Gaussian2D_pState::pressure -- Thermodynamic pressure.*
  *********************************************************/
-
 inline double Gaussian2D_pState::pressure(void) {
   assert( atoms == GAUSSIAN_MONATOMIC || atoms == GAUSSIAN_DIATOMIC );
   if(atoms==GAUSSIAN_MONATOMIC){
@@ -926,7 +930,6 @@ inline double Gaussian2D_pState::pressure(void) const {
 /*********************************************************
  * Gaussian2D_pState::DetP -- Determinant of Press tensor*
  *********************************************************/
-
 inline double Gaussian2D_pState::DetP(void) {
   return (p.xx*p.yy-sqr(p.xy));
 }
@@ -938,7 +941,6 @@ inline double Gaussian2D_pState::DetP(void) const {
 /************************************************************
  * Gaussian2D_pState::invalid, checks for physical validity *
  ************************************************************/
-
 inline int Gaussian2D_pState::invalid() const{
 
   int check(0);
@@ -977,7 +979,6 @@ inline void Gaussian2D_pState::make_valid() {
 /********************************************************
  * Gaussian2D_pState::T -- Temperature.                 *
  ********************************************************/
-
 inline double Gaussian2D_pState::T(void) {
   if(pressure()<=0.0) {
     cout << "P=" << pressure() << endl;
@@ -1005,7 +1006,6 @@ inline double Gaussian2D_pState::T(void) const {
 /********************************************************
  * Gaussian2D_pState::E -- Total energy.                   *
  ********************************************************/
-
 inline Tensor2D Gaussian2D_pState::E(void) {
 
     Tensor2D temp;
@@ -1034,7 +1034,6 @@ inline Tensor2D Gaussian2D_pState::E(void) const {
 /********************************************************
  * Gaussian2D_pState::h -- Specific enthalpy.              *
  ********************************************************/
-
 inline Tensor2D Gaussian2D_pState::h(void) {
 
     double hxx, hxy, hyy, hzz;
@@ -1062,7 +1061,6 @@ inline Tensor2D Gaussian2D_pState::h(void) const {
 /********************************************************
  * Gaussian2D_pState::axx & ayy -- Sound speeds. (sort of) *
  ********************************************************/
-
 inline double Gaussian2D_pState::axx(void) {
   assert( p.xx>0.0 && d>0.0 );
   return (sqrt(p.xx/d));
@@ -1111,21 +1109,25 @@ inline double Gaussian2D_pState::sound(void) const {
  * Gaussian2D_pState::R -- Specific Gas Constant.       *
  ********************************************************/
 inline double Gaussian2D_pState::R(void) const {
-  return R_UNIVERSAL/M;
+  return R_UNIVERSAL/M*THOUSAND;
 }
 
 /********************************************************
- * Gaussian2D_pState::Gamma                             *
+ * Gaussian2D_pState::compute_gamma                     *
  ********************************************************/
-inline double Gaussian2D_pState::Gamma(void) const {
+inline void Gaussian2D_pState::compute_gamma(void) {
   switch(atoms) {
     case 1 :
-      return (5.0/3.0);
+      gamma = (5.0/3.0);
+      g_gm1 = gamma / (gamma-1.0);
+      return;
     case 2 :
-      return 1.4;
+      gamma = 1.4;
+      g_gm1 = gamma / (gamma-1.0);
+      return;
     default :
       cout << "Error determining Gamma." << endl;
-      return -1.0;
+      return;
   };
 }
 
@@ -1133,15 +1135,14 @@ inline double Gaussian2D_pState::Gamma(void) const {
  * Gaussian2D_pState::Cv -- specific heat at constant V.*
  ********************************************************/
 inline double Gaussian2D_pState::Cv(void) const {
-  return R()/(Gamma()-1.0);
+  return R()/(gamma-1.0);
 }
 
 /********************************************************
  * Gaussian2D_pState::Cp -- specific heat at constant P.*
  ********************************************************/
 inline double Gaussian2D_pState::Cp(void) const {
-  double g(Gamma());
-  return R()*g/(g-1.0);
+  return R()*g_gm1;
 }
 
 /********************************************************
@@ -1150,8 +1151,6 @@ inline double Gaussian2D_pState::Cp(void) const {
 inline double Gaussian2D_pState::K(void) const {
   return Cp()*viscosity()/pr;
 }
-
-
 
 /********************************************************
  * Gaussian2D_pState::dv -- Momentum.                   *
@@ -1280,7 +1279,7 @@ inline double Gaussian2D_pState::bulk_viscosity(void) const{
 /********************************************************
  * Gaussian2D_pState -- Mean Free Path (hard spheres)   *
  ********************************************************/
-inline double Gaussian2D_pState::mfp(void){
+inline double Gaussian2D_pState::mfp(void) const {
   if(pressure() < TOLER || d < TOLER) {
     return MILLION;
   } else {
@@ -1383,7 +1382,6 @@ inline Gaussian2D_pState& Gaussian2D_pState::operator /=(const double &a) {
   return *this;
 }
 
-
 /********************************************************
  * Gaussian2D_pState -- Relational operators.           *
  ********************************************************/
@@ -1485,7 +1483,6 @@ inline double Gaussian2D_cState::v(const Vector2D &n) const {
 /********************************************************
  * Gaussian2D_cState::p -- Pressure.                    *
  ********************************************************/
-
 inline Tensor2D Gaussian2D_cState::p(void) {
 
     Tensor2D temp;
@@ -1530,7 +1527,6 @@ inline double Gaussian2D_cState::pressure(void) const {
 /************************************************************
  * Gaussian2D_cState::invalid, checks for physical validity *
  ************************************************************/
-
 inline int Gaussian2D_cState::invalid() const
 {
   int check(0);
@@ -1583,7 +1579,6 @@ inline Gaussian2D_cState& Gaussian2D_cState::operator =(const Gaussian2D_cState 
 /********************************************************
  * Gaussian2D_cState -- Binary arithmetic operators.       *
  ********************************************************/
-
 inline Gaussian2D_cState operator +(const Gaussian2D_cState &U1, const Gaussian2D_cState &U2) {
   return (Gaussian2D_cState(U1.d+U2.d,U1.dv+U2.dv,U1.E+U2.E,U1.erot+U2.erot));
 }
@@ -1691,7 +1686,6 @@ inline istream &operator >> (istream &in_file, Gaussian2D_cState &U) {
 /********************************************************
  * Gaussian2D_pState::Gaussian2D_pState -- Constructor.    *
  ********************************************************/
-
 inline Gaussian2D_pState::Gaussian2D_pState(const Gaussian2D_cState &U) {
   d = U.d; v = U.v(); p = U.p(); erot = U.erot;
 }
@@ -1699,7 +1693,6 @@ inline Gaussian2D_pState::Gaussian2D_pState(const Gaussian2D_cState &U) {
 /********************************************************
  * Gaussian2D_pState::U -- Conserved solution state.    *
  ********************************************************/
-
 inline Gaussian2D_cState Gaussian2D_pState::U(void) {
   return (Gaussian2D_cState(d, dv(), E(), erot));
 }
@@ -1719,7 +1712,6 @@ inline Gaussian2D_cState U(const Gaussian2D_pState &W) {
 /********************************************************
  * Gaussian2D_pState::F -- Solution flux (x-direction). *
  ********************************************************/
-
 inline Gaussian2D_cState Gaussian2D_pState::F(void) {
   return (Gaussian2D_cState(d*v.x, 
                             d*v.x*v.x + p.xx, 
@@ -1778,7 +1770,6 @@ inline Gaussian2D_cState Gaussian2D_pState::F(const Vector2D &V) const {
 /********************************************************
  * Gaussian2D_pState::Fx -- Solution flux (x-direction).*
  ********************************************************/
-
 inline Gaussian2D_cState Gaussian2D_pState::Fx(void) {
   return (Gaussian2D_cState(d*v.x, 
                             d*v.x*v.x + p.xx, 
@@ -1826,7 +1817,6 @@ inline Gaussian2D_cState Fx(const Gaussian2D_pState &W) {
 /********************************************************
  * Gaussian2D_pState::Fy -- Solution flux (y-direction).   *
  ********************************************************/
-
 inline Gaussian2D_cState Gaussian2D_pState::Fy(void) {
   return (Gaussian2D_cState(d*v.y, 
                             d*v.x*v.y + p.xy, 
@@ -1923,10 +1913,10 @@ inline Gaussian2D_cState Gaussian2D_pState::Gy(const Gaussian2D_pState &dWdy) co
  ********************************************************/
 inline void Gaussian2D_pState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 						const Gaussian2D_pState &dWdy,
-						const Vector2D &X,//this variable is added to be consistend with Jai
+						const Vector2D &X,//this variable is added to be consistent with Jai
 						const int &Axisymmetric) {
 
-  double tau = pr*tt();
+  double tau = tt()/pr * 2.0/5.0 * g_gm1;
 
   q.xxx = -tau*3.0*(p.xx*(dWdx.p.xx-p.xx/d*dWdx.d)/d +
 		    p.xy*(dWdy.p.xx-p.xx/d*dWdy.d)/d);
@@ -1952,12 +1942,11 @@ inline void Gaussian2D_pState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 
   return;
 }
-#endif
+#endif //_GAUSSIAN_HEAT_TRANSFER_
 
 /************************************************************
  * Gaussian2D_pState::lambda -- Eigenvalue(s) (x-direction).*
  ************************************************************/
-
 inline Gaussian2D_pState Gaussian2D_pState::lambda(void) {
   double c = axx();
   return (Gaussian2D_pState(v.x-sqrt(3.0)*c, v.x-c, v.x, v.x, v.x, v.x, v.x+c, v.x+sqrt(3.0)*c));
@@ -2156,6 +2145,7 @@ inline Gaussian2D_pState Gaussian2D_pState::lambda_x(const Vector2D &V) const {
 			    v.x-V.x+c, 
 			    v.x-V.x+sqrt(3.0)*c));
 }
+
 /************************************************************
  * Gaussian2D_pState::lambda_y -- Eigenvalue(s) (y-direction). *
  ************************************************************/
@@ -2255,7 +2245,6 @@ inline double lambda_y(const Gaussian2D_pState &W, int index) {
  * Gaussian2D_pState::rc -- Conserved right eigenvector *
  *                       (x-direction).                 *
  ********************************************************/
-
 inline Gaussian2D_cState Gaussian2D_pState::rc(int index) {
   double c;
   assert( index >= 1 && index <= NUM_VAR_GAUSSIAN2D );
@@ -2608,10 +2597,9 @@ inline Gaussian2D_cState rc_y(const Gaussian2D_pState &W, int index) {
 
 
 /********************************************************
- * Gaussian2D_pState::lp -- Primitive left eigenvector     *
+ * Gaussian2D_pState::lp -- Primitive left eigenvector  *
  *                       (x-direction).                 *
  ********************************************************/
-
 inline Gaussian2D_pState Gaussian2D_pState::lp(int index) {
   double c;
   assert( index >= 1 && index <= NUM_VAR_GAUSSIAN2D );
@@ -2923,7 +2911,7 @@ inline double Gaussian2D_pState::tr() const {
  * with gamma.                                               *
  *************************************************************/
 inline double Gaussian2D_pState::gt() const {
-  return (2.0-alpha_t)/alpha_t * sqrt(2*PI*R()*T()) * K()/((Gamma()+1.0)*Cv()*pressure());
+  return (10.0*PI)/16.0 * (2.0-alpha_t)/alpha_t * gamma/(gamma+1.0) * mfp()/pr;
 }
 
 /*************************************************************
@@ -2939,7 +2927,6 @@ inline void Gaussian2D_pState::set_temperature_d(double temperature) {
 /********************************************************
  * Gaussian2D_cState::Gaussian2D_cState -- Constructor. *
  ********************************************************/
-
 inline Gaussian2D_cState::Gaussian2D_cState(const Gaussian2D_pState &W) {
   d = W.d; dv = W.dv(); E = W.E(); erot = W.erot;
 }
@@ -2947,7 +2934,6 @@ inline Gaussian2D_cState::Gaussian2D_cState(const Gaussian2D_pState &W) {
 /********************************************************
  * Gaussian2D_cState::W -- Primitive solution state.    *
  ********************************************************/
-
 inline Gaussian2D_pState Gaussian2D_cState::W(void) {
   return (Gaussian2D_pState(d, v(), p(), erot));
 }
@@ -2967,7 +2953,6 @@ inline Gaussian2D_pState W(const Gaussian2D_cState &U) {
 /********************************************************
  * Gaussian2D_cState::F -- Solution flux (x-direction). *
  ********************************************************/
-
 inline Gaussian2D_cState Gaussian2D_cState::F(void) {
   Tensor2D pressure = p();
   return (Gaussian2D_cState(dv.x, 
@@ -3032,7 +3017,6 @@ inline Gaussian2D_cState Gaussian2D_cState::F(const Vector2D &V) const {
 /********************************************************
  * Gaussian2D_cState::Fx -- Solution flux (x-direction).   *
  ********************************************************/
-
 inline Gaussian2D_cState Gaussian2D_cState::Fx(void) {
   Tensor2D pressure = p();
   return (Gaussian2D_cState(dv.x, 
@@ -3084,7 +3068,6 @@ inline Gaussian2D_cState Fx(const Gaussian2D_cState &U) {
 /********************************************************
  * Gaussian2D_cState::Fy -- Solution flux (y-direction).*
  ********************************************************/
-
 inline Gaussian2D_cState Gaussian2D_cState::Fy(void) {
   Tensor2D pressure = p();
   return (Gaussian2D_cState(dv.y,
@@ -3199,11 +3182,12 @@ inline Gaussian2D_cState Gaussian2D_cState::Gy(const Gaussian2D_pState &dWdy) co
  ********************************************************/
 inline void Gaussian2D_cState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 						const Gaussian2D_pState &dWdy,
-						const Vector2D &X,//this variable is added to be consistend with Jai
+						const Vector2D &X,//this variable is added to be consistent with Jai
 						const int &Axisymmetric) {  //this is very poorly coded.
                                                                             //fix this later
   Tensor2D pressure = p();
-  double tau = pr*W().tt();
+  Gaussian2D_pState W1 = W();
+  double tau = W1.tt()/pr * 2.0/5.0 * Gaussian2D_pState::g_gm1;
 
   q.xxx = -tau*3.0*(pressure.xx*(dWdx.p.xx-pressure.xx/d*dWdx.d)/d +
 		    pressure.xy*(dWdy.p.xx-pressure.xx/d*dWdy.d)/d);
@@ -3229,7 +3213,7 @@ inline void Gaussian2D_cState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 
   return;
 }
-#endif
+#endif //_GAUSSIAN_HEAT_TRANSFER_
 
 /**********************************************************
  * Gaussian2D_cState::S -- Source terms (axisymmetric flow). *
@@ -3251,7 +3235,6 @@ inline Gaussian2D_cState S(const Gaussian2D_cState &U, const Vector2D &X) {
 /********************************************************
  * Useful 2D Gaussian state constants.                  *
  ********************************************************/
-
 const Gaussian2D_pState Gaussian2D_W_STDATM(DENSITY_STDATM,
 				      Vector2D_ZERO, PRESSURE_STDATM);
 const Gaussian2D_pState Gaussian2D_W_VACUUM(ZERO, Vector2D_ZERO, ZERO);
@@ -3263,7 +3246,6 @@ const Gaussian2D_cState Gaussian2D_U_ONE(ONE, ONE, ONE, ONE, ONE, ONE, ONE , ONE
 /********************************************************
  * Gaussian2DState -- External subroutines.             *
  ********************************************************/
-
 extern Gaussian2D_pState RoeAverage(const Gaussian2D_pState &Wl,
 				    const Gaussian2D_pState &Wr);
 
@@ -3290,6 +3272,13 @@ extern double dTdn(const Gaussian2D_pState &W,
 		   const Gaussian2D_pState &dWdy,
 		   const Vector2D &norm_dir);
 
+extern double Slip_T(const Gaussian2D_pState &W,
+		     const double &T,
+		     double &old_T,
+		     const Gaussian2D_pState &dWdx,
+		     const Gaussian2D_pState &dWdy,
+		     const Vector2D &norm_dir);
+
 extern Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
 					const Gaussian2D_pState &Wo,
 					const Vector2D &norm_dir,
@@ -3307,6 +3296,7 @@ extern Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
 extern Gaussian2D_pState Isothermal_Wall_Slip_T(const Gaussian2D_pState &W,
 						const Vector2D &V,
 						const double &T,
+						double &old_T,
 						const Gaussian2D_pState &dWdx,
 						const Gaussian2D_pState &dWdy,
 						const Vector2D &norm_dir);
@@ -3323,6 +3313,7 @@ extern Gaussian2D_pState Knudsen_Layer_Isothermal(const Gaussian2D_pState &W,
 extern Gaussian2D_pState Knudsen_Layer_Isothermal_Slip_T(const Gaussian2D_pState &W,
 							 const Vector2D &V,
 							 const double &T,
+							 double &old_T,
 							 const Gaussian2D_pState &dWdx,
 							 const Gaussian2D_pState &dWdy,
 							 const Vector2D &norm_dir);

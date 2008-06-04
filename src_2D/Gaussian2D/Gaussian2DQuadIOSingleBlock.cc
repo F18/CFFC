@@ -83,24 +83,24 @@ void Output_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
     for ( j = SolnBlk.Grid.JCl; j <= SolnBlk.Grid.JCu; j++){
       //left
       if(SolnBlk.Grid.BCtypeW[j] != BC_NONE) {
-	Linear_Reconstruction_LeastSquares(SolnBlk, 
+	Linear_Reconstruction_LeastSquares(SolnBlk,
 					   SolnBlk.ICl, j, 
 					   LIMITER_BARTH_JESPERSEN);
 	dX = SolnBlk.Grid.Cell[SolnBlk.ICl-1][j].Xc -
 	  SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc;
-	SolnBlk.W[SolnBlk.ICl-1][j] = SolnBlk.W[SolnBlk.ICl][j] + 
+	SolnBlk.W[SolnBlk.ICl-1][j] = SolnBlk.W[SolnBlk.ICl][j] +
 	  (SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dWdx[SolnBlk.ICl][j])*dX.x +
 	  (SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dWdy[SolnBlk.ICl][j])*dX.y;
 	SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
       }
     //right
       if(SolnBlk.Grid.BCtypeE[j] != BC_NONE) {
-	Linear_Reconstruction_LeastSquares(SolnBlk, 
-					   SolnBlk.ICu, j, 
+	Linear_Reconstruction_LeastSquares(SolnBlk,
+					   SolnBlk.ICu, j,
 					   LIMITER_BARTH_JESPERSEN);
 	dX = SolnBlk.Grid.Cell[SolnBlk.ICu+1][j].Xc -
 	  SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc;
-	SolnBlk.W[SolnBlk.ICu+1][j] = SolnBlk.W[SolnBlk.ICu][j] + 
+	SolnBlk.W[SolnBlk.ICu+1][j] = SolnBlk.W[SolnBlk.ICu][j] +
 	  (SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dWdx[SolnBlk.ICu][j])*dX.x +
 	  (SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dWdy[SolnBlk.ICu][j])*dX.y;
 	SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
@@ -111,24 +111,24 @@ void Output_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
     for ( i = SolnBlk.Grid.ICl; i <= SolnBlk.Grid.ICu; i++){
       //bottom
       if(SolnBlk.Grid.BCtypeS[i] != BC_NONE) {
-	Linear_Reconstruction_LeastSquares(SolnBlk, 
-					   i, SolnBlk.JCl, 
+	Linear_Reconstruction_LeastSquares(SolnBlk,
+					   i, SolnBlk.JCl,
 					   LIMITER_BARTH_JESPERSEN);
 	dX = SolnBlk.Grid.Cell[i][SolnBlk.JCl-1].Xc -
 	  SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc;
-	SolnBlk.W[i][SolnBlk.JCl-1] = SolnBlk.W[i][SolnBlk.JCl] + 
+	SolnBlk.W[i][SolnBlk.JCl-1] = SolnBlk.W[i][SolnBlk.JCl] +
 	  (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdx[i][SolnBlk.JCl])*dX.x +
 	  (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdy[i][SolnBlk.JCl])*dX.y;
 	SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
       }
       //top
       if(SolnBlk.Grid.BCtypeN[i] != BC_NONE) {
-	Linear_Reconstruction_LeastSquares(SolnBlk, 
-					   i, SolnBlk.JCu, 
+	Linear_Reconstruction_LeastSquares(SolnBlk,
+					   i, SolnBlk.JCu,
 					   LIMITER_BARTH_JESPERSEN);
 	dX = SolnBlk.Grid.Cell[i][SolnBlk.JCu+1].Xc -
 	  SolnBlk.Grid.Cell[i][SolnBlk.JCu].Xc;
-	SolnBlk.W[i][SolnBlk.JCu+1] = SolnBlk.W[i][SolnBlk.JCu] + 
+	SolnBlk.W[i][SolnBlk.JCu+1] = SolnBlk.W[i][SolnBlk.JCu] +
 	  (SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dWdx[i][SolnBlk.JCu])*dX.x +
 	  (SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dWdy[i][SolnBlk.JCu])*dX.y;
 	SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
@@ -239,6 +239,7 @@ void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
 		<< "\"Qyzz\" \\ \n"
 		<< "\"qx\" \\ \n"
 		<< "\"qy\" \\ \n"
+		<< "\"K\" \\ \n"
 #endif
                 << "\"drhodx\" \\ \n"
                 << "\"dudx\" \\ \n"
@@ -303,6 +304,7 @@ void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
 		    << " " << SolnBlk.W[i][j].q
 		    << " " << (SolnBlk.W[i][j].q.xxx+SolnBlk.W[i][j].q.xyy+SolnBlk.W[i][j].q.xzz)/2.0
 		    << " " << (SolnBlk.W[i][j].q.xxy+SolnBlk.W[i][j].q.yyy+SolnBlk.W[i][j].q.yzz)/2.0
+		    << " " << SolnBlk.W[i][j].K()
 #endif
 		    << " " << SolnBlk.dWdx[i][j]
 		    << " " << SolnBlk.dWdy[i][j]
@@ -422,7 +424,6 @@ void Output_Cylinder_Free_Molecular(Gaussian2D_Quad_Block &SolnBlk,
 
   int i, j;
   double psi, cos_angle, sin_angle, Pn, tau, Pn_exact, tau_exact, cpsi;
-  double c, S, alpha_m;
   double T_ratio(1.0); //ratio of temperature between incoming and reflected particles
   Vector2D dX;
   Gaussian2D_pState W_node, W_exact;
@@ -586,7 +587,10 @@ void Output_Drag(Gaussian2D_Quad_Block &SolnBlk,
 
   for(i = SolnBlk.Grid.ICl; i <= SolnBlk.Grid.ICu; i++) {
 
-    if(SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL){
+    if(SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+       SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL ||
+       SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+       SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP){
 
       Linear_Reconstruction_LeastSquares(SolnBlk,i,SolnBlk.Grid.JCl,
 					 LIMITER_VENKATAKRISHNAN);
@@ -641,7 +645,10 @@ void Output_Drag(Gaussian2D_Quad_Block &SolnBlk,
       lift += cell_lift;
     }
 
-    if(SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL){
+    if(SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+       SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL ||
+       SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+       SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP){
       //Not Done
     }
   }
@@ -650,11 +657,17 @@ void Output_Drag(Gaussian2D_Quad_Block &SolnBlk,
 
   for(i = SolnBlk.Grid.JCl; i <= SolnBlk.Grid.JCu; i++) {
 
-    if(SolnBlk.Grid.BCtypeE[i] == BC_ADIABATIC_WALL){
+    if(SolnBlk.Grid.BCtypeE[i] == BC_REFLECTION ||
+       SolnBlk.Grid.BCtypeE[i] == BC_ADIABATIC_WALL ||
+       SolnBlk.Grid.BCtypeE[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+       SolnBlk.Grid.BCtypeE[i] == BC_TEMPERATURE_SLIP){
       //Not Done
     }
 
-    if(SolnBlk.Grid.BCtypeW[i] == BC_ADIABATIC_WALL){
+    if(SolnBlk.Grid.BCtypeW[i] == BC_REFLECTION ||
+       SolnBlk.Grid.BCtypeW[i] == BC_ADIABATIC_WALL ||
+       SolnBlk.Grid.BCtypeW[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+       SolnBlk.Grid.BCtypeW[i] == BC_TEMPERATURE_SLIP){
       //Not Done
     }
   }
@@ -700,8 +713,10 @@ void Output_Shock_Structure(Gaussian2D_Quad_Block &SolnBlk,
 			    int &Output_Title,
 			    ostream &Out_File,
 			    const double &y,
-			    const double &y_tol) {
-  int i, j, output_flag(0);
+			    const double &y_tol,
+			    const Gaussian2D_pState &Wu,
+			    const Gaussian2D_pState &Wd) {
+    int i, j, output_flag(0);
 
     /* Ensure boundary conditions are updated before
        outputting solution */
@@ -726,19 +741,12 @@ void Output_Shock_Structure(Gaussian2D_Quad_Block &SolnBlk,
 		 << ", Time = " << Time
 		 << "\"" << "\n"
 		 << "VARIABLES = \"x\" \\ \n"
-		 << "\"y\" \\ \n"
-		 << "\"Mean Free Path\" \\ \n"
-		 << "\"x/mfp_ref\" \\ \n"
 		 << "\"rho\" \\ \n"
-		 << "\"u\" \\ \n"
-		 << "\"v\" \\ \n"
-		 << "\"pxx\" \\ \n"
-		 << "\"pxy\" \\ \n"
-		 << "\"pyy\" \\ \n"
-		 << "\"pzz\" \\ \n"
-		 << "\"erot\" \\ \n"
 		 << "\"T\" \\ \n"
-		 << "\"DetP\" \\ \n"
+		 << "\"u\" \\ \n"
+		 << "\"Pxx\" \\ \n"
+		 << "\"Pyy\" \\ \n"
+		 << "\"Qxxx\" \\ \n"
 		 << "ZONE T =  \"Block Number = " << Block_Number
 		 << "\" \\ \n"
 		 << "I = " << SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 1 << " \\ \n"
@@ -753,16 +761,27 @@ void Output_Shock_Structure(Gaussian2D_Quad_Block &SolnBlk,
 
       for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
 	for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+	   //note: this does not compute the heat terms in exactly the same way as in
+	   //      the residual calculation.  Be sure you know what you're computing.
+	   SolnBlk.W[i][j].ComputeHeatTerms(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],
+					    Vector2D(0.0,0.0),0);
+#endif
 	  if(fabs(SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc.y-y)<y_tol && 
 	     SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc.y > 0.0) {
-	    Out_File << " "  << SolnBlk.Grid.Cell[i][j].Xc;
 	    Out_File.setf(ios::scientific);
-	    Out_File << " "  << SolnBlk.W[i][j].mfp() 
-		     << " "  << SolnBlk.Grid.Cell[i][j].Xc.x/SolnBlk.WoN[0].mfp(); //I don't use IP.Wo because it is not reset after a restart.
-	    Out_File.unsetf(ios::scientific);
-	    Out_File << SolnBlk.W[i][j];
-	    Out_File.setf(ios::scientific);
-	    Out_File << " " << SolnBlk.W[i][j].T() << " " << SolnBlk.W[i][j].DetP() << "\n";
+	    Out_File << " "  << SolnBlk.Grid.Cell[i][j].Xc.x/Wu.mfp();
+	    Out_File << " "  << (SolnBlk.W[i][j].d-Wu.d)/(Wd.d-Wu.d);
+	    Out_File << " "  << SolnBlk.W[i][j].T();
+	    Out_File << " "  << SolnBlk.W[i][j].v.x;
+	    Out_File << " "  << SolnBlk.W[i][j].p.xx;
+	    Out_File << " "  << SolnBlk.W[i][j].p.yy;
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+	    Out_File << " "  << SolnBlk.W[i][j].q.xxx/( pow(SolnBlk.W[i][j].p.xx,1.5)/sqrt(SolnBlk.W[i][j].d) );
+#else
+	    Out_File << " "  << 0.00;
+#endif
+	    Out_File << "\n";
 	    Out_File.unsetf(ios::scientific);
 	  }
 	} /* endfor */

@@ -13,14 +13,17 @@
 /****************************************************************
  * Gaussian2D_pState -- Create storage and assign gas constants.*
  ****************************************************************/
-double Gaussian2D_pState::M        = MOLE_WT_AIR;
-int    Gaussian2D_pState::atoms    = GAUSSIAN_DIATOMIC;
-int    Gaussian2D_pState::gas      = GAS_AIR;
-double Gaussian2D_pState::alpha_m  = ONE;
-double Gaussian2D_pState::alpha_t  = ONE;
-double Gaussian2D_pState::omega    = OMEGA_AIR;
-double Gaussian2D_pState::mu_not   = MU_NOT_AIR;
-double Gaussian2D_pState::pr       = 0.6666666666666666667;
+double Gaussian2D_pState::M         = MOLE_WT_AIR;
+int    Gaussian2D_pState::atoms     = GAUSSIAN_DIATOMIC;
+int    Gaussian2D_pState::gas       = GAS_AIR;
+double Gaussian2D_pState::alpha_m   = ONE;
+double Gaussian2D_pState::alpha_t   = ONE;
+double Gaussian2D_pState::omega     = OMEGA_AIR;
+double Gaussian2D_pState::mu_not    = MU_NOT_AIR;
+double Gaussian2D_pState::pr        = 0.6666666666666666667;
+double Gaussian2D_pState::gamma     = 1.6666666666666666667;
+double Gaussian2D_pState::g_gm1     = 2.5;
+double Gaussian2D_pState::T_damping = 0.0;
 /****************************************************************
  * Gaussian2D_cState -- Create storage and assign gas constants.*
  ****************************************************************/
@@ -36,6 +39,11 @@ double Gaussian2D_cState::pr      = 0.6666666666666666667;
  *************************************************************/
 void Gaussian2D_pState::set_state_from_ips(Gaussian2D_Input_Parameters &IP) {
   setgas(IP.Gas_Type);
+  p.xx = IP.Pressure;
+  p.xy = 0.0;
+  p.yy = IP.Pressure;
+  p.zz = IP.Pressure;
+  if(atoms == 2)  erot = IP.Pressure;
   set_temperature_d(IP.Temperature);
   v.x = IP.Mach_Number*sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
   v.y = IP.Mach_Number*sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
@@ -305,24 +313,54 @@ double dTdn(const Gaussian2D_pState &W,
 	    const Gaussian2D_pState &dWdy,
 	    const Vector2D &norm_dir) {
 
+  double temp(AVOGADRO*THOUSAND/W.M*BOLTZMANN);
   Gaussian2D_pState dWdn(norm_dir.x*dWdx+norm_dir.y*dWdy);
 
   switch(W.atoms) {
     case 1 :
 
       return ( 1.0/(3.0*W.d)*(dWdn.p.xx+dWdn.p.yy+dWdn.p.zz) -
-	       1.0/(3.0*W.d*W.d)*(W.p.xx+W.p.yy+W.p.zz)*dWdn.d);
+	       1.0/(3.0*W.d*W.d)*(W.p.xx+W.p.yy+W.p.zz)*dWdn.d)/temp;
 
     case 2 :
 
       return ( 1.0/(5.0*W.d)*(dWdn.p.xx+dWdn.p.yy+dWdn.p.zz+2.0*dWdn.erot) -
-	       1.0/(5.0*W.d*W.d)*(W.p.xx+W.p.yy+W.p.zz+2.0*W.erot)*dWdn.d);
+	       1.0/(5.0*W.d*W.d)*(W.p.xx+W.p.yy+W.p.zz+2.0*W.erot)*dWdn.d)/temp;
 
     default :
       cout << "Error determining dTdn." << endl;
       return -1.0;
   };
 
+}
+
+/********************************************************
+ * Routine: Slip_T                                      *
+ *                                                      *
+ * Find the slip temperature.                           *
+ *                                                      *
+ ********************************************************/
+double Slip_T(const Gaussian2D_pState &W,
+	      const double &T,
+	      double &old_T,
+	      const Gaussian2D_pState &dWdx,
+	      const Gaussian2D_pState &dWdy,
+	      const Vector2D &norm_dir) {
+  double Tk, _dTdn; //underscore to avoid same name as function dTdn()
+  double Tk_damped;
+
+  //I need the negative sign because this function takes the
+  //outward facing normal from the first cell inside the domain.
+  //I need the opposite sign.
+  _dTdn = -dTdn(W,dWdx,dWdy,norm_dir);
+
+  Tk = T + W.gt()*_dTdn;
+
+  //damping can be required for high-knudsen-number situations.
+  Tk_damped = (1.0-W.T_damping)*Tk + W.T_damping*old_T;
+  old_T = Tk_damped;
+
+  return Tk_damped;
 }
 
 /********************************************************
@@ -453,17 +491,13 @@ Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
 Gaussian2D_pState Isothermal_Wall_Slip_T(const Gaussian2D_pState &W,
 					 const Vector2D &V,
 					 const double &T,
+					 double &T_old,
 					 const Gaussian2D_pState &dWdx,
 					 const Gaussian2D_pState &dWdy,
 					 const Vector2D &norm_dir) {
-  double Tk, _dTdn; //underscore to avoid same name as function dTdn()
+  double Tk;
 
-  //I need the negative sign because this function takes the
-  //outward facing normal from the first cell inside the domain.
-  //I need the opposite sign.
-  _dTdn = -dTdn(W,dWdx,dWdy,norm_dir);
-
-  Tk = T + W.gt()*_dTdn;
+  Tk = Slip_T(W,T,T_old,dWdx,dWdy,norm_dir);
 
   return Isothermal_Wall(W,V,Tk,norm_dir);
 }
@@ -606,17 +640,13 @@ Gaussian2D_pState Knudsen_Layer_Isothermal(const Gaussian2D_pState &W,
 Gaussian2D_pState Knudsen_Layer_Isothermal_Slip_T(const Gaussian2D_pState &W,
 						  const Vector2D &V,
 						  const double &T,
+						  double &T_old,
 						  const Gaussian2D_pState &dWdx,
 						  const Gaussian2D_pState &dWdy,
 						  const Vector2D &norm_dir) {
-  double Tk, _dTdn; //underscore to avoid same name as function dTdn()
+  double Tk;
 
-  //I need the negative sign because this function takes the
-  //outward facing normal from the first cell inside the domain.
-  //I need the opposite sign.
-  _dTdn = -dTdn(W,dWdx,dWdy,norm_dir);
-
-  Tk = T + W.gt()*_dTdn;
+  Tk = Slip_T(W,T,T_old,dWdx,dWdy,norm_dir);
 
   return Knudsen_Layer_Isothermal(W,V,Tk,norm_dir);
 }

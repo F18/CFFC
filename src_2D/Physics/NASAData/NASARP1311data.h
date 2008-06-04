@@ -12,7 +12,7 @@
                trans.inp
 
         associated class file: 
-               NASARP1311class.cc
+               NASARP1311dataclass.cc
 
    Note:  This class has been ammended to include the computation of transport
           coefficients using Lennard-Jones parameters.  See the Theory section of
@@ -24,7 +24,6 @@
                 
 *****************************************************************************/
 
-//SETUP
 #ifndef _NASARP1311_DATA_INCLUDED
 #define _NASARP1311_DATA_INCLUDED
 
@@ -49,7 +48,7 @@ using namespace std;
 
 #ifndef _POLYFIT_H
 #include "../../Math/Polyfit/Polyfit.h"
-#endif  
+#endif // _POLYFIT_H
 
 #include "LennardJones.h"
 
@@ -58,13 +57,10 @@ using namespace std;
 #define TRANSPORT_NASA                   1000
 #define TRANSPORT_LENNARD_JONES          1001
 
-
 // define early
 class thermocoef;
 class transcoef;
 class NASARP1311data;
-
-
 
 /*************************************************************************
 ************** THEMOCOEF CLASS DEFINITION ********************************
@@ -73,10 +69,8 @@ class NASARP1311data;
  
 *************************************************************************
 *************************************************************************/
-class thermocoef{
-  
+class thermocoef {
 private:
-  
   //range of temperature for set of data
   double low_range;
   double high_range;
@@ -276,10 +270,8 @@ inline double transcoef::Trans_coef(int i){
 
 ************************************************************************* 
 *************************************************************************/ 
-class NASARP1311data{
- 
+class NASARP1311data {
   private: 
-
   //data file name and path 
   //const char datafilename[15] = "thermo.inp";
   char datafilename_thermo[INPUT_PARAMETER_LENGTH_CHEM2D]; 
@@ -414,7 +406,6 @@ class NASARP1311data{
   ~NASARP1311data(){ deallocate();}
 };
 
-
 /**************************************************************************
 ********************* NASARP1311data CLASS CONSTRUCTORS *******************
 ***************************************************************************/
@@ -448,7 +439,6 @@ inline void NASARP1311data::Set_Path_Names(const char *CFFC_path){
   }
 
 }
-
 
 /********************* Species Gas Constant ***********************/
 inline double NASARP1311data::Rs(){ 

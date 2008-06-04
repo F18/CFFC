@@ -133,6 +133,7 @@ void Set_Default_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     // Boundary Conditions
     IP.alpha_m = 1.0;
     IP.alpha_t = 1.0;
+    IP.T_damping = 0.0;
     IP.Ramp_by_Mach_Number = 0.0;
     IP.Number_of_Time_Steps_to_Ramp = 0; 
     string_ptr = "OFF";
@@ -605,6 +606,12 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
       IP.Wo.alpha_t = IP.alpha_t;
       IP.Uo.alpha_t = IP.alpha_t;
     } // endif 
+    MPI::COMM_WORLD.Bcast(&(IP.T_damping),
+                          1,
+                          MPI::DOUBLE, 0);
+    if (!CFFC_Primary_MPI_Processor()) {
+      IP.Wo.T_damping = IP.T_damping;
+    } // endif
     MPI::COMM_WORLD.Bcast(&(IP.Ramp_by_Mach_Number), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -1177,6 +1184,12 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
       IP.Wo.alpha_t = IP.alpha_t;
       IP.Uo.alpha_t = IP.alpha_t;
     } // endif
+    Communicator.Bcast(&(IP.T_damping),
+                       1,
+                       MPI::DOUBLE, Source_Rank);
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+      IP.Wo.T_damping = IP.T_damping;
+    } // endif
     Communicator.Bcast(&(IP.Ramp_by_Mach_Number), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -1610,6 +1623,12 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	  strcpy(IP.Gas_Type, string_ptr);
 	  IP.Wo.setgas(IP.Gas_Type);
 	  IP.Wo = Gaussian2D_pState(1.661, 350.7444241833, 0.0, 101325.0);
+       } else if (strcmp(IP.ICs_Type, "Shock_Structure_M1_2") == 0) {
+          IP.i_ICs = IC_SHOCK_STRUCTURE_M1_2;
+	  string_ptr = "A";
+	  strcpy(IP.Gas_Type, string_ptr);
+	  IP.Wo.setgas(IP.Gas_Type);
+	  IP.Wo = Gaussian2D_pState(1.661, 382.63, 0.0, 101325.0);
        } else if (strcmp(IP.ICs_Type, "Shock_Structure_M1_3") == 0) {
           IP.i_ICs = IC_SHOCK_STRUCTURE_M1_3;
 	  string_ptr = "A";
@@ -1628,6 +1647,12 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	  strcpy(IP.Gas_Type, string_ptr);
 	  IP.Wo.setgas(IP.Gas_Type);
 	  IP.Wo = Gaussian2D_pState(1.661, 637.716803332, 0.0, 101325.0);
+       } else if (strcmp(IP.ICs_Type, "Shock_Structure_M9_0") == 0) {
+          IP.i_ICs = IC_SHOCK_STRUCTURE_M9_0;
+	  string_ptr = "A";
+	  strcpy(IP.Gas_Type, string_ptr);
+	  IP.Wo.setgas(IP.Gas_Type);
+	  IP.Wo = Gaussian2D_pState(1.661, 2869.73, 0.0, 101325.0);
        } else if (strcmp(IP.ICs_Type, "Shock_Structure_M10_0") == 0) {
           IP.i_ICs = IC_SHOCK_STRUCTURE_M10_0;
 	  string_ptr = "A";
@@ -1713,6 +1738,11 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        } else if (strcmp(IP.Grid_Type, "NACA_Aerofoil") == 0) {
           IP.i_Grid = GRID_NACA_AEROFOIL;
           IP.Chord_Length = ONE;
+          strcpy(IP.NACA_Aerofoil_Type, "0012");
+       } else if (strcmp(IP.Grid_Type, "NACA_Aerofoil_Ogrid") == 0) {
+          IP.i_Grid = GRID_NACA_AEROFOIL_OGRID;
+          IP.Chord_Length = ONE;
+          IP.Cylinder_Radius2 = 32.0;
           strcpy(IP.NACA_Aerofoil_Type, "0012");
        } else if (strcmp(IP.Grid_Type, "Free_Jet") == 0) {
           IP.i_Grid = GRID_FREE_JET;
@@ -1993,6 +2023,7 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        i_command = 30;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Chord_Length;
+       IP.Cylinder_Radius2 = 32.0*IP.Chord_Length;
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Chord_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
@@ -2117,6 +2148,13 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        IP.Uo.alpha_t = IP.alpha_t;
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.alpha_t < ZERO || IP.alpha_t > ONE) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Slip_T_BC_damping") == 0) {
+       i_command = 43;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.T_damping;
+       IP.Wo.T_damping = IP.T_damping;
+       IP.Input_File.getline(buffer, sizeof(buffer));
 
     } else if (strcmp(IP.Next_Control_Parameter, "Ramp_by_Mach_Number") == 0) {
        i_command = 43;

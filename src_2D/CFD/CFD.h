@@ -234,6 +234,7 @@ inline char *Date_And_Time() {
 #define GRID_JET_FLOW                        30
 #define GRID_ANNULUS                         31
 #define GRID_DEFORMED_BOX                    32
+#define GRID_NACA_AEROFOIL_OGRID             33
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
@@ -595,13 +596,16 @@ inline char *Date_And_Time() {
 #define IC_ELECTRIC_FIELD_DOUBLE_OCTAPOLE    204
 
 #define IC_SHOCK_STRUCTURE_M1_1       300
-#define IC_SHOCK_STRUCTURE_M1_3       301
-#define IC_SHOCK_STRUCTURE_M1_5       302
-#define IC_SHOCK_STRUCTURE_M2_0       303
-#define IC_SHOCK_STRUCTURE_M10_0      304
-#define IC_PIPE                       305
-#define IC_COUETTE                    306
-#define IC_BLUNT_BODY                 307
+#define IC_SHOCK_STRUCTURE_M1_2       301
+#define IC_SHOCK_STRUCTURE_M1_3       302
+#define IC_SHOCK_STRUCTURE_M1_5       303
+#define IC_SHOCK_STRUCTURE_M2_0       304
+#define IC_SHOCK_STRUCTURE_M9_0       305
+#define IC_SHOCK_STRUCTURE_M10_0      306
+#define IC_PIPE                       307
+#define IC_COUETTE                    308
+#define IC_BLUNT_BODY                 309
+#define IC_STATIONARY_SHOCK_STRUCTURE 310
 
 #define IC_SPECIFIED                  400
 #define IC_DISCONTINUOUS              401
@@ -769,9 +773,10 @@ inline char *Date_And_Time() {
 #define FLUX_FUNCTION_AUSM                             9
 #define FLUX_FUNCTION_AUSMplus                        10
 #define FLUX_FUNCTION_AUSM_PLUS_UP                    11
+#define FLUX_FUNCTION_KINETIC                         12
 
-#define	FLUX_FUNCTION_ROE_PRECON_WS                   12
-#define	FLUX_FUNCTION_HLLE_PRECON_WS                  13
+#define	FLUX_FUNCTION_ROE_PRECON_WS                   13
+#define	FLUX_FUNCTION_HLLE_PRECON_WS                  14
 
 #define FLUX_FUNCTION_GODUNOV_MB                      21
 #define FLUX_FUNCTION_ROE_MB                          22

@@ -232,6 +232,9 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
     IP.a = ONE;
     IP.Tau = ONE;
 
+    IP.heat_transfer_flag = 0;
+    IP.thermal_conductivity = 0.0;
+
     string_ptr = "Uniform";
     strcpy(IP.Grid_Type, string_ptr);
     IP.i_Grid = GRID_CARTESIAN_UNIFORM;
@@ -260,6 +263,17 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
 
     // set output to verbose
     IP.Verbose() = ON;
+
+    // levermore1D-specific inputs
+    IP.number_of_moments = 3;
+    IP.relaxation_time = 1.0e10;
+    IP.resync_tol = 1.0e-4;
+
+    // bgk1D-specific inputs
+    IP.bgk_v_min = -2000.0;
+    IP.bgk_v_max = 2000.0;
+    IP.bgk_v_number = 100;
+
 }
 
 /********************************************************
@@ -439,6 +453,8 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
           IP.i_Flux_Function = FLUX_FUNCTION_HLLC;
        } else if (strcmp(IP.Flux_Function_Type, "Osher") == 0) {
           IP.i_Flux_Function = FLUX_FUNCTION_OSHER;
+       } else if (strcmp(IP.Flux_Function_Type, "Kinetic") == 0) {
+          IP.i_Flux_Function = FLUX_FUNCTION_KINETIC;
        } else {
 	 i_command = INVALID_INPUT_CODE;
        } /* endif */
@@ -511,6 +527,8 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
 	  IP.ExactFunction = ConvectionShapes;
        } else if (strcmp(IP.ICs_Type, "Density_Step_IVP") == 0) {
           IP.i_ICs = IC_DENSITY_STEP_WAVE;
+       } else if (strcmp(IP.ICs_Type, "Stationary_Shock_Structure") == 0) {
+          IP.i_ICs = IC_STATIONARY_SHOCK_STRUCTURE;
        } else {
 	 i_command = INVALID_INPUT_CODE;
        } /* endif */
@@ -637,6 +655,20 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Tau < ZERO) i_command = INVALID_INPUT_VALUE;
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Thermal_Conductivity") == 0) {
+       i_command = 20;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.thermal_conductivity;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.thermal_conductivity < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Heat_Transfer") == 0) {
+       i_command = 20;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.heat_transfer_flag;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.heat_transfer_flag != 0 && IP.heat_transfer_flag != 1) i_command = INVALID_INPUT_VALUE;
+
     } else if (strcmp(IP.Next_Control_Parameter, "Output_Format_Type") == 0) {
        i_command = 21;
        Get_Next_Input_Control_Parameter(IP);
@@ -681,7 +713,78 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
       } else {
 	IP.Reconstruction_In_Each_Stage = false;
       } /* endif */
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Mach_Number") == 0) {
+       i_command = 26;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.mach_number;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.mach_number < 0.0 ){
+	 cout << "\n Error! Mach number must be greater than or equal to zero.";
+	 i_command = INVALID_INPUT_VALUE;
+       }/* endif */
+
+      /********************** levermore1D- and bgk-specific inputs **************************/
+    } else if (strcmp(IP.Next_Control_Parameter, "Number_Of_Moments") == 0) {
+       i_command = 30;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.number_of_moments;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.number_of_moments < 3 || IP.number_of_moments%2 ==0 ){
+	 cout << "\n Error! Invalid number of moments.";
+	 i_command = INVALID_INPUT_VALUE;
+       }/* endif */
       
+    } else if (strcmp(IP.Next_Control_Parameter, "Relaxation_Time") == 0) {
+       i_command = 31;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.relaxation_time;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.relaxation_time <= 0.0 ){
+	 cout << "\n Error! Relaxation time must be greater than zero.";
+	 i_command = INVALID_INPUT_VALUE;
+       }/* endif */
+      
+    } else if (strcmp(IP.Next_Control_Parameter, "Resync_Tol") == 0) {
+       i_command = 32;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.resync_tol;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.resync_tol < 0.0 ){
+	 cout << "\n Error! Re-synchronization tolerance must be greater than or equal to zero.";
+	 i_command = INVALID_INPUT_VALUE;
+       }/* endif */
+
+    } else if (strcmp(IP.Next_Control_Parameter, "BGK_v_min") == 0) {
+       i_command = 33;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.bgk_v_min;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.bgk_v_min >= IP.bgk_v_max ){
+	 cout << "\n Error! BGK_v_min must be less than BGK_v_max.";
+	 i_command = INVALID_INPUT_VALUE;
+       }/* endif */
+
+    } else if (strcmp(IP.Next_Control_Parameter, "BGK_v_max") == 0) {
+       i_command = 32;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.bgk_v_max;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.bgk_v_max <= IP.bgk_v_min ){
+	 cout << "\n Error! BGK_v_max must be greater than BGK_v_min.";
+	 i_command = INVALID_INPUT_VALUE;
+       }/* endif */
+
+    } else if (strcmp(IP.Next_Control_Parameter, "BGK_v_number") == 0) {
+       i_command = 32;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.bgk_v_number;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.bgk_v_number <= 3 ){
+	 cout << "\n Error! BGK_v_number must be greater than three..";
+	 i_command = INVALID_INPUT_VALUE;
+       }/* endif */
+
     } else if (strcmp(IP.Next_Control_Parameter, "Execute") == 0) {
        i_command = EXECUTE_CODE;
 

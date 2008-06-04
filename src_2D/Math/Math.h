@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <cassert>
 
 using namespace std;
 
@@ -197,9 +198,14 @@ T TwoPointFiniteDifference(const T &T1, const T &T2, const double &d2_d1) {
   return (T2-T1)/d2_d1;
 }
 
-inline double Factorial(int N){
+inline int Factorial(int N){
   if (N==0) return 1;
   else return N*Factorial(N-1);
+}
+
+inline int Double_Factorial(int N){
+  if (N==0 || N == -1 || N == 1) return 1;
+  else return N*Double_Factorial(N-2);
 }
 
 inline double ConvertDomainToMinusOneOne (double xmin, double xmax, double x){
@@ -215,6 +221,11 @@ inline double ConvertDomainToZeroOne (double xmin, double xmax, double x){
 inline double ConvertDomain (double DomainMin, double DomainMax, double NewDomainMin, double NewDomainMax, double x){
   // convert the domain [DomainMin,DomainMax] to [NewDomainMin,NewDomainMax]
   return (NewDomainMin*DomainMax - DomainMin*NewDomainMax + x*(NewDomainMax - NewDomainMin))/(DomainMax - DomainMin);
+}
+
+inline int Pascals_Triangle(int n, int k) {
+  assert(n>=k);
+  return Factorial(n)/(Factorial(k)*Factorial(n-k));
 }
 
 /*!

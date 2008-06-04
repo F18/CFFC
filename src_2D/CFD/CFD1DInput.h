@@ -56,6 +56,7 @@ class CFD1D_Input_Parameters{
   char ICs_Type[INPUT_PARAMETER_LENGTH_CFD1D];
   int i_ICs;
   FunctionType1D ExactFunction; // pointer to the exact function
+  double mach_number; //mach number for shock-structure ics
 
   // Grid type indicator and related input parameters:
   char Grid_Type[INPUT_PARAMETER_LENGTH_CFD1D];
@@ -66,6 +67,21 @@ class CFD1D_Input_Parameters{
 
   // Diffusion coefficient, wave speed, and relaxation time:
   double Kappa, a, Tau;
+
+  // Thermal Conductivity and flag to turn diffusive heat transfer
+  // on for euler1D.  This was used in my shock structure study
+  // for Levermore moment systems.
+  double thermal_conductivity;
+  int heat_transfer_flag;
+
+  // levermore1D-specific input parameters
+  int number_of_moments;
+  double relaxation_time;
+  double resync_tol;
+
+  //bgk1D-specific input parameters
+  double bgk_v_min, bgk_v_max;
+  int bgk_v_number;
 
   // Output file name:
   char Output_File_Name[INPUT_PARAMETER_LENGTH_CFD1D];
@@ -201,6 +217,10 @@ inline ostream &operator << (ostream &out_file,
         break;
       case IC_EINFELDT :
         break;
+      case IC_STATIONARY_SHOCK_STRUCTURE :
+	out_file << "\n  -> Mach Number: "
+		 << IP.mach_number;
+	break;
       default:
         break;
     } /* endswitch */
@@ -210,7 +230,12 @@ inline ostream &operator << (ostream &out_file,
              << IP.a;
     out_file << "\n  -> Relaxation Time : " 
              << IP.Tau;
-
+    if(IP.heat_transfer_flag) {
+      out_file << "\n -> Diffusive heat transfer for euler1D is active"
+	       << "\n    with thermal conductivity = " << IP.thermal_conductivity
+	       << "\n    (This is only implimented for explicit-Euler and predictor-corrector"
+	       << "\n    time marching).";
+    }
     out_file << "\n  -> Grid: " 
              << IP.Grid_Type;
     switch(IP.i_Grid) {
@@ -240,6 +265,19 @@ inline ostream &operator << (ostream &out_file,
              << IP.Output_File_Name;
     out_file << "\n  -> Output Format: " 
              << IP.Output_Format_Type;
+    out_file << "\n  ------------- levermore1D- and bgk1D-specific inputs ------------"
+	     << "\n  -> Number of Moments: "
+	     << IP.number_of_moments
+	     << "\n  -> Relaxation time: "
+	     << IP.relaxation_time
+	     << "\n  -> Re-synchronization tolerance: "
+             << IP.resync_tol
+	     << "\n  -> BGK v_min: "
+             << IP.bgk_v_min
+	     << "\n  -> BGK v_max: "
+             << IP.bgk_v_max
+	     << "\n  -> BGK v_number: "
+             << IP.bgk_v_number;
 
     return (out_file);
 }

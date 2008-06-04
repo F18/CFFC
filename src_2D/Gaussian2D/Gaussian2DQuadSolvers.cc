@@ -1078,9 +1078,9 @@ int Gaussian2DQuadSolver(char *Input_File_Name_ptr,
       CdF = sqrt(PI)/S*(PI/4.0+3.0/2.0);
       CdC = 8.0*PI/Re/(log(8.0/Re)-0.0772);
       CdP = 8.0*PI/Re/(log(8.0/Re)-0.0772+1.0161*(4.0*S/Re)+0.0166*sqr(4.0*S/Re));
-      if (!batch_flag) cout << "\n\n Drag = " << drag << " N/m (valid only for \"Adiabatic Walls\")        Cd = " 
+      if (!batch_flag) cout << "\n\n Drag = " << drag << " N/m (valid only for some BCs)        Cd = " 
 			    << Cd <<" (valid only for cylinder)\n"
-			    << " Lift = " << lift << " N/m (valid only for \"Adiabatic Walls\")        Cl = " 
+			    << " Lift = " << lift << " N/m (valid only for some BCs)        Cl = " 
 			    << Cl <<" (valid only for cylinder)\n"
 			    << " Speed Ratio = " << S << "                                       Kn = "
 			    << Kn <<" (valid only for cylinder)\n           Re = " << Re

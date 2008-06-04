@@ -7,7 +7,7 @@
           hence the use of -D_GNU_GCC_296 compiler flag.
 
         assosiated header file: 
-                  NASARP1311.h
+                  NASARP1311data.h
 
 ****************************************************************************/
 
@@ -158,7 +158,6 @@ void NASARP1311data::GetThermoData(const string spec) {
     //convert from J/mol to J/kg by / my mol_mass
     Temp = type.substr(66,80);
     thermo_data[i].DeltaHref_in(stof(Temp)/mol_mass);
-    thermo_data[i].DeltaHref_in(0.0);
 
     // Everything is set up around 7 exponents so check!
     //if(thermo_data[i].Numexponents() != 7){
@@ -973,7 +972,6 @@ void NASARP1311data::FitTransDataLJ() {
   trans_thermconduct[0].Trans_coef_in(C_coef);
   trans_thermconduct[0].Low_range_in(Tmin);
   trans_thermconduct[0].High_range_in(Tmax);
-
 
   //------------------------------------------------
   // DEBUG - write tests to file

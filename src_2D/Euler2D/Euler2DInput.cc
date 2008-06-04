@@ -2710,6 +2710,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
       strcpy(IP.BC_North_Type,IP.Next_Control_Parameter);
       if (strcmp(IP.BC_North_Type,"Reflection") == 0) {
 	IP.BC_North = BC_REFLECTION;
+      } else if (strcmp(IP.BC_North_Type,"Periodic") == 0) {
+	IP.BC_North = BC_PERIODIC;
       } else if (strcmp(IP.BC_North_Type,"Burning_Surface") == 0) {
 	IP.BC_North = BC_BURNING_SURFACE;
       } else if (strcmp(IP.BC_North_Type,"Fixed") == 0) {
@@ -2740,6 +2742,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
       strcpy(IP.BC_South_Type,IP.Next_Control_Parameter);
       if (strcmp(IP.BC_South_Type,"Reflection") == 0) {
 	IP.BC_South = BC_REFLECTION;
+      } else if (strcmp(IP.BC_South_Type,"Periodic") == 0) {
+	IP.BC_South = BC_PERIODIC;
       } else if (strcmp(IP.BC_South_Type,"Burning_Surface") == 0) {
 	IP.BC_South = BC_BURNING_SURFACE;
       } else if (strcmp(IP.BC_South_Type,"Fixed") == 0) {
@@ -2770,6 +2774,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
       strcpy(IP.BC_East_Type,IP.Next_Control_Parameter);
       if (strcmp(IP.BC_East_Type,"Reflection") == 0) {
 	IP.BC_East = BC_REFLECTION;
+      } else if (strcmp(IP.BC_East_Type,"Periodic") == 0) {
+	IP.BC_East = BC_PERIODIC;
       } else if (strcmp(IP.BC_East_Type,"Burning_Surface") == 0) {
 	IP.BC_East = BC_BURNING_SURFACE;
       } else if (strcmp(IP.BC_East_Type,"Fixed") == 0) {
@@ -2800,6 +2806,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
       strcpy(IP.BC_West_Type,IP.Next_Control_Parameter);
       if (strcmp(IP.BC_West_Type,"Reflection") == 0) {
 	IP.BC_West = BC_REFLECTION;
+      } else if (strcmp(IP.BC_West_Type,"Periodic") == 0) {
+	IP.BC_West = BC_PERIODIC;
       } else if (strcmp(IP.BC_West_Type,"Burning_Surface") == 0) {
 	IP.BC_West = BC_BURNING_SURFACE;
       } else if (strcmp(IP.BC_West_Type,"Fixed") == 0) {

@@ -286,6 +286,7 @@ extern void Linear_Reconstruction_LeastSquares(Euler1D_UniformMesh *Soln,
 					       const int Limiter);
 
 extern int dUdt_explicitEuler_upwind(Euler1D_UniformMesh *Soln,
+				     const CFD1D_Input_Parameters &IP,
     	                             const int Number_of_Cells,
 			             double &dtMin,
 				     const double &CFL_Number,

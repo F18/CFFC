@@ -34,7 +34,6 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
   /* Broadcast the mesh to other MPI processors. */
 
   Data.Initial_Mesh.Broadcast();
-
   
   /* Initialize solution blocks specializations. */
 
