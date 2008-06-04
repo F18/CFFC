@@ -139,9 +139,9 @@ void HighOrder2D_Input::Set_Final_Parameters(Input_Parameters_Type & IP){
   }
 
   // Decide how many high-order reconstructions need to be instantiated.
-  // by checking how many orders are different than -1.
+  // by checking how many orders are greater than -1.
   for (i=0,NumberOfHighOrderReconstructions = 0,NumberOfAuxiliaryReconstructions = 0; i < OrdersOfReconstruction.size(); ++i){
-    if (OrdersOfReconstruction[i] != -1){
+    if (OrdersOfReconstruction[i] > -1){
       ++NumberOfHighOrderReconstructions;
       // add to the Temp if this reconstruction is an auxiliary one
       if (i != 0){

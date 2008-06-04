@@ -1224,14 +1224,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
     // Update all dependent variables
     if (!CFFC_Primary_MPI_Processor()) {
-      // Perform update of the internal variables of the exact solution
-      IP.ExactSoln->Set_ParticularSolution_Parameters();
-
-      // Perform update of the internal variables of the inflow field
-      IP.Inflow->Set_InflowField_Parameters();
-
-      // Perform update of the internal variables of the high-order input parameters
-      HighOrder2D_Input::Set_Final_Parameters(IP);
 
       // Set reference state in the AdvectDiffuse2D_Quad_Block class
       AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(IP.RefU);
