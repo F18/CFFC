@@ -2742,152 +2742,167 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
       LESPremixed2D_pState *Wflame;
       
       Lx = Input_Parameters.Box_Width;
-      
-      // Open data file for reading
-      InFile.open("Slice1DFlame_j-0002.dat", ios::in); 
-      // Check to see if successful
-      if(InFile.fail()){ 
-        cerr<<"\nError opening file: Slice1DFlame_j-0002.dat to read" <<endl;
-        exit(1); 
-      } 
+
+//       // Open data file for reading
+//       InFile.open("Slice1DFlame_j-0002.dat", ios::in); 
+//       // Check to see if successful
+//       if(InFile.fail()){ 
+//         cerr<<"\nError opening file: Slice1DFlame_j-0002.dat to read" <<endl;
+//         exit(1); 
+//       } 
 
      
       
-      // Read the number of cells n, required to allocate Wflame, and the thickness 
-      // of the region written in the file
-      InFile.setf(ios::skipws);
-      do {
-        getline(InFile, line);
-      } while (line.compare("Cells, Thickness:")!=0  &&  !InFile.eof());
-      if (InFile.eof()){
-	cerr<< "\"Cells, Thickness:\" not in: Slice1DFlame_j-0002.dat"<< endl;
-	exit(1);
-      }
-      InFile >> n >> thickness;
+//       // Read the number of cells n, required to allocate Wflame, and the thickness 
+//       // of the region written in the file
+//       InFile.setf(ios::skipws);
+//       do {
+//         getline(InFile, line);
+//       } while (line.compare("Cells, Thickness:")!=0  &&  !InFile.eof());
+//       if (InFile.eof()){
+// 	cerr<< "\"Cells, Thickness:\" not in: Slice1DFlame_j-0002.dat"<< endl;
+// 	exit(1);
+//       }
+//       InFile >> n >> thickness;
 
-      assert(thickness <= Lx);
+//       assert(thickness <= Lx);
 
-      // Allocate arrays containing relative position and W within the 1D flame front
-      Wflame = new LESPremixed2D_pState[n];  
-      x_flame = new double[n];
+//       // Allocate arrays containing relative position and W within the 1D flame front
+//       Wflame = new LESPremixed2D_pState[n];  
+//       x_flame = new double[n];
 
-      do {
-        getline(InFile, line);
-      } while (line.compare("Yf_u, Yf_b, Tu, Tb, rho_un:")!=0  &&  !InFile.eof());
-      if (InFile.eof()){
-	cerr<< "\"Yf_u, Yf_b, Tu, Tb\" not in: Slice1DFlame_j-0002.dat"<< endl;
-	exit(1);
-      }
-      InFile >> Yf_u >> Yf_b >> Tu >> Tb >> rho_un;
+//       do {
+//         getline(InFile, line);
+//       } while (line.compare("Yf_u, Yf_b, Tu, Tb, rho_un:")!=0  &&  !InFile.eof());
+//       if (InFile.eof()){
+// 	cerr<< "\"Yf_u, Yf_b, Tu, Tb\" not in: Slice1DFlame_j-0002.dat"<< endl;
+// 	exit(1);
+//       }
+//       InFile >> Yf_u >> Yf_b >> Tu >> Tb >> rho_un;
 
-      if (Yf_b < 1.0E-6) Yf_b = ZERO;
-      // This is needed for the calculation of the condional averages to the
-      // unburned gas mixture. 
-      Input_Parameters.Fresh_Fuel_Mass_Fraction = Yf_u;
-      Input_Parameters.Burnt_Fuel_Mass_Fraction = Yf_b;
-      Input_Parameters.Fresh_Density = rho_un;
+//       if (Yf_b < 1.0E-6) Yf_b = ZERO;
+//       // This is needed for the calculation of the condional averages to the
+//       // unburned gas mixture. 
+//       Input_Parameters.Fresh_Fuel_Mass_Fraction = Yf_u;
+//       Input_Parameters.Burnt_Fuel_Mass_Fraction = Yf_b;
+//       Input_Parameters.Fresh_Density = rho_un;
 
 
 
-      // Go to the beginning of the file 
-      InFile.seekg(0, ios::beg); 
+//       // Go to the beginning of the file 
+//       InFile.seekg(0, ios::beg); 
 
-      // Read relative position and W within the 1D flame front
-      for (int k=0; k < n; ++k) {
-	InFile >> x_flame[k] >> Wflame[k];
-	if (Wflame[k].rho > 1.131)  cout << "\nSomething went wrong reading. \t x = "<< x_flame[k] 
-					 << "\t k = " << k << "\t rho = " << Wflame[k].rho << flush;
-        getline(InFile, line);
-      }  
-      InFile.unsetf(ios::skipws);
-      // Close the file
-      InFile.close();     
+//       // Read relative position and W within the 1D flame front
+//       for (int k=0; k < n; ++k) {
+// 	InFile >> x_flame[k] >> Wflame[k];
+// 	if (Wflame[k].rho > 1.131)  cout << "\nSomething went wrong reading. \t x = "<< x_flame[k] 
+// 					 << "\t k = " << k << "\t rho = " << Wflame[k].rho << flush;
+//         getline(InFile, line);
+//       }  
+//       InFile.unsetf(ios::skipws);
+//       // Close the file
+//       InFile.close();     
 
       
-      /*-------------------------------------------------------------------------*\
-        Fill the row of the block corresponding to j = SolnBlk.JCl-SolnBlk.Nghost 
-        with values from the data file. Additionally, turn off the heat release 
-        and set the velocity to zero:
-          rho = density of the unburnt gases
-          vx = zero
-          vy = zero
-          p = pressure of the unburnt gases
-          T = temperature of the unburnt gases
-      \*-------------------------------------------------------------------------*/
+//       /*-------------------------------------------------------------------------*\
+//         Fill the row of the block corresponding to j = SolnBlk.JCl-SolnBlk.Nghost 
+//         with values from the data file. Additionally, turn off the heat release 
+//         and set the velocity to zero:
+//           rho = density of the unburnt gases
+//           vx = zero
+//           vy = zero
+//           p = pressure of the unburnt gases
+//           T = temperature of the unburnt gases
+//       \*-------------------------------------------------------------------------*/
+
+//       jj = SolnBlk.JCl-SolnBlk.Nghost;
+//       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i ) {
+//         // LHS of the flame
+//         if (SolnBlk.Grid.Cell[i][jj].Xc.x < (Lx/*5.0*Lx/8.0*/ - thickness)/TWO) {
+//           SolnBlk.W[i][jj] = Wflame[0];
+//         // RHS of the flame
+// 	    } else if (SolnBlk.Grid.Cell[i][jj].Xc.x > (Lx/*5.0*Lx/8.0*/ + thickness)/TWO) {
+//           SolnBlk.W[i][jj] = Wflame[n-1];
+//         // Flame  region
+//         } else {
+// 	      double relative_x = SolnBlk.Grid.Cell[i][jj].Xc.x - (Lx/*5.0*Lx/8.0*/ - thickness)/TWO;
+//           for (int k=0; k < n; ++k) {
+//             if (x_flame[k] == relative_x) {
+//               SolnBlk.W[i][jj] = Wflame[k];
+//               break;
+// 	    } else if (relative_x <= x_flame[0]) {
+//               SolnBlk.W[i][jj] = Wflame[0];
+// 	      break;
+//             } else if (k>0 &&  (x_flame[k] > relative_x)) {
+// 	      if (x_flame[k-1] < relative_x) {
+// 		// Interpolate
+// 		SolnBlk.W[i][jj] =  LinearInterpolation(x_flame[k-1], x_flame[k], 
+// 							relative_x, 
+// 							Wflame[k-1], Wflame[k]);
+// 	      } // else {
+// // 		for (int m=k-1; m>0; --m) {
+// // 		  if (x_flame[m] < relative_x) {
+// // 		    SolnBlk.W[i][jj] =  LinearInterpolation(x_flame[m], x_flame[k], 
+// // 							    relative_x, 
+// // 							    Wflame[m], Wflame[k]);
+// // 		    break;
+// // 		  }	  
+// // 		}
+// // 	      }
+//               break;
+//             } else if (k>0  &&  relative_x >= x_flame[n-1]) {
+//               SolnBlk.W[i][jj] = Wflame[n-1];
+//               break; 
+// 	    }
+//   	  } //end for
+//         } //end if
+
+// 	if (SolnBlk.W[i][jj].spec[0].c < 1.0E-6)  SolnBlk.W[i][jj].spec[0].c = 0.0; 
+//         bool species_check = SolnBlk.W[i][jj].negative_speccheck();
+
+// //         SolnBlk.W[i][jj].rho = Wflame[0].rho;
+// //        SolnBlk.W[i][jj].p = Wflame[0].p;
+// //         SolnBlk.W[i][jj].v.zero();
+
+// 	// Ensure the thickening and wrinkling factors are 1.0 
+// #ifdef THICKENED_FLAME_ON
+// 	SolnBlk.W[i][jj].flame.TF = ONE;
+// 	SolnBlk.W[i][jj].flame.WF = ONE;
+// #endif
+
+// 	//////////////////////////////////////////////////////  New stuff
+// 	double HRF, C;
+// 	Tb = 2218.13;   // Methane, phi = 1.0, from Cantera
+// 	HRF = (Tb - Tu)/Tu;
+// 	if (HRF <= ZERO ) {
+// 	  cerr <<"\nNot acceptable value of heat release";
+// 	  exit(1);
+// 	}
+	
+// 	C = (SolnBlk.W[i][jj].spec[0].c - Yf_u)/(Yf_b - Yf_u);
+//         C = min(max(C, ZERO), ONE);
+// 	    if (SolnBlk.Grid.Cell[i][jj].Xc.x > (Lx/*5.0*Lx/8.0*/ + thickness)/TWO)  {  
+// 	  SolnBlk.W[i][jj].rho = SolnBlk.W[i][jj].p/(SolnBlk.W[i][jj].Rtot()*Tb);
+// 	} else {
+// 	  SolnBlk.W[i][jj].rho = (rho_un/(ONE + HRF*C))*(Wflame[0].Rtot()/SolnBlk.W[i][jj].Rtot());
+// 	}
+// 	//////////////////////////////////////////////////////  New stuff
 
       jj = SolnBlk.JCl-SolnBlk.Nghost;
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i ) {
-        // LHS of the flame
-        if (SolnBlk.Grid.Cell[i][jj].Xc.x < (/*Lx/2.0*/  5.0*Lx/8.0 - thickness/2.0)/*TWO*/) {
-          SolnBlk.W[i][jj] = Wflame[0];
-        // RHS of the flame
-	} else if (SolnBlk.Grid.Cell[i][jj].Xc.x > (/*Lx/2.0*/  5.0*Lx/8.0 + thickness/2.0)/*TWO*/) {
-          SolnBlk.W[i][jj] = Wflame[n-1];
-        // Flame  region
-        } else {
-          double relative_x = SolnBlk.Grid.Cell[i][jj].Xc.x - (/*Lx/2.0*/  5.0*Lx/8.0 - thickness/2.0)/*TWO*/;
-          for (int k=0; k < n; ++k) {
-            if (x_flame[k] == relative_x) {
-              SolnBlk.W[i][jj] = Wflame[k];
-              break;
-	    } else if (relative_x <= x_flame[0]) {
-              SolnBlk.W[i][jj] = Wflame[0];
-	      break;
-            } else if (k>0 &&  (x_flame[k] > relative_x)) {
-	      if (x_flame[k-1] < relative_x) {
-		// Interpolate
-		SolnBlk.W[i][jj] =  LinearInterpolation(x_flame[k-1], x_flame[k], 
-							relative_x, 
-							Wflame[k-1], Wflame[k]);
-	      } // else {
-// 		for (int m=k-1; m>0; --m) {
-// 		  if (x_flame[m] < relative_x) {
-// 		    SolnBlk.W[i][jj] =  LinearInterpolation(x_flame[m], x_flame[k], 
-// 							    relative_x, 
-// 							    Wflame[m], Wflame[k]);
-// 		    break;
-// 		  }	  
-// 		}
-// 	      }
-              break;
-            } else if (k>0  &&  relative_x >= x_flame[n-1]) {
-              SolnBlk.W[i][jj] = Wflame[n-1];
-              break; 
-	    }
-  	  } //end for
-        } //end if
-
-	if (SolnBlk.W[i][jj].spec[0].c < 1.0E-6)  SolnBlk.W[i][jj].spec[0].c = 0.0; 
-        bool species_check = SolnBlk.W[i][jj].negative_speccheck();
-
-//         SolnBlk.W[i][jj].rho = Wflame[0].rho;
-//        SolnBlk.W[i][jj].p = Wflame[0].p;
-//         SolnBlk.W[i][jj].v.zero();
-
-	// Ensure the thickening and wrinkling factors are 1.0 
-#ifdef THICKENED_FLAME_ON
-	SolnBlk.W[i][jj].flame.TF = ONE;
-	SolnBlk.W[i][jj].flame.WF = ONE;
-#endif
-
-	//////////////////////////////////////////////////////  New stuff
-	double HRF, C;
-	Tb = 2218.13;   // Methane, phi = 1.0, from Cantera
-	HRF = (Tb - Tu)/Tu;
-	if (HRF <= ZERO ) {
-	  cerr <<"\nNot acceptable value of heat release";
-	  exit(1);
-	}
-	
-	C = (SolnBlk.W[i][jj].spec[0].c - Yf_u)/(Yf_b - Yf_u);
-        C = min(max(C, ZERO), ONE);
-	if (SolnBlk.Grid.Cell[i][jj].Xc.x > (/*Lx/2.0*/  5.0*Lx/8.0 + thickness/2.0))  {  
-	  SolnBlk.W[i][jj].rho = SolnBlk.W[i][jj].p/(SolnBlk.W[i][jj].Rtot()*Tb);
-	} else {
-	  SolnBlk.W[i][jj].rho = (rho_un/(ONE + HRF*C))*(Wflame[0].Rtot()/SolnBlk.W[i][jj].Rtot());
-	}
-	//////////////////////////////////////////////////////  New stuff
-
+//       	 if ( SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY &&
+//               SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE &&
+//               SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY &&
+//               SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
+           double xx = SolnBlk.Grid.Cell[i][jj].Xc.x-Lx/TWO;
+	   SolnBlk.W[i][jj].scalar[0] = (erf(xx*8000.0)+1.0)/2.0;
+	   SolnBlk.W[i][jj].p = 101325.0;
+	   SolnBlk.W[i][jj] = SolnBlk.W[i][jj].premixed_mfrac(Input_Parameters.Wo);
+	   SolnBlk.W[i][jj].rho = SolnBlk.W[i][jj].reactants_den/(1.0+SolnBlk.W[i][jj].HeatRelease_Parameter()*SolnBlk.W[i][jj].scalar[0]);
+	   SolnBlk.W[i][jj].v.x = SolnBlk.W[i][jj].reactants_den*SolnBlk.W[i][jj].laminar_speed/SolnBlk.W[i][jj].rho;
+	   SolnBlk.W[i][jj].v.y = 0.0;
+ 	   SolnBlk.W[i][jj].scalar[1]= 2000.0*exp(-sqr(xx*8000.0))/sqrt(3.1415926)/SolnBlk.W[i][jj].rho;
+// 	 }
 
 	// Update U from W
         SolnBlk.U[i][jj] = U(SolnBlk.W[i][jj]);
