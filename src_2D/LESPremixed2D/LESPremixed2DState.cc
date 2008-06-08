@@ -1054,7 +1054,7 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
          Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
          Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
          Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD) {
-    dWdQ(5,0) = -scalar[1]/rho;;
+    dWdQ(5,0) = -scalar[1]/rho;
     dWdQ(5,5) = ONE/rho;
     if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
       dWdQ(3,0) = HALF*v.sqr()-ht+C_p*pt/(rho*Rt)+scalar[0]*eta_fsd;

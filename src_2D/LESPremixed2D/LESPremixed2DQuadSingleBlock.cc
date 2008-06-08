@@ -2353,37 +2353,37 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
       // Set Initial condtions on 1D grid
       for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
 	for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-     if ( SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C &&
-          SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C_ALGEBRAIC &&
-          SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C_FSD &&
-          SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_NGT_C_FSD &&
-          SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY &&
-          SolnBlk.Flow_Type != FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ) {
-	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= 0.0){ //spatial relation, grid independent 
-	    SolnBlk.W[i][j] = Wl;  
-	  } else {
- 	    SolnBlk.W[i][j] = Wr;	     
- 	  } /* end if */
-	 }else if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C ||
-                    SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC ||
-                    SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
-                    SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD ||
-                    SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
-                    SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ) {
-            double xx = SolnBlk.Grid.Cell[i][j].Xc.x-0.01;
+	  if ( SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C &&
+	       SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C_ALGEBRAIC &&
+	       SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_C_FSD &&
+	       SolnBlk.Flow_Type != FLOWTYPE_LAMINAR_NGT_C_FSD &&
+	       SolnBlk.Flow_Type != FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY &&
+	       SolnBlk.Flow_Type != FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ) {
+	    if (SolnBlk.Grid.Cell[i][j].Xc.x <= 0.0){ //spatial relation, grid independent 
+	      SolnBlk.W[i][j] = Wl;  
+	    } else {
+	      SolnBlk.W[i][j] = Wr;	     
+	    } /* end if */
+	  } else if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C ||
+		      SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC ||
+		      SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+		      SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD ||
+		      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+		      SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ) {
+            double xx = SolnBlk.Grid.Cell[i][j].Xc.x;
 	    double tau_fsd = SolnBlk.W[i][j].HeatRelease_Parameter();
-       	  SolnBlk.W[i][j].scalar[0] = (erf(xx*4000.0)+1.0)/2.0;
-	  SolnBlk.W[i][j].p = 101325.0;
-	  SolnBlk.W[i][j] = SolnBlk.W[i][j].premixed_mfrac(Input_Parameters.Wo);
-       	  SolnBlk.W[i][j].rho = SolnBlk.W[i][j].reactants_den*SolnBlk.W[2][j].Rtot()/SolnBlk.W[i][j].Rtot()/(1.0+tau_fsd*SolnBlk.W[i][j].scalar[0]);
-       	  SolnBlk.W[i][j].v.x = SolnBlk.W[i][j].reactants_den*SolnBlk.W[i][j].laminar_speed/SolnBlk.W[i][j].rho;
-	  if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
-               SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD ||
-               SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
-               SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ) {
-       	  SolnBlk.W[i][j].scalar[1] = 2000.0*exp(-sqr(xx*4000.0))/sqrt(3.1415926)/SolnBlk.W[i][j].rho;
-	 }
-     }
+	    SolnBlk.W[i][j].scalar[0] = (erf(xx*4000.0)+1.0)/2.0;
+	    SolnBlk.W[i][j].p = 101325.0;
+	    SolnBlk.W[i][j] = SolnBlk.W[i][j].premixed_mfrac(Input_Parameters.Wo);
+	    SolnBlk.W[i][j].rho = SolnBlk.W[i][j].reactants_den*SolnBlk.W[2][j].Rtot()/SolnBlk.W[i][j].Rtot()/(1.0+tau_fsd*SolnBlk.W[i][j].scalar[0]);
+	    SolnBlk.W[i][j].v.x = SolnBlk.W[i][j].reactants_den*SolnBlk.W[i][j].laminar_speed/SolnBlk.W[i][j].rho;
+	    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
+		 SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD ||
+		 SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+		 SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ) {
+	      SolnBlk.W[i][j].scalar[1] = 2000.0*exp(-sqr(xx*4000.0))/sqrt(3.1415926)/SolnBlk.W[i][j].rho;
+	    }
+	  }
 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
 	} 
       } 

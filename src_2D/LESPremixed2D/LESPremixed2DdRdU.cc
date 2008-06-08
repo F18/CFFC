@@ -2,6 +2,30 @@
 #include "LESPremixed2DdRdU.h"
 #endif 
 
+
+int Local_NumVar(LESPremixed2D_Quad_Block &SolnBlk){
+
+#ifdef THICKENED_FLAME_ON
+  return (SolnBlk.NumVar()-3);
+#else
+   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+        return (SolnBlk.NumVar()-SolnBlk.W[0][0].ns);
+   } else {
+     return (SolnBlk.NumVar()-1);
+   }
+#endif 
+}
+
 // All functions setup to use "Uo" values as point implicit 
 // can be used in a multistage scheme and this insures 
 // that all Jacobians are taken as dR/dUo.
@@ -18,26 +42,8 @@ void PointImplicitBlockJacobi(DenseMatrix &dRdU,
 			      LESPremixed2D_Quad_Block &SolnBlk,
 			      LESPremixed2D_Input_Parameters &Input_Parameters,
 			      const int &ii, const int &jj){
-  int NUM_VAR_LESPREMIXED2D;   
-#ifdef THICKENED_FLAME_ON
-  NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-3; 
-#else
-  NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-1; 
-#endif
 
-  if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
-       SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
-       SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
-       SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
-       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
-       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
-       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
-       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
-       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
-       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
-       SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD) { 
-       NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns; 
-  }
+  int NUM_VAR_LESPREMIXED2D =  Local_NumVar(SolnBlk);
 
   DenseMatrix dRdW(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO);  
 
@@ -75,30 +81,10 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
 			     const int &solver_type,
 			     const int &ii, const int &jj){ 
   
-    int NUM_VAR_LESPREMIXED2D;
-  if( (SolnBlk.Axisymmetric && SolnBlk.Flow_Type != FLOWTYPE_INVISCID) ||
-       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ) { 
-
-#ifdef THICKENED_FLAME_ON
-     NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-3; 
-#else
-     NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-1;
-#endif
   
-
-   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
-	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
-        NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
-    }
+  int NUM_VAR_LESPREMIXED2D = Local_NumVar(SolnBlk);
+  
+  if(SolnBlk.Flow_Type != FLOWTYPE_INVISCID){
 
     DenseMatrix dRdW(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO);  
 
@@ -270,26 +256,8 @@ DenseMatrix Rotation_Matrix_PM2D(Vector2D nface, int Size,  int A_matrix)
 void dFIdW_Inviscid_HLLE(DenseMatrix &dRdW, LESPremixed2D_Quad_Block &SolnBlk,
 			 LESPremixed2D_Input_Parameters &Input_Parameters, 
 			 const int &ii, const int &jj, const int Orient){
-  int NUM_VAR_LESPREMIXED2D;
-#ifdef THICKENED_FLAME_ON
-  NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-2; 
-#else
-  NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar(); 
-#endif
 
-   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
-	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
-        NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
-    }
+  int NUM_VAR_LESPREMIXED2D = Local_NumVar(SolnBlk);
 
   int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
 
@@ -369,22 +337,9 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &SolnBlk,
      cout<<"\n Hey I am not suppose to be here! \n"; exit(1);
 
   } else {     
-
-   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
-	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
-        NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
-   }else{
-        NUM_VAR_LESPREMIXED2D = dRdW.get_n();  //  SolnBlk.NumVar()-1;    
-   }
+    
+    NUM_VAR_LESPREMIXED2D = dRdW.get_n(); 
+   
     DenseMatrix dFidW(NUM_VAR_LESPREMIXED2D, NUM_VAR_LESPREMIXED2D,ZERO);
     
     Vector2D nface,DX; double lface;   
@@ -508,21 +463,8 @@ void dFIdW_Inviscid_ROE_FD(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &SolnBlk,
 
   } else {     
 
-   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
-	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
-        NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
-   }else{
-        NUM_VAR_LESPREMIXED2D = dRdW.get_n();   
-   }
+     NUM_VAR_LESPREMIXED2D = dRdW.get_n();   
+    
      DenseMatrix dFidW(NUM_VAR_LESPREMIXED2D, NUM_VAR_LESPREMIXED2D,ZERO);
      
      Vector2D nface, DX;   double lface;
@@ -790,88 +732,88 @@ int Inviscid_Flux_Used_Reconstructed_LeftandRight_States(LESPremixed2D_pState &W
    
 }
 
-/********************************************************
- * Routine: Inviscid Flux Jacobian using AUSM_plus_up   *
- *                                                      *
- * This routine returns the inviscid components of      *    
- * Jacobian matrix for the specified local solution     *
- * block calculated analytically.                       *
- *                                                      *
- * dF/dW_R                                              *
- ********************************************************/
-void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &SolnBlk,  
-				 LESPremixed2D_Input_Parameters &Input_Parameters,
-				 const int &ii, const int &jj, const int Orient){
+// /********************************************************
+//  * Routine: Inviscid Flux Jacobian using AUSM_plus_up   *
+//  *                                                      *
+//  * This routine returns the inviscid components of      *    
+//  * Jacobian matrix for the specified local solution     *
+//  * block calculated analytically.                       *
+//  *                                                      *
+//  * dF/dW_R                                              *
+//  ********************************************************/
+// void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &SolnBlk,  
+// 				 LESPremixed2D_Input_Parameters &Input_Parameters,
+// 				 const int &ii, const int &jj, const int Orient){
    
-  int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
-  int Ri, Rj;
-  int NUM_VAR_LESPREMIXED2D;
+//   int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
+//   int Ri, Rj;
+//   int NUM_VAR_LESPREMIXED2D;
 
-  if (ii < SolnBlk.ICl -overlap || ii > SolnBlk.ICu + overlap ||
-      jj < SolnBlk.JCl -overlap || jj > SolnBlk.JCu + overlap) {
-     // GHOST CELL so do nothing
-     cout<<"\n Hey I am not suppose to be here! \n"; exit(1);
+//   if (ii < SolnBlk.ICl -overlap || ii > SolnBlk.ICu + overlap ||
+//       jj < SolnBlk.JCl -overlap || jj > SolnBlk.JCu + overlap) {
+//      // GHOST CELL so do nothing
+//      cout<<"\n Hey I am not suppose to be here! \n"; exit(1);
 
-  } else {     
+//   } else {     
 
-   if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
-	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
-	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
-	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
-        NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
-   }else{
-        NUM_VAR_LESPREMIXED2D = dRdW.get_n();  //  SolnBlk.NumVar();    
-   }
-    DenseMatrix dFidW(NUM_VAR_LESPREMIXED2D, NUM_VAR_LESPREMIXED2D,ZERO);
+//    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
+// 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
+// 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
+// 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
+// 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C || 
+// 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_ALGEBRAIC || 
+// 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
+// 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE || 
+// 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
+// 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
+// 	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
+//         NUM_VAR_LESPREMIXED2D =  SolnBlk.NumVar()-SolnBlk.W[0][0].ns+1;
+//    }else{
+//         NUM_VAR_LESPREMIXED2D = dRdW.get_n();  //  SolnBlk.NumVar();    
+//    }
+//     DenseMatrix dFidW(NUM_VAR_LESPREMIXED2D, NUM_VAR_LESPREMIXED2D,ZERO);
     
-    Vector2D nface,DX; double lface;   
-    LESPremixed2D_pState Wa, wavespeeds, Left, Right, Wl, Wr;   
-    Left.Vacuum();   Right.Vacuum();  Wl.Vacuum();  Wr.Vacuum();
+//     Vector2D nface,DX; double lface;   
+//     LESPremixed2D_pState Wa, wavespeeds, Left, Right, Wl, Wr;   
+//     Left.Vacuum();   Right.Vacuum();  Wl.Vacuum();  Wr.Vacuum();
           
-     if (Orient == NORTH) {
-       Ri = ii; Rj=jj-1;
-       nface = SolnBlk.Grid.nfaceN(Ri, Rj);
-       lface = SolnBlk.Grid.lfaceN(Ri, Rj);
-     } else if (Orient == SOUTH) {
-       Ri = ii; Rj=jj+1;
-       nface = SolnBlk.Grid.nfaceS(Ri, Rj);
-       lface = SolnBlk.Grid.lfaceS(Ri, Rj);
-     } else if (Orient == EAST) { 
-       Ri = ii-1; Rj=jj;
-       nface = SolnBlk.Grid.nfaceE(Ri, Rj);     
-       lface = SolnBlk.Grid.lfaceE(Ri, Rj);
-     } else if (Orient == WEST) { 
-       Ri = ii+1; Rj=jj;
-       nface = SolnBlk.Grid.nfaceW(Ri, Rj);
-       lface = SolnBlk.Grid.lfaceW(Ri, Rj);
-     }
+//      if (Orient == NORTH) {
+//        Ri = ii; Rj=jj-1;
+//        nface = SolnBlk.Grid.nfaceN(Ri, Rj);
+//        lface = SolnBlk.Grid.lfaceN(Ri, Rj);
+//      } else if (Orient == SOUTH) {
+//        Ri = ii; Rj=jj+1;
+//        nface = SolnBlk.Grid.nfaceS(Ri, Rj);
+//        lface = SolnBlk.Grid.lfaceS(Ri, Rj);
+//      } else if (Orient == EAST) { 
+//        Ri = ii-1; Rj=jj;
+//        nface = SolnBlk.Grid.nfaceE(Ri, Rj);     
+//        lface = SolnBlk.Grid.lfaceE(Ri, Rj);
+//      } else if (Orient == WEST) { 
+//        Ri = ii+1; Rj=jj;
+//        nface = SolnBlk.Grid.nfaceW(Ri, Rj);
+//        lface = SolnBlk.Grid.lfaceW(Ri, Rj);
+//      }
      
-     DenseMatrix A(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 1));
-     DenseMatrix AI(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 0));
+//      DenseMatrix A(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 1));
+//      DenseMatrix AI(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 0));
           
-     //********** FILL IN AUSM SPECIFIC STUFF HERE ********************//
-     Left  = Rotate(Wl, nface);
-     Right = Rotate(Wr, nface);
+//      //********** FILL IN AUSM SPECIFIC STUFF HERE ********************//
+//      Left  = Rotate(Wl, nface);
+//      Right = Rotate(Wr, nface);
      
 
-     //***************************************************************//
+//      //***************************************************************//
 
-     // Jacobian dF/dW         
-     dFIdW(dFidW, Rotate(SolnBlk.Uo[ii][jj].W(), nface) , SolnBlk.Flow_Type);       
-     dFidW = HALF*dFidW;
+//      // Jacobian dF/dW         
+//      dFIdW(dFidW, Rotate(SolnBlk.Uo[ii][jj].W(), nface) , SolnBlk.Flow_Type);       
+//      dFidW = HALF*dFidW;
           
-     //Rotate back 
-     dRdW += lface*AI*dFidW*A;
+//      //Rotate back 
+//      dRdW += lface*AI*dFidW*A;
         
-  } 
-}
+//   } 
+// }
 
 
 /********************************************************
@@ -886,14 +828,8 @@ void dGVdW_Viscous(DenseMatrix &dRdW, LESPremixed2D_Quad_Block &SolnBlk,
 		   LESPremixed2D_Input_Parameters &Input_Parameters,
 		   const int &ii, const int &jj){
 
-  int NUM_VAR_LESPREMIXED2D;
-#ifdef THICKENED_FLAME_ON   
-  NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar()-3; 
-#else
-  NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar()-1;
-#endif
-   int ns = SolnBlk.W[ii][jj].ns-1;
-   int matrix_size;
+  int NUM_VAR_LESPREMIXED2D = Local_NumVar(SolnBlk)+1;
+  int matrix_size;
 
    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
@@ -906,16 +842,15 @@ void dGVdW_Viscous(DenseMatrix &dRdW, LESPremixed2D_Quad_Block &SolnBlk,
 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
 	SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
 	SolnBlk.Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD ){
-        NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar()-SolnBlk.W[0][0].ns;
-	matrix_size = 2*NUM_VAR_LESPREMIXED2D+2;
+     matrix_size = 10 + 2*SolnBlk.W[ii][jj].nscal;
    }else{
-     matrix_size = 14+ns;
+     matrix_size = 10 + 2*SolnBlk.W[ii][jj].nscal + SolnBlk.W[ii][jj].ns-1;
    }   
 
-   DenseMatrix dFvdWf(NUM_VAR_LESPREMIXED2D, matrix_size,/*14+(ns),*/ZERO);
-   DenseMatrix dWfdWx(matrix_size,/*14+(ns),*/ NUM_VAR_LESPREMIXED2D,ZERO);  
-   DenseMatrix dGvdWf(NUM_VAR_LESPREMIXED2D, matrix_size,/*14+(ns),*/ZERO);
-   DenseMatrix dWfdWy(matrix_size,/*14+(ns),*/ NUM_VAR_LESPREMIXED2D,ZERO);
+   DenseMatrix dFvdWf(NUM_VAR_LESPREMIXED2D, matrix_size,ZERO);
+   DenseMatrix dWfdWx(matrix_size, NUM_VAR_LESPREMIXED2D,ZERO);  
+   DenseMatrix dGvdWf(NUM_VAR_LESPREMIXED2D, matrix_size,ZERO);
+   DenseMatrix dWfdWy(matrix_size, NUM_VAR_LESPREMIXED2D,ZERO);
 
    DenseMatrix dGVdW(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO);
    Vector2D nface;
@@ -972,10 +907,9 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
   
    double kappa, Cp, mu, mu_t, kappa_t,Dm_t,Pr_t, Sc_t;
    double sigma, sigma_star, Rmix;
-   double rho, U, V, p;  //k, omega;
+   double rho, U, V, p; 
    double  *h, *dcdx, *dcdy, *dhdT;
    double dUdx,dUdy, dVdx,dVdy;
-   //double dkdx, dkdy, domegadx, domegady;
    double drhodx, drhody, dpdx, dpdy, Temp;
    double *dscalardx, *dscalardy;
    double radius;
@@ -1012,10 +946,6 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      dUdy = SolnBlk.dWdy_faceN[ii][jj].v.x;
      dVdx = SolnBlk.dWdx_faceN[ii][jj].v.y;
      dVdy = SolnBlk.dWdy_faceN[ii][jj].v.y;
-//      dkdx = SolnBlk.dWdx_faceN[ii][jj].k;
-//      dkdy = SolnBlk.dWdy_faceN[ii][jj].k;
-//      domegadx = SolnBlk.dWdx_faceN[ii][jj].omega;
-//      domegady = SolnBlk.dWdy_faceN[ii][jj].omega;
    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
@@ -1058,10 +988,6 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      dUdy = SolnBlk.dWdy_faceE[ii][jj].v.x;
      dVdx = SolnBlk.dWdx_faceE[ii][jj].v.y;
      dVdy = SolnBlk.dWdy_faceE[ii][jj].v.y;
-//      dkdx = SolnBlk.dWdx_faceE[ii][jj].k;
-//      dkdy = SolnBlk.dWdy_faceE[ii][jj].k;
-//      domegadx = SolnBlk.dWdx_faceE[ii][jj].omega;
-//      domegady = SolnBlk.dWdy_faceE[ii][jj].omega;
    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
@@ -1104,10 +1030,6 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      dUdy = SolnBlk.dWdy_faceS[ii][jj].v.x;
      dVdx = SolnBlk.dWdx_faceS[ii][jj].v.y;
      dVdy = SolnBlk.dWdy_faceS[ii][jj].v.y;
-//      dkdx = SolnBlk.dWdx_faceS[ii][jj].k;
-//      dkdy = SolnBlk.dWdy_faceS[ii][jj].k;
-//      domegadx = SolnBlk.dWdx_faceS[ii][jj].omega;
-//      domegady = SolnBlk.dWdy_faceS[ii][jj].omega;  
    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
@@ -1149,10 +1071,6 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      dUdy = SolnBlk.dWdy_faceW[ii][jj].v.x;
      dVdx = SolnBlk.dWdx_faceW[ii][jj].v.y;
      dVdy = SolnBlk.dWdy_faceW[ii][jj].v.y;
-//      dkdx = SolnBlk.dWdx_faceW[ii][jj].k;
-//      dkdy = SolnBlk.dWdy_faceW[ii][jj].k;
-//      domegadx = SolnBlk.dWdx_faceW[ii][jj].omega;
-//      domegady = SolnBlk.dWdy_faceW[ii][jj].omega;
    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_FSD || 
@@ -2674,226 +2592,5 @@ t116-2.0*t68*t28+t35*t156*t116)-t85*t86*t183/t185;
    
     return (0);
  }
-
-
-
-
-
-// ARE THES FUNCTIONS EVER CALLED ????
-
-
-// int Automatic_Wall_Treatment_Residual_Jacobian(LESPremixed2D_Quad_Block &SolnBlk, LESPremixed2D_Input_Parameters &Input_Parameters, int i, int j, DenseMatrix &dRdU){
-   
-//    int NUM_VAR = SolnBlk.NumVar()-1;  
-
-//     //First cells off wall  
-//    if(((i==SolnBlk.ICl) && ((SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS ||
-//                              SolnBlk.Grid.BCtypeW[j] == BC_NO_SLIP  ||
-//                              SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-//                              SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
-//                              SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL))  ) 
-//       ||((i==SolnBlk.ICu) &&(SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS ||
-//                              SolnBlk.Grid.BCtypeE[j] == BC_NO_SLIP  ||
-//                              SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-//                              SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
-//                              SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL))
-//       || ((j == SolnBlk.JCl) &&((SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS ||
-//                                  SolnBlk.Grid.BCtypeS[i] == BC_NO_SLIP  ||
-//                                  SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-//                                  SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
-//                                  SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL))  )
-//       || ((j ==SolnBlk.JCu) &&((SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS ||
-//                                 SolnBlk.Grid.BCtypeN[i] == BC_NO_SLIP  ||
-//                                 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-//                                 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
-//                                 SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)))){
-
-//       if(SolnBlk.Wall[i][j].yplus <=SolnBlk.W[i][j].y_sublayer){
-//          for(int jcol=0; jcol<NUM_VAR; jcol++){
-//             if(jcol!=5){
-//                dRdU(5,jcol) = 0.0;
-//             }
-//          }
-         
-            
-//       }
-      
-//       /* y+ > 2.5 && y+<30  apply  blending formulation */
-//       if(SolnBlk.Wall[i][j].yplus >SolnBlk.W[i][j].y_sublayer
-//          && SolnBlk.Wall[i][j].yplus <SolnBlk.W[i][j].Yplus_l){
-//          for(int jcol=0; jcol<NUM_VAR; jcol++){
-//             if(jcol!=4){
-//                dRdU(4,jcol) = 0.0;
-//             }
-//          }
-//          for(int jcol=0; jcol<NUM_VAR; jcol++){
-//             if(jcol!=5){
-//                dRdU(5,jcol) = 0.0;
-//             }
-//          }
-//       }      
-//       /* y+ >= 30  apply wall function */
-//       if(SolnBlk.Wall[i][j].yplus >= SolnBlk.W[i][j].Yplus_l){
-//          //cout<<"-----------#3"<<endl;
-//          // Set k
-//          for(int jcol=0; jcol<NUM_VAR; jcol++){
-//             if(jcol!=4){
-//                dRdU(4,jcol) = 0.0;
-//             }
-//          }
-//          for(int jcol=0; jcol<NUM_VAR; jcol++){
-//             if(jcol!=5){
-//                dRdU(5,jcol) = 0.0;
-//             }
-                    
-//          }
-//       }
-      
-//     // first cells off walls
-//    }else if ((SolnBlk.Wall[i][j].yplus >SolnBlk.W[i][j].y_sublayer
-//               && SolnBlk.Wall[i][j].yplus <SolnBlk.W[i][j].Yplus_l) &&(
-//                  (((i-1 ==SolnBlk.ICl) && ((SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS ||
-//                                             SolnBlk.Grid.BCtypeW[j] == BC_NO_SLIP  ||
-//                                             SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-//                                             SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
-//                                             SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL))  ) 
-//                   ||((i+1==SolnBlk.ICu) &&(SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS ||
-//                                            SolnBlk.Grid.BCtypeE[j] == BC_NO_SLIP  ||
-//                                            SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-//                                            SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
-//                                            SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL))
-//                   || ((j-1 == SolnBlk.JCl) &&((SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS ||
-//                                                SolnBlk.Grid.BCtypeS[i] == BC_NO_SLIP  ||
-//                                                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-//                                                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
-//                                                SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL))  )
-//                   || ((j+1 ==SolnBlk.JCu) &&((SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS ||
-//                                               SolnBlk.Grid.BCtypeN[i] == BC_NO_SLIP  ||
-//                                               SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-//                                               SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
-//                                               SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)))) ||
-//                  (((i-2 ==SolnBlk.ICl) && ((SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS ||
-//                                             SolnBlk.Grid.BCtypeW[j] == BC_NO_SLIP  ||
-//                                             SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-//                                             SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
-//                                             SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL))  ) 
-//                   ||((i+2==SolnBlk.ICu) &&(SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS ||
-//                                            SolnBlk.Grid.BCtypeE[j] == BC_NO_SLIP  ||
-//                                            SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-//                                            SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
-//                                            SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL))
-//                   || ((j-2 == SolnBlk.JCl) &&((SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS ||
-//                                                SolnBlk.Grid.BCtypeS[i] == BC_NO_SLIP  ||
-//                                                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-//                                                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
-//                                                SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL))  )
-//                   || ((j+2 ==SolnBlk.JCu) &&((SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS ||
-//                                               SolnBlk.Grid.BCtypeN[i] == BC_NO_SLIP  ||
-//                                               SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-//                                               SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
-//                                               SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)))))) {
-//       for(int jcol=0; jcol<NUM_VAR; jcol++){
-//          if(jcol!=4){
-//             dRdU(4,jcol) = 0.0;
-//          }
-//       }
-//       for(int jcol=0; jcol<NUM_VAR; jcol++){
-//          if(jcol!=5){
-//             dRdU(5,jcol) = 0.0;
-//          }         
-//       }
-      
-//    } else if (SolnBlk.Wall[i][j].yplus <=SolnBlk.W[i][j].y_sublayer){
-   
-//       for(int jcol=0; jcol<NUM_VAR; jcol++){
-//          if(jcol!=5){
-//             dRdU(5,jcol) = 0.0;
-//          }        
-//       }     
-//    }
-   
-//    return 0;
-
-// }
-
-// int Wall_Function_Residual_Jacobian(LESPremixed2D_Quad_Block &SolnBlk, 
-//                          LESPremixed2D_Input_Parameters &Input_Parameters, 
-//                          int i, int j, DenseMatrix &dRdU){
-   
-//   int NUM_VAR = SolnBlk.NumVar()-1;
-
-//   if (SolnBlk.Wall[i][j].yplus <= SolnBlk.W[i][j].Yplus_u) {                    
-//     for(int jcol=0; jcol<NUM_VAR; jcol++){
-//       if(jcol!=4){
-// 	dRdU(4,jcol) = 0.0;
-//       }
-//     }
-//     for(int jcol=0; jcol<NUM_VAR; jcol++){
-//       if(jcol!=5){
-// 	dRdU(5,jcol) = 0.0;
-//       }      
-//     }    
-//    } /* endif */
-  
-//   return 0;   
-// }
-
-
-// void Low_Reynoldsnumber_Formulation_Residual_Jacobian(LESPremixed2D_Quad_Block &SolnBlk, 
-// 						      LESPremixed2D_Input_Parameters &Input_Parameters, 
-// 						      int i, int j, DenseMatrix & dRdU){
-  
-//   int NUM_VAR = SolnBlk.NumVar()-1;
-  
-//   if (( SolnBlk.Wall[i][j].yplus <=SolnBlk.W[i][j].y_sublayer)
-//       ||((i==SolnBlk.ICl) && ( (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS ||
-// 				SolnBlk.Grid.BCtypeW[j] == BC_NO_SLIP  ||
-// 				SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-// 				SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
-// 				SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL))  ) 
-//       ||  ((i==SolnBlk.ICu) &&(SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS ||
-// 			       SolnBlk.Grid.BCtypeE[j] == BC_NO_SLIP  ||
-// 			       SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-// 			       SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
-// 			       SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL))
-//       || ((j == SolnBlk.JCl) &&((SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS ||
-//                                  SolnBlk.Grid.BCtypeS[i] == BC_NO_SLIP  ||
-//                                  SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-//                                  SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
-//                                  SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL))  )
-//       || ((j ==SolnBlk.JCu) &&((SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS ||
-// 				SolnBlk.Grid.BCtypeN[i] == BC_NO_SLIP  ||
-// 				SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-// 				SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
-// 				SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)))){
-    
-//     for(int jcol=0; jcol<NUM_VAR; jcol++){
-//       if(jcol!=5){
-// 	dRdU(5,jcol) = 0.0;
-//       }      
-//     }    
-//   }   
-
-// }
-
-
-// void BC_Residual_Jacobian(LESPremixed2D_Quad_Block &SolnBlk, LESPremixed2D_Input_Parameters &Input_Parameters, int i, int j, DenseMatrix &dRdU){
-   
-//   if (((i==SolnBlk.ICl) && ( (SolnBlk.Grid.BCtypeW[j] != BC_NONE ))) 
-//       ||  ((i==SolnBlk.ICu) &&(SolnBlk.Grid.BCtypeE[j] != BC_NONE))
-//       || ((j == SolnBlk.JCl) &&((SolnBlk.Grid.BCtypeS[i] != BC_NONE )))
-//       || ((j ==SolnBlk.JCu) &&((SolnBlk.Grid.BCtypeN[i] != BC_NONE )))){
-          
-//     dRdU.zero();
-//     int NUM_VAR_LESPREMIXED2D = SolnBlk.NumVar();
-    
-//     for(int irow=0; irow<(NUM_VAR_LESPREMIXED2D-1); irow++)
-//       for(int jcol=0; jcol<(NUM_VAR_LESPREMIXED2D-1); jcol++){
-// 	if(irow==jcol){
-// 	  dRdU(irow, jcol) = -ONE/SolnBlk.dt[i][j];
-// 	}
-//       }    
-//   }
-// }
 
 

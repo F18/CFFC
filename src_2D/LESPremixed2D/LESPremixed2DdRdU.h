@@ -91,8 +91,8 @@ extern void d_dWd_dW_Center(double &d_dWdx_dW_C, double &d_dWdy_dW_C, LESPremixe
 extern int dS_tdW(DenseMatrix &dStdW,  LESPremixed2D_Quad_Block &SolnBlk,
 		  double &d_dWdx_dW, double &d_dWdy_dW, const int &ii, const int &jj);
 
-
-
+/****************************************************************/
+extern int Local_NumVar(LESPremixed2D_Quad_Block &SolnBlk);
 
 
 //ARE THESE EVER CALLED ???
