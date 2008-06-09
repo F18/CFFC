@@ -1303,35 +1303,32 @@ Output_Nodes_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
       
       Out_File<< "ZONE T =  \"Block Number = " << Block_Number
               << "\" \\ \n"
-              << "I = " << Grid.INu - Grid.INl + 1 + 2 << " \\ \n"
-              << "J = " << Grid.JNu - Grid.JNl + 1 + 2 << " \\ \n"
-              << "K = " << Grid.KNu - Grid.KNl + 1 + 2 << " \\ \n"
+              << "I = " << Grid.INu - Grid.INl + 1 + 2*(Grid.Nghost-1) << " \\ \n"
+              << "J = " << Grid.JNu - Grid.JNl + 1 + 2*(Grid.Nghost-1) << " \\ \n"
+              << "K = " << Grid.KNu - Grid.KNl + 1 + 2*(Grid.Nghost-1) << " \\ \n"
               << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " << Grid.INu - Grid.INl + 1 + 2 << " \\ \n"
-               << "J = " << Grid.JNu - Grid.JNl + 1 + 2 << " \\ \n"
-               << "K = " << Grid.KNu - Grid.KNl + 1 + 2 << " \\ \n"
+               << "I = " << Grid.INu - Grid.INl + 1 + 2*(Grid.Nghost-1) << " \\ \n"
+               << "J = " << Grid.JNu - Grid.JNl + 1 + 2*(Grid.Nghost-1) << " \\ \n"
+               << "K = " << Grid.KNu - Grid.KNl + 1 + 2*(Grid.Nghost-1) << " \\ \n"
                << "DATAPACKING = POINT \n";
    } /* endif */
    
-   for (int k = Grid.KNl-1; k <= Grid.KNu+1 ; ++k) {
-      for (int j = Grid.JNl-1; j <= Grid.JNu+1 ; ++j) {
-         for (int i = Grid.INl-1; i <= Grid.INu+1 ; ++i) {
- /*   for (int k = Grid.KNl-Grid.Nghost-1; k <= Grid.KNu+Grid.Nghost-1 ; ++k) {
-      for (int j = Grid.JNl-Grid.Nghost-1; j <= Grid.JNu+Grid.Nghost-1 ; ++j) {
-      for (int i = Grid.INl-Grid.Nghost-1; i <= Grid.INu+Grid.Nghost-1 ; ++i) {  */
-	    W_node = Wn(i, j, k);
-            Out_File << " "  << Grid.Node[i][j][k].X << W_node;
-            Out_File.setf(ios::scientific);
-            Out_File << " " << W_node.T() 
-                     << " " << W_node.M() << "\n";
-            Out_File.unsetf(ios::scientific);
-         } /* endfor */
-      } /* endfor */
+   for (int k = Grid.KNl-(Grid.Nghost-1); k <= Grid.KNu+(Grid.Nghost-1) ; ++k) {
+     for (int j = Grid.JNl-(Grid.Nghost-1); j <= Grid.JNu+(Grid.Nghost-1) ; ++j) {
+       for (int i = Grid.INl-(Grid.Nghost-1); i <= Grid.INu+(Grid.Nghost-1) ; ++i) { 
+	 W_node = Wn(i, j, k);
+	 Out_File << " "  << Grid.Node[i][j][k].X << W_node;
+	 Out_File.setf(ios::scientific);
+	 Out_File << " " << W_node.T() 
+		  << " " << W_node.M() << "\n";
+	 Out_File.unsetf(ios::scientific);
+       } /* endfor */
+     } /* endfor */
    } /* endfor */
-
+   
    Out_File << setprecision(6);
     
 }
