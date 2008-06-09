@@ -606,9 +606,9 @@ inline void LESPremixed2D_Quad_Block::deallocate(void) {
    delete []dWdx_faceE; dWdx_faceE = NULL; delete []dWdy_faceE; dWdy_faceE = NULL;
    delete []dWdx_faceW; dWdx_faceW = NULL; delete []dWdy_faceW; dWdy_faceW = NULL;
    delete []dWdx_faceS; dWdx_faceS = NULL; delete []dWdy_faceS; dWdy_faceS = NULL;
-   delete []d_dWdx_dx[i]; d_dWdx_dx[i] = NULL; 
-   delete []d_dWdx_dy[i]; d_dWdx_dy[i] = NULL;
-   delete []d_dWdy_dy[i]; d_dWdy_dy[i] = NULL;
+   delete []d_dWdx_dx; d_dWdx_dx = NULL; 
+   delete []d_dWdx_dy; d_dWdx_dy = NULL;
+   delete []d_dWdy_dy; d_dWdy_dy = NULL;
 
    delete []phi; phi = NULL; delete []Uo; Uo = NULL;  
    delete []Ut; Ut = NULL; delete []Uold; Uold = NULL;

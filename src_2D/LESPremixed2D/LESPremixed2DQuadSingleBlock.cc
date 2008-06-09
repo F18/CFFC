@@ -2919,9 +2919,9 @@ void ICs(LESPremixed2D_Quad_Block &SolnBlk,
         }
       }
 
-      // Deallocate memory
-      delete [] Wflame;
-      delete [] x_flame;
+//       // Deallocate memory
+//       delete [] Wflame;
+//       delete [] x_flame;
 
 
       /*---------------------------------------------------------------------*\ 
