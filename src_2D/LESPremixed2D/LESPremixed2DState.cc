@@ -903,8 +903,8 @@ void dFIdW(DenseMatrix &dFdW, const LESPremixed2D_pState &W, const int Flow_Type
   dFdW(2,0) = W.v.x*W.v.y;
   dFdW(2,1) = W.rho*W.v.y;
   dFdW(2,2) = W.rho*W.v.x;
-  dFdW(3,0) = (HALF*W.v.sqr() + ht + 5.0*kk/3.0 - C_p*Temp)*W.v.x;
-  dFdW(3,1) = W.rho*(W.v.x*W.v.x+ ht + 5.0*kk/3.0 + HALF*W.v.sqr());
+  dFdW(3,0) = (HALF*W.v.sqr() + ht - C_p*Temp)*W.v.x; //+ 5.0*kk/3.0
+  dFdW(3,1) = W.rho*(W.v.x*W.v.x+ ht + HALF*W.v.sqr()); //+ 5.0*kk/3.0
   dFdW(3,2) = W.rho*W.v.x*W.v.y;
   dFdW(3,3) = W.v.x*C_p/Rt;
 
@@ -942,7 +942,7 @@ void dFIdW(DenseMatrix &dFdW, const LESPremixed2D_pState &W, const int Flow_Type
       dFdW(6,6) = W.rho*W.v.x;
     }
     }
-  }else{
+  } else{
 
   int NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES + W.nscal;
 
@@ -1012,7 +1012,7 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
 
   //int num_species = dWdQ.get_n() - NUM_LESPREMIXED2D_VAR_SANS_SPECIES; //ns -1 or ns
   int num_species=ns-1;
-
+  
   double Temp = T();
   double pt = pmodified();
   double Rt = Rtot();
@@ -1039,14 +1039,14 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
        Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
        Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD) {
     double eta_fsd = Progvar_Species_Grad();
-    dWdQ(3,0) = HALF*v.sqr()-ht-5.0*kk/3.0+C_p*pt/(rho*Rt)+scalar[0]*eta_fsd;
+    dWdQ(3,0) = (HALF*v.sqr()-ht+C_p*pt/(rho*Rt)+scalar[0]*eta_fsd)/denominator;  
     dWdQ(3,1) = -v.x/denominator;
     dWdQ(3,2) = -v.y/denominator;
     dWdQ(3,3) = ONE/denominator;
     dWdQ(3,4) = -eta_fsd/denominator;
     dWdQ(4,0) = -scalar[0]/rho;
     dWdQ(4,4) = ONE/rho;
-
+    
     if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
          Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
          Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
@@ -1054,22 +1054,22 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
          Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
          Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
          Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD) {
-    dWdQ(5,0) = -scalar[1]/rho;
-    dWdQ(5,5) = ONE/rho;
-    if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
-      dWdQ(3,0) = HALF*v.sqr()-ht+C_p*pt/(rho*Rt)+scalar[0]*eta_fsd;
-      dWdQ(3,6) = -5.0/3.0/denominator;
-      dWdQ(6,0) = -scalar[2]/rho;
-      dWdQ(6,6) = ONE/rho;
+      dWdQ(5,0) = -scalar[1]/rho;
+      dWdQ(5,5) = ONE/rho;
+      if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
+	dWdQ(3,0) = (HALF*v.sqr()-ht-5.0*kk/3.0+C_p*pt/(rho*Rt)+scalar[0]*eta_fsd)/denominator;
+	dWdQ(3,6) = -5.0/3.0/denominator;
+	dWdQ(6,0) = -scalar[2]/rho;
+	dWdQ(6,6) = ONE/rho;
+      }
     }
-    }
-  }else{
-
+  } else {
+    
   double phi = ZERO;   
   for(int i=0; i<num_species; ++i){  
 #ifdef _NS_MINUS_ONE
     phi += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt
-    - (specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - C_p*Temp*specdata[ns-1].Rs()/Rt));
+	 - (specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - C_p*Temp*specdata[ns-1].Rs()/Rt));
 #else
     phi += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt);
 #endif
@@ -1085,7 +1085,6 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
   dWdQ(3,1) = -v.x/denominator;
   dWdQ(3,2) = -v.y/denominator;
   dWdQ(3,3) = ONE/denominator;
-
 
   //Species
   int NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES + nscal;
@@ -1107,7 +1106,7 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
     if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
       dWdQ(3,NUM_VAR+i) = -(5.0/3.0)/denominator;
     }
-
+    
     // row corresponding to the scalar
     dWdQ(NUM_VAR+i, 0) = - scalar[i]/rho;
     // diagonal
@@ -1128,16 +1127,16 @@ void LESPremixed2D_pState::dWdU_FD(DenseMatrix &dWdQ, const int Flow_Type){
 
   for(int jcol=0; jcol<dWdQ.get_n(); ++jcol){    
     A = UU;    C = UU;
-    if( jcol <NUM_LESPREMIXED2D_VAR_SANS_SPECIES) {
+//     if( jcol <NUM_LESPREMIXED2D_VAR_SANS_SPECIES) {
       A[jcol+1] += perturb*max(ONE,A[jcol+1]); 
       C[jcol+1] -= perturb*max(ONE,C[jcol+1]);
-    } else {                                       //enforce sum(ci) = 1;
-      a =  perturb*max(ONE,A[jcol+1]); 
-      A[jcol+1] += a;
-      A[NUM_VAR_LESPREMIXED2D] -= a;      
-      C[jcol+1] -= a;
-      C[NUM_VAR_LESPREMIXED2D] += a;
-    }
+//     } else {                                       //enforce sum(ci) = 1;
+//       a =  perturb*max(ONE,A[jcol+1]); 
+//       A[jcol+1] += a;
+//       A[NUM_VAR_LESPREMIXED2D] -= a;      
+//       C[jcol+1] -= a;
+//       C[NUM_VAR_LESPREMIXED2D] += a;
+//     }
     B = W(A);    D = W(C);
     for(int irow=0; irow<(dWdQ.get_n()); ++irow){
       dWdQ(irow,jcol) = ( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE,UU[jcol+1]));     
