@@ -116,7 +116,7 @@ class NKS_Input_Parameters{
 
   //@{ @name NKS Parameters
   int Min_Number_of_Newton_Steps_With_Zero_Limiter;            //!< force 1st order for "N" steps
-  double Min_Number_of_Newton_Steps_Requiring_Jacobian_Update; //!< force Jacobian updates for "N" Newton steps       
+  int Number_of_Newton_Steps_Requiring_Jacobian_Update;        //!< force Jacobian updates for "N" Newton steps       
   double Min_L2_Norm_Requiring_Jacobian_Update;                //!< force Jacobian update for L2 < "N"
   double Min_Finite_Time_Step_Norm_Ratio;                      //!< ramp over to full newton over 8 orders of L2 magnitude
   int Jacobian_Update_Frequency;                               //!< update every 'n' intervals
@@ -167,7 +167,7 @@ class NKS_Input_Parameters{
     NKS_Write_Output_Cells_Freq = 0; 
    
     Min_Number_of_Newton_Steps_With_Zero_Limiter = 0 ;           
-    Min_Number_of_Newton_Steps_Requiring_Jacobian_Update = 100; 
+    Number_of_Newton_Steps_Requiring_Jacobian_Update = 1; //defaults to every step 
     Min_L2_Norm_Requiring_Jacobian_Update = 1.0e-08 ;
     Min_Finite_Time_Step_Norm_Ratio = 1.0e-10; 
     Jacobian_Update_Frequency = 1;
@@ -261,7 +261,7 @@ class NKS_Input_Parameters{
     MPI::COMM_WORLD.Bcast(&(NKS_Write_Output_Cells_Freq), 1, MPI::INT, 0);  
 
     MPI::COMM_WORLD.Bcast(&(Min_Number_of_Newton_Steps_With_Zero_Limiter), 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Min_Number_of_Newton_Steps_Requiring_Jacobian_Update), 1, MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Number_of_Newton_Steps_Requiring_Jacobian_Update), 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&( Min_L2_Norm_Requiring_Jacobian_Update), 1, MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&( Min_Finite_Time_Step_Norm_Ratio), 1, MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Jacobian_Update_Frequency), 1, MPI::INT, 0);
@@ -348,7 +348,7 @@ class NKS_Input_Parameters{
     Communicator.Bcast(&(NKS_Write_Output_Cells_Freq), 1, MPI::INT, Source_Rank);  
 
     Communicator.Bcast(&(Min_Number_of_Newton_Steps_With_Zero_Limiter), 1, MPI::INT, Source_Rank);
-    Communicator.Bcast(&(Min_Number_of_Newton_Steps_Requiring_Jacobian_Update), 1, MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(Number_of_Newton_Steps_Requiring_Jacobian_Update), 1, MPI::INT, Source_Rank);
     Communicator.Bcast(&(Min_L2_Norm_Requiring_Jacobian_Update), 1, MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(Min_Finite_Time_Step_Norm_Ratio), 1, MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(Jacobian_Update_Frequency), 1, MPI::INT, Source_Rank);
@@ -617,9 +617,9 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
     Min_Number_of_Newton_Steps_With_Zero_Limiter = static_cast<int>(strtol(value, &ptr, 10));
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
-  } else if (strcmp(code, "NKS_Min_Number_of_Newton_Steps_Requiring_Jacobian_Update") == 0) {
+  } else if (strcmp(code, "NKS_Number_of_Newton_Steps_Requiring_Jacobian_Update") == 0) {
     i_command = 79;
-    Min_Number_of_Newton_Steps_Requiring_Jacobian_Update = strtod(value, &ptr);
+    Number_of_Newton_Steps_Requiring_Jacobian_Update = strtod(value, &ptr);
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
   } else if (strcmp(code, "NKS_Min_L2_Norm_Requiring_Jacobian_Update") == 0) {
@@ -698,7 +698,9 @@ inline ostream& NKS_Input_Parameters::Output(ostream& fout) const {
     fout <<" GMRES Initial Tol     ====> " << GMRES_Initial_Tolerance << endl;
     fout <<" GMRES Final Tol       ====> " << GMRES_Final_Tolerance << endl;
   }
-  
+
+  fout <<" Update Jacobian Steps ====> "<<Number_of_Newton_Steps_Requiring_Jacobian_Update<<endl;
+
   if (Normalization == ON) {
     fout <<" Normalization         ====> ON" << endl;
   } else {
