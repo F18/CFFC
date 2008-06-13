@@ -985,8 +985,8 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	}
 	//If it fails, redo 
 	if(GMRES_Failed) GMRES_Iters_increaseing = true;
-	if(Number_of_Newton_Steps%
-	   Input_Parameters.NKS_IP.Number_of_Newton_Steps_Requiring_Jacobian_Update !=0) GMRES_Iters_increaseing = false;
+// 	if(Number_of_Newton_Steps%
+// 	   Input_Parameters.NKS_IP.Number_of_Newton_Steps_Requiring_Jacobian_Update !=0) GMRES_Iters_increaseing = false;
       }
 
       /**************************************************************************/
@@ -1000,7 +1000,6 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 
         if (CFFC_Primary_MPI_Processor() ) {	
 	  cout << "\n Creating/Updating Jacobian Matrix";
-	  if( Input_Parameters.NKS_IP.Dual_Time_Stepping) cout<<" Last GMRES Iterations " <<GMRES_Iters;       
 	}
 	clock_t t0 = clock();
 	//Update for each block.
@@ -1015,10 +1014,12 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       } else {
 	if (CFFC_Primary_MPI_Processor() ) {	
 	  cout << "\n Reuse Jacobian Matrix";
-	  if( Input_Parameters.NKS_IP.Dual_Time_Stepping) cout<<" Last GMRES Iterations " <<GMRES_Iters;       
 	}
       }
-
+	 
+      if(CFFC_Primary_MPI_Processor() && Input_Parameters.NKS_IP.Dual_Time_Stepping){
+	cout<<"  Last GMRES Iterations = " <<GMRES_Iters <<"  L2norm_ratio = " << L2norm_current_n;   
+      }
  
       /**************************************************************************/
 
