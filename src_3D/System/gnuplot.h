@@ -10,7 +10,6 @@
   
  ---------------------------------------------------------------------------*/
 
-#ifdef _GNUPLOT
 #ifndef _GNUPLOT_INCLUDED
 #define _GNUPLOT_INCLUDED
 
@@ -87,6 +86,7 @@ public:
     void gnuplot_set_xlabel(char *label);
     void gnuplot_set_ylabel(char *label);
     void gnuplot_set_title(char *title);
+    void gnuplot_set_title(string title);
 
 
 };
@@ -454,6 +454,14 @@ inline void Gnuplot_Control::gnuplot_set_title(char * title)
     char    cmd[GP_CMD_SIZE] ;
     
     (void)sprintf(cmd, "set title \"%s\"", title) ;
+    gnuplot_cmd(cmd) ;
+    return ;
+}
+inline void Gnuplot_Control::gnuplot_set_title(string title)
+{
+    char    cmd[GP_CMD_SIZE] ;
+    
+    (void)sprintf(cmd, "set title \"%s\"", title.c_str()) ;
     gnuplot_cmd(cmd) ;
     return ;
 }
@@ -873,4 +881,3 @@ inline void Gnuplot_Control::gnuplot_plot_equation (char *equation, char *title 
 
 
 #endif // _GNUPLOT_INCLUDED
-#endif // _GNUPLOT
