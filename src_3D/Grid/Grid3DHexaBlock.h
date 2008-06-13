@@ -203,6 +203,9 @@ class Grid3D_Hexa_Block {
     /* Calculate cell volume. */
     double volume(const Cell3D &Cell);
     double volume(const int ii, const int jj, const int kk);
+    
+    /* Calculate smallest dx, dy, dz */
+    Vector3D Delta_minimum(void);
 
     /* Calculate vectors from a cell center pointing to its east neigbour cell center
        pointing to its north neigbour cell center, and pointing to its top neighbour 

@@ -36,42 +36,45 @@ void Grid3D_Input_Parameters::Broadcast(void) {
    MPI::COMM_WORLD.Bcast(&(NCells_Idir),
                          1,
                          MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(NCells_Jdir),
-                         1,
-                         MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(NCells_Kdir),
-                         1,
-                         MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(Nghost),
-                         1,
-                         MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(NCells_Turbulence_Idir),
-                         1,
-                         MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(NCells_Turbulence_Jdir),
-                         1,
-                         MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(NCells_Turbulence_Kdir),
-                         1,
-                         MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(Stretching_Type_Idir),
-	         	 1,
-			 MPI::INT,0);
-   MPI::COMM_WORLD.Bcast(&(Stretching_Type_Jdir),
-			 1,
-			 MPI::INT,0);
-   MPI::COMM_WORLD.Bcast(&(Stretching_Type_Kdir),
-			 1,
-			 MPI::INT,0);
-   MPI::COMM_WORLD.Bcast(&(Stretching_Factor_Idir),
-			 1,
-			 MPI::DOUBLE,0);
-   MPI::COMM_WORLD.Bcast(&(Stretching_Factor_Jdir),
-			 1,
-			 MPI::DOUBLE,0);
-   MPI::COMM_WORLD.Bcast(&(Stretching_Factor_Kdir),
-			 1,
-			 MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(NCells_Jdir),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(NCells_Kdir),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Nghost),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(NCells_Turbulence_Idir),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(NCells_Turbulence_Jdir),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(NCells_Turbulence_Kdir),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Stretching_Type_Idir),
+                          1,
+                          MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(Mesh_Stretching),
+                          1,
+                          MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(Stretching_Type_Jdir),
+                          1,
+                          MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(Stretching_Type_Kdir),
+                          1,
+                          MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(Stretching_Factor_Idir),
+                          1,
+                          MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(Stretching_Factor_Jdir),
+                          1,
+                          MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(Stretching_Factor_Kdir),
+                          1,
+                          MPI::DOUBLE,0);
    MPI::COMM_WORLD.Bcast(&(X_Shift.x), 
                          1, 
                          MPI::DOUBLE, 0);
@@ -361,6 +364,17 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
      value >> NBlk_Kdir;
      if (NBlk_Kdir < 1) i_command = INVALID_INPUT_VALUE;
 
+  } else if (strcmp(code, "Mesh_Stretching") == 0) {
+      i_command = 3009;
+      value >> value_string;
+      if (strcmp("ON", value_string.c_str()) == 0) {
+          Mesh_Stretching = ON;
+      } else if (strcmp("OFF", value_string.c_str()) == 0) {
+          Mesh_Stretching = OFF;
+      } else {
+          i_command = INVALID_INPUT_VALUE;
+      }
+            
   } else if (strcmp(code, "Stretching_Factor_Idir") == 0) {
      i_command = 3010;
      value >> Stretching_Factor_Idir;

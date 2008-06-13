@@ -1473,4 +1473,25 @@ void Grid3D_Hexa_Block::Extrude(Grid2D_Quad_Block &Grid2D_XYplane,
 
 }
 
+Vector3D Grid3D_Hexa_Block::Delta_minimum(void) {
+    double dx(1e10), dy(1e10), dz(1e10);
+    double D;
+    for (int k = KNl-Nghost; k <= KNu+Nghost-1; k++) {
+        for (int j =  JNl-Nghost; j <= JNu+Nghost-1; j++) {
+            for (int i = INl-Nghost; i <= INu+Nghost-1; i++) {
+                D = Node[i+1][j][k].X.x-Node[i][j][k].X.x;
+                if (D < dx)     dx = D;
+                
+                D = Node[i][j+1][k].X.y-Node[i][j][k].X.y;
+                if (D < dy)     dy = D;      
+                
+                D = Node[i][j][k+1].X.z-Node[i][j][k].X.z;
+                if (D < dz)     dz = D;
+            }
+        }
+    }
+    return Vector3D(dx,dy,dz);
+}
+
+
 

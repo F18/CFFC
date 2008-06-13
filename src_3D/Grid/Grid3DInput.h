@@ -78,6 +78,7 @@ class Grid3D_Input_Parameters{
     //@}
 
     //@{ @name Mesh stretching parameters:
+    int Mesh_Stretching;
     int Stretching_Type_Idir, Stretching_Type_Jdir, 
         Stretching_Type_Kdir; 
     double Stretching_Factor_Idir, Stretching_Factor_Jdir, 
@@ -128,6 +129,7 @@ class Grid3D_Input_Parameters{
        strcpy(Grid_Type,"Cube");
        i_Grid = GRID_CUBE; 
        strcpy(Grid_File_Name,"gridfile.grid");
+       Mesh_Stretching = OFF;
        Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
        Stretching_Type_Jdir = STRETCHING_FCN_LINEAR; 
        Stretching_Type_Kdir = STRETCHING_FCN_LINEAR;
