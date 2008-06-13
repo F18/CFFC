@@ -58,32 +58,46 @@ OFF
 Grid_Type =
 Periodic_Box
 Number_of_Cells_Idir = 
-32
+16
 Number_of_Cells_Jdir =
-32
+16
 Number_of_Cells_Kdir =
-32
+16
 Number_of_Blocks_Idir = 
-2
+1
 Number_of_Blocks_Jdir =
-2
+1
 Number_of_Blocks_Kdir =
-2
+1
 Box_Width = 
 #20.37
-0.0366
-#6.28
+#0.0366
+6.28
 #3.14
 Box_Height =
 #20.37
-0.0366
-#6.28
+#0.0366
+6.28
 #3.14
 Box_Length = 
 #20.37
-0.0366
-#6.28
+#0.0366
+6.28
 #3.14
+Mesh_Stretching =
+ON
+Stretching_Factor_Idir = 
+1.2
+Stretching_Factor_Jdir = 
+1.2
+Stretching_Factor_Kdir = 
+1.2
+Stretching_Type_Idir = 
+3
+Stretching_Type_Jdir = 
+3
+Stretching_Type_Kdir = 
+3
 ###################################
 #   Time stepping parameters      #
 ###################################

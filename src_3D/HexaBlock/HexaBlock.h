@@ -91,6 +91,9 @@ class Hexa_Block {
    bool  ***Filter_Weights_Assigned;  // Stores if the filterweights have been allocated
    bool Filter_Weights_Allocated;
 
+   DenseMatrix    ***Derivative_Reconstruction_Weights;  // Weights used in reconstructing derivatives (in LES_Filters.h)
+   bool  ***Derivative_Reconstruction_Weights_Assigned;  // Stores if the Derivative_Reconstruction_Weights have been allocated
+   bool    Derivative_Reconstruction_Weights_Allocated;
     
    //   SOLN_cSTATE **FluxN,**FluxS,  // Boundary solution fluxes.
    //               **FluxE,**FluxW,

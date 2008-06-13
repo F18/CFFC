@@ -18,11 +18,11 @@
 #include "../../Math/LinearSystems.h"
 #include "../../Math/Matrix.h"
 
-#ifndef _GNUPLOT
-#include "../../System/gnuplot.h"
-#endif
-
 #include "../../Utilities/Utilities.h"
+
+#ifndef _GNUPLOT_INCLUDED
+#include "../../system/gnuplot.h"
+#endif
 
 
 #include <cstdlib>
@@ -44,7 +44,7 @@ public:
         commutation_order = LES_Filter<Soln_pState,Soln_cState>::commutation_order;
         number_of_rings = LES_Filter<Soln_pState,Soln_cState>::number_of_rings;
         target_filter_sharpness = LES_Filter<Soln_pState,Soln_cState>::target_filter_sharpness;
-        theNeighbours.allocate(number_of_rings+1);   // shouldn't be +1!!!! look up why
+        theNeighbours.allocate(number_of_rings); 
     }
     
     Neighbours theNeighbours;
@@ -57,7 +57,7 @@ public:
     void Reset_Filter_Weights(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk);
 
     DenseMatrix Neighbouring_Values;
-    void Set_Neighbouring_Values(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Neighbours &theNeighbours, DenseMatrix &Neighbouring_Values);
+    void Set_Neighbouring_Values(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, Neighbours &theNeighbours, DenseMatrix &Neighbouring_Values);
 
     RowVector filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell);
 
@@ -109,7 +109,7 @@ inline RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Hexa_Block<Sol
         SolnBlk.Filter_Weights[I][J][K] = Get_Weights(theCell,theNeighbours);
         SolnBlk.Filter_Weights_Assigned[I][J][K] = true;
     }
-    Set_Neighbouring_Values(SolnBlk,theNeighbours,Neighbouring_Values);
+    Set_Neighbouring_Values(SolnBlk,theCell,theNeighbours,Neighbouring_Values);
     
     return SolnBlk.Filter_Weights[I][J][K]*Neighbouring_Values;
     
@@ -117,9 +117,9 @@ inline RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Hexa_Block<Sol
 
 
 template <typename Soln_pState, typename Soln_cState>
-void Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Neighbours &theNeighbours, DenseMatrix &Neighbouring_Values) {
+void Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, Neighbours &theNeighbours, DenseMatrix &Neighbouring_Values) {
     RowVector RowVec;
-    LES_Filter<Soln_pState,Soln_cState>::what_to_filter(SolnBlk,0,0,0,RowVec);
+    LES_Filter<Soln_pState,Soln_cState>::what_to_filter(SolnBlk,theCell.I,theCell.J,theCell.K,RowVec);
     int the_number_of_neighbours = theNeighbours.number_of_neighbours;
     int the_number_of_variables = RowVec.size();
     

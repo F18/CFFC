@@ -305,6 +305,10 @@ namespace tut
 //        
         SpectralAnalysis<Soln_pState,Soln_cState> Spectrum(Data,Solution_Data);
         typedef double (Soln_pState::*member_ptr);
+        typedef Soln_cState *** (Hexa_Block<Soln_pState,Soln_cState>::*Soln_cState_3D_ptr_type);
+
+        Soln_cState_3D_ptr_type U_ptr = &Hexa_Block<Soln_pState,Soln_cState>::U; 
+
         member_ptr rho_member = &Soln_pState::rho;
 //        member_ptr p_member = &Soln_pState::p;
 //
@@ -324,11 +328,17 @@ namespace tut
 //        myfilter.filter(rho_member);
 //        
 //
+        myfilter.filter(rho_member);
+
         cout << "done filtering" << endl;
-//        Spectrum.Get_Spectrum(rho_member,"density");
+        Spectrum.Get_Spectrum(rho_member,"density");
         
- //       if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_RESTART)
- //           myfilter.Write_to_file();
+        if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_RESTART)
+            myfilter.Write_to_file();
+
+        cout << " Calculating commutation error " << endl;
+
+        myfilter.Commutation_Error(rho_member);
         
         myfilter.transfer_function();//FILTER_CORNER_CELL);
 //        Spectrum.Get_Spectrum(p_member,"pressure");

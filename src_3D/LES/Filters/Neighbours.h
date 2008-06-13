@@ -50,11 +50,11 @@ public:
         theCell_included = false;
     }
     void allocate(void) {
-        neighbour = new Cell3D [points(MAX_NUMBER_OF_NEIGHBOURING_RINGS_IN_LES_FILTER)+1];
+        neighbour = new Cell3D [int(pow(TWO*MAX_NUMBER_OF_NEIGHBOURING_RINGS_IN_LES_FILTER+ONE,THREE))];
         Allocated = true;
     }
     void allocate(int number_of_rings) {
-        neighbour = new Cell3D [points(number_of_rings)+1];
+        neighbour = new Cell3D [int(pow(TWO*number_of_rings+ONE,THREE))];
         Allocated = true;
     }
     

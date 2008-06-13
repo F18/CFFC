@@ -637,7 +637,7 @@ Calculate_relaxation_factor(Cell3D &theCell, Neighbours &theNeighbours, Vector3D
     fb = real(b+(ONE-b)*G_max);
     f = 100;
     counter = 0;
-    while( fabs(f) >= 0.001 ) {
+    while( fabs(f) >= 0.0001 ) {
         m = a + (b-a)/TWO;
         fm = m+(ONE-m)*G_max;
         
@@ -652,7 +652,7 @@ Calculate_relaxation_factor(Cell3D &theCell, Neighbours &theNeighbours, Vector3D
         
         
         counter++;
-        if(counter >= 20) {
+        if(counter >= 100) {
             cout << "max reached for relaxation_factor" << endl;
             return 0.0;
         }

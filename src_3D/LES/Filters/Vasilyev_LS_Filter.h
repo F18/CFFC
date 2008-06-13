@@ -21,9 +21,6 @@ inline double stepfunction(const double &k) {
         return ZERO;
 }
 
-#define _GNUPLOT
-#include "../../System/gnuplot.h"
-
 #include "Discrete_Filter.h"
 
 
@@ -360,8 +357,8 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     w_k = Az.pseudo_inverse()*bz;
     
     
+    /*
     int n=200;
-    
     double *Gr = new double [n];
     double *Gi = new double [n];
     double *Gt = new double [n];
@@ -386,6 +383,7 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     h2.gnuplot_plot1d_var2(k2,Gr,n,"real");
     h2.gnuplot_plot1d_var2(k2,Gi,n,"imag");
     h2.gnuplot_plot1d_var2(k2,Gt,n,"target");
+    */
 
     // Load coefficients into neighbour_weights
     RowVector W(number_of_neighbours);
