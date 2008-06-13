@@ -309,8 +309,13 @@ class Turbulent_Velocity_Field_Multi_Block_List {
 
     void Create(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
                 const Grid3D_Input_Parameters &Input);
+    
+    template <typename HEXA_BLOCK>
+    void Create_Local_Velocity_Field_Multi_Block_List(Grid3D_Hexa_Multi_Block_List &Grid,
+                                                      HEXA_BLOCK *Solution_Block, 
+                                                      AdaptiveBlock3D_List &LocalSolnBlockList) ;
 
-    void Interpolate_Turbulent_Field(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
+    int Interpolate_Turbulent_Field(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
 				     Turbulent_Velocity_Field_Multi_Block_List &Interpolated_Velocity_Field);
     /* Read and write turbulent velocity field */
     int Write_Turbulent_Velocity_Field(void) const;   
@@ -342,18 +347,27 @@ class Turbulent_Velocity_Field_Multi_Block_List {
  * \param [in]  LocalSolnBlockList  The local AdaptiveBlock3D_List
  */
 template <typename HEXA_BLOCK>
-inline void Create_Local_Velocity_Field_Multi_Block_List(Turbulent_Velocity_Field_Multi_Block_List &Local_List, 
-                                                         HEXA_BLOCK *Solution_Block, 
-                                                         AdaptiveBlock3D_List &LocalSolnBlockList) {
+inline void Turbulent_Velocity_Field_Multi_Block_List::Create_Local_Velocity_Field_Multi_Block_List(Grid3D_Hexa_Multi_Block_List &Grid,
+                                                                                                    HEXA_BLOCK *Solution_Block, 
+                                                                                                    AdaptiveBlock3D_List &LocalSolnBlockList) {
+    int INl,INu,JNl,JNu,KNl,KNu;
     if (LocalSolnBlockList.Nused() >= 1) {
-        Local_List.Allocate(LocalSolnBlockList.Nused());
+        Allocate(LocalSolnBlockList.Nused());
         for (int nBlk = 0; nBlk <= LocalSolnBlockList.Nused(); ++nBlk ) {
             if (LocalSolnBlockList.Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
-                Local_List.Vel_Blks[nBlk].allocate(Solution_Block[nBlk].NCi - 2*Solution_Block[nBlk].Nghost,
-                                                   Solution_Block[nBlk].NCj - 2*Solution_Block[nBlk].Nghost,
-                                                   Solution_Block[nBlk].NCk - 2*Solution_Block[nBlk].Nghost,
-                                                   Solution_Block[nBlk].Nghost);
-                Local_List.Vel_Blks[nBlk].gblknum = LocalSolnBlockList.Block[nBlk].info.gblknum;
+                Vel_Blks[nBlk].allocate(Solution_Block[nBlk].NCi - 2*Solution_Block[nBlk].Nghost,
+                                        Solution_Block[nBlk].NCj - 2*Solution_Block[nBlk].Nghost,
+                                        Solution_Block[nBlk].NCk - 2*Solution_Block[nBlk].Nghost,
+                                        Solution_Block[nBlk].Nghost);
+                Vel_Blks[nBlk].gblknum = LocalSolnBlockList.Block[nBlk].info.gblknum;
+                INl = Grid.Grid_Blks[nBlk].INl; 
+                INu = Grid.Grid_Blks[nBlk].INu; 
+                JNl = Grid.Grid_Blks[nBlk].JNl; 
+                JNu = Grid.Grid_Blks[nBlk].JNu; 
+                KNl = Grid.Grid_Blks[nBlk].KNl; 
+                KNu = Grid.Grid_Blks[nBlk].KNu;
+                Vel_Blks[nBlk].Node_INl_JNl_KNl = Grid.Grid_Blks[nBlk].Node[INl][JNl][KNl].X; 
+                Vel_Blks[nBlk].Node_INu_JNu_KNu = Grid.Grid_Blks[nBlk].Node[INu][JNu][KNu].X;
             }         
         } /* endfor */
     } /* endif */
@@ -1324,7 +1338,10 @@ RandomFieldRogallo(Input_Parameters<SOLN_pSTATE,SOLN_cSTATE> &IPs) {
     spectrum_flag = IPs.Turbulence_IP.i_spectrum;
     spectrum_name = IPs.Turbulence_IP.spectrum;
     
-    if (IPs.Grid_IP.i_Grid == GRID_BUNSEN_BURNER || IPs.Grid_IP.i_Grid == GRID_BUNSEN_BOX) {
+    if (IPs.Grid_IP.i_Grid == GRID_BUNSEN_BURNER ||
+        IPs.Grid_IP.i_Grid == GRID_BUNSEN_BOX    ||
+        IPs.Grid_IP.Mesh_Stretching == ON) {
+        
         NCells_Idir = IPs.Grid_IP.NCells_Turbulence_Idir;
         NCells_Jdir = IPs.Grid_IP.NCells_Turbulence_Jdir;
         NCells_Kdir = IPs.Grid_IP.NCells_Turbulence_Kdir;
