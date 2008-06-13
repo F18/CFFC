@@ -2079,6 +2079,44 @@ double LESPremixed2D_pState::Progvar_Species_Grad(void) const {
   return (eta_fsd);
 }
 
+double LESPremixed2D_pState::Progvar_Species_Grad(int var) const {
+  double Temp, stoich, ratio, f_ub;
+  Temp = p/(rho*Rtot());
+  if ( React.reactset_flag == CH4_1STEP ||
+       React.reactset_flag == C3H8_1STEP ) {
+    if ( React.reactset_flag == CH4_1STEP ){
+      stoich = 2.0*specdata[1].Mol_mass()/specdata[0].Mol_mass();
+      ratio = specdata[2].Mol_mass()/(specdata[2].Mol_mass()+2.0*specdata[3].Mol_mass());
+      f_ub = specdata[0].Mol_mass()/(specdata[0].Mol_mass()+2.0*specdata[1].Mol_mass()+7.52*specdata[4].Mol_mass());
+    } else if ( React.reactset_flag == C3H8_1STEP ){
+      stoich = 5.0*specdata[1].Mol_mass()/specdata[0].Mol_mass();
+      ratio = 3.0*specdata[2].Mol_mass()/(3.0*specdata[2].Mol_mass()+4.0*specdata[3].Mol_mass());
+      f_ub = specdata[0].Mol_mass()/(specdata[0].Mol_mass()+5.0*specdata[1].Mol_mass()+18.8*specdata[4].Mol_mass());
+    }
+    
+    switch(var){
+    case 0:
+      return (-f_ub);                    //dC1
+    case 1:
+      return (-stoich*f_ub/equivalence_ratio);  //dC2
+    case 2:
+      return ((1.0+stoich/equivalence_ratio)*f_ub*ratio);        // dC3
+    case 3:
+      return ((1.0+stoich/equivalence_ratio)*f_ub*(1.0-ratio)); //dC4
+    }
+
+  } else if ( React.reactset_flag == H2O2_1STEP ){
+//     stoich = specdata[1].Mol_mass()/2.0/specdata[0].Mol_mass();
+//     f_ub = 2.0*specdata[0].Mol_mass()/(2.0*specdata[0].Mol_mass()+specdata[1].Mol_mass()+3.76*specdata[3].Mol_mass());
+//     eta_fsd = (-f_ub)      //dC1
+//       +(-stoich*f_ub/equivalence_ratio) //dC2
+//       +((1.0+stoich/equivalence_ratio)*f_ub); //dC3
+    cerr<<" Progvar_Species_Grad ISSUES"; exit(1);
+  }
+ 
+  return 0;
+}
+
 double LESPremixed2D_pState::Reaction_Rate_Progvar(const LESPremixed2D_pState &dWdx,
                                                    const LESPremixed2D_pState &dWdy) const {
 

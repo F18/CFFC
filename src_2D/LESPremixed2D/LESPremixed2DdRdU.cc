@@ -927,6 +927,10 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
    dscalardx = new double [num];
    dscalardy = new double [num];
 
+   //Calculate 2nd derivatives  
+   double d_dWdx_dW_C,d_dWdy_dW_C;
+   d_dWd_dW_Center(d_dWdx_dW_C,d_dWdy_dW_C,SolnBlk,ii, jj);  
+
    switch(Orient){
      /****************************** NORTH ******************************/
    case NORTH:
@@ -1102,7 +1106,6 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
    }
    
    /////////////////////////////////////////////////////////////////////////////////
-
    rho = QuadraturePoint_W.rho;
    p = QuadraturePoint_W.p;
    kappa = QuadraturePoint_W.kappa();
@@ -1110,15 +1113,7 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
    mu = QuadraturePoint_W.mu();
    Rmix =  QuadraturePoint_W.Rtot();
    
-
    /*********************** X - DIRECTION **************************************/
-   double Sum_q(ZERO);   double Sum_dq(ZERO);      double Sum_dhdC(ZERO);
-   
-   for(int Num = 0; Num<ns_values; Num++){
-     Sum_q +=    dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdx[Num]/(rho*Rmix);
-     Sum_dq -=   dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdx[Num]*p/(rho*rho*Rmix);
-     Sum_dhdC -= dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdx[Num]*dcdx[Num]*p/(rho*rho*Rmix);
-   } 
 
    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
@@ -1138,19 +1133,31 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      kappa_t = QuadraturePoint_W.Kappa_turb(mu_t);
      Sc_t =  QuadraturePoint_W.Sc_turb();
      
+     //THESE ARE THE SAME FOR X AND Y !!!
+     double Sum_A(ZERO);   double Sum_B(ZERO);  double Sum_C(ZERO);
+     for(int Num = 0; Num<ns_species; Num++){
+       double dCi = QuadraturePoint_W.Progvar_Species_Grad(Num);
+       Sum_A += QuadraturePoint_W.specdata[Num].HeatCapacity_p(Temp)*dCi/QuadraturePoint_W.Schmidt[Num];
+       Sum_B += (QuadraturePoint_W.specdata[Num].Enthalpy(Temp)+QuadraturePoint_W.specdata[Num].Heatofform() )*
+	        dCi/QuadraturePoint_W.Schmidt[Num];
+       Sum_C += Sum_A*dCi*QuadraturePoint_W.specdata[Num].Rs();
+     } 
+
      dFvdWf(1, 7) += FOUR/THREE*(mu+mu_t);
      dFvdWf(1, 10) -= TWO/THREE*(mu+mu_t);
      dFvdWf(2, 8) += mu+mu_t;
      dFvdWf(2, 9) += mu+mu_t;  
-     
-     // THIS IS NOT RIGHT dc/dx != dC/dx or dscalar[0]/dx !!!!!
 
-//      dFvdWf(3,0) += (kappa+kappa_t)*(-dpdx+TWO*p*drhodx/rho)/(rho*rho*Rmix)+Sum_dq;
+     //CHECK
+     dFvdWf(3,0) += (kappa+kappa_t)*(-dpdx+TWO*p*drhodx/rho)/(rho*rho*Rmix) - (mu+mu_t)*dscalardx[0]*Temp/rho * Sum_A;
+
      dFvdWf(3,1) += TWO*(mu+mu_t)*(TWO/THREE*dUdx-dVdy/THREE);
-     dFvdWf(3,2) += (mu+mu_t)*(dUdy+dVdx);
-//      dFvdWf(3,3) += -drhodx/(rho*rho*Rmix)*(kappa+kappa_t)+Sum_q;
+     dFvdWf(3,2) += (mu+mu_t)*(dUdy+dVdx); 
 
-//      dFvdWf(3,4) += Sum_dhdC;          dscalardx??
+     //CHECK
+     dFvdWf(3,3) += -drhodx/(rho*rho*Rmix)*(kappa+kappa_t) + (mu+mu_t)*dscalardx[0]/(rho*Rmix) * Sum_A;
+     //CHECK
+     dFvdWf(3,4) += (mu+mu_t)*( Sum_B*d_dWdx_dW_C - (Temp/Rmix)*dscalardx[0]*Sum_C);
 
      dFvdWf(3,6) -= p/(rho*rho*Rmix)*(kappa+kappa_t); 
      dFvdWf(3,7) += FOUR/THREE*QuadraturePoint_W.v.x*(mu+mu_t);
@@ -1164,7 +1171,13 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
 
      // NO FSD
    } else {
- 
+     double Sum_q(ZERO);   double Sum_dq(ZERO); 
+   
+     for(int Num = 0; Num<ns_values; Num++){
+       Sum_q +=    dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdx[Num]/(rho*Rmix);
+       Sum_dq -=   dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdx[Num]*p/(rho*rho*Rmix);
+     } 
+
      dFvdWf(1, 5) += FOUR/THREE*mu;
      dFvdWf(1, 8) -= TWO/THREE*mu;
      dFvdWf(2, 6) += mu;
@@ -1200,13 +1213,6 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
  
 
    /*********************** Y - DIRECTION **************************************/
-   Sum_q = ZERO;  Sum_dq = ZERO; Sum_dhdC =ZERO;
-
-   for(int Num = 0; Num<ns_values; Num++){
-     Sum_q +=    dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdy[Num]/(rho*Rmix);
-     Sum_dq -=   dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdy[Num]*p/(rho*rho*Rmix);
-     Sum_dhdC -= dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdy[Num]*dcdy[Num]*p/(rho*rho*Rmix);
-   } 
 
    if ( SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C || 
 	SolnBlk.Flow_Type == FLOWTYPE_LAMINAR_C_ALGEBRAIC || 
@@ -1225,17 +1231,32 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      mu_t =  QuadraturePoint_W.mu_t(strain_rate,SolnBlk.Flow_Type);
      kappa_t = QuadraturePoint_W.Kappa_turb(mu_t);
      Sc_t =  QuadraturePoint_W.Sc_turb();
-     
+    
+
+     double Sum_A(ZERO);   double Sum_B(ZERO);  double Sum_C(ZERO);
+     for(int Num = 0; Num<ns_species; Num++){
+       double dCi = QuadraturePoint_W.Progvar_Species_Grad(Num);
+       Sum_A += QuadraturePoint_W.specdata[Num].HeatCapacity_p(Temp)*dCi/QuadraturePoint_W.Schmidt[Num];
+       Sum_B += (QuadraturePoint_W.specdata[Num].Enthalpy(Temp)+QuadraturePoint_W.specdata[Num].Heatofform() )*
+	        dCi/QuadraturePoint_W.Schmidt[Num];
+       Sum_C += Sum_A*dCi*QuadraturePoint_W.specdata[Num].Rs();
+     }    
+
      dGvdWf(1, 8) += mu+mu_t;
      dGvdWf(1, 9) += mu+mu_t; 
      dGvdWf(2, 7) -= TWO/THREE*(mu+mu_t);
      dGvdWf(2, 10) += FOUR/THREE*(mu+mu_t);
+   
+     //CHECK
+     dGvdWf(3,0) += (kappa+kappa_t)*(-dpdy+TWO*p*drhody/rho)/(rho*rho*Rmix) - (mu+mu_t)*dscalardy[0]*Temp/rho * Sum_A;
 
-//      dGvdWf(3,0) += (kappa+kappa_t)*(-dpdy+TWO*p*drhody/rho)/(rho*rho*Rmix)+Sum_dq; 
      dGvdWf(3,1) += (mu+mu_t)*(dUdy +dVdx);
      dGvdWf(3,2) += TWO*(mu+mu_t)*(TWO/THREE*dVdy-dUdx/THREE);
-//      dGvdWf(3,3) += -drhody/(rho*rho*Rmix)*(kappa+kappa_t)+Sum_q;
-//      dGvdWf(3,4) += Sum_dhdC;
+
+     //CHECK
+     dGvdWf(3,3) += -drhody/(rho*rho*Rmix)*(kappa+kappa_t) + (mu+mu_t)*dscalardy[0]/(rho*Rmix) * Sum_A;
+     //CHECK
+     dGvdWf(3,4) += (mu+mu_t)*( Sum_B*d_dWdy_dW_C - (Temp/Rmix)*dscalardy[0]*Sum_C);
 
      dGvdWf(3,6) -= p/(rho*rho*Rmix)*(kappa+kappa_t); 
      dGvdWf(3,7) -= TWO/THREE*QuadraturePoint_W.v.y*(mu+mu_t);
@@ -1249,7 +1270,13 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
 
      // NO FSD 
    } else {
-     
+     double Sum_q(ZERO);  double Sum_dq(ZERO);
+
+     for(int Num = 0; Num<ns_values; Num++){
+       Sum_q +=    dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdy[Num]/(rho*Rmix);
+       Sum_dq -=   dhdT[Num]*(mu+mu_t)/QuadraturePoint_W.Schmidt[Num]*dcdy[Num]*p/(rho*rho*Rmix);
+     } 
+
      dGvdWf(1, 6) += mu;
      dGvdWf(1, 7) += mu; 
      dGvdWf(2, 5) -= TWO/THREE*mu;

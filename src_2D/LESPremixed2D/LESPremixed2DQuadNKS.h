@@ -200,7 +200,7 @@ Preconditioner_dFIdU(DenseMatrix &_dFIdU, LESPremixed2D_pState W)
  ****************************************************************/ 
 template<> inline void Block_Preconditioner<LESPremixed2D_pState,
 					    LESPremixed2D_Quad_Block,			    
-					    LESPremixed2D_Input_Parameters>::
+			 		    LESPremixed2D_Input_Parameters>::
 Preconditioner_dFIdU_Roe(DenseMatrix &_dFIdU, int ii, int jj, int Orient)
 { 
   int NUM_VAR_LESPREMIXED2D = Local_NumVar(*SolnBlk);
@@ -208,12 +208,20 @@ Preconditioner_dFIdU_Roe(DenseMatrix &_dFIdU, int ii, int jj, int Orient)
   DenseMatrix dFI_dW(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO);
   
   dFIdW_Inviscid_ROE(dFI_dW, *SolnBlk,*Input_Parameters, ii,jj,Orient);  
-  //dFIdW_Inviscid_ROE_FD(dFI_dW, *SolnBlk,*Input_Parameters, ii,jj,Orient);
- 
+//   cout<<"\n dFdW\n "<<dFI_dW; dFI_dW.zero();  
+//  dFIdW_Inviscid_ROE_FD(dFI_dW, *SolnBlk,*Input_Parameters, ii,jj,Orient);
+//   cout<<"\n dFdW_FD\n "<<dFI_dW;   
+
   //transformation Jacobian 
   DenseMatrix dWdU(NUM_VAR_LESPREMIXED2D,NUM_VAR_LESPREMIXED2D,ZERO); 
   //transformation Jacobian  Wo == W here 
-  SolnBlk->W[ii][jj].dWdU(dWdU, SolnBlk->Flow_Type);
+   SolnBlk->W[ii][jj].dWdU(dWdU, SolnBlk->Flow_Type);
+
+//   cout<<"\n dWdU\n "<<dWdU;
+//   dWdU.zero();
+//   SolnBlk->W[ii][jj].dWdU_FD(dWdU, SolnBlk->Flow_Type);
+//   cout<<"\n dWdUFD\n "<<dWdU;
+
   _dFIdU += dFI_dW*dWdU;
 
 }
@@ -520,7 +528,7 @@ calculate_Matrix_Free(const double &epsilon)
 	//No Preconditioner
 	} else { // z/h
 	  V[(search_directions+1)*scalar_dim+iter] -= normalizeUtoR( W[(search_directions)*scalar_dim + iter] 
-								     * LHS_Time<LESPremixed2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
+	  * LHS_Time<LESPremixed2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
 	
 	}
       }  
