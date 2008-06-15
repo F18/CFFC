@@ -1703,7 +1703,11 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
      
    for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
       for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
-          // Prescribe West boundary conditions.
+
+	// Do not yet prescribe any corner ghost cells
+	if ( (j >= JCl && j <= JCu) && (k >= KCl && k <= KCu) ){
+
+	  // Prescribe West boundary conditions.
           switch(Grid.BCtypeW[j][k]) {
               case BC_NONE :
                   break;
@@ -1813,8 +1817,8 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 		  break;
 
           } /* endswitch */
-         
-          // Prescribe East boundary conditions.
+
+	  // Prescribe East boundary conditions.  
           switch(Grid.BCtypeE[j][k]) {
               case BC_NONE :
                   break;
@@ -1932,14 +1936,22 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 		  }
                   break;
 
-         }//endofeastface
-         
+	  } /* endswitch */
+	} /* endif */
       } /* endfor */
    } /* endfor */
    
    for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
       for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
-          // Prescribe South boundary conditions.
+
+	
+	// Use the north and south BCtypes to prescribe all of the corner 
+	// ghost-cells found in the domain of (k >= KCl && k <= KCu).
+	// Corner ghost cells outside of this domain will be prescribed based
+	// on the north and south BCtypes accordingly.
+	if ( k >= KCl && k <= KCu){
+        
+	  // Prescribe South boundary conditions.
           switch(Grid.BCtypeS[i][k]) {
               case BC_NONE :
                   break;
@@ -2132,11 +2144,15 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 		  break;
 
          } /* endswitch */
+	} /* endif */
       } /* endfor */
    } /* endfor */
    
    for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
       for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+	  // Remaining corner ghost cells, outside of the domain of (k >= KCl && k <= KCu),
+	  // are prescribed based on the north and south BCtypes accordingly.
+
           // Prescribe Bottom boundary conditions.
           switch(Grid.BCtypeB[i][j]) {
               case BC_NONE :
