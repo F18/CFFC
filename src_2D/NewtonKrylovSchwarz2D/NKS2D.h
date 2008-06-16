@@ -199,7 +199,7 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   int DTS_Step(1);   //Restart should change to "number_of_explicit_steps" ???  but may break function dependencies
   if (Input_Parameters.NKS_IP.Dual_Time_Stepping) { 
 
-    double DTS_dTime(ZERO);
+    double DTS_dTime(ZERO), DTS_dTime_CFL(ZERO);
     int physical_time_param(TIME_STEPPING_IMPLICIT_EULER);
     bool IE_Flag = true; //Use Implicit Euler for 1st DTS Step & for AMR 
 
@@ -269,17 +269,20 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       /**************************************************************************/
 
       /**************************************************************************/
-      // Determine global time step using a "fixed" time step or using a CFL                                                       
+      // Determine global time step using a "fixed" time step or using a CFL  
+      DTS_dTime = CFL(SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);  
+      DTS_dTime = Input_Parameters.NKS_IP.Physical_Time_CFL_Number*CFFC_Minimum_MPI(DTS_dTime); 
+      DTS_dTime_CFL = Input_Parameters.NKS_IP.Physical_Time_CFL_Number;
+
+      //Overide CFL with a fixed Physical Time Step
       if(Input_Parameters.NKS_IP.Physical_Time_Step > ZERO){
-	DTS_dTime = Input_Parameters.NKS_IP.Physical_Time_Step;
-      } else {
-	DTS_dTime = CFL(SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);  
-	DTS_dTime = Input_Parameters.NKS_IP.Physical_Time_CFL_Number*CFFC_Minimum_MPI(DTS_dTime); 
-	
-	//Last Time sized to get Time_Max
-	if( Physical_Time + DTS_dTime > Input_Parameters.Time_Max){
-	  DTS_dTime = Input_Parameters.Time_Max - Physical_Time;
-	}
+	DTS_dTime_CFL = Input_Parameters.NKS_IP.Physical_Time_Step/DTS_dTime;
+	DTS_dTime = Input_Parameters.NKS_IP.Physical_Time_Step;		
+      }
+
+      //Last Time sized to get Time_Max
+      if( Physical_Time + DTS_dTime > Input_Parameters.Time_Max){
+	DTS_dTime = Input_Parameters.Time_Max - Physical_Time;
       }
       /**************************************************************************/
 
@@ -331,8 +334,9 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       /**************************************************************************/
       //DTS Output
       if (CFFC_Primary_MPI_Processor()) {
-	cout << "\n *** End of DTS Step " << DTS_Step+number_of_explicit_time_steps; 
-	cout << " Time Step: " << DTS_dTime << "s  Real Time: " << Physical_Time << "s **** \n";
+	cout << "\n * End of DTS Step " << DTS_Step+number_of_explicit_time_steps; 
+	cout << " Time Step: " << DTS_dTime << "s  Real Time: " << Physical_Time 
+	     <<"s  Eff. CFL: " <<DTS_dTime_CFL<< " * \n";
       }
       /**************************************************************************/
 
