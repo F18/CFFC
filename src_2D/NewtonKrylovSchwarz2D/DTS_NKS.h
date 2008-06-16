@@ -157,6 +157,14 @@ int dUdt_Residual_Evaluation_NKS(SOLN_BLOCK_TYPE &SolnBlk,
   return error_flag;
 }
 
+template <typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
+int NKS_DTS_Output(SOLN_BLOCK_TYPE *SolnBlk, 
+		   AdaptiveBlock2D_List List_of_Local_Solution_Blocks, 
+		   INPUT_TYPE & Input_Parameters,
+		   const int &Steps,
+		   const double &Physical_Time) {
+  cout<<"\n SPECIALIZATION OF NKS_DTS_Output REQUIRED TO USE DTS_Time_Accurate_Plot_Frequency \n";
+}
 
 
 

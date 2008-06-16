@@ -9,7 +9,7 @@
         assosiated header file: 
                   NASARP1311data.h
 
-****************************************************************************/
+*****************************************************************************/
 
 #ifndef _NASARP1311_DATA_INCLUDED
 #include "NASARP1311data.h"
@@ -149,7 +149,7 @@ void NASARP1311data::GetThermoData(const string spec) {
     thermo_data[i].Low_range_in(stof(Temp));
 
     //Temp = type.substr(13,21);
-    Temp = type.substr(11,10);
+    Temp = type.substr(13,9);
     thermo_data[i].High_range_in(stof(Temp));
 
     Temp = type.substr(22,1);
@@ -967,11 +967,7 @@ void NASARP1311data::FitTransDataLJ() {
 
   // move into transcoef class
   trans_viscosity[0].Trans_coef_in(V_coef);
-  trans_viscosity[0].Low_range_in(Tmin);
-  trans_viscosity[0].High_range_in(Tmax);
   trans_thermconduct[0].Trans_coef_in(C_coef);
-  trans_thermconduct[0].Low_range_in(Tmin);
-  trans_thermconduct[0].High_range_in(Tmax);
 
   //------------------------------------------------
   // DEBUG - write tests to file

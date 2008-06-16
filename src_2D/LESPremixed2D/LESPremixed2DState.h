@@ -523,6 +523,7 @@ class LESPremixed2D_pState {
                                  const int &Flow_Type,
                                  const Tensor2D &strain_rate) const; 
   double Progvar_Species_Grad(void) const;
+  double Progvar_Species_Grad(int var) const;
   double Reaction_Rate_Progvar(const LESPremixed2D_pState &dWdx,
                                const LESPremixed2D_pState &dWdy) const;
   double Reaction_Rate_Algebraic(const LESPremixed2D_pState &dWdx,

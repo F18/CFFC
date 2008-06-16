@@ -8129,6 +8129,11 @@ int Send_All_Messages2(Quad_Soln_Block *Soln_ptr,
        return(error_flag);
     } /* endif */
 
+    // BCS -> Needed for corner ghost cell reconstruction, 
+    // however not necessary if Subcellreconstruction is done properly, ie on boundaries,
+    // don't use all eight, only internal cells.
+    // BCs(Soln_ptr,Soln_Block_List, Input_Parameters);
+
     /* Load message buffers at block interfaces for sending from coarse to fine blocks. */
     dout << endl << " Load_Send_Message_Buffers_ResChange_CoarseToFine"; dout.flush();
     error_flag = Load_Send_Message_Buffers_ResChange_CoarseToFine(Soln_ptr,
@@ -8182,6 +8187,153 @@ int Send_All_Messages2(Quad_Soln_Block *Soln_ptr,
 
     /* Return error flag. */
     dout << endl << " Done"; dout.flush();
+
+    return(error_flag);
+
+}
+
+// Modification to Regular Send_All_Messages, forcing BC's with AMR
+template <class Quad_Soln_Block, class INPUT_TYPE>
+int Send_All_Messages_NKS(Quad_Soln_Block *Soln_ptr,
+			  AdaptiveBlock2D_List &Soln_Block_List,
+			  const int Number_of_Solution_Variables,
+			  const int Send_Mesh_Geometry_Only,
+			  INPUT_TYPE &Input_Parameters) {
+
+    int error_flag;
+
+    /* Load message buffers at block interfaces with no cell resolution change. */
+
+    error_flag = Load_Send_Message_Buffers_NoResChange(Soln_ptr,
+                                                       Soln_Block_List,
+                                                       Number_of_Solution_Variables,
+                                                       Send_Mesh_Geometry_Only);
+    if (error_flag) {
+       cout << "\n " << CFFC_Version() 
+            << " Message Passing Error: Load_Send_Message_Buffers_NoResChange, "
+            << "flag = " << error_flag << ".\n";
+       return(error_flag);
+    } /* endif */
+
+    /* Load message buffers at block interfaces for sending from fine to coarse blocks. */
+
+    error_flag = Load_Send_Message_Buffers_ResChange_FineToCoarse(Soln_ptr,
+                                                                  Soln_Block_List,
+                                                                  Number_of_Solution_Variables,
+                                                                  Send_Mesh_Geometry_Only,
+                                                                  OFF);
+    if (error_flag) {
+       cout << "\n " << CFFC_Version() 
+            << " Message Passing Error: Load_Send_Message_Buffers_ResChange_FineToCoarse, "
+            << "flag = " << error_flag << ".\n";
+       return(error_flag);
+    } /* endif */
+
+    /* Exchange message buffers at block interfaces 
+       with no cell resolution change. */
+
+    error_flag = Exchange_Messages_NoResChange(Soln_Block_List,
+                                               Number_of_Solution_Variables);
+    if (error_flag) {
+       cout << "\n " << CFFC_Version() 
+            << " Message Passing Error: Exchange_Messages_NoResChange.\n";
+       return(error_flag);
+    } /* endif */
+
+    /* Exchange message buffers at block interfaces, 
+       sending messages from fine to coarse blocks. */
+
+    error_flag = Exchange_Messages_ResChange_FineToCoarse(Soln_Block_List,
+                                                          Number_of_Solution_Variables);
+    if (error_flag) {
+       cout << "\n " << CFFC_Version() 
+            << " Message Passing Error: Exchange_Messages_ResChange_FineToCoarse, "
+            << "flag = " << error_flag << ".\n";
+       return(error_flag);
+    } /* endif */
+
+    /* Unload message buffers at block interfaces with no cell resolution change. */
+
+    error_flag = Unload_Receive_Message_Buffers_NoResChange(Soln_ptr,
+                                                            Soln_Block_List,
+                                                            Number_of_Solution_Variables,
+                                                            Send_Mesh_Geometry_Only);
+    if (error_flag) {
+       cout << "\n " << CFFC_Version() 
+            << " Message Passing Error: Unload_Receive_Message_Buffers_NoResChange, "
+            << "flag = " << error_flag << ".\n";
+       return(error_flag);
+    } /* endif */
+
+    /* Unload message buffers at block interfaces as sent from fine to coarse blocks. */
+
+    error_flag = Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Soln_ptr,
+                                                                       Soln_Block_List,
+                                                                       Number_of_Solution_Variables,
+                                                                       Send_Mesh_Geometry_Only,
+                                                                       OFF);
+    if (error_flag) {
+       cout << "\n " << CFFC_Version() 
+            << " Message Passing Error: Unload_Receive_Message_Buffers_ResChange_FineToCoarse, "
+            << "flag = " << error_flag << ".\n";
+       return(error_flag);
+    } /* endif */
+
+
+    // TEMPORARY HACK FOR C2F UNTIL ALL SUBCELL RECONSTRUCTION LOGIC FOR CORNERS FIXED
+    ////////////////////
+    BCs(Soln_ptr,Soln_Block_List,Input_Parameters);
+    ///////////////////
+
+    /* Load message buffers at block interfaces for sending from coarse to fine blocks. */
+
+    error_flag = Load_Send_Message_Buffers_ResChange_CoarseToFine(Soln_ptr,
+                                                                  Soln_Block_List,
+                                                                  Number_of_Solution_Variables,
+                                                                  Send_Mesh_Geometry_Only);
+    if (error_flag) {
+       cout << "\n " << CFFC_Version() 
+            << " Message Passing Error: Load_Send_Message_Buffers_ResChange_CoarseToFine, "
+            << "flag = " << error_flag << ".\n";
+       return(error_flag);
+    } /* endif */
+
+    /* Exchange message buffers at block interfaces, 
+       sending messages from coarse to fine blocks. */
+
+    error_flag = Exchange_Messages_ResChange_CoarseToFine(Soln_Block_List,
+                                                          Number_of_Solution_Variables);
+    if (error_flag) {
+       cout << "\n " << CFFC_Version() 
+            << " Message Passing Error: Exchange_Messages_ResChange_CoarseToFine, "
+            << "flag = " << error_flag << ".\n";
+       return(error_flag);
+    } /* endif */
+
+    /* Unload message buffers at block interfaces as sent from coarse to fine blocks. */
+
+    error_flag = Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Soln_ptr,
+                                                                       Soln_Block_List,
+                                                                       Number_of_Solution_Variables,
+                                                                       Send_Mesh_Geometry_Only);
+    if (error_flag) {
+       cout << "\n " << CFFC_Version() 
+            << " Message Passing Error: Unload_Receive_Message_Buffers_ResChange_CoarseToFine, "
+            << "flag = " << error_flag << ".\n";
+       return(error_flag);
+    } /* endif */
+
+    /* Update corner ghost cell information for cases where there are no corner neighbours. */
+
+    if (Number_of_Solution_Variables > Soln_ptr[0].NumVar() || Send_Mesh_Geometry_Only) {
+      for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
+	if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+	  Update_Corner_Ghost_Nodes(Soln_ptr[nb].Grid);
+	}
+      } /* endfor */
+    } /* endif */
+
+    /* Return error flag. */
 
     return(error_flag);
 

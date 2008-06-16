@@ -622,10 +622,10 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	    dTime = CFFC_Minimum_MPI(dTime);
 	  } else {
             // Assign physical time step for dual time stepping.
-            if (n_inner == 0) { 
-	      dTime = Input_Parameters.Physical_CFL_Number*CFFC_Minimum_MPI(dTime);
-              Input_Parameters.dTime = dTime;              
-	    }
+//             if (n_inner == 0) { 
+// 	      dTime = Input_Parameters.Physical_CFL_Number*CFFC_Minimum_MPI(dTime);
+//               Input_Parameters.dTime = dTime;              
+// 	    }
             dTime = Input_Parameters.dTime;
 	  }
 

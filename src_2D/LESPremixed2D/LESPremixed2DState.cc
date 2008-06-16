@@ -9,7 +9,7 @@
 *********************************************************************/
 
 //DEBUGGING FLAG FOR FIGUREING OUT proper NS-1 setup.
-//#define _NS_MINUS_ONE
+#define _NS_MINUS_ONE
 
 #ifndef _LESPREMIXED2D_STATE_INCLUDED 
 #include "LESPremixed2DState.h"
@@ -710,8 +710,6 @@ LESPremixed2D_cState LESPremixed2D_pState::Fx(void) const{
  **********************************************************/
 void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type) {
   
-  //cout<<"\n USING DFIDU \n";
-  
   //int num_species = dFdU.get_n() - NUM_LESPREMIXED2D_VAR_SANS_SPECIES; 
   int num_species=W.ns-1;
 
@@ -791,6 +789,8 @@ void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type
     dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y*W.v.y) - ht - 5.0*kk/3.0 + C_p*pt/(W.rho*Rt) + phi )/denominator;
   } else if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
     dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y*W.v.y) - ht + C_p*pt/(W.rho*Rt) + phi )/denominator;
+  } else {
+    dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y*W.v.y) - ht + C_p*Temp + phi )/denominator;  
   }
 
   dFdU(1,1) += W.v.x*(TWO*C_p/Rt-THREE)/denominator; 
@@ -804,6 +804,8 @@ void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type
     dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y*W.v.y + C_p*pt/(W.rho*Rt) - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + 5.0*kk/3.0 + ht) + phi)/denominator;
   } else if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
     dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y*W.v.y + 5.0*kk/3.0 + C_p*pt/(W.rho*Rt) - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + 5.0*kk/3.0 + ht) + phi)/denominator;
+  } else {
+    dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y+W.v.y + C_p*Temp - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + ht) + phi)/denominator;
   }
 
   dFdU(3,1) += ht + HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + 5.0*kk/3.0 - W.v.x*W.v.x/denominator;
@@ -829,7 +831,6 @@ void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type
     dFdU(NUM_VAR+i,NUM_VAR+i) += W.v.x ;        
   }
 
-  
   //Scalars
   NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES;  
   for(int i = 0; i<W.nscal; ++i){ 
@@ -845,8 +846,9 @@ void dFIdU(DenseMatrix &dFdU, const LESPremixed2D_pState &W, const int Flow_Type
     // diagonal
     dFdU(NUM_VAR+i,NUM_VAR+i) += W.v.x;
   }
-  } 
+  }
 }
+
 
 // Finite difference check of dFxdU
 void dFIdU_FD(DenseMatrix &dFdU, const LESPremixed2D_pState &WW, const int Flow_Type) {
@@ -901,8 +903,8 @@ void dFIdW(DenseMatrix &dFdW, const LESPremixed2D_pState &W, const int Flow_Type
   dFdW(2,0) = W.v.x*W.v.y;
   dFdW(2,1) = W.rho*W.v.y;
   dFdW(2,2) = W.rho*W.v.x;
-  dFdW(3,0) = (HALF*W.v.sqr() + ht + 5.0*kk/3.0 - C_p*Temp)*W.v.x;
-  dFdW(3,1) = W.rho*(W.v.x*W.v.x+ ht + 5.0*kk/3.0 + HALF*W.v.sqr());
+  dFdW(3,0) = (HALF*W.v.sqr() + ht - C_p*Temp)*W.v.x; //+ 5.0*kk/3.0
+  dFdW(3,1) = W.rho*(W.v.x*W.v.x+ ht + HALF*W.v.sqr()); //+ 5.0*kk/3.0
   dFdW(3,2) = W.rho*W.v.x*W.v.y;
   dFdW(3,3) = W.v.x*C_p/Rt;
 
@@ -940,7 +942,7 @@ void dFIdW(DenseMatrix &dFdW, const LESPremixed2D_pState &W, const int Flow_Type
       dFdW(6,6) = W.rho*W.v.x;
     }
     }
-  }else{
+  } else{
 
   int NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES + W.nscal;
 
@@ -1010,7 +1012,7 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
 
   //int num_species = dWdQ.get_n() - NUM_LESPREMIXED2D_VAR_SANS_SPECIES; //ns -1 or ns
   int num_species=ns-1;
-
+  
   double Temp = T();
   double pt = pmodified();
   double Rt = Rtot();
@@ -1037,14 +1039,14 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
        Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
        Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD) {
     double eta_fsd = Progvar_Species_Grad();
-    dWdQ(3,0) = HALF*v.sqr()-ht-5.0*kk/3.0+C_p*pt/(rho*Rt)+scalar[0]*eta_fsd;
+    dWdQ(3,0) = (HALF*v.sqr()-ht+C_p*pt/(rho*Rt)+scalar[0]*eta_fsd)/denominator;  
     dWdQ(3,1) = -v.x/denominator;
     dWdQ(3,2) = -v.y/denominator;
     dWdQ(3,3) = ONE/denominator;
     dWdQ(3,4) = -eta_fsd/denominator;
     dWdQ(4,0) = -scalar[0]/rho;
     dWdQ(4,4) = ONE/rho;
-
+    
     if ( Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
          Flow_Type == FLOWTYPE_LAMINAR_NGT_C_FSD || 
          Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY || 
@@ -1052,22 +1054,22 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
          Flow_Type == FLOWTYPE_TURBULENT_LES_NGT_C_FSD_SMAGORINSKY || 
          Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
          Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD) {
-    dWdQ(5,0) = -scalar[1]/rho;;
-    dWdQ(5,5) = ONE/rho;
-    if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
-      dWdQ(3,0) = HALF*v.sqr()-ht+C_p*pt/(rho*Rt)+scalar[0]*eta_fsd;
-      dWdQ(3,6) = -5.0/3.0/denominator;
-      dWdQ(6,0) = -scalar[2]/rho;
-      dWdQ(6,6) = ONE/rho;
+      dWdQ(5,0) = -scalar[1]/rho;
+      dWdQ(5,5) = ONE/rho;
+      if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
+	dWdQ(3,0) = (HALF*v.sqr()-ht-5.0*kk/3.0+C_p*pt/(rho*Rt)+scalar[0]*eta_fsd)/denominator;
+	dWdQ(3,6) = -5.0/3.0/denominator;
+	dWdQ(6,0) = -scalar[2]/rho;
+	dWdQ(6,6) = ONE/rho;
+      }
     }
-    }
-  }else{
-
+  } else {
+    
   double phi = ZERO;   
   for(int i=0; i<num_species; ++i){  
 #ifdef _NS_MINUS_ONE
     phi += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt
-    - (specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - C_p*Temp*specdata[ns-1].Rs()/Rt));
+	 - (specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - C_p*Temp*specdata[ns-1].Rs()/Rt));
 #else
     phi += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt);
 #endif
@@ -1077,11 +1079,12 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
     dWdQ(3,0) = (HALF*(v.x*v.x+v.y*v.y) - h() - 5.0*kk/3.0 + C_p*pt/(rho*Rt) + phi)/denominator;
   } else if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
     dWdQ(3,0) = (HALF*(v.x*v.x+v.y*v.y) - h() + C_p*pt/(rho*Rt) + phi)/denominator;
+  } else {
+    dWdQ(3,0) = (HALF*(v.x*v.x+v.y*v.y) - h() + C_p*Temp + phi)/denominator;
   }
   dWdQ(3,1) = -v.x/denominator;
   dWdQ(3,2) = -v.y/denominator;
   dWdQ(3,3) = ONE/denominator;
-
 
   //Species
   int NUM_VAR = NUM_LESPREMIXED2D_VAR_SANS_SPECIES + nscal;
@@ -1103,7 +1106,7 @@ void LESPremixed2D_pState::dWdU(DenseMatrix &dWdQ, const int Flow_Type) const{
     if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
       dWdQ(3,NUM_VAR+i) = -(5.0/3.0)/denominator;
     }
-
+    
     // row corresponding to the scalar
     dWdQ(NUM_VAR+i, 0) = - scalar[i]/rho;
     // diagonal
@@ -1124,16 +1127,16 @@ void LESPremixed2D_pState::dWdU_FD(DenseMatrix &dWdQ, const int Flow_Type){
 
   for(int jcol=0; jcol<dWdQ.get_n(); ++jcol){    
     A = UU;    C = UU;
-    if( jcol <NUM_LESPREMIXED2D_VAR_SANS_SPECIES) {
+//     if( jcol <NUM_LESPREMIXED2D_VAR_SANS_SPECIES) {
       A[jcol+1] += perturb*max(ONE,A[jcol+1]); 
       C[jcol+1] -= perturb*max(ONE,C[jcol+1]);
-    } else {                                       //enforce sum(ci) = 1;
-      a =  perturb*max(ONE,A[jcol+1]); 
-      A[jcol+1] += a;
-      A[NUM_VAR_LESPREMIXED2D] -= a;      
-      C[jcol+1] -= a;
-      C[NUM_VAR_LESPREMIXED2D] += a;
-    }
+//     } else {                                       //enforce sum(ci) = 1;
+//       a =  perturb*max(ONE,A[jcol+1]); 
+//       A[jcol+1] += a;
+//       A[NUM_VAR_LESPREMIXED2D] -= a;      
+//       C[jcol+1] -= a;
+//       C[NUM_VAR_LESPREMIXED2D] += a;
+//     }
     B = W(A);    D = W(C);
     for(int irow=0; irow<(dWdQ.get_n()); ++irow){
       dWdQ(irow,jcol) = ( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE,UU[jcol+1]));     
@@ -2074,6 +2077,44 @@ double LESPremixed2D_pState::Progvar_Species_Grad(void) const {
              +(specdata[2].Enthalpy(Temp)+specdata[2].Heatofform()-Cp(Temp)*Temp*specdata[2].Rs()/Rtot())*((1.0+stoich/equivalence_ratio)*f_ub);
   }
   return (eta_fsd);
+}
+
+double LESPremixed2D_pState::Progvar_Species_Grad(int var) const {
+  double Temp, stoich, ratio, f_ub;
+  Temp = p/(rho*Rtot());
+  if ( React.reactset_flag == CH4_1STEP ||
+       React.reactset_flag == C3H8_1STEP ) {
+    if ( React.reactset_flag == CH4_1STEP ){
+      stoich = 2.0*specdata[1].Mol_mass()/specdata[0].Mol_mass();
+      ratio = specdata[2].Mol_mass()/(specdata[2].Mol_mass()+2.0*specdata[3].Mol_mass());
+      f_ub = specdata[0].Mol_mass()/(specdata[0].Mol_mass()+2.0*specdata[1].Mol_mass()+7.52*specdata[4].Mol_mass());
+    } else if ( React.reactset_flag == C3H8_1STEP ){
+      stoich = 5.0*specdata[1].Mol_mass()/specdata[0].Mol_mass();
+      ratio = 3.0*specdata[2].Mol_mass()/(3.0*specdata[2].Mol_mass()+4.0*specdata[3].Mol_mass());
+      f_ub = specdata[0].Mol_mass()/(specdata[0].Mol_mass()+5.0*specdata[1].Mol_mass()+18.8*specdata[4].Mol_mass());
+    }
+    
+    switch(var){
+    case 0:
+      return (-f_ub);                    //dC1
+    case 1:
+      return (-stoich*f_ub/equivalence_ratio);  //dC2
+    case 2:
+      return ((1.0+stoich/equivalence_ratio)*f_ub*ratio);        // dC3
+    case 3:
+      return ((1.0+stoich/equivalence_ratio)*f_ub*(1.0-ratio)); //dC4
+    }
+
+  } else if ( React.reactset_flag == H2O2_1STEP ){
+//     stoich = specdata[1].Mol_mass()/2.0/specdata[0].Mol_mass();
+//     f_ub = 2.0*specdata[0].Mol_mass()/(2.0*specdata[0].Mol_mass()+specdata[1].Mol_mass()+3.76*specdata[3].Mol_mass());
+//     eta_fsd = (-f_ub)      //dC1
+//       +(-stoich*f_ub/equivalence_ratio) //dC2
+//       +((1.0+stoich/equivalence_ratio)*f_ub); //dC3
+    cerr<<" Progvar_Species_Grad ISSUES"; exit(1);
+  }
+ 
+  return 0;
 }
 
 double LESPremixed2D_pState::Reaction_Rate_Progvar(const LESPremixed2D_pState &dWdx,
@@ -5238,7 +5279,6 @@ Vector2D HLLE_wavespeeds(const LESPremixed2D_pState &Wl,
 
     Vector2D wavespeed;
     LESPremixed2D_pState Wa_n, lambdas_l, lambdas_r, lambdas_a, Wl_n, Wr_n;  
-    int NUM_VAR_LESPREMIXED2D = (Wl.NUM_VAR_LESPREMIXED2D );
     /* Use rotated values to calculate eignvalues */
     Wl_n = Rotate(Wl, norm_dir);
     Wr_n = Rotate(Wr, norm_dir);
@@ -5257,9 +5297,6 @@ Vector2D HLLE_wavespeeds(const LESPremixed2D_pState &Wl,
                       lambdas_a[1]);   //u-a
     wavespeed.y = max(lambdas_r[4],
                       lambdas_a[4]);   //u+a
- 
-  //   wavespeed.y = max(lambdas_r[NUM_VAR_LESPREMIXED2D],
-//                       lambdas_a[NUM_VAR_LESPREMIXED2D]);  //THIS IS u! not u+a WTF!!!
  
     wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
     wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 

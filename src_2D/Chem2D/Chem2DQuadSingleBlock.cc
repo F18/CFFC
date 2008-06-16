@@ -1055,6 +1055,7 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
       Viscous_Calculations(SolnBlk);
     }
 
+    //cout<<"\n Output_Cells_Tecplot BCS commented out -FYI";
     BCs(SolnBlk,IP);
 
     Out_File << setprecision(14);
@@ -1092,6 +1093,14 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
        Out_File << "\"T\" \\ \n"
 	        << "\"M\" \\ \n"
                 << "\"R\" \\ \n"
+		<< "\"rho*H\"  \\ \n"  
+		<<"\"h\" \\ \n"
+		<<"\"h_s\" \\ \n"
+		<<"\"h_ref\" \\ \n"
+		<<"\"rho*E\" \\ \n"
+		<< "\"e\" \\  \n" 
+		<< "\"e_s\" \\ \n"
+		<< "\"e_ref\" \\ \n"
 	        << "\"viscosity\" \\ \n"
 	        << "\"thermal conduct\" \\ \n"
 	        << "\"Prandtl\" \\ \n";
@@ -1181,7 +1190,9 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 		    << " " << SolnBlk.U[i][j].theta<< " " << SolnBlk.U[i][j].lambda
 		    << " " << SolnBlk.W[i][j].T()
 		    << " " << SolnBlk.W[i][j].v.abs()/SolnBlk.W[i][j].a() 
-		    << " " << SolnBlk.W[i][j].Rtot()
+		    << " " << SolnBlk.W[i][j].Rtot() 
+		    << " " << SolnBlk.W[i][j].H() <<" "<< SolnBlk.W[i][j].h() <<" "<< SolnBlk.W[i][j].hs()<<" "<< SolnBlk.W[i][j].href()
+		    << " " << SolnBlk.W[i][j].E() <<" "<< SolnBlk.W[i][j].e() <<" "<< SolnBlk.W[i][j].es()<<" "<< SolnBlk.W[i][j].eref()
 		    << " " << SolnBlk.W[i][j].mu()
 		    << " " << SolnBlk.W[i][j].kappa()
 		    << " " << SolnBlk.U[i][j].Prandtl(); 
@@ -1332,7 +1343,7 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	 const int i_ICtype,
 	 Chem2D_pState *Wo, Chem2D_Input_Parameters &Input_Parameters) {
 
-    Chem2D_pState Wl, Wr;
+    Chem2D_pState Wl, Wr, Wi;
     Chem2D_pState Chem2D_W_STDATM;
     Chem2D_cState Chem2D_U_STDATM; //default
     Vector2D dX;
@@ -1890,7 +1901,7 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
       // Set Initial condtions on 1D grid
       for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
 	for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= 0.01){ //spatial relation, grid independent 
+	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= 0.0){ //spatial relation, grid independent 
 	    SolnBlk.W[i][j] = Wl;  
 	  } else {
  	    SolnBlk.W[i][j] = Wr;	     
@@ -1911,7 +1922,7 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
       **************************************************************************/
     case IC_CHEM_CORE_FLAME :           
 
-//       if(Wo[0].React.reactset_flag == CH4_2STEP || Wo[0].React.reactset_flag == CH4_1STEP){
+      if(Wo[0].React.reactset_flag == CH4_2STEP || Wo[0].React.reactset_flag == CH4_1STEP){
 	fuel_spacing = 0.002;      //m
 	fuel_velocity = 0.70;      //m/s  //0.70
 	fuel_temp_inlet = 298.0;   //K 
@@ -1947,7 +1958,7 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	Wr.v.zero();
 
 
-//       } else if(Wo[0].React.reactset_flag == H2O2_1STEP) {
+      } else if(Wo[0].React.reactset_flag == H2O2_1STEP) {
 	
 // 	fuel_spacing = 0.002;      //m	
 // 	fuel_temp_inlet = 298.0;   //K 
@@ -1987,7 +1998,7 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 // 	Wr.rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
 // 	Wr.v.zero();
 
-//       } 
+      } 
 
       for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
 	for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
@@ -2005,15 +2016,15 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	      SolnBlk.W[i][j].v.x = ZERO;
 	    }
 	    //region for injected air parabolic profile
-	  } else if (SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing+tube_thickness && 
-		     SolnBlk.Grid.Cell[i][j].Xc.x <= 0.05*air_spacing + fuel_spacing+tube_thickness ){		    
-	    SolnBlk.W[i][j] = Wr;
-	    SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
-	    SolnBlk.W[i][j].v.y = ( ONE -  pow(  (SolnBlk.Grid.Cell[i][j].Xc.x - fuel_spacing - tube_thickness - 0.05*air_spacing) 
-						 /(0.05*air_spacing),TWO))*air_velocity;	  
-	    SolnBlk.W[i][j].v.x = ZERO;
+// 	  } else if (SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing+tube_thickness && 
+// 		     SolnBlk.Grid.Cell[i][j].Xc.x <= 0.05*air_spacing + fuel_spacing+tube_thickness ){		    
+// 	    SolnBlk.W[i][j] = Wr;
+// 	    SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
+//  	    SolnBlk.W[i][j].v.y = ( ONE -  pow(  (SolnBlk.Grid.Cell[i][j].Xc.x - fuel_spacing - tube_thickness - 0.05*air_spacing) 
+//  						 /(0.05*air_spacing),TWO))*air_velocity;	  
+// 	    SolnBlk.W[i][j].v.x = ZERO;
 	    //region for injected air
-	  } else if (SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing+tube_thickness && 
+	  } else if (SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing +tube_thickness && 
 		     SolnBlk.Grid.Cell[i][j].Xc.x <= air_spacing ){	
 	      SolnBlk.W[i][j] = Wr;
 	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
@@ -2148,28 +2159,23 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
     case IC_CHEM_PREMIXED_FLAME :           
 
       if(Wo[0].React.reactset_flag == CH4_2STEP || Wo[0].React.reactset_flag == CH4_1STEP){
-	fuel_spacing = 0.011;      //m
-	fuel_velocity = 1.10;     //m/s  
+	fuel_spacing = 0.01;      //m
+	fuel_velocity = 0.73;     //m/s  
 	fuel_temp_inlet = 298.0;  //K 
 	tube_thickness =  0.001;    //m delta	
 
-	air_spacing = 0.030;       //m   
+	air_spacing = 0.050;       //m   
 	air_velocity = 0.0;        //m/s 
 	air_temp_inlet = 298.0;    //K
 	ignition_temp = 1200.0;    //K
 	
-	Wr = Wo[0];
-	Wl = Wo[0];
-	
-        //phi=0.95
-// 	Wl.spec[0] = 0.054;   //CH4
-//  	Wl.spec[1] = 0.2213;   //O2
-//  	Wl.spec[Wl.ns-1] = 0.7247; //N2
+	Wr = Wo[0]; Wl = Wo[0]; Wi = Wo[0];
 
-	//Premixed FUEL phi=1.05 CH4 & AIR (O2 &N2)
-	Wl.spec[0] = 0.05766;   //CH4
-	Wl.spec[1] = 0.21966;   //O2
-	Wl.spec[Wl.ns-1] = 0.72268; //N2
+	//PREMIXED GAS
+        //phi=0.8
+	Wl.spec[0] = 0.0445;   //CH4
+ 	Wl.spec[1] = 0.2227;   //O2
+ 	Wl.spec[Wl.ns-1] = 0.7328; //N2
 
 	// phi=1.0
  // 	Wl.spec[0] = 0.0551;   //CH4
@@ -2181,16 +2187,23 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	Wl.rho = Wl.p/(Wl.Rtot()*fuel_temp_inlet);
 	Wl.v.zero();
 
-	//PRODUCTS
-// 	Wr.spec[0] = 0.0;   //CH4
-//  	Wr.spec[1] = 0.0;   //O2
-// 	Wr.spec[2] = 0.1511;     //CO2
-// 	Wr.spec[3] = 0.1242;     //H2O 
-// 	Wr.spec[Wl.ns-1] = 0.7247; //N2
-// 	Wr.rho = Wr.p/(Wr.Rtot()*2320); //2234
-// 	Wr.v.zero();
+	if(Wo[0].React.reactset_flag == CH4_2STEP || Wo[0].React.reactset_flag == CH4_1STEP){
+	  //PRODUCTS
+	  Wi.spec[0] = ZERO;        //CH4
+	  Wi.spec[1] = 0.0472798;   //O2
+	  Wi.spec[2] = 0.116376;    //CO2
+	  Wi.spec[3] = 0.0999;      //H2O  
+	  Wi.spec[4] = 0.00364414;  //CO
+	} else if ( Wo[0].React.reactset_flag == CH4_1STEP){
+	  Wi.spec[0] = ZERO;       //CH4
+	  Wi.spec[1] = 0.0452;     //O2
+	  Wi.spec[2] = 0.1221;     //CO2
+	  Wi.spec[3] = 0.0999;     //H2O 	
+	}
+	Wi.spec[Wi.ns-1] = 0.7328;      //N2   = 1 - sum(cs) ;
+	Wi.rho = Wi.p/(Wi.Rtot()*2000);
 
-	//air 21% O2 & 79% N2
+	//AIR 21% O2 & 79% N2
 	for(int q=0; q < Wr.ns; q++){
 	  if(q ==1 || q == Wr.ns-1){
 	    Wr.spec[1] = 0.232;
@@ -2208,17 +2221,24 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
   	  //region for injected fuel 
  	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing ){ 
-    	    if (SolnBlk.Grid.Cell[i][j].Xc.y <0.035 ){
+     	    if (SolnBlk.Grid.Cell[i][j].Xc.y + FOUR*SolnBlk.Grid.Cell[i][j].Xc.x <= 0.04) { //&& SolnBlk.Grid.Cell[i][j].Xc.y < 0.03){ 
+	      //if (SolnBlk.Grid.Cell[i][j].Xc.y < 0.01){
 	      SolnBlk.W[i][j] = Wl;
 	      SolnBlk.W[i][j].rho = Wl.p/(Wl.Rtot()*fuel_temp_inlet);  //set BC value to proper inlet temp
 	      SolnBlk.W[i][j].v.y = fuel_velocity;
- 	      SolnBlk.W[i][j].v.x = ZERO;
+	      SolnBlk.W[i][j].v.x = ZERO;
 	    } else {
-	      SolnBlk.W[i][j] = Wr;
-	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
-	      SolnBlk.W[i][j].v.y = fuel_velocity;
+	      //products 
+	      SolnBlk.W[i][j] = Wi;
+	      SolnBlk.W[i][j].v.y = TWO*fuel_velocity; 
 	      SolnBlk.W[i][j].v.x = ZERO;
 	    }
+	    //region for products
+	  } else if (SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing && 
+		     SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing + tube_thickness){
+	      SolnBlk.W[i][j] = Wi;
+	      SolnBlk.W[i][j].v.zero();
+
 	    //region for injected air 
 	  } else if (SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing+tube_thickness && 
 		     SolnBlk.Grid.Cell[i][j].Xc.x <= air_spacing ){	
@@ -2231,19 +2251,7 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	    SolnBlk.W[i][j] = Wr;	    	  	    	  
 	    SolnBlk.W[i][j].v.zero(); 	   	    
  	  } 
-
-	  //IGNITOR across fuel and air inlets   
-	  if( SolnBlk.Grid.Cell[i][j].Xc.y < 0.035 && SolnBlk.Grid.Cell[i][j].Xc.y > 0.03){   	    
-	    if ( SolnBlk.Grid.Cell[i][j].Xc.x <= 1.0*fuel_spacing && SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing*0.9){ 
-	      SolnBlk.W[i][j].rho = Wl.p/(Wl.Rtot()*ignition_temp);
-// 	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing){
-// 	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*ignition_temp);
-// 	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= air_spacing*0.5){
-// 	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*ignition_temp);
-// 	    } else {
-// 	      //left at air
-	    }
-	  }
+	  
 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
 	} 
       } 
@@ -3844,6 +3852,7 @@ void Linear_Reconstruction_GreenGauss(Chem2D_Quad_Block &SolnBlk,
 	   
 	// Calculate slope limiters.    
       if (!SolnBlk.Freeze_Limiter) {
+
 	for ( n = 1 ; n <= NUM_VAR_CHEM2D ; ++n ) {
 	  u0Min = SolnBlk.W[i][j][n];
 	    u0Max = u0Min;
@@ -3899,9 +3908,11 @@ void Linear_Reconstruction_GreenGauss(Chem2D_Quad_Block &SolnBlk,
 	    } /* endswitch */
 	    
 	    SolnBlk.phi[i][j][n] = phi;
-	  } /* endfor */
+
+	} /* endfor */ 
+	
       } // end limiter if
-	  
+      
     } else {
       SolnBlk.dWdx[i][j].Vacuum();
       SolnBlk.dWdy[i][j].Vacuum();
@@ -5232,8 +5243,7 @@ void Linear_Reconstruction_GreenGauss_Diamond(Chem2D_Quad_Block &SolnBlk,
     W_SW = SolnBlk.Wn(i,j);
     W_SE = SolnBlk.Wn(i+1,j);
     
-    /*************** NORTH ****************************/
-    
+    /*************** NORTH ****************************/    
     /*Formulate the gradients of primitive parameters on the north face of cell (i, j)*/
     // counterclockwise, starting from the cell center (i,j), nodeNE (i, j), 
     // top cell center (i, j+1), NodeNW (i, j);
@@ -5262,9 +5272,8 @@ void Linear_Reconstruction_GreenGauss_Diamond(Chem2D_Quad_Block &SolnBlk,
     
     SolnBlk.dWdx_faceN[i][j] = ( W_average[0]* norm[0].x +W_average[1]* norm[1].x+ W_average[2]* norm[2].x+W_average[3]* norm[3].x)/AREA;
     SolnBlk.dWdy_faceN[i][j] = ( W_average[0]* norm[0].y +W_average[1]* norm[1].y+ W_average[2]* norm[2].y+W_average[3]* norm[3].y)/AREA;  
-    
-    /*************** EAST ****************************/
-    
+
+    /*************** EAST ****************************/    
     /*Formulate the gradients of primitive parameters on the east face of cell (i, j)*/
     // counterclockwise, starting from  nodeSE(i,j), cell (i+1, j), 
     // nodeNE(i,j), cell center (i, j+1)     
@@ -5292,9 +5301,8 @@ void Linear_Reconstruction_GreenGauss_Diamond(Chem2D_Quad_Block &SolnBlk,
     
     SolnBlk.dWdx_faceE[i][j] = ( W_average[0]* norm[0].x +W_average[1]* norm[1].x+ W_average[2]* norm[2].x+W_average[3]* norm[3].x)/AREA;
     SolnBlk.dWdy_faceE[i][j] = ( W_average[0]* norm[0].y +W_average[1]* norm[1].y+ W_average[2]* norm[2].y+W_average[3]* norm[3].y)/AREA;  
-    
-    /*************** SOUTH ****************************/
-    
+
+    /*************** SOUTH ****************************/    
     /*Formulate the gradients of primitive parameters on the south face of cell (i, j)*/
     // counterclockwise, starting from  cell (i, j-1), nodeSE(i,j) 
     // cell(i,j), nodeSW(i,j)     
@@ -5322,7 +5330,7 @@ void Linear_Reconstruction_GreenGauss_Diamond(Chem2D_Quad_Block &SolnBlk,
     
     SolnBlk.dWdx_faceS[i][j] = ( W_average[0]* norm[0].x +W_average[1]* norm[1].x+ W_average[2]* norm[2].x+W_average[3]* norm[3].x)/AREA;
     SolnBlk.dWdy_faceS[i][j] = ( W_average[0]* norm[0].y +W_average[1]* norm[1].y+ W_average[2]* norm[2].y+W_average[3]* norm[3].y)/AREA;  
-    
+
     /*************** WEST ****************************/    
     /*Formulate the gradients of primitive parameters on the west face of cell (i, j ) */
     // counterclockwise, starting from  NodeSW(i,j) 
@@ -5351,7 +5359,7 @@ void Linear_Reconstruction_GreenGauss_Diamond(Chem2D_Quad_Block &SolnBlk,
         
     SolnBlk.dWdx_faceW[i][j] = ( W_average[0]* norm[0].x +W_average[1]* norm[1].x+ W_average[2]* norm[2].x+W_average[3]* norm[3].x)/AREA;
     SolnBlk.dWdy_faceW[i][j] = ( W_average[0]* norm[0].y +W_average[1]* norm[1].y+ W_average[2]* norm[2].y+W_average[3]* norm[3].y)/AREA;  
-    
+
     /*************** CENTER ****************************/
     
     // area weighted gradients at cell centers, 4 inside triangles
@@ -5372,15 +5380,19 @@ void Linear_Reconstruction_GreenGauss_Diamond(Chem2D_Quad_Block &SolnBlk,
     SolnBlk.dWdy[i][j] = SolnBlk.dWdy_faceN[i][j]*area[0]+ SolnBlk.dWdy_faceE[i][j]*area[1] +
       SolnBlk.dWdy_faceW[i][j]*area[2] + SolnBlk.dWdy_faceS[i][j]*area[3];     
     SolnBlk.dWdy[i][j] = SolnBlk.dWdy[i][j]/SolnBlk.Grid.Cell[i][j].A; 
-    
+
     /****************************************************/
-        
+   
+    // recompute last species gradient
+    SolnBlk.FixSpecGrad(i, j, true,SolnBlk.dWdy[i][j].ns);    
+   
+
     double u0Min, u0Max, uQuad[4], phi;
     double DxDx_ave, DxDy_ave, DyDy_ave;
     Vector2D deltaX; 
     
     // Calculate slope limiters.  
-    if (!SolnBlk.Freeze_Limiter) {
+    if (!SolnBlk.Freeze_Limiter) {     
       for ( int n=1 ; n <= SolnBlk.NumVar(); n++ ) {
 	u0Min = SolnBlk.W[i][j][n];
 	u0Max = u0Min;
@@ -5436,8 +5448,10 @@ void Linear_Reconstruction_GreenGauss_Diamond(Chem2D_Quad_Block &SolnBlk,
 	} /* endswitch */
 	
 	SolnBlk.phi[i][j][n] = phi;
-      } /* endfor */
+	
+      } /* endfor */              
     }//end limiter if 
+    
   } else {
     SolnBlk.dWdx_faceN[i][j].Vacuum();
     SolnBlk.dWdx_faceS[i][j].Vacuum();
@@ -6137,12 +6151,6 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
   int NUM_VAR_CHEM2D = SolnBlk.NumVar();
   double delta_n; 
 
-  /* Additional variables for dual time stepping. */
-  double dTime;    // Physical time step
-  if (Input_Parameters.Dual_Time_Stepping) {
-    dTime = Input_Parameters.dTime;
-  } 
-
   // Modifications for NKS overlap 
   int JCl_overlap = 0, JCu_overlap = 0, ICu_overlap = 0, ICl_overlap = 0;
   if(Input_Parameters.NKS_IP.GMRES_Overlap > 0 ){	
@@ -6213,6 +6221,9 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	    (SolnBlk.phi[i+1][j]^SolnBlk.dWdx[i+1][j])*dX.x +
 	    (SolnBlk.phi[i+1][j]^SolnBlk.dWdy[i+1][j])*dX.y;	
 	  
+	  Wr.spec[Wr.ns-1].c = ONE - Wr.sum_species(); //ensure sum;
+
+
 	  if (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION) {
 	    Wl = Reflect(Wr, SolnBlk.Grid.nfaceW(i+1, j));
 	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_FREE_SLIP_ISOTHERMAL) {
@@ -6241,6 +6252,10 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	    Wl = BC_Characteristic_Pressure(Wr, 
 					    SolnBlk.WoW[j], 
 					    SolnBlk.Grid.nfaceW(i+1, j));
+	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_2DFLAME_OUTFLOW){
+	    Wl = BC_2DFlame_Outflow(Wr, 
+				    SolnBlk.WoW[j], 
+				    SolnBlk.Grid.nfaceW(i+1, j));	    	 
 	  } else {
 	    cerr<< "\n Wrong BC in  dUdt_Residual_Evaluation "<< SolnBlk.Grid.BCtypeW[j]; exit(1);
 	  }
@@ -6260,7 +6275,8 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
 	  Wl = SolnBlk.W[i][j] + 
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
-	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;	    
+	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
+	  Wl.spec[Wl.ns-1].c = ONE - Wl.sum_species(); //ensure sum;	    
 	  if (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION) {
 	    Wr = Reflect(Wl, SolnBlk.Grid.nfaceE(i, j));   
 	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_FREE_SLIP_ISOTHERMAL) {
@@ -6285,9 +6301,9 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 				    SolnBlk.WoE[j],
 				    SolnBlk.W[SolnBlk.ICl][j], 
 				    SolnBlk.Grid.nfaceE(i, j));	 
-	  } else if (SolnBlk.Grid.BCtypeE[i] == BC_2DFLAME_OUTFLOW){
+	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_2DFLAME_OUTFLOW){
 	    Wr = BC_2DFlame_Outflow(Wl, 
-				    SolnBlk.WoE[i], 
+				    SolnBlk.WoE[j], 
 				    SolnBlk.Grid.nfaceE(i, j));	    
 	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC) { 
 	    Wr = BC_Characteristic_Pressure(Wl, 
@@ -6301,11 +6317,14 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
 	  Wl = SolnBlk.W[i][j] + 
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
-	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
+	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y; 
+	  Wl.spec[Wl.ns-1].c = ONE - Wl.sum_species(); //ensure sum;
 	  dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
 	  Wr = SolnBlk.W[i+1][j] + 
 	    (SolnBlk.phi[i+1][j]^SolnBlk.dWdx[i+1][j])*dX.x +
-	    (SolnBlk.phi[i+1][j]^SolnBlk.dWdy[i+1][j])*dX.y;	       
+	    (SolnBlk.phi[i+1][j]^SolnBlk.dWdy[i+1][j])*dX.y;		  
+	  Wr.spec[Wr.ns-1].c = ONE - Wr.sum_species(); //ensure sum;
+
 	} /* endif */
 	
 	  // Spacing for Preconditioner 
@@ -6401,10 +6420,10 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	    
 	  case VISCOUS_RECONSTRUCTION_DIAMONDPATH_LEAST_SQUARES :	      
 	  case VISCOUS_RECONSTRUCTION_DIAMONDPATH_GREEN_GAUSS :
-	    W_face = HALF*(SolnBlk.Wn(i+1,j+1) +SolnBlk.Wn(i+1,j)); // IS this right in general ??( Wn_NE + Wn_SE ) 
+	    W_face = HALF*(SolnBlk.Wn(i+1,j+1) +SolnBlk.Wn(i+1,j)); 
 	    dWdx = SolnBlk.dWdx_faceE[i][j];
 	    dWdy = SolnBlk.dWdy_faceE[i][j];
-	    Flux -= Viscous_Flux_n(W_face,dWdx,dWdy,
+	    Flux -= Viscous_Flux_n(W_face,dWdx,dWdy,                 
 				   SolnBlk.Flow_Type,
 				   SolnBlk.Axisymmetric,
 				   SolnBlk.Grid.xfaceE(i,j),
@@ -6430,11 +6449,11 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 
 	  // Include viscous if specified
 	  if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID) { //-ve as on RHS 
-	    SolnBlk.dUdt[i][j][0] += SolnBlk.W[i][j].Sa_viscous(SolnBlk.dWdx[i][j],
+	    SolnBlk.dUdt[i][j][0] += SolnBlk.W[i][j].Sa_viscous(SolnBlk.dWdx[i][j],        
 								SolnBlk.dWdy[i][j],
 								SolnBlk.Grid.Cell[i][j].Xc,
 								SolnBlk.Flow_Type,
-								SolnBlk.Axisymmetric);
+								SolnBlk.Axisymmetric);	   	    
 	  }
 	} /* endif */
 	
@@ -6464,13 +6483,6 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  SolnBlk.dUdt[i][j][0] += SolnBlk.W[i][j].Sg();
 	}   
 	
-	/* Include physical time derivative for dual time stepping */
-	if (Input_Parameters.Dual_Time_Stepping) {
-	  //cout << "Source[0] dual time" << endl;
-	  SolnBlk.dUdt[i][j][0] -= SolnBlk.W[i][j].S_dual_time_stepping(SolnBlk.U[i][j], SolnBlk.Ut[i][j], 
-									SolnBlk.Uold[i][j], 
-									dTime, Input_Parameters.first_step);
-	}  
 	/*****************************************/
 	/*****************************************/
 	
@@ -6513,6 +6525,7 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  Wr = SolnBlk.W[i][j+1] +
 	    (SolnBlk.phi[i][j+1]^SolnBlk.dWdx[i][j+1])*dX.x +
 	    (SolnBlk.phi[i][j+1]^SolnBlk.dWdy[i][j+1])*dX.y;
+	  Wr.spec[Wr.ns-1].c = ONE - Wr.sum_species(); //ensure sum;
 	  if (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION) {
 	    Wl = Reflect(Wr, SolnBlk.Grid.nfaceS(i, j+1)); 
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_FREE_SLIP_ISOTHERMAL) {
@@ -6568,6 +6581,7 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  Wl = SolnBlk.W[i][j] + 
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
+	  Wl.spec[Wl.ns-1].c = ONE - Wl.sum_species(); //ensure sum;
 	  if (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION) {
 	    Wr = Reflect(Wl, SolnBlk.Grid.nfaceN(i, j));	
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_FREE_SLIP_ISOTHERMAL) {
@@ -6609,10 +6623,12 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  Wl = SolnBlk.W[i][j] + 
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
 	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
+	  Wl.spec[Wl.ns-1].c = ONE - Wl.sum_species(); //ensure sum;
 	  dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
 	  Wr = SolnBlk.W[i][j+1] +
 	    (SolnBlk.phi[i][j+1]^SolnBlk.dWdx[i][j+1])*dX.x +
 	    (SolnBlk.phi[i][j+1]^SolnBlk.dWdy[i][j+1])*dX.y;
+	  Wr.spec[Wr.ns-1].c = ONE - Wr.sum_species(); //ensure sum;
 	} /* endif */
 	  
 	// Spacing for Preconditioner 
@@ -6770,12 +6786,7 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 
     /* Residual successfully calculated. */
 
-//     //HACK FOR 1D FLAME
-//     if( SolnBlk.Grid.BCtypeE[SolnBlk.JCu] == BC_FLAME_OUTFLOW 
-// 	||  SolnBlk.Grid.BCtypeW[SolnBlk.JCu] == BC_FLAME_INFLOW ){ 
-//       SolnBlk.set_v_zero();
-//     }
-
+  return 0;
 }
 
 /********************************************************
@@ -6967,7 +6978,11 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC) {
 	    Wl = BC_Characteristic_Pressure(Wr, 
 					    SolnBlk.WoW[j], 
-					    SolnBlk.Grid.nfaceW(i+1, j));
+					    SolnBlk.Grid.nfaceW(i+1, j)); 
+	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_2DFLAME_OUTFLOW){
+	    Wl = BC_2DFlame_Outflow(Wr, 
+				    SolnBlk.WoW[j], 
+				    SolnBlk.Grid.nfaceW(i+1, j));
 	  } else {
 	    cerr<< "\n Wrong BC in  dUdt_Residual_Evaluation "<< SolnBlk.Grid.BCtypeW[j]; exit(1);
 	  }
@@ -7012,9 +7027,9 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 				    SolnBlk.WoE[j],
 				    SolnBlk.W[SolnBlk.ICl][j], 
 				    SolnBlk.Grid.nfaceE(i, j));  
-	  } else if (SolnBlk.Grid.BCtypeE[i] == BC_2DFLAME_OUTFLOW){
+	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_2DFLAME_OUTFLOW){
 	    Wr = BC_2DFlame_Outflow(Wl, 
-				    SolnBlk.WoE[i], 
+				    SolnBlk.WoE[j], 
 				    SolnBlk.Grid.nfaceE(i, j));	    
 	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC) { 
 	    Wr = BC_Characteristic_Pressure(Wl, 
@@ -7191,10 +7206,6 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 	    //  SolnBlk.dUdt[i][j][k_residual].E = Heat_source(SolnBlk.Grid.Cell[i][j].Xc);
 	    //}     
 	  }
-
-// 	  if(Input_Parameters.Heat_Source > ZERO){	
-// 	    SolnBlk.dUdt[i][j][k_residual].E = (Input_Parameters.Heat_Source - SolnBlk.U[i][j].E);
-// 	  }     
  
           /* Include source terms associated with gravity */
 	  if (SolnBlk.Gravity) {	 
@@ -7459,8 +7470,6 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 	} else if (j == SolnBlk.JCu) {
 	  SolnBlk.FluxN[i] = Flux*SolnBlk.Grid.lfaceN(i, j);  
 	} /* endif */	
-
-	//cout<<"\n j dUdt "<<i<<" "<<j<<" "<<k_residual<<" "<<SolnBlk.dUdt[i][j][k_residual]; 	         
 	  
       } /* endfor */
 
@@ -7494,9 +7503,6 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 //     } /* endif */
 
     /* Residual successfully calculated. */
-
-    //   cout<<"\n New Block \n";
-    
 
     return (0);
     
@@ -7827,26 +7833,6 @@ int Update_Solution_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
   return (0);
   
 }
-/********************************************************
- * Routine: Update_Dual_Solution_States                 *
- *                                                      *
- * This routine updates solution states of the given    *
- * solution block at different times, required in the   *
- * dual time stepping.                                  * 
- *                                                      *
- ********************************************************/
-int Update_Dual_Solution_States(Chem2D_Quad_Block &SolnBlk) {
-
-  for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-    for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-      SolnBlk.Uold[i][j] = SolnBlk.Ut[i][j];  // Solution at time t(n-1)
-      SolnBlk.Ut[i][j] = SolnBlk.U[i][j];     // Solution at time t(n)
-    }
-  }
-
-  /* Solution successfully updated. */
-  return (0);
-}
 
 /**********************************************************************
  *   Viscous Calculations - Cell Centered                             *
@@ -7901,7 +7887,7 @@ void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk) {
       X = SolnBlk.Grid.Cell[i][j].Xc;
       /***************** Molecular (Laminar) Stresses ******************/
       SolnBlk.W[i][j].Laminar_Stress(SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j],
-				     SolnBlk.Flow_Type, SolnBlk.Axisymmetric, X);
+				     SolnBlk.Flow_Type, SolnBlk.Axisymmetric,mu, X);
       SolnBlk.U[i][j].tau =  SolnBlk.W[i][j].tau;
 
       /********************** Turbulent Stresses ***********************/

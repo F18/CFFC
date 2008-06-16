@@ -17,7 +17,9 @@ enum Jacobian_Orders { SOURCE_TERMS_ONLY,
                        SECOND_ORDER_OTHER };
 
 enum Frechet_Derivatives { FIRST_ORDER = 1,
-			   SECOND_ORDER = 2 };
+			   SECOND_ORDER = 2,
+                           FIRST_ORDER_RESTART = 3,
+                           SECOND_ORDER_RESTART = 4 };
 
 enum output_formats { OF_SCOTT, OF_ALISTAIR };
 
@@ -88,7 +90,8 @@ class NKS_Input_Parameters{
 
   //@{ @name Matrix Free
   bool   GMRES_CHECK;
-  int    GMRES_Frechet_Derivative_Order;
+  int    GMRES_Frechet_Derivative_Order; 
+  bool   GMRES_Frechet_Derivative_Chem;
   double Epsilon_Naught;
   //@}
 
@@ -113,7 +116,7 @@ class NKS_Input_Parameters{
 
   //@{ @name NKS Parameters
   int Min_Number_of_Newton_Steps_With_Zero_Limiter;            //!< force 1st order for "N" steps
-  double Min_Number_of_Newton_Steps_Requiring_Jacobian_Update; //!< force Jacobian updates for "N" Newton steps       
+  int Number_of_Newton_Steps_Requiring_Jacobian_Update;        //!< force Jacobian updates for "N" Newton steps       
   double Min_L2_Norm_Requiring_Jacobian_Update;                //!< force Jacobian update for L2 < "N"
   double Min_Finite_Time_Step_Norm_Ratio;                      //!< ramp over to full newton over 8 orders of L2 magnitude
   int Jacobian_Update_Frequency;                               //!< update every 'n' intervals
@@ -147,8 +150,9 @@ class NKS_Input_Parameters{
     Normalization = true;
  
     GMRES_CHECK = false;
-    GMRES_Frechet_Derivative_Order = FIRST_ORDER; 
-    Epsilon_Naught = 1e-6; // 1e-8 original, 1e-10 fixed minimum, viscous stable @ 1e-6
+    GMRES_Frechet_Derivative_Order = FIRST_ORDER;   
+    GMRES_Frechet_Derivative_Chem = false;
+    Epsilon_Naught = 1.0e-6; // 1e-8 original, 1e-10 fixed minimum, viscous stable @ 1e-6
     
     GMRES_Block_Preconditioner = Block_Jacobi;
     Jacobian_Order = FIRST_ORDER_INVISCID_HLLE;
@@ -163,7 +167,7 @@ class NKS_Input_Parameters{
     NKS_Write_Output_Cells_Freq = 0; 
    
     Min_Number_of_Newton_Steps_With_Zero_Limiter = 0 ;           
-    Min_Number_of_Newton_Steps_Requiring_Jacobian_Update = 100; 
+    Number_of_Newton_Steps_Requiring_Jacobian_Update = 1; //defaults to every step 
     Min_L2_Norm_Requiring_Jacobian_Update = 1.0e-08 ;
     Min_Finite_Time_Step_Norm_Ratio = 1.0e-10; 
     Jacobian_Update_Frequency = 1;
@@ -230,6 +234,9 @@ class NKS_Input_Parameters{
     MPI::COMM_WORLD.Bcast(&(GMRES_Frechet_Derivative_Order),
 			  1, 
 			  MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(GMRES_Frechet_Derivative_Chem),
+			  1, 
+			  MPI::INT, 0);  //BOOL
     MPI::COMM_WORLD.Bcast(&(Epsilon_Naught), 1, MPI::DOUBLE, 0);
 
     // GMRES Preconditioner Type
@@ -254,7 +261,7 @@ class NKS_Input_Parameters{
     MPI::COMM_WORLD.Bcast(&(NKS_Write_Output_Cells_Freq), 1, MPI::INT, 0);  
 
     MPI::COMM_WORLD.Bcast(&(Min_Number_of_Newton_Steps_With_Zero_Limiter), 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Min_Number_of_Newton_Steps_Requiring_Jacobian_Update), 1, MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Number_of_Newton_Steps_Requiring_Jacobian_Update), 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&( Min_L2_Norm_Requiring_Jacobian_Update), 1, MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&( Min_Finite_Time_Step_Norm_Ratio), 1, MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Jacobian_Update_Frequency), 1, MPI::INT, 0);
@@ -313,7 +320,10 @@ class NKS_Input_Parameters{
 			  MPI::INT, Source_Rank); //BOOL
     Communicator.Bcast(&(GMRES_Frechet_Derivative_Order),
 			  1, 
-			  MPI::INT, Source_Rank);
+			  MPI::INT, Source_Rank); 
+    Communicator.Bcast(&(GMRES_Frechet_Derivative_Chem),
+			  1,  
+		       MPI::INT, Source_Rank); //BOOL
     Communicator.Bcast(&(Epsilon_Naught), 1, MPI::DOUBLE, Source_Rank);
 
     // GMRES Preconditioner Type
@@ -338,7 +348,7 @@ class NKS_Input_Parameters{
     Communicator.Bcast(&(NKS_Write_Output_Cells_Freq), 1, MPI::INT, Source_Rank);  
 
     Communicator.Bcast(&(Min_Number_of_Newton_Steps_With_Zero_Limiter), 1, MPI::INT, Source_Rank);
-    Communicator.Bcast(&(Min_Number_of_Newton_Steps_Requiring_Jacobian_Update), 1, MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(Number_of_Newton_Steps_Requiring_Jacobian_Update), 1, MPI::INT, Source_Rank);
     Communicator.Bcast(&(Min_L2_Norm_Requiring_Jacobian_Update), 1, MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(Min_Finite_Time_Step_Norm_Ratio), 1, MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(Jacobian_Update_Frequency), 1, MPI::INT, Source_Rank);
@@ -498,6 +508,9 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
       GMRES_Frechet_Derivative_Order = FIRST_ORDER;
     } else if(strcmp(value, "Second_Order") == 0) {
       GMRES_Frechet_Derivative_Order = SECOND_ORDER;
+    } else if(strcmp(value, "Second_Order_Chem") == 0) {
+      GMRES_Frechet_Derivative_Order = SECOND_ORDER;
+      GMRES_Frechet_Derivative_Chem = true;
     } else {
       GMRES_Frechet_Derivative_Order = FIRST_ORDER;
     }
@@ -604,9 +617,9 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
     Min_Number_of_Newton_Steps_With_Zero_Limiter = static_cast<int>(strtol(value, &ptr, 10));
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
-  } else if (strcmp(code, "NKS_Min_Number_of_Newton_Steps_Requiring_Jacobian_Update") == 0) {
+  } else if (strcmp(code, "NKS_Number_of_Newton_Steps_Requiring_Jacobian_Update") == 0) {
     i_command = 79;
-    Min_Number_of_Newton_Steps_Requiring_Jacobian_Update = strtod(value, &ptr);
+    Number_of_Newton_Steps_Requiring_Jacobian_Update = strtod(value, &ptr);
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
   } else if (strcmp(code, "NKS_Min_L2_Norm_Requiring_Jacobian_Update") == 0) {
@@ -685,7 +698,9 @@ inline ostream& NKS_Input_Parameters::Output(ostream& fout) const {
     fout <<" GMRES Initial Tol     ====> " << GMRES_Initial_Tolerance << endl;
     fout <<" GMRES Final Tol       ====> " << GMRES_Final_Tolerance << endl;
   }
-  
+
+  fout <<" Update Jacobian Steps ====> "<<Number_of_Newton_Steps_Requiring_Jacobian_Update<<endl;
+
   if (Normalization == ON) {
     fout <<" Normalization         ====> ON" << endl;
   } else {
@@ -695,11 +710,17 @@ inline ostream& NKS_Input_Parameters::Output(ostream& fout) const {
   if (GMRES_CHECK) {
     fout <<" GMRES Check           ====> ON" << endl;
   }
+
   if( GMRES_Frechet_Derivative_Order == FIRST_ORDER) {
     fout<<   " Frechet Derivative    ====> First Order "<< endl;
   } else if ( GMRES_Frechet_Derivative_Order == SECOND_ORDER) {
-    fout<<   " Frechet Derivative    ====> Second Order "<< endl;
+    if (GMRES_Frechet_Derivative_Chem) {
+      fout<<   " Frechet Derivative    ====> Second Order Chem Mod "<< endl;
+    } else {
+      fout<<   " Frechet Derivative    ====> Second Order "<< endl;
+    }
   }
+
   fout <<" Matrix Free Epsilon0  ====> " << Epsilon_Naught << endl;
   
   // Precondtioner

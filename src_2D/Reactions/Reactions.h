@@ -17,6 +17,7 @@ class Reaction_set;
 #include <iostream>
 #include <string>
 #include <cassert>
+#include <limits>
 
 using namespace std;
 
@@ -455,17 +456,18 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W,  const int
 	break;
       };
       //ans in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3      
-      U.rhospec[index].c = M[index]*ans*THOUSAND;  
+      U.rhospec[index].c = M[index]*ans*THOUSAND;      
     }
     break;
     
     //TWO STEP CH4
   case CH4_2STEP:
     kf[0] = reactions[0].kf(Temp)*pow(W.SpecCon(0)/MILLION,0.2)*pow(W.SpecCon(1)/MILLION,1.3);
+//     kf[0] = reactions[0].kf(Temp)*pow((W.SpecCon(0))/MILLION,a)*pow((W.SpecCon(1)/MILLION),b);        
     kb[0] = ZERO;
     kf[1] = reactions[1].kf(Temp)*(W.SpecCon(4)/MILLION)*pow(W.SpecCon(3)/MILLION,0.5)*pow(W.SpecCon(1)/MILLION,0.25); 
     kb[1] = reactions[1].kb(Temp)*(W.SpecCon(2)/MILLION);
-   
+
     for(int index =0; index<num_react_species; index++){
       switch(index) {
       case 0 : //CH4
@@ -742,17 +744,6 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
 
   case CH4_1STEP:
     kf[0] = reactions[0].kf(Temp); 
-
-    // One forward reaction ... so only depending on the fuel and oxidize ..  
-    // for coef a=0.2, b=1.3
- //    dSwdU(NUM_VAR,NUM_VAR) += -0.2*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1);
-//     dSwdU(NUM_VAR+1,NUM_VAR) += -0.4*M[1]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];
-//     dSwdU(NUM_VAR+2,NUM_VAR) += 0.2*M[2]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];
-//     dSwdU(NUM_VAR+3,NUM_VAR) += 0.4*M[3]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];    
-//     dSwdU(NUM_VAR,NUM_VAR+1) += -0.13E1*M[0]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];
-//     dSwdU(NUM_VAR+1,NUM_VAR+1) += -0.26E1*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3);
-//     dSwdU(NUM_VAR+2,NUM_VAR+1) += 0.13E1*M[2]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];
-//     dSwdU(NUM_VAR+3,NUM_VAR+1) += 0.26E1*M[3]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];  
  
     //for coef a=b=1.0
     dSwdU(NUM_VAR,NUM_VAR) += -1.0*kf[0]*rho*c[1]/M[1];
@@ -764,75 +755,15 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     dSwdU(NUM_VAR+3,NUM_VAR) += 2.0*M[3]*kf[0]*rho*c[1]/M[1]/M[0];
     dSwdU(NUM_VAR+3,NUM_VAR+1) += 2.0*M[3]*kf[0]*rho*c[0]/M[0]/M[1];
 
-
-//     /********** dSwdW ***********************/
-//     Con0 = rho*c[0]/M[0];
-//     Con1 = rho*c[1]/M[0];
-    
-//     Rt = W.Rtot(); 
-//     dkf0_dp = reactions[0].dkf_dT(Temp)/(rho*Rt); ///THOUSAND;
-//     dkf0_drho = reactions[0].dkf_dT(Temp)*(-Temp/rho);
-    
-//     //take into account kf(rho,p,and ci)
-//     dkf0_dc1 =  reactions[0].dkf_dT(Temp)*(-Temp/Rt*(W.specdata[0].Rs()-W.specdata[4].Rs()))*Con0*Con1;
-//     dkf0_dc2 =  reactions[0].dkf_dT(Temp)*(-Temp/Rt*(W.specdata[1].Rs()-W.specdata[4].Rs()))*Con0*Con1;
-//     dkf0_dc3 =  reactions[0].dkf_dT(Temp)*(-Temp/Rt*(W.specdata[2].Rs()-W.specdata[4].Rs()))*Con0*Con1;
-//     dkf0_dc4 =  reactions[0].dkf_dT(Temp)*(-Temp/Rt*(W.specdata[3].Rs()-W.specdata[4].Rs()))*Con0*Con1;
-
-//     dSwdW(NUM_VAR,NUM_VAR)  += -M[0]*dkf0_dc1;
-//     dSwdW(NUM_VAR+1,NUM_VAR) += -TWO*M[1]*dkf0_dc1;
-//     dSwdW(NUM_VAR+2,NUM_VAR) += M[2]*dkf0_dc1;
-//     dSwdW(NUM_VAR+3,NUM_VAR) += TWO*M[3]*dkf0_dc1;
-
-//     dSwdW(NUM_VAR,NUM_VAR+1)  += -M[0]*dkf0_dc2;
-//     dSwdW(NUM_VAR+1,NUM_VAR+1) += -TWO*M[1]*dkf0_dc2;
-//     dSwdW(NUM_VAR+2,NUM_VAR+1) += M[2]*dkf0_dc2;
-//     dSwdW(NUM_VAR+3,NUM_VAR+1) += TWO*M[3]*dkf0_dc2;
-    
-//     dSwdW(NUM_VAR,NUM_VAR+2)  += -M[0]*dkf0_dc3;
-//     dSwdW(NUM_VAR+1,NUM_VAR+2) += -TWO*M[1]*dkf0_dc3;
-//     dSwdW(NUM_VAR+2,NUM_VAR+2) += M[2]*dkf0_dc3;
-//     dSwdW(NUM_VAR+3,NUM_VAR+2) += TWO*M[3]*dkf0_dc3;
-
-//     dSwdW(NUM_VAR,NUM_VAR+3)  += -M[0]*dkf0_dc4;
-//     dSwdW(NUM_VAR+1,NUM_VAR+3) += -TWO*M[1]*dkf0_dc4;
-//     dSwdW(NUM_VAR+2,NUM_VAR+3) += M[2]*dkf0_dc4;
-//     dSwdW(NUM_VAR+3,NUM_VAR+3) += TWO*M[3]*dkf0_dc4;
-
-//     dSwdW(NUM_VAR,0) += -M[0]*dkf0_drho*Con0*Con1 - kf[0]*Con1*c[0] - M[0]*kf[0]*Con0*c[1]/M[1];    
-//     dSwdW(NUM_VAR+1,0) += -TWO*M[1]*dkf0_drho*Con0*Con1 - TWO*kf[0]*M[1]*Con1*c[0]/M[0] - TWO*kf[0]*Con0*c[1];    
-//     dSwdW(NUM_VAR+2,0) += M[2]*dkf0_drho*Con0*Con1 + kf[0]*M[2]*Con1*c[0]/M[0] + M[2]*kf[0]*Con0*c[1]/M[1];    
-//     dSwdW(NUM_VAR+3,0) += TWO*M[3]*dkf0_drho*Con0*Con1 + TWO*kf[0]*M[3]*Con1*c[0]/M[0] + TWO*M[3]*kf[0]*Con0*c[1]/M[1];   
-
-//     dSwdW(NUM_VAR,3) += -M[0]*dkf0_dp*Con0*Con1;
-//     dSwdW(NUM_VAR+1,3) += -TWO*M[1]*dkf0_dp*Con0*Con1;
-//     dSwdW(NUM_VAR+2,3) += M[2]*dkf0_dp*Con0*Con1;
-//     dSwdW(NUM_VAR+3,3) += TWO*M[3]*dkf0_dp*Con0*Con1;
-   
-//     dSwdW(NUM_VAR,NUM_VAR)   += -kf[0]*Con1*rho*THOUSAND;
-//     dSwdW(NUM_VAR+1,NUM_VAR) += -TWO*M[1]*kf[0]*Con1*rho/M[0]*THOUSAND;
-//     dSwdW(NUM_VAR+2,NUM_VAR) += M[2]*kf[0]*Con1*rho/M[0]*THOUSAND;
-//     dSwdW(NUM_VAR+3,NUM_VAR) += TWO*M[3]*kf[0]*Con1*rho/M[0]*THOUSAND;
-
-//     dSwdW(NUM_VAR,NUM_VAR+1)   += -M[0]*kf[0]*Con0*rho/M[1]*THOUSAND;
-//     dSwdW(NUM_VAR+1,NUM_VAR+1) += -TWO*kf[0]*Con0*rho*THOUSAND;
-//     dSwdW(NUM_VAR+2,NUM_VAR+1) += M[2]*kf[0]*Con0*rho/M[1]*THOUSAND;
-//     dSwdW(NUM_VAR+3,NUM_VAR+1) += TWO*M[3]*kf[0]*Con0*rho/M[1]*THOUSAND;
-
-//     // LAZY dSwdU = dSwdW * dWdU
-//     W.dWdU(dWdQ,Flow_Type); 
-//     dSwdU += dSwdW*dWdQ;
-//     /***************************************/
-
     //this is a work around for the delta t calculation using an unesseccarily small value
     //when c[0] -> ZERO
     if(c_denom[0] != c[0] && CFL_flag){ dSwdU(NUM_VAR,NUM_VAR)=ZERO; }
-    
+ 
     break;
 
-
     //TWO STEP CH4   
-  case CH4_2STEP:  
+  case CH4_2STEP:   
+
     /******************** ORIGINAL ****************************************/
     //still some issues with units ??? ie.  dSwdU(6,6) ??
     //which is also on the diagonal so messes with CFL???
@@ -1073,6 +1004,7 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
 
     
 } //end dSwdU
+
 
 /************************************************************************
   Calculates the Jacobian of the Chemical Source terms with respect

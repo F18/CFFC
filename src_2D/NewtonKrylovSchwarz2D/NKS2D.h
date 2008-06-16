@@ -61,15 +61,6 @@ double Finite_Time_Step(const INPUT_TYPE &Input_Parameters,
 			const double &L2norm_current_n,				
 			const int &Number_of_Newton_Steps);
 
-template <typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
-int NKS_DTS_Output(SOLN_BLOCK_TYPE *SolnBlk, 
-		   AdaptiveBlock2D_List List_of_Local_Solution_Blocks, 
-		   INPUT_TYPE & Input_Parameters,
-		   const int &Steps,
-		   const double &Physical_Time) {
-  cout<<"\n SPECIALIZATION OF NKS_DTS_Output REQUIRED TO USE DTS_Time_Accurate_Plot_Frequency \n";
-}
-
 template <typename SOLN_BLOCK_TYPE>
 int set_blocksize(SOLN_BLOCK_TYPE &SolnBlk){ return (SolnBlk.NumVar()); }
 
@@ -205,17 +196,15 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   /**************************************************************************/  
   /********* Unsteady Time Accurate, Dual Time Stepping  ********************/
   /**************************************************************************/  
-  int DTS_Step(1);   //Restart should change to "number_of_explicit_steps" ???  but may brake function dependencies
+  int DTS_Step(1);   //Restart should change to "number_of_explicit_steps" ???  but may break function dependencies
   if (Input_Parameters.NKS_IP.Dual_Time_Stepping) { 
 
-    double DTS_dTime(ZERO);
+    double DTS_dTime(ZERO), DTS_dTime_CFL(ZERO);
     int physical_time_param(TIME_STEPPING_IMPLICIT_EULER);
     bool IE_Flag = true; //Use Implicit Euler for 1st DTS Step & for AMR 
 
-    //HACK FOUR COUNTERS...
-    //Physical_Time = ZERO; 
-
-    Input_Parameters.NKS_IP.Total_Physical_Time = Physical_Time; //BC HACK may need to ZERO when starting from steady state...
+    //BC HACK for time-varying BCs (ie. massflow etc.)
+    Input_Parameters.NKS_IP.Total_Physical_Time = Physical_Time; 
 
     // Outer Loop (Physical Time)      
     while ( (DTS_Step-1 < Input_Parameters.NKS_IP.Maximum_Number_of_DTS_Steps) &&
@@ -280,17 +269,20 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       /**************************************************************************/
 
       /**************************************************************************/
-      // Determine global time step using a "fixed" time step or using a CFL                                                       
+      // Determine global time step using a "fixed" time step or using a CFL  
+      DTS_dTime = CFL(SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);  
+      DTS_dTime = Input_Parameters.NKS_IP.Physical_Time_CFL_Number*CFFC_Minimum_MPI(DTS_dTime); 
+      DTS_dTime_CFL = Input_Parameters.NKS_IP.Physical_Time_CFL_Number;
+
+      //Overide CFL with a fixed Physical Time Step
       if(Input_Parameters.NKS_IP.Physical_Time_Step > ZERO){
-	DTS_dTime = Input_Parameters.NKS_IP.Physical_Time_Step;
-      } else {
-	DTS_dTime = CFL(SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);  
-	DTS_dTime = Input_Parameters.NKS_IP.Physical_Time_CFL_Number*CFFC_Minimum_MPI(DTS_dTime); 
-	
-	//Last Time sized to get Time_Max
-	if( Physical_Time + DTS_dTime > Input_Parameters.Time_Max){
-	  DTS_dTime = Input_Parameters.Time_Max - Physical_Time;
-	}
+	DTS_dTime_CFL = Input_Parameters.NKS_IP.Physical_Time_Step/DTS_dTime;
+	DTS_dTime = Input_Parameters.NKS_IP.Physical_Time_Step;		
+      }
+
+      //Last Time sized to get Time_Max
+      if( Physical_Time + DTS_dTime > Input_Parameters.Time_Max){
+	DTS_dTime = Input_Parameters.Time_Max - Physical_Time;
       }
       /**************************************************************************/
 
@@ -330,7 +322,7 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       /**************************************************************************/
       // Update Physical Time
       Physical_Time +=  DTS_dTime;
-      Input_Parameters.NKS_IP.Total_Physical_Time = Physical_Time; //BC HACK may need to ZERO when starting from steady state...
+      Input_Parameters.NKS_IP.Total_Physical_Time = Physical_Time; //BC HACK 
       /**************************************************************************/
 
       /**************************************************************************/
@@ -342,8 +334,9 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       /**************************************************************************/
       //DTS Output
       if (CFFC_Primary_MPI_Processor()) {
-	cout << "\n *** End of DTS Step " << DTS_Step+number_of_explicit_time_steps; 
-	cout << " Time Step: " << DTS_dTime << "s  Real Time: " << Physical_Time << "s **** \n";
+	cout << "\n * End of DTS Step " << DTS_Step+number_of_explicit_time_steps; 
+	cout << " Time Step: " << DTS_dTime << "s  Real Time: " << Physical_Time 
+	     <<"s  Eff. CFL: " <<DTS_dTime_CFL<< " * \n";
       }
       /**************************************************************************/
 
@@ -374,7 +367,12 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     /**************************************************************************/  
     /********* Steady State non-time accurate  ********************************/
     /**************************************************************************/  
-  } else { 
+  } else {   
+
+    //Set to ZERO for steady state 
+    Physical_Time = ZERO; 
+    Input_Parameters.NKS_IP.Total_Physical_Time = Physical_Time; 
+
     error_flag = Internal_Newton_Krylov_Schwarz_Solver(processor_cpu_time,
 						       residual_file,   
 						       number_of_explicit_time_steps,
@@ -478,6 +476,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   bool GMRES_Restarted = false, GMRES_Failed = false;
   int GMRES_Restarts = 0, GMRES_Failures = 0, GMRES_Iters = 0, All_Iters_index = 0;
   int *GMRES_All_Iters = new int[Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations];
+  GMRES_All_Iters[All_Iters_index] = GMRES_Iters;
 
   double GMRES_Forcing_Power = 0.0;
   {
@@ -498,40 +497,39 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   int Number_of_Newton_Steps = 1;  // FOR RESTART, THIS SHOULD BE SET TO LAST NKS STEP
   int i_limiter = Input_Parameters.i_Limiter;
  
-  if (CFFC_Primary_MPI_Processor() && Input_Parameters.NKS_IP.output_format == OF_ALISTAIR &&
-      (!Input_Parameters.NKS_IP.Dual_Time_Stepping ||
-       (Input_Parameters.NKS_IP.Dual_Time_Stepping && DTS_Step == 1))) {
-     int ww = Input_Parameters.NKS_IP.output_width; 
-     cout.precision(Input_Parameters.NKS_IP.output_precision); 
-     cout << scientific;
-     cout << left;
-     cout << " | NKS Outer Iteration " << endl;
-     cout << setw(5) << " | " << "  " 
-          << " | Residual L2-Norm (Using Entry " << Input_Parameters.i_Residual_Variable 
-	  << " of the State Class)" << endl;
-     cout << setw(5) << " | " << "  " << setw(ww) 
-          << " | " << " | Ratio of Current to Initial Residual L2-Norm" << endl;
-     cout << setw(5) << " | " << "  " << setw(ww) 
-          << " | " << setw(ww) << " | " << " | CFL (for Continuation Method)" << endl;
-     cout << setw(5) << " | " << "  " << setw(ww) << " | " << setw(ww) << " | " 
-          << setw(ww) << " | " << "    | Number of GMRES (\"Inner\") Iterations " << endl;
-     cout << setw(5) << " | " << "  " << setw(ww) << " | " 
-          << setw(ww) << " | " << setw(ww) << " | " << "    | " << setw(5) << " ";
-     cout << " | GMRES End Relative Residual L2-Norm times 1000" << endl;
-     cout << setw(5) << " | " << "  " << setw(ww) << " | " 
-          << setw(ww) << " | " << setw(ww) << " | " << "    | " << setw(5) 
-          << " " << setw(ww) << " | ";
-     cout << " | GMRES Initial Residual L2-Norm" << endl;
-     cout << setw(5) << " | " << "  " << setw(ww) << " | " 
-          << setw(ww) << " | " << setw(ww) << " | " << "    | " 
-          << setw(5) << " " << setw(ww) << " | " << setw(ww) << " | ";
-     cout << " | An \"F\" here means GMRES did not converge" << endl;
-     cout << setw(5) << " | " << "  " << setw(ww) << " | " << setw(ww) << " | " 
-          << setw(ww) << " | " << "    | " << setw(5) << " " << setw(ww) 
-          << " | " << setw(ww) << " | ";
-     cout << " | An \"R\" here means GMRES restarted at least once" << endl;
-     cout << right;
-  }
+//   if (CFFC_Primary_MPI_Processor() && Input_Parameters.NKS_IP.output_format == OF_ALISTAIR &&
+//       (!Input_Parameters.NKS_IP.Dual_Time_Stepping || (Input_Parameters.NKS_IP.Dual_Time_Stepping && DTS_Step == 1))) {
+//      int ww = Input_Parameters.NKS_IP.output_width; 
+//      cout.precision(Input_Parameters.NKS_IP.output_precision); 
+//      cout << scientific;
+//      cout << left;
+//      cout << " | NKS Outer Iteration " << endl;
+//      cout << setw(5) << " | " << "  " 
+//           << " | Residual L2-Norm (Using Entry " << Input_Parameters.i_Residual_Variable 
+// 	  << " of the State Class)" << endl;
+//      cout << setw(5) << " | " << "  " << setw(ww) 
+//           << " | " << " | Ratio of Current to Initial Residual L2-Norm" << endl;
+//      cout << setw(5) << " | " << "  " << setw(ww) 
+//           << " | " << setw(ww) << " | " << " | CFL (for Continuation Method)" << endl;
+//      cout << setw(5) << " | " << "  " << setw(ww) << " | " << setw(ww) << " | " 
+//           << setw(ww) << " | " << "    | Number of GMRES (\"Inner\") Iterations " << endl;
+//      cout << setw(5) << " | " << "  " << setw(ww) << " | " 
+//           << setw(ww) << " | " << setw(ww) << " | " << "    | " << setw(5) << " ";
+//      cout << " | GMRES End Relative Residual L2-Norm times 1000" << endl;
+//      cout << setw(5) << " | " << "  " << setw(ww) << " | " 
+//           << setw(ww) << " | " << setw(ww) << " | " << "    | " << setw(5) 
+//           << " " << setw(ww) << " | ";
+//      cout << " | GMRES Initial Residual L2-Norm" << endl;
+//      cout << setw(5) << " | " << "  " << setw(ww) << " | " 
+//           << setw(ww) << " | " << setw(ww) << " | " << "    | " 
+//           << setw(5) << " " << setw(ww) << " | " << setw(ww) << " | ";
+//      cout << " | An \"F\" here means GMRES did not converge" << endl;
+//      cout << setw(5) << " | " << "  " << setw(ww) << " | " << setw(ww) << " | " 
+//           << setw(ww) << " | " << "    | " << setw(5) << " " << setw(ww) 
+//           << " | " << setw(ww) << " | ";
+//      cout << " | An \"R\" here means GMRES restarted at least once" << endl;
+//      cout << right;
+//   }
 
   processor_cpu_time.update();
   start_total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
@@ -580,6 +578,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     res_nevals++;
     /**************************************************************************/
 
+
     /**************************************************************************/
     /* Calculate 1-, 2-, and max-norms of density residual (dUdt) for all blocks. */   
 
@@ -591,7 +590,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       L1norm_current[q] = CFFC_Summation_MPI(L1norm_current[q]);      // L1 norm for all processors.
       L2norm_current[q] = sqr(L2norm_current[q]);
       L2norm_current[q] = sqrt(CFFC_Summation_MPI(L2norm_current[q])); // L2 norm for all processors.
-      Max_norm_current[q] = CFFC_Maximum_MPI(Max_norm_current[q]);     // Max norm for all processors.
+      Max_norm_current[q] = CFFC_Maximum_MPI(Max_norm_current[q]);     // Max norm for all processors.     
     }
 
     processor_cpu_time.update();
@@ -675,222 +674,227 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 //       if (error_flag) return (error_flag);  cout.flush();
 //     } 
 
-    if (Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq > 0) {
-       if (Number_of_Newton_Steps == 1 ||
-	   (Number_of_Newton_Steps-1) % Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq == 0) {
-	  if (CFFC_Primary_MPI_Processor()) { tell_me_about_output_tecplot = true; }
-	  do { // allows for a break
-	     // TODO: this could be a true time value for DTS.
-	     double no_time_please = 0.0;
-	     int real_NKS_Step = Input_Parameters.NKS_IP.Dual_Time_Stepping ?
-				 DTS_Step * 100 + (Number_of_Newton_Steps-1) : Number_of_Newton_Steps-1;
- 	     char prefix[96], output_file_name[96];
-	     ofstream output_file;    
-	     int idx = 0;
+    //ALISTAR's OUTPUT -> PUT IN ANOTHER FUNCTION??
 
-	     for (idx = 0; idx < strlen(Input_Parameters.Output_File_Name); idx++) {
-		if (Input_Parameters.Output_File_Name[idx] == ' ' ||
-		    Input_Parameters.Output_File_Name[idx] == '.') {
-		  break;
-		}
-	     }
-   	     strncpy(prefix, Input_Parameters.Output_File_Name, idx);
-	     prefix[idx] = '\0';
-	     sprintf(output_file_name, "%s_n1%.4d_cells_cpu%.6d.dat",
-		     prefix, real_NKS_Step, List_of_Local_Solution_Blocks.ThisCPU);
-	     output_file.open(output_file_name, ios::out);
-	     if (!output_file.good()) break;
+//     if (Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq > 0) {
+//        if (Number_of_Newton_Steps == 1 ||
+// 	   (Number_of_Newton_Steps-1) % Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq == 0) {
+// 	  if (CFFC_Primary_MPI_Processor()) { tell_me_about_output_tecplot = true; }
+// 	  do { // allows for a break
+// 	     // TODO: this could be a true time value for DTS.
+// 	     double no_time_please = 0.0;
+// 	     int real_NKS_Step = Input_Parameters.NKS_IP.Dual_Time_Stepping ?
+// 				 DTS_Step * 100 + (Number_of_Newton_Steps-1) : Number_of_Newton_Steps-1;
+//  	     char prefix[96], output_file_name[96];
+// 	     ofstream output_file;    
+// 	     int idx = 0;
 
-	     int i_output_title = 1;
-	     for (int nb = 0; nb < List_of_Local_Solution_Blocks.Nblk; nb++) {
-		if (List_of_Local_Solution_Blocks.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
-		   Output_Cells_Tecplot(SolnBlk[nb],
-					Input_Parameters,
-					real_NKS_Step, 
-					no_time_please,
-					List_of_Local_Solution_Blocks.Block[nb].gblknum,
-					i_output_title,
-			 	        output_file);
-		   i_output_title = 0;
-		}
-	     }
-	     output_file.close();
+// 	     for (idx = 0; idx < strlen(Input_Parameters.Output_File_Name); idx++) {
+// 		if (Input_Parameters.Output_File_Name[idx] == ' ' ||
+// 		    Input_Parameters.Output_File_Name[idx] == '.') {
+// 		  break;
+// 		}
+// 	     }
+//    	     strncpy(prefix, Input_Parameters.Output_File_Name, idx);
+// 	     prefix[idx] = '\0';
+// 	     sprintf(output_file_name, "%s_n1%.4d_cells_cpu%.6d.dat",
+// 		     prefix, real_NKS_Step, List_of_Local_Solution_Blocks.ThisCPU);
+// 	     output_file.open(output_file_name, ios::out);
+// 	     if (!output_file.good()) break;
 
-	     sprintf(output_file_name, "%s_n1%.4d_cpu%.6d.dat",
-		     prefix, real_NKS_Step, List_of_Local_Solution_Blocks.ThisCPU);
-	     output_file.open(output_file_name, ios::out);
-	     if (!output_file.good()) break;
+// 	     int i_output_title = 1;
+// 	     for (int nb = 0; nb < List_of_Local_Solution_Blocks.Nblk; nb++) {
+// 		if (List_of_Local_Solution_Blocks.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+// 		   Output_Cells_Tecplot(SolnBlk[nb],
+// 					Input_Parameters,
+// 					real_NKS_Step, 
+// 					no_time_please,
+// 					List_of_Local_Solution_Blocks.Block[nb].gblknum,
+// 					i_output_title,
+// 			 	        output_file);
+// 		   i_output_title = 0;
+// 		}
+// 	     }
+// 	     output_file.close();
 
-	     i_output_title = 1;
-	     for (int nb = 0; nb < List_of_Local_Solution_Blocks.Nblk; nb++) {
-		if (List_of_Local_Solution_Blocks.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
-		   Output_Tecplot(SolnBlk[nb],
-			          Input_Parameters,
-				  real_NKS_Step, 
-				  no_time_please,
-				  List_of_Local_Solution_Blocks.Block[nb].gblknum,
-				  i_output_title,
-				  output_file);
-		   i_output_title = 0;
-		}
-	     }
-	     output_file.close();
+// 	     sprintf(output_file_name, "%s_n1%.4d_cpu%.6d.dat",
+// 		     prefix, real_NKS_Step, List_of_Local_Solution_Blocks.ThisCPU);
+// 	     output_file.open(output_file_name, ios::out);
+// 	     if (!output_file.good()) break;
 
-	  } while (0); 
-       }
-    } // end if (Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq > 0) 
+// 	     i_output_title = 1;
+// 	     for (int nb = 0; nb < List_of_Local_Solution_Blocks.Nblk; nb++) {
+// 		if (List_of_Local_Solution_Blocks.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+// 		   Output_Tecplot(SolnBlk[nb],
+// 			          Input_Parameters,
+// 				  real_NKS_Step, 
+// 				  no_time_please,
+// 				  List_of_Local_Solution_Blocks.Block[nb].gblknum,
+// 				  i_output_title,
+// 				  output_file);
+// 		   i_output_title = 0;
+// 		}
+// 	     }
+// 	     output_file.close();
 
-    if (CFFC_Primary_MPI_Processor() &&	Input_Parameters.NKS_IP.Detect_Convergence_Stall) {
-      double L2norm_cq = L2norm_current[SolnBlk[0].residual_variable-1]; // looks pretty on the page
-      dcs_data[dcs_position++] = log10(L2norm_cq);
-      if (dcs_position == Input_Parameters.NKS_IP.DCS_Window) {
-	 dcs_position = 0; 
-      }
-      dcs_counter++;
+// 	  } while (0); 
+//        }
+//     } // end if (Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq > 0) 
 
-      // Right here, dcs_counter equals the number of L2 norms
-      // that we have recorded. For example, on the first
-      // pass, dcs_counter is now 1.
-      // And clearly from: "dcs_data[dcs_position++] = ...",
-      // dcs_position now needs to equal the entry for the
-      // next run.
-      if ((dcs_counter == 1) || (L2norm_cq < dcs_minL2)) {
-	dcs_minL2 = L2norm_cq;
-      }
 
-      if (dcs_counter >= Input_Parameters.NKS_IP.DCS_Window) {
- 	 // Before calling Least_Squares_Slope(), dcs_data[dcs_position] must be 
-         // the oldest entry.
-	 dcs_slope = linear_regression_slope(dcs_data, 
-                                             Input_Parameters.NKS_IP.DCS_Window, 
-                                             dcs_position);
+    // ALISTAIR'S CONVERGENCE STALL DETECTION 
 
-      //  The following are four reasons why we should transition from
-      //  waiting to freeze the limiters to actually freezing the
-      //  limiters. It goes something like this: "We stalled, eh? Well
-      //  wait until we come close to the minimum norm encountered so far. . . .
-      //  Still waiting?  Okay fine, I'll settle for half a decade
-      //  (3.16) away from the minimum. . . . Still waiting? Okay
-      //  fine, as long as we are a decade below the stall point then
-      //  freeze. . . . Still waiting? Well, I refuse to freeze unless
-      //  we go below the stall point."
-      //  
-      //  The same idea applies between waiting to stop and actually stopping.
-#define ST1(thisL2, minL2, detectL2, steps) \
-        (  (thisL2) < (1.1*(minL2))  )
-#define ST2(thisL2, minL2, detectL2, steps) \
-	(  (steps) > 10  && (thisL2) < (3.16*(minL2))  )
-#define ST3(thisL2, minL2, detectL2, steps) \
-	(  (steps) > 15  && (thisL2) < (0.10*(detectL2))  )
-#define ST4(thisL2, minL2, detectL2, steps) \
-	(  (steps) > 20  && (thisL2) < (     (detectL2))  )
+//     if (CFFC_Primary_MPI_Processor() &&	Input_Parameters.NKS_IP.Detect_Convergence_Stall) {
+//       double L2norm_cq = L2norm_current[SolnBlk[0].residual_variable-1]; // looks pretty on the page
+//       dcs_data[dcs_position++] = log10(L2norm_cq);
+//       if (dcs_position == Input_Parameters.NKS_IP.DCS_Window) {
+// 	 dcs_position = 0; 
+//       }
+//       dcs_counter++;
 
-      switch (dcs_state) {
-	case CLEAR: 
-	  if (dcs_slope > 0.0) {
-	    cout << " Convergence stall detected. Will freeze limiters when next appropriate.\n";
-	    dcs_state++;
-	    dcs_L2_at_detect = L2norm_cq;
-	    dcs_counter_at_detect = dcs_counter;
-	  }
-	  break;
-	case WAITING_TO_FREEZE:
-	  if (ST1(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect) ||
-	      ST2(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect) ||
-	      ST3(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect) ||
-	      ST4(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) {
- 	    cout << " Freezing limiters to help with convergence stall (";
-	    if (ST1(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
-               cout << "ST1";
-	    } else if (ST2(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
-               cout << "ST2";
-	    } else if (ST3(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
-               cout << "ST3";
-	    } else if (ST4(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
-               cout << "ST4";
-	    }
-	    cout << ").\n";
-	    dcs_state++;
-	    dcs_counter = 0;
-	    dcs_position = 0;
-	    dcs_freeze_now = 1;
-	  }
- 	  break;
-	case FROZEN:
-	  if (dcs_slope > 0.0) {
-	    cout <<" Convergence stall detected even with limiters frozen. Will stop when next appropriate.\n";
-	    dcs_state++;
-	    dcs_L2_at_detect = L2norm_cq;
-	    dcs_counter_at_detect = dcs_counter;
-	  }
-	  break;
-        case WAITING_TO_STOP:
-	  if (ST1(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect) ||
-	      ST2(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect) ||
-	      ST3(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect) ||
-	      ST4(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) {
-	     cout << " Limiters are frozen and yet convergence has stalled nonetheless. Stopping. (";
-	     if (ST1(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
-                cout << "ST1";
-	     } else if (ST2(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
-                cout << "ST2";
-	     } else if (ST3(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
-                cout << "ST3";
-	     } else if (ST4(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
-                cout << "ST4";
-	     }
-	     cout << ".)\n";
-	     dcs_stop_now = 1;
-	  }
-	  break;
-        }
+//       // Right here, dcs_counter equals the number of L2 norms
+//       // that we have recorded. For example, on the first
+//       // pass, dcs_counter is now 1.
+//       // And clearly from: "dcs_data[dcs_position++] = ...",
+//       // dcs_position now needs to equal the entry for the
+//       // next run.
+//       if ((dcs_counter == 1) || (L2norm_cq < dcs_minL2)) {
+// 	dcs_minL2 = L2norm_cq;
+//       }
 
-      }// if (dcs_counter >= window_size) 
-    } // if (Input_Parameters.NKS_IP.Detect_Convergence_Stall)
+//       if (dcs_counter >= Input_Parameters.NKS_IP.DCS_Window) {
+//  	 // Before calling Least_Squares_Slope(), dcs_data[dcs_position] must be 
+//          // the oldest entry.
+// 	 dcs_slope = linear_regression_slope(dcs_data, 
+//                                              Input_Parameters.NKS_IP.DCS_Window, 
+//                                              dcs_position);
 
-    CFFC_Broadcast_MPI(&dcs_stop_now, 1);
-    if (dcs_stop_now) { break; }
-    CFFC_Broadcast_MPI(&dcs_freeze_now, 1);
+//       //  The following are four reasons why we should transition from
+//       //  waiting to freeze the limiters to actually freezing the
+//       //  limiters. It goes something like this: "We stalled, eh? Well
+//       //  wait until we come close to the minimum norm encountered so far. . . .
+//       //  Still waiting?  Okay fine, I'll settle for half a decade
+//       //  (3.16) away from the minimum. . . . Still waiting? Okay
+//       //  fine, as long as we are a decade below the stall point then
+//       //  freeze. . . . Still waiting? Well, I refuse to freeze unless
+//       //  we go below the stall point."
+//       //  
+//       //  The same idea applies between waiting to stop and actually stopping.
+// #define ST1(thisL2, minL2, detectL2, steps) \
+//         (  (thisL2) < (1.1*(minL2))  )
+// #define ST2(thisL2, minL2, detectL2, steps) \
+// 	(  (steps) > 10  && (thisL2) < (3.16*(minL2))  )
+// #define ST3(thisL2, minL2, detectL2, steps) \
+// 	(  (steps) > 15  && (thisL2) < (0.10*(detectL2))  )
+// #define ST4(thisL2, minL2, detectL2, steps) \
+// 	(  (steps) > 20  && (thisL2) < (     (detectL2))  )
 
-    if (limiter_check && Number_of_Newton_Steps > 1) {
-       // These two if-statements should really be one but 
-       // are split up to make it more readable.
-       if ((Input_Parameters.Freeze_Limiter && 
-            L2norm_current[SolnBlk[0].residual_variable-1] <= 
-            Input_Parameters.Freeze_Limiter_Residual_Level) ||
-	   (Input_Parameters.NKS_IP.Freeze_Limiter_Immediately == FLI_YES) || 
-	    (dcs_freeze_now)) {
-	  // Should one use the absolute (L2norm_current) or relative
-	  // (L2norm_current_n) for when to freeze the limiter? Relative
-	  // seems desirable since it appears more problem independent.
-	  // But what if you use another scheme for startup? Well then
-	  // you could pass the initial L2 norm from that to this
-	  // function. Okay, what if you start with full multigrid? Ahh,
-	  // you think about it.
-	  //   -- Alistair Wood Tue Sep 19 2006
-	  //
-	  // This point becomes somewhat moot with the introduction of 
-	  // my convergence stall detection algorithm.
-	  //  -- Alistair Wood Sun Apr 01 2007
-	  if (CFFC_Primary_MPI_Processor()) {
-	    switch (Input_Parameters.NKS_IP.output_format) {
-	      case OF_SCOTT:
-		cout << "\n\n ********** Apply Limiter Freezing ********** \n";
-		break;
-	      case OF_ALISTAIR:
-		if (!dcs_freeze_now) { 
-	 	   tell_me_about_limiter_freeze = true;
-		}
-		break;
-	      default: 
-                break;
-	    }
-	  } 
-	  Freeze_Limiters(SolnBlk, List_of_Local_Solution_Blocks);	
-	  limiter_check = false;	
-       } 
-    } // if (limiter_check && Number_of_Newton_Steps > 1)
-    if (dcs_freeze_now) { dcs_freeze_now = 0; }
+//       switch (dcs_state) {
+// 	case CLEAR: 
+// 	  if (dcs_slope > 0.0) {
+// 	    cout << " Convergence stall detected. Will freeze limiters when next appropriate.\n";
+// 	    dcs_state++;
+// 	    dcs_L2_at_detect = L2norm_cq;
+// 	    dcs_counter_at_detect = dcs_counter;
+// 	  }
+// 	  break;
+// 	case WAITING_TO_FREEZE:
+// 	  if (ST1(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect) ||
+// 	      ST2(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect) ||
+// 	      ST3(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect) ||
+// 	      ST4(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) {
+//  	    cout << " Freezing limiters to help with convergence stall (";
+// 	    if (ST1(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
+//                cout << "ST1";
+// 	    } else if (ST2(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
+//                cout << "ST2";
+// 	    } else if (ST3(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
+//                cout << "ST3";
+// 	    } else if (ST4(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
+//                cout << "ST4";
+// 	    }
+// 	    cout << ").\n";
+// 	    dcs_state++;
+// 	    dcs_counter = 0;
+// 	    dcs_position = 0;
+// 	    dcs_freeze_now = 1;
+// 	  }
+//  	  break;
+// 	case FROZEN:
+// 	  if (dcs_slope > 0.0) {
+// 	    cout <<" Convergence stall detected even with limiters frozen. Will stop when next appropriate.\n";
+// 	    dcs_state++;
+// 	    dcs_L2_at_detect = L2norm_cq;
+// 	    dcs_counter_at_detect = dcs_counter;
+// 	  }
+// 	  break;
+//         case WAITING_TO_STOP:
+// 	  if (ST1(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect) ||
+// 	      ST2(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect) ||
+// 	      ST3(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect) ||
+// 	      ST4(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) {
+// 	     cout << " Limiters are frozen and yet convergence has stalled nonetheless. Stopping. (";
+// 	     if (ST1(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
+//                 cout << "ST1";
+// 	     } else if (ST2(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
+//                 cout << "ST2";
+// 	     } else if (ST3(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
+//                 cout << "ST3";
+// 	     } else if (ST4(L2norm_cq, dcs_minL2, dcs_L2_at_detect, dcs_counter - dcs_counter_at_detect)) { 
+//                 cout << "ST4";
+// 	     }
+// 	     cout << ".)\n";
+// 	     dcs_stop_now = 1;
+// 	  }
+// 	  break;
+//         }
+
+//       }// if (dcs_counter >= window_size) 
+//     } // if (Input_Parameters.NKS_IP.Detect_Convergence_Stall)
+
+//     CFFC_Broadcast_MPI(&dcs_stop_now, 1);
+//     if (dcs_stop_now) { break; }
+//     CFFC_Broadcast_MPI(&dcs_freeze_now, 1);
+
+//     if (limiter_check && Number_of_Newton_Steps > 1) {
+//        // These two if-statements should really be one but 
+//        // are split up to make it more readable.
+//        if ((Input_Parameters.Freeze_Limiter && 
+//             L2norm_current[SolnBlk[0].residual_variable-1] <= 
+//             Input_Parameters.Freeze_Limiter_Residual_Level) ||
+// 	   (Input_Parameters.NKS_IP.Freeze_Limiter_Immediately == FLI_YES) || 
+// 	    (dcs_freeze_now)) {
+// 	  // Should one use the absolute (L2norm_current) or relative
+// 	  // (L2norm_current_n) for when to freeze the limiter? Relative
+// 	  // seems desirable since it appears more problem independent.
+// 	  // But what if you use another scheme for startup? Well then
+// 	  // you could pass the initial L2 norm from that to this
+// 	  // function. Okay, what if you start with full multigrid? Ahh,
+// 	  // you think about it.
+// 	  //   -- Alistair Wood Tue Sep 19 2006
+// 	  //
+// 	  // This point becomes somewhat moot with the introduction of 
+// 	  // my convergence stall detection algorithm.
+// 	  //  -- Alistair Wood Sun Apr 01 2007
+// 	  if (CFFC_Primary_MPI_Processor()) {
+// 	    switch (Input_Parameters.NKS_IP.output_format) {
+// 	      case OF_SCOTT:
+// 		cout << "\n\n ********** Apply Limiter Freezing ********** \n";
+// 		break;
+// 	      case OF_ALISTAIR:
+// 		if (!dcs_freeze_now) { 
+// 	 	   tell_me_about_limiter_freeze = true;
+// 		}
+// 		break;
+// 	      default: 
+//                 break;
+// 	    }
+// 	  } 
+// 	  Freeze_Limiters(SolnBlk, List_of_Local_Solution_Blocks);	
+// 	  limiter_check = false;	
+//        } 
+//     } // if (limiter_check && Number_of_Newton_Steps > 1)
+//     if (dcs_freeze_now) { dcs_freeze_now = 0; }
 
     /**************************************************************************/
     /***************** NEWTON STEP ********************************************/
@@ -966,7 +970,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	  /* Copy solutions in conserved variables, U to Uo for all blocks for update procedure. */
 	  for (int j = SolnBlk[Bcount].JCl-SolnBlk[Bcount].Nghost;  j <= SolnBlk[Bcount].JCu+SolnBlk[Bcount].Nghost; j++){
 	    for (int i = SolnBlk[Bcount].ICl-SolnBlk[Bcount].Nghost;  i <= SolnBlk[Bcount].ICu+SolnBlk[Bcount].Nghost; i++){
-	      SolnBlk[Bcount].Uo[i][j] = SolnBlk[Bcount].U[i][j];
+	      SolnBlk[Bcount].Uo[i][j] = SolnBlk[Bcount].U[i][j]; //MAYBE NO GHOST CELLS & CALL BC'S ???
 	    } 
 	  } 	  
 	} 
@@ -975,40 +979,31 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 
       //DTS RULES: update Preconditioner only if GMRES iterations increase between Newton Its.
       bool GMRES_Iters_increaseing(true);
-      if( GMRES_Iters != 0){
-	if(GMRES_Iters ==1) {
-	  GMRES_Iters_increaseing = false;
-	} else if (GMRES_All_Iters[All_Iters_index-2] > GMRES_Iters) {
+      if( All_Iters_index != 0){   //Newton_Step == 1 
+	if( All_Iters_index ==1){  //Newton_Step == 2
+	  GMRES_Iters_increaseing = false;	  
+	} else if (GMRES_All_Iters[All_Iters_index-1] < GMRES_Iters) { //Newton_Step >= 3
 	  GMRES_Iters_increaseing = true;
 	} else {
 	  GMRES_Iters_increaseing = false;
 	}
+	//If it fails, redo 
+	if(GMRES_Failed) GMRES_Iters_increaseing = true;
+// 	if(Number_of_Newton_Steps%
+// 	   Input_Parameters.NKS_IP.Number_of_Newton_Steps_Requiring_Jacobian_Update !=0) GMRES_Iters_increaseing = false;
       }
 
       /**************************************************************************/
       /************* PRECONDTIONER "BLOCK" JACOBIANS ****************************/      
       /**************************************************************************/
       // Create/Update Jacobian Matrix(s) using Uo = U  
-      bool update;
-      if (!Input_Parameters.NKS_IP.Dual_Time_Stepping)
-	update = ( (Number_of_Newton_Steps < Input_Parameters.NKS_IP.Min_Number_of_Newton_Steps_Requiring_Jacobian_Update) || 
-		   (L2norm_current_n > Input_Parameters.NKS_IP.Min_L2_Norm_Requiring_Jacobian_Update &&
-		    Number_of_Newton_Steps%Input_Parameters.NKS_IP.Jacobian_Update_Frequency==0) );
-      else 
-	update = GMRES_Iters_increaseing;
-      if ( update ) {
+      if ( ( !Input_Parameters.NKS_IP.Dual_Time_Stepping &&
+	     ((L2norm_current_n > Input_Parameters.NKS_IP.Min_L2_Norm_Requiring_Jacobian_Update) ||
+	      (Number_of_Newton_Steps%Input_Parameters.NKS_IP.Number_of_Newton_Steps_Requiring_Jacobian_Update ==0)) ) ||                          
+	   ( Input_Parameters.NKS_IP.Dual_Time_Stepping && GMRES_Iters_increaseing) ) {
 
         if (CFFC_Primary_MPI_Processor() ) {	
-	    switch (Input_Parameters.NKS_IP.output_format) {
-	      case OF_SCOTT: 
-                cout << "\n Creating/Updating Jacobian Matrix"; 
-                break;
-	      case OF_ALISTAIR: 
-                cout << "    | "; 
-                break;
-	      default: 
-                break;
-	    }
+	  cout << "\n Creating/Updating Jacobian Matrix";
 	}
 	clock_t t0 = clock();
 	//Update for each block.
@@ -1021,11 +1016,15 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	preconditioner_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC);
 	nsetup++;
       } else {
-	if (CFFC_Primary_MPI_Processor() && 
-            Input_Parameters.NKS_IP.output_format == OF_ALISTAIR) {
-	cout << " noJ| "; 
+	if (CFFC_Primary_MPI_Processor() ) {	
+	  cout << "\n Reuse Jacobian Matrix";
 	}
       }
+	 
+      if(CFFC_Primary_MPI_Processor() && Input_Parameters.NKS_IP.Dual_Time_Stepping){
+	cout<<"  Last GMRES Iterations = " <<GMRES_Iters <<"  L2norm_ratio = " << L2norm_current_n;   
+      }
+ 
       /**************************************************************************/
 
       /**************************************************************************/
@@ -1043,30 +1042,38 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       if (GMRES_Failed)    { GMRES_Failures++; }
       GMRES_All_Iters[All_Iters_index++] = GMRES_Iters;
       /**************************************************************************/      
- 
+
+
+      /**************************************************************************/ 
+      // Output GMRES Info ( V, W, deltaU, etc) for debugging/interest
+      if (Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq > 0) {
+        if (Number_of_Newton_Steps == 1 || (Number_of_Newton_Steps-1) % Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq == 0) {
+	  if (CFFC_Primary_MPI_Processor()) { tell_me_about_output_gmres = true; }
+	  GMRES_.Output_GMRES_vars_Tecplot(Number_of_Newton_Steps-1,
+					   L2norm_current[SolnBlk[0].residual_variable-1], L2norm_current_n);
+	}
+      } 
+      /**************************************************************************/      
+
       /**************************************************************************/      
       // Solution Update U = Uo + GMRES.deltaU
       error_flag = Newton_Update<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>
 	           (SolnBlk,List_of_Local_Solution_Blocks,
                     Input_Parameters,GMRES_, 
                     Input_Parameters.NKS_IP.Relaxation_multiplier);
+
       if (CFFC_Primary_MPI_Processor() && error_flag) cout <<  "\n NKS2D: Error in Solution Update \n";
       /**************************************************************************/
 
-      if (Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq > 0) {
-        if (Number_of_Newton_Steps == 1 || (Number_of_Newton_Steps-1) % Input_Parameters.NKS_IP.NKS_Write_Output_Cells_Freq == 0) {
- 	   if (CFFC_Primary_MPI_Processor()) { tell_me_about_output_gmres = true; }
-  	   GMRES_.Output_GMRES_vars_Tecplot(Number_of_Newton_Steps-1,
-					    L2norm_current[SolnBlk[0].residual_variable-1], L2norm_current_n);
-	}			
-      } 
 
       /**************************************************************************/
       /* Exchange solution information between neighbouring blocks. */    
-      error_flag = Send_All_Messages(SolnBlk,
-				     List_of_Local_Solution_Blocks,
-				     Num_Var, 
-				     OFF);
+      error_flag = Send_All_Messages_NKS(SolnBlk,
+					 List_of_Local_Solution_Blocks,
+					 Num_Var, 
+					 OFF,
+					 Input_Parameters);
+
       if (error_flag) {
          cout << "\n 2D_NKS ERROR: 2D message passing error on processor "
 	      << List_of_Local_Solution_Blocks.ThisCPU

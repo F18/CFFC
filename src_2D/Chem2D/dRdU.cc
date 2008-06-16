@@ -20,7 +20,8 @@ void PointImplicitBlockJacobi(DenseMatrix &dRdU,
 			      const int &ii, const int &jj){
    
   int NUM_VAR_CHEM2D =  SolnBlk.NumVar()-1; 
-  DenseMatrix dRdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);  
+  static DenseMatrix dRdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);  
+  dRdW.zero();
 
   //Inviscid dRdU
   dFIdW_Inviscid(dRdW, SolnBlk, Input_Parameters, ii,jj);
@@ -33,7 +34,8 @@ void PointImplicitBlockJacobi(DenseMatrix &dRdU,
   // Add Source Jacobians (axisymmetric, turbulence)
   SemiImplicitBlockJacobi_dSdW(dRdW,SolnBlk,EXPLICIT,ii,jj);                          
 
-  DenseMatrix dWdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);     
+  static DenseMatrix dWdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO); 
+  dWdU.zero();
   // Transformation Jacobian 
   SolnBlk.Uo[ii][jj].W().dWdU(dWdU, SolnBlk.Flow_Type); 
   dRdU += dRdW*dWdU;
@@ -60,14 +62,17 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
       SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) { 
 
     int NUM_VAR_CHEM2D =  SolnBlk.NumVar()-1; 
-    DenseMatrix dRdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);  
-    
+    static DenseMatrix dRdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);  
+    dRdW.zero();
+
     // Add Source Jacobians (viscous axisymmetric, turbulence)
     SemiImplicitBlockJacobi_dSdW(dRdW,SolnBlk,EXPLICIT,ii,jj);                          
     
-    DenseMatrix dWdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);     
+    static DenseMatrix dWdU(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);
+    dWdU.zero();
+    
     // Transformation Jacobian 
-    SolnBlk.Uo[ii][jj].W().dWdU(dWdU, SolnBlk.Flow_Type);   //WHY HERE !!!!! ONLY 
+    SolnBlk.W[ii][jj].dWdU(dWdU, SolnBlk.Flow_Type);   
     dSdU += dRdW*dWdU;
   }
 
@@ -119,7 +124,7 @@ void SemiImplicitBlockJacobi_dSdU(DenseMatrix &dSdU,
   
   //Add Jacobian for finite-rate chemistry source terms  
   if (SolnBlk.W[ii][jj].React.reactset_flag != NO_REACTIONS){    
-    SolnBlk.W[ii][jj].dSwdU(dSdU, SolnBlk.Flow_Type,solver_type);
+    SolnBlk.W[ii][jj].dSwdU(dSdU, SolnBlk.Flow_Type,solver_type);    
   }  
 
   //Add Jacobian for gravitational source terms
@@ -173,13 +178,11 @@ void dFIdW_Inviscid(DenseMatrix &dRdW, Chem2D_Quad_Block &SolnBlk, Chem2D_Input_
  *                = 0 for returning inverse of A.        *
  *                                                       *
  *********************************************************/
-/*The rotation matrix is used for the inviscid flux calculations */
-DenseMatrix Rotation_Matrix2(Vector2D nface, int Size,  int A_matrix) 
+void Rotation_Matrix2(DenseMatrix &mat, Vector2D nface,  int A_matrix) 
 {
+
   double cos_angle = nface.x; 
-  double sin_angle = nface.y;
-    
-  DenseMatrix mat(Size,Size);
+  double sin_angle = nface.y;    
   mat.identity();
  
   if (A_matrix) {
@@ -195,10 +198,7 @@ DenseMatrix Rotation_Matrix2(Vector2D nface, int Size,  int A_matrix)
     mat(2,1) = sin_angle;
     mat(2,2) = cos_angle;
   } /* endif */
-
-  return mat;
-} 
-
+}
 
 /********************************************************
  * Routine: Inviscid Flux Jacobian using HLLE           *
@@ -215,7 +215,8 @@ void dFIdW_Inviscid_HLLE(DenseMatrix &dRdW, Chem2D_Quad_Block &SolnBlk,
   int NUM_VAR_CHEM2D =  SolnBlk.NumVar(); 
   int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
 
-   DenseMatrix dFidW(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);    
+   static DenseMatrix dFidW(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);
+   dFidW.zero();
    Vector2D nface, lambdas;   
     
    if (ii < SolnBlk.ICl -overlap || ii > SolnBlk.ICu +overlap ||
@@ -240,9 +241,11 @@ void dFIdW_Inviscid_HLLE(DenseMatrix &dRdW, Chem2D_Quad_Block &SolnBlk,
 			       SolnBlk.Uo[ii][jj].W(), nface);
    }
 
-   DenseMatrix A( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 1));
-   DenseMatrix AI( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 0));
-   DenseMatrix II(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO); 
+   static DenseMatrix A(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO); 
+   static DenseMatrix AI(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO); 
+   Rotation_Matrix2(A,nface, 1);
+   Rotation_Matrix2(AI,nface, 0);
+   static DenseMatrix II(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO); 
    II.identity();
    
    //Weightings
@@ -291,8 +294,9 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, Chem2D_Quad_Block &SolnBlk,
 
   } else {     
     int NUM_VAR_CHEM2D = dRdW.get_n();  //  SolnBlk.NumVar()-1;    
-    DenseMatrix dFidW(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);
-    
+    static DenseMatrix dFidW(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);
+    dFidW.zero();
+
     Vector2D nface,DX; double lface;   
     Chem2D_pState Wa, wavespeeds, Left, Right, Wl, Wr;   
     Left.Vacuum();   Right.Vacuum();  Wl.Vacuum();  Wr.Vacuum();
@@ -315,8 +319,10 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, Chem2D_Quad_Block &SolnBlk,
        lface = SolnBlk.Grid.lfaceW(Ri, Rj);
      }
      
-     DenseMatrix A( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 1));
-     DenseMatrix AI( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 0));
+     static DenseMatrix A(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO); 
+     static DenseMatrix AI(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO); 
+     Rotation_Matrix2(A,nface, 1);
+     Rotation_Matrix2(AI,nface, 0);
      
      //Left and Right States                                                       ///Ri ,Rj fixed not ii, jj 
      Inviscid_Flux_Used_Reconstructed_LeftandRight_States(Wl, Wr, DX, SolnBlk, Orient, Ri, Rj );   
@@ -328,7 +334,8 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, Chem2D_Quad_Block &SolnBlk,
 
      // Jacobian dF/dW         
      dFIdW(dFidW, Rotate(SolnBlk.Uo[ii][jj].W(), nface) , SolnBlk.Flow_Type);       
-     dFidW = HALF*dFidW;
+     //dFidW = HALF*dFidW;
+     dFidW *= HALF; 
      
      /***************************** Regular Roe (no preconditioning) *************************************/
      if(!Input_Parameters.Preconditioning){
@@ -368,7 +375,8 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, Chem2D_Quad_Block &SolnBlk,
        
        
        //Calculate the preconditioned upwind dissipation flux.
-       DenseMatrix Flux_dissipation(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);        
+       static DenseMatrix Flux_dissipation(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO); 
+       Flux_dissipation.zero();
        for (int i=1; i <=  NUM_VAR_CHEM2D; i++) {		   
 	 for(int irow =0; irow < NUM_VAR_CHEM2D; irow++){
 	   for(int jcol =0; jcol < NUM_VAR_CHEM2D; jcol++){	   
@@ -378,7 +386,7 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, Chem2D_Quad_Block &SolnBlk,
        }
        
        // Evaluate the low-Mach-number local preconditioner for the Roe-averaged state.
-       DenseMatrix P( NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);          
+       static DenseMatrix P( NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);    
        Wa.Low_Mach_Number_Preconditioner(P,SolnBlk.Flow_Type,deltax);
        
        // Add preconditioned dissipation to Inviscid Jacobian
@@ -413,8 +421,9 @@ void dFIdW_Inviscid_ROE_FD(DenseMatrix& dRdW, Chem2D_Quad_Block &SolnBlk,
 
   } else {     
      int NUM_VAR_CHEM2D = dRdW.get_n();   
-     DenseMatrix dFidW(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);
-     
+     static DenseMatrix dFidW(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);
+     dFidW.zero();
+
      Vector2D nface, DX;   double lface;
      Chem2D_pState Wa, wavespeeds, Left, Right, Wl, Wr;   
      Left.Vacuum();   Right.Vacuum();  Wl.Vacuum();  Wr.Vacuum();
@@ -437,9 +446,11 @@ void dFIdW_Inviscid_ROE_FD(DenseMatrix& dRdW, Chem2D_Quad_Block &SolnBlk,
        lface = SolnBlk.Grid.lfaceW(Ri, Rj);
      }
      
-     DenseMatrix A( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 1));
-     DenseMatrix AI( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 0));
-     
+     static DenseMatrix A(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO); 
+     static DenseMatrix AI(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO); 
+     Rotation_Matrix2(A,nface, 1);
+     Rotation_Matrix2(AI,nface, 0);
+          
      //Left and Right States 
      Inviscid_Flux_Used_Reconstructed_LeftandRight_States(Wl, Wr, DX, SolnBlk, Orient, Ri, Rj );   
      Left  = Rotate(Wl, nface);
@@ -703,8 +714,9 @@ void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW, Chem2D_Quad_Block &SolnBlk,
 
   } else {     
     int NUM_VAR_CHEM2D = dRdW.get_n();  //  SolnBlk.NumVar();    
-    DenseMatrix dFidW(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);
-    
+    static DenseMatrix dFidW(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO);
+    dFidW.zero();
+
     Vector2D nface,DX; double lface;   
     Chem2D_pState Wa, wavespeeds, Left, Right, Wl, Wr;   
     Left.Vacuum();   Right.Vacuum();  Wl.Vacuum();  Wr.Vacuum();
@@ -726,10 +738,12 @@ void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW, Chem2D_Quad_Block &SolnBlk,
        nface = SolnBlk.Grid.nfaceW(Ri, Rj);
        lface = SolnBlk.Grid.lfaceW(Ri, Rj);
      }
-     
-     DenseMatrix A( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 1));
-     DenseMatrix AI( Rotation_Matrix2(nface,NUM_VAR_CHEM2D, 0));
-          
+
+     static DenseMatrix A(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO); 
+     static DenseMatrix AI(NUM_VAR_CHEM2D, NUM_VAR_CHEM2D,ZERO); 
+     Rotation_Matrix2(A,nface, 1);
+     Rotation_Matrix2(AI,nface, 0);
+               
      //********** FILL IN AUSM SPECIFIC STUFF HERE ********************//
      Left  = Rotate(Wl, nface);
      Right = Rotate(Wr, nface);
@@ -763,12 +777,12 @@ void dGVdW_Viscous(DenseMatrix &dRdW, Chem2D_Quad_Block &SolnBlk,
    int NUM_VAR_CHEM2D = SolnBlk.NumVar()-1; 
    int ns = SolnBlk.W[ii][jj].ns-1;
 
-   DenseMatrix dFvdWf(NUM_VAR_CHEM2D, 14+(ns),ZERO);
-   DenseMatrix dWfdWx(14+(ns), NUM_VAR_CHEM2D,ZERO);  
-   DenseMatrix dGvdWf(NUM_VAR_CHEM2D, 14+(ns),ZERO);
-   DenseMatrix dWfdWy(14+(ns), NUM_VAR_CHEM2D,ZERO);
-   
-   DenseMatrix dGVdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);
+   static DenseMatrix dFvdWf(NUM_VAR_CHEM2D, 14+(ns),ZERO);
+   static DenseMatrix dWfdWx(14+(ns), NUM_VAR_CHEM2D,ZERO);  
+   static DenseMatrix dGvdWf(NUM_VAR_CHEM2D, 14+(ns),ZERO);
+   static DenseMatrix dWfdWy(14+(ns), NUM_VAR_CHEM2D,ZERO);
+   static DenseMatrix dGVdW(NUM_VAR_CHEM2D,NUM_VAR_CHEM2D,ZERO);
+
    Vector2D nface;
 
    if (ii < SolnBlk.ICl || ii > SolnBlk.ICu ||
@@ -778,7 +792,8 @@ void dGVdW_Viscous(DenseMatrix &dRdW, Chem2D_Quad_Block &SolnBlk,
      // NON-GHOST CELL.
            
      //Viscous flux Jacobians at North face of cell (ii, jj)
-     nface = SolnBlk.Grid.nfaceN(ii, jj);    
+     nface = SolnBlk.Grid.nfaceN(ii, jj); 
+     dFvdWf.zero(); dWfdWx.zero(); dGvdWf.zero(); dWfdWy.zero();   
      dFvdWf_Diamond(dFvdWf,dGvdWf, SolnBlk, NORTH, ii, jj);
      dWfdWc_Diamond(dWfdWx,dWfdWy, SolnBlk, NORTH, ii, jj, CENTER);     
      dGVdW = SolnBlk.Grid.lfaceN(ii, jj)* (nface.x*(dFvdWf*dWfdWx) + nface.y*(dGvdWf*dWfdWy));

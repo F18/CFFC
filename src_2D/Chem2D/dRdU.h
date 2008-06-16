@@ -32,8 +32,8 @@ extern void SemiImplicitBlockJacobi_dSdW( DenseMatrix &dSdW,
 					  const int &solver_type,
 					  const int &ii, const int &jj);
 
-extern DenseMatrix Rotation_Matrix2(Vector2D nface, int Size, int A_matrix); 
-
+extern void Rotation_Matrix2(DenseMatrix &mat, Vector2D nface,  int A_matrix);
+ 
 /*****************************************************************************/
 //Inviscid Flux Jacobian (FI)
 extern void dFIdW_Inviscid(DenseMatrix &dRdW, Chem2D_Quad_Block &SolnBlk, 

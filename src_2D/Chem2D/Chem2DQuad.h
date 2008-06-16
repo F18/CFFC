@@ -78,14 +78,6 @@
  *                 (y-direction) for the block.         *
  *     phi      -- Return the solution slope limiters.  *
  *      Uo      -- Return initial solution state.       *
- *      Ut      -- Return solution state at the current *
- *                 physical time.                       *
- *                 (Used in the treatment of physical   *
- *                  time for dual time-stepping)        *
- *     Uold     -- Return solution state at the         *
- *                 previous physical time step.         *
- *                 (Used in the treatment of physical   *
- *                  time for dual time-stepping)        *
  *    FluxN     -- Return array of north boundary       *
  *                 solution fluxes.                     *
  *    FluxS     -- Return array of south boundary       *
@@ -201,8 +193,6 @@ class Chem2D_Quad_Block{
   //@} 
   
   Chem2D_cState            **Uo;   //!< Initial solution state.
-  Chem2D_cState            **Ut;   //!< Solution state at the current time step.
-  Chem2D_cState          **Uold;   //!< Solution state at the previous time step.
  
   double                   **dt;   //!< Local time step.  
   Chem2D_cState         ***dUdt;   //!< Solution residual.
@@ -269,7 +259,7 @@ class Chem2D_Quad_Block{
     dWdx_faceE = NULL; dWdy_faceE = NULL;
     dWdx_faceW = NULL; dWdy_faceW = NULL;
     dWdx_faceS = NULL; dWdy_faceS = NULL;
-    phi = NULL;  Uo = NULL; Ut = NULL; Uold = NULL;
+    phi = NULL;  Uo = NULL;
     FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
     WoN = NULL; WoS = NULL; WoE = NULL; WoW = NULL;
     Axisymmetric = 0; Gravity =0; Flow_Type = 0;
@@ -288,7 +278,7 @@ class Chem2D_Quad_Block{
     dWdx_faceE = Soln.dWdx_faceE; dWdy_faceE = Soln.dWdy_faceE;
     dWdx_faceW = Soln.dWdx_faceW; dWdy_faceW = Soln.dWdy_faceW;
     dWdx_faceS = Soln.dWdx_faceS; dWdy_faceS = Soln.dWdy_faceS;
-    phi = Soln.phi; Uo = Soln.Uo; Ut = Soln.Ut; Uold = Soln.Uold; 
+    phi = Soln.phi; Uo = Soln.Uo;
     FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
     WoN = Soln.WoN; WoS = Soln.WoS; WoE = Soln.WoE; WoW = Soln.WoW;
     Axisymmetric = Soln.Axisymmetric ; Gravity = Soln.Gravity; 
@@ -338,6 +328,9 @@ class Chem2D_Quad_Block{
   int BiLinearInterpolationCoefficients(double &eta, double &zeta, const int &ii, const int &jj);
   
   void set_v_zero(void);
+
+  // recompute last species gradient
+  void FixSpecGrad(const int i,const int j, const bool&visc, const int nsp);
 
   /*****************************************************************************
      dWn_dWc is the derivative of node solution w.r.t. cell center solution
@@ -475,8 +468,7 @@ inline void Chem2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng
    dWdx_faceE = new Chem2D_pState*[NCi]; dWdy_faceE = new Chem2D_pState*[NCi];
    dWdx_faceW = new Chem2D_pState*[NCi]; dWdy_faceW = new Chem2D_pState*[NCi];
    dWdx_faceS = new Chem2D_pState*[NCi]; dWdy_faceS = new Chem2D_pState*[NCi];
-   phi = new Chem2D_pState*[NCi]; Uo = new Chem2D_cState*[NCi];
-   Ut = new Chem2D_cState*[NCi]; Uold = new Chem2D_cState*[NCi];
+   phi = new Chem2D_pState*[NCi]; Uo = new Chem2D_cState*[NCi]; 
    Wall = new Turbulent2DWallData*[NCi];
    
    for (int i = 0; i <= NCi-1 ; ++i ) {
@@ -491,7 +483,6 @@ inline void Chem2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng
       dWdx_faceW[i] = new Chem2D_pState[NCj]; dWdy_faceW[i] = new Chem2D_pState[NCj];
       dWdx_faceS[i] = new Chem2D_pState[NCj]; dWdy_faceS[i] = new Chem2D_pState[NCj];
       phi[i] = new Chem2D_pState[NCj]; Uo[i] = new Chem2D_cState[NCj];
-      Ut[i] = new Chem2D_cState[NCj]; Uold[i] = new Chem2D_cState[NCj]; 
       Wall[i] = new Turbulent2DWallData[NCj];
    } /* endfor */
    FluxN = new Chem2D_cState[NCi]; FluxS = new Chem2D_cState[NCi];
@@ -528,8 +519,7 @@ inline void Chem2D_Quad_Block::deallocate(void) {
       delete []dWdx_faceE[i]; dWdx_faceE[i] = NULL; delete []dWdy_faceE[i]; dWdy_faceE[i] = NULL;
       delete []dWdx_faceW[i]; dWdx_faceW[i] = NULL; delete []dWdy_faceW[i]; dWdy_faceW[i] = NULL;
       delete []dWdx_faceS[i]; dWdx_faceS[i] = NULL; delete []dWdy_faceS[i]; dWdy_faceS[i] = NULL;
-      delete []phi[i]; phi[i] = NULL; delete []Uo[i]; Uo[i] = NULL; 
-      delete []Ut[i]; Ut[i] = NULL; delete []Uold[i]; Uold[i] = NULL;
+      delete []phi[i]; phi[i] = NULL; delete []Uo[i]; Uo[i] = NULL;   
       delete []Wall[i]; Wall[i] = NULL; 
    } /* endfor */
    delete []W; W = NULL; delete []U; U = NULL;
@@ -541,7 +531,6 @@ inline void Chem2D_Quad_Block::deallocate(void) {
    delete []dWdx_faceS; dWdx_faceS = NULL; delete []dWdy_faceS; dWdy_faceS = NULL;
 
    delete []phi; phi = NULL; delete []Uo; Uo = NULL;  
-   delete []Ut; Ut = NULL; delete []Uold; Uold = NULL;
    delete []Wall; Wall = NULL;
    delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
    delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
@@ -629,7 +618,8 @@ inline double Chem2D_Quad_Block::dWn_dWc(const int &i, const int &j, const int &
     cerr<<"\n Improper Orient in Chem2D_Quad_Block::dWn_dWc\n";
     break;
   }
-      
+   
+  return (ZERO);
 }
 
 
@@ -926,9 +916,7 @@ inline ostream &operator << (ostream &out_file,
   if (SolnBlk.NCi == 0 || SolnBlk.NCj == 0) return(out_file);
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-         out_file << SolnBlk.U[i][j] << "\n"
-	          << SolnBlk.Ut[i][j] << "\n"
-		  << SolnBlk.Uold[i][j] << "\n";
+       out_file << SolnBlk.U[i][j] << "\n";
      } /* endfor */
   } /* endfor */
   for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
@@ -969,9 +957,8 @@ inline istream &operator >> (istream &in_file,
   Copy_Quad_Block(SolnBlk.Grid, New_Grid); New_Grid.deallocate();
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-         in_file >> SolnBlk.U[i][j] >> SolnBlk.Ut[i][j] >> SolnBlk.Uold[i][j];
+       in_file >> SolnBlk.U[i][j]; // >> SolnBlk.Ut[i][j] >> SolnBlk.Uold[i][j];
          SolnBlk.W[i][j] = W(SolnBlk.U[i][j]);
-	 SolnBlk.Ut[i][j] = SolnBlk.U[i][j]; 
          for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_CHEM2D-1 ; ++k ) {
 	     SolnBlk.dUdt[i][j][k] = Chem2D_U_VACUUM;
          } /* endfor */
@@ -1069,11 +1056,14 @@ inline int Chem2D_Quad_Block::LoadSendBuffer_F2C(double *buffer,
                                    Grid.Cell[i+1][j  ].A+
                                    Grid.Cell[i  ][j+1].A+
                                    Grid.Cell[i+1][j+1].A);
+// 	   cout<<"\nLo buffer"<<buffer_count<<" i "<<i<<" j "<<j<<" k "<<k<<" "<<buffer[buffer_count];
+
 /*            buffer[buffer_count] = (Grid.Cell[i  ][j  ].A*U[i  ][j  ][k]+ */
 /*                                    Grid.Cell[i+1][j  ].A*U[i+1][j  ][k]+ */
 /*                                    Grid.Cell[i  ][j+1].A*U[i  ][j+1][k]+ */
 /*                                    Grid.Cell[i+1][j+1].A*U[i+1][j+1][k]); */
         } /* endfor */
+
      } /* endfor */
   } /* endfor */
   return(0);
@@ -1692,13 +1682,11 @@ inline int Chem2D_Quad_Block::UnloadReceiveBuffer_F2C(double *buffer,
   int NUM_VAR_CHEM2D = NumVar();
   int i, j;
   for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-       //Changed from Euler2D
+     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {   
        for ( int k = 1 ; k <= NUM_VAR_CHEM2D; ++ k) {
 	 buffer_count = buffer_count + 1;
 	 if (buffer_count >= buffer_size) return(1);    
-	 U[i][j][k] = buffer[buffer_count];
-/* 	 U[i][j][k] = buffer[buffer_count]/Grid.Cell[i][j].A; */
+	 U[i][j][k] = buffer[buffer_count]; 
        }
        W[i][j] = U[i][j].W();
      } /* endfor */
@@ -1757,224 +1745,232 @@ inline void Chem2D_Quad_Block::SubcellReconstruction(const int i,
  
   int NUM_VAR_CHEM2D = NumVar(); 
  
+
+  //NEED TO CHANGE TO AVOID USING GHOST CELLS THAT ARE ON THE EDGE OF 
+  // BCS  WITH RES CHANGE (C2F) ISSUES !!!
+
   /* Carry out the limited solution reconstruction in
      each cell of the computational mesh. */
 
-  if (i == ICl-Nghost || i == ICu+Nghost ||
+//   if (i == ICl-Nghost || i == ICu+Nghost ||
+//       j == JCl-Nghost || j == JCu+Nghost) {
+//     n_pts = 0;
+//   } else if ((i == ICl) && (Grid.BCtypeW[j] != BC_NONE)) {
+
+//     if (j == JCl-Nghost+1 || j == JCu+Nghost-1) {
+//        n_pts = 0;
+//     } else if (Grid.BCtypeW[j] == BC_PERIODIC ||
+//                Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
+//                Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
+//                Grid.BCtypeW[j] == BC_CHARACTERISTIC) {
+//        if (j == JCl) {
+//           n_pts = 5;
+//           i_index[0] = i-1; j_index[0] = j  ;
+//           i_index[1] = i+1; j_index[1] = j  ;
+//           i_index[2] = i-1; j_index[2] = j+1;
+//           i_index[3] = i  ; j_index[3] = j+1;
+//           i_index[4] = i+1; j_index[4] = j+1;
+//        } else if (j == JCu) {
+//           n_pts = 5;
+//           i_index[0] = i-1; j_index[0] = j-1;
+//           i_index[1] = i  ; j_index[1] = j-1;
+//           i_index[2] = i+1; j_index[2] = j-1;
+//           i_index[3] = i-1; j_index[3] = j  ;
+//           i_index[4] = i+1; j_index[4] = j  ;
+//        } else {
+//           n_pts = 8;
+//           i_index[0] = i-1; j_index[0] = j-1;
+//           i_index[1] = i  ; j_index[1] = j-1;
+//           i_index[2] = i+1; j_index[2] = j-1;
+//           i_index[3] = i-1; j_index[3] = j  ;
+//           i_index[4] = i+1; j_index[4] = j  ;
+//           i_index[5] = i-1; j_index[5] = j+1;
+//           i_index[6] = i  ; j_index[6] = j+1;
+//           i_index[7] = i+1; j_index[7] = j+1;
+//        } /* endif */
+//     } else {
+//        if (j == JCl) {
+//           n_pts = 3;
+//           i_index[0] = i+1; j_index[0] = j  ;
+//           i_index[1] = i  ; j_index[1] = j+1;
+//           i_index[2] = i+1; j_index[2] = j+1;
+//        } else if (j == JCu) {
+//           n_pts = 3;
+//           i_index[0] = i  ; j_index[0] = j-1;
+//           i_index[1] = i+1; j_index[1] = j-1;
+//           i_index[2] = i+1; j_index[2] = j  ;
+//        } else {
+//           n_pts = 5;
+//           i_index[0] = i  ; j_index[0] = j-1;
+//           i_index[1] = i+1; j_index[1] = j-1;
+//           i_index[2] = i+1; j_index[2] = j  ;
+//           i_index[3] = i  ; j_index[3] = j+1;
+//           i_index[4] = i+1; j_index[4] = j+1;
+//        } /* endif */
+//     } /* endif */           
+//   } else if ((i == ICu+Nghost-1) && 
+//              (Grid.BCtypeE[j] != BC_NONE)) {
+//     if (j == JCl-Nghost+1 || j == JCu+Nghost-1) {
+//        n_pts = 0;
+//     } else if (Grid.BCtypeE[j] == BC_PERIODIC ||
+//                Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
+//                Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
+//                Grid.BCtypeE[j] == BC_CHARACTERISTIC) {
+//        if (j == JCl) {
+//           n_pts = 5;
+//           i_index[0] = i-1; j_index[0] = j  ;
+//           i_index[1] = i+1; j_index[1] = j  ;
+//           i_index[2] = i-1; j_index[2] = j+1;
+//           i_index[3] = i  ; j_index[3] = j+1;
+//           i_index[4] = i+1; j_index[4] = j+1;
+//        } else if (j == JCu) {
+//           n_pts = 5;
+//           i_index[0] = i-1; j_index[0] = j-1;
+//           i_index[1] = i  ; j_index[1] = j-1;
+//           i_index[2] = i+1; j_index[2] = j-1;
+//           i_index[3] = i-1; j_index[3] = j  ;
+//           i_index[4] = i+1; j_index[4] = j  ;
+//        } else {
+//           n_pts = 8;
+//           i_index[0] = i-1; j_index[0] = j-1;
+//           i_index[1] = i  ; j_index[1] = j-1;
+//           i_index[2] = i+1; j_index[2] = j-1;
+//           i_index[3] = i-1; j_index[3] = j  ;
+//           i_index[4] = i+1; j_index[4] = j  ;
+//           i_index[5] = i-1; j_index[5] = j+1;
+//           i_index[6] = i  ; j_index[6] = j+1;
+//           i_index[7] = i+1; j_index[7] = j+1;
+//        } /* endif */
+//     } else {
+//        if (j == JCl) {
+//           n_pts = 3;
+//           i_index[0] = i-1; j_index[0] = j  ;
+//           i_index[1] = i-1; j_index[1] = j+1;
+//           i_index[2] = i  ; j_index[2] = j+1;
+//        } else if (j == JCu) {
+//           n_pts = 3;
+//           i_index[0] = i-1; j_index[0] = j-1;
+//           i_index[1] = i  ; j_index[1] = j-1;
+//           i_index[2] = i-1; j_index[2] = j  ;
+//        } else {
+//           n_pts = 5;
+//           i_index[0] = i-1; j_index[0] = j-1;
+//           i_index[1] = i  ; j_index[1] = j-1;
+//           i_index[2] = i-1; j_index[2] = j  ;
+//           i_index[3] = i-1; j_index[3] = j+1;
+//           i_index[4] = i  ; j_index[4] = j+1;
+//        } /* endif */
+//     } /* endif */
+//   } else if ((j == JCl-Nghost+1) && 
+//              (Grid.BCtypeS[i] != BC_NONE)) {
+//     if (i == ICl-Nghost+1 || i == ICu+Nghost-1) {
+//        n_pts = 0;
+//     } else if (Grid.BCtypeS[i] == BC_PERIODIC ||
+//                Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
+//                Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
+//                Grid.BCtypeS[i] == BC_CHARACTERISTIC) {
+//        if (i == ICl) {
+//           n_pts = 5;
+//           i_index[0] = i  ; j_index[0] = j-1;
+//           i_index[1] = i+1; j_index[1] = j-1;
+//           i_index[2] = i+1; j_index[2] = j  ;
+//           i_index[3] = i  ; j_index[3] = j+1;
+//           i_index[4] = i+1; j_index[4] = j+1;
+//        } else if (i == ICu) {
+//           n_pts = 5;
+//           i_index[0] = i-1; j_index[0] = j-1;
+//           i_index[1] = i  ; j_index[1] = j-1;
+//           i_index[2] = i-1; j_index[2] = j  ;
+//           i_index[3] = i-1; j_index[3] = j+1;
+//           i_index[4] = i  ; j_index[4] = j+1;
+//        } else {
+//           n_pts = 8;
+//           i_index[0] = i-1; j_index[0] = j-1;
+//           i_index[1] = i  ; j_index[1] = j-1;
+//           i_index[2] = i+1; j_index[2] = j-1;
+//           i_index[3] = i-1; j_index[3] = j  ;
+//           i_index[4] = i+1; j_index[4] = j  ;
+//           i_index[5] = i-1; j_index[5] = j+1;
+//           i_index[6] = i  ; j_index[6] = j+1;
+//           i_index[7] = i+1; j_index[7] = j+1;
+//        } /* endif */
+//     } else {
+//        if (i == ICl) {
+//           n_pts = 3;
+//           i_index[0] = i+1; j_index[0] = j  ;
+//           i_index[1] = i  ; j_index[1] = j+1;
+//           i_index[2] = i+1; j_index[2] = j+1;
+//        } else if (i == ICu) {
+//           n_pts = 3;
+//           i_index[0] = i-1; j_index[0] = j  ;
+//           i_index[1] = i-1; j_index[1] = j+1;
+//           i_index[2] = i  ; j_index[2] = j+1;
+//        } else {
+//           n_pts = 5;
+//           i_index[0] = i-1; j_index[0] = j  ;
+//           i_index[1] = i+1; j_index[1] = j  ;
+//           i_index[2] = i-1; j_index[2] = j+1;
+//           i_index[3] = i  ; j_index[3] = j+1;
+//           i_index[4] = i+1; j_index[4] = j+1;
+//        } /* endif */
+//     } /* endif */
+//   } else if ((j == JCu+Nghost-1) && 
+//              (Grid.BCtypeN[i] != BC_NONE)) {
+//     if (i == ICl-Nghost+1 || i == ICu+Nghost-1) {
+//        n_pts = 0;
+//     } else if (Grid.BCtypeN[i] == BC_PERIODIC ||
+//                Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
+//                Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
+//                Grid.BCtypeN[i] == BC_CHARACTERISTIC) {
+//        if (i == ICl) {
+//           n_pts = 5;
+//           i_index[0] = i  ; j_index[0] = j-1;
+//           i_index[1] = i+1; j_index[1] = j-1;
+//           i_index[2] = i+1; j_index[2] = j  ;
+//           i_index[3] = i  ; j_index[3] = j+1;
+//           i_index[4] = i+1; j_index[4] = j+1;
+//        } else if (i == ICu) {
+//           n_pts = 5;
+//           i_index[0] = i-1; j_index[0] = j-1;
+//           i_index[1] = i  ; j_index[1] = j-1;
+//           i_index[2] = i-1; j_index[2] = j  ;
+//           i_index[3] = i-1; j_index[3] = j+1;
+//           i_index[4] = i  ; j_index[4] = j+1;
+//        } else {
+//           n_pts = 8;
+//           i_index[0] = i-1; j_index[0] = j-1;
+//           i_index[1] = i  ; j_index[1] = j-1;
+//           i_index[2] = i+1; j_index[2] = j-1;
+//           i_index[3] = i-1; j_index[3] = j  ;
+//           i_index[4] = i+1; j_index[4] = j  ;
+//           i_index[5] = i-1; j_index[5] = j+1;
+//           i_index[6] = i  ; j_index[6] = j+1;
+//           i_index[7] = i+1; j_index[7] = j+1;
+//        } /* endif */
+//     } else {
+//        if (i == ICl) {
+//           n_pts = 3;
+//           i_index[0] = i  ; j_index[0] = j-1;
+//           i_index[1] = i+1; j_index[1] = j-1;
+//           i_index[2] = i+1; j_index[2] = j  ;
+//        } else if (i == ICu) {
+//           n_pts = 3;
+//           i_index[0] = i-1; j_index[0] = j-1;
+//           i_index[1] = i  ; j_index[1] = j-1;
+//           i_index[2] = i-1; j_index[2] = j  ;
+//        } else {
+//           n_pts = 5;
+//           i_index[0] = i-1; j_index[0] = j-1;
+//           i_index[1] = i  ; j_index[1] = j-1;
+//           i_index[2] = i+1; j_index[2] = j-1;
+//           i_index[3] = i-1; j_index[3] = j  ;
+//           i_index[4] = i+1; j_index[4] = j  ;
+//        } /* endif */
+//     } /* endif */  
+  
+  if (i == ICl-Nghost || i ==ICu+Nghost ||
       j == JCl-Nghost || j == JCu+Nghost) {
     n_pts = 0;
-  } else if ((i == ICl-Nghost+1) && 
-             (Grid.BCtypeW[j] != BC_NONE)) {
-    if (j == JCl-Nghost+1 || j == JCu+Nghost-1) {
-       n_pts = 0;
-    } else if (Grid.BCtypeW[j] == BC_PERIODIC ||
-               Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-               Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-               Grid.BCtypeW[j] == BC_CHARACTERISTIC) {
-       if (j == JCl) {
-          n_pts = 5;
-          i_index[0] = i-1; j_index[0] = j  ;
-          i_index[1] = i+1; j_index[1] = j  ;
-          i_index[2] = i-1; j_index[2] = j+1;
-          i_index[3] = i  ; j_index[3] = j+1;
-          i_index[4] = i+1; j_index[4] = j+1;
-       } else if (j == JCu) {
-          n_pts = 5;
-          i_index[0] = i-1; j_index[0] = j-1;
-          i_index[1] = i  ; j_index[1] = j-1;
-          i_index[2] = i+1; j_index[2] = j-1;
-          i_index[3] = i-1; j_index[3] = j  ;
-          i_index[4] = i+1; j_index[4] = j  ;
-       } else {
-          n_pts = 8;
-          i_index[0] = i-1; j_index[0] = j-1;
-          i_index[1] = i  ; j_index[1] = j-1;
-          i_index[2] = i+1; j_index[2] = j-1;
-          i_index[3] = i-1; j_index[3] = j  ;
-          i_index[4] = i+1; j_index[4] = j  ;
-          i_index[5] = i-1; j_index[5] = j+1;
-          i_index[6] = i  ; j_index[6] = j+1;
-          i_index[7] = i+1; j_index[7] = j+1;
-       } /* endif */
-    } else {
-       if (j == JCl) {
-          n_pts = 3;
-          i_index[0] = i+1; j_index[0] = j  ;
-          i_index[1] = i  ; j_index[1] = j+1;
-          i_index[2] = i+1; j_index[2] = j+1;
-       } else if (j == JCu) {
-          n_pts = 3;
-          i_index[0] = i  ; j_index[0] = j-1;
-          i_index[1] = i+1; j_index[1] = j-1;
-          i_index[2] = i+1; j_index[2] = j  ;
-       } else {
-          n_pts = 5;
-          i_index[0] = i  ; j_index[0] = j-1;
-          i_index[1] = i+1; j_index[1] = j-1;
-          i_index[2] = i+1; j_index[2] = j  ;
-          i_index[3] = i  ; j_index[3] = j+1;
-          i_index[4] = i+1; j_index[4] = j+1;
-       } /* endif */
-    } /* endif */           
-  } else if ((i == ICu+Nghost-1) && 
-             (Grid.BCtypeE[j] != BC_NONE)) {
-    if (j == JCl-Nghost+1 || j == JCu+Nghost-1) {
-       n_pts = 0;
-    } else if (Grid.BCtypeE[j] == BC_PERIODIC ||
-               Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-               Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-               Grid.BCtypeE[j] == BC_CHARACTERISTIC) {
-       if (j == JCl) {
-          n_pts = 5;
-          i_index[0] = i-1; j_index[0] = j  ;
-          i_index[1] = i+1; j_index[1] = j  ;
-          i_index[2] = i-1; j_index[2] = j+1;
-          i_index[3] = i  ; j_index[3] = j+1;
-          i_index[4] = i+1; j_index[4] = j+1;
-       } else if (j == JCu) {
-          n_pts = 5;
-          i_index[0] = i-1; j_index[0] = j-1;
-          i_index[1] = i  ; j_index[1] = j-1;
-          i_index[2] = i+1; j_index[2] = j-1;
-          i_index[3] = i-1; j_index[3] = j  ;
-          i_index[4] = i+1; j_index[4] = j  ;
-       } else {
-          n_pts = 8;
-          i_index[0] = i-1; j_index[0] = j-1;
-          i_index[1] = i  ; j_index[1] = j-1;
-          i_index[2] = i+1; j_index[2] = j-1;
-          i_index[3] = i-1; j_index[3] = j  ;
-          i_index[4] = i+1; j_index[4] = j  ;
-          i_index[5] = i-1; j_index[5] = j+1;
-          i_index[6] = i  ; j_index[6] = j+1;
-          i_index[7] = i+1; j_index[7] = j+1;
-       } /* endif */
-    } else {
-       if (j == JCl) {
-          n_pts = 3;
-          i_index[0] = i-1; j_index[0] = j  ;
-          i_index[1] = i-1; j_index[1] = j+1;
-          i_index[2] = i  ; j_index[2] = j+1;
-       } else if (j == JCu) {
-          n_pts = 3;
-          i_index[0] = i-1; j_index[0] = j-1;
-          i_index[1] = i  ; j_index[1] = j-1;
-          i_index[2] = i-1; j_index[2] = j  ;
-       } else {
-          n_pts = 5;
-          i_index[0] = i-1; j_index[0] = j-1;
-          i_index[1] = i  ; j_index[1] = j-1;
-          i_index[2] = i-1; j_index[2] = j  ;
-          i_index[3] = i-1; j_index[3] = j+1;
-          i_index[4] = i  ; j_index[4] = j+1;
-       } /* endif */
-    } /* endif */
-  } else if ((j == JCl-Nghost+1) && 
-             (Grid.BCtypeS[i] != BC_NONE)) {
-    if (i == ICl-Nghost+1 || i == ICu+Nghost-1) {
-       n_pts = 0;
-    } else if (Grid.BCtypeS[i] == BC_PERIODIC ||
-               Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-               Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-               Grid.BCtypeS[i] == BC_CHARACTERISTIC) {
-       if (i == ICl) {
-          n_pts = 5;
-          i_index[0] = i  ; j_index[0] = j-1;
-          i_index[1] = i+1; j_index[1] = j-1;
-          i_index[2] = i+1; j_index[2] = j  ;
-          i_index[3] = i  ; j_index[3] = j+1;
-          i_index[4] = i+1; j_index[4] = j+1;
-       } else if (i == ICu) {
-          n_pts = 5;
-          i_index[0] = i-1; j_index[0] = j-1;
-          i_index[1] = i  ; j_index[1] = j-1;
-          i_index[2] = i-1; j_index[2] = j  ;
-          i_index[3] = i-1; j_index[3] = j+1;
-          i_index[4] = i  ; j_index[4] = j+1;
-       } else {
-          n_pts = 8;
-          i_index[0] = i-1; j_index[0] = j-1;
-          i_index[1] = i  ; j_index[1] = j-1;
-          i_index[2] = i+1; j_index[2] = j-1;
-          i_index[3] = i-1; j_index[3] = j  ;
-          i_index[4] = i+1; j_index[4] = j  ;
-          i_index[5] = i-1; j_index[5] = j+1;
-          i_index[6] = i  ; j_index[6] = j+1;
-          i_index[7] = i+1; j_index[7] = j+1;
-       } /* endif */
-    } else {
-       if (i == ICl) {
-          n_pts = 3;
-          i_index[0] = i+1; j_index[0] = j  ;
-          i_index[1] = i  ; j_index[1] = j+1;
-          i_index[2] = i+1; j_index[2] = j+1;
-       } else if (i == ICu) {
-          n_pts = 3;
-          i_index[0] = i-1; j_index[0] = j  ;
-          i_index[1] = i-1; j_index[1] = j+1;
-          i_index[2] = i  ; j_index[2] = j+1;
-       } else {
-          n_pts = 5;
-          i_index[0] = i-1; j_index[0] = j  ;
-          i_index[1] = i+1; j_index[1] = j  ;
-          i_index[2] = i-1; j_index[2] = j+1;
-          i_index[3] = i  ; j_index[3] = j+1;
-          i_index[4] = i+1; j_index[4] = j+1;
-       } /* endif */
-    } /* endif */
-  } else if ((j == JCu+Nghost-1) && 
-             (Grid.BCtypeN[i] != BC_NONE)) {
-    if (i == ICl-Nghost+1 || i == ICu+Nghost-1) {
-       n_pts = 0;
-    } else if (Grid.BCtypeN[i] == BC_PERIODIC ||
-               Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-               Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-               Grid.BCtypeN[i] == BC_CHARACTERISTIC) {
-       if (i == ICl) {
-          n_pts = 5;
-          i_index[0] = i  ; j_index[0] = j-1;
-          i_index[1] = i+1; j_index[1] = j-1;
-          i_index[2] = i+1; j_index[2] = j  ;
-          i_index[3] = i  ; j_index[3] = j+1;
-          i_index[4] = i+1; j_index[4] = j+1;
-       } else if (i == ICu) {
-          n_pts = 5;
-          i_index[0] = i-1; j_index[0] = j-1;
-          i_index[1] = i  ; j_index[1] = j-1;
-          i_index[2] = i-1; j_index[2] = j  ;
-          i_index[3] = i-1; j_index[3] = j+1;
-          i_index[4] = i  ; j_index[4] = j+1;
-       } else {
-          n_pts = 8;
-          i_index[0] = i-1; j_index[0] = j-1;
-          i_index[1] = i  ; j_index[1] = j-1;
-          i_index[2] = i+1; j_index[2] = j-1;
-          i_index[3] = i-1; j_index[3] = j  ;
-          i_index[4] = i+1; j_index[4] = j  ;
-          i_index[5] = i-1; j_index[5] = j+1;
-          i_index[6] = i  ; j_index[6] = j+1;
-          i_index[7] = i+1; j_index[7] = j+1;
-       } /* endif */
-    } else {
-       if (i == ICl) {
-          n_pts = 3;
-          i_index[0] = i  ; j_index[0] = j-1;
-          i_index[1] = i+1; j_index[1] = j-1;
-          i_index[2] = i+1; j_index[2] = j  ;
-       } else if (i == ICu) {
-          n_pts = 3;
-          i_index[0] = i-1; j_index[0] = j-1;
-          i_index[1] = i  ; j_index[1] = j-1;
-          i_index[2] = i-1; j_index[2] = j  ;
-       } else {
-          n_pts = 5;
-          i_index[0] = i-1; j_index[0] = j-1;
-          i_index[1] = i  ; j_index[1] = j-1;
-          i_index[2] = i+1; j_index[2] = j-1;
-          i_index[3] = i-1; j_index[3] = j  ;
-          i_index[4] = i+1; j_index[4] = j  ;
-       } /* endif */
-    } /* endif */
   } else {
     n_pts = 8;
     i_index[0] = i-1; j_index[0] = j-1;
@@ -1987,18 +1983,25 @@ inline void Chem2D_Quad_Block::SubcellReconstruction(const int i,
     i_index[7] = i+1; j_index[7] = j+1;
   } /* endif */
   
+ 
   if (n_pts > 0) {
       DUDx_ave = Chem2D_W_VACUUM;
       DUDy_ave = Chem2D_W_VACUUM;
       DxDx_ave = ZERO;
       DxDy_ave = ZERO;
       DyDy_ave = ZERO;
-  
+
+ //      cout<<" C2F "<<i<<" "<<j<<" "<<n_pts<<endl;
+
       for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
           dX = Grid.Cell[ i_index[n2] ][ j_index[n2] ].Xc - 
                Grid.Cell[i][j].Xc;
           DU = W[ i_index[n2] ][ j_index[n2] ] - 
                W[i][j];
+	  
+// 	  cout<<n2<<" "<<i_index[n2]<<" "<<j_index[n2]<<
+// 	    W[ i_index[n2] ][ j_index[n2] ]<<endl;
+
           DUDx_ave += DU*dX.x;
           DUDy_ave += DU*dX.y;
           DxDx_ave += dX.x*dX.x;
@@ -2015,6 +2018,8 @@ inline void Chem2D_Quad_Block::SubcellReconstruction(const int i,
                    (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
       dWdy[i][j] = (DUDy_ave*DxDx_ave-DUDx_ave*DxDy_ave)/
                    (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
+
+//       cout<<dWdy[i][j]<<"\n"<<dWdx[i][j]<<"\n";
 
       // Calculate slope limiters. 
       if (!Freeze_Limiter) {
@@ -2073,6 +2078,10 @@ inline void Chem2D_Quad_Block::SubcellReconstruction(const int i,
          } /* endswitch */
   
          phi[i][j][n] = phi_n;
+	 
+// 	 cout<<i<<" "<<j<<" "<<n<<" "<<phi[i][j][n]<<endl;
+
+
 	} /* endfor */
       } // end limiter if
   } else {
