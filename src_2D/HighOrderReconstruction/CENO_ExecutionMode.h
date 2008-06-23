@@ -105,6 +105,35 @@ public:
       --------------------------------------------------------------------------------------- */
   static short CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS;
 
+  /*! Generate approximate constraints from the neighbour cells that are near constrained boundaries. \n
+      Turn ON if this feature is desired. (default) \n
+      Turn OFF if you don't want to use this feature. \n
+      --------------------------------------------------------------------------------------- */
+  static short CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS;
+
+  /*! Extend the stencil to get more equations instead of using approximate constraints with
+      the boundary conditions of the neighbour cells that are near constrained boundaries. \n
+      Turn ON if this feature is desired. \n
+      Turn OFF if you don't want to use this feature. (default) \n
+      --------------------------------------------------------------------------------------- */
+  static short CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL;
+
+  /*! Error functions might be hard or impossible to be integrated accurately over domains with
+      curved boundaries. Therefore, this flag controls whether the cells near these boundaries 
+      are included or ignored. \n
+      Turn ON if this feature is desired. \n
+      Turn OFF if you don't want to use this feature. (default) \n
+      --------------------------------------------------------------------------------------- */  
+  static short IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT;
+
+  /*! Error functions might be hard or impossible to be integrated accurately over domains with
+      curved boundaries. Therefore, this flag controls whether the cells near these boundaries 
+      are included or ignored. \n
+      Turn ON if this feature is desired. \n
+      Turn OFF if you don't want to use this feature. (default) \n
+      --------------------------------------------------------------------------------------- */  
+  static short USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA;  
+
   /*! The high-order k-Exact reconstruction involves the solution of a linear least-squares problem,
       which can be obtained with different subroutines. Currently, a Lapack subroutine and an 
       internal one (L. Ivan's implementation) can be used. The Lapack one is faster but assumes the 
@@ -114,6 +143,12 @@ public:
       Turn OFF to use the internal one.  
       --------------------------------------------------------------------------------------- */
   static short USE_LAPACK_LEAST_SQUARES;
+
+  /*! Use high-order interpolant to transfer the solution between blocks with mesh resolution change. \n
+      Turn ON if this feature is desired. (default) \n
+      Turn OFF if you don't want to use this feature. \n
+      --------------------------------------------------------------------------------------- */
+  static short HIGH_ORDER_MESSAGE_PASSING;
 
   static int Limiter;   //!< the limiter used for the limited linear reconstruction performed for non-smooth solutions
 
@@ -227,6 +262,44 @@ void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Ty
       USE_LAPACK_LEAST_SQUARES = ON;
     } else if ( strcmp(IP.Next_Control_Parameter, "Internal") == 0 ){
       USE_LAPACK_LEAST_SQUARES = OFF;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Additional_Approximate_Constraints") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
+      CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS = ON;
+      CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = OFF;
+    } else if ( strcmp(IP.Next_Control_Parameter, "No") == 0 ){
+      CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS = OFF;
+      CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = ON;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Accuracy_Assessment_Near_Curved_Boundaries") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Ignore_Cells") == 0 ){
+      IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT = ON;
+    } else if ( strcmp(IP.Next_Control_Parameter, "Include_Cells") == 0 ){
+      IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT = OFF;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "AMR_High_Order_Criteria") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Smoothness_Indicator") == 0 ){
+      USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA = ON;
+    } else {
+      USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA = OFF;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "High_Order_Message_Passing") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
+      HIGH_ORDER_MESSAGE_PASSING = ON;
+    } else {
+      HIGH_ORDER_MESSAGE_PASSING = OFF;
     }
     i_command = 0;
 

@@ -372,7 +372,7 @@ inline void polval(const double* cof, const int n, const double x,
 		   double &y)
 {
   y = 0.0;
-  for (int i=0; i<n; i++ ) y += cof[i] * pow(x,i);
+  for (int i=0; i<n; i++ ) y += cof[i] * std::pow(x,i);
 }
 
 

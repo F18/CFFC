@@ -102,6 +102,7 @@ namespace tut
       GlobalList_Soln_Blocks.deallocate();
       QuadTree.deallocate();
     }
+    HO_Grid2D_Execution_Mode::SetDefaults();
   }
 
   // === InitializeComputationalDomain()
@@ -145,6 +146,7 @@ namespace tut
 
     Status = ON;
   }
+
 
   // === SetLocalTimeStepToValue()
   void Data_AdvectDiffuse2D_Quad_Block::SetLocalTimeStepToValue(AdvectDiffuse2D_Quad_Block *& _SolnBlk_,
@@ -1663,7 +1665,7 @@ namespace tut
     // ========= Compute with HighOrderVariable(0) ========
     for (int i = SolnBlk[0].ICl; i <= SolnBlk[0].ICu; ++i){
       for (int j = SolnBlk[0].JCl; j <= SolnBlk[0].JCu; ++j){
-	SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,0,0);
+	SolnBlk[0].dUdt[i][j][0] = SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,0);
       }
     }
 
@@ -1679,7 +1681,7 @@ namespace tut
     // ========= Compute with HighOrderVariable(1) ========
     for (int i = SolnBlk[0].ICl; i <= SolnBlk[0].ICu; ++i){
       for (int j = SolnBlk[0].JCl; j <= SolnBlk[0].JCu; ++j){
-	SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,0,1);
+	SolnBlk[0].dUdt[i][j][0] = SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,1);
       }
     }
 
@@ -1695,7 +1697,7 @@ namespace tut
     // ========= Compute with HighOrderVariable(2) ========
     for (int i = SolnBlk[0].ICl; i <= SolnBlk[0].ICu; ++i){
       for (int j = SolnBlk[0].JCl; j <= SolnBlk[0].JCu; ++j){
-	SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,0,2);
+	SolnBlk[0].dUdt[i][j][0] = SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,2);
       }
     }
 
@@ -1712,7 +1714,7 @@ namespace tut
     // ========= Compute with HighOrderVariable(3) ========
     for (int i = SolnBlk[0].ICl; i <= SolnBlk[0].ICu; ++i){
       for (int j = SolnBlk[0].JCl; j <= SolnBlk[0].JCu; ++j){
-	SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,0,3);
+	SolnBlk[0].dUdt[i][j][0] = SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(i,j,3);
       }
     }
 
@@ -1749,11 +1751,16 @@ namespace tut
   void AdvectDiffuse2D_Quad_Block_object::test<21>()
   {
 
-    set_test_name("Compute positivity coefficient ");
+    set_test_name("Perform scheme positivity analysis ");
     set_local_input_path("QuadBlockData");
     set_local_output_path("QuadBlockData");
 
-    RunRegression = OFF;
+    // == Local variables == 
+    bool LocalAnalysis, GlobalAnalysis, StencilOptimization;
+    unsigned short int HighOrderVar;
+    int iCell,jCell;
+    double ErrorL1, ErrorL2 ;
+
 
     // Set input file name
     Open_Input_File("HighOrder_EllipticTermDiscretization_PositivityStudy.in");
@@ -1769,32 +1776,413 @@ namespace tut
 
     // == check correct initialization
     ensure("High-order variables", SolnBlk[0].HighOrderVariables() != NULL);
-    ensure_equals("Main High-order ", SolnBlk[0].HighOrderVariable(0).RecOrder(), 4);
-    ensure_equals("2nd High-order " , SolnBlk[0].HighOrderVariable(1).RecOrder(), 1);
-    ensure_equals("3rd High-order " , SolnBlk[0].HighOrderVariable(2).RecOrder(), 2);
-    ensure_equals("4th High-order " , SolnBlk[0].HighOrderVariable(3).RecOrder(), 3);
     
     // Apply initial condition
     ICs(SolnBlk,LocalList_Soln_Blocks,IP);
 
 
+    // ===== Execution control =====
+    RunRegression = ON;
+    LocalAnalysis = false;
+    GlobalAnalysis = false;
+    StencilOptimization = false;
+    verbose = false;
+    HighOrderVar = 0;      // Set high-order object
+
+
+    // ========= Perform local analysis ========
+    if (LocalAnalysis) {
+    
+      // Set cell indexes
+      iCell = 10;
+      jCell = 10;
+
+      // Do analysis
+      SolnBlk[0].Analyse_HighOrder_Positivity_For_LaplacianOperator(iCell,jCell,HighOrderVar);
+      
+      if (verbose){
+	SolnBlk[0].Output_HighOrder_InfluenceDomain_And_SolutionCoefficients_For_LaplacianOperator(cout);
+	Print_(SolnBlk[0].CellPositivityMeasure(iCell,jCell));
+      }
+    
+      if (RunRegression == OFF){
+	// Output solution to check non-positivity
+	CurrentFile = "Current_HighOrder_LocalNonPositivity_Study.dat";
+	Open_Output_File(CurrentFile);
+    
+	SolnBlk[0].Output_Tecplot_InfluenceDomain_And_SolutionCoefficients(out());
+      }
+
+      // Estimate errors against the exact solution
+      ErrorL1 = ( SolnBlk[0].HighOrderVariable(HighOrderVar).
+		  ComputeSolutionErrorL1(iCell,jCell,
+					 wrapped_member_function(SolnBlk[0].ExactSolution(),
+								 &AdvectDiffuse2D_Quad_Block::
+								 Exact_Solution_Type::Solution,
+								 ErrorL1),
+					 1, 12) );
+		
+
+      ErrorL2 = ( SolnBlk[0].HighOrderVariable(HighOrderVar).
+		  ComputeSolutionErrorL2(iCell,jCell,
+					 wrapped_member_function(SolnBlk[0].ExactSolution(),
+								 &AdvectDiffuse2D_Quad_Block::
+								 Exact_Solution_Type::Solution,
+								 ErrorL2),
+					 1, 12) );
+
+      if (verbose){
+	Print_2(ErrorL1, ErrorL2);
+      }
+
+    }// endif (LocalAnalysis)
+
+
+    // ========= Perform global analysis ========
+    if (GlobalAnalysis){
+
+      if (StencilOptimization){
+	// Do analysis and optimization
+	SolnBlk[0].Analyse_HighOrder_Positivity_For_LaplacianOperator_And_Modify_Stencil(HighOrderVar);
+      } else {
+	// Do analysis
+	SolnBlk[0].Analyse_HighOrder_Positivity_For_LaplacianOperator(HighOrderVar);
+      }
+
+      if (verbose){
+	Print_(SolnBlk[0].IsAnyStencilDecoupled());
+	Print_(SolnBlk[0].MaximumNonPositivity());
+	Print_(SolnBlk[0].MinimumNonPositivity()); 
+      }
+
+      // Estimate errors against the exact solution
+      SolnBlk[0].HighOrderVariable(HighOrderVar).ComputeSolutionErrors(wrapped_member_function(SolnBlk[0].ExactSolution(),
+											       &AdvectDiffuse2D_Quad_Block::
+											       Exact_Solution_Type::Solution,
+											       ErrorL1),
+								       1, 12);
+      if (verbose){
+	Print_(SolnBlk[0].HighOrderVariable(HighOrderVar).BlockL1Norm());
+	Print_(SolnBlk[0].HighOrderVariable(HighOrderVar).BlockL2Norm());
+	Print_(SolnBlk[0].HighOrderVariable(HighOrderVar).BlockLMaxNorm());
+      }
+
+      if (RunRegression == OFF){ 
+
+	// Output solution to check non-positivity
+	CurrentFile = "Current_HighOrder_PositivityStudy.dat";
+	Open_Output_File(CurrentFile);
+	SolnBlk[0].Output_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+      }
+
+    } //endif (GlobalAnalysis)
+
+  }
+
+  /* Test 22:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<22>()
+  {
+
+    set_test_name("HighOrder2D<>::Set_MeanValueConservation_Equations()");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    // Set input file name
+    Open_Input_File("HighOrder_CurvedBoundaries_Constraints.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+    HighOrder2D_Input::Set_Final_Parameters(IP);
+    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = OFF;
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // == check correct initialization
+    ensure("High-order variables", SolnBlk[0].HighOrderVariables() != NULL);
+    
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+    // Reconstruct solution
+    IndexType i_index(25), j_index(25), ParameterIndex(1,1);
+    int iCell, jCell;
+    int TotalNumConstraints(1);
+
+    iCell = 5;
+    jCell = 5;
+
+    DenseMatrix A(25,15), All_U(25,1), X(15,1);
+    A.zero();  All_U.zero();  X.zero();
+
+    // Calculate reconstruction by explicitly enforcing the mean constraint
+    SolnBlk[0].HighOrderVariable(0).SetReconstructionStencil(iCell, jCell, i_index, j_index);
+    SolnBlk[0].HighOrderVariable(0).ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk[0],
+											&AdvectDiffuse2D_Quad_Block::
+											CellSolution,
+											iCell, jCell,
+											i_index, j_index);
+
+    // Calculate reconstruction by enforcing the mean constraint numerically
+    SolnBlk[0].HighOrderVariable(0).Set_MeanValueConservation_Equations(SolnBlk[0],
+									&AdvectDiffuse2D_Quad_Block::CellSolution,
+									iCell,jCell,
+									i_index, j_index,
+									A, All_U,
+									ParameterIndex,
+									0, 1, 0 );
+
+    Solve_Constrained_LS_Householder(A,All_U,X,TotalNumConstraints);
+
+    for (int i=0; i<=SolnBlk[0].HighOrderVariable(0).CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+      ensure_distance("Deriv", X(i,0), SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,i)[1],
+		      AcceptedError(SolnBlk[0].HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,i)[1], 1.0e-10));
+    }
+  }
+
+  /* Test 23:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<23>()
+  {
+
+    set_test_name("Compute high-order constrained reconstruction");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    RunRegression = OFF;
+
+    // Set input file name
+    Open_Input_File("HighOrder_StraightBoundaries_ConstraintBCs_Study.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+    // Set high-order BCs
+    SolnBlk[0].BCs_HighOrder();
+
+    // Compute high-order unlimited reconstruction
+    SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+
+    // Compute solution error
+    double Error;
+
+    SolnBlk[0].HighOrderVariable(0).ComputeSolutionErrors(wrapped_member_function(SolnBlk[0].ExactSolution(),
+										  &AdvectDiffuse2D_Quad_Block::
+										  Exact_Solution_Type::Solution,
+										  Error),
+							  1, 12);
+
+    // Check errors against values determined in a grid convergence study which reproduced the expected order of accuracy
+    //     ensure_distance("HO_0, L1", SolnBlk[0].HighOrderVariable(0).L1(), 1.273835612246606e-07 , AcceptedError(1.273835612246606e-07));
+    //     ensure_distance("HO_0, L2", SolnBlk[0].HighOrderVariable(0).L2(), 1.539509111646529e-14 , AcceptedError(1.539509111646529e-14));
+    //     ensure_distance("HO_0, LMax", SolnBlk[0].HighOrderVariable(0).LMax(), 3.081072413138049e-07, AcceptedError(3.081072413138049e-07));
+    //     ensure_distance("HO_0, BlockArea", SolnBlk[0].HighOrderVariable(0).BlockArea(),
+    // 		    7.089999999999999, AcceptedError(7.089999999999999));
+    //     ensure_distance("HO_0, Block L1", SolnBlk[0].HighOrderVariable(0).BlockL1Norm(), 
+    // 		    1.796665179473352e-08, AcceptedError(1.796665179473352e-08));
+    //     ensure_distance("HO_0, Block L2", SolnBlk[0].HighOrderVariable(0).BlockL2Norm(), 
+    // 		    4.659807909693294e-08, AcceptedError(4.659807909693294e-08));
+    //     ensure_distance("HO_0, Block LMax", SolnBlk[0].HighOrderVariable(0).BlockLMaxNorm(), 
+    // 		    3.081072413138049e-07, AcceptedError(3.081072413138049e-07));
+    //     ensure_equals("HO_1, Cells used", SolnBlk[0].HighOrderVariable(0).UsedCells(), 256);
+  }
+
+
+  /* Test 24:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<24>()
+  {
+
+    set_test_name("Check dUdt_Residual_Evaluation_HighOrder() with constrained BCs");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    RunRegression = ON;
+
+    // Error norms
+    double L1, L2, LMax;
+    double L1_M, L2_M, LMax_M;	// master errors
+
+    // Set input file name
+    Open_Input_File("HighOrder_StraightBoundaries_ConstraintBCs_Study.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+    // Set local time step
+    SetLocalTimeStepToValue(SolnBlk,
+			    LocalList_Soln_Blocks,
+			    1.0);
+
+    // Set high-order BCs
+    SolnBlk[0].BCs_HighOrder();
+
+    // Compute integral of the RHS term and write it to the k_residual = 2
+    ComputeEquationRightHandSideTerm(SolnBlk[0], IP, 2);
+
     // ========= Compute with HighOrderVariable(0) ========
 
-    // Determine domain of influence for Laplacian operator
-    SolnBlk[0].Set_HighOrder_InfluenceDomain_For_LaplacianOperator(4,4,0);
+    // Compute residuals for stage 1
+    SolnBlk[0].dUdt_Residual_Evaluation_HighOrder(IP);
 
-    // Calculate Laplace operator
-    SolnBlk[0].Calculate_HighOrder_Discretization_LaplacianOperator(4,4,0,0);
-    
+    // Compute residual errors
+    ComputeResidualErrors(SolnBlk[0], 0, 2, L1, L2, LMax);
+
+    // === check errors
+    L1_M = 3.396547274504095e-06; L2_M = 1.360317592760631e-05; LMax_M = 0.0001026043138794034;
+    //     ensure_distance("L1, k=4"  , L1, L1_M, AcceptedError(L1_M, 1.0e-7) );
+    //     ensure_distance("L2, k=4"  , L2, L2_M, AcceptedError(L2_M, 1.0e-7) );
+    //     ensure_distance("LMax, k=4", LMax, LMax_M, AcceptedError(LMax_M, 1.0e-7) );
+
     if (RunRegression == OFF){ 
+      // Print errors
+      cout << endl
+	   << SolnBlk[0].ICu - SolnBlk[0].ICl + 1 << "x" <<  SolnBlk[0].JCu - SolnBlk[0].JCl + 1 << endl
+	   << "L1_Norm = " << setprecision(16) << L1 << endl
+	   << "L2_Norm = " << setprecision(16) << L2 << endl
+	   << "Max_Norm = " << setprecision(16) << LMax << endl;
 
       // Output solution to check residual errors
-      CurrentFile = "Current_HighOrder_PositivityStudy.dat";
+      CurrentFile = "Current_HighOrder_StraightBoundaries_ReconstructionBasedFlux_Residual_Study.dat";
       Open_Output_File(CurrentFile);
       
       SolnBlk[0].Output_Nodes_Tecplot_HighOrder(0,0,0, 1, out(), 0);
     }
 
+  }
+
+  /* Test 25:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<25>()
+  {
+
+    set_test_name("Check residual for constrained reconstruction with curved boundaries");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    RunRegression = ON;
+
+    // Error norms
+    double L1, L2, LMax;
+    double L1_M, L2_M, LMax_M;	// master errors
+
+    // Set input file name
+    Open_Input_File("HighOrder_ConstrainedBoundaries_Residual_Study.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+    				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+    				  SolnBlk, IP);
+
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+    // Set high-order BCs
+    SolnBlk[0].BCs_HighOrder();
+
+    // Compute integral of the RHS term and write it to the k_residual = 2
+    ComputeEquationRightHandSideTerm(SolnBlk[0], IP, 2);
+
+    // ========= Compute with HighOrderVariable(0) ========
+
+
+    // Compute residuals for stage 1
+    SolnBlk[0].dUdt_Residual_Evaluation_HighOrder(IP);
+
+    //     double Error;
+    
+    //     SolnBlk[0].HighOrderVariable(0).ComputeSolutionErrors(wrapped_member_function(SolnBlk[0].ExactSolution(),
+    // 										  &AdvectDiffuse2D_Quad_Block::
+    // 										  Exact_Solution_Type::Solution,
+    // 										  Error),
+    // 							  1, 12);
+
+    //     Print_(SolnBlk[0].HighOrderVariable(0).BlockL1Norm());
+    //     Print_(SolnBlk[0].HighOrderVariable(0).BlockL2Norm());
+    //     Print_(SolnBlk[0].HighOrderVariable(0).BlockLMaxNorm());
+
+
+    if (RunRegression == OFF){
+      if ( SolnBlk[0].Grid.BndSouthSplineInfo != NULL){
+	Print_(SolnBlk[0].Grid.BndSouthSplineInfo[4].GQPointsPerSubInterval());
+      }
+      Print_(SolnBlk[0].Grid.getNumGQP());
+    }
+
+    // Compute residual errors
+    ComputeResidualErrors(SolnBlk[0], 0, 2, L1, L2, LMax);
+
+    // === check errors
+    //     L1_M = 3.396547274504095e-06; L2_M = 1.360317592760631e-05; LMax_M = 0.0001026043138794034;
+    //     ensure_distance("L1, k=4"  , L1, L1_M, AcceptedError(L1_M, 1.0e-7) );
+    //     ensure_distance("L2, k=4"  , L2, L2_M, AcceptedError(L2_M, 1.0e-7) );
+    //     ensure_distance("LMax, k=4", LMax, LMax_M, AcceptedError(LMax_M, 1.0e-7) );
+
+    if (RunRegression == OFF){ 
+      // Print errors
+      cout << endl
+	   << SolnBlk[0].ICu - SolnBlk[0].ICl + 1 << "x" <<  SolnBlk[0].JCu - SolnBlk[0].JCl + 1 << endl
+	   << "L1_Norm = " << setprecision(16) << L1 << endl
+	   << "L2_Norm = " << setprecision(16) << L2 << endl
+	   << "Max_Norm = " << setprecision(16) << LMax << endl;
+
+      // Output solution to check residual errors
+      CurrentFile = "Current_HighOrder_CurvedBoundaries_ReconstructionBasedFlux_Residual_Study.dat";
+      Open_Output_File(CurrentFile);
+      
+      SolnBlk[0].Output_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+    }
+
+    //     if (RunRegression){
+    //       // Output solution
+    //       MasterFile = "HighOrder_CurvedBoundaries_Study.dat";
+    //       CurrentFile = "Current_HighOrder_CurvedBoundaries_Study.dat";
+    //       Open_Output_File(CurrentFile);
+    
+    //       SolnBlk[0].Output_Cells_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+    
+    //       // === check cell values
+    //       RunRegressionTest("Cells Tecplot Output", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+    
+    //     } else {
+    //       // == Generate the master file
+    
+    //       // Output solution
+    //       MasterFile = "HighOrder_CurvedBoundaries_Study.dat";
+    //       Open_Output_File(MasterFile);
+    
+    //       SolnBlk[0].Output_Cells_Tecplot_HighOrder(0,0,0, 1, out(), 0);
+    //     }
   }
 
 }

@@ -61,41 +61,41 @@ void HighOrder2D_Input::Broadcast(void){
   // On primary CPU
   if (CFFC_Primary_MPI_Processor()) {
     // calculate buffer_size
-    buffer_size = 2 + OrdersOfReconstruction.size();
+    buffer_size = 3 + OrdersOfReconstruction.size();
 
     // allocate and load buffer
     buffer = new int [buffer_size];
 
     buffer[0] = NumberOfHighOrderReconstructions;
     buffer[1] = NumberOfAuxiliaryReconstructions;
+    buffer[2] = MaxReconstructionOrder;
 
-    for (i = 2; i<buffer_size; ++i){
-      buffer[i] = OrdersOfReconstruction[i-2];
+    for (i = 3; i<buffer_size; ++i){
+      buffer[i] = OrdersOfReconstruction[i-3];
     }
   }
 
   // Broadcast the buffer size
-  MPI::COMM_WORLD.Bcast(&buffer_size, 1, MPI::SHORT, 0);
-  
+  MPI::COMM_WORLD.Bcast(&buffer_size, 1, MPI::INT, 0);
+ 
   /* On non-primary MPI processors, allocate 
      memory for the buffer. */
   if (!CFFC_Primary_MPI_Processor()) {
     buffer = new int [buffer_size];
   } /* endif */
 
-
   // Broadcast the buffer
-  MPI::COMM_WORLD.Bcast(&buffer[0], buffer_size, MPI::SHORT, 0);
-
+  MPI::COMM_WORLD.Bcast(&buffer[0], buffer_size, MPI::INT, 0);
 
   // On non-primary MPI processors, unpack the buffer.
   if (!CFFC_Primary_MPI_Processor()) {
     NumberOfHighOrderReconstructions = buffer[0];
-    NumberOfAuxiliaryReconstructions = buffer[1];    
+    NumberOfAuxiliaryReconstructions = buffer[1];   
+    MaxReconstructionOrder = buffer[2];
 
     OrdersOfReconstruction.assign(NumberOfHighOrderReconstructions,-1);
-    for (i = 2; i<buffer_size; ++i){
-      OrdersOfReconstruction[i-2] = buffer[i];
+    for (i = 3; i<buffer_size; ++i){
+      OrdersOfReconstruction[i-3] = buffer[i];
     }
   }
   

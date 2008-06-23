@@ -475,8 +475,32 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 	       (number_of_time_steps/Input_Parameters.AMR_Frequency) == 0 ) {
               if (!batch_flag) cout << "\n\n Refining Grid.  Performing adaptive mesh refinement at n = "
                                     << number_of_time_steps << ".";
+
+	      /* Update ghostcell information and prescribe boundary conditions to ensure
+		 that the solution is consistent on each block. */
+    
+	      CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+
+	      error_flag = Send_All_Messages(Local_SolnBlk, 
+					     List_of_Local_Solution_Blocks,
+					     NUM_VAR_ADVECTDIFFUSE2D,
+					     OFF);
+	      if (error_flag) {
+		cout << "\n AdvectDiffuse2D ERROR: AdvectDiffuse2D message passing error on processor "
+		     << List_of_Local_Solution_Blocks.ThisCPU
+		     << ".\n";
+		cout.flush();
+	      } /* endif */
+	      error_flag = CFFC_OR_MPI(error_flag);
+	      if (error_flag) return (error_flag);
+	      
+	      BCs(Local_SolnBlk, 
+		  List_of_Local_Solution_Blocks,
+		  Input_Parameters);
+
               Evaluate_Limiters(Local_SolnBlk, 
                                 List_of_Local_Solution_Blocks);
+	      
               error_flag = AMR(Local_SolnBlk,
 			       Input_Parameters,
                                QuadTree,
@@ -615,7 +639,12 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 	  if (error_flag) return (error_flag);
 	  cout << "\n";
 	  cout.flush();
-	} /* endif */
+
+	  if (CFFC_Primary_MPI_Processor()) {
+	    System::Remove_Restart_Flag();  //Remove flag to indicate the restart is finished
+	  }
+
+	} /* endif */  //end save_restart
 	
 	/* Output progress information for the calculation. */
 	 if (!batch_flag) Output_Progress_L2norm(number_of_time_steps,

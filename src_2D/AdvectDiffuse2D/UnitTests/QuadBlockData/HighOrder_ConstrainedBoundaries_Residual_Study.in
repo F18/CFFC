@@ -16,31 +16,86 @@
 Flow_Geometry_Type = 
 		Planar
 Grid_Type =
-      # Deformed_Box
-         Rectangular_Box
-Box_Width =
-	2.00
-Box_Height =
-	2.00
+       Annulus
+Cylinder_Radius =
+       2.0
+Cylinder_Radius2 =
+       4.0
+Annulus_Start_Angle =
+       0.0
+Annulus_End_Angle = 
+       90.0
 X_Shift =
-	3.0 0.0
-# VertexSW =
-#    2.0 1.0
-# VertexSE =
-#    3.8 -1.8
-# VertexNE =
-#    3.3 5.6
-# VertexNW =
-#    2.3 3.8
+       0.0 4.0
+
+##Grid_Type =
+##       Deformed_Box
+##VertexSW =
+##   2.0 1.0
+##VertexSE =
+##   3.8 -1.8
+##VertexNE =
+##   3.3 5.6
+##VertexNW =
+##   2.3 3.8
+##X_Shift = 
+##   0.0 4.0
+
+##Grid_Type =
+##       Deformed_Box
+##VertexSW =
+##   2.0 1.0
+##VertexSE =
+##   6.8 -1.8
+##VertexNE =
+##   6.3 3.6
+##VertexNW =
+##   2.3 3.8
+##X_Shift = 
+##   0.0 4.0
+
+##Grid_Type =
+##	 Rectangular_Box
+##Box_Width =
+##	1.00
+##Box_Height =
+##	1.00
+##X_Shift = 
+##   0.0 4.0
+
 
 High_Order_Boundary =
-              OFF
+              On
 Gauss_Points_For_Boundary_Integration =
-              3
+              5
+##Large_Domain_Mesh =
+##              On
+##Curved_Boundary_Integration =
+##              Line_Segments
+
+	#############################
+	#  FLUX CALCULATION METHOD  #
+	#############################
+Flux_Calculation_Method_Specified =
+             Yes
+Flux_West_Method = 
+             # Riemann_Problem
+              Constrained_Reconstruction
+Flux_East_Method = 
+             # Riemann_Problem
+              Constrained_Reconstruction
+Flux_North_Method = 
+             # Riemann_Problem
+              Constrained_Reconstruction
+Flux_South_Method = 
+             # Riemann_Problem
+              Constrained_Reconstruction
 
 	###############################
 	#  VELOCITY FIELD PARAMETERS  #
 	###############################
+Include_Advection_Term_In_Equation =
+        No
 Velocity_Field =
 	Quiescent
 
@@ -72,18 +127,36 @@ Exact_Integration_Digits =
 	###########################
 	#  DEFINE EXACT SOLUTION  #
 	###########################
+##Exact_Solution =
+##	Poisson_V
+##A_Coeff = 
+##   1.7
+##B_Coeff =
+##   2.3
+##C_Coeff =
+##   4.0
+##a_Coeff =
+##   1.5
+##beta_Coeff =
+##   0.007
+
+##Exact_Solution =
+##	Laplace_I
+##A_Coeff = 
+##   10.0
+##B_Coeff =
+##   20.0
+##C_Coeff =
+##   4.0
+
 Exact_Solution =
-	Poisson_V
+	Laplace_IV
 A_Coeff = 
-   1.7
+   1.0
 B_Coeff =
-   2.3
-C_Coeff =
-   4.0
-a_Coeff =
+   2.0
+mu_Coeff =
    1.5
-beta_Coeff =
-   4.7
 
 	################################
 	#  DEFINE BOUNDARY CONDITIONS  #
@@ -92,24 +165,28 @@ Boundary_Conditions_Specified =
 		 On
 		# Off
 BC_North =
-         None
+         Exact_Solution
+        # None
 	#Farfield
-	#Dirichlet
+	# Dirichlet
 
 BC_South =
-         None
+         Exact_Solution
+        # None
 	#Farfield
-	#Dirichlet
+	# Dirichlet
 
 BC_East =
-         None
+         Exact_Solution
+        # None
 	#Farfield
-	#Dirichlet
+	# Dirichlet
 
 BC_West =
-         None
+         Exact_Solution
+        # None
 	#Farfield
-	#Dirichlet
+	# Dirichlet
 
 
 			###########################################
@@ -122,9 +199,9 @@ BC_West =
 	#########################
 
 Number_of_Cells_Idir = 
-	10
+	64
 Number_of_Cells_Jdir =
-	10
+	64
 Number_of_Blocks_Idir = 
 	1
 Number_of_Blocks_Jdir =
@@ -138,9 +215,14 @@ Iteration_Disturb_Mesh =
 Mesh_Stretching = 
         Off
 Mesh_Stretching_Type_Idir = 
-        Min_Clustering
+       Linear
+       # Min_Clustering
 Mesh_Stretching_Factor_Idir =
-        1.05
+        1.00
+Mesh_Stretching_Type_Jdir =
+       Linear
+Mesh_Stretching_Factor_Jdir =
+        1.00
 Smooth_Quad_Block =
         Off
 
@@ -151,13 +233,13 @@ Reconstruction_Type =
 	CENO
 
 Space_Accuracy =
-        1
+        3
 
-##Number_of_Auxiliary_Reconstructions =
-##        3
-##
-##Auxiliary_Reconstruction_Orders =
-##      1   2   3
+#Number_of_Auxiliary_Reconstructions =
+#        3
+#
+#Auxiliary_Reconstruction_Orders =
+#      1   2   3
 
 CENO_Smoothness_Indicator =
      Use_First_Neighbours
@@ -175,10 +257,12 @@ CENO_Padding =
          No
 CENO_Smoothness_Indicator =
          Use_First_Neighbours
+CENO_Additional_Approximate_Constraints =
+         No
 CENO_Use_Geom_Weighting_For_Smoothness_Analysis =
          Yes
 CENO_Square_Geom_Weighting =
-         Yes
+         No
 CENO_Apply_Geom_Weighting =
          Yes
 CENO_Absolute_Epsilon =
@@ -266,7 +350,7 @@ AMR_Frequency =
 	# SET OUTPUT PARAMETERS #
 	#########################
 Tecplot_Output_Format =
-        Extended
+        Full
 Output_File_Name = 
 	AdvectDiffuse2D/UnitTests/QuadBlockData/Current_HighOrder_Residual_Study
 

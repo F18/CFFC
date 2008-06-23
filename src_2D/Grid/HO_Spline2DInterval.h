@@ -105,6 +105,8 @@ public:
 
   //! Copy the array of Gauss quadrature points used for flux calculation in the provided container
   void CopyGQPoints(Vector2D *CopyGQP){ for (int i=0; i<NumGQPoints(); ++i) CopyGQP[i] = GQP[i]; }
+  //! Copy the array of Gauss quadrature points used for flux calculation in the provided array container
+  void CopyGQPoints(std::vector<Vector2D> &CopyGQP){ for (int i=0; i<NumGQPoints(); ++i) CopyGQP.push_back(GQP[i]); }
 
   /*! 
    * Get a specific Gauss quadrature point location. 
@@ -121,6 +123,11 @@ public:
    */
   const Vector2D& NormalGQPoint(const int &Position) const {return NormalGQP[Position-1];}
   Vector2D& NormalGQPoint(const int &Position) {return NormalGQP[Position-1];}
+
+  //! Copy the array of normals at the Gauss quadrature points used for flux calculation in the provided container
+  void CopyNormalGQPoints(Vector2D *CopyNormal){ for (int i=0; i<NumGQPoints(); ++i) CopyNormal[i] = NormalGQP[i]; }
+  //! Copy the array of normals at the Gauss quadrature points used for flux calculation in the provided array container
+  void CopyNormalGQPoints(std::vector<Vector2D> &CopyNormal){ for (int i=0; i<NumGQPoints(); ++i) CopyNormal.push_back(NormalGQP[i]);}
 
   //! Get the array of Gauss quadrature points used for contour integration.
   const Vector2D* GQPointContourIntegral(void) const {return GQP_ContourInt;}

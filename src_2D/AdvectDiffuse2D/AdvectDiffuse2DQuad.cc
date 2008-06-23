@@ -45,7 +45,8 @@ AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(void):
   AssessAccuracy(this),
   Ref_State_BC_North(0.0), Ref_State_BC_South(0.0),
   Ref_State_BC_East(0.0), Ref_State_BC_West(0.0),
-  HO_Ptr(NULL), NumberOfHighOrderVariables(0)
+  HO_Ptr(NULL), NumberOfHighOrderVariables(0),
+  Positivity_Coeffs(NULL), UseSpecialStencil(NULL)
 {
 
   Freeze_Limiter = OFF;
@@ -57,6 +58,7 @@ AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(void):
   dUdx = NULL; dUdy = NULL; phi = NULL; Uo = NULL;
   FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
   UoN = NULL; UoS = NULL; UoE = NULL; UoW = NULL;
+  HO_UoN = NULL; HO_UoS = NULL; HO_UoE = NULL; HO_UoW = NULL;
 
   // Set the pointers in the solution state to the velocity, diffusion and source term fields.
   // These pointes are static variables in the state class.
@@ -82,6 +84,7 @@ AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(const AdvectDiffuse2D_Qua
   Uo = Soln.Uo;
   FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
   UoN = Soln.UoN; UoS = Soln.UoS; UoE = Soln.UoE; UoW = Soln.UoW;
+  HO_UoN = Soln.HO_UoN; HO_UoS = Soln.HO_UoS; HO_UoE = Soln.HO_UoE; HO_UoW = Soln.HO_UoW;
   Ref_State_BC_North = Soln.Ref_State_BC_North;
   Ref_State_BC_South = Soln.Ref_State_BC_South;
   Ref_State_BC_East = Soln.Ref_State_BC_East;
@@ -89,6 +92,8 @@ AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(const AdvectDiffuse2D_Qua
   Freeze_Limiter = Soln.Freeze_Limiter;
   HO_Ptr = Soln.HO_Ptr;
   NumberOfHighOrderVariables = Soln.NumberOfHighOrderVariables;
+  Positivity_Coeffs = Soln.Positivity_Coeffs;
+  UseSpecialStencil = Soln.UseSpecialStencil;
 }
 
 /*****************************************************//**
@@ -149,6 +154,33 @@ AdvectDiffuse2D_Quad_Block & AdvectDiffuse2D_Quad_Block::operator =(const Advect
       UoS[i] = Soln.UoS[i];
       UoN[i] = Soln.UoN[i];
     }/* endfor */
+
+    // allocate memory for high-order boundary conditions.
+    allocate_HighOrder_BoundaryConditions();
+
+    for (j  = JCl ; j <= JCu ; ++j ) {
+      // Copy West high-order BCs
+      if (HO_UoW != NULL){
+	HO_UoW[j] = Soln.HO_UoW[j];
+      }
+
+      // Copy East high-order BCs
+      if (HO_UoE != NULL){
+	HO_UoE[j] = Soln.HO_UoE[j];
+      }
+    }
+
+    for ( i = ICl ; i <= ICu ; ++i ) {
+      // Copy South high-order BCs
+      if (HO_UoS != NULL){
+	HO_UoS[i] = Soln.HO_UoS[i];
+      }
+      
+      // Copy North high-order BCs
+      if (HO_UoN != NULL){
+	HO_UoN[i] = Soln.HO_UoN[i];
+      }
+    }
     
     // Copy the high-order objects
     for (k = 1; k <= NumberOfHighOrderVariables; ++k){
@@ -156,6 +188,12 @@ AdvectDiffuse2D_Quad_Block & AdvectDiffuse2D_Quad_Block::operator =(const Advect
     }/* endfor */
     
   }/* endif */
+
+  // Copy boundary reference states
+  Ref_State_BC_North = Soln.Ref_State_BC_North;
+  Ref_State_BC_South = Soln.Ref_State_BC_South;
+  Ref_State_BC_East = Soln.Ref_State_BC_East;
+  Ref_State_BC_West = Soln.Ref_State_BC_West;  
 
   // Reset accuracy assessment flag
   AssessAccuracy.ResetForNewCalculation();
@@ -183,6 +221,8 @@ void AdvectDiffuse2D_Quad_Block::allocate(const int &Ni, const int &Nj, const in
     U = new AdvectDiffuse2D_State*[NCi]; dt = new double*[NCi]; dUdt = new AdvectDiffuse2D_State**[NCi]; 
     dUdx = new AdvectDiffuse2D_State*[NCi]; dUdy = new AdvectDiffuse2D_State*[NCi]; 
     phi = new AdvectDiffuse2D_State*[NCi]; Uo = new AdvectDiffuse2D_State*[NCi];
+    Positivity_Coeffs = new double*[NCi]; 
+    UseSpecialStencil = new bool*[NCi];
     for ( i = 0; i <= NCi-1 ; ++i ) {
       U[i] = new AdvectDiffuse2D_State[NCj]; 
       dt[i] = new double[NCj]; dUdt[i] = new AdvectDiffuse2D_State*[NCj];
@@ -191,6 +231,8 @@ void AdvectDiffuse2D_Quad_Block::allocate(const int &Ni, const int &Nj, const in
       dUdx[i] = new AdvectDiffuse2D_State[NCj]; dUdy[i] = new AdvectDiffuse2D_State[NCj]; 
       phi[i] = new AdvectDiffuse2D_State[NCj];
       Uo[i] = new AdvectDiffuse2D_State[NCj];
+      Positivity_Coeffs[i] = new double [NCj];
+      UseSpecialStencil[i] = new bool [NCj];
     } /* endfor */
     FluxN = new AdvectDiffuse2D_State[NCi]; FluxS = new AdvectDiffuse2D_State[NCi];
     FluxE = new AdvectDiffuse2D_State[NCj]; FluxW = new AdvectDiffuse2D_State[NCj];
@@ -206,6 +248,8 @@ void AdvectDiffuse2D_Quad_Block::allocate(const int &Ni, const int &Nj, const in
 	phi[i][j].Vacuum();
 	Uo[i][j].Vacuum();
 	dt[i][j] = ZERO;
+	Positivity_Coeffs[i][j] = ONE; // When calculated, these coefficients can be maximum ZERO!
+	UseSpecialStencil[i][j] = false; // Use the central stencil
       } /* endfor */
     } /* endfor */
 
@@ -256,6 +300,99 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder(const int & NumberOfReconstr
   }// endif
 }
 
+/***************************************************//**
+ * Allocate memory for high-order boundary conditions
+ * if the corresponding boundary reconstruction is 
+ * constrained.
+ * Assume that Grid and block indexes have been setup!
+ *******************************************************/
+void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
+
+  int i,j;
+
+  // allocate North BCs
+  if ( Grid.IsNorthBoundaryReconstructionConstrained() ){
+
+    if (HO_UoN != NULL){
+      // deallocate memory
+      delete [] HO_UoN; HO_UoN = NULL;
+    }
+
+    // allocate new memory
+    HO_UoN = new BC_Type[NCi];
+
+    // allocate BC memory for each flux calculation point
+    for (i=ICl; i<=ICu; ++i){
+      BC_NorthCell(i).allocate(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu));
+    }
+
+  } else if ( HO_UoN != NULL){
+    // deallocate memory
+    delete [] HO_UoN; HO_UoN = NULL;
+  }
+
+  // allocate South BCs
+  if ( Grid.IsSouthBoundaryReconstructionConstrained() ){
+
+    if (HO_UoS != NULL){
+      // deallocate memory
+      delete [] HO_UoS; HO_UoS = NULL;
+    }
+
+    // allocate new memory    
+    HO_UoS = new BC_Type[NCi];
+    
+    // allocate BC memory for each flux calculation point
+    for (i=ICl; i<=ICu; ++i){
+      BC_SouthCell(i).allocate(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl));
+    }    
+  } else if (HO_UoS != NULL){
+    // deallocate memory
+    delete [] HO_UoS; HO_UoS = NULL;
+  }
+
+  // allocate East BCs
+  if ( Grid.IsEastBoundaryReconstructionConstrained() ){
+
+    if (HO_UoE != NULL){
+      // deallocate memory
+      delete [] HO_UoE; HO_UoE = NULL;
+    }
+
+    // allocate new memory    
+    HO_UoE = new BC_Type[NCj];
+
+    // allocate BC memory for each flux calculation point
+    for (j=JCl; j<=JCu; ++j){
+      BC_EastCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j));
+    }
+  } else if (HO_UoE != NULL){
+    // deallocate memory
+    delete [] HO_UoE; HO_UoE = NULL;
+  }
+
+  // allocate West BCs
+  if ( Grid.IsWestBoundaryReconstructionConstrained() ){
+
+    if (HO_UoW != NULL){
+      // deallocate memory
+      delete [] HO_UoW; HO_UoW = NULL;
+    }
+
+    // allocate new memory    
+    HO_UoW = new BC_Type[NCj];
+
+    // allocate BC memory for each flux calculation point
+    for (j=JCl; j<=JCu; ++j){
+      BC_WestCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j));
+    }
+  } else if (HO_UoW != NULL){
+    // deallocate memory
+    delete [] HO_UoW; HO_UoW = NULL;
+  }
+
+}
+
 /*********************//**
  * Deallocate memory.   
  ***********************/
@@ -270,6 +407,8 @@ void AdvectDiffuse2D_Quad_Block::deallocate(void) {
       delete []dUdt[i]; dUdt[i] = NULL;
       delete []dUdx[i]; dUdx[i] = NULL; delete []dUdy[i]; dUdy[i] = NULL;
       delete []phi[i]; phi[i] = NULL; delete []Uo[i]; Uo[i] = NULL;
+      delete []Positivity_Coeffs[i]; Positivity_Coeffs[i] = NULL;
+      delete []UseSpecialStencil[i]; UseSpecialStencil[i] = NULL;
     } /* endfor */
     delete []U; U = NULL; delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
     delete []dUdx; dUdx = NULL; delete []dUdy; dUdy = NULL; 
@@ -278,9 +417,12 @@ void AdvectDiffuse2D_Quad_Block::deallocate(void) {
     delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
     delete []UoN; UoN = NULL; delete []UoS; UoS = NULL;
     delete []UoE; UoE = NULL; delete []UoW; UoW = NULL;
+    delete []Positivity_Coeffs; Positivity_Coeffs = NULL;
+    delete []UseSpecialStencil; UseSpecialStencil = NULL;
     NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
 
     deallocate_HighOrder();
+    deallocate_HighOrder_BoundaryConditions();
     deallocate_U_Nodes();
   }
 }
@@ -291,6 +433,24 @@ void AdvectDiffuse2D_Quad_Block::deallocate(void) {
 void AdvectDiffuse2D_Quad_Block::deallocate_HighOrder(void) {
   delete []HO_Ptr; HO_Ptr = NULL;
   NumberOfHighOrderVariables = 0;
+}
+
+/****************************************************//**
+ * Deallocate memory for high-order boundary conditions
+ *******************************************************/
+void AdvectDiffuse2D_Quad_Block::deallocate_HighOrder_BoundaryConditions(void) {
+  if (HO_UoN != NULL){
+    delete [] HO_UoN; HO_UoN = NULL;
+  }
+  if (HO_UoS != NULL){
+    delete [] HO_UoS; HO_UoS = NULL;
+  }
+  if (HO_UoE != NULL){
+    delete [] HO_UoE; HO_UoE = NULL;
+  }
+  if (HO_UoW != NULL){
+    delete [] HO_UoW; HO_UoW = NULL;
+  }
 }
 
 /***********************//**
@@ -1509,7 +1669,7 @@ Set_Boundary_Reference_States_Based_On_Input(const AdvectDiffuse2D_Input_Paramet
 					   IP.Ref_State_BC_East,
 					   IP.Ref_State_BC_West);
 
-  // Set boundary reference states for particular bondary condition types
+  // Set boundary reference states for particular boundary condition types
   Set_Boundary_Reference_States();
 }
 
@@ -1609,7 +1769,8 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
 
     default:
       // Leave the values unchanged
-      UoW[j];
+      // UoW[j];
+      break;
     }
 
     // === Set reference data for UoE ===
@@ -1652,7 +1813,8 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
 
     default:
       // Leave the values unchanged
-      UoE[j];
+      // UoE[j];
+      break;
     } // endswitch
   } // endfor(j)
 
@@ -1698,7 +1860,8 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
 
     default:
       // Leave the values unchanged
-      UoS[i];
+      // UoS[i];
+      break;
     }
 
     // === Set reference data for UoN ===
@@ -1741,7 +1904,8 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
 
     default:
       // Leave the values unchanged
-      UoN[i];
+      // UoN[i];
+      break;
     } // endswitch
   } // enfor(i)
 
@@ -2334,6 +2498,10 @@ istream &operator >> (istream &in_file,
     in_file >> SolnBlk.UoS[i];
     in_file >> SolnBlk.UoN[i];
   } /* endfor */
+
+  // Allocate memory for the high-order boundary conditions (the values don't need to be read)
+  SolnBlk.allocate_HighOrder_BoundaryConditions();
+
   in_file.setf(ios::skipws);
 
   // Read the high-order variables
@@ -2361,14 +2529,14 @@ istream &operator >> (istream &in_file,
  * Loads send message buffer.
  ********************************/
 int AdvectDiffuse2D_Quad_Block::LoadSendBuffer(double *buffer,
-						   int &buffer_count,
-						   const int buffer_size,
-						   const int i_min, 
-						   const int i_max,
-						   const int i_inc,
-						   const int j_min, 
-						   const int j_max,
-						   const int j_inc) {
+					       int &buffer_count,
+					       const int buffer_size,
+					       const int i_min, 
+					       const int i_max,
+					       const int i_inc,
+					       const int j_min, 
+					       const int j_max,
+					       const int j_inc) {
   int i, j, k;
   for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
@@ -2386,14 +2554,14 @@ int AdvectDiffuse2D_Quad_Block::LoadSendBuffer(double *buffer,
  * Loads send message buffer for fine to coarse block message passing.          
  *******************************************************************************/
 int AdvectDiffuse2D_Quad_Block::LoadSendBuffer_F2C(double *buffer,
-						       int &buffer_count,
-						       const int buffer_size,
-						       const int i_min, 
-						       const int i_max,
-						       const int i_inc,
-						       const int j_min, 
-						       const int j_max,
-						       const int j_inc) {
+						   int &buffer_count,
+						   const int buffer_size,
+						   const int i_min, 
+						   const int i_max,
+						   const int i_inc,
+						   const int j_min, 
+						   const int j_max,
+						   const int j_inc) {
   int i, j, k;
   for ( j  = j_min ; ((j_inc+2)/4) ? (j < j_max):(j > j_max) ; j += j_inc ) {
     for ( i = i_min ;  ((i_inc+2)/4) ? (i < i_max):(i > i_max) ; i += i_inc ) {
@@ -2414,117 +2582,236 @@ int AdvectDiffuse2D_Quad_Block::LoadSendBuffer_F2C(double *buffer,
   return(0);
 }
 
-/*******************************************************************************
+/****************************************************************************//**
  * Loads send message buffer for coarse to fine block message passing.         
+ * \todo Check efficiency for high-order message passing!
  *******************************************************************************/
 int AdvectDiffuse2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
-						       int &buffer_count,
-						       const int buffer_size,
-						       const int i_min, 
-						       const int i_max,
-						       const int i_inc,
-						       const int j_min, 
-						       const int j_max,
-						       const int j_inc,
-						       const int face,
-						       const int sector) {
+						   int &buffer_count,
+						   const int buffer_size,
+						   const int i_min, 
+						   const int i_max,
+						   const int i_inc,
+						   const int j_min, 
+						   const int j_max,
+						   const int j_inc,
+						   const int face,
+						   const int sector) {
   int i, j, k;
   Vector2D dX;
   double ufine;
   AdvectDiffuse2D_State Ufine;
   int Limiter = LIMITER_VENKATAKRISHNAN;
+  Node2D_HO MidN,MidS,MidE,MidW,CC;
 
   if (j_inc > 0) {
     if (i_inc > 0) {
-      for ( j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
-	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	  // Perform limited linear least squares reconstruction in cell (i, j_min).
-	  SubcellReconstruction(i, j, Limiter);
-	  // Evaluate SW sub (fine) cell values if required.
-	  if (!(face == NORTH && sector == WEST && Nghost%2 && j == j_min) &&
-	      !(face == NORTH && sector == EAST && Nghost%2 && (i == i_min || j == j_min)) &&
-	      !(face == SOUTH && sector == EAST && Nghost%2 && i == i_min) &&
-	      !(face == EAST && sector == NORTH && Nghost%2 && (i == i_min || j == j_min)) &&
-	      !(face == EAST && sector == SOUTH && Nghost%2 && i == i_min) &&
-	      !(face == WEST && sector == NORTH && Nghost%2 && j == j_min) &&
-	      !(face == NORTH_EAST && Nghost%2 && (i == i_min || j == j_min)) &&
-	      !(face == NORTH_WEST && Nghost%2 && j == j_min) &&
-	      !(face == SOUTH_EAST && Nghost%2 && i == i_min)) {
-	    dX = Grid.centroidSW(i,j) - Grid.Cell[i][j].Xc;
-	    Ufine = U[i][j] + ( (phi[i][j]^dUdx[i][j])*dX.x +
-				(phi[i][j]^dUdy[i][j])*dX.y );
-	    for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
-	      buffer_count++;
-	      if (buffer_count >= buffer_size) return(1);
-	      buffer[buffer_count] = Ufine[k];
-	    } /* endfor (k) */
-	  } /* endif */
-	  // Evaluate SE sub (fine) cell values if required.
-	  if (!(face == NORTH && sector == WEST && Nghost%2 && (i == i_max || j == j_min)) &&
-	      !(face == NORTH && sector == EAST && Nghost%2 && j == j_min) &&
-	      !(face == SOUTH && sector == WEST && Nghost%2 && i == i_max) &&
-	      !(face == EAST && sector == NORTH && Nghost%2 && j == j_min) &&
-	      !(face == WEST && sector == NORTH && Nghost%2 && (i == i_max || j == j_min)) &&
-	      !(face == WEST && sector == SOUTH && Nghost%2 && i == i_max) &&
-	      !(face == NORTH_EAST && Nghost%2 && j == j_min) &&
-	      !(face == NORTH_WEST && Nghost%2 && (i == i_max || j == j_min)) &&
-	      !(face == SOUTH_WEST && Nghost%2 && i == i_max)) {
-	    dX = Grid.centroidSE(i,j) - Grid.Cell[i][j].Xc;
-	    Ufine = U[i][j] + ( (phi[i][j]^dUdx[i][j])*dX.x +
-				(phi[i][j]^dUdy[i][j])*dX.y );
-	    for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
-	      buffer_count++;
-	      if (buffer_count >= buffer_size) return(1);
-	      buffer[buffer_count] = Ufine[k];
-	    } /* endfor (k) */
-	  } /* endif */
+
+      if (CENO_Execution_Mode::USE_CENO_ALGORITHM &&
+	  CENO_Execution_Mode::HIGH_ORDER_MESSAGE_PASSING){ // High-order message passing
+
+	// Make sure that reconstruction is done for this block
+	HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(*this,
+								    CENO_Execution_Mode::Limiter);
+
+	for ( j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
+	  for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
+	    // Fill in the first row of ghost cells
+	    // Set location for the midpoint of every face and the centroid of the coarse cell
+	    MidN.setloc(Grid.xfaceN(i,j));
+	    MidS.setloc(Grid.xfaceS(i,j));
+	    MidE.setloc(Grid.xfaceE(i,j));
+	    MidW.setloc(Grid.xfaceW(i,j));
+	    CC.setloc(Grid.CellCentroid(i,j));
+
+	    // Evaluate SW sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == WEST && Nghost%2 && j == j_min) &&
+		!(face == NORTH && sector == EAST && Nghost%2 && (i == i_min || j == j_min)) &&
+		!(face == SOUTH && sector == EAST && Nghost%2 && i == i_min) &&
+		!(face == EAST && sector == NORTH && Nghost%2 && (i == i_min || j == j_min)) &&
+		!(face == EAST && sector == SOUTH && Nghost%2 && i == i_min) &&
+		!(face == WEST && sector == NORTH && Nghost%2 && j == j_min) &&
+		!(face == NORTH_EAST && Nghost%2 && (i == i_min || j == j_min)) &&
+		!(face == NORTH_WEST && Nghost%2 && j == j_min) &&
+		!(face == SOUTH_EAST && Nghost%2 && i == i_min)) {
+
+	      // Integrate over the domain of the SW subcell and divide by the area of the subdomain
+	      Ufine = (HighOrderVariable(0).IntegrateCellReconstructionOverQuadDomain(i,j,Grid.nodeSW(i,j),MidW,CC,MidS)/
+		       Grid.area(Grid.nodeSW(i,j),MidW,CC,MidS));
+	      for ( k = 1 ; k <= NUM_VAR_ADVECTDIFFUSE2D; ++ k) {
+		buffer_count++;
+		if (buffer_count >= buffer_size) return(1);
+		buffer[buffer_count] = Ufine[k];
+	      } /* endfor */
+	    } /* endif */
+	    // Evaluate SE sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == WEST && Nghost%2 && (i == i_max || j == j_min)) &&
+		!(face == NORTH && sector == EAST && Nghost%2 && j == j_min) &&
+		!(face == SOUTH && sector == WEST && Nghost%2 && i == i_max) &&
+		!(face == EAST && sector == NORTH && Nghost%2 && j == j_min) &&
+		!(face == WEST && sector == NORTH && Nghost%2 && (i == i_max || j == j_min)) &&
+		!(face == WEST && sector == SOUTH && Nghost%2 && i == i_max) &&
+		!(face == NORTH_EAST && Nghost%2 && j == j_min) &&
+		!(face == NORTH_WEST && Nghost%2 && (i == i_max || j == j_min)) &&
+		!(face == SOUTH_WEST && Nghost%2 && i == i_max)) {
+
+	      // Integrate over the domain of the SE subcell and divide by the area of the subdomain
+	      Ufine = (HighOrderVariable(0).IntegrateCellReconstructionOverQuadDomain(i,j,MidS,CC,MidE,Grid.nodeSE(i,j))/
+		       Grid.area(MidS,CC,MidE,Grid.nodeSE(i,j)));
+	      for ( k = 1 ; k <= NUM_VAR_ADVECTDIFFUSE2D; ++ k) {
+		buffer_count++;
+		if (buffer_count >= buffer_size) return(1);
+		buffer[buffer_count] = Ufine[k];
+	      } /* endfor */
+	    } /* endif */
+	  } /* endfor */
+
+	  for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
+	    // Fill in the next row of ghost cells
+	    // Set location for the midpoint of every face and the centroid of the coarse cell
+	    MidN.setloc(Grid.xfaceN(i,j));
+	    MidS.setloc(Grid.xfaceS(i,j));
+	    MidE.setloc(Grid.xfaceE(i,j));
+	    MidW.setloc(Grid.xfaceW(i,j));
+	    CC.setloc(Grid.CellCentroid(i,j));
+
+	    // Evaluate NW sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == EAST && Nghost%2 && i == i_min) &&
+		!(face == SOUTH && sector == EAST && Nghost%2 && (i == i_min || j == j_max)) &&
+		!(face == SOUTH && sector == WEST && Nghost%2 && j == j_max) &&
+		!(face == EAST && sector == NORTH && Nghost%2 && i == i_min) &&
+		!(face == EAST && sector == SOUTH && Nghost%2 && (i == i_min || j == j_max)) &&
+		!(face == WEST && sector == SOUTH && Nghost%2 && j == j_max) &&
+		!(face == NORTH_EAST && Nghost%2 && i == i_min) &&
+		!(face == SOUTH_EAST && Nghost%2 && (i == i_min || j == j_max)) &&
+		!(face == SOUTH_WEST && Nghost%2 && j == j_max)) {
+
+	      // Integrate over the domain of the NW subcell and divide by the area of the subdomain
+	      Ufine = (HighOrderVariable(0).IntegrateCellReconstructionOverQuadDomain(i,j,MidW,Grid.nodeNW(i,j),MidN,CC)/
+		       Grid.area(MidW,Grid.nodeNW(i,j),MidN,CC));
+	      for ( k = 1 ; k <= NUM_VAR_ADVECTDIFFUSE2D; ++ k) { 
+		buffer_count++;
+		if (buffer_count >= buffer_size) return(1);
+		buffer[buffer_count] = Ufine[k];
+	      } /* endfor */
+	    } /* endif */
+	    // Evaluate NE sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == WEST && Nghost%2 && i == i_max) &&
+		!(face == SOUTH && sector == EAST && Nghost%2 && j == j_max) &&
+		!(face == SOUTH && sector == WEST && Nghost%2 && (i == i_max || j == j_max)) &&
+		!(face == EAST && sector == SOUTH && Nghost%2 && j == j_max) &&
+		!(face == WEST && sector == NORTH && Nghost%2 && i == i_max) &&
+		!(face == WEST && sector == SOUTH && Nghost%2 && (i == i_max || j == j_max)) &&
+		!(face == NORTH_WEST && Nghost%2 && i == i_max) &&
+		!(face == SOUTH_EAST && Nghost%2 && j == j_max) &&
+		!(face == SOUTH_WEST && Nghost%2 && (i == i_max || j == j_max))) {
+
+	      // Integrate over the domain of the NE subcell and divide by the area of the subdomain
+	      Ufine = (HighOrderVariable(0).IntegrateCellReconstructionOverQuadDomain(i,j,CC,MidN,Grid.nodeNE(i,j),MidE)/
+		       Grid.area(CC,MidN,Grid.nodeNE(i,j),MidE));
+	      for ( k = 1 ; k <= NUM_VAR_ADVECTDIFFUSE2D; ++ k) {
+		buffer_count++;
+		if (buffer_count >= buffer_size) return(1);
+		buffer[buffer_count] = Ufine[k];
+	      } /* endfor */
+	    } /* endif */
+	  } /* endfor */
 	} /* endfor */
-	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	  // Evaluate NW sub (fine) cell values if required.
-	  if (!(face == NORTH && sector == EAST && Nghost%2 && i == i_min) &&
-	      !(face == SOUTH && sector == EAST && Nghost%2 && (i == i_min || j == j_max)) &&
-	      !(face == SOUTH && sector == WEST && Nghost%2 && j == j_max) &&
-	      !(face == EAST && sector == NORTH && Nghost%2 && i == i_min) &&
-	      !(face == EAST && sector == SOUTH && Nghost%2 && (i == i_min || j == j_max)) &&
-	      !(face == WEST && sector == SOUTH && Nghost%2 && j == j_max) &&
-	      !(face == NORTH_EAST && Nghost%2 && i == i_min) &&
-	      !(face == SOUTH_EAST && Nghost%2 && (i == i_min || j == j_max)) &&
-	      !(face == SOUTH_WEST && Nghost%2 && j == j_max)) {
-	    dX = Grid.centroidNW(i,j) - Grid.Cell[i][j].Xc;
-	    Ufine = U[i][j] + ( (phi[i][j]^dUdx[i][j])*dX.x +
-				(phi[i][j]^dUdy[i][j])*dX.y );
-	    for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
-	      buffer_count++;
-	      if (buffer_count >= buffer_size) return(1);
-	      buffer[buffer_count] = Ufine[k];
-	    } /* endfor (k) */
-	  } /* endif */
-	  // Evaluate NE sub (fine) cell values if required.
-	  if (!(face == NORTH && sector == WEST && Nghost%2 && i == i_max) &&
-	      !(face == SOUTH && sector == EAST && Nghost%2 && j == j_max) &&
-	      !(face == SOUTH && sector == WEST && Nghost%2 && (i == i_max || j == j_max)) &&
-	      !(face == EAST && sector == SOUTH && Nghost%2 && j == j_max) &&
-	      !(face == WEST && sector == NORTH && Nghost%2 && i == i_max) &&
-	      !(face == WEST && sector == SOUTH && Nghost%2 && (i == i_max || j == j_max)) &&
-	      !(face == NORTH_WEST && Nghost%2 && i == i_max) &&
-	      !(face == SOUTH_EAST && Nghost%2 && j == j_max) &&
-	      !(face == SOUTH_WEST && Nghost%2 && (i == i_max || j == j_max))) {
-	    dX = Grid.centroidNE(i,j) - Grid.Cell[i][j].Xc;
-	    Ufine = U[i][j] + ( (phi[i][j]^dUdx[i][j])*dX.x +
-				(phi[i][j]^dUdy[i][j])*dX.y );
-	    for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
-	      buffer_count++;
-	      if (buffer_count >= buffer_size) return(1);
-	      buffer[buffer_count] = Ufine[k];
-	    } /* endfor (k) */
-	  } /* endif */
+	
+      } else {            // Lower-order
+
+	for ( j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
+	  for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
+	    // Perform limited linear least squares reconstruction in cell (i, j_min).
+	    SubcellReconstruction(i, j, Limiter);
+	    // Evaluate SW sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == WEST && Nghost%2 && j == j_min) &&
+		!(face == NORTH && sector == EAST && Nghost%2 && (i == i_min || j == j_min)) &&
+		!(face == SOUTH && sector == EAST && Nghost%2 && i == i_min) &&
+		!(face == EAST && sector == NORTH && Nghost%2 && (i == i_min || j == j_min)) &&
+		!(face == EAST && sector == SOUTH && Nghost%2 && i == i_min) &&
+		!(face == WEST && sector == NORTH && Nghost%2 && j == j_min) &&
+		!(face == NORTH_EAST && Nghost%2 && (i == i_min || j == j_min)) &&
+		!(face == NORTH_WEST && Nghost%2 && j == j_min) &&
+		!(face == SOUTH_EAST && Nghost%2 && i == i_min)) {
+	      dX = Grid.centroidSW(i,j) - Grid.Cell[i][j].Xc;
+	      Ufine = U[i][j] + ( (phi[i][j]^dUdx[i][j])*dX.x +
+				  (phi[i][j]^dUdy[i][j])*dX.y );
+	      for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+		buffer_count++;
+		if (buffer_count >= buffer_size) return(1);
+		buffer[buffer_count] = Ufine[k];
+	      } /* endfor (k) */
+	    } /* endif */
+	    // Evaluate SE sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == WEST && Nghost%2 && (i == i_max || j == j_min)) &&
+		!(face == NORTH && sector == EAST && Nghost%2 && j == j_min) &&
+		!(face == SOUTH && sector == WEST && Nghost%2 && i == i_max) &&
+		!(face == EAST && sector == NORTH && Nghost%2 && j == j_min) &&
+		!(face == WEST && sector == NORTH && Nghost%2 && (i == i_max || j == j_min)) &&
+		!(face == WEST && sector == SOUTH && Nghost%2 && i == i_max) &&
+		!(face == NORTH_EAST && Nghost%2 && j == j_min) &&
+		!(face == NORTH_WEST && Nghost%2 && (i == i_max || j == j_min)) &&
+		!(face == SOUTH_WEST && Nghost%2 && i == i_max)) {
+	      dX = Grid.centroidSE(i,j) - Grid.Cell[i][j].Xc;
+	      Ufine = U[i][j] + ( (phi[i][j]^dUdx[i][j])*dX.x +
+				  (phi[i][j]^dUdy[i][j])*dX.y );
+	      for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+		buffer_count++;
+		if (buffer_count >= buffer_size) return(1);
+		buffer[buffer_count] = Ufine[k];
+	      } /* endfor (k) */
+	    } /* endif */
+	  } /* endfor */
+	  for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
+	    // Evaluate NW sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == EAST && Nghost%2 && i == i_min) &&
+		!(face == SOUTH && sector == EAST && Nghost%2 && (i == i_min || j == j_max)) &&
+		!(face == SOUTH && sector == WEST && Nghost%2 && j == j_max) &&
+		!(face == EAST && sector == NORTH && Nghost%2 && i == i_min) &&
+		!(face == EAST && sector == SOUTH && Nghost%2 && (i == i_min || j == j_max)) &&
+		!(face == WEST && sector == SOUTH && Nghost%2 && j == j_max) &&
+		!(face == NORTH_EAST && Nghost%2 && i == i_min) &&
+		!(face == SOUTH_EAST && Nghost%2 && (i == i_min || j == j_max)) &&
+		!(face == SOUTH_WEST && Nghost%2 && j == j_max)) {
+	      dX = Grid.centroidNW(i,j) - Grid.Cell[i][j].Xc;
+	      Ufine = U[i][j] + ( (phi[i][j]^dUdx[i][j])*dX.x +
+				  (phi[i][j]^dUdy[i][j])*dX.y );
+	      for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+		buffer_count++;
+		if (buffer_count >= buffer_size) return(1);
+		buffer[buffer_count] = Ufine[k];
+	      } /* endfor (k) */
+	    } /* endif */
+	    // Evaluate NE sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == WEST && Nghost%2 && i == i_max) &&
+		!(face == SOUTH && sector == EAST && Nghost%2 && j == j_max) &&
+		!(face == SOUTH && sector == WEST && Nghost%2 && (i == i_max || j == j_max)) &&
+		!(face == EAST && sector == SOUTH && Nghost%2 && j == j_max) &&
+		!(face == WEST && sector == NORTH && Nghost%2 && i == i_max) &&
+		!(face == WEST && sector == SOUTH && Nghost%2 && (i == i_max || j == j_max)) &&
+		!(face == NORTH_WEST && Nghost%2 && i == i_max) &&
+		!(face == SOUTH_EAST && Nghost%2 && j == j_max) &&
+		!(face == SOUTH_WEST && Nghost%2 && (i == i_max || j == j_max))) {
+	      dX = Grid.centroidNE(i,j) - Grid.Cell[i][j].Xc;
+	      Ufine = U[i][j] + ( (phi[i][j]^dUdx[i][j])*dX.x +
+				  (phi[i][j]^dUdy[i][j])*dX.y );
+	      for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+		buffer_count++;
+		if (buffer_count >= buffer_size) return(1);
+		buffer[buffer_count] = Ufine[k];
+	      } /* endfor (k) */
+	    } /* endif */
+	  } /* endfor */
 	} /* endfor */
-      } /* endfor */
+
+      }	//endif (CENO_Execution_Mode::Use_CENO_ALGORITHM)
 
       return 0;
 
     } /* endif */
   } /* endif */
+
 
   // Load send message buffer for the coarse-to-fine grid for cases in
   // which one (or both) of the increments is negative.  Only for two
@@ -2895,6 +3182,31 @@ int AdvectDiffuse2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
  * Unloads receive buffer.
  *******************************************************************************/
 int AdvectDiffuse2D_Quad_Block::UnloadReceiveBuffer(double *buffer,
+						    int &buffer_count,
+						    const int buffer_size,
+						    const int i_min, 
+						    const int i_max,
+						    const int i_inc,
+						    const int j_min, 
+						    const int j_max,
+						    const int j_inc) {
+  int i, j, k;
+  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
+    for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
+      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	buffer_count++;
+	if (buffer_count >= buffer_size) return 1;
+	U[i][j][k] = buffer[buffer_count];
+      } /* endfor (k) */
+    } /* endfor */
+  } /* endfor */
+  return(0);
+}
+
+/***********************************************************************************
+ * Unloads receive message buffer for fine to coarse block message passing.
+ ***********************************************************************************/
+int AdvectDiffuse2D_Quad_Block::UnloadReceiveBuffer_F2C(double *buffer,
 							int &buffer_count,
 							const int buffer_size,
 							const int i_min, 
@@ -2917,42 +3229,17 @@ int AdvectDiffuse2D_Quad_Block::UnloadReceiveBuffer(double *buffer,
 }
 
 /***********************************************************************************
- * Unloads receive message buffer for fine to coarse block message passing.
- ***********************************************************************************/
-int AdvectDiffuse2D_Quad_Block::UnloadReceiveBuffer_F2C(double *buffer,
-							    int &buffer_count,
-							    const int buffer_size,
-							    const int i_min, 
-							    const int i_max,
-							    const int i_inc,
-							    const int j_min, 
-							    const int j_max,
-							    const int j_inc) {
-  int i, j, k;
-  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-    for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
-	buffer_count++;
-	if (buffer_count >= buffer_size) return 1;
-	U[i][j][k] = buffer[buffer_count];
-      } /* endfor (k) */
-    } /* endfor */
-  } /* endfor */
-  return(0);
-}
-
-/***********************************************************************************
  * Unloads receive message buffer for coarse to fine block message passing.
  ***********************************************************************************/
 int AdvectDiffuse2D_Quad_Block::UnloadReceiveBuffer_C2F(double *buffer,
-							    int &buffer_count,
-							    const int buffer_size,
-							    const int i_min, 
-							    const int i_max,
-							    const int i_inc,
-							    const int j_min, 
-							    const int j_max,
-							    const int j_inc) {
+							int &buffer_count,
+							const int buffer_size,
+							const int i_min, 
+							const int i_max,
+							const int i_inc,
+							const int j_min, 
+							const int j_max,
+							const int j_inc) {
   int i, j, k;
   for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
@@ -2972,8 +3259,8 @@ int AdvectDiffuse2D_Quad_Block::UnloadReceiveBuffer_C2F(double *buffer,
  * the specified quadrilateral solution block.            
  **************************************************************/
 void AdvectDiffuse2D_Quad_Block::SubcellReconstruction(const int i, 
-							   const int j,
-							   const int Limiter) {
+						       const int j,
+						       const int Limiter) {
 
   int n, n_pts, i_index[8], j_index[8];
   double u0Min, u0Max, uQuad[4], phi_k;
@@ -3290,14 +3577,14 @@ void AdvectDiffuse2D_Quad_Block::SubcellReconstruction(const int i,
  * passing of conservative solution fluxes.
  ****************************************************************/
 int AdvectDiffuse2D_Quad_Block::LoadSendBuffer_Flux_F2C(double *buffer,
-							    int &buffer_count,
-							    const int buffer_size,
-							    const int i_min, 
-							    const int i_max,
-							    const int i_inc,
-							    const int j_min, 
-							    const int j_max,
-							    const int j_inc) {
+							int &buffer_count,
+							const int buffer_size,
+							const int i_min, 
+							const int i_max,
+							const int i_inc,
+							const int j_min, 
+							const int j_max,
+							const int j_inc) {
   int i, j, k;
   if (j_min == j_max && j_min == JCl) {
     for ( i = i_min ;  ((i_inc+2)/4) ? (i < i_max):(i > i_max) ; i += i_inc ) {
@@ -3340,14 +3627,14 @@ int AdvectDiffuse2D_Quad_Block::LoadSendBuffer_Flux_F2C(double *buffer,
  * block message passing of conservative solution fluxes.  
  ***********************************************************/
 int AdvectDiffuse2D_Quad_Block::UnloadReceiveBuffer_Flux_F2C(double *buffer,
-								 int &buffer_count,
-								 const int buffer_size,
-								 const int i_min, 
-								 const int i_max,
-								 const int i_inc,
-								 const int j_min, 
-								 const int j_max,
-								 const int j_inc) {
+							     int &buffer_count,
+							     const int buffer_size,
+							     const int i_min, 
+							     const int i_max,
+							     const int i_inc,
+							     const int j_min, 
+							     const int j_max,
+							     const int j_inc) {
   int i, j, k;
   if (j_min == j_max && j_min == JCl) {
     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {

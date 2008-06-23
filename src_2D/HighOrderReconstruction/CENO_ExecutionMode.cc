@@ -22,9 +22,13 @@ short CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS = OFF;	// computation of smooth
 short CENO_Execution_Mode::FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE = ON; // try to use the PWC at interface
 short CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF; // use enough layers of ghost cells
 short CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF; // compute SI with all neighbours
+short CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS = ON; //use additional constraints
+short CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = OFF; // don't extend the stencil
 short CENO_Execution_Mode::USE_LAPACK_LEAST_SQUARES = ON; // use Lapack least-squares subroutine
 int CENO_Execution_Mode::Limiter = LIMITER_VANLEER;
-
+short CENO_Execution_Mode::IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT = OFF; // don't ignore curved boundaries
+short CENO_Execution_Mode::USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA = ON; // use the smoothness indicator for CENO AMR
+short CENO_Execution_Mode::HIGH_ORDER_MESSAGE_PASSING = ON; // use high-order message passing for high-order AMR
 
 //! Set all flags to default values
 // add all flag default values to this function
@@ -40,7 +44,13 @@ void CENO_Execution_Mode::SetDefaults(void){
   FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE = ON; // try to use the PWC at interface
   CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF; // use enough layers of ghost cells to compute everything that is needed
   CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF; // compute SI with all neighbours
+  CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS = ON; // use additional constraints
+  CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = OFF; // don't extend the stencil
   USE_LAPACK_LEAST_SQUARES = ON; // use Lapack least-squares subroutine
+  IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT = OFF; // don't ignore curved boundaries
+  USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA = ON; // use the smoothness indicator for CENO AMR
+  HIGH_ORDER_MESSAGE_PASSING = ON; // use high-order message passing for high-order AMR
+  Limiter = LIMITER_VANLEER;
 }
 
 //! Print the current execution mode
@@ -107,6 +117,38 @@ void CENO_Execution_Mode::Print_Info(std::ostream & out_file){
   } else {
     out_file << "\n     -> CENO Smoothness Indicator: " << "With all neighbours";
   }
+
+  // output behaviour in for cells with constrained reconstruction
+  if (CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS == ON && 
+      CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL == OFF ){
+    out_file << "\n     -> CENO Additional Constraints: " << "Yes";
+    out_file << "\n     -> CENO Extended Biased Stencil: " << "No";
+  } else {
+    out_file << "\n     -> CENO Additional Constraints: " << "No";
+    out_file << "\n     -> CENO Extended Biased Stencil: " << "Yes";
+  }
+
+  // output accuracy assessment behaviour close to curved boundaries
+  if ( IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT == ON ){
+    out_file << "\n     -> Accuracy Measurement Near Curved Boundaries: " << "Ignore cells";
+  } else {		   
+    out_file << "\n     -> Accuracy Measurement Near Curved Boundaries: " << "Include cells";
+  }
+
+  // output high-order AMR criteria
+  if ( USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA == ON ){
+    out_file << "\n     -> High-order AMR: " << "Use Smoothness Indicator";
+  } else {
+    out_file << "\n     -> High-order AMR: " << "DON'T Use Smoothness Indicator";
+  }
+
+  // output high-order message passing
+  if ( HIGH_ORDER_MESSAGE_PASSING  == ON ){
+    out_file << "\n     -> High-order Message Passing: " << "Use high-order interpolant";
+  } else {
+    out_file << "\n     -> High-order Message Passing: " << "Use low-order interpolant";
+  }
+
 }
 
 /*!
@@ -148,9 +190,27 @@ void CENO_Execution_Mode::Broadcast(void){
   MPI::COMM_WORLD.Bcast(&CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS,
  			1, 
  			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL,
+ 			1, 
+ 			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&USE_LAPACK_LEAST_SQUARES,
  			1, 
  			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&HIGH_ORDER_MESSAGE_PASSING,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&Limiter,
+ 			1, 
+ 			MPI::SHORT, 0);  
 
 #endif
 }

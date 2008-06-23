@@ -11,6 +11,10 @@
 #include "HO_Grid2DQuad.h"	// Include 2D high-order block grid
 #include "HO_Grid2DQuad_ExecutionMode.h" // Include header file for the control class of the 2D high-order grid
 
+
+//#define MODIFY_NUMBER_OF_FLUX_CALCULATION_POINTS_AT_BOUNDARIES
+
+
 // ===== Member variables =====
 
 /*!
@@ -4660,6 +4664,11 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
 
   int i;
+  int NumGQPsPerSubinterval(NumGQP);
+
+#ifdef MODIFY_NUMBER_OF_FLUX_CALCULATION_POINTS_AT_BOUNDARIES
+  NumGQPsPerSubinterval = NumGQP + 1;
+#endif
 
   if ( !CheckExistenceOfCurvedBoundaries() ){
     // There is no need for curved boundary representation so SplineInfo(s) don't need to be updated 
@@ -4687,7 +4696,7 @@ void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
       if ( BndNorthSpline.getS(Node[INl][JNu]) > BndNorthSpline.getS(Node[INu][JNu]) ){
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndNorthSplineInfo[i].UpdateInterval(BndNorthSpline,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	  BndNorthSplineInfo[i].UpdateInterval(BndNorthSpline,Node[i][JNu],Node[i+1][JNu],NumGQPsPerSubinterval);
 	}
       } else {
 	// Copy the spline
@@ -4697,7 +4706,7 @@ void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
 
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndNorthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	  BndNorthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNu],Node[i+1][JNu],NumGQPsPerSubinterval);
 	}
       }//endif
     } // endif (North Boundary)
@@ -4716,7 +4725,7 @@ void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
       if ( BndSouthSpline.getS(Node[INl][JNl]) < BndSouthSpline.getS(Node[INu][JNl]) ){
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndSouthSplineInfo[i].UpdateInterval(BndSouthSpline,Node[i][JNl],Node[i+1][JNl],NumGQP);
+	  BndSouthSplineInfo[i].UpdateInterval(BndSouthSpline,Node[i][JNl],Node[i+1][JNl],NumGQPsPerSubinterval);
 	}
       } else {
 	// Copy the spline
@@ -4726,7 +4735,7 @@ void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
 
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndSouthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNl],Node[i+1][JNl],NumGQP);
+	  BndSouthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNl],Node[i+1][JNl],NumGQPsPerSubinterval);
 	}
       }//endif
     } // endif (South Boundary)
@@ -4745,7 +4754,7 @@ void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
       if ( BndEastSpline.getS(Node[INu][JNl]) < BndEastSpline.getS(Node[INu][JNu]) ){
 	// Update the geometric information 
 	for(i=JCl; i<=JCu; ++i){
-	  BndEastSplineInfo[i].UpdateInterval(BndEastSpline,Node[INu][i],Node[INu][i+1],NumGQP);
+	  BndEastSplineInfo[i].UpdateInterval(BndEastSpline,Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
 	}
       } else {
 	// Copy the spline
@@ -4755,7 +4764,7 @@ void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
 
 	// Update the geometric information 
 	for(i=JCl; i<=JCu; ++i){
-	  BndEastSplineInfo[i].UpdateInterval(SplineCopy,Node[INu][i],Node[INu][i+1],NumGQP);
+	  BndEastSplineInfo[i].UpdateInterval(SplineCopy,Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
 	}
       }//endif
     } // endif (East Boundary)
@@ -4774,7 +4783,7 @@ void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
       if ( BndWestSpline.getS(Node[INl][JNl]) > BndWestSpline.getS(Node[INl][JNu]) ){
 	// Update the geometric information 
 	for(i=JCl; i<=JCu; ++i){
-	  BndWestSplineInfo[i].UpdateInterval(BndWestSpline,Node[INl][i],Node[INl][i+1],NumGQP);
+	  BndWestSplineInfo[i].UpdateInterval(BndWestSpline,Node[INl][i],Node[INl][i+1],NumGQPsPerSubinterval);
 	}
       } else {
 	// Copy the spline
@@ -4784,7 +4793,7 @@ void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
 
 	// Update the geometric information 
 	for(i=JCl; i<=JCu; ++i){
-	  BndWestSplineInfo[i].UpdateInterval(SplineCopy,Node[INl][i],Node[INl][i+1],NumGQP);
+	  BndWestSplineInfo[i].UpdateInterval(SplineCopy,Node[INl][i],Node[INl][i+1],NumGQPsPerSubinterval);
 	}
       }//endif
     } // endif (West Boundary)
@@ -6631,6 +6640,12 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
   int i,j;
   bool CurvedNorthBnd, CurvedSouthBnd, CurvedEastBnd, CurvedWestBnd;
 
+  int NumGQPsPerSubinterval(NumGQP);
+
+#ifdef MODIFY_NUMBER_OF_FLUX_CALCULATION_POINTS_AT_BOUNDARIES
+  NumGQPsPerSubinterval = NumGQP + 1;
+#endif
+
   // Update cell information assuming straight boundaries (i.e. every edge of the cell is a line segment)
   for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
     for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
@@ -6676,7 +6691,7 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
       if ( BndNorthSpline.getS(Node[INl][JNu]) > BndNorthSpline.getS(Node[INu][JNu]) ){
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndNorthSplineInfo[i].UpdateInterval(BndNorthSpline,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	  BndNorthSplineInfo[i].UpdateInterval(BndNorthSpline,Node[i][JNu],Node[i+1][JNu],NumGQPsPerSubinterval);
 	}
       } else {
 	// Copy the spline
@@ -6686,7 +6701,7 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
 	
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndNorthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	  BndNorthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNu],Node[i+1][JNu],NumGQPsPerSubinterval);
 	}
       }//endif
     }// endif (North Boundary)
@@ -6704,7 +6719,7 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
       if ( BndSouthSpline.getS(Node[INl][JNl]) < BndSouthSpline.getS(Node[INu][JNl]) ){
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndSouthSplineInfo[i].UpdateInterval(BndSouthSpline,Node[i][JNl],Node[i+1][JNl],NumGQP);
+	  BndSouthSplineInfo[i].UpdateInterval(BndSouthSpline,Node[i][JNl],Node[i+1][JNl],NumGQPsPerSubinterval);
 	}
       } else {
 	// Copy the spline
@@ -6714,7 +6729,7 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
 
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndSouthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNl],Node[i+1][JNl],NumGQP);
+	  BndSouthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNl],Node[i+1][JNl],NumGQPsPerSubinterval);
 	}
       }//endif
     }// endif (South Boundary)
@@ -6732,7 +6747,7 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
       if ( BndEastSpline.getS(Node[INu][JNl]) < BndEastSpline.getS(Node[INu][JNu]) ){
 	// Update the geometric information 
 	for(i=JCl; i<=JCu; ++i){
-	  BndEastSplineInfo[i].UpdateInterval(BndEastSpline,Node[INu][i],Node[INu][i+1],NumGQP);
+	  BndEastSplineInfo[i].UpdateInterval(BndEastSpline,Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
 	}
       } else {
 	// Copy the spline
@@ -6742,7 +6757,7 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
 
 	// Update the geometric information 
 	for(i=JCl; i<=JCu; ++i){
-	  BndEastSplineInfo[i].UpdateInterval(SplineCopy,Node[INu][i],Node[INu][i+1],NumGQP);
+	  BndEastSplineInfo[i].UpdateInterval(SplineCopy,Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
 	}
       }//endif
     }// endif (East Boundary)
@@ -6760,7 +6775,7 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
       if ( BndWestSpline.getS(Node[INl][JNl]) > BndWestSpline.getS(Node[INl][JNu]) ){
 	// Update the geometric information 
 	for(i=JCl; i<=JCu; ++i){
-	  BndWestSplineInfo[i].UpdateInterval(BndWestSpline,Node[INl][i],Node[INl][i+1],NumGQP);
+	  BndWestSplineInfo[i].UpdateInterval(BndWestSpline,Node[INl][i],Node[INl][i+1],NumGQPsPerSubinterval);
 	}
       } else {
 	// Copy the spline
@@ -6770,7 +6785,7 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
 
 	// Update the geometric information 
 	for(i=JCl; i<=JCu; ++i){
-	  BndWestSplineInfo[i].UpdateInterval(SplineCopy,Node[INl][i],Node[INl][i+1],NumGQP);
+	  BndWestSplineInfo[i].UpdateInterval(SplineCopy,Node[INl][i],Node[INl][i+1],NumGQPsPerSubinterval);
 	}
       }//endif
     }// endif (West Boundary)
@@ -6940,6 +6955,12 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
 
   int i,j;
 
+  int NumGQPsPerSubinterval(NumGQP);
+
+#ifdef MODIFY_NUMBER_OF_FLUX_CALCULATION_POINTS_AT_BOUNDARIES
+  NumGQPsPerSubinterval = NumGQP + 1;
+#endif
+
   // Update cell information assuming straight boundaries (i.e. every edge of the cell is a line segment)
   for ( j = JCl; j <= JCu ; ++j) {
     for ( i = ICl; i <= ICu; ++i) {
@@ -6982,7 +7003,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
       if ( BndNorthSpline.getS(Node[INl][JNu]) > BndNorthSpline.getS(Node[INu][JNu]) ){
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndNorthSplineInfo[i].UpdateInterval(BndNorthSpline,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	  BndNorthSplineInfo[i].UpdateInterval(BndNorthSpline,Node[i][JNu],Node[i+1][JNu],NumGQPsPerSubinterval);
 	}
       } else {
 	// Copy the spline
@@ -6992,7 +7013,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
 
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndNorthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	  BndNorthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNu],Node[i+1][JNu],NumGQPsPerSubinterval);
 	}
       }//endif
 
@@ -7042,7 +7063,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
       if ( BndSouthSpline.getS(Node[INl][JNl]) < BndSouthSpline.getS(Node[INu][JNl]) ){
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndSouthSplineInfo[i].UpdateInterval(BndSouthSpline,Node[i][JNl],Node[i+1][JNl],NumGQP);
+	  BndSouthSplineInfo[i].UpdateInterval(BndSouthSpline,Node[i][JNl],Node[i+1][JNl],NumGQPsPerSubinterval);
 	}
       } else {
 	// Copy the spline
@@ -7052,7 +7073,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
 
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndSouthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNl],Node[i+1][JNl],NumGQP);
+	  BndSouthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNl],Node[i+1][JNl],NumGQPsPerSubinterval);
 	}
       }//endif
 
@@ -7102,7 +7123,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
       if ( BndEastSpline.getS(Node[INu][JNl]) < BndEastSpline.getS(Node[INu][JNu]) ){
 	// Update the geometric information 
 	for(i=JCl; i<=JCu; ++i){
-	  BndEastSplineInfo[i].UpdateInterval(BndEastSpline,Node[INu][i],Node[INu][i+1],NumGQP);
+	  BndEastSplineInfo[i].UpdateInterval(BndEastSpline,Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
 	}
       } else {
 	// Copy the spline
@@ -7112,7 +7133,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
 
 	// Update the geometric information 
 	for(i=JCl; i<=JCu; ++i){
-	  BndEastSplineInfo[i].UpdateInterval(SplineCopy,Node[INu][i],Node[INu][i+1],NumGQP);
+	  BndEastSplineInfo[i].UpdateInterval(SplineCopy,Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
 	}
       }//endif
 
@@ -7138,7 +7159,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
       if ( BndWestSpline.getS(Node[INl][JNl]) > BndWestSpline.getS(Node[INl][JNu]) ){
 	// Update the geometric information 
 	for(i=JCl; i<=JCu; ++i){
-	  BndWestSplineInfo[i].UpdateInterval(BndWestSpline,Node[INl][i],Node[INl][i+1],NumGQP);
+	  BndWestSplineInfo[i].UpdateInterval(BndWestSpline,Node[INl][i],Node[INl][i+1],NumGQPsPerSubinterval);
 	}
       } else {
 	// Copy the spline
@@ -7148,7 +7169,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
 
 	// Update the geometric information 
 	for(i=JCl; i<=JCu; ++i){
-	  BndWestSplineInfo[i].UpdateInterval(SplineCopy,Node[INl][i],Node[INl][i+1],NumGQP);
+	  BndWestSplineInfo[i].UpdateInterval(SplineCopy,Node[INl][i],Node[INl][i+1],NumGQPsPerSubinterval);
 	}
       }//endif
 

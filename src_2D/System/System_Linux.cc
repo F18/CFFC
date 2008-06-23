@@ -60,10 +60,10 @@ void System::Compress_Restart()
 {
 
   std::system("tar -cf backup.tar *.tree");
-  std::system("find ./ -name '*.soln' -print0 | xargs -0 tar -rf backup.tar");
+  std::system("find ./ -maxdepth 1 -name '*.soln' -print0 | xargs -0 tar -rf backup.tar");
   std::system("gzip -f backup.tar");
   std::system("rm -f *.tree");
-  std::system("find ./ -name '*.soln' -print0 | xargs -0 rm -f");
+  std::system("find ./ -maxdepth 1 -name '*.soln' -print0 | xargs -0 rm -f");
   return;
 
 }
@@ -85,7 +85,7 @@ void System::Uncompress_Restart()
 {
 
   std::system("rm -f *.tree");
-  std::system("find ./ -name '*.soln' -print0 | xargs -0 rm -f");
+  std::system("find ./ -maxdepth 1 -name '*.soln' -print0 | xargs -0 rm -f");
   std::system("tar -xzf backup.tar.gz");
   return;
 

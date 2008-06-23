@@ -26,7 +26,8 @@ public:
   //! Data type defining different levels of output.
   enum Output_Level_Type { Brief,    //!< Minimum level of output
 			   Detailed, //!< A more detailed output
-			   Full      //!< Complete level of output
+			   Full    , //!< Complete level of output
+			   Extended  //!< Complete level plus extra information, not necessarily part of the solution
   };
   
   //! Data type defining different levels of accuracy for the output data
@@ -53,9 +54,14 @@ public:
   //! Return true if the data must be plotted with double accuracy otherwise false
   static bool IsDoublePrecision(void){ return (OUTPUT_ACCURACY == DoublePrec) ? true: false; }
   //! Return true if the data associated with the detailed format should be output otherwise false
-  static bool IsDetailedOutputRequired(void){ return ((OUTPUT_LEVEL == Detailed) || (OUTPUT_LEVEL == Full)) ? true: false;}
+  static bool IsDetailedOutputRequired(void){ return ((OUTPUT_LEVEL == Detailed) ||
+						      (OUTPUT_LEVEL == Full) || 
+						      (OUTPUT_LEVEL == Extended) ) ? true: false;}
   //! Return true if the data associated with the full format should be output otherwise false
-  static bool IsFullOutputRequired(void){ return (OUTPUT_LEVEL == Full) ? true: false; }
+  static bool IsFullOutputRequired(void){ return ( (OUTPUT_LEVEL == Full) ||
+						   (OUTPUT_LEVEL == Extended) ) ? true: false; }
+  //! Return true if the data associated with the extended format should be output otherwise false
+  static bool IsExtendedOutputRequired(void){ return (OUTPUT_LEVEL == Extended) ? true: false; }
   
 protected:
   Tecplot_Execution_Mode(void);   //!< Private default constructor
@@ -97,6 +103,8 @@ void Tecplot_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters
       OUTPUT_LEVEL = Detailed;
     } else if ( strcmp(IP.Next_Control_Parameter, "Full") == 0 ) {
       OUTPUT_LEVEL = Full;
+    } else if ( strcmp(IP.Next_Control_Parameter, "Extended") == 0 ) {
+      OUTPUT_LEVEL = Extended;
     } else {
       i_command = INVALID_INPUT_VALUE;
       return;

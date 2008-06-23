@@ -60,6 +60,10 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
   int i, j, ni, nj, ng, block_allocated, buffer_size;
   double *buffer;
 
+  // High-order related variables
+  int NumberOfHighOrderVariables;
+  vector<int> ReconstructionOrders;
+
   /* Broadcast the number of cells in each direction. */
 
   if (CFFC_Primary_MPI_Processor()) {
@@ -71,12 +75,28 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
     } else {
       block_allocated = 0;
     } /* endif */ 
+
+    // High-order variables and their reconstruction order
+    NumberOfHighOrderVariables = SolnBlk.NumberOfHighOrderObjects();
+    for (i = 0; i < NumberOfHighOrderVariables; ++i){
+      ReconstructionOrders.push_back(SolnBlk.HighOrderVariable(i).RecOrder());
+    }
   } /* endif */
 
   MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&ng, 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&block_allocated, 1, MPI::INT, 0);
+
+  // Broadcast the number of high-order variables and their reconstruction order
+  MPI::COMM_WORLD.Bcast(&NumberOfHighOrderVariables, 1, MPI::INT, 0);
+  if (!CFFC_Primary_MPI_Processor()) {
+    // reserve memory for the reconstruction orders
+    ReconstructionOrders.reserve(NumberOfHighOrderVariables);
+  }
+  for (i = 0; i < NumberOfHighOrderVariables; ++i){
+    MPI::COMM_WORLD.Bcast(&ReconstructionOrders[i], 1, MPI::INT, 0);
+  }
 
   /* On non-primary MPI processors, allocate (re-allocate) 
      memory for the quadrilateral solution block as necessary. */
@@ -95,6 +115,17 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
   /* Broadcast the grid. */
 
   Broadcast_Quad_Block(SolnBlk.Grid);
+
+  /* Allocate memory for high-order variables
+     on non-primary MPI processors. */
+  if (!CFFC_Primary_MPI_Processor()) {
+    // allocate memory for high-order variables AFTER grid broadcast!
+    SolnBlk.allocate_HighOrder(NumberOfHighOrderVariables,
+			       ReconstructionOrders);
+    // allocate memory for high-order boundary conditions if necessary
+    SolnBlk.allocate_HighOrder_BoundaryConditions();
+  }
+
 
   /* Broadcast the solution state variables. */
 
@@ -184,6 +215,12 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
 
     delete []buffer; 
     buffer = NULL;
+
+    /* Broadcast the high-order variables. */
+    for (i = 0; i < NumberOfHighOrderVariables; ++i){
+      SolnBlk.HighOrderVariable(i).Broadcast_HighOrder_Data(SolnBlk.Grid);
+    }
+
   } /* endif */
 #endif
 
@@ -207,6 +244,10 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
   int i, j, ni, nj, ng, block_allocated, buffer_size;
   double *buffer;
 
+  // High-order related variables
+  int NumberOfHighOrderVariables;
+  vector<int> ReconstructionOrders;
+
   /* Broadcast the number of cells in each direction. */
 
   if (CFFC_MPI::This_Processor_Number == Source_CPU) {
@@ -218,12 +259,28 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
     } else {
       block_allocated = 0;
     } /* endif */ 
+
+    // High-order variables and their reconstruction order
+    NumberOfHighOrderVariables = SolnBlk.NumberOfHighOrderObjects();
+    for (i = 0; i < NumberOfHighOrderVariables; ++i){
+      ReconstructionOrders.push_back(SolnBlk.HighOrderVariable(i).RecOrder());
+    }
   } /* endif */
 
   Communicator.Bcast(&ni, 1, MPI::INT, Source_Rank);
   Communicator.Bcast(&nj, 1, MPI::INT, Source_Rank);
   Communicator.Bcast(&ng, 1, MPI::INT, Source_Rank);
   Communicator.Bcast(&block_allocated, 1, MPI::INT, Source_Rank);
+
+  // Broadcast the number of high-order variables and their reconstruction order
+  Communicator.Bcast(&NumberOfHighOrderVariables, 1, MPI::INT, Source_Rank);
+  if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+    // reserve memory for the reconstruction orders
+    ReconstructionOrders.reserve(NumberOfHighOrderVariables);
+  }
+  for (i = 0; i < NumberOfHighOrderVariables; ++i){
+    Communicator.Bcast(&ReconstructionOrders[i], 1, MPI::INT, Source_Rank);
+  }
 
   /* On non-source MPI processors, allocate (re-allocate) 
      memory for the quadrilateral solution block as necessary. */
@@ -242,6 +299,16 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
   /* Broadcast the grid. */
 
   Broadcast_Quad_Block(SolnBlk.Grid, Communicator, Source_CPU);
+
+  /* Allocate memory for high-order variables
+     on non-source MPI processors. */
+  if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+    // allocate memory for high-order variables AFTER grid broadcast!
+    SolnBlk.allocate_HighOrder(NumberOfHighOrderVariables,
+			       ReconstructionOrders);
+    // allocate memory for high-order boundary conditions if necessary
+    SolnBlk.allocate_HighOrder_BoundaryConditions();
+  }
 
   /* Broadcast the solution state variables. */
 
@@ -331,6 +398,14 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
 
     delete []buffer; 
     buffer = NULL;
+
+    /* Broadcast the high-order variables. */
+    for (i = 0; i < NumberOfHighOrderVariables; ++i){
+      SolnBlk.HighOrderVariable(i).Broadcast_HighOrder_Data(Communicator,
+							    Source_CPU,
+							    SolnBlk.Grid);
+    }
+
   } /* endif */
 
 }
@@ -365,6 +440,10 @@ int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Fine,
   int i, j, k, i_min, i_max, j_min, j_max, mesh_refinement_permitted;
   double area_total_fine;
 
+  // High-order related variables
+  int SolnBlk_Original_NumberOfHighOrderVariables(SolnBlk_Original.NumberOfHighOrderObjects());
+  vector<int> SolnBlk_Original_ReconstructionOrders; 
+
   /* Allocate (re-allocate) memory for the solution
      of the refined quadrilateral solution block as necessary. */
 
@@ -391,6 +470,16 @@ int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Fine,
 		  SolnBlk_Original.Grid,
 		  Sector);
     } /* endif */
+
+    // Allocate high-order objects if necessary
+    for (i = 0; i < SolnBlk_Original_NumberOfHighOrderVariables; ++i){
+      SolnBlk_Original_ReconstructionOrders.push_back(SolnBlk_Original.HighOrderVariable(i).RecOrder());
+    }
+    SolnBlk_Fine.allocate_HighOrder(SolnBlk_Original_NumberOfHighOrderVariables,
+				    SolnBlk_Original_ReconstructionOrders);
+    // allocate memory for high-order boundary conditions if necessary
+    SolnBlk_Fine.allocate_HighOrder_BoundaryConditions();
+
   } /* endif */
 
   if (mesh_refinement_permitted) {
@@ -486,11 +575,16 @@ int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Fine,
       SolnBlk_Fine.UoN[2*(i-i_min)+SolnBlk_Fine.ICl+1]	= SolnBlk_Original.UoN[i];
     } /* endfor */
 
+    // Set the reference values for the boundary states to the ones from the Original solution block
+    SolnBlk_Fine.Set_Reference_Values_For_Boundary_States(SolnBlk_Original.Ref_State_BC_North,
+							  SolnBlk_Original.Ref_State_BC_South,
+							  SolnBlk_Original.Ref_State_BC_East,
+							  SolnBlk_Original.Ref_State_BC_West);
+
     // Enforce analytic values for the boundary reference states if defined
     SolnBlk_Fine.Set_Boundary_Reference_States();
     
   } /* endif */
-  
   
   
     // Prolongation of solution block was successful.
@@ -512,6 +606,10 @@ int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Coarse,
 			    AdvectDiffuse2D_Quad_Block &SolnBlk_Original_NE) {
 
   int i, j, i_coarse, j_coarse, mesh_coarsening_permitted;
+
+  // High-order related variables
+  int SolnBlk_Original_NumberOfHighOrderVariables(SolnBlk_Original_SW.NumberOfHighOrderObjects());
+  vector<int> SolnBlk_Original_ReconstructionOrders; 
  
   /* Allocate memory for the cells and nodes for the 
      coarsened quadrilateral mesh block. */
@@ -554,6 +652,16 @@ int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Coarse,
 		   SolnBlk_Original_NW.Grid,
 		   SolnBlk_Original_NE.Grid);
     } /* endif */
+
+    // Allocate high-order objects if necessary
+    for (i = 0; i < SolnBlk_Original_NumberOfHighOrderVariables; ++i){
+      SolnBlk_Original_ReconstructionOrders.push_back(SolnBlk_Original_SW.HighOrderVariable(i).RecOrder());
+    }
+    SolnBlk_Coarse.allocate_HighOrder(SolnBlk_Original_NumberOfHighOrderVariables,
+				      SolnBlk_Original_ReconstructionOrders);
+    // allocate memory for high-order boundary conditions if necessary
+    SolnBlk_Coarse.allocate_HighOrder_BoundaryConditions();
+
   } /* endif */
 
   if (mesh_coarsening_permitted) {
@@ -733,9 +841,12 @@ int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Coarse,
       } /* endif */
     } /* endfor */
 
-    // Enforce analytic values for the boundary reference states if defined
-    SolnBlk_Coarse.Set_Boundary_Reference_States();
-
+    // Set the reference values for the boundary states
+    // This approach might not always give the proper reference values.
+    SolnBlk_Coarse.Set_Reference_Values_For_Boundary_States(SolnBlk_Original_NW.Ref_State_BC_North,
+							    SolnBlk_Original_SE.Ref_State_BC_South,
+							    SolnBlk_Original_NE.Ref_State_BC_East,
+							    SolnBlk_Original_SW.Ref_State_BC_West);
   } /* endif */
 
   // Restriction of solution block was successful.
@@ -1133,6 +1244,13 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	  break;
 
 	case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoW has the right inflow data!
+	  if (SolnBlk.Grid.BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+	    for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.UoW[j];
+	    }
+	    break;
+	  }
+
 	case BC_DIRICHLET :	// Use UoW as reference value
 	  // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
 	  dx_normal = ( SolnBlk.Grid.xfaceW(SolnBlk.ICl,j) - 
@@ -1174,18 +1292,27 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	  if (Vn <= ZERO){
 	    // The flow enters the domain
 	    // Use UoW as reference value
-	    
-	    // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
-	    dx_normal = ( SolnBlk.Grid.xfaceW(SolnBlk.ICl,j) - 
-			  SolnBlk.Grid.CellCentroid(SolnBlk.ICl,j) ) * SolnBlk.Grid.nfaceW(SolnBlk.ICl,j);
-	    // Estimate the solution gradient in the normal direction
-	    dUdn = (SolnBlk.UoW[j] - SolnBlk.U[SolnBlk.ICl][j])/dx_normal;
 
-	    // Fill in the ghost cells.
-	    for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	      dx_normal = ( SolnBlk.Grid.CellCentroid(SolnBlk.ICl-ghost,j) -
-			    SolnBlk.Grid.xfaceW(SolnBlk.ICl,j)) * SolnBlk.Grid.nfaceW(SolnBlk.ICl,j);
-	      SolnBlk.U[SolnBlk.ICl-ghost][j] = ( SolnBlk.UoW[j] + dUdn * dx_normal );
+	    if (SolnBlk.Grid.BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux) {
+	      // Fill in the ghost cells.
+	      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+		SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.UoW[j];
+	      }
+	      
+	    } else {
+
+	      // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+	      dx_normal = ( SolnBlk.Grid.xfaceW(SolnBlk.ICl,j) - 
+			    SolnBlk.Grid.CellCentroid(SolnBlk.ICl,j) ) * SolnBlk.Grid.nfaceW(SolnBlk.ICl,j);
+	      // Estimate the solution gradient in the normal direction
+	      dUdn = (SolnBlk.UoW[j] - SolnBlk.U[SolnBlk.ICl][j])/dx_normal;
+	      
+	      // Fill in the ghost cells.
+	      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+		dx_normal = ( SolnBlk.Grid.CellCentroid(SolnBlk.ICl-ghost,j) -
+			      SolnBlk.Grid.xfaceW(SolnBlk.ICl,j)) * SolnBlk.Grid.nfaceW(SolnBlk.ICl,j);
+		SolnBlk.U[SolnBlk.ICl-ghost][j] = ( SolnBlk.UoW[j] + dUdn * dx_normal );
+	      }
 	    }
 
 	  } else {
@@ -1250,6 +1377,13 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	  break;
 	  
 	case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoE has the right inflow data!
+	  if (SolnBlk.Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+	    for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.UoE[j];
+	    }
+	    break;
+	  }
+
 	case BC_DIRICHLET :	// Use UoE as reference value
 	  // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
 	  dx_normal = ( SolnBlk.Grid.xfaceE(SolnBlk.ICu,j) - 
@@ -1292,17 +1426,26 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	    // The flow enters the domain
 	    // Use UoE as reference value
 
-	    // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
-	    dx_normal = ( SolnBlk.Grid.xfaceE(SolnBlk.ICu,j) - 
-			  SolnBlk.Grid.CellCentroid(SolnBlk.ICu,j) ) * SolnBlk.Grid.nfaceE(SolnBlk.ICu,j);
-	    // Estimate the solution gradient in the normal direction
-	    dUdn = (SolnBlk.UoE[j] - SolnBlk.U[SolnBlk.ICu][j])/dx_normal;
+	    if (SolnBlk.Grid.BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux) {
+	      // Fill in the ghost cells.
+	      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+		SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.UoE[j];
+	      }
+
+	    } else {
+
+	      // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+	      dx_normal = ( SolnBlk.Grid.xfaceE(SolnBlk.ICu,j) - 
+			    SolnBlk.Grid.CellCentroid(SolnBlk.ICu,j) ) * SolnBlk.Grid.nfaceE(SolnBlk.ICu,j);
+	      // Estimate the solution gradient in the normal direction
+	      dUdn = (SolnBlk.UoE[j] - SolnBlk.U[SolnBlk.ICu][j])/dx_normal;
 	    
-	    // Fill in the ghost cells.
-	    for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	      dx_normal = ( SolnBlk.Grid.CellCentroid(SolnBlk.ICu+ghost,j) -
-			    SolnBlk.Grid.xfaceW(SolnBlk.ICu,j)) * SolnBlk.Grid.nfaceE(SolnBlk.ICu,j);
-	      SolnBlk.U[SolnBlk.ICu+ghost][j] = ( SolnBlk.UoE[j] + dUdn * dx_normal );
+	      // Fill in the ghost cells.
+	      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+		dx_normal = ( SolnBlk.Grid.CellCentroid(SolnBlk.ICu+ghost,j) -
+			      SolnBlk.Grid.xfaceW(SolnBlk.ICu,j)) * SolnBlk.Grid.nfaceE(SolnBlk.ICu,j);
+		SolnBlk.U[SolnBlk.ICu+ghost][j] = ( SolnBlk.UoE[j] + dUdn * dx_normal );
+	      }
 	    }
 
 	  } else {
@@ -1367,6 +1510,13 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
       break;
       
     case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoS has the right inflow data!
+      if (SolnBlk.Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+	for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	  SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.UoS[i];
+	}
+	break;
+      }
+      
     case BC_DIRICHLET :	// Use UoS as reference value
       // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
       dx_normal = ( SolnBlk.Grid.xfaceS(i,SolnBlk.JCl) - 
@@ -1409,17 +1559,26 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	// The flow enters the domain
 	// Use UoS as reference value
 
-	// Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
-	dx_normal = ( SolnBlk.Grid.xfaceS(i,SolnBlk.JCl) - 
-		      SolnBlk.Grid.CellCentroid(i,SolnBlk.JCl) ) * SolnBlk.Grid.nfaceS(i,SolnBlk.JCl);
-	// Estimate the solution gradient in the normal direction
-	dUdn = (SolnBlk.UoS[i] - SolnBlk.U[i][SolnBlk.JCl])/dx_normal;
+	if (SolnBlk.Grid.BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux) {
+	  // Fill in the ghost cells.
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.UoS[i];
+	  }
+	  
+	} else {
+
+	  // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+	  dx_normal = ( SolnBlk.Grid.xfaceS(i,SolnBlk.JCl) - 
+			SolnBlk.Grid.CellCentroid(i,SolnBlk.JCl) ) * SolnBlk.Grid.nfaceS(i,SolnBlk.JCl);
+	  // Estimate the solution gradient in the normal direction
+	  dUdn = (SolnBlk.UoS[i] - SolnBlk.U[i][SolnBlk.JCl])/dx_normal;
       
-	// Fill in the ghost cells.
-	for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	  dx_normal = ( SolnBlk.Grid.CellCentroid(i,SolnBlk.JCl-ghost) -
-			SolnBlk.Grid.xfaceS(i,SolnBlk.JCl)) * SolnBlk.Grid.nfaceS(i,SolnBlk.JCl);
-	  SolnBlk.U[i][SolnBlk.JCl-ghost] = ( SolnBlk.UoS[i] + dUdn * dx_normal );
+	  // Fill in the ghost cells.
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    dx_normal = ( SolnBlk.Grid.CellCentroid(i,SolnBlk.JCl-ghost) -
+			  SolnBlk.Grid.xfaceS(i,SolnBlk.JCl)) * SolnBlk.Grid.nfaceS(i,SolnBlk.JCl);
+	    SolnBlk.U[i][SolnBlk.JCl-ghost] = ( SolnBlk.UoS[i] + dUdn * dx_normal );
+	  }
 	}
 
       } else {
@@ -1479,6 +1638,13 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
       break;
       
     case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoN has the right inflow data!
+      if (SolnBlk.Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+	for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	  SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.UoN[i];
+	}
+	break;
+      }
+
     case BC_DIRICHLET :	// Use UoN as reference value
       // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
       dx_normal = ( SolnBlk.Grid.xfaceN(i,SolnBlk.JCu) - 
@@ -1520,10 +1686,29 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
       if (Vn <= ZERO){
 	// The flow enters the domain
 	// Use UoN as reference value
-	for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	  SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.UoN[i];
-	}
 
+	if (SolnBlk.Grid.BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux) {
+	  // Fill in the ghost cells.
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.UoN[i];
+	  }
+	  
+	} else {
+
+	  // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+	  dx_normal = ( SolnBlk.Grid.xfaceN(i,SolnBlk.JCu) - 
+			SolnBlk.Grid.CellCentroid(i,SolnBlk.JCu) ) * SolnBlk.Grid.nfaceN(i,SolnBlk.JCu);
+	  // Estimate the solution gradient in the normal direction
+	  dUdn = (SolnBlk.UoN[i] - SolnBlk.U[i][SolnBlk.JCu])/dx_normal;
+	      
+	  // Fill in the ghost cells.
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    dx_normal = ( SolnBlk.Grid.CellCentroid(i,SolnBlk.JCu+ghost) -
+			  SolnBlk.Grid.xfaceN(i,SolnBlk.JCu)) * SolnBlk.Grid.nfaceN(i,SolnBlk.JCu);	    
+	    SolnBlk.U[i][SolnBlk.JCu+ghost] = ( SolnBlk.UoN[i] + dUdn * dx_normal );
+	  }
+
+	}
       } else {
 	// The flow leaves the domain
 	// Impose constant extrapolation
@@ -1563,6 +1748,10 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
       break;
     } /* endswitch */
   } /* endfor */
+
+
+  // Impose high-order boundary conditions
+  SolnBlk.BCs_HighOrder();
 
 }
 
@@ -2361,11 +2550,20 @@ void Residual_Smoothing(AdvectDiffuse2D_Quad_Block &SolnBlk,
  * Calculate refinement criteria for the solution       
  * block.                                               
  *                                                      
+ * \todo Refactor this function!
  ********************************************************/
 void Calculate_Refinement_Criteria(double *refinement_criteria,
 				   AdvectDiffuse2D_Input_Parameters &IP,
                                    int &number_refinement_criteria,
                                    AdvectDiffuse2D_Quad_Block &SolnBlk) {
+
+  // Calculate refinement criteria based on smoothness indicator
+  if (CENO_Execution_Mode::USE_CENO_ALGORITHM && 
+      CENO_Execution_Mode::USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA) {
+    return SolnBlk.Calculate_Refinement_Criteria_HighOrder(refinement_criteria,
+							   IP,
+							   number_refinement_criteria);
+  }
 
   int i, j;
 

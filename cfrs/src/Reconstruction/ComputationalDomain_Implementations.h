@@ -1584,7 +1584,7 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
 
     /************* STEP 3: Flag the cells which didn't get a good reconstruction ***********/
     for (i=iStart(); i<=iEnd(); ++i){
-      if(SolnPtr[0][0][i].CellMCC() < IP.FitTolerance() ){
+      if(SolnPtr[0][0][i].CellMCC() < CENO_Tolerances::Fit_Tolerance ){
 
 	/* Flag the cell with non-smooth reconstruction */
 	SolnPtr[0][0][i].UnfitReconstructionFlag() = ON;
@@ -1762,7 +1762,7 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
     // Flag the cells which didn't get a good reconstruction
     for (i=iStart(); i<=iEnd(); ++i)
       for (j=jStart(); j<=jEnd(); ++j){
-	if ( SolnPtr[0][j][i].CellMCC() < IP.FitTolerance() ){
+	if ( SolnPtr[0][j][i].CellMCC() < CENO_Tolerances::Fit_Tolerance ){
 
 	  /* Flag the cell with non-smooth reconstruction */
 	  SolnPtr[0][j][i].UnfitReconstructionFlag() = ON;
@@ -1901,12 +1901,12 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructZ
       Print_(SolnPtr[0][j][i].CellMCC());
     }
 
-  Print_(IP.FitTolerance())
+  Print_(CENO_Tolerances::Fit_Tolerance)
 
   // Flag the cells which didn't get a good reconstruction
   for (i=iStart()+2; i<=iEnd()-2; ++i)
     for (j=jStart()+2; j<=jEnd()-2; ++j){
-      if ( SolnPtr[0][j][i].CellMCC() < IP.FitTolerance() ){
+      if ( SolnPtr[0][j][i].CellMCC() < CENO_Tolerances::Fit_Tolerance ){
 	SolnPtr[0][j][i].UnfitReconstructionFlag() = ON;
 	/* Update the number of cells with not enough resolution */
 	++UnfitCells;

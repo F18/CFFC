@@ -22,6 +22,7 @@
 #include "../System/System_Linux.h"    /* Include System Linux header file. */
 #include "../HighOrderReconstruction/AccuracyAssessment2D.h" /* Include 2D accuracy assessment header file. */
 #include "../HighOrderReconstruction/HighOrder2D.h" /* Include 2D high-order template class header file. */
+#include "../HighOrderReconstruction/Cauchy_BoundaryConditions.h" /* Include 2D high-order boundary conditions header file. */
 
 /* Define the structures and classes. */
 
@@ -130,6 +131,7 @@ public:
   typedef AccuracyAssessment2D<AdvectDiffuse2D_Quad_Block> Accuracy_Assessment_Type;
   typedef HighOrder2D<AdvectDiffuse2D_State> HighOrderType; //!< high-order variable data type
   typedef AdvectDiffuse2D_State Soln_State;
+  typedef Cauchy_BCs<Soln_State> BC_Type;
   //@}
 
 
@@ -230,11 +232,17 @@ public:
   void allocate_HighOrder(const int & NumberOfReconstructions,
 			  const vector<int> & ReconstructionOrders);
 
+  //! Allocate memory for high-order boundary conditions
+  void allocate_HighOrder_BoundaryConditions(void);
+
   //! Deallocate memory for structured quadrilateral solution block.
   void deallocate(void);
 
   //! Deallocate high-order variable memory for structured quadrilateral solution block.
   void deallocate_HighOrder(void);
+
+  //! Deallocate high-order boundary conditions memory.
+  void deallocate_HighOrder_BoundaryConditions(void);
 
   //! Allocate memory for the static memory pool U_Nodes
   void allocate_U_Nodes(const int &_NNi, const int &_NNj);
@@ -277,6 +285,26 @@ public:
   //! Return the high-order variable in the "Pos" position of the current block
   HighOrderType & HighOrderVariable(const unsigned short int & Pos) { return HO_Ptr[Pos]; }
   const HighOrderType & HighOrderVariable(const unsigned short int & Pos) const { return HO_Ptr[Pos]; }
+  //! Return the number of high-order variables
+  const unsigned short int & NumberOfHighOrderObjects(void) const { return NumberOfHighOrderVariables; }
+  //@}
+
+  //! @name High-order boundary conditions (used mostly for constrained reconstruction)
+  //@{
+  const BC_Type * BC_NorthCell(void) { return HO_UoN;}
+  BC_Type & BC_NorthCell(const int &iCell){ return HO_UoN[iCell]; }
+  const BC_Type & BC_NorthCell(const int &iCell) const { return HO_UoN[iCell]; }
+  const BC_Type * BC_SouthCell(void) { return HO_UoS;}
+  BC_Type & BC_SouthCell(const int &iCell){ return HO_UoS[iCell]; }
+  const BC_Type & BC_SouthCell(const int &iCell) const { return HO_UoS[iCell]; }
+  const BC_Type * BC_EastCell(void) { return HO_UoE;}
+  BC_Type & BC_EastCell(const int &jCell){ return HO_UoE[jCell]; }
+  const BC_Type & BC_EastCell(const int &jCell) const { return HO_UoE[jCell]; }
+  const BC_Type * BC_WestCell(void) { return HO_UoW;}
+  BC_Type & BC_WestCell(const int &jCell){ return HO_UoW[jCell]; }
+  const BC_Type & BC_WestCell(const int &jCell) const { return HO_UoW[jCell]; }
+
+  void BCs_HighOrder(void);
   //@}
 
   //@} //end(Field access)
@@ -422,16 +450,37 @@ public:
 
   //! @name Functions for estimating positivity of elliptic term discretization:
   //@{
+  const double & CellPositivityMeasure(const int &iCell, const int &jCell) const { return Positivity_Coeffs[iCell][jCell]; }
+  int StencilSize_For_LaplacianEstimation(void) const { return Laplacian_Coeffs.size(); }
+  const double & LaplacianCoefficient(const int &Pos) const {return Laplacian_Coeffs[Pos]; }
+  const double & CellSolution_LaplacianInfluenceCoefficient(const int &iCell, const int &jCell) const;
+  const IndexType & LaplacianStencil_I(void) const { return i_index; }
+  const IndexType & LaplacianStencil_J(void) const { return j_index; }
+  const double & MaximumNonPositivity(void) const { return MaxNonPositivity; }
+  const double & MinimumNonPositivity(void) const { return MinNonPositivity; }
+  bool IsAnyStencilDecoupled(void) const { if (i_index_decoupled.size() != 0){ return true; } else { return false; } }
+  const IndexType & DecoupledCells_IndexI(void) const { return i_index_decoupled; }
+  const IndexType & DecoupledCells_IndexJ(void) const { return j_index_decoupled; }  
+  void Analyse_HighOrder_Positivity_For_LaplacianOperator(const unsigned short int Pos = 0);
+  void Analyse_HighOrder_Positivity_For_LaplacianOperator_And_Modify_Stencil(const unsigned short int Pos = 0);
   void Analyse_HighOrder_Positivity_For_LaplacianOperator(const int &iCell, const int &jCell,
 							  const unsigned short int Pos = 0);
   void Calculate_HighOrder_SolutionCoefficients_For_LaplacianOperator(const int &iCell, const int &jCell,
 								      const unsigned short int Pos = 0);
   void Set_HighOrder_InfluenceDomain_For_LaplacianOperator(const int &iCell, const int &jCell,
 							   const unsigned short int Pos = 0);
-  void Calculate_HighOrder_Discretization_LaplacianOperator(const int &iCell, const int &jCell,
-							    const int & k_residual,
-							    const unsigned short int Pos = 0);
+  AdvectDiffuse2D_State Calculate_HighOrder_Discretization_LaplacianOperator(const int &iCell, const int &jCell,
+									     const unsigned short int Pos = 0);
   void Output_HighOrder_InfluenceDomain_For_LaplacianOperator(ostream &os);
+  void Output_HighOrder_InfluenceDomain_And_SolutionCoefficients_For_LaplacianOperator(ostream &os);
+  void Output_Tecplot_InfluenceDomain_And_SolutionCoefficients(ostream &Out_File);
+  //@}
+
+  //! @name Functions for AMR:
+  //@{
+  void Calculate_Refinement_Criteria_HighOrder(double *refinement_criteria,
+					       AdvectDiffuse2D_Input_Parameters &IP,
+					       int &number_refinement_criteria);
   //@}
 
   //! @name Input-output operators.
@@ -604,6 +653,18 @@ private:
   IndexType i_index, j_index;	     //!< Storage for indexes of cells that influence the discretization of the Laplace operator.
   std::vector<double>  Laplacian_Coeffs; /*!< The coefficient for each cell in the stencil that
 					   appears in the discretization of the Laplace operator. */
+  double **Positivity_Coeffs;	//!< Storage for the coefficients which measure scheme positivity for the elliptic term discretization
+  double MaxNonPositivity, MinNonPositivity; //!< Storage for the maximum and minimum non-positivity values over the whole block
+  IndexType i_index_decoupled, j_index_decoupled; //!< indexes of cells found with decoupled stencils.
+  bool  **UseSpecialStencil;			  //!< Flag to set the type of reconstruction stencil (i.e. central or special)
+  //@}
+
+  //! @name High-order boundary conditions (used mostly for constrained reconstruction)
+  //@{
+  BC_Type  *HO_UoN, 		//!< High-order boundary condition reference states for North boundary
+    *HO_UoS,            	//!< High-order boundary condition reference states for South boundary
+    *HO_UoE,			//!< High-order boundary condition reference states for East boundary
+    *HO_UoW;            	//!< High-order boundary condition reference states for West boundary
   //@}
 };
 
@@ -1160,6 +1221,23 @@ inline void AdvectDiffuse2D_Quad_Block::SetPiecewiseLinearReconstructionStencil(
     i_index[6] = i  ; j_index[6] = j+1;
     i_index[7] = i+1; j_index[7] = j+1;
   } /* endif */
+}
+
+/*!
+ * \return The influence coefficient of cell (iCell,jCell) to
+ * the Laplacian operator.
+ * \note This operator uses the variables in the memory pool!
+ */
+inline const double & AdvectDiffuse2D_Quad_Block::CellSolution_LaplacianInfluenceCoefficient(const int &iCell,
+											     const int &jCell) const{
+  
+  int i,j, pos;
+  
+  for (pos = 0; pos <= i_index.size(); ++pos){
+    if (i_index[pos] == iCell && j_index[pos] == jCell){
+      return Laplacian_Coeffs[pos];
+    }
+  } // endfor
 }
 
 /**************************************************************************

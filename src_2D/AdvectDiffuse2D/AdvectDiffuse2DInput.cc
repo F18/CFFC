@@ -1224,14 +1224,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
     // Update all dependent variables
     if (!CFFC_Primary_MPI_Processor()) {
-      // Perform update of the internal variables of the exact solution
-      IP.ExactSoln->Set_ParticularSolution_Parameters();
-
-      // Perform update of the internal variables of the inflow field
-      IP.Inflow->Set_InflowField_Parameters();
-
-      // Perform update of the internal variables of the high-order input parameters
-      HighOrder2D_Input::Set_Final_Parameters(IP);
 
       // Set reference state in the AdvectDiffuse2D_Quad_Block class
       AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(IP.RefU);
@@ -1791,6 +1783,8 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.i_Limiter = LIMITER_BARTH_JESPERSEN;
     } else if (strcmp(IP.Limiter_Type, "Venkatakrishnan") == 0) {
       IP.i_Limiter = LIMITER_VENKATAKRISHNAN;
+    } else if (strcmp(IP.Limiter_Type, "Venkatakrishnan_Modified") == 0) {
+      IP.i_Limiter = LIMITER_VENKATAKRISHNAN_CORRECTED;
     } else {
       std::cout << "\n ==> Unknown limiter type!";
       i_command = INVALID_INPUT_VALUE;
@@ -3087,6 +3081,9 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
     
     // Set flag for including/excluding diffusion term in the model equation
     AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = Input_Parameters.Include_Diffusion_Term;
+
+    // Set limiter in CENO class
+    CENO_Execution_Mode::Limiter = Input_Parameters.i_Limiter;
 
     /* Initial processing of input control parameters complete.  
        Return the error indicator flag. */
