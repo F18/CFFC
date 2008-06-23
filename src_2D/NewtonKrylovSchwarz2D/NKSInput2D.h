@@ -619,8 +619,8 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
 
   } else if (strcmp(code, "NKS_Number_of_Newton_Steps_Requiring_Jacobian_Update") == 0) {
     i_command = 79;
-    Number_of_Newton_Steps_Requiring_Jacobian_Update = strtod(value, &ptr);
-    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+    Number_of_Newton_Steps_Requiring_Jacobian_Update = static_cast<int>(strtol(value, &ptr, 10));
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }	
 
   } else if (strcmp(code, "NKS_Min_L2_Norm_Requiring_Jacobian_Update") == 0) {
     i_command = 80;
