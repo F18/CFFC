@@ -1792,20 +1792,16 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 		  break;
 
               case BC_CHANNEL_INFLOW:
-                  dpdx = IPs.Pressure_Gradient.x; 
+                  dpdx = IPs.Pressure_Gradient.x;
                   //for turbulent channel flow
-                  // p linearly varys based on constant pressure gradient 
-                  dX = Grid.Cell[ICl-1][j][k].Xc - Grid.Cell[ICl][j][k].Xc; 
-                  W[ICl-1][j][k] = WoW[j][k];
-                  W[ICl-1][j][k].v.x = W[ICl][j][k].v.x;
-                  W[ICl-1][j][k].p = WoW[j][k].p - dpdx*dX.x;
-                  U[ICl-1][j][k] = W[ICl-1][j][k].U();
-            
-                  dX = Grid.Cell[ICl-2][j][k].Xc - Grid.Cell[ICl][j][k].Xc;
-                  W[ICl-2][j][k] = WoW[j][k];
-                  W[ICl-2][j][k].v.x = W[ICl][j][k].v.x;
-                  W[ICl-2][j][k].p =  WoW[j][k].p - dpdx*dX.x;
-                  U[ICl-2][j][k] = W[ICl-2][j][k].U();
+                  // p linearly varys based on constant pressure gradient
+		  for (int ghost = 1 ; ghost <= Nghost ; ++ghost){
+		    dX = Grid.Cell[ICl-ghost][j][k].Xc - Grid.Cell[ICl][j][k].Xc;
+		    W[ICl-ghost][j][k] = WoW[j][k]; 
+		    W[ICl-ghost][j][k].v.x = W[ICl][j][k].v.x;
+		    W[ICl-ghost][j][k].p = WoW[j][k].p - dpdx*dX.x;
+		    U[ICl-ghost][j][k] = W[ICl-ghost][j][k].U();
+		  }
                   break;  
             
               case BC_CONSTANT_EXTRAPOLATION :
@@ -1909,14 +1905,13 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
                   dpdx = IPs.Pressure_Gradient.x; 
                   // all constant extrapolation except pressure specified 
                   // which linearly varys if there is pressure gradient
-                  dX = Grid.Cell[ICu+1][j][k].Xc - Grid.Cell[ICu][j][k].Xc; 
-                  W[ICu+1][j][k] = W[ICu][j][k];
-                  W[ICu+1][j][k].p = (WoE[j][k].p);//-dpdx*dX.x;
-                  U[ICu+1][j][k] = W[ ICu+1][j][k].U();
-                  dX = Grid.Cell[ICu+2][j][k].Xc - Grid.Cell[ICu][j][k].Xc; 
-                  W[ICu+2][j][k] = W[ICu][j][k];
-                  W[ICu+2][j][k].p = W[ICu+1][j][k].p;// (WoE[j][k].p)-dpdx*dX.x; 	
-                  U[ICu+2][j][k] = W[ICu+2][j][k].U();
+		  for (int ghost = 1 ; ghost <= Nghost ; ++ghost){
+		    dX = Grid.Cell[ICu+ghost][j][k].Xc - Grid.Cell[ICl][j][k].Xc;
+		    W[ICu+ghost][j][k] = W[ICu][j][k];
+		    W[ICu+ghost][j][k].p = WoW[j][k].p-dpdx*dX.x;
+		    U[ICu+ghost][j][k] = W[ICu+ghost][j][k].U();
+		  }
+
                   break;
             
 // 	 case BC_CHARACTERISTIC :
