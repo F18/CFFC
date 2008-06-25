@@ -2205,7 +2205,7 @@ void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::FFT_physical_to_spectral(void
     
     /* --------------- FFT scaling factor ---------------- */
     
-    double FFT_scaling_factor = ONE/(Nx*Ny*Nz)   / sqrt(pow(TWO*PI,3)/(L1*L2*L3));
+    double FFT_scaling_factor = ONE/(Nx*Ny*Nz)   / sqrt(cube(TWO*PI)/(L1*L2*L3));
     int index;
     for (int ii=0; ii<nK; ii++) {
         for (int jj=0; jj<K[ii].N; jj++) {
