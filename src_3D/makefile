@@ -391,7 +391,7 @@ help:
 	@echo "|        make superclean           clean up documentation and library directories   |"
 	@echo "|        make help                 display makefile usage information               |"
 	@echo "|                                                                                   |"
-	@echo "| Package Options: MPI_VERSION = NoMPI (default), MPICH, MPICH2, MPT (sgi)          |"
+	@echo "| Package Options: MPI_VERSION = NoMPI (default), MPICH, MPICH2, OPENMPI, MPT (sgi) |"
 	@echo "|                  ICEMCFD_VERSION = NoICEMCFD (default),V41,V42,V43,V50,V10,V11    |"
 	@echo "|                  GCC_VERSION = V296, V3+ (default), ICC                           |"
 	@echo "|                  CANTERA_VERSION = NoCANTERA (default), V70                       |"
@@ -469,9 +469,7 @@ cantera:
 	@echo Building $(CANTERA) library for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------'
 	@echo ' '
-	cd $(CANTERA_DIR); ./preconfig CXX="$(CXX) $(CXXFLAGS)" CC="$(CC)" F77="$(FC)" \
-          CXXFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FFLAGS)" \
-	  LCXX_END_LIBS="$(CANTERA_LCXX_END_LIBS)" PYTHON_PACKAGE="$(CANTERA_PYTHON_PACKAGE)";
+	cd $(CANTERA_DIR); ./preconfig $(CANTERA_STRING) PYTHON_PACKAGE="$(CANTERA_PYTHON_PACKAGE)";
 	cd $(CANTERA_DIR); make;
 	@echo ' '
 	@echo $(CANTERA) library has been brought up to date.

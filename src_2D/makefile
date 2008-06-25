@@ -107,28 +107,28 @@ SRC_GRID = $(GRID_DIR)Cell1D.cc \
            $(GRID_DIR)Grid2DQuadMultiBlock.cc \
            $(GRID_DIR)Grid3DHexaSingleBlock.cc \
            $(GRID_DIR)Grid3DHexaMultiBlock.cc \
-           $(GRID_DIR)HO_Cell2D.cc \
-           $(GRID_DIR)HO_Spline2D.cc \
-           $(GRID_DIR)HO_Spline2DInterval.cc \
-	   $(GRID_DIR)HO_Grid2DQuad.cc \
-           $(GRID_DIR)HO_Grid2DQuadMultiBlock.cc \
-	   $(GRID_DIR)HO_Grid2DQuad_ExecutionMode.cc \
 	   $(GRID_DIR)Tecplot_ExecutionMode.cc
+SRC_GRID_HO = $(GRID_DIR)HO_Cell2D.cc \
+              $(GRID_DIR)HO_Spline2D.cc \
+              $(GRID_DIR)HO_Spline2DInterval.cc \
+	      $(GRID_DIR)HO_Grid2DQuad.cc \
+              $(GRID_DIR)HO_Grid2DQuadMultiBlock.cc \
+	      $(GRID_DIR)HO_Grid2DQuad_ExecutionMode.cc
 SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
 	      $(ICEMCFD_DIR)ICEMCFD_ctype.c
 
 # Add Grid Testing If Required:
-SRC_GRID_TESTS := test_Grid2DQuadIntegration.cc \
-		  test_HO_Grid2DQuad.cc \
-		  test_HO_Grid2DQuadMultiBlock.cc \
-		  test_HO_Spline2D.cc \
-		  test_HO_Spline2D_Integration.cc \
-		  test_HO_Spline2DInterval.cc \
-		  test_HO_Cell2D.cc \
-		  HO_Grid2DQuadMultiBlock_InputForTesting.cc
-SRC_GRID_TESTS := $(addprefix $(GRID_DIR)UnitTests/,$(SRC_GRID_TESTS))
+SRC_GRID_HO_TESTS := test_Grid2DQuadIntegration.cc \
+		     test_HO_Grid2DQuad.cc \
+		     test_HO_Grid2DQuadMultiBlock.cc \
+		     test_HO_Spline2D.cc \
+		     test_HO_Spline2D_Integration.cc \
+		     test_HO_Spline2DInterval.cc \
+		     test_HO_Cell2D.cc \
+		     HO_Grid2DQuadMultiBlock_InputForTesting.cc
+SRC_GRID_HO_TESTS := $(addprefix $(GRID_DIR)UnitTests/,$(SRC_GRID_HO_TESTS))
 ifeq ($(TUT_TESTING),ON) 
-  SRC_GRID += $(SRC_GRID_TESTS)
+  SRC_GRID_HO += $(SRC_GRID_HO_TESTS)
 endif
 
 # AMR:
@@ -152,6 +152,7 @@ SRC_HIGH_ORDER_RECONSTRUCTION_COMMON := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION
 SRC_HIGH_ORDER_RECONSTRUCTION_1D = ENO_ExecutionMode.cc \
 				   AccuracyAssessment1D.cc
 SRC_HIGH_ORDER_RECONSTRUCTION_1D := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION_1D))
+
 # Add High-Order Reconstruction Testing If Required:
 SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_1D := test_HighOrder1D_Double.cc
 SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_1D := $(addprefix $(HIGH_ORDER_RECONSTRUCTION_DIR)UnitTests/,$(SRC_HIGH_ORDER_RECONSTRUCTION_TESTS_1D))
@@ -493,7 +494,9 @@ SRC_TUT := $(addprefix $(UNIT_TESTING_DIR), $(SRC_TUT))
 SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
 
 # Base and CFFC sources:
-SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
+SRC_BASE_NOHO = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
+                $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) $(SRC_SYSTEM)
+SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_GRID_HO) $(SRC_AMR) \
            $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) $(SRC_HIGH_ORDER_RECONSTRUCTION_2D) $(SRC_SYSTEM) 
 ifeq ($(TUT_TESTING),ON) 
   SRC_BASE += $(SRC_TUT)
@@ -506,7 +509,7 @@ SRC_CFFC = $(SRC_BASE) \
            $(SRC_CFD1D_INPUT) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D) $(SRC_MHD1D) \
            $(SRC_ADVECTDIFFUSE) $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_CHEM) $(SRC_HIGHTEMP) \
            $(SRC_DUSTY) $(SRC_LESPREMIXED) $(SRC_GAUSSIAN) $(SRC_ION) $(SRC_ELECTROSTATIC) \
-           $(SRC_RTE) $(SRC_INTERFACE) $(SRC_LEVELSET) $(SRC_LEVERMORE1D) $(SRC_BGK1D)\
+           $(SRC_RTE) $(SRC_INTERFACE) $(SRC_LEVELSET) $(SRC_LEVERMORE1D) $(SRC_BGK1D) \
            $(SRC_TURBULENT) $(SRC_EOS) $(SRC_NASADATA) $(SRC_REACTIONS) $(SRC_SNBCK) $(SRC_ICEMCFD) \
            $(SRC_HIGH_ORDER_RECONSTRUCTION_1D) $(SRC_SHOCK_RELATIONS)
 
@@ -532,6 +535,7 @@ OBJ_MPI = $(SRC_MPI:.cc=.o)
 
 # Grid:
 OBJ_GRID = $(SRC_GRID:.cc=.o)
+OBJ_GRID_HO = $(SRC_GRID_HO:.cc=.o)
 OBJ_ICEMCFD = $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_ICEMCFD)))
 OBJ_ICEMCFD += $(patsubst %.c,%.o,$(filter %.c,$(SRC_ICEMCFD)))
 
@@ -652,6 +656,11 @@ OBJ_TUT := $(SRC_TUT:.cc=.o)
 OBJ_SYSTEM = $(SRC_SYSTEM:.cc=.o)
 
 # Base and CFFC objects:
+OBJ_BASE_NOHO = $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_BASE_NOHO)))
+OBJ_BASE_NOHO += $(patsubst %.c,%.o,$(filter %.c,$(SRC_BASE_NOHO)))
+OBJ_BASE_NOHO += $(patsubst %.f90,%.o,$(filter %.f90,$(SRC_BASE_NOHO)))
+OBJ_BASE_NOHO += $(patsubst %.f,%.o,$(filter %.f,$(SRC_BASE_NOHO)))
+
 OBJ_BASE = $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_BASE)))
 OBJ_BASE += $(patsubst %.c,%.o,$(filter %.c,$(SRC_BASE)))
 OBJ_BASE += $(patsubst %.f90,%.o,$(filter %.f90,$(SRC_BASE)))
@@ -665,10 +674,10 @@ OBJ_CFFC += $(patsubst %.f,%.o,$(filter %.f,$(SRC_CFFC)))
 # Executable objects:
 OBJ_MAIN = $(SRC_MAIN:.cc=.o)
 OBJ_ICEMCFD_UTIL1 = $(SRC_ICEMCFD_UTIL1:.cc=.o) \
-                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD) \
+                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_GRID_HO) $(OBJ_ICEMCFD) \
 		    $(OBJ_HIGH_ORDER_RECONSTRUCTION_2D) $(OBJ_HIGH_ORDER_RECONSTRUCTION_COMMON)
 OBJ_ICEMCFD_UTIL2 = $(SRC_ICEMCFD_UTIL2:.cc=.o) \
-                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_ICEMCFD) \
+                    $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_GRID) $(OBJ_GRID_HO) $(OBJ_ICEMCFD) \
 		    $(OBJ_HIGH_ORDER_RECONSTRUCTION_2D) $(OBJ_HIGH_ORDER_RECONSTRUCTION_COMMON)
 ifeq ($(TUT_TESTING),ON) 
   OBJ_ICEMCFD_UTIL1 += $(OBJ_TUT)
@@ -746,7 +755,7 @@ help:
 	@echo "|        make superclean           clean up documentation and library directories   |"
 	@echo "|        make help                 display makefile usage information               |"
 	@echo "|                                                                                   |"
-	@echo "| Package Options: MPI_VERSION = NoMPI (default), MPICH, MPICH2, OPENMPI, MPT (sgi  |"
+	@echo "| Package Options: MPI_VERSION = NoMPI (default), MPICH, MPICH2, OPENMPI, MPT (sgi) |"
 	@echo "|                  ICEMCFD_VERSION = NoICEMCFD (default),V41,V42,V43,V50,V10,V11    |"
 	@echo "|                  GCC_VERSION = V296, V3+ (default), ICC                           |"
 	@echo "|                  CANTERA_VERSION = NoCANTERA (default), V70                       |"
@@ -768,11 +777,11 @@ help:
 	@echo "+-----------------------------------------------------------------------------------+"
 
 all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
-     $(EXE_EULER1D) $(EXE_SOLVERS1D) \
+     $(EXE_EULER1D) $(EXE_SOLVERS1D) $(EXE_LEVERMORE1D) $(EXE_BGK1D) \
      $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
      $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
      $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-     $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D) $(EXE_BGK1D)
+     $(EXE_EMBEDDEDBOUNDARIES2D)
 	@echo ' '
 	@echo All programs have been brought up to date.
 	@echo '------------------------------------------'
@@ -814,9 +823,7 @@ cantera:
 	@echo Building $(CANTERA) library for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------'
 	@echo ' '
-	cd $(CANTERA_DIR); ./preconfig CXX="$(CXX) $(CXXFLAGS)" CC="$(CC)" F77="$(FC)" \
-          CXXFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FFLAGS)" \
-	  LCXX_END_LIBS="$(CANTERA_LCXX_END_LIBS)" PYTHON_PACKAGE="$(CANTERA_PYTHON_PACKAGE)";
+	cd $(CANTERA_DIR); ./preconfig $(CANTERA_STRING) PYTHON_PACKAGE="$(CANTERA_PYTHON_PACKAGE)";
 	cd $(CANTERA_DIR); make;
 	@echo ' '
 	@echo $(CANTERA) library has been brought up to date.
@@ -947,12 +954,12 @@ $(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OB
 	@echo '--------------------------------------------------'
 	@echo ' '
 
-$(EXE_FLAME2D): $(OBJ_FLAME_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_SNBCK) $(OBJ_FLAME) $(OBJ_ICEMCFD)
+$(EXE_FLAME2D): $(OBJ_FLAME_EXE) $(OBJ_BASE_NOHO) $(OBJ_NASADATA) $(OBJ_SNBCK) $(OBJ_FLAME) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_FLAME2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_FLAME2D) $(OBJ_FLAME_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_SNBCK) $(OBJ_FLAME) $(OBJ_ICEMCFD) $(LDFLAGS)
+	$(LD) -o $(EXE_FLAME2D) $(OBJ_FLAME_EXE) $(OBJ_BASE_NOHO) $(OBJ_NASADATA) $(OBJ_SNBCK) $(OBJ_FLAME) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_FLAME2D) has been brought up to date.
 	@echo '--------------------------------------------------'
@@ -1090,16 +1097,18 @@ install: $(EXE_MAIN)
 	@echo "---------------------"
 	@echo " "
 
-install-all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_EULER1D) $(EXE_SOLVERS1D) \
+install-all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
+        $(EXE_EULER1D) $(EXE_SOLVERS1D) $(EXE_LEVERMORE1D) $(EXE_BGK1D) \
         $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D) $(EXE_BGK1D)
-	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_EULER1D) $(EXE_SOLVERS1D) \
+        $(EXE_EMBEDDEDBOUNDARIES2D)
+	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
+        $(EXE_EULER1D) $(EXE_SOLVERS1D) $(EXE_LEVERMORE1D) $(EXE_BGK1D) \
         $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D) $(EXE_BGK1D); \
+        $(EXE_EMBEDDEDBOUNDARIES2D); \
 	do \
 	  echo "Installing $$f"; \
 	  cp $$f $(CFFC_BIN_DIR); \
@@ -1118,11 +1127,12 @@ uninstall:
 	@echo " "
 
 uninstall-all:
-	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_EULER1D) $(EXE_SOLVERS1D) \
+	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
+        $(EXE_EULER1D) $(EXE_SOLVERS1D) $(EXE_LEVERMORE1D) $(EXE_BGK1D) \
         $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_LEVERMORE1D) $(EXE_BGK1D); \
+        $(EXE_EMBEDDEDBOUNDARIES2D); \
 	do \
 	  echo "Uninstalling $$f"; \
 	  cd $(CFFC_BIN_DIR); \
@@ -1330,6 +1340,7 @@ ifeq ($(strip $(filter $(MAKECMDGOALS), $(NODEP_LIST)) ), )
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_EULER_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_NAVIERSTOKES_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_CHEM_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_FLAME)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_FLAME_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_HIGHTEMP_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_DUSTY_EXE)))

@@ -8,7 +8,7 @@
 # Set some default platform and version options
 PLATFORM = generic
 
-# NoMPI, MPICH, MPICH2, MPT (SGI)
+# NoMPI, MPICH, MPICH2, MPT (SGI), OPENMPI
 MPI_VERSION = NoMPI
 
 # NoICEMCFD, V41, V42. V43, V50, V10, V11
@@ -182,23 +182,32 @@ BLKCLIB_LD_FLAGS        = -L$(BLKCLIB_LIB_DIR) -lblkc
 # Set flags associated with cantera
 ifeq ($(PLATFORM),Linux_i386)
   CANTERA_ARCH          = $(shell uname -m)-pc-linux-gnu
-  CANTERA_LCXX_END_LIBS = -lm
-endif
-ifeq ($(PLATFORM),Darwin_i386)
-  CANTERA_ARCH          =  $(shell uname -m)-apple-darwin-$(shell uname -r)
-  CANTERA_LCXX_END_LIBS = -lm
+  CANTERA_STRING        = CXX="g++" CXXFLAGS="-O3 -Wall" \
+                          CC="gcc" CFLAGS="-O3 -Wall" F77="gfortran" \
+                          FFLAGS="-O3" \
+                          LCXX_END_LIBS="-lm"
 endif
 ifeq ($(PLATFORM),Linux_alpha)
   CANTERA_ARCH          = alphaev68-unknown-linux-gnu
-  CANTERA_LCXX_END_LIBS = -lm
+  CANTERA_STRING        = CXX="cxx" \
+	                  CXXFLAGS="-D__USE_STD_IOSTREAM -arch host -tune host -fast -w -std gnu" \
+	                  CC="ccc" CFLAGS="-arch host -tune host -fast -w" \
+                          F77="fort" FFLAGS="-arch host -tune host -fast -w" \
+	                  LCXX_END_LIBS="-lm"
 endif
 ifeq ($(PLATFORM),Linux_ia64)
   CANTERA_ARCH          = ia64-unknown-linux-gnu
-  CANTERA_LCXX_END_LIBS = -limf
+  CANTERA_STRING        = CXX="icpc" CXXFLAGS="-w0 -O2 -mp -ftz" \
+                          CC="icc" CFLAGS="-w0 -O2 -mp -ftz" \
+                          F77="ifort" FFLAGS="-w -O2 -mp -ftz" \
+                          LCXX_END_LIBS="-limf"
 endif	
 ifeq ($(PLATFORM),Linux_x86_64)
   CANTERA_ARCH          = $(shell uname -m)-pc-linux-gnu
-  CANTERA_LCXX_END_LIBS = -lm
+  CANTERA_STRING        = CXX="g++" CXXFLAGS="-O3 -Wall" \
+                          CC="gcc" CFLAGS="-O3 -Wall" F77="gfortran" \
+                          FFLAGS="-O3" \
+                          LCXX_END_LIBS="-lm"
 endif
 
 CANTERA                   = CANTERA
@@ -325,6 +334,24 @@ ifeq ($(PLATFORM),Linux_i386)
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS)  $(BLKCLIB_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
     DEPENDSFLAGS = 
   endif
+  ifeq ($(MPI_VERSION),OPENMPI)
+    FC = mpif77
+    F90 = mpif90
+    CC = mpicc
+    CXX = mpiCC
+    CPPFLAGS = -D_MPI_VERSION -D_MPI_VERSION2 -D_GNU_GCC_296 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
+    ifeq ($(GCC_VERSION),V3+)
+       CPPFLAGS = -D_MPI_VERSION -D_MPI_VERSION2 -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
+    endif
+    FFLAGS = -O -w
+    F90FLAGS = $(FFLAGS) -fdefault-real-8
+    MODFLAG = -M
+    CFLAGS = -O
+    CXXFLAGS = -O
+    LD = $(CXX)
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
+    DEPENDSFLAGS = 
+   endif
 endif
 
 #
