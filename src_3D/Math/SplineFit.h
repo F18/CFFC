@@ -449,9 +449,9 @@ inline double CubicSplinesIntegration(double *X, double *Y, int N) {
     double I=0;
     for (int i=0 ; i<N-1 ; i++) {
         I += a[i]*(X[i+1]-X[i]) + 
-	     b[i]*pow((X[i+1]-X[i]),int(2)) + 
-	     c[i]*pow((X[i+1]-X[i]),int(3)) + 
-	     d[i]*pow((X[i+1]-X[i]),int(4));
+	     b[i]*std::pow((X[i+1]-X[i]),2) + 
+	     c[i]*std::pow((X[i+1]-X[i]),3) + 
+	     d[i]*std::pow((X[i+1]-X[i]),4);
     }
     
     delete[] a;
