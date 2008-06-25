@@ -2167,7 +2167,7 @@ void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::FFT_spectral_to_physical(void
     fftw_destroy_plan(physical);
     
     /* ---------- FFT scaling factor ---------- */
-    double FFT_scaling_factor = sqrt(pow(TWO*PI,3.0)/(L1*L2*L3));
+    double FFT_scaling_factor = sqrt(cube(TWO*PI)/(L1*L2*L3));
     int index;
     for (int i=0; i<Nx; i++) {
         for (int j=0; j<Ny; j++) {
