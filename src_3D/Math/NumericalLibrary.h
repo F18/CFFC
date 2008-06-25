@@ -1,8 +1,8 @@
 /*!\file NumericalLibrary.h
   \brief Header file defining some useful numerical methods/objects. */
 
-#ifndef _NumericalLibrary_INCLUDED
-#define _NumericalLibrary_INCLUDED
+#ifndef _NUMERICAL_LIBRARY_INCLUDED
+#define _NUMERICAL_LIBRARY_INCLUDED
 
 /* Include required C++ libraries. */
 #include <limits>
@@ -250,6 +250,252 @@ wrapped_member_function(ObjectType *object, Member_Pointer mem_func, SolutionTyp
   return _Member_Function_Wrapper_<ObjectType,Member_Pointer,SolutionType> (object,mem_func);
 }
 
+/************************************************************************//**
+ * \class _Member_Function_Wrapper_One_Parameter_
+ * \brief Adaptor for making a class member function that takes one (unsigned) parameter
+ * look like an ordinary function
+ *
+ * This wrapper is useful for passing member functions to subroutines that 
+ * take ordinary functions (e.g. numerical integration subroutines)
+ ****************************************************************************/
+template<class ObjectType, class Member_Pointer, class SolutionType>
+class _Member_Function_Wrapper_One_Parameter_{
+  
+public:
+  
+  /* constructor */
+  _Member_Function_Wrapper_One_Parameter_(ObjectType *object,
+					  Member_Pointer mem_func,
+					  const unsigned param): Obj(object), Ptr(mem_func), parameter(param){ }
+  
+  // "member function evaluation" with three parameters
+  SolutionType operator() (double val1, double val2, double val3){
+    return (Obj->*Ptr)(val1,val2,val3,parameter);
+  }
+    
+  // "member function evaluation" with two parameters
+  SolutionType operator() (double val1, double val2){
+    return (Obj->*Ptr)(val1,val2,parameter);
+  }
+    
+  // "member function evaluation" with one parameter
+  SolutionType operator() (double val1){
+    return (Obj->*Ptr)(val1,parameter);
+  }
+    
+private:
+  _Member_Function_Wrapper_One_Parameter_();	/* make default constructor private */
+  ObjectType *Obj;		/*!< pointer to the object */
+  Member_Pointer Ptr;		/*!< pointer to the class member function */
+  unsigned parameter;         /*!< variable to store the function parameter value */
+};
+
+
+/************************************************************************//**
+ * \fn _Member_Function_Wrapper_One_Parameter<ObjectType,Member_Pointer,SolutionType> 
+ wrapped_member_function_one_parameter(ObjectType *object, Member_Pointer mem_func, SolutionType dummy)
+ * \brief Adaptor for making a class member function that takes one (unsigned) parameter
+ * look like an ordinary function.
+ *
+ * \param object the object used to access the member function
+ * \param mem_func the member function object
+ * \param param the value of the parameter used to evaluate the function
+ * \param dummy used only to provide the solution type
+ ****************************************************************************/
+template<typename ObjectType, typename Member_Pointer, typename SolutionType>
+inline _Member_Function_Wrapper_One_Parameter_<ObjectType,Member_Pointer,SolutionType> 
+wrapped_member_function_one_parameter(ObjectType *object, Member_Pointer mem_func,
+				      unsigned parameter, SolutionType dummy){
+  return _Member_Function_Wrapper_One_Parameter_<ObjectType,Member_Pointer,SolutionType> (object,mem_func,parameter);
+}
+
+/************************************************************************//**
+ * \class _Soln_Block_Member_Function_Wrapper_
+ * \brief Adaptor for member functions of a solution block
+ *
+ * This adaptor is design to make a member function of a structured solution 
+ * block that takes as arguments iCell,jCell, X_Coord and Y_Coord 
+ * look like a function only of 'x' and 'y' Cartesian coordinates. \n
+ * This wrapper is useful for passing member functions to subroutines that 
+ * take ordinary functions (e.g. numerical integration subroutines)
+ ****************************************************************************/
+template<class ObjectType, class Member_Pointer, class SolutionType>
+class _Soln_Block_Member_Function_Wrapper_{
+  
+public:
+  
+  /* Constructors */
+  //  == 1D ==
+  _Soln_Block_Member_Function_Wrapper_(ObjectType *object,
+				       Member_Pointer mem_func,
+				       const int & _iCell_): Obj(object), Ptr(mem_func),
+							     iCell(_iCell_), jCell(0), kCell(0){ };
+
+  // == 2D ==
+  _Soln_Block_Member_Function_Wrapper_(ObjectType *object,
+				       Member_Pointer mem_func,
+				       const int & _iCell_,
+				       const int & _jCell_): Obj(object), Ptr(mem_func),
+							     iCell(_iCell_), jCell(_jCell_), kCell(0){ };
+
+  // == 3D ==
+  _Soln_Block_Member_Function_Wrapper_(ObjectType *object,
+				       Member_Pointer mem_func,
+				       const int & _iCell_,
+				       const int & _jCell_,
+				       const int & _kCell_): Obj(object), Ptr(mem_func),
+							     iCell(_iCell_), jCell(_jCell_), kCell(_kCell_){ };
+    
+  // "member function evaluation" with three parameters (x,y,z)
+  SolutionType operator() (double val1, double val2, double val3){
+    return (Obj->*Ptr)(iCell,jCell,kCell,
+		       val1,val2,val3);
+  }
+    
+  // "member function evaluation" with two parameters (x,y)
+  SolutionType operator() (double val1, double val2){
+    return (Obj->*Ptr)(iCell,jCell,
+		       val1,val2);
+  }
+    
+  // "member function evaluation" with one parameter (x)
+  SolutionType operator() (double val1){
+    return (Obj->*Ptr)(iCell,
+		       val1);
+  }
+    
+private:
+  /*! Private default constructor*/
+  _Soln_Block_Member_Function_Wrapper_();
+
+  // Local variables
+  ObjectType *Obj;		/*!< pointer to the object */
+  Member_Pointer Ptr;		/*!< pointer to the class member function */
+  int iCell, jCell, kCell;	//!< the cell indexes in the structured solution block
+};
+
+
+/************************************************************************//**
+ * \fn _Soln_Block_Member_Function_Wrapper_<ObjectType,Member_Pointer,SolutionType> 
+ wrapped_member_function_one_parameter(ObjectType *object, Member_Pointer mem_func,
+                                       int iCell, int jCell,
+                                       SolutionType dummy)
+ * \brief Adaptor for member functions of a 2D solution block
+ *
+ * \param object the object used to access the member function
+ * \param mem_func the member function object
+ * \param iCell,jCell the cell indexes in the structured solution block
+ * \param dummy used only to provide the solution type
+ ****************************************************************************/
+template<typename ObjectType, typename Member_Pointer, typename SolutionType>
+inline _Soln_Block_Member_Function_Wrapper_<ObjectType,Member_Pointer,SolutionType> 
+wrapped_soln_block_member_function(ObjectType *object, Member_Pointer mem_func,
+				   const int & iCell, const int & jCell,
+				   SolutionType dummy){
+  return ( _Soln_Block_Member_Function_Wrapper_<ObjectType,Member_Pointer,SolutionType> (object,mem_func,iCell,jCell) );
+}
+
+
+/************************************************************************//**
+ * \class _Soln_Block_Member_Function_Wrapper_One_Parameter_
+ * \brief Adaptor for member functions of a solution block
+ *
+ * This adaptor is design to make a member function of a structured solution 
+ * block that takes as arguments iCell,jCell, PositionVector and  one (unsigned)
+ * parameter look like a function only of 'x' and 'y' Cartesian coordinates. \n
+ * This wrapper is useful for passing member functions to subroutines that 
+ * take ordinary functions (e.g. numerical integration subroutines)
+ ****************************************************************************/
+template<class ObjectType, class Member_Pointer, class SolutionType, class PositionVectorType>
+class _Soln_Block_Member_Function_Wrapper_One_Parameter_{
+  
+public:
+  
+  /* Constructors */
+  //  == 1D ==
+  _Soln_Block_Member_Function_Wrapper_One_Parameter_(ObjectType *object,
+						     Member_Pointer mem_func,
+						     const int & _iCell_,
+						     const unsigned & param): Obj(object), Ptr(mem_func),
+									      iCell(_iCell_), jCell(0), kCell(0),
+									      parameter(param){ };
+
+  // == 2D ==
+  _Soln_Block_Member_Function_Wrapper_One_Parameter_(ObjectType *object,
+						     Member_Pointer mem_func,
+						     const int & _iCell_,
+						     const int & _jCell_,
+						     const unsigned & param): Obj(object), Ptr(mem_func),
+									      iCell(_iCell_), jCell(_jCell_), kCell(0),
+									      parameter(param){ };
+
+  // == 3D ==
+  _Soln_Block_Member_Function_Wrapper_One_Parameter_(ObjectType *object,
+						     Member_Pointer mem_func,
+						     const int & _iCell_,
+						     const int & _jCell_,
+						     const int & _kCell_,
+						     const unsigned & param): Obj(object), Ptr(mem_func),
+									      iCell(_iCell_), jCell(_jCell_), kCell(_kCell_),
+									      parameter(param){ };
+    
+  // "member function evaluation" with three parameters (x,y,z)
+  SolutionType operator() (double val1, double val2, double val3){
+    return (Obj->*Ptr)(iCell,jCell,kCell,
+		       PositionVectorType(val1,val2,val3),
+		       parameter);
+  }
+    
+  // "member function evaluation" with two parameters (x,y)
+  SolutionType operator() (double val1, double val2){
+    return (Obj->*Ptr)(iCell,jCell,
+		       PositionVectorType(val1,val2),
+		       parameter);
+  }
+    
+  // "member function evaluation" with one parameter (x)
+  SolutionType operator() (double val1){
+    return (Obj->*Ptr)(iCell,
+		       PositionVectorType(val1),
+		       parameter);
+  }
+    
+private:
+  /*! Private default constructor*/
+  _Soln_Block_Member_Function_Wrapper_One_Parameter_();
+
+  // Local variables
+  ObjectType *Obj;		/*!< pointer to the object */
+  Member_Pointer Ptr;		/*!< pointer to the class member function */
+  int iCell, jCell, kCell;	//!< the cell indexes in the structured solution block
+  unsigned parameter;           /*!< variable to store the function parameter value */
+};
+
+
+/************************************************************************//**
+ * \fn _Soln_Block_Member_Function_Wrapper_One_Parameter<ObjectType,Member_Pointer,SolutionType,PositionVectorType> 
+ wrapped_member_function_one_parameter(ObjectType *object, Member_Pointer mem_func, PositionVectorType _dummy_Pos,
+                                       int iCell, int jCell,
+                                       SolutionType dummy)
+ * \brief Adaptor for member functions of a 2D solution block
+ *
+ * \param object the object used to access the member function
+ * \param mem_func the member function object
+ * \param iCell,jCell the cell indexes in the structured solution block
+ * \param _dummy_Pos  used only to provide the type of the position vector (e.g. Vector2D, Node2D etc.)
+ * \param param the value of the parameter used to evaluate the function
+ * \param dummy used only to provide the solution type
+ ****************************************************************************/
+template<typename ObjectType, typename Member_Pointer, typename SolutionType, typename PositionVectorType>
+inline _Soln_Block_Member_Function_Wrapper_One_Parameter_<ObjectType,Member_Pointer,SolutionType,PositionVectorType> 
+wrapped_member_function_one_parameter(ObjectType *object, Member_Pointer mem_func,
+				      const PositionVectorType & ,
+				      const int & iCell, const int & jCell,
+				      unsigned parameter, SolutionType dummy){
+  return ( _Soln_Block_Member_Function_Wrapper_One_Parameter_<ObjectType,Member_Pointer,
+	   SolutionType,PositionVectorType> (object,mem_func,iCell,jCell,parameter) );
+}
+
 
 /*******************************************************************
  *                                                                 *
@@ -313,7 +559,7 @@ void frenel(double x, double &s, double &c);
  * \param dummy used only to provide the ReturnType
  ****************************************************************************/
 template<class FunctionType, class ReturnType>
-  inline ReturnType qgauss5(FunctionType func, double a, double b, const ReturnType & dummy){
+inline ReturnType qgauss5(FunctionType func, double a, double b, const ReturnType & dummy){
 
   int j;
   long double xr,xm,dx;
@@ -349,8 +595,8 @@ template<class FunctionType, class ReturnType>
  **************************************************************************************************************************/
 // Lucian Ivan, 31/09/2005
 template <class FunctionType, class ReturnType>
-  inline ReturnType adaptlobstp(FunctionType func, double a, double b, const ReturnType & fa, const ReturnType & fb, 
-				const ReturnType & is, int &FunctionEvaluations, int & WriteMessage)
+inline ReturnType adaptlobstp(FunctionType func, double a, double b, const ReturnType & fa, const ReturnType & fb, 
+			      const ReturnType & is, int &FunctionEvaluations, int & WriteMessage)
   throw(TooShortInterval,MaximumIterationsExceeded){
 
   const ReturnType eps(numeric_limits<double>::epsilon());
@@ -433,7 +679,7 @@ inline ReturnType GaussLobattoAdaptiveQuadrature(FunctionType func, double Start
 						 int digits = numeric_limits<double>::digits10)
   throw (TooShortInterval) {
   
-  ReturnType tol(0.5*pow(10.0,-digits));
+  ReturnType tol(0.5*std::pow(10.0,-digits));
   const ReturnType eps(numeric_limits<double>::epsilon());
   
   double a,b;
@@ -583,9 +829,9 @@ inline ReturnType GaussLobattoQuadrature(FunctionType func, double StartPoint, d
  * \param digits number of exact digits (there is a default value already provided!)
  **************************************************************************************************************************/
 template <class FunctionType, class ReturnType>
-  inline ReturnType AdaptiveGaussianQuadrature(FunctionType func, double StartPoint, double EndPoint,
-					       const ReturnType & dummy, int digits = numeric_limits<double>::digits10){
-
+inline ReturnType AdaptiveGaussianQuadrature(FunctionType func, double StartPoint, double EndPoint,
+					     const ReturnType & dummy, int digits = numeric_limits<double>::digits10){
+  
   int WriteMessage = 0; 	/* this flag makes sure that the error message is printed only once */
   return GaussLobattoAdaptiveQuadrature(func,StartPoint,EndPoint,dummy,WriteMessage,digits);
 }
@@ -839,10 +1085,10 @@ template<class FunctionType, class SolutionType>
  * \param digits number of exact digits (there is a default value already provided!)
  **************************************************************************************************************************/
 template<class FunctionType, class ReturnType>
-ReturnType AdaptiveGaussianQuadrature(FunctionType func, double StartX, double EndX,
-				      double StartY, double EndY,  
-				      int digits, const ReturnType & dummy){
-
+inline ReturnType AdaptiveGaussianQuadrature(FunctionType func, double StartX, double EndX,
+					     double StartY, double EndY,  
+					     int digits, const ReturnType & dummy){
+  
   int WriteMessage = 0; 	/* this flag makes sure that the error message is written only once */
   
   /* Create the function inner integral  */
@@ -868,13 +1114,13 @@ ReturnType AdaptiveGaussianQuadrature(FunctionType func, double StartX, double E
  * \param dummy used only to provide the return type
  **************************************************************************************************************************/
 template <class FunctionType, class ReturnType>
-  inline ReturnType GaussLobattoQuadrature(FunctionType func, double StartX, double EndX,
-					   double StartY, double EndY, 
-					   const ReturnType & dummy){
-
+inline ReturnType GaussLobattoQuadrature(FunctionType func, double StartX, double EndX,
+					 double StartY, double EndY, 
+					 const ReturnType & dummy){
+  
   /* Create the inner integral */
   AntiderivativeGL<FunctionType,ReturnType> PrimitiveY(func,StartY,EndY);
-
+  
   /* Integrate the inner integral with respect to X */
   return GaussLobattoQuadrature(PrimitiveY,StartX,EndX,dummy);
 }
@@ -894,13 +1140,13 @@ template <class FunctionType, class ReturnType>
  * \param dummy used only to provide the return type
  **************************************************************************************************************************/
 template <class FunctionType, class ReturnType>
-  inline ReturnType Gauss5PointQuadrature(FunctionType func, double StartX, double EndX,
-					  double StartY, double EndY, 
-					  const ReturnType & dummy){
-
+inline ReturnType Gauss5PointQuadrature(FunctionType func, double StartX, double EndX,
+					double StartY, double EndY, 
+					const ReturnType & dummy){
+  
   /* Create the inner integral */
   AntiderivativeG5<FunctionType,ReturnType> PrimitiveY(func,StartY,EndY);
-
+  
   /* Integrate the inner integral with respect to X */
   return qgauss5(PrimitiveY,StartX,EndX,dummy);
 }
@@ -925,18 +1171,18 @@ template <class FunctionType, class ReturnType>
  * \param digits number of exact digits (there is a default value already provided!)
  **************************************************************************************************************************/
 template<class FunctionType, class ReturnType>
-  ReturnType AdaptiveGaussianQuadrature(FunctionType func, const double StartX,const double EndX,
-					const double StartY, const double EndY, const double StartZ,
-					const double EndZ, int digits, const ReturnType & dummy){
-
+inline ReturnType AdaptiveGaussianQuadrature(FunctionType func, const double StartX,const double EndX,
+					     const double StartY, const double EndY, const double StartZ,
+					     const double EndZ, int digits, const ReturnType & dummy){
+  
   int WriteMessage = 0; 	/* this flag makes sure that the error message is written only once */
-
+  
   /* Create the function to be integrated with Y */
   Antiderivative<FunctionType,ReturnType> PrimitiveZ(func,StartZ,EndZ,WriteMessage,digits);
-
+  
   /* Create the function to be integrated with X */
   Antiderivative<Antiderivative<FunctionType,ReturnType>,ReturnType> PrimitiveY(PrimitiveZ,StartY,EndY,WriteMessage,digits);
-
+  
   return GaussLobattoAdaptiveQuadrature(PrimitiveY,StartX,EndX,dummy,WriteMessage,digits);
 };
 
@@ -1026,8 +1272,8 @@ public:
  * \param SE the south-east node of the quadrilateral
  * \param dummy used only to provide the return type
  ****************************************************************************/
-template<class FunctionType, class NodeType, class ReturnType> 
-inline
+template<class FunctionType, class NodeType, class ReturnType>
+inline 
 BilinearTransformFunctionInPlan<FunctionType, NodeType, ReturnType> // returned type
 planar_bilinear_function_transformation(FunctionType func,
 					const NodeType & SW, const NodeType & NW,
@@ -1053,8 +1299,10 @@ planar_bilinear_function_transformation(FunctionType func,
  * \param digits number of exact digits (there is a default value already provided!)
  **************************************************************************************************************************/
 template<class FunctionType, class NodeType, class ReturnType>
-  ReturnType QuadrilateralQuadrature(FunctionType func, const NodeType & SW, const NodeType & NW, const NodeType & NE, 
-				     const NodeType & SE, int digits, const ReturnType & dummy){
+inline ReturnType QuadrilateralQuadrature(FunctionType func,
+					  const NodeType & SW, const NodeType & NW,
+					  const NodeType & NE, const NodeType & SE,
+					  int digits, const ReturnType & dummy){
 
   /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
   return AdaptiveGaussianQuadrature(planar_bilinear_function_transformation(func,SW,NW,NE,SE,dummy), // tranform the function
@@ -1077,8 +1325,10 @@ template<class FunctionType, class NodeType, class ReturnType>
  * \param dummy used only to provide the return type
  **************************************************************************************************************************/
 template<class FunctionType, class NodeType, class ReturnType>
-  ReturnType GaussLobattoQuadrilateralQuadrature(FunctionType func, NodeType & SW, NodeType & NW, NodeType & NE, 
-						 NodeType & SE, const ReturnType & dummy){
+inline ReturnType GaussLobattoQuadrilateralQuadrature(FunctionType func,
+						      const NodeType & SW, const NodeType & NW,
+						      const NodeType & NE, const NodeType & SE,
+						      const ReturnType & dummy){
 
   /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
   return GaussLobattoQuadrature(planar_bilinear_function_transformation(func,SW,NW,NE,SE,dummy), // tranform the function
@@ -1100,19 +1350,21 @@ template<class FunctionType, class NodeType, class ReturnType>
  * \param SE the south-east node of the quadrilateral
  * \param dummy used only to provide the return type
  **************************************************************************************************************************/
-template<class FunctionType, class NodeType, class ReturnType>
-  ReturnType Gauss5PointQuadrilateralQuadrature(FunctionType func, NodeType & SW, NodeType & NW, NodeType & NE, 
-						NodeType & SE, const ReturnType & dummy){
+template<class FunctionType, class NodeType, class ReturnType> 
+inline ReturnType Gauss5PointQuadrilateralQuadrature(FunctionType func,
+						     const NodeType & SW, const NodeType & NW,
+						     const NodeType & NE, const NodeType & SE,
+						     const ReturnType & dummy){
 
   /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
   return Gauss5PointQuadrature(planar_bilinear_function_transformation(func,SW,NW,NE,SE,dummy), // tranform the function
 			       0.0,1.0,0.0,1.0,dummy);
 }
 
-/******************************************************************************************
- * Generalized polynomial function of ONE-variable                                        *
- * is a class of functions which have the form (x-xi)^n                                   *
- ******************************************************************************************/
+/**
+ * Generalized polynomial function of ONE-variable                                        
+ * is a class of functions which have the form (x-xi)^n                                   
+ ********************************************************/
 class GeneralizedPolynomialFunctionOfOneVariable{
  private:
   double xi;
@@ -1127,14 +1379,14 @@ class GeneralizedPolynomialFunctionOfOneVariable{
     }
 
     double operator()(const double & x){
-      return pow((x-xi),n);
+      return std::pow((x-xi),n);
     }
 };
 
-/******************************************************************************************
- * Generalized polynomial function of TWO-variables                                       *
- * is a class of functions which have the form (x-xi)^n * (y-yi)^m                        *
- ******************************************************************************************/
+/**
+ * Generalized polynomial function of TWO-variables                                      
+ * is a class of functions which have the form (x-xi)^n * (y-yi)^m                       
+ ********************************************************************/
 class GeneralizedPolynomialFunctionOfTwoVariables{
  private:
   double xi, yi;
@@ -1151,7 +1403,7 @@ class GeneralizedPolynomialFunctionOfTwoVariables{
     }
 
     double operator()(const double x, const double y){
-      return pow((x-xi),n)*pow((y-yi),m);
+      return std::pow((x-xi),n)*std::pow((y-yi),m);
     }
 
     friend ostream& operator << (ostream& os, const GeneralizedPolynomialFunctionOfTwoVariables & Var){
@@ -1168,6 +1420,31 @@ class GeneralizedPolynomialFunctionOfTwoVariables{
 double ZeroLineIntegration(const double & N1x, const double & N1y,
 			   const double & N2x, const double & N2y);
 
+/***********************************************************************//**
+ * Compute the integral \f$ I = \int x dy \f$ along a segment line
+ * in a local coordinate system (LCS).
+ * GCS = global coordinate system
+ *
+ * \param N1x the x-coordinate of the segment first end point in the GCS.
+ * \param N1y the y-coordinate of the segment first end point in the GCS.
+ * \param N2x the x-coordinate of the segment second end point in the GCS.
+ * \param N2y the y-coordinate of the segment second end point in the GCS.
+ * \param xLCS the x-coordinate of the LCS in the GCS
+ * \param yLCS the y-coordinate of the LCS in the GCS
+ * \return the value of the integral
+ ************************************************************************/
+inline double ZeroLineIntegration(const double & N1x, const double & N1y,
+				  const double & N2x, const double & N2y,
+				  const double & xLCS, const double & yLCS){
+  
+  // Calculate the coordinates in the LCS
+  double N1x_LCS(N1x-xLCS), N1y_LCS(N1y-yLCS);
+  double N2x_LCS(N2x-xLCS), N2y_LCS(N2y-yLCS);
+  
+  return ZeroLineIntegration(N1x_LCS, N1y_LCS,
+			     N2x_LCS, N2y_LCS);
+}
+
 // ZeroLineIntegration for Node input
 template< class Node>
 inline double ZeroLineIntegration(const Node& StartNode, const Node& EndNode){
@@ -1178,8 +1455,127 @@ inline double ZeroLineIntegration(const Node& StartNode, const Node& EndNode){
 double PolynomLineIntegration(const double & N1x, const double & N1y,
 			      const double & N2x, const double & N2y,
 			      const double & xCC, const double & yCC,
-			      const int OrderX,   const int OrderY);
+			      const int &OrderX, const int &OrderY);
 
+// PolynomLineIntegration2()
+double PolynomLineIntegration2(const double & N1x, const double & N1y,
+			       const double & N2x, const double & N2y,
+			       const double & xCC, const double & yCC,
+			       const int &OrderX, const int &OrderY);
+
+/***********************************************************************//**
+ * Compute the integral \f$ I = \int (x - xc)^{(OrderX+1)} * (y - yc)^OrderY dy \f$
+ * along a segment line in a local coordinate system (LCS).
+ * The result of this polynomial function integration is determined with an analytic expression.
+ * GCS = global coordinate system
+ *
+ * \param N1x the x-coordinate of the line first end point in the GCS.
+ * \param N1y the y-coordinate of the line first end point in the GCS.
+ * \param N2x the x-coordinate of the line second end point in the GCS.
+ * \param N2y the y-coordinate of the line second end point in the GCS.
+ * \param xCC the xc-coordinate in the GCS
+ * \param yCC the yc-coordinate in the GCS
+ * \param xLCS the x-coordinate of the LCS in the GCS
+ * \param yLCS the y-coordinate of the LCS in the GCS
+ * \return the value of the integrals up to 4th-order (i.e. OrderX + OrderY <= 4)
+ *
+ *********************************************************************************/
+inline double PolynomLineIntegration(const double & N1x, const double & N1y,
+				     const double & N2x, const double & N2y,
+				     const double & xCC, const double & yCC,
+				     const double & xLCS, const double & yLCS,
+				     const int &OrderX, const int &OrderY){
+
+  // Calculate the coordinates in the LCS
+  double N1x_LCS(N1x-xLCS), N1y_LCS(N1y-yLCS);
+  double N2x_LCS(N2x-xLCS), N2y_LCS(N2y-yLCS);
+  double xCC_LCS(xCC-xLCS), yCC_LCS(yCC-yLCS);
+  
+  return PolynomLineIntegration(N1x_LCS, N1y_LCS,
+				N2x_LCS, N2y_LCS,
+				xCC_LCS, yCC_LCS,
+				OrderX, OrderY);
+}
+
+/*!
+ * \class GaussQuadratureData
+ *
+ * @brief Collection of absissae and weights 
+ *        for n-point Gauss quadrature formula
+ * 
+ * The integral that can be computed with this data
+ * is defined as follows:
+ * 
+ * \f$ I = \int_{a}^{b} f(x) dx = m \int_{-1}^{+1}f(c+mt) dt \f$
+ * where \f$x=c+mt\f$, \f$c=\frac{1}{2}(b+a)\f$ and \f$m=\frac{1}{2}(b-a)\f$ ,
+ *        'a' and 'b' are the integration limits. \n
+ *
+ * This integral can be writen as follows: \n
+ * \f$ I = m \int_{-1}^{+1}f(c+mt) dt = m \sum_{i=i}^{n} \omega_{i} 
+ *         f(c+mt_{i}) = (b-a) \sum_{i=i}^{n} GQn\_Weight[i]* f(a + GQn\_Abscissa[i]*(b-a)) \f$
+ ***********************************************************************************************/
+class GaussQuadratureData{
+public:
+  // Abscissae and weights for 1-point Gaussian method
+  static const double GQ1_Abscissa[1];
+  static const double GQ1_Weight[1];
+
+  // Abscissae and weights for 2-point Gaussian method
+  static const double GQ2_Abscissa[2];
+  static const double GQ2_Weight[2];
+
+  // Abscissae and weights for 3-point Gaussian method
+  static const double GQ3_Abscissa[3];
+  static const double GQ3_Weight[3];
+
+  // Abscissae and weights for 5-point Gaussian method
+  static const double GQ5_Abscissa[5];
+  static const double GQ5_Weight[5];  
+
+  //! Set the weights in the passed array
+  static void getGaussQuadWeights(double * GaussQuadWeights, const int & NumberOfGQPs);
+
+protected:
+  GaussQuadratureData(void); //!< Private default constructor
+  GaussQuadratureData(const GaussQuadratureData&); //!< Private copy constructor
+  GaussQuadratureData& operator=(const GaussQuadratureData&); //!< Private assignment operator
+  
+};
+
+inline void GaussQuadratureData::getGaussQuadWeights(double * GaussQuadWeights, const int & NumberOfGQPs){
+
+  // Note: This subroutine doesn't check if there is enough memory allocated!
+
+  switch ( NumberOfGQPs ){
+  case 1:			// One point
+    GaussQuadWeights[0] = GQ1_Weight[0];
+    break;
+
+  case 2:			// Two points
+    GaussQuadWeights[0] = GQ2_Weight[0];
+    GaussQuadWeights[1] = GQ2_Weight[1];
+    break;
+    
+  case 3:			// Three points
+    GaussQuadWeights[0] = GQ3_Weight[0];
+    GaussQuadWeights[1] = GQ3_Weight[1];
+    GaussQuadWeights[2] = GQ3_Weight[2];
+    break;
+
+  case 5:			// Five points
+    GaussQuadWeights[0] = GQ5_Weight[0];
+    GaussQuadWeights[1] = GQ5_Weight[1];
+    GaussQuadWeights[2] = GQ5_Weight[2];
+    GaussQuadWeights[3] = GQ5_Weight[3];
+    GaussQuadWeights[4] = GQ5_Weight[4];
+    break;
+
+  default:
+    // Add option if different GQPs are desired.
+    throw runtime_error("GaussQuadratureData::getGaussQuadWeights() ERROR! There is no implementation for this number of Gauss points!");
+  } // endswitch
+
+}
 
 /**************** Function Prototypes ********************/
 

@@ -11,7 +11,6 @@
 #include "LES3DPolytropicState.h"
 #endif // LES3D_POLYTROPIC_STATE_INCLUDED   
 
-
 /*----------------------------------------------------------------------------*
  *                LESS3D_Polytropic_pState member functions                   *
  *----------------------------------------------------------------------------*/
@@ -25,8 +24,6 @@ void LES3D_Polytropic_pState::Set_LES_parameters(SFS_model_Parameters &SFS_model
     SFS_model = SFS_model_;
     filter = filter_;
 }
-
-
 
 /*
  * Turbulent transport coefficients
