@@ -128,7 +128,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       V1[i] = a;
       V2[i] = b;
     }
@@ -137,7 +137,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       ensure_distance("V3 = V1 + V2", V3[i], a+b, fabs(a+b)*tol);
     }
   }
@@ -155,7 +155,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       V1[i] = a;
       V2[i] = b;
     }
@@ -164,7 +164,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
 
       ensure_distance("V2 += V1",V2[i],a+b,fabs(a+b)*tol);
       ensure_distance("V3 = (V2+=V1)",V3[i],a+b,fabs(a+b)*tol);
@@ -184,7 +184,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp ((double)i);
       V1[i] = a;
       V2[i] = b;
     }
@@ -193,7 +193,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       ensure_distance("V3 = V1 - V2", V3[i], a-b, fabs(a-b)*tol);
     }
   }
@@ -211,7 +211,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       V1[i] = a;
       V2[i] = b;
     }
@@ -220,7 +220,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
 
       ensure_distance("V2 -= V1",V2[i],b-a,fabs(b-a)*tol);
       ensure_distance("V3 = (V2-=V1)",V3[i],b-a,fabs(b-a)*tol);
@@ -240,7 +240,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       dot += (a*b);
       V1[i] = a;
       V2[i] = b;
@@ -266,7 +266,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       V1[i] = a;
       V2[i] = b;
     }
@@ -274,14 +274,14 @@ namespace tut
     V3 = V1 ^ V2;
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       ensure_distance("V3 = V1^V2)", V3[i], a*b, fabs(a*b)*tol);
     }
 
     V3 = V2 ^ V1;
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       ensure_distance("V3 = V1^V2)", V3[i], a*b, fabs(a*b)*tol);
     }
   }
