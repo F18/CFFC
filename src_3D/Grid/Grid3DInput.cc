@@ -342,180 +342,184 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
      if (NCells_Kdir < 1) i_command = INVALID_INPUT_VALUE;
      if (NCells_Turbulence_Kdir < NCells_Kdir) NCells_Turbulence_Kdir = NCells_Kdir;
 
-  } else if (strcmp(code, "Number_of_Blocks_Idir") == 0) {
+  } else if (strcmp(code, "Number_of_Ghost_Cells") == 0) {
      i_command = 3006;
+     value >> Nghost;
+
+  } else if (strcmp(code, "Number_of_Blocks_Idir") == 0) {
+     i_command = 3007;
      value >> NBlk_Idir;
      if (NBlk_Idir < 1) i_command = INVALID_INPUT_VALUE;
-
+ 
   } else if (strcmp(code, "Number_of_Blocks_Jdir") == 0) {
-     i_command = 3007;
+     i_command = 3008;
      value >> NBlk_Jdir;
      if (NBlk_Jdir < 1) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Number_of_Blocks_Kdir") == 0) {
-     i_command = 3008;
+     i_command = 3009;
      value >> NBlk_Kdir;
      if (NBlk_Kdir < 1) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Stretching_Factor_Idir") == 0) {
-     i_command = 3009;
+     i_command = 3010;
      value >> Stretching_Factor_Idir;
      if (Stretching_Factor_Idir < ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Stretching_Factor_Jdir") == 0) {
-     i_command = 3010;
+     i_command = 3011;
      value >> Stretching_Factor_Jdir;
      if (Stretching_Factor_Jdir < ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Stretching_Factor_Kdir") == 0) {
-     i_command = 3011;
+     i_command = 3012;
      value >> Stretching_Factor_Kdir;
      if (Stretching_Factor_Kdir < ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Stretching_Type_Idir") == 0) {
-     i_command = 3012;
+     i_command = 3013;
      value >> Stretching_Type_Idir;
      if (Stretching_Type_Idir < 0) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Stretching_Type_Jdir") == 0) {
-     i_command = 3013;
+     i_command = 3014;
      value >> Stretching_Type_Jdir;
      if (Stretching_Type_Jdir < 0) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Stretching_Type_Kdir") == 0) {
-     i_command = 3014;
+     i_command = 3015;
      value >> Stretching_Type_Kdir;
      if (Stretching_Type_Kdir < 0) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "X_Shift") == 0) {
-     i_command = 3015;
+     i_command = 3016;
      value >> X_Shift;
 
   } else if (strcmp(code, "X_Scale") == 0) {
-     i_command = 3016;
+     i_command = 3017;
      value >> X_Scale;
        
   } else if (strcmp(code, "X_Rotate") == 0) {
-     i_command = 3017;
+     i_command = 3018;
      value >> X_Rotate;
       
   } else if (strcmp(code, "Plate_Length") == 0) {
-      i_command = 3040;
-      value >> Plate_Length;
-      if (Plate_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
+     i_command = 3019;
+     value >> Plate_Length;
+     if (Plate_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Pipe_Length") == 0) {
-     i_command = 3018;
+     i_command = 3020;
      value >> Pipe_Length;
      if (Pipe_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Pipe_Radius") == 0) {
-     i_command = 3019;
+     i_command = 3021;
      value >> Pipe_Radius;
      if (Pipe_Radius <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Radius_Bluff_Body") == 0) {
-     i_command = 3020;
+     i_command = 3022;
      value >> Radius_Bluff_Body;
      if (Radius_Bluff_Body <ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Radius_Fuel_Line") == 0) {
-     i_command = 3021;
+     i_command = 3023;
      value >> Radius_Fuel_Line;
      if (Radius_Fuel_Line <ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Radius_Coflow_Inlet_Pipe") == 0) {
-     i_command = 3022;
+     i_command = 3024;
      value >> Radius_Coflow_Inlet_Pipe;
      if (Radius_Coflow_Inlet_Pipe <ZERO) i_command = INVALID_INPUT_VALUE;   
 
   } else if (strcmp(code, "Length_Coflow_Inlet_Pipe") == 0) {
-     i_command = 3023;
+     i_command = 3025;
      value >> Length_Coflow_Inlet_Pipe;
      if (Length_Coflow_Inlet_Pipe <ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Length_Combustor_Tube") == 0) {
-     i_command = 3024;
+     i_command = 3026;
      value >> Length_Combustor_Tube;
      if (Length_Combustor_Tube <ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "ICEMCFD_Topology_File") == 0) {
-     i_command = 3025;
+     i_command = 3027;
      value >> value_string;
      strcpy(ICEMCFD_FileNames[0], value_string.c_str());
 
   } else if (strcmp(code, "ICEMCFD_Family_Boco_File") == 0) {
-     i_command = 3026;
+     i_command = 3028;
      value >> value_string;
      strcpy(ICEMCFD_FileNames[1], value_string.c_str());
 
   } else if (strcmp(code, "ICEMCFD_Family_Topo_File") == 0) {
-     i_command = 3027;
+     i_command = 3029;
      value >> value_string;
      strcpy(ICEMCFD_FileNames[2], value_string.c_str());
 
   } else if (strcmp(code, "Box_Length") == 0) {
-     i_command = 3028;
+     i_command = 3030;
      value >> Box_Length;
      if (Box_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Box_Width") == 0) {
-     i_command = 3029;
+     i_command = 3031;
      value >> Box_Width;
      if (Box_Width <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Box_Height") == 0) {
-     i_command = 3030;
+     i_command = 3032;
      value >> Box_Height;
      if (Box_Height <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Radius_Bunsen_Burner_Fuel_Line") == 0) {
-     i_command = 3031;
+     i_command = 3033;
      value >> Radius_Bunsen_Burner_Fuel_Line;
      if (Radius_Bunsen_Burner <ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Radius_Bunsen_Burner") == 0) {
-     i_command = 3032;
+     i_command = 3034;
      value >> Radius_Bunsen_Burner;
      if (Radius_Bunsen_Burner <ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Height_Bunsen_Burner") == 0) {
-     i_command = 3033;
+     i_command = 3035;
      value >> Height_Bunsen_Burner;
      if (Height_Bunsen_Burner <ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Number_of_Cells_Turbulence_Idir") == 0) {
-     i_command = 3034;
+     i_command = 3036;
      value >> NCells_Turbulence_Idir;
      if (NCells_Turbulence_Idir < 1) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Number_of_Cells_Turbulence_Jdir") == 0) {
-     i_command = 3035;
+     i_command = 3037;
      value >> NCells_Turbulence_Jdir;
      if (NCells_Turbulence_Jdir <1) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Number_of_Cells_Turbulence_Kdir") == 0) {
-     i_command = 3036;
+     i_command = 3038;
      value >> NCells_Turbulence_Kdir;
      if (NCells_Turbulence_Kdir < 1) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Turbulence_Box_Length") == 0) {
-     i_command = 3037;
+     i_command = 3039;
      value >> Turbulence_Box_Length;
      if (Turbulence_Box_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Turbulence_Box_Width") == 0) {
-     i_command = 3038;
+     i_command = 3040;
      value >> Turbulence_Box_Width;
      if (Turbulence_Box_Width <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Turbulence_Box_Height") == 0) {
-     i_command = 3039;
+     i_command = 3041;
      value >> Turbulence_Box_Height;
      if (Turbulence_Box_Height <= ZERO) i_command = INVALID_INPUT_VALUE;
     
   } else if (strcmp(code, "Slot_Width") == 0) {
-     i_command = 3040;
+     i_command = 3042;
      value >> Slot_Width;
      if (Slot_Width <= ZERO) i_command = INVALID_INPUT_VALUE;
 
@@ -652,6 +656,8 @@ void Grid3D_Input_Parameters::Output(ostream &out_file) const {
             << NCells_Jdir;
    out_file << "\n  -> Number of Cells k-direction: " 
             << NCells_Kdir;
+   out_file << "\n  -> Number of Ghost Cells on each side: "
+            << Nghost;
 
    out_file << "\n  -> Mesh shift, scale, and rotate: " 
             << X_Shift << " " << X_Scale << " " << X_Rotate;
