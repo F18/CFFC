@@ -709,8 +709,10 @@ clean:
 	rm -f $(EULER_DIR)*.o $(EULER_DIR)*.il $(EULER_DIR)*~ $(EULER_DIR)*.depend $(EULER_DIR)*.bak
 	rm -f $(EULER_DIR)UnitTests/*.o $(EULER_DIR)UnitTests/*.il $(EULER_DIR)UnitTests/*~ $(EULER_DIR)UnitTests/*.bak
 	rm -f $(NAVIERSTOKES_DIR)*.o $(NAVIERSTOKES_DIR)*.il $(NAVIERSTOKES_DIR)*~ $(NAVIERSTOKES_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
+	rm -f $(NAVIERSTOKES_DIR)UnitTests/*.o $(NAVIERSTOKES_DIR)UnitTests/*.il $(NAVIERSTOKES_DIR)UnitTests/*~ $(NAVIERSTOKES_DIR)UnitTests/*.bak
 	rm -f $(FANS_DIR)*.o $(FANS_DIR)*.il $(FANS_DIR)*~ $(FANS_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
-	rm -f $(LES_POLYTROPIC_DIR)*.o $(LES_POLYTROPIC_DIR)*.il $(LES_POLYTROPIC_DIR)*~ $(LES_POLYTROPIC_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
+	rm -f $(LES_POLYTROPIC_DIR)*.o $(LES_POLYTROPIC_DIR)*.il $(LES_POLYTROPIC_DIR)*~ $(LES_POLYTROPIC_DIR)*.depend $(LES_POLYTROPIC_DIR)*.bak
+	rm -f $(LES_POLYTROPIC_DIR)UnitTests/*.o $(LES_POLYTROPIC_DIR)UnitTests/*.il $(LES_POLYTROPIC_DIR)UnitTests/*~ $(LES_POLYTROPIC_DIR)UnitTests/*.bak
 	rm -f $(LESFSD_DIR)*.o $(LESFSD_DIR)*.il $(LESFSD_DIR)*~ $(LESFSD_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(LESTF_DIR)*.o $(LESTF_DIR)*.il $(LESTF_DIR)*~ $(LESTF_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(HEXA_DIR)*.o $(HEXA_DIR)*.il $(HEXA_DIR)*~
