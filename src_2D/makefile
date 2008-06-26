@@ -1185,8 +1185,8 @@ clean:
 	rm -f $(CFD_DIR)*.o $(CFD_DIR)*.il $(CFD_DIR)*~
 	rm -f $(MPI_DIR)*.o $(MPI_DIR)*.il $(MPI_DIR)*~
 	rm -f $(GRID_DIR)*.o $(GRID_DIR)*.il $(GRID_DIR)*~
-	rm -f $(ICEMCFD_DIR)*.o $(ICEMCFD_DIR)*.il $(ICEMCFD_DIR)*~ $(ICEMCFD_DIR)*.depend $(ICEMCFD_DIR)*.bak
 	rm -f $(GRID_DIR)UnitTests/*.o $(GRID_DIR)UnitTests/*.il $(GRID_DIR)UnitTests/*~ $(GRID_DIR)UnitTests/*.bak
+	rm -f $(ICEMCFD_DIR)*.o $(ICEMCFD_DIR)*.il $(ICEMCFD_DIR)*~ $(ICEMCFD_DIR)*.depend $(ICEMCFD_DIR)*.bak
 	rm -f $(AMR_DIR)*.o $(AMR_DIR)*.il $(AMR_DIR)*~
 	rm -f $(SYSTEM_DIR)*.o $(SYSTEM_DIR)*.il $(SYSTEM_DIR)*~
 	rm -f $(EULER_1D_DIR)*.o $(EULER_1D_DIR)*.il $(EULER_1D_DIR)*~ $(EULER_1D_DIR)*.bak
@@ -1213,6 +1213,7 @@ clean:
 	rm -f $(INTERFACE_DIR)*.o $(INTERFACE_DIR)*.il $(INTERFACE_DIR)*~ $(INTERFACE_DIR)*.depend $(INTERFACE_DIR)*.bak
 	rm -f $(LEVELSET_DIR)*.o $(LEVELSET_DIR)*.il $(LEVELSET_DIR)*~ $(LEVELSET_DIR)*.depend $(LEVELSET_DIR)*.bak
 	rm -f $(PHYSICS_DIR)*.o $(PHYSICS_DIR)*.il $(PHYSICS_DIR)*~
+	rm -f $(PHYSICS_DIR)UnitTests/*.o $(PHYSICS_DIR)UnitTests/*.il $(PHYSICS_DIR)UnitTests/*~ $(PHYSICS_DIR)UnitTests/*.bak
 	rm -f $(TURBULENT_DIR)*.o $(TURBULENT_DIR)*.il $(TURBULENT_DIR)*~
 	rm -f $(EOS_DIR)*.o $(EOS_DIR)*.il $(EOS_DIR)*~
 	rm -f $(NASADATA_DIR)*.o $(NASADATA_DIR)*.il $(NASADATA_DIR)*~
