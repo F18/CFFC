@@ -213,7 +213,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_cState::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       U1[i] = a;
       U2[i] = b;
     }
@@ -222,7 +222,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_cState::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       ensure_distance("U3 = U1 + U2", U3[i], a+b, fabs(a+b)*tol);
     }
   }
@@ -240,7 +240,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_cState::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       U1[i] = a;
       U2[i] = b;
     }
@@ -249,7 +249,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_cState::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
 
       ensure_distance("U2 += U1",U2[i],a+b,fabs(a+b)*tol);
       ensure_distance("U3 = (U2+=U1)",U3[i],a+b,fabs(a+b)*tol);
@@ -269,7 +269,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_cState::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       U1[i] = a;
       U2[i] = b;
     }
@@ -278,7 +278,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_cState::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       ensure_distance("U3 = U1 - U2", U3[i], a-b, fabs(a-b)*tol);
     }
   }
@@ -296,7 +296,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_cState::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       U1[i] = a;
       U2[i] = b;
     }
@@ -305,7 +305,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_cState::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
 
       ensure_distance("U2 -= U1",U2[i],b-a,fabs(b-a)*tol);
       ensure_distance("U3 = (U2-=U1)",U3[i],b-a,fabs(b-a)*tol);
@@ -325,7 +325,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_cState::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       dot += (a*b);
       U1[i] = a;
       U2[i] = b;
@@ -351,7 +351,7 @@ namespace tut
 
     for(i=1;i<=Levermore1D_cState::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       U1[i] = a;
       U2[i] = b;
     }
@@ -359,14 +359,14 @@ namespace tut
     U3 = U1 ^ U2;
     for(i=1;i<=Levermore1D_cState::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       ensure_distance("U3 = U1^U2)", U3[i], a*b, fabs(a*b)*tol);
     }
 
     U3 = U2 ^ U1;
     for(i=1;i<=Levermore1D_cState::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
-      b = sqrt((double)i) * exp (i);
+      b = sqrt((double)i) * exp((double)i);
       ensure_distance("U3 = U1^U2)", U3[i], a*b, fabs(a*b)*tol);
     }
   }
