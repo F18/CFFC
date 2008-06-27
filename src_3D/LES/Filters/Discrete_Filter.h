@@ -48,6 +48,7 @@ public:
     }
     
     Neighbours theNeighbours;
+    Cell3D theCell;
     int commutation_order;
     double FGR;
     int number_of_rings;

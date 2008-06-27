@@ -104,6 +104,7 @@ private:
 template <typename Soln_pState, typename Soln_cState>
 class Vasilyev_LS_Filter : public Discrete_Filter<Soln_pState,Soln_cState> {
 public:
+    using Discrete_Filter<Soln_pState,Soln_cState>::theCell;
     using Discrete_Filter<Soln_pState,Soln_cState>::theNeighbours;
     using Discrete_Filter<Soln_pState,Soln_cState>::number_of_rings;
     using Discrete_Filter<Soln_pState,Soln_cState>::commutation_order;
@@ -124,7 +125,8 @@ public:
     
     bool Output_Constraints;
 
-    void Get_Neighbours(Cell3D &theCell) {
+    void Get_Neighbours(Cell3D &theCell_) {
+        theCell = theCell_;
         theNeighbours.GetNeighbours_Vasilyev(theCell, number_of_rings);
     }
     RowVector Get_Weights(Cell3D &theCell, Neighbours &theNeighbours);
@@ -177,24 +179,29 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     
     int Lr; // number of remaining constraints after setting basic constraints
     Lr = Set_basic_constraints(theNeighbours); 
-    assert(pow(-ONE,Lr) > 0);   // Lr must be even
-    cout << "Lr = " << Lr << endl;
+    assert(Lr == 0);
+    //assert(pow(-ONE,Lr) > 0);   // Lr must be even
+    //cout << "Lr = " << Lr << endl;
     
-    Neighbours theNeighbours_subset(theNeighbours);
-    theNeighbours_subset.allocate(number_of_rings-Lr/2 +1); // the +1 should go but is little bug for now
-    theNeighbours_subset.GetNeighbours_Vasilyev(theCell,number_of_rings-Lr/2);
+    //Neighbours theNeighbours_subset(theNeighbours);
+    //theNeighbours_subset.allocate(number_of_rings-Lr/2);
+    //theNeighbours_subset.GetNeighbours_Vasilyev(theCell,number_of_rings-Lr/2);
     
+    Vector3D X0(theCell.Xc);
+    double x,y,z;
     
     /* ---------------------- X - direction filter ------------------------ */
     int Ki,Li;
-    Ki = theNeighbours_subset.Ki;     Li = theNeighbours_subset.Li;
+    Ki = theNeighbours.Ki;     Li = theNeighbours.Li;
     
     DenseMatrix Ax(commutation_order,Ki+Li+1);
     int index_l;
     for (int q=0; q<commutation_order; q++) {
         for (int l=-Ki; l<=Li; l++) {
             index_l = Ki+l;
-            Ax(q,index_l) = pow(double(l),q);
+            x = theNeighbours.neighbour_x[index_l].Xc.x;
+//            Ax(q,index_l) = pow(x-X0.x,q);
+            Ax(q,index_l) = pow(double(l),double(q));
         }
     }
     ColumnVector bx(commutation_order);
@@ -203,13 +210,15 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     
     /* ---------------------- Y - direction filter ------------------------ */
     int Kj,Lj;
-    Kj = theNeighbours_subset.Kj;     Lj = theNeighbours_subset.Lj;
+    Kj = theNeighbours.Kj;     Lj = theNeighbours.Lj;
     DenseMatrix Ay(commutation_order,Kj+Lj+1);
     int index_m;
     for (int q=0; q<commutation_order; q++) {
         for (int m=-Kj; m<=Lj; m++) {
             index_m = Kj+m;
-            Ay(q,index_m) = pow(double(m),q);
+            y = theNeighbours.neighbour_y[index_m].Xc.y;
+//            Ay(q,index_m) = pow(y-X0.y,q);
+            Ay(q,index_m) = pow(double(m),double(q));
         }
     }
     ColumnVector by(commutation_order);
@@ -218,13 +227,15 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     
     /* ---------------------- Z - direction filter ------------------------ */
     int Kk,Lk;
-    Kk = theNeighbours_subset.Kk;     Lk = theNeighbours_subset.Lk;
+    Kk = theNeighbours.Kk;     Lk = theNeighbours.Lk;
     DenseMatrix Az(commutation_order,Kk+Lk+1);
     int index_n;
     for (int q=0; q<commutation_order; q++) {
         for (int n=-Kk; n<=Lk; n++) {
             index_n = Kk+n;
-            Az(q,index_n) = pow(double(n),q);
+            z = theNeighbours.neighbour_z[index_n].Xc.z;
+//            Az(q,index_n) = pow(z-X0.z,q);
+            Az(q,index_n) = pow(double(n),double(q));
         }
     }
     ColumnVector bz(commutation_order);
@@ -244,6 +255,7 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     RowVector Az_row(Kk+Lk+1);
 
     Vector3D Delta = theNeighbours.Delta;
+    double dx = Delta.x, dy = Delta.y, dz = Delta.z;
     
     for (int i=0; i<number_of_constraints; i++) {
         
@@ -257,19 +269,25 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
             case G_CONSTRAINT:
                 for (double l=-Ki; l<=Li; l++) {
                     index_l = Ki+l;
-                    Ax_row(index_l) = real( exp(-I*(k.x*l*Delta.x)) );
+//                    x = theNeighbours.neighbour_x[index_l].Xc.x;
+//                    Ax_row(index_l) = real( exp(-I*(k.x*(x-X0.x))) );
+                    Ax_row(index_l) = real( exp(-I*(k.x*l*dx)) );
                 }
                 Ax.append(Ax_row);      bx.append(target);
                 
                 for (double m=-Kj; m<=Lj; m++) {
                     index_m = Kj+m;
-                    Ay_row(index_m) = real( exp(-I*(k.y*m*Delta.y)) );
+//                    y = theNeighbours.neighbour_y[index_m].Xc.y;
+//                    Ay_row(index_m) = real( exp(-I*(k.y*(y-X0.y))) );
+                    Ay_row(index_m) = real( exp(-I*(k.y*m*dy)) );
                 }
                 Ay.append(Ay_row);      by.append(target);
                 
                 for (double n=-Kk; n<=Lk; n++) {
                     index_n = Kk+n;
-                    Az_row(index_n) = real( exp(-I*(k.z*n*Delta.z)) );
+//                    z = theNeighbours.neighbour_z[index_n].Xc.z;
+//                    Az_row(index_n) = real( exp(-I*(k.z*(z-X0.z))) );
+                    Az_row(index_n) = real( exp(-I*(k.z*n*dz)) );
                 }
                 Az.append(Az_row);      bz.append(target);
                 
@@ -278,28 +296,38 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
             case DG_CONSTRAINT:
                 for (double l=-Ki; l<=Li; l++) {
                     index_l = Ki+l;
+//                    x = theNeighbours.neighbour_x[index_l].Xc.x;
                     if ( pow(-1.0,p) < ZERO )
-                        Ax_row(index_l) = imag( pow(-I*(k.x*l*Delta.x),p) * exp(-I*(k.x*l*Delta.x)));
+                        Ax_row(index_l) = imag( pow(-I*(k.x*l*dx),p) * exp(-I*(k.x*l*dx)));
+//                        Ax_row(index_l) = imag( pow(-I*(k.x*(x-X0.x)),p) * exp(-I*(k.x*(x-X0.x))));
                     else
-                        Ax_row(index_l) = real( pow(-I*(k.x*l*Delta.x),p) * exp(-I*(k.x*l*Delta.x)));
+                        Ax_row(index_l) = real( pow(-I*(k.x*l*dx),p) * exp(-I*(k.x*l*dx)));
+//                        Ax_row(index_l) = real( pow(-I*(k.x*(x-X0.x)),p) * exp(-I*(k.x*(x-X0.x))));
                 }
                 Ax.append(Ax_row);     bx.append(target);
                 
                 for (double m=-Kj; m<=Lj; m++) {
                     index_m = Kj+m;
+//                    y = theNeighbours.neighbour_y[index_m].Xc.y;
                     if ( pow(-1.0,p) < ZERO )
-                        Ay_row(index_m) = imag( pow(-I*(k.y*m*Delta.y),p) * exp(-I*(k.y*m*Delta.y)));
+                        Ay_row(index_m) = imag( pow(-I*(k.y*(y-X0.y)),p) * exp(-I*(k.y*m*dy)));
+//                        Ay_row(index_m) = imag( pow(-I*(k.y*(y-X0.y)),p) * exp(-I*(k.y*(y-X0.y))));
                     else
-                        Ay_row(index_m) = real( pow(-I*(k.y*m*Delta.y),p) * exp(-I*(k.y*m*Delta.y)));
+                        Ay_row(index_m) = real( pow(-I*(k.y*(y-X0.y)),p) * exp(-I*(k.y*m*dy)));
+//                        Ay_row(index_m) = real( pow(-I*(k.y*(y-X0.y)),p) * exp(-I*(k.y*(y-X0.y))));
                 }
                 Ay.append(Ay_row);     by.append(target);
                 
                 for (double n=-Kk; n<=Lk; n++) {
                     index_n = Kk+n;
+//                    z = theNeighbours.neighbour_z[index_n].Xc.z;
                     if ( pow(-1.0,p) < ZERO )
-                        Az_row(index_n) = imag( pow(-I*(k.z*n*Delta.z),p) * exp(-I*(k.z*n*Delta.z)));
+                        Az_row(index_n) = imag( pow(-I*(k.z*(z-X0.z)),p) * exp(-I*(k.z*n*dz)));
+//                        Az_row(index_n) = imag( pow(-I*(k.z*(z-X0.z)),p) * exp(-I*(k.z*(z-X0.z))));
+
                     else
-                        Az_row(index_n) = real( pow(-I*(k.z*n*Delta.z),p) * exp(-I*(k.z*n*Delta.z)));
+                        Az_row(index_n) = real( pow(-I*(k.z*(z-X0.z)),p) * exp(-I*(k.z*n*dz)));
+//                        Az_row(index_n) = real( pow(-I*(k.z*(z-X0.z)),p) * exp(-I*(k.z*(z-X0.z))));
                 }
                 Az.append(Az_row);     bz.append(target);
                 
@@ -357,7 +385,7 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     w_k = Az.pseudo_inverse()*bz;
     
     
-    /*
+#ifdef _GNUPLOT
     int n=200;
     double *Gr = new double [n];
     double *Gi = new double [n];
@@ -383,7 +411,7 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     h2.gnuplot_plot1d_var2(k2,Gr,n,"real");
     h2.gnuplot_plot1d_var2(k2,Gi,n,"imag");
     h2.gnuplot_plot1d_var2(k2,Gt,n,"target");
-    */
+#endif
 
     // Load coefficients into neighbour_weights
     RowVector W(number_of_neighbours);
@@ -435,17 +463,17 @@ inline int Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Ne
     }
     int number_of_remaining_constraints = number_of_extra_constraints;    
     
-//    /* ------------- Filter Grid Ratio --------------- */
-//    type = G_CONSTRAINT;
-//    target = HALF;
-//    
-//    k = k_FGR;
-//    Add_extra_constraints(type, target, k);
-//    if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
-//        cout << "   --> Filter grid ratio = " << FGR << endl;
-//    }
-//    number_of_remaining_constraints--;   
-//     
+    /* ------------- Filter Grid Ratio --------------- */
+    type = G_CONSTRAINT;
+    target = HALF;
+    
+    k = k_FGR;
+    Add_extra_constraints(type, target, k);
+    if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
+        cout << "   --> Filter grid ratio = " << FGR << endl;
+    }
+    number_of_remaining_constraints--;   
+     
      
     if (number_of_remaining_constraints > 0) {
         /* ------------- Grid cut off --------------- */
@@ -473,7 +501,6 @@ inline int Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Ne
 //        number_of_remaining_constraints--;
 //        p++;
 //    }
-    cout << "voor basic constraints: Lr = "<< number_of_remaining_constraints << endl;
     int Lr = number_of_remaining_constraints;
     cout << "   --> Least Squares constraints = " << Lr << endl;
 
@@ -491,19 +518,26 @@ inline int Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Ne
 template<typename Soln_pState, typename Soln_cState>
 inline double Vasilyev_LS_Filter<Soln_pState,Soln_cState>::LeastSquares_coefficient_function(const int &l, const int &m, const double &k, const int &direction) {
     double Delta;
-    int L,K;
+    //int K;
     switch (direction) {
         case X_DIRECTION:
             Delta = theNeighbours.Delta.x;
+            //K = theNeighbours.Ki;
+            //Delta = theNeighbours.neighbour_x[K+l+m].Xc.x - theCell.Xc.x;
             break;
         case Y_DIRECTION:
             Delta = theNeighbours.Delta.y;
+            //K = theNeighbours.Kj;
+            //Delta = theNeighbours.neighbour_y[K+l+m].Xc.y - theCell.Xc.y;
             break;
         case Z_DIRECTION:
             Delta = theNeighbours.Delta.z;
+            //K = theNeighbours.Kk;
+            //Delta = theNeighbours.neighbour_z[K+l+m].Xc.z - theCell.Xc.z;
             break;           
     }   
-    return (/*real(exp(-I*((k*Delta)*(double(l+m)))))+*/imag(exp(-I*((k*Delta)*(double(l+m))))));
+    //return (real(exp(-I*((k*Delta)*(double(l+m)))))+imag(exp(-I*((k*Delta)*(double(l+m))))));
+    return (real(exp(-I*(k*Delta)))+imag(exp(-I*(k*Delta))));
 }
 
 template<typename Soln_pState, typename Soln_cState>
@@ -547,19 +581,26 @@ inline double Vasilyev_LS_Filter<Soln_pState,Soln_cState>::LeastSquares_RHS(cons
 template<typename Soln_pState, typename Soln_cState>
 inline double Vasilyev_LS_Filter<Soln_pState,Soln_cState>::LeastSquares_RHS_function(const int &m, const double &k, const int &LS_DOF, const int &direction) {
     double Delta;
-    int L,K;
+    //int K;
     switch (direction) {
         case X_DIRECTION:
             Delta = theNeighbours.Delta.x;
+            //K = theNeighbours.Ki;
+            //Delta = theNeighbours.neighbour_x[K+m].Xc.x - theCell.Xc.x;
             break;
         case Y_DIRECTION:
             Delta = theNeighbours.Delta.y;
+            //K = theNeighbours.Kj;
+            //Delta = theNeighbours.neighbour_y[K+m].Xc.y - theCell.Xc.y;
             break;
         case Z_DIRECTION:
             Delta = theNeighbours.Delta.z;
+            //K = theNeighbours.Kk;
+            //Delta = theNeighbours.neighbour_z[K+m].Xc.z - theCell.Xc.z;
             break;           
     }   
-    return (/*real(G_target(k,LS_DOF,direction) * exp(-I*(k*double(m)*Delta))) +*/ imag(G_target(k,LS_DOF,direction) * exp(-I*(k*double(m)*Delta))));
+    //return (real(G_target(k,LS_DOF,direction) * exp(-I*(k*Delta))) + imag(G_target(k,LS_DOF,direction) * exp(-I*(k*Delta))));
+    return (real(G_target(k,LS_DOF,direction) * exp(-I*(k*double(m)*Delta))) + imag(G_target(k,LS_DOF,direction) * exp(-I*(k*double(m)*Delta))));
 }
 
 template<typename Soln_pState, typename Soln_cState>

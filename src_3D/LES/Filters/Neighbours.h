@@ -25,6 +25,12 @@ public:
     Cell3D *theCell;
     Grid3D_Hexa_Block *Grid_ptr;
     
+    /* for 1D-filters */
+    Cell3D *neighbour_x;
+    Cell3D *neighbour_y;
+    Cell3D *neighbour_z;
+    bool vasilyev_neighbours_allocated;
+    
     static int max_number_of_neighbours;
     static int number_of_rings;
     bool Allocated;
@@ -37,17 +43,20 @@ public:
         Grid_ptr = &Grid;
         allocate();
         theCell_included = false;
+        vasilyev_neighbours_allocated = false;
     }
     Neighbours(Neighbours &anotherNeighbours){
         Grid_ptr = anotherNeighbours.Grid_ptr;
         theCell = anotherNeighbours.theCell;
         Allocated = false;
         theCell_included = false;
+        vasilyev_neighbours_allocated = false;
     }
     
     Neighbours(void) {
         Allocated = false;
         theCell_included = false;
+        vasilyev_neighbours_allocated = false;
     }
     void allocate(void) {
         neighbour = new Cell3D [int(pow(TWO*MAX_NUMBER_OF_NEIGHBOURING_RINGS_IN_LES_FILTER+ONE,THREE))];
@@ -65,6 +74,11 @@ public:
     ~Neighbours(void) {
         if (Allocated)
             delete[] neighbour;
+        if (vasilyev_neighbours_allocated) {
+            delete[] neighbour_x;
+            delete[] neighbour_y;
+            delete[] neighbour_z;
+        }
     }
     void GetNeighbours(Cell3D &theCell, int number_of_rings);
     void append_theCell(Cell3D &theCell);
@@ -74,7 +88,7 @@ public:
     void GetNeighbours_Vasilyev_no_ghostcells(Cell3D &theCell, int number_of_rings);
 
     
-    int Ki, Kj, Kk, Li, Lj, Lk;
+    int Ki, Kj, Kk, Li, Lj, Lk, Ni, Nj, Nk;
     
     
     Cell3D random_cell(Cell3D &theCell, int imin, int imax, int jmin, int jmax, int kmin, int kmax);
@@ -191,9 +205,15 @@ inline void Neighbours::GetNeighbours_Vasilyev(Cell3D &theCell, int number_of_ri
     if (jmax == Grid_ptr->JCu+Grid_ptr->Nghost)    jmin = jmax - 2*number_of_rings;
     if (kmax == Grid_ptr->KCu+Grid_ptr->Nghost)    kmin = kmax - 2*number_of_rings;
     
-    Ki = theCell.I - imin;      Li = imax - theCell.I;
-    Kj = theCell.J - jmin;      Lj = jmax - theCell.J;
-    Kk = theCell.K - kmin;      Lk = kmax - theCell.K;
+    Ki = theCell.I - imin;      Li = imax - theCell.I;      Ni = Ki+Li+1;
+    Kj = theCell.J - jmin;      Lj = jmax - theCell.J;      Nj = Kj+Lj+1;
+    Kk = theCell.K - kmin;      Lk = kmax - theCell.K;      Nk = Kk+Lk+1;
+    
+    neighbour_x = new Cell3D[Ni];
+    neighbour_y = new Cell3D[Nj];
+    neighbour_z = new Cell3D[Nk];
+    vasilyev_neighbours_allocated = true;
+
     
     Vector3D Xmin(MILLION,MILLION,MILLION), Xmax(-MILLION,-MILLION,-MILLION);
 
@@ -211,6 +231,18 @@ inline void Neighbours::GetNeighbours_Vasilyev(Cell3D &theCell, int number_of_ri
             }
         }
     }
+    
+    for (int i=imin, n=0; i<=imax; i++, n++) {
+        neighbour_x[n] = Grid_ptr->Cell[i][theCell.J][theCell.K];
+    }
+    for (int j=jmin, n=0; j<=jmax; j++, n++) {
+        neighbour_y[n] = Grid_ptr->Cell[theCell.I][j][theCell.K];
+    }
+    for (int k=kmin, n=0; k<=kmax; k++, n++) { 
+        neighbour_z[n] = Grid_ptr->Cell[theCell.I][theCell.J][k];
+    }
+    
+    
     
     Delta = (Xmax-Xmin);            // --> averaged dx dy dz over number of neighbouring rings
     Delta.x /= double(imax-imin);

@@ -41,6 +41,10 @@
 #ifndef _NKS_INCLUDED
 #include "../../../NewtonKrylovSchwarz/NKS.h"
 #endif //_NKS_INCLUDED
+
+#include "../../../Math/FiniteDifference.h"
+
+
 /* -------------------------------------------------------- */
 
 namespace tut
@@ -180,6 +184,7 @@ namespace tut
         
         cv.append(10.020200202);
         cout << " cv = " << endl << cv << endl;
+                
 
     }
 
@@ -304,6 +309,11 @@ namespace tut
         Initialize();
 //        
         SpectralAnalysis<Soln_pState,Soln_cState> Spectrum(Data,Solution_Data);
+        
+        double J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(9,2,16,10);
+        cout << "J = " << J << endl;
+            
+        
         typedef double (Soln_pState::*member_ptr);
         typedef Soln_cState *** (Hexa_Block<Soln_pState,Soln_cState>::*Soln_cState_3D_ptr_type);
 
