@@ -28,6 +28,10 @@ using namespace std;
 #include "../Math/Vector3D.h"
 #endif //_VECTOR3D_INCLUDED
 
+#ifndef _MATRIX_INCLUDED
+#include "../Math/Matrix.h"
+#endif //_MATRIX_INCLUDED
+
 #ifndef _CELL3D_INCLUDED
 #include "Cell3D.h"
 #endif // _CELL3D_INCLUDED
@@ -200,6 +204,15 @@ class Grid3D_Hexa_Block {
     Vector3D centroid(const Cell3D &Cell);
     Vector3D centroid(const int ii, const int jj, const int kk);
 
+    /* Calculate Jacobian (Determinant) */
+    double jacobian(const Cell3D &Cell, int order);
+    double jacobian(const int ii, const int jj, const int kk, int order);
+    double Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
+    double Central_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
+    double Forward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
+    double Backward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
+    
+    
     /* Calculate cell volume. */
     double volume(const Cell3D &Cell);
     double volume(const int ii, const int jj, const int kk);

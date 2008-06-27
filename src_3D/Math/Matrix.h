@@ -150,6 +150,8 @@ class RowVector: public MV_Vector_double{
     // Use automatically generated assignment operator.
 
     /* Binary arithmetic operators. */
+    RowVector& operator *=(const double &a);
+    RowVector& operator /=(const double &a);
     friend RowVector operator /(const RowVector &RVec1, const double &a);
     friend double operator *(const RowVector &RVec1, const RowVector &RVec2);
     friend double operator *(const RowVector &RVec, const ColumnVector &CVec);
@@ -312,6 +314,23 @@ inline double norminf(const RowVector &RVec) {
 /********************************************************
  * RowVector -- Binary arithmetic operators.            *
  ********************************************************/
+inline RowVector& RowVector::operator *=(const double &a) {
+    int i, m; m = size();
+    for ( i = 0; i <= m-1; ++i ) {
+        p_[i]*=a;
+    }
+    return *this;
+}
+
+inline RowVector& RowVector::operator /=(const double &a) {
+    int i, m; m = size();
+    for ( i = 0; i <= m-1; ++i ) {
+        p_[i]/=a;
+    }
+    return *this;
+}
+
+
 inline RowVector operator /(const RowVector &RVec, const double &a) {
    int i, m; m = RVec.size(); double xx; xx = ONE/a; RowVector rv(m);
    for ( i = 0; i <= m-1; ++i ) {
@@ -535,6 +554,8 @@ class ColumnVector: public MV_Vector_double{
     // Use automatically generated assignment operator.
 
     /* Binary arithmetic operators. */
+    ColumnVector& operator *=(const double &a);
+    ColumnVector& operator /=(const double &a);
     friend ColumnVector operator /(const ColumnVector &CVec1, const double &a);
     friend double operator *(const ColumnVector &CVec1, const ColumnVector &CVec2);
     friend double operator *(const RowVector &RVec, const ColumnVector &CVec);
@@ -696,6 +717,22 @@ inline double norminf(const ColumnVector &RVec) {
 /********************************************************
  * ColumnVector -- Binary arithmetic operators.         *
  ********************************************************/
+inline ColumnVector& ColumnVector::operator *=(const double &a) {
+    int i, m; m = size();
+    for ( i = 0; i <= m-1; ++i ) {
+        p_[i]*=a;
+    }
+    return *this;
+}
+
+inline ColumnVector& ColumnVector::operator /=(const double &a) {
+    int i, m; m = size();
+    for ( i = 0; i <= m-1; ++i ) {
+        p_[i]/=a;
+    }
+    return *this;
+}
+
 inline ColumnVector operator /(const ColumnVector &CVec, const double &a) {
    int i, m; m = CVec.size(); double xx; xx = ONE/a; ColumnVector cv(m);
    for ( i = 0; i <= m-1; ++i ) {

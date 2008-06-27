@@ -1213,17 +1213,19 @@ int Grid3D_Hexa_Block::Fix_Corner_Cells_for_3_Blks_Abutting(const int i_elem,
  *****************************************************************/
 void Grid3D_Hexa_Block::Update_Cells(void) {
 
-  for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
-    for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
-      for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
-	Cell[i][j][k].I = i ;
-	Cell[i][j][k].J = j ;
-	Cell[i][j][k].K = k ;
-	Cell[i][j][k].Xc = centroid(i, j, k);
-        Cell[i][j][k].V = volume(Cell[i][j][k]);
-      } /* endfor */
+    for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+        for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+            for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
+                Cell[i][j][k].I = i ;
+                Cell[i][j][k].J = j ;
+                Cell[i][j][k].K = k ;
+                Cell[i][j][k].Xc = centroid(i, j, k);
+                Cell[i][j][k].V = volume(Cell[i][j][k]);
+                /* calculate jacobian to 4th order */
+                Cell[i][j][k].Jacobian = jacobian(i,j,k,4);
+            } /* endfor */
+        } /* endfor */
     } /* endfor */
-  } /* endfor */
 
 }
 
@@ -1493,5 +1495,393 @@ Vector3D Grid3D_Hexa_Block::Delta_minimum(void) {
     return Vector3D(dx,dy,dz);
 }
 
+
+#define DXDI 1
+#define DYDI 2
+#define DZDI 3
+#define DXDJ 4
+#define DYDJ 5
+#define DZDJ 6
+#define DXDK 7
+#define DYDK 8
+#define DZDK 9
+
+/* Finite difference for equally spaced samples */
+double Grid3D_Hexa_Block::Central_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
+    
+    int n=ceil(order/2);
+    int N=2*n;
+    RowVector coefficients(N);
+    ColumnVector samples(N);
+    
+    for(int p=1; p<=n; p++) {
+        switch (derivative) {
+            case DXDI:
+                samples(n-p)   = Cell[i+p][j][k].Xc.x;
+                samples(n+p-1) = Cell[i-p][j][k].Xc.x;
+                break;
+            case DYDI:
+                samples(n-p)   = Cell[i+p][j][k].Xc.y;
+                samples(n+p-1) = Cell[i-p][j][k].Xc.y;
+                break;
+            case DZDI:
+                samples(n-p)   = Cell[i+p][j][k].Xc.z;
+                samples(n+p-1) = Cell[i-p][j][k].Xc.z;
+                break;
+            case DXDJ:
+                samples(n-p)   = Cell[i][j+p][k].Xc.x;
+                samples(n+p-1) = Cell[i][j-p][k].Xc.x;
+                break;
+            case DYDJ:
+                samples(n-p)   = Cell[i][j+p][k].Xc.y;
+                samples(n+p-1) = Cell[i][j-p][k].Xc.y;
+                break;
+            case DZDJ:
+                samples(n-p)   = Cell[i][j+p][k].Xc.z;
+                samples(n+p-1) = Cell[i][j-p][k].Xc.z;
+                break;
+            case DXDK:
+                samples(n-p)   = Cell[i][j][k+p].Xc.x;
+                samples(n+p-1) = Cell[i][j][k-p].Xc.x;
+                break;
+            case DYDK:
+                samples(n-p)   = Cell[i][j][k+p].Xc.y;
+                samples(n+p-1) = Cell[i][j][k-p].Xc.y;
+                break;
+            case DZDK:
+                samples(n-p)   = Cell[i][j][k+p].Xc.z;
+                samples(n+p-1) = Cell[i][j][k-p].Xc.z;
+                break;
+        }
+    }
+    
+    switch (N) {
+        case 2:
+            /* 2nd order */
+            coefficients(0) = -1.0;
+            coefficients(1) = 1.0;
+            coefficients /= 2.0;
+            break;
+        case 4:
+            /* 4th order */
+            coefficients(0) =  1.0;
+            coefficients(1) = -8.0;
+            coefficients(2) =  8.0;
+            coefficients(3) = -1.0;
+            coefficients /= 12.0;
+            break;
+        case 6:
+            /* 6th order */
+            coefficients(0) = -1.0;
+            coefficients(1) =  9.0;
+            coefficients(2) = -45.0;
+            coefficients(3) =  45.0;
+            coefficients(4) = -9.0;
+            coefficients(5) =  1.0;
+            coefficients /= 60.0;
+            break;
+        case 8:
+            /* 8th order */
+            coefficients(0) =  3.0;
+            coefficients(1) = -32.0;
+            coefficients(2) =  168.0;
+            coefficients(3) = -672.0;
+            coefficients(4) =  672.0;
+            coefficients(5) = -168.0;
+            coefficients(6) =  32.0;
+            coefficients(7) = -3.0;
+            coefficients /= 840.0;
+            break;
+        case 10:
+            /* 10th order */
+            coefficients(0) = -2.0;
+            coefficients(1) =  25.0;
+            coefficients(2) = -150.0;
+            coefficients(3) =  600.0;
+            coefficients(4) = -2100.0;
+            coefficients(5) =  2100.0;
+            coefficients(6) = -600.0;
+            coefficients(7) =  150.0;
+            coefficients(8) = -25.0;
+            coefficients(9) =  2.0;
+            coefficients /= 2520.0;
+            break;
+    }
+    
+    return coefficients*samples/dt;
+}
+
+/* Finite difference for equally spaced samples */
+double Grid3D_Hexa_Block::Forward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
+    
+    
+    int n = ceil(order/2);
+    order = 2*n;
+    int N=2*n+1;
+    RowVector coefficients(N);
+    ColumnVector samples(N);
+    
+    for(int p=0; p<N; p++) {
+        switch (derivative) {
+            case DXDI:
+                samples(N-p) = Cell[i-p][j][k].Xc.x;
+                break;
+            case DYDI:
+                samples(N-p) = Cell[i-p][j][k].Xc.y;
+                break;
+            case DZDI:       
+                samples(N-p) = Cell[i-p][j][k].Xc.z;
+                break;
+            case DXDJ:
+                samples(N-p) = Cell[i][j-p][k].Xc.x;
+                break;
+            case DYDJ:
+                samples(N-p) = Cell[i][j-p][k].Xc.y;
+                break;
+            case DZDJ:
+                samples(N-p) = Cell[i][j-p][k].Xc.z;
+                break;
+            case DXDK:
+                samples(N-p) = Cell[i][j][k-p].Xc.x;
+                break;
+            case DYDK:
+                samples(N-p) = Cell[i][j][k-p].Xc.y;
+                break;
+            case DZDK:
+                samples(N-p) = Cell[i][j][k-p].Xc.z;
+                break;
+        }
+    }
+    
+    switch (order) {
+        case 2:
+            /* 2nd order */
+            coefficients(0) =  1.0;
+            coefficients(1) = -4.0;
+            coefficients(2) =  3.0;
+            coefficients /= 2.0;
+            break;
+        case 4:
+            /* 4th order */
+            coefficients(0) =  3.0;
+            coefficients(1) = -16.0;
+            coefficients(2) =  36.0;
+            coefficients(3) = -48.0;
+            coefficients(4) =  25.0;
+            coefficients /= 12.0;
+            break;
+        case 6:
+            /* 6th order */
+            coefficients(0) =  10.0;
+            coefficients(1) = -72.0;
+            coefficients(2) =  225.0;
+            coefficients(3) = -400.0;
+            coefficients(4) =  450.0;
+            coefficients(5) = -360.0;
+            coefficients(6) =  147.0;
+            coefficients /= 60.0;
+            break;
+        case 8:
+            /* 8th order */
+            coefficients(0) =  105.0;
+            coefficients(1) = -960.0;
+            coefficients(2) =  3920.0;
+            coefficients(3) = -9408.0;
+            coefficients(4) =  14700.0;
+            coefficients(5) = -15680.0;
+            coefficients(6) =  11760.0;
+            coefficients(7) = -6720.0;
+            coefficients(8) =  2283.0;
+            coefficients /= 840.0;
+            break;
+        case 10:
+            /* 10th order */
+            coefficients(0)  =  252.0;
+            coefficients(1)  = -2800.0;
+            coefficients(2)  =  14175.0;
+            coefficients(3)  = -43200.0;
+            coefficients(4)  =  88200.0;
+            coefficients(5)  = -127008.0;
+            coefficients(6)  =  132300.0;
+            coefficients(7)  = -100800.0;
+            coefficients(8)  =  56700.0;
+            coefficients(9)  = -25200.0;
+            coefficients(10) =  7381.0;
+            coefficients /= 2520.0;
+            break;
+    }
+    
+    return coefficients*samples/dt;
+}
+
+
+/* Finite difference for equally spaced samples */
+double Grid3D_Hexa_Block::Backward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
+    
+    int n=ceil(order/2);
+    order=2*n;
+    int N=2*n+1;
+    RowVector coefficients(N);
+    ColumnVector samples(N);
+    
+    for(int p=0; p<N; p++) {
+        switch (derivative) {
+            case DXDI:
+                samples(p) = Cell[i+p][j][k].Xc.x;
+                break;
+            case DYDI:
+                samples(p) = Cell[i+p][j][k].Xc.y;
+                break;
+            case DZDI:       
+                samples(p) = Cell[i+p][j][k].Xc.z;
+                break;
+            case DXDJ:
+                samples(p) = Cell[i][j+p][k].Xc.x;
+                break;
+            case DYDJ:
+                samples(p) = Cell[i][j+p][k].Xc.y;
+                break;
+            case DZDJ:
+                samples(p) = Cell[i][j+p][k].Xc.z;
+                break;
+            case DXDK:
+                samples(p) = Cell[i][j][k+p].Xc.x;
+                break;
+            case DYDK:
+                samples(p) = Cell[i][j][k+p].Xc.y;
+                break;
+            case DZDK:
+                samples(p) = Cell[i][j][k+p].Xc.z;
+                break;
+        }
+    }
+    
+    switch (order) {
+        case 2:
+            /* 2nd order */
+            coefficients(0) = -3.0;
+            coefficients(1) =  4.0;
+            coefficients(2) = -1.0;
+            coefficients /= 2.0;
+            break;
+        case 4:
+            /* 4th order */
+            coefficients(0) = -25.0;
+            coefficients(1) =  48.0;
+            coefficients(2) = -36.0;
+            coefficients(3) =  16.0;
+            coefficients(4) = -3.0;
+            coefficients /= 12.0;
+            break;
+        case 6:
+            /* 6th order */
+            coefficients(0) = -147.0;
+            coefficients(1) =  360.0;
+            coefficients(2) = -450.0;
+            coefficients(3) =  400.0;
+            coefficients(4) = -225.0;
+            coefficients(5) =  72.0;
+            coefficients(6) = -10.0;
+            coefficients /= 60.0;
+            break;
+        case 8:
+            /* 8th order */
+            coefficients(0) =  2283.0;
+            coefficients(1) = -6720.0;
+            coefficients(2) =  11760.0;
+            coefficients(3) = -15680.0;
+            coefficients(4) =  14700.0;
+            coefficients(5) = -9408.0;
+            coefficients(6) =  3920.0;
+            coefficients(7) = -960.0;
+            coefficients(8) =  105.0;
+            coefficients /= 840.0;
+            break;
+        case 10:
+            /* 10th order */
+            coefficients(0)  = -7381.0;
+            coefficients(1)  =  25200.0;
+            coefficients(2)  = -56700.0;
+            coefficients(3)  =  100800.0;
+            coefficients(4)  = -132300.0;
+            coefficients(5)  =  127008.0;
+            coefficients(6)  = -88200.0;
+            coefficients(7)  =  43200.0;
+            coefficients(8)  = -14175.0;
+            coefficients(9)  =  2800.0;
+            coefficients(10) = -252.0;
+            coefficients /= 2520.0;
+            break;
+    }
+    
+    return coefficients*samples/dt;
+}
+
+double Grid3D_Hexa_Block::Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
+    
+    int n=ceil(order/2);
+    
+    int index, last_index;
+    switch(derivative) {
+        case DXDI:
+        case DYDI:
+        case DZDI:
+            index = i;
+            last_index = NCi-1;
+            break;
+        case DXDJ:
+        case DYDJ:
+        case DZDJ:
+            index = j;
+            last_index = NCj-1;
+            break;
+        case DXDK:
+        case DYDK:
+        case DZDK:
+            index = k;
+            last_index = NCk-1;
+            break;
+    }
+    
+    if (n > index) {
+        return Backward_Finite_Difference(i,j,k, derivative, dt, order);
+    } else if (n > last_index - index) {
+        return  Forward_Finite_Difference(i,j,k, derivative, dt, order);
+    } else {
+        return  Central_Finite_Difference(i,j,k, derivative, dt, order);
+    }
+}
+
+
+double Grid3D_Hexa_Block::jacobian(const Cell3D &theCell, int order) {
+    return jacobian(theCell.I,theCell.J,theCell.K,order);
+}
+
+double Grid3D_Hexa_Block::jacobian(const int i, const int j, const int k, int order) {
+    double dt = 1.0;
+    
+    DenseMatrix J(3,3);
+    
+    
+    /* calculate  dxdi */
+    J(0,0) = Finite_Difference(i,j,k,DXDI, dt, order);
+    J(0,1) = Finite_Difference(i,j,k,DYDI, dt, order);
+    J(0,2) = Finite_Difference(i,j,k,DZDI, dt, order);
+    J(1,0) = Finite_Difference(i,j,k,DXDJ, dt, order);
+    J(1,1) = Finite_Difference(i,j,k,DYDJ, dt, order);
+    J(1,2) = Finite_Difference(i,j,k,DZDJ, dt, order);
+    J(2,0) = Finite_Difference(i,j,k,DXDK, dt, order);
+    J(2,1) = Finite_Difference(i,j,k,DYDK, dt, order);
+    J(2,2) = Finite_Difference(i,j,k,DZDK, dt, order);
+    
+    /* inverse = didx */
+    J.pseudo_inverse_override();
+    
+    /* calculate determinant */
+    double DetJ = -J(0,2)*J(1,1)*J(2,0) + J(0,1)*J(1,2)*J(2,0) + J(0,2)*J(1,0)*J(2,1)
+    -J(0,0)*J(1,2)*J(2,1) - J(0,1)*J(1,0)*J(2,2) + J(0,0)*J(1,1)*J(2,2);
+    
+    return DetJ;
+}
 
 
