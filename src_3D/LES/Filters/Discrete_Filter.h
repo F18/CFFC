@@ -66,6 +66,7 @@ public:
     
     /* --------------- Transfer function calculations ------------- */
     void transfer_function(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell);
+    Complex G_function_computational(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &k, RowVector &w);
     Complex G_function(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &k, RowVector &w);
     Complex G_function_1D(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w);
     Complex G_function_1D_100(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w);
@@ -224,6 +225,7 @@ inline void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Blo
     for (int i=0; i<N; i++) {
         for (int j=0; j<N; j++) {
             for (int k=0; k<N; k++) {
+                //G[i][j][k] = G_function(theCell,theNeighbours,kCells[i][j][k].Xc,w);
                 G[i][j][k] = G_function(theCell,theNeighbours,kCells[i][j][k].Xc,w);
             }
         }
@@ -245,16 +247,17 @@ inline void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Blo
         G_111[i]=real(G_function(theCell,theNeighbours,K_111,w));
         G_110[i]=real(G_function(theCell,theNeighbours,K_110,w));
         G_100[i]=real(G_function(theCell,theNeighbours,K_100,w));
-        k_111[i]/= (kmax.abs()/sqrt(THREE));
-        k_110[i]/= (kmax.abs()/sqrt(THREE));
-        k_100[i]/= (kmax.abs()/sqrt(THREE));
+        //k_111[i]/= (kmax.abs()/sqrt(THREE));
+        //k_110[i]/= (kmax.abs()/sqrt(THREE));
+        //k_100[i]/= (kmax.abs()/sqrt(THREE));
     }
     double FGR = Filter_Grid_Ratio(theCell,theNeighbours,w,kmax);
     string title;
     std::stringstream ss ;
     ss << fixed << setprecision(2) << FGR ;
     title = "Transfer function " + filter_name() + " :  FGR = " + ss.str();    
-    
+
+#define _GNUPLOT
 #ifdef _GNUPLOT
     Gnuplot_Control h1;
     h1.gnuplot_init(); 
@@ -268,6 +271,7 @@ inline void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Blo
     h1.gnuplot_plot1d_var2(k_110,G_110,N,"110");
     h1.gnuplot_plot1d_var2(k_100,G_100,N,"100");
 #endif
+#undef _GNUPLOT
     
     Output_Transfer_Function_gnuplot(k_111,G_111,k_110,G_110,k_100,G_100,N,title);
 
@@ -451,6 +455,30 @@ inline Complex Discrete_Filter<Soln_pState,Soln_cState>::G_function(Cell3D &theC
     }
     return G;
 }
+
+
+template<typename Soln_pState, typename Soln_cState>
+inline Complex Discrete_Filter<Soln_pState,Soln_cState>::G_function_computational(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &k, RowVector &w) {
+    
+    Complex G(0,0);
+    
+    int l,m,n;
+    
+    for (int i=0; i<theNeighbours.number_of_neighbours; i++) {
+        
+        l = theNeighbours.neighbour[i].I - theCell.I;
+        m = theNeighbours.neighbour[i].J - theCell.J;
+        n = theNeighbours.neighbour[i].K - theCell.K;
+        
+        G += w(i)  *  exp(-I*(k.x*double(l) + k.y*double(m) + k.z*double(n)))/theNeighbours.neighbour[i].Jacobian ;
+    }  
+    
+    return G;             
+    
+    
+}
+
+
 
 template<typename Soln_pState, typename Soln_cState>
 inline Complex Discrete_Filter<Soln_pState,Soln_cState>::G_function_1D(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w) {

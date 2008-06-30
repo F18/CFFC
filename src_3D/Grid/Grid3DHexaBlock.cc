@@ -240,6 +240,8 @@ void Grid3D_Hexa_Block::Copy(Grid3D_Hexa_Block &Grid2) {
 	        Cell[i][j][k].K  = Grid2.Cell[i][j][k].K;
 	        Cell[i][j][k].Xc = Grid2.Cell[i][j][k].Xc;
 	        Cell[i][j][k].V  = Grid2.Cell[i][j][k].V;
+             Cell[i][j][k].Jacobian  = Grid2.Cell[i][j][k].Jacobian;
+
 	     } /* endfor */
           } /* endfor */
        } /* endfor */
@@ -1221,8 +1223,8 @@ void Grid3D_Hexa_Block::Update_Cells(void) {
                 Cell[i][j][k].K = k ;
                 Cell[i][j][k].Xc = centroid(i, j, k);
                 Cell[i][j][k].V = volume(Cell[i][j][k]);
-                /* calculate jacobian to 4th order */
-                Cell[i][j][k].Jacobian = jacobian(i,j,k,4);
+                /* calculate jacobian to 2nd order */
+                Cell[i][j][k].Jacobian = jacobian(i,j,k,2);
             } /* endfor */
         } /* endfor */
     } /* endfor */
@@ -1247,6 +1249,8 @@ void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
             Cell[i][j][k].K = k ;
             Cell[i][j][k].Xc = centroid(i, j, k);
             Cell[i][j][k].V = volume(Cell[i][j][k]);
+             /* calculate jacobian to 2nd order */
+            Cell[i][j][k].Jacobian = jacobian(i,j,k,2);
          } /* endif */
       } /* endfor */
     } /* endfor */
@@ -1517,40 +1521,40 @@ double Grid3D_Hexa_Block::Central_Finite_Difference(const int i, const int j, co
     for(int p=1; p<=n; p++) {
         switch (derivative) {
             case DXDI:
-                samples(n-p)   = Cell[i+p][j][k].Xc.x;
-                samples(n+p-1) = Cell[i-p][j][k].Xc.x;
+                samples(n-p)   = Cell[i-p][j][k].Xc.x;
+                samples(n+p-1) = Cell[i+p][j][k].Xc.x;
                 break;
             case DYDI:
-                samples(n-p)   = Cell[i+p][j][k].Xc.y;
-                samples(n+p-1) = Cell[i-p][j][k].Xc.y;
+                samples(n-p)   = Cell[i-p][j][k].Xc.y;
+                samples(n+p-1) = Cell[i+p][j][k].Xc.y;
                 break;
             case DZDI:
-                samples(n-p)   = Cell[i+p][j][k].Xc.z;
-                samples(n+p-1) = Cell[i-p][j][k].Xc.z;
+                samples(n-p)   = Cell[i-p][j][k].Xc.z;
+                samples(n+p-1) = Cell[i+p][j][k].Xc.z;
                 break;
             case DXDJ:
-                samples(n-p)   = Cell[i][j+p][k].Xc.x;
-                samples(n+p-1) = Cell[i][j-p][k].Xc.x;
+                samples(n-p)   = Cell[i][j-p][k].Xc.x;
+                samples(n+p-1) = Cell[i][j+p][k].Xc.x;
                 break;
             case DYDJ:
-                samples(n-p)   = Cell[i][j+p][k].Xc.y;
-                samples(n+p-1) = Cell[i][j-p][k].Xc.y;
+                samples(n-p)   = Cell[i][j-p][k].Xc.y;
+                samples(n+p-1) = Cell[i][j+p][k].Xc.y;
                 break;
             case DZDJ:
-                samples(n-p)   = Cell[i][j+p][k].Xc.z;
-                samples(n+p-1) = Cell[i][j-p][k].Xc.z;
+                samples(n-p)   = Cell[i][j-p][k].Xc.z;
+                samples(n+p-1) = Cell[i][j+p][k].Xc.z;
                 break;
             case DXDK:
-                samples(n-p)   = Cell[i][j][k+p].Xc.x;
-                samples(n+p-1) = Cell[i][j][k-p].Xc.x;
+                samples(n-p)   = Cell[i][j][k-p].Xc.x;
+                samples(n+p-1) = Cell[i][j][k+p].Xc.x;
                 break;
             case DYDK:
-                samples(n-p)   = Cell[i][j][k+p].Xc.y;
-                samples(n+p-1) = Cell[i][j][k-p].Xc.y;
+                samples(n-p)   = Cell[i][j][k-p].Xc.y;
+                samples(n+p-1) = Cell[i][j][k+p].Xc.y;
                 break;
             case DZDK:
-                samples(n-p)   = Cell[i][j][k+p].Xc.z;
-                samples(n+p-1) = Cell[i][j][k-p].Xc.z;
+                samples(n-p)   = Cell[i][j][k-p].Xc.z;
+                samples(n+p-1) = Cell[i][j][k+p].Xc.z;
                 break;
         }
     }
@@ -1861,7 +1865,6 @@ double Grid3D_Hexa_Block::jacobian(const int i, const int j, const int k, int or
     double dt = 1.0;
     
     DenseMatrix J(3,3);
-    
     
     /* calculate  dxdi */
     J(0,0) = Finite_Difference(i,j,k,DXDI, dt, order);

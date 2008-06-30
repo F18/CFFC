@@ -9,18 +9,6 @@
 #ifndef _VASILYEV_LS_FILTER_INCLUDED
 #define _VASILYEV_LS_FILTER_INCLUDED
 
-
-inline double stepfunction(const double &k) {
-    double kmax;
-    kmax = PI/(TWO*PI/32.0);
-    
-    double kFGR(kmax/2.0);
-    if (k <= kFGR)
-        return ONE;
-    else 
-        return ZERO;
-}
-
 #include "Discrete_Filter.h"
 
 
@@ -187,8 +175,6 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     //theNeighbours_subset.allocate(number_of_rings-Lr/2);
     //theNeighbours_subset.GetNeighbours_Vasilyev(theCell,number_of_rings-Lr/2);
     
-    Vector3D X0(theCell.Xc);
-    double x,y,z;
     
     /* ---------------------- X - direction filter ------------------------ */
     int Ki,Li;
@@ -199,8 +185,6 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     for (int q=0; q<commutation_order; q++) {
         for (int l=-Ki; l<=Li; l++) {
             index_l = Ki+l;
-            x = theNeighbours.neighbour_x[index_l].Xc.x;
-//            Ax(q,index_l) = pow(x-X0.x,q);
             Ax(q,index_l) = pow(double(l),double(q));
         }
     }
@@ -216,8 +200,6 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     for (int q=0; q<commutation_order; q++) {
         for (int m=-Kj; m<=Lj; m++) {
             index_m = Kj+m;
-            y = theNeighbours.neighbour_y[index_m].Xc.y;
-//            Ay(q,index_m) = pow(y-X0.y,q);
             Ay(q,index_m) = pow(double(m),double(q));
         }
     }
@@ -233,8 +215,6 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     for (int q=0; q<commutation_order; q++) {
         for (int n=-Kk; n<=Lk; n++) {
             index_n = Kk+n;
-            z = theNeighbours.neighbour_z[index_n].Xc.z;
-//            Az(q,index_n) = pow(z-X0.z,q);
             Az(q,index_n) = pow(double(n),double(q));
         }
     }
@@ -253,9 +233,6 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     RowVector Ax_row(Ki+Li+1);
     RowVector Ay_row(Kj+Lj+1);
     RowVector Az_row(Kk+Lk+1);
-
-    Vector3D Delta = theNeighbours.Delta;
-    double dx = Delta.x, dy = Delta.y, dz = Delta.z;
     
     for (int i=0; i<number_of_constraints; i++) {
         
@@ -269,25 +246,19 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
             case G_CONSTRAINT:
                 for (double l=-Ki; l<=Li; l++) {
                     index_l = Ki+l;
-//                    x = theNeighbours.neighbour_x[index_l].Xc.x;
-//                    Ax_row(index_l) = real( exp(-I*(k.x*(x-X0.x))) );
-                    Ax_row(index_l) = real( exp(-I*(k.x*l*dx)) );
+                    Ax_row(index_l) = real( exp(-I*(k.x*double(l))) );
                 }
                 Ax.append(Ax_row);      bx.append(target);
                 
                 for (double m=-Kj; m<=Lj; m++) {
                     index_m = Kj+m;
-//                    y = theNeighbours.neighbour_y[index_m].Xc.y;
-//                    Ay_row(index_m) = real( exp(-I*(k.y*(y-X0.y))) );
-                    Ay_row(index_m) = real( exp(-I*(k.y*m*dy)) );
+                    Ay_row(index_m) = real( exp(-I*(k.y*double(m))) );
                 }
                 Ay.append(Ay_row);      by.append(target);
                 
                 for (double n=-Kk; n<=Lk; n++) {
                     index_n = Kk+n;
-//                    z = theNeighbours.neighbour_z[index_n].Xc.z;
-//                    Az_row(index_n) = real( exp(-I*(k.z*(z-X0.z))) );
-                    Az_row(index_n) = real( exp(-I*(k.z*n*dz)) );
+                    Az_row(index_n) = real( exp(-I*(k.z*double(n))) );
                 }
                 Az.append(Az_row);      bz.append(target);
                 
@@ -296,38 +267,28 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
             case DG_CONSTRAINT:
                 for (double l=-Ki; l<=Li; l++) {
                     index_l = Ki+l;
-//                    x = theNeighbours.neighbour_x[index_l].Xc.x;
                     if ( pow(-1.0,p) < ZERO )
-                        Ax_row(index_l) = imag( pow(-I*(k.x*l*dx),p) * exp(-I*(k.x*l*dx)));
-//                        Ax_row(index_l) = imag( pow(-I*(k.x*(x-X0.x)),p) * exp(-I*(k.x*(x-X0.x))));
+                        Ax_row(index_l) = imag( pow(-I*(k.x*double(l)),p) * exp(-I*(k.x*double(l))));
                     else
-                        Ax_row(index_l) = real( pow(-I*(k.x*l*dx),p) * exp(-I*(k.x*l*dx)));
-//                        Ax_row(index_l) = real( pow(-I*(k.x*(x-X0.x)),p) * exp(-I*(k.x*(x-X0.x))));
+                        Ax_row(index_l) = real( pow(-I*(k.x*double(l)),p) * exp(-I*(k.x*double(l))));
                 }
                 Ax.append(Ax_row);     bx.append(target);
                 
                 for (double m=-Kj; m<=Lj; m++) {
                     index_m = Kj+m;
-//                    y = theNeighbours.neighbour_y[index_m].Xc.y;
                     if ( pow(-1.0,p) < ZERO )
-                        Ay_row(index_m) = imag( pow(-I*(k.y*(y-X0.y)),p) * exp(-I*(k.y*m*dy)));
-//                        Ay_row(index_m) = imag( pow(-I*(k.y*(y-X0.y)),p) * exp(-I*(k.y*(y-X0.y))));
+                        Ay_row(index_m) = imag( pow(-I*(k.y*double(m)),p) * exp(-I*(k.y*double(m))));
                     else
-                        Ay_row(index_m) = real( pow(-I*(k.y*(y-X0.y)),p) * exp(-I*(k.y*m*dy)));
-//                        Ay_row(index_m) = real( pow(-I*(k.y*(y-X0.y)),p) * exp(-I*(k.y*(y-X0.y))));
+                        Ay_row(index_m) = real( pow(-I*(k.y*double(m)),p) * exp(-I*(k.y*double(m))));
                 }
                 Ay.append(Ay_row);     by.append(target);
                 
                 for (double n=-Kk; n<=Lk; n++) {
                     index_n = Kk+n;
-//                    z = theNeighbours.neighbour_z[index_n].Xc.z;
                     if ( pow(-1.0,p) < ZERO )
-                        Az_row(index_n) = imag( pow(-I*(k.z*(z-X0.z)),p) * exp(-I*(k.z*n*dz)));
-//                        Az_row(index_n) = imag( pow(-I*(k.z*(z-X0.z)),p) * exp(-I*(k.z*(z-X0.z))));
-
+                        Az_row(index_n) = imag( pow(-I*(k.z*double(n)),p) * exp(-I*(k.z*double(n))));
                     else
-                        Az_row(index_n) = real( pow(-I*(k.z*(z-X0.z)),p) * exp(-I*(k.z*n*dz)));
-//                        Az_row(index_n) = real( pow(-I*(k.z*(z-X0.z)),p) * exp(-I*(k.z*(z-X0.z))));
+                        Az_row(index_n) = real( pow(-I*(k.z*double(n)),p) * exp(-I*(k.z*double(n))));
                 }
                 Az.append(Az_row);     bz.append(target);
                 
@@ -362,6 +323,7 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
         }
     }
     
+    
     /* -------------------- Solve 3 linear system ---------------------- *
      *               these are the basic filter weights                  *
      * ----------------------------------------------------------------- */
@@ -384,20 +346,20 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     assert(bz.size() == w_k.size());
     w_k = Az.pseudo_inverse()*bz;
     
-    
+//#define _GNUPLOT
 #ifdef _GNUPLOT
     int n=200;
     double *Gr = new double [n];
     double *Gi = new double [n];
     double *Gt = new double [n];
     double *k2 = new double [n];
-    double dx = theNeighbours.Delta.x;
-    double kmax = PI/dx;
+    double kmax = PI;
     for (int i=0; i<n; i++) {
-        k2[i] = i*kmax/(n-ONE);
-        Gr[i] = real( G0_func(k2[i], X_DIRECTION, theCell, theNeighbours, w_i) );
-        Gi[i] = imag( G0_func(k2[i], X_DIRECTION, theCell, theNeighbours, w_i) );
-        Gt[i] = real( G_target(k2[i], Lr, X_DIRECTION) );
+        double k = i*kmax/(n-ONE);
+        k2[i] = k/kmax;
+        Gr[i] = real( G0_func(k, X_DIRECTION, theCell, theNeighbours, w_i) );
+        Gi[i] = imag( G0_func(k, X_DIRECTION, theCell, theNeighbours, w_i) );
+        Gt[i] = real( G_target(k, Lr, X_DIRECTION) );
     }
     
     Gnuplot_Control h2;
@@ -406,7 +368,7 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     h2.gnuplot_cmd("set grid");
     h2.gnuplot_set_xlabel("k");
     h2.gnuplot_set_ylabel("G(k)");
-    h2.gnuplot_cmd("set yrange [0:1]");
+    h2.gnuplot_cmd("set yrange [-1:1]");
     h2.gnuplot_set_title("transfer function");
     h2.gnuplot_plot1d_var2(k2,Gr,n,"real");
     h2.gnuplot_plot1d_var2(k2,Gi,n,"imag");
@@ -419,7 +381,7 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
         index_l = Ki - (theCell.I - theNeighbours.neighbour[i].I);
         index_m = Kj - (theCell.J - theNeighbours.neighbour[i].J);
         index_n = Kk - (theCell.K - theNeighbours.neighbour[i].K);
-        W(i) = w_i(index_l)*w_j(index_m)*w_k(index_n);
+        W(i) = w_i(index_l)*w_j(index_m)*w_k(index_n) * theNeighbours.neighbour[i].Jacobian;
     }
     
     return W;
@@ -432,11 +394,10 @@ inline int Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Ne
 
     number_of_constraints = 0;
 
-    Vector3D Delta = theNeighbours.Delta;
     Vector3D kmax;
-    kmax.x = PI/Delta.x;
-    kmax.y = PI/Delta.y;
-    kmax.z = PI/Delta.z;
+    kmax.x = PI;
+    kmax.y = PI;
+    kmax.z = PI;
     Vector3D k_FGR = kmax/FGR;   
 
     int type;
@@ -488,21 +449,26 @@ inline int Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Ne
         number_of_remaining_constraints--;
     }
     
-//    int p=1;
-//    while (number_of_remaining_constraints>0 && p<=2) {
-//        /* -------------- Derivatives ----------------- */
-//        type = DG_CONSTRAINT;
-//        target = ZERO;
-//        k = kmax;
-//        Add_extra_constraints(type, target, k, p);
-//        if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
-//            cout << "   --> Derivative " << p << " of transfer function at grid cut off = " << target << endl;
-//        }
-//        number_of_remaining_constraints--;
-//        p++;
-//    }
+    int p=1;
+    while (number_of_remaining_constraints>0 ) { //&& p<=2) {
+        /* -------------- Derivatives ----------------- */
+        type = DG_CONSTRAINT;
+        target = ZERO;
+        k = kmax;
+        Add_extra_constraints(type, target, k, p);
+        if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
+            cout << "   --> Derivative " << p << " of transfer function at grid cut off = " << target << endl;
+        }
+        number_of_remaining_constraints--;
+        p++;
+    }
+    
+    
+    
     int Lr = number_of_remaining_constraints;
-    cout << "   --> Least Squares constraints = " << Lr << endl;
+    if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
+        cout << "   --> Least Squares constraints = " << Lr << endl;
+    }
 
     while (number_of_remaining_constraints>0) {
         /* ------------ Least Squares Constraints ------------ */
@@ -511,33 +477,16 @@ inline int Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Ne
         number_of_remaining_constraints--;
     }
     
+    Output_Constraints = false;
+    
     return number_of_remaining_constraints;
 }
     
 
 template<typename Soln_pState, typename Soln_cState>
 inline double Vasilyev_LS_Filter<Soln_pState,Soln_cState>::LeastSquares_coefficient_function(const int &l, const int &m, const double &k, const int &direction) {
-    double Delta;
-    //int K;
-    switch (direction) {
-        case X_DIRECTION:
-            Delta = theNeighbours.Delta.x;
-            //K = theNeighbours.Ki;
-            //Delta = theNeighbours.neighbour_x[K+l+m].Xc.x - theCell.Xc.x;
-            break;
-        case Y_DIRECTION:
-            Delta = theNeighbours.Delta.y;
-            //K = theNeighbours.Kj;
-            //Delta = theNeighbours.neighbour_y[K+l+m].Xc.y - theCell.Xc.y;
-            break;
-        case Z_DIRECTION:
-            Delta = theNeighbours.Delta.z;
-            //K = theNeighbours.Kk;
-            //Delta = theNeighbours.neighbour_z[K+l+m].Xc.z - theCell.Xc.z;
-            break;           
-    }   
-    //return (real(exp(-I*((k*Delta)*(double(l+m)))))+imag(exp(-I*((k*Delta)*(double(l+m))))));
-    return (real(exp(-I*(k*Delta)))+imag(exp(-I*(k*Delta))));
+
+    return (real(exp(-I*k*double(l+m)))+imag(exp(-I*k*double(l+m))));
 }
 
 template<typename Soln_pState, typename Soln_cState>
@@ -547,16 +496,7 @@ inline double Vasilyev_LS_Filter<Soln_pState,Soln_cState>::LeastSquares_coeffici
     LeastSquares_coefficient_function_class<Vasilyev_LS_Filter<Soln_pState,Soln_cState>,LeastSquares_coefficient_function_ptr_type,double> C_LS (this, &Vasilyev_LS_Filter<Soln_pState,Soln_cState>::LeastSquares_coefficient_function, l,  m,  direction);
     
     double dummy;
-    double kmax;
-    switch (direction) {
-        case X_DIRECTION:
-            kmax = PI/theNeighbours.Delta.x;  break;
-        case Y_DIRECTION:
-            kmax = PI/theNeighbours.Delta.y;  break;
-        case Z_DIRECTION:
-            kmax = PI/theNeighbours.Delta.z;  break;
-    }
-    return AdaptiveGaussianQuadrature(C_LS, ZERO, kmax, dummy, numeric_limits<double>::digits10);
+    return AdaptiveGaussianQuadrature(C_LS, ZERO, PI, dummy, numeric_limits<double>::digits10);
 }
 
 template<typename Soln_pState, typename Soln_cState>
@@ -565,55 +505,21 @@ inline double Vasilyev_LS_Filter<Soln_pState,Soln_cState>::LeastSquares_RHS(cons
     typedef double (Vasilyev_LS_Filter<Soln_pState,Soln_cState>::*LeastSquares_RHS_function_ptr_type) (const int &, const double &, const int &, const int &);
     LeastSquares_RHS_function_class<Vasilyev_LS_Filter<Soln_pState,Soln_cState>,LeastSquares_RHS_function_ptr_type,double> R_LS (this, &Vasilyev_LS_Filter<Soln_pState,Soln_cState>::LeastSquares_RHS_function,m,LS_DOF,direction);
     
-    double dummy;
-    double kmax;
-    switch (direction) {
-        case X_DIRECTION:
-            kmax = PI/theNeighbours.Delta.x;  break;
-        case Y_DIRECTION:
-            kmax = PI/theNeighbours.Delta.y;  break;
-        case Z_DIRECTION:
-            kmax = PI/theNeighbours.Delta.z;  break;
-    }    
-    return AdaptiveGaussianQuadrature(R_LS, ZERO, kmax, dummy, numeric_limits<double>::digits10);
+    double dummy;   
+    return AdaptiveGaussianQuadrature(R_LS, ZERO, PI, dummy, numeric_limits<double>::digits10);
 }
 
 template<typename Soln_pState, typename Soln_cState>
 inline double Vasilyev_LS_Filter<Soln_pState,Soln_cState>::LeastSquares_RHS_function(const int &m, const double &k, const int &LS_DOF, const int &direction) {
-    double Delta;
-    //int K;
-    switch (direction) {
-        case X_DIRECTION:
-            Delta = theNeighbours.Delta.x;
-            //K = theNeighbours.Ki;
-            //Delta = theNeighbours.neighbour_x[K+m].Xc.x - theCell.Xc.x;
-            break;
-        case Y_DIRECTION:
-            Delta = theNeighbours.Delta.y;
-            //K = theNeighbours.Kj;
-            //Delta = theNeighbours.neighbour_y[K+m].Xc.y - theCell.Xc.y;
-            break;
-        case Z_DIRECTION:
-            Delta = theNeighbours.Delta.z;
-            //K = theNeighbours.Kk;
-            //Delta = theNeighbours.neighbour_z[K+m].Xc.z - theCell.Xc.z;
-            break;           
-    }   
+ 
     //return (real(G_target(k,LS_DOF,direction) * exp(-I*(k*Delta))) + imag(G_target(k,LS_DOF,direction) * exp(-I*(k*Delta))));
-    return (real(G_target(k,LS_DOF,direction) * exp(-I*(k*double(m)*Delta))) + imag(G_target(k,LS_DOF,direction) * exp(-I*(k*double(m)*Delta))));
+    return (real(G_target(k,LS_DOF,direction) * exp(-I*(k*double(m)))) + imag(G_target(k,LS_DOF,direction) * exp(-I*(k*double(m)))));
 }
 
 template<typename Soln_pState, typename Soln_cState>
 inline Complex Vasilyev_LS_Filter<Soln_pState,Soln_cState>::G_target(const double &k, const int &LS_DOF, const int &direction) {
-    double kmax;
-    switch (direction) {
-        case X_DIRECTION:
-            kmax = PI/theNeighbours.Delta.x;  break;
-        case Y_DIRECTION:
-            kmax = PI/theNeighbours.Delta.y;  break;
-        case Z_DIRECTION:
-            kmax = PI/theNeighbours.Delta.z;  break;
-    }
+    double kmax = PI;
+
     double d = fabs((kmax/FOUR)/(LS_DOF)  - (kmax/TWENTY)*(commutation_order));
     if (target_filter_sharpness >= 0) {
         d = (kmax * target_filter_sharpness )/TWO;
@@ -632,23 +538,9 @@ inline Complex Vasilyev_LS_Filter<Soln_pState,Soln_cState>::G_target(const doubl
 
 
 template<typename Soln_pState, typename Soln_cState>
-inline Complex Vasilyev_LS_Filter<Soln_pState,Soln_cState>::G0_func(const double &k_1D, const int &direction, const Cell3D &theCell, const Neighbours &theNeigbhours_subset, const ColumnVector &w0) {
+inline Complex Vasilyev_LS_Filter<Soln_pState,Soln_cState>::G0_func(const double &k, const int &direction, const Cell3D &theCell, const Neighbours &theNeigbhours_subset, const ColumnVector &w0) {
     
     Complex G(0,0);
-    
-    Vector3D X0(theCell.Xc);
-    Vector3D X;
-    Vector3D dX;
-    Vector3D k;
-    k.zero();
-    switch (direction) {
-        case X_DIRECTION:
-            k.x = k_1D;     break;
-        case Y_DIRECTION:
-            k.y = k_1D;     break;
-        case Z_DIRECTION:
-            k.z = k_1D;     break;
-    }
     
     int l,m,n, index_l,index_m,index_n;
     int Ki,Li, Kj,Lj, Kk,Lk;
@@ -657,7 +549,6 @@ inline Complex Vasilyev_LS_Filter<Soln_pState,Soln_cState>::G0_func(const double
     Kk=theNeigbhours_subset.Kk;  Lk=theNeigbhours_subset.Lk;
     
     for (int i=0; i<theNeigbhours_subset.number_of_neighbours; i++) {
-        dX = theNeigbhours_subset.neighbour[i].Xc - X0;
         
         l = theNeigbhours_subset.neighbour[i].I - theCell.I;
         m = theNeigbhours_subset.neighbour[i].J - theCell.J;
@@ -668,19 +559,19 @@ inline Complex Vasilyev_LS_Filter<Soln_pState,Soln_cState>::G0_func(const double
             case X_DIRECTION:
                 if (m==0 && n==0) {
                     index_l = Ki - (theCell.I - theNeigbhours_subset.neighbour[i].I);
-                    G += w0(index_l)  *  real( exp(-I*(k*dX)) );
+                    G += w0(index_l)  *  ( exp(-I*k*double(l)) );
                 }
                 break;
             case Y_DIRECTION:
                 if (l==0 && n==0) {
                     index_m = Kj - (theCell.J - theNeigbhours_subset.neighbour[i].J);
-                    G += w0(index_m)  *  real( exp(-I*(k*dX)) );
+                    G += w0(index_m)  *  ( exp(-I*k*double(m)) );
                 }
                 break;
             case Z_DIRECTION:
                 if (l==0 && m==0) {
                     index_n = Kk - (theCell.K - theNeigbhours_subset.neighbour[i].K);
-                    G += w0(index_n)  *  real( exp(-I*(k*dX)) );
+                    G += w0(index_n)  *  ( exp(-I*k*double(n)) );
                 }
                 break;
         }        
@@ -694,26 +585,22 @@ inline Complex Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Gx_func(const double
     
     Complex G(0,0);
 
-    double Delta;
     int L,K;
     switch (direction) {
         case X_DIRECTION:
             L = theNeighbours.Li;   K = theNeighbours.Ki;
-            Delta = theNeighbours.Delta.x;
             break;
         case Y_DIRECTION:
             L = theNeighbours.Lj;   K = theNeighbours.Kj;
-            Delta = theNeighbours.Delta.y;
             break;
         case Z_DIRECTION:
             L = theNeighbours.Lk;   K = theNeighbours.Kk;
-            Delta = theNeighbours.Delta.z;
             break;           
     }    
     int Lr = z.size();
     for (int m=0; m<Lr; m++) {
         for (int l=-K; l<=L; l++) {
-            G += A(l+K,m) * exp(-I*(k*double(l)*Delta));
+            G += A(l+K,m) * exp(-I*(k*double(l)));
         }
         G *= z(m);
     }

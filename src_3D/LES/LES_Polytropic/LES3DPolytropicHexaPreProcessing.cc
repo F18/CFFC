@@ -85,8 +85,10 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                                 
                 // Make velocity field blocks where turbulence will be written
                 Data.Velocity_Field.Create(Data.Initial_Mesh, Solution_Data.Input.Grid_IP);
-                                
-                bool Use_Auxiliary_Mesh = true;
+                   
+                bool Use_Auxiliary_Mesh = false;
+                if(Solution_Data.Input.Grid_IP.Mesh_Stretching==ON)
+                    Use_Auxiliary_Mesh = true;
                 if (!Use_Auxiliary_Mesh) {
                     // Create turbulence spectrum and store in the velocity field blocks
                     RandomFieldRogallo<LES3D_Polytropic_pState, LES3D_Polytropic_cState> Spectrum(Solution_Data.Input);
@@ -187,7 +189,10 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                                                                    Data.Global_Adaptive_Block_List);
 
             if (CFFC_Primary_MPI_Processor()) {
-                bool Use_Auxiliary_Mesh = true;
+                bool Use_Auxiliary_Mesh = false;
+                if(Solution_Data.Input.Grid_IP.Mesh_Stretching==ON)
+                    Use_Auxiliary_Mesh = true;
+                
                 if (!Use_Auxiliary_Mesh) {
                     // Get the kinetic energy spectrum
                     RandomFieldRogallo<LES3D_Polytropic_pState, LES3D_Polytropic_cState> Spectrum(Solution_Data.Input);
@@ -261,7 +266,10 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
                                                                Data.Global_Adaptive_Block_List);
         
         if (CFFC_Primary_MPI_Processor()) {
-            bool Use_Auxiliary_Mesh = true;
+            bool Use_Auxiliary_Mesh = false;
+            if(Solution_Data.Input.Grid_IP.Mesh_Stretching==ON)
+                Use_Auxiliary_Mesh = true;
+            
             if (!Use_Auxiliary_Mesh) {
                 // Get the kinetic energy spectrum
                 RandomFieldRogallo<LES3D_Polytropic_pState, LES3D_Polytropic_cState> Spectrum(Solution_Data.Input);

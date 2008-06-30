@@ -24,8 +24,8 @@ Smagorinsky_Coefficient =
 Filter_Type =
 #Implicit
 #Vasilyev
-#Vasilyev_LS
-Haselbacher
+Vasilyev_LS
+#Haselbacher
 #Restart
 Filter_Grid_Ratio =
 2.0
@@ -74,18 +74,21 @@ Box_Width =
 #0.0366
 6.28
 #3.14
+#16
 Box_Height =
 #20.37
 #0.0366
 6.28
 #3.14
+#16
 Box_Length = 
 #20.37
 #0.0366
 6.28
 #3.14
+#16
 Mesh_Stretching =
-ON
+OFF
 Stretching_Factor_Idir = 
 1.2
 Stretching_Factor_Jdir = 

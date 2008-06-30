@@ -310,8 +310,21 @@ namespace tut
 //        
         SpectralAnalysis<Soln_pState,Soln_cState> Spectrum(Data,Solution_Data);
         
-        double J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(9,2,16,10);
+        double J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(5,8,8,2);
         cout << "J = " << J << endl;
+         J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(6,8,8,2);
+        cout << "J = " << J << endl;
+         J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(7,8,8,2);
+        cout << "J = " << J << endl;
+         J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(8,8,8,2);
+        cout << "J = " << J << endl;
+         J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(9,8,8,2);
+        cout << "J = " << J << endl;
+         J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(10,8,8,2);
+        cout << "J = " << J << endl;
+         J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(11,8,8,2);
+        cout << "J = " << J << endl;
+        //cout << "J = " << J << endl;
             
         
         typedef double (Soln_pState::*member_ptr);
@@ -334,26 +347,41 @@ namespace tut
 //        myfilter.Set_Filter_Variables(dUdt_ptr,0);
 //        myfilter.test();
        // myfilter.reset();   // make sure that we will use the new filter
+        
+        //Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Update_Grid_Cells();
+        cout << "J(5,8,8) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[5][8][8].Jacobian << endl;
+        cout << "J(6,8,8) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[6][5][8].Jacobian << endl;
+        cout << "J(7,8,8) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[7][8][8].Jacobian << endl;
+        cout << "J(8,8,8) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[8][8][8].Jacobian << endl;
+        cout << "J(9,8,8) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[9][8][8].Jacobian << endl;
+        cout << "J(10,8,8) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[10][8][8].Jacobian << endl;
+        cout << "J(11,8,8) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[11][8][8].Jacobian << endl;
+
+        
+        
+        myfilter.transfer_function(5,5,5);//FILTER_CORNER_CELL);
+
+        
         cout << "start filtering" << endl;
-//        myfilter.filter(rho_member);
-//        
-//
         myfilter.filter(rho_member);
+//        
 
         cout << "done filtering" << endl;
         Spectrum.Get_Spectrum(rho_member,"density");
         
-        if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_RESTART)
-            myfilter.Write_to_file();
+        //if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_RESTART)
+        //    myfilter.Write_to_file();
 
+        
+
+        
         cout << " Calculating commutation error " << endl;
 
-        myfilter.Commutation_Error(rho_member);
+//        myfilter.Commutation_Error(rho_member);
         
-        myfilter.transfer_function();//FILTER_CORNER_CELL);
 //        Spectrum.Get_Spectrum(p_member,"pressure");
 //
-//        error_flag = Hexa_Post_Processing(Data,Solution_Data);
+        error_flag = Hexa_Post_Processing(Data,Solution_Data);
 //        ensure("Post_Processing",error_flag==false);
     
     }

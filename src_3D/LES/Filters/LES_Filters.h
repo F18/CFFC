@@ -187,6 +187,8 @@ public:
                 break;
             case FILTER_TYPE_VASILYEV_LS:
                 filter_ptr = new Vasilyev_LS_Filter<Soln_pState,Soln_cState>;
+                Solution_Blocks_ptr[0].Update_Grid_Cells();
+                Solution_Blocks_ptr[0].Update_Grid_Ghost_Cells();
                 break;
             case FILTER_TYPE_RESTART:
                 int error_flag = Read_from_file();
