@@ -349,6 +349,11 @@ namespace tut
        // myfilter.reset();   // make sure that we will use the new filter
         
         //Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Update_Grid_Cells();
+        cout << "J(0,0,0) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[0][0][0].Jacobian << endl;
+        cout << "J(0,0,10) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[0][0][10].Jacobian << endl;
+        cout << "J(0,10,10) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[0][10][10].Jacobian << endl;
+        cout << "J(10,10,10) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[10][10][10].Jacobian << endl;
+
         cout << "J(5,8,8) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[5][8][8].Jacobian << endl;
         cout << "J(6,8,8) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[6][5][8].Jacobian << endl;
         cout << "J(7,8,8) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[7][8][8].Jacobian << endl;
@@ -359,11 +364,14 @@ namespace tut
 
         
         
-        myfilter.transfer_function(5,5,5);//FILTER_CORNER_CELL);
+        //myfilter.transfer_function(FILTER_CORNER_CELL);
+        myfilter.transfer_function(FILTER_FACE_CELL);
+        //myfilter.transfer_function(FILTER_EDGE_CELL);
+        myfilter.transfer_function(FILTER_INNER_CELL);
 
         
         cout << "start filtering" << endl;
-        myfilter.filter(rho_member);
+//        myfilter.filter(rho_member);
 //        
 
         cout << "done filtering" << endl;

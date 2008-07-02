@@ -151,7 +151,7 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                         error_flag = Solution_Data.Explicit_Filter.Write_to_file();
                     // output the filter transfer function
                     if (CFFC_Primary_MPI_Processor())
-                        Solution_Data.Explicit_Filter.transfer_function();
+                        Solution_Data.Explicit_Filter.transfer_function(FILTER_CORNER_CELL);
             }
             
             

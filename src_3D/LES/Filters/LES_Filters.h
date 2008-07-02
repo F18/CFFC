@@ -457,6 +457,7 @@ double LES_Filter<Soln_pState,Soln_cState>::maximum_wavenumber() {
 #define FILTER_CORNER_CELL  0
 #define FILTER_FACE_CELL    1
 #define FILTER_EDGE_CELL    2
+#define FILTER_INNER_CELL   3
 
 template<typename Soln_pState, typename Soln_cState>
 void LES_Filter<Soln_pState,Soln_cState>::transfer_function(int flag) {
@@ -482,6 +483,8 @@ void LES_Filter<Soln_pState,Soln_cState>::transfer_function(int flag) {
             transfer_function(Nghost, Nghost, number_of_rings);     break;
         case FILTER_EDGE_CELL:
             transfer_function(Nghost, number_of_rings, number_of_rings);    break;
+        case FILTER_INNER_CELL:
+            transfer_function(number_of_rings+1, number_of_rings+1, number_of_rings+1);    break;
     }
 }
 
@@ -510,7 +513,7 @@ void LES_Filter<Soln_pState,Soln_cState>::transfer_function() {
         cout << "LES_Filter not initialized, can not return transfer_function" << endl;
         return;
     }
-    transfer_function(number_of_rings,number_of_rings,number_of_rings);
+    transfer_function(FILTER_INNER_CELL);
 }
 
 template<typename Soln_pState, typename Soln_cState>

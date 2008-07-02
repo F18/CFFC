@@ -1223,8 +1223,8 @@ void Grid3D_Hexa_Block::Update_Cells(void) {
                 Cell[i][j][k].K = k ;
                 Cell[i][j][k].Xc = centroid(i, j, k);
                 Cell[i][j][k].V = volume(Cell[i][j][k]);
-                /* calculate jacobian to 2nd order */
-                Cell[i][j][k].Jacobian = jacobian(i,j,k,2);
+                /* calculate jacobian to 4th order */
+                Cell[i][j][k].Jacobian = jacobian(i,j,k,4);
             } /* endfor */
         } /* endfor */
     } /* endfor */
@@ -1249,8 +1249,8 @@ void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
             Cell[i][j][k].K = k ;
             Cell[i][j][k].Xc = centroid(i, j, k);
             Cell[i][j][k].V = volume(Cell[i][j][k]);
-             /* calculate jacobian to 2nd order */
-            Cell[i][j][k].Jacobian = jacobian(i,j,k,2);
+             /* calculate jacobian to 4th order */
+            Cell[i][j][k].Jacobian = jacobian(i,j,k,4);
          } /* endif */
       } /* endfor */
     } /* endfor */

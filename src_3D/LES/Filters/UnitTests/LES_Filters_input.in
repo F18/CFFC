@@ -30,13 +30,13 @@ Vasilyev_LS
 Filter_Grid_Ratio =
 2.0
 Target_Filter_Sharpness = 
-0.1
+1.0
 Filter_Initial_Condition =
 OFF
 Commutation_Order =
-3
+4
 Number_of_Rings =
-3
+4
 ##############################
 #     Spectrum parameters    #
 ##############################
@@ -57,6 +57,8 @@ OFF
 ##############################
 Grid_Type =
 Periodic_Box
+Number_of_Ghost_Cells =
+2
 Number_of_Cells_Idir = 
 16
 Number_of_Cells_Jdir =
@@ -88,13 +90,13 @@ Box_Length =
 #3.14
 #16
 Mesh_Stretching =
-OFF
+ON
 Stretching_Factor_Idir = 
-1.2
+1.05
 Stretching_Factor_Jdir = 
-1.2
+1.05
 Stretching_Factor_Kdir = 
-1.2
+1.05
 Stretching_Type_Idir = 
 3
 Stretching_Type_Jdir = 
