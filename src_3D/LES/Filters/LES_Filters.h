@@ -173,7 +173,8 @@ public:
     }
     
     ~LES_Filter() {
-        delete filter_ptr;
+        if (initialized)
+            delete filter_ptr;
     }
     
     

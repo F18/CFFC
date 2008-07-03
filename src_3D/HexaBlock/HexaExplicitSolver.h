@@ -14,7 +14,10 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 				    HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
   
     SOLN_cSTATE **** (Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::*dUdt_ptr) = &Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::dUdt;
-    Solution_Data.Explicit_Filter.Initialize(Data,Solution_Data);
+    if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT) {
+        Solution_Data.Explicit_Filter.Initialize(Data,Solution_Data);
+    }
+
 
   int error_flag(0);
    
