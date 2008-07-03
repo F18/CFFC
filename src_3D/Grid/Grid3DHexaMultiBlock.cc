@@ -566,6 +566,94 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Cube(Grid3D_Input_Parameters &Inp
     
 }
 
+
+/********************************************************
+ * Routine: Create_Grid_Single_Block_Periodic_Box       *
+ *                                                      *
+ * Generates a 3D Cartesian multiblock mesh for a cube. *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block_List::Create_Grid_Single_Block_Periodic_Box(Grid3D_Input_Parameters &Input) {
+    
+    int count_blocks;
+    int BC_top, BC_bottom;
+    Grid2D_Quad_Block **Grid2D_Box_XYplane;
+    
+    /* Allocate required memory. */
+    
+    assert(Input.NBlk_Idir==1 && Input.NBlk_Jdir==1 && Input.NBlk_Kdir==1);
+    
+    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+    
+    /* Creat 2D cross-section grids from which the 3D grid
+     will be extruded. */
+    
+    Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
+                                              Input.NBlk_Idir, 
+                                              Input.NBlk_Jdir,
+                                              Input.Box_Width,
+                                              Input.Box_Height,
+                                              Input.Mesh_Stretching,
+                                              Input.Stretching_Type_Idir,
+                                              Input.Stretching_Type_Jdir,
+                                              Input.Stretching_Factor_Idir,
+                                              Input.Stretching_Factor_Jdir,
+                                              Input.NCells_Idir,
+                                              Input.NCells_Jdir,
+                                              Input.Nghost);
+    
+    /* Create the mesh for each block representing
+     the complete grid. */
+    
+    count_blocks = 0;
+    
+    for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+        for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+            for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+                
+                /* Extrude each of the grid blocks from the
+                 appropriate 2D grid in XY-plane. */
+                
+                Grid_Blks[count_blocks].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
+                                                Input.NCells_Kdir,
+                                                Input.Stretching_Type_Kdir,
+                                                Input.Stretching_Factor_Kdir,
+                                                -HALF*Input.Box_Length+
+                                                (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
+                                                -HALF*Input.Box_Length+
+                                                (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
+                
+                /* Set all boundary conditions to periodic */
+                
+                Grid_Blks[count_blocks].Set_BCs(BC_PERIODIC, 
+                                                BC_PERIODIC, 
+                                                BC_PERIODIC, 
+                                                BC_PERIODIC, 
+                                                BC_PERIODIC, 
+                                                BC_PERIODIC);
+                                
+                /* Update block counter. */
+                
+                count_blocks ++;
+                
+            } /* endfor */
+        } /* endfor */
+    } /* endfor */
+    
+    /* Deallocate 2D grid. */
+    
+    Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
+                                                     Input.NBlk_Idir, 
+                                                     Input.NBlk_Jdir);
+    
+    
+    /* Call the function Find_Neighbours to obtain the neighbour block information
+     and assign values to data members in the grid block connectivity data structure. */
+    
+    Find_Neighbours(Input);
+    
+}
+
 /********************************************************
  * Routine: Create_Grid_Periodic_Box                    *
  *                                                      *
@@ -574,6 +662,13 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Cube(Grid3D_Input_Parameters &Inp
  *                                                      *
  ********************************************************/
 void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Parameters &Input) {
+    
+    /* No block connectivity needed in case of 1 single block --> No Message Passing for ghost cells */
+    if (Input.NBlk_Idir==1 && Input.NBlk_Jdir==1 && Input.NBlk_Kdir==1) {
+        return Create_Grid_Single_Block_Periodic_Box(Input);
+    }
+
+    
     int nBlk;
     int opposite_nBlk, opposite_iBlk, opposite_jBlk, opposite_kBlk;
     Direction_Indices Dir_Index;

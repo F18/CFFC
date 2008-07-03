@@ -223,6 +223,8 @@ class Grid3D_Hexa_Multi_Block_List {
 
     void Create_Grid_Periodic_Box(Grid3D_Input_Parameters &Input);
     
+    void Create_Grid_Single_Block_Periodic_Box(Grid3D_Input_Parameters &Input);
+    
     void Create_Grid_Flat_Plate(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Turbulence_Box(Grid3D_Input_Parameters &Input);
