@@ -140,32 +140,17 @@ void Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values(Hexa_Bloc
 
 template<typename Soln_pState, typename Soln_cState>
 inline void Discrete_Filter<Soln_pState,Soln_cState>::Allocate_Filter_Weights(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk) {
-    SolnBlk.Filter_Weights = new RowVector **[SolnBlk.NCi];
-    SolnBlk.Filter_Weights_Assigned = new bool **[SolnBlk.NCi];
-    for (int i=0; i<SolnBlk.NCi; i++) {
-        SolnBlk.Filter_Weights[i] = new RowVector *[SolnBlk.NCj];
-        SolnBlk.Filter_Weights_Assigned[i] = new bool *[SolnBlk.NCj];
-        for (int j=0; j<SolnBlk.NCj; j++) {
-            SolnBlk.Filter_Weights[i][j] = new RowVector [SolnBlk.NCk];
-            SolnBlk.Filter_Weights_Assigned[i][j] = new bool [SolnBlk.NCk];
-            
-            for (int k=0; k<SolnBlk.NCk; k++) {
-                SolnBlk.Filter_Weights_Assigned[i][j][k] = false;
-            }
-        }
-    }
+    SolnBlk.Allocate_Filter_Weights();
 }
 
 template<typename Soln_pState, typename Soln_cState>
 inline void Discrete_Filter<Soln_pState,Soln_cState>::Reset_Filter_Weights(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk) {
-    SolnBlk.Filter_Weights_Assigned = new bool **[SolnBlk.NCi];
-    for (int i=0; i<SolnBlk.NCi; i++) {
-        SolnBlk.Filter_Weights_Assigned[i] = new bool *[SolnBlk.NCj];
-        for (int j=0; j<SolnBlk.NCj; j++) {
-            SolnBlk.Filter_Weights_Assigned[i][j] = new bool [SolnBlk.NCk];
-            
-            for (int k=0; k<SolnBlk.NCk; k++) {
-                SolnBlk.Filter_Weights_Assigned[i][j][k] = false;
+    if (SolnBlk.Filter_Weights_Allocated) {
+        for (int i=0; i<SolnBlk.NCi; i++) {
+            for (int j=0; j<SolnBlk.NCj; j++) {            
+                for (int k=0; k<SolnBlk.NCk; k++) {
+                    SolnBlk.Filter_Weights_Assigned[i][j][k] = false;
+                }
             }
         }
     }
@@ -214,26 +199,35 @@ inline void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Blo
         }
     }
     
-
+    for (int i=0; i<N; i++) {
+        for (int j=0; j<N; j++) {
+            for (int k=0; k<N; k++) {
+                G[i][j][k] = G_function(theCell,theNeighbours,kCells[i][j][k].Xc,w);
+            }
+        }
+    }
+    
+    Output_Transfer_Function_tecplot(kCells,G,N);
+    
+    /* --------- deallocations --------- */
+    for (int i=0; i<N; i++) {
+        for (int j=0; j<N; j++) {
+            delete[] kCells[i][j];
+            delete[] G[i][j];
+        }
+        delete[] kCells[i];
+        delete[] G[i];
+    }
+    delete[] kCells;
+    delete[] G;
+    
+    /* -------------- Output gnuplot ----------------- */
     double *k_111 = new double [N];
     double *k_110 = new double [N];
     double *k_100 = new double [N];
     double *G_111 = new double [N];
     double *G_110 = new double [N];
     double *G_100 = new double [N];
-    
-    for (int i=0; i<N; i++) {
-        for (int j=0; j<N; j++) {
-            for (int k=0; k<N; k++) {
-                //G[i][j][k] = G_function(theCell,theNeighbours,kCells[i][j][k].Xc,w);
-                G[i][j][k] = G_function(theCell,theNeighbours,kCells[i][j][k].Xc,w);
-            }
-        }
-    }
-    
-    
-    Output_Transfer_Function_tecplot(kCells,G,N);
-//    kmax = Vector3D(PI,PI,PI);
     
     Vector3D K_111, K_110, K_100;
     K_110.zero(); K_100.zero();
@@ -257,7 +251,6 @@ inline void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Blo
     ss << fixed << setprecision(2) << FGR ;
     title = "Transfer function " + filter_name() + " :  FGR = " + ss.str();    
 
-#define _GNUPLOT
 #ifdef _GNUPLOT
     Gnuplot_Control h1;
     h1.gnuplot_init(); 
@@ -271,9 +264,17 @@ inline void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Blo
     h1.gnuplot_plot1d_var2(k_110,G_110,N,"110");
     h1.gnuplot_plot1d_var2(k_100,G_100,N,"100");
 #endif
-#undef _GNUPLOT
     
     Output_Transfer_Function_gnuplot(k_111,G_111,k_110,G_110,k_100,G_100,N,title);
+    
+    
+    delete[] k_111;
+    delete[] k_110;
+    delete[] k_100;
+    delete[] G_111;
+    delete[] G_110;
+    delete[] G_100;
+    
 
 }
 

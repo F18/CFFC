@@ -194,34 +194,33 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
     Lr = Set_basic_constraints(theNeighbours); 
     
     /* ---------------------- Moment constraints ------------------------ */
-    int Ki,Li , Kj,Lj , Kk,Lk;
-    Ki = theNeighbours.Ki;     Li = theNeighbours.Li;
-    Kj = theNeighbours.Kj;     Lj = theNeighbours.Lj;
-    Kk = theNeighbours.Kk;     Lk = theNeighbours.Lk;
-    DenseMatrix Ax(commutation_order,Ki+Li+1);
-    DenseMatrix Ay(commutation_order,Kj+Lj+1);
-    DenseMatrix Az(commutation_order,Kk+Lk+1);
+    int Ki,Li,Ni , Kj,Lj,Nj , Kk,Lk,Nk;
+    Ki = theNeighbours.Ki;     Li = theNeighbours.Li;       Ni = theNeighbours.Ni;
+    Kj = theNeighbours.Kj;     Lj = theNeighbours.Lj;       Nj = theNeighbours.Nj;
+    Kk = theNeighbours.Kk;     Lk = theNeighbours.Lk;       Nk = theNeighbours.Nk;
+    DenseMatrix Ax(commutation_order,Ni);
+    DenseMatrix Ay(commutation_order,Nj);
+    DenseMatrix Az(commutation_order,Nk);
 
     int index_l, index_m, index_n;
     for (int q=0; q<commutation_order; q++) {
-        for (int i=0; i<number_of_neighbours; i++) {
-            int l = theNeighbours.neighbour[i].I - theCell.I;
-            int m = theNeighbours.neighbour[i].J - theCell.J;
-            int n = theNeighbours.neighbour[i].K - theCell.K;
-            
-            if (m==0 && n==0) {
-                index_l = Ki+l;
-                Ax(q,index_l) = pow(theNeighbours.neighbour[i].Xc.x-theCell.Xc.x,double(q));
-            }
-            if (l==0 && n==0) {
-                index_m = Kj+m;
-                Ay(q,index_m) = pow(theNeighbours.neighbour[i].Xc.y-theCell.Xc.y,double(q));
-            }
-            if (l==0 && m==0) {
-                index_n = Kk+n;
-                Az(q,index_n) = pow(theNeighbours.neighbour[i].Xc.z-theCell.Xc.z,double(q));                
-            }
-        } 
+        for (int i=0; i<Ni; i++) {
+            int l = theNeighbours.neighbour_x[i].I - theCell.I;
+            index_l = Ki+l;
+            Ax(q,index_l) = pow(theNeighbours.neighbour_x[i].Xc.x-theCell.Xc.x,double(q));
+        }
+        
+        for (int i=0; i<Nj; i++) {
+            int m = theNeighbours.neighbour_y[i].J - theCell.J;
+            index_m = Kj+m;
+            Ay(q,index_m) = pow(theNeighbours.neighbour_y[i].Xc.y-theCell.Xc.y,double(q));
+        }
+        
+        for (int i=0; i<Nk; i++) {
+            int n = theNeighbours.neighbour_z[i].K - theCell.K;
+            index_n = Kk+n;
+            Az(q,index_n) = pow(theNeighbours.neighbour_z[i].Xc.z-theCell.Xc.z,double(q));                
+        }
     }
     ColumnVector bx(commutation_order);
     bx.zero();
@@ -261,24 +260,23 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
         LS_type = Constraints[i].LS_type;
         switch (type) {
             case G_CONSTRAINT:
-                for (int i=0; i<number_of_neighbours; i++) {
-                    int l = theNeighbours.neighbour[i].I - theCell.I;
-                    int m = theNeighbours.neighbour[i].J - theCell.J;
-                    int n = theNeighbours.neighbour[i].K - theCell.K;
-                    
-                    if (m==0 && n==0) {
-                        index_l = Ki+l;
-                        Ax_row(index_l) = real( exp(-I*(k.x*(theNeighbours.neighbour[i].Xc.x-theCell.Xc.x) ) ) );
-                    }
-                    if (l==0 && n==0) {
-                        index_m = Kj+m;
-                        Ay_row(index_m) = real( exp(-I*(k.y*(theNeighbours.neighbour[i].Xc.y-theCell.Xc.y) ) ) );
-                    }
-                    if (l==0 && m==0) {
-                        index_n = Kk+n;
-                        Az_row(index_n) = real( exp(-I*(k.z*(theNeighbours.neighbour[i].Xc.z-theCell.Xc.z) ) ) );
-                    }
-                } 
+                for (int i=0; i<Ni; i++) {
+                    int l = theNeighbours.neighbour_x[i].I - theCell.I;
+                    index_l = Ki+l;
+                    Ax_row(index_l) = real( exp(-I*(k.x*(theNeighbours.neighbour_x[i].Xc.x-theCell.Xc.x) ) ) );
+                }
+                
+                for (int i=0; i<Nj; i++) {
+                    int m = theNeighbours.neighbour_y[i].J - theCell.J;
+                    index_m = Kj+m;
+                    Ay_row(index_m) = real( exp(-I*(k.y*(theNeighbours.neighbour_y[i].Xc.y-theCell.Xc.y) ) ) );
+                }
+                
+                for (int i=0; i<Nk; i++) {
+                    int n = theNeighbours.neighbour_z[i].K - theCell.K;
+                    index_n = Kk+n;
+                    Az_row(index_n) = real( exp(-I*(k.z*(theNeighbours.neighbour_z[i].Xc.z-theCell.Xc.z) ) ) );
+                }
                 Ax.append(Ax_row);      bx.append(target);
                 Ay.append(Ay_row);      by.append(target);
                 Az.append(Az_row);      bz.append(target);
@@ -286,33 +284,33 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
                 break;
                 
             case DG_CONSTRAINT:
-                for (int i=0; i<number_of_neighbours; i++) {
-                    int l = theNeighbours.neighbour[i].I - theCell.I;
-                    int m = theNeighbours.neighbour[i].J - theCell.J;
-                    int n = theNeighbours.neighbour[i].K - theCell.K;
-                    
-                    if (m==0 && n==0) {
-                        index_l = Ki+l;
-                        if ( pow(-1.0,p) < ZERO )
-                            Ax_row(index_l) = imag( pow(-I*(k.x*(theNeighbours.neighbour[i].Xc.x-theCell.Xc.x)),p) * exp(-I*(k.x*(theNeighbours.neighbour[i].Xc.x-theCell.Xc.x))));
-                        else
-                            Ax_row(index_l) = real( pow(-I*(k.x*(theNeighbours.neighbour[i].Xc.x-theCell.Xc.x)),p) * exp(-I*(k.x*(theNeighbours.neighbour[i].Xc.x-theCell.Xc.x))));
-                    }
-                    if (l==0 && n==0) {
-                        index_m = Kj+m;
-                        if ( pow(-1.0,p) < ZERO )
-                            Ay_row(index_m) = imag( pow(-I*(k.y*(theNeighbours.neighbour[i].Xc.y-theCell.Xc.y)),p) * exp(-I*(k.y*(theNeighbours.neighbour[i].Xc.y-theCell.Xc.y))));
-                        else
-                            Ay_row(index_m) = real( pow(-I*(k.y*(theNeighbours.neighbour[i].Xc.y-theCell.Xc.y)),p) * exp(-I*(k.y*(theNeighbours.neighbour[i].Xc.y-theCell.Xc.y))));
-                    }
-                    if (l==0 && m==0) {
-                        index_n = Kk+n;
-                        if ( pow(-1.0,p) < ZERO )
-                            Az_row(index_n) = imag( pow(-I*(k.z*(theNeighbours.neighbour[i].Xc.z-theCell.Xc.z)),p) * exp(-I*(k.z*(theNeighbours.neighbour[i].Xc.z-theCell.Xc.z))));
-                        else
-                            Az_row(index_n) = real( pow(-I*(k.z*(theNeighbours.neighbour[i].Xc.z-theCell.Xc.z)),p) * exp(-I*(k.z*(theNeighbours.neighbour[i].Xc.z-theCell.Xc.z))));
-                    }
-                } 
+                for (int i=0; i<Ni; i++) {
+                    int l = theNeighbours.neighbour_x[i].I - theCell.I;
+                    index_l = Ki+l;
+                    if ( pow(-1.0,p) < ZERO )
+                        Ax_row(index_l) = imag( pow(-I*(k.x*(theNeighbours.neighbour_x[i].Xc.x-theCell.Xc.x)),p) * exp(-I*(k.x*(theNeighbours.neighbour_x[i].Xc.x-theCell.Xc.x))));
+                    else
+                        Ax_row(index_l) = real( pow(-I*(k.x*(theNeighbours.neighbour_x[i].Xc.x-theCell.Xc.x)),p) * exp(-I*(k.x*(theNeighbours.neighbour_x[i].Xc.x-theCell.Xc.x))));
+                }
+                
+                for (int i=0; i<Nj; i++) {
+                    int m = theNeighbours.neighbour_y[i].J - theCell.J;
+                    index_m = Kj+m;
+                    if ( pow(-1.0,p) < ZERO )
+                        Ay_row(index_m) = imag( pow(-I*(k.y*(theNeighbours.neighbour_y[i].Xc.y-theCell.Xc.y)),p) * exp(-I*(k.y*(theNeighbours.neighbour_y[i].Xc.y-theCell.Xc.y))));
+                    else
+                        Ay_row(index_m) = real( pow(-I*(k.y*(theNeighbours.neighbour_y[i].Xc.y-theCell.Xc.y)),p) * exp(-I*(k.y*(theNeighbours.neighbour_y[i].Xc.y-theCell.Xc.y))));
+                }
+                
+                for (int i=0; i<Nk; i++) {
+                    int n = theNeighbours.neighbour_z[i].K - theCell.K;
+                    index_n = Kk+n;
+                    if ( pow(-1.0,p) < ZERO )
+                        Az_row(index_n) = imag( pow(-I*(k.z*(theNeighbours.neighbour_z[i].Xc.z-theCell.Xc.z)),p) * exp(-I*(k.z*(theNeighbours.neighbour_z[i].Xc.z-theCell.Xc.z))));
+                    else
+                        Az_row(index_n) = real( pow(-I*(k.z*(theNeighbours.neighbour_z[i].Xc.z-theCell.Xc.z)),p) * exp(-I*(k.z*(theNeighbours.neighbour_z[i].Xc.z-theCell.Xc.z))));
+                }
+
                 Ax.append(Ax_row);      bx.append(target);
                 Ay.append(Ay_row);      by.append(target);
                 Az.append(Az_row);      bz.append(target);
@@ -329,58 +327,54 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
                 /* t is number of coefficient
                  * delta_t is the distance between theCell en neighbour for coefficient t
                  */
-                
-                for (int i=0; i<number_of_neighbours; i++) {
-                    int l = theNeighbours.neighbour[i].I - theCell.I;
-                    int m = theNeighbours.neighbour[i].J - theCell.J;
-                    int n = theNeighbours.neighbour[i].K - theCell.K;
-                    
-                    if (m==0 && n==0) {
-                        if(l == tx)
-                            delta_tx = theNeighbours.neighbour[i].Xc.x-theCell.Xc.x;
-                    }
-                    if (l==0 && n==0) {
-                        if(m == ty)
-                            delta_ty = theNeighbours.neighbour[i].Xc.y-theCell.Xc.y;
-                    }
-                    if (l==0 && m==0) {
-                        if(n == tz)
-                            delta_tz = theNeighbours.neighbour[i].Xc.z-theCell.Xc.z;
-                    }
+                for (int i=0; i<Ni; i++) {
+                    int l = theNeighbours.neighbour_x[i].I - theCell.I;
+                    index_l = Ki+l;
+                    if(l == tx)
+                        delta_tx = theNeighbours.neighbour_x[i].Xc.x-theCell.Xc.x;
+                }
+                for (int i=0; i<Nj; i++) {
+                    int m = theNeighbours.neighbour_y[i].J - theCell.J;
+                    index_m = Kj+m;
+                    if(m == ty)
+                        delta_ty = theNeighbours.neighbour_y[i].Xc.y-theCell.Xc.y;
+                }
+                for (int i=0; i<Nk; i++) {
+                    int n = theNeighbours.neighbour_z[i].K - theCell.K;
+                    index_n = Kk+n;
+                    if(n == tz)
+                        delta_tz = theNeighbours.neighbour_z[i].Xc.z-theCell.Xc.z;               
                 }
                 
                 
-                for (int i=0; i<number_of_neighbours; i++) {
-                    int l = theNeighbours.neighbour[i].I - theCell.I;
-                    int m = theNeighbours.neighbour[i].J - theCell.J;
-                    int n = theNeighbours.neighbour[i].K - theCell.K;
-                    
-                    if (m==0 && n==0) {
-                        index_l = Ki+l;
-                        delta_l = theNeighbours.neighbour[i].Xc.x-theCell.Xc.x;
-                        if (with_coefficients)
-                            Ax_row(index_l) = LeastSquares_coefficient(double(l),double(tx),X_DIRECTION,LS_type);
-                        else
-                            Ax_row(index_l) = LeastSquares_coefficient(delta_l,delta_tx,X_DIRECTION,LS_type);
+                for (int i=0; i<Ni; i++) {
+                    int l = theNeighbours.neighbour_x[i].I - theCell.I;
+                    index_l = Ki+l;
+                    delta_l = theNeighbours.neighbour[i].Xc.x-theCell.Xc.x;
+                    if (with_coefficients)
+                        Ax_row(index_l) = LeastSquares_coefficient(double(l),double(tx),X_DIRECTION,LS_type);
+                    else
+                        Ax_row(index_l) = LeastSquares_coefficient(delta_l,delta_tx,X_DIRECTION,LS_type);                    
+                }
+                for (int i=0; i<Nj; i++) {
+                    int m = theNeighbours.neighbour_y[i].J - theCell.J;
+                    index_m = Kj+m;
+                    delta_m = theNeighbours.neighbour[i].Xc.y-theCell.Xc.y;
+                    if (with_coefficients)
+                        Ay_row(index_m) = LeastSquares_coefficient(double(m),double(ty),Y_DIRECTION,LS_type);
+                    else
+                        Ay_row(index_m) = LeastSquares_coefficient(delta_m,delta_ty,Y_DIRECTION,LS_type);
+                }
+                for (int i=0; i<Nk; i++) {
+                    int n = theNeighbours.neighbour_z[i].K - theCell.K;
+                    index_n = Kk+n;
+                    delta_n = theNeighbours.neighbour[i].Xc.z-theCell.Xc.z;
+                    if (with_coefficients)
+                        Az_row(index_n) = LeastSquares_coefficient(double(n),double(tz),Z_DIRECTION,LS_type);
+                    else
+                        Az_row(index_n) = LeastSquares_coefficient(delta_n,delta_tz,Z_DIRECTION,LS_type);             
+                }
 
-                    }
-                    if (l==0 && n==0) {
-                        index_m = Kj+m;
-                        delta_m = theNeighbours.neighbour[i].Xc.y-theCell.Xc.y;
-                        if (with_coefficients)
-                            Ay_row(index_m) = LeastSquares_coefficient(double(m),double(ty),Y_DIRECTION,LS_type);
-                        else
-                            Ay_row(index_m) = LeastSquares_coefficient(delta_m,delta_ty,Y_DIRECTION,LS_type);
-                    }
-                    if (l==0 && m==0) {
-                        index_n = Kk+n;
-                        delta_n = theNeighbours.neighbour[i].Xc.z-theCell.Xc.z;
-                        if (with_coefficients)
-                            Az_row(index_n) = LeastSquares_coefficient(double(n),double(tz),Z_DIRECTION,LS_type);
-                        else
-                            Az_row(index_n) = LeastSquares_coefficient(delta_n,delta_tz,Z_DIRECTION,LS_type);
-                    }
-                }
                 if (with_coefficients) {
                     Ax.append(Ax_row);      bx.append(LeastSquares_RHS(double(tx),LS_DOF,X_DIRECTION,LS_type));
                     Ay.append(Ay_row);      by.append(LeastSquares_RHS(double(ty),LS_DOF,Y_DIRECTION,LS_type));
@@ -448,6 +442,11 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
     h2.gnuplot_plot1d_var2(k2,Gr,n,"real");
     h2.gnuplot_plot1d_var2(k2,Gi,n,"imag");
     h2.gnuplot_plot1d_var2(k2,Gt,n,"target");
+    
+    delete[] Gr;
+    delete[] Gi;
+    delete[] Gt;
+    delete[] k2;
 #endif
 
     // Load coefficients into neighbour_weights

@@ -22,7 +22,7 @@
 class Neighbours{
 public:
     Cell3D *neighbour;
-    Cell3D *theCell;
+   // Cell3D *theCell;
     Grid3D_Hexa_Block *Grid_ptr;
     
     /* for 1D-filters */
@@ -47,7 +47,7 @@ public:
     }
     Neighbours(Neighbours &anotherNeighbours){
         Grid_ptr = anotherNeighbours.Grid_ptr;
-        theCell = anotherNeighbours.theCell;
+        //theCell = anotherNeighbours.theCell;
         Allocated = false;
         theCell_included = false;
         vasilyev_neighbours_allocated = false;
@@ -59,26 +59,45 @@ public:
         vasilyev_neighbours_allocated = false;
     }
     void allocate(void) {
-        neighbour = new Cell3D [int(pow(TWO*MAX_NUMBER_OF_NEIGHBOURING_RINGS_IN_LES_FILTER+ONE,THREE))];
-        Allocated = true;
+        allocate(MAX_NUMBER_OF_NEIGHBOURING_RINGS_IN_LES_FILTER);
     }
     void allocate(int number_of_rings) {
+        deallocate();
         neighbour = new Cell3D [int(pow(TWO*number_of_rings+ONE,THREE))];
         Allocated = true;
+    }
+    
+    void allocate_vasilyev(int Ni, int Nj, int Nk) {
+        deallocate_vasilyev();
+        neighbour_x = new Cell3D[Ni];
+        neighbour_y = new Cell3D[Nj];
+        neighbour_z = new Cell3D[Nk];
+        vasilyev_neighbours_allocated = true;
+    }
+    
+    void deallocate_vasilyev(void) {
+        if (vasilyev_neighbours_allocated) {
+            delete[] neighbour_x;   neighbour_x = NULL;
+            delete[] neighbour_y;   neighbour_y = NULL;
+            delete[] neighbour_z;   neighbour_z = NULL;
+        }
+        vasilyev_neighbours_allocated = false;
     }
     
     void set_grid(Grid3D_Hexa_Block &Grid) {
         Grid_ptr = &Grid;
     }
     
-    ~Neighbours(void) {
-        if (Allocated)
+    void deallocate(void) {
+        if (Allocated) {
             delete[] neighbour;
-        if (vasilyev_neighbours_allocated) {
-            delete[] neighbour_x;
-            delete[] neighbour_y;
-            delete[] neighbour_z;
         }
+        Allocated = false;
+    }
+    
+    ~Neighbours(void) {
+        deallocate();
+        deallocate_vasilyev();
     }
     void GetNeighbours(Cell3D &theCell, int number_of_rings);
     void append_theCell(Cell3D &theCell);
@@ -89,15 +108,6 @@ public:
 
     
     int Ki, Kj, Kk, Li, Lj, Lk, Ni, Nj, Nk;
-    
-    
-    Cell3D random_cell(Cell3D &theCell, int imin, int imax, int jmin, int jmax, int kmin, int kmax);
-    void shuffle_Neighbours(int number_of_cells);
-
-    // useless because can calculate box - 1 point
-    int pointsPerEdge(int ring);
-    int pointsPerFace(int ring);
-    int points(int number_of_rings);
     
     friend ostream &operator << (ostream &out_file, const Neighbours &neighbours);
     //    friend istream &operator >> (istream &in_file, Neighbours &neighbours);
@@ -116,9 +126,6 @@ inline ostream &operator << (ostream &out_file,
     }
     return (out_file);
 }
-
-
-
 
 
 
@@ -209,12 +216,8 @@ inline void Neighbours::GetNeighbours_Vasilyev(Cell3D &theCell, int number_of_ri
     Ki = theCell.I - imin;      Li = imax - theCell.I;      Ni = Ki+Li+1;
     Kj = theCell.J - jmin;      Lj = jmax - theCell.J;      Nj = Kj+Lj+1;
     Kk = theCell.K - kmin;      Lk = kmax - theCell.K;      Nk = Kk+Lk+1;
-    
-    neighbour_x = new Cell3D[Ni];
-    neighbour_y = new Cell3D[Nj];
-    neighbour_z = new Cell3D[Nk];
-    vasilyev_neighbours_allocated = true;
 
+    allocate_vasilyev(Ni,Nj,Nk);
     
     Vector3D Xmin(MILLION,MILLION,MILLION), Xmax(-MILLION,-MILLION,-MILLION);
 
@@ -292,167 +295,5 @@ inline void Neighbours::GetNeighbours_Vasilyev_no_ghostcells(Cell3D &theCell, in
     
 }
 
-
-
-
-//#define ODD -1.0
-//#define EVEN 1.0
-//inline void Neighbours::GetNeighbours(Cell3D &theCell, int number_of_rings) {
-//    number_of_neighbours = 0;
-//    
-//    number_of_rings = 5;
-//
-//    
-//    assert(number_of_rings <= MAX_NUMBER_OF_NEIGHBOURING_RINGS_IN_LES_FILTER);    
-//    
-//    
-//    
-//    int imin = max(theCell.I-number_of_rings,Grid_ptr->ICl-Grid_ptr->Nghost);
-//    int imax = min(theCell.I+number_of_rings,Grid_ptr->ICu+Grid_ptr->Nghost);
-//    int jmin = max(theCell.J-number_of_rings,Grid_ptr->JCl-Grid_ptr->Nghost);
-//    int jmax = min(theCell.J+number_of_rings,Grid_ptr->JCu+Grid_ptr->Nghost);
-//    int kmin = max(theCell.K-number_of_rings,Grid_ptr->KCl-Grid_ptr->Nghost);
-//    int kmax = min(theCell.K+number_of_rings,Grid_ptr->KCu+Grid_ptr->Nghost);
-//    int I = theCell.I;
-//    int J = theCell.J;
-//    int K = theCell.K;
-//    
-//    Vector3D Xmin(MILLION,MILLION,MILLION), Xmax(-MILLION,-MILLION,-MILLION);
-//    
-//    int seed = 1; // = time(NULL);      // assigns the current time to the seed
-//    srand48(seed);                      // changes the seed for drand48()
-//
-//    cout << "max_pts = " << points(number_of_rings) << endl;
-//    
-////    for (int i=0; i<number_of_cells; i++) {
-////        neighbour[number_of_neighbours] = random_cell(theCell,imin,imax,jmin,jmax,kmin,kmax);
-////        Xmin.x = min(Xmin.x,neighbour[number_of_neighbours].Xc.x);
-////        Xmin.y = min(Xmin.y,neighbour[number_of_neighbours].Xc.y);
-////        Xmin.z = min(Xmin.z,neighbour[number_of_neighbours].Xc.z);
-////        Xmax.x = max(Xmax.x,neighbour[number_of_neighbours].Xc.x);
-////        Xmax.y = max(Xmax.y,neighbour[number_of_neighbours].Xc.y);
-////        Xmax.z = max(Xmax.z,neighbour[number_of_neighbours].Xc.z);
-////        number_of_neighbours++;
-////    }                    
-//                    
-//    for (int i=imin; i<=imax; i++) {
-//        for (int j=jmin; j<=jmax; j++) {
-//            for (int k=kmin; k<=kmax; k++) {
-//                if (theCell != Grid_ptr->Cell[i][j][k]) {
-//                    neighbour[number_of_neighbours] = Grid_ptr->Cell[i][j][k];
-//                    Xmin.x = min(Xmin.x,neighbour[number_of_neighbours].Xc.x);
-//                    Xmin.y = min(Xmin.y,neighbour[number_of_neighbours].Xc.y);
-//                    Xmin.z = min(Xmin.z,neighbour[number_of_neighbours].Xc.z);
-//                    Xmax.x = max(Xmax.x,neighbour[number_of_neighbours].Xc.x);
-//                    Xmax.y = max(Xmax.y,neighbour[number_of_neighbours].Xc.y);
-//                    Xmax.z = max(Xmax.z,neighbour[number_of_neighbours].Xc.z);
-//                    number_of_neighbours++;
-//                }
-//            }
-//        }
-//    }
-//    shuffle_Neighbours(135);
-//                                     
-//                    
-//                    
-//                    /*if ( (abs(I-i)==1)  && (abs(J-j)==1) && (abs(K-k)==1) ) {
-//                        neighbour[number_of_neighbours] = Grid_ptr->Cell[i][j][k];
-//                        Xmin.x = min(Xmin.x,neighbour[number_of_neighbours].Xc.x);
-//                        Xmin.y = min(Xmin.y,neighbour[number_of_neighbours].Xc.y);
-//                        Xmin.z = min(Xmin.z,neighbour[number_of_neighbours].Xc.z);
-//                        Xmax.x = max(Xmax.x,neighbour[number_of_neighbours].Xc.x);
-//                        Xmax.y = max(Xmax.y,neighbour[number_of_neighbours].Xc.y);
-//                        Xmax.z = max(Xmax.z,neighbour[number_of_neighbours].Xc.z);
-//                        number_of_neighbours++;
-//                    }
-//                    if ( (abs(I-i)==3)  && (abs(J-j)==3) && (abs(K-k)==3) ) {
-//                        neighbour[number_of_neighbours] = Grid_ptr->Cell[i][j][k];
-//                        Xmin.x = min(Xmin.x,neighbour[number_of_neighbours].Xc.x);
-//                        Xmin.y = min(Xmin.y,neighbour[number_of_neighbours].Xc.y);
-//                        Xmin.z = min(Xmin.z,neighbour[number_of_neighbours].Xc.z);
-//                        Xmax.x = max(Xmax.x,neighbour[number_of_neighbours].Xc.x);
-//                        Xmax.y = max(Xmax.y,neighbour[number_of_neighbours].Xc.y);
-//                        Xmax.z = max(Xmax.z,neighbour[number_of_neighbours].Xc.z);
-//                        number_of_neighbours++;
-//                    }
-//                        
-//                    
-//                    else if ( pow(-ONE,(i-I)+(j-J)+(k-K)) == EVEN) {
-//                        neighbour[number_of_neighbours] = Grid_ptr->Cell[i][j][k];
-//                        Xmin.x = min(Xmin.x,neighbour[number_of_neighbours].Xc.x);
-//                        Xmin.y = min(Xmin.y,neighbour[number_of_neighbours].Xc.y);
-//                        Xmin.z = min(Xmin.z,neighbour[number_of_neighbours].Xc.z);
-//                        Xmax.x = max(Xmax.x,neighbour[number_of_neighbours].Xc.x);
-//                        Xmax.y = max(Xmax.y,neighbour[number_of_neighbours].Xc.y);
-//                        Xmax.z = max(Xmax.z,neighbour[number_of_neighbours].Xc.z);
-//                        number_of_neighbours++;
-//                    }*/
-////                }
-////            }
-////        }
-////    }
-//    
-//    Delta = (Xmax-Xmin);            // --> averaged dx dy dz over number of neighbouring rings
-//    Delta.x /= double(imax-imin);
-//    Delta.y /= double(jmax-jmin);
-//    Delta.z /= double(kmax-kmin);
-//}
-
-
-inline void Neighbours::shuffle_Neighbours(int number_of_cells){
-    for (int i=0; i<number_of_cells; i++) {
-        int r = i + (rand() % (number_of_neighbours-i)); // Random remaining position.
-        
-        // switch neighbour i and r
-        Cell3D temp = neighbour[i]; 
-        neighbour[i] = neighbour[r]; 
-        neighbour[r] = temp;
-    }
-    number_of_neighbours = number_of_cells;
-}
-
-inline Cell3D Neighbours::random_cell(Cell3D &theCell, int imin, int imax, int jmin, int jmax, int kmin, int kmax){
-    Cell3D theRandomCell;
-    
-    bool repeat_condition = false;
-    do {
-        int i = imin + rand() % (imax-imin+1); 
-        int j = jmin + rand() % (jmax-jmin+1);
-        int k = kmin + rand() % (kmax-kmin+1);
-        
-        theRandomCell = Grid_ptr->Cell[i][j][k];
-        
-        for (int i=0; i<number_of_neighbours; i++) {
-            if (theRandomCell == neighbour[i] || theRandomCell == theCell) {
-                repeat_condition = true;
-                cout << "                   already present: " << theRandomCell << endl;
-                break;
-            }
-        }
-    } while (repeat_condition);
-    cout << "return : " << theRandomCell << endl;
-    return  theRandomCell;
-}
-
-
-inline int Neighbours::pointsPerEdge(int ring) {
-    return 1+(ring-1)*2;
-}
-
-inline int Neighbours::pointsPerFace(int ring) {
-    int n=1;
-    for (int i=1; i<=ring; i++) {
-        n += (i-1)*8;
-    }
-    return n;
-}
-
-inline int Neighbours::points(int num_of_rings) {
-    int n=0;
-    for (int i=1; i<=num_of_rings; i++) {
-        n += 8 + 12*pointsPerEdge(i) + 4*pointsPerFace(i);
-    }
-    return n;
-}
 
 #endif

@@ -244,7 +244,7 @@ void Grid3D_Hexa_Multi_Block_List::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&nk, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&grid_allocated, 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&IsAuxiliary, 1, MPI::BOOL, 0);
+    MPI::COMM_WORLD.Bcast(&IsAuxiliary, 1, MPI::INT, 0);
 
     
     /* On non-primary MPI processors, allocate (re-allocate) 

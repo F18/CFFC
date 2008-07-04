@@ -42,9 +42,6 @@
 #include "../../../NewtonKrylovSchwarz/NKS.h"
 #endif //_NKS_INCLUDED
 
-#include "../../../Math/FiniteDifference.h"
-
-
 /* -------------------------------------------------------- */
 
 namespace tut

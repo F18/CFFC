@@ -81,7 +81,7 @@ public:
     Solution_type operator() (const double &k){
         return (Obj->*Ptr)(m,k,LS_DOF,direction);
     }
-    
+
 private:
     LeastSquares_RHS_function_class();	/* make default constructor private */
     Object_type *Obj;		/*!< pointer to the object */
@@ -369,6 +369,10 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     assert(bz.size() == w_k.size());
     w_k = Az.pseudo_inverse()*bz;
     
+#ifdef _GNUPLOT
+#undef _GNUPLOT
+#endif
+    
 //#define _GNUPLOT
 #ifdef _GNUPLOT
     int n=200;
@@ -396,6 +400,11 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     h2.gnuplot_plot1d_var2(k2,Gr,n,"real");
     h2.gnuplot_plot1d_var2(k2,Gi,n,"imag");
     h2.gnuplot_plot1d_var2(k2,Gt,n,"target");
+    
+    delete[] Gr;
+    delete[] Gi;
+    delete[] Gt;
+    delete[] k2;
 #endif
 
     // Load coefficients into neighbour_weights
