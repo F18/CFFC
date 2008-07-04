@@ -311,19 +311,19 @@ namespace tut
         SpectralAnalysis<Soln_pState,Soln_cState> Spectrum(Data,Solution_Data);
         
         double J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(5,8,8,2);
-        cout << "J = " << J << endl;
+        cout << "J = " << J << "   Delta = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[5][8][8].dXc << endl;
          J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(6,8,8,2);
-        cout << "J = " << J << endl;
+        cout << "J = " << J << "   Delta = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[6][8][8].dXc<< endl;
          J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(7,8,8,2);
-        cout << "J = " << J << endl;
+        cout << "J = " << J << "   Delta = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[7][8][8].dXc<< endl;
          J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(8,8,8,2);
-        cout << "J = " << J << endl;
+        cout << "J = " << J << "   Delta = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[8][8][8].dXc<< endl;
          J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(9,8,8,2);
-        cout << "J = " << J << endl;
+        cout << "J = " << J << "   Delta = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[9][8][8].dXc<< endl;
          J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(10,8,8,2);
-        cout << "J = " << J << endl;
+        cout << "J = " << J << "   Delta = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[10][8][8].dXc<< endl;
          J = Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.jacobian(11,8,8,2);
-        cout << "J = " << J << endl;
+        cout << "J = " << J << "   Delta = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[11][8][8].dXc<< endl;
         //cout << "J = " << J << endl;
             
         
@@ -348,7 +348,7 @@ namespace tut
 //        myfilter.test();
        // myfilter.reset();   // make sure that we will use the new filter
         
-        //Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Update_Grid_Cells();
+       // Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Update_Grid_Cells();
         cout << "J(0,0,0) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[0][0][0].Jacobian << endl;
         cout << "J(0,0,10) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[0][0][10].Jacobian << endl;
         cout << "J(0,10,10) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[0][10][10].Jacobian << endl;
@@ -362,17 +362,17 @@ namespace tut
         cout << "J(10,8,8) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[10][8][8].Jacobian << endl;
         cout << "J(11,8,8) = " << Solution_Data.Local_Solution_Blocks.Soln_Blks[0].Grid.Cell[11][8][8].Jacobian << endl;
 
-        
-        
-        //myfilter.transfer_function(FILTER_CORNER_CELL);
-        myfilter.transfer_function(FILTER_FACE_CELL);
-        //myfilter.transfer_function(FILTER_EDGE_CELL);
-        myfilter.transfer_function(FILTER_INNER_CELL);
+        myfilter.test();
+//        myfilter.transfer_function(FILTER_CORNER_CELL);
+//        myfilter.transfer_function(FILTER_FACE_CELL);
+//        myfilter.transfer_function(FILTER_EDGE_CELL);
+//        myfilter.transfer_function(FILTER_INNER_CELL);
+        myfilter.transfer_function(FILTER_MIDDLE_CELL);
 
         
         cout << "start filtering" << endl;
 //        myfilter.filter(rho_member);
-//        
+        
 
         cout << "done filtering" << endl;
         Spectrum.Get_Spectrum(rho_member,"density");
@@ -385,7 +385,7 @@ namespace tut
         
         cout << " Calculating commutation error " << endl;
 
-//        myfilter.Commutation_Error(rho_member);
+        myfilter.Commutation_Error(rho_member);
         
 //        Spectrum.Get_Spectrum(p_member,"pressure");
 //

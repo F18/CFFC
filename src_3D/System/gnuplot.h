@@ -87,6 +87,13 @@ public:
     void gnuplot_set_ylabel(char *label);
     void gnuplot_set_title(char *title);
     void gnuplot_set_title(string title);
+    
+    template <typename functiontype>
+    void gnuplot_plot1d_function(functiontype function, 
+                                 double xmin, 
+                                 double xmax, 
+                                 int N, 
+                                 char *title);
 
 
 };
@@ -750,7 +757,72 @@ inline void Gnuplot_Control::gnuplot_plot1d_var2(
 }
 
 
-
+template <typename functiontype>
+inline void Gnuplot_Control::gnuplot_plot1d_function(functiontype function, double xmin, double xmax, int N, char *title){
+    int         i ;
+    FILE    *   tmp ;
+    char    *   name ;
+    char        cmd[GP_CMD_SIZE] ;
+    char        line[GP_CMD_SIZE] ;
+    
+    /* can we open one more temporary file? */
+    if (ntmp == GP_MAX_TMP_FILES - 1) {
+        fprintf(stderr,
+                "maximum # of temporary files reached (%d): cannot open more",
+                GP_MAX_TMP_FILES) ;
+        return ;
+    }
+    
+    /* Open temporary file for output   */
+    if ((name = tmpnam(NULL)) == (char*)NULL) {
+        fprintf(stderr,"cannot create temporary file: exiting plot") ;
+        return ;
+    }
+    if ((tmp = fopen(name, "w")) == NULL) {
+        fprintf(stderr,"cannot create temporary file: exiting plot") ;
+        return ;
+    }
+    
+    /* Store file name in array for future deletion */
+    (void)strcpy(to_delete[ntmp], name) ;
+    ntmp ++ ;
+    
+    /* Write data to this file  */
+    double *x = new double [N];
+    double *y = new double [N];
+    for (int i=0; i<N; i++) {
+        x[i] = xmin + i*(xmax-xmin)/(N-1.0);
+        y[i] = function(x[i]);
+    }
+    
+    
+    for (i=0 ; i<N ; i++) {
+        (void)fprintf(tmp, "%g %g\n", x[i], y[i]) ;
+    }
+    (void)fflush(tmp) ;
+    (void)fclose(tmp) ;
+    
+    
+    /* Command to be sent to gnuplot    */
+    if (nplots > 0) {
+        (void)strcpy(cmd, "replot") ;
+    } else {
+        (void)strcpy(cmd, "plot") ;
+    }
+    
+    if (title == NULL) {
+        (void)sprintf(line, "%s \"%s\" with %s", cmd, name, pstyle) ;
+    } else {
+        (void)sprintf(line, "%s \"%s\" title \"%s\" with %s", cmd, name,
+                      title, pstyle) ;
+    }
+    
+    /* send command to gnuplot  */
+    gnuplot_cmd(line) ;
+    nplots++ ;
+    
+    return ;
+}
 
 
 /*-------------------------------------------------------------------------*/

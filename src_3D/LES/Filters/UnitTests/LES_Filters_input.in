@@ -24,8 +24,8 @@ Smagorinsky_Coefficient =
 Filter_Type =
 #Implicit
 #Vasilyev
-Vasilyev_LS
-#Haselbacher
+#Vasilyev_LS
+Haselbacher
 #Restart
 Filter_Grid_Ratio =
 2.0
@@ -34,9 +34,9 @@ Target_Filter_Sharpness =
 Filter_Initial_Condition =
 OFF
 Commutation_Order =
-4
+3
 Number_of_Rings =
-4
+3
 ##############################
 #     Spectrum parameters    #
 ##############################
@@ -58,13 +58,13 @@ OFF
 Grid_Type =
 Periodic_Box
 Number_of_Ghost_Cells =
-2
+3
 Number_of_Cells_Idir = 
-16
+32
 Number_of_Cells_Jdir =
-16
+32
 Number_of_Cells_Kdir =
-16
+32
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =
@@ -92,11 +92,11 @@ Box_Length =
 Mesh_Stretching =
 ON
 Stretching_Factor_Idir = 
-1.05
+1.1
 Stretching_Factor_Jdir = 
-1.05
+1.1
 Stretching_Factor_Kdir = 
-1.05
+1.1
 Stretching_Type_Idir = 
 3
 Stretching_Type_Jdir = 

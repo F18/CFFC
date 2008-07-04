@@ -233,7 +233,7 @@ inline void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Blo
     
     
     Output_Transfer_Function_tecplot(kCells,G,N);
-    
+//    kmax = Vector3D(PI,PI,PI);
     
     Vector3D K_111, K_110, K_100;
     K_110.zero(); K_100.zero();
@@ -468,9 +468,8 @@ inline Complex Discrete_Filter<Soln_pState,Soln_cState>::G_function_computationa
         
         l = theNeighbours.neighbour[i].I - theCell.I;
         m = theNeighbours.neighbour[i].J - theCell.J;
-        n = theNeighbours.neighbour[i].K - theCell.K;
-        
-        G += w(i)  *  exp(-I*(k.x*double(l) + k.y*double(m) + k.z*double(n)))/theNeighbours.neighbour[i].Jacobian ;
+        n = theNeighbours.neighbour[i].K - theCell.K;        
+        G += w(i)  *  exp(-I*(k.x*double(l) + k.y*double(m) + k.z*double(n)));
     }  
     
     return G;             
