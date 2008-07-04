@@ -54,6 +54,7 @@ class Cell3D{
     int             I,J,K;   // (i,j,k) indices for cell.
     double              V;   // Cell volume
     double       Jacobian;   // Determinant of Jacobian
+    Vector3D          dXc;
 	                     // Made public so can access them.
 		      
     /* Creation, copy, and assignment constructors. */

@@ -167,6 +167,7 @@ inline void Neighbours::GetNeighbours(Cell3D &theCell, int number_of_rings) {
     Delta.x /= double(imax-imin);
     Delta.y /= double(jmax-jmin);
     Delta.z /= double(kmax-kmin);
+    Delta = theCell.dXc;
     
     theCell_included = false;
     
@@ -248,6 +249,10 @@ inline void Neighbours::GetNeighbours_Vasilyev(Cell3D &theCell, int number_of_ri
     Delta.x /= double(imax-imin);
     Delta.y /= double(jmax-jmin);
     Delta.z /= double(kmax-kmin);
+    
+    
+    Delta = theCell.dXc;
+    
     
 }
 

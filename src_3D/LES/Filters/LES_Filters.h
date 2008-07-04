@@ -459,6 +459,7 @@ double LES_Filter<Soln_pState,Soln_cState>::maximum_wavenumber() {
 #define FILTER_FACE_CELL    1
 #define FILTER_EDGE_CELL    2
 #define FILTER_INNER_CELL   3
+#define FILTER_MIDDLE_CELL  4
 
 template<typename Soln_pState, typename Soln_cState>
 void LES_Filter<Soln_pState,Soln_cState>::transfer_function(int flag) {
@@ -467,13 +468,17 @@ void LES_Filter<Soln_pState,Soln_cState>::transfer_function(int flag) {
         return;
     }
     int Nghost;
+    int NMi, NMj, NMk;
     if (FILTER_ONLY_ONE_SOLNBLK) {
         Nghost = Solution_Blocks_ptr->Grid.Nghost;            
     }
     else if (LocalSolnBlkList_ptr->Nused() >= 1) {
         for (int nBlk = 0; nBlk <= LocalSolnBlkList_ptr->Nused(); ++nBlk ) {
             if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
-                Nghost = Solution_Blocks_ptr[nBlk].Grid.Nghost;            
+                Nghost = Solution_Blocks_ptr[nBlk].Grid.Nghost;
+                NMi = Solution_Blocks_ptr[nBlk].Grid.NCi/2;
+                NMj = Solution_Blocks_ptr[nBlk].Grid.NCj/2;
+                NMk = Solution_Blocks_ptr[nBlk].Grid.NCk/2;
             }
         }
     }
@@ -485,7 +490,9 @@ void LES_Filter<Soln_pState,Soln_cState>::transfer_function(int flag) {
         case FILTER_EDGE_CELL:
             transfer_function(Nghost, number_of_rings, number_of_rings);    break;
         case FILTER_INNER_CELL:
-            transfer_function(number_of_rings+1, number_of_rings+1, number_of_rings+1);    break;
+            transfer_function(number_of_rings, number_of_rings, number_of_rings);    break;
+        case FILTER_MIDDLE_CELL:
+            transfer_function(NMi,NMj,NMk);    break;
     }
 }
 

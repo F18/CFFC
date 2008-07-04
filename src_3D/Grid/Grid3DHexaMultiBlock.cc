@@ -522,6 +522,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Cube(Grid3D_Input_Parameters &Inp
                 
                 Grid_Blks[count_blocks].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
                                                 Input.NCells_Kdir,
+                                                Input.Mesh_Stretching,
                                                 Input.Stretching_Type_Kdir,
                                                 Input.Stretching_Factor_Kdir,
                                                 -HALF*Input.Box_Length+
@@ -616,6 +617,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Single_Block_Periodic_Box(Grid3D_
                 
                 Grid_Blks[count_blocks].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
                                                 Input.NCells_Kdir,
+                                                Input.Mesh_Stretching,
                                                 Input.Stretching_Type_Kdir,
                                                 Input.Stretching_Factor_Kdir,
                                                 -HALF*Input.Box_Length+
@@ -664,7 +666,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Single_Block_Periodic_Box(Grid3D_
 void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Parameters &Input) {
     
     /* No block connectivity needed in case of 1 single block --> No Message Passing for ghost cells */
-    if (Input.NBlk_Idir==1 && Input.NBlk_Jdir==1 && Input.NBlk_Kdir==1) {
+    if (Input.NBlk_Idir==1 && Input.NBlk_Jdir==1 && Input.NBlk_Kdir==1 && Input.i_Grid!=GRID_PERIODIC_BOX_WITH_INFLOW) {
         return Create_Grid_Single_Block_Periodic_Box(Input);
     }
 
@@ -712,14 +714,10 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Paramet
                 /* Extrude each of the grid blocks from the
                  appropriate 2D grid in XY-plane. */
                 
-                int Stretching_Type_Kdir = Input.Stretching_Type_Kdir;
-                if (Input.Mesh_Stretching == OFF) {
-                    Stretching_Type_Kdir = STRETCHING_FCN_LINEAR;
-                }
-                
                 Grid_Blks[nBlk].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
                                         Input.NCells_Kdir,
-                                        Stretching_Type_Kdir,
+                                        Input.Mesh_Stretching,
+                                        Input.Stretching_Type_Kdir, 
                                         Input.Stretching_Factor_Kdir,
                                         -HALF*Input.Box_Length+
                                         (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,

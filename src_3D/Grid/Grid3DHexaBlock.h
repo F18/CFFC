@@ -433,6 +433,14 @@ class Grid3D_Hexa_Block {
                 const double &Angle2);
 
     void Extrude(Grid2D_Quad_Block &Grid2D_XYplane, 
+                 const int Nk,
+                 const int Stretching_Flag,
+                 const int i_Stretching_Kdir,
+                 const double &Stretching_Kdir,
+                 const double &Z_min,
+                 const double &Z_max);
+    
+    void Extrude(Grid2D_Quad_Block &Grid2D_XYplane, 
 		 const int Nk,
                  const int i_Stretching_Kdir,
 		 const double &Stretching_Kdir,

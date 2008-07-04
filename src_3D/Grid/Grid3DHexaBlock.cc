@@ -1424,6 +1424,27 @@ void Grid3D_Hexa_Block::Rotate(const double &Angle,
  *                                                      *
  ********************************************************/
 void Grid3D_Hexa_Block::Extrude(Grid2D_Quad_Block &Grid2D_XYplane, 
+                                const int Nk,
+                                const int Stretching_Flag,
+                                const int i_Stretching_Kdir,
+                                const double &Stretching_Kdir,
+                                const double &Z_min,
+                                const double &Z_max) {
+    int Stretching_type_Kdir = i_Stretching_Kdir;
+    if (Stretching_Flag == OFF) {
+        Stretching_type_Kdir = STRETCHING_FCN_LINEAR;
+    }
+    
+    Extrude(Grid2D_XYplane,
+            Nk,
+            Stretching_type_Kdir,
+            Stretching_Kdir,
+            Z_min,
+            Z_max);
+            
+}
+
+void Grid3D_Hexa_Block::Extrude(Grid2D_Quad_Block &Grid2D_XYplane, 
            			const int Nk,
                                 const int i_Stretching_Kdir,
 			        const double &Stretching_Kdir,
@@ -1868,18 +1889,22 @@ double Grid3D_Hexa_Block::jacobian(const int i, const int j, const int k, int or
     
     /* calculate  dxdi */
     J(0,0) = Finite_Difference(i,j,k,DXDI, dt, order);
-    J(0,1) = Finite_Difference(i,j,k,DYDI, dt, order);
-    J(0,2) = Finite_Difference(i,j,k,DZDI, dt, order);
-    J(1,0) = Finite_Difference(i,j,k,DXDJ, dt, order);
+    J(0,1) = Finite_Difference(i,j,k,DXDJ, dt, order);
+    J(0,2) = Finite_Difference(i,j,k,DXDK, dt, order);
+    J(1,0) = Finite_Difference(i,j,k,DYDI, dt, order);
     J(1,1) = Finite_Difference(i,j,k,DYDJ, dt, order);
-    J(1,2) = Finite_Difference(i,j,k,DZDJ, dt, order);
-    J(2,0) = Finite_Difference(i,j,k,DXDK, dt, order);
-    J(2,1) = Finite_Difference(i,j,k,DYDK, dt, order);
+    J(1,2) = Finite_Difference(i,j,k,DYDK, dt, order);
+    J(2,0) = Finite_Difference(i,j,k,DZDI, dt, order);
+    J(2,1) = Finite_Difference(i,j,k,DZDJ, dt, order);
     J(2,2) = Finite_Difference(i,j,k,DZDK, dt, order);
+    
+    Cell[i][j][k].dXc.x = J(0,0) + J(0,1) + J(0,2);
+    Cell[i][j][k].dXc.y = J(1,0) + J(1,1) + J(1,2);
+    Cell[i][j][k].dXc.z = J(2,0) + J(2,1) + J(2,2);
     
     /* inverse = didx */
     J.pseudo_inverse_override();
-    
+
     /* calculate determinant */
     double DetJ = -J(0,2)*J(1,1)*J(2,0) + J(0,1)*J(1,2)*J(2,0) + J(0,2)*J(1,0)*J(2,1)
     -J(0,0)*J(1,2)*J(2,1) - J(0,1)*J(1,0)*J(2,2) + J(0,0)*J(1,1)*J(2,2);
