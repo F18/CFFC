@@ -180,7 +180,7 @@ SRC_3D_TEST_FUNCTIONS   := $(addprefix $(TESTFUNCTIONS_DIR)/, $(SRC_3D_TEST_FUNC
 
 # Reconstruction:
 #*********************************
-SRC_RECONSTRUCTION3D	= Reconstruction3DSolver.cc
+SRC_RECONSTRUCTION3D	= Reconstruct3DInput.cc Reconstruction3DSolver.cc
 SRC_RECONSTRUCTION3D	:= $(addprefix  $(RECONSTRUCTION3D_DIR)/, $(SRC_RECONSTRUCTION3D))
 
 #*********************************
