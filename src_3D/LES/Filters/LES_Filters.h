@@ -175,7 +175,8 @@ public:
     }
     
     void Create_filter(void) {
-        switch (filter_type) {
+      int error_flag;
+      switch (filter_type) {
             case FILTER_TYPE_HASELBACHER:
                 filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;
                 break;
@@ -186,7 +187,7 @@ public:
                 filter_ptr = new Vasilyev_LS_Filter<Soln_pState,Soln_cState>;
                 break;
             case FILTER_TYPE_RESTART:
-                int error_flag = Read_from_file();
+                error_flag = Read_from_file();
                 if (error_flag == 1) cerr << "could not read filter_input_file" << endl;
                 break;
             default:

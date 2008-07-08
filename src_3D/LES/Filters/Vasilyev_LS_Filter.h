@@ -270,19 +270,19 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
         LS_type = Constraints[i].LS_type;
         switch (type) {
             case G_CONSTRAINT:
-                for (double l=-Ki; l<=Li; l++) {
+                for (int l=-Ki; l<=Li; l++) {
                     index_l = Ki+l;
                     Ax_row(index_l) = real( exp(-I*(k.x*double(l))) );
                 }
                 Ax.append(Ax_row);      bx.append(target);
                 
-                for (double m=-Kj; m<=Lj; m++) {
+                for (int m=-Kj; m<=Lj; m++) {
                     index_m = Kj+m;
                     Ay_row(index_m) = real( exp(-I*(k.y*double(m))) );
                 }
                 Ay.append(Ay_row);      by.append(target);
                 
-                for (double n=-Kk; n<=Lk; n++) {
+                for (int n=-Kk; n<=Lk; n++) {
                     index_n = Kk+n;
                     Az_row(index_n) = real( exp(-I*(k.z*double(n))) );
                 }
@@ -291,7 +291,7 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
                 break;
                 
             case DG_CONSTRAINT:
-                for (double l=-Ki; l<=Li; l++) {
+                for (int l=-Ki; l<=Li; l++) {
                     index_l = Ki+l;
                     if ( pow(-1.0,p) < ZERO )
                         Ax_row(index_l) = imag( pow(-I*(k.x*double(l)),p) * exp(-I*(k.x*double(l))));
@@ -300,7 +300,7 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
                 }
                 Ax.append(Ax_row);     bx.append(target);
                 
-                for (double m=-Kj; m<=Lj; m++) {
+                for (int m=-Kj; m<=Lj; m++) {
                     index_m = Kj+m;
                     if ( pow(-1.0,p) < ZERO )
                         Ay_row(index_m) = imag( pow(-I*(k.y*double(m)),p) * exp(-I*(k.y*double(m))));
@@ -309,7 +309,7 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
                 }
                 Ay.append(Ay_row);     by.append(target);
                 
-                for (double n=-Kk; n<=Lk; n++) {
+                for (int n=-Kk; n<=Lk; n++) {
                     index_n = Kk+n;
                     if ( pow(-1.0,p) < ZERO )
                         Az_row(index_n) = imag( pow(-I*(k.z*double(n)),p) * exp(-I*(k.z*double(n))));
@@ -323,7 +323,7 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
             case LS_CONSTRAINT:
                 t = Ax.get_n()-1;       // the last row index
                 t -= Ki;                // the next undefined coefficient
-                for (double l=-Ki; l<=Li; l++) {
+                for (int l=-Ki; l<=Li; l++) {
                     index_l = Ki+l;
                     Ax_row(index_l) = LeastSquares_coefficient(l,t,X_DIRECTION,LS_type);
                 }
@@ -331,7 +331,7 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
                 
                 t = Ay.get_n()-1;       // the last row index
                 t -= Kj;                // the next undefined coefficient
-                for (double m=-Kj; m<=Lj; m++) {
+                for (int m=-Kj; m<=Lj; m++) {
                     index_m = Kj+m;
                     Ay_row(index_m) = LeastSquares_coefficient(m,t,Y_DIRECTION,LS_type);
                 }
@@ -339,7 +339,7 @@ inline RowVector Vasilyev_LS_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
                 
                 t = Az.get_n()-1;       // the last row index
                 t -= Kk;                // the next undefined coefficient
-                for (double n=-Kk; n<=Lk; n++) {
+                for (int n=-Kk; n<=Lk; n++) {
                     index_n = Kk+n;
                     Az_row(index_n) = LeastSquares_coefficient(n,t,Z_DIRECTION,LS_type);
                 }

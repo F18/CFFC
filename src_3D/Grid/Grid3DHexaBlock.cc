@@ -1534,7 +1534,7 @@ Vector3D Grid3D_Hexa_Block::Delta_minimum(void) {
 /* Finite difference for equally spaced samples */
 double Grid3D_Hexa_Block::Central_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
     
-    int n=ceil(order/2);
+    int n=int(ceil(order/2));
     int N=2*n;
     RowVector coefficients(N);
     ColumnVector samples(N);
@@ -1640,7 +1640,7 @@ double Grid3D_Hexa_Block::Central_Finite_Difference(const int i, const int j, co
 double Grid3D_Hexa_Block::Forward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
     
     
-    int n = ceil(order/2);
+    int n = int(ceil(order/2));
     order = 2*n;
     int N=2*n+1;
     RowVector coefficients(N);
@@ -1743,7 +1743,7 @@ double Grid3D_Hexa_Block::Forward_Finite_Difference(const int i, const int j, co
 /* Finite difference for equally spaced samples */
 double Grid3D_Hexa_Block::Backward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
     
-    int n=ceil(order/2);
+    int n=int(ceil(order/2));
     order=2*n;
     int N=2*n+1;
     RowVector coefficients(N);

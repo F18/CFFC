@@ -253,7 +253,7 @@ inline char * Gnuplot_Control::gnuplot_get_program_path(char * pname)
 
 inline int Gnuplot_Control::gnuplot_init ( void )
 {
-    if (check_X_display(1)) return NULL ;
+    if (check_X_display(1)) return 1 ;
     
 //	if (gnuplot_get_program_path("gnuplot")==NULL) {
 //        fprintf(stderr, "cannot find gnuplot in your PATH");
