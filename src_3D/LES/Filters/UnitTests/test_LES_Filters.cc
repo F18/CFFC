@@ -139,13 +139,13 @@ namespace tut
     /* Test 1:*/
     template<>
     template<>
-    void LES_Filters_object::test<3>()
+    void LES_Filters_object::test<1>()
     {
         
         set_test_name("Test Filter");
         
-        
-
+        cout << "\n\n\n Running first test" << endl;
+/*
         Initialize();
         
         SpectralAnalysis<Soln_pState,Soln_cState> Spectrum(Data,Solution_Data);
@@ -231,7 +231,7 @@ namespace tut
 //
         error_flag = Hexa_Post_Processing(Data,Solution_Data);
 //        ensure("Post_Processing",error_flag==false);
-    
+*/    
     }
 
 }
