@@ -25,6 +25,8 @@
 #endif
 
 
+#define _GNUPLOT
+
 #include <cstdlib>
 
 template <typename Soln_pState, typename Soln_cState>
@@ -44,6 +46,9 @@ public:
         commutation_order = LES_Filter<Soln_pState,Soln_cState>::commutation_order;
         number_of_rings = LES_Filter<Soln_pState,Soln_cState>::number_of_rings;
         target_filter_sharpness = LES_Filter<Soln_pState,Soln_cState>::target_filter_sharpness;
+        Filter_Width_strict = LES_Filter<Soln_pState,Soln_cState>::Filter_Width_strict;
+        LS_constraints = LES_Filter<Soln_pState,Soln_cState>::LS_constraints;
+        Derivative_constraints =  LES_Filter<Soln_pState,Soln_cState>::Derivative_constraints;
         theNeighbours.allocate(number_of_rings); 
     }
     
@@ -53,6 +58,9 @@ public:
     double FGR;
     int number_of_rings;
     double target_filter_sharpness;
+    bool Filter_Width_strict;
+    bool LS_constraints;
+    int Derivative_constraints;
 
     void Allocate_Filter_Weights(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk);
     void Reset_Filter_Weights(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk);
@@ -74,10 +82,14 @@ public:
     Complex dG_function(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &k, RowVector &w);
     Complex dG_function_1D(Cell3D &theCell, Neighbours &theNeighbours, double &wave_number, RowVector &w);
     
-    int Output_Transfer_Function_tecplot(Cell3D  ***kCells, Complex ***G, int N);
-    int Output_Transfer_Function_gnuplot(double *k_111, double *G_111, double *k_110, double *G_110, double *K_100, double *G_100, int N, string &title);
+    int Output_Transfer_Function_tecplot(string prefix_string, Cell3D  ***kCells, Complex ***G, int N);
+    int Output_Transfer_Function_gnuplot(string prefix_string, double *k_111, double *G_111, string legend_111, double *k_110, double *G_110, string legend_110, double *K_100, double *G_100, string legend_100, int N, string &title);
 
     double Filter_Grid_Ratio(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax);
+    double Filter_Grid_Ratio_111(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax);
+    double Filter_Grid_Ratio_110(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax);
+    double Filter_Grid_Ratio_100(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax);
+
     Vector3D Calculate_wavenumber_of_Gvalue(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmax, RowVector &w, double G_value);
     Vector3D Calculate_wavenumber_of_dGvalue(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmin, Vector3D &kmax, RowVector &w, double dG_value);
 
@@ -174,10 +186,70 @@ inline void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Blo
     kmax.z = PI/Delta.z;
     
     cout << "\nkmax = " << kmax << endl;
+    int N=50;
+    std::stringstream prefix;
+    prefix << "transfer_function_I" << theCell.I << "J" << theCell.J << "K" << theCell.K;
+    
+    /* -------------- Output gnuplot ----------------- */
+    double *k_111 = new double [N];
+    double *k_110 = new double [N];
+    double *k_100 = new double [N];
+    double *G_111 = new double [N];
+    double *G_110 = new double [N];
+    double *G_100 = new double [N];
+    
+    Vector3D K_111, K_110, K_100;
+    K_110.zero(); K_100.zero();
+    for (int i=0; i<N; i++) {
+        K_111 = i*kmax/(N-1.0);
+        k_111[i] = K_111.abs();
+        K_110.x = i*kmax.x/(N-1.0);     K_110.y = i*kmax.y/(N-1.0);
+        k_110[i] = K_110.abs();
+        K_100.x = i*kmax.x/(N-1.0);
+        k_100[i] = K_100.abs();
+        G_111[i]=real(G_function(theCell,theNeighbours,K_111,w));
+        G_110[i]=real(G_function(theCell,theNeighbours,K_110,w));
+        G_100[i]=real(G_function(theCell,theNeighbours,K_100,w));
+        //k_111[i]/= (kmax.abs()/sqrt(THREE));
+        //k_110[i]/= (kmax.abs()/sqrt(THREE));
+        //k_100[i]/= (kmax.abs()/sqrt(THREE));
+    }
+    string title ;
+    std::stringstream Cellstring, legend_111, legend_110, legend_100;
+    Cellstring << "Cell = ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
+    legend_111 << "111  FGR = " << fixed << setprecision(2) <<  Filter_Grid_Ratio_111(theCell,theNeighbours,w,kmax);
+    legend_110 << "110  FGR = " << fixed << setprecision(2) <<  Filter_Grid_Ratio_110(theCell,theNeighbours,w,kmax);
+    legend_100 << "100  FGR = " << fixed << setprecision(2) <<  Filter_Grid_Ratio_100(theCell,theNeighbours,w,kmax);
+
+    title = "Transfer function " + filter_name() + " :   " + Cellstring.str() ;    
+
+#ifdef _GNUPLOT
+    Gnuplot_Control h1;
+    h1.gnuplot_init(); 
+    h1.gnuplot_setstyle("lines") ;
+    h1.gnuplot_cmd("set grid");
+    h1.gnuplot_set_xlabel("k");
+    h1.gnuplot_set_ylabel("G(k)");
+    h1.gnuplot_set_title(title);
+    
+    h1.gnuplot_plot1d_var2(k_111,G_111,N,legend_111.str().c_str());
+    h1.gnuplot_plot1d_var2(k_110,G_110,N,legend_110.str().c_str());
+    h1.gnuplot_plot1d_var2(k_100,G_100,N,legend_100.str().c_str());
+#endif
+    
+    Output_Transfer_Function_gnuplot(prefix.str(),k_111,G_111,legend_111.str(),k_110,G_110,legend_110.str(),k_100,G_100,legend_100.str(),N,title);
+    
+    
+    delete[] k_111;
+    delete[] k_110;
+    delete[] k_100;
+    delete[] G_111;
+    delete[] G_110;
+    delete[] G_100;
+    
     
     
     /* --------------- allocations ----------------- */
-    int N=50;
     Cell3D  ***kCells   = new Cell3D  **[N];
     Complex ***G        = new Complex **[N];
     for (int i=0; i<N; i++) {
@@ -207,7 +279,7 @@ inline void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Blo
         }
     }
     
-    Output_Transfer_Function_tecplot(kCells,G,N);
+    Output_Transfer_Function_tecplot(prefix.str(),kCells,G,N);
     
     /* --------- deallocations --------- */
     for (int i=0; i<N; i++) {
@@ -220,86 +292,20 @@ inline void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Hexa_Blo
     }
     delete[] kCells;
     delete[] G;
-    
-    /* -------------- Output gnuplot ----------------- */
-    double *k_111 = new double [N];
-    double *k_110 = new double [N];
-    double *k_100 = new double [N];
-    double *G_111 = new double [N];
-    double *G_110 = new double [N];
-    double *G_100 = new double [N];
-    
-    Vector3D K_111, K_110, K_100;
-    K_110.zero(); K_100.zero();
-    for (int i=0; i<N; i++) {
-        K_111 = i*kmax/(N-1.0);
-        k_111[i] = K_111.abs();
-        K_110.x = i*kmax.x/(N-1.0);     K_110.y = i*kmax.y/(N-1.0);
-        k_110[i] = K_110.abs();
-        K_100.x = i*kmax.x/(N-1.0);
-        k_100[i] = K_100.abs();
-        G_111[i]=real(G_function(theCell,theNeighbours,K_111,w));
-        G_110[i]=real(G_function(theCell,theNeighbours,K_110,w));
-        G_100[i]=real(G_function(theCell,theNeighbours,K_100,w));
-        //k_111[i]/= (kmax.abs()/sqrt(THREE));
-        //k_110[i]/= (kmax.abs()/sqrt(THREE));
-        //k_100[i]/= (kmax.abs()/sqrt(THREE));
-    }
-    double FGR = Filter_Grid_Ratio(theCell,theNeighbours,w,kmax);
-    string title;
-    std::stringstream ss ;
-    ss << fixed << setprecision(2) << FGR ;
-    title = "Transfer function " + filter_name() + " :  FGR = " + ss.str();    
-
-#ifdef _GNUPLOT
-    Gnuplot_Control h1;
-    h1.gnuplot_init(); 
-    h1.gnuplot_setstyle("lines") ;
-    h1.gnuplot_cmd("set grid");
-    h1.gnuplot_set_xlabel("k");
-    h1.gnuplot_set_ylabel("G(k)");
-    h1.gnuplot_set_title(title);
-    
-    h1.gnuplot_plot1d_var2(k_111,G_111,N,"111");
-    h1.gnuplot_plot1d_var2(k_110,G_110,N,"110");
-    h1.gnuplot_plot1d_var2(k_100,G_100,N,"100");
-#endif
-    
-    Output_Transfer_Function_gnuplot(k_111,G_111,k_110,G_110,k_100,G_100,N,title);
-    
-    
-    delete[] k_111;
-    delete[] k_110;
-    delete[] k_100;
-    delete[] G_111;
-    delete[] G_110;
-    delete[] G_100;
-    
 
 }
 
 
 template<typename Soln_pState, typename Soln_cState>
 int Discrete_Filter<Soln_pState,Soln_cState>::
-Output_Transfer_Function_gnuplot(double *k_111, double *G_111, double *k_110, double *G_110, double *k_100, double *G_100, int N, string &title){
+Output_Transfer_Function_gnuplot(string prefix_string, double *k_111, double *G_111, string legend_111, double *k_110, double *G_110, string legend_110, double *k_100, double *G_100, string legend_100, int N, string &title){
     int i, i_output_title;
-    char prefix[256], extension[256], output_file_name[256], gnuplot_file_name[256];
+    const char *prefix;
+    char extension[256], output_file_name[256], gnuplot_file_name[256];
     char *output_file_name_ptr, *gnuplot_file_name_ptr;
     ofstream output_file, gnuplot_file;
     
-    /* Determine prefix of output data file names. */
-    
-    //    i = 0;
-    //    while (1) {
-    //        if (Input.Output_File_Name[i] == ' ' ||
-    //            Input.Output_File_Name[i] == '.') break;
-    //        prefix[i]=Input.Output_File_Name[i];
-    //        i = i + 1;
-    //        if (i > strlen(Input.Output_File_Name) ) break;
-    //    } /* endwhile */
-    //    prefix[i] = '\0';
-    sprintf(prefix,"transfer_function");
-    
+    prefix = prefix_string.c_str();
     
     /* ------------------- output file ----------------------*/
     
@@ -348,11 +354,11 @@ Output_Transfer_Function_gnuplot(double *k_111, double *G_111, double *k_110, do
     << "set grid \n"
     //<< "set logscale xy\n"
     << "plot \"" << output_file_name_ptr << "\" using 1:2 \\\n"
-    << "     title \"" << "111"    << "\" with lines , \\\n"
+    << "     title \"" << legend_111    << "\" with lines , \\\n"
     << "\"" << output_file_name_ptr << "\" using 3:4 \\\n"
-    << "     title \"" << "110"    << "\" with lines , \\\n"
+    << "     title \"" << legend_110    << "\" with lines , \\\n"
     << "\"" << output_file_name_ptr << "\" using 5:6 \\\n"
-    << "     title \"" << "100"    << "\" with lines \n"
+    << "     title \"" << legend_100    << "\" with lines \n"
     << "pause -1  \"Hit return to continue\"\n";
     
     gnuplot_file.close();
@@ -362,25 +368,15 @@ Output_Transfer_Function_gnuplot(double *k_111, double *G_111, double *k_110, do
 
 template<typename Soln_pState, typename Soln_cState>
 int Discrete_Filter<Soln_pState,Soln_cState>::
-Output_Transfer_Function_tecplot(Cell3D  ***kCells, Complex ***G, int N) {
+Output_Transfer_Function_tecplot(string prefix_string, Cell3D  ***kCells, Complex ***G, int N) {
     
     int i, i_output_title;
-    char prefix[256], extension[256], output_file_name[256];
+    const char *prefix;
+    char extension[256], output_file_name[256];
     char *output_file_name_ptr;
     ofstream output_file;    
     
-    /* Determine prefix of output data file names. */
-    
-    //    i = 0;
-    //    while (1) {
-    //        if (Input.Output_File_Name[i] == ' ' ||
-    //            Input.Output_File_Name[i] == '.') break;
-    //        prefix[i]=Input.Output_File_Name[i];
-    //        i = i + 1;
-    //        if (i > strlen(Input.Output_File_Name) ) break;
-    //    } /* endwhile */
-    //    prefix[i] = '\0';
-    sprintf(prefix,"transfer_function");
+    prefix = prefix_string.c_str();
     
     /* Determine output data file name for this processor. */
     
@@ -636,11 +632,42 @@ Calculate_wavenumber_of_dGvalue(Cell3D &theCell, Neighbours &theNeighbours, Vect
 
 template<typename Soln_pState, typename Soln_cState>
 double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax) {
+    return Filter_Grid_Ratio_111(theCell,theNeighbours,w,kmax);
+}
+
+
+template<typename Soln_pState, typename Soln_cState>
+double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio_111(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax) {
     Vector3D k_HALF = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax,w,HALF);
     
     // this k_HALF is on the diagonal that connects (0,0,0) with kmax
     // the norm of the vector touching the ellipsoid connecting the boundaries of the spectral domain:
     //      kmax.abs()/sqrt(3)
+    return (kmax.abs()/sqrt(THREE))/k_HALF.abs();
+}
+
+
+template<typename Soln_pState, typename Soln_cState>
+double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio_110(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax) {
+    Vector3D kmax_110;
+    kmax_110.zero();
+    kmax_110.x = kmax.x;
+    kmax_110.y = kmax.y;
+    
+    Vector3D k_HALF = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax_110,w,HALF);
+    
+    return (kmax.abs()/sqrt(THREE))/k_HALF.abs();
+}
+
+
+template<typename Soln_pState, typename Soln_cState>
+double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio_100(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax) {
+    Vector3D kmax_100;
+    kmax_100.zero();
+    kmax_100.x = kmax.x;
+    
+    Vector3D k_HALF = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax_100,w,HALF);
+    
     return (kmax.abs()/sqrt(THREE))/k_HALF.abs();
 }
 
@@ -680,5 +707,5 @@ void Discrete_Filter<Soln_pState,Soln_cState>::Read_from_file(Hexa_Block<Soln_pS
     SolnBlk.Filter_Weights_Allocated = true;
 }
 
-
+#undef _GNUPLOT
 #endif

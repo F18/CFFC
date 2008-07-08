@@ -70,19 +70,19 @@ public:
     void gnuplot_resetplot(void);
     void gnuplot_plot1d_var1(double *d,
                              int n_point,
-                             char *title) ;
+                             const char *title) ;
     void gnuplot_plot1d_var2(dpoint *d,
                              int n_points,
-                             char *title) ;
+                             const char *title) ;
     void gnuplot_plot1d_var2(double *x,
                              double *y,
                              int n_points,
-                             char *title);
+                             const char *title);
     void gnuplot_plot_slope(double a,
                             double b,
-                            char *title) ;
+                            const char *title) ;
     void gnuplot_plot_equation(char *equation,
-                               char *title) ;
+                               const char *title) ;
     void gnuplot_set_xlabel(char *label);
     void gnuplot_set_ylabel(char *label);
     void gnuplot_set_title(char *title);
@@ -93,7 +93,7 @@ public:
                                  double xmin, 
                                  double xmax, 
                                  int N, 
-                                 char *title);
+                                 const char *title);
 
 
 };
@@ -537,7 +537,7 @@ inline void Gnuplot_Control::gnuplot_resetplot(void)
 inline void Gnuplot_Control::gnuplot_plot1d_var1(
                                           double          *   d,
                                           int                 n_point,
-                                          char            *   title
+                                          const char      *   title
 )
 {
     int         i ;
@@ -631,7 +631,7 @@ inline void Gnuplot_Control::gnuplot_plot1d_var1(
 inline void Gnuplot_Control::gnuplot_plot1d_var2(
                                           dpoint          *   d,
                                           int                 n_points,
-                                          char            *   title
+                                          const char      *   title
 )
 {
     int         i ;
@@ -696,7 +696,7 @@ inline void Gnuplot_Control::gnuplot_plot1d_var2(
                                                  double          *   x,
                                                  double          *   y,
                                                  int                 n_points,
-                                                 char            *   title
+                                                 const char      *   title
 )
 {
     int         i ;
@@ -758,7 +758,7 @@ inline void Gnuplot_Control::gnuplot_plot1d_var2(
 
 
 template <typename functiontype>
-inline void Gnuplot_Control::gnuplot_plot1d_function(functiontype function, double xmin, double xmax, int N, char *title){
+inline void Gnuplot_Control::gnuplot_plot1d_function(functiontype function, double xmin, double xmax, int N, const char *title){
     int         i ;
     FILE    *   tmp ;
     char    *   name ;
@@ -862,7 +862,7 @@ inline void Gnuplot_Control::gnuplot_plot1d_function(functiontype function, doub
 inline void Gnuplot_Control::gnuplot_plot_slope(
                                          double              a,
                                          double              b,
-                                         char            *   title
+                                         const char      *   title
 )
 {
     char    stitle[GP_TITLE_SIZE] ;
@@ -888,7 +888,7 @@ inline void Gnuplot_Control::gnuplot_plot_slope(
 
 
 
-inline void Gnuplot_Control::gnuplot_plot_equation (char *equation, char *title )
+inline void Gnuplot_Control::gnuplot_plot_equation (char *equation, const char *title )
 /*-------------------------------------------------------------------------*/
 /**
  @name		gnuplot_plot_equation

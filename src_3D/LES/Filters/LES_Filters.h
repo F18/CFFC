@@ -52,6 +52,10 @@ public:
     static double FGR;
     static int number_of_rings;
     static double target_filter_sharpness;
+    static bool LS_constraints;
+    static bool Filter_Width_strict;
+    static int Derivative_constraints;
+
     
     static bool restarted;
     
@@ -81,12 +85,7 @@ public:
             Solution_Blocks_ptr  = Solution_Data.Local_Solution_Blocks.Soln_Blks;
             LocalSolnBlkList_ptr = &(Data.Local_Adaptive_Block_List);
             FILTER_ONLY_ONE_SOLNBLK = false;
-            FGR = Solution_Data.Input.Turbulence_IP.FGR;
-            commutation_order = Solution_Data.Input.Turbulence_IP.commutation_order;
-            number_of_rings = Solution_Data.Input.Turbulence_IP.number_of_rings;
-            filter_type = Solution_Data.Input.Turbulence_IP.i_filter_type;
-            output_file_name = Solution_Data.Input.Output_File_Name;
-            target_filter_sharpness = Solution_Data.Input.Turbulence_IP.Target_Filter_Sharpness;
+            Set_Static_Variables(Solution_Data.Input);
             
             if (Solution_Data.Input.i_ICs == IC_RESTART && !restarted)
                 filter_type = FILTER_TYPE_RESTART;
@@ -106,11 +105,8 @@ public:
         Solution_Blocks_ptr  = Solution_Data.Local_Solution_Blocks.Soln_Blks;
         LocalSolnBlkList_ptr = &(Data.Local_Adaptive_Block_List);
         FILTER_ONLY_ONE_SOLNBLK = false;
-        FGR = Solution_Data.Input.Turbulence_IP.FGR;
-        commutation_order = Solution_Data.Input.Turbulence_IP.commutation_order;
-        number_of_rings = Solution_Data.Input.Turbulence_IP.number_of_rings;
-        output_file_name = Solution_Data.Input.Output_File_Name;
-        target_filter_sharpness = Solution_Data.Input.Turbulence_IP.Target_Filter_Sharpness;
+        Set_Static_Variables(Solution_Data.Input);
+
         filter_type = filter_flag;
         
         Create_filter();
@@ -124,12 +120,8 @@ public:
         Solution_Blocks_ptr  = Solution_Data.Local_Solution_Blocks.Soln_Blks;
         LocalSolnBlkList_ptr = &(Data.Local_Adaptive_Block_List);
         FILTER_ONLY_ONE_SOLNBLK = false;
-        FGR = Solution_Data.Input.Turbulence_IP.FGR;
-        commutation_order = Solution_Data.Input.Turbulence_IP.commutation_order;
-        number_of_rings = Solution_Data.Input.Turbulence_IP.number_of_rings;
-        filter_type = Solution_Data.Input.Turbulence_IP.i_filter_type;
-        output_file_name = Solution_Data.Input.Output_File_Name;
-        target_filter_sharpness = Solution_Data.Input.Turbulence_IP.Target_Filter_Sharpness;
+        Set_Static_Variables(Solution_Data.Input);
+
 
         if (Solution_Data.Input.i_ICs == IC_RESTART && !restarted)
             filter_type = FILTER_TYPE_RESTART;
@@ -143,10 +135,7 @@ public:
                int filter_flag) {
         FILTER_ONLY_ONE_SOLNBLK = true;
         Solution_Blocks_ptr  = &SolnBlk;
-        FGR = IPs.Turbulence_IP.FGR;
-        commutation_order = IPs.Turbulence_IP.commutation_order;
-        number_of_rings = IPs.Turbulence_IP.number_of_rings;
-        target_filter_sharpness = IPs.Turbulence_IP.Target_Filter_Sharpness;
+        Set_Static_Variables(IPs);
         filter_type = filter_flag;
         
         Create_filter();
@@ -159,11 +148,7 @@ public:
                Input_Parameters<Soln_pState,Soln_cState> &IPs) {
         FILTER_ONLY_ONE_SOLNBLK = true;
         Solution_Blocks_ptr  = &SolnBlk;
-        FGR = IPs.Turbulence_IP.FGR;
-        commutation_order = IPs.Turbulence_IP.commutation_order;
-        number_of_rings = IPs.Turbulence_IP.number_of_rings;
-        filter_type = IPs.Turbulence_IP.i_filter_type;
-        target_filter_sharpness = IPs.Turbulence_IP.Target_Filter_Sharpness;
+        Set_Static_Variables(IPs);
         if (filter_type == FILTER_TYPE_RESTART) {
             cerr << "Cannot read explicit filter from file with this constructor";
         }
@@ -177,6 +162,17 @@ public:
             delete filter_ptr;
     }
     
+    void Set_Static_Variables(Input_Parameters<Soln_pState,Soln_cState> &IPs) {
+        output_file_name = IPs.Output_File_Name;
+        FGR = IPs.Turbulence_IP.FGR;
+        commutation_order = IPs.Turbulence_IP.commutation_order;
+        number_of_rings = IPs.Turbulence_IP.number_of_rings;
+        filter_type = IPs.Turbulence_IP.i_filter_type;
+        target_filter_sharpness = IPs.Turbulence_IP.Target_Filter_Sharpness;
+        LS_constraints = IPs.Turbulence_IP.LS_constraints;
+        Derivative_constraints = IPs.Turbulence_IP.Derivative_constraints;
+        Filter_Width_strict = IPs.Turbulence_IP.Filter_Width_strict;
+    }
     
     void Create_filter(void) {
         switch (filter_type) {
@@ -365,6 +361,15 @@ template<typename Soln_pState, typename Soln_cState>
 int LES_Filter<Soln_pState,Soln_cState>::number_of_rings = 2;
 
 template<typename Soln_pState, typename Soln_cState>
+bool LES_Filter<Soln_pState,Soln_cState>::LS_constraints = ON;
+
+template<typename Soln_pState, typename Soln_cState>
+int LES_Filter<Soln_pState,Soln_cState>::Derivative_constraints = DEFAULT;
+
+template<typename Soln_pState, typename Soln_cState>
+bool LES_Filter<Soln_pState,Soln_cState>::Filter_Width_strict = OFF;
+
+template<typename Soln_pState, typename Soln_cState>
 double LES_Filter<Soln_pState,Soln_cState>::FGR = 2.0;
 
 template<typename Soln_pState, typename Soln_cState>
@@ -500,6 +505,7 @@ void LES_Filter<Soln_pState,Soln_cState>::transfer_function(int i, int j, int k)
         cout << "LES_Filter not initialized, can not return transfer_function" << endl;
         return;
     }
+    cout << "\n Calculating filter transfer function for cell (" << i << "," << j << "," << k << ")."<<endl;
     if (FILTER_ONLY_ONE_SOLNBLK) {
         filter_ptr->transfer_function(*Solution_Blocks_ptr,Solution_Blocks_ptr->Grid.Cell[i][j][k]);            
     }

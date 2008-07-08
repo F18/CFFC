@@ -20,7 +20,7 @@ double Euler3D_Polytropic_pState::gm1 = GAMMA_AIR-ONE;
 double Euler3D_Polytropic_pState::gm1i = ONE/(GAMMA_AIR-ONE);
 double Euler3D_Polytropic_pState::R = R_UNIVERSAL/(MOLE_WT_AIR*MILLI);
 char* Euler3D_Polytropic_pState::gas_type = "AIR";
-double Euler3D_Polytropic_pState::Mref = 0.1;
+double Euler3D_Polytropic_pState::Mref = 0.5;
 
 
 // Set gas constants.

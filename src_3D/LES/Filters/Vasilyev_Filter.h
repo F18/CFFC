@@ -102,6 +102,8 @@ public:
     using Discrete_Filter<Soln_pState,Soln_cState>::number_of_rings;
     using Discrete_Filter<Soln_pState,Soln_cState>::commutation_order;
     using Discrete_Filter<Soln_pState,Soln_cState>::FGR;
+    using Discrete_Filter<Soln_pState,Soln_cState>::LS_constraints;
+    using Discrete_Filter<Soln_pState,Soln_cState>::Filter_Width_strict;
     using Discrete_Filter<Soln_pState,Soln_cState>::target_filter_sharpness;
     using Discrete_Filter<Soln_pState,Soln_cState>::Neighbouring_Values;
     using Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values;
@@ -513,7 +515,7 @@ inline int Vasilyev_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Neigh
     }
     
     
-    if (number_of_remaining_constraints <= 2 ) {
+    if (number_of_remaining_constraints <= 2 || Filter_Width_strict) {
         /* ------------- Filter Grid Ratio --------------- */
         type = G_CONSTRAINT;
         target = HALF;
@@ -531,7 +533,7 @@ inline int Vasilyev_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Neigh
     if (number_of_remaining_constraints > 2) {
         plast = 1;
     }
-    while (number_of_remaining_constraints>0  && p<=plast) {
+    while (number_of_remaining_constraints>0  && (p<=plast || !LS_constraints)) {
         /* -------------- Derivatives ----------------- */
         type = DG_CONSTRAINT;
         target = ZERO;

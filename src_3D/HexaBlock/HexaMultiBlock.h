@@ -221,14 +221,14 @@ template<class HEXA_BLOCK>
 void Hexa_Multi_Block<HEXA_BLOCK>::Deallocate(void) {
 
    if (Number_of_Soln_Blks >= 1 && Allocated) {
-      delete []Soln_Blks; delete []Block_Used;
-      Soln_Blks = NULL; Block_Used = NULL;
+      delete []Soln_Blks; 
+      delete []Block_Used;
+      Soln_Blks = NULL; 
+      Block_Used = NULL;
 
       Number_of_Soln_Blks = 0;
-
-      Allocated = 0;
    } /* endif */
-
+    Allocated = 0;
 }
 
 /********************************************************
