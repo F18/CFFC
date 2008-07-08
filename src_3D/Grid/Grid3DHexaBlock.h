@@ -447,6 +447,12 @@ class Grid3D_Hexa_Block {
                  const double &Z_min,
                  const double &Z_max);
 
+    void Disturb_Interior_Nodes(const int Number_of_Iterations);
+    double MinimumNodeFaceDistance(const int i, const int j, const int k);
+    double DistanceFromPointToFace(const Node3D &Point, const Node3D &node1, const Node3D &node2, const Node3D &node3, const Node3D &node4);
+    double DistanceFromPointToFace(const Node3D &Point, const Vector3D &Xp, const Vector3D &n);
+
+    
   private:
     //copy and assignment are not permitted
     Grid3D_Hexa_Block(const Grid3D_Hexa_Block &G);

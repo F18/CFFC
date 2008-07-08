@@ -90,6 +90,9 @@ void Grid3D_Input_Parameters::Broadcast(void) {
    MPI::COMM_WORLD.Bcast(&(X_Rotate),
                          1,
                          MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(Disturb_Interior_Nodes),
+                         1,
+                         MPI::INT,0);
 
    // Grid cube and box dimensions:
    MPI::COMM_WORLD.Bcast(&(Box_Length),
@@ -416,6 +419,10 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
   } else if (strcmp(code, "X_Rotate") == 0) {
      i_command = 3018;
      value >> X_Rotate;
+      
+  } else if (strcmp(code, "Disturb_Interior_Nodes") == 0) {
+      i_command = 3018;
+      value >> Disturb_Interior_Nodes;
       
   } else if (strcmp(code, "Plate_Length") == 0) {
      i_command = 3019;

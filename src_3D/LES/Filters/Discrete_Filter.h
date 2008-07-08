@@ -24,9 +24,6 @@
 #include "../../system/gnuplot.h"
 #endif
 
-
-#define _GNUPLOT
-
 #include <cstdlib>
 
 template <typename Soln_pState, typename Soln_cState>
@@ -707,5 +704,4 @@ void Discrete_Filter<Soln_pState,Soln_cState>::Read_from_file(Hexa_Block<Soln_pS
     SolnBlk.Filter_Weights_Allocated = true;
 }
 
-#undef _GNUPLOT
 #endif

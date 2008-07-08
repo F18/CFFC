@@ -87,7 +87,7 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                 Data.Velocity_Field.Create(Data.Initial_Mesh, Solution_Data.Input.Grid_IP);
                    
                 bool Use_Auxiliary_Mesh = false;
-                if(Solution_Data.Input.Grid_IP.Mesh_Stretching==ON)
+                if(Solution_Data.Input.Grid_IP.Mesh_Stretching==ON || Solution_Data.Input.Grid_IP.Disturb_Interior_Nodes!=OFF)
                     Use_Auxiliary_Mesh = true;
                 if (!Use_Auxiliary_Mesh) {
                     // Create turbulence spectrum and store in the velocity field blocks
@@ -97,7 +97,7 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                                                                                        Data.Velocity_Field);
                 } else {
                     // Create a uniform single block with same dimensions as Initial_Mesh
-                    cout << "\n \n Creating Auxiliary mesh " << endl;
+                    cout << "\n\n Creating Auxiliary mesh " << endl;
                     Data.Auxiliary_Mesh.Create_Uniform_Initial_Grid(Solution_Data.Input.Grid_IP,Data.Initial_Mesh);
                               
                     char grid_file_name[256];
@@ -116,11 +116,9 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                     error_flag = Spectrum.Create_Homogeneous_Turbulence_Velocity_Field(Data.Auxiliary_Mesh, 
                                                                                        Data.batch_flag,
                                                                                        Auxiliary_Velocity_Field);
-                    cout << " Finished creating Homogenous Turbulence Velocity Field" << endl;
                     
                     // Interpolate the Auxiliary_Velocity_Field to the Data.Velocity_Field
                     error_flag = Auxiliary_Velocity_Field.Interpolate_Turbulent_Field(Data.Initial_Mesh, Data.Velocity_Field);
-                    cout << "Interpolated Velocity fields" << endl;
                     
                 }
                 if (error_flag) {
@@ -129,9 +127,7 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                     return error_flag;
                 }
             }
-            
-            cout << "waiting for other processors" << endl;
-            
+                        
             CFFC_Barrier_MPI();
             Data.Velocity_Field.Broadcast();
             
@@ -142,19 +138,23 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             
             
             /* ---------------------- Explicitly filter the initial condition --------------------- */
-            if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT && 
-                Solution_Data.Input.Turbulence_IP.Filter_Initial_Condition) {
-                    Solution_Data.Explicit_Filter.Initialize(Data,Solution_Data);
+            if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT) {
+                // Initialize the filter
+                Solution_Data.Explicit_Filter.Initialize(Data,Solution_Data);
+
+                // output the filter transfer function
+                if (CFFC_Primary_MPI_Processor())
+                    Solution_Data.Explicit_Filter.transfer_function(FILTER_MIDDLE_CELL);
+            
+                if (Solution_Data.Input.Turbulence_IP.Filter_Initial_Condition) {
+                    // filter the initial condition
                     error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Initial_Condition(Solution_Data.Explicit_Filter);
                     // save filter to file so don't have to recompute.
                     if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_RESTART)
                         error_flag = Solution_Data.Explicit_Filter.Write_to_file();
-                    // output the filter transfer function
-                    if (CFFC_Primary_MPI_Processor())
-                        Solution_Data.Explicit_Filter.transfer_function(FILTER_CORNER_CELL);
+                }
             }
-            
-            
+
             
             /* -------------------- ICs Specializations --------------------- */
             error_flag = Solution_Data.Local_Solution_Blocks.ICs_Specializations(Solution_Data.Input);
@@ -190,7 +190,7 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
 
             if (CFFC_Primary_MPI_Processor()) {
                 bool Use_Auxiliary_Mesh = false;
-                if(Solution_Data.Input.Grid_IP.Mesh_Stretching==ON)
+                if(Solution_Data.Input.Grid_IP.Mesh_Stretching==ON || Solution_Data.Input.Grid_IP.Disturb_Interior_Nodes!=OFF)
                     Use_Auxiliary_Mesh = true;
                 
                 if (!Use_Auxiliary_Mesh) {
@@ -246,20 +246,16 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
         
         // Make local velocity field blocks containing fluctuations around average velocity
         Turbulent_Velocity_Field_Multi_Block_List  Local_Velocity_Field;
-        cout << "\n going to create local velocity field" << endl;
         Local_Velocity_Field.Create_Local_Velocity_Field_Multi_Block_List(Data.Initial_Mesh, 
                                                                           Solution_Data.Local_Solution_Blocks.Soln_Blks,
                                                                           Data.Local_Adaptive_Block_List);
-        cout << "done" << endl;
         Get_Local_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
                                                         Data.Local_Adaptive_Block_List,
                                                         Vector3D(u_ave,v_ave,w_ave),
                                                         Local_Velocity_Field);
         
         // Collect all local velocity field blocks and put them in a global list
-        cout << "going to create Data.Velocity_Field" << endl;
         Data.Velocity_Field.Create(Data.Initial_Mesh, Solution_Data.Input.Grid_IP);
-        cout << "done" << endl;
         Data.Velocity_Field.Assign_Local_Velocity_Field_Blocks(Local_Velocity_Field);
         Data.Velocity_Field.Collect_Blocks_from_all_processors(Data.Octree,
                                                                Data.Local_Adaptive_Block_List,
@@ -267,7 +263,7 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
         
         if (CFFC_Primary_MPI_Processor()) {
             bool Use_Auxiliary_Mesh = false;
-            if(Solution_Data.Input.Grid_IP.Mesh_Stretching==ON)
+            if(Solution_Data.Input.Grid_IP.Mesh_Stretching==ON || Solution_Data.Input.Grid_IP.Disturb_Interior_Nodes!=OFF)
                 Use_Auxiliary_Mesh = true;
             
             if (!Use_Auxiliary_Mesh) {
@@ -282,9 +278,7 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
                 
                 // Make velocity field blocks where turbulence will be written
                 Turbulent_Velocity_Field_Multi_Block_List  Auxiliary_Velocity_Field;
-                cout << "going to create auxiliary velocity field" << endl;
                 Auxiliary_Velocity_Field.Create(Data.Auxiliary_Mesh, Solution_Data.Input.Grid_IP);
-                cout << " done " << endl;
                 // Interpolate the Data.Velocity_Field to the Auxiliary_Velocity_Field.
                 error_flag = Data.Velocity_Field.Interpolate_Turbulent_Field(Data.Auxiliary_Mesh, Auxiliary_Velocity_Field);
                 if (error_flag)   return error_flag;

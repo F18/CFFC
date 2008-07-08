@@ -51,14 +51,17 @@ class Turbulence_Modelling_Input_Parameters{
     char SFS_model[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];     //!< Sub-filter-scale model , default = Smagorinsky + Yoshizawa
     int i_SFS_model;                                            //!< Sub-filter-scale model , default = Smagorinsky + Yoshizawa
     double smagorinsky_coefficient;                             //!< SFS smagorinsky coefficient
+    int Filter_Initial_Condition;                               //!< Flag defines to filter the initial condition
     char filter_type[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];   //!< Filter type : default = implicit filtering
     int i_filter_type;                                          //!< Filter type : default = implicit filtering
     double FGR;                                                 //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
     double Filter_Width;                                        //!< Constant filter width
     int commutation_order;                                      //!< Commutation order of explicit filter
     int number_of_rings;                                        //!< Number of rings used in the explicit filter
-    double Target_Filter_Sharpness;                             //!< Sharpness of target filter
-    int Filter_Initial_Condition;                               //!< Flag defines to filter the initial condition
+    double Target_Filter_Sharpness;                             //!< Sharpness of target filter in case of Least squares constraint (vasilyev)
+    bool Filter_Width_strict;                                   //!< This will strictly set the FGR and won't allow Least squares to approximate : default = false
+    bool LS_constraints;                                        //!< This will turn on or off Least squares constraints for Vasilyev's filter : default = true
+    int Derivative_constraints;                                 //!< Determines the number of derivative constraints for Vasilyev's filter : default = true
     //@}
     
     //@{ @name Spectrum related input parameters:
@@ -95,6 +98,9 @@ class Turbulence_Modelling_Input_Parameters{
       number_of_rings = 2;
       Target_Filter_Sharpness = -1;
       Filter_Initial_Condition = ON;
+      Filter_Width_strict = OFF;
+      LS_constraints = ON;
+      Derivative_constraints = DEFAULT; // this lets an algorithm put the number
     
       // Spectrum parameters
       strcpy(spectrum,"Pope");

@@ -1913,3 +1913,196 @@ double Grid3D_Hexa_Block::jacobian(const int i, const int j, const int k, int or
 }
 
 
+void Grid3D_Hexa_Block::Disturb_Interior_Nodes(const int Number_of_Iterations) {
+    double MinDistance, phi, theta , Displacement;
+	
+	/* Displace the interior nodes of the quadrilateral mesh block without affecting the boundary nodes */
+	for (int num_iter=1; num_iter<=Number_of_Iterations; ++num_iter){
+		
+		//srand48(num_iter);        // set the seed for the pseudo-random number generator
+		
+		for (int i=INl+1; i<=INu-1 ; i++) {
+			for (int j=JNl+1; j<=JNu-1; j++) {
+                for (int k=KNl+1; k<=KNu-1; k++) {
+                    
+                    // Determine the minimum distance between the Node[i][j] and all the neighbour edges
+                    MinDistance = MinimumNodeFaceDistance(i,j,k);
+                    
+                    // Generate a random angle for the displacement direction
+                    phi   = 2.0*PI*drand48();
+                    theta =     PI*drand48();
+                    
+                    // Calculate the displacement -> 5% of the MinDistance
+                    Displacement = 0.05 * MinDistance;
+                    
+                    // Calculate the new node location
+                    Node[i][j][k].X.x += Displacement*sin(theta)*cos(phi);
+                    Node[i][j][k].X.y += Displacement*sin(theta)*sin(phi);
+                    Node[i][j][k].X.z += Displacement*cos(theta);
+                    
+                    
+                    
+                }    // endfor (i)
+            } // endfor (j)
+        } // endfor (k)
+        
+    } //endfor (num_iter)
+    
+    Update_Cells();
+        
+}
+
+/********************************************************\
+ * Routine: MinimumNodeFaceDistance                       *
+ *                                                        *
+ * Determines the minimum distance between the Node[i][j] *
+ * and all the neighbour edges, for a quadrilateral mesh. *
+ \********************************************************/
+double Grid3D_Hexa_Block::MinimumNodeFaceDistance(const int i, const int j, const int k) 
+{
+	
+	// Obs. For the quadrilateral mesh there are 8 edges and 4 diagonals that must be checked for determining the min distance.
+	/***************************************\
+     *          6      5                     *
+     *       o-----o------o                  *
+     *       |            |                  *
+     *     7 |   (i,j)    | 4                *
+     *       o     o      o                  *
+     *       |            |                  *
+     *     8 |            | 3                *
+     *       o-----o------o                  *
+     *          1     2                      *
+     \***************************************/
+	
+	double MinDistance;
+	
+    // Face (i-1/2,j,k)
+	
+	MinDistance = DistanceFromPointToFace(Node[i][j][k], Node[i-1][j-1][k-1], Node[i-1][j-1][k], Node[i-1][j][k], Node[i-1][j][k-1]);
+	MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j-1][k], Node[i-1][j-1][k+1], Node[i-1][j][k+1], Node[i-1][j][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j][k], Node[i-1][j][k+1], Node[i-1][j+1][k+1], Node[i-1][j+1][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j][k-1], Node[i-1][j][k], Node[i-1][j+1][k], Node[i-1][j+1][k-1]));
+    
+    // Face (i+1/2,j,k)
+	
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i+1][j-1][k-1], Node[i+1][j-1][k], Node[i+1][j][k], Node[i+1][j][k-1]));
+	MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i+1][j-1][k], Node[i+1][j-1][k+1], Node[i+1][j][k+1], Node[i+1][j][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i+1][j][k], Node[i+1][j][k+1], Node[i+1][j+1][k+1], Node[i+1][j+1][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i+1][j][k-1], Node[i+1][j][k], Node[i+1][j+1][k], Node[i+1][j+1][k-1]));
+    
+    
+    // Face (i,j-1/2,k)
+	
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j-1][k-1], Node[i-1][j-1][k], Node[i][j-1][k], Node[i][j-1][k-1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j-1][k], Node[i-1][j-1][k+1], Node[i][j-1][k+1], Node[i][j-1][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j-1][k], Node[i][j-1][k+1], Node[i+1][j-1][k+1], Node[i+1][j-1][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j-1][k-1], Node[i][j-1][k], Node[i+1][j-1][k], Node[i+1][j-1][k-1]));
+    
+    // Face (i,j+1/2,k)
+	
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j+1][k-1], Node[i-1][j+1][k], Node[i][j+1][k], Node[i][j+1][k-1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j+1][k], Node[i-1][j+1][k+1], Node[i][j+1][k+1], Node[i][j+1][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j+1][k], Node[i][j+1][k+1], Node[i+1][j+1][k+1], Node[i+1][j+1][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j+1][k-1], Node[i][j+1][k], Node[i+1][j+1][k], Node[i+1][j+1][k-1]));
+    
+    
+    
+    // Face (i,j,k-1/2)
+	
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j-1][k-1], Node[i-1][j][k-1], Node[i][j][k-1], Node[i][j-1][k-1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j][k-1], Node[i-1][j+1][k-1], Node[i][j+1][k-1], Node[i][j][k-1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j][k-1], Node[i][j+1][k-1], Node[i+1][j+1][k-1], Node[i+1][j][k-1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j-1][k-1], Node[i][j][k-1], Node[i+1][j][k-1], Node[i+1][j-1][k-1]));
+    
+    // Face (i,j,k+1/2)
+	
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j-1][k+1], Node[i-1][j][k+1], Node[i][j][k+1], Node[i][j-1][k+1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j][k+1], Node[i-1][j+1][k+1], Node[i][j+1][k+1], Node[i][j][k+1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j][k+1], Node[i][j+1][k+1], Node[i+1][j+1][k+1], Node[i+1][j][k+1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j-1][k+1], Node[i][j][k+1], Node[i+1][j][k+1], Node[i+1][j-1][k+1]));
+    
+	return MinDistance;
+}
+
+/**********************************************************
+ * Routine: DistanceFromPointToLine                       *
+ *                                                        *
+ * Determines the distance between the Point and the face *
+ *  by using 4 points in the face and the given point     *
+ **********************************************************/
+double Grid3D_Hexa_Block::DistanceFromPointToFace(const Node3D &Point, const Node3D &node1, const Node3D &node2, const Node3D &node3, const Node3D &node4) {
+    Vector3D Xp = (node1.X + node2.X + node3.X + node4.X)/FOUR;
+    Vector3D n1,n2,n3,n4;
+    
+	/***************************************\
+     *     2                3              *
+     *       o------------o                *
+     *       |            |                *
+     *       |     Xp     |                *
+     *       |     o      |                *
+     *       |            |                *
+     *       |            |                *
+     *       o------------o                *
+     *     1                4              *
+     \***************************************/
+    
+    n1 = (Xp-node1.X)^(node2.X-node1.X);
+    n2 = (Xp-node2.X)^(node3.X-node2.X);
+    n3 = (Xp-node3.X)^(node4.X-node3.X);
+    n4 = (Xp-node4.X)^(node1.X-node4.X);
+    if(abs(n1)!=0)
+        n1=n1/abs(n1);
+    if(abs(n2)!=0)
+        n2=n2/abs(n2);
+    if(abs(n3)!=0)
+        n3=n3/abs(n3);
+    if(abs(n4)!=0)
+        n4=n4/abs(n4);
+    
+    double A1, A2, A3, A4;
+    A1 = abs(((Xp-node1.X)^(node1.X-node2.X)))/2;
+    A2 = abs(((Xp-node2.X)^(node2.X-node3.X)))/2;
+    A3 = abs(((Xp-node3.X)^(node3.X-node4.X)))/2;
+    A4 = abs(((Xp-node4.X)^(node4.X-node1.X)))/2;
+    
+    
+    Vector3D n =((A1*n1+A2*n2+A3*n3+A4*n4));
+    if(abs(n)!=0)
+        n=n/abs(n); 
+    
+    return DistanceFromPointToFace(Point, Xp, n);
+}
+
+/**********************************************************
+ * Routine: DistanceFromPointToLine                       *
+ *                                                        *
+ * Determines the distance between the Point and the face *
+ * defined by a point on the face and the normal.         *
+ *********************************************************/
+double Grid3D_Hexa_Block::DistanceFromPointToFace(const Node3D &Point, const Vector3D &Xp, const Vector3D &n) {
+    Vector3D dX = Point.X - Xp;
+    return fabs(n*dX)/n.abs();
+}

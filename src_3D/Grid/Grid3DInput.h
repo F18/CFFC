@@ -90,6 +90,10 @@ class Grid3D_Input_Parameters{
     double X_Scale, X_Rotate;
     //@}
 
+    //@{ @name Mesh distortion:
+    int Disturb_Interior_Nodes;
+    //@}
+    
     //@{ @name Flat Plate mesh parameters:
     double Plate_Length;
     //@}
@@ -139,6 +143,7 @@ class Grid3D_Input_Parameters{
        X_Shift = Vector3D_ZERO;
        X_Scale = ONE;
        X_Rotate = ZERO;
+       Disturb_Interior_Nodes = OFF;
        // Pipe parameters:
        Pipe_Length = ONE; Pipe_Radius = 0.1234;
        // Flat plate parameters:

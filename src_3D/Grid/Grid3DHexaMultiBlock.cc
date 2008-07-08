@@ -473,6 +473,9 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid(Grid3D_Input_Parameters &Input) {
             break;
     } /* endswitch */
     
+    if (Input.Disturb_Interior_Nodes != 0 && !IsAuxiliary)
+        Disturb_Interior_Nodes(Input.Disturb_Interior_Nodes);
+    
 }
 
 /********************************************************
@@ -5019,6 +5022,15 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
     } /* endif */
     
 }
+
+void Grid3D_Hexa_Multi_Block_List::Disturb_Interior_Nodes(const int Number_of_Iterations) {
+    cout << "\n Disturbing Interior Nodes ... " ;
+    srand48(1); // make sure every generation will be the same
+    for (int n=0; n<NBlk; n++) {
+        Grid_Blks[n].Disturb_Interior_Nodes(Number_of_Iterations);
+    }
+}
+
 
 
 /********************************************************

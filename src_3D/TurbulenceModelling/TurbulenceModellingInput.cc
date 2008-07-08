@@ -51,6 +51,15 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(Target_Filter_Sharpness),
                           1,
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Filter_Width_strict),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(LS_constraints),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Derivative_constraints),
+                          1,
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(spectrum,
                           TURBULENCEMODEL_INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
@@ -181,6 +190,32 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
       } else {
           i_command = INVALID_INPUT_VALUE;
       }
+      
+  } else if (strcmp(code, "Filter_Width_strict") == 0) {
+      i_command = 132;
+      value >> value_string;
+      if (strcmp(value_string.c_str(), "ON") == 0) {
+          Filter_Width_strict = ON;
+      } else if(strcmp(value_string.c_str(), "OFF") == 0) {
+          Filter_Width_strict = OFF; 
+      } else {
+          i_command = INVALID_INPUT_VALUE;
+      }
+      
+  } else if (strcmp(code, "LS_constraints") == 0) {
+      i_command = 132;
+      value >> value_string;
+      if (strcmp(value_string.c_str(), "ON") == 0) {
+          LS_constraints = ON;
+      } else if(strcmp(value_string.c_str(), "OFF") == 0) {
+          LS_constraints = OFF; 
+      } else {
+          i_command = INVALID_INPUT_VALUE;
+      }
+      
+  } else if (strcmp(code, "Derivative_constraints") == 0) {
+      i_command = 132;
+      value >> Derivative_constraints;
       
   } else if (strcmp(code, "Commutation_Order") == 0) {
       i_command = 131;

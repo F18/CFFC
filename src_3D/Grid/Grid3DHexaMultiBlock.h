@@ -248,6 +248,8 @@ class Grid3D_Hexa_Multi_Block_List {
     void Create_Grid_ICEMCFD(Grid3D_Input_Parameters &Input);
     
     void Find_Neighbours(Grid3D_Input_Parameters &Input);
+    
+    void Disturb_Interior_Nodes(const int Number_of_Iterations);
 
   private:
     //copy and assignment are not permitted

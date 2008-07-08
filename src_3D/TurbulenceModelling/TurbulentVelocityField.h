@@ -1340,7 +1340,8 @@ RandomFieldRogallo(Input_Parameters<SOLN_pSTATE,SOLN_cSTATE> &IPs) {
     
     if (IPs.Grid_IP.i_Grid == GRID_BUNSEN_BURNER ||
         IPs.Grid_IP.i_Grid == GRID_BUNSEN_BOX    ||
-        IPs.Grid_IP.Mesh_Stretching == ON) {
+        IPs.Grid_IP.Mesh_Stretching == ON ||
+        IPs.Grid_IP.Disturb_Interior_Nodes != OFF) {
         
         NCells_Idir = IPs.Grid_IP.NCells_Turbulence_Idir;
         NCells_Jdir = IPs.Grid_IP.NCells_Turbulence_Jdir;
