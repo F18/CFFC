@@ -1646,7 +1646,7 @@ double Grid3D_Hexa_Block::Forward_Finite_Difference(const int i, const int j, co
     RowVector coefficients(N);
     ColumnVector samples(N);
     
-    for(int p=0; p<N; p++) {
+    for(int p=1; p<=N; p++) {
         switch (derivative) {
             case DXDI:
                 samples(N-p) = Cell[i-p][j][k].Xc.x;
