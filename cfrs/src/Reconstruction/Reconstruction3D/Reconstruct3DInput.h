@@ -18,8 +18,8 @@ using namespace std;
 
 #define	INPUT_PARAMETER_LENGTH_RECONSTRUCT3D    128
 
-typedef double (* TestFunction3D) (double,double);
-typedef double (* IntegralTestFunction3D) (double,double,double,double);
+typedef double (* TestFunction3D) (double,double,double);
+typedef double (* IntegralTestFunction3D) (double,double,double,double,double,double);
 
 
 /**********************************************************
@@ -70,8 +70,9 @@ class Reconstruct3D_Input_Parameters{
   int Number_of_Ghost_Cells;
   double Delta_X_Cell;
   double Delta_Y_Cell;
+  double Delta_Z_Cell;
 
-  double Box_Width, Box_Height, Plate_Length, 
+  double Box_Width, Box_Height, Box_Length, Plate_Length, 
          Pipe_Length, Pipe_Radius, 
          Blunt_Body_Radius, Blunt_Body_Mach_Number,
          Grain_Length, Grain_Radius, Grain_To_Throat_Length,
@@ -84,8 +85,9 @@ class Reconstruct3D_Input_Parameters{
   Vector2D X_Shift;
   char Stretching_Function_I[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D]; /* Grid stretching function */
   char Stretching_Function_J[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D]; /* Grid stretching function */
-  int Stretch_I, Stretch_J;	
-  double Beta_I, Beta_J, Tau_I, Tau_J; /* Grid stretching parameters */
+  char Stretching_Function_K[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D]; /* Grid stretching function */
+  int Stretch_I, Stretch_J, Stretch_K;	
+  double Beta_I, Beta_J, Beta_K, Tau_I, Tau_J, Tau_K; /* Grid stretching parameters */
   int NumOfIter_UnsmoothMesh;
   double CharacteristicLength;
   double CutoffKnobHighOrderReconstruction;
@@ -97,11 +99,14 @@ class Reconstruct3D_Input_Parameters{
   char SubGridPoints_or_DeltaSubGrid[2];
   int  Number_of_SubGrid_Points_Idir;
   int  Number_of_SubGrid_Points_Jdir;
+  int  Number_of_SubGrid_Points_Kdir;
   double Delta_X_of_SubGrid;
   double Delta_Y_of_SubGrid;
+  double Delta_Z_of_SubGrid;
 
   double X_min, X_Length;
   double Y_min, Y_Length;
+  double Z_min, Z_Length;
 
   // Limiter type indicator and related input parameters:
   char Limiter_Type[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D];
@@ -127,10 +132,12 @@ class Reconstruct3D_Input_Parameters{
   // Access functions
   const int & NumSubGridI(void) const { return Number_of_SubGrid_Points_Idir; }
   const int & NumSubGridJ(void) const { return Number_of_SubGrid_Points_Jdir; }
+  const int & NumSubGridK(void) const { return Number_of_SubGrid_Points_Kdir; }
   const int & RecOrder(void) const { return Reconstruction_Order; }
   const int & iCell(void) const { return Number_of_Cells_Idir;}
   const int & jCell(void) const { return Number_of_Cells_Jdir;}
-  int kCell(void) const { return 0;}
+  const int & kCell(void) const { return Number_of_Cells_Kdir;}
+  //int kCell(void) const { return 0;}
   const int & Nghost(void) const { return Number_of_Ghost_Cells;}
   const TestFunction3D & TestFunction(void) const {return TestF;}
   double & CutoffKnob(void) { return CutoffKnobHighOrderReconstruction; }
