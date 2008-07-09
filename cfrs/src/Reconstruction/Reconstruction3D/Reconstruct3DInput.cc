@@ -31,7 +31,6 @@ ostream &operator << (ostream &out_file,
       break;
     case WENO:
       // comments
-
       break;
     case SpectralDiff:
       // comments
@@ -239,16 +238,19 @@ void Set_Default_Input_Parameters(Reconstruct3D_Input_Parameters &IP) {
     IP.Reconstruction_Order = 1;
 
     // Grid settings
-    strcpy(IP.Grid_Type, "Square");
-    IP.i_Grid = GRID_SQUARE;
+    strcpy(IP.Grid_Type, "Cube");
+    IP.i_Grid = GRID_CUBE;
     IP.Box_Width = ONE;
     IP.Box_Height = ONE;
-    IP.Number_of_Cells_Idir = 100;
-    IP.Number_of_Cells_Jdir = 100;
+    IP.Box_Length = ONE;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Cells_Kdir = 10;
     IP.Number_of_Blocks_Idir = 1;
     IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Kdir = 1;
     IP.Number_of_Ghost_Cells = 2;
- 
+        
     IP.Plate_Length = ONE;
     IP.Pipe_Length = ONE;
     IP.Pipe_Radius = HALF;
@@ -274,18 +276,23 @@ void Set_Default_Input_Parameters(Reconstruct3D_Input_Parameters &IP) {
     IP.CharacteristicLength = ONE;
     IP.CutoffKnob() = ONE;
     strcpy(IP.Stretching_Function_I, "Linear_Function");
-    strcpy(IP.Stretching_Function_J, "Linear_Function");
+    strcpy(IP.Stretching_Function_J, "Linear_Function"); 
+    strcpy(IP.Stretching_Function_K, "Linear_Function"); 
     IP.Stretch_I = STRETCHING_FCN_LINEAR;
     IP.Beta_I = ZERO; 
     IP.Tau_I = ZERO;
     IP.Stretch_J = STRETCHING_FCN_LINEAR;
     IP.Beta_J = ZERO;
     IP.Tau_J = ZERO;
+    IP.Stretch_K = STRETCHING_FCN_LINEAR;
+    IP.Beta_K = ZERO;
+    IP.Tau_K = ZERO;
     IP.NumOfIter_UnsmoothMesh = 0;
 
 
     IP.Number_of_SubGrid_Points_Idir = 5;
     IP.Number_of_SubGrid_Points_Jdir = 5;
+    IP.Number_of_SubGrid_Points_Kdir = 5;
 
     strcpy(IP.Output_File_Name, "outputfile.dat");
 
@@ -443,11 +450,21 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
        Get_Next_Input_Control_Parameter(IP);
        strcpy(IP.Grid_Type, 
               IP.Next_Control_Parameter);
-       if (strcmp(IP.Grid_Type, "Cartesian") == 0) {
-          IP.i_Grid = GRID_CARTESIAN_UNIFORM;
-          IP.Box_Width = ONE;
+       if (strcmp(IP.Grid_Type, "Cube") == 0) {
+          IP.i_Grid = GRID_CUBE;
+          IP.Box_Width  = ONE;
           IP.Box_Height = ONE;
-       } else if (strcmp(IP.Grid_Type, "Square") == 0) {
+	  IP.Box_Length = ONE;
+       } else {
+	 IP.i_Grid = GRID_CUBE;
+          IP.Box_Width  = ONE;
+          IP.Box_Height = ONE;
+	  IP.Box_Length = ONE;
+       } /* endif */
+
+       /* ********** 2D Grid Types ******************************
+
+       else if (strcmp(IP.Grid_Type, "Square") == 0) {
           IP.i_Grid = GRID_SQUARE;
           IP.Box_Width = ONE;
           IP.Box_Height = ONE;
@@ -512,8 +529,9 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
           IP.i_Grid = GRID_SQUARE;
           IP.Box_Width = ONE;
           IP.Box_Height = ONE;
-       } /* endif */
-     
+       } 
+       **************** End of 2D Grid Types ************************* */
+
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Cells_Idir") == 0) {
        i_command = 4;
        ++IP.Line_Number;
@@ -526,9 +544,16 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
        ++IP.Line_Number;
        IP.Input_File >> IP.Number_of_Cells_Jdir;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Number_of_Cells_Idir < 1) i_command = INVALID_INPUT_VALUE;
+       if (IP.Number_of_Cells_Jdir < 1) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Idir") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Cells_Kdir") == 0) {
+       i_command = 5;
+       ++IP.Line_Number;
+       IP.Input_File >> IP.Number_of_Cells_Kdir;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Number_of_Cells_Kdir < 1) i_command = INVALID_INPUT_VALUE;
+
+    }else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Idir") == 0) {
        i_command = 6;
        ++IP.Line_Number;
        IP.Input_File >> IP.Number_of_Blocks_Idir;
@@ -542,7 +567,14 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Number_of_Blocks_Jdir < 1) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Box_Width") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Kdir") == 0) {
+       i_command = 7;
+       ++IP.Line_Number;
+       IP.Input_File >> IP.Number_of_Blocks_Kdir;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Number_of_Blocks_Kdir < 1) i_command = INVALID_INPUT_VALUE;
+
+    }else if (strcmp(IP.Next_Control_Parameter, "Box_Width") == 0) {
        i_command = 8;
        ++IP.Line_Number;
        IP.Input_File >> IP.Box_Width;
@@ -553,6 +585,13 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
        i_command = 9;
        ++IP.Line_Number;
        IP.Input_File >> IP.Box_Height;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Box_Height <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+    }else if (strcmp(IP.Next_Control_Parameter, "Box_Length") == 0) {
+       i_command = 9;
+       ++IP.Line_Number;
+       IP.Input_File >> IP.Box_Length;
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Box_Height <= ZERO) i_command = INVALID_INPUT_VALUE;
 
@@ -734,7 +773,15 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
 	i_command = INVALID_INPUT_VALUE;
       IP.Input_File.getline(buffer, sizeof(buffer));
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Method_Used") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Subgrid_Points_Kdir") == 0){
+      i_command = 32;
+      ++IP.Line_Number;
+      if ((IP.Input_File >> IP.Number_of_SubGrid_Points_Kdir) == 0 ||
+	  (IP.Number_of_SubGrid_Points_Kdir < 1))
+	i_command = INVALID_INPUT_VALUE;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    }else if (strcmp(IP.Next_Control_Parameter, "Method_Used") == 0) {
       i_command = 33;
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.Method_Used, 
@@ -920,7 +967,30 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
        	 IP.Stretch_J = STRETCHING_FCN_LINEAR;
        }
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Beta_I") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter, "Stretch_K") == 0) {
+       i_command = 45;
+       Get_Next_Input_Control_Parameter(IP);
+       strcpy(IP.Stretching_Function_K, 
+              IP.Next_Control_Parameter);
+       if (strcmp(IP.Stretching_Function_K, "Linear") == 0) {
+	 IP.Stretch_K = STRETCHING_FCN_LINEAR;
+       } else if (strcmp(IP.Stretching_Function_K, "Min_Clustering") == 0) {
+	 IP.Stretch_K = STRETCHING_FCN_MIN_CLUSTERING;
+       } else if (strcmp(IP.Stretching_Function_K, "Max_Clustering") == 0) {
+	 IP.Stretch_K = STRETCHING_FCN_MAX_CLUSTERING;
+       } else if (strcmp(IP.Stretching_Function_K, "MinMax_Clustering") == 0) {
+	 IP.Stretch_K = STRETCHING_FCN_MINMAX_CLUSTERING;
+       } else if (strcmp(IP.Stretching_Function_K, "Midpt_Clustering") == 0) {
+	 IP.Stretch_K = STRETCHING_FCN_MIDPT_CLUSTERING;
+       } else if (strcmp(IP.Stretching_Function_K, "Sine") == 0) {
+	 IP.Stretch_K = STRETCHING_FCN_SINE;
+       } else if (strcmp(IP.Stretching_Function_K, "Cosine") == 0) {
+	 IP.Stretch_K = STRETCHING_FCN_COSINE;
+       } else {
+       	 IP.Stretch_K = STRETCHING_FCN_LINEAR;
+       }
+
+    }else if (strcmp(IP.Next_Control_Parameter, "Beta_I") == 0) {
        i_command = 46;
        ++IP.Line_Number;
        IP.Input_File >> IP.Beta_I;
@@ -932,7 +1002,13 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
        IP.Input_File >> IP.Beta_J;
        IP.Input_File.getline(buffer, sizeof(buffer));
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Tau_I") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter, "Beta_K") == 0) {
+       i_command = 46;
+       ++IP.Line_Number;
+       IP.Input_File >> IP.Beta_K;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+
+    }else if (strcmp(IP.Next_Control_Parameter, "Tau_I") == 0) {
        i_command = 46;
        ++IP.Line_Number;
        IP.Input_File >> IP.Tau_I;
@@ -944,7 +1020,13 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
        IP.Input_File >> IP.Tau_J;
        IP.Input_File.getline(buffer, sizeof(buffer));
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Iter_UnsmoothMesh") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter, "Tau_K") == 0) {
+       i_command = 46;
+       ++IP.Line_Number;
+       IP.Input_File >> IP.Tau_K;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+
+    }else if (strcmp(IP.Next_Control_Parameter, "Iter_UnsmoothMesh") == 0) {
        i_command = 47;
        ++IP.Line_Number;
        IP.Input_File >> IP.NumOfIter_UnsmoothMesh;
@@ -1067,7 +1149,7 @@ int Process_Input_Control_Parameter_File(Reconstruct3D_Input_Parameters
        } else if (Command_Flag == INVALID_INPUT_CODE ||
                   Command_Flag == INVALID_INPUT_VALUE) {
           line_number = -line_number;
-          cout << "\n Reconstruction3D ERROR: Error reading Reconstruction2D"
+          cout << "\n Reconstruction3D ERROR: Error reading Reconstruction3D"
 	       << " data at line #"
                << -line_number  << " of input data file.\n\a";
           error_flag = line_number;

@@ -77,7 +77,7 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
    **************************************************************/
 
   // Solution variables.
-  ComputationalDomain<TwoD,Cell3D_Hexa,double> SolnBlkDouble;           //
+  ComputationalDomain<ThreeD,Cell3D_Hexa,double> SolnBlkDouble;           //
 
   // Mesh variables
   Grid3D_Hexa_Block   Grid;
