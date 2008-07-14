@@ -11,6 +11,8 @@ Flux_Function_Type =
 AUSM_plus_up
 Pressure =
 0.1
+#Flow_Type =
+#Turbulent-LES
 ##############################
 #       LES parameters       #
 ##############################
@@ -90,7 +92,7 @@ Box_Length =
 #3.14
 #16
 Mesh_Stretching =
-ON
+OFF
 Stretching_Factor_Idir = 
 1.1
 Stretching_Factor_Jdir = 
@@ -103,6 +105,8 @@ Stretching_Type_Jdir =
 3
 Stretching_Type_Kdir = 
 3
+Disturb_Interior_Nodes =
+20
 ###################################
 #   Time stepping parameters      #
 ###################################
