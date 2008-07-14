@@ -102,3 +102,6 @@ log.tut
 #dependencies
 src_2D/Depend
 src_3D/Depend
+
+# hidden files created by nfs (if an open file is deleted or overwritten)
+.nfs*
