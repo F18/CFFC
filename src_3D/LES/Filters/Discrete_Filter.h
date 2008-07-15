@@ -46,6 +46,7 @@ public:
         Filter_Width_strict = LES_Filter<Soln_pState,Soln_cState>::Filter_Width_strict;
         LS_constraints = LES_Filter<Soln_pState,Soln_cState>::LS_constraints;
         Derivative_constraints =  LES_Filter<Soln_pState,Soln_cState>::Derivative_constraints;
+        Store_Filter_Weights = !(LES_Filter<Soln_pState,Soln_cState>::Memory_Efficient);
         theNeighbours.allocate(number_of_rings); 
     }
     
@@ -58,6 +59,7 @@ public:
     bool Filter_Width_strict;
     bool LS_constraints;
     int Derivative_constraints;
+    bool Store_Filter_Weights;
 
     void Allocate_Filter_Weights(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk);
     void Reset_Filter_Weights(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk);
@@ -104,7 +106,7 @@ public:
 template<typename Soln_pState, typename Soln_cState>
 inline RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell) {
 
-    if (!SolnBlk.Filter_Weights_Allocated) {
+    if (!SolnBlk.Filter_Weights_Allocated && Store_Filter_Weights) {
         Allocate_Filter_Weights(SolnBlk);
         SolnBlk.Filter_Weights_Allocated = true;
     }
@@ -113,17 +115,24 @@ inline RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Hexa_Block<Sol
     theNeighbours.set_grid(SolnBlk.Grid);
     Get_Neighbours(theCell);
     
+    
     int I(theCell.I);
     int J(theCell.J);
     int K(theCell.K);
-    if (!SolnBlk.Filter_Weights_Assigned[I][J][K]) {
-        SolnBlk.Filter_Weights[I][J][K] = Get_Weights(theCell,theNeighbours);
-        SolnBlk.Filter_Weights_Assigned[I][J][K] = true;
+    if (Store_Filter_Weights) {
+        if (!SolnBlk.Filter_Weights_Assigned[I][J][K]) {
+            SolnBlk.Filter_Weights[I][J][K] = Get_Weights(theCell,theNeighbours);
+            SolnBlk.Filter_Weights_Assigned[I][J][K] = true;
+            Set_Neighbouring_Values(SolnBlk,theCell,theNeighbours,Neighbouring_Values);
+            return SolnBlk.Filter_Weights[I][J][K]*Neighbouring_Values;
+        }
+    } else {
+        RowVector W = Get_Weights(theCell,theNeighbours);
+        Set_Neighbouring_Values(SolnBlk,theCell,theNeighbours,Neighbouring_Values);
+        return W*Neighbouring_Values;
     }
-    Set_Neighbouring_Values(SolnBlk,theCell,theNeighbours,Neighbouring_Values);
     
-    return SolnBlk.Filter_Weights[I][J][K]*Neighbouring_Values;
-    
+
 }
 
 
@@ -688,20 +697,22 @@ void Discrete_Filter<Soln_pState,Soln_cState>::Write_to_file(Hexa_Block<Soln_pSt
 
 template<typename Soln_pState, typename Soln_cState>
 void Discrete_Filter<Soln_pState,Soln_cState>::Read_from_file(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, ifstream &in_file) {
-    Allocate_Filter_Weights(SolnBlk);
-    for (int i=0; i<SolnBlk.NCi; i++) {
-        for (int j=0; j<SolnBlk.NCj; j++) {                
-            for (int k=0; k<SolnBlk.NCk; k++) {
-                in_file.setf(ios::skipws);
-                in_file >> SolnBlk.Filter_Weights_Assigned[i][j][k];
-                in_file.unsetf(ios::skipws);
-                if (SolnBlk.Filter_Weights_Assigned[i][j][k]) {
-                    SolnBlk.Filter_Weights[i][j][k].read(in_file);
+    if (Store_Filter_Weights) {
+        Allocate_Filter_Weights(SolnBlk);
+        for (int i=0; i<SolnBlk.NCi; i++) {
+            for (int j=0; j<SolnBlk.NCj; j++) {                
+                for (int k=0; k<SolnBlk.NCk; k++) {
+                    in_file.setf(ios::skipws);
+                    in_file >> SolnBlk.Filter_Weights_Assigned[i][j][k];
+                    in_file.unsetf(ios::skipws);
+                    if (SolnBlk.Filter_Weights_Assigned[i][j][k]) {
+                        SolnBlk.Filter_Weights[i][j][k].read(in_file);
+                    }
                 }
             }
         }
+        SolnBlk.Filter_Weights_Allocated = true;
     }
-    SolnBlk.Filter_Weights_Allocated = true;
 }
 
 #endif

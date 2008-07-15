@@ -1844,7 +1844,7 @@ double Grid3D_Hexa_Block::Backward_Finite_Difference(const int i, const int j, c
 
 double Grid3D_Hexa_Block::Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
     
-    int n=ceil(order/2);
+    int n=int(ceil(order/2));
     
     int index, last_index;
     switch(derivative) {

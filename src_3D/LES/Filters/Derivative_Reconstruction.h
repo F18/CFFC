@@ -29,12 +29,14 @@ public:
     Derivative_Reconstruction(void) {
         order_of_accuracy = LES_Filter<Soln_pState,Soln_cState>::commutation_order+1;
         number_of_rings = LES_Filter<Soln_pState,Soln_cState>::number_of_rings;
+        Store_Derivative_Reconstruction_Weights = !(LES_Filter<Soln_pState,Soln_cState>::Memory_Efficient);
         theNeighbours.allocate(number_of_rings);
         the_number_of_unknowns = number_of_unknowns();
     }
     Derivative_Reconstruction(int order_of_accuracy_, int number_of_rings_) {
         order_of_accuracy = order_of_accuracy_;
         number_of_rings = number_of_rings_;
+        Store_Derivative_Reconstruction_Weights = !(LES_Filter<Soln_pState,Soln_cState>::Memory_Efficient);
         theNeighbours.allocate(number_of_rings);
         the_number_of_unknowns = number_of_unknowns();
     }
@@ -42,6 +44,7 @@ public:
     Neighbours theNeighbours;
     int order_of_accuracy;
     int number_of_rings;
+    bool Store_Derivative_Reconstruction_Weights;
         
     DenseMatrix Delta_Neighbouring_Values;
     void Set_Delta_Neighbouring_Values(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell, Neighbours &theNeighbours, DenseMatrix &Delta_Neighbouring_Values);
@@ -124,7 +127,7 @@ template<typename Soln_pState, typename Soln_cState>
 inline DenseMatrix Derivative_Reconstruction<Soln_pState,Soln_cState>::gradient(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell) {
     
     
-    if (!SolnBlk.Derivative_Reconstruction_Weights_Allocated) {
+    if (!SolnBlk.Derivative_Reconstruction_Weights_Allocated && Store_Derivative_Reconstruction_Weights) {
         Allocate_Derivative_Reconstruction_Weights(SolnBlk);
         SolnBlk.Derivative_Reconstruction_Weights_Allocated = true;
     }
@@ -135,15 +138,19 @@ inline DenseMatrix Derivative_Reconstruction<Soln_pState,Soln_cState>::gradient(
     int I(theCell.I);
     int J(theCell.J);
     int K(theCell.K);
-    if (!SolnBlk.Derivative_Reconstruction_Weights_Assigned[I][J][K]) {
-        SolnBlk.Derivative_Reconstruction_Weights[I][J][K] = Get_Weights(theCell,theNeighbours);
-        SolnBlk.Derivative_Reconstruction_Weights_Assigned[I][J][K] = true;
+    if (Store_Derivative_Reconstruction_Weights) {
+        if (!SolnBlk.Derivative_Reconstruction_Weights_Assigned[I][J][K]) {
+            SolnBlk.Derivative_Reconstruction_Weights[I][J][K] = Get_Weights(theCell,theNeighbours);
+            SolnBlk.Derivative_Reconstruction_Weights_Assigned[I][J][K] = true;
+            Set_Delta_Neighbouring_Values(SolnBlk,theCell,theNeighbours,Delta_Neighbouring_Values);
+            return SolnBlk.Derivative_Reconstruction_Weights[I][J][K]*Delta_Neighbouring_Values;
+        }
+    } else {
+        DenseMatrix W = Get_Weights(theCell,theNeighbours);
+        Set_Delta_Neighbouring_Values(SolnBlk,theCell,theNeighbours,Delta_Neighbouring_Values);
+        return Get_Weights(theCell,theNeighbours) * Delta_Neighbouring_Values;
     }
-    
-    Set_Delta_Neighbouring_Values(SolnBlk,theCell,theNeighbours,Delta_Neighbouring_Values);
-    
-    return SolnBlk.Derivative_Reconstruction_Weights[I][J][K]*Delta_Neighbouring_Values;
-}
+ }
 
 template<typename Soln_pState, typename Soln_cState>
 inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::divergence(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk, Cell3D &theCell) {

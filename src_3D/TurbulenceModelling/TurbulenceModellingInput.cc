@@ -60,6 +60,9 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(Derivative_constraints),
                           1,
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Filter_Memory_Efficient),
+                          1,
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(spectrum,
                           TURBULENCEMODEL_INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
@@ -163,6 +166,17 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
       } else {
           i_command = INVALID_INPUT_VALUE;
       } /* endif */
+      
+  } else if (strcmp(code, "Filter_Memory_Efficient") == 0) {
+      i_command = 132;
+      value >> value_string;
+      if (strcmp(value_string.c_str(), "ON") == 0) {
+          Filter_Memory_Efficient = ON;
+      } else if(strcmp(value_string.c_str(), "OFF") == 0) {
+          Filter_Memory_Efficient = OFF; 
+      } else {
+          i_command = INVALID_INPUT_VALUE;
+      }
       
   } else if (strcmp(code, "Filter_Grid_Ratio") == 0) {
     i_command = 131;

@@ -39,6 +39,8 @@ Commutation_Order =
 3
 Number_of_Rings =
 3
+Filter_Memory_Efficient =
+ON
 ##############################
 #     Spectrum parameters    #
 ##############################

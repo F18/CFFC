@@ -55,6 +55,7 @@ public:
     static bool LS_constraints;
     static bool Filter_Width_strict;
     static int Derivative_constraints;
+    static bool Memory_Efficient;
 
     
     static bool restarted;
@@ -172,6 +173,7 @@ public:
         LS_constraints = IPs.Turbulence_IP.LS_constraints;
         Derivative_constraints = IPs.Turbulence_IP.Derivative_constraints;
         Filter_Width_strict = IPs.Turbulence_IP.Filter_Width_strict;
+        Memory_Efficient = IPs.Turbulence_IP.Filter_Memory_Efficient;
     }
     
     void Create_filter(void) {
@@ -390,6 +392,9 @@ public:
         Commutation_Error_Blocks();
     }
 };
+
+template<typename Soln_pState, typename Soln_cState>
+bool LES_Filter<Soln_pState,Soln_cState>::Memory_Efficient = false;
 
 template<typename Soln_pState, typename Soln_cState>
 int LES_Filter<Soln_pState,Soln_cState>::commutation_order = 2;
@@ -776,22 +781,28 @@ void LES_Filter<Soln_pState,Soln_cState>::Commutation_Error_Block(Hexa_Block<Sol
     int temporary_filter_variable_type = filter_variable_type;
     Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(commutation_order+1,2);
 
-    cout << " -- Filtered and Divergence " << endl;
-    /* ----- Filter and Divergence ----- */
+    cout << " -- Filter " << endl;
+    /* ----- Filter ----- */
     for(int i=Solution_Block.ICl; i<=Solution_Block.ICu; i++) {
         for (int j=Solution_Block.JCl; j<=Solution_Block.JCu; j++) {
             for (int k=Solution_Block.KCl; k<=Solution_Block.KCu; k++) {
-                Divergence[i][j][k] = derivative_reconstructor.divergence(Solution_Block,Solution_Block.Grid.Cell[i][j][k]);
                 Filtered[i][j][k] = filter_ptr->filter(Solution_Block,Solution_Block.Grid.Cell[i][j][k]);
-                Solution_Block.W[i][j][k][2]=Divergence[i][j][k](0);
-                Solution_Block.W[i][j][k][3]=Filtered[i][j][k](0);
             }
         }
     }
     
-    cout << " -- Filter of Divergence " << endl;
-    
+    /* ----- Divergence ----- */
+    cout << " -- Divergence " << endl;
+    for(int i=Solution_Block.ICl; i<=Solution_Block.ICu; i++) {
+        for (int j=Solution_Block.JCl; j<=Solution_Block.JCu; j++) {
+            for (int k=Solution_Block.KCl; k<=Solution_Block.KCu; k++) {
+                Divergence[i][j][k] = derivative_reconstructor.divergence(Solution_Block,Solution_Block.Grid.Cell[i][j][k]);
+            }
+        }
+    }
+        
     /* ----- Filter of Divergence ----- */
+    cout << " -- Filter of Divergence " << endl;
     filter_variable_type = LES_FILTER_ROWVECTOR;
     RowVector_ptr = Divergence;
     for(int i=Solution_Block.ICl+number_of_rings; i<=Solution_Block.ICu-number_of_rings; i++) {
@@ -801,10 +812,9 @@ void LES_Filter<Soln_pState,Soln_cState>::Commutation_Error_Block(Hexa_Block<Sol
             }
         }
     }
-    
-    cout << " -- Divergence of Filtered " << endl;
-    
+        
     /* ----- Divergence of Filtered ----- */
+    cout << " -- Divergence of Filtered " << endl;
     filter_variable_type = LES_FILTER_ROWVECTOR;
     RowVector_ptr = Filtered;
     for(int i=Solution_Block.ICl+number_of_rings; i<=Solution_Block.ICu-number_of_rings; i++) {
@@ -817,10 +827,16 @@ void LES_Filter<Soln_pState,Soln_cState>::Commutation_Error_Block(Hexa_Block<Sol
     }
     
     filter_variable_type = temporary_filter_variable_type;
-    
+   
+    /* for multiblock should be moved to other location!!! */
     Commutation_Error_maxnorm = maxnorm(Solution_Block, Commutation_Error_Vector);
     Commutation_Error_L2norm = p_norm(Solution_Block, Commutation_Error_Vector, 2);
     
+    cout << "Filter : " << filter_ptr->filter_name() << endl;
+    cout << "Commutation Order : " << commutation_order << endl;
+    cout << "Grid : " << (Solution_Block.Grid.ICu - Solution_Block.Grid.ICl + 1) 
+               << "x" << (Solution_Block.Grid.JCu - Solution_Block.Grid.JCl + 1)
+               << "x" << (Solution_Block.Grid.KCu - Solution_Block.Grid.KCl + 1) << endl;
     cout << "Commutation_Error:" << endl;
     cout << "   max norm = " << Commutation_Error_maxnorm;
     cout << "   L2 norm  = " << Commutation_Error_L2norm; 
@@ -990,6 +1006,10 @@ void LES_Filter<Soln_pState,Soln_cState>::Output_Commutation(Hexa_Block<Soln_pSt
 
 template<typename Soln_pState, typename Soln_cState>
 int LES_Filter<Soln_pState,Soln_cState>::Write_to_file(void){
+    if (Memory_Efficient) {
+        cout <<"\n Memory Efficient mode is ON --> No filter weights to write to file. " << endl;
+        return (0);
+    }
     cout << "\n Writing explicit filter coefficients to file." << endl ;
     int i;
     char prefix[256], cpu_id[256], extension[256], out_file_name[256];

@@ -62,6 +62,7 @@ class Turbulence_Modelling_Input_Parameters{
     bool Filter_Width_strict;                                   //!< This will strictly set the FGR and won't allow Least squares to approximate : default = false
     bool LS_constraints;                                        //!< This will turn on or off Least squares constraints for Vasilyev's filter : default = true
     int Derivative_constraints;                                 //!< Determines the number of derivative constraints for Vasilyev's filter : default = true
+    bool Filter_Memory_Efficient;                               //!< Determines whether to store filter weights or not (not storing slows down tremendously)
     //@}
     
     //@{ @name Spectrum related input parameters:
@@ -101,6 +102,7 @@ class Turbulence_Modelling_Input_Parameters{
       Filter_Width_strict = OFF;
       LS_constraints = ON;
       Derivative_constraints = DEFAULT; // this lets an algorithm put the number
+      Filter_Memory_Efficient = OFF;
     
       // Spectrum parameters
       strcpy(spectrum,"Pope");
