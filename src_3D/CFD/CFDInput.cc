@@ -627,6 +627,8 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_TURBULENT_BUNSEN_BOX;
        }else if (strcmp(ICs_Type, "Turbulent_Box") == 0) {
           i_ICs = IC_TURBULENT_BOX;
+       }else if (strcmp(ICs_Type, "Radial_Cosine") == 0) {
+           i_ICs = IC_RADIAL_COSINE;
        } else if (strcmp(ICs_Type, "Restart") == 0) {
           i_ICs = IC_RESTART;
        } else {

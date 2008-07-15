@@ -556,6 +556,7 @@ inline char *Date_And_Time() {
 #define IC_SINE2_WAVE_XDIR             46
 #define IC_SINE2_WAVE_YDIR             47
 #define IC_SINE2_WAVE_ZDIR             48
+#define IC_RADIAL_COSINE               49
 
 #define IC_COMPRESSION_XDIR            50
 #define IC_COMPRESSION_YDIR            51

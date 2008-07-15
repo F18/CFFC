@@ -1639,7 +1639,24 @@ ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
            } 
            break; 
            
-
+        case IC_RADIAL_COSINE:
+           // Set the solution state everywhere to the initial state Wo[0].
+           // and sets rho to a cosine function.
+           // This is used to demonstrate explicitfiltering capabilities, 
+           // not for actual computations.
+           for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+               for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+                   for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                       W[i][j][k] = IPs.Wo;
+                       double r = Grid.Cell[i][j][k].Xc.abs();
+                       double a = W[i][j][k].rho;
+                       W[i][j][k].rho = a + a/3.0*cos(2.0*r);// + a/5.0*cos(6.0*r);
+                       U[i][j][k] = W[i][j][k].U( );
+                   } /* endfor */
+               } /* endfor */
+           } /* endfor */
+           break;
+           
       case IC_UNIFORM :
       default:
          // Set the solution state everywhere to the initial state Wo[0].

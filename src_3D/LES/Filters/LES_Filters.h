@@ -247,7 +247,9 @@ public:
     RowVector ***Divergence;
     RowVector ***Filtered_Divergence;
     RowVector ***Divergenced_Filtered;
-    RowVector Commutation_Error_max;
+    RowVector ***Commutation_Error_Vector;
+    RowVector Commutation_Error_maxnorm;
+    RowVector Commutation_Error_L2norm;
     static RowVector ***RowVector_ptr;
     
     void allocate_Filtered(Hexa_Block<Soln_pState,Soln_cState> &Soln_Blk){
@@ -286,6 +288,16 @@ public:
             Divergenced_Filtered[i] = new RowVector *[Soln_Blk.NCj];
             for (int j=0; j<Soln_Blk.NCj; j++) {
                 Divergenced_Filtered[i][j] = new RowVector [Soln_Blk.NCk];
+            }
+        }
+    }
+    
+    void allocate_Commutation_Error_Vector(Hexa_Block<Soln_pState,Soln_cState> &Soln_Blk){
+        Commutation_Error_Vector = new RowVector **[Soln_Blk.NCi];
+        for (int i=0; i<Soln_Blk.NCi; i++) {
+            Commutation_Error_Vector[i] = new RowVector *[Soln_Blk.NCj];
+            for (int j=0; j<Soln_Blk.NCj; j++) {
+                Commutation_Error_Vector[i][j] = new RowVector [Soln_Blk.NCk];
             }
         }
     }
@@ -330,11 +342,35 @@ public:
         delete[] Divergence;   Divergence = NULL;
     }
     
+    void deallocate_Commutation_Error_Vector(Hexa_Block<Soln_pState,Soln_cState> &Soln_Blk) {
+        for (int i=0; i<Soln_Blk.NCi; i++) {
+            for (int j=0; j<Soln_Blk.NCj; j++) {
+                delete[] Commutation_Error_Vector[i][j];   Commutation_Error_Vector[i][j] = NULL;
+            }
+            delete[] Commutation_Error_Vector[i];   Commutation_Error_Vector[i] = NULL;
+        }
+        delete[] Commutation_Error_Vector;   Commutation_Error_Vector = NULL;
+    }
     
     int Read_from_file(void);
     int Write_to_file(void);
     
-    void Commutation_Error_Blocks(void);
+    void Commutation_Error_Block(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block);
+    int Commutation_Error_Blocks(void);
+    void Output_Commutation(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
+                            RowVector ***filtered,
+                            RowVector ***divergence,
+                            RowVector ***filtered_divergence,
+                            RowVector ***divergence_filtered,
+                            RowVector ***commutation_error,
+                            int Block_Number,
+                            bool Output_Title,
+                            ofstream &Out_File);
+    RowVector p_norm(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
+                     RowVector ***Rows,
+                     int p);
+    RowVector maxnorm(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
+                      RowVector ***Rows);
     void Commutation_Error(double Soln_pState::*&member) {
         if (!initialized) {
             cout << "LES_Filter not initialized, can not calculate commutation error" << endl;
@@ -640,114 +676,317 @@ void LES_Filter<Soln_pState,Soln_cState>::filter_Blocks(void) {
 
 
 template<typename Soln_pState, typename Soln_cState>
-void LES_Filter<Soln_pState,Soln_cState>::Commutation_Error_Blocks(void) {
+int LES_Filter<Soln_pState,Soln_cState>::Commutation_Error_Blocks(void) {
+    
+    int i;
+    char prefix[256], cpu_id[256], extension[256], out_file_name[256];
+    char *out_file_name_ptr;
+    
+    i = 0;
+    while (1) {
+        if (output_file_name[i] == ' ' ||
+            output_file_name[i] == '.') break;
+        prefix[i] = output_file_name[i];
+        i = i + 1;
+        if (i > strlen(output_file_name) ) break;
+    } /* endwhile */
+    prefix[i] = '\0';
+    strcat(prefix, "_commutation_error");
+    strcpy(extension, ".dat");
+    
+    sprintf(cpu_id,"_cpu_%d",LocalSolnBlkList_ptr->ThisCPU);
+    
+    strcpy(out_file_name, prefix);
+    strcat(out_file_name, cpu_id);
+    strcat(out_file_name, extension);
+    out_file_name_ptr = out_file_name;
+    
+    ofstream out_file;
+    out_file.open(out_file_name, ios::out);
+    if (out_file.bad()) return (1);
+    
+    
     if (FILTER_ONLY_ONE_SOLNBLK) {
-//        allocate_Filtered(*Solution_Blocks_ptr);
-//        for(int i=Solution_Blocks_ptr->ICl; i<=Solution_Blocks_ptr->ICu; i++) {
-//            for (int j=Solution_Blocks_ptr->JCl; j<=Solution_Blocks_ptr->JCu; j++) {
-//                for (int k=Solution_Blocks_ptr->KCl; k<=Solution_Blocks_ptr->KCu; k++) {
-//                    Filtered[i][j][k] = filter_ptr->filter(*Solution_Blocks_ptr,Solution_Blocks_ptr->Grid.Cell[i][j][k]);
-//                }
-//            }
-//        }
-//        for(int i=Solution_Blocks_ptr->ICl; i<=Solution_Blocks_ptr->ICu; i++) {
-//            for (int j=Solution_Blocks_ptr->JCl; j<=Solution_Blocks_ptr->JCu; j++) {
-//                for (int k=Solution_Blocks_ptr->KCl; k<=Solution_Blocks_ptr->KCu; k++) {
-//                    switch (filter_variable_type) {
-//                        case SOLN_PSTATE_DOUBLE:
-//                            Solution_Blocks_ptr->W[i][j][k].*Soln_pState_member_ptr = Filtered[i][j][k](0);
-//                            break;
-//                        case SOLN_CSTATE_3D:
-//                            for (int n=1; n<=Solution_Blocks_ptr->NumVar(); n++)
-//                                (Solution_Blocks_ptr->*Soln_cState_3D_ptr)[i][j][k][n] = Filtered[i][j][k](n-1);
-//                            break;
-//                            case SOLN_CSTATE_4D:
-//                            for (int n=1; n<=Solution_Blocks_ptr->NumVar(); n++)
-//                                (Solution_Blocks_ptr->*Soln_cState_4D_ptr)[i][j][k][dUdt_k_residual][n] = Filtered[i][j][k](n-1);
-//                            break;
-//                    }
-//                }
-//            }
-//        }
-//        deallocate_Filtered(*Solution_Blocks_ptr);        
+        /* ----- allocations ----- */
+        allocate_Filtered(*Solution_Blocks_ptr);
+        allocate_Divergence(*Solution_Blocks_ptr);
+        allocate_Filtered_Divergence(*Solution_Blocks_ptr);
+        allocate_Divergenced_Filtered(*Solution_Blocks_ptr);
+        allocate_Commutation_Error_Vector(*Solution_Blocks_ptr);
+        
+        /* ------ calculations --------*/
+        Commutation_Error_Block(*Solution_Blocks_ptr);
+        
+        /* ----- deallocations ----- */
+        deallocate_Filtered(*Solution_Blocks_ptr);
+        deallocate_Divergence(*Solution_Blocks_ptr);
+        deallocate_Filtered_Divergence(*Solution_Blocks_ptr);
+        deallocate_Divergenced_Filtered(*Solution_Blocks_ptr);
+        deallocate_Commutation_Error_Vector(*Solution_Blocks_ptr);
     }
     else {
-        bool Initialized_Commutation_Error_max = false;
-        Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(commutation_order+1,2);
+        bool first_flag = true;
         /* For every local solution block */
         if (LocalSolnBlkList_ptr->Nused() >= 1) {
             for (int nBlk = 0; nBlk < LocalSolnBlkList_ptr->Nused(); nBlk++ ) {
                 if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
-                    /* For every cell */
-                    
                     /* ----- allocations ----- */
                     allocate_Filtered(Solution_Blocks_ptr[nBlk]);
                     allocate_Divergence(Solution_Blocks_ptr[nBlk]);
                     allocate_Filtered_Divergence(Solution_Blocks_ptr[nBlk]);
                     allocate_Divergenced_Filtered(Solution_Blocks_ptr[nBlk]);
+                    allocate_Commutation_Error_Vector(Solution_Blocks_ptr[nBlk]);
                     
+                    /* ------ calculations -------- */
+                    Commutation_Error_Block(Solution_Blocks_ptr[nBlk]);
                     
-                    cout << " -- Filtered and Divergence " << endl;
-                    
-                    /* ----- Filter and Divergence ----- */
-                    for(int i=Solution_Blocks_ptr[nBlk].ICl; i<=Solution_Blocks_ptr[nBlk].ICu; i++) {
-                        for (int j=Solution_Blocks_ptr[nBlk].JCl; j<=Solution_Blocks_ptr[nBlk].JCu; j++) {
-                            for (int k=Solution_Blocks_ptr[nBlk].KCl; k<=Solution_Blocks_ptr[nBlk].KCu; k++) {
-                                Divergence[i][j][k] = derivative_reconstructor.divergence(Solution_Blocks_ptr[nBlk],Solution_Blocks_ptr[nBlk].Grid.Cell[i][j][k]);
-                                Filtered[i][j][k] = filter_ptr->filter(Solution_Blocks_ptr[nBlk],Solution_Blocks_ptr[nBlk].Grid.Cell[i][j][k]);
-                            }
-                        }
-                    }
-                    
-                    cout << " -- Filter of Divergence " << endl;
-                    
-                    /* ----- Filter of Divergence ----- */
-                    filter_variable_type = LES_FILTER_ROWVECTOR;
-                    RowVector_ptr = Divergence;
-                    for(int i=Solution_Blocks_ptr[nBlk].ICl+number_of_rings; i<=Solution_Blocks_ptr[nBlk].ICu-number_of_rings; i++) {
-                        for (int j=Solution_Blocks_ptr[nBlk].JCl+number_of_rings; j<=Solution_Blocks_ptr[nBlk].JCu-number_of_rings; j++) {
-                            for (int k=Solution_Blocks_ptr[nBlk].KCl+number_of_rings; k<=Solution_Blocks_ptr[nBlk].KCu-number_of_rings; k++) {
-                                Filtered_Divergence[i][j][k] = filter_ptr->filter(Solution_Blocks_ptr[nBlk],Solution_Blocks_ptr[nBlk].Grid.Cell[i][j][k]);
-                            }
-                        }
-                    }
-                    
-                    cout << " -- Divergence of Filtered " << endl;
-
-                    /* ----- Divergence of Filtered ----- */
-                    filter_variable_type = LES_FILTER_ROWVECTOR;
-                    RowVector_ptr = Filtered;
-                    for(int i=Solution_Blocks_ptr[nBlk].ICl+number_of_rings; i<=Solution_Blocks_ptr[nBlk].ICu-number_of_rings; i++) {
-                        for (int j=Solution_Blocks_ptr[nBlk].JCl+number_of_rings; j<=Solution_Blocks_ptr[nBlk].JCu-number_of_rings; j++) {
-                            for (int k=Solution_Blocks_ptr[nBlk].KCl+number_of_rings; k<=Solution_Blocks_ptr[nBlk].KCu-number_of_rings; k++) {
-                                Divergenced_Filtered[i][j][k] = derivative_reconstructor.divergence(Solution_Blocks_ptr[nBlk],Solution_Blocks_ptr[nBlk].Grid.Cell[i][j][k]);
-                                
-                                if (!Initialized_Commutation_Error_max) {
-                                    Commutation_Error_max = RowVector(Filtered[i][j][k].size());
-                                    Initialized_Commutation_Error_max = true;
-                                }
-                                for (int n=0; n<Filtered[i][j][k].size(); n++) {
-                                    Commutation_Error_max(n) = max(Commutation_Error_max(n), fabs(Filtered_Divergence[i][j][k](n) - Divergenced_Filtered[i][j][k](n)));
-                                }
-                            }
-                        }
-                    }
+                    /* ----- output commutation error ----- */
+                    Output_Commutation(Solution_Blocks_ptr[nBlk],
+                                       Filtered,
+                                       Divergence,
+                                       Filtered_Divergence,
+                                       Divergenced_Filtered,
+                                       Commutation_Error_Vector,
+                                       LocalSolnBlkList_ptr->Block[nBlk].info.gblknum,
+                                       first_flag,
+                                       out_file);
+                    first_flag = false;
                     
                     /* ----- deallocations ----- */
                     deallocate_Filtered(Solution_Blocks_ptr[nBlk]);
                     deallocate_Divergence(Solution_Blocks_ptr[nBlk]);
                     deallocate_Filtered_Divergence(Solution_Blocks_ptr[nBlk]);
                     deallocate_Divergenced_Filtered(Solution_Blocks_ptr[nBlk]);
+                    deallocate_Commutation_Error_Vector(Solution_Blocks_ptr[nBlk]);
                 }         
             } 
         }         
     }
     
-    cout << "Commutation_Error_max = " << Commutation_Error_max << endl;
-    
+    out_file.close();
+    return (0);
+
 }
 
 
+template<typename Soln_pState, typename Soln_cState>
+void LES_Filter<Soln_pState,Soln_cState>::Commutation_Error_Block(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block) {
+    /* For every cell */
+    
+    int temporary_filter_variable_type = filter_variable_type;
+    Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(commutation_order+1,2);
+
+    cout << " -- Filtered and Divergence " << endl;
+    /* ----- Filter and Divergence ----- */
+    for(int i=Solution_Block.ICl; i<=Solution_Block.ICu; i++) {
+        for (int j=Solution_Block.JCl; j<=Solution_Block.JCu; j++) {
+            for (int k=Solution_Block.KCl; k<=Solution_Block.KCu; k++) {
+                Divergence[i][j][k] = derivative_reconstructor.divergence(Solution_Block,Solution_Block.Grid.Cell[i][j][k]);
+                Filtered[i][j][k] = filter_ptr->filter(Solution_Block,Solution_Block.Grid.Cell[i][j][k]);
+                Solution_Block.W[i][j][k][2]=Divergence[i][j][k](0);
+                Solution_Block.W[i][j][k][3]=Filtered[i][j][k](0);
+            }
+        }
+    }
+    
+    cout << " -- Filter of Divergence " << endl;
+    
+    /* ----- Filter of Divergence ----- */
+    filter_variable_type = LES_FILTER_ROWVECTOR;
+    RowVector_ptr = Divergence;
+    for(int i=Solution_Block.ICl+number_of_rings; i<=Solution_Block.ICu-number_of_rings; i++) {
+        for (int j=Solution_Block.JCl+number_of_rings; j<=Solution_Block.JCu-number_of_rings; j++) {
+            for (int k=Solution_Block.KCl+number_of_rings; k<=Solution_Block.KCu-number_of_rings; k++) {
+                Filtered_Divergence[i][j][k] = filter_ptr->filter(Solution_Block,Solution_Block.Grid.Cell[i][j][k]);
+            }
+        }
+    }
+    
+    cout << " -- Divergence of Filtered " << endl;
+    
+    /* ----- Divergence of Filtered ----- */
+    filter_variable_type = LES_FILTER_ROWVECTOR;
+    RowVector_ptr = Filtered;
+    for(int i=Solution_Block.ICl+number_of_rings; i<=Solution_Block.ICu-number_of_rings; i++) {
+        for (int j=Solution_Block.JCl+number_of_rings; j<=Solution_Block.JCu-number_of_rings; j++) {
+            for (int k=Solution_Block.KCl+number_of_rings; k<=Solution_Block.KCu-number_of_rings; k++) {
+                Divergenced_Filtered[i][j][k] = derivative_reconstructor.divergence(Solution_Block,Solution_Block.Grid.Cell[i][j][k]);
+                Commutation_Error_Vector[i][j][k] = (RowVector(Filtered_Divergence[i][j][k] - Divergenced_Filtered[i][j][k])).absolute_values();
+            }
+        }
+    }
+    
+    filter_variable_type = temporary_filter_variable_type;
+    
+    Commutation_Error_maxnorm = maxnorm(Solution_Block, Commutation_Error_Vector);
+    Commutation_Error_L2norm = p_norm(Solution_Block, Commutation_Error_Vector, 2);
+    
+    cout << "Commutation_Error:" << endl;
+    cout << "   max norm = " << Commutation_Error_maxnorm;
+    cout << "   L2 norm  = " << Commutation_Error_L2norm; 
+}
+
+
+template<typename Soln_pState, typename Soln_cState>
+RowVector LES_Filter<Soln_pState,Soln_cState>::p_norm(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
+                                               RowVector ***Rows,
+                                               int p) {
+    int imin = Solution_Block.Grid.ICl+number_of_rings,
+        imax = Solution_Block.Grid.ICu-number_of_rings,
+        jmin = Solution_Block.Grid.JCl+number_of_rings,
+        jmax = Solution_Block.Grid.JCu-number_of_rings,
+        kmin = Solution_Block.Grid.KCl+number_of_rings,
+        kmax = Solution_Block.Grid.KCu-number_of_rings;
+    
+    int N = Rows[imin][jmin][jmax].size();
+    
+    RowVector normRow(N);
+    normRow.zero();
+    
+    for (int k = kmin ; k <= kmax ; ++k) {
+        for (int j = jmin ; j <= jmax ; ++j) {
+            for (int i = imin ; i <= imax ; ++i) {
+                for (int n = 0; n < N ; ++n) {
+                    normRow(n) += pow(Rows[i][j][k](n),double(p));
+                }
+            }
+        }
+    }
+    
+    for (int n = 0; n < N ; ++n) {
+        normRow(n) = pow(normRow(n),ONE/double(p));
+    }
+    return normRow;
+}
+
+template<typename Soln_pState, typename Soln_cState>
+RowVector LES_Filter<Soln_pState,Soln_cState>::maxnorm(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
+                                                      RowVector ***Rows) {
+    int imin = Solution_Block.Grid.ICl+number_of_rings,
+        imax = Solution_Block.Grid.ICu-number_of_rings,
+        jmin = Solution_Block.Grid.JCl+number_of_rings,
+        jmax = Solution_Block.Grid.JCu-number_of_rings,
+        kmin = Solution_Block.Grid.KCl+number_of_rings,
+        kmax = Solution_Block.Grid.KCu-number_of_rings;
+    
+    int N = Rows[imin][jmin][jmax].size();
+    
+    RowVector normRow(N);
+    normRow.zero();
+    
+    for (int k = kmin ; k <= kmax ; ++k) {
+        for (int j = jmin ; j <= jmax ; ++j) {
+            for (int i = imin ; i <= imax ; ++i) {
+                for (int n = 0; n < N ; ++n) {
+                    normRow(n) = max(normRow(n),Rows[i][j][k](n));
+                }
+            }
+        }
+    }
+    
+    return normRow;
+}
+
+
+
+template<typename Soln_pState, typename Soln_cState>
+void LES_Filter<Soln_pState,Soln_cState>::Output_Commutation(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
+                                                             RowVector ***filtered,
+                                                             RowVector ***divergence,
+                                                             RowVector ***filtered_divergence,
+                                                             RowVector ***divergence_filtered,
+                                                             RowVector ***commutation_error,
+                                                             int Block_Number,
+                                                             bool Output_Title,
+                                                             ofstream &Out_File){
+    
+    
+    
+    
+
+    int imin = Solution_Block.Grid.ICl+number_of_rings,
+        imax = Solution_Block.Grid.ICu-number_of_rings,
+        jmin = Solution_Block.Grid.JCl+number_of_rings,
+        jmax = Solution_Block.Grid.JCu-number_of_rings,
+        kmin = Solution_Block.Grid.KCl+number_of_rings,
+        kmax = Solution_Block.Grid.KCu-number_of_rings;
+    
+    /* Ensure boundary conditions are updated before
+     evaluating solution at the nodes. */
+    
+    //  BCs(IPs);
+    
+    /* Output nodal solution data. */
+    
+    Out_File << setprecision(14);
+    
+    if (Output_Title) {
+        
+        Out_File << "TITLE = \"" << CFFC_Name() << ": Commutation error, "
+        << "\"" << "\n"
+        << "VARIABLES = \"x\" \\ \n"
+        << "\"y\" \\ \n"
+        << "\"z\" \\ \n"
+        << "\"unfiltered\" \\ \n"
+        << "\"filtered\" \\ \n"
+        << "\"divergence\" \\ \n"
+        << "\"filtered of divergence\" \\ \n"
+        << "\"divergence of filtered\" \\ \n"
+        << "\"commutation error\" \\ \n";
+        
+        Out_File<< "ZONE T =  \"Block Number = " << Block_Number
+        << "\" \\ \n"
+        << "I = " << imax - imin + 1 << " \\ \n"
+        << "J = " << jmax - jmin + 1 << " \\ \n"
+        << "K = " << kmax - kmin + 1 << " \\ \n"
+        << "DATAPACKING = POINT \n";
+    } else {
+        Out_File << "ZONE T =  \"Block Number = " << Block_Number
+        << "\" \\ \n"
+        << "I = " << imax - imin + 1 << " \\ \n"
+        << "J = " << jmax - jmin + 1 << " \\ \n"
+        << "K = " << kmax - kmin + 1 << " \\ \n"
+        << "DATAPACKING = POINT \n";              
+    } /* endif */
+    
+    for (int k = kmin ; k <= kmax ; ++k) {
+        for (int j = jmin ; j <= jmax ; ++j) {
+            for (int i = imin ; i <= imax ; ++i) {
+                
+                RowVector unfiltered;
+                switch (filter_variable_type) {
+                    case SOLN_PSTATE_DOUBLE:
+                        unfiltered = RowVector(1);
+                        unfiltered(0) = Solution_Block.W[i][j][k].*Soln_pState_member_ptr;
+                        break;
+                    case SOLN_CSTATE_3D:
+                        unfiltered = RowVector(Solution_Block.NumVar());
+                        for (int n=1; n<=Solution_Block.NumVar(); n++)
+                            unfiltered(n-1) = (Solution_Block.*Soln_cState_3D_ptr)[i][j][k][n];
+                        break;
+                    case SOLN_CSTATE_4D:
+                        unfiltered = RowVector(Solution_Block.NumVar());
+                        for (int n=1; n<=Solution_Block.NumVar(); n++)
+                            unfiltered(n-1) = (Solution_Block.*Soln_cState_4D_ptr)[i][j][k][dUdt_k_residual][n];
+                        break;
+                }
+                
+                Out_File << " "  << Solution_Block.Grid.Cell[i][j][k].Xc;
+                Out_File.setf(ios::scientific);
+                Out_File    << " " << unfiltered(0)
+                            << " " << filtered[i][j][k](0)
+                            << " " << divergence[i][j][k](0)
+                            << " " << filtered_divergence[i][j][k](0)
+                            << " " << divergence_filtered[i][j][k](0)
+                            << " " << commutation_error[i][j][k](0) << "\n";
+                Out_File.unsetf(ios::scientific);
+            } /* endfor */
+        } /* endfor */
+    } /* endfor */
+    
+    Out_File << setprecision(6);
+                                                             
+}
 
 template<typename Soln_pState, typename Soln_cState>
 int LES_Filter<Soln_pState,Soln_cState>::Write_to_file(void){

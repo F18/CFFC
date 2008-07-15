@@ -91,7 +91,6 @@ namespace tut
             ensure("Initial_Conditions",error_flag==false);
         }
         
-        
     private:
         
     };
@@ -176,7 +175,8 @@ namespace tut
 //        member_ptr p_member = &Soln_pState::p;
 //
 //        Spectrum.Set_Spectrum(p_member);
-        Spectrum.Set_Spectrum(rho_member);
+//        Spectrum.Set_Spectrum(rho_member);
+        
 //                
 //        //cout << endl<< endl << endl << "FILTERING..." << endl;
         LES_Filter<Soln_pState,Soln_cState> myfilter(Data,Solution_Data);

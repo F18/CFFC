@@ -5024,7 +5024,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
 }
 
 void Grid3D_Hexa_Multi_Block_List::Disturb_Interior_Nodes(const int Number_of_Iterations) {
-    cout << "\n Disturbing Interior Nodes ... " ;
+    cout << "\n Disturbing Interior Nodes ... " << endl;
     srand48(1); // make sure every generation will be the same
     for (int n=0; n<NBlk; n++) {
         Grid_Blks[n].Disturb_Interior_Nodes(Number_of_Iterations);

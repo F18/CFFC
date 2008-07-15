@@ -121,6 +121,8 @@ class RowVector: public MV_Vector_double{
     double abs(void);
     double abs(void) const;
     friend double abs(const RowVector &RVec);
+    
+    RowVector absolute_values(void);
 
     /* Square of vector. */
     double sqr(void);
@@ -231,6 +233,14 @@ inline double abs(const RowVector &RVec) {
    int i, m; m = RVec.size(); double xx; xx= ZERO;
    for ( i = 0; i <= m-1; ++i ) xx += RVec(i)*RVec(i);
    return (sqrt(xx));
+}
+
+inline RowVector RowVector::absolute_values(void) {
+    int i, m = size(); RowVector rv(m);
+    for ( i = 0; i <= m-1; ++i ) {
+        rv(i) = fabs(p_[i]);
+    } /* endfor */
+    return (rv);
 }
 
 /********************************************************
@@ -525,6 +535,8 @@ class ColumnVector: public MV_Vector_double{
     double abs(void);
     double abs(void) const;
     friend double abs(const ColumnVector &CVec);
+    
+    ColumnVector absolute_values(void) ;
 
     /* Square of vector. */
     double sqr(void);
@@ -634,6 +646,14 @@ inline double abs(const ColumnVector &CVec) {
    int i, m; m = CVec.size(); double xx; xx= ZERO;
    for ( i = 0; i <= m-1; ++i ) xx += CVec(i)*CVec(i);
    return (sqrt(xx));
+}
+
+inline ColumnVector ColumnVector::absolute_values(void) {
+    int i, m = size(); ColumnVector cv(m);
+    for ( i = 0; i <= m-1; ++i ) {
+        cv(i) = fabs(p_[i]);
+    } /* endfor */
+    return (cv);
 }
 
 /********************************************************

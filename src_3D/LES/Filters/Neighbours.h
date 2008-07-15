@@ -104,8 +104,6 @@ public:
     void delete_theCell(void);
 
     void GetNeighbours_Vasilyev(Cell3D &theCell, int number_of_rings);
-    void GetNeighbours_Vasilyev_no_ghostcells(Cell3D &theCell, int number_of_rings);
-
     
     int Ki, Kj, Kk, Li, Lj, Lk, Ni, Nj, Nk;
     
@@ -150,30 +148,17 @@ inline void Neighbours::GetNeighbours(Cell3D &theCell, int number_of_rings) {
     if (jmax == Grid_ptr->JCu+Grid_ptr->Nghost)    jmin = jmax - 2*number_of_rings;
     if (kmax == Grid_ptr->KCu+Grid_ptr->Nghost)    kmin = kmax - 2*number_of_rings;
     
-    
-    Vector3D Xmin(MILLION,MILLION,MILLION), Xmax(-MILLION,-MILLION,-MILLION);
-    
     for (int i=imin; i<=imax; i++) {
         for (int j=jmin; j<=jmax; j++) {
             for (int k=kmin; k<=kmax; k++) {
                 if (theCell != Grid_ptr->Cell[i][j][k]) {
                     neighbour[number_of_neighbours] = Grid_ptr->Cell[i][j][k];
-                    Xmin.x = min(Xmin.x,neighbour[number_of_neighbours].Xc.x);
-                    Xmin.y = min(Xmin.y,neighbour[number_of_neighbours].Xc.y);
-                    Xmin.z = min(Xmin.z,neighbour[number_of_neighbours].Xc.z);
-                    Xmax.x = max(Xmax.x,neighbour[number_of_neighbours].Xc.x);
-                    Xmax.y = max(Xmax.y,neighbour[number_of_neighbours].Xc.y);
-                    Xmax.z = max(Xmax.z,neighbour[number_of_neighbours].Xc.z);
                     number_of_neighbours++;
                 }
             }
         }
     }
-    
-    Delta = (Xmax-Xmin);            // --> averaged dx dy dz over number of neighbouring rings
-    Delta.x /= double(imax-imin);
-    Delta.y /= double(jmax-jmin);
-    Delta.z /= double(kmax-kmin);
+
     Delta = theCell.dXc;
     
     theCell_included = false;
@@ -219,18 +204,10 @@ inline void Neighbours::GetNeighbours_Vasilyev(Cell3D &theCell, int number_of_ri
 
     allocate_vasilyev(Ni,Nj,Nk);
     
-    Vector3D Xmin(MILLION,MILLION,MILLION), Xmax(-MILLION,-MILLION,-MILLION);
-
     for (int i=imin; i<=imax; i++) {
         for (int j=jmin; j<=jmax; j++) {
             for (int k=kmin; k<=kmax; k++) {   // includes theCell !!!
                 neighbour[number_of_neighbours] = Grid_ptr->Cell[i][j][k];
-                Xmin.x = min(Xmin.x,neighbour[number_of_neighbours].Xc.x);
-                Xmin.y = min(Xmin.y,neighbour[number_of_neighbours].Xc.y);
-                Xmin.z = min(Xmin.z,neighbour[number_of_neighbours].Xc.z);
-                Xmax.x = max(Xmax.x,neighbour[number_of_neighbours].Xc.x);
-                Xmax.y = max(Xmax.y,neighbour[number_of_neighbours].Xc.y);
-                Xmax.z = max(Xmax.z,neighbour[number_of_neighbours].Xc.z);
                 number_of_neighbours++;
             }
         }
@@ -245,55 +222,9 @@ inline void Neighbours::GetNeighbours_Vasilyev(Cell3D &theCell, int number_of_ri
     for (int k=kmin, n=0; k<=kmax; k++, n++) { 
         neighbour_z[n] = Grid_ptr->Cell[theCell.I][theCell.J][k];
     }
-    
-    
-    
-    Delta = (Xmax-Xmin);            // --> averaged dx dy dz over number of neighbouring rings
-    Delta.x /= double(imax-imin);
-    Delta.y /= double(jmax-jmin);
-    Delta.z /= double(kmax-kmin);
-    
-    
+        
     Delta = theCell.dXc;
-    
-    
+
 }
-
-
-
-inline void Neighbours::GetNeighbours_Vasilyev_no_ghostcells(Cell3D &theCell, int number_of_rings) {
-    number_of_neighbours = 0;
-    assert(number_of_rings <= MAX_NUMBER_OF_NEIGHBOURING_RINGS_IN_LES_FILTER);    
-    
-    int imin = max(theCell.I-number_of_rings,Grid_ptr->ICl);
-    int jmin = max(theCell.J-number_of_rings,Grid_ptr->JCl);
-    int kmin = max(theCell.K-number_of_rings,Grid_ptr->KCl);
-    int imax = min(theCell.I+number_of_rings,Grid_ptr->ICu);
-    int jmax = min(theCell.J+number_of_rings,Grid_ptr->JCu);
-    int kmax = min(theCell.K+number_of_rings,Grid_ptr->KCu);
-    
-    /* ---- assymetric stencil with same number of cells ---- */
-    if (imin == Grid_ptr->ICl)    imax = imin + 2*number_of_rings;
-    if (jmin == Grid_ptr->JCl)    jmax = jmin + 2*number_of_rings;
-    if (kmin == Grid_ptr->KCl)    kmax = kmin + 2*number_of_rings;
-    if (imax == Grid_ptr->ICu)    imin = imax - 2*number_of_rings;
-    if (jmax == Grid_ptr->JCu)    jmin = jmax - 2*number_of_rings;
-    if (kmax == Grid_ptr->KCu)    kmin = kmax - 2*number_of_rings;
-    
-    Ki = theCell.I - imin;      Li = imax - theCell.I;
-    Kj = theCell.J - jmin;      Lj = jmax - theCell.J;
-    Kk = theCell.K - kmin;      Lk = kmax - theCell.K;
-    
-    for (int i=imin; i<=imax; i++) {
-        for (int j=jmin; j<=jmax; j++) {
-            for (int k=kmin; k<=kmax; k++) {   // includes theCell !!!
-                neighbour[number_of_neighbours] = Grid_ptr->Cell[i][j][k];
-                number_of_neighbours++;
-            }
-        }
-    }
-    
-}
-
 
 #endif

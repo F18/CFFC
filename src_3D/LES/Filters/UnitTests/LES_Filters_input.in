@@ -2,7 +2,7 @@
 #    Solver parameters       #
 ##############################
 ICs_Type = 
-Uniform
+Radial_Cosine
 Reconstruction_Type =
 Least_Squares
 Limiter_Type = 
@@ -25,8 +25,8 @@ Smagorinsky_Coefficient =
 ##############################
 Filter_Type =
 #Implicit
-Vasilyev
-#Vasilyev_LS
+#Vasilyev
+Vasilyev_LS
 #Haselbacher
 #Restart
 Filter_Grid_Ratio =
@@ -36,9 +36,9 @@ Target_Filter_Sharpness =
 Filter_Initial_Condition =
 OFF
 Commutation_Order =
-2
+3
 Number_of_Rings =
-2
+3
 ##############################
 #     Spectrum parameters    #
 ##############################
@@ -60,13 +60,13 @@ OFF
 Grid_Type =
 Periodic_Box
 Number_of_Ghost_Cells =
-2
+3
 Number_of_Cells_Idir = 
-8
+16
 Number_of_Cells_Jdir =
-8
+16
 Number_of_Cells_Kdir =
-8
+16
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =
@@ -106,7 +106,7 @@ Stretching_Type_Jdir =
 Stretching_Type_Kdir = 
 3
 Disturb_Interior_Nodes =
-20
+10
 ###################################
 #   Time stepping parameters      #
 ###################################
@@ -139,8 +139,8 @@ Execute
 # Write output        
 #######################
 Write_Output_Nodes
-#Write_Output
-#Write_Restart
+Write_Output
+Write_Restart
 #######################
 # Terminate program   
 #######################
