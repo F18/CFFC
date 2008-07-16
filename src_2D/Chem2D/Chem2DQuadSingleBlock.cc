@@ -7848,7 +7848,7 @@ void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk) {
   double mu, kappa, r, div_v;
   double Temperature, Rmix, Cp;
   double mu_t, kappa_t, Dm_t;
-  Vector2D grad_T;
+  Vector2D grad_T; 
   Vector2D X;
   for (int j = SolnBlk.JCl-1; j <= SolnBlk.JCu+1; j++) {
     for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
@@ -7872,10 +7872,16 @@ void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk) {
       /* Temperature gradients from using the chain rule 
          with the ideal gas law (P=rho*R*T) 
          dT/dx = 1/rho*R *( dP/dx - P/rho * drho/dx) */
-      grad_T.x = (ONE/(SolnBlk.W[i][j].rho*Rmix)) * (SolnBlk.dWdx[i][j].p - 
-                 (SolnBlk.W[i][j].p/SolnBlk.W[i][j].rho)*SolnBlk.dWdx[i][j].rho);
-      grad_T.y = (ONE/(SolnBlk.W[i][j].rho*Rmix)) * (SolnBlk.dWdy[i][j].p - 
-                 (SolnBlk.W[i][j].p/SolnBlk.W[i][j].rho)*SolnBlk.dWdy[i][j].rho);
+      grad_T.x = (SolnBlk.dWdx[i][j].p - (SolnBlk.W[i][j].p/SolnBlk.W[i][j].rho)*SolnBlk.dWdx[i][j].rho);
+      grad_T.y = (SolnBlk.dWdy[i][j].p - (SolnBlk.W[i][j].p/SolnBlk.W[i][j].rho)*SolnBlk.dWdy[i][j].rho);
+      double R_N(SolnBlk.W[i][j].specdata[SolnBlk.W[i][j].ns-1].Rs()), delR,
+	tmp(SolnBlk.W[i][j].p/Rmix);
+      for(int k=0; k<SolnBlk.W[i][j].ns; k++){
+	delR = SolnBlk.W[i][j].specdata[k].Rs()-R_N;
+	grad_T.x -= tmp * delR * SolnBlk.dWdx[i][j].spec[k].c;
+	grad_T.y -= tmp * delR * SolnBlk.dWdy[i][j].spec[k].c;
+      }          
+      grad_T *=(ONE/(SolnBlk.W[i][j].rho*Rmix));
 
       /*************** Molecular (Laminar) Diffusion of Species ********/
       // for each of the "n" species

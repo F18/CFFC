@@ -576,7 +576,15 @@ class Euler3D_ThermallyPerfect_pState {
 /*        -------------- */
 //@{
    //!< x-direction inviscid flux Jacobian
-   void dFxdU(DenseMatrix &dFxdU);
+  void dFxdU(DenseMatrix &dFxdU);
+  void dFxdW(DenseMatrix &dFxdW);
+//@}
+
+/** @name Solution variable Jacobians. */
+/*        ---------------------------- */
+//@{
+    void dUdW(DenseMatrix &dUdW);         //!< dU/dW
+    void dWdU(DenseMatrix &dWdU);         //!< dW/dU
 //@}
 
 /** @name Eigenvalue(s) and eigenvector(s) (x-direction) */
@@ -656,6 +664,11 @@ class Euler3D_ThermallyPerfect_pState {
    static Euler3D_ThermallyPerfect_pState lambda_plus(const Euler3D_ThermallyPerfect_pState  &lambda_a,
                                                       const Euler3D_ThermallyPerfect_pState  &lambda_l,
                                                       const Euler3D_ThermallyPerfect_pState  &lambda_r); 
+
+   //! Returns absolute waves speeds (eigenvalues) using Harten entropy fix
+   static Euler3D_ThermallyPerfect_pState lambda_abs(const Euler3D_ThermallyPerfect_pState  &lambda_a,
+						     const Euler3D_ThermallyPerfect_pState  &lambda_l,
+						     const Euler3D_ThermallyPerfect_pState  &lambda_r);
 
    //! HLLE wavespeeds in n-direction given 2 primitive states and a direction
    static Vector2D HLLE_wavespeeds(const Euler3D_ThermallyPerfect_pState &Wl,

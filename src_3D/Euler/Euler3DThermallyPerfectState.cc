@@ -810,6 +810,24 @@ void Euler3D_ThermallyPerfect_pState::dFxdU(DenseMatrix &dFdU){
 
 }
 
+/***********************************************************************************
+ * Euler3D_ThermallyPerfect_pState::dFxdW -- Invisicd flux Jacobian (x-direction). *     
+ ***********************************************************************************/
+void Euler3D_ThermallyPerfect_pState::dFxdW(DenseMatrix &dFdW){
+  cout<<"\n  NEED  Euler3D_ThermallyPerfect_pState::dFxdW "; 
+}
+
+/***********************************************************************************
+ * Euler3D_ThermallyPerfect_pState::dUdW -- Solution Variable Jacobians            *     
+ ***********************************************************************************/
+void Euler3D_ThermallyPerfect_pState::dUdW(DenseMatrix &dUdW){
+  cout<<"\n  NEED  Euler3D_ThermallyPerfect_pState::dUdW "; 
+}
+
+void Euler3D_ThermallyPerfect_pState::dWdU(DenseMatrix &dWdU){
+  cout<<"\n  NEED  Euler3D_ThermallyPerfect_pState::dWdU "; 
+}
+
 /*******************************************************************
  ***************** EIGENVALUES *************************************
  *******************************************************************/
@@ -1492,6 +1510,29 @@ lambda_plus(const Euler3D_ThermallyPerfect_pState &lambdas_a,
 
    return (W_temp);
 
+}
+
+/******************************************************************************************
+ * Euler3D_ThermallyPerfect_pState::lambda_abs --  Absolute wave speeds determined using  *
+ *                                                 Harten entropy fix.                    *
+ ******************************************************************************************/
+Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_pState::
+lambda_abs(const Euler3D_ThermallyPerfect_pState &lambdas_a,
+	   const Euler3D_ThermallyPerfect_pState &lambdas_l,
+	   const Euler3D_ThermallyPerfect_pState &lambdas_r) {
+   
+   Euler3D_ThermallyPerfect_pState W_temp;
+
+   W_temp.rho = HartenFixAbs(lambdas_a[1], lambdas_l[1], lambdas_r[1]);
+   W_temp.v.x = fabs(lambdas_a[2]);
+   W_temp.v.y = fabs(lambdas_a[3]);
+   W_temp.v.z = fabs(lambdas_a[4]);
+   W_temp.p = HartenFixAbs(lambdas_a[5], lambdas_l[5], lambdas_r[5]);
+  
+   for(int i = NUM_EULER3D_VAR_SANS_SPECIES+1; i <= W_temp.num_vars; i++) {
+     W_temp.spec[i-(NUM_EULER3D_VAR_SANS_SPECIES+1)].c = fabs(lambdas_a[i]);
+   } 
+   return (W_temp);
 }
 
 /******************************************************************************************

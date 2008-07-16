@@ -61,6 +61,10 @@ class NavierStokes3D_ThermallyPerfect_cState;
  *  - q_x              -- Return component of (molecular) heat flux vector in x-direction
  *  - q_y              -- Return component of (molecular) heat flux vector in y-direction
  *  - q_z              -- Return component of (molecular) heat flux vector in z-direction
+ *  - gradT            -- Return gradient of Temperature vector
+ *  - gradT_x          -- Return gradient of Temperature for dT/dx
+ *  - gradT_y          -- Return gradient of Temperature for dT/dy
+ *  - gradT_z          -- Return gradient of Temperature for dT/dz
  *  - U                -- Return conserved solution state
  *  - F, Fx            -- Return x-direction inviscid solution flux
  *  - Fy               -- Return y-direction inviscid solution flux
@@ -311,6 +315,26 @@ class NavierStokes3D_ThermallyPerfect_pState : public Euler3D_ThermallyPerfect_p
                 const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
                 const NavierStokes3D_ThermallyPerfect_pState &dWdy,
                 const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+
+   //! Returns gradient of Temperature w.r.t space (x,y,z)
+   Vector3D gradT(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+		  const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+		  const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+    
+   //! Returns gradient of Temperature w.r.t X dT/dX
+   Vector3D gradT_x(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+		    const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+		    const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+  
+   //! Returns gradient of Temperature w.r.t Y dT/dy
+   Vector3D gradT_y(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+		    const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+ 		    const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+  
+   //! Returns gradient of Temperature w.r.t Z dT/dz
+   Vector3D gradT_z(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+		    const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+		    const NavierStokes3D_ThermallyPerfect_pState &dWdz);
 
    //! Returns thermal diffusion flux vector (due to species diffusion processes) 
    Vector3D thermal_diffusion(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 

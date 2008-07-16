@@ -415,17 +415,9 @@ Vector3D NavierStokes3D_ThermallyPerfect_pState::
 q(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
   const NavierStokes3D_ThermallyPerfect_pState &dWdy,
   const NavierStokes3D_ThermallyPerfect_pState &dWdz) {
+
+  return ( -kappa()*gradT(dWdx,dWdy,dWdz));
   
-    double Rmix = Rtot();
-    double kappa_temp = kappa();    
-    Vector3D heat_flux;
-    
-    heat_flux.x = -kappa_temp*(ONE/(rho*Rmix)) * (dWdx.p -(p/rho)*dWdx.rho);
-    heat_flux.y = -kappa_temp*(ONE/(rho*Rmix)) * (dWdy.p -(p/rho)*dWdy.rho);
-    heat_flux.z = -kappa_temp*(ONE/(rho*Rmix)) * (dWdz.p -(p/rho)*dWdz.rho);
-        
-    return (heat_flux);
-   
 }
 
 Vector3D NavierStokes3D_ThermallyPerfect_pState::
@@ -434,15 +426,7 @@ q(const double &kappa_temp,
   const NavierStokes3D_ThermallyPerfect_pState &dWdy,
   const NavierStokes3D_ThermallyPerfect_pState &dWdz) {
   
-    double Rmix = Rtot();
-    Vector3D heat_flux;
-    
-    heat_flux.x = -kappa_temp*(ONE/(rho*Rmix)) * (dWdx.p -(p/rho)*dWdx.rho);
-    heat_flux.y = -kappa_temp*(ONE/(rho*Rmix)) * (dWdy.p -(p/rho)*dWdy.rho);
-    heat_flux.z = -kappa_temp*(ONE/(rho*Rmix)) * (dWdz.p -(p/rho)*dWdz.rho);
-        
-    return (heat_flux);
-
+  return ( -kappa_temp*gradT(dWdx,dWdy,dWdz));
 }
 
 /********************************************************************************************
@@ -453,15 +437,8 @@ Vector3D NavierStokes3D_ThermallyPerfect_pState::
 q_x(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
     const NavierStokes3D_ThermallyPerfect_pState &dWdy,
     const NavierStokes3D_ThermallyPerfect_pState &dWdz) {
-  
-    double Rmix = Rtot();
-    double kappa_temp = kappa();    
-    Vector3D heat_flux;
-    
-    heat_flux.x = -kappa_temp*(ONE/(rho*Rmix)) * (dWdx.p -(p/rho)*dWdx.rho);
-        
-    return (heat_flux);
-   
+ 
+  return ( -kappa()*gradT_x(dWdx,dWdy,dWdz));
 }
 
 Vector3D NavierStokes3D_ThermallyPerfect_pState::
@@ -470,13 +447,7 @@ q_x(const double &kappa_temp,
     const NavierStokes3D_ThermallyPerfect_pState &dWdy,
     const NavierStokes3D_ThermallyPerfect_pState &dWdz) {
   
-    double Rmix = Rtot();
-    Vector3D heat_flux;
-    
-    heat_flux.x = -kappa_temp*(ONE/(rho*Rmix)) * (dWdx.p -(p/rho)*dWdx.rho);
-        
-    return (heat_flux);
-
+  return ( -kappa_temp*gradT_x(dWdx,dWdy,dWdz));
 }
 
 /********************************************************************************************
@@ -488,14 +459,7 @@ q_y(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
     const NavierStokes3D_ThermallyPerfect_pState &dWdy,
     const NavierStokes3D_ThermallyPerfect_pState &dWdz) {
   
-    double Rmix = Rtot();
-    double kappa_temp = kappa();    
-    Vector3D heat_flux;
-    
-    heat_flux.y = -kappa_temp*(ONE/(rho*Rmix)) * (dWdy.p -(p/rho)*dWdy.rho);
-        
-    return (heat_flux);
-   
+  return ( -kappa()*gradT_y(dWdx,dWdy,dWdz));
 }
 
 Vector3D NavierStokes3D_ThermallyPerfect_pState::
@@ -504,13 +468,7 @@ q_y(const double &kappa_temp,
     const NavierStokes3D_ThermallyPerfect_pState &dWdy,
     const NavierStokes3D_ThermallyPerfect_pState &dWdz) {
   
-    double Rmix = Rtot();
-    Vector3D heat_flux;
-    
-    heat_flux.y = -kappa_temp*(ONE/(rho*Rmix)) * (dWdy.p -(p/rho)*dWdy.rho);
-        
-    return (heat_flux);
-
+    return ( -kappa_temp*gradT_y(dWdx,dWdy,dWdz));
 }
 
 /********************************************************************************************
@@ -522,14 +480,7 @@ q_z(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
     const NavierStokes3D_ThermallyPerfect_pState &dWdy,
     const NavierStokes3D_ThermallyPerfect_pState &dWdz) {
   
-    double Rmix = Rtot();
-    double kappa_temp = kappa();    
-    Vector3D heat_flux;
-    
-    heat_flux.z = -kappa_temp*(ONE/(rho*Rmix)) * (dWdz.p -(p/rho)*dWdz.rho);
-        
-    return (heat_flux);
-   
+  return ( -kappa()*gradT_z(dWdx,dWdy,dWdz));
 }
 
 Vector3D NavierStokes3D_ThermallyPerfect_pState::
@@ -538,14 +489,103 @@ q_z(const double &kappa_temp,
     const NavierStokes3D_ThermallyPerfect_pState &dWdy,
     const NavierStokes3D_ThermallyPerfect_pState &dWdz) {
   
-    double Rmix = Rtot();
-    Vector3D heat_flux;
-    
-    heat_flux.z = -kappa_temp*(ONE/(rho*Rmix)) * (dWdz.p -(p/rho)*dWdz.rho);
-        
-    return (heat_flux);
-
+    return ( -kappa_temp*gradT_z(dWdx,dWdy,dWdz));
 }
+
+/********************************************************************************************
+ * NavierStokes3D_ThermallyPerfect_pState::gradT -- Return of the gradient of temperature   *
+ *                                                  vector.                                 *
+ ********************************************************************************************/
+Vector3D NavierStokes3D_ThermallyPerfect_pState::
+gradT(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+      const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+      const NavierStokes3D_ThermallyPerfect_pState &dWdz){
+
+  //dT/dx = 1/rho*R *( dP/dx - P/rho * drho/dx + diT/dci * dci/dx)  
+  double Rmix(Rtot());
+  double R_N(specdata[ns-1].Rs()), delR, tmp(p/Rmix);
+  Vector3D grad_T;
+  grad_T.x = (dWdx.p - (p/rho)*dWdx.rho);
+  grad_T.y = (dWdy.p - (p/rho)*dWdy.rho);
+  grad_T.z = (dWdz.p - (p/rho)*dWdz.rho);
+
+  // diT/dci * dci/dx
+  for(int i=0; i<ns; i++){
+    delR = specdata[i].Rs()-R_N;
+    grad_T.x -= tmp * delR * dWdx.spec[i].c;
+    grad_T.y -= tmp * delR * dWdy.spec[i].c;
+    grad_T.z -= tmp * delR * dWdz.spec[i].c;
+  }
+  grad_T *= ONE/(rho*Rmix);
+
+  return grad_T;
+}
+
+Vector3D NavierStokes3D_ThermallyPerfect_pState::
+gradT_x(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+	const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+	const NavierStokes3D_ThermallyPerfect_pState &dWdz){
+
+  //dT/dx = 1/rho*R *( dP/dx - P/rho * drho/dx + diT/dci * dci/dx)  
+  double Rmix(Rtot());
+  double R_N(specdata[ns-1].Rs()), delR, tmp(p/Rmix);
+  Vector3D grad_T;
+  grad_T.x = (dWdx.p - (p/rho)*dWdx.rho);
+
+  // diT/dci * dci/dx
+  for(int i=0; i<ns; i++){
+    delR = specdata[i].Rs()-R_N;
+    grad_T.x -= tmp * delR * dWdx.spec[i].c; 
+  }
+  grad_T *= ONE/(rho*Rmix);
+
+  return grad_T;
+}
+
+
+Vector3D NavierStokes3D_ThermallyPerfect_pState::
+gradT_y(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+      const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+      const NavierStokes3D_ThermallyPerfect_pState &dWdz){
+
+  //dT/dx = 1/rho*R *( dP/dx - P/rho * drho/dx + diT/dci * dci/dx)  
+  double Rmix(Rtot());
+  double R_N(specdata[ns-1].Rs()), delR, tmp(p/Rmix);
+  Vector3D grad_T;
+  grad_T.y = (dWdy.p - (p/rho)*dWdy.rho);
+
+  // diT/dci * dci/dx
+  for(int i=0; i<ns; i++){
+    delR = specdata[i].Rs()-R_N;
+    grad_T.y -= tmp * delR * dWdy.spec[i].c; 
+  }
+  grad_T *= ONE/(rho*Rmix);
+
+  return grad_T;
+}
+
+
+Vector3D NavierStokes3D_ThermallyPerfect_pState::
+gradT_z(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+	const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+	const NavierStokes3D_ThermallyPerfect_pState &dWdz){
+
+  //dT/dx = 1/rho*R *( dP/dx - P/rho * drho/dx + diT/dci * dci/dx)  
+  double Rmix(Rtot());
+  double R_N(specdata[ns-1].Rs()), delR, tmp(p/Rmix);
+  Vector3D grad_T;
+  grad_T.z = (dWdz.p - (p/rho)*dWdz.rho);
+
+  // diT/dci * dci/dx
+  for(int i=0; i<ns; i++){
+    delR = specdata[i].Rs()-R_N;
+    grad_T.z -= tmp * delR * dWdz.spec[i].c; 
+  }
+  grad_T *= ONE/(rho*Rmix);
+
+  return grad_T;
+}
+
 
 /**********************************************************************
  ***************** VISCOUS FLUX VECTORS *******************************

@@ -1784,12 +1784,19 @@ Chem2D_cState Chem2D_pState::Sa_viscous(const Chem2D_pState &dWdx,
   static Chem2D_cState Temp; Temp.Vacuum(); 
   double radius = check_radius(Axisymmetric,X);
 
-
   //Temperature gradient
   //dT/dx = 1/rho*R *( dP/dx - P/rho * drho/dx)
-  grad_T.x = (ONE/(rho*Rmix))*(dWdx.p - (p/rho)*dWdx.rho);
-  grad_T.y = (ONE/(rho*Rmix))*(dWdy.p - (p/rho)*dWdy.rho);
-
+  double R_N(specdata[ns-1].Rs()), delR;
+  tmp =  p/Rmix;
+  grad_T.x = (dWdx.p - (p/rho)*dWdx.rho);
+  grad_T.y = (dWdy.p - (p/rho)*dWdy.rho);
+  for(int i=0; i<ns; i++){
+    delR = specdata[i].Rs()-R_N;
+    grad_T.x -= tmp * delR * dWdx.spec[i].c;
+    grad_T.y -= tmp * delR * dWdy.spec[i].c;
+  }
+  grad_T *= ONE/(rho*Rmix);
+  
   //Molecular (laminar) stress tensor
   Laminar_Stress(dWdx,dWdy, Flow_Type,Axisymmetric,Mu, X);
  
@@ -4241,9 +4248,16 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
  
   //Temperature gradient
   //dT/dx = 1/rho*R *( dP/dx - P/rho * drho/dx)
-  grad_T.x = (ONE/(W.rho*Rmix))*(dWdx.p - (W.p/W.rho)*dWdx.rho);
-  grad_T.y = (ONE/(W.rho*Rmix))*(dWdy.p - (W.p/W.rho)*dWdy.rho);
- 
+  double R_N(W.specdata[W.ns-1].Rs()), delR, tmp( W.p/Rmix );
+  grad_T.x = (dWdx.p - (W.p/W.rho)*dWdx.rho);
+  grad_T.y = (dWdy.p - (W.p/W.rho)*dWdy.rho);
+  for(int i=0; i<W.ns; i++){
+    delR = W.specdata[i].Rs()-R_N;
+    grad_T.x -= tmp * delR * dWdx.spec[i].c;
+    grad_T.y -= tmp * delR * dWdy.spec[i].c;
+  }
+  grad_T *= ONE/(W.rho*Rmix);
+
   // Molecular (Laminar) diffusion of species
   // for each of the "n" species
   for( int k=0; k<U.ns; k++){
