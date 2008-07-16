@@ -101,6 +101,8 @@ class CFD_Input_Parameters{
   int Output_Progress_Frequency;
   //! Frequency of outputting solution for time accurate calculations
   int Time_Accurate_Output_Frequency;
+  //! Determines how progress is indicated (Only use PROGRESS_MODE_TERMINAL in case output on terminal)
+  int Progress_Mode;
   //@}
 
   //@{ @name Debugging parameters:
@@ -223,6 +225,7 @@ class CFD_Input_Parameters{
     i_Output_Format = IO_TECPLOT;
     Restart_Solution_Save_Frequency = 1000;
     Time_Accurate_Output_Frequency = 0;
+    Progress_Mode = PROGRESS_MODE_MESSAGE;
     // Debugging parameters:
     Debug_Level = 0;  //default no debug information
     // Flow type indicator and related input parameters:

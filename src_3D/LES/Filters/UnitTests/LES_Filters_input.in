@@ -13,6 +13,8 @@ Pressure =
 0.1
 #Flow_Type =
 #Turbulent-LES
+Progress_Mode =
+Terminal
 ##############################
 #       LES parameters       #
 ##############################

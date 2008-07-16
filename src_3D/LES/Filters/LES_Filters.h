@@ -61,6 +61,7 @@ public:
     static bool restarted;
     
     bool initialized;
+    int progress_mode;
     
     int filter_type;
     
@@ -93,11 +94,28 @@ public:
             
             Create_filter();
             Solution_Data.Input.Turbulence_IP.i_filter_type = filter_type;
+            progress_mode = Solution_Data.Input.Progress_Mode; // Don't use terminal mode when outputting to file
             initialized = true;
         }
     }
     
     
+    LES_Filter(HexaSolver_Data &Data,
+               HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data) {
+                
+        Solution_Blocks_ptr  = Solution_Data.Local_Solution_Blocks.Soln_Blks;
+        LocalSolnBlkList_ptr = &(Data.Local_Adaptive_Block_List);
+        FILTER_ONLY_ONE_SOLNBLK = false;
+        Set_Static_Variables(Solution_Data.Input);
+
+        progress_mode = Solution_Data.Input.Progress_Mode; // Don't use terminal mode when outputting to file
+
+        if (Solution_Data.Input.i_ICs == IC_RESTART && !restarted)
+            filter_type = FILTER_TYPE_RESTART;
+        
+        Create_filter();
+        initialized = true;
+    }
     
     LES_Filter(HexaSolver_Data &Data,
                HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data,
@@ -107,28 +125,12 @@ public:
         LocalSolnBlkList_ptr = &(Data.Local_Adaptive_Block_List);
         FILTER_ONLY_ONE_SOLNBLK = false;
         Set_Static_Variables(Solution_Data.Input);
-
+        
         filter_type = filter_flag;
         
         Create_filter();
         initialized = true;
-
-    }
-    
-    LES_Filter(HexaSolver_Data &Data,
-               HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data) {
         
-        Solution_Blocks_ptr  = Solution_Data.Local_Solution_Blocks.Soln_Blks;
-        LocalSolnBlkList_ptr = &(Data.Local_Adaptive_Block_List);
-        FILTER_ONLY_ONE_SOLNBLK = false;
-        Set_Static_Variables(Solution_Data.Input);
-
-
-        if (Solution_Data.Input.i_ICs == IC_RESTART && !restarted)
-            filter_type = FILTER_TYPE_RESTART;
-        
-        Create_filter();
-        initialized = true;
     }
     
     LES_Filter(Hexa_Block<Soln_pState,Soln_cState> &SolnBlk,
@@ -357,6 +359,7 @@ public:
     int Read_from_file(void);
     int Write_to_file(void);
     
+    void ShowProgress(std::string message, int numIn, int maximum, int mode);
     void Commutation_Error_Block(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block);
     int Commutation_Error_Blocks(void);
     void Output_Commutation(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block,
@@ -637,7 +640,6 @@ void LES_Filter<Soln_pState,Soln_cState>::filter_Blocks(void) {
         deallocate_Filtered(*Solution_Blocks_ptr);        
     }
     else {
-        /* For every local solution block */
         if (LocalSolnBlkList_ptr->Nused() >= 1) {
             for (int nBlk = 0; nBlk < LocalSolnBlkList_ptr->Nused(); nBlk++ ) {
                 if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
@@ -776,51 +778,83 @@ int LES_Filter<Soln_pState,Soln_cState>::Commutation_Error_Blocks(void) {
 
 template<typename Soln_pState, typename Soln_cState>
 void LES_Filter<Soln_pState,Soln_cState>::Commutation_Error_Block(Hexa_Block<Soln_pState,Soln_cState> &Solution_Block) {
+    
+    int number_of_cells_first = 0;
+    int number_of_cells_second = 0;
+    int number_of_processed_cells = 0;
+    /* For every local solution block */
+    if (LocalSolnBlkList_ptr->Nused() >= 1) {
+        for (int nBlk = 0; nBlk < LocalSolnBlkList_ptr->Nused(); nBlk++ ) {
+            if (LocalSolnBlkList_ptr->Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
+                number_of_cells_first += (Solution_Blocks_ptr[nBlk].ICu - Solution_Blocks_ptr[nBlk].ICl + 1)
+                                       * (Solution_Blocks_ptr[nBlk].JCu - Solution_Blocks_ptr[nBlk].JCl + 1)
+                                       * (Solution_Blocks_ptr[nBlk].KCu - Solution_Blocks_ptr[nBlk].KCl + 1);
+                number_of_cells_second += ((Solution_Blocks_ptr[nBlk].ICu-number_of_rings) - (Solution_Blocks_ptr[nBlk].ICl+number_of_rings) + 1)
+                                        * ((Solution_Blocks_ptr[nBlk].JCu-number_of_rings) - (Solution_Blocks_ptr[nBlk].JCl+number_of_rings) + 1)
+                                        * ((Solution_Blocks_ptr[nBlk].KCu-number_of_rings) - (Solution_Blocks_ptr[nBlk].KCl+number_of_rings) + 1);
+            }
+        }
+    }
+    
+    
     /* For every cell */
     
     int temporary_filter_variable_type = filter_variable_type;
     Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(commutation_order+1,2);
 
-    cout << " -- Filter " << endl;
+    //cout << " -- Filter " << endl;
     /* ----- Filter ----- */
+    number_of_processed_cells = 0;
     for(int i=Solution_Block.ICl; i<=Solution_Block.ICu; i++) {
         for (int j=Solution_Block.JCl; j<=Solution_Block.JCu; j++) {
             for (int k=Solution_Block.KCl; k<=Solution_Block.KCu; k++) {
                 Filtered[i][j][k] = filter_ptr->filter(Solution_Block,Solution_Block.Grid.Cell[i][j][k]);
+                number_of_processed_cells++;
+                ShowProgress(" -- Filter ",number_of_processed_cells,number_of_cells_first,progress_mode);
             }
         }
     }
     
     /* ----- Divergence ----- */
-    cout << " -- Divergence " << endl;
+    //cout << " -- Divergence " << endl;
+    number_of_processed_cells = 0;
     for(int i=Solution_Block.ICl; i<=Solution_Block.ICu; i++) {
         for (int j=Solution_Block.JCl; j<=Solution_Block.JCu; j++) {
             for (int k=Solution_Block.KCl; k<=Solution_Block.KCu; k++) {
                 Divergence[i][j][k] = derivative_reconstructor.divergence(Solution_Block,Solution_Block.Grid.Cell[i][j][k]);
+                number_of_processed_cells++;
+                ShowProgress(" -- Divergence ",number_of_processed_cells,number_of_cells_first,progress_mode);
             }
         }
     }
         
     /* ----- Filter of Divergence ----- */
-    cout << " -- Filter of Divergence " << endl;
+    //cout << " -- Filter of Divergence " << endl;
+    number_of_processed_cells = 0;
     filter_variable_type = LES_FILTER_ROWVECTOR;
     RowVector_ptr = Divergence;
     for(int i=Solution_Block.ICl+number_of_rings; i<=Solution_Block.ICu-number_of_rings; i++) {
         for (int j=Solution_Block.JCl+number_of_rings; j<=Solution_Block.JCu-number_of_rings; j++) {
             for (int k=Solution_Block.KCl+number_of_rings; k<=Solution_Block.KCu-number_of_rings; k++) {
                 Filtered_Divergence[i][j][k] = filter_ptr->filter(Solution_Block,Solution_Block.Grid.Cell[i][j][k]);
+                number_of_processed_cells++;
+                ShowProgress(" -- Filter of Divergence ",number_of_processed_cells,number_of_cells_second,progress_mode);
+
             }
         }
     }
         
     /* ----- Divergence of Filtered ----- */
-    cout << " -- Divergence of Filtered " << endl;
+    //cout << " -- Divergence of Filtered " << endl;
+    number_of_processed_cells = 0;
     filter_variable_type = LES_FILTER_ROWVECTOR;
     RowVector_ptr = Filtered;
     for(int i=Solution_Block.ICl+number_of_rings; i<=Solution_Block.ICu-number_of_rings; i++) {
         for (int j=Solution_Block.JCl+number_of_rings; j<=Solution_Block.JCu-number_of_rings; j++) {
             for (int k=Solution_Block.KCl+number_of_rings; k<=Solution_Block.KCu-number_of_rings; k++) {
                 Divergenced_Filtered[i][j][k] = derivative_reconstructor.divergence(Solution_Block,Solution_Block.Grid.Cell[i][j][k]);
+                number_of_processed_cells++;
+                ShowProgress(" -- Divergence of Filtered ",number_of_processed_cells,number_of_cells_second,progress_mode);
                 Commutation_Error_Vector[i][j][k] = (RowVector(Filtered_Divergence[i][j][k] - Divergenced_Filtered[i][j][k])).absolute_values();
             }
         }
@@ -1105,7 +1139,53 @@ int LES_Filter<Soln_pState,Soln_cState>::Read_from_file(void) {
     return (0);
 }
 
-
+template<typename Soln_pState, typename Soln_cState>
+void LES_Filter<Soln_pState,Soln_cState>::ShowProgress(std::string message, int numIn, int maximum, int mode) {
+    int first_index = 1;
+    int last_index = maximum;
+    int percent = int(100*numIn/double(last_index));
+    if (mode == PROGRESS_MODE_TERMINAL) {
+        char barspin[16] = {'\\','\\','\\','\\',
+                            '|', '|','|','|',
+                            '/','/', '/', '/',
+                            '-','-','-','-'};
+            
+        int whichOne;
+        
+        whichOne = numIn % 16;
+        
+        std::cout << '\r'
+        << message << setw(3)  <<  percent << " %"
+        << "  " << barspin[whichOne] << " ";
+        std::cout.flush();
+        if (percent == 100) {
+            std::cout << '\r'
+            << message << setw(3)  <<  percent << " %      " << std::endl;
+        }
+        
+    } else if (mode == PROGRESS_MODE_FILE) {
+        if (numIn == first_index) {
+            std::cout << message << "   " ;
+        }
+        int previous_percent = int(100*(numIn-1)/double(last_index));
+        if (percent != previous_percent || numIn == first_index) {
+            std::cout << " " << percent << "%";
+            std::cout.flush();
+        }
+        if (percent == 100) {
+            std::cout << std::endl;
+        }
+        
+    } else if (mode == PROGRESS_MODE_MESSAGE) {
+        // no progress, just message
+        if (numIn == first_index) {
+            std::cout << message << endl;
+        }
+    } else {
+        // nothing
+    }
+    return;
+}
 
 /* ----------------------------------------------------------------------------------------------------------------------- 
 typedef double (theClass::*function_with_one_argument) (const double &abs_wave_num) const;

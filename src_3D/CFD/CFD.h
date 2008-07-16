@@ -100,6 +100,11 @@ inline char *Date_And_Time() {
 #define	ON                            1
 #define DEFAULT                      -1
 
+#define PROGRESS_MODE_SILENT     0
+#define PROGRESS_MODE_MESSAGE    1
+#define PROGRESS_MODE_FILE       2
+#define PROGRESS_MODE_TERMINAL   3
+
 /**********************************************************************
  * CFD -- Input parameter command codes.                              *
  **********************************************************************/

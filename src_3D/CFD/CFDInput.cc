@@ -252,6 +252,21 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        } else {
           i_command = INVALID_INPUT_VALUE;
        } /* endif */
+        
+    } else if (strcmp(code, "Progress_Mode") == 0) {
+        i_command = 12;
+        value_stream >> value_string;
+        if (strcmp(value_string.c_str(), "Silent") == 0) {
+            Progress_Mode = PROGRESS_MODE_SILENT;
+        } else if (strcmp(value_string.c_str(), "Message") == 0) {
+            Progress_Mode = PROGRESS_MODE_MESSAGE;
+        } else if (strcmp(value_string.c_str(), "File") == 0) {
+            Progress_Mode = PROGRESS_MODE_FILE;
+        } else if (strcmp(value_string.c_str(), "Terminal") == 0) {
+            Progress_Mode = PROGRESS_MODE_TERMINAL;
+        } else {
+            i_command = INVALID_INPUT_VALUE;
+        } /* endif */
 
     } else if (strcmp(code, "Restart_Solution_Save_Frequency") == 0) {
        i_command = 13;
@@ -976,6 +991,9 @@ void CFD_Input_Parameters::Broadcast(void) {
                           1,
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Time_Accurate_Output_Frequency),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Progress_Mode),
                           1,
                           MPI::INT, 0);
 
