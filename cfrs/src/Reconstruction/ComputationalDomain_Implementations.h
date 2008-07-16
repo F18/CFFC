@@ -436,6 +436,157 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   LMaxNorm = SolutionType(0.0);
 }
 
+// SetDomain(const Grid3D_Hexa_Block, const Reconstruct3D_Input_Parameters)
+template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
+void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
+  SetDomain(Grid3D_Hexa_Block & Grid, const Reconstruct3D_Input_Parameters & IP)
+{
+
+  ///////////////////////
+  /* CONSTRUCTION ZONE */
+  ///////////////////////
+
+  int i,j,k;
+
+  // allocate memory
+  SetDomain(IP.iCell(), IP.jCell(), IP.kCell(), IP.Nghost());
+
+  // allocate all the neccessary memory for the computational cell
+  vector<int> SubGridPoints;
+  SubGridPoints.reserve(3);
+  SubGridPoints.push_back( IP.NumSubGridI() );
+  SubGridPoints.push_back( IP.NumSubGridJ() );
+  SubGridPoints.push_back( IP.NumSubGridK() );
+
+  // Set the geometry
+  Cell3D ijkCell;
+  Cell3D_Hexa InitCell;
+
+  for(k=0; k<=kLastCell(); ++k){
+    for(j=0; j<=jLastCell(); ++j){
+      for(i=0; i<=iLastCell(); ++i){
+
+	ijkCell.setindex(i,j,k);
+	InitCell.setnodes(Grid.nodeSWTop(ijkCell).X.x,Grid.nodeSWTop(ijkCell).X.y,Grid.nodeSWTop(ijkCell).X.z,
+			  Grid.nodeSETop(ijkCell).X.x,Grid.nodeSETop(ijkCell).X.y,Grid.nodeSETop(ijkCell).X.z,
+			  Grid.nodeNETop(ijkCell).X.x,Grid.nodeNETop(ijkCell).X.y,Grid.nodeNETop(ijkCell).X.z,
+			  Grid.nodeNWTop(ijkCell).X.x,Grid.nodeNWTop(ijkCell).X.y,Grid.nodeNWTop(ijkCell).X.z,
+			  Grid.nodeSWBot(ijkCell).X.x,Grid.nodeSWBot(ijkCell).X.y,Grid.nodeSWBot(ijkCell).X.z,
+			  Grid.nodeSEBot(ijkCell).X.x,Grid.nodeSEBot(ijkCell).X.y,Grid.nodeSEBot(ijkCell).X.z,
+			  Grid.nodeNEBot(ijkCell).X.x,Grid.nodeNEBot(ijkCell).X.y,Grid.nodeNEBot(ijkCell).X.z,
+			  Grid.nodeNWBot(ijkCell).X.x,Grid.nodeNWBot(ijkCell).X.y,Grid.nodeNWBot(ijkCell).X.z);
+	SolnPtr[k][j][i].SetCell(InitCell,SubGridPoints,IP.RecOrder());
+      
+      } /* end for */
+    } /* end for */
+  } /* end for */
+
+  // Set the characteristic length of the geometry
+  CharacteristicLength = IP.CharacteristicLength;
+  CutoffKnob = IP.CutoffKnob();
+
+  // Reset the L1, L2 and LMax norms
+  L1Norm = SolutionType(0.0);
+  L2Norm = SolutionType(0.0);
+  LMaxNorm = SolutionType(0.0);
+ 
+}
+
+// SetDomain(const Reconstruct3D_Input_Parameters)
+template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
+void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
+  SetDomain(const Reconstruct3D_Input_Parameters & IP)
+{
+  ///////////////////////
+  /* CONSTRUCTION ZONE */
+  ///////////////////////
+
+  ifstream In_File;
+  int i,j,k, Nghost, RecOrder;
+
+  // Open data file.
+  In_File.open(IP.Input_File_Name, ios::in);
+  if (In_File.bad()) {
+    std::cout << "SetDomain()::ERROR!!! Can't open the input data file " << IP.Input_File_Name << "\n";
+    std::cout.flush();
+    exit(1);
+  }
+
+  // Read the number of cells in the Xdir and in the Ydir. Read number of ghost cells and the reconstruction order
+  In_File >> i >> j >> k>> Nghost >> RecOrder;
+
+  // allocate memory
+  SetDomain(i, j, k, Nghost);
+
+  // allocate all the neccessary memory for the computational cell
+  vector<int> SubGridPoints;
+  SubGridPoints.reserve(3);
+  SubGridPoints.push_back( IP.NumSubGridI() );
+  SubGridPoints.push_back( IP.NumSubGridJ() );
+  SubGridPoints.push_back( IP.NumSubGridK() );
+
+  double XnodeSWTop, YnodeSWTop, ZnodeSWTop, XnodeSETop, YnodeSETop, ZnodeSETop;
+  double XnodeNETop, YnodeNETop, ZnodeNETop, XnodeNWTop, YnodeNWTop, ZnodeNWTop;
+  double XnodeSWBot, YnodeSWBot, ZnodeSWBot, XnodeSEBot, YnodeSEBot, ZnodeSEBot;
+  double XnodeNEBot, YnodeNEBot, ZnodeNEBot, XnodeNWBot, YnodeNWBot, ZnodeNWBot;
+  double CentroidX, CentroidY, CentroidZ;
+  GeometricIntegrals GeomCoeff; GeomCoeff.GenerateContainer(RecOrder);
+
+  // Set the geometry
+  Cell3D_Hexa InitCell;
+
+  for (i = 0; i<= iLastCell(); ++i){
+    for (j = 0; j<= jLastCell(); ++j){
+      for(k = 0; k<= kLastCell(); ++k){
+
+	In_File >> XnodeSWTop >> YnodeSWTop >> ZnodeSWTop >> XnodeSETop >> YnodeSETop >> ZnodeSETop 
+		>> XnodeNETop >> YnodeNETop >> ZnodeNETop >> XnodeNWTop >> YnodeNWTop >> ZnodeNWTop;
+	In_File >> XnodeSWBot >> YnodeSWBot >> ZnodeSWBot >> XnodeSEBot >> YnodeSEBot >> ZnodeSEBot 
+		>> XnodeNEBot >> YnodeNEBot >> ZnodeNEBot >> XnodeNWBot >> YnodeNWBot >> ZnodeNWBot;
+
+	// Set the nodes
+	InitCell.setnodes(XnodeSWTop,YnodeSWTop,ZnodeSWTop,
+			  XnodeSETop,YnodeSETop,ZnodeSETop, 
+			  XnodeNETop,YnodeNETop,ZnodeNETop,
+			  XnodeNWTop,YnodeNWTop,ZnodeNWTop,
+			  XnodeSWBot,YnodeSWBot,ZnodeSWBot,
+			  XnodeSEBot,YnodeSEBot,ZnodeSEBot, 
+			  XnodeNEBot,YnodeNEBot,ZnodeNEBot,
+			  XnodeNWBot,YnodeNWBot,ZnodeNWBot);
+
+	SolnPtr[k][j][i].SetCell(InitCell,SubGridPoints,RecOrder);  
+	
+	In_File >> CentroidX >> CentroidY >> CentroidZ;
+	
+	// Set the centroid
+	SolnPtr[k][j][i].CellGeometry().xc.x = CentroidX;
+	SolnPtr[k][j][i].CellGeometry().xc.y = CentroidY;
+	SolnPtr[k][j][i].CellGeometry().xc.z = CentroidZ;
+	
+	In_File >> GeomCoeff;
+	
+	// Copy geometric coefficients
+	SolnPtr[k][j][i].CellGeomCoeff() = GeomCoeff;
+	
+	In_File.setf(ios::skipws);
+	In_File >> SolnPtr[k][j][i].CellSolution();
+	
+	
+	SolnPtr[k][j][i].CellDeriv(0,true,true,true) = SolnPtr[k][j][i].CellSolution();
+	SolnPtr[k][j][i].UpdateSubgridSolution();
+
+      } /* end for */
+    } /* end for */
+  } /* end for */
+
+  In_File.close();
+
+  // Reset the L1, L2 and LMax norms
+  L1Norm = SolutionType(0.0);
+  L2Norm = SolutionType(0.0);
+  LMaxNorm = SolutionType(0.0);
+}
+
 /* Overloaded operators */
 // bracket ( int )
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline

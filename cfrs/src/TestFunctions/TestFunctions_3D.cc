@@ -44,6 +44,11 @@ double Test_Example1 (double x, double y, double z) {
   return f;
 }
 
+double Test_Example1_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  double f;
+  f = 0;
+  return f;
+}
 /**********************************************************************
  * Function Test_Example2:
  *          f(x,y,z) = 
@@ -53,6 +58,12 @@ double Test_Example2 (double x, double y, double z) {
 
   double f;
   f = x; f = y; f=z; f= 0.0; 	// that's for the compiler !
+  return f;
+}
+
+double Test_Example2_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  double f;
+  f = 0;
   return f;
 }
 
@@ -68,6 +79,12 @@ double Test_Example3 (double x, double y, double z) {
   return f;
 }
 
+double Test_Example3_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  double f;
+  f = 0;
+  return f;
+}
+
 /********************************************************
  * Function Test_Example4:                              *
 
@@ -80,6 +97,12 @@ double Test_Example4 (double x, double y, double z) {
   return f;
 }
 
+double Test_Example4_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  double f;
+  f = 0;
+  return f;
+}
+
 /********************************************************
  * Function Test_Example5:                              *
 
@@ -88,6 +111,12 @@ double Test_Example4 (double x, double y, double z) {
 double Test_Example5 (double x, double y, double z) {
   double f;
   f = x; f = y; f=z; f= 0.0; 	// that's for the compiler !
+  return f;
+}
+
+double Test_Example5_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  double f;
+  f = 0;
   return f;
 }
 
@@ -103,6 +132,12 @@ double Test_Example6 (double x, double y, double z) {
   return f;
 }
 
+double Test_Example6_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  double f;
+  f = 0;
+  return f;
+}
+
 /********************************************************
  * Function Test_Example7:                              *
 
@@ -115,6 +150,12 @@ double Test_Example7 (double x, double y, double z) {
   return f;
 }
 
+double Test_Example7_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  double f;
+  f = 0;
+  return f;
+}
+
 /********************************************************
  * Function Test_Example8:                              *
  *          f(x) =                    *
@@ -124,5 +165,11 @@ double Test_Example8 (double x, double y, double z)
 {
   double f;
   f = x; f = y; f=z; f= 0.0; 	// that's for the compiler !
+  return f;
+}
+
+double Test_Example8_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  double f;
+  f = 0;
   return f;
 }

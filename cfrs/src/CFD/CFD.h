@@ -155,6 +155,8 @@ Lucian's stuff
 #define GRID_RINGLEB_FLOW                    16
 #define GRID_BUMP_CHANNEL_FLOW               17
 
+#define GRID_CUBE                            23
+
 /**************************
 Lucian's stuff
 **************************/
