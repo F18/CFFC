@@ -15,11 +15,11 @@ using namespace std;
 /* Include math macro and 3D vector header files. */
 
 #ifndef _MATH_MACROS_INCLUDED
-#include "../../../src_2D/Math/Math.h"
+#include "../../../src_3D/Math/Math.h"
 #endif // _MATH_MACROS_INCLUDED
 
 #ifndef _VECTOR3D_INCLUDED
-#include "../../../src_2D/Math/Vector3D.h"
+#include "../../../src_3D/Math/Vector3D.h"
 #endif //_VECTOR3D_INCLUDED
 
 /* Define the basic 3D cell class. */
@@ -222,7 +222,7 @@ class Node3D{
     }
     
     /* Destructor. */
-    // ~Node2D(void);
+    // ~Node3D(void);
     // Use automatically generated destructor.
 
     /* Set cell center location. */
@@ -233,6 +233,8 @@ class Node3D{
     double & x(void) { return X.x;}
     double & y(void) { return X.y;}
     double & z(void) { return X.z;}
+
+    double tetvolume(const Vector3D V1,const  Node3D N2,const  Node3D N3,const  Vector3D V4);
 
     /* Assignment operator. */
     // Node2D operator = (const Node2D &Node);
@@ -253,7 +255,7 @@ class Node3D{
 };
 
 /******************************************************************
- * Node2D::setloc -- Set cell center location.  *
+ * Node3D::setloc -- Set cell center location.  *
  ******************************************************************/
 inline void Node3D::setloc(void) {
   X.x = ONE; X.y = ONE; X.z = ONE;
@@ -271,8 +273,16 @@ inline void Node3D::setloc(const double &xx, const double &yy, const double &zz)
   X.x = xx; X.y = yy; X.z=zz;
 }
 
+inline double tetvolume(const Vector3D V1,const  Node3D N2,const  Node3D N3,const  Vector3D V4){
+  Vector3D A,B,C; 
+  A = (N2.X-V1);
+  B = (N3.X-V1);
+  C = (V4-V1);
+  return ((fabs(A*(B^C)))/6); 
+}
+
 /******************************************************************
- * Node2D -- Relational operators.              *
+ * Node3D -- Relational operators.              *
  ******************************************************************/
 inline int operator ==(const Node3D &Node1,
 		       const Node3D &Node2) {
@@ -297,6 +307,266 @@ inline istream &operator >> (istream &in_file,
 			     Node3D &Node) {
     in_file >> Node.X; 
     return (in_file);
+}
+
+/* Define the cell class for a 3D hexahedral mesh. */
+
+/*********************************************************
+ * Class: Cell3D_Hexa                                    *
+ *                                                       *
+ * Member functions                                      *
+ *      xc       -- Return 3D vector containing location *
+ *                  of cell center.                      *
+ *      xnNWTop  -- Return 3D vector containing location *
+ *                  of north-west top node.              *
+ *      xnNETop  -- Return 3D vector containing location *
+ *                  of north-east top node.              *
+ *      xnSETop  -- Return 3D vector containing location *
+ *                  of south-east top node.              *
+ *      xnSWTop  -- Return 3D vector containing location *
+ *                  of south-west top node.              *
+ *      xnNWBot  -- Return 3D vector containing location *
+ *                  of north-west bottom node.           *
+ *      xnNEBot  -- Return 3D vector containing location *
+ *                  of north-east bottom node.           *
+ *      xnSEBot  -- Return 3D vector containing location *
+ *                  of south-east bottom node.           *
+ *      xnSWBot  -- Return 3D vector containing location *
+ *                  of south-west bottom node.           *
+ *                                                       *
+ *      setnodes -- Set cell node locations.             * 
+ *                                                       *
+ * Member operators                                      *
+ *      C -- a cell                                      *
+ *                                                       *
+ * C = C;                                                *
+ * C == C;                                               *
+ * C != C;                                               *
+ * cout << C; (output function)                          *
+ * cin  >> C; (input function)                           *
+ *                                                       *
+ *********************************************************/
+class Cell3D_Hexa{
+private:
+public:
+  Vector3D            xc;   // Location of cell center.
+  Vector3D       xnNWTop;   // Location of top north-west node.
+  Vector3D       xnNETop;   // Location of top north-east node.
+  Vector3D       xnSETop;   // Location of top south-east node.
+  Vector3D       xnSWTop;   // Location of top south-west node.
+  Vector3D       xnNWBot;   // Location of bot north-west node.
+  Vector3D       xnNEBot;   // Location of bot north-east node.
+  Vector3D       xnSEBot;   // Location of bot south-east node.
+  Vector3D       xnSWBot;   // Location of bot south-west node.
+  // Made public so can access them.
+		      
+  /* Creation, copy, and assignment constructors. */
+  Cell3D_Hexa(void);
+  Cell3D_Hexa(const Cell3D_Hexa &Cell);
+  //  Cell3D_Hexa(const Vector3D &V1, const Vector3D &V2, const Vector3D &V3,
+  //	      const Vector3D &V4, const Vector3D &V5, const Vector3D &V6);
+  Cell3D_Hexa(const double &x1, const double &y1, const double &z1,
+	      const double &x2, const double &y2, const double &z2,
+	      const double &x3, const double &y3, const double &z3,
+	      const double &x4, const double &y4, const double &z4,
+	      const double &x5, const double &y5, const double &z5,
+	      const double &x6, const double &y6, const double &z6,
+	      const double &x7, const double &y7, const double &z7,
+	      const double &x8, const double &y8, const double &z8);
+    
+  /* Destructor. */
+  // ~Cell3D_Hexa(void);
+  // Use automatically generated destructor.
+
+  /* Cell Volume. */
+  //double V(void);
+  //double V(void) const;
+
+  /* Cell centroid. */
+  void centroid(void);
+
+  /* Set cell node locations. */
+  void setnodes(void);
+  void setnodes(const Cell3D_Hexa &Cell);
+  //void setnodes(const Vector2D &V1, const Vector2D &V2,
+  //		const Vector2D &V3, const Vector2D &V4);
+  void setnodes(const double &x1, const double &y1, const double &z1,
+		const double &x2, const double &y2, const double &z2,
+		const double &x3, const double &y3, const double &z3,
+		const double &x4, const double &y4, const double &z4,
+		const double &x5, const double &y5, const double &z5,
+		const double &x6, const double &y6, const double &z6,
+		const double &x7, const double &y7, const double &z7,
+		const double &x8, const double &y8, const double &z8);
+
+  /* Assignment operator. */
+  // Cell3D_Hexa operator = (const Cell3D_Hexa &Cell);
+  // Use automatically generated assignment operator.
+
+  /* Relational operators. */
+  friend int operator ==(const Cell3D_Hexa &Cell1,
+			 const Cell3D_Hexa &Cell2);
+  friend int operator !=(const Cell3D_Hexa &Cell1,
+			 const Cell3D_Hexa &Cell2);
+    
+  /* Input-output operators. */
+  friend ostream &operator << (ostream &out_file,
+			       const Cell3D_Hexa &Cell);
+  friend istream &operator >> (istream &in_file,
+			       Cell3D_Hexa &Cell);
+    
+};
+
+/* Creation, copy, and assignment constructors. */
+inline Cell3D_Hexa::Cell3D_Hexa(void) {
+  xnNWTop.x = ZERO; xnNWTop.y = ZERO; xnNWTop.z =  ONE;
+  xnNETop.x =  ONE; xnNETop.y = ZERO; xnNETop.z =  ONE;  
+  xnSETop.x =  ONE; xnSETop.y =  ONE; xnSETop.z =  ONE; 
+  xnSWTop.x = ZERO; xnSWTop.y =  ONE; xnSWTop.z =  ONE;
+
+  xnNWBot.x = ZERO; xnNWBot.y = ZERO; xnNWBot.z = ZERO;
+  xnNEBot.x =  ONE; xnNEBot.y = ZERO; xnNEBot.z = ZERO;  
+  xnSEBot.x =  ONE; xnSEBot.y =  ONE; xnSEBot.z = ZERO; 
+  xnSWBot.x = ZERO; xnSWBot.y =  ONE; xnSWBot.z = ZERO;
+
+  centroid();
+}
+
+inline Cell3D_Hexa::Cell3D_Hexa(const Cell3D_Hexa &Cell) {
+  xnNWTop = Cell.xnNWTop; xnNETop = Cell.xnNETop; xnSETop = Cell.xnSETop; xnSWTop = Cell.xnSWTop; 
+  xnNWBot = Cell.xnNWBot; xnNEBot = Cell.xnNEBot; xnSEBot = Cell.xnSEBot; xnSWBot = Cell.xnSWBot; 
+  xc = Cell.xc;
+}
+
+//inline Cell3D_Hexa::Cell3D_Hexa(const Vector3D &V1, const Vector3D &V2, const Vector3D &V3,
+//				const Vector3D &V4, const Vector3D &V5, const Vector3D &V6) {
+//  xnNW = V4; xnNE = V3; xnSE = V2; xnSW = V1; 
+//  centroid();
+//}
+
+inline Cell3D_Hexa::Cell3D_Hexa(const double &x1, const double &y1, const double &z1,
+				const double &x2, const double &y2, const double &z2,
+				const double &x3, const double &y3, const double &z3,
+				const double &x4, const double &y4, const double &z4,
+				const double &x5, const double &y5, const double &z5,
+				const double &x6, const double &y6, const double &z6,
+				const double &x7, const double &y7, const double &z7,
+				const double &x8, const double &y8, const double &z8) {
+
+  xnNWTop.x = x4; xnNWTop.y = y4; xnNWTop.z = z4;
+  xnNETop.x = x3; xnNETop.y = y3; xnNETop.z = z3;  
+  xnSETop.x = x2; xnSETop.y = y2; xnSETop.z = z2; 
+  xnSWTop.x = x1; xnSWTop.y = y1; xnSWTop.z = z1;
+
+  xnNWBot.x = x8; xnNWBot.y = y8; xnNWBot.z = z8;
+  xnNEBot.x = x7; xnNEBot.y = y7; xnNEBot.z = z7;  
+  xnSEBot.x = x6; xnSEBot.y = y6; xnSEBot.z = z6; 
+  xnSWBot.x = x5; xnSWBot.y = y5; xnSWBot.z = z5;
+  
+  centroid();  
+
+  //xnNW.x = x4; xnNW.y = y4; xnNE.x = x3; xnNE.y = y3;
+  //xnSE.x = x2; xnSE.y = y2; xnSW.x = x1; xnSW.y = y1;
+  
+}
+
+
+/******************************************************************
+ * Cell3D_Hexa::setnodes -- Set cell node locations.              *
+ ******************************************************************/
+inline void Cell3D_Hexa::setnodes(void) {
+  xnNWTop.x = ZERO; xnNWTop.y = ZERO; xnNWTop.z =  ONE;
+  xnNETop.x =  ONE; xnNETop.y = ZERO; xnNETop.z =  ONE;  
+  xnSETop.x =  ONE; xnSETop.y =  ONE; xnSETop.z =  ONE; 
+  xnSWTop.x = ZERO; xnSWTop.y =  ONE; xnSWTop.z =  ONE;
+
+  xnNWBot.x = ZERO; xnNWBot.y = ZERO; xnNWBot.z = ZERO;
+  xnNEBot.x =  ONE; xnNEBot.y = ZERO; xnNEBot.z = ZERO;  
+  xnSEBot.x =  ONE; xnSEBot.y =  ONE; xnSEBot.z = ZERO; 
+  xnSWBot.x = ZERO; xnSWBot.y =  ONE; xnSWBot.z = ZERO;
+
+  centroid();
+
+}
+
+inline void Cell3D_Hexa::setnodes(const Cell3D_Hexa &Cell) {
+  xnNWTop = Cell.xnNWTop; xnNETop = Cell.xnNETop; xnSETop = Cell.xnSETop; xnSWTop = Cell.xnSWTop; 
+  xnNWBot = Cell.xnNWBot; xnNEBot = Cell.xnNEBot; xnSEBot = Cell.xnSEBot; xnSWBot = Cell.xnSWBot; 
+  xc = Cell.xc;
+}
+
+//inline void Cell2D_Quad::setnodes(const Vector2D &V1, const Vector2D &V2,
+//                                 const Vector2D &V3, const Vector2D &V4) {
+//  xnNW = V4; xnNE = V3; xnSE = V2; xnSW = V1; 
+//  centroid();
+//}
+
+inline void Cell3D_Hexa::setnodes(const double &x1, const double &y1, const double &z1,
+				  const double &x2, const double &y2, const double &z2,
+				  const double &x3, const double &y3, const double &z3,
+				  const double &x4, const double &y4, const double &z4,
+				  const double &x5, const double &y5, const double &z5,
+				  const double &x6, const double &y6, const double &z6,
+				  const double &x7, const double &y7, const double &z7,
+				  const double &x8, const double &y8, const double &z8) {
+
+  xnNWTop.x = x4; xnNWTop.y = y4; xnNWTop.z = z4;
+  xnNETop.x = x3; xnNETop.y = y3; xnNETop.z = z3;  
+  xnSETop.x = x2; xnSETop.y = y2; xnSETop.z = z2; 
+  xnSWTop.x = x1; xnSWTop.y = y1; xnSWTop.z = z1;
+
+  xnNWBot.x = x8; xnNWBot.y = y8; xnNWBot.z = z8;
+  xnNEBot.x = x7; xnNEBot.y = y7; xnNEBot.z = z7;  
+  xnSEBot.x = x6; xnSEBot.y = y6; xnSEBot.z = z6; 
+  xnSWBot.x = x5; xnSWBot.y = y5; xnSWBot.z = z5;
+  
+  centroid();  
+
+  //xnNW.x = x4; xnNW.y = y4; xnNE.x = x3; xnNE.y = y3;
+  //xnSE.x = x2; xnSE.y = y2; xnSW.x = x1; xnSW.y = y1;
+
+}
+
+/*************************************************************************
+ * Cell3D_Hexa::centroid -- Cell centre.                           *
+ *************************************************************************/
+inline void Cell3D_Hexa::centroid(void){
+
+  xc = (xnNWTop+xnNETop+xnSETop+xnSWTop+xnNWBot+xnNEBot+xnSEBot+xnSWBot)/8.0;
+}
+
+/******************************************************************
+ * Cell3D_Hexa -- Relational operators.                           *
+ ******************************************************************/
+inline int operator ==(const Cell3D_Hexa &Cell1,
+		       const Cell3D_Hexa &Cell2) {
+  return (Cell1.xnNETop == Cell2.xnNETop && Cell1.xnNWTop == Cell2.xnNWTop &&
+	  Cell1.xnSWTop == Cell2.xnSWTop && Cell1.xnSETop == Cell2.xnSETop &&
+	  Cell1.xnNEBot == Cell2.xnNEBot && Cell1.xnNWBot == Cell2.xnNWBot &&
+	  Cell1.xnSWBot == Cell2.xnSWBot && Cell1.xnSEBot == Cell2.xnSEBot);
+}
+
+inline int operator !=(const Cell3D_Hexa &Cell1,
+		       const Cell3D_Hexa &Cell2) {
+  return (Cell1.xnNETop != Cell2.xnNETop || Cell1.xnNWTop != Cell2.xnNWTop ||
+	  Cell1.xnSWTop != Cell2.xnSWTop || Cell1.xnSETop != Cell2.xnSETop ||
+	  Cell1.xnNEBot != Cell2.xnNEBot || Cell1.xnNWBot != Cell2.xnNWBot ||
+	  Cell1.xnSWBot != Cell2.xnSWBot || Cell1.xnSEBot != Cell2.xnSEBot);
+}
+
+/******************************************************************
+ * Cell3D_Hexa -- Input-output operators.                         *
+ ******************************************************************/
+inline ostream &operator << (ostream &out_file,
+			     const Cell3D_Hexa &Cell) {
+  out_file << Cell.xc;
+  return (out_file);
+}
+
+inline istream &operator >> (istream &in_file,
+			     Cell3D_Hexa &Cell) {
+  in_file >> Cell.xc; 
+  return (in_file);
 }
 
 #endif /* _CELL3D_INCLUDED  */
