@@ -8,7 +8,9 @@
 #include "include/ComputationalCell.h"
 #include "Reconstruction1D/Reconstruct1DInput.h"
 #include "Reconstruction2D/Reconstruct2DInput.h"
+#include "Reconstruction3D/Reconstruct3DInput.h"
 #include "Grid/Grid2D/QuadrilateralGrid.h"
+#include "Grid/Grid3D/Grid3DHexaMultiBlock.h"
 #include "ReconstructionFunction.h"
 #include "CENO_DataAnalysis.h"
 #include "Common/TecplotAuxData.h"
@@ -114,6 +116,8 @@ class ComputationalDomain{
   void SetDomain(const Reconstruct1D_Input_Parameters & IP);
   void SetDomain(Grid2D_Quad_Block & Grid, const Reconstruct2D_Input_Parameters & IP);
   void SetDomain(const Reconstruct2D_Input_Parameters & IP);
+  void SetDomain(Grid3D_Hexa_Block & Grid, const Reconstruct3D_Input_Parameters & IP);
+  void SetDomain(const Reconstruct3D_Input_Parameters & IP);
 
   /* Access functions */
   int & iStart(void) { return IndexLow[0];}

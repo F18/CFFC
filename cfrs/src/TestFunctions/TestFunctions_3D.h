@@ -10,7 +10,6 @@
  *******************************************************/
 
 double Test_Default3D (double x, double y, double z);
-
 double Test_Default3D_Integral (double x1, double x2, double y1, double y2, double z1, double z2);
 
 /********************************************************
@@ -19,7 +18,6 @@ double Test_Default3D_Integral (double x1, double x2, double y1, double y2, doub
  *******************************************************/
 
 double Test_Example1 (double x, double y, double z); 
-
 double Test_Example1_Integral (double x1, double x2, double y1, double y2, double z1, double z2);
 
 /**********************************************************************
@@ -29,7 +27,7 @@ double Test_Example1_Integral (double x1, double x2, double y1, double y2, doubl
 */
 
 double Test_Example2 (double x, double y, double z);
-
+double Test_Example2_Integral (double x1, double x2, double y1, double y2, double z1, double z2);
 
 /********************************************************
  * Function Test_Example3:                              *
@@ -37,7 +35,7 @@ double Test_Example2 (double x, double y, double z);
  *******************************************************/
 
 double Test_Example3 (double x, double y, double z);
-
+double Test_Example3_Integral (double x1, double x2, double y1, double y2, double z1, double z2);
 
 /********************************************************
  * Function Test_Example4:                              *
@@ -45,6 +43,7 @@ double Test_Example3 (double x, double y, double z);
  *******************************************************/
 
 double Test_Example4 (double x, double y, double z);
+double Test_Example4_Integral (double x1, double x2, double y1, double y2, double z1, double z2);
 
 /********************************************************
  * Function Test_Example5:                              *
@@ -52,7 +51,7 @@ double Test_Example4 (double x, double y, double z);
  *******************************************************/
 
 double Test_Example5 (double x, double y, double z);
-
+double Test_Example5_Integral (double x1, double x2, double y1, double y2, double z1, double z2);
 
 /********************************************************
  * Function Test_Example6:                              *
@@ -60,7 +59,7 @@ double Test_Example5 (double x, double y, double z);
  *******************************************************/
 
 double Test_Example6 (double x, double y, double z);
-
+double Test_Example6_Integral (double x1, double x2, double y1, double y2, double z1, double z2);
 
 /********************************************************
  * Function Test_Example7:                              *
@@ -68,7 +67,7 @@ double Test_Example6 (double x, double y, double z);
  *******************************************************/
 
 double Test_Example7 (double x, double y, double z);
-
+double Test_Example7_Integral (double x1, double x2, double y1, double y2, double z1, double z2);
 
 /********************************************************
  * Function Test_Example8:                              *
@@ -76,7 +75,7 @@ double Test_Example7 (double x, double y, double z);
  *******************************************************/
 
 double Test_Example8 (double x, double y, double z);
-
+double Test_Example8_Integral (double x1, double x2, double y1, double y2, double z1, double z2);
 
 #endif // _TESTFUNCTIONS_2D_INCLUDED
 

@@ -95,18 +95,20 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
     SolnBlkDouble.ReconstructZonalSolution(Input_Parameters);
 
 
-  } else {
+  } 
+   else {
     std::cout << "\n Create Grid:\n";
     // Set Grid
     MeshBlk = Multi_Block_Grid(MeshBlk,Input_Parameters);
-    if (MeshBlk != NULL) {
-      if (Check_Multi_Block_Grid(MeshBlk,
-				 Input_Parameters.Number_of_Blocks_Idir,
-				 Input_Parameters.Number_of_Blocks_Jdir)) {
-	std::cout << "Check_Multi_Block_Grid ERROR\n";
-      } 
-    } /* endif */
 
+    //    if (MeshBlk != NULL) {
+    //      if (Check_Multi_Block_Grid(MeshBlk,
+    //				 Input_Parameters.Number_of_Blocks_Idir,
+    //				 Input_Parameters.Number_of_Blocks_Jdir)) {
+    //	std::cout << "Check_Multi_Block_Grid ERROR\n";
+    //      } 
+    //    } /* end if */
+  
     // copy the mesh to the computational domain
     Copy_Quad_Block(Grid,MeshBlk[0][0]);
   

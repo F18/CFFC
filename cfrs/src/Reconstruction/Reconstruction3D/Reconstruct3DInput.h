@@ -7,10 +7,10 @@
 /* Include header files. */
 
 #include <fstream>
-#include "CFD/CFD.h"
-#include "Grid/Grid3D/Cell3D.h"
-#include "TestFunctions/TestFunctions_3D.h"
-#include "include/TypeDefinition.h"
+#include "../../CFD/CFD.h"
+#include "../../Grid/Grid3D/Cell3D.h"
+#include "../../TestFunctions/TestFunctions_3D.h"
+#include "../../include/TypeDefinition.h"
 
 using namespace std;
 
@@ -82,7 +82,7 @@ class Reconstruct3D_Input_Parameters{
          Wedge_Angle, Wedge_Length;
 
   double X_Scale, X_Rotate;
-  Vector2D X_Shift;
+  Vector3D X_Shift;
   char Stretching_Function_I[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D]; /* Grid stretching function */
   char Stretching_Function_J[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D]; /* Grid stretching function */
   char Stretching_Function_K[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D]; /* Grid stretching function */
