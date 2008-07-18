@@ -5167,33 +5167,33 @@ void Grid3D_Hexa_Multi_Block::Create_Grid(Reconstruct3D_Input_Parameters &Input)
         case GRID_CUBE :
             Create_Grid_Cube(Input);
             break;      
-        case GRID_CHANNEL_XDIR :
-        case GRID_CHANNEL_YDIR:
-        case GRID_CHANNEL_ZDIR:
-            Create_Grid_Channel(Input);
-            break;
-            
-        case GRID_COUETTE_XDIR :
-        case GRID_COUETTE_YDIR:
-        case GRID_COUETTE_ZDIR:
-            Create_Grid_Couette(Input);
-            break;
-            
-        case GRID_PIPE :
-            Create_Grid_Pipe(Input);
-            break;
-            
-        case GRID_BUMP_CHANNEL_FLOW :
-            Create_Grid_Bump_Channel_Flow(Input);
-            break;
-            
-        case GRID_BLUFF_BODY_BURNER :
-            Create_Grid_Bluff_Body_Burner(Input);
-            break;
-            
-        case GRID_ICEMCFD :
-            Create_Grid_ICEMCFD(Input);
-            break;
+//        case GRID_CHANNEL_XDIR :
+//        case GRID_CHANNEL_YDIR:
+//        case GRID_CHANNEL_ZDIR:
+//            Create_Grid_Channel(Input);
+//            break;
+//            
+//        case GRID_COUETTE_XDIR :
+//        case GRID_COUETTE_YDIR:
+//        case GRID_COUETTE_ZDIR:
+//            Create_Grid_Couette(Input);
+//            break;
+//            
+//        case GRID_PIPE :
+//            Create_Grid_Pipe(Input);
+//            break;
+//            
+//        case GRID_BUMP_CHANNEL_FLOW :
+//            Create_Grid_Bump_Channel_Flow(Input);
+//            break;
+//            
+//        case GRID_BLUFF_BODY_BURNER :
+//            Create_Grid_Bluff_Body_Burner(Input);
+//            break;
+//            
+//        case GRID_ICEMCFD :
+//            Create_Grid_ICEMCFD(Input);
+//            break;
             
         default:
             Create_Grid_Cube(Input);
@@ -5221,7 +5221,7 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Cube(Reconstruct3D_Input_Parameters &I
      will be extruded. */
     
     Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
-                                              Input.NBlk_Idir, 
+                                              Input.NBlk_Idir,
                                               Input.NBlk_Jdir,
                                               Input.Box_Width,
                                               Input.Box_Height,
@@ -5280,825 +5280,825 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Cube(Reconstruct3D_Input_Parameters &I
                                                      Input.NBlk_Jdir);
     
 }
-
-/********************************************************
- * Routine: Create_Grid_Channel                         *
- *                                                      *
- * Generates a 3D Cartesian multiblock mesh for a       *
- * channel flow.                                        *
- *                                                      *
- ********************************************************/
-void Grid3D_Hexa_Multi_Block::Create_Grid_Channel(Reconstruct3D_Input_Parameters &Input) {
-    
-    int BC_east, BC_west, BC_north, BC_south, BC_top, BC_bottom;
-    Grid2D_Quad_Block **Grid2D_Box_XYplane;
-    
-    /* Allocate required memory. */
-    
-    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
-    
-    /* Creat 2D cross-section grids from which the 3D grid
-     will be extruded. */
-    
-    Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
-                                              Input.NBlk_Idir, 
-                                              Input.NBlk_Jdir,
-                                              Input.Box_Width,
-                                              Input.Box_Height,
-                                              ON,
-                                              Input.Stretching_Type_Idir,
-                                              Input.Stretching_Type_Jdir,
-                                              Input.Stretching_Factor_Idir,
-                                              Input.Stretching_Factor_Jdir,
-                                              Input.NCells_Idir,
-                                              Input.NCells_Jdir,
-                                              Input.Nghost);
-    
-    /* Create the mesh for each block representing
-     the complete grid. */
-    
-    for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
-        for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
-            for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
-                
-                /* Extrude each of the grid blocks from the
-                 appropriate 2D grid in XY-plane. */
-                
-                Grid_Blks[iBlk][jBlk][kBlk].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
-                                                    Input.NCells_Kdir,
-                                                    Input.Stretching_Type_Kdir,
-                                                    Input.Stretching_Factor_Kdir,
-                                                    (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
-                                                    (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
-                
-                /* Assign top and bottom boundary conditions. */
-                
-                if (Input.i_Grid == GRID_CHANNEL_ZDIR) {
-                    
-                    if (iBlk == Input.NBlk_Idir-1) {
-                        BC_east = BC_CONSTANT_EXTRAPOLATION;
-                    } else {
-                        BC_east = BC_NONE;
-                    } /* endif */
-                    if (iBlk == 0) {
-                        BC_west = BC_CONSTANT_EXTRAPOLATION;
-                    } else {
-                        BC_west = BC_NONE;
-                    } /* endif */
-                    
-                    if (jBlk == Input.NBlk_Jdir-1) {
-                        BC_north = BC_WALL_VISCOUS;
-                    } else {
-                        BC_north = BC_NONE;
-                    } /* endif */
-                    if (jBlk == 0) {
-                        BC_south = BC_WALL_VISCOUS;
-                    } else {
-                        BC_south = BC_NONE;
-                    } /* endif */
-                    
-                    if (kBlk == Input.NBlk_Kdir-1) {
-                        BC_top = BC_CHANNEL_OUTFLOW;
-                    } else {
-                        BC_top = BC_NONE;
-                    } /* endif */
-                    if (kBlk == 0) {
-                        BC_bottom = BC_CHANNEL_INFLOW;
-                    } else {
-                        BC_bottom = BC_NONE;
-                    } /* endif */
-                    
-                } else if (Input.i_Grid == GRID_CHANNEL_XDIR) {
-                    
-                    if (iBlk == Input.NBlk_Idir-1) {
-                        BC_east = BC_CHANNEL_OUTFLOW;
-                    } else {
-                        BC_east = BC_NONE;
-                    } /* endif */
-                    if (iBlk == 0) {
-                        BC_west = BC_CHANNEL_INFLOW;
-                    } else {
-                        BC_west = BC_NONE;
-                    } /* endif */
-                    
-                    if (jBlk == Input.NBlk_Jdir-1) {
-                        BC_north = BC_WALL_VISCOUS;
-                    } else {
-                        BC_north = BC_NONE;
-                    } /* endif */
-                    if (jBlk == 0) {
-                        BC_south = BC_WALL_VISCOUS;
-                    } else {
-                        BC_south = BC_NONE;
-                    } /* endif */
-                    
-                    if (kBlk == Input.NBlk_Kdir-1) {
-                        BC_top = BC_CONSTANT_EXTRAPOLATION;
-                    } else {
-                        BC_top = BC_NONE;
-                    } /* endif */
-                    if (kBlk == 0) {
-                        BC_bottom = BC_CONSTANT_EXTRAPOLATION;
-                    } else {
-                        BC_bottom = BC_NONE;
-                    } /* endif */
-                    
-                } else if (Input.i_Grid == GRID_CHANNEL_YDIR) {
-                    
-                    if (iBlk == Input.NBlk_Idir-1) {
-                        BC_east = BC_CONSTANT_EXTRAPOLATION;
-                    } else {
-                        BC_east = BC_NONE;
-                    } /* endif */
-                    if (iBlk == 0) {
-                        BC_west = BC_CONSTANT_EXTRAPOLATION;
-                    } else {
-                        BC_west = BC_NONE;
-                    } /* endif */
-                    
-                    if (jBlk == Input.NBlk_Jdir-1) {
-                        BC_north = BC_CHANNEL_OUTFLOW;
-                    } else {
-                        BC_north = BC_NONE;
-                    } /* endif */
-                    if (jBlk == 0) {
-                        BC_south = BC_CHANNEL_INFLOW;
-                    } else {
-                        BC_south = BC_NONE;
-                    } /* endif */
-                    
-                    if (kBlk == Input.NBlk_Kdir-1) {
-                        BC_top = BC_WALL_VISCOUS;
-                    } else {
-                        BC_top = BC_NONE;
-                    } /* endif */
-                    if (kBlk == 0) {
-                        BC_bottom = BC_WALL_VISCOUS;
-                    } else {
-                        BC_bottom = BC_NONE;
-                    } /* endif */
-                } /* endif */
-                
-                Grid_Blks[iBlk][jBlk][kBlk].Set_BCs(BC_east, 
-                                                    BC_west, 
-                                                    BC_north, 
-                                                    BC_south, 
-                                                    BC_top, 
-                                                    BC_bottom);
-                
-            } /* endfor */
-        } /* endfor */
-    } /* endfor */
-    
-    /* Deallocate 2D grid. */
-    
-    Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
-                                                     Input.NBlk_Idir, 
-                                                     Input.NBlk_Jdir);
-    
-}
-
-/********************************************************
- * Routine: Create_Grid_Couette                         *
- *                                                      *
- * Generates a 3D Cartesian multiblock mesh for a       *
- * Couette flow.                                        *
- *                                                      *
- ********************************************************/
-void Grid3D_Hexa_Multi_Block::Create_Grid_Couette(Reconstruct3D_Input_Parameters &Input) {
-    
-    int BC_east, BC_west, BC_north, BC_south, BC_top, BC_bottom;
-    Grid2D_Quad_Block **Grid2D_Box_XYplane;
-    
-    /* Allocate required memory. */
-    
-    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
-    
-    /* Creat 2D cross-section grids from which the 3D grid
-     will be extruded. */
-    
-    Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
-                                              Input.NBlk_Idir, 
-                                              Input.NBlk_Jdir,
-                                              Input.Box_Width,
-                                              Input.Box_Height,
-                                              ON,
-                                              Input.Stretching_Type_Idir,
-                                              Input.Stretching_Type_Jdir,
-                                              Input.Stretching_Factor_Idir,
-                                              Input.Stretching_Factor_Jdir,
-                                              Input.NCells_Idir,
-                                              Input.NCells_Jdir,
-                                              Input.Nghost);
-    
-    /* Create the mesh for each block representing
-     the complete grid. */
-    
-    for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
-        for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
-            for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
-                
-                /* Extrude each of the grid blocks from the
-                 appropriate 2D grid in XY-plane. */
-                
-                Grid_Blks[iBlk][jBlk][kBlk].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
-                                                    Input.NCells_Kdir,
-                                                    Input.Stretching_Type_Kdir,
-                                                    Input.Stretching_Factor_Kdir,
-                                                    (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
-                                                    (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
-                
-                /* Assign top and bottom boundary conditions. */
-                
-                if (Input.i_Grid == GRID_COUETTE_ZDIR) {
-                    
-                    if (iBlk == Input.NBlk_Idir-1) {
-                        BC_east = BC_CONSTANT_EXTRAPOLATION;
-                    } else {
-                        BC_east = BC_NONE;
-                    } /* endif */
-                    if (iBlk == 0) {
-                        BC_west = BC_CONSTANT_EXTRAPOLATION;
-                    } else {
-                        BC_west = BC_NONE;
-                    } /* endif */
-                    
-                    if (jBlk == Input.NBlk_Jdir-1) {
-                        BC_north = BC_MOVING_WALL;
-                    } else {
-                        BC_north = BC_NONE;
-                    } /* endif */
-                    if (jBlk == 0) {
-                        BC_south = BC_NO_SLIP;
-                    } else {
-                        BC_south = BC_NONE;
-                    } /* endif */
-                    
-                    if (kBlk == Input.NBlk_Kdir-1) {
-                        BC_top = BC_FIXED_PRESSURE;
-                    } else {
-                        BC_top = BC_NONE;
-                    } /* endif */
-                    if (kBlk == 0) {
-                        BC_bottom = BC_FIXED_PRESSURE;
-                    } else {
-                        BC_bottom = BC_NONE;
-                    } /* endif */
-                    
-                } else if (Input.i_Grid == GRID_COUETTE_XDIR) {
-                    
-                    if (iBlk == Input.NBlk_Idir-1) {
-                        BC_east = BC_FIXED_PRESSURE;
-                    } else {
-                        BC_east = BC_NONE;
-                    } /* endif */
-                    if (iBlk == 0) {
-                        BC_west = BC_FIXED_PRESSURE;
-                    } else {
-                        BC_west = BC_NONE;
-                    } /* endif */
-                    
-                    if (jBlk == Input.NBlk_Jdir-1) {
-                        BC_north = BC_MOVING_WALL;
-                    } else {
-                        BC_north = BC_NONE;
-                    } /* endif */
-                    if (jBlk == 0) {
-                        BC_south = BC_NO_SLIP;
-                    } else {
-                        BC_south = BC_NONE;
-                    } /* endif */
-                    
-                    if (kBlk == Input.NBlk_Kdir-1) {
-                        BC_top = BC_CONSTANT_EXTRAPOLATION;
-                    } else {
-                        BC_top = BC_NONE;
-                    } /* endif */
-                    if (kBlk == 0) {
-                        BC_bottom = BC_CONSTANT_EXTRAPOLATION;
-                    } else {
-                        BC_bottom = BC_NONE;
-                    } /* endif */
-                    
-                } else if (Input.i_Grid == GRID_COUETTE_YDIR) {
-                    
-                    if (iBlk == Input.NBlk_Idir-1) {
-                        BC_east = BC_CONSTANT_EXTRAPOLATION;
-                    } else {
-                        BC_east = BC_NONE;
-                    } /* endif */
-                    if (iBlk == 0) {
-                        BC_west = BC_CONSTANT_EXTRAPOLATION;
-                    } else {
-                        BC_west = BC_NONE;
-                    } /* endif */
-                    
-                    if (jBlk == Input.NBlk_Jdir-1) {
-                        BC_north = BC_FIXED_PRESSURE;
-                    } else {
-                        BC_north = BC_NONE;
-                    } /* endif */
-                    if (jBlk == 0) {
-                        BC_south = BC_FIXED_PRESSURE;
-                    } else {
-                        BC_south = BC_NONE;
-                    } /* endif */
-                    
-                    if (kBlk == Input.NBlk_Kdir-1) {
-                        BC_top = BC_MOVING_WALL;
-                    } else {
-                        BC_top = BC_NONE;
-                    } /* endif */
-                    if (kBlk == 0) {
-                        BC_bottom = BC_NO_SLIP;
-                    } else {
-                        BC_bottom = BC_NONE;
-                    } /* endif */
-                } /* endif */
-                
-                Grid_Blks[iBlk][jBlk][kBlk].Set_BCs(BC_east, 
-                                                    BC_west, 
-                                                    BC_north, 
-                                                    BC_south, 
-                                                    BC_top, 
-                                                    BC_bottom);
-                
-            } /* endfor */
-        } /* endfor */
-    } /* endfor */
-    
-    /* Deallocate 2D grid. */
-    
-    Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
-                                                     Input.NBlk_Idir, 
-                                                     Input.NBlk_Jdir);
-    
-}
-
-/********************************************************
- * Routine: Create_Grid_Pipe                            *
- *                                                      *
- * Generates a 3D multiblock mesh for pipe flows.       *
- *                                                      *
- ********************************************************/
-void Grid3D_Hexa_Multi_Block::Create_Grid_Pipe(Reconstruct3D_Input_Parameters &Input) {
-    
-    int numblk_idir_pipe, numblk_jdir_pipe;
-    Grid2D_Quad_Block **Grid2D_Pipe_XYplane;
-    
-    /* Allocate required memory. */
-    
-    Input.NBlk_Idir = 5;
-    Input.NBlk_Jdir = 1;
-    Input.NBlk_Kdir = 1;
-    
-    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
-    
-    /* Creat 2D cross-section grids from which the 3D grid
-     will be extruded. */
-    
-    Grid2D_Pipe_XYplane = Grid_Tube_2D(Grid2D_Pipe_XYplane,
-                                       numblk_idir_pipe,
-                                       numblk_jdir_pipe,
-                                       Input.Pipe_Radius,
-                                       Input.NCells_Idir,
-                                       Input.NCells_Jdir,
-                                       Input.Nghost,
-                                       STRETCHING_FCN_MAX_CLUSTERING,
-                                       1.00001);
-    
-    /* Create the mesh for each block representing
-     the complete grid. */
-    
-    for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
-        
-        /* Extrude each of the grid blocks from the
-         appropriate 2D grid in XY-plane. */
-        
-        Grid_Blks[iBlk][0][0].Extrude(Grid2D_Pipe_XYplane[iBlk][0],
-                                      Input.NCells_Kdir,
-                                      Input.Stretching_Type_Kdir,
-                                      Input.Stretching_Factor_Kdir,
-                                      ZERO,
-                                      Input.Pipe_Length);
-        if (iBlk == 0) {
-            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
-                                          BC_NONE,
-                                          BC_NONE,
-                                          BC_NONE,
-                                          BC_FIXED_PRESSURE,
-                                          BC_FIXED_PRESSURE);
-        } else {
-            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
-                                          BC_NONE,
-                                          BC_NO_SLIP,
-                                          BC_NONE,
-                                          BC_FIXED_PRESSURE,
-                                          BC_FIXED_PRESSURE);
-        } /* endif */
-        
-    } /* endfor */
-    
-    /* Deallocate 2D grid. */
-    
-    Grid2D_Pipe_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Pipe_XYplane,
-                                                      numblk_idir_pipe,
-                                                      numblk_jdir_pipe);
-    
-}
-
-/**********************************************************************
- * Routine: Grid_Bump_Channel_Flow                                    *
- *                                                                    *
- * Generates a single block quadilateral mesh with clustering for     *
- * predicting supersonic flow around a cirucular cylinder blunt body. *
- *                                                                    *
- **********************************************************************/
-void Grid3D_Hexa_Multi_Block::Create_Grid_Bump_Channel_Flow(Reconstruct3D_Input_Parameters &Input) {
-    
-    Grid2D_Quad_Block **Grid2D_XYplane;
-    int BC_top, BC_bottom;
-    
-    //Fixed at 4x2
-    int Number_of_Blocks_Idir, Number_of_Blocks_Jdir;
-    int Smooth_Bump = 0; //don't use smooth bump.
-    
-    /* Allocate required memory. */
-    
-    Input.NBlk_Idir = 4;
-    Input.NBlk_Jdir = 2;
-    Input.NBlk_Kdir = 1;
-    
-    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
-    
-    /* Creat 2D cross-section grids from which the 3D grid
-     will be extruded. */
-    
-    Grid2D_XYplane = Grid_Bump_Channel_Flow(Grid2D_XYplane,
-                                            Number_of_Blocks_Idir,
-                                            Number_of_Blocks_Jdir,
-                                            Smooth_Bump,
-                                            Input.NCells_Idir,
-                                            Input.NCells_Jdir,
-                                            Input.Nghost);
-    
-    /* Create the mesh for each block representing
-     the complete grid. */
-    
-    for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
-        for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
-            for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
-                
-                /* Extrude each of the grid blocks from the
-                 appropriate 2D grid in XY-plane. */
-                
-                Grid_Blks[iBlk][jBlk][kBlk].Extrude(Grid2D_XYplane[iBlk][jBlk],
-                                                    Input.NCells_Kdir,
-                                                    Input.Stretching_Type_Kdir,
-                                                    Input.Stretching_Factor_Kdir,			       
-                                                    (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
-                                                    (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
-                
-                /* Assign top and bottom boundary conditions. */
-                
-                if (kBlk == Input.NBlk_Kdir-1) {
-                    BC_top = BC_REFLECTION;//BC_CONSTANT_EXTRAPOLATION;
-                } else {
-                    BC_top = BC_NONE;
-                } /* endif */
-                if (kBlk == 0) {
-                    BC_bottom =BC_REFLECTION;// BC_CONSTANT_EXTRAPOLATION;
-                } else {
-                    BC_bottom = BC_NONE;
-                } /* endif */
-                
-                Grid_Blks[iBlk][jBlk][kBlk].Set_BCs_Zdir(BC_top, BC_bottom);
-                
-            } 
-        } 
-    } 
-    
-    /* Deallocate 2D grid. */
-    Grid2D_XYplane = Deallocate_Multi_Block_Grid(Grid2D_XYplane,
-                                                 Number_of_Blocks_Idir,
-                                                 Number_of_Blocks_Jdir);
-    
-}
-
-/********************************************************
- * Routine: Create_Grid_Bluff_Body_Burner               *
- *                                                      *
- * Generates a 3D multiblock mesh for TNF bluff body    *
- * burner.                                              *
- *                                                      *
- ********************************************************/
-void Grid3D_Hexa_Multi_Block::Create_Grid_Bluff_Body_Burner(Reconstruct3D_Input_Parameters &Input) {
-    
-    int numblk_idir_fuel, numblk_jdir_fuel,
-    numblk_idir_bluffbody, numblk_jdir_bluffbody,
-    numblk_idir_coflow, numblk_jdir_coflow;
-    Grid2D_Quad_Block **Grid2D_Fuel_Line_XYplane,
-    **Grid2D_Bluff_Body_Inner_XYplane,
-    **Grid2D_Bluff_Body_Outer_XYplane,
-    **Grid2D_Coflow_XYplane;
-    
-    /* Allocate required memory. */
-    
-    Input.NBlk_Idir = 42;
-    Input.NBlk_Jdir = 1;
-    Input.NBlk_Kdir = 1;
-    
-    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
-    
-    /* Creat 2D cross-section grids from which the 3D grid
-     will be extruded. */
-    
-    Grid2D_Fuel_Line_XYplane = Grid_Tube_2D(
-                                            Grid2D_Fuel_Line_XYplane,
-                                            numblk_idir_fuel,
-                                            numblk_jdir_fuel,
-                                            Input.Radius_Fuel_Line,
-                                            Input.NCells_Idir,
-                                            Input.NCells_Jdir,
-                                            Input.Nghost,
-                                            STRETCHING_FCN_MAX_CLUSTERING,
-                                            1.25);
-    
-    Grid2D_Bluff_Body_Inner_XYplane = Grid_Annulus_2D(
-                                                      Grid2D_Bluff_Body_Inner_XYplane,
-                                                      numblk_idir_bluffbody,
-                                                      numblk_jdir_bluffbody,
-                                                      Input.Radius_Fuel_Line,
-                                                      HALF*Input.Radius_Bluff_Body,
-                                                      Input.NCells_Idir,
-                                                      Input.NCells_Jdir,
-                                                      Input.Nghost,
-                                                      STRETCHING_FCN_MIN_CLUSTERING,
-                                                      1.10);
-    
-    Grid2D_Bluff_Body_Outer_XYplane = Grid_Annulus_2D(
-                                                      Grid2D_Bluff_Body_Outer_XYplane,
-                                                      numblk_idir_bluffbody,
-                                                      numblk_jdir_bluffbody,
-                                                      HALF*Input.Radius_Bluff_Body,
-                                                      Input.Radius_Bluff_Body,
-                                                      Input.NCells_Idir,
-                                                      Input.NCells_Jdir,
-                                                      Input.Nghost,
-                                                      STRETCHING_FCN_MAX_CLUSTERING,
-                                                      1.10);
-    
-    Grid2D_Coflow_XYplane = Grid_Annulus_2D(
-                                            Grid2D_Coflow_XYplane,
-                                            numblk_idir_coflow,
-                                            numblk_jdir_coflow,
-                                            Input.Radius_Bluff_Body,
-                                            Input.Radius_Coflow_Inlet_Pipe,
-                                            Input.NCells_Idir,
-                                            Input.NCells_Jdir,
-                                            Input.Nghost,
-                                            STRETCHING_FCN_MIN_CLUSTERING,
-                                            1.10);
-    
-    /* Create the mesh for each block representing
-     the complete grid. */
-    
-    for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
-        
-        /* Extrude each of the grid blocks from the
-         appropriate 2D grid in XY-plane. */
-        
-        if (iBlk <= 4) {
-            Grid_Blks[iBlk][0][0].Extrude(
-                                          Grid2D_Fuel_Line_XYplane[iBlk][0],
-                                          Input.NCells_Kdir,
-                                          STRETCHING_FCN_MIN_CLUSTERING,
-                                          1.25,
-                                          ZERO,
-                                          0.25*Input.Length_Combustor_Tube);
-            if (iBlk == 0) {
-                Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
-                                              BC_NONE,
-                                              BC_NONE,
-                                              BC_NONE,
-                                              BC_NONE,
-                                              BC_DIRICHLET);
-            } else {
-                Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
-                                              BC_NONE,
-                                              BC_NONE,
-                                              BC_NONE,
-                                              BC_NONE,
-                                              BC_DIRICHLET);
-            }  /* endif */
-            
-        } else if (iBlk >= 5 && iBlk <= 9) {
-            Grid_Blks[iBlk][0][0].Extrude(
-                                          Grid2D_Fuel_Line_XYplane[iBlk-5][0],
-                                          Input.NCells_Kdir,
-                                          STRETCHING_FCN_LINEAR,
-                                          ZERO,
-                                          0.25*Input.Length_Combustor_Tube,
-                                          Input.Length_Combustor_Tube);
-            if (iBlk-5 == 0) {
-                Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
-                                              BC_NONE,
-                                              BC_NONE,
-                                              BC_NONE,
-                                              BC_FIXED_PRESSURE,
-                                              BC_NONE);
-            } else {
-                Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
-                                              BC_NONE,
-                                              BC_NONE,
-                                              BC_NONE,
-                                              BC_FIXED_PRESSURE,
-                                              BC_NONE);
-            } /* endif */
-            
-        } else if (iBlk >= 10 && iBlk <= 13) {
-            Grid_Blks[iBlk][0][0].Extrude(
-                                          Grid2D_Bluff_Body_Inner_XYplane[iBlk-10][0],
-                                          Input.NCells_Kdir,
-                                          STRETCHING_FCN_MIN_CLUSTERING,
-                                          1.25,
-                                          ZERO,
-                                          0.25*Input.Length_Combustor_Tube);
-            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
-                                          BC_NONE,
-                                          BC_NONE,
-                                          BC_NONE,
-                                          BC_NONE,
-                                          BC_WALL_VISCOUS);
-            
-        } else if (iBlk >= 14 && iBlk <= 17) {
-            Grid_Blks[iBlk][0][0].Extrude(
-                                          Grid2D_Bluff_Body_Inner_XYplane[iBlk-14][0],
-                                          Input.NCells_Kdir,
-                                          STRETCHING_FCN_LINEAR,
-                                          ZERO,
-                                          0.25*Input.Length_Combustor_Tube,
-                                          Input.Length_Combustor_Tube);
-            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
-                                          BC_NONE,
-                                          BC_NONE,
-                                          BC_NONE,
-                                          BC_FIXED_PRESSURE,
-                                          BC_NONE);
-            
-        } else if (iBlk >= 18 && iBlk <= 21) {
-            Grid_Blks[iBlk][0][0].Extrude(
-                                          Grid2D_Bluff_Body_Outer_XYplane[iBlk-18][0],
-                                          Input.NCells_Kdir,
-                                          STRETCHING_FCN_MIN_CLUSTERING,
-                                          1.25,
-                                          ZERO,
-                                          0.25*Input.Length_Combustor_Tube);
-            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
-                                          BC_NONE,
-                                          BC_NONE,
-                                          BC_NONE,
-                                          BC_NONE,
-                                          BC_WALL_VISCOUS);
-            
-        } else if (iBlk >= 22 && iBlk <= 25) {
-            Grid_Blks[iBlk][0][0].Extrude(
-                                          Grid2D_Bluff_Body_Outer_XYplane[iBlk-22][0],
-                                          Input.NCells_Kdir,
-                                          STRETCHING_FCN_LINEAR,
-                                          ONE,
-                                          0.25*Input.Length_Combustor_Tube,
-                                          Input.Length_Combustor_Tube);
-            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
-                                          BC_NONE,
-                                          BC_NONE,
-                                          BC_NONE,
-                                          BC_FIXED_PRESSURE,
-                                          BC_NONE);
-            
-        } else if (iBlk >= 26 && iBlk <= 29) {
-            Grid_Blks[iBlk][0][0].Extrude(
-                                          Grid2D_Coflow_XYplane[iBlk-26][0],
-                                          Input.NCells_Kdir,
-                                          STRETCHING_FCN_MIN_CLUSTERING,
-                                          1.25,
-                                          ZERO,
-                                          0.25*Input.Length_Combustor_Tube);
-            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
-                                          BC_NONE,
-                                          BC_REFLECTION,
-                                          BC_NONE,
-                                          BC_NONE,
-                                          BC_NONE);
-            
-        } else if (iBlk >= 30 && iBlk <= 33) {
-            Grid_Blks[iBlk][0][0].Extrude(
-                                          Grid2D_Coflow_XYplane[iBlk-30][0],
-                                          Input.NCells_Kdir,
-                                          STRETCHING_FCN_LINEAR,
-                                          ZERO,
-                                          0.25*Input.Length_Combustor_Tube,
-                                          Input.Length_Combustor_Tube);
-            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
-                                          BC_NONE,
-                                          BC_REFLECTION,
-                                          BC_NONE,
-                                          BC_FIXED_PRESSURE,
-                                          BC_NONE);
-            
-        } else if (iBlk >= 34 && iBlk <= 37) {
-            Grid_Blks[iBlk][0][0].Extrude(
-                                          Grid2D_Coflow_XYplane[iBlk-34][0],
-                                          Input.NCells_Kdir,
-                                          STRETCHING_FCN_MAX_CLUSTERING,
-                                          1.25,
-                                          -0.25*Input.Length_Coflow_Inlet_Pipe,
-                                          ZERO);
-            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
-                                          BC_NONE,
-                                          BC_REFLECTION,
-                                          BC_WALL_VISCOUS,
-                                          BC_NONE,
-                                          BC_NONE);
-            
-        } else if (iBlk >= 38 && iBlk <= 41) {
-            Grid_Blks[iBlk][0][0].Extrude(
-                                          Grid2D_Coflow_XYplane[iBlk-38][0],
-                                          Input.NCells_Kdir,
-                                          STRETCHING_FCN_LINEAR,
-                                          ONE,
-                                          -Input.Length_Coflow_Inlet_Pipe,
-                                          -0.25*Input.Length_Coflow_Inlet_Pipe);
-            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
-                                          BC_NONE,
-                                          BC_REFLECTION,
-                                          BC_WALL_VISCOUS,
-                                          BC_DIRICHLET,
-                                          BC_NONE);
-            
-        } /* endif */
-        
-    } /* endfor */
-    
-    /* Deallocate 2D grids. */
-    
-    Grid2D_Fuel_Line_XYplane = Deallocate_Multi_Block_Grid(
-                                                           Grid2D_Fuel_Line_XYplane,
-                                                           numblk_idir_fuel,
-                                                           numblk_jdir_fuel);
-    
-    Grid2D_Bluff_Body_Inner_XYplane = Deallocate_Multi_Block_Grid(
-                                                                  Grid2D_Bluff_Body_Inner_XYplane,
-                                                                  numblk_idir_bluffbody,
-                                                                  numblk_jdir_bluffbody);
-    
-    Grid2D_Bluff_Body_Outer_XYplane = Deallocate_Multi_Block_Grid(
-                                                                  Grid2D_Bluff_Body_Outer_XYplane,
-                                                                  numblk_idir_bluffbody,
-                                                                  numblk_jdir_bluffbody);
-    
-    Grid2D_Coflow_XYplane = Deallocate_Multi_Block_Grid(
-                                                        Grid2D_Coflow_XYplane,
-                                                        numblk_idir_coflow,
-                                                        numblk_jdir_coflow);
-    
-}
-
-/********************************************************
- * Routine: Create_Grid_ICEMCFD                         *
- *                                                      *
- * Read ICEMCFD Mesh                                    *
- *                                                      *
- ********************************************************/
-void Grid3D_Hexa_Multi_Block::Create_Grid_ICEMCFD(Reconstruct3D_Input_Parameters &Input) {
-    
-    if (Allocated) Deallocate();
-    
-    Grid_Blks = Grid_ICEMCFD(Grid_Blks, 
-                             Input.ICEMCFD_FileNames, 
-                             NBlk_Idir, 
-                             NBlk_Jdir, 
-                             NBlk_Kdir);
-    
-    int found = 0;
-    for (int kBlk = 0; kBlk <= NBlk_Kdir-1 && !found; ++kBlk) {
-        for (int jBlk = 0; jBlk <= NBlk_Jdir-1 && !found; ++jBlk) {
-            for (int iBlk = 0; iBlk <= NBlk_Idir-1 && !found; ++iBlk) {
-                if (Grid_Blks[iBlk][jBlk][kBlk].Allocated) {
-                    Input.NCells_Idir = Grid_Blks[iBlk][jBlk][kBlk].NCi-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;
-                    Input.NCells_Jdir = Grid_Blks[iBlk][jBlk][kBlk].NCj-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;
-                    Input.NCells_Kdir = Grid_Blks[iBlk][jBlk][kBlk].NCk-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;
-                    found = 1;
-                }/* endif */   
-            } /* endfor */
-        } /* endfor */
-    } /* endfor */
-    
-    Input.NBlk_Idir = NBlk_Idir; 
-    Input.NBlk_Jdir = NBlk_Jdir; 
-    Input.NBlk_Kdir = NBlk_Kdir;
-    
-    assert(NBlk_Idir >= 1 && NBlk_Jdir >= 1 && NBlk_Kdir >= 1); 
-    Allocated = 1;
-    
-}         
+//
+///********************************************************
+// * Routine: Create_Grid_Channel                         *
+// *                                                      *
+// * Generates a 3D Cartesian multiblock mesh for a       *
+// * channel flow.                                        *
+// *                                                      *
+// ********************************************************/
+//void Grid3D_Hexa_Multi_Block::Create_Grid_Channel(Reconstruct3D_Input_Parameters &Input) {
+//    
+//    int BC_east, BC_west, BC_north, BC_south, BC_top, BC_bottom;
+//    Grid2D_Quad_Block **Grid2D_Box_XYplane;
+//    
+//    /* Allocate required memory. */
+//    
+//    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+//    
+//    /* Creat 2D cross-section grids from which the 3D grid
+//     will be extruded. */
+//    
+//    Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
+//                                              Input.NBlk_Idir, 
+//                                              Input.NBlk_Jdir,
+//                                              Input.Box_Width,
+//                                              Input.Box_Height,
+//                                              ON,
+//                                              Input.Stretching_Type_Idir,
+//                                              Input.Stretching_Type_Jdir,
+//                                              Input.Stretching_Factor_Idir,
+//                                              Input.Stretching_Factor_Jdir,
+//                                              Input.NCells_Idir,
+//                                              Input.NCells_Jdir,
+//                                              Input.Nghost);
+//    
+//    /* Create the mesh for each block representing
+//     the complete grid. */
+//    
+//    for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+//        for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+//            for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+//                
+//                /* Extrude each of the grid blocks from the
+//                 appropriate 2D grid in XY-plane. */
+//                
+//                Grid_Blks[iBlk][jBlk][kBlk].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
+//                                                    Input.NCells_Kdir,
+//                                                    Input.Stretching_Type_Kdir,
+//                                                    Input.Stretching_Factor_Kdir,
+//                                                    (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
+//                                                    (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
+//                
+//                /* Assign top and bottom boundary conditions. */
+//                
+//                if (Input.i_Grid == GRID_CHANNEL_ZDIR) {
+//                    
+//                    if (iBlk == Input.NBlk_Idir-1) {
+//                        BC_east = BC_CONSTANT_EXTRAPOLATION;
+//                    } else {
+//                        BC_east = BC_NONE;
+//                    } /* endif */
+//                    if (iBlk == 0) {
+//                        BC_west = BC_CONSTANT_EXTRAPOLATION;
+//                    } else {
+//                        BC_west = BC_NONE;
+//                    } /* endif */
+//                    
+//                    if (jBlk == Input.NBlk_Jdir-1) {
+//                        BC_north = BC_WALL_VISCOUS;
+//                    } else {
+//                        BC_north = BC_NONE;
+//                    } /* endif */
+//                    if (jBlk == 0) {
+//                        BC_south = BC_WALL_VISCOUS;
+//                    } else {
+//                        BC_south = BC_NONE;
+//                    } /* endif */
+//                    
+//                    if (kBlk == Input.NBlk_Kdir-1) {
+//                        BC_top = BC_CHANNEL_OUTFLOW;
+//                    } else {
+//                        BC_top = BC_NONE;
+//                    } /* endif */
+//                    if (kBlk == 0) {
+//                        BC_bottom = BC_CHANNEL_INFLOW;
+//                    } else {
+//                        BC_bottom = BC_NONE;
+//                    } /* endif */
+//                    
+//                } else if (Input.i_Grid == GRID_CHANNEL_XDIR) {
+//                    
+//                    if (iBlk == Input.NBlk_Idir-1) {
+//                        BC_east = BC_CHANNEL_OUTFLOW;
+//                    } else {
+//                        BC_east = BC_NONE;
+//                    } /* endif */
+//                    if (iBlk == 0) {
+//                        BC_west = BC_CHANNEL_INFLOW;
+//                    } else {
+//                        BC_west = BC_NONE;
+//                    } /* endif */
+//                    
+//                    if (jBlk == Input.NBlk_Jdir-1) {
+//                        BC_north = BC_WALL_VISCOUS;
+//                    } else {
+//                        BC_north = BC_NONE;
+//                    } /* endif */
+//                    if (jBlk == 0) {
+//                        BC_south = BC_WALL_VISCOUS;
+//                    } else {
+//                        BC_south = BC_NONE;
+//                    } /* endif */
+//                    
+//                    if (kBlk == Input.NBlk_Kdir-1) {
+//                        BC_top = BC_CONSTANT_EXTRAPOLATION;
+//                    } else {
+//                        BC_top = BC_NONE;
+//                    } /* endif */
+//                    if (kBlk == 0) {
+//                        BC_bottom = BC_CONSTANT_EXTRAPOLATION;
+//                    } else {
+//                        BC_bottom = BC_NONE;
+//                    } /* endif */
+//                    
+//                } else if (Input.i_Grid == GRID_CHANNEL_YDIR) {
+//                    
+//                    if (iBlk == Input.NBlk_Idir-1) {
+//                        BC_east = BC_CONSTANT_EXTRAPOLATION;
+//                    } else {
+//                        BC_east = BC_NONE;
+//                    } /* endif */
+//                    if (iBlk == 0) {
+//                        BC_west = BC_CONSTANT_EXTRAPOLATION;
+//                    } else {
+//                        BC_west = BC_NONE;
+//                    } /* endif */
+//                    
+//                    if (jBlk == Input.NBlk_Jdir-1) {
+//                        BC_north = BC_CHANNEL_OUTFLOW;
+//                    } else {
+//                        BC_north = BC_NONE;
+//                    } /* endif */
+//                    if (jBlk == 0) {
+//                        BC_south = BC_CHANNEL_INFLOW;
+//                    } else {
+//                        BC_south = BC_NONE;
+//                    } /* endif */
+//                    
+//                    if (kBlk == Input.NBlk_Kdir-1) {
+//                        BC_top = BC_WALL_VISCOUS;
+//                    } else {
+//                        BC_top = BC_NONE;
+//                    } /* endif */
+//                    if (kBlk == 0) {
+//                        BC_bottom = BC_WALL_VISCOUS;
+//                    } else {
+//                        BC_bottom = BC_NONE;
+//                    } /* endif */
+//                } /* endif */
+//                
+//                Grid_Blks[iBlk][jBlk][kBlk].Set_BCs(BC_east, 
+//                                                    BC_west, 
+//                                                    BC_north, 
+//                                                    BC_south, 
+//                                                    BC_top, 
+//                                                    BC_bottom);
+//                
+//            } /* endfor */
+//        } /* endfor */
+//    } /* endfor */
+//    
+//    /* Deallocate 2D grid. */
+//    
+//    Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
+//                                                     Input.NBlk_Idir, 
+//                                                     Input.NBlk_Jdir);
+//    
+//}
+//
+///********************************************************
+// * Routine: Create_Grid_Couette                         *
+// *                                                      *
+// * Generates a 3D Cartesian multiblock mesh for a       *
+// * Couette flow.                                        *
+// *                                                      *
+// ********************************************************/
+//void Grid3D_Hexa_Multi_Block::Create_Grid_Couette(Reconstruct3D_Input_Parameters &Input) {
+//    
+//    int BC_east, BC_west, BC_north, BC_south, BC_top, BC_bottom;
+//    Grid2D_Quad_Block **Grid2D_Box_XYplane;
+//    
+//    /* Allocate required memory. */
+//    
+//    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+//    
+//    /* Creat 2D cross-section grids from which the 3D grid
+//     will be extruded. */
+//    
+//    Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
+//                                              Input.NBlk_Idir, 
+//                                              Input.NBlk_Jdir,
+//                                              Input.Box_Width,
+//                                              Input.Box_Height,
+//                                              ON,
+//                                              Input.Stretching_Type_Idir,
+//                                              Input.Stretching_Type_Jdir,
+//                                              Input.Stretching_Factor_Idir,
+//                                              Input.Stretching_Factor_Jdir,
+//                                              Input.NCells_Idir,
+//                                              Input.NCells_Jdir,
+//                                              Input.Nghost);
+//    
+//    /* Create the mesh for each block representing
+//     the complete grid. */
+//    
+//    for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+//        for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+//            for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+//                
+//                /* Extrude each of the grid blocks from the
+//                 appropriate 2D grid in XY-plane. */
+//                
+//                Grid_Blks[iBlk][jBlk][kBlk].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
+//                                                    Input.NCells_Kdir,
+//                                                    Input.Stretching_Type_Kdir,
+//                                                    Input.Stretching_Factor_Kdir,
+//                                                    (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
+//                                                    (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
+//                
+//                /* Assign top and bottom boundary conditions. */
+//                
+//                if (Input.i_Grid == GRID_COUETTE_ZDIR) {
+//                    
+//                    if (iBlk == Input.NBlk_Idir-1) {
+//                        BC_east = BC_CONSTANT_EXTRAPOLATION;
+//                    } else {
+//                        BC_east = BC_NONE;
+//                    } /* endif */
+//                    if (iBlk == 0) {
+//                        BC_west = BC_CONSTANT_EXTRAPOLATION;
+//                    } else {
+//                        BC_west = BC_NONE;
+//                    } /* endif */
+//                    
+//                    if (jBlk == Input.NBlk_Jdir-1) {
+//                        BC_north = BC_MOVING_WALL;
+//                    } else {
+//                        BC_north = BC_NONE;
+//                    } /* endif */
+//                    if (jBlk == 0) {
+//                        BC_south = BC_NO_SLIP;
+//                    } else {
+//                        BC_south = BC_NONE;
+//                    } /* endif */
+//                    
+//                    if (kBlk == Input.NBlk_Kdir-1) {
+//                        BC_top = BC_FIXED_PRESSURE;
+//                    } else {
+//                        BC_top = BC_NONE;
+//                    } /* endif */
+//                    if (kBlk == 0) {
+//                        BC_bottom = BC_FIXED_PRESSURE;
+//                    } else {
+//                        BC_bottom = BC_NONE;
+//                    } /* endif */
+//                    
+//                } else if (Input.i_Grid == GRID_COUETTE_XDIR) {
+//                    
+//                    if (iBlk == Input.NBlk_Idir-1) {
+//                        BC_east = BC_FIXED_PRESSURE;
+//                    } else {
+//                        BC_east = BC_NONE;
+//                    } /* endif */
+//                    if (iBlk == 0) {
+//                        BC_west = BC_FIXED_PRESSURE;
+//                    } else {
+//                        BC_west = BC_NONE;
+//                    } /* endif */
+//                    
+//                    if (jBlk == Input.NBlk_Jdir-1) {
+//                        BC_north = BC_MOVING_WALL;
+//                    } else {
+//                        BC_north = BC_NONE;
+//                    } /* endif */
+//                    if (jBlk == 0) {
+//                        BC_south = BC_NO_SLIP;
+//                    } else {
+//                        BC_south = BC_NONE;
+//                    } /* endif */
+//                    
+//                    if (kBlk == Input.NBlk_Kdir-1) {
+//                        BC_top = BC_CONSTANT_EXTRAPOLATION;
+//                    } else {
+//                        BC_top = BC_NONE;
+//                    } /* endif */
+//                    if (kBlk == 0) {
+//                        BC_bottom = BC_CONSTANT_EXTRAPOLATION;
+//                    } else {
+//                        BC_bottom = BC_NONE;
+//                    } /* endif */
+//                    
+//                } else if (Input.i_Grid == GRID_COUETTE_YDIR) {
+//                    
+//                    if (iBlk == Input.NBlk_Idir-1) {
+//                        BC_east = BC_CONSTANT_EXTRAPOLATION;
+//                    } else {
+//                        BC_east = BC_NONE;
+//                    } /* endif */
+//                    if (iBlk == 0) {
+//                        BC_west = BC_CONSTANT_EXTRAPOLATION;
+//                    } else {
+//                        BC_west = BC_NONE;
+//                    } /* endif */
+//                    
+//                    if (jBlk == Input.NBlk_Jdir-1) {
+//                        BC_north = BC_FIXED_PRESSURE;
+//                    } else {
+//                        BC_north = BC_NONE;
+//                    } /* endif */
+//                    if (jBlk == 0) {
+//                        BC_south = BC_FIXED_PRESSURE;
+//                    } else {
+//                        BC_south = BC_NONE;
+//                    } /* endif */
+//                    
+//                    if (kBlk == Input.NBlk_Kdir-1) {
+//                        BC_top = BC_MOVING_WALL;
+//                    } else {
+//                        BC_top = BC_NONE;
+//                    } /* endif */
+//                    if (kBlk == 0) {
+//                        BC_bottom = BC_NO_SLIP;
+//                    } else {
+//                        BC_bottom = BC_NONE;
+//                    } /* endif */
+//                } /* endif */
+//                
+//                Grid_Blks[iBlk][jBlk][kBlk].Set_BCs(BC_east, 
+//                                                    BC_west, 
+//                                                    BC_north, 
+//                                                    BC_south, 
+//                                                    BC_top, 
+//                                                    BC_bottom);
+//                
+//            } /* endfor */
+//        } /* endfor */
+//    } /* endfor */
+//    
+//    /* Deallocate 2D grid. */
+//    
+//    Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
+//                                                     Input.NBlk_Idir, 
+//                                                     Input.NBlk_Jdir);
+//    
+//}
+//
+///********************************************************
+// * Routine: Create_Grid_Pipe                            *
+// *                                                      *
+// * Generates a 3D multiblock mesh for pipe flows.       *
+// *                                                      *
+// ********************************************************/
+//void Grid3D_Hexa_Multi_Block::Create_Grid_Pipe(Reconstruct3D_Input_Parameters &Input) {
+//    
+//    int numblk_idir_pipe, numblk_jdir_pipe;
+//    Grid2D_Quad_Block **Grid2D_Pipe_XYplane;
+//    
+//    /* Allocate required memory. */
+//    
+//    Input.NBlk_Idir = 5;
+//    Input.NBlk_Jdir = 1;
+//    Input.NBlk_Kdir = 1;
+//    
+//    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+//    
+//    /* Creat 2D cross-section grids from which the 3D grid
+//     will be extruded. */
+//    
+//    Grid2D_Pipe_XYplane = Grid_Tube_2D(Grid2D_Pipe_XYplane,
+//                                       numblk_idir_pipe,
+//                                       numblk_jdir_pipe,
+//                                       Input.Pipe_Radius,
+//                                       Input.NCells_Idir,
+//                                       Input.NCells_Jdir,
+//                                       Input.Nghost,
+//                                       STRETCHING_FCN_MAX_CLUSTERING,
+//                                       1.00001);
+//    
+//    /* Create the mesh for each block representing
+//     the complete grid. */
+//    
+//    for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+//        
+//        /* Extrude each of the grid blocks from the
+//         appropriate 2D grid in XY-plane. */
+//        
+//        Grid_Blks[iBlk][0][0].Extrude(Grid2D_Pipe_XYplane[iBlk][0],
+//                                      Input.NCells_Kdir,
+//                                      Input.Stretching_Type_Kdir,
+//                                      Input.Stretching_Factor_Kdir,
+//                                      ZERO,
+//                                      Input.Pipe_Length);
+//        if (iBlk == 0) {
+//            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+//                                          BC_NONE,
+//                                          BC_NONE,
+//                                          BC_NONE,
+//                                          BC_FIXED_PRESSURE,
+//                                          BC_FIXED_PRESSURE);
+//        } else {
+//            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+//                                          BC_NONE,
+//                                          BC_NO_SLIP,
+//                                          BC_NONE,
+//                                          BC_FIXED_PRESSURE,
+//                                          BC_FIXED_PRESSURE);
+//        } /* endif */
+//        
+//    } /* endfor */
+//    
+//    /* Deallocate 2D grid. */
+//    
+//    Grid2D_Pipe_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Pipe_XYplane,
+//                                                      numblk_idir_pipe,
+//                                                      numblk_jdir_pipe);
+//    
+//}
+//
+///**********************************************************************
+// * Routine: Grid_Bump_Channel_Flow                                    *
+// *                                                                    *
+// * Generates a single block quadilateral mesh with clustering for     *
+// * predicting supersonic flow around a cirucular cylinder blunt body. *
+// *                                                                    *
+// **********************************************************************/
+//void Grid3D_Hexa_Multi_Block::Create_Grid_Bump_Channel_Flow(Reconstruct3D_Input_Parameters &Input) {
+//    
+//    Grid2D_Quad_Block **Grid2D_XYplane;
+//    int BC_top, BC_bottom;
+//    
+//    //Fixed at 4x2
+//    int Number_of_Blocks_Idir, Number_of_Blocks_Jdir;
+//    int Smooth_Bump = 0; //don't use smooth bump.
+//    
+//    /* Allocate required memory. */
+//    
+//    Input.NBlk_Idir = 4;
+//    Input.NBlk_Jdir = 2;
+//    Input.NBlk_Kdir = 1;
+//    
+//    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+//    
+//    /* Creat 2D cross-section grids from which the 3D grid
+//     will be extruded. */
+//    
+//    Grid2D_XYplane = Grid_Bump_Channel_Flow(Grid2D_XYplane,
+//                                            Number_of_Blocks_Idir,
+//                                            Number_of_Blocks_Jdir,
+//                                            Smooth_Bump,
+//                                            Input.NCells_Idir,
+//                                            Input.NCells_Jdir,
+//                                            Input.Nghost);
+//    
+//    /* Create the mesh for each block representing
+//     the complete grid. */
+//    
+//    for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+//        for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+//            for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+//                
+//                /* Extrude each of the grid blocks from the
+//                 appropriate 2D grid in XY-plane. */
+//                
+//                Grid_Blks[iBlk][jBlk][kBlk].Extrude(Grid2D_XYplane[iBlk][jBlk],
+//                                                    Input.NCells_Kdir,
+//                                                    Input.Stretching_Type_Kdir,
+//                                                    Input.Stretching_Factor_Kdir,			       
+//                                                    (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
+//                                                    (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
+//                
+//                /* Assign top and bottom boundary conditions. */
+//                
+//                if (kBlk == Input.NBlk_Kdir-1) {
+//                    BC_top = BC_REFLECTION;//BC_CONSTANT_EXTRAPOLATION;
+//                } else {
+//                    BC_top = BC_NONE;
+//                } /* endif */
+//                if (kBlk == 0) {
+//                    BC_bottom =BC_REFLECTION;// BC_CONSTANT_EXTRAPOLATION;
+//                } else {
+//                    BC_bottom = BC_NONE;
+//                } /* endif */
+//                
+//                Grid_Blks[iBlk][jBlk][kBlk].Set_BCs_Zdir(BC_top, BC_bottom);
+//                
+//            } 
+//        } 
+//    } 
+//    
+//    /* Deallocate 2D grid. */
+//    Grid2D_XYplane = Deallocate_Multi_Block_Grid(Grid2D_XYplane,
+//                                                 Number_of_Blocks_Idir,
+//                                                 Number_of_Blocks_Jdir);
+//    
+//}
+//
+///********************************************************
+// * Routine: Create_Grid_Bluff_Body_Burner               *
+// *                                                      *
+// * Generates a 3D multiblock mesh for TNF bluff body    *
+// * burner.                                              *
+// *                                                      *
+// ********************************************************/
+//void Grid3D_Hexa_Multi_Block::Create_Grid_Bluff_Body_Burner(Reconstruct3D_Input_Parameters &Input) {
+//    
+//    int numblk_idir_fuel, numblk_jdir_fuel,
+//    numblk_idir_bluffbody, numblk_jdir_bluffbody,
+//    numblk_idir_coflow, numblk_jdir_coflow;
+//    Grid2D_Quad_Block **Grid2D_Fuel_Line_XYplane,
+//    **Grid2D_Bluff_Body_Inner_XYplane,
+//    **Grid2D_Bluff_Body_Outer_XYplane,
+//    **Grid2D_Coflow_XYplane;
+//    
+//    /* Allocate required memory. */
+//    
+//    Input.NBlk_Idir = 42;
+//    Input.NBlk_Jdir = 1;
+//    Input.NBlk_Kdir = 1;
+//    
+//    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+//    
+//    /* Creat 2D cross-section grids from which the 3D grid
+//     will be extruded. */
+//    
+//    Grid2D_Fuel_Line_XYplane = Grid_Tube_2D(
+//                                            Grid2D_Fuel_Line_XYplane,
+//                                            numblk_idir_fuel,
+//                                            numblk_jdir_fuel,
+//                                            Input.Radius_Fuel_Line,
+//                                            Input.NCells_Idir,
+//                                            Input.NCells_Jdir,
+//                                            Input.Nghost,
+//                                            STRETCHING_FCN_MAX_CLUSTERING,
+//                                            1.25);
+//    
+//    Grid2D_Bluff_Body_Inner_XYplane = Grid_Annulus_2D(
+//                                                      Grid2D_Bluff_Body_Inner_XYplane,
+//                                                      numblk_idir_bluffbody,
+//                                                      numblk_jdir_bluffbody,
+//                                                      Input.Radius_Fuel_Line,
+//                                                      HALF*Input.Radius_Bluff_Body,
+//                                                      Input.NCells_Idir,
+//                                                      Input.NCells_Jdir,
+//                                                      Input.Nghost,
+//                                                      STRETCHING_FCN_MIN_CLUSTERING,
+//                                                      1.10);
+//    
+//    Grid2D_Bluff_Body_Outer_XYplane = Grid_Annulus_2D(
+//                                                      Grid2D_Bluff_Body_Outer_XYplane,
+//                                                      numblk_idir_bluffbody,
+//                                                      numblk_jdir_bluffbody,
+//                                                      HALF*Input.Radius_Bluff_Body,
+//                                                      Input.Radius_Bluff_Body,
+//                                                      Input.NCells_Idir,
+//                                                      Input.NCells_Jdir,
+//                                                      Input.Nghost,
+//                                                      STRETCHING_FCN_MAX_CLUSTERING,
+//                                                      1.10);
+//    
+//    Grid2D_Coflow_XYplane = Grid_Annulus_2D(
+//                                            Grid2D_Coflow_XYplane,
+//                                            numblk_idir_coflow,
+//                                            numblk_jdir_coflow,
+//                                            Input.Radius_Bluff_Body,
+//                                            Input.Radius_Coflow_Inlet_Pipe,
+//                                            Input.NCells_Idir,
+//                                            Input.NCells_Jdir,
+//                                            Input.Nghost,
+//                                            STRETCHING_FCN_MIN_CLUSTERING,
+//                                            1.10);
+//    
+//    /* Create the mesh for each block representing
+//     the complete grid. */
+//    
+//    for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+//        
+//        /* Extrude each of the grid blocks from the
+//         appropriate 2D grid in XY-plane. */
+//        
+//        if (iBlk <= 4) {
+//            Grid_Blks[iBlk][0][0].Extrude(
+//                                          Grid2D_Fuel_Line_XYplane[iBlk][0],
+//                                          Input.NCells_Kdir,
+//                                          STRETCHING_FCN_MIN_CLUSTERING,
+//                                          1.25,
+//                                          ZERO,
+//                                          0.25*Input.Length_Combustor_Tube);
+//            if (iBlk == 0) {
+//                Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+//                                              BC_NONE,
+//                                              BC_NONE,
+//                                              BC_NONE,
+//                                              BC_NONE,
+//                                              BC_DIRICHLET);
+//            } else {
+//                Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+//                                              BC_NONE,
+//                                              BC_NONE,
+//                                              BC_NONE,
+//                                              BC_NONE,
+//                                              BC_DIRICHLET);
+//            }  /* endif */
+//            
+//        } else if (iBlk >= 5 && iBlk <= 9) {
+//            Grid_Blks[iBlk][0][0].Extrude(
+//                                          Grid2D_Fuel_Line_XYplane[iBlk-5][0],
+//                                          Input.NCells_Kdir,
+//                                          STRETCHING_FCN_LINEAR,
+//                                          ZERO,
+//                                          0.25*Input.Length_Combustor_Tube,
+//                                          Input.Length_Combustor_Tube);
+//            if (iBlk-5 == 0) {
+//                Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+//                                              BC_NONE,
+//                                              BC_NONE,
+//                                              BC_NONE,
+//                                              BC_FIXED_PRESSURE,
+//                                              BC_NONE);
+//            } else {
+//                Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+//                                              BC_NONE,
+//                                              BC_NONE,
+//                                              BC_NONE,
+//                                              BC_FIXED_PRESSURE,
+//                                              BC_NONE);
+//            } /* endif */
+//            
+//        } else if (iBlk >= 10 && iBlk <= 13) {
+//            Grid_Blks[iBlk][0][0].Extrude(
+//                                          Grid2D_Bluff_Body_Inner_XYplane[iBlk-10][0],
+//                                          Input.NCells_Kdir,
+//                                          STRETCHING_FCN_MIN_CLUSTERING,
+//                                          1.25,
+//                                          ZERO,
+//                                          0.25*Input.Length_Combustor_Tube);
+//            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+//                                          BC_NONE,
+//                                          BC_NONE,
+//                                          BC_NONE,
+//                                          BC_NONE,
+//                                          BC_WALL_VISCOUS);
+//            
+//        } else if (iBlk >= 14 && iBlk <= 17) {
+//            Grid_Blks[iBlk][0][0].Extrude(
+//                                          Grid2D_Bluff_Body_Inner_XYplane[iBlk-14][0],
+//                                          Input.NCells_Kdir,
+//                                          STRETCHING_FCN_LINEAR,
+//                                          ZERO,
+//                                          0.25*Input.Length_Combustor_Tube,
+//                                          Input.Length_Combustor_Tube);
+//            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+//                                          BC_NONE,
+//                                          BC_NONE,
+//                                          BC_NONE,
+//                                          BC_FIXED_PRESSURE,
+//                                          BC_NONE);
+//            
+//        } else if (iBlk >= 18 && iBlk <= 21) {
+//            Grid_Blks[iBlk][0][0].Extrude(
+//                                          Grid2D_Bluff_Body_Outer_XYplane[iBlk-18][0],
+//                                          Input.NCells_Kdir,
+//                                          STRETCHING_FCN_MIN_CLUSTERING,
+//                                          1.25,
+//                                          ZERO,
+//                                          0.25*Input.Length_Combustor_Tube);
+//            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+//                                          BC_NONE,
+//                                          BC_NONE,
+//                                          BC_NONE,
+//                                          BC_NONE,
+//                                          BC_WALL_VISCOUS);
+//            
+//        } else if (iBlk >= 22 && iBlk <= 25) {
+//            Grid_Blks[iBlk][0][0].Extrude(
+//                                          Grid2D_Bluff_Body_Outer_XYplane[iBlk-22][0],
+//                                          Input.NCells_Kdir,
+//                                          STRETCHING_FCN_LINEAR,
+//                                          ONE,
+//                                          0.25*Input.Length_Combustor_Tube,
+//                                          Input.Length_Combustor_Tube);
+//            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+//                                          BC_NONE,
+//                                          BC_NONE,
+//                                          BC_NONE,
+//                                          BC_FIXED_PRESSURE,
+//                                          BC_NONE);
+//            
+//        } else if (iBlk >= 26 && iBlk <= 29) {
+//            Grid_Blks[iBlk][0][0].Extrude(
+//                                          Grid2D_Coflow_XYplane[iBlk-26][0],
+//                                          Input.NCells_Kdir,
+//                                          STRETCHING_FCN_MIN_CLUSTERING,
+//                                          1.25,
+//                                          ZERO,
+//                                          0.25*Input.Length_Combustor_Tube);
+//            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+//                                          BC_NONE,
+//                                          BC_REFLECTION,
+//                                          BC_NONE,
+//                                          BC_NONE,
+//                                          BC_NONE);
+//            
+//        } else if (iBlk >= 30 && iBlk <= 33) {
+//            Grid_Blks[iBlk][0][0].Extrude(
+//                                          Grid2D_Coflow_XYplane[iBlk-30][0],
+//                                          Input.NCells_Kdir,
+//                                          STRETCHING_FCN_LINEAR,
+//                                          ZERO,
+//                                          0.25*Input.Length_Combustor_Tube,
+//                                          Input.Length_Combustor_Tube);
+//            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+//                                          BC_NONE,
+//                                          BC_REFLECTION,
+//                                          BC_NONE,
+//                                          BC_FIXED_PRESSURE,
+//                                          BC_NONE);
+//            
+//        } else if (iBlk >= 34 && iBlk <= 37) {
+//            Grid_Blks[iBlk][0][0].Extrude(
+//                                          Grid2D_Coflow_XYplane[iBlk-34][0],
+//                                          Input.NCells_Kdir,
+//                                          STRETCHING_FCN_MAX_CLUSTERING,
+//                                          1.25,
+//                                          -0.25*Input.Length_Coflow_Inlet_Pipe,
+//                                          ZERO);
+//            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+//                                          BC_NONE,
+//                                          BC_REFLECTION,
+//                                          BC_WALL_VISCOUS,
+//                                          BC_NONE,
+//                                          BC_NONE);
+//            
+//        } else if (iBlk >= 38 && iBlk <= 41) {
+//            Grid_Blks[iBlk][0][0].Extrude(
+//                                          Grid2D_Coflow_XYplane[iBlk-38][0],
+//                                          Input.NCells_Kdir,
+//                                          STRETCHING_FCN_LINEAR,
+//                                          ONE,
+//                                          -Input.Length_Coflow_Inlet_Pipe,
+//                                          -0.25*Input.Length_Coflow_Inlet_Pipe);
+//            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
+//                                          BC_NONE,
+//                                          BC_REFLECTION,
+//                                          BC_WALL_VISCOUS,
+//                                          BC_DIRICHLET,
+//                                          BC_NONE);
+//            
+//        } /* endif */
+//        
+//    } /* endfor */
+//    
+//    /* Deallocate 2D grids. */
+//    
+//    Grid2D_Fuel_Line_XYplane = Deallocate_Multi_Block_Grid(
+//                                                           Grid2D_Fuel_Line_XYplane,
+//                                                           numblk_idir_fuel,
+//                                                           numblk_jdir_fuel);
+//    
+//    Grid2D_Bluff_Body_Inner_XYplane = Deallocate_Multi_Block_Grid(
+//                                                                  Grid2D_Bluff_Body_Inner_XYplane,
+//                                                                  numblk_idir_bluffbody,
+//                                                                  numblk_jdir_bluffbody);
+//    
+//    Grid2D_Bluff_Body_Outer_XYplane = Deallocate_Multi_Block_Grid(
+//                                                                  Grid2D_Bluff_Body_Outer_XYplane,
+//                                                                  numblk_idir_bluffbody,
+//                                                                  numblk_jdir_bluffbody);
+//    
+//    Grid2D_Coflow_XYplane = Deallocate_Multi_Block_Grid(
+//                                                        Grid2D_Coflow_XYplane,
+//                                                        numblk_idir_coflow,
+//                                                        numblk_jdir_coflow);
+//    
+//}
+//
+///********************************************************
+// * Routine: Create_Grid_ICEMCFD                         *
+// *                                                      *
+// * Read ICEMCFD Mesh                                    *
+// *                                                      *
+// ********************************************************/
+//void Grid3D_Hexa_Multi_Block::Create_Grid_ICEMCFD(Reconstruct3D_Input_Parameters &Input) {
+//    
+//    if (Allocated) Deallocate();
+//    
+//    Grid_Blks = Grid_ICEMCFD(Grid_Blks, 
+//                             Input.ICEMCFD_FileNames, 
+//                             NBlk_Idir, 
+//                             NBlk_Jdir, 
+//                             NBlk_Kdir);
+//    
+//    int found = 0;
+//    for (int kBlk = 0; kBlk <= NBlk_Kdir-1 && !found; ++kBlk) {
+//        for (int jBlk = 0; jBlk <= NBlk_Jdir-1 && !found; ++jBlk) {
+//            for (int iBlk = 0; iBlk <= NBlk_Idir-1 && !found; ++iBlk) {
+//                if (Grid_Blks[iBlk][jBlk][kBlk].Allocated) {
+//                    Input.NCells_Idir = Grid_Blks[iBlk][jBlk][kBlk].NCi-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;
+//                    Input.NCells_Jdir = Grid_Blks[iBlk][jBlk][kBlk].NCj-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;
+//                    Input.NCells_Kdir = Grid_Blks[iBlk][jBlk][kBlk].NCk-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;
+//                    found = 1;
+//                }/* endif */   
+//            } /* endfor */
+//        } /* endfor */
+//    } /* endfor */
+//    
+//    Input.NBlk_Idir = NBlk_Idir; 
+//    Input.NBlk_Jdir = NBlk_Jdir; 
+//    Input.NBlk_Kdir = NBlk_Kdir;
+//    
+//    assert(NBlk_Idir >= 1 && NBlk_Jdir >= 1 && NBlk_Kdir >= 1); 
+//    Allocated = 1;
+//    
+//}         

@@ -155,7 +155,7 @@ Lucian's stuff
 #define GRID_RINGLEB_FLOW                    16
 #define GRID_BUMP_CHANNEL_FLOW               17
 
-#define GRID_CUBE                            23
+
 
 /**************************
 Lucian's stuff
@@ -164,6 +164,41 @@ Lucian's stuff
 #define GRID_NONUNIFORM                    21
 #define GRID_PREDEFINED1                   22
 #define GRID_PREDEFINED2                   23
+
+/**************************
+Lucian's stuff
+**************************/
+
+
+#define GRID_ICEMCFD                       1000
+#define GRID_READ_FROM_DEFINITION_FILE    10000
+#define GRID_READ_FROM_GRID_DATA_FILE     10001
+
+#define GRID_COUETTE                         50
+#define GRID_1DFLAME                         51
+#define GRID_LAMINAR_FLAME                   52
+
+/**************************
+3D stuff
+**************************/
+
+#define GRID_CUBE                           223
+#define GRID_CHANNEL                         24
+#define GRID_CHANNEL_ZDIR          GRID_CHANNEL
+#define GRID_CHANNEL_XDIR                    25
+#define GRID_CHANNEL_YDIR                    26
+// #define GRID_COUETTE               see above
+#define GRID_COUETTE_ZDIR          GRID_COUETTE
+#define GRID_COUETTE_XDIR                    28
+#define GRID_COUETTE_YDIR                    29
+#define GRID_BLUFF_BODY_BURNER               30
+#define GRID_PERIODIC_BOX                    31
+#define GRID_PERIODIC_BOX_WITH_INFLOW        32
+#define GRID_BUNSEN_BURNER                   33
+#define GRID_BUNSEN_BOX                      34
+#define GRID_BUNSEN_INFLOW                   35
+#define GRID_TURBULENCE_BOX                  36
+
 
 /********************************************************
  * Method for solving the least squares problem         *
@@ -194,18 +229,6 @@ Lucian's stuff
 #define DD_ENO                             14
 #define SpectralDiff                       15
 #define CENO                               16
-/**************************
-Lucian's stuff
-**************************/
-
-
-#define GRID_ICEMCFD                       1000
-#define GRID_READ_FROM_DEFINITION_FILE    10000
-#define GRID_READ_FROM_GRID_DATA_FILE     10001
-
-#define GRID_COUETTE                         50
-#define GRID_1DFLAME                         51
-#define GRID_LAMINAR_FLAME                   52
 
 /********************************************************
  * CFD -- Boundary Condition Types.                     *
