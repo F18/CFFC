@@ -147,17 +147,17 @@ ostream &operator << (ostream &out_file,
 	     << IP.Beta_I << " " << IP.Beta_J << " " << IP.Tau_I << " " << IP.Tau_J;
     out_file << "\n  -> Number of iteration for unsmoothing the mesh: " << IP.NumOfIter_UnsmoothMesh;
     out_file << "\n  -> Number of Blocks i-direction: "
-             << IP.Number_of_Blocks_Idir;
+             << IP.NBlk_Idir;
     out_file << "\n  -> Number of Blocks j-direction: " 
-             << IP.Number_of_Blocks_Jdir;
+             << IP.NBlk_Jdir;
     out_file << "\n  -> Number of Cells i-direction: "
-             << IP.Number_of_Cells_Idir;
+             << IP.NCells_Idir;
     out_file << "\n  -> Number of Cells j-direction: " 
-             << IP.Number_of_Cells_Jdir;
+             << IP.NCells_Jdir;
     out_file << "\n  -> Number of SubGrid Points in X-dir: "
-	     << IP.Number_of_SubGrid_Points_Idir;
+	     << IP.NSubGrid_Points_Idir;
     out_file << "\n  -> Number of SubGrid Points in Y-dir: "
-	     << IP.Number_of_SubGrid_Points_Jdir;
+	     << IP.NSubGrid_Points_Jdir;
     out_file << "\n  -> Output File Name: " 
              << IP.Output_File_Name;
 
@@ -243,13 +243,19 @@ void Set_Default_Input_Parameters(Reconstruct3D_Input_Parameters &IP) {
     IP.Box_Width = ONE;
     IP.Box_Height = ONE;
     IP.Box_Length = ONE;
-    IP.Number_of_Cells_Idir = 10;
-    IP.Number_of_Cells_Jdir = 10;
-    IP.Number_of_Cells_Kdir = 10;
-    IP.Number_of_Blocks_Idir = 1;
-    IP.Number_of_Blocks_Jdir = 1;
-    IP.Number_of_Blocks_Kdir = 1;
-    IP.Number_of_Ghost_Cells = 2;
+    IP.NCells_Idir = 10;
+    IP.NCells_Jdir = 10;
+    IP.NCells_Kdir = 10;
+    IP.NBlk_Idir = 1;
+    IP.NBlk_Jdir = 1;
+    IP.NBlk_Kdir = 1;
+    IP.Nghost = 2;
+    IP.Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
+    IP.Stretching_Type_Jdir = STRETCHING_FCN_LINEAR;
+    IP.Stretching_Type_Kdir = STRETCHING_FCN_LINEAR;
+    IP.Stretching_Factor_Idir = 1.10;
+    IP.Stretching_Factor_Jdir = 1.10;
+    IP.Stretching_Factor_Kdir = 1.10;
         
     IP.Plate_Length = ONE;
     IP.Pipe_Length = ONE;
@@ -290,9 +296,9 @@ void Set_Default_Input_Parameters(Reconstruct3D_Input_Parameters &IP) {
     IP.NumOfIter_UnsmoothMesh = 0;
 
 
-    IP.Number_of_SubGrid_Points_Idir = 5;
-    IP.Number_of_SubGrid_Points_Jdir = 5;
-    IP.Number_of_SubGrid_Points_Kdir = 5;
+    IP.NSubGrid_Points_Idir = 5;
+    IP.NSubGrid_Points_Jdir = 5;
+    IP.NSubGrid_Points_Kdir = 5;
 
     strcpy(IP.Output_File_Name, "outputfile.dat");
 
@@ -422,7 +428,7 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
 	} // endif
 
 	// Set the required number of Ghost cells
-	IP.Number_of_Ghost_Cells = 5;
+	IP.Nghost = 5;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Grid_Type") == 0) {
        i_command = 3;
@@ -514,44 +520,44 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Cells_Idir") == 0) {
        i_command = 4;
        ++IP.Line_Number;
-       IP.Input_File >> IP.Number_of_Cells_Idir;
+       IP.Input_File >> IP.NCells_Idir;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Number_of_Cells_Idir < 1) i_command = INVALID_INPUT_VALUE;
+       if (IP.NCells_Idir < 1) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Cells_Jdir") == 0) {
        i_command = 5;
        ++IP.Line_Number;
-       IP.Input_File >> IP.Number_of_Cells_Jdir;
+       IP.Input_File >> IP.NCells_Jdir;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Number_of_Cells_Jdir < 1) i_command = INVALID_INPUT_VALUE;
+       if (IP.NCells_Jdir < 1) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Cells_Kdir") == 0) {
        i_command = 5;
        ++IP.Line_Number;
-       IP.Input_File >> IP.Number_of_Cells_Kdir;
+       IP.Input_File >> IP.NCells_Kdir;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Number_of_Cells_Kdir < 1) i_command = INVALID_INPUT_VALUE;
+       if (IP.NCells_Kdir < 1) i_command = INVALID_INPUT_VALUE;
 
     }else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Idir") == 0) {
        i_command = 6;
        ++IP.Line_Number;
-       IP.Input_File >> IP.Number_of_Blocks_Idir;
+       IP.Input_File >> IP.NBlk_Idir;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Number_of_Blocks_Idir < 1) i_command = INVALID_INPUT_VALUE;
+       if (IP.NBlk_Idir < 1) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Jdir") == 0) {
        i_command = 7;
        ++IP.Line_Number;
-       IP.Input_File >> IP.Number_of_Blocks_Jdir;
+       IP.Input_File >> IP.NBlk_Jdir;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Number_of_Blocks_Jdir < 1) i_command = INVALID_INPUT_VALUE;
+       if (IP.NBlk_Jdir < 1) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Kdir") == 0) {
        i_command = 7;
        ++IP.Line_Number;
-       IP.Input_File >> IP.Number_of_Blocks_Kdir;
+       IP.Input_File >> IP.NBlk_Kdir;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Number_of_Blocks_Kdir < 1) i_command = INVALID_INPUT_VALUE;
+       if (IP.NBlk_Kdir < 1) i_command = INVALID_INPUT_VALUE;
 
     }else if (strcmp(IP.Next_Control_Parameter, "Box_Width") == 0) {
        i_command = 8;
@@ -739,24 +745,24 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Subgrid_Points_Idir") == 0){
       i_command = 31;
       ++IP.Line_Number;
-      if ((IP.Input_File >> IP.Number_of_SubGrid_Points_Idir) == 0 ||
-	  (IP.Number_of_SubGrid_Points_Idir < 1))
+      if ((IP.Input_File >> IP.NSubGrid_Points_Idir) == 0 ||
+	  (IP.NSubGrid_Points_Idir < 1))
 	i_command = INVALID_INPUT_VALUE;
       IP.Input_File.getline(buffer, sizeof(buffer));
 
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Subgrid_Points_Jdir") == 0){
       i_command = 32;
       ++IP.Line_Number;
-      if ((IP.Input_File >> IP.Number_of_SubGrid_Points_Jdir) == 0 ||
-	  (IP.Number_of_SubGrid_Points_Jdir < 1))
+      if ((IP.Input_File >> IP.NSubGrid_Points_Jdir) == 0 ||
+	  (IP.NSubGrid_Points_Jdir < 1))
 	i_command = INVALID_INPUT_VALUE;
       IP.Input_File.getline(buffer, sizeof(buffer));
 
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Subgrid_Points_Kdir") == 0){
       i_command = 32;
       ++IP.Line_Number;
-      if ((IP.Input_File >> IP.Number_of_SubGrid_Points_Kdir) == 0 ||
-	  (IP.Number_of_SubGrid_Points_Kdir < 1))
+      if ((IP.Input_File >> IP.NSubGrid_Points_Kdir) == 0 ||
+	  (IP.NSubGrid_Points_Kdir < 1))
 	i_command = INVALID_INPUT_VALUE;
       IP.Input_File.getline(buffer, sizeof(buffer));
 
@@ -897,9 +903,40 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
        } else if (strcmp(IP.Limiter_Type, "Venkatakrishnan") == 0) {
           IP.i_Limiter = LIMITER_VENKATAKRISHNAN;
        } else {
-          IP.i_Limiter = LIMITER_VANLEER ;
+          IP.i_Limiter = LIMITER_VANLEER;
        } /* endif */
 
+    // } else if (strcmp(code, "Stretching_Factor_Idir") == 0) {
+    //  i_command = 3010;
+    //  value >> Stretching_Factor_Idir;
+    //  if (Stretching_Factor_Idir < ZERO) i_command = INVALID_INPUT_VALUE;
+    //  
+    //} else if (strcmp(code, "Stretching_Factor_Jdir") == 0) {
+    //  i_command = 3011;
+    //  value >> Stretching_Factor_Jdir;
+    //  if (Stretching_Factor_Jdir < ZERO) i_command = INVALID_INPUT_VALUE;
+    //  
+    //} else if (strcmp(code, "Stretching_Factor_Kdir") == 0) {
+    //  i_command = 3012;
+    //  value >> Stretching_Factor_Kdir;
+    //  if (Stretching_Factor_Kdir < ZERO) i_command = INVALID_INPUT_VALUE;
+    //  
+    //} else if (strcmp(code, "Stretching_Type_Idir") == 0) {
+    //  i_command = 3013;
+    //  value >> Stretching_Type_Idir;
+    //  if (Stretching_Type_Idir < 0) i_command = INVALID_INPUT_VALUE;
+    //  
+    //} else if (strcmp(code, "Stretching_Type_Jdir") == 0) {
+    //  i_command = 3014;
+    //  value >> Stretching_Type_Jdir;
+    //  if (Stretching_Type_Jdir < 0) i_command = INVALID_INPUT_VALUE;
+    //  
+    //} else if (strcmp(code, "Stretching_Type_Kdir") == 0) {
+    //  i_command = 3015;
+    //  value >> Stretching_Type_Kdir;
+    //  if (Stretching_Type_Kdir < 0) i_command = INVALID_INPUT_VALUE;
+      
+      
     } else if (strcmp(IP.Next_Control_Parameter, "Stretch_I") == 0) {
        i_command = 45;
        Get_Next_Input_Control_Parameter(IP);
@@ -969,7 +1006,7 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
        	 IP.Stretch_K = STRETCHING_FCN_LINEAR;
        }
 
-    }else if (strcmp(IP.Next_Control_Parameter, "Beta_I") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter, "Beta_I") == 0) {
        i_command = 46;
        ++IP.Line_Number;
        IP.Input_File >> IP.Beta_I;

@@ -65,9 +65,9 @@ class Reconstruct3D_Input_Parameters{
   char NACA_Aerofoil_Type[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D];
   int i_Grid;
   char CellNumber_or_DeltaCell[2];
-  int  Number_of_Cells_Idir, Number_of_Cells_Jdir, Number_of_Cells_Kdir,
-       Number_of_Blocks_Idir, Number_of_Blocks_Jdir, Number_of_Blocks_Kdir;
-  int Number_of_Ghost_Cells;
+  int  NCells_Idir, NCells_Jdir, NCells_Kdir,
+       NBlk_Idir, NBlk_Jdir, NBlk_Kdir;
+  int Nghost;
   double Delta_X_Cell;
   double Delta_Y_Cell;
   double Delta_Z_Cell;
@@ -86,20 +86,23 @@ class Reconstruct3D_Input_Parameters{
   char Stretching_Function_I[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D]; /* Grid stretching function */
   char Stretching_Function_J[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D]; /* Grid stretching function */
   char Stretching_Function_K[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D]; /* Grid stretching function */
-  int Stretch_I, Stretch_J, Stretch_K;	
+  int Stretch_I, Stretch_J, Stretch_K;
   double Beta_I, Beta_J, Beta_K, Tau_I, Tau_J, Tau_K; /* Grid stretching parameters */
   int NumOfIter_UnsmoothMesh;
   double CharacteristicLength;
   double CutoffKnobHighOrderReconstruction;
   double CENO_Cutoff;
 
+  int Stretching_Type_Idir, Stretching_Type_Jdir, Stretching_Type_Kdir;
+  double Stretching_Factor_Idir, Stretching_Factor_Jdir, Stretching_Factor_Kdir;
+
   char **ICEMCFD_FileNames;
 
   //Subgrid parameters 
   char SubGridPoints_or_DeltaSubGrid[2];
-  int  Number_of_SubGrid_Points_Idir;
-  int  Number_of_SubGrid_Points_Jdir;
-  int  Number_of_SubGrid_Points_Kdir;
+  int  NSubGrid_Points_Idir;
+  int  NSubGrid_Points_Jdir;
+  int  NSubGrid_Points_Kdir;
   double Delta_X_of_SubGrid;
   double Delta_Y_of_SubGrid;
   double Delta_Z_of_SubGrid;
@@ -130,15 +133,15 @@ class Reconstruct3D_Input_Parameters{
   int i_Output_Format;
 
   // Access functions
-  const int & NumSubGridI(void) const { return Number_of_SubGrid_Points_Idir; }
-  const int & NumSubGridJ(void) const { return Number_of_SubGrid_Points_Jdir; }
-  const int & NumSubGridK(void) const { return Number_of_SubGrid_Points_Kdir; }
+  const int & NumSubGridI(void) const { return NSubGrid_Points_Idir; }
+  const int & NumSubGridJ(void) const { return NSubGrid_Points_Jdir; }
+  const int & NumSubGridK(void) const { return NSubGrid_Points_Kdir; }
   const int & RecOrder(void) const { return Reconstruction_Order; }
-  const int & iCell(void) const { return Number_of_Cells_Idir;}
-  const int & jCell(void) const { return Number_of_Cells_Jdir;}
-  const int & kCell(void) const { return Number_of_Cells_Kdir;}
+  const int & iCell(void) const { return NCells_Idir;}
+  const int & jCell(void) const { return NCells_Jdir;}
+  const int & kCell(void) const { return NCells_Kdir;}
   //int kCell(void) const { return 0;}
-  const int & Nghost(void) const { return Number_of_Ghost_Cells;}
+  //const int & Nghost(void) const { return Nghost;}
   const TestFunction3D & TestFunction(void) const {return TestF;}
   double & CutoffKnob(void) { return CutoffKnobHighOrderReconstruction; }
   const double & CutoffKnob(void) const { return CutoffKnobHighOrderReconstruction; }

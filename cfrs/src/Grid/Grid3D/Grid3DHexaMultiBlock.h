@@ -295,27 +295,27 @@ class Grid3D_Hexa_Multi_Block {
 
     void Create_Grid_Cube(Reconstruct3D_Input_Parameters &Input);
 
-    void Create_Grid_Channel(Reconstruct3D_Input_Parameters &Input);
-    
-    void Create_Grid_Flat_Plate(Reconstruct3D_Input_Parameters &Input);
-
-    void Create_Grid_Couette(Reconstruct3D_Input_Parameters &Input);
-
-    void Create_Grid_Pipe(Reconstruct3D_Input_Parameters &Input);
-
-    void Create_Grid_Bump_Channel_Flow(Reconstruct3D_Input_Parameters &Input);
-
-    void Create_Grid_Bluff_Body_Burner(Reconstruct3D_Input_Parameters &Input);
-
-    void Create_Grid_Turbulence_Box(Reconstruct3D_Input_Parameters &Input);
-
-    void Create_Grid_Bunsen_Inflow(Reconstruct3D_Input_Parameters &Input);
-
-    void Create_Grid_Bunsen_Burner(Reconstruct3D_Input_Parameters &Input);
-
-    void Create_Grid_Bunsen_Box(Reconstruct3D_Input_Parameters &Input);
-
-    void Create_Grid_ICEMCFD(Reconstruct3D_Input_Parameters &Input);
+//    void Create_Grid_Channel(Reconstruct3D_Input_Parameters &Input);
+//    
+//    void Create_Grid_Flat_Plate(Reconstruct3D_Input_Parameters &Input);
+//
+//    void Create_Grid_Couette(Reconstruct3D_Input_Parameters &Input);
+//
+//    void Create_Grid_Pipe(Reconstruct3D_Input_Parameters &Input);
+//
+//    void Create_Grid_Bump_Channel_Flow(Reconstruct3D_Input_Parameters &Input);
+//
+//    void Create_Grid_Bluff_Body_Burner(Reconstruct3D_Input_Parameters &Input);
+//
+//    void Create_Grid_Turbulence_Box(Reconstruct3D_Input_Parameters &Input);
+//
+//    void Create_Grid_Bunsen_Inflow(Reconstruct3D_Input_Parameters &Input);
+//
+//    void Create_Grid_Bunsen_Burner(Reconstruct3D_Input_Parameters &Input);
+//
+//    void Create_Grid_Bunsen_Box(Reconstruct3D_Input_Parameters &Input);
+//
+//    void Create_Grid_ICEMCFD(Reconstruct3D_Input_Parameters &Input);
 
   private:
     //copy and assignment are not permitted
