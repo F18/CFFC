@@ -263,21 +263,17 @@ template <typename Soln_pState, typename Soln_cState>
 RowVector Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FilterVariable(int i, int j, int k) {
     Asserts();
     switch (adaptor_type) {
-        case SOLN_PSTATE_DOUBLE :
-        {
+        case SOLN_PSTATE_DOUBLE : {
             RowVector temp(1);
-            double var = Soln_Blk_ptr->W[i][j][k].*Soln_pState_member_ptr;
             temp(0) = Soln_Blk_ptr->W[i][j][k].*Soln_pState_member_ptr;
             return temp;
         }
-        case SOLN_CSTATE_DOUBLE :
-        {
+        case SOLN_CSTATE_DOUBLE : {
             RowVector temp(1);
             temp(0) = Soln_Blk_ptr->U[i][j][k].*Soln_cState_member_ptr;
             return temp;
         }
-        case SOLN_PSTATE_3D:
-        {
+        case SOLN_PSTATE_3D: {
             int numvar = Soln_Blk_ptr->NumVar();
             RowVector temp(numvar);
             for (int n=0; n<numvar; n++) {
@@ -285,8 +281,7 @@ RowVector Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FilterVariable(int i
             }
             return temp;
         }
-        case SOLN_CSTATE_3D:
-        {
+        case SOLN_CSTATE_3D: {
             int numvar = Soln_Blk_ptr->NumVar();
             RowVector temp(numvar);
             for (int n=0; n<numvar; n++) {
@@ -294,8 +289,7 @@ RowVector Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FilterVariable(int i
             }
             return temp;
         }
-        case SOLN_CSTATE_4D:
-        {
+        case SOLN_CSTATE_4D: {
             int numvar = Soln_Blk_ptr->NumVar();
             RowVector temp(numvar);
             for (int n=0; n<numvar; n++) {
@@ -303,14 +297,12 @@ RowVector Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FilterVariable(int i
             }
             return temp;
         }
-        case FILTER_STATE_DOUBLE:
-        {
+        case FILTER_STATE_DOUBLE: {
             RowVector temp(1);
             temp(0) = Filter_State_Blk_ptr[nBlk][i][j][k].member;
             return temp;
         }
-        case FILTER_DOUBLE:
-        {
+        case FILTER_DOUBLE: {
             RowVector temp(1);
             temp(0) = Filter_double_Blk_ptr[nBlk][i][j][k];
             return temp;
@@ -376,7 +368,6 @@ void Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrixRow(DenseMatrix
     Asserts();
     switch (adaptor_type) {
         case SOLN_PSTATE_DOUBLE :
-            double var = Soln_Blk_ptr->W[i][j][k].*Soln_pState_member_ptr;
             matrix(row_index,0) = Soln_Blk_ptr->W[i][j][k].*Soln_pState_member_ptr;
             break;
         case SOLN_CSTATE_DOUBLE :
