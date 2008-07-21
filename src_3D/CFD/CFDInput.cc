@@ -218,9 +218,10 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
     } else if (strcmp(code, "Output_File_Name") == 0) {
        i_command = 10;
        value_stream >> value_string;
-       strcpy(Output_File_Name, value_string.c_str());
+       strcpy(Output_File_Name_Prefix, value_string.c_str());
+       strcpy(Output_File_Name, Output_File_Name_Prefix);
        strcat(Output_File_Name, ".dat");
-       strcpy(Restart_File_Name, value_string.c_str());
+       strcpy(Restart_File_Name, Output_File_Name_Prefix);
        strcat(Restart_File_Name, ".soln");
       
     } else if (strcmp(code, "Restart_File_Name") == 0) {
@@ -976,6 +977,9 @@ void CFD_Input_Parameters::Broadcast(void) {
 
     // Output parameters:
     MPI::COMM_WORLD.Bcast(Output_File_Name,
+                          INPUT_PARAMETER_LENGTH,
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(Output_File_Name_Prefix,
                           INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(Restart_File_Name,

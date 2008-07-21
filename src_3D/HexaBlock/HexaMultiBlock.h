@@ -17,9 +17,8 @@
 #include "../AMR/AdaptiveBlock3D.h"
 #endif //_ADAPTIVEBLOCK3D_INCLUDED
 
-
-template <typename Soln_pState, typename Soln_cState>
-class LES_Filter;
+template<typename Soln_pState, typename Soln_cState>
+class Explicit_Filters;
 
 // A local list of solution blocks on a given processor.
 template<class HEXA_BLOCK> 
@@ -181,7 +180,7 @@ class Hexa_Multi_Block {
                                            const int I_Stage);
     
     
-    int Explicitly_Filter_Initial_Condition(LES_Filter<typename HEXA_BLOCK::Soln_pState, typename HEXA_BLOCK::Soln_cState> &Explicit_Filter);
+    int Explicitly_Filter_Initial_Condition(Explicit_Filters<typename HEXA_BLOCK::Soln_pState, typename HEXA_BLOCK::Soln_cState> &Explicit_Filter, int batch_flag);
     
     
 };
@@ -1390,14 +1389,14 @@ Output_Nodes_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
  ********************************************************/
 template<class HEXA_BLOCK>
 int Hexa_Multi_Block<HEXA_BLOCK>::
-Explicitly_Filter_Initial_Condition(LES_Filter<typename HEXA_BLOCK::Soln_pState,typename HEXA_BLOCK::Soln_cState> &Explicit_Filter) {
+Explicitly_Filter_Initial_Condition(Explicit_Filters<typename HEXA_BLOCK::Soln_pState,typename HEXA_BLOCK::Soln_cState> &Explicit_Filter, int batch_flag) {
     
     int error_flag(0);
     
     Soln_cState *** (Hexa_Block<Soln_pState,Soln_cState>::*U_ptr) = &Hexa_Block<Soln_pState,Soln_cState>::U;
     double Soln_pState::*p_ptr = p_ptr = &Soln_pState::p; 
 
-    if (CFFC_Primary_MPI_Processor()) {
+    if (CFFC_Primary_MPI_Processor() && !batch_flag) {
         cout << endl;
         cout << " ------------------------------------------------" << endl;
         cout << "    Explicitly filtering the initial condition   " << endl;
@@ -1406,6 +1405,7 @@ Explicitly_Filter_Initial_Condition(LES_Filter<typename HEXA_BLOCK::Soln_pState,
     
     Explicit_Filter.filter(U_ptr);
     for (int nBlk = 0; nBlk < Number_of_Soln_Blks; ++nBlk) {
+        cout.flush();
         if (Block_Used[nBlk]) {
             for (int k  = Soln_Blks[nBlk].KCl-Soln_Blks[nBlk].Nghost ; k <= Soln_Blks[nBlk].KCu+Soln_Blks[nBlk].Nghost ; ++k ) {
                 for ( int j  = Soln_Blks[nBlk].JCl-Soln_Blks[nBlk].Nghost ; j <= Soln_Blks[nBlk].JCu+Soln_Blks[nBlk].Nghost ; ++j ) {
@@ -1415,8 +1415,9 @@ Explicitly_Filter_Initial_Condition(LES_Filter<typename HEXA_BLOCK::Soln_pState,
                 }
             }
         }
+        cout << endl;
     }
-    
+
     Explicit_Filter.filter(p_ptr);    
     for (int nBlk = 0; nBlk < Number_of_Soln_Blks; ++nBlk) {
         if (Block_Used[nBlk]) {
@@ -1431,7 +1432,7 @@ Explicitly_Filter_Initial_Condition(LES_Filter<typename HEXA_BLOCK::Soln_pState,
     }
 
 
-   if (CFFC_Primary_MPI_Processor()) {
+   if (CFFC_Primary_MPI_Processor() && !batch_flag) {
         cout << "    Finished explicitly filtering the initial condition" << endl;
     }
             

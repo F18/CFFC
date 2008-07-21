@@ -90,6 +90,7 @@ class CFD_Input_Parameters{
   //@{ @name Output parameters:
   //! Output file name
   char Output_File_Name[INPUT_PARAMETER_LENGTH];
+  char Output_File_Name_Prefix[INPUT_PARAMETER_LENGTH];
   //! Restart file name
   char Restart_File_Name[INPUT_PARAMETER_LENGTH];
   //! Output format type indicator
@@ -220,6 +221,7 @@ class CFD_Input_Parameters{
     strcpy(Next_Control_Parameter, " ");
     // Output parameters:
     strcpy(Output_File_Name, "outputfile.dat");
+    strcpy(Output_File_Name, "outputfile");
     strcpy(Restart_File_Name, "restartfile.soln");
     strcpy(Output_Format_Type, "Tecplot");
     i_Output_Format = IO_TECPLOT;

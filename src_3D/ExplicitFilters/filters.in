@@ -1,0 +1,176 @@
+##############################
+#    Solver parameters       #
+##############################
+ICs_Type = 
+Radial_Cosine
+Reconstruction_Type =
+Least_Squares
+Limiter_Type = 
+One
+Flux_Function_Type =
+AUSM_plus_up
+Pressure =
+0.1
+#Flow_Type =
+#Turbulent-LES
+Progress_Mode =
+Terminal
+##############################
+#       LES parameters       #
+##############################
+SFS_model = 
+Smagorinsky
+Smagorinsky_Coefficient = 
+0.18
+##############################
+#     Filter parameters      #
+##############################
+Filter_Type =
+#Implicit
+Vasilyev
+#Vasilyev_LS
+#Haselbacher
+#Restart
+Filter_Grid_Ratio =
+2.0
+Target_Filter_Sharpness = 
+1.0
+Filter_Initial_Condition =
+OFF
+Commutation_Order =
+2
+Number_of_Rings =
+2
+Filter_Memory_Efficient =
+OFF
+###################
+#     Spectrum parameters    #
+##############################
+Spectrum_Model =
+Uniform
+#Pope
+#Haworth_Poinsot
+#Laval_Nazarenko
+Domain_Integral_Lengthscale_Ratio = 
+#3.2
+5
+Turbulent_Kinetic_Energy =
+1
+Rescale_Spectrum_Before_Execution = 
+OFF
+##############################
+#       Grid parameters      #
+##############################
+Grid_Type =
+Periodic_Box
+Number_of_Ghost_Cells =
+2
+Number_of_Cells_Idir = 
+16
+Number_of_Cells_Jdir =
+16
+Number_of_Cells_Kdir =
+16
+Number_of_Blocks_Idir = 
+1
+Number_of_Blocks_Jdir =
+1
+Number_of_Blocks_Kdir =
+1
+Box_Width = 
+#20.37
+#0.0366
+6.28
+#3.14
+#16
+Box_Height =
+#20.37
+#0.0366
+6.28
+#3.14
+#16
+Box_Length = 
+#20.37
+#0.0366
+6.28
+#3.14
+#16
+Mesh_Stretching =
+OFF
+Stretching_Factor_Idir = 
+1.1
+Stretching_Factor_Jdir = 
+1.1
+Stretching_Factor_Kdir = 
+1.1
+Stretching_Type_Idir = 
+3
+Stretching_Type_Jdir = 
+3
+Stretching_Type_Kdir = 
+3
+Disturb_Interior_Nodes =
+10
+###################################
+#   Time stepping parameters      #
+###################################
+Time_Integration_Type =
+Explicit_Runge_Kutta
+#Explicit_Euler
+N_Stage =
+2
+Time_Accurate = 
+ON
+Local_Time_Stepping =
+0
+CFL_Number =
+0.1
+Time_Max = 
+0
+Maximum_Number_of_Time_Steps =
+0
+Number_of_Blocks_Per_Processor =
+1000
+Output_File_Name = 
+Commutation_1
+Restart_Solution_Save_Frequency =
+100
+#######################
+# Execute program     
+#######################
+Execute
+#######################
+# Write output        
+#######################
+Write_Output_Nodes
+Write_Output
+Write_Restart
+#
+#
+#
+#
+#########################
+Filter_Type =
+#Vasilyev
+Haselbacher
+Output_File_Name = 
+Commutation_2
+#######################
+# Execute again  
+#######################
+Execute
+#######################
+# Write output        
+#######################
+Write_Output_Nodes
+Write_Output
+Write_Restart
+#
+#
+#
+#
+#######################
+# Terminate program   
+#######################
+Terminate
+#########################

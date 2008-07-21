@@ -148,7 +148,7 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             
                 if (Solution_Data.Input.Turbulence_IP.Filter_Initial_Condition) {
                     // filter the initial condition
-                    error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Initial_Condition(Solution_Data.Explicit_Filter);
+                    error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Initial_Condition(Solution_Data.Explicit_Filter,Data.batch_flag);
                     // save filter to file so don't have to recompute.
                     if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_RESTART)
                         error_flag = Solution_Data.Explicit_Filter.Write_to_file();

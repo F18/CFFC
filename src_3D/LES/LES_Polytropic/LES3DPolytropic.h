@@ -37,10 +37,6 @@
 #include "../../ICEM/ICEMCFD.h"
 #endif // _ICEMCFD_INCLUDED
 
-#ifndef _LES_FILTERS_INCLUDED
-#include "../LES/Filters/LES_Filters.h"
-#endif // _LES_FILTERS_INCLUDED
-
 #ifndef _SPECTRAL_ANALYSIS_INCLUDED
 #include "../../TurbulenceModelling/SpectralAnalysis.h"
 #endif // _SPECTRAL_ANALYSIS_INCLUDED

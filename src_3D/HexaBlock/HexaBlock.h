@@ -86,15 +86,7 @@ class Hexa_Block {
                                   // (z-direction).
    SOLN_pSTATE           ***phi;  // Solution slope limiter.
    SOLN_cSTATE            ***Uo;  // Initial solution state.
-    
-   RowVector      ***Filter_Weights;  // Weights used in discrete explicit filtering
-   bool  ***Filter_Weights_Assigned;  // Stores if the filterweights have been allocated
-   bool Filter_Weights_Allocated;
-
-   DenseMatrix    ***Derivative_Reconstruction_Weights;  // Weights used in reconstructing derivatives (in LES_Filters.h)
-   bool  ***Derivative_Reconstruction_Weights_Assigned;  // Stores if the Derivative_Reconstruction_Weights have been allocated
-   bool    Derivative_Reconstruction_Weights_Allocated;
-    
+        
    //   SOLN_cSTATE **FluxN,**FluxS,  // Boundary solution fluxes.
    //               **FluxE,**FluxW,
    //               **FluxT,**FluxB;
@@ -124,7 +116,6 @@ class Hexa_Block {
       WoN = NULL; WoS = NULL; 
       WoE = NULL; WoW = NULL;
       WoT = NULL; WoB = NULL; WallData = NULL;
-      Filter_Weights_Allocated = false;
    }
 
    Hexa_Block(Hexa_Block &Block2) {
@@ -137,8 +128,6 @@ class Hexa_Block {
               const int Nk, 
               const int Ng) {
       allocate(Ni, Nj, Nk, Ng);
-      Filter_Weights_Allocated = false;
-
    }
 
    Hexa_Block(const int Ni, 
@@ -150,7 +139,6 @@ class Hexa_Block {
       allocate(Ni, Nj, Nk, Ng);
       Grid.Copy(Grid2);
       Flow_Type = flow_type;
-      Filter_Weights_Allocated = false;
 
    }
    
@@ -171,12 +159,6 @@ class Hexa_Block {
 
    /* Deallocate static memory for structured hexahedrial solution block. */
    void deallocate_static(void);
-
-   /* Allocate memory for filter weights used for explicit filtering */
-   void Allocate_Filter_Weights(void);
-
-   /* Deallocate memory for filter weights used for explicit filtering */
-   void Deallocate_Filter_Weights(void);
 
    /* Return primitive solution state at specified node. */
    SOLN_pSTATE Wn(const int ii, const int jj, const int kk);
@@ -715,8 +697,6 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate(void) {
 
    } /* endif */
 
-    Deallocate_Filter_Weights();
-
 }
 
 /******************************************************************
@@ -906,20 +886,6 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Copy(Hexa_Block<SOLN_pSTATE, SOLN_cST
             } /* endfor */
          } /* endfor */
       } /* endif */
-       
-       if (Block2.Filter_Weights_Allocated) {
-           Allocate_Filter_Weights();
-           for (int k = 0; k < NCk; ++k) {
-               for (int j = 0; j < NCj; ++j) {
-                   for (int i = 0; i < NCi; ++i) {
-                       Filter_Weights[i][j][k] = Block2.Filter_Weights[i][j][k]; 
-                       Filter_Weights_Assigned[i][j][k] = Block2.Filter_Weights_Assigned[i][j][k]; 
-                   } /* endfor */
-               } /* endfor */
-           } /* endfor */
-       } /* endif */
-       Filter_Weights_Allocated = Block2.Filter_Weights_Allocated;
-
    }
 }
 
@@ -978,44 +944,6 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Copy_static(Hexa_Block<SOLN_pSTATE, S
       } /* endfor */
    } /* endif */
 
-}
-
-
-template<class SOLN_pSTATE, class SOLN_cSTATE>
-void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Allocate_Filter_Weights(void) {
-    Deallocate_Filter_Weights();
-    Filter_Weights = new RowVector **[NCi];
-    Filter_Weights_Assigned = new bool **[NCi];
-    for (int i=0; i<NCi; i++) {
-        Filter_Weights[i] = new RowVector *[NCj];
-        Filter_Weights_Assigned[i] = new bool *[NCj];
-        for (int j=0; j<NCj; j++) {
-            Filter_Weights[i][j] = new RowVector [NCk];
-            Filter_Weights_Assigned[i][j] = new bool [NCk];
-            
-            for (int k=0; k<NCk; k++) {
-                Filter_Weights_Assigned[i][j][k] = false;
-            }
-        }
-    }
-    Filter_Weights_Allocated = true;
-}
-
-template<class SOLN_pSTATE, class SOLN_cSTATE>
-void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Deallocate_Filter_Weights(void) {
-    if (Filter_Weights_Allocated) {
-        for (int i=0; i<NCi; i++) {
-            for (int j=0; j<NCj; j++) {
-                delete[] Filter_Weights[i][j];          Filter_Weights[i][j] = NULL;
-                delete[] Filter_Weights_Assigned[i][j]; Filter_Weights_Assigned[i][j] = NULL;
-            }
-            delete[] Filter_Weights[i];             Filter_Weights[i] = NULL;
-            delete[] Filter_Weights_Assigned[i];    Filter_Weights_Assigned[i] = NULL;
-        }
-        delete[] Filter_Weights;            Filter_Weights = NULL;
-        delete[] Filter_Weights_Assigned;   Filter_Weights_Assigned = NULL;
-    }
-    Filter_Weights_Allocated = false;
 }
 
 

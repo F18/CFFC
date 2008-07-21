@@ -1,9 +1,6 @@
 #ifndef _HEXA_EXPLICIT_SOLVER
 #define _HEXA_EXPLICIT_SOLVER
 
-#ifndef _LES_FILTERS_INCLUDED
-#include "../LES/Filters/LES_Filters.h"
-#endif // _LES_FILTERS_INCLUDED
 
 /*! ******************************************************
  * Routine: Hexa_Explicit_Solver                        *

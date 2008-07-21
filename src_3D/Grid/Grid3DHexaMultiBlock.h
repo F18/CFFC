@@ -172,7 +172,7 @@ class Grid3D_Hexa_Multi_Block_List {
     /* Creation constructors. */
     Grid3D_Hexa_Multi_Block_List(void) : 
        NBlk(0), NBlk_Idir(0), NBlk_Jdir(0), NBlk_Kdir(0), Grid_Blks(NULL), 
-       Connectivity(NULL), Allocated(0) { }
+       Connectivity(NULL), Allocated(0), IsAuxiliary(false) { }
 
     Grid3D_Hexa_Multi_Block_List(const int N) {
        Allocate(N);
@@ -248,6 +248,8 @@ class Grid3D_Hexa_Multi_Block_List {
     void Create_Grid_ICEMCFD(Grid3D_Input_Parameters &Input);
     
     void Find_Neighbours(Grid3D_Input_Parameters &Input);
+    
+    void Update_Cells(void);
     
     void Disturb_Interior_Nodes(const int Number_of_Iterations);
 

@@ -38,7 +38,6 @@ NAVIERSTOKES_DIR = NavierStokes/
 LES_POLYTROPIC_DIR = LES/LES_Polytropic/
 LESFSD_DIR = LES/LES_FSD/
 LESTF_DIR = LES/LES_ThickenedFlame/
-LES_FILTERS_DIR = LES/Filters/
 NKS_DIR = NewtonKrylovSchwarz/
 PHYSICS_DIR = Physics/
 EOS_DIR = $(PHYSICS_DIR)EquationOfState/
@@ -46,6 +45,7 @@ NASADATA_DIR = $(PHYSICS_DIR)NASAData/
 REACTIONS_DIR = Reactions/
 SYSTEM_DIR = System/
 TURBULENCE_DIR = TurbulenceModelling/
+FILTERS_DIR= ExplicitFilters/
 
 #
 # Set default f90 module directory
@@ -206,18 +206,9 @@ SRC_LESTF = $(LESTF_DIR)LES3DThickenedFlameInput.cc \
 
 SRC_LESTF_EXE = $(LESTF_DIR)LES3DThickenedFlame.cc
 
-# LES_FILTERS:
-SRC_LES_FILTERS = $(LES_FILTERS_DIR)LES_Filters.cc
-
-# LESFILTERS_TESTS
-SRC_LES_FILTERS_TESTS = test_LES_Filters.cc
-SRC_LES_FILTERS_TESTS := $(addprefix $(LES_FILTERS_DIR)UnitTests/, $(SRC_LES_FILTERS_TESTS))
-ifeq ($(TUT_TESTING),ON) 
-  SRC_LES_FILTERS += $(SRC_LES_FILTERS_TESTS)
-endif
-
-# Add LES_FILTERS to LES classes
-SRC_LES_POLYTROPIC += $(SRC_LES_FILTERS)
+# Filters
+SRC_FILTERS = $(FILTERS_DIR)Explicit_Filter.cc
+SRC_FILTERS_EXE = $(FILTERS_DIR)filters.cc
 
 # Physics, Turbulence, Thermodynamics, and Chemistry:
 SRC_PHYSICS = $(PHYSICS_DIR)SpeciesInput.cc
@@ -255,7 +246,8 @@ endif
 SRC_CFFC = $(SRC_BASE) \
            $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_FANS) $(SRC_LES_POLYTROPIC) $(SRC_LESFSD) $(SRC_LESTF)\
            $(SRC_PHYSICS) $(SRC_TURBULENCE) $(SRC_EOS) $(SRC_NASADATA) \
-           $(SRC_REACTIONS)
+           $(SRC_REACTIONS) \
+           $(SRC_FILTERS) \
 
 # Executable sources:
 SRC_MAIN = cffc3D.cc
@@ -332,6 +324,10 @@ OBJ_REACTIONS += $(patsubst %.f,%.o,$(filter %.f,$(SRC_REACTIONS)))
 OBJ_REACTIONS += $(patsubst %.f90,%.o,$(filter %.f90,$(SRC_REACTIONS)))
 OBJ_REACTIONS_F90 = $(SRC_REACTIONS_F90:.f90=.o)
 
+# Filters :
+OBJ_FILTERS = $(SRC_FILTERS:.cc=.o)
+OBJ_FILTERS_EXE = $(SRC_FILTERS_EXE:.cc=.o)
+
 # TUT testing:
 OBJ_TUT := $(SRC_TUT:.cc=.o)
 
@@ -348,7 +344,8 @@ endif
 OBJ_CFFC = $(OBJ_BASE) \
            $(OBJ_EULER) $(OBJ_NAVIERSTOKES) $(OBJ_FANS) $(OBJ_LES_POLYTROPIC) $(OBJ_LESFSD) $(OBJ_LESTF)\
            $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_EOS) $(OBJ_NASADATA) \
-           $(OBJ_REACTIONS)
+           $(OBJ_REACTIONS) \
+           $(OBJ_FILTERS)
 
 # Executable objects:
 OBJ_MAIN = $(SRC_MAIN:.cc=.o)
@@ -365,6 +362,7 @@ EXE_FANS_THERMPERFECT = fans3Dthermallyperfect
 EXE_LES_POLYTROPIC = les3Dpolytropic
 EXE_LESFSD = les3Dfsd
 EXE_LESTF = les3Dtf
+EXE_FILTERS = filters
 
 ###############################################################################
 # Define dependencies
@@ -391,6 +389,7 @@ help:
 	@echo "|             compile les3Dfsd stand alone program                                  |"
 	@echo "|        make les3Dtf                                                               |"
 	@echo "|             compile les3Dtf stand alone program                                   |"
+	@echo "|        make filters compile filters stand alone program                           |"
 	@echo "|        make install              copies cffc3D executable to bin directory        |"
 	@echo "|        make install-all          copies all executables to bin directory          |"
 	@echo "|        make uninstall            removes cffc3D executable from bin directory     |"
@@ -581,13 +580,13 @@ $(EXE_FANS_THERMPERFECT): $(OBJ_FANS_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_FANS_TH
 	@echo ' '
 
 $(EXE_LES_POLYTROPIC): $(OBJ_LES_POLYTROPIC_EXE) $(OBJ_BASE) $(OBJ_LES_POLYTROPIC) $(OBJ_NAVIERSTOKES_POLYTROPIC) $(OBJ_EULER_POLYTROPIC) \
-               $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+               $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS)
 	@echo ' '
 	@echo Building program $(EXE_LES_POLYTROPIC) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'
 	@echo ' '
 	$(LD) -o $(EXE_LES_POLYTROPIC) $(OBJ_LES_POLYTROPIC_EXE) $(OBJ_BASE) $(OBJ_LES_POLYTROPIC) $(OBJ_NAVIERSTOKES_POLYTROPIC) $(OBJ_EULER_POLYTROPIC) \
-                 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
+                 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_LES_POLYTROPIC) has been brought up to date.
 	@echo '---------------------------------------------------------'
@@ -619,6 +618,21 @@ $(EXE_LESTF): $(OBJ_LESTF_EXE) $(OBJ_BASE) $(OBJ_LESTF) $(OBJ_NAVIERSTOKES_THERM
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
+$(EXE_FILTERS): $(OBJ_FILTERS_EXE) $(OBJ_FILTERS) $(OBJ_BASE)  \
+                $(OBJ_LES_POLYTROPIC) $(OBJ_NAVIERSTOKES_POLYTROPIC) $(OBJ_EULER_POLYTROPIC) \
+                $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+	@echo ' '
+	@echo Building program $(EXE_FILTERS) for a $(PLATFORM) platform.
+	@echo '-----------------------------------------------------------------'
+	@echo ' '
+	$(LD) -o $(EXE_FILTERS) $(OBJ_FILTERS_EXE) $(OBJ_FILTERS) $(OBJ_BASE)  \
+			 $(OBJ_EULER_POLYTROPIC) \
+			 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)  $(LDFLAGS)
+	@echo ' '
+	@echo Program $(EXE_FILTERS) has been brought up to date.
+	@echo '---------------------------------------------------------'
+	@echo ' '
+
 #
 # Install/Uninstall targets
 install: $(EXE_MAIN)
@@ -632,7 +646,7 @@ install: $(EXE_MAIN)
 install-all: $(EXE_MAIN) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) \
              $(EXE_NAVIERSTOKES_POLYTROPIC) $(EXE_NAVIERSTOKES_THERMPERFECT) \
              $(EXE_FANS_THERMPERFECT) \
-             $(EXE_LES_POLYTROPIC) $(EXE_LESFSD) $(EXE_LESTF)
+             $(EXE_LES_POLYTROPIC) $(EXE_LESFSD) $(EXE_LESTF) $(EXE_FILTERS)
 	@for f in $(EXE_MAIN) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) \
               $(EXE_NAVIERSTOKES_POLYTROPIC) $(EXE_NAVIERSTOKES_THERMPERFECT) \
               $(EXE_FANS_THERMPERFECT) \
@@ -658,13 +672,13 @@ uninstall-all:
 	@for f in $(EXE_MAIN) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) \
               $(EXE_NAVIERSTOKES_POLYTROPIC) $(EXE_NAVIERSTOKES_THERMPERFECT) \
               $(EXE_FANS_THERMPERFECT) \
-			  $(EXE_LES_POLYTROPIC) $(EXE_LESFSD) $(EXE_LESTF); \
+			  $(EXE_LES_POLYTROPIC) $(EXE_LESFSD) $(EXE_LESTF) $(EXE_FILTERS); \
 	do \
 	  echo "Uninstalling $$f"; \
 	  cd $(CFFC_BIN_DIR) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) \
          $(EXE_NAVIERSTOKES_POLYTROPIC) $(EXE_NAVIERSTOKES_THERMPERFECT) \
          $(EXE_FANS_THERMPERFECT) \
-		 $(EXE_LES_POLYTROPIC) $(EXE_LESFSD) $(EXE_LESTF); \
+		 $(EXE_LES_POLYTROPIC) $(EXE_LESFSD) $(EXE_LESTF) $(EXE_FILTERS); \
 	  rm -f $$f; \
 	done;
 	@echo " "
@@ -730,6 +744,7 @@ clean:
 	rm -f $(LES_POLYTROPIC_DIR)UnitTests/*.o $(LES_POLYTROPIC_DIR)UnitTests/*.il $(LES_POLYTROPIC_DIR)UnitTests/*~ $(LES_POLYTROPIC_DIR)UnitTests/*.bak
 	rm -f $(LESFSD_DIR)*.o $(LESFSD_DIR)*.il $(LESFSD_DIR)*~ $(LESFSD_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(LESTF_DIR)*.o $(LESTF_DIR)*.il $(LESTF_DIR)*~ $(LESTF_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
+	rm -f $(FILTERS_DIR)*.o $(FILTERS_DIR)*.il $(FILTERS_DIR)*~ $(FILTERS_DIR)*.depend $(FILTERS_DIR)*.bak
 	rm -f $(HEXA_DIR)*.o $(HEXA_DIR)*.il $(HEXA_DIR)*~
 	rm -f $(PHYSICS_DIR)*.o $(PHYSICS_DIR)*.il $(PHYSICS_DIR)*~
 	rm -f $(TURBULENCE_DIR)*.o $(TURBULENCE_DIR)*.il $(TURBULENCE_DIR)*~
@@ -752,6 +767,7 @@ clean:
 	rm -f $(EXE_LES_POLYTROPIC)
 	rm -f $(EXE_LESFSD)
 	rm -f $(EXE_LESTF)
+	rm -f $(EXE_FILTERS)
 	rm -fr $(DEPEND_DIR)
 	@echo ' '
 	@echo All source file directories are now clean.
@@ -844,6 +860,7 @@ ifeq ($(strip $(filter $(MAKECMDGOALS), $(NODEP_LIST)) ), )
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_LES_POLYTROPIC_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_LESFSD_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_LESTF_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_FILTERS_EXE)))
 endif
 endif
 
