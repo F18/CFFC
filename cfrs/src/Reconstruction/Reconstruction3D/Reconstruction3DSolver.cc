@@ -14,9 +14,6 @@
  ********************************************************/
 int Reconstruction3DSolver(char *Input_File_Name_ptr){
 
-  std::cout << "The 3D framework is just incipient!" << std::endl;
-#if 0
-
   // Reconstruction3D input variables and parameters:
   Reconstruct3D_Input_Parameters Input_Parameters;
 
@@ -81,7 +78,6 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
 
   // Mesh variables
   Grid3D_Hexa_Block   Grid;
-  //Grid3D_Hexa_Block   ***MeshBlk(NULL); // the mesh
 
  execute_new_calculation: ;
 
@@ -99,38 +95,33 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
    else {
     std::cout << "\n Create Grid:\n";
     // Set Grid
-    // MeshBlk = Single_Block_Grid(MeshBlk,Input_Parameters);
-
-    //    if (MeshBlk != NULL) {
-    //      if (Check_Multi_Block_Grid(MeshBlk,
-    //				 Input_Parameters.Number_of_Blocks_Idir,
-    //				 Input_Parameters.Number_of_Blocks_Jdir)) {
-    //	std::cout << "Check_Multi_Block_Grid ERROR\n";
-    //      } 
-    //    } /* end if */
-  
-    // copy the mesh to the computational domain
-    // Copy_Quad_Block(Grid,MeshBlk[0][0]);
-
-    Grid = Create_Block(Input_Parameters.Box_Length,
-			Input_Parameters.Box_Width,
-			Input_Parameters.Box.Height,
-			ZERO,
-			ZERO,
-			ZERO,
-			Input_Parameters.alpha,
-			Input_Parameters.beta,
-			Input_Parameters.gamma,
-			BC_NONE,
-			BC_NONE,
-			BC_NONE,
-			BC_NONE,
-			BC_NONE,
-			BC_NONE,
-			Input_Parameters.NCells_Idir,
-			Input_Parameters.NCells_Jdir,
-			Input_Parameters.NCells_Kdir,
-			Input_Parameters.Nghost);
+    Grid.Create_Block(Input_Parameters.Box_Length,
+		      Input_Parameters.Box_Width,
+		      Input_Parameters.Box_Height,
+		      ZERO,    // x-orig
+		      ZERO,    // y-orig
+		      ZERO,    // z-orig
+		      ZERO,    // alpha
+		      ZERO,    // beta
+		      ZERO,    // gamma
+		      BC_NONE, // top
+		      BC_NONE, // bottom
+		      BC_NONE, // north
+		      BC_NONE, // south
+		      BC_NONE, // west
+		      BC_NONE, // east
+		      Input_Parameters.NCells_Idir,
+		      Input_Parameters.NCells_Jdir,
+		      Input_Parameters.NCells_Kdir,
+		      Input_Parameters.Nghost_Cells);
+    
+    // TEMPORARY OUTPUT
+    ///////////////////
+    //ofstream fout;
+    //fout.open("Output_TEST_data.txt");
+    //Grid.Output_Cells_Tecplot(1,1,fout);
+    //fout.close();
+    //return(0);
     
     std::cout << " Set the Computational Domain:\n";
     // Set the Computation Domain
@@ -164,14 +155,6 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
     line_number = Input_Parameters.Line_Number;
 
     if (command_flag == EXECUTE_CODE) {
-      if (MeshBlk != NULL){
-	  // Deallocate memory for 3D reconstruction solution.
-	  cout << "\n Deallocating Reconstruction3D "
-	       << "solution variables.";
-	  MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
-						Input_Parameters.Number_of_Blocks_Idir, 
-						Input_Parameters.Number_of_Blocks_Jdir);
-      }
 
       // Output input parameters for new caluculation.
       cout << "\n\n Starting a new calculation.";
@@ -188,10 +171,6 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
       // Deallocate memory for 3D reconstruction solution.
       cout << "\n\n Deallocating Reconstruction3D"
 	   <<" solution variables.";
-
-      MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
-					    Input_Parameters.Number_of_Blocks_Idir, 
-					    Input_Parameters.Number_of_Blocks_Jdir);
 
       Grid.deallocate();
 
@@ -310,7 +289,6 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
     
   } // endwhile
 
-#endif  
   /**********************************************************  
    * End of all Reconstruction3DSolver computations and I/O. *
    **********************************************************/

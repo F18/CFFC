@@ -67,7 +67,7 @@ class Reconstruct3D_Input_Parameters{
   char CellNumber_or_DeltaCell[2];
   int  NCells_Idir, NCells_Jdir, NCells_Kdir,
        NBlk_Idir, NBlk_Jdir, NBlk_Kdir;
-  int Nghost;
+  int Nghost_Cells;
   double Delta_X_Cell;
   double Delta_Y_Cell;
   double Delta_Z_Cell;
@@ -140,8 +140,7 @@ class Reconstruct3D_Input_Parameters{
   const int & iCell(void) const { return NCells_Idir;}
   const int & jCell(void) const { return NCells_Jdir;}
   const int & kCell(void) const { return NCells_Kdir;}
-  //int kCell(void) const { return 0;}
-  //const int & Nghost(void) const { return Nghost;}
+  const int & Nghost(void) const { return Nghost_Cells;}
   const TestFunction3D & TestFunction(void) const {return TestF;}
   double & CutoffKnob(void) { return CutoffKnobHighOrderReconstruction; }
   const double & CutoffKnob(void) const { return CutoffKnobHighOrderReconstruction; }
