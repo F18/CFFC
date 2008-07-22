@@ -81,7 +81,7 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
 
   // Mesh variables
   Grid3D_Hexa_Block   Grid;
-  Grid3D_Hexa_Block   **MeshBlk(NULL); // the mesh
+  //Grid3D_Hexa_Block   ***MeshBlk(NULL); // the mesh
 
  execute_new_calculation: ;
 
@@ -89,7 +89,7 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
     std::cout << "\n Read grid and solution data from file: " << Input_Parameters.Input_File_Name << "\n";
 
     // Set the Computation Domain
-    SolnBlkDouble.SetDomain(Input_Parameters);
+    SolnBlkDouble.SetDomain(Input_Parameters); 
 
     // Reconstruct the solution
     SolnBlkDouble.ReconstructZonalSolution(Input_Parameters);
@@ -99,7 +99,7 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
    else {
     std::cout << "\n Create Grid:\n";
     // Set Grid
-    MeshBlk = Multi_Block_Grid(MeshBlk,Input_Parameters);
+    // MeshBlk = Single_Block_Grid(MeshBlk,Input_Parameters);
 
     //    if (MeshBlk != NULL) {
     //      if (Check_Multi_Block_Grid(MeshBlk,
@@ -110,8 +110,28 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
     //    } /* end if */
   
     // copy the mesh to the computational domain
-    Copy_Quad_Block(Grid,MeshBlk[0][0]);
-  
+    // Copy_Quad_Block(Grid,MeshBlk[0][0]);
+
+    Grid = Create_Block(Input_Parameters.Box_Length,
+			Input_Parameters.Box_Width,
+			Input_Parameters.Box.Height,
+			ZERO,
+			ZERO,
+			ZERO,
+			Input_Parameters.alpha,
+			Input_Parameters.beta,
+			Input_Parameters.gamma,
+			BC_NONE,
+			BC_NONE,
+			BC_NONE,
+			BC_NONE,
+			BC_NONE,
+			BC_NONE,
+			Input_Parameters.NCells_Idir,
+			Input_Parameters.NCells_Jdir,
+			Input_Parameters.NCells_Kdir,
+			Input_Parameters.Nghost);
+    
     std::cout << " Set the Computational Domain:\n";
     // Set the Computation Domain
     SolnBlkDouble.SetDomain(Grid,Input_Parameters);

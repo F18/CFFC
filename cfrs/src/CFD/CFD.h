@@ -41,6 +41,20 @@ inline string CFDkit_Version() {
   return ("CFDkit+caboodle, Version 1.5, UTIAS CFD & Propulsion Group, 1999-2004.");
 }
 
+/**********************************************************************
+ * CFD -- CFFC library name and version.                              *
+ **********************************************************************/
+
+// Name.
+inline string CFFC_Name() {
+  return ("CFFC");
+}
+
+// Version.
+inline string CFFC_Version() {
+  return ("CFFC, Version 0.01, UTIAS CFD & Propulsion Group, 1999-2007.");
+}
+
 /********************************************************
  * CFD -- Date and time.                                *
  ********************************************************/
