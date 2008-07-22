@@ -21,7 +21,7 @@ using namespace std;
 #endif // _MATH_MACROS_INCLUDED
 
 #ifndef _CFD_INCLUDED
-#include "../../../../src_3D/CFD/CFD.h"
+#include "../../CFD/CFD.h"
 #endif // _CFD_INCLUDED
 
 #ifndef _VECTOR3D_INCLUDED

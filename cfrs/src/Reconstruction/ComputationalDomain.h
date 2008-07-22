@@ -10,7 +10,7 @@
 #include "Reconstruction2D/Reconstruct2DInput.h"
 #include "Reconstruction3D/Reconstruct3DInput.h"
 #include "Grid/Grid2D/QuadrilateralGrid.h"
-#include "Grid/Grid3D/Grid3DHexaMultiBlock.h"
+#include "Grid/Grid3D/Grid3DHexaBlock.h"
 #include "ReconstructionFunction.h"
 #include "CENO_DataAnalysis.h"
 #include "Common/TecplotAuxData.h"
