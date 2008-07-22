@@ -249,7 +249,7 @@ void Set_Default_Input_Parameters(Reconstruct3D_Input_Parameters &IP) {
     IP.NBlk_Idir = 1;
     IP.NBlk_Jdir = 1;
     IP.NBlk_Kdir = 1;
-    IP.Nghost = 2;
+    IP.Nghost_Cells = 2;
     IP.Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
     IP.Stretching_Type_Jdir = STRETCHING_FCN_LINEAR;
     IP.Stretching_Type_Kdir = STRETCHING_FCN_LINEAR;
@@ -428,7 +428,7 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
 	} // endif
 
 	// Set the required number of Ghost cells
-	IP.Nghost = 5;
+	IP.Nghost_Cells = 5;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Grid_Type") == 0) {
        i_command = 3;
