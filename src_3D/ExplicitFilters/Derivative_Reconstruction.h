@@ -153,6 +153,7 @@ inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::dfdx(Grid3D
         int K(theCell.K);
         if (!Grid_Blk.Derivative_Reconstruction_Weights_Assigned[I][J][K]) {
             RowVector W = Get_Weights_x(theCell,theNeighbours);
+            Grid_Blk.Derivative_Reconstruction_Weights[I][J][K].newsize(3,W.size());
             Grid_Blk.Derivative_Reconstruction_Weights[I][J][K].assignRow(0,W);
             Grid_Blk.Derivative_Reconstruction_Weights_Assigned[I][J][K] = true;
         }
@@ -183,6 +184,7 @@ inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::dfdy(Grid3D
         int K(theCell.K);
         if (!Grid_Blk.Derivative_Reconstruction_Weights_Assigned[I][J][K]) {
             RowVector W = Get_Weights_y(theCell,theNeighbours);
+            Grid_Blk.Derivative_Reconstruction_Weights[I][J][K].newsize(3,W.size());
             Grid_Blk.Derivative_Reconstruction_Weights[I][J][K].assignRow(1,W);
             Grid_Blk.Derivative_Reconstruction_Weights_Assigned[I][J][K] = true;
         }
@@ -213,6 +215,7 @@ inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::dfdz(Grid3D
         int K(theCell.K);
         if (!Grid_Blk.Derivative_Reconstruction_Weights_Assigned[I][J][K]) {
             RowVector W = Get_Weights_z(theCell,theNeighbours);
+            Grid_Blk.Derivative_Reconstruction_Weights[I][J][K].newsize(3,W.size());
             Grid_Blk.Derivative_Reconstruction_Weights[I][J][K].assignRow(2,W);
             Grid_Blk.Derivative_Reconstruction_Weights_Assigned[I][J][K] = true;
         }
