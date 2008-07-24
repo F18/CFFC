@@ -19,6 +19,8 @@
 #include "Haselbacher_Filter.h"
 #include "Vasilyev_Filter.h"
 #include "Derivative_Reconstruction.h"
+#include "Tophat_Filter.h"
+#include "Gaussian_Filter.h"
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -194,8 +196,14 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Create_filter(void) {
         case FILTER_TYPE_VASILYEV:
             filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>;
             break;
+        case FILTER_TYPE_TOPHAT:
+            filter_ptr = new Tophat_Filter<Soln_pState,Soln_cState>;
+            break;
+        case FILTER_TYPE_GAUSSIAN:
+            filter_ptr = new Gaussian_Filter<Soln_pState,Soln_cState>;
+            break;
         case FILTER_TYPE_RESTART:
-            //error_flag = Read_from_file();
+            error_flag = Read_from_file();
             if (error_flag == 1) cerr << "could not read filter_input_file" << endl;
             break;
         default:
@@ -628,7 +636,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     
     int temporary_adaptor_type = adaptor.adaptor_type;
     
-    Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(properties.commutation_order+1,2);
+    Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(properties.commutation_order+2,properties.number_of_rings);
     
     /* ----- Filter ----- */
     //cout << " -- Filter " << endl;
@@ -649,7 +657,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     for(int i=Grid_Blk.ICl; i<=Grid_Blk.ICu; i++) {
         for (int j=Grid_Blk.JCl; j<=Grid_Blk.JCu; j++) {
             for (int k=Grid_Blk.KCl; k<=Grid_Blk.KCu; k++) {
-                Divergence[i][j][k] = derivative_reconstructor.divergence(Grid_Blk,Grid_Blk.Cell[i][j][k]);
+                Divergence[i][j][k] = derivative_reconstructor.dfdx(Grid_Blk,Grid_Blk.Cell[i][j][k]);
                 number_of_processed_cells++;
                 ShowProgress(" -- Divergence ",number_of_processed_cells,number_of_cells_first,properties.progress_mode);
             }
@@ -678,7 +686,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     for(int i=Grid_Blk.ICl+properties.number_of_rings; i<=Grid_Blk.ICu-properties.number_of_rings; i++) {
         for (int j=Grid_Blk.JCl+properties.number_of_rings; j<=Grid_Blk.JCu-properties.number_of_rings; j++) {
             for (int k=Grid_Blk.KCl+properties.number_of_rings; k<=Grid_Blk.KCu-properties.number_of_rings; k++) {
-                Divergenced_Filtered[i][j][k] = derivative_reconstructor.divergence(Grid_Blk,Grid_Blk.Cell[i][j][k]);
+                Divergenced_Filtered[i][j][k] = derivative_reconstructor.dfdx(Grid_Blk,Grid_Blk.Cell[i][j][k]);
                 number_of_processed_cells++;
                 ShowProgress(" -- Divergence of Filtered ",number_of_processed_cells,number_of_cells_second,properties.progress_mode);
                 Commutation_Error[i][j][k] = (RowVector(Filtered_Divergence[i][j][k] - Divergenced_Filtered[i][j][k])).absolute_values();

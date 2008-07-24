@@ -49,11 +49,19 @@ public:
     
     DenseMatrix gradient(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
     RowVector divergence(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
+    RowVector dfdx(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
+    RowVector dfdy(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
+    RowVector dfdz(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
+
     
     void Allocate_Derivative_Reconstruction_Weights(Grid3D_Hexa_Block &Grid_Blk);
 
     void Get_Neighbours(Cell3D &theCell) ;
     DenseMatrix Get_Weights(Cell3D &theCell, Neighbours &theNeighbours);
+    RowVector Get_Weights_x(Cell3D &theCell, Neighbours &theNeighbours);
+    RowVector Get_Weights_y(Cell3D &theCell, Neighbours &theNeighbours);
+    RowVector Get_Weights_z(Cell3D &theCell, Neighbours &theNeighbours);
+
     DenseMatrix Matrix_A(Cell3D &theCell, Neighbours &theNeighbours);
     
     /* --------- functions for Matrix A calculations --------- */ 
@@ -100,7 +108,6 @@ void Derivative_Reconstruction<Soln_pState,Soln_cState>::Set_Delta_Neighbouring_
 template<typename Soln_pState, typename Soln_cState>
 inline DenseMatrix Derivative_Reconstruction<Soln_pState,Soln_cState>::gradient(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
     
-    
     if (!Grid_Blk.Derivative_Reconstruction_Weights_Allocated && Store_Derivative_Reconstruction_Weights) {
         Allocate_Derivative_Reconstruction_Weights(Grid_Blk);
         Grid_Blk.Derivative_Reconstruction_Weights_Allocated = true;
@@ -109,10 +116,11 @@ inline DenseMatrix Derivative_Reconstruction<Soln_pState,Soln_cState>::gradient(
     theNeighbours.set_grid(Grid_Blk);
     Get_Neighbours(theCell);
     
-    int I(theCell.I);
-    int J(theCell.J);
-    int K(theCell.K);
+
     if (Store_Derivative_Reconstruction_Weights) {
+        int I(theCell.I);
+        int J(theCell.J);
+        int K(theCell.K);
         if (!Grid_Blk.Derivative_Reconstruction_Weights_Assigned[I][J][K]) {
             Grid_Blk.Derivative_Reconstruction_Weights[I][J][K] = Get_Weights(theCell,theNeighbours);
             Grid_Blk.Derivative_Reconstruction_Weights_Assigned[I][J][K] = true;
@@ -122,9 +130,100 @@ inline DenseMatrix Derivative_Reconstruction<Soln_pState,Soln_cState>::gradient(
     } else {
         DenseMatrix W = Get_Weights(theCell,theNeighbours);
         Set_Delta_Neighbouring_Values(Grid_Blk,theCell,theNeighbours,Delta_Neighbouring_Values);
-        return Get_Weights(theCell,theNeighbours) * Delta_Neighbouring_Values;
+        return W * Delta_Neighbouring_Values;
     }
- }
+}
+
+
+template<typename Soln_pState, typename Soln_cState>
+inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::dfdx(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
+    
+    if (!Grid_Blk.Derivative_Reconstruction_Weights_Allocated && Store_Derivative_Reconstruction_Weights) {
+        Allocate_Derivative_Reconstruction_Weights(Grid_Blk);
+        Grid_Blk.Derivative_Reconstruction_Weights_Allocated = true;
+    }
+    
+    theNeighbours.set_grid(Grid_Blk);
+    Get_Neighbours(theCell);
+    
+    
+    if (Store_Derivative_Reconstruction_Weights) {
+        int I(theCell.I);
+        int J(theCell.J);
+        int K(theCell.K);
+        if (!Grid_Blk.Derivative_Reconstruction_Weights_Assigned[I][J][K]) {
+            RowVector W = Get_Weights_x(theCell,theNeighbours);
+            Grid_Blk.Derivative_Reconstruction_Weights[I][J][K].assignRow(0,W);
+            Grid_Blk.Derivative_Reconstruction_Weights_Assigned[I][J][K] = true;
+        }
+        Set_Delta_Neighbouring_Values(Grid_Blk,theCell,theNeighbours,Delta_Neighbouring_Values);
+        return Grid_Blk.Derivative_Reconstruction_Weights[I][J][K][0]*Delta_Neighbouring_Values;
+    } else {
+        RowVector W = Get_Weights_x(theCell,theNeighbours);
+        Set_Delta_Neighbouring_Values(Grid_Blk,theCell,theNeighbours,Delta_Neighbouring_Values);
+        return W * Delta_Neighbouring_Values;
+    }
+}
+
+template<typename Soln_pState, typename Soln_cState>
+inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::dfdy(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
+    
+    if (!Grid_Blk.Derivative_Reconstruction_Weights_Allocated && Store_Derivative_Reconstruction_Weights) {
+        Allocate_Derivative_Reconstruction_Weights(Grid_Blk);
+        Grid_Blk.Derivative_Reconstruction_Weights_Allocated = true;
+    }
+    
+    theNeighbours.set_grid(Grid_Blk);
+    Get_Neighbours(theCell);
+    
+    
+    if (Store_Derivative_Reconstruction_Weights) {
+        int I(theCell.I);
+        int J(theCell.J);
+        int K(theCell.K);
+        if (!Grid_Blk.Derivative_Reconstruction_Weights_Assigned[I][J][K]) {
+            RowVector W = Get_Weights_y(theCell,theNeighbours);
+            Grid_Blk.Derivative_Reconstruction_Weights[I][J][K].assignRow(1,W);
+            Grid_Blk.Derivative_Reconstruction_Weights_Assigned[I][J][K] = true;
+        }
+        Set_Delta_Neighbouring_Values(Grid_Blk,theCell,theNeighbours,Delta_Neighbouring_Values);
+        return Grid_Blk.Derivative_Reconstruction_Weights[I][J][K][1]*Delta_Neighbouring_Values;
+    } else {
+        RowVector W = Get_Weights_y(theCell,theNeighbours);
+        Set_Delta_Neighbouring_Values(Grid_Blk,theCell,theNeighbours,Delta_Neighbouring_Values);
+        return W * Delta_Neighbouring_Values;
+    }
+}
+
+template<typename Soln_pState, typename Soln_cState>
+inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::dfdz(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
+    
+    if (!Grid_Blk.Derivative_Reconstruction_Weights_Allocated && Store_Derivative_Reconstruction_Weights) {
+        Allocate_Derivative_Reconstruction_Weights(Grid_Blk);
+        Grid_Blk.Derivative_Reconstruction_Weights_Allocated = true;
+    }
+    
+    theNeighbours.set_grid(Grid_Blk);
+    Get_Neighbours(theCell);
+    
+    
+    if (Store_Derivative_Reconstruction_Weights) {
+        int I(theCell.I);
+        int J(theCell.J);
+        int K(theCell.K);
+        if (!Grid_Blk.Derivative_Reconstruction_Weights_Assigned[I][J][K]) {
+            RowVector W = Get_Weights_z(theCell,theNeighbours);
+            Grid_Blk.Derivative_Reconstruction_Weights[I][J][K].assignRow(2,W);
+            Grid_Blk.Derivative_Reconstruction_Weights_Assigned[I][J][K] = true;
+        }
+        Set_Delta_Neighbouring_Values(Grid_Blk,theCell,theNeighbours,Delta_Neighbouring_Values);
+        return Grid_Blk.Derivative_Reconstruction_Weights[I][J][K][2]*Delta_Neighbouring_Values;
+    } else {
+        RowVector W = Get_Weights_z(theCell,theNeighbours);
+        Set_Delta_Neighbouring_Values(Grid_Blk,theCell,theNeighbours,Delta_Neighbouring_Values);
+        return W * Delta_Neighbouring_Values;
+    }
+}
 
 template<typename Soln_pState, typename Soln_cState>
 inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::divergence(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
@@ -194,7 +293,29 @@ inline DenseMatrix Derivative_Reconstruction<Soln_pState,Soln_cState>::Get_Weigh
     return weights;
 }
 
+template<typename Soln_pState, typename Soln_cState>
+inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::Get_Weights_x(Cell3D &theCell, Neighbours &theNeighbours) {
+    
+    DenseMatrix A = Matrix_A(theCell,theNeighbours);
+    DenseMatrix Z = A.pseudo_inverse();
+    return Z[0];
+}
 
+template<typename Soln_pState, typename Soln_cState>
+inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::Get_Weights_y(Cell3D &theCell, Neighbours &theNeighbours) {
+    
+    DenseMatrix A = Matrix_A(theCell,theNeighbours);
+    DenseMatrix Z = A.pseudo_inverse();
+    return Z[1];
+}
+
+template<typename Soln_pState, typename Soln_cState>
+inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::Get_Weights_z(Cell3D &theCell, Neighbours &theNeighbours) {
+    
+    DenseMatrix A = Matrix_A(theCell,theNeighbours);
+    DenseMatrix Z = A.pseudo_inverse();
+    return Z[2];
+}
 
 template<typename Soln_pState, typename Soln_cState>
 inline DenseMatrix Derivative_Reconstruction<Soln_pState,Soln_cState>::Matrix_A(Cell3D &theCell, Neighbours &theNeighbours) {

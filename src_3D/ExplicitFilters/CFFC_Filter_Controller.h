@@ -45,8 +45,9 @@ public:
     void Explicit_Filter_Operations(void){
         Explicit_Filters<Soln_pState,Soln_cState> explicit_filter;
         explicit_filter.Initialize(Data,Solution_Data);
-        //explicit_filter.transfer_function(FILTER_INNER_CELL);
-        
+        explicit_filter.transfer_function(FILTER_INNER_CELL);
+        //explicit_filter.test();
+
         typedef double (Soln_pState::*member_ptr);
         member_ptr rho_member = &Soln_pState::rho;
         member_ptr p_member = &Soln_pState::p;
@@ -56,7 +57,7 @@ public:
         Soln_cState_3D_ptr_type U_ptr = &Hexa_Block<Soln_pState,Soln_cState>::U; 
         
         //explicit_filter.filter(U_ptr);
-        //explicit_filter.filter(p_member);
+        //explicit_filter.filter(rho_member);
         explicit_filter.Calculate_Commutation_Error(rho_member);
     }
     

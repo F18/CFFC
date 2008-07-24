@@ -1415,7 +1415,6 @@ Explicitly_Filter_Initial_Condition(Explicit_Filters<typename HEXA_BLOCK::Soln_p
                 }
             }
         }
-        cout << endl;
     }
 
     Explicit_Filter.filter(p_ptr);    

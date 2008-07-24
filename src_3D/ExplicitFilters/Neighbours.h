@@ -43,6 +43,7 @@ public:
     Vector3D Delta;
     Neighbours(Grid3D_Hexa_Block &Grid){
         Grid_ptr = &Grid;
+        Allocated = false;
         allocate();
         theCell_included = false;
         vasilyev_neighbours_allocated = false;

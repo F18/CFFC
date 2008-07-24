@@ -14,7 +14,8 @@ Pressure =
 #Flow_Type =
 #Turbulent-LES
 Progress_Mode =
-Terminal
+#Terminal
+File
 ##############################
 #       LES parameters       #
 ##############################
@@ -27,9 +28,9 @@ Smagorinsky_Coefficient =
 ##############################
 Filter_Type =
 #Implicit
-Vasilyev
-#Vasilyev_LS
-#Haselbacher
+#Vasilyev
+Haselbacher
+#Tophat
 #Restart
 Filter_Grid_Ratio =
 2.0
@@ -42,7 +43,7 @@ Commutation_Order =
 Number_of_Rings =
 2
 Filter_Memory_Efficient =
-OFF
+ON
 ###################
 #     Spectrum parameters    #
 ##############################
@@ -66,11 +67,11 @@ Periodic_Box
 Number_of_Ghost_Cells =
 2
 Number_of_Cells_Idir = 
-16
+32
 Number_of_Cells_Jdir =
-16
+32
 Number_of_Cells_Kdir =
-16
+32
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =
@@ -96,13 +97,13 @@ Box_Length =
 #3.14
 #16
 Mesh_Stretching =
-OFF
+ON
 Stretching_Factor_Idir = 
-1.1
+1.2
 Stretching_Factor_Jdir = 
-1.1
+1.2
 Stretching_Factor_Kdir = 
-1.1
+1.2
 Stretching_Type_Idir = 
 3
 Stretching_Type_Jdir = 
@@ -110,7 +111,7 @@ Stretching_Type_Jdir =
 Stretching_Type_Kdir = 
 3
 Disturb_Interior_Nodes =
-10
+OFF #10
 ###################################
 #   Time stepping parameters      #
 ###################################
@@ -132,7 +133,7 @@ Maximum_Number_of_Time_Steps =
 Number_of_Blocks_Per_Processor =
 1000
 Output_File_Name = 
-Commutation_1
+Commutation
 Restart_Solution_Save_Frequency =
 100
 #######################
@@ -145,30 +146,6 @@ Execute
 Write_Output_Nodes
 Write_Output
 Write_Restart
-#
-#
-#
-#
-#########################
-Filter_Type =
-#Vasilyev
-Haselbacher
-Output_File_Name = 
-Commutation_2
-#######################
-# Execute again  
-#######################
-Execute
-#######################
-# Write output        
-#######################
-Write_Output_Nodes
-Write_Output
-Write_Restart
-#
-#
-#
-#
 #######################
 # Terminate program   
 #######################
