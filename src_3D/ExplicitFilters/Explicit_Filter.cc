@@ -18,3 +18,5 @@ int    Explicit_Filter_Properties::progress_mode = PROGRESS_MODE_MESSAGE;
 int    Explicit_Filter_Properties::filter_type = FILTER_TYPE_HASELBACHER;
 char   *(Explicit_Filter_Properties::output_file_name) = NULL;
 int    Explicit_Filter_Properties::batch_flag = 0;
+int    Explicit_Filter_Properties::number_of_rings_increased = 3;
+int    Explicit_Filter_Properties::derivative_accuracy = 3;

@@ -46,6 +46,8 @@ public:
     static int    filter_type;
     static char   *output_file_name;
     static int    batch_flag;
+    static int    number_of_rings_increased;
+    static int    derivative_accuracy;
     
 };
 
@@ -139,6 +141,134 @@ public:
     
     /* ----------------- Just for commutation error calculations ------------------ */
     void Set_Commutation_RowVector(RowVector ***rows);
+    
+    void Set_Initial_Condition(Input_Parameters<Soln_pState,Soln_cState> &Input){
+        int n = 8;
+        int kind = 1;
+        for(int i=0; i<Soln_Blk_ptr->NCi; i++) {
+            for (int j=0; j<Soln_Blk_ptr->NCj; j++) {
+                for (int k=0; k<Soln_Blk_ptr->NCk; k++) {
+                    double x = Soln_Blk_ptr->Grid.Cell[i][j][k].Xc.x;
+                    double y = Soln_Blk_ptr->Grid.Cell[i][j][k].Xc.y;
+                    double z = Soln_Blk_ptr->Grid.Cell[i][j][k].Xc.z;
+                    double Dx = Input.Grid_IP.Box_Width;
+                    double Dy = Input.Grid_IP.Box_Height;
+                    double Dz = Input.Grid_IP.Box_Length;
+                    double r = sqrt(sqr(x/(Dx/2.)) + sqr(y/(Dy/2.)) + sqr(z/(Dz/2.)))/sqrt(3.);
+                    //Soln_Blk_ptr->W[i][j][k].*Soln_pState_member_ptr = chebyshev_polynomial(kind,n,x/(Dx/2.));
+                    Soln_Blk_ptr->W[i][j][k].*Soln_pState_member_ptr = cos(r);
+                                                                                            
+                }
+            }
+        }
+    }
+    
+    RowVector Exact_Derivative(Input_Parameters<Soln_pState,Soln_cState> &Input, double x, double y, double z){
+        int n = 8;
+        int kind = 1;
+        double Dx = Input.Grid_IP.Box_Width;
+        double Dy = Input.Grid_IP.Box_Height;
+        double Dz = Input.Grid_IP.Box_Length;
+        double r = sqrt(sqr(x/(Dx/2.)) + sqr(y/(Dy/2.)) + sqr(z/(Dz/2.)))/sqrt(3.);
+        RowVector temp(1);
+        //temp(0) = chebyshev_polynomial_derivative(kind,n,x/(Dx/2.));
+        temp(0) = -sin(r);
+        return temp;
+    }
+    
+    double chebyshev_polynomial(const int& r, const int& n, const double& x)
+    {
+        double result;
+        int i;
+        double a;
+        double b;
+        
+        
+        //
+        // Prepare A and B
+        //
+        if( r==1 ) {
+            a = 1;
+            b = x;
+        }
+        else {
+            a = 1;
+            b = 2*x;
+        }
+        
+        //
+        // Special cases: N=0 or N=1
+        //
+        if( n==0 ) {
+            result = a;
+            return result;
+        }
+        if( n==1 ) {
+            result = b;
+            return result;
+        }
+        
+        //
+        // General case: N>=2
+        //
+        for(i = 2; i <= n; i++) {
+            result = 2*x*b-a;
+            a = b;
+            b = result;
+        }
+        return result;
+    }
+    
+    
+    double chebyshev_polynomial_derivative(const int& r, const int& n, const double& x) {
+        double result;
+        int i;
+        double T_a , T_b, T;
+        double dT_a , dT_b, dT;
+        
+        
+        //
+        // Prepare A and B
+        //
+        if( r==1 ) {
+            T_a = 1;
+            T_b = x;
+            dT_a = 0;
+            dT_b = 1;
+        } else {
+            T_a = 1;
+            T_b = 2*x;
+            dT_a = 0;
+            dT_b = 2;
+        }
+        
+        //
+        // Special cases: N=0 or N=1
+        //
+        if( n==0 ) {
+            result = dT_a;
+            return result;
+        }
+        if( n==1 ) {
+            result = dT_b;
+            return result;
+        }
+        
+        //
+        // General case: N>=2
+        //
+        for(i = 2; i <= n; i++) {
+            dT = 2*x*dT_b - dT_a + 2*T_b;
+            dT_a = dT_b;
+            dT_b = dT;
+            
+            T = 2*x*T_b-T_a;
+            T_a = T_b;
+            T_b = T;
+        }
+        return dT;
+    }
+    
     
 };
 

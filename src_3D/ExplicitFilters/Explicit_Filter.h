@@ -97,6 +97,9 @@ public:
     RowVector ***Commutation_Error;
     void allocate_Commutation_Error(Grid3D_Hexa_Block &Grid_Blk);
     void deallocate_Commutation_Error(Grid3D_Hexa_Block &Grid_Blk);
+    RowVector ***Truncation_Error;
+    void allocate_Truncation_Error(Grid3D_Hexa_Block &Grid_Blk);
+    void deallocate_Truncation_Error(Grid3D_Hexa_Block &Grid_Blk);
     
     template <typename Filter_Variable_Type>
     void Calculate_Commutation_Error(Filter_Variable_Type filter_variable);
@@ -108,6 +111,7 @@ public:
                             RowVector ***filtered_divergence,
                             RowVector ***divergence_filtered,
                             RowVector ***commutation_error,
+                            RowVector ***truncation_error,
                             int Block_Number,
                             bool Output_Title,
                             ofstream &Out_File);
@@ -511,6 +515,27 @@ void Explicit_Filters<Soln_pState,Soln_cState>::deallocate_Commutation_Error(Gri
     delete[] Commutation_Error;   Commutation_Error = NULL;
 }
 
+template <typename Soln_pState, typename Soln_cState>
+void Explicit_Filters<Soln_pState,Soln_cState>::allocate_Truncation_Error(Grid3D_Hexa_Block &Grid_Blk){
+    Truncation_Error = new RowVector **[Grid_Blk.NCi];
+    for (int i=0; i<Grid_Blk.NCi; i++) {
+        Truncation_Error[i] = new RowVector *[Grid_Blk.NCj];
+        for (int j=0; j<Grid_Blk.NCj; j++) {
+            Truncation_Error[i][j] = new RowVector [Grid_Blk.NCk];
+        }
+    }
+}
+
+template <typename Soln_pState, typename Soln_cState>
+void Explicit_Filters<Soln_pState,Soln_cState>::deallocate_Truncation_Error(Grid3D_Hexa_Block &Grid_Blk) {
+    for (int i=0; i<Grid_Blk.NCi; i++) {
+        for (int j=0; j<Grid_Blk.NCj; j++) {
+            delete[] Truncation_Error[i][j];   Truncation_Error[i][j] = NULL;
+        }
+        delete[] Truncation_Error[i];   Truncation_Error[i] = NULL;
+    }
+    delete[] Truncation_Error;   Truncation_Error = NULL;
+}
 
 template <typename Soln_pState, typename Soln_cState>
 template <typename Filter_Variable_Type>
@@ -522,11 +547,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error(Filt
     // Let an adaptor deal with what will be filtered
     adaptor.Set_Adaptor(filter_variable);
     Calculate_Commutation_Error_Blocks();
-//    if (mode == FILTER_CFFC_MODE) {
-//        filter_Blocks();
-//    } else if (mode == FILTER_DESIGN_MODE) {
-//        filter_Blocks_design_mode(filter_variable);
-//    }
+
 }
 
 template<typename Soln_pState, typename Soln_cState>
@@ -565,9 +586,11 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Block
                 allocate_Filtered_Divergence(Soln_Blks[nBlk].Grid);
                 allocate_Divergenced_Filtered(Soln_Blks[nBlk].Grid);
                 allocate_Commutation_Error(Soln_Blks[nBlk].Grid);
+                allocate_Truncation_Error(Soln_Blks[nBlk].Grid);
                 
                 /* ------ calculations -------- */
                 adaptor.Set_Solution_Block(Soln_Blks[nBlk]);
+                adaptor.Set_Initial_Condition(Solution_Data_ptr->Input);
                 Calculate_Commutation_Error_Block(Soln_Blks[nBlk].Grid);
                 
                 /* ----- output commutation error ----- */
@@ -577,6 +600,7 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Block
                                     Filtered_Divergence,
                                     Divergenced_Filtered,
                                     Commutation_Error,
+                                    Truncation_Error,
                                     Data_ptr->Local_Adaptive_Block_List.Block[nBlk].info.gblknum,
                                     first_flag,
                                     out_file);
@@ -589,6 +613,8 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Block
                 deallocate_Filtered_Divergence(Soln_Blks[nBlk].Grid);
                 deallocate_Divergenced_Filtered(Soln_Blks[nBlk].Grid);
                 deallocate_Commutation_Error(Soln_Blks[nBlk].Grid);
+                deallocate_Truncation_Error(Soln_Blks[nBlk].Grid);
+
             }         
         } 
     }         
@@ -636,7 +662,9 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     
     int temporary_adaptor_type = adaptor.adaptor_type;
     
-    Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(properties.commutation_order+2,properties.number_of_rings);
+    properties.number_of_rings_increased = properties.number_of_rings+1;
+    properties.derivative_accuracy = properties.commutation_order+2;
+    Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(properties.commutation_order+1,properties.number_of_rings+1);
     
     /* ----- Filter ----- */
     //cout << " -- Filter " << endl;
@@ -657,9 +685,14 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     for(int i=Grid_Blk.ICl; i<=Grid_Blk.ICu; i++) {
         for (int j=Grid_Blk.JCl; j<=Grid_Blk.JCu; j++) {
             for (int k=Grid_Blk.KCl; k<=Grid_Blk.KCu; k++) {
-                Divergence[i][j][k] = derivative_reconstructor.dfdx(Grid_Blk,Grid_Blk.Cell[i][j][k]);
+                Divergence[i][j][k] = derivative_reconstructor.dfdr(Grid_Blk,Grid_Blk.Cell[i][j][k]);
                 number_of_processed_cells++;
                 ShowProgress(" -- Divergence ",number_of_processed_cells,number_of_cells_first,properties.progress_mode);
+                Truncation_Error[i][j][k] = (RowVector(adaptor.Exact_Derivative(Solution_Data_ptr->Input,
+                                                                                Grid_Blk.Cell[i][j][k].Xc.x,
+                                                                                Grid_Blk.Cell[i][j][k].Xc.y,
+                                                                                Grid_Blk.Cell[i][j][k].Xc.z)
+                                             - Divergence[i][j][k])).absolute_values();
             }
         }
     }
@@ -683,10 +716,10 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     //cout << " -- Divergence of Filtered " << endl;
     number_of_processed_cells = 0;
     adaptor.Set_Commutation_RowVector(Filtered);
-    for(int i=Grid_Blk.ICl+properties.number_of_rings; i<=Grid_Blk.ICu-properties.number_of_rings; i++) {
-        for (int j=Grid_Blk.JCl+properties.number_of_rings; j<=Grid_Blk.JCu-properties.number_of_rings; j++) {
-            for (int k=Grid_Blk.KCl+properties.number_of_rings; k<=Grid_Blk.KCu-properties.number_of_rings; k++) {
-                Divergenced_Filtered[i][j][k] = derivative_reconstructor.dfdx(Grid_Blk,Grid_Blk.Cell[i][j][k]);
+    for(int i=Grid_Blk.ICl+properties.number_of_rings_increased; i<=Grid_Blk.ICu-properties.number_of_rings_increased; i++) {
+        for (int j=Grid_Blk.JCl+properties.number_of_rings_increased; j<=Grid_Blk.JCu-properties.number_of_rings_increased; j++) {
+            for (int k=Grid_Blk.KCl+properties.number_of_rings_increased; k<=Grid_Blk.KCu-properties.number_of_rings_increased; k++) {
+                Divergenced_Filtered[i][j][k] = derivative_reconstructor.dfdr(Grid_Blk,Grid_Blk.Cell[i][j][k]);
                 number_of_processed_cells++;
                 ShowProgress(" -- Divergence of Filtered ",number_of_processed_cells,number_of_cells_second,properties.progress_mode);
                 Commutation_Error[i][j][k] = (RowVector(Filtered_Divergence[i][j][k] - Divergenced_Filtered[i][j][k])).absolute_values();
@@ -698,6 +731,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     
     /* for multiblock should be moved to other location!!! */
     RowVector Commutation_Error_maxnorm = maxnorm(Grid_Blk, Commutation_Error);
+    RowVector Commutation_Error_L1norm = p_norm(Grid_Blk, Commutation_Error, 1);
     RowVector Commutation_Error_L2norm = p_norm(Grid_Blk, Commutation_Error, 2);
     
     if (!Explicit_Filter_Properties::batch_flag){
@@ -708,7 +742,13 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
         << "x" << (Grid_Blk.KCu - Grid_Blk.KCl + 1) << endl;
         cout << "Commutation_Error:" << endl;
         cout << "   max norm = " << Commutation_Error_maxnorm;
+        cout << "   L1 norm  = " << Commutation_Error_L1norm; 
         cout << "   L2 norm  = " << Commutation_Error_L2norm; 
+        cout << endl;
+        cout << "Truncation_Error:" << endl;
+        cout << "   max norm = " << maxnorm(Grid_Blk, Truncation_Error);
+        cout << "   L1 norm  = " << p_norm(Grid_Blk, Truncation_Error, 1); 
+        cout << "   L2 norm  = " << p_norm(Grid_Blk, Truncation_Error, 2); 
     }
 
 }
@@ -718,12 +758,12 @@ template<typename Soln_pState, typename Soln_cState>
 RowVector Explicit_Filters<Soln_pState,Soln_cState>::p_norm(Grid3D_Hexa_Block &Grid_Blk,
                                                       RowVector ***Rows,
                                                       int p) {
-    int imin = Grid_Blk.ICl+properties.number_of_rings,
-        imax = Grid_Blk.ICu-properties.number_of_rings,
-        jmin = Grid_Blk.JCl+properties.number_of_rings,
-        jmax = Grid_Blk.JCu-properties.number_of_rings,
-        kmin = Grid_Blk.KCl+properties.number_of_rings,
-        kmax = Grid_Blk.KCu-properties.number_of_rings;
+    int imin = Grid_Blk.ICl+properties.number_of_rings_increased,
+        imax = Grid_Blk.ICu-properties.number_of_rings_increased,
+        jmin = Grid_Blk.JCl+properties.number_of_rings_increased,
+        jmax = Grid_Blk.JCu-properties.number_of_rings_increased,
+        kmin = Grid_Blk.KCl+properties.number_of_rings_increased,
+        kmax = Grid_Blk.KCu-properties.number_of_rings_increased;
     
     
     int N = Rows[imin][jmin][jmax].size();
@@ -750,12 +790,12 @@ RowVector Explicit_Filters<Soln_pState,Soln_cState>::p_norm(Grid3D_Hexa_Block &G
 template<typename Soln_pState, typename Soln_cState>
 RowVector Explicit_Filters<Soln_pState,Soln_cState>::maxnorm(Grid3D_Hexa_Block &Grid_Blk,
                                                              RowVector ***Rows) {
-    int imin = Grid_Blk.ICl+properties.number_of_rings,
-        imax = Grid_Blk.ICu-properties.number_of_rings,
-        jmin = Grid_Blk.JCl+properties.number_of_rings,
-        jmax = Grid_Blk.JCu-properties.number_of_rings,
-        kmin = Grid_Blk.KCl+properties.number_of_rings,
-        kmax = Grid_Blk.KCu-properties.number_of_rings;
+    int imin = Grid_Blk.ICl+properties.number_of_rings_increased,
+        imax = Grid_Blk.ICu-properties.number_of_rings_increased,
+        jmin = Grid_Blk.JCl+properties.number_of_rings_increased,
+        jmax = Grid_Blk.JCu-properties.number_of_rings_increased,
+        kmin = Grid_Blk.KCl+properties.number_of_rings_increased,
+        kmax = Grid_Blk.KCu-properties.number_of_rings_increased;
     
     int N = Rows[imin][jmin][jmax].size();
     
@@ -936,26 +976,27 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Read_from_file(void) {
 
 template<typename Soln_pState, typename Soln_cState>
 void Explicit_Filters<Soln_pState,Soln_cState>::Output_Commutation(Grid3D_Hexa_Block &Grid_Blk,
-                                                             RowVector ***filtered,
-                                                             RowVector ***divergence,
-                                                             RowVector ***filtered_divergence,
-                                                             RowVector ***divergence_filtered,
-                                                             RowVector ***commutation_error,
-                                                             int Block_Number,
-                                                             bool Output_Title,
-                                                             ofstream &Out_File){
+                                                                   RowVector ***filtered,
+                                                                   RowVector ***divergence,
+                                                                   RowVector ***filtered_divergence,
+                                                                   RowVector ***divergence_filtered,
+                                                                   RowVector ***commutation_error,
+                                                                   RowVector ***truncation_error,
+                                                                   int Block_Number,
+                                                                   bool Output_Title,
+                                                                   ofstream &Out_File){
     
     
     
     int nVar = 0;
     
     
-    int imin = Grid_Blk.ICl+properties.number_of_rings,
-    imax = Grid_Blk.ICu-properties.number_of_rings,
-    jmin = Grid_Blk.JCl+properties.number_of_rings,
-    jmax = Grid_Blk.JCu-properties.number_of_rings,
-    kmin = Grid_Blk.KCl+properties.number_of_rings,
-    kmax = Grid_Blk.KCu-properties.number_of_rings;
+    int imin = Grid_Blk.ICl+properties.number_of_rings_increased,
+    imax = Grid_Blk.ICu-properties.number_of_rings_increased,
+    jmin = Grid_Blk.JCl+properties.number_of_rings_increased,
+    jmax = Grid_Blk.JCu-properties.number_of_rings_increased,
+    kmin = Grid_Blk.KCl+properties.number_of_rings_increased,
+    kmax = Grid_Blk.KCu-properties.number_of_rings_increased;
     
     /* Ensure boundary conditions are updated before
      evaluating solution at the nodes. */
@@ -976,9 +1017,11 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Output_Commutation(Grid3D_Hexa_B
         << "\"unfiltered\" \\ \n"
         << "\"filtered\" \\ \n"
         << "\"divergence\" \\ \n"
+        << "\"exact divergence\" \\ \n"
         << "\"filtered of divergence\" \\ \n"
         << "\"divergence of filtered\" \\ \n"
-        << "\"commutation error\" \\ \n";
+        << "\"commutation error\" \\ \n"
+        << "\"truncation error\" \\ \n";
         Out_File << "DATASETAUXDATA filter = \"" << filter_ptr->filter_name() << "\" \\ \n"
                  << "DATASETAUXDATA commutation_order = \"" << properties.commutation_order << "\" \\ \n"
                  << "DATASETAUXDATA filter_grid_ratio = \"" << properties.FGR << "\" \\ \n"
@@ -1010,9 +1053,14 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Output_Commutation(Grid3D_Hexa_B
                 Out_File    << " " << adaptor.FilterVariable(i,j,k)(nVar)
                             << " " << filtered[i][j][k](nVar)
                             << " " << divergence[i][j][k](nVar)
+                            << " " << adaptor.Exact_Derivative(Solution_Data_ptr->Input,
+                                                               Grid_Blk.Cell[i][j][k].Xc.x,
+                                                               Grid_Blk.Cell[i][j][k].Xc.y,
+                                                               Grid_Blk.Cell[i][j][k].Xc.z)(nVar)
                             << " " << filtered_divergence[i][j][k](nVar)
                             << " " << divergence_filtered[i][j][k](nVar)
-                            << " " << commutation_error[i][j][k](nVar) << "\n";
+                            << " " << commutation_error[i][j][k](nVar)
+                            << " " << truncation_error[i][j][k](nVar) << "\n";
                 Out_File.unsetf(ios::scientific);
             } /* endfor */
         } /* endfor */

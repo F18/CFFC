@@ -65,13 +65,13 @@ OFF
 Grid_Type =
 Periodic_Box
 Number_of_Ghost_Cells =
-2
+3
 Number_of_Cells_Idir = 
-16
+32
 Number_of_Cells_Jdir =
-16
+32
 Number_of_Cells_Kdir =
-16
+32
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =
@@ -99,11 +99,11 @@ Box_Length =
 Mesh_Stretching =
 ON
 Stretching_Factor_Idir = 
-1.2
+1.1
 Stretching_Factor_Jdir = 
-1.2
+1.1
 Stretching_Factor_Kdir = 
-1.2
+1.1
 Stretching_Type_Idir = 
 3
 Stretching_Type_Jdir = 

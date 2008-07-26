@@ -52,6 +52,7 @@ public:
     RowVector dfdx(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
     RowVector dfdy(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
     RowVector dfdz(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
+    RowVector dfdr(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
 
     
     void Allocate_Derivative_Reconstruction_Weights(Grid3D_Hexa_Block &Grid_Blk);
@@ -227,6 +228,31 @@ inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::dfdz(Grid3D
         return W * Delta_Neighbouring_Values;
     }
 }
+
+
+template<typename Soln_pState, typename Soln_cState>
+inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::dfdr(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
+    
+    DenseMatrix grad = gradient(Grid_Blk,theCell);
+    double x = theCell.Xc.x;
+    double y = theCell.Xc.y;
+    double z = theCell.Xc.z;
+    double r = sqrt(sqr(x)+sqr(y)+sqr(z));
+    double theta = atan2(y,x);
+    double phi = acos(z/r);
+    double dxdr = cos(theta)*sin(phi);
+    double dydr = sin(theta)*sin(phi);
+    double dzdr = cos(phi);
+    
+    int n = grad.get_m();
+    RowVector derivative(n);
+    for (int i=0; i<n; i++) {
+        derivative(i) = grad(0,i)*dxdr + grad(1,i)*dydr + grad(2,i)*dzdr;
+    }
+    return derivative ;
+    
+}
+
 
 template<typename Soln_pState, typename Soln_cState>
 inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::divergence(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
