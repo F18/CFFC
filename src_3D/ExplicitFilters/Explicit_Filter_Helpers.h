@@ -145,18 +145,20 @@ public:
     void Set_Initial_Condition(Input_Parameters<Soln_pState,Soln_cState> &Input){
         int n = 8;
         int kind = 1;
+        double b = 2.0;
+
         for(int i=0; i<Soln_Blk_ptr->NCi; i++) {
             for (int j=0; j<Soln_Blk_ptr->NCj; j++) {
                 for (int k=0; k<Soln_Blk_ptr->NCk; k++) {
                     double x = Soln_Blk_ptr->Grid.Cell[i][j][k].Xc.x;
                     double y = Soln_Blk_ptr->Grid.Cell[i][j][k].Xc.y;
                     double z = Soln_Blk_ptr->Grid.Cell[i][j][k].Xc.z;
-                    double Dx = Input.Grid_IP.Box_Width;
-                    double Dy = Input.Grid_IP.Box_Height;
-                    double Dz = Input.Grid_IP.Box_Length;
-                    double r = sqrt(sqr(x/(Dx/2.)) + sqr(y/(Dy/2.)) + sqr(z/(Dz/2.)))/sqrt(3.);
-                    //Soln_Blk_ptr->W[i][j][k].*Soln_pState_member_ptr = chebyshev_polynomial(kind,n,x/(Dx/2.));
-                    Soln_Blk_ptr->W[i][j][k].*Soln_pState_member_ptr = cos(r);
+                    //double Dx = Input.Grid_IP.Box_Width;
+                    //double Dy = Input.Grid_IP.Box_Height;
+                    //double Dz = Input.Grid_IP.Box_Length;
+                    double r = sqrt(sqr(x) + sqr(y) + sqr(z));
+                    //Soln_Blk_ptr->W[i][j][k].*Soln_pState_member_ptr = chebyshev_polynomial(kind,n,r/scaling);
+                    Soln_Blk_ptr->W[i][j][k].*Soln_pState_member_ptr = cos(b*x);
                                                                                             
                 }
             }
@@ -166,13 +168,15 @@ public:
     RowVector Exact_Derivative(Input_Parameters<Soln_pState,Soln_cState> &Input, double x, double y, double z){
         int n = 8;
         int kind = 1;
-        double Dx = Input.Grid_IP.Box_Width;
-        double Dy = Input.Grid_IP.Box_Height;
-        double Dz = Input.Grid_IP.Box_Length;
-        double r = sqrt(sqr(x/(Dx/2.)) + sqr(y/(Dy/2.)) + sqr(z/(Dz/2.)))/sqrt(3.);
+        double b = 2.0;
+        //double Dx = Input.Grid_IP.Box_Width;
+//        double Dy = Input.Grid_IP.Box_Height;
+//        double Dz = Input.Grid_IP.Box_Length;
+//        double scaling = sqrt(3.);
+        double r = sqrt(sqr(x) + sqr(y) + sqr(z));
         RowVector temp(1);
-        //temp(0) = chebyshev_polynomial_derivative(kind,n,x/(Dx/2.));
-        temp(0) = -sin(r);
+        //temp(0) = 1./scaling*chebyshev_polynomial_derivative(kind,n,r);
+        temp(0) = -b*sin(b*x);
         return temp;
     }
     

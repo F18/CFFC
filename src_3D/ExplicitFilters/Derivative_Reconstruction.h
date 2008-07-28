@@ -259,6 +259,9 @@ inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::divergence(
     
     DenseMatrix grad = gradient(Grid_Blk,theCell);
     
+    // should not be from gradient, but from (dudx,dvdy,dwdz)
+    
+    
     int n = grad.get_m();
     RowVector diver(n);
     for (int i=0; i<n; i++) {
@@ -273,7 +276,7 @@ inline RowVector Derivative_Reconstruction<Soln_pState,Soln_cState>::divergence(
 template <typename Soln_pState, typename Soln_cState>
 inline int Derivative_Reconstruction<Soln_pState,Soln_cState>::number_of_unknowns(void) {
     int number = 0;
-    for (int k=0; k<= order_of_accuracy; k++) {
+    for (int k=1; k<= order_of_accuracy; k++) {  // k starts at 1 because the term of degree 0 is not an unknown!
         number += number_of_terms_of_degree(k);
     }
     return number;
@@ -384,9 +387,9 @@ inline DenseMatrix Derivative_Reconstruction<Soln_pState,Soln_cState>::Matrix_A(
 /* ------------------------ trinomial coefficient -------------------------- */
 /* 
  * coefficient of x^n1 y^n2 z^n3 in expansion of (x+y+z)^n (with n=n1+n2+n3)
- *  (n1 + n2 + n3)!             (               (n1 + n2 + n3 + ... + nk)!   )
- *  ---------------             ( multinomial:  ---------------------------  )
- *   n1!  n2!  n3!              (                 n1!  n2!  n3!  ...  nk!    )
+ *  (n1 + n2 + n3)!             /               (n1 + n2 + n3 + ... + nk)!   \
+ *  ---------------            |  multinomial:  ---------------------------   |
+ *   n1!  n2!  n3!              \                 n1!  n2!  n3!  ...  nk!    /
  */
 template<typename Soln_pState, typename Soln_cState>
 inline double Derivative_Reconstruction<Soln_pState,Soln_cState>::trinomial_coefficient(int n1, int n2, int n3){
