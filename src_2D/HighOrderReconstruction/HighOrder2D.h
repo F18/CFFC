@@ -838,6 +838,8 @@ private:
   Soln_State Max_SS_Regression, Temp_Regression, Temp_Residual;
   //! Normalization state characteristic to each solution state and cell
   Soln_State NormalizationState;
+  //! Coefficient used to compute the smoothness indicator. It is based on the degrees of freedom (i.e. number of derivatives) and the size of the reconstruction stencil
+  double AdjustmentCoeff;
   //! Local variable
   Vector2D DeltaCentroids;
   //! Local variable
@@ -888,7 +890,8 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(void):
   Geom(NULL), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
   _constrained_block_reconstruction(false),
   _constrained_WEST_reconstruction(false) , _constrained_EAST_reconstruction(false),
-  _constrained_NORTH_reconstruction(false), _constrained_SOUTH_reconstruction(false)
+  _constrained_NORTH_reconstruction(false), _constrained_SOUTH_reconstruction(false),
+  AdjustmentCoeff(0.0)
 {
   //
 }
@@ -920,7 +923,8 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder,
   Geom(&Block), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
   _constrained_block_reconstruction(false),
   _constrained_WEST_reconstruction(false) , _constrained_EAST_reconstruction(false),
-  _constrained_NORTH_reconstruction(false), _constrained_SOUTH_reconstruction(false)
+  _constrained_NORTH_reconstruction(false), _constrained_SOUTH_reconstruction(false),
+  AdjustmentCoeff(0.0)
 {
   // Use the grid to get the number of interior block cells and the number of available ghost cells
   allocate(ICu_Grid()-ICl_Grid()+1,
@@ -947,7 +951,8 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
     TD(NULL), SI(NULL), LimitedCell(NULL), PreviousLimitedCell(NULL),
     rings(0), rings_SI(0), _calculated_psinv(false),
     CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
-    Geom(rhs.Geom), _si_calculation(rhs._si_calculation)
+    Geom(rhs.Geom), _si_calculation(rhs._si_calculation),
+    AdjustmentCoeff(rhs.AdjustmentCoeff)
 {
 
   int i,j;
@@ -1077,6 +1082,9 @@ HighOrder2D<SOLN_STATE> & HighOrder2D<SOLN_STATE>::operator=(const HighOrder2D<S
       deallocate();
       throw runtime_error("HighOrder2D<SOLN_STATE>::operator=() ERROR! The object cannot be assigned due to incompatibilities between the CENO_Execution_Mode class settings and the object settings");
     }
+
+    // set the smoothness indicator adjustment coefficient
+    AdjustmentCoeff = rhs.AdjustmentCoeff;
     
     // check if the rhs has cell memory allocated
     if (rhs._allocated_cells){
@@ -1476,6 +1484,10 @@ void HighOrder2D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, Geomet
 
   // Compute the pseudo-inverse if required
   ComputeReconstructionPseudoInverse();
+
+  // Compute the smoothness indicator adjustment coefficient
+  /* It adjusts the value of the smoothness indicator based on the degree of the reconstruction */
+  AdjustmentCoeff = (getStencilSize() - NumberOfTaylorDerivatives() )/( NumberOfTaylorDerivatives() - 1.0);
 }
 
 //! Reset the reconstruction order.
@@ -1960,13 +1972,6 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
   // Set the mean solution of (iCell,jCell). It's used as a reference.
   MeanSolution = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
   
-  /* Adjustment coefficient.
-     It adjust the value of the smoothness indicator based on the overlapping degree of the reconstruction */
-  double AdjustmentCoeff( (StencilSize - NumberOfTaylorDerivatives() )/( NumberOfTaylorDerivatives() - 1.0) );
-  if (AdjustmentCoeff < 0 || _si_calculation){
-    AdjustmentCoeff = 1.0;
-  }
-
   /*! NOTE: The following used variables are set as private to the class:
     SS_Regression, SS_Residual, Max_SS_Regression, Temp_Regression, Temp_Residual. */
 
