@@ -158,7 +158,7 @@ class ComputationalDomain{
   void ReconstructSolution(const Reconstruct1D_Input_Parameters & IP);
   void ReconstructSolution(const Reconstruct2D_Input_Parameters & IP);
   void ReconstructZonalSolution(const Reconstruct2D_Input_Parameters & IP);
-  void ReconstructSolution(bool ChangeMe);
+  void ReconstructSolution(const Reconstruct3D_Input_Parameters & IP);
   void ReconstructSolutionAndBoundary(const Reconstruct1D_Input_Parameters & IP);
   void ReconstructToLimitedPiecewiseLinear(int iCell, const int Limiter);
   void ReconstructToLimitedPiecewiseLinear(int iCell, int jCell, const int Limiter);

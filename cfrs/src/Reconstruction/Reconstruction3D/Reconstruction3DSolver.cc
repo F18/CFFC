@@ -85,10 +85,10 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
     std::cout << "\n Read grid and solution data from file: " << Input_Parameters.Input_File_Name << "\n";
 
     // Set the Computation Domain
-    SolnBlkDouble.SetDomain(Input_Parameters); 
+    SolnBlkDouble.SetDomain(Input_Parameters);
 
     // Reconstruct the solution
-    SolnBlkDouble.ReconstructZonalSolution(Input_Parameters);
+    SolnBlkDouble.ReconstructSolution(Input_Parameters);
 
 
   } 

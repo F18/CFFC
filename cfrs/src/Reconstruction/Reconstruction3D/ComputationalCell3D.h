@@ -100,6 +100,16 @@ class ComputationalCell<ThreeD, GeometryType, SolutionType>{
   const SolutionType & CellErrorMax() const { return ErrorRecMaxNorm;}
   SolutionType & CellErrorMax() { return ErrorRecMaxNorm;}
 
+  // Added by RR:
+  const GeometricIntegrals & CellGeomCoeff() const { return GeomCoeff; }
+  GeometricIntegrals & CellGeomCoeff() {return GeomCoeff;}
+  const double & CellGeomCoeff(const int & p1, const int & p2, cont int & p3) {return GeomCoeff(p1,p2,p3);}
+#ifndef __Use_Iterator__
+  const double & CellGeomCoeff(const int position, const bool, const bool, const bool) {return GeomCoeff(position,true,true,true).D();}
+#endif
+  //
+
+
   const int & iSubgridPoints() const {return NbSubgridPoints[0];}
   const int & jSubgridPoints() const {return NbSubgridPoints[1];}
   const int & kSubgridPoints() const {return NbSubgridPoints[2];}
