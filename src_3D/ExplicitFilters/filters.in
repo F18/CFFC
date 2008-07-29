@@ -43,7 +43,7 @@ Commutation_Order =
 Number_of_Rings =
 2
 Filter_Memory_Efficient =
-OFF
+ON
 ###################
 #     Spectrum parameters    #
 ##############################

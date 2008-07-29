@@ -33,6 +33,7 @@
 
 class Explicit_Filter_Properties {
 public:
+    static bool   debug_flag;
     static int    commutation_order;
     static double FGR;
     static int    number_of_rings;

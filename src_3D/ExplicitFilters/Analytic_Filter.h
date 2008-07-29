@@ -26,8 +26,6 @@
 #include "../system/gnuplot.h"
 #endif
 
-#define _GNUPLOT
-
 #include <cstdlib>
 
 typedef complex<double> Complex;

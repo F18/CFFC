@@ -370,43 +370,40 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
     assert(Az.get_n() == bz.size());
     assert(bz.size() == w_k.size());
     w_k = Az.pseudo_inverse()*bz;
-    
+       
 #ifdef _GNUPLOT
-#undef _GNUPLOT
-#endif
-    
-//#define _GNUPLOT
-#ifdef _GNUPLOT
-    int n=200;
-    double *Gr = new double [n];
-    double *Gi = new double [n];
-    double *Gt = new double [n];
-    double *k2 = new double [n];
-    double kmax = PI;
-    for (int i=0; i<n; i++) {
-        double k = i*kmax/(n-ONE);
-        k2[i] = k/kmax;
-        Gr[i] = real( G0_func(k, X_DIRECTION, theCell, theNeighbours, w_i) );
-        Gi[i] = imag( G0_func(k, X_DIRECTION, theCell, theNeighbours, w_i) );
-        Gt[i] = real( G_target(k, LS_DOF, X_DIRECTION) );
+    if (Explicit_Filter_Properties::debug_flag) {
+        int n=200;
+        double *Gr = new double [n];
+        double *Gi = new double [n];
+        double *Gt = new double [n];
+        double *k2 = new double [n];
+        double kmax = PI;
+        for (int i=0; i<n; i++) {
+            double k = i*kmax/(n-ONE);
+            k2[i] = k/kmax;
+            Gr[i] = real( G0_func(k, X_DIRECTION, theCell, theNeighbours, w_i) );
+            Gi[i] = imag( G0_func(k, X_DIRECTION, theCell, theNeighbours, w_i) );
+            Gt[i] = real( G_target(k, LS_DOF, X_DIRECTION) );
+        }
+        
+        Gnuplot_Control h2;
+        h2.gnuplot_init();
+        h2.gnuplot_setstyle("lines") ;
+        h2.gnuplot_cmd("set grid");
+        h2.gnuplot_set_xlabel("k");
+        h2.gnuplot_set_ylabel("G(k)");
+        //h2.gnuplot_cmd("set yrange [-1:1]");
+        h2.gnuplot_set_title("transfer function LS");
+        h2.gnuplot_plot1d_var2(k2,Gr,n,"real");
+        h2.gnuplot_plot1d_var2(k2,Gi,n,"imag");
+        h2.gnuplot_plot1d_var2(k2,Gt,n,"target");
+        
+        delete[] Gr;
+        delete[] Gi;
+        delete[] Gt;
+        delete[] k2;        
     }
-    
-    Gnuplot_Control h2;
-    h2.gnuplot_init();
-    h2.gnuplot_setstyle("lines") ;
-    h2.gnuplot_cmd("set grid");
-    h2.gnuplot_set_xlabel("k");
-    h2.gnuplot_set_ylabel("G(k)");
-    //h2.gnuplot_cmd("set yrange [-1:1]");
-    h2.gnuplot_set_title("transfer function LS");
-    h2.gnuplot_plot1d_var2(k2,Gr,n,"real");
-    h2.gnuplot_plot1d_var2(k2,Gi,n,"imag");
-    h2.gnuplot_plot1d_var2(k2,Gt,n,"target");
-    
-    delete[] Gr;
-    delete[] Gi;
-    delete[] Gt;
-    delete[] k2;
 #endif
 
     // Load coefficients into neighbour_weights

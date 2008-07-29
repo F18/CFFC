@@ -5,6 +5,7 @@
  *  Created by Willem Deconinck on 25/03/08. 
  */
 #include "Explicit_Filter_Helpers.h"
+bool   Explicit_Filter_Properties::debug_flag = false;
 bool   Explicit_Filter_Properties::Memory_Efficient = false;
 int    Explicit_Filter_Properties::commutation_order = 2;
 int    Explicit_Filter_Properties::number_of_rings = 2;
