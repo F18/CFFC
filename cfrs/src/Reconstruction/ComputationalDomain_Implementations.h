@@ -2218,7 +2218,7 @@ void ReconstructSolution(Reconstruct3D_Input_Parameters)
 Solves the reconstruction over the domain
 ***********************************************/
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
-  void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructSolution(bool ChangeMe)
+void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructSolution(const Reconstruct3D_Input_Parameters & IP)
 {
 
   require(SpaceDimension==ThreeD, "ERROR:Reconstruct3DSolution(). This function can be called only for a 3D computational domain. Check your space dimension and call for the proper function!");
@@ -2237,17 +2237,106 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
     return;
   }
 
-  vector<int> i_index, j_index, k_index;
+  //vector<int> i_index, j_index, k_index;
+  int *i_index(NULL), *j_index(NULL), *k_index(NULL);
+  int UnfitCells(0);            /* the number of cells that didn't get the smooth resolution */
+  int TotalModifiedCells(0);    /* the total number of cells affected by the order reduction */
+
+  int i,j,k, FinishedCell;
 
   /*****************************************************************************
    *                    COMPUTE THE RECONSTRUCTION                             *
    *****************************************************************************/
 
   /* Determine the number of cells in the stencil based on the number of rings */
-  int CellsInOneDirection;
+  int NumOfCellsInOneDirection, StencilSize;
   
-  switch(ChangeMe){
+  switch(IP.ReconstructionMethod()){
     
+  case CENO:
+    NumOfCellsInOneDirection = 2*SolnPtr[0][0][0].CellRings() + 1;
+    StencilSize = NumOfCellsInOneDirection*NumOfCellsInOneDirection*NumOfCellsInOneDirection;
+    i_index = new int [StencilSize];
+    j_index = new int [StencilSize];
+    k_index = new int [StencilSize];
+    
+    // Solve reconstruction for each cell in the domain plus 2 additional layers of cells for each boundary.
+    // These boundary cells are used for checking the goodness of fit of the first domain cell.
+    for (i=iStart()-2, FinishedCell=0; i<=iEnd()+2; ++i){
+      for (j=jStart()-2; j<=jEnd()+2; ++j){
+	for (k=kStart()-2; k<=kEnd()+2; ++k){
+	  /* Make Stencil */
+	  MakeReconstructionStencil(SolnPtr[0][0][0].CellRings(),i,j,k,i_index,j_index,k_index);  // --> RR: Must be created in ReconstructionHelpers.h
+	  /* Solve reconstruction for the current cell */
+	  kExact_Reconstruction(*this,i_index,j_index,k_index,StencilSize); // --> RR: Must be created
+	  
+	  ++FinishedCell;
+	  Print_Progress(FinishedCell,ProgressFrequency);
+	}//endfor(k)
+      }//endfor(j)
+    }//endfor(i)
+    
+    
+//    // Compute the Smoothness Indicator for each cell reconstruction
+//    for (i=iStart(); i<=iEnd(); ++i)
+//      for (j=jStart(); j<=jEnd(); ++j)
+//	for (k=kStart(); k<=kEnd(); ++k){
+//	  /* Make Stencil */
+//	  MakeReconstructionStencil(SolnPtr[0][0][0].CellRings(),i,j,k,i_index,j_index,k_index);
+//	  ComputeSmoothnessIndicator(*this,i_index,j_index,k_index,StencilSize,i,j,k); // --> RR: Must be created
+//	}
+//    
+//    // Flag the cells which didn't get a good reconstruction
+//    for (i=iStart(); i<=iEnd(); ++i)
+//      for (j=jStart(); j<=jEnd(); ++j)
+//	for (k=kStart(); k<=kEnd(); ++k){
+//	  if ( SolnPtr[k][j][i].CellMCC() < CENO_Tolerances::Fit_Tolerance ){
+//	  
+//	  /* Flag the cell with non-smooth reconstruction */
+//	  SolnPtr[k][j][i].UnfitReconstructionFlag() = ON;
+//	  
+////#ifdef CENO_Padding
+////	  /* Flag all the cells surrounding this cell */
+////	  SolnPtr[0][j-1][i-1].UnfitReconstructionFlag() = ON;
+////	  SolnPtr[0][j-1][i].UnfitReconstructionFlag() = ON;
+////	  SolnPtr[0][j-1][i+1].UnfitReconstructionFlag() = ON;
+////
+////	  SolnPtr[0][j][i-1].UnfitReconstructionFlag() = ON;
+////	  SolnPtr[0][j][i+1].UnfitReconstructionFlag() = ON;
+////
+////	  SolnPtr[0][j+1][i-1].UnfitReconstructionFlag() = ON;
+////	  SolnPtr[0][j+1][i].UnfitReconstructionFlag() = ON;
+////	  SolnPtr[0][j+1][i+1].UnfitReconstructionFlag() = ON;
+////#endif
+//
+//	  /* Update the number of cell with not enough resolution */
+//	  ++UnfitCells;
+//	}
+//      }//endfor
+//
+//    /* reduce to limited piecewise linear */
+//    for (i=iStart(); i<=iEnd(); ++i)
+//      for (j=jStart(); j<=jEnd(); ++j)
+//	for (k=kStart(); k<=kEnd(); ++k){
+//	  if(SolnPtr[k][j][i].UnfitReconstructionFlag() == ON ){
+//	    ++TotalModifiedCells;
+//	    ReconstructToLimitedPiecewiseLinear(i,j,k,IP.Limiter());  // --> RR: Must be Created
+//	  }
+//	}
+//
+//    for (i=iStart(); i<=iEnd(); ++i)
+//      for (j=jStart(); j<=jEnd(); ++j)
+//	for (k=kStart(); k<=kEnd(); ++k){
+//	// Update subgrid solution
+//	SolnPtr[k][j][i].UpdateSubgridSolution();
+//      }
+//
+    /* Print UnfitCells and TotalModifiedCells */
+    std::cout << std::endl;
+    Print_(UnfitCells);
+    Print_(TotalModifiedCells);
+    break;
+
     /* DataDependent ENO-like reconstruction */
   case DD_ENO:
     
