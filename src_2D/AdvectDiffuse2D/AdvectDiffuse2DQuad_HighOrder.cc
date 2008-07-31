@@ -6182,7 +6182,13 @@ void AdvectDiffuse2D_Quad_Block::Calculate_Refinement_Criteria_HighOrder(double 
   
   number_refinement_criteria = 1;
 
+  /* Allocate memory for the refinement criteria */
+  Refinement_Criteria().reserve(number_refinement_criteria);
+  
   /* Return the refinement criteria. */
   refinement_criteria[0] = HighOrderVariable(0).AMR_Criteria_Based_On_Minimum_Smoothness_Indicator(*this);
+
+  /* Store the refinement_criteria values in the solution block designated variable */
+  Refinement_Criterion(0) = refinement_criteria[0];
 
 }

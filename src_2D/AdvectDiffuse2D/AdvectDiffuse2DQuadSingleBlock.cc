@@ -2574,6 +2574,9 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
 
   number_refinement_criteria = 1;
 
+  /* Allocate memory for the refinement criteria */
+  SolnBlk.Refinement_Criteria().reserve(number_refinement_criteria);
+
   /* Initialize the refinement criteria for the block. */
 
   grad_u_criteria_max = ZERO;
@@ -2602,9 +2605,11 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
     } /* endfor */
   } /* endfor */
 
-    /* Return the refinement criteria. */
-
+  /* Return the refinement criteria. */
   refinement_criteria[0] = grad_u_criteria_max;
+
+  /* Store the refinement_criteria values in the solution block designated variable */
+  SolnBlk.Refinement_Criterion(0) = refinement_criteria[0];
 
 }
 

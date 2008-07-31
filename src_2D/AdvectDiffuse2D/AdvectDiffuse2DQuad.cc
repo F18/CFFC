@@ -69,6 +69,9 @@ AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(void):
 
   // Get access to the AdvectDiffuse2D_InflowField object
   Inflow = &AdvectDiffuse2D_InflowField::getInstance();
+
+  // Reserve memory for one refinement criteria
+  refinement_criteria.reserve(1);
 }
 
 /****************************************\\**
