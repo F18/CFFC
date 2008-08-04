@@ -441,6 +441,25 @@ ostream &operator << (ostream &out_file,
         out_file << "\n     -> Orifice Radius: " 
                  << IP.Orifice_Radius;
         break;
+      case GRID_RINGLEB_FLOW :
+	out_file << "\n  -> Inner streamline number: " << IP.Inner_Streamline_Number;
+	out_file << "\n  -> Outer streamline number: " << IP.Outer_Streamline_Number;
+	out_file << "\n  -> Isotach line: " << IP.Isotach_Line;
+	break;
+      case GRID_WEDGE :
+        out_file << "\n  -> Wedge Angle (degrees): " << IP.Wedge_Angle;
+	out_file << "\n  -> Wedge Length (m): " << IP.Wedge_Length;
+	break;
+      case GRID_UNSTEADY_BLUNT_BODY :
+	out_file << "\n  -> Cylinder Radius (m): " 
+		 << IP.Blunt_Body_Radius;
+        break;
+      case GRID_BUMP_CHANNEL_FLOW :
+	if (strcmp(IP.Grid_Type,"Bump_Channel_Flow") == 0) {
+	  if (IP.Smooth_Bump) out_file << " (smooth bump)";
+	  else out_file << " (non-smooth bump)";
+	}
+	break;
       case GRID_ICEMCFD :
         break;
       case GRID_READ_FROM_DEFINITION_FILE :
@@ -677,6 +696,13 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Ellipse_Length_Y_Axis = HALF;
     IP.Chord_Length = ONE;
     IP.Orifice_Radius = ONE;
+    IP.Inner_Streamline_Number = 0.80;
+    IP.Outer_Streamline_Number = 0.40;
+    IP.Isotach_Line = 0.30;
+    IP.Wedge_Angle = 25.0;
+    IP.Wedge_Length = HALF;
+    IP.Smooth_Bump = OFF;
+
     IP.VertexSW = Vector2D(-0.5,-0.5);
     IP.VertexSE = Vector2D( 0.5,-0.5);
     IP.VertexNE = Vector2D( 0.5, 0.5);
@@ -974,6 +1000,24 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Orifice_Radius), 
                           1, 
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Inner_Streamline_Number),
+			  1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Outer_Streamline_Number),
+			  1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Isotach_Line),
+			  1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Wedge_Angle), 
+			  1, 
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Wedge_Length), 
+			  1, 
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Smooth_Bump),
+			  1,
+			  MPI::INT,0);
     MPI::COMM_WORLD.Bcast(&(IP.VertexSW.x), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -1457,6 +1501,7 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Orifice_Radius), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+
     Communicator.Bcast(&(IP.VertexSW.x), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -1481,6 +1526,24 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.VertexNW.y), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Inner_Streamline_Number),
+		       1,
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Outer_Streamline_Number),
+		       1,
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Isotach_Line),
+		       1,
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Wedge_Angle), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Wedge_Length), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Smooth_Bump),
+		       1,
+		       MPI::INT,Source_Rank);
     Communicator.Bcast(&(IP.X_Shift.x), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -2131,6 +2194,52 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Input_File >> IP.Orifice_Radius;
     IP.Input_File.getline(buffer, sizeof(buffer));
     if (IP.Orifice_Radius <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Inner_Streamline_Number") == 0) {
+    i_command = 31;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Inner_Streamline_Number;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (IP.Inner_Streamline_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Outer_Streamline_Number") == 0) {
+    i_command = 31;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Outer_Streamline_Number;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (IP.Outer_Streamline_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Isotach_Line") == 0) {
+    i_command = 31;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Isotach_Line;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (IP.Isotach_Line <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Wedge_Angle") == 0) {
+    i_command = 31;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Wedge_Angle;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if (IP.Wedge_Angle <= ZERO) i_command = INVALID_INPUT_VALUE;
+    
+  } else if (strcmp(IP.Next_Control_Parameter, "Wedge_Length") == 0) {
+    i_command = 31;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Wedge_Length;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if (IP.Wedge_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
+    
+  } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Bump") == 0) {
+    i_command = 32;
+    Get_Next_Input_Control_Parameter(IP);
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+      IP.Smooth_Bump = ON;
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+      IP.Smooth_Bump = OFF;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
 
   } else if (strcmp(IP.Next_Control_Parameter,"Chamber_Length") == 0) {
     i_command = 31;

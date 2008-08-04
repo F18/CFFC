@@ -139,8 +139,10 @@ public:
          Nozzle_Length, Nozzle_Radius_Exit, Nozzle_Radius_Throat, Grain_Radius,
          Cylinder_Radius, Cylinder_Radius2, Ellipse_Length_X_Axis, 
          Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
+         Inner_Streamline_Number, Outer_Streamline_Number, Isotach_Line,
+         Wedge_Angle, Wedge_Length,  
          Annulus_Theta_Start, Annulus_Theta_End;
-  int Nozzle_Type;
+  int Smooth_Bump, Nozzle_Type;
   Vector2D VertexSW, VertexSE, VertexNE, VertexNW;
   double X_Scale, X_Rotate;
   Vector2D X_Shift;
@@ -246,6 +248,11 @@ public:
   //@{
   void get_cffc_path();
   //@}
+
+  //! Output the name of the solver which this input parameters belong to.
+  std::string Solver_Name(void){
+    return "AdvectDiffuse2D";
+  }
 
   //! @name Reconstruction related member functions:
   //@{

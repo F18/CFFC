@@ -1094,6 +1094,23 @@ public:
   int Output_Cells_Tecplot_Using_IP(const Input_Parameters_Type &Input_Parameters);
   //@}
 
+  /////////////////////////////////////////////////
+  // Extra routines for specialization.          //
+  /////////////////////////////////////////////////
+
+  template<typename Input_Parameters_Type>
+  void Additional_Multi_Block_Grid_Setup(Input_Parameters_Type &Input_Parameters);
+
+  //! Specialize this routine for any additional setup during multi-block grid definition reading
+  template<typename Input_Parameters_Type>
+  void Additional_Setup_Read_Multi_Block_Grid_Definition(Input_Parameters_Type &Input_Parameters)
+  { /* EMPTY */ }
+
+  //! Specialize this routine for any additional setup during multi-block grid data reading
+  template<typename Input_Parameters_Type>
+  void Additional_Setup_Read_Multi_Block_Grid_Data(Input_Parameters_Type & Input_Parameters)
+  { /* EMPTY */ }
+
 private:
   //! @name Mesh indexes
   //@{ 
@@ -1127,17 +1144,26 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 
     if (Grid_ptr == NULL) {
       cout << "\n " << CFFC_Name() 
-	   << " AdvectDiffuse2D ERROR: Unable to open multi-block mesh definition file "
+	   << " " << Input_Parameters.Solver_Name() << " ERROR: Unable to open multi-block mesh definition file "
 	   << Input_Parameters.Grid_Definition_File_Name << ".\n";
     } /* endif */
+
+    // perform additional setup during multi-block grid definition reading
+    Additional_Setup_Read_Multi_Block_Grid_Definition(Input_Parameters);
+
     break;
   case GRID_READ_FROM_GRID_DATA_FILE :
     Read_Multi_Block_Grid_Using_IP(Input_Parameters);
+
     if (Grid_ptr == NULL) {
       cout << "\n " << CFFC_Name() 
 	   << " AdvectDiffuse2D ERROR: Unable to open multi-block mesh data file "
 	   << Input_Parameters.Grid_File_Name << ".\n";
     } /* endif */
+
+    // perform additional setup during multi-block grid data reading
+    Additional_Setup_Read_Multi_Block_Grid_Data(Input_Parameters);
+
     break;
   case GRID_SQUARE :
     Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
@@ -1431,6 +1457,50 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 				 Input_Parameters.Number_of_Ghost_Cells,
 				 HighOrder2D_Input::MaximumReconstructionOrder());
     break;
+  case GRID_WEDGE :
+    Grid_Wedge_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+			      Input_Parameters.Number_of_Blocks_Jdir,
+			      Input_Parameters.Wedge_Angle,
+			      Input_Parameters.Wedge_Length,
+			      Input_Parameters.BC_South,
+			      Input_Parameters.i_Mesh_Stretching,
+			      Input_Parameters.Mesh_Stretching_Factor_Idir,
+			      Input_Parameters.Mesh_Stretching_Factor_Jdir,
+			      Input_Parameters.Number_of_Cells_Idir,
+			      Input_Parameters.Number_of_Cells_Jdir,
+			      Input_Parameters.Number_of_Ghost_Cells,
+			      HighOrder2D_Input::MaximumReconstructionOrder());
+    break;
+  case GRID_UNSTEADY_BLUNT_BODY :
+    Grid_Unsteady_Blunt_Body_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					    Input_Parameters.Number_of_Blocks_Jdir,
+					    Input_Parameters.Blunt_Body_Radius,
+					    Input_Parameters.Blunt_Body_Mach_Number,
+					    Input_Parameters.Number_of_Cells_Idir,
+					    Input_Parameters.Number_of_Cells_Jdir,
+					    Input_Parameters.Number_of_Ghost_Cells,
+					    HighOrder2D_Input::MaximumReconstructionOrder());
+    break;
+  case GRID_RINGLEB_FLOW :
+    Grid_Ringleb_Flow_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+				     Input_Parameters.Number_of_Blocks_Jdir,
+				     Input_Parameters.Inner_Streamline_Number,
+				     Input_Parameters.Outer_Streamline_Number,
+				     Input_Parameters.Isotach_Line,
+				     Input_Parameters.Number_of_Cells_Idir,
+				     Input_Parameters.Number_of_Cells_Jdir,
+				     Input_Parameters.Number_of_Ghost_Cells,
+				     HighOrder2D_Input::MaximumReconstructionOrder());
+    break;
+  case GRID_BUMP_CHANNEL_FLOW :
+    Grid_Bump_Channel_Flow_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					  Input_Parameters.Number_of_Blocks_Jdir,
+					  Input_Parameters.Smooth_Bump,
+					  Input_Parameters.Number_of_Cells_Idir,
+					  Input_Parameters.Number_of_Cells_Jdir,
+					  Input_Parameters.Number_of_Ghost_Cells,
+					  HighOrder2D_Input::MaximumReconstructionOrder());
+    break;
   case GRID_ICEMCFD :
     ICEMCFD_Read(Input_Parameters.ICEMCFD_FileNames,
 		 *this,
@@ -1440,18 +1510,12 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 		 &Input_Parameters.Number_of_Blocks_Jdir);
     break;
   default:
-    Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
-					Input_Parameters.Number_of_Blocks_Jdir,
-					Input_Parameters.Box_Width,
-					Input_Parameters.Box_Height,
-					Input_Parameters.Number_of_Cells_Idir,
-					Input_Parameters.Number_of_Cells_Jdir,
-					Input_Parameters.Number_of_Ghost_Cells,
-					HighOrder2D_Input::MaximumReconstructionOrder());
-    break;
+    // perform additional multi-block grid setup or set the default grid
+    Additional_Multi_Block_Grid_Setup(Input_Parameters);
+
   } /* endswitch */
 
-    /* Reset boundary conditions if required. */
+  /* Reset boundary conditions if required. */
 
   if (Input_Parameters.BCs_Specified) {
     for (jBlk = 0; jBlk < Input_Parameters.Number_of_Blocks_Jdir; ++jBlk) {
@@ -1509,6 +1573,23 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
   }
 
   return error_flag;
+}
+
+/*!
+ * Specialize this routine to setup any additional 
+ * multi-block grid or the default one.
+ */
+template<typename Input_Parameters_Type> inline
+void Grid2D_Quad_MultiBlock_HO::Additional_Multi_Block_Grid_Setup(Input_Parameters_Type &Input_Parameters){
+
+  Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+				      Input_Parameters.Number_of_Blocks_Jdir,
+				      Input_Parameters.Box_Width,
+				      Input_Parameters.Box_Height,
+				      Input_Parameters.Number_of_Cells_Idir,
+				      Input_Parameters.Number_of_Cells_Jdir,
+				      Input_Parameters.Number_of_Ghost_Cells,
+				      HighOrder2D_Input::MaximumReconstructionOrder());
 }
 
 inline void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir_,
