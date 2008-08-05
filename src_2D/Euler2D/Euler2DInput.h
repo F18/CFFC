@@ -149,11 +149,16 @@ class Euler2D_Input_Parameters{
          Cylinder_Radius, Cylinder_Radius2, Ellipse_Length_X_Axis, 
          Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
          Inner_Streamline_Number, Outer_Streamline_Number, Isotach_Line,
-         Wedge_Angle, Wedge_Length;
+         Wedge_Angle, Wedge_Length,
+         Annulus_Theta_Start, Annulus_Theta_End;
   int Smooth_Bump, Nozzle_Type;
+  Vector2D VertexSW, VertexSE, VertexNE, VertexNW;
   double X_Scale, X_Rotate;
   Vector2D X_Shift;
   char **ICEMCFD_FileNames;
+  int IterationsOfInteriorNodesDisturbances; /*<! Number of iterations run to move (disturb) the interior nodes.
+						 (create an unsmooth interior mesh). */
+  int Num_Of_Spline_Control_Points;  /*<! Number of points used to define the spline curve. */
   //@}
 
   //@{ @name Mesh stretching factor.
@@ -254,6 +259,11 @@ class Euler2D_Input_Parameters{
   //@{ @name Obtain the CFFC root directory path:
   void get_cffc_path();
   //@}
+
+  //! Output the name of the solver which this input parameters belong to.
+  std::string Solver_Name(void){
+    return "Euler2D";
+  }
 
   //@{ @name Multi-block solution-adaption and parallel domain decomposition input parameters:
   int Number_of_Processors, Number_of_Blocks_Per_Processor;
@@ -422,6 +432,16 @@ inline ostream &operator << (ostream &out_file,
         out_file << "\n  -> Height of Solution Domain (m): " 
                  << IP.Box_Height;
         break;
+      case GRID_DEFORMED_BOX :
+        out_file << "\n     -> SW Corner: " 
+                 << IP.VertexSW;
+        out_file << "\n     -> SE Corner: " 
+                 << IP.VertexSE;
+        out_file << "\n     -> NE Corner: " 
+                 << IP.VertexNE;
+        out_file << "\n     -> NW Corner: " 
+                 << IP.VertexNW;
+        break;
       case GRID_FLAT_PLATE :
         out_file << "\n  -> Plate Length (m): " 
                  << IP.Plate_Length;
@@ -457,6 +477,16 @@ inline ostream &operator << (ostream &out_file,
       case GRID_CIRCULAR_CYLINDER :
         out_file << "\n  -> Cylinder Radius (m): " 
                  << IP.Cylinder_Radius;
+        break;
+      case GRID_ANNULUS :
+        out_file << "\n     -> Inner Cylinder Radius (m): " 
+                 << IP.Cylinder_Radius
+		 << "\n     -> Outer Cylinder Radius (m): " 
+                 << IP.Cylinder_Radius2
+		 << "\n     -> Start Theta (degrees): " 
+		 << IP.Annulus_Theta_Start
+		 << "\n     -> End Theta (degrees): " 
+		 << IP.Annulus_Theta_End;
         break;
       case GRID_ELLIPSE :
         out_file << "\n  -> Width of Ellipse along x-axis (m): " 
@@ -514,12 +544,15 @@ inline ostream &operator << (ostream &out_file,
                  << IP.Box_Height;
         break;
     } /* endswitch */
-    if (IP.BCs_Specified) {
-      out_file << "\n  -> Boundary conditions specified as: "
-	       << "\n     -> BC_North = " << IP.BC_North_Type
-	       << "\n     -> BC_South = " << IP.BC_South_Type
-	       << "\n     -> BC_East = " << IP.BC_East_Type
-	       << "\n     -> BC_West = " << IP.BC_West_Type;
+    out_file << "\n     -> Smooth Quad Block: ";
+    if (IP.i_Smooth_Quad_Block){
+      out_file << "Yes";
+    } else {
+      out_file << "No";
+    }
+    if (IP.IterationsOfInteriorNodesDisturbances > 0){
+      out_file << "\n     -> Disturbed Interior Quad Block Nodes: "
+	       << IP.IterationsOfInteriorNodesDisturbances << " iterations.";
     }
     out_file << "\n  -> Mesh shift, scale, and rotate: " 
              << IP.X_Shift << " " << IP.X_Scale << " " << IP.X_Rotate;
@@ -533,6 +566,15 @@ inline ostream &operator << (ostream &out_file,
              << IP.Number_of_Cells_Jdir;
     out_file << "\n  -> Number of Ghost Cells: "
 	     << IP.Number_of_Ghost_Cells;
+
+    if (IP.BCs_Specified) {
+      out_file << "\n  -> Boundary conditions specified as: "
+	       << "\n     -> BC_North = " << IP.BC_North_Type
+	       << "\n     -> BC_South = " << IP.BC_South_Type
+	       << "\n     -> BC_East = " << IP.BC_East_Type
+	       << "\n     -> BC_West = " << IP.BC_West_Type;
+    }
+
     if (IP.Interface_IP.Component_List.Ni) out_file << IP.Interface_IP;
     if (IP.Number_of_Initial_Mesh_Refinements > 0)
     out_file << "\n  -> Number of Initial Mesh Refinements : " 

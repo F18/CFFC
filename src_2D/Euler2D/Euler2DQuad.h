@@ -19,6 +19,8 @@
 #include "../Grid/Grid2DQuad.h"
 #endif // _GRID2D_QUAD_BLOCK_INCLUDED
 
+#include "../Grid/HO_Grid2DQuad.h"     /* Include 2D quadrilateral block grid header file */
+
 #ifndef _QUADTREE_INCLUDED
 #include "../AMR/QuadTree.h"
 #endif // _QUADTREE_INCLUDED
@@ -50,6 +52,11 @@
 #ifndef _ICEMCFD_INCLUDED
 #include "../ICEM/ICEMCFD.h"
 #endif // _ICEMCFD_INCLUDED
+
+#include "../System/System_Linux.h"    /* Include System Linux header file. */
+#include "../HighOrderReconstruction/AccuracyAssessment2D.h" /* Include 2D accuracy assessment header file. */
+#include "../HighOrderReconstruction/HighOrder2D.h" /* Include 2D high-order template class header file. */
+#include "../HighOrderReconstruction/Cauchy_BoundaryConditions.h" /* Include 2D high-order boundary conditions header file. */
 
 /* Define the structures and classes. */
 
@@ -167,6 +174,16 @@
 class Euler2D_Quad_Block{
 private:
 public:
+
+  //! @name Defined public types:
+  //@{
+  typedef AccuracyAssessment2D<Euler2D_Quad_Block> Accuracy_Assessment_Type;
+  typedef Euler2D_pState Soln_State;
+  typedef HighOrder2D<Soln_State> HighOrderType; //!< high-order variable data type. Use primitive variables for reconstruction.
+  typedef Cauchy_BCs<Soln_State> BC_Type;
+  typedef std::vector<double> DoubleArrayType;
+  //@}
+
   //@{ @name Solution state arrays:
   Euler2D_pState           **W; //!< Primitive solution state.
   Euler2D_cState           **U; //!< Conserved solution state.
@@ -180,7 +197,7 @@ public:
                            JCl, //!< First j-direction non-ghost cell counter.
                            JCu; //!< Final j-direction non-ghost cell counter.
   int                   Nghost; //!< Number of ghost cells.
-  Grid2D_Quad_Block       Grid; //!< 2D quadrilateral grid geometry.
+  Grid2D_Quad_Block_HO    Grid; //!< 2D quadrilateral grid geometry.
   //@}
 
   //@{ @name Residual and time-stepping arrays:
@@ -620,7 +637,7 @@ inline ostream &operator << (ostream &out_file,
 inline istream &operator >> (istream &in_file,
 			     Euler2D_Quad_Block &SolnBlk) {
   int i, j, k, ni, il, iu, ng, nj, jl, ju;
-  Grid2D_Quad_Block New_Grid; in_file >> New_Grid; 
+  Grid2D_Quad_Block_HO New_Grid; in_file >> New_Grid; 
   in_file.setf(ios::skipws);
   in_file >> ni >> il >> iu >> ng; in_file >> nj >> jl >> ju;
   in_file >> SolnBlk.Axisymmetric;
@@ -632,7 +649,11 @@ inline istream &operator >> (istream &in_file,
       if (SolnBlk.U != NULL) SolnBlk.deallocate(); 
       SolnBlk.allocate(ni - 2*ng, nj - 2*ng, ng);
   } /* endif */
-  Copy_Quad_Block(SolnBlk.Grid, New_Grid); New_Grid.deallocate();
+
+  // Copy the temporary mesh into the grid of the current solution block
+  SolnBlk.Grid = New_Grid;
+
+  // Read the solution & Initialize some data structures
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
          in_file >> SolnBlk.U[i][j];
@@ -2018,7 +2039,7 @@ extern Euler2D_Quad_Block* Allocate(Euler2D_Quad_Block *Soln_ptr,
 extern Euler2D_Quad_Block* Deallocate(Euler2D_Quad_Block *Soln_ptr,
                                       Euler2D_Input_Parameters &Input_Parameters);
 
-extern Euler2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block **InitMeshBlk,
+extern Euler2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block_HO **InitMeshBlk,
 						       Euler2D_Quad_Block *Soln_ptr,
 						       Euler2D_Input_Parameters &Input_Parameters,
 						       QuadTreeBlock_DataStructure &QuadTree,

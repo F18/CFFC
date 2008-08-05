@@ -149,9 +149,17 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     IP.Wedge_Length = HALF;
     IP.Smooth_Bump = OFF;
 
+    IP.VertexSW = Vector2D(-0.5,-0.5);
+    IP.VertexSE = Vector2D( 0.5,-0.5);
+    IP.VertexNE = Vector2D( 0.5, 0.5);
+    IP.VertexNW = Vector2D(-0.5, 0.5);
     IP.X_Shift = Vector2D_ZERO;
     IP.X_Scale = ONE;
     IP.X_Rotate = ZERO;
+
+    IP.IterationsOfInteriorNodesDisturbances = 0;     /* Number of iterations of disturbing the mesh 
+							 (create an unsmooth interior mesh) */
+    IP.Num_Of_Spline_Control_Points = 361; /* Number of control points on the 2D spline (used for some grids) */
 
     // Mesh stretching factor:
     IP.i_Mesh_Stretching = OFF;
@@ -512,6 +520,30 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Smooth_Bump),
 			  1,
 			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSW.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSW.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSE.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSE.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNW.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNW.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNE.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNE.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.X_Shift.x), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -665,6 +697,11 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.i_Smooth_Quad_Block),
 			  1,
 			  MPI::INT,0);
+
+    MPI::COMM_WORLD.Bcast(&(IP.IterationsOfInteriorNodesDisturbances),
+			  1,
+			  MPI::INT,0);
+
     // Interface input parameters:
     IP.Interface_IP.Broadcast_Input_Parameters();
     MPI::COMM_WORLD.Bcast(&(IP.Reset_Interface_Motion_Type),
@@ -978,6 +1015,30 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Orifice_Radius), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSW.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSW.y), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSE.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSE.y), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNE.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNE.y), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNW.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNW.y), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Inner_Streamline_Number),
 		       1,
 		       MPI::DOUBLE, Source_Rank);
@@ -1149,6 +1210,11 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.i_Smooth_Quad_Block),
 		       1,
 		       MPI::INT,Source_Rank);
+
+    Communicator.Bcast(&(IP.IterationsOfInteriorNodesDisturbances),
+		       1,
+		       MPI::INT,Source_Rank);
+
     // Interface input parameters:
     IP.Interface_IP.Broadcast_Input_Parameters(Communicator,
 					       Source_CPU);
@@ -1916,6 +1982,34 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
       IP.Input_File >> IP.Grain_Radius;
       IP.Input_File.getline(buffer,sizeof(buffer));
 
+    } else if (strcmp(IP.Next_Control_Parameter, "VertexSW") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.VertexSW;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "VertexSE") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.VertexSE;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "VertexNE") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.VertexNE;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "VertexNW") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.VertexNW;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
     } else if (strcmp(IP.Next_Control_Parameter, "Gas_Type") == 0) {
        i_command = 41;
        Get_Next_Input_Control_Parameter(IP);
@@ -2432,6 +2526,20 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Iteration_Disturb_Mesh") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.IterationsOfInteriorNodesDisturbances;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.IterationsOfInteriorNodesDisturbances < 0 ) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Number_Spline_Points") == 0) {
+      i_command = 101;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Num_Of_Spline_Control_Points;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Num_Of_Spline_Control_Points <= TWO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Morton") == 0) {
       i_command = 107;

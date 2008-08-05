@@ -13,6 +13,8 @@
 #include "../FASMultigrid2D/FASMultigrid2D.h"
 #endif // _FASMULTIGRID2D_INCLUDED
 
+/* Include 2D quadrilateral multiblock grid header file for Euler */
+#include "HO_Euler2DQuadGrid.h"
 
 /* Include 2D NKS solver header file. */
 #include "../NewtonKrylovSchwarz2D/NKS2D.h"
@@ -40,7 +42,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   /* Multi-block solution-adaptive quadrilateral mesh 
      solution variables. */
  
-  Grid2D_Quad_Block          **MeshBlk;
+  Grid2D_Quad_MultiBlock_HO    MeshBlk;
   QuadTreeBlock_DataStructure  QuadTree;
   AdaptiveBlockResourceList    List_of_Global_Solution_Blocks;
   AdaptiveBlock2D_List         List_of_Local_Solution_Blocks;
@@ -109,81 +111,98 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   /* Create initial mesh.  Read mesh from grid definition or data files 
      when specified by input parameters. */
 
-  // The primary MPI processor creates the initial mesh.
-  if (CFFC_Primary_MPI_Processor()) {
-     if (!batch_flag) cout << "\n Creating (or reading) initial quadrilateral multi-block mesh.";
-     MeshBlk = NULL;
-     MeshBlk = Multi_Block_Grid(MeshBlk, 
-                                Input_Parameters);
+  if (Input_Parameters.i_ICs != IC_RESTART) {
+    // Generate the mesh only if the current run is NOT a restart!
 
-     if (MeshBlk == NULL) {
-        error_flag = 1;
-     } else if (Check_Multi_Block_Grid(MeshBlk,
-                                       Input_Parameters.Number_of_Blocks_Idir,
-  	                               Input_Parameters.Number_of_Blocks_Jdir)) {
-        error_flag = 1;
-     } else {
-        error_flag = 0;
-     } /* endif */
+    // The primary MPI processor creates the initial mesh.
+    if (CFFC_Primary_MPI_Processor()) {
+      if (!batch_flag){ cout << "\n Creating (or reading) initial quadrilateral multi-block mesh."; cout.flush(); }
+      error_flag = MeshBlk.Multi_Block_Grid(Input_Parameters);
 
-     if (error_flag) {
+      if (error_flag) {
         cout << "\n Euler2D ERROR: Unable to create valid Euler2D multi-block mesh.\n";
         cout.flush();
-     } else {
+      } else {
         if (Input_Parameters.i_Grid == GRID_NASA_ROTOR_37) {
-           if (!batch_flag) cout << "\n Writing geometry and flow field data files for NASA Rotor 37.";
-           Input_Parameters.NASA_Rotor37.outputTP_UpstreamFlowConditions("NASARotor37_UpstreamProfile.dat");
-           Input_Parameters.NASA_Rotor37.outputTP_DownstreamFlowConditions("NASARotor37_DownstreamProfile.dat");
-           Input_Parameters.NASA_Rotor37.outputTP_Geometry("NASARotor37_Geometry.dat");
-//             Input_Parameters.NASA_Rotor37.outputTP_Mesh3D(48, 24, 12,
-//                                                           Input_Parameters.NASA_Rotor37.z_up, 
-//                                                           Input_Parameters.NASA_Rotor37.z_d,
-//                                                           "NASARotor37_3DMesh_Top.dat",
-//                                                           "NASARotor37_3DMesh_Bottom.dat");
-//             Input_Parameters.NASA_Rotor37.output_Tetin("NASARotor37.tetin", 
-//                                                        2);
+	  if (!batch_flag) cout << "\n Writing geometry and flow field data files for NASA Rotor 37.";
+	  Input_Parameters.NASA_Rotor37.outputTP_UpstreamFlowConditions("NASARotor37_UpstreamProfile.dat");
+	  Input_Parameters.NASA_Rotor37.outputTP_DownstreamFlowConditions("NASARotor37_DownstreamProfile.dat");
+	  Input_Parameters.NASA_Rotor37.outputTP_Geometry("NASARotor37_Geometry.dat");
+	  //             Input_Parameters.NASA_Rotor37.outputTP_Mesh3D(48, 24, 12,
+	  //                                                           Input_Parameters.NASA_Rotor37.z_up, 
+	  //                                                           Input_Parameters.NASA_Rotor37.z_d,
+	  //                                                           "NASARotor37_3DMesh_Top.dat",
+	  //                                                           "NASARotor37_3DMesh_Bottom.dat");
+	  //             Input_Parameters.NASA_Rotor37.output_Tetin("NASARotor37.tetin", 
+	  //                                                        2);
         } else if (Input_Parameters.i_Grid == GRID_NASA_ROTOR_67 ){
-           if (!batch_flag) cout << "\n Writing geometry and flow field data files for NASA Rotor 67.";
-           Input_Parameters.NASA_Rotor67.outputTP_UpstreamFlowConditions("NASARotor67_UpstreamProfile.dat");
-           Input_Parameters.NASA_Rotor67.outputTP_DownstreamFlowConditions("NASARotor67_DownstreamProfile.dat");
-           Input_Parameters.NASA_Rotor67.outputTP_Geometry("NASARotor67_Geometry.dat");
-           Input_Parameters.NASA_Rotor67.outputTP_FlowField2D(Input_Parameters.Rotor_Percent_Span,
-                                                              "NASARotor67_InterbladeFlow.dat");
-//             Input_Parameters.NASA_Rotor67.outputTP_FlowField2D_All("NASARotor67_InterbladeFlow.dat");
-//             Input_Parameters.NASA_Rotor67.outputTP_Mesh3D(48, 24, 12,
-//                                                           Input_Parameters.NASA_Rotor67.z_up, 
-//                                                           Input_Parameters.NASA_Rotor67.z_d,
-//                                                           "NASARotor67_3DMesh_Top.dat",
-//                                                           "NASARotor67_3DMesh_Bottom.dat");
-//             Input_Parameters.NASA_Rotor67.output_Tetin("NASARotor67.tetin", 
-//                                                        2);
+	  if (!batch_flag) cout << "\n Writing geometry and flow field data files for NASA Rotor 67.";
+	  Input_Parameters.NASA_Rotor67.outputTP_UpstreamFlowConditions("NASARotor67_UpstreamProfile.dat");
+	  Input_Parameters.NASA_Rotor67.outputTP_DownstreamFlowConditions("NASARotor67_DownstreamProfile.dat");
+	  Input_Parameters.NASA_Rotor67.outputTP_Geometry("NASARotor67_Geometry.dat");
+	  Input_Parameters.NASA_Rotor67.outputTP_FlowField2D(Input_Parameters.Rotor_Percent_Span,
+							     "NASARotor67_InterbladeFlow.dat");
+	  //             Input_Parameters.NASA_Rotor67.outputTP_FlowField2D_All("NASARotor67_InterbladeFlow.dat");
+	  //             Input_Parameters.NASA_Rotor67.outputTP_Mesh3D(48, 24, 12,
+	  //                                                           Input_Parameters.NASA_Rotor67.z_up, 
+	  //                                                           Input_Parameters.NASA_Rotor67.z_d,
+	  //                                                           "NASARotor67_3DMesh_Top.dat",
+	  //                                                           "NASARotor67_3DMesh_Bottom.dat");
+	  //             Input_Parameters.NASA_Rotor67.output_Tetin("NASARotor67.tetin", 
+	  //                                                        2);
         } /* endif */
-     } /* endif */
+      } /* endif */
+    }
+
+    // Broadcast the mesh to other MPI processors.
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    CFFC_Broadcast_MPI(&error_flag, 1); // Broadcast mesh error flag.
+    if (error_flag) return (error_flag);
+    MeshBlk.Broadcast_Multi_Block_Grid();
+
+    /* Set the number of blocks in I-dir and J-dir in Input_Parameters based
+       on what resulted after the mesh has been created. */
+    Input_Parameters.Number_of_Blocks_Idir = MeshBlk.Blocks_Idir();
+    Input_Parameters.Number_of_Blocks_Jdir = MeshBlk.Blocks_Jdir();
+
+    /* Create (allocate) multi-block quadtree data structure, create
+       (allocate) array of local 2D Euler equation solution blocks, 
+       assign and create (allocate) 2D Euler equation solution blocks
+       corresponding to the initial mesh. */
+    
+    if (!batch_flag) cout << "\n Creating multi-block quadtree data structure and assigning"
+			  << "\n  Euler2D solution blocks corresponding to initial mesh.";
+    Local_SolnBlk = Create_Initial_Solution_Blocks(MeshBlk.Grid_ptr,
+						   Local_SolnBlk,
+						   Input_Parameters,
+						   QuadTree,
+						   List_of_Global_Solution_Blocks,
+						   List_of_Local_Solution_Blocks);
+
   } else {
-     MeshBlk = NULL;
-  } /* endif */
-
-  // Broadcast the mesh to other MPI processors.
-  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-  CFFC_Broadcast_MPI(&error_flag, 1); // Broadcast mesh error flag.
-  if (error_flag) return (error_flag);
-  MeshBlk = Broadcast_Multi_Block_Grid(MeshBlk, 
-                                       Input_Parameters);
-
-  /* Create (allocate) multi-block quadtree data structure, create
-     (allocate) array of local 2D Euler equation solution blocks, 
-     assign and create (allocate) 2D Euler equation solution blocks
-     corresponding to the initial mesh. */
-
-  if (!batch_flag) cout << "\n Creating multi-block quadtree data structure and assigning"
-                        << "\n  Euler2D solution blocks corresponding to initial mesh.";
-  Local_SolnBlk = Create_Initial_Solution_Blocks(MeshBlk,
-                                                 Local_SolnBlk,
-                                                 Input_Parameters,
-                                                 QuadTree,
-                                                 List_of_Global_Solution_Blocks,
-                                                 List_of_Local_Solution_Blocks);
+    // Allocate the minimum information related to the solution blocks. (i.e. use the default constructors)
+    Local_SolnBlk = Allocate(Local_SolnBlk,Input_Parameters);
+  }
   if (Local_SolnBlk == NULL) return (1);
+
+  if (Input_Parameters.i_ICs != IC_RESTART) {
+    /* Output multi-block solution-adaptive quadrilateral mesh statistics. */
+
+    if (!batch_flag) {
+      cout << "\n\n Multi-block solution-adaptive quadrilateral mesh statistics: "; 
+      cout << "\n  -> Number of Root Blocks i-direction: "
+	   << QuadTree.NRi;
+      cout << "\n  -> Number of Root Blocks j-direction: " 
+	   << QuadTree.NRj;
+      cout << "\n  -> Total Number of Used Blocks: " 
+	   << QuadTree.countUsedBlocks();
+      cout << "\n  -> Total Number of Computational Cells: " 
+	   << QuadTree.countUsedCells();
+      cout << "\n  -> Refinement Efficiency: " 
+	   << QuadTree.efficiencyRefinement() << "\n";
+      cout.flush();
+    } /* endif */
+  }
 
   /********************************************************  
    * Initialize Euler2D solution variables.               *
@@ -193,23 +212,34 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
   Time = ZERO;
   number_of_time_steps = 0;
-
- /* Set the CPU time to zero. */
-
+  
+  /* Set the CPU time to zero. */
+  
   processor_cpu_time.zero();
   total_cpu_time.zero();
   NKS_total_cpu_time.zero();
   
   /* Initialize the conserved and primitive state
      solution variables. */
-  
-  if (!batch_flag) cout << "\n Prescribing Euler2D initial data.";
   if (Input_Parameters.i_ICs == IC_RESTART) {
-     if (!batch_flag) cout << "\n Reading Euler2D solution from restart data files.";
-     error_flag = Read_QuadTree(QuadTree,
-                                List_of_Global_Solution_Blocks,
-                                List_of_Local_Solution_Blocks, 
-                                Input_Parameters);
+    if (!batch_flag) { cout << "\n Reading Euler2D solution from restart data files."; cout.flush(); }
+
+    //Check that restart files are probably not corrupt.
+    if (CFFC_Primary_MPI_Processor()) {
+      if(System::Restart_In_Progress()) {
+	cout << "\n  Restart-in-progress flag detected, assuming data is corrupt."
+	     << "\n  Uncompressing backups.";
+	System::Uncompress_Restart();
+	System::Remove_Restart_Flag();
+	cout << "\n  Backup successfully uncompressed; reading.";
+      }
+    }
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+
+    error_flag = Read_QuadTree(QuadTree,
+			       List_of_Global_Solution_Blocks,
+			       List_of_Local_Solution_Blocks, 
+			       Input_Parameters);
      if (error_flag) {
         cout << "\n Euler2D ERROR: Unable to open Euler2D quadtree data file "
              << "on processor "
@@ -221,6 +251,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
      if (error_flag) return (error_flag);
      Allocate_Message_Buffers(List_of_Local_Solution_Blocks,
                               Local_SolnBlk[0].NumVar()+NUM_COMP_VECTOR2D);
+
      error_flag = Read_Restart_Solution(Local_SolnBlk, 
                                         List_of_Local_Solution_Blocks, 
                                         Input_Parameters,
@@ -234,13 +265,18 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
              << ".\n";
         cout.flush();
      } /* endif */
+
      error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return (error_flag);
+
      // Ensure each processor has the correct time and time!!!
      number_of_time_steps = CFFC_Maximum_MPI(number_of_time_steps);
      Time = CFFC_Maximum_MPI(Time);
      processor_cpu_time.cput = CFFC_Maximum_MPI(processor_cpu_time.cput);
+     Input_Parameters.Maximum_Number_of_Time_Steps =
+       CFFC_Maximum_MPI(Input_Parameters.Maximum_Number_of_Time_Steps);
   } else {
+    if (!batch_flag){ cout << "\n Prescribing Euler2D initial data."; cout.flush(); }
      ICs(Local_SolnBlk, 
          List_of_Local_Solution_Blocks, 
          Input_Parameters);
@@ -306,7 +342,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
      error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return error_flag;
 
-     if (!batch_flag) cout << "\n Performing Euler2D initial mesh refinement.";
+     if (!batch_flag){ cout << "\n Performing Euler2D initial mesh refinement."; cout.flush(); }
      error_flag = Initial_AMR(Local_SolnBlk,
                               Input_Parameters,
 	   	              QuadTree,
@@ -542,8 +578,8 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	if (Input_Parameters.Morton &&
             !first_step &&
             number_of_time_steps%Input_Parameters.Morton_Reordering_Frequency == 0) {
-           if (!batch_flag) cout << "\n\n Applying Morton re-ordering algorithm to solution blocks at n = "
-                                 << number_of_time_steps << ".";
+	  if (!batch_flag) { cout << "\n\n Applying Morton re-ordering algorithm to solution blocks at n = "
+				  << number_of_time_steps << "."; cout.flush(); }
 	   error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
                                                              List_of_Global_Solution_Blocks, 
                                                              List_of_Local_Solution_Blocks, 
@@ -619,8 +655,23 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	if (!first_step &&
 	    number_of_time_steps-Input_Parameters.Restart_Solution_Save_Frequency*
 	    (number_of_time_steps/Input_Parameters.Restart_Solution_Save_Frequency) == 0 ) {
-	  if (!batch_flag) cout << "\n\n  Saving Euler2D solution to restart data file(s) after"
-				<< " n = " << number_of_time_steps << " steps (iterations).";
+
+	  //  Save and delete old restart files in compressed archive (just in case)
+	  if (CFFC_Primary_MPI_Processor()) {
+	    cout << "\n  Creating compressed archive of (and deleting) old restarts.";
+	    System::Compress_Restart();
+	    cout << "\n  Writing new restart files.";
+	    cout.flush();
+	  }
+	  CFFC_Barrier_MPI(); // MPI barrier so that other processors do
+	                      // not start over writing restarts
+	  
+	  if (CFFC_Primary_MPI_Processor()) {
+	    System::Set_Restart_Flag();  //Set flag to indicate a restart is being saved
+	  }
+
+	  if (!batch_flag){ cout << "\n\n  Saving Euler2D solution to restart data file(s) after"
+				 << " n = " << number_of_time_steps << " steps (iterations)."; cout.flush(); }
           error_flag = Write_QuadTree(QuadTree,
                                       Input_Parameters);
           if (error_flag) {
@@ -632,6 +683,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
           } /* endif */
           error_flag = CFFC_OR_MPI(error_flag);
           if (error_flag) return (error_flag);
+
 	  error_flag = Write_Restart_Solution(Local_SolnBlk, 
 					      List_of_Local_Solution_Blocks, 
 					      Input_Parameters,
@@ -651,6 +703,11 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	    cout << "\n";
 	    cout.flush();
 	  }
+
+	  if (CFFC_Primary_MPI_Processor()) {
+	    System::Remove_Restart_Flag();  //Remove flag to indicate the restart is finished
+	  }
+
 	} /* endif */
 	
 	/* Output progress information for the calculation. */
@@ -660,12 +717,14 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 						 residual_l2_norm,
 						 first_step,
 						 50);
-//  	if (!batch_flag) Output_Progress(number_of_time_steps,
-//  					 Time*THOUSAND,
-//  					 total_cpu_time,
-//  					 residual_l1_norm,
-//  					 first_step,
-//  					 50);
+
+	 //  	if (!batch_flag) Output_Progress(number_of_time_steps,
+	 //  					 Time*THOUSAND,
+	 //  					 total_cpu_time,
+	 //  					 residual_l1_norm,
+	 //  					 first_step,
+	 //  					 50);
+
 	if (CFFC_Primary_MPI_Processor() && !first_step) {
 	  Output_Progress_to_File(residual_file,
 				  number_of_time_steps,
@@ -939,9 +998,6 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
       List_of_Local_Solution_Blocks.deallocate();
       List_of_Global_Solution_Blocks.deallocate();
       QuadTree.deallocate();
-      MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
-					    Input_Parameters.Number_of_Blocks_Idir, 
-					    Input_Parameters.Number_of_Blocks_Jdir);
       // Output input parameters for new caluculation.
       if (!batch_flag)  {
 	cout << "\n\n Starting a new calculation.";
@@ -964,9 +1020,6 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
       List_of_Local_Solution_Blocks.deallocate();
       List_of_Global_Solution_Blocks.deallocate();
       QuadTree.deallocate();
-      MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
-					    Input_Parameters.Number_of_Blocks_Idir, 
-					    Input_Parameters.Number_of_Blocks_Jdir);
       // Close input data file.
       if (!batch_flag) cout << "\n\n Closing Euler2D input data file.";
       if (CFFC_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);
@@ -1021,25 +1074,25 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
              << QuadTree.efficiencyRefinement() << "\n";
         cout.flush();
       } /* endif */
-//       if (CFFC_Primary_MPI_Processor()) {
-//          for ( int j_blk = 0 ; j_blk <= QuadTree.Nblk-1 ; ++j_blk ) {
-//             for ( int i_blk = 0 ; i_blk <= QuadTree.Ncpu-1 ; ++i_blk ) {
-//                if (QuadTree.Blocks[i_blk][j_blk] != NULL) {
-//                   cout << "\n cpu = " 
-//                        << i_blk
-//                        << " blk = "
-//                        << j_blk
-//                        << " blk = "
-//                        << QuadTree.Blocks[i_blk][j_blk]->block;
-//                } else {
-//                   cout << "\n cpu = " 
-//                        << i_blk
-//                        << " blk = "
-//                        << j_blk;
-//                } /* endif */
-//             } /* endfor */
-//          } /* endfor */
-//       } /* endif */
+      //       if (CFFC_Primary_MPI_Processor()) {
+      //          for ( int j_blk = 0 ; j_blk <= QuadTree.Nblk-1 ; ++j_blk ) {
+      //             for ( int i_blk = 0 ; i_blk <= QuadTree.Ncpu-1 ; ++i_blk ) {
+      //                if (QuadTree.Blocks[i_blk][j_blk] != NULL) {
+      //                   cout << "\n cpu = " 
+      //                        << i_blk
+      //                        << " blk = "
+      //                        << j_blk
+      //                        << " blk = "
+      //                        << QuadTree.Blocks[i_blk][j_blk]->block;
+      //                } else {
+      //                   cout << "\n cpu = " 
+      //                        << i_blk
+      //                        << " blk = "
+      //                        << j_blk;
+      //                } /* endif */
+      //             } /* endfor */
+      //          } /* endfor */
+      //       } /* endif */
 
    } else if (command_flag == MORTON_ORDERING_CODE) {
       if (!batch_flag) cout << "\n\n Applying Morton re-ordering algorithm.";
@@ -1096,7 +1149,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
        // Output solution data.
        if (!batch_flag) cout << "\n Writing cell-centered Euler2D solution to output data file(s).";
        if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0 ||
-         !(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+	   !(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
 	     Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
 	 error_flag = Output_Cells_Tecplot(Local_SolnBlk, 
 					   List_of_Local_Solution_Blocks, 
@@ -1120,7 +1173,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
     } else if (command_flag == WRITE_OUTPUT_NODES_CODE) {
       if (!batch_flag) cout << "\n Writing Euler2D node locations to output data file(s).";
       if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0 ||
-         !(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+	  !(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
 	    Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
 	error_flag = Output_Nodes_Tecplot(Local_SolnBlk,
 					  List_of_Local_Solution_Blocks,
@@ -1176,6 +1229,21 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
     } else if (command_flag == WRITE_RESTART_CODE) {
        // Write restart files.
+
+       //  Save and delete old restart files in compressed archive (just in case)
+       if (CFFC_Primary_MPI_Processor()) {
+	 cout << "\n  Creating compressed archive of (and deleting) old restarts.";
+	 System::Compress_Restart();
+	 cout << "\n  Writing new restart files.";
+	 cout.flush();
+       }
+       CFFC_Barrier_MPI(); // MPI barrier so that other processors do
+                           // not start over writing restarts
+
+       if (CFFC_Primary_MPI_Processor()) {
+	 System::Set_Restart_Flag();  //Set flag to indicate a restart is being saved
+       }
+
        if (!batch_flag) cout << "\n Writing Euler2D solution to restart data file(s).";
        error_flag = Write_QuadTree(QuadTree,
                                    Input_Parameters);
@@ -1203,13 +1271,15 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
        } /* endif */
        error_flag = CFFC_OR_MPI(error_flag);
        if (error_flag) return (error_flag);
+       if (CFFC_Primary_MPI_Processor()) {
+	 System::Remove_Restart_Flag();  //Remove flag to indicate the restart is finished
+       }
 
     } else if (command_flag == WRITE_OUTPUT_GRID_CODE) {
        // Output multi-block solution-adaptive mesh data file.
        if (CFFC_Primary_MPI_Processor()) {
           if (!batch_flag) cout << "\n Writing Euler2D multi-block mesh to grid data output file.";
-          error_flag = Output_Tecplot(MeshBlk,
-                                      Input_Parameters);
+          error_flag = MeshBlk.Output_Tecplot_Using_IP(Input_Parameters);
           if (error_flag) {
              cout << "\n Euler2D ERROR: Unable to open Euler2D mesh data output file.\n";
              cout.flush();
@@ -1222,10 +1292,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
        // Write multi-block solution-adaptive mesh definition files.
        if (CFFC_Primary_MPI_Processor()) {
           if (!batch_flag) cout << "\n Writing Euler2D multi-block mesh to grid definition files.";
-          error_flag = Write_Multi_Block_Grid_Definition(MeshBlk,
-                                                         Input_Parameters);
-          error_flag = Write_Multi_Block_Grid(MeshBlk,
-                                              Input_Parameters);
+          error_flag = MeshBlk.Write_Multi_Block_Grid_Definition_Using_IP(Input_Parameters);
           if (error_flag) {
              cout << "\n Euler2D ERROR: Unable to open Euler2D multi-block mesh definition files.\n";
              cout.flush();
@@ -1238,8 +1305,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
        // Output multi-block solution-adaptive mesh node data file.
        if (CFFC_Primary_MPI_Processor()) {
           if (!batch_flag) cout << "\n Writing Euler2D multi-block mesh to node data output file.";
-          error_flag = Output_Nodes_Tecplot(MeshBlk,
-                                            Input_Parameters);
+          error_flag = MeshBlk.Output_Nodes_Tecplot_Using_IP(Input_Parameters);
           if (error_flag) {
              cout << "\n Euler2D ERROR: Unable to open Euler2D mesh node data output file.\n";
              cout.flush();
@@ -1252,8 +1318,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
        // Output multi-block solution-adaptive mesh cell data file.
        if (CFFC_Primary_MPI_Processor()) {
           if (!batch_flag) cout << "\n Writing Euler2D multi-block mesh to cell data output file.";
-          error_flag = Output_Cells_Tecplot(MeshBlk,
-                                            Input_Parameters);
+          error_flag = MeshBlk.Output_Cells_Tecplot_Using_IP(Input_Parameters);
           if (error_flag) {
              cout << "\n Euler2D ERROR: Unable to open Euler2D mesh cell data output file.\n";
              cout.flush();

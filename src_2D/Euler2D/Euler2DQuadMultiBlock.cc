@@ -65,7 +65,7 @@ Euler2D_Quad_Block* Deallocate(Euler2D_Quad_Block *Soln_ptr,
  * found in AMR.h.                                                    *
  *                                                                    *
  **********************************************************************/
-Euler2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block **InitMeshBlk,
+Euler2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block_HO **InitMeshBlk,
 						Euler2D_Quad_Block *Soln_ptr,
 						Euler2D_Input_Parameters &Input_Parameters,
 						QuadTreeBlock_DataStructure &QuadTree,
