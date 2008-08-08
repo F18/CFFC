@@ -21,6 +21,7 @@
 #include "Derivative_Reconstruction.h"
 #include "Tophat_Filter.h"
 #include "Gaussian_Filter.h"
+#include "Finite_Difference.h"
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -630,6 +631,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     
     int number_of_cells_first = 0;
     int number_of_cells_second = 0;
+    int number_of_cells_third = 0;
     int number_of_processed_cells = 0;
     /* For every local solution block */
     
@@ -643,6 +645,10 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
                 number_of_cells_second += ((Soln_Blks[nBlk].ICu-properties.number_of_rings) - (Soln_Blks[nBlk].ICl+properties.number_of_rings) + 1)
                                         * ((Soln_Blks[nBlk].JCu-properties.number_of_rings) - (Soln_Blks[nBlk].JCl+properties.number_of_rings) + 1)
                                         * ((Soln_Blks[nBlk].KCu-properties.number_of_rings) - (Soln_Blks[nBlk].KCl+properties.number_of_rings) + 1);
+                number_of_cells_third += ((Soln_Blks[nBlk].ICu-properties.number_of_rings_increased) - (Soln_Blks[nBlk].ICl+properties.number_of_rings_increased) + 1)
+                                       * ((Soln_Blks[nBlk].JCu-properties.number_of_rings_increased) - (Soln_Blks[nBlk].JCl+properties.number_of_rings_increased) + 1)
+                                       * ((Soln_Blks[nBlk].KCu-properties.number_of_rings_increased) - (Soln_Blks[nBlk].KCl+properties.number_of_rings_increased) + 1);
+                
             }
         }
     } else if (mode == FILTER_DESIGN_MODE) {
@@ -653,10 +659,12 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
             number_of_cells_second += ((Grid_List_ptr->Grid_Blks[nBlk].ICu-properties.number_of_rings) - (Grid_List_ptr->Grid_Blks[nBlk].ICl+properties.number_of_rings) + 1)
                                     * ((Grid_List_ptr->Grid_Blks[nBlk].JCu-properties.number_of_rings) - (Grid_List_ptr->Grid_Blks[nBlk].JCl+properties.number_of_rings) + 1)
                                     * ((Grid_List_ptr->Grid_Blks[nBlk].KCu-properties.number_of_rings) - (Grid_List_ptr->Grid_Blks[nBlk].KCl+properties.number_of_rings) + 1);
+        
+            number_of_cells_third += ((Grid_List_ptr->Grid_Blks[nBlk].ICu-properties.number_of_rings_increased) - (Grid_List_ptr->Grid_Blks[nBlk].ICl+properties.number_of_rings_increased) + 1)
+                                   * ((Grid_List_ptr->Grid_Blks[nBlk].JCu-properties.number_of_rings_increased) - (Grid_List_ptr->Grid_Blks[nBlk].JCl+properties.number_of_rings_increased) + 1)
+                                   * ((Grid_List_ptr->Grid_Blks[nBlk].KCu-properties.number_of_rings_increased) - (Grid_List_ptr->Grid_Blks[nBlk].KCl+properties.number_of_rings_increased) + 1);
         }
     }
-    
-
     
     /* For every cell */
     
@@ -664,7 +672,8 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     
     properties.number_of_rings_increased = properties.number_of_rings+1;
     properties.derivative_accuracy = properties.commutation_order+2;
-    Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(properties.commutation_order+1,properties.number_of_rings+1);
+    //Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(properties.commutation_order+1,properties.number_of_rings+1);
+    Finite_Difference_Class<Soln_pState,Soln_cState> finite_differencer(properties.commutation_order+3);
     
     /* ----- Filter ----- */
     //cout << " -- Filter " << endl;
@@ -685,7 +694,8 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     for(int i=Grid_Blk.ICl; i<=Grid_Blk.ICu; i++) {
         for (int j=Grid_Blk.JCl; j<=Grid_Blk.JCu; j++) {
             for (int k=Grid_Blk.KCl; k<=Grid_Blk.KCu; k++) {
-                Divergence[i][j][k] = derivative_reconstructor.dfdx(Grid_Blk,Grid_Blk.Cell[i][j][k]);
+                //Divergence[i][j][k] = derivative_reconstructor.dfdx(Grid_Blk,Grid_Blk.Cell[i][j][k]);
+                Divergence[i][j][k] = finite_differencer.Finite_Difference(Grid_Blk,Grid_Blk.Cell[i][j][k], DFDR);
                 number_of_processed_cells++;
                 ShowProgress(" -- Divergence ",number_of_processed_cells,number_of_cells_first,properties.progress_mode);
                 Truncation_Error[i][j][k] = (RowVector(adaptor.Exact_Derivative(Solution_Data_ptr->Input,
@@ -719,9 +729,10 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     for(int i=Grid_Blk.ICl+properties.number_of_rings_increased; i<=Grid_Blk.ICu-properties.number_of_rings_increased; i++) {
         for (int j=Grid_Blk.JCl+properties.number_of_rings_increased; j<=Grid_Blk.JCu-properties.number_of_rings_increased; j++) {
             for (int k=Grid_Blk.KCl+properties.number_of_rings_increased; k<=Grid_Blk.KCu-properties.number_of_rings_increased; k++) {
-                Divergenced_Filtered[i][j][k] = derivative_reconstructor.dfdx(Grid_Blk,Grid_Blk.Cell[i][j][k]);
+                //Divergenced_Filtered[i][j][k] = derivative_reconstructor.dfdx(Grid_Blk,Grid_Blk.Cell[i][j][k]);
+                Divergenced_Filtered[i][j][k] = finite_differencer.Finite_Difference(Grid_Blk,Grid_Blk.Cell[i][j][k], DFDR);
                 number_of_processed_cells++;
-                ShowProgress(" -- Divergence of Filtered ",number_of_processed_cells,number_of_cells_second,properties.progress_mode);
+                ShowProgress(" -- Divergence of Filtered ",number_of_processed_cells,number_of_cells_third,properties.progress_mode);
                 Commutation_Error[i][j][k] = (RowVector(Filtered_Divergence[i][j][k] - Divergenced_Filtered[i][j][k])).absolute_values();
             }
         }

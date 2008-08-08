@@ -2009,6 +2009,24 @@ double Grid3D_Hexa_Block::jacobian(const int i, const int j, const int k, int or
     return DetJ;
 }
 
+void Grid3D_Hexa_Block::Jacobian_Matrix(DenseMatrix &J, const int i, const int j, const int k, int order) {
+    double dt = 1.0;
+        
+    /* calculate  dxdi */
+    J(0,0) = Finite_Difference(i,j,k,DXDI, dt, order);
+    J(0,1) = Finite_Difference(i,j,k,DXDJ, dt, order);
+    J(0,2) = Finite_Difference(i,j,k,DXDK, dt, order);
+    J(1,0) = Finite_Difference(i,j,k,DYDI, dt, order);
+    J(1,1) = Finite_Difference(i,j,k,DYDJ, dt, order);
+    J(1,2) = Finite_Difference(i,j,k,DYDK, dt, order);
+    J(2,0) = Finite_Difference(i,j,k,DZDI, dt, order);
+    J(2,1) = Finite_Difference(i,j,k,DZDJ, dt, order);
+    J(2,2) = Finite_Difference(i,j,k,DZDK, dt, order);
+    
+    /* inverse = didx */
+    J.pseudo_inverse_override();
+}
+
 
 void Grid3D_Hexa_Block::Disturb_Interior_Nodes(const int Number_of_Iterations) {
     double MinDistance, phi, theta , Displacement;

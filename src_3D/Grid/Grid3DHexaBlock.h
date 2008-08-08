@@ -234,7 +234,7 @@ class Grid3D_Hexa_Block {
     double Central_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
     double Forward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
     double Backward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
-    
+    void Jacobian_Matrix(DenseMatrix &J, const int i, const int j, const int k, int order);
     
     /* Calculate cell volume. */
     double volume(const Cell3D &Cell);

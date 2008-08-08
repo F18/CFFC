@@ -71,12 +71,15 @@ class ColumnVector;
  * RV = a * RV;                                         *
  * RV = RV * a;                                         *
  * RV = RV / a;                                         *
+ * RV = RV ^ RV;
  * a = RV * RV; (inner product)                         *
  * a = RV * CV; (inner product)                         *
  * RV = +RV;                                            *
  * RV = -RV;                                            *
  * RV += RV;                                            *
  * RV -= RV;                                            *
+ * RV *= a;                                             *
+ * RV /= a;                                             *
  * RV == RV;                                            *
  * RV != RV;                                            *
  * cout << RV; (output function)                        *
@@ -159,6 +162,7 @@ class RowVector: public MV_Vector_double{
     friend double operator *(const RowVector &RVec, const ColumnVector &CVec);
     friend RowVector operator *(const double &a, const RowVector &RVec);
     friend RowVector operator *(const RowVector &RVec, const double &a);
+    friend RowVector operator ^(const RowVector &RVec1, const RowVector &RVec2);
 
     /* Relational operators. */
     friend int operator ==(const RowVector &RVec1, const RowVector &RVec2);
@@ -372,6 +376,15 @@ inline RowVector operator *(const RowVector &RVec, const double &a) {
 
 inline double operator *(const RowVector &RVec1, const RowVector &RVec2) {
    return (dot(RVec1, RVec2));
+}
+
+
+inline RowVector operator ^(const RowVector &RVec1, const RowVector &RVec2) {
+    int i, m; m = RVec1.size(); RowVector rv(m);
+    for ( i = 0; i <= m-1; ++i ) {
+        rv(i) = RVec1(i)*RVec2(i);
+    } /* endfor */
+    return (rv);
 }
 
 /********************************************************
