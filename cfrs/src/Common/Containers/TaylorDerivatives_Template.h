@@ -221,15 +221,15 @@ bool operator!=(const DerivativeObj<SpaceDimension,T>& left,
   return !(left == right);
 }
 
-template<> inline
-const double & DerivativeObj<ThreeD,double>::D(const unsigned ) const {
-  return ValueD;
-}
-
-template<> inline
-double & DerivativeObj<ThreeD,double>::D(const unsigned ) {
-  return ValueD;
-}
+//template<> inline
+//const double & DerivativeObj<ThreeD,double>::D(const unsigned ) const {
+//  return ValueD;
+//}
+//
+//template<> inline
+//double & DerivativeObj<ThreeD,double>::D(const unsigned ) {
+//  return ValueD;
+//}
 
 /*******************************************************************
  * TEMPLATIZED CLASS: TaylorDerivativesContainer Declaration       *
