@@ -366,15 +366,31 @@ TaylorDerivativesContainer<ThreeD,T>::operator=(const TaylorDerivativesContainer
 template<class T> inline
 unsigned TaylorDerivativesContainer<ThreeD,T>::IndexOrder(const unsigned p1, const unsigned p2, const unsigned p3)
 {
-
   /* Observe that DContainer[LastElem()].P1() is equal to the order of the reconstruction */
-  unsigned sum = 0;
+  int OrderOfReconstruction = DContainer[LastElem()].P1();
+  int sum_series[20];
+  unsigned sum_p1 = 0;
+  unsigned sum_p2 = 0;
+  unsigned n;
 
-  for (unsigned n=2; n<=p1; ++n){
-    sum += (n - 1);
+  // sum_series is a vector containing the series 1,3,6,10,15,21,28,...
+  sum_series[0] = 1;
+  for (n=1; n<20; ++n){
+    sum_series[n] = sum_series[n-1] + (n+1);
   }
 
-  return (DContainer[LastElem()].P1() + 1)*p1  - sum + p2;
+  sum_p1 = 0;
+  for (n=1; n<=p1; ++n){
+    sum_p1 += sum_series[OrderOfReconstruction-n+1];
+  }
+
+  sum_p2 = 0;
+  for ( n=2; n<=p2; ++n){
+    sum_p2 += (n-1);
+  }
+  sum_p2 += p1*p2;
+
+  return sum_p1 + (OrderOfReconstruction+1)*p2 - sum_p2 + p3;
 }
 
 
@@ -402,9 +418,9 @@ double & TaylorDerivativesContainer<ThreeD,T>::operator()(const unsigned p1, con
   return DContainer[IndexOrder(p1,p2,p3)].D(VarPosition);
 }
 
-// ComputeSolutionFor :-> Compute the solution of the Taylor series expansion for a particular distance (DeltaX,DeltaY)
+// ComputeSolutionFor :-> Compute the solution of the Taylor series expansion for a particular distance (DeltaX,DeltaY,DeltaZ)
 template<class T> inline
-T TaylorDerivativesContainer<ThreeD,T>::ComputeSolutionFor(const double DeltaX, const double DeltaY){
+T TaylorDerivativesContainer<ThreeD,T>::ComputeSolutionFor(const double DeltaX, const double DeltaY, const double DeltaZ){
 
   // initialize the solution state
   T Solution(0.0);
@@ -413,14 +429,23 @@ T TaylorDerivativesContainer<ThreeD,T>::ComputeSolutionFor(const double DeltaX, 
   int OrderOfReconstruction = DContainer[LastElem()].P1();
   int p1,p2,p3,Position;
 
-  double DeltaXtoPower(1.0), DeltaYtoPower;
+  double DeltaXtoPower(1.0), DeltaYtoPower, DeltaZtoPower;
 
-  for (p1=0,Position=0; p1<=OrderOfReconstruction; ++p1){
+ for (p1=0,Position=0; p1<=OrderOfReconstruction; ++p1){
     /* Reinitialize DeltaYtoPower */
     DeltaYtoPower = 1.0;
-    for (p2=0; p2<=OrderOfReconstruction-p1; ++p2, ++Position){
-      /* Update solution */
-      Solution += DeltaXtoPower*DeltaYtoPower*DContainer[Position].D();
+
+    for (p2=0; p2<=OrderOfReconstruction-p1; ++p2){
+      /* Reinitialize DeltaZtoPower */
+      DeltaZtoPower = 1.0;
+      
+      for (p3=0; p3<=OrderOfReconstruction-p1-p2; ++p3, ++Position){
+
+	/* Update solution */
+	 Solution += DeltaXtoPower*DeltaYtoPower*DeltaZtoPower*DContainer[Position].D();
+	/* Update DeltaZtoPower */
+	DeltaZtoPower *= DeltaZ;
+      }
 
       /* Update DeltaYtoPower */
       DeltaYtoPower *= DeltaY;
@@ -430,7 +455,7 @@ T TaylorDerivativesContainer<ThreeD,T>::ComputeSolutionFor(const double DeltaX, 
     DeltaXtoPower *= DeltaX;
   }
 
-  return phi*Solution + (OneT-phi)*DContainer[0].D();
+ return phi*Solution + (OneT-phi)*DContainer[0].D();
 }
 
 // Friend functions
