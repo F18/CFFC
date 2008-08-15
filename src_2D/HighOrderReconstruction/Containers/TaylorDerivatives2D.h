@@ -277,11 +277,6 @@ class TaylorDerivativesContainer<TwoD,T>{
 
 
   /* Overloaded Operators */
-  Derivative & operator()(const int & position, const bool,
-			  const bool, const bool) {return DContainer[position];}
-  const Derivative & operator()(const int & position, const bool,
-				const bool, const bool) const {return DContainer[position];}
-
   Derivative & operator()(const int position) {return DContainer[position];}
   const Derivative & operator()(const int position) const {return DContainer[position];}
 
@@ -630,7 +625,7 @@ ostream & operator<< (ostream & os, const TaylorDerivativesContainer<TwoD,T>& Ob
   os.width(4);
   os << Obj.RecOrder() << endl;
   for(int i=0; i<=Obj.LastElem(); ++i)
-    os << Obj(i,true,true,true) << endl;
+    os << Obj(i) << endl;
   os.unsetf(ios::skipws);
   return os;
 }
@@ -644,7 +639,7 @@ istream & operator>> (istream & os, TaylorDerivativesContainer<TwoD,T>& Obj){
   /* Adjust the container size */
   Obj.GenerateContainer(ReconstructionOrder);
   for(int i=0; i<=Obj.LastElem(); ++i){
-    os >> Obj(i,true,true,true);
+    os >> Obj(i);
   }
   os.unsetf(ios::skipws);
   return os;
@@ -658,7 +653,7 @@ const TaylorDerivativesContainer<TwoD,T> operator+(const TaylorDerivativesContai
   TaylorDerivativesContainer<TwoD,T> Temp(left.RecOrder());
   
   for (int i=0; i<=right.LastElem(); ++i){
-    Temp(i,true,true,true).D() = left(i,true,true,true).D() + right(i,true,true,true).D();
+    Temp(i).D() = left(i).D() + right(i).D();
   }
   
   return Temp;
@@ -672,7 +667,7 @@ const TaylorDerivativesContainer<TwoD,T> operator-(const TaylorDerivativesContai
   TaylorDerivativesContainer<TwoD,T> Temp(left.RecOrder());
   
   for (int i=0; i<=right.LastElem(); ++i){
-    Temp(i,true,true,true).D() = left(i,true,true,true).D() - right(i,true,true,true).D();
+    Temp(i).D() = left(i).D() - right(i).D();
   }
   
   return Temp;
@@ -687,7 +682,7 @@ bool operator==(const TaylorDerivativesContainer<TwoD,T>& left,
   if (left.size() != right.size() )
     return !answer;
   for (int i=0; i<=right.LastElem(); ++i){
-    answer = answer && ( left(i,true,true,true) == right(i,true,true,true) );
+    answer = answer && ( left(i) == right(i) );
   }
   return answer;
 }
