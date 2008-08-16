@@ -113,7 +113,8 @@ SRC_GRID_HO = $(GRID_DIR)HO_Cell2D.cc \
               $(GRID_DIR)HO_Spline2DInterval.cc \
 	      $(GRID_DIR)HO_Grid2DQuad.cc \
               $(GRID_DIR)HO_Grid2DQuadMultiBlock.cc \
-	      $(GRID_DIR)HO_Grid2DQuad_ExecutionMode.cc
+	      $(GRID_DIR)HO_Grid2DQuad_ExecutionMode.cc \
+	      $(GRID_DIR)NASARotor37_HO.cc $(GRID_DIR)NASARotor67_HO.cc
 SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
 	      $(ICEMCFD_DIR)ICEMCFD_ctype.c
 

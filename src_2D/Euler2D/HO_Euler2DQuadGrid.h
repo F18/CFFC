@@ -90,50 +90,52 @@ void Grid2D_Quad_MultiBlock_HO::Additional_Multi_Block_Grid_Setup(Euler2D_Input_
 
   switch(Input_Parameters.i_Grid) {
   case GRID_NASA_ROTOR_37 :
-    //     Input_Parameters.Number_of_Blocks_Idir = 3;
-    //     Input_Parameters.Number_of_Blocks_Jdir = 2;
-    //     if (!Input_Parameters.Interface_IP.Component_List.Ni) {
-    //       Grid_ptr = Input_Parameters.NASA_Rotor37.genMeshH_3x2_AUTO(Grid_ptr,
-    // 								 Input_Parameters.Rotor_Percent_Span,
-    // 								 Input_Parameters.NASA_Rotor37.z_up,
-    // 								 Input_Parameters.NASA_Rotor37.z_d,
-    // 								 Input_Parameters.Number_of_Cells_Idir,
-    // 								 Input_Parameters.Number_of_Cells_Jdir,
-    // 								 Input_Parameters.Number_of_Ghost_Cells,
-    // 								 min(250, 8*max(Input_Parameters.Number_of_Cells_Idir,
-    // 										Input_Parameters.Number_of_Cells_Jdir)));
-    //     } else {
-    //       Grid_ptr = Grid_NASA_Rotor_37(Grid_ptr,
-    // 				    Input_Parameters.Number_of_Blocks_Idir,
-    // 				    Input_Parameters.Number_of_Blocks_Jdir,
-    // 				    Input_Parameters.Rotor_Percent_Span,
-    // 				    Input_Parameters.Number_of_Cells_Idir, 
-    // 				    Input_Parameters.Number_of_Cells_Jdir,
-    // 				    Input_Parameters.Number_of_Ghost_Cells);
-    //     }
+    Input_Parameters.Number_of_Blocks_Idir = 3;
+    Input_Parameters.Number_of_Blocks_Jdir = 2;
+    if (!Input_Parameters.Interface_IP.Component_List.Ni) {
+      Input_Parameters.NASA_Rotor37.genMeshH_3x2_AUTO(*this,
+						      Input_Parameters.Rotor_Percent_Span,
+						      Input_Parameters.NASA_Rotor37.z_up,
+						      Input_Parameters.NASA_Rotor37.z_d,
+						      Input_Parameters.Number_of_Cells_Idir,
+						      Input_Parameters.Number_of_Cells_Jdir,
+						      Input_Parameters.Number_of_Ghost_Cells,
+						      HighOrder2D_Input::MaximumReconstructionOrder(),
+						      min(250, 8*max(Input_Parameters.Number_of_Cells_Idir,
+								     Input_Parameters.Number_of_Cells_Jdir)));
+    } else {
+      Grid_NASA_Rotor_37_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					Input_Parameters.Number_of_Blocks_Jdir,
+					Input_Parameters.Rotor_Percent_Span,
+					Input_Parameters.Number_of_Cells_Idir, 
+					Input_Parameters.Number_of_Cells_Jdir,
+					Input_Parameters.Number_of_Ghost_Cells,
+					HighOrder2D_Input::MaximumReconstructionOrder());
+    }
     break;
   case GRID_NASA_ROTOR_67 :
-    //     Input_Parameters.Number_of_Blocks_Idir = 3;
-    //     Input_Parameters.Number_of_Blocks_Jdir = 2;
-    //     if (!Input_Parameters.Interface_IP.Component_List.Ni) {
-    //       Grid_ptr = Input_Parameters.NASA_Rotor67.genMeshH_3x2_AUTO(Grid_ptr,
-    // 								 Input_Parameters.Rotor_Percent_Span,
-    // 								 Input_Parameters.NASA_Rotor67.z_up,
-    // 								 Input_Parameters.NASA_Rotor67.z_d,
-    // 								 Input_Parameters.Number_of_Cells_Idir,
-    // 								 Input_Parameters.Number_of_Cells_Jdir,
-    // 								 Input_Parameters.Number_of_Ghost_Cells,
-    // 								 min(250, 8*max(Input_Parameters.Number_of_Cells_Idir,
-    // 										Input_Parameters.Number_of_Cells_Jdir)));
-    //     } else {
-    //       Grid_ptr = Grid_NASA_Rotor_67(Grid_ptr,
-    // 				    Input_Parameters.Number_of_Blocks_Idir,
-    // 				    Input_Parameters.Number_of_Blocks_Jdir,
-    // 				    Input_Parameters.Rotor_Percent_Span,
-    // 				    Input_Parameters.Number_of_Cells_Idir,
-    // 				    Input_Parameters.Number_of_Cells_Jdir,
-    // 				    Input_Parameters.Number_of_Ghost_Cells);
-    //     }
+    Input_Parameters.Number_of_Blocks_Idir = 3;
+    Input_Parameters.Number_of_Blocks_Jdir = 2;
+    if (!Input_Parameters.Interface_IP.Component_List.Ni) {
+      Input_Parameters.NASA_Rotor67.genMeshH_3x2_AUTO(*this,
+						      Input_Parameters.Rotor_Percent_Span,
+						      Input_Parameters.NASA_Rotor67.z_up,
+						      Input_Parameters.NASA_Rotor67.z_d,
+						      Input_Parameters.Number_of_Cells_Idir,
+						      Input_Parameters.Number_of_Cells_Jdir,
+						      Input_Parameters.Number_of_Ghost_Cells,
+						      HighOrder2D_Input::MaximumReconstructionOrder(),
+						      min(250, 8*max(Input_Parameters.Number_of_Cells_Idir,
+								     Input_Parameters.Number_of_Cells_Jdir)));
+    } else {
+      Grid_NASA_Rotor_67_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					Input_Parameters.Number_of_Blocks_Jdir,
+					Input_Parameters.Rotor_Percent_Span,
+					Input_Parameters.Number_of_Cells_Idir,
+					Input_Parameters.Number_of_Cells_Jdir,
+					Input_Parameters.Number_of_Ghost_Cells,
+					HighOrder2D_Input::MaximumReconstructionOrder());
+    }
     break;
   default:
     Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
