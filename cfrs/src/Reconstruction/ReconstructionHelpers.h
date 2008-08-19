@@ -8,6 +8,10 @@
 #include "../../../src_2D/HighOrderReconstruction/ReconstructionHelpers.h"
 #include "include/TypeDefinition.h"
 
+//#include "../../../src_3D/Math/LinearSystems.h"
+//#include "../../../src_3D/Math/Vector3D.h"
+//#include "../../../src_3D/Utilities/Utilities.h"
+
 /* Function Definition */
 void AnalyzeWeights(DenseMatrix & A, ColumnVector & Weights, const double & MinDistance, 
 		    const int & ReconstructionOrder, int & FinalOrder, const double & CutoffKnob);
@@ -48,6 +52,11 @@ void DetermineDistanceCellCenters(ColumnVector & DistanceCellCenters, vector<Vec
 
 int InverseOrder2D(const int & ReconstructionOrder, const int & ComputedDerivatives);
   
-
+/*! Set the stencil for the 3D kExact reconstruction
+******************************************************************************************/
+void MakeReconstructionStencil(const int & rings, const int & iCell, const int & jCell, const int & kCell,
+			       vector<int> & i_index, vector<int> & j_index, vector<int> & k_index);
+void MakeReconstructionStencil(const int & rings, const int & iCell, const int & jCell, const int & kCell,
+			       int *i_index, int *j_index, int *k_index);
 
 #endif

@@ -572,7 +572,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 	In_File >> SolnPtr[k][j][i].CellSolution();
 	
 	
-	SolnPtr[k][j][i].CellDeriv(0,true,true,true) = SolnPtr[k][j][i].CellSolution();
+	SolnPtr[k][j][i].CellDeriv(0) = SolnPtr[k][j][i].CellSolution();
 	SolnPtr[k][j][i].UpdateSubgridSolution();
 
       } /* end for */
@@ -2266,9 +2266,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructS
       for (j=jStart()-2; j<=jEnd()+2; ++j){
 	for (k=kStart()-2; k<=kEnd()+2; ++k){
 	  /* Make Stencil */
-	  MakeReconstructionStencil(SolnPtr[0][0][0].CellRings(),i,j,k,i_index,j_index,k_index);  // --> RR: Must be created in ReconstructionHelpers.h
+	  MakeReconstructionStencil(SolnPtr[0][0][0].CellRings(),i,j,k,i_index,j_index,k_index);
 	  /* Solve reconstruction for the current cell */
-	  kExact_Reconstruction(*this,i_index,j_index,k_index,StencilSize); // --> RR: Must be created
+	  kExact_Reconstruction(*this,i_index,j_index,k_index,StencilSize); // --> RR: Must be created in Reconstruction3D/ReconstructionFunctions.h
 	  
 	  ++FinishedCell;
 	  Print_Progress(FinishedCell,ProgressFrequency);
