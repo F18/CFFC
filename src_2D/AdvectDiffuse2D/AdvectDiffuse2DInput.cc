@@ -1,5 +1,5 @@
-/* AdvectDiffuse2DInput.cc:  Subroutines for 
-                             2D Advection Diffusion Equation Input Classes. */
+/*!\file AdvectDiffuse2DInput.cc
+  \brief Subroutines for 2D Advection Diffusion Equation Input Classes. */
 
 /* Include required C++ libraries. */
 // None

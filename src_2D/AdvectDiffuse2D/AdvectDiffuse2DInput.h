@@ -318,7 +318,7 @@ inline AdvectDiffuse2D_Input_Parameters::AdvectDiffuse2D_Input_Parameters(void):
 
 /************************************************************************
  * AdvectDiffuse2D_Input_Parameters::~AdvectDiffuse2D_Input_Parameters()*
- * -->  Default Constructor                                             *
+ * -->  Default Destructor                                              *
  ***********************************************************************/
 inline AdvectDiffuse2D_Input_Parameters::~AdvectDiffuse2D_Input_Parameters(void){
   if (ICEMCFD_FileNames != NULL){
