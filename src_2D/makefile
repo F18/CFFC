@@ -304,7 +304,9 @@ SRC_EULER = $(EULER_2D_DIR)Euler2DState.cc \
             $(EULER_2D_DIR)Euler2DQuadSingleBlock.cc \
             $(EULER_2D_DIR)Euler2DQuadMultiBlock.cc \
             $(EULER_2D_DIR)Euler2DQuadGrid.cc \
-            $(EULER_2D_DIR)Euler2DQuadSolvers.cc 
+            $(EULER_2D_DIR)Euler2DQuadSolvers.cc \
+	    $(EULER_2D_DIR)Euler2DExactSolutions.cc \
+	    $(EULER_2D_DIR)ExactSolutions.cc
 SRC_EULER_EXE = $(EULER_2D_DIR)Euler2D.cc
 
 # NavierStokes2D:

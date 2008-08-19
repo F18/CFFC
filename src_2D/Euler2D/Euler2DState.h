@@ -188,6 +188,9 @@ public:
     d = rho; v.x = vx; v.y = vy; p = pre;
   }
 
+  //! Value Constructor
+  Euler2D_pState(const double &Val);
+
   /* Destructor. */
   // ~Euler2D_pState(void);
   // Use automatically generated destructor.
@@ -937,6 +940,13 @@ public:
   //@}
 
 };
+
+/********************************************
+ * Euler2D_pState Value Constructor.        *
+ *******************************************/
+inline Euler2D_pState::Euler2D_pState(const double &Val):
+  d(Val), v(Val), p(Val){
+}
 
 /********************************************************
  * Euler2D_pState::setgas -- Assign gas constants.      *

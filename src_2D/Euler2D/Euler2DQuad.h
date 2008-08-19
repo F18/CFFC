@@ -7,56 +7,22 @@
 /* Include 2D Euler state, 2D cell, 2D quadrilateral multiblock 
    grid, quadtree, AMR, NASA rotor, and 2D Euler input header files. */
 
-#ifndef _EULER2D_STATE_INCLUDED
 #include "Euler2DState.h"
-#endif // _EULER2D_STATE_INCLUDED
-
-#ifndef _CELL2D_INCLUDED
 #include "../Grid/Cell2D.h"
-#endif // _CELL2D_INCLUDED
-
-#ifndef _GRID2D_QUAD_BLOCK_INCLUDED
 #include "../Grid/Grid2DQuad.h"
-#endif // _GRID2D_QUAD_BLOCK_INCLUDED
-
 #include "../Grid/HO_Grid2DQuad.h"     /* Include 2D quadrilateral block grid header file */
-
-#ifndef _QUADTREE_INCLUDED
 #include "../AMR/QuadTree.h"
-#endif // _QUADTREE_INCLUDED
-
-#ifndef _AMR_INCLUDED
 #include "../AMR/AMR.h"
-#endif // _AMR_INCLUDED
-
-#ifndef _NASA_ROTOR37_INCLUDED
 #include "../Grid/NASARotor37.h"
-#endif // _NASA_ROTOR37_INCLUDED
-
-#ifndef _NASA_ROTOR67_INCLUDED
 #include "../Grid/NASARotor67.h"
-#endif // _NASA_ROTOR67_INCLUDED
-
-#ifndef _EULER2D_INPUT_INCLUDED
 #include "Euler2DInput.h"
-#endif // _EULER2D_INPUT_INCLUDED
-
-/* Include the linear systems header file. */
-
-#ifndef _LINEARSYSTEMS_INCLUDED
-#include "../Math/LinearSystems.h"
-#endif // _LINEARSYSTEMS_INCLUDED
-
-/* Include ICEMCFD input header file. */
-
-#ifndef _ICEMCFD_INCLUDED
-#include "../ICEM/ICEMCFD.h"
-#endif // _ICEMCFD_INCLUDED
-
+#include "../Math/LinearSystems.h"  /* Include the linear systems header file. */
+#include "../ICEM/ICEMCFD.h"        /* Include ICEMCFD input header file. */
 #include "../System/System_Linux.h"    /* Include System Linux header file. */
 #include "../HighOrderReconstruction/AccuracyAssessment2D.h" /* Include 2D accuracy assessment header file. */
 #include "../HighOrderReconstruction/HighOrder2D.h" /* Include 2D high-order template class header file. */
 #include "../HighOrderReconstruction/Cauchy_BoundaryConditions.h" /* Include 2D high-order boundary conditions header file. */
+#include "Euler2DExactSolutions.h"  /* Include 2D Euler exact solutions header file */
 
 /* Define the structures and classes. */
 
@@ -177,6 +143,7 @@ public:
 
   //! @name Defined public types:
   //@{
+  typedef Euler2D_ExactSolutions Exact_Solution_Type;
   typedef AccuracyAssessment2D<Euler2D_Quad_Block> Accuracy_Assessment_Type;
   typedef Euler2D_pState Soln_State;
   typedef HighOrder2D<Soln_State> HighOrderType; //!< high-order variable data type. Use primitive variables for reconstruction.
@@ -236,38 +203,29 @@ public:
                           *WoS, //!< Boundary condition reference states for south boundary.
                           *WoE, //!< Boundary condition reference states for east boundary.
                           *WoW; //!< Boundary condition reference states for west boundary.
+
+  //! Reference values for north and south boundary conditon reference states
+  Euler2D_pState Ref_State_BC_North, Ref_State_BC_South; 
+  //! Reference values for east and west boundary conditon reference states
+  Euler2D_pState Ref_State_BC_East, Ref_State_BC_West;
   //@}
+
+  //! @name Accuracy assessment data:
+  //@{
+  static Exact_Solution_Type *ExactSoln;          //!< Pointer to the exact solution
+  static Exact_Solution_Type *ExactSolution(void){ return ExactSoln;} //!< Return the exact solution pointer
+  Accuracy_Assessment_Type AssessAccuracy;   //!< Variable to provide access to accuracy assessment subroutines
+  //@}
+
 
   //@{ @name Creation, copy, and assignment constructors.
   //! Creation constructor.
-  Euler2D_Quad_Block(void) {
-    NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
-    W = NULL; U = NULL; dt = NULL; dUdt = NULL; 
-    dWdx = NULL; dWdy = NULL; phi = NULL; Uo = NULL;
-    FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
-    WoN = NULL; WoS = NULL; WoE = NULL; WoW = NULL;
-    Axisymmetric = 0; Freeze_Limiter = OFF;
-  }
-
-  //! Copy constructor.
-  Euler2D_Quad_Block(const Euler2D_Quad_Block &Soln) {
-    NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu; 
-    NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu; Nghost = Soln.Nghost;
-    Grid = Soln.Grid; W = Soln.W; U = Soln.U; dt = Soln.dt; dUdt = Soln.dUdt; 
-    dWdx = Soln.dWdx; dWdy = Soln.dWdy; phi = Soln.phi; Uo = Soln.Uo;
-    FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
-    WoN = Soln.WoN; WoS = Soln.WoS; WoE = Soln.WoE; WoW = Soln.WoW;
-    Axisymmetric = 0; Freeze_Limiter = Soln.Freeze_Limiter;
-  }
+  Euler2D_Quad_Block(void);
 
   /* Destructor. */
   // ~Euler2D_Quad_Block(void);
   // Use automatically generated destructor.
   //@}
-
-  /* Assignment operator. */
-  // Euler2D_Quad_Block operator = (const Euler2D_Quad_Block &Soln);
-  // Use automatically generated assignment operator.
 
   //@{ @name Allocate and deallocate functions.
   //! Allocate memory for structured quadrilateral solution block.
@@ -298,6 +256,14 @@ public:
   //@{ @name Member functions for limiter freezing.
   void evaluate_limiters(void); //!< Set flags for limiter evaluation.
   void freeze_limiters(void);   //!< Set flags for limiter freezing.
+  //@}
+
+  //! @name Normalization related functions:
+  //@{
+  //! Get normalization state
+  const Euler2D_pState getNormalizationState(const int &ii, const int &jj) const { return RefU; }
+  //! Set normalization state
+  static void Set_Normalization_Reference_State(const Euler2D_pState & State){ RefU = State; }
   //@}
 
   //@{ @name Input-output operators.
@@ -396,7 +362,56 @@ public:
 				   const int j_inc);
   //@}
 
+private:
+  Euler2D_Quad_Block(const Euler2D_Quad_Block &Soln);  //! Private copy constructor.
+  Euler2D_Quad_Block & operator = (const Euler2D_Quad_Block &Soln);   //!< Private assignment operator
+
+  static Euler2D_pState RefU;	//!< reference state for normalizing the solution
 };
+
+/****************************************\\**
+ * Default constructor.
+ *****************************************/
+inline Euler2D_Quad_Block::Euler2D_Quad_Block(void):
+  AssessAccuracy(this),
+  Ref_State_BC_North(0.0), Ref_State_BC_South(0.0),
+  Ref_State_BC_East(0.0), Ref_State_BC_West(0.0)
+{
+
+  // Grid size and variables:
+  NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+  // Solution variables:
+  W = NULL; U = NULL; dt = NULL; dUdt = NULL; 
+  dWdx = NULL; dWdy = NULL; phi = NULL; Uo = NULL;
+  FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
+  WoN = NULL; WoS = NULL; WoE = NULL; WoW = NULL;
+  Axisymmetric = 0; Freeze_Limiter = OFF;
+  
+  // Get access to the Euler2D_ExactSolutions object
+  ExactSoln = &Euler2D_ExactSolutions::getInstance();
+
+}
+
+/****************************************\\**
+ * Private copy constructor. (shallow copy)
+ *****************************************/
+inline Euler2D_Quad_Block::Euler2D_Quad_Block(const Euler2D_Quad_Block &Soln):
+  AssessAccuracy(this)
+{
+  NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu; 
+  NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu; Nghost = Soln.Nghost;
+  Grid = Soln.Grid; W = Soln.W; U = Soln.U; dt = Soln.dt; dUdt = Soln.dUdt; 
+  dWdx = Soln.dWdx; dWdy = Soln.dWdy; phi = Soln.phi; Uo = Soln.Uo;
+  FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
+  WoN = Soln.WoN; WoS = Soln.WoS; WoE = Soln.WoE; WoW = Soln.WoW;
+  Axisymmetric = 0; Freeze_Limiter = Soln.Freeze_Limiter;
+
+  Ref_State_BC_North = Soln.Ref_State_BC_North;
+  Ref_State_BC_South = Soln.Ref_State_BC_South;
+  Ref_State_BC_East = Soln.Ref_State_BC_East;
+  Ref_State_BC_West = Soln.Ref_State_BC_West;
+
+}
 
 /**************************************************************************
  * Euler2D_Quad_Block::allocate -- Allocate memory.                       *

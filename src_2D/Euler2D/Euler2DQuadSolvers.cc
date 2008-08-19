@@ -1,33 +1,26 @@
-/* Euler2DQuadSolvers.cc:  2D Euler Equation 
-                           Multi-Block Quadrilateral Mesh Solvers. */
+/*!\file Euler2DQuadSolvers.cc
+  \brief 2D Euler Equation Multi-Block Quadrilateral Mesh Solvers. */
 
-/* Include 2D Euler quadrilateral mesh solution header file. */
+/* Include required C++ libraries. */
+// None
 
-#ifndef _EULER2D_QUAD_INCLUDED
-#include "Euler2DQuad.h"
-#endif // _EULER2D_QUAD_INCLUDED
+/* Using std namespace functions */
+// None
 
-/* Include 2D FAS Multigrid solver header file. */
+/* Include CFFC header files */
+#include "Euler2DQuad.h" /* Include 2D Euler quadrilateral mesh solution header file. */
+#include "../FASMultigrid2D/FASMultigrid2D.h" /* Include 2D FAS Multigrid solver header file. */
+#include "HO_Euler2DQuadGrid.h" /* Include 2D quadrilateral multiblock grid header file for Euler */
+#include "../NewtonKrylovSchwarz2D/NKS2D.h" /* Include 2D NKS solver header file. */
+#include "Euler2DQuadNKS.h"  /* Inlcude Euler Specializaitons for NKS */
 
-#ifndef _FASMULTIGRID2D_INCLUDED
-#include "../FASMultigrid2D/FASMultigrid2D.h"
-#endif // _FASMULTIGRID2D_INCLUDED
 
-/* Include 2D quadrilateral multiblock grid header file for Euler */
-#include "HO_Euler2DQuadGrid.h"
-
-/* Include 2D NKS solver header file. */
-#include "../NewtonKrylovSchwarz2D/NKS2D.h"
-
-/* Inlcude Euler Specializaitons for NKS */
-#include "Euler2DQuadNKS.h" 
-
-/********************************************************
- * Routine: Euler2DQuadSolver                           *
- *                                                      *
- * Computes solutions to 2D Euler equations on 2D       *
- * quadrilateral multi-block solution-adaptive mesh.    *
- *                                                      *
+/******************************************************//**
+ * Routine: Euler2DQuadSolver                           
+ *                                                      
+ * Computes solutions to 2D Euler equations on 2D       
+ * quadrilateral multi-block solution-adaptive mesh.    
+ *                                                      
  ********************************************************/
 int Euler2DQuadSolver(char *Input_File_Name_ptr,
                       int batch_flag) {
