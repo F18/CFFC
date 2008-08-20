@@ -1,4 +1,5 @@
-/* Euler2DState.h:  Header file defining 2D Euler Solution State Classes. */
+/*!\file Euler2DState.h
+  \brief Header file defining 2D Euler Solution State Classes. */
 
 #ifndef _EULER2D_STATE_INCLUDED
 #define _EULER2D_STATE_INCLUDED
@@ -13,33 +14,16 @@
 #include <cstdlib>
 #include <cstring>
 
+/* Using std namespace functions */
 using namespace std;
 
-/* Include math macro, CFD, 2D vector, and gas constant header files. */
-
-#ifndef _MATH_MACROS_INCLUDED
-#include "../Math/Math.h"
-#endif // _MATH_MACROS_INCLUDED
-
-#ifndef _CFD_INCLUDED
-#include "../CFD/CFD.h"
-#endif // _CFD_INCLUDED
-
-#ifndef _MATRIX_INCLUDED
-#include "../Math/Matrix.h"
-#endif // _MATRIX_INCLUDED
-
-#ifndef _VECTOR2D_INCLUDED
-#include "../Math/Vector2D.h"
-#endif //_VECTOR2D_INCLUDED
-
-#ifndef _GAS_CONSTANTS_INCLUDED
-#include "../Physics/GasConstants.h"
-#endif // _GAS_CONSTANTS_INCLUDED
-
-#ifndef _SOLID_CONSTANTS_INCLUDED
-#include "../Physics/SolidConstants.h"
-#endif // _SOLID_CONSTANTS_INCLUDED
+/* Include CFFC header files */
+#include "../Math/Math.h"  /* Include math macro header files. */
+#include "../CFD/CFD.h"    /* Include CFD header files. */
+#include "../Math/Matrix.h"  /* Include matrix header files. */
+#include "../Math/Vector2D.h" /* Include vector 2D header files. */
+#include "../Physics/GasConstants.h" /* Include gas constant header files. */
+#include "../Physics/SolidConstants.h" /* Include solid constant header files. */
 
 /* Define the classes. */
 
@@ -198,7 +182,7 @@ public:
  
   //@{ @name Useful operators.
   //! Return the number of variables.
-  int NumVar(void) { return NUM_VAR_EULER2D; }
+  static int NumVar(void) { return NUM_VAR_EULER2D; }
 
   //! Copy operator.
   void Copy(const Euler2D_pState &W) {
@@ -208,6 +192,11 @@ public:
   //! Vacuum operator.
   void Vacuum(void) {
     d = ZERO; v = Vector2D_ZERO; p = ZERO;
+  }
+
+  //! One operator. Set the solution to ONE.
+  void One(void) { 
+    d = ONE; v.x = ONE; v.y = ONE; p = ONE;
   }
 
   //! Standard atmosphere operator.
@@ -515,17 +504,23 @@ public:
   friend Euler2D_pState operator *(const Euler2D_pState &W, const double &a);
   friend Euler2D_pState operator *(const double &a, const Euler2D_pState &W);
   friend Euler2D_pState operator /(const Euler2D_pState &W, const double &a);
+  friend Euler2D_pState operator /(const Euler2D_pState &W1, const Euler2D_pState &W2);
   friend Euler2D_pState operator ^(const Euler2D_pState &W1, const Euler2D_pState &W2);
+  friend Euler2D_pState max(const Euler2D_pState &W1, const Euler2D_pState &W2 );
   //@}
 
   //@{ @name Unary arithmetic operators.
   friend Euler2D_pState operator +(const Euler2D_pState &W);
   friend Euler2D_pState operator -(const Euler2D_pState &W);
+  friend Euler2D_pState fabs(const Euler2D_pState &W);
+  friend Euler2D_pState sqr(const Euler2D_pState &W);
+
   //@}
 
   //@{ @name Shortcut arithmetic operators.
   Euler2D_pState &operator +=(const Euler2D_pState &W);
   Euler2D_pState &operator -=(const Euler2D_pState &W);
+  Euler2D_pState &operator /=(const Euler2D_pState &W);
   Euler2D_pState &operator *=(const double &a);
   Euler2D_pState &operator /=(const double &a);
   //@}
@@ -533,6 +528,10 @@ public:
   //@{ @name Relational operators.
   friend int operator ==(const Euler2D_pState &W1, const Euler2D_pState &W2);
   friend int operator !=(const Euler2D_pState &W1, const Euler2D_pState &W2);
+  friend bool operator >=(const Euler2D_pState& W1, const Euler2D_pState& W2);
+  friend bool operator <=(const Euler2D_pState& W1, const Euler2D_pState& W2);
+  friend bool operator <(const Euler2D_pState &W1, const Euler2D_pState &W2);
+  friend bool operator >(const Euler2D_pState &W1, const Euler2D_pState &W2);
   //@}
 
   //@{ @name Input-output operators.
@@ -1217,9 +1216,21 @@ inline Euler2D_pState operator /(const Euler2D_pState &W, const double &a) {
   return (Euler2D_pState(W.d/a,W.v/a,W.p/a));
 }
 
+inline Euler2D_pState operator /(const Euler2D_pState &W1, const Euler2D_pState &W2) {
+  return (Euler2D_pState(W1[1]/W2[1], W1[2]/W2[2], W1[3]/W2[3], W1[4]/W2[4]));
+}
+
 // My useful solution state product operator.
 inline Euler2D_pState operator ^(const Euler2D_pState &W1, const Euler2D_pState &W2) {
    return (Euler2D_pState(W1.d*W2.d,W1.v.x*W2.v.x,W1.v.y*W2.v.y,W1.p*W2.p));
+}
+
+/*!
+ * Compute maximum between 2 states. 
+ * Return the state of maximum values.
+ */
+inline Euler2D_pState max(const Euler2D_pState &W1, const Euler2D_pState &W2 ){
+  return Euler2D_pState(max(W1.d,W2.d),max(W1.v.x,W2.v.x),max(W1.v.y,W2.v.y),max(W1.p,W2.p));
 }
 
 /********************************************************
@@ -1233,6 +1244,15 @@ inline Euler2D_pState operator -(const Euler2D_pState &W) {
   return (Euler2D_pState(-W.d,-W.v,-W.p));
 }
 
+inline Euler2D_pState fabs(const Euler2D_pState &W){
+  return Euler2D_pState(fabs(W[1]),fabs(W[2]), fabs(W[3]),fabs(W[4]));
+}
+
+inline Euler2D_pState sqr(const Euler2D_pState &W){
+  return Euler2D_pState(sqr(W.d),sqr(W.v.x),sqr(W.v.y),sqr(W.p));
+}
+
+
 /********************************************************
  * Euler2D_pState -- Shortcut arithmetic operators.     *
  ********************************************************/
@@ -1243,6 +1263,14 @@ inline Euler2D_pState& Euler2D_pState::operator +=(const Euler2D_pState &W) {
 
 inline Euler2D_pState& Euler2D_pState::operator -=(const Euler2D_pState &W) {
   d -= W.d; v.x -= W.v.x; v.y -= W.v.y; p -= W.p;
+  return *this;
+}
+
+inline Euler2D_pState& Euler2D_pState::operator /=(const Euler2D_pState &W){
+  d /= W.d;
+  v.x /= W.v.x;
+  v.y /= W.v.y;
+  p /= W.p;
   return *this;
 }
 
@@ -1265,6 +1293,22 @@ inline int operator ==(const Euler2D_pState &W1, const Euler2D_pState &W2) {
 
 inline int operator !=(const Euler2D_pState &W1, const Euler2D_pState &W2) {
   return (W1.d != W2.d || W1.v != W2.v || W1.p != W2.p);
+}
+
+inline bool operator <=(const Euler2D_pState &W1, const Euler2D_pState &W2) {
+  return (W1[1]<=W2[1] && W1[2]<=W2[2] && W1[3]<=W2[3] && W1[4]<=W2[4] );
+}
+
+inline bool operator >=(const Euler2D_pState &W1, const Euler2D_pState &W2) {
+  return (W1[1]>=W2[1] && W1[2]>=W2[2] && W1[3]>=W2[3] && W1[4]>=W2[4] );
+}
+
+inline bool operator <(const Euler2D_pState &W1, const Euler2D_pState &W2) {
+  return (W1[1]<W2[1] && W1[2]<W2[2] && W1[3]<W2[3] && W1[4]<W2[4] );
+}
+
+inline bool operator >(const Euler2D_pState &W1, const Euler2D_pState &W2) {
+  return (W1[1]>W2[1] && W1[2]>W2[2] && W1[3]>W2[3] && W1[4]>W2[4] );
 }
 
 /********************************************************

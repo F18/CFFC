@@ -223,8 +223,7 @@ public:
   Euler2D_Quad_Block(void);
 
   /* Destructor. */
-  // ~Euler2D_Quad_Block(void);
-  // Use automatically generated destructor.
+  ~Euler2D_Quad_Block(void){ deallocate(); }
   //@}
 
   //@{ @name Allocate and deallocate functions.
