@@ -74,7 +74,7 @@ AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(void):
   refinement_criteria.reserve(1);
 }
 
-/****************************************\\**
+/****************************************//**
  * Private copy constructor. (shallow copy)
  *****************************************/
 AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(const AdvectDiffuse2D_Quad_Block &Soln):
