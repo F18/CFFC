@@ -230,8 +230,21 @@ public:
   //! Allocate memory for structured quadrilateral solution block.
   void allocate(const int Ni, const int Nj, const int Ng);
 
+  //! Allocate memory for high-order variables
+  void allocate_HighOrder(const int & NumberOfReconstructions,
+			  const vector<int> & ReconstructionOrders);
+
+  //! Allocate memory for high-order boundary conditions
+  void allocate_HighOrder_BoundaryConditions(void);
+
   //! Deallocate memory for structured quadrilateral solution block.
   void deallocate(void);
+
+  //! Deallocate high-order variable memory for structured quadrilateral solution block.
+  void deallocate_HighOrder(void);
+
+  //! Deallocate high-order boundary conditions memory.
+  void deallocate_HighOrder_BoundaryConditions(void);
   //@}
 
   //@{ @name Bilinear interplation (Zingg & Yarrow).
@@ -252,10 +265,40 @@ public:
   Euler2D_cState UnSW(const int ii, const int jj); //!< Return conserved solution state at cell SW node.
   //@}
 
-  //@{ @name Member functions for limiter freezing.
-  void evaluate_limiters(void); //!< Set flags for limiter evaluation.
-  void freeze_limiters(void);   //!< Set flags for limiter freezing.
+  //! @name Field access
+  //@{
+  const Euler2D_pState& CellSolution(const int &ii, const int &jj) const { return W[ii][jj]; }
+
+  //! @name High-order variables
+  //@{
+  //! Return the array of high-order variable of the current block
+  const HighOrderType * HighOrderVariables(void) const { return HO_Ptr; }
+  //! Return the high-order variable in the "Pos" position of the current block
+  HighOrderType & HighOrderVariable(const unsigned short int & Pos) { return HO_Ptr[Pos]; }
+  const HighOrderType & HighOrderVariable(const unsigned short int & Pos) const { return HO_Ptr[Pos]; }
+  //! Return the number of high-order variables
+  const unsigned short int & NumberOfHighOrderObjects(void) const { return NumberOfHighOrderVariables; }
   //@}
+
+  //! @name High-order boundary conditions (used mostly for constrained reconstruction)
+  //@{
+  const BC_Type * BC_NorthCell(void) { return HO_WoN;}
+  BC_Type & BC_NorthCell(const int &iCell){ return HO_WoN[iCell]; }
+  const BC_Type & BC_NorthCell(const int &iCell) const { return HO_WoN[iCell]; }
+  const BC_Type * BC_SouthCell(void) { return HO_WoS;}
+  BC_Type & BC_SouthCell(const int &iCell){ return HO_WoS[iCell]; }
+  const BC_Type & BC_SouthCell(const int &iCell) const { return HO_WoS[iCell]; }
+  const BC_Type * BC_EastCell(void) { return HO_WoE;}
+  BC_Type & BC_EastCell(const int &jCell){ return HO_WoE[jCell]; }
+  const BC_Type & BC_EastCell(const int &jCell) const { return HO_WoE[jCell]; }
+  const BC_Type * BC_WestCell(void) { return HO_WoW;}
+  BC_Type & BC_WestCell(const int &jCell){ return HO_WoW[jCell]; }
+  const BC_Type & BC_WestCell(const int &jCell) const { return HO_WoW[jCell]; }
+
+  void BCs_HighOrder(void);
+  //@}
+
+  //@} //end(Field access)
 
   //! @name Normalization related functions:
   //@{
@@ -263,6 +306,44 @@ public:
   const Euler2D_pState getNormalizationState(const int &ii, const int &jj) const { return RefU; }
   //! Set normalization state
   static void Set_Normalization_Reference_State(const Euler2D_pState & State){ RefU = State; }
+  //@}
+
+  //@{ @name Member functions for limiter freezing.
+  void evaluate_limiters(void); //!< Set flags for limiter evaluation.
+  void freeze_limiters(void);   //!< Set flags for limiter freezing.
+  //@}
+
+  //! @name Member functions to compute the piecewise linear solution at a particular location
+  //@{
+  Euler2D_pState PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+						 const double &DeltaXToCentroid,
+						 const double &DeltaYToCentroid) const;
+  double PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+					 const double &DeltaXToCentroid,
+					 const double &DeltaYToCentroid,
+					 const unsigned int &parameter) const;
+  Euler2D_pState PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+						   const Vector2D &CalculationPoint) const;
+  double PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+					   const Vector2D &CalculationPoint,
+					   const unsigned int &parameter) const;
+
+  Euler2D_pState UnlimitedPiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+							  const double &DeltaXToCentroid,
+							  const double &DeltaYToCentroid) const;
+  Euler2D_pState UnlimitedPiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+							    const Vector2D &CalculationPoint) const;
+  //@}
+
+  //! @name Member functions to set boundary states
+  //@{
+  //! Set reference values for boundary reference states
+  void Set_Reference_Values_For_Boundary_States(const Euler2D_pState & Ref_North,
+						const Euler2D_pState & Ref_South,
+						const Euler2D_pState & Ref_East,
+						const Euler2D_pState & Ref_West);
+  //! Set boundary reference states based on user's input data
+  void Set_Boundary_Reference_States_Based_On_Input(const Euler2D_Input_Parameters &IP);
   //@}
 
   //@{ @name Input-output operators.
@@ -361,20 +442,90 @@ public:
 				   const int j_inc);
   //@}
 
+  //! @name Member functions used for plotting.
+  //@{
+  void Output_Nodes_Tecplot_HighOrder(const int &Number_of_Time_Steps,
+				      const double &Time,
+				      const int &Block_Number,
+				      const int &Output_Title,
+				      ostream &Out_File,
+				      const int & StartI_CellIndex,
+				      const int & EndI_CellIndex,
+				      const int & StartJ_CellIndex,
+				      const int & EndJ_CellIndex,
+				      const int &IndexHO = 0);
+
+  void Output_Tecplot_HighOrder(const int &Number_of_Time_Steps,
+				const double &Time,
+				const int &Block_Number,
+				const int &Output_Title,
+				ostream &Out_File,
+				const int &IndexHO = 0);
+
+  void Output_Tecplot_HighOrder_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
+					   const Euler2D_Input_Parameters &P,
+					   const int &Block_Number,
+					   const int &IndexHO = 0);
+
+  void Output_Nodes_Tecplot_HighOrder(const int &Number_of_Time_Steps,
+				      const double &Time,
+				      const int &Block_Number,
+				      const int &Output_Title,
+				      ostream &Out_File,
+				      const int &IndexHO = 0);
+
+  void Output_Nodes_Tecplot_HighOrder_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
+						 const Euler2D_Input_Parameters &P,
+						 const int &Block_Number,
+						 const int &IndexHO = 0);
+
+  void Output_Cells_Tecplot_HighOrder(const int &Number_of_Time_Steps,
+				      const double &Time,
+				      const int &Block_Number,
+				      const int &Output_Title,
+				      ostream &Out_File,
+				      const int &IndexHO = 0);
+
+  void Output_Cells_Tecplot_HighOrder_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
+						 const Euler2D_Input_Parameters &P,
+						 const int &Block_Number,
+						 const int &IndexHO = 0);
+  //@}
+
+
 private:
   Euler2D_Quad_Block(const Euler2D_Quad_Block &Soln);  //! Private copy constructor.
   Euler2D_Quad_Block & operator = (const Euler2D_Quad_Block &Soln);   //!< Private assignment operator
 
   static Euler2D_pState RefU;	//!< reference state for normalizing the solution
+
+  //! @name High-order variables and member functions
+  //@{
+  HighOrderType* HO_Ptr;  //!< pointer to an array of high-order variables
+  unsigned short int NumberOfHighOrderVariables; //!< counter for the total number of high-order variables
+
+  //! Allocate high-order variables array.
+  void allocate_HighOrder_Array(const int & NumberOfReconstructions);
+  //@}
+
+  //! @name High-order boundary conditions (used mostly for constrained reconstruction)
+  //@{
+  BC_Type  *HO_WoN, 		//!< High-order boundary condition reference states for North boundary
+    *HO_WoS,            	//!< High-order boundary condition reference states for South boundary
+    *HO_WoE,			//!< High-order boundary condition reference states for East boundary
+    *HO_WoW;            	//!< High-order boundary condition reference states for West boundary
+  //@}
+
 };
 
-/****************************************\\**
+/****************************************//**
  * Default constructor.
  *****************************************/
 inline Euler2D_Quad_Block::Euler2D_Quad_Block(void):
   AssessAccuracy(this),
   Ref_State_BC_North(0.0), Ref_State_BC_South(0.0),
-  Ref_State_BC_East(0.0), Ref_State_BC_West(0.0)
+  Ref_State_BC_East(0.0), Ref_State_BC_West(0.0),
+  HO_Ptr(NULL), NumberOfHighOrderVariables(0)
 {
 
   // Grid size and variables:
@@ -384,6 +535,7 @@ inline Euler2D_Quad_Block::Euler2D_Quad_Block(void):
   dWdx = NULL; dWdy = NULL; phi = NULL; Uo = NULL;
   FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
   WoN = NULL; WoS = NULL; WoE = NULL; WoW = NULL;
+  HO_WoN = NULL; HO_WoS = NULL; HO_WoE = NULL; HO_WoW = NULL;
   Axisymmetric = 0; Freeze_Limiter = OFF;
   
   // Get access to the Euler2D_ExactSolutions object
@@ -391,11 +543,11 @@ inline Euler2D_Quad_Block::Euler2D_Quad_Block(void):
 
 }
 
-/****************************************\\**
+/****************************************//**
  * Private copy constructor. (shallow copy)
  *****************************************/
 inline Euler2D_Quad_Block::Euler2D_Quad_Block(const Euler2D_Quad_Block &Soln):
-  AssessAccuracy(this)
+  AssessAccuracy(this), HO_Ptr(NULL)
 {
   NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu; 
   NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu; Nghost = Soln.Nghost;
@@ -403,6 +555,7 @@ inline Euler2D_Quad_Block::Euler2D_Quad_Block(const Euler2D_Quad_Block &Soln):
   dWdx = Soln.dWdx; dWdy = Soln.dWdy; phi = Soln.phi; Uo = Soln.Uo;
   FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
   WoN = Soln.WoN; WoS = Soln.WoS; WoE = Soln.WoE; WoW = Soln.WoW;
+  HO_WoN = Soln.HO_WoN; HO_WoS = Soln.HO_WoS; HO_WoE = Soln.HO_WoE; HO_WoW = Soln.HO_WoW;
   Axisymmetric = 0; Freeze_Limiter = Soln.Freeze_Limiter;
 
   Ref_State_BC_North = Soln.Ref_State_BC_North;
@@ -410,66 +563,243 @@ inline Euler2D_Quad_Block::Euler2D_Quad_Block(const Euler2D_Quad_Block &Soln):
   Ref_State_BC_East = Soln.Ref_State_BC_East;
   Ref_State_BC_West = Soln.Ref_State_BC_West;
 
+  HO_Ptr = Soln.HO_Ptr;
+  NumberOfHighOrderVariables = Soln.NumberOfHighOrderVariables;
 }
 
-/**************************************************************************
- * Euler2D_Quad_Block::allocate -- Allocate memory.                       *
- **************************************************************************/
+/***********************//**
+ * Allocate memory.                       
+ ***************************/
 inline void Euler2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng) {
-   int i, j, k; assert(Ni > 1 && Nj > 1 && Ng > 1); Grid.allocate(Ni, Nj, Ng);
-   NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; 
-   NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
-   W = new Euler2D_pState*[NCi]; U = new Euler2D_cState*[NCi];
-   dt = new double*[NCi]; dUdt = new Euler2D_cState**[NCi];
-   dWdx = new Euler2D_pState*[NCi]; dWdy = new Euler2D_pState*[NCi];
-   phi = new Euler2D_pState*[NCi]; Uo = new Euler2D_cState*[NCi];
-   for ( i = 0; i <= NCi-1 ; ++i ) {
-      W[i] = new Euler2D_pState[NCj]; U[i] = new Euler2D_cState[NCj];
-      dt[i] = new double[NCj]; dUdt[i] = new Euler2D_cState*[NCj];
-      for ( j = 0; j <= NCj-1 ; ++j ) 
-        { dUdt[i][j] = new Euler2D_cState[NUMBER_OF_RESIDUAL_VECTORS_EULER2D]; }
-      dWdx[i] = new Euler2D_pState[NCj]; dWdy[i] = new Euler2D_pState[NCj];
-      phi[i] = new Euler2D_pState[NCj]; Uo[i] = new Euler2D_cState[NCj];
-   } /* endfor */
-   FluxN = new Euler2D_cState[NCi]; FluxS = new Euler2D_cState[NCi];
-   FluxE = new Euler2D_cState[NCj]; FluxW = new Euler2D_cState[NCj];
-   WoN = new Euler2D_pState[NCi]; WoS = new Euler2D_pState[NCi];
-   WoE = new Euler2D_pState[NCj]; WoW = new Euler2D_pState[NCj];
-   // Set the solution residuals, gradients, limiters, and other values to zero.
-   for (j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-      for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-          for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_EULER2D-1 ; ++k ) {
-	     dUdt[i][j][k] = Euler2D_U_VACUUM;
-          } /* endfor */
-	  dWdx[i][j] = Euler2D_W_VACUUM; dWdy[i][j] = Euler2D_W_VACUUM;
-	  phi[i][j] = Euler2D_W_VACUUM; Uo[i][j] = Euler2D_U_VACUUM;
-	  dt[i][j] = ZERO;
-      } /* endfor */
-   } /* endfor */
+   int i, j, k; 
+   assert(Ni > 1 && Nj > 1 && Ng > 1);
+
+   // Check to see if the current block dimensions differ from the required ones.
+   if ( (Nghost != Ng) || (NCi != Ni+2*Ng) || (NCj != Nj+2*Ng) ){ 
+
+     // free the memory if there is memory allocated
+     deallocate();
+
+     // allocate new memory
+     Grid.allocate(Ni, Nj, Ng);
+     NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; 
+     NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
+     W = new Euler2D_pState*[NCi]; U = new Euler2D_cState*[NCi];
+     dt = new double*[NCi]; dUdt = new Euler2D_cState**[NCi];
+     dWdx = new Euler2D_pState*[NCi]; dWdy = new Euler2D_pState*[NCi];
+     phi = new Euler2D_pState*[NCi]; Uo = new Euler2D_cState*[NCi];
+     for ( i = 0; i <= NCi-1 ; ++i ) {
+       W[i] = new Euler2D_pState[NCj]; U[i] = new Euler2D_cState[NCj];
+       dt[i] = new double[NCj]; dUdt[i] = new Euler2D_cState*[NCj];
+       for ( j = 0; j <= NCj-1 ; ++j ) 
+	 { dUdt[i][j] = new Euler2D_cState[NUMBER_OF_RESIDUAL_VECTORS_EULER2D]; }
+       dWdx[i] = new Euler2D_pState[NCj]; dWdy[i] = new Euler2D_pState[NCj];
+       phi[i] = new Euler2D_pState[NCj]; Uo[i] = new Euler2D_cState[NCj];
+     } /* endfor */
+     FluxN = new Euler2D_cState[NCi]; FluxS = new Euler2D_cState[NCi];
+     FluxE = new Euler2D_cState[NCj]; FluxW = new Euler2D_cState[NCj];
+     WoN = new Euler2D_pState[NCi]; WoS = new Euler2D_pState[NCi];
+     WoE = new Euler2D_pState[NCj]; WoW = new Euler2D_pState[NCj];
+     // Set the solution residuals, gradients, limiters, and other values to zero.
+     for (j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+       for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+	 for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_EULER2D-1 ; ++k ) {
+	   dUdt[i][j][k] = Euler2D_U_VACUUM;
+	 } /* endfor */
+	 dWdx[i][j].Vacuum(); dWdy[i][j].Vacuum();
+	 phi[i][j].Vacuum(); Uo[i][j].Vacuum();
+	 dt[i][j] = ZERO;
+       } /* endfor */
+     } /* endfor */
+
+   }/* endif */
+}
+
+/*****************************************//**
+ * Allocate memory for high-order variables.
+ ********************************************/
+inline void Euler2D_Quad_Block::allocate_HighOrder(const int & NumberOfReconstructions,
+						   const vector<int> & ReconstructionOrders){
+
+  bool _pseudo_inverse_allocation_(false);
+  int i;
+
+  // Decide whether to allocate the pseudo-inverse
+  if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
+    _pseudo_inverse_allocation_ = true;
+  }
+
+  // Re-allocate new memory if necessary
+  if (NumberOfReconstructions != NumberOfHighOrderVariables){
+
+    // allocate the high-order array
+    allocate_HighOrder_Array(NumberOfReconstructions);
+    
+    // set the reconstruction order of each high-order object
+    for (i=0; i<NumberOfHighOrderVariables; ++i){
+      HO_Ptr[i].InitializeVariable(ReconstructionOrders[i],
+				   Grid,
+				   _pseudo_inverse_allocation_);
+    }
+
+  } else {
+    // check the reconstruction orders
+    for (i=0; i<ReconstructionOrders.size(); ++i){
+      if (HighOrderVariable(i).RecOrder() != ReconstructionOrders[i]){
+	// change the reconstruction order of the high-order object
+	HO_Ptr[i].SetReconstructionOrder(ReconstructionOrders[i]);
+      }
+    } // endfor
+  }// endif
+}
+
+/***************************************************//**
+ * Allocate memory for high-order boundary conditions
+ * if the corresponding boundary reconstruction is 
+ * constrained.
+ * Assume that Grid and block indexes have been setup!
+ *******************************************************/
+inline void Euler2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
+
+  int i,j;
+
+  // allocate North BCs
+  if ( Grid.IsNorthBoundaryReconstructionConstrained() ){
+
+    if (HO_WoN != NULL){
+      // deallocate memory
+      delete [] HO_WoN; HO_WoN = NULL;
+    }
+
+    // allocate new memory
+    HO_WoN = new BC_Type[NCi];
+
+    // allocate BC memory for each flux calculation point
+    for (i=ICl; i<=ICu; ++i){
+      BC_NorthCell(i).allocate(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu));
+    }
+
+  } else if ( HO_WoN != NULL){
+    // deallocate memory
+    delete [] HO_WoN; HO_WoN = NULL;
+  }
+
+  // allocate South BCs
+  if ( Grid.IsSouthBoundaryReconstructionConstrained() ){
+
+    if (HO_WoS != NULL){
+      // deallocate memory
+      delete [] HO_WoS; HO_WoS = NULL;
+    }
+
+    // allocate new memory    
+    HO_WoS = new BC_Type[NCi];
+    
+    // allocate BC memory for each flux calculation point
+    for (i=ICl; i<=ICu; ++i){
+      BC_SouthCell(i).allocate(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl));
+    }    
+  } else if (HO_WoS != NULL){
+    // deallocate memory
+    delete [] HO_WoS; HO_WoS = NULL;
+  }
+
+  // allocate East BCs
+  if ( Grid.IsEastBoundaryReconstructionConstrained() ){
+
+    if (HO_WoE != NULL){
+      // deallocate memory
+      delete [] HO_WoE; HO_WoE = NULL;
+    }
+
+    // allocate new memory    
+    HO_WoE = new BC_Type[NCj];
+
+    // allocate BC memory for each flux calculation point
+    for (j=JCl; j<=JCu; ++j){
+      BC_EastCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j));
+    }
+  } else if (HO_WoE != NULL){
+    // deallocate memory
+    delete [] HO_WoE; HO_WoE = NULL;
+  }
+
+  // allocate West BCs
+  if ( Grid.IsWestBoundaryReconstructionConstrained() ){
+
+    if (HO_WoW != NULL){
+      // deallocate memory
+      delete [] HO_WoW; HO_WoW = NULL;
+    }
+
+    // allocate new memory    
+    HO_WoW = new BC_Type[NCj];
+
+    // allocate BC memory for each flux calculation point
+    for (j=JCl; j<=JCu; ++j){
+      BC_WestCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j));
+    }
+  } else if (HO_WoW != NULL){
+    // deallocate memory
+    delete [] HO_WoW; HO_WoW = NULL;
+  }
+
 }
 
 /**************************************************************************
  * Euler2D_Quad_Block::deallocate -- Deallocate memory.                   *
  **************************************************************************/
 inline void Euler2D_Quad_Block::deallocate(void) {
-   int i, j; Grid.deallocate(); 
-   for ( i = 0; i <= NCi-1 ; ++i ) {
+  if (U != NULL){
+    /* free the memory if there is memory allocated */
+    int i, j; Grid.deallocate(); 
+    for ( i = 0; i <= NCi-1 ; ++i ) {
       delete []W[i]; W[i] = NULL; delete []U[i]; U[i] = NULL;
       delete []dt[i]; dt[i] = NULL; 
       for ( j = 0; j <= NCj-1 ; ++j ) { delete []dUdt[i][j]; dUdt[i][j] = NULL; }
       delete []dUdt[i]; dUdt[i] = NULL;
       delete []dWdx[i]; dWdx[i] = NULL; delete []dWdy[i]; dWdy[i] = NULL;
       delete []phi[i]; phi[i] = NULL; delete []Uo[i]; Uo[i] = NULL;
-   } /* endfor */
-   delete []W; W = NULL; delete []U; U = NULL;
-   delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
-   delete []dWdx; dWdx = NULL; delete []dWdy; dWdy = NULL; 
-   delete []phi; phi = NULL; delete []Uo; Uo = NULL;
-   delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
-   delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
-   delete []WoN; WoN = NULL; delete []WoS; WoS = NULL;
-   delete []WoE; WoE = NULL; delete []WoW; WoW = NULL;
-   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+    } /* endfor */
+    delete []W; W = NULL; delete []U; U = NULL;
+    delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
+    delete []dWdx; dWdx = NULL; delete []dWdy; dWdy = NULL; 
+    delete []phi; phi = NULL; delete []Uo; Uo = NULL;
+    delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
+    delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
+    delete []WoN; WoN = NULL; delete []WoS; WoS = NULL;
+    delete []WoE; WoE = NULL; delete []WoW; WoW = NULL;
+    NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+
+    deallocate_HighOrder();
+    deallocate_HighOrder_BoundaryConditions();   
+  }/*endif*/
+}
+
+/******************************************//**
+ * Deallocate memory for high-order variables
+ *********************************************/
+inline void Euler2D_Quad_Block::deallocate_HighOrder(void) {
+  delete []HO_Ptr; HO_Ptr = NULL;
+  NumberOfHighOrderVariables = 0;
+}
+
+/****************************************************//**
+ * Deallocate memory for high-order boundary conditions
+ *******************************************************/
+inline void Euler2D_Quad_Block::deallocate_HighOrder_BoundaryConditions(void) {
+  if (HO_WoN != NULL){
+    delete [] HO_WoN; HO_WoN = NULL;
+  }
+  if (HO_WoS != NULL){
+    delete [] HO_WoS; HO_WoS = NULL;
+  }
+  if (HO_WoE != NULL){
+    delete [] HO_WoE; HO_WoE = NULL;
+  }
+  if (HO_WoW != NULL){
+    delete [] HO_WoW; HO_WoW = NULL;
+  }
 }
 
 /**************************************************************************
@@ -645,15 +975,24 @@ inline ostream &operator << (ostream &out_file,
      out_file << SolnBlk.WoS[i] << "\n";
      out_file << SolnBlk.WoN[i] << "\n";
   } /* endfor */
+
+  // Output the high-order variables
+  out_file << SolnBlk.NumberOfHighOrderVariables << "\n";
+  for (int k = 1; k <= SolnBlk.NumberOfHighOrderVariables; ++k){
+    out_file << SolnBlk.HighOrderVariable(k-1);
+  }/* endfor */
+
   return (out_file);
 }
 
 inline istream &operator >> (istream &in_file,
 			     Euler2D_Quad_Block &SolnBlk) {
-  int i, j, k, ni, il, iu, ng, nj, jl, ju;
-  Grid2D_Quad_Block_HO New_Grid; in_file >> New_Grid; 
+  int i, j, k, ni, il, iu, ng, nj, jl, ju, n_HO;
+  Grid2D_Quad_Block_HO New_Grid;
+  in_file >> New_Grid; 
   in_file.setf(ios::skipws);
-  in_file >> ni >> il >> iu >> ng; in_file >> nj >> jl >> ju;
+  in_file >> ni >> il >> iu >> ng;
+  in_file >> nj >> jl >> ju;
   in_file >> SolnBlk.Axisymmetric;
   in_file.unsetf(ios::skipws);
   if (ni == 0 || nj == 0) {
@@ -673,12 +1012,12 @@ inline istream &operator >> (istream &in_file,
          in_file >> SolnBlk.U[i][j];
          SolnBlk.W[i][j] = W(SolnBlk.U[i][j]);
          for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_EULER2D-1 ; ++k ) {
-	     SolnBlk.dUdt[i][j][k] = Euler2D_U_VACUUM;
+	   SolnBlk.dUdt[i][j][k].Vacuum();
          } /* endfor */
-	 SolnBlk.dWdx[i][j] = Euler2D_W_VACUUM;
-	 SolnBlk.dWdy[i][j] = Euler2D_W_VACUUM;
-	 SolnBlk.phi[i][j] = Euler2D_W_VACUUM;
-	 SolnBlk.Uo[i][j] = Euler2D_U_VACUUM;
+	 SolnBlk.dWdx[i][j].Vacuum();
+	 SolnBlk.dWdy[i][j].Vacuum();
+	 SolnBlk.phi[i][j].Vacuum();
+	 SolnBlk.Uo[i][j].Vacuum();
 	 SolnBlk.dt[i][j] = ZERO;
      } /* endfor */
   } /* endfor */
@@ -690,14 +1029,27 @@ inline istream &operator >> (istream &in_file,
      in_file >> SolnBlk.WoS[i];
      in_file >> SolnBlk.WoN[i];
   } /* endfor */
+
+  // Allocate memory for the high-order boundary conditions (the values don't need to be read)
+  SolnBlk.allocate_HighOrder_BoundaryConditions();
+
+  in_file.setf(ios::skipws);
+
+  // Read the high-order variables
+  in_file >> n_HO;
+  SolnBlk.allocate_HighOrder_Array(n_HO);
+
+  for (int k = 1; k <= SolnBlk.NumberOfHighOrderVariables; ++k){
+    // Read the current variable
+    in_file >> SolnBlk.HighOrderVariable(k-1);
+    // Associate this variable to the current grid
+    SolnBlk.HighOrderVariable(k-1).AssociateGeometry(SolnBlk.Grid);
+  }/* endfor */
+
+  in_file.setf(ios::skipws);
+
   return (in_file);
 }
-
-/*******************************************************************************
- *                                                                             *
- * MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING.                              *
- *                                                                             *
- *******************************************************************************/
 
 /*******************************************************************************
  * Euler2D_Quad_Block::NumVar -- Returns number of state variables.            *
@@ -705,6 +1057,129 @@ inline istream &operator >> (istream &in_file,
 inline int Euler2D_Quad_Block::NumVar(void) {
   return (int(NUM_VAR_EULER2D));
 }
+
+/*!
+ * Compute the solution provided by the piecewise linear reconstruction
+ * at a location relative to the cell centroid.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param DeltaXToCentroid the X-delta between the point of interest and the centroid
+ * \param DeltaYToCentroid the Y-delta between the point of interest and the centroid
+ */
+inline Euler2D_pState Euler2D_Quad_Block::PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+									  const double &DeltaXToCentroid,
+									  const double &DeltaYToCentroid) const{
+  return W[ii][jj] + (phi[ii][jj]^(dWdx[ii][jj]*DeltaXToCentroid + dWdy[ii][jj]*DeltaYToCentroid) );
+}
+
+/*!
+ * Compute the solution provided by the piecewise linear reconstruction
+ * for a particular state parameter at a location relative to the cell centroid.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param DeltaXToCentroid the X-delta between the point of interest and the centroid
+ * \param DeltaYToCentroid the Y-delta between the point of interest and the centroid
+ * \param parameter the parameter for which the solution is computed
+ */
+inline double Euler2D_Quad_Block::PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+								  const double &DeltaXToCentroid,
+								  const double &DeltaYToCentroid,
+								  const unsigned int &parameter) const{
+  return W[ii][jj][parameter] + (phi[ii][jj][parameter]*(dWdx[ii][jj][parameter]*DeltaXToCentroid + 
+							 dWdy[ii][jj][parameter]*DeltaYToCentroid) );
+}
+
+/*!
+ * Compute the solution provided by the piecewise linear reconstruction
+ * at a particular location.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param CalculationPoint the Cartesian coordinates of the point of interest
+ */
+inline Euler2D_pState Euler2D_Quad_Block::PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+									    const Vector2D &CalculationPoint) const{
+  // calculate the distance between the point of interest and the centroid of the cell
+  Vector2D dX(CalculationPoint - Grid.Cell[ii][jj].Xc);	
+  return PiecewiseLinearSolutionForDelta(ii,jj,dX.x,dX.y);
+}
+
+/*!
+ * Compute the solution provided by the piecewise linear reconstruction
+ * for a particular state parameter at a particular location.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param CalculationPoint the Cartesian coordinates of the point of interest
+ * \param parameter the parameter for which the solution is computed
+ */
+inline double Euler2D_Quad_Block::PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+								    const Vector2D &CalculationPoint,
+								    const unsigned int &parameter) const{
+  // calculate the distance between the point of interest and the centroid of the cell
+  Vector2D dX(CalculationPoint - Grid.Cell[ii][jj].Xc);	  
+  return PiecewiseLinearSolutionForDelta(ii,jj,dX.x,dX.y,parameter);
+}
+
+/*!
+ * Compute the solution provided by the UNLIMITED (i.e. no limiter!) piecewise 
+ * linear reconstruction at a location relative to the cell centroid.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param DeltaXToCentroid the X-delta between the point of interest and the centroid
+ * \param DeltaYToCentroid the Y-delta between the point of interest and the centroid
+ */
+inline Euler2D_pState Euler2D_Quad_Block::UnlimitedPiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+										   const double &DeltaXToCentroid,
+										   const double &DeltaYToCentroid) const{
+
+  return W[ii][jj] + dWdx[ii][jj]*DeltaXToCentroid + dWdy[ii][jj]*DeltaYToCentroid;
+}
+
+/*!
+ * Compute the solution provided by the UNLIMITED (i.e. no limiter!) piecewise 
+ * linear reconstruction at a particular location.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param CalculationPoint the Cartesian coordinates of the point of interest
+ */
+inline Euler2D_pState Euler2D_Quad_Block::UnlimitedPiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+										     const Vector2D &CalculationPoint) const{
+
+  // calculate the distance between the point of interest and the centroid of the cell
+  Vector2D dX(CalculationPoint - Grid.Cell[ii][jj].Xc);	
+  return UnlimitedPiecewiseLinearSolutionForDelta(ii,jj,dX.x,dX.y);
+}
+
+/*!
+ * Allocate the high-order array.
+ */
+inline void Euler2D_Quad_Block::allocate_HighOrder_Array(const int & NumberOfReconstructions){
+
+  if (NumberOfReconstructions != NumberOfHighOrderVariables){
+    
+    // deallocate memory
+    deallocate_HighOrder();
+    
+    // allocate new memory for high-order objects
+    HO_Ptr = new HighOrderType [NumberOfReconstructions];
+    
+    // check for successful memory allocation
+    if (HO_Ptr != NULL){
+      NumberOfHighOrderVariables = NumberOfReconstructions;
+    }
+  }
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING.                              *
+ *                                                                             *
+ *******************************************************************************/
 
 /*******************************************************************************
  * Euler2D_Quad_Block::LoadSendBuffer -- Loads send message buffer.            *
