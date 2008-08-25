@@ -521,6 +521,7 @@ public:
   Euler2D_pState &operator +=(const Euler2D_pState &W);
   Euler2D_pState &operator -=(const Euler2D_pState &W);
   Euler2D_pState &operator /=(const Euler2D_pState &W);
+  Euler2D_pState &operator *=(const Euler2D_pState &W);
   Euler2D_pState &operator *=(const double &a);
   Euler2D_pState &operator /=(const double &a);
   //@}
@@ -1271,6 +1272,11 @@ inline Euler2D_pState& Euler2D_pState::operator /=(const Euler2D_pState &W){
   v.x /= W.v.x;
   v.y /= W.v.y;
   p /= W.p;
+  return *this;
+}
+
+inline Euler2D_pState& Euler2D_pState::operator *=(const Euler2D_pState &W) {
+  d *= W.d; v.x *= W.v.x; v.y *= W.v.y; p *= W.p;
   return *this;
 }
 

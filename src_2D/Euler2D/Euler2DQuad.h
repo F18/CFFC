@@ -138,7 +138,6 @@
  * \endverbatim
  */
 class Euler2D_Quad_Block{
-private:
 public:
 
   //! @name Defined public types:
@@ -315,6 +314,9 @@ public:
 
   //! @name Member functions to compute the piecewise linear solution at a particular location
   //@{
+  void SetPiecewiseLinearReconstructionStencil(const int &i, const int &j,
+					       int i_index[], int j_index[],
+					       int & n_ptr);
   Euler2D_pState PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
 						 const double &DeltaXToCentroid,
 						 const double &DeltaYToCentroid) const;
@@ -948,6 +950,254 @@ inline void Euler2D_Quad_Block::evaluate_limiters(void) {
  **************************************************************************/
 inline void Euler2D_Quad_Block::freeze_limiters(void) {
   Freeze_Limiter = ON; 
+}
+
+/*!
+ * Determine the number of neighbouring cells to
+ * be used in the piecewise linear reconstruction
+ * procedure and set the cell indexes in the 
+ * provided containers.
+ *
+ * \param [in] i the i-index of the reconstructed cell
+ * \param [in] j the j-index of the reconstructed cell
+ * \param [out] i_index the "i" indexes of the neighbouring cells that form the stencil
+ * \param [out] j_index the "j" indexes of the neighbouring cells that form the stencil
+ * \param [out] n_ptr the number of neighbouring cells that form the stencil.
+ * This number is typically 8, but it can vary for different boundary conditions.
+ */
+inline void Euler2D_Quad_Block::SetPiecewiseLinearReconstructionStencil(const int &i, const int &j,
+									int i_index[], int j_index[],
+									int &n_pts){
+
+  if (i <= ICl-Nghost || i >= ICu+Nghost || j <= JCl-Nghost || j >= JCu+Nghost) {
+    n_pts = 0;
+  } else if ((i == ICl-1) && (Grid.BCtypeW[j] != BC_NONE)) {
+    if (j == JCl-1 || j == JCu+1) {
+      n_pts = 0;
+    } else if (Grid.BCtypeW[j] == BC_PERIODIC ||
+	       Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
+	       Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
+	       Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
+	       Grid.BCtypeW[j] == BC_NEUMANN ||
+	       Grid.BCtypeW[j] == BC_ROBIN) {
+      if (j == JCl) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i+1; j_index[1] = j  ;
+	i_index[2] = i-1; j_index[2] = j+1;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } else if (j == JCu) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+      } else {
+	n_pts = 8;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+	i_index[5] = i-1; j_index[5] = j+1;
+	i_index[6] = i  ; j_index[6] = j+1;
+	i_index[7] = i+1; j_index[7] = j+1;
+      } /* endif */
+    } else {
+      if (j == JCl) {
+	n_pts = 3;
+	i_index[0] = i+1; j_index[0] = j  ;
+	i_index[1] = i  ; j_index[1] = j+1;
+	i_index[2] = i+1; j_index[2] = j+1;
+      } else if (j == JCu) {
+	n_pts = 3;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+      } else {
+	n_pts = 5;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } /* endif */
+    } /* endif */           
+  } else if ((i == ICu+1) && (Grid.BCtypeE[j] != BC_NONE)) {
+    if (j == JCl-1 || j == JCu+1) {
+      n_pts = 0;
+    } else if (Grid.BCtypeE[j] == BC_PERIODIC ||
+	       Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
+	       Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
+	       Grid.BCtypeE[j] == BC_CHARACTERISTIC ||	       
+	       Grid.BCtypeE[j] == BC_NEUMANN ||
+	       Grid.BCtypeE[j] == BC_ROBIN) {
+      if (j == JCl) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i+1; j_index[1] = j  ;
+	i_index[2] = i-1; j_index[2] = j+1;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } else if (j == JCu) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+      } else {
+	n_pts = 8;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+	i_index[5] = i-1; j_index[5] = j+1;
+	i_index[6] = i  ; j_index[6] = j+1;
+	i_index[7] = i+1; j_index[7] = j+1;
+      } /* endif */
+    } else {
+      if (j == JCl) {
+	n_pts = 3;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i-1; j_index[1] = j+1;
+	i_index[2] = i  ; j_index[2] = j+1;
+      } else if (j == JCu) {
+	n_pts = 3;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+      } else {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+	i_index[3] = i-1; j_index[3] = j+1;
+	i_index[4] = i  ; j_index[4] = j+1;
+      } /* endif */
+    } /* endif */
+  } else if ((j == JCl-1) && (Grid.BCtypeS[i] != BC_NONE)) {
+    if (i == ICl-1 || i == ICu+1) {
+      n_pts = 0;
+    } else if (Grid.BCtypeS[i] == BC_PERIODIC ||
+	       Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
+	       Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
+	       Grid.BCtypeS[i] == BC_CHARACTERISTIC ||	       
+	       Grid.BCtypeS[i] == BC_NEUMANN ||
+	       Grid.BCtypeS[i] == BC_ROBIN) {
+      if (i == ICl) {
+	n_pts = 5;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } else if (i == ICu) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+	i_index[3] = i-1; j_index[3] = j+1;
+	i_index[4] = i  ; j_index[4] = j+1;
+      } else {
+	n_pts = 8;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+	i_index[5] = i-1; j_index[5] = j+1;
+	i_index[6] = i  ; j_index[6] = j+1;
+	i_index[7] = i+1; j_index[7] = j+1;
+      } /* endif */
+    } else {
+      if (i == ICl) {
+	n_pts = 3;
+	i_index[0] = i+1; j_index[0] = j  ;
+	i_index[1] = i  ; j_index[1] = j+1;
+	i_index[2] = i+1; j_index[2] = j+1;
+      } else if (i == ICu) {
+	n_pts = 3;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i-1; j_index[1] = j+1;
+	i_index[2] = i  ; j_index[2] = j+1;
+      } else {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i+1; j_index[1] = j  ;
+	i_index[2] = i-1; j_index[2] = j+1;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } /* endif */
+    } /* endif */
+  } else if ((j == JCu+1) && (Grid.BCtypeN[i] != BC_NONE)) {
+    if (i == ICl-1 || i == ICu+1) {
+      n_pts = 0;
+    } else if (Grid.BCtypeN[i] == BC_PERIODIC ||
+	       Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
+	       Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
+	       Grid.BCtypeN[i] == BC_CHARACTERISTIC ||	       
+	       Grid.BCtypeN[i] == BC_NEUMANN ||
+	       Grid.BCtypeN[i] == BC_ROBIN) {
+      if (i == ICl) {
+	n_pts = 5;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } else if (i == ICu) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+	i_index[3] = i-1; j_index[3] = j+1;
+	i_index[4] = i  ; j_index[4] = j+1;
+      } else {
+	n_pts = 8;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+	i_index[5] = i-1; j_index[5] = j+1;
+	i_index[6] = i  ; j_index[6] = j+1;
+	i_index[7] = i+1; j_index[7] = j+1;
+      } /* endif */
+    } else {
+      if (i == ICl) {
+	n_pts = 3;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+      } else if (i == ICu) {
+	n_pts = 3;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+      } else {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+      } /* endif */
+    } /* endif */
+  } else {
+    n_pts = 8;
+    i_index[0] = i-1; j_index[0] = j-1;
+    i_index[1] = i  ; j_index[1] = j-1;
+    i_index[2] = i+1; j_index[2] = j-1;
+    i_index[3] = i-1; j_index[3] = j  ;
+    i_index[4] = i+1; j_index[4] = j  ;
+    i_index[5] = i-1; j_index[5] = j+1;
+    i_index[6] = i  ; j_index[6] = j+1;
+    i_index[7] = i+1; j_index[7] = j+1;
+  } /* endif */
 }
 
 /**************************************************************************
@@ -2450,6 +2700,10 @@ extern void Linear_Reconstruction_LeastSquares_2(Euler2D_Quad_Block &SolnBlk,
 extern void Linear_Reconstruction_LeastSquares(Euler2D_Quad_Block &SolnBlk,
 					       const int Limiter);
 
+extern void Linear_Reconstruction(Euler2D_Quad_Block &SolnBlk,
+				  const int & Reconstruction_Type,
+				  const int & Limiter);
+
 extern void Residual_Smoothing(Euler2D_Quad_Block &SolnBlk,
                                const int k_residual,
 			       double &epsilon, 
@@ -2599,6 +2853,10 @@ extern int Output_Ringleb_Flow(Euler2D_Quad_Block *Soln_ptr,
 			       AdaptiveBlock2D_List &Soln_Block_List,
 			       Euler2D_Input_Parameters &Input_Parameters);
 
+extern void Linear_Reconstruction(Euler2D_Quad_Block *Soln_ptr,
+				  AdaptiveBlock2D_List &Soln_Block_List,
+				  Euler2D_Input_Parameters &Input_Parameters);
+
 extern void BCs(Euler2D_Quad_Block *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,
 		Euler2D_Input_Parameters &Input_Parameters);
@@ -2721,5 +2979,13 @@ extern int Output_Tecplot(Grid3D_Hexa_Block ***Grid_ptr,
 
 extern int Euler2DQuadSolver(char *Input_File_Name_ptr,
                              int batch_flag);
+
+
+/*
+ * Include specializations CFFC header files.
+ * Must be included at the end of the file!!!
+ */
+#include "Euler2DAccuracyAssessment.h" /* Include 2D accuracy assessment header 
+					  file with specializations for Euler solution. */
 
 #endif /* _EULER2D_QUAD_INCLUDED  */

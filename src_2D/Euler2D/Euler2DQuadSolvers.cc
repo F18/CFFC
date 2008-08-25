@@ -13,7 +13,8 @@
 #include "HO_Euler2DQuadGrid.h" /* Include 2D quadrilateral multiblock grid header file for Euler */
 #include "../NewtonKrylovSchwarz2D/NKS2D.h" /* Include 2D NKS solver header file. */
 #include "Euler2DQuadNKS.h"  /* Inlcude Euler Specializaitons for NKS */
-
+#include "../HighOrderReconstruction/AccuracyAssessment2DMultiBlock.h" /* Include 2D accuracy assessment for multi-block level. */
+#include "../HighOrderReconstruction/HighOrder2D_MultiBlock.h" /* Include 2D high-order header file for multi-block level. */
 
 /******************************************************//**
  * Routine: Euler2DQuadSolver                           
@@ -92,6 +93,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   CFFC_Broadcast_MPI(&command_flag, 1);
   if (command_flag == TERMINATE_CODE) return (0);
   Broadcast_Input_Parameters(Input_Parameters);
+  Input_Parameters.Verbose(batch_flag);    //< Set Input_Parameters to batch_mode if required
 
   /********************************************************  
    * Create initial mesh and allocate Euler2D solution    *
@@ -172,6 +174,10 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 						   List_of_Global_Solution_Blocks,
 						   List_of_Local_Solution_Blocks);
 
+    /* Create (allocate) the high-order variables in each of the
+       local 2D advection diffusion equation solution blocks */
+    HighOrder2D_MultiBlock::Create_Initial_HighOrder_Variables(Local_SolnBlk,
+							       List_of_Local_Solution_Blocks);
   } else {
     // Allocate the minimum information related to the solution blocks. (i.e. use the default constructors)
     Local_SolnBlk = Allocate(Local_SolnBlk,Input_Parameters);
@@ -307,7 +313,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   /* Perform uniform, boundary, and, initial mesh refinement. */
 
   if (Input_Parameters.i_ICs != IC_RESTART) {
-     if (!batch_flag) cout << "\n Performing Euler2D uniform mesh refinement.";
+    if (!batch_flag){ cout << "\n Performing Euler2D uniform mesh refinement."; cout.flush(); }
      error_flag = Uniform_AMR(Local_SolnBlk,
                               Input_Parameters,
                               QuadTree,
@@ -321,7 +327,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
      error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return error_flag;
 
-     if (!batch_flag) cout << "\n Performing Euler2D boundary mesh refinement.";
+     if (!batch_flag){ cout << "\n Performing Euler2D boundary mesh refinement."; cout.flush(); }
      error_flag = Boundary_AMR(Local_SolnBlk,
                                Input_Parameters,
                                QuadTree,
@@ -410,6 +416,10 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
   continue_existing_calculation: ;
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+
+  // Reset accuracy assessment
+  AccuracyAssessment2D_MultiBlock::ResetForNewCalculation(Local_SolnBlk,
+							  List_of_Local_Solution_Blocks);
 
   if(!batch_flag) { time(&start_explicit); }
 
@@ -524,6 +534,29 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	       (number_of_time_steps/Input_Parameters.AMR_Frequency) == 0 ) {
               if (!batch_flag) cout << "\n\n Refining Grid.  Performing adaptive mesh refinement at n = "
                                     << number_of_time_steps << ".";
+
+	      /* Update ghostcell information and prescribe boundary conditions to ensure
+		 that the solution is consistent on each block. */
+    
+	      CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+
+	      error_flag = Send_All_Messages(Local_SolnBlk, 
+					     List_of_Local_Solution_Blocks,
+					     NUM_VAR_EULER2D,
+					     OFF);
+	      if (error_flag) {
+		cout << "\n AdvectDiffuse2D ERROR: AdvectDiffuse2D message passing error on processor "
+		     << List_of_Local_Solution_Blocks.ThisCPU
+		     << ".\n";
+		cout.flush();
+	      } /* endif */
+	      error_flag = CFFC_OR_MPI(error_flag);
+	      if (error_flag) return (error_flag);
+	      
+	      BCs(Local_SolnBlk, 
+		  List_of_Local_Solution_Blocks,
+		  Input_Parameters);
+
               Evaluate_Limiters(Local_SolnBlk, 
                                 List_of_Local_Solution_Blocks);
               error_flag = AMR(Local_SolnBlk,
@@ -959,6 +992,40 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   /*************************************************************************************************************************/
   /*************************************************************************************************************************/
 
+
+  /***************************************************************
+   * Perform solution reconstruction with the final average      *
+   * states in order to use the true piecewise representation    *
+   * of the solution for post-processing steps, such as solution *
+   * plotting or accuracy assessment.                            *
+   **************************************************************/
+  if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+    std::cout << "\n\n ---------------------------------------\n"
+	      << " Reconstruct final solution.\n";
+  }
+
+  if ( Input_Parameters.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+    // Use high-order reconstruction
+    HighOrder2D_MultiBlock::HighOrder_Reconstruction(Local_SolnBlk,
+						     List_of_Local_Solution_Blocks,
+						     Input_Parameters,
+						     0,
+						     &Euler2D_Quad_Block::CellSolution);
+  } else {
+    // Use low-order reconstruction
+    Linear_Reconstruction(Local_SolnBlk, 
+			  List_of_Local_Solution_Blocks,
+			  Input_Parameters);
+  } // endif
+  
+  if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+    std::cout << " Solution reconstruction done.\n" << " ---------------------------------------\n";
+  }
+  
+  /*************************************************************************************************************************/
+  /*************************************************************************************************************************/
+
+
   /********************************************************
    * Solution calculations complete.                      *
    * Write 2D Euler solution to output and restart files  *
@@ -1375,13 +1442,83 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
 
+    } else if (command_flag == WRITE_ERROR_NORMS_TO_SCREEN) {
+      if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	cout << "\n\n ---------------------------------------\n" 
+	     << " Writing error norms to screen ...\n";
+	cout.flush();
+      }
+
+      error_flag = AccuracyAssessment2D_MultiBlock::PrintErrorNorms(Local_SolnBlk, 
+								    List_of_Local_Solution_Blocks, 
+								    Input_Parameters,
+								    std::cout);
+       
+      if (CFFC_Primary_MPI_Processor() && error_flag) {
+	cout << "\n AdvectDiffuse2D ERROR: Unable to write AdvectDiffuse2D error norms data.\n"; cout.flush();
+      } // endif
+
+      CFFC_Broadcast_MPI(&error_flag, 1);
+      if (error_flag) return (error_flag);
+
+      if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	cout << "\n ---------------------------------------\n";       
+	cout.flush();
+      }
+
+    } else if (command_flag == WRITE_ERROR_NORMS_TO_FILE) {
+      if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	cout << "\n\n ---------------------------------------\n" 
+	     << " Writing error norms to output file ...\n";
+	cout.flush();
+      }
+
+      error_flag = AccuracyAssessment2D_MultiBlock::WriteErrorNormsToOutputFile(Local_SolnBlk, 
+										List_of_Local_Solution_Blocks, 
+										Input_Parameters);
+       
+      if (CFFC_Primary_MPI_Processor() && error_flag) {
+	cout << "\n AdvectDiffuse2D ERROR: Unable to write AdvectDiffuse2D error norms data.\n"; cout.flush();
+      } // endif
+
+      CFFC_Broadcast_MPI(&error_flag, 1);
+      if (error_flag) return (error_flag);
+
+      if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	cout << "\n ---------------------------------------\n";       
+	cout.flush();
+      }
+
+    } else if (command_flag == APPEND_ERROR_NORMS_TO_FILE) {
+      if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	cout << "\n\n ---------------------------------------\n" 
+	     << " Appending error norms to output file ...\n";
+	cout.flush();
+      }
+
+      error_flag = AccuracyAssessment2D_MultiBlock::AppendErrorNormsToOutputFile(Local_SolnBlk, 
+										 List_of_Local_Solution_Blocks, 
+										 Input_Parameters);
+       
+      if (CFFC_Primary_MPI_Processor() && error_flag) {
+	cout << "\n AdvectDiffuse2D ERROR: Unable to write AdvectDiffuse2D error norms data.\n"; cout.flush();
+      } // endif
+
+      CFFC_Broadcast_MPI(&error_flag, 1);
+      if (error_flag) return (error_flag);
+
+      if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	cout << "\n ---------------------------------------\n";       
+	cout.flush();
+      }
+
     } else if (command_flag == INVALID_INPUT_CODE ||
                command_flag == INVALID_INPUT_VALUE) {
-        line_number = -line_number;
-        cout << "\n Euler2D ERROR: Error reading Euler2D data at line #"
-             << -line_number  << " of input data file.\n";
-        cout.flush();
-        return (line_number);
+      line_number = -line_number;
+      cout << "\n Euler2D ERROR: Error reading Euler2D data at line #"
+	   << -line_number  << " of input data file.\n";
+      cout.flush();
+      return (line_number);
     } /* endif */
 
   } /* endwhile */

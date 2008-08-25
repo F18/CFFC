@@ -39,6 +39,7 @@ public:
   //@{ 
   Euler2D_pState operator()(const double &x, const double &y) const;
   Euler2D_pState Solution(const double &x, const double &y) const;
+  double SolutionForParameter(const double &x, const double &y, const unsigned &parameter) const;
   Euler2D_pState XDependencyIntegrated_Solution(const double &x, const double &y) const;
   //@}
 
@@ -81,6 +82,16 @@ inline Euler2D_pState Euler2D_ExactSolutions::operator()(const double &x, const 
  */
 inline Euler2D_pState Euler2D_ExactSolutions::Solution(const double &x, const double &y) const{
   return ExactSoln->EvaluateSolutionAt(x,y);
+}
+
+/*! 
+ * Evaluate the exact solution for a specified parameter.
+ * \param x,y Cartesian coordinates
+ * \param parameter the state variable for which the exact solution is evaluated
+ */
+inline double Euler2D_ExactSolutions::SolutionForParameter(const double &x, const double &y,
+							   const unsigned &parameter) const{
+  return ExactSoln->EvaluateSolutionAt(x,y)[parameter];
 }
 
 /*! 
