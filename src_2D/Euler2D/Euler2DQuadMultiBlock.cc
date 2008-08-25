@@ -1,6 +1,6 @@
-/* Euler2DQuadMultiBlock.cc:  Multi-Block Versions of Subroutines for 2D Euler 
-                              Multi-Block Quadrilateral Mesh 
-                              Solution Classes. */
+/*!\file Euler2DQuadMultiBlock.cc
+  \brief Multi-Block Versions of Subroutines for 2D Euler 
+  Multi-Block Quadrilateral Mesh Solution Classes. */
 
 /* Include 2D Euler quadrilateral mesh solution header file. */
 
@@ -340,14 +340,23 @@ int Output_Tecplot(Euler2D_Quad_Block *Soln_ptr,
     i_output_title = 1;
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          Output_Tecplot(Soln_ptr[i],
-			 Input_Parameters,
-                         Number_of_Time_Steps, 
-                         Time,
-                         Soln_Block_List.Block[i].gblknum,
-                         i_output_title,
-                         output_file);
-	  if (i_output_title) i_output_title = 0;
+	 if (Input_Parameters.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+	   // Use the first high-order object of the block
+	   Soln_ptr[i].Output_Tecplot_HighOrder(Number_of_Time_Steps, 
+						Time,
+						Soln_Block_List.Block[i].gblknum,
+						i_output_title,
+						output_file);
+	 } else {
+	   Output_Tecplot(Soln_ptr[i],
+			  Input_Parameters,
+			  Number_of_Time_Steps, 
+			  Time,
+			  Soln_Block_List.Block[i].gblknum,
+			  i_output_title,
+			  output_file);
+	 }
+	 if (i_output_title) i_output_title = 0;
        } /* endif */
     }  /* endfor */
 
@@ -414,14 +423,23 @@ int Output_Cells_Tecplot(Euler2D_Quad_Block *Soln_ptr,
     i_output_title = 1;
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          Output_Cells_Tecplot(Soln_ptr[i], 
-                               Input_Parameters,
-                               Number_of_Time_Steps, 
-                               Time,
-                               Soln_Block_List.Block[i].gblknum,
-                               i_output_title,
-                               output_file);
-	  if (i_output_title) i_output_title = 0;
+	 if (Input_Parameters.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+	   // Use the first high-order object of the block
+	   Soln_ptr[i].Output_Cells_Tecplot_HighOrder(Number_of_Time_Steps, 
+						      Time,
+						      Soln_Block_List.Block[i].gblknum,
+						      i_output_title,
+						      output_file);
+	 } else {
+	   Output_Cells_Tecplot(Soln_ptr[i], 
+				Input_Parameters,
+				Number_of_Time_Steps, 
+				Time,
+				Soln_Block_List.Block[i].gblknum,
+				i_output_title,
+				output_file);
+	 }
+	 if (i_output_title) i_output_title = 0;
        } /* endif */
     }  /* endfor */
 
@@ -487,13 +505,22 @@ int Output_Nodes_Tecplot(Euler2D_Quad_Block *Soln_ptr,
     i_output_title = 1;
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          Output_Nodes_Tecplot(Soln_ptr[i],
-                               Number_of_Time_Steps,
-                               Time,
-                               Soln_Block_List.Block[i].gblknum,
-                               i_output_title,
-                               output_file);
-	  if (i_output_title) i_output_title = 0;
+	 if (Input_Parameters.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+	   // Use the first high-order object of the block
+	   Soln_ptr[i].Output_Nodes_Tecplot_HighOrder(Number_of_Time_Steps, 
+						      Time,
+						      Soln_Block_List.Block[i].gblknum,
+						      i_output_title,
+						      output_file);
+	 } else {
+	   Output_Nodes_Tecplot(Soln_ptr[i],
+				Number_of_Time_Steps,
+				Time,
+				Soln_Block_List.Block[i].gblknum,
+				i_output_title,
+				output_file);
+	 }
+	 if (i_output_title) i_output_title = 0;
        } /* endif */
     }  /* endfor */
 
