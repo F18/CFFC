@@ -622,6 +622,8 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 		 << ".\n";
 	    cout.flush();
 	  } /* endif */
+	  error_flag = CFFC_OR_MPI(error_flag);
+	  if (error_flag) return (error_flag);
 
 	  if (CFFC_Primary_MPI_Processor()) {
 	    if (!batch_flag) cout << "\n  Saving QuadTree data file.";
@@ -1200,7 +1202,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
          // Write multi-block solution-adaptive mesh definition files.
          if (CFFC_Primary_MPI_Processor()) {
             if (!batch_flag) cout << "\n Writing AdvectDiffuse2D multi-block mesh to grid definition files.";
-	    MeshBlk.Write_Multi_Block_Grid_Definition_Using_IP(Input_Parameters);
+	    error_flag = MeshBlk.Write_Multi_Block_Grid_Definition_Using_IP(Input_Parameters);
             if (error_flag) {
                cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D multi-block mesh definition files.\n";
                cout.flush();
