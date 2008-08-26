@@ -525,8 +525,6 @@ int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Fine,
     } /* endswitch */
 
     int iCell, jCell;		// indexes for the first fine cell
-    double area_total_fine;	// total area of the fine cells
-    double Fine_A1, Fine_A2, Fine_A3, Fine_A4; // areas for each individual fine cell
 
     for ( j  = j_min; j <= j_max; ++j ) {
       for ( i = i_min; i <= i_max; ++i ) {
@@ -535,26 +533,18 @@ int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Fine,
 	iCell = 2*(i-i_min)+SolnBlk_Fine.ICl;
 	jCell = 2*(j-j_min)+SolnBlk_Fine.JCl;
 
-	// Compute each individual fine cell area
-	Fine_A1 = SolnBlk_Fine.Grid.Cell[iCell  ][jCell  ].A; // Fine Cell I
-	Fine_A2 = SolnBlk_Fine.Grid.Cell[iCell+1][jCell  ].A; // Fine Cell II
-	Fine_A3 = SolnBlk_Fine.Grid.Cell[iCell  ][jCell+1].A; // Fine Cell III
-	Fine_A4 = SolnBlk_Fine.Grid.Cell[iCell+1][jCell+1].A; // Fine Cell IV
-	
-	// Compute the total area
-	area_total_fine = Fine_A1 + Fine_A2 + Fine_A3 + Fine_A4;
-
+	// Use direct injection
 	// Update fine cell I
-	SolnBlk_Fine.U[iCell  ][jCell  ] = (Fine_A1/area_total_fine)*SolnBlk_Original.U[i][j];
+	SolnBlk_Fine.U[iCell  ][jCell  ] = SolnBlk_Original.U[i][j];
 
 	// Update fine cell II
-	SolnBlk_Fine.U[iCell+1][jCell  ] = (Fine_A2/area_total_fine)*SolnBlk_Original.U[i][j];
+	SolnBlk_Fine.U[iCell+1][jCell  ] = SolnBlk_Original.U[i][j];
 
 	// Update fine cell III
-	SolnBlk_Fine.U[iCell  ][jCell+1] = (Fine_A3/area_total_fine)*SolnBlk_Original.U[i][j];
+	SolnBlk_Fine.U[iCell  ][jCell+1] = SolnBlk_Original.U[i][j];
 
 	// Update fine cell IV
-	SolnBlk_Fine.U[iCell+1][jCell+1] = (Fine_A4/area_total_fine)*SolnBlk_Original.U[i][j];
+	SolnBlk_Fine.U[iCell+1][jCell+1] = SolnBlk_Original.U[i][j];
       } /* endfor */
     } /* endfor */
 
