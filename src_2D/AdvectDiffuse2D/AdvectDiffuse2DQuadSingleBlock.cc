@@ -2702,6 +2702,9 @@ void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk,
     } /* endfor */
   } /* endif */
 
+  /* Require update of the interior cells geometric properties. */
+  SolnBlk.Grid.Schedule_Interior_Mesh_Update();
+
   /* Reset the boundary condition types at the block boundaries. */
   Set_BCs(SolnBlk.Grid);
 
@@ -2817,6 +2820,9 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
 				   SolnBlk.Grid.area(SolnBlk.ICl, j))*SolnBlk.U[SolnBlk.ICl][j];
     } /* endfor */
   } /* endif */
+
+  /* Require update of the interior cells geometric properties. */
+  SolnBlk.Grid.Schedule_Interior_Mesh_Update();
 
   /* Reset the boundary condition types at the block boundaries. */
   Set_BCs(SolnBlk.Grid);
