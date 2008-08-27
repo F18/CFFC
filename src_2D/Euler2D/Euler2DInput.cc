@@ -1872,6 +1872,36 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	  IP.i_ICs = IC_CYLINDRICAL_EXPLOSION;
        } else if (strcmp(IP.ICs_Type,"Cylindrical_Implosion") == 0) {
           IP.i_ICs = IC_CYLINDRICAL_IMPLOSION;
+       } else if (strcmp(IP.ICs_Type, "Wedge_Flow") == 0) {
+	  IP.i_ICs = IC_WEDGE_FLOW;
+       } else if (strcmp(IP.ICs_Type, "Unsteady_Blunt_Body") == 0) {
+          IP.i_ICs = IC_UNSTEADY_BLUNT_BODY;
+       } else if (strcmp(IP.ICs_Type,"Sin_X") == 0) {
+          IP.i_ICs = IC_PERIODIC_SINX_WAVE;
+       } else if (strcmp(IP.ICs_Type,"Sin_Y") == 0) {
+          IP.i_ICs = IC_PERIODIC_SINY_WAVE;
+       } else if (strcmp(IP.ICs_Type,"Multiple_Sin_X") == 0) {
+          IP.i_ICs = IC_PERIODIC_SINX_MULTIWAVE;
+       } else if (strcmp(IP.ICs_Type,"Multiple_Sin_Y") == 0) {
+          IP.i_ICs = IC_PERIODIC_SINY_MULTIWAVE;
+       } else if (strcmp(IP.ICs_Type,"Complex_Waves") == 0) {
+          IP.i_ICs = IC_PERIODIC_COMPLEX_MULTIWAVE;
+       } else if (strcmp(IP.ICs_Type,"2D_Abgrall") == 0) {
+          IP.i_ICs = IC_ABGRALL_FUNCTION;
+       } else if (strcmp(IP.ICs_Type,"SinExp_X") == 0) {
+          IP.i_ICs = IC_SIN_EXP_X_WAVE;
+       } else if (strcmp(IP.ICs_Type,"SinExp_Y") == 0) {
+          IP.i_ICs = IC_SIN_EXP_Y_WAVE;
+       } else if (strcmp(IP.ICs_Type,"SinExp_Rotated") == 0) {
+          IP.i_ICs = IC_SIN_EXP_ROTATED_WAVE;
+       } else if (strcmp(IP.ICs_Type,"Cosine_Hill") == 0) {
+          IP.i_ICs = IC_COSINE_HILL;
+       } else if (strcmp(IP.ICs_Type,"Hyper_Tangent") == 0) {
+          IP.i_ICs = IC_HYPER_TANGENT;
+       } else if (strcmp(IP.ICs_Type, "Blast_Wave_IVP") == 0) {
+	  IP.i_ICs = IC_BLAST_WAVE_INTERACTION;
+       } else if (strcmp(IP.ICs_Type, "Acoustic_Shock_IVP") == 0) {
+	  IP.i_ICs = IC_SHOCK_ACOUSTIC_INTERACTION;
        } else if (strcmp(IP.ICs_Type,"Exact_Solution") == 0) {
 	 IP.i_ICs = IC_EXACT_SOLUTION;
        } else if (strcmp(IP.ICs_Type,"Uniform_Interior_Exact_Ghost_Cells") == 0) {

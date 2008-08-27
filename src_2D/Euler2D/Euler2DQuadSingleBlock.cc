@@ -1,12 +1,16 @@
-/* Euler2DQuadSingleBlock.cc:  Single-Block Versions of Subroutines for 2D Euler 
-                               Multi-Block Quadrilateral Mesh 
-                               Solution Classes. */
+/*!\file Euler2DQuadSingleBlock.cc
+  \brief Single-Block Versions of Subroutines for 2D Euler Multi-Block Quadrilateral Mesh Solution Classes. */
 
-/* Include 2D Euler quadrilateral mesh solution header file. */
+/* Include required C++ libraries. */
+// None
 
-#ifndef _EULER2D_QUAD_INCLUDED
-#include "Euler2DQuad.h"
-#endif // _EULER2D_QUAD_INCLUDED
+/* Using std namespace functions */
+// None
+
+/* Include CFFC header files */
+#include "Euler2DQuad.h" /* Include 2D Euler quadrilateral mesh solution header file. */
+#include "Euler2D_ICs.h" /* Include 2D Euler analytically defined initial conditions header file. */
+
 
 /**************************************************************************
  * Euler2D_Quad_Block -- Single Block External Subroutines.               *
@@ -57,6 +61,10 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk) {
     int i, j, ni, nj, ng, nr, block_allocated, buffer_size;
     double *buffer;
 
+    // High-order related variables
+    int NumberOfHighOrderVariables;
+    vector<int> ReconstructionOrders;
+
     /* Broadcast the number of cells in each direction. */
 
     if (CFFC_Primary_MPI_Processor()) {
@@ -69,13 +77,29 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk) {
       } else {
 	 block_allocated = 0;
       } /* endif */ 
-    } /* endif */
 
+      // High-order variables and their reconstruction order
+      NumberOfHighOrderVariables = SolnBlk.NumberOfHighOrderObjects();
+      for (i = 0; i < NumberOfHighOrderVariables; ++i){
+	ReconstructionOrders.push_back(SolnBlk.HighOrderVariable(i).RecOrder());
+      }
+    } /* endif */
+    
     MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&ng, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&nr,1,MPI::INT,0);
     MPI::COMM_WORLD.Bcast(&block_allocated, 1, MPI::INT, 0);
+
+    // Broadcast the number of high-order variables and their reconstruction order
+    MPI::COMM_WORLD.Bcast(&NumberOfHighOrderVariables, 1, MPI::INT, 0);
+    if (!CFFC_Primary_MPI_Processor()) {
+      // reserve memory for the reconstruction orders
+      ReconstructionOrders.reserve(NumberOfHighOrderVariables);
+    }
+    for (i = 0; i < NumberOfHighOrderVariables; ++i){
+      MPI::COMM_WORLD.Bcast(&ReconstructionOrders[i], 1, MPI::INT, 0);
+    }
 
     /* On non-primary MPI processors, allocate (re-allocate) 
        memory for the quadrilateral solution block as necessary. */
@@ -96,6 +120,16 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk) {
     /* Broadcast the grid. */
 
     Broadcast_Quad_Block(SolnBlk.Grid);
+
+    /* Allocate memory for high-order variables
+       on non-primary MPI processors. */
+    if (!CFFC_Primary_MPI_Processor()) {
+      // allocate memory for high-order variables AFTER grid broadcast!
+      SolnBlk.allocate_HighOrder(NumberOfHighOrderVariables,
+				 ReconstructionOrders);
+      // allocate memory for high-order boundary conditions if necessary
+      SolnBlk.allocate_HighOrder_BoundaryConditions();
+    }
 
     /* Broadcast the solution state variables. */
 
@@ -216,6 +250,12 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk) {
 
        delete []buffer; 
        buffer = NULL;
+
+       /* Broadcast the high-order variables. */
+       for (i = 0; i < NumberOfHighOrderVariables; ++i){
+	 SolnBlk.HighOrderVariable(i).Broadcast_HighOrder_Data(SolnBlk.Grid);
+       }
+
     } /* endif */
 #endif
 
@@ -239,6 +279,10 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk,
     int i, j, ni, nj, ng, nr, block_allocated, buffer_size;
     double *buffer;
 
+    // High-order related variables
+    int NumberOfHighOrderVariables;
+    vector<int> ReconstructionOrders;
+
     /* Broadcast the number of cells in each direction. */
 
     if (CFFC_MPI::This_Processor_Number == Source_CPU) {
@@ -251,6 +295,12 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk,
       } else {
 	 block_allocated = 0;
       } /* endif */
+
+      // High-order variables and their reconstruction order
+      NumberOfHighOrderVariables = SolnBlk.NumberOfHighOrderObjects();
+      for (i = 0; i < NumberOfHighOrderVariables; ++i){
+	ReconstructionOrders.push_back(SolnBlk.HighOrderVariable(i).RecOrder());
+      }
     } /* endif */
 
     Communicator.Bcast(&ni, 1, MPI::INT, Source_Rank);
@@ -258,6 +308,16 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk,
     Communicator.Bcast(&ng, 1, MPI::INT, Source_Rank);
     Communicator.Bcast(&nr,1,MPI::INT,Source_Rank);
     Communicator.Bcast(&block_allocated, 1, MPI::INT, Source_Rank);
+
+    // Broadcast the number of high-order variables and their reconstruction order
+    Communicator.Bcast(&NumberOfHighOrderVariables, 1, MPI::INT, Source_Rank);
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+      // reserve memory for the reconstruction orders
+      ReconstructionOrders.reserve(NumberOfHighOrderVariables);
+    }
+    for (i = 0; i < NumberOfHighOrderVariables; ++i){
+      Communicator.Bcast(&ReconstructionOrders[i], 1, MPI::INT, Source_Rank);
+    }
 
     /* On non-source MPI processors, allocate (re-allocate) 
        memory for the quadrilateral solution block as necessary. */
@@ -278,6 +338,16 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk,
     /* Broadcast the grid. */
 
     Broadcast_Quad_Block(SolnBlk.Grid, Communicator, Source_CPU);
+
+    /* Allocate memory for high-order variables
+       on non-source MPI processors. */
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+      // allocate memory for high-order variables AFTER grid broadcast!
+      SolnBlk.allocate_HighOrder(NumberOfHighOrderVariables,
+				 ReconstructionOrders);
+      // allocate memory for high-order boundary conditions if necessary
+      SolnBlk.allocate_HighOrder_BoundaryConditions();
+    }
 
     /* Broadcast the solution state variables. */
 
@@ -398,6 +468,14 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk,
 
        delete []buffer; 
        buffer = NULL;
+
+       /* Broadcast the high-order variables. */
+       for (i = 0; i < NumberOfHighOrderVariables; ++i){
+	 SolnBlk.HighOrderVariable(i).Broadcast_HighOrder_Data(Communicator,
+							       Source_CPU,
+							       SolnBlk.Grid);
+       }
+
     } /* endif */
 
 }
@@ -412,69 +490,18 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk,
  ********************************************************/
 void Copy_Solution_Block(Euler2D_Quad_Block &SolnBlk1,
                          Euler2D_Quad_Block &SolnBlk2) {
-
-    int i, j, k;
-
-    /* Allocate (re-allocate) memory for the solution
-       of the quadrilateral solution block SolnBlk1 as necessary. */
-
-    if (SolnBlk1.NCi != SolnBlk2.NCi || 
-	SolnBlk1.NCj != SolnBlk2.NCj || 
-	SolnBlk1.Nghost != SolnBlk2.Nghost) {
-       if (SolnBlk1.U != NULL) SolnBlk1.deallocate();
-       if (SolnBlk2.U != NULL) SolnBlk1.allocate(SolnBlk2.NCi-2*SolnBlk2.Nghost,
-                                                 SolnBlk2.NCj-2*SolnBlk2.Nghost,
-						 SolnBlk2.Nghost);
-    } /* endif */
-
-    /* Set the axisymmetric/planar flow indicator. */
-
-    SolnBlk1.Axisymmetric = SolnBlk2.Axisymmetric;
-
-    /* Copy the grid of the second solution block
-       to the first solution block. */
-
-    Copy_Quad_Block(SolnBlk1.Grid, SolnBlk2.Grid);
-
-    /* Copy the solution information from SolnBlk2 to SolnBlk1. */
-
-    if (SolnBlk2.U != NULL) {
-       for ( j  = SolnBlk1.JCl-SolnBlk1.Nghost ; j <= SolnBlk1.JCu+SolnBlk1.Nghost ; ++j ) {
-          for ( i = SolnBlk1.ICl-SolnBlk1.Nghost ; i <= SolnBlk1.ICu+SolnBlk1.Nghost ; ++i ) {
-             SolnBlk1.U[i][j] = SolnBlk2.U[i][j];
-             SolnBlk1.W[i][j] = SolnBlk2.W[i][j];
-             for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_EULER2D-1 ; ++k ) {
-	        SolnBlk1.dUdt[i][j][k] = SolnBlk2.dUdt[i][j][k];
-             } /* endfor */
-	     SolnBlk1.dWdx[i][j] = SolnBlk2.dWdx[i][j];
-	     SolnBlk1.dWdy[i][j] = SolnBlk2.dWdy[i][j];
-	     SolnBlk1.phi[i][j] = SolnBlk2.phi[i][j];
-	     SolnBlk1.Uo[i][j] = SolnBlk2.Uo[i][j];
-	     SolnBlk1.dt[i][j] = SolnBlk2.dt[i][j];
-          } /* endfor */
-       } /* endfor */
-
-       for (j  = SolnBlk1.JCl-SolnBlk1.Nghost ; j <= SolnBlk1.JCu+SolnBlk1.Nghost ; ++j ) {
-	   SolnBlk1.WoW[j] = SolnBlk2.WoW[j];
-           SolnBlk1.WoE[j] = SolnBlk2.WoE[j];
-       } /* endfor */
-
-       for ( i = SolnBlk1.ICl-SolnBlk1.Nghost ; i <= SolnBlk1.ICu+SolnBlk1.Nghost ; ++i ) {
-           SolnBlk1.WoS[i] = SolnBlk2.WoS[i];
-           SolnBlk1.WoN[i] = SolnBlk2.WoN[i];
-       } /* endfor */
-    } /* endif */
-
+  SolnBlk1.makeCopy(SolnBlk2);
 }
 
-/********************************************************
- * Routine: Prolong_Solution_Block                      *
- *                                                      *
- * Prolongs the solution information of one of the      *
- * specified sectors of the original quadrilateral      *
- * solution block SolnBlk_Original to the refined       *
- * solution block SolnBlk_Fine.                         *
- *                                                      *
+/******************************************************//**
+ * Routine: Prolong_Solution_Block                     
+ *                                                     
+ * Prolongs the solution information of one of the     
+ * specified sectors of the original quadrilateral     
+ * solution block SolnBlk_Original to the refined      
+ * solution block SolnBlk_Fine.                        
+ *                                                     
+ * \note Add high-order prolongation! Add mechanism to prolong high-order BCs!
  ********************************************************/
 int Prolong_Solution_Block(Euler2D_Quad_Block &SolnBlk_Fine,
 			   Euler2D_Quad_Block &SolnBlk_Original,
@@ -483,6 +510,10 @@ int Prolong_Solution_Block(Euler2D_Quad_Block &SolnBlk_Fine,
     int i, j, i_min, i_max, j_min, j_max, mesh_refinement_permitted;
     double area_total_fine;
     Vector2D dX;
+
+    // High-order related variables
+    int SolnBlk_Original_NumberOfHighOrderVariables(SolnBlk_Original.NumberOfHighOrderObjects());
+    vector<int> SolnBlk_Original_ReconstructionOrders; 
 
     /* Allocate (re-allocate) memory for the solution
        of the refined quadrilateral solution block as necessary. */
@@ -509,6 +540,16 @@ int Prolong_Solution_Block(Euler2D_Quad_Block &SolnBlk_Fine,
                       SolnBlk_Original.Grid,
                       Sector);
        } /* endif */
+
+       // Allocate high-order objects if necessary
+       for (i = 0; i < SolnBlk_Original_NumberOfHighOrderVariables; ++i){
+	 SolnBlk_Original_ReconstructionOrders.push_back(SolnBlk_Original.HighOrderVariable(i).RecOrder());
+       }
+       SolnBlk_Fine.allocate_HighOrder(SolnBlk_Original_NumberOfHighOrderVariables,
+				       SolnBlk_Original_ReconstructionOrders);
+       // allocate memory for high-order boundary conditions if necessary
+       SolnBlk_Fine.allocate_HighOrder_BoundaryConditions();
+       
     } /* endif */
 
     if (mesh_refinement_permitted) {
@@ -680,6 +721,12 @@ int Prolong_Solution_Block(Euler2D_Quad_Block &SolnBlk_Fine,
               = SolnBlk_Original.WoN[i];
        } /* endfor */
 
+       // Set the reference values for the boundary states to the ones from the Original solution block
+       SolnBlk_Fine.Set_Reference_Values_For_Boundary_States(SolnBlk_Original.Ref_State_BC_North,
+							     SolnBlk_Original.Ref_State_BC_South,
+							     SolnBlk_Original.Ref_State_BC_East,
+							     SolnBlk_Original.Ref_State_BC_West);
+
     } /* endif */
 
     // Prolongation of solution block was successful.
@@ -702,6 +749,10 @@ int Restrict_Solution_Block(Euler2D_Quad_Block &SolnBlk_Coarse,
 			    Euler2D_Quad_Block &SolnBlk_Original_NE) {
 
     int i, j, i_coarse, j_coarse, mesh_coarsening_permitted;
+
+    // High-order related variables
+    int SolnBlk_Original_NumberOfHighOrderVariables(SolnBlk_Original_SW.NumberOfHighOrderObjects());
+    vector<int> SolnBlk_Original_ReconstructionOrders; 
  
     /* Allocate memory for the cells and nodes for the 
        coarsened quadrilateral mesh block. */
@@ -744,6 +795,16 @@ int Restrict_Solution_Block(Euler2D_Quad_Block &SolnBlk_Coarse,
                        SolnBlk_Original_NW.Grid,
                        SolnBlk_Original_NE.Grid);
        } /* endif */
+
+       // Allocate high-order objects if necessary
+       for (i = 0; i < SolnBlk_Original_NumberOfHighOrderVariables; ++i){
+	 SolnBlk_Original_ReconstructionOrders.push_back(SolnBlk_Original_SW.HighOrderVariable(i).RecOrder());
+       }
+       SolnBlk_Coarse.allocate_HighOrder(SolnBlk_Original_NumberOfHighOrderVariables,
+					 SolnBlk_Original_ReconstructionOrders);
+       // allocate memory for high-order boundary conditions if necessary
+       SolnBlk_Coarse.allocate_HighOrder_BoundaryConditions();
+
     } /* endif */
 
     if (mesh_coarsening_permitted) {
@@ -927,6 +988,12 @@ int Restrict_Solution_Block(Euler2D_Quad_Block &SolnBlk_Coarse,
           } /* endif */
       } /* endfor */
 
+    // Set the reference values for the boundary states
+    // This approach might not always give the proper reference values.
+    SolnBlk_Coarse.Set_Reference_Values_For_Boundary_States(SolnBlk_Original_NW.Ref_State_BC_North,
+							    SolnBlk_Original_SE.Ref_State_BC_South,
+							    SolnBlk_Original_NE.Ref_State_BC_East,
+							    SolnBlk_Original_SW.Ref_State_BC_West);
    } /* endif */
 
    // Restriction of solution block was successful.
@@ -1486,7 +1553,7 @@ void ICs(Euler2D_Quad_Block &SolnBlk,
          Euler2D_pState *Wo) {
 
     int i, j, k;
-    Euler2D_pState Wl, Wr;
+    Euler2D_pState Wl, Wr, Wm;
 
     /* Assign the initial data for the IVP of interest. */
 
@@ -1798,6 +1865,36 @@ void ICs(Euler2D_Quad_Block &SolnBlk,
 	    } /* endfor */
 	} /* endfor */
 	break;
+      case IC_WEDGE_FLOW :
+	Wl.d = FOUR*DENSITY_STDATM;   Wr.d = DENSITY_STDATM;
+	Wl.v = Vector2D_ZERO;         Wr.v = Vector2D_ZERO;
+	Wl.p = FOUR*PRESSURE_STDATM;  Wr.p = PRESSURE_STDATM;
+        for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+            for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	       if (SolnBlk.Grid.centroid(i,j).x <= -0.75) {
+		  SolnBlk.W[i][j] = Wl;
+	       } else {
+		  SolnBlk.W[i][j] = Wr;	     
+	       } /* end if */
+	       SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	    } /* endfor */
+	} /* endfor */
+	break;
+      case IC_UNSTEADY_BLUNT_BODY :
+	Wl.d = FOUR*DENSITY_STDATM;   Wr.d = DENSITY_STDATM;
+	Wl.v = Vector2D_ZERO;         Wr.v = Vector2D_ZERO;
+	Wl.p = FOUR*PRESSURE_STDATM;  Wr.p = PRESSURE_STDATM;
+        for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+            for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	       if (SolnBlk.Grid.centroid(i,j).x <= -FIVE) {
+		  SolnBlk.W[i][j] = Wl;
+	       } else {
+		  SolnBlk.W[i][j] = Wr;	     
+	       } /* end if */
+	       SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	    } /* endfor */
+	} /* endfor */
+	break;
       case IC_RINGLEB_FLOW :
         for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
             for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
@@ -1811,6 +1908,246 @@ void ICs(Euler2D_Quad_Block &SolnBlk,
             } /* endfor */
         } /* endfor */
 	break;
+      case IC_BLAST_WAVE_INTERACTION:
+	// defined in the domain '0' to '1'
+	Wl = Euler2D_pState(ONE, ZERO, ZERO, 1.0e03);
+	Wm = Euler2D_pState(ONE, ZERO, ZERO, 1.0e-02);
+	Wr = Euler2D_pState(ONE, ZERO, ZERO, 1.0e02);
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    if (SolnBlk.Grid.Cell[i][j].Xc.x <= 0.1) {
+	      SolnBlk.W[i][j] = Wl;
+	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= 0.9){
+	      SolnBlk.W[i][j] = Wm;
+	    } else {
+	      SolnBlk.W[i][j] = Wr;	
+	    } /* end if */
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  } /* endfor */
+	} /* endfor */
+	break;
+      case IC_SHOCK_ACOUSTIC_INTERACTION:
+	double density;
+	Wl = Euler2D_pState(3.857143, 2.629369, ZERO, 10.333333);
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    if (SolnBlk.Grid.Cell[i][j].Xc.x <= -4.0) {
+	      SolnBlk.W[i][j] = Wl;
+	    } else {
+	      density = 1 + 0.2*sin(5*SolnBlk.Grid.Cell[i][j].Xc.x);
+	      Wr = Euler2D_pState(density, ZERO, ZERO, ONE);
+	      SolnBlk.W[i][j] = Wr;	
+	    } /* end if */
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  } /* endfor */
+	} /* endfor */
+	break;
+      case IC_PERIODIC_SINX_WAVE :
+	Wl.v.x = 100.0;
+	Wl.v.y = 0.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      SinVariationInXDir,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_PERIODIC_SINY_WAVE :
+	Wl.v.x = 0.0;
+	Wl.v.y = 100.0;
+	Wl.p = PRESSURE_STDATM;
+        for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      SinVariationInYDir,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+      break;
+      case IC_ABGRALL_FUNCTION :
+	Wl.v.x = 0.0;
+	Wl.v.y = 0.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      Abgrall_2D_Function,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_SIN_EXP_X_WAVE :
+	Wl.v.x = 0.0;
+	Wl.v.y = 0.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      SinExponentialVariationInXDir,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_SIN_EXP_Y_WAVE :
+	Wl.v.x = 0.0;
+	Wl.v.y = 0.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      SinExponentialVariationInYDir,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_SIN_EXP_ROTATED_WAVE :
+	Wl.v.x = 0.0;
+	Wl.v.y = 0.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      SinExponentialVariationRotated,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_COSINE_HILL:
+	Wl.v.x = 100.0;
+	Wl.v.y = 50.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      CosineHill,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_HYPER_TANGENT:
+	Wl.v.x = Wo[0].v.x;
+	Wl.v.y = Wo[0].v.y;
+	Wl.p = Wo[0].p;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      Translated_Solutions::HyperTangentIC,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_PERIODIC_SINX_MULTIWAVE :
+	Wl.v.x = 100.0;
+	Wl.v.y = 0.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      MultipleSinVariationInXDir,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_PERIODIC_SINY_MULTIWAVE :
+	Wl.v.x = 0.0;
+	Wl.v.y = 100.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      MultipleSinVariationInYDir,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_PERIODIC_COMPLEX_MULTIWAVE :
+	Wl.v.x = 250.0;
+	Wl.v.y = 0.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      Complex_2D_Waves,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_EXACT_SOLUTION :
+	// Set the solution state by calculating the cell average values with integration of the exact solution
+	// Use the ExactSoln pointer to access the exact solution
+	if (IP.ExactSoln->IsExactSolutionSet()) {
+	  for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	    for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	      SolnBlk.W[i][j] = 
+		SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								   wrapped_member_function(IP.ExactSoln,
+											   &Euler2D_ExactSolutions::Solution,
+											   Wl),
+								   wrapped_member_function(IP.ExactSoln,
+											   &Euler2D_ExactSolutions::
+											   XDependencyIntegrated_Solution,
+											   Wl),
+								   IP.Exact_Integration_Digits,Wl)/SolnBlk.Grid.Cell[i][j].A;
+	      SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	    } /* endfor */
+	  } /* endfor */
+	} else {
+	  // There is no exact solution set for this problem
+	  throw runtime_error("ICs() ERROR! No exact solution has been set!");
+	}
+	break;
+      case IC_INTERIOR_UNIFORM_GHOSTCELLS_EXACT :
+	if (IP.ExactSoln->IsExactSolutionSet()) {
+	  for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	    for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	      if (i<SolnBlk.ICl || i>SolnBlk.ICu || j<SolnBlk.JCl || j>SolnBlk.JCu) {
+		// Set the solution state of the ghost cells to average values calculated with
+		// integration of the exact solution
+		SolnBlk.W[i][j] = 
+		  SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								     wrapped_member_function(IP.ExactSoln,
+											     &Euler2D_ExactSolutions::Solution,
+											     Wl),
+								     IP.Exact_Integration_Digits,Wl)/SolnBlk.Grid.Cell[i][j].A;
+		SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	      } else {
+		// Set the solution state of the interior cells to the initial state Uo[0].
+		SolnBlk.W[i][j] = Wo[0];
+		SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	      }
+	    } /* endfor */
+	  } /* endfor */
+	  
+	} else {
+	  // There is no exact solution set for this problem
+	  throw runtime_error("ICs() ERROR! No exact solution has been set!");
+	}
+	break;
+
       default:
         // Set the solution state to the initial state Wo[0].
         for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {

@@ -246,6 +246,9 @@ public:
   void deallocate_HighOrder_BoundaryConditions(void);
   //@}
 
+  //! Make an identical copy of SolnBlk
+  void makeCopy(const Euler2D_Quad_Block &SolnBlk){ *this = SolnBlk; }
+
   //@{ @name Bilinear interplation (Zingg & Yarrow).
   //! Return primitive solution state at specified node.
   Euler2D_pState Wn(const int ii, const int jj);
