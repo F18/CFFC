@@ -222,20 +222,20 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk) {
 	SolnBlk.WoS[i].v.x  = buffer[buffer_size+1];
 	SolnBlk.WoS[i].v.y  = buffer[buffer_size+2];
 	SolnBlk.WoS[i].p.xx = buffer[buffer_size+3];
-	SolnBlk.WoS[i].p.xy = buffer[buffer_size+3];
-	SolnBlk.WoS[i].p.yy = buffer[buffer_size+3];
-	SolnBlk.WoS[i].p.zz = buffer[buffer_size+3];
-	SolnBlk.WoS[i].erot = buffer[buffer_size+3];
-	SolnBlk.WoN[i].d    = buffer[buffer_size+4];
-	SolnBlk.WoN[i].v.x  = buffer[buffer_size+5];
-	SolnBlk.WoN[i].v.y  = buffer[buffer_size+6];
-	SolnBlk.WoN[i].p.xx = buffer[buffer_size+7];
-	SolnBlk.WoN[i].p.xy = buffer[buffer_size+7];
-	SolnBlk.WoN[i].p.yy = buffer[buffer_size+7];
-	SolnBlk.WoN[i].p.zz = buffer[buffer_size+7];
-	SolnBlk.WoN[i].erot = buffer[buffer_size+7];
-	SolnBlk.oldT_S[i]   = buffer[buffer_size+7];
-	SolnBlk.oldT_N[i]   = buffer[buffer_size+7];
+	SolnBlk.WoS[i].p.xy = buffer[buffer_size+4];
+	SolnBlk.WoS[i].p.yy = buffer[buffer_size+5];
+	SolnBlk.WoS[i].p.zz = buffer[buffer_size+6];
+	SolnBlk.WoS[i].erot = buffer[buffer_size+7];
+	SolnBlk.WoN[i].d    = buffer[buffer_size+8];
+	SolnBlk.WoN[i].v.x  = buffer[buffer_size+9];
+	SolnBlk.WoN[i].v.y  = buffer[buffer_size+10];
+	SolnBlk.WoN[i].p.xx = buffer[buffer_size+11];
+	SolnBlk.WoN[i].p.xy = buffer[buffer_size+12];
+	SolnBlk.WoN[i].p.yy = buffer[buffer_size+13];
+	SolnBlk.WoN[i].p.zz = buffer[buffer_size+14];
+	SolnBlk.WoN[i].erot = buffer[buffer_size+15];
+	SolnBlk.oldT_S[i]   = buffer[buffer_size+16];
+	SolnBlk.oldT_N[i]   = buffer[buffer_size+17];
 	buffer_size = buffer_size + 18;
       } /* endfor */
     } /* endif */
@@ -379,8 +379,8 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk,
 	buffer[buffer_size+13] = SolnBlk.WoE[j].p.yy;
 	buffer[buffer_size+14] = SolnBlk.WoE[j].p.zz;
 	buffer[buffer_size+15] = SolnBlk.WoE[j].erot;
-	buffer[buffer_size+14] = SolnBlk.oldT_W[j];
-	buffer[buffer_size+15] = SolnBlk.oldT_E[j];
+	buffer[buffer_size+16] = SolnBlk.oldT_W[j];
+	buffer[buffer_size+17] = SolnBlk.oldT_E[j];
 	buffer_size = buffer_size + 18;
       } /* endfor */
     } /* endif */
@@ -407,8 +407,8 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk,
 	SolnBlk.WoE[j].p.yy = buffer[buffer_size+13];
 	SolnBlk.WoE[j].p.zz = buffer[buffer_size+14];
 	SolnBlk.WoE[j].erot = buffer[buffer_size+15];
-	SolnBlk.oldT_W[j]   = buffer[buffer_size+14];
-	SolnBlk.oldT_E[j]   = buffer[buffer_size+15];
+	SolnBlk.oldT_W[j]   = buffer[buffer_size+16];
+	SolnBlk.oldT_E[j]   = buffer[buffer_size+17];
 	buffer_size = buffer_size + 18;
       } /* endfor */
     } /* endif */
@@ -439,8 +439,8 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk,
 	buffer[buffer_size+13] = SolnBlk.WoN[i].p.yy;
 	buffer[buffer_size+14] = SolnBlk.WoN[i].p.zz;
 	buffer[buffer_size+15] = SolnBlk.WoN[i].erot;
-	buffer[buffer_size+14] = SolnBlk.oldT_S[i];
-	buffer[buffer_size+15] = SolnBlk.oldT_N[i];
+	buffer[buffer_size+16] = SolnBlk.oldT_S[i];
+	buffer[buffer_size+17] = SolnBlk.oldT_N[i];
 	buffer_size = buffer_size + 18;
       } /* endfor */
     } /* endif */
@@ -467,8 +467,8 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk,
 	SolnBlk.WoN[i].p.yy = buffer[buffer_size+13];
 	SolnBlk.WoN[i].p.zz = buffer[buffer_size+14];
 	SolnBlk.WoN[i].erot = buffer[buffer_size+15];
-	SolnBlk.oldT_S[i]   = buffer[buffer_size+14];
-	SolnBlk.oldT_N[i]   = buffer[buffer_size+15];
+	SolnBlk.oldT_S[i]   = buffer[buffer_size+16];
+	SolnBlk.oldT_N[i]   = buffer[buffer_size+17];
 	buffer_size = buffer_size + 18;
       } /* endfor */
     } /* endif */

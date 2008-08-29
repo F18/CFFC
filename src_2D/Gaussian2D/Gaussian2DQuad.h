@@ -660,6 +660,7 @@ inline ostream &operator << (ostream &out_file,
      out_file << SolnBlk.WoS[i] << "\n";
      out_file << SolnBlk.WoN[i] << "\n";
   } /* endfor */
+  out_file.setf(ios::scientific);
   for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      out_file << SolnBlk.oldT_W[j] << "\n";
      out_file << SolnBlk.oldT_E[j] << "\n";
@@ -668,6 +669,7 @@ inline ostream &operator << (ostream &out_file,
      out_file << SolnBlk.oldT_S[i] << "\n";
      out_file << SolnBlk.oldT_N[i] << "\n";
   } /* endfor */
+  out_file.unsetf(ios::scientific);
   return (out_file);
 }
 
@@ -710,6 +712,7 @@ inline istream &operator >> (istream &in_file,
      in_file >> SolnBlk.WoS[i];
      in_file >> SolnBlk.WoN[i];
   } /* endfor */
+  in_file.setf(ios::skipws);
   for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      in_file >> SolnBlk.oldT_W[j];
      in_file >> SolnBlk.oldT_E[j];
@@ -718,7 +721,7 @@ inline istream &operator >> (istream &in_file,
      in_file >> SolnBlk.oldT_S[i];
      in_file >> SolnBlk.oldT_N[i];
   } /* endfor */
-
+  in_file.unsetf(ios::skipws);
   return (in_file);
 }
 

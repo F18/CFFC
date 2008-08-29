@@ -191,7 +191,6 @@ int Write_Restart_Solution(Gaussian2D_Quad_Block *Soln_ptr,
 	  restart_file << Input_Parameters.Wo.pr << "\n";
           restart_file.unsetf(ios::scientific);
           restart_file << setprecision(14) << Soln_ptr[i];
-
           // Close restart file.
           restart_file.close();
        } /* endif */
