@@ -174,8 +174,17 @@ class ComputationalCell<ThreeD, GeometryType, SolutionType>{
 
   // IntegrateOverTheCell()
   template<typename FO, class ReturnType>
-    ReturnType IntegrateOverTheCell(const FO FuncObj, const int & digits, ReturnType _dummy_param){
-    return _dummy_param ;
+    ReturnType IntegrateOverTheCell(FO FuncObj, const int & digits, const ReturnType & _dummy_param){
+
+    Node3D SWTop(geom.NodeSWTop()), NWTop(geom.NodeNWTop());
+    Node3D SETop(geom.NodeSETop()), NETop(geom.NodeNETop());
+    Node3D SWBot(geom.NodeSWBot()), NWBot(geom.NodeNWBot());
+    Node3D SEBot(geom.NodeSEBot()), NEBot(geom.NodeNEBot());
+
+    return AdaptiveGaussianQuadrature(FuncObj,
+                                      SWTop, NWTop, NETop, SETop,
+                                      SWBot, NWBot, NEBot, SEBot,
+                                      digits,_dummy_param); // --> RR: Must be modified/Created in NumericalLibrary.h
   }
 
   void OutputMeshNodesTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
