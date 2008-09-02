@@ -1416,6 +1416,43 @@ class GeneralizedPolynomialFunctionOfTwoVariables{
     }
 };
 
+
+/**
+ * Generalized polynomial function of THREE-variables                                      
+ * is a class of functions which have the form (x-xi)^n * (y-yi)^m * (z-zi)^l                      
+ ****************************************************************************/
+class GeneralizedPolynomialFunctionOfThreeVariables{
+ private:
+  double xi, yi,zi;
+  int l,m,n;
+ public:
+  GeneralizedPolynomialFunctionOfThreeVariables(const int _l_, const int _m_, const int _n_,
+                                                const double _xi_, const double _yi_, const double _zi_)
+    : xi(_xi_), yi(_yi_), zi(_zi_), l(_l_), m(_m_), n(_n_){
+  };
+
+  void ChangePowersTo(const int _l_, const int _m_, const int _n_){
+      l = _l_;
+      m = _m_;
+      n = _n_;
+  }
+
+  double operator()(const double x, const double y, const double z){
+    return std::pow((x-xi),l)*std::pow((y-yi),m)*std::pow((z-zi),n);
+  }
+
+    friend ostream& operator << (ostream& os, const GeneralizedPolynomialFunctionOfThreeVariables & Var){
+      os << endl;
+      os << "xi=" << Var.xi << endl
+	 << "yi=" << Var.yi << endl
+         << "zi=" << Var.zi << endl
+	 << "power l=" << Var.l << endl
+	 << "power m=" << Var.m << endl;
+	 << "power n=" << Var.n << endl;
+      return os;
+    }
+};
+
 // ZeroLineIntegration()
 double ZeroLineIntegration(const double & N1x, const double & N1y,
 			   const double & N2x, const double & N2y);

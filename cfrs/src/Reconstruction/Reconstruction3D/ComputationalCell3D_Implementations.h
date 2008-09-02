@@ -64,6 +64,9 @@ SetCell (const GeometryType & geom_, const std::vector<int> & SubGridPoints, con
   // generate SubgridMesh and TaylorDerivatives container
   GenerateCell(SubGridPoints[0], SubGridPoints[1], SubGridPoints[2], RO_);
 
+  // compute the geometric coefficients
+  ComputeGeometricCoefficients();
+
   // Set number of rings
   SetRings();
 
@@ -91,6 +94,49 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>::SetSubGridGeometry(){
   std::cout << "Not implemented yet\n";
 
 }
+
+
+// ComputeGeometricCoefficients()
+/******************************************************************
+ * Computes the geometric coefficients by computing integral      *
+ * over the volume of the cell of the polynomial function having  *
+ * the form                                                       *
+ *       ((x-xCC)^n)*((y-yCC)^m) and divide by aria A             * 
+******************************************************************/
+template<class GeometryType,class SolutionType> inline
+void ComputationalCell<ThreeD,GeometryType,SolutionType>
+::ComputeGeometricCoefficients( ){
+
+  int l,m,n;
+  double DummyParam;
+
+  /* Create the polynomial function for the cell */
+  GeneralizedPolynomialFunctionOfThreeVariables Polynom(0,0,0,geom.xc.x,geom.xc.y,geom.xc.z);
+
+//#ifdef __Use_Iterator__
+//  /* Create iterator */
+//  GeomCoeffIterator Iter = GeomCoeff;
+//
+//  for (Iter = GeomCoeff.begin(); Iter!=GeomCoeff.end(); Iter++){
+//    /* Compute the geometric coefficient */
+//    l = Iter->P1();
+//    m  = Iter->P2();
+//    n = Iter->P3();
+//    Polynom.ChangePowersTo(l,m,n);
+//    Iter->D() = IntegrateOverTheCell(Polynom,14,DummyParam)/geom.V();
+//  }
+//#else
+
+
+  /* When the method of integration is used the moments associated with the first order are not quite accurate */
+  for (int p1 = GeomCoeff.FirstElem(); p1<=GeomCoeff.LastElem(); ++p1){
+    /* Compute the geometric coefficient */
+    Polynom.ChangePowersTo(GeomCoeff(p1,true,true,true).P1(),GeomCoeff(p1,true,true,true).P2(),GeomCoeff(p1,true,true,true).P3());
+    GeomCoeff(p1,true,true,true).D() = IntegrateOverTheCell(Polynom,14,DummyParam)/geom.V();
+  }
+}
+
+
 
 // UpdateSubgridSolution()
 template< class GeometryType,class SolutionType> inline

@@ -385,6 +385,32 @@ public:
   /* Cell centroid. */
   void centroid(void);
 
+  /* Node location */
+  Vector3D NodeNWTop(void){return xnNWTop;}
+  Vector3D NodeNWTop(void) const {return xnNWTop;}
+
+  Vector3D NodeNETop(void){return xnNETop;}
+  Vector3D NodeNETop(void) const {return xnNETop;}
+
+  Vector3D NodeSWTop(void){return xnSWTop;}
+  Vector3D NodeSWTop(void) const {return xnSWTop;}
+
+  Vector3D NodeSETop(void){return xnSETop;}
+  Vector3D NodeSETop(void) const {return xnSETop;}
+
+  Vector3D NodeNWBot(void){return xnNWBot;}
+  Vector3D NodeNWBot(void) const {return xnNWBot;}
+
+  Vector3D NodeNEBot(void){return xnNEBot;}
+  Vector3D NodeNEBot(void) const {return xnNEBot;}
+
+  Vector3D NodeSWBot(void){return xnSWBot;}
+  Vector3D NodeSWBot(void) const {return xnSWBot;}
+
+  Vector3D NodeSEBot(void){return xnSEBot;}
+  Vector3D NodeSEBot(void) const {return xnSEBot;}
+
+
   /* Set cell node locations. */
   void setnodes(void);
   void setnodes(const Cell3D_Hexa &Cell);
