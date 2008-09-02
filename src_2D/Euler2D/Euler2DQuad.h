@@ -351,6 +351,29 @@ public:
   void Set_Boundary_Reference_States_Based_On_Input(const Euler2D_Input_Parameters &IP);
   //@}
 
+  //! @name Residual evaluation functions:
+  //@{
+  int dUdt_Residual_Evaluation(const Euler2D_Input_Parameters &IP);
+  int dUdt_Residual_HighOrder(const Euler2D_Input_Parameters &IP,
+			      const int & k_residual,
+			      const bool & UseTimeStep,
+			      const unsigned short int Pos = 0){};
+  int dUdt_Residual_Evaluation_HighOrder(const Euler2D_Input_Parameters &IP,
+					 const unsigned short int Pos = 0){};
+  int dUdt_Multistage_Explicit(const int &i_stage,
+			       const Euler2D_Input_Parameters &IP);
+  int dUdt_Multistage_Explicit_HighOrder(const int &i_stage,
+					 const Euler2D_Input_Parameters &IP,
+					 const unsigned short int Pos = 0){};
+  //@}
+
+  //! @name Functions for AMR:
+  //@{
+  void Calculate_Refinement_Criteria_HighOrder(double *refinement_criteria,
+					       Euler2D_Input_Parameters &IP,
+					       int &number_refinement_criteria){};
+  //@}
+
   //@{ @name Input-output operators.
   friend ostream &operator << (ostream &out_file, const Euler2D_Quad_Block &Soln);
   friend istream &operator >> (istream &in_file, Euler2D_Quad_Block &Soln);
