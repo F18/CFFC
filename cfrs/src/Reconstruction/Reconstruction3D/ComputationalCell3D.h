@@ -78,6 +78,7 @@ class ComputationalCell<ThreeD, GeometryType, SolutionType>{
   void SetCell (const GeometryType & geom_, const std::vector<int> & SubGridPoints, const int &RO_);
   void SetCell (const std::vector<int> &SubGridPoints, const int & RO_);
   void SetCell (const GeometryType & geom_){ geom = geom_;}
+  void ComputeGeometricCoefficients (void);
 
   // Field access
   const Vector & CellCenter( ) {return geom.xc;}
@@ -181,10 +182,8 @@ class ComputationalCell<ThreeD, GeometryType, SolutionType>{
     Node3D SWBot(geom.NodeSWBot()), NWBot(geom.NodeNWBot());
     Node3D SEBot(geom.NodeSEBot()), NEBot(geom.NodeNEBot());
 
-    return AdaptiveGaussianQuadrature(FuncObj,
-                                      SWTop, NWTop, NETop, SETop,
-                                      SWBot, NWBot, NEBot, SEBot,
-                                      digits,_dummy_param); // --> RR: Must be modified/Created in NumericalLibrary.h
+    return AdaptiveGaussianQuadrature(FuncObj, NWBot.x, NEBot.x, NWBot.y, SWBot.y,
+                                      NWBot.z, NWTop.z, digits,_dummy_param);
   }
 
   void OutputMeshNodesTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
