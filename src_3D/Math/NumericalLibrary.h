@@ -1154,7 +1154,7 @@ inline ReturnType Gauss5PointQuadrature(FunctionType func, double StartX, double
 
 /**
  * \fn ReturnType AdaptiveGaussianQuadrature(FunctionType func, double StartX, double EndX,
- * double StartY, double EndY, int digits, const ReturnType & dummy)
+ * double StartY, double EndY, double StartZ, double EndZ, int digits, const ReturnType & dummy)
  * \brief Numerically evaluate integrals of THREE-variable functions over a cuboid (3D).
  *
  * This integration uses an adaptive Lobatto rule in each of the three directions, X, Y and Z.
@@ -1447,7 +1447,7 @@ class GeneralizedPolynomialFunctionOfThreeVariables{
 	 << "yi=" << Var.yi << endl
          << "zi=" << Var.zi << endl
 	 << "power l=" << Var.l << endl
-	 << "power m=" << Var.m << endl;
+	 << "power m=" << Var.m << endl
 	 << "power n=" << Var.n << endl;
       return os;
     }
