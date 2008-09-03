@@ -311,6 +311,14 @@ SRC_EULER = $(EULER_2D_DIR)Euler2DState.cc \
 	    $(EULER_2D_DIR)Euler2D_ICs.cc
 SRC_EULER_EXE = $(EULER_2D_DIR)Euler2D.cc
 
+# Add Euler 2D Testing If Required:
+SRC_EULER_TESTS = test_Euler2DState.cc
+
+SRC_EULER_TESTS := $(addprefix $(EULER_2D_DIR)UnitTests/, $(SRC_EULER_TESTS))
+ifeq ($(TUT_TESTING),ON) 
+  SRC_EULER += $(SRC_EULER_TESTS)
+endif
+
 # NavierStokes2D:
 SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DInput.cc \

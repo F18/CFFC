@@ -325,6 +325,9 @@ public:
   Euler2D_cState Fn(void) const;
   Euler2D_cState Fn(const Euler2D_pState &W);
   friend Euler2D_cState Fn(const Euler2D_pState &W);
+  //! @brief Calculate flux in the provided normal direction for a given solution state
+  Euler2D_cState Fn(const Vector2D & normal_dir) const;
+  friend Euler2D_cState Fn(const Euler2D_pState &W, const Vector2D & normal_dir);
   void dFndU(DenseMatrix &dFndU);
   void dFndU(DenseMatrix &dFndU) const;
   friend void dFndU(DenseMatrix &dFndU, const Euler2D_pState &W);
@@ -514,7 +517,6 @@ public:
   friend Euler2D_pState operator -(const Euler2D_pState &W);
   friend Euler2D_pState fabs(const Euler2D_pState &W);
   friend Euler2D_pState sqr(const Euler2D_pState &W);
-
   //@}
 
   //@{ @name Shortcut arithmetic operators.
@@ -920,6 +922,8 @@ public:
   //@{ @name Unary arithmetic operators.
   friend Euler2D_cState operator +(const Euler2D_cState &U);
   friend Euler2D_cState operator -(const Euler2D_cState &U);
+  friend Euler2D_cState fabs(const Euler2D_cState &U);
+  friend Euler2D_cState sqr(const Euler2D_cState &U);
   //@}
 
   //@{ @name Shortcut arithmetic operators.
@@ -932,6 +936,10 @@ public:
   //@{ @name Relational operators.
   friend int operator ==(const Euler2D_cState &U1, const Euler2D_cState &U2);
   friend int operator !=(const Euler2D_cState &U1, const Euler2D_cState &U2);
+  friend bool operator >=(const Euler2D_cState& U1, const Euler2D_cState& U2);
+  friend bool operator <=(const Euler2D_cState& U1, const Euler2D_cState& U2);
+  friend bool operator <(const Euler2D_cState &U1, const Euler2D_cState &U2);
+  friend bool operator >(const Euler2D_cState &U1, const Euler2D_cState &U2);  
   //@}
 
   //@{ @name Input-output operators.
@@ -1661,6 +1669,22 @@ inline int operator !=(const Euler2D_cState &U1, const Euler2D_cState &U2) {
   return (U1.d != U2.d || U1.dv != U2.dv || U1.E != U2.E);
 }
 
+inline bool operator <=(const Euler2D_cState &U1, const Euler2D_cState &U2) {
+  return (U1[1]<=U2[1] && U1[2]<=U2[2] && U1[3]<=U2[3] && U1[4]<=U2[4] );
+}
+
+inline bool operator >=(const Euler2D_cState &U1, const Euler2D_cState &U2) {
+  return (U1[1]>=U2[1] && U1[2]>=U2[2] && U1[3]>=U2[3] && U1[4]>=U2[4] );
+}
+
+inline bool operator <(const Euler2D_cState &U1, const Euler2D_cState &U2) {
+  return (U1[1]<U2[1] && U1[2]<U2[2] && U1[3]<U2[3] && U1[4]<U2[4] );
+}
+
+inline bool operator >(const Euler2D_cState &U1, const Euler2D_cState &U2) {
+  return (U1[1]>U2[1] && U1[2]>U2[2] && U1[3]>U2[3] && U1[4]>U2[4] );
+}
+
 /********************************************************
  * Euler2D_cState -- Input-output operators.            *
  ********************************************************/
@@ -1943,6 +1967,26 @@ inline Euler2D_cState Fn(const Euler2D_pState &W) {
   return (Euler2D_cState(W.d*W.v.x, W.d*sqr(W.v.x) + W.p,
                          W.d*W.v.x*W.v.y, W.v.x*W.H()));
 }
+
+/*
+ * Calculate the inviscid flux in the normal direction 
+ * using the given solution state.
+ *
+ * \param normal_dir vector defining the normal direction
+ */ 
+inline Euler2D_cState Euler2D_pState::Fn(const Vector2D & normal_dir) const {
+  double V_dot_n(v.x*normal_dir.x + v.y*normal_dir.y);
+  return (Euler2D_cState(d*V_dot_n, 
+			 d*v.x*V_dot_n + p*normal_dir.x,
+			 d*v.y*V_dot_n + p*normal_dir.y,
+			 V_dot_n*H()));
+}
+
+/*
+ * Calculate the inviscid flux in the normal direction 
+ * using the given solution state.
+ */ 
+inline Euler2D_cState Fn(const Euler2D_pState &W, const Vector2D & normal_dir) { return W.Fn(normal_dir); }
 
 inline void Euler2D_pState::dFndU(DenseMatrix &dFndU) {
   dFndU(0,1) += ONE;
