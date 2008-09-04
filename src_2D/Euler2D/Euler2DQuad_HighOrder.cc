@@ -2367,11 +2367,13 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_stage,
  * \param  BOUNDARY boundary position specifier (i.e. WEST, EAST, SOUTH or NORTH)
  * \param  ii       i-index of the cell in which the calculation is done
  * \param  jj       j-index of the cell in which the calculation is done
- * \param  Ul       the left interface state 
- * \param  Ur       the right interface state 
+ * \param  Wl       the left interface state 
+ * \param  Wr       the right interface state 
  * \param CalculationPoint the flux calculation point
+ * \param NormalDirection the normal direction at the calculation point
  *
- * \return The solution state required to calculate the convective flux with such that to satisfy the boundary conditions.
+ * \return The solution state which is required to calculate the inviscid flux with 
+ *         such that to satisfy the boundary condition.
  */
 void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const int &BOUNDARY,
 									  const int &ii, const int &jj,
@@ -2380,6 +2382,296 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
 									  const Vector2D &CalculationPoint,
 									  const Vector2D &NormalDirection,
 									  const unsigned short int Pos) const {
-  
+
+  switch(BOUNDARY){
+
+    // *******************************
+    // === WEST boundary interface ===
+    // *******************************
+  case WEST :			
+    // Compute right interface state based on reconstruction or the particular boundary condition
+    switch (Grid.BCtypeW[jj]){
+
+    case BC_NONE :
+      // Compute Wr based on the high-order reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii-1,jj,CalculationPoint);
+      break;
+
+    case BC_PERIODIC :
+      // Compute Wr based on the high-order reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii-1,jj,CalculationPoint);
+      break;
+
+    case BC_FROZEN :
+      // Calculate Wr based on the reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii-1,jj,CalculationPoint);
+      break;
+      
+    case BC_DIRICHLET :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_DIRICHLET not implemented yet.");
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Calculate W_face based on the exact solution
+      if (ExactSoln->IsExactSolutionSet()){
+	Wr = Wl = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
+      break;
+      
+    case BC_NEUMANN :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_NEUMANN not implemented yet.");
+      break;
+
+    case BC_SYMMETRY_PLANE :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_SYMMETRY_PLANE not implemented yet.");
+      break;
+
+    case BC_EXTRAPOLATE :
+      // Set Wr equal to the left side value (i.e Wl)
+      Wr = Wl;
+      break;
+
+    case BC_LINEAR_EXTRAPOLATION :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_LINEAR_EXTRAPOLATION not implemented yet.");
+      break;
+
+    case BC_OUTFLOW :
+      // Set Wr equal to the left side value (i.e Wl)
+      Wr = Wl;
+      break;
+
+    case BC_CONSTANT_EXTRAPOLATION :
+      // Set Wr equal to the left side value (i.e Wl)
+      Wr = Wl;
+      break;
+      
+    case BC_FARFIELD :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_FARFIELD not implemented yet.");
+      break;
+
+    default:
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such West BCtype!");
+    }// endswitch (Grid.BCtypeW[jj])
+    break;
+
+
+    // *******************************
+    // === EAST boundary interface ===
+    // *******************************
+  case EAST :
+    // Compute right interface state based on reconstruction or the particular boundary condition
+    switch (Grid.BCtypeE[jj]){
+
+    case BC_NONE :
+      // Compute Wr based on the high-order reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii+1,jj,CalculationPoint);
+      break;
+
+    case BC_PERIODIC :
+      // Compute Wr based on the high-order reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii+1,jj,CalculationPoint);
+      break;
+
+    case BC_FROZEN :
+      // Compute Wr based on the high-order reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii+1,jj,CalculationPoint);
+      break;
+      
+    case BC_DIRICHLET :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_DIRICHLET not implemented yet.");
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Calculate W_face based on the exact solution
+      if (ExactSoln->IsExactSolutionSet()){
+	Wr = Wl = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
+      break;
+      
+    case BC_NEUMANN : 
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_NEUMANN not implemented yet.");
+      break;
+
+    case BC_SYMMETRY_PLANE :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_SYMMETRY_PLANE not implemented yet.");
+      break;
+
+    case BC_EXTRAPOLATE :
+      // Set Wr equal to the left side value (i.e Wl)
+      Wr = Wl;
+      break;
+
+    case BC_LINEAR_EXTRAPOLATION :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_LINEAR_EXTRAPOLATION not implemented yet.");
+      break;
+
+    case BC_OUTFLOW :
+      // Set Wr equal to the left side value (i.e Wl)
+      Wr = Wl;
+      break;
+
+    case BC_CONSTANT_EXTRAPOLATION :
+      // Set Wr equal to the left side value (i.e Wl)
+      Wr = Wl;
+      break;
+      
+    case BC_FARFIELD :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_FARFIELD not implemented yet.");
+      break;
+
+    default:
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such East BCtype!");
+    }// endswitch (Grid.BCtypeE[jj])
+    break;
+
+    // ********************************
+    // === SOUTH boundary interface ===
+    // ********************************
+  case SOUTH :
+    // Compute left interface state based on reconstruction or the particular boundary condition
+    switch (Grid.BCtypeS[ii]){
+
+    case BC_NONE :
+      // Compute Wr based on the high-order reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj-1,CalculationPoint);
+      break;
+
+    case BC_PERIODIC :
+      // Compute Wr based on the high-order reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj-1,CalculationPoint);
+      break;
+
+    case BC_FROZEN :
+      // Compute Wr based on the reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj-1,CalculationPoint);
+      break;
+      
+    case BC_DIRICHLET :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_DIRICHLET not implemented yet.");
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Calculate W_face based on the exact solution
+      if (ExactSoln->IsExactSolutionSet()){
+	Wr = Wl = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
+      break;
+      
+    case BC_NEUMANN : 
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_NEUMANN not implemented yet.");
+      break;
+
+    case BC_SYMMETRY_PLANE :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_SYMMETRY_PLANE not implemented yet.");
+      break;
+
+    case BC_EXTRAPOLATE :
+      // Set Wr equal to the left side value (i.e Wl)
+      Wr = Wl;
+      break;
+
+    case BC_LINEAR_EXTRAPOLATION :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_LINEAR_EXTRAPOLATION not implemented yet.");
+      break;
+
+    case BC_OUTFLOW :
+      // Set Wr equal to the left side value (i.e Wl)
+      Wr = Wl;
+      break;
+
+    case BC_CONSTANT_EXTRAPOLATION :
+      // Set Wr equal to the left side value (i.e Wl)
+      Wr = Wl;
+      break;
+      
+    case BC_FARFIELD :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_FARFIELD not implemented yet.");
+      break;
+
+    default:
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such South BCtype!");
+    }// endswitch (Grid.BCtypeS[ii])
+    break;
+
+    // ********************************
+    // === NORTH boundary interface ===
+    // ********************************
+  case NORTH :
+    // Compute right interface state based on reconstruction or the particular boundary condition
+    switch (Grid.BCtypeN[ii]){
+
+    case BC_NONE :
+      // Compute Wr based on the high-order reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj+1,CalculationPoint);
+      break;
+
+    case BC_PERIODIC :
+      // Compute Wr based on the high-order reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj+1,CalculationPoint);
+      break;
+
+    case BC_FROZEN :
+      // Compute Wr based on the high-order reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj+1,CalculationPoint);
+      break;
+      
+    case BC_DIRICHLET :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_DIRICHLET not implemented yet.");
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Calculate W_face based on the exact solution
+      if (ExactSoln->IsExactSolutionSet()){
+	Wr = Wl = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+      } else {
+	throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
+      break;
+      
+    case BC_NEUMANN : 
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_NEUMANN not implemented yet.");
+      break;
+
+    case BC_SYMMETRY_PLANE :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_SYMMETRY_PLANE not implemented yet.");
+      break;
+
+    case BC_EXTRAPOLATE :
+      // Set Wr equal to the left side value (i.e Wl)
+      Wr = Wl;
+      break;
+
+    case BC_LINEAR_EXTRAPOLATION :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_LINEAR_EXTRAPOLATION not implemented yet.");
+      break;
+
+    case BC_OUTFLOW :
+      // Set Wr equal to the left side value (i.e Wl)
+      Wr = Wl;
+      break;
+
+    case BC_CONSTANT_EXTRAPOLATION :
+      // Set Wr equal to the left side value (i.e Wl)
+      Wr = Wl;
+      break;
+      
+    case BC_FARFIELD :
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_FARFIELD not implemented yet.");
+      break;
+
+    default:
+      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such North BCtype!");
+    }// endswitch (Grid.BCtypeN[ii])
+    break;
+
+  default:
+    throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such boundary!");
+  }  
 
 }
