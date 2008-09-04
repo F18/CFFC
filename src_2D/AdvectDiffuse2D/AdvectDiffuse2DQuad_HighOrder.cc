@@ -4253,7 +4253,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
       if (Inflow->IsInflowFieldSet()){
 	Ur = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
       } else {
-	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
       }
       break;
 
@@ -4267,7 +4267,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
       if (ExactSoln->IsExactSolutionSet()){
 	Ur = Ul = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
       } else {
-	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
       break;
       
@@ -4356,7 +4356,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
       if (Inflow->IsInflowFieldSet()){
 	Ur = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
       } else {
-	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
       }
       break;
 
@@ -4370,7 +4370,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
       if (ExactSoln->IsExactSolutionSet()){
 	Ur = Ul = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
       } else {
-	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
       break;
       
@@ -4458,7 +4458,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
       if (Inflow->IsInflowFieldSet()){
 	Ur = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
       } else {
-	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
       }
       break;
 
@@ -4472,7 +4472,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
       if (ExactSoln->IsExactSolutionSet()){
 	Ur = Ul = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
       } else {
-	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
       break;
       
@@ -4560,7 +4560,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
       if (Inflow->IsInflowFieldSet()){
 	Ur = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
       } else {
-	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
       }
       break;
 
@@ -4574,7 +4574,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
       if (ExactSoln->IsExactSolutionSet()){
 	Ur = Ul = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
       } else {
-	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
       break;
       
