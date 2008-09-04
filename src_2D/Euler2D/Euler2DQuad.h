@@ -357,14 +357,14 @@ public:
   int dUdt_Residual_HighOrder(const Euler2D_Input_Parameters &IP,
 			      const int & k_residual,
 			      const bool & UseTimeStep,
-			      const unsigned short int Pos = 0){};
+			      const unsigned short int Pos = 0);
   int dUdt_Residual_Evaluation_HighOrder(const Euler2D_Input_Parameters &IP,
-					 const unsigned short int Pos = 0){};
+					 const unsigned short int Pos = 0);
   int dUdt_Multistage_Explicit(const int &i_stage,
 			       const Euler2D_Input_Parameters &IP);
   int dUdt_Multistage_Explicit_HighOrder(const int &i_stage,
 					 const Euler2D_Input_Parameters &IP,
-					 const unsigned short int Pos = 0){};
+					 const unsigned short int Pos = 0);
   //@}
 
   //! @name Functions for AMR:
@@ -372,6 +372,28 @@ public:
   void Calculate_Refinement_Criteria_HighOrder(double *refinement_criteria,
 					       Euler2D_Input_Parameters &IP,
 					       int &number_refinement_criteria){};
+  //@}
+
+  //! @name Functions for flux calculation:
+  //@{
+  //! @brief Calculate Riemann flux
+  Euler2D_cState RiemannFlux_n(const int & Flux_Function,
+			       const Euler2D_pState &Wl,
+			       const Euler2D_pState &Wr,
+			       const Vector2D &normal_dir) const;
+  //! @brief Check the validity of the state
+  void Validate_Primitive_SolnState(Euler2D_pState & W,
+				    const int &iCell,
+				    const int &jCell,
+				    const std::string &Ref,
+				    const int &IndexHO) const;
+  void InviscidFluxStates_AtBoundaryInterface_HighOrder(const int &BOUNDARY,
+							const int &ii, const int &jj,
+							Euler2D_pState &Wl,
+							Euler2D_pState &Wr,
+							const Vector2D &CalculationPoint,
+							const Vector2D &NormalDirection,
+							const unsigned short int Pos = 0) const;
   //@}
 
   //@{ @name Input-output operators.
@@ -2605,6 +2627,112 @@ inline int Euler2D_Quad_Block::UnloadReceiveBuffer_Flux_F2C(double *buffer,
      } /* endfor */
   } /* endif */
   return(0);
+}
+
+
+/*!
+ * Return the upwind flux in the normal direction 
+ * based on the left and right interface states for 
+ * a variety of flux functions.
+ *
+ * \param Flux_Function index to specify the requested flux function
+ * \param Wl left interface state
+ * \param Wr right interface state
+ * \param normal_dir vector to define the normal direction
+ */
+inline Euler2D_cState Euler2D_Quad_Block::RiemannFlux_n(const int & Flux_Function,
+							const Euler2D_pState &Wl,
+							const Euler2D_pState &Wr,
+							const Vector2D &normal_dir) const{
+
+  switch(Flux_Function) {
+  case FLUX_FUNCTION_GODUNOV :
+    return FluxGodunov_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_ROE :
+    return FluxRoe_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_RUSANOV :
+    return FluxRusanov_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_HLLE :
+    return FluxHLLE_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_LINDE :
+    return FluxLinde_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_HLLC :
+    return FluxHLLC_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_VANLEER :
+    return FluxVanLeer_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_AUSM :
+    return FluxAUSM_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_AUSMplus :
+    return FluxAUSMplus_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_ROE_PRECON_WS :
+    return FluxRoe_n_Precon_WS(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_HLLE_PRECON_WS :
+    return FluxHLLE_n_Precon_WS(Wl, Wr, normal_dir);
+  default:
+    return FluxRoe_n(Wl, Wr, normal_dir);
+  } /* endswitch */
+
+}
+
+/*!
+ * Check that the primitive state is physical.
+ *
+ * \param W checked solution state
+ * \param iCell i-index of the cell which the solution state belongs to 
+ * \param iCell j-index of the cell which the solution state belongs to 
+ * \param Ref reference string. Used in the output error message
+ */
+inline void Euler2D_Quad_Block::Validate_Primitive_SolnState(Euler2D_pState & W,
+							     const int &iCell,
+							     const int &jCell,
+							     const std::string &Ref,
+							     const int &IndexHO) const{
+  
+  int Param_Index;
+  std::ostringstream error_msg;
+
+  // Check if negative density or pressure occur
+  if (W.d <= ZERO || W.p <= ZERO ) {
+
+    if (CENO_Execution_Mode::FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE){
+      // output a brief error message
+      std::cout << "\n " << CFFC_Name() 
+		<< " Euler2D ERROR: Negative Density and/or Pressure at the "
+		<< Ref
+		<< " interface of (" << iCell << "," << jCell << ") cell: "
+		<< "\n W = " << W << "\n"; 
+            
+      // try using the Piecewise Constant (PWC) solution instead
+      W = CellSolution(iCell,jCell);
+
+    } else {
+
+      // throw a runtime error with an error message
+      error_msg << "\n " << CFFC_Name() 
+		<< " Euler2D ERROR: Negative Density and/or Pressure at the "
+		<< Ref
+		<< " interface of (" << iCell << "," << jCell << ") cell: "
+		<< "\n W = " << W; 
+      
+      error_msg << "\n High-order reconstruction data: "
+		<< "\n Derivatives: \n"
+		<< HighOrderVariable(IndexHO).CellTaylorDeriv(iCell,jCell)
+		<< "\n Limiter: \n"
+		<< HighOrderVariable(IndexHO).CellTaylorDeriv(iCell,jCell).Limiter();
+	      
+      for (Param_Index = 1; Param_Index <= 4; ++Param_Index){
+	error_msg << "\n  Variable=" << Param_Index
+		  << ", SI=" << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(iCell,jCell,Param_Index)
+		  << ", Flagged=" <<  HighOrderVariable(IndexHO).CellInadequateFitValue(iCell,jCell,Param_Index);
+      }
+      error_msg << "\n";
+
+      throw runtime_error(error_msg.str());
+
+    } // endif (FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE)
+
+  } // endif
+
 }
 
 /**************************************************************************
