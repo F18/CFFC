@@ -379,18 +379,18 @@ public:
   // Use automatically generated destructor.
 
   /* Cell Volume. */
-  double V(void);
-
+  const double V(void) const;
+  
   /* Cell centroid. */
   void centroid(void);
 
   /* Cell face-center */
-  Vector3D xfaceN(void);
-  Vector3D xfaceE(void);
-  Vector3D xfaceS(void);
-  Vector3D xfaceW(void);
-  Vector3D xfaceTop(void);
-  Vector3D xfaceBot(void);
+  const Vector3D xfaceN(void) const;
+  const Vector3D xfaceE(void) const;
+  const Vector3D xfaceS(void) const;
+  const Vector3D xfaceW(void) const;
+  const Vector3D xfaceTop(void) const;
+  const Vector3D xfaceBot(void) const;
 
   /* Node location */
   Vector3D NodeNWTop(void){return xnNWTop;}
@@ -571,28 +571,28 @@ inline void Cell3D_Hexa::centroid(void){
 /********************************************************
  * Cell3D_Hexa -- Get midpoints of faces                *
  ********************************************************/
-inline Vector3D Cell3D_Hexa::xfaceN(void) {
+inline const Vector3D Cell3D_Hexa::xfaceN(void) const{
   return ((xnNWTop+xnNETop+xnNEBot+xnNWBot)/FOUR);
 }
 
 
-inline Vector3D Cell3D_Hexa::xfaceS(void) {
+inline const Vector3D Cell3D_Hexa::xfaceS(void) const{
   return ((xnSWTop+xnSETop+xnSEBot+xnSWBot)/FOUR);
 }
 
-inline Vector3D Cell3D_Hexa::xfaceE(void) {
+inline const Vector3D Cell3D_Hexa::xfaceE(void) const{
   return ((xnNETop+xnNEBot+xnSEBot+xnSETop)/FOUR);
 }
 
-inline Vector3D Cell3D_Hexa::xfaceW(void) {
+inline const Vector3D Cell3D_Hexa::xfaceW(void) const{
   return ((xnNWTop+xnNWBot+xnSWBot+xnSWTop)/FOUR);
 }
 
-inline Vector3D Cell3D_Hexa::xfaceTop(void) {
+inline const Vector3D Cell3D_Hexa::xfaceTop(void) const{
   return ((xnNETop+xnSETop+xnSWTop+xnNWTop)/FOUR);
 }
 
-inline Vector3D Cell3D_Hexa::xfaceBot(void) {
+inline const Vector3D Cell3D_Hexa::xfaceBot(void) const{
   return ((xnNEBot+xnSEBot+xnSWBot+xnSWBot)/FOUR);
 }
 
@@ -600,32 +600,32 @@ inline Vector3D Cell3D_Hexa::xfaceBot(void) {
 /*************************************************************************
  * Cell3D_Hexa::centroid -- Cell Volume.                           *
  *************************************************************************/
-inline double Cell3D_Hexa::V(void){
+inline const double Cell3D_Hexa::V(void) const {
 
-  return (tetvolume(xc, xnNWBot, xnNEBot, xfaceBot)+
-	  tetvolume(xc, xnNWBot, xnSWBot, xfaceBot)+
-	  tetvolume(xc, xnSWBot, xnSEBot, xfaceBot)+
-	  tetvolume(xc, xnSEBot, xnNEBot, xfaceBot)+
-	  tetvolume(xc, xnSEBot, xnNEBot, xfaceE)+
-	  tetvolume(xc, xnNEBot, xnNETop, xfaceE)+
-	  tetvolume(xc, xnNETop, xnSETop, xfaceE)+
-	  tetvolume(xc, xnSETop, xnSEBot, xfaceE)+
-	  tetvolume(xc, xnSETop, xnSEBot, xfaceS)+
-	  tetvolume(xc, xnSEBot, xnSWBot, xfaceS)+
-	  tetvolume(xc, xnSWBot, xnSWTop, xfaceS)+
-	  tetvolume(xc, xnSWTop, xnSETop, xfaceS)+
-	  tetvolume(xc, xnSWTop, xnSETop, xfaceTop)+
-	  tetvolume(xc, xnSETop, xnNETop, xfaceTop)+
-	  tetvolume(xc, xnNETop, xnNWTop, xfaceTop)+
-	  tetvolume(xc, xnNWTop, xnSWTop, xfaceTop)+
-	  tetvolume(xc, xnNWTop, xnSWTop, xfaceW)+
-	  tetvolume(xc, xnSWTop, xnSWBot, xfaceW)+
-	  tetvolume(xc, xnSWBot, xnNWBot, xfaceW)+
-	  tetvolume(xc, xnNWBot, xnNWTop, xfaceW)+
-	  tetvolume(xc, xnNWBot, xnNWTop, xfaceN)+
-	  tetvolume(xc, xnNWTop, xnNETop, xfaceN)+
-	  tetvolume(xc, xnNETop, xnNEBot, xfaceN)+
-	  tetvolume(xc, xnNEBot, xnNWBot, xfaceN));  
+  return (tetvolume(xc, NodeNWBot(), NodeNEBot(), xfaceBot())+
+	  tetvolume(xc, NodeNWBot(), NodeSWBot(), xfaceBot())+
+	  tetvolume(xc, NodeSWBot(), NodeSEBot(), xfaceBot())+
+	  tetvolume(xc, NodeSEBot(), NodeNEBot(), xfaceBot())+
+	  tetvolume(xc, NodeSEBot(), NodeNEBot(), xfaceE())+
+	  tetvolume(xc, NodeNEBot(), NodeNETop(), xfaceE())+
+	  tetvolume(xc, NodeNETop(), NodeSETop(), xfaceE())+
+	  tetvolume(xc, NodeSETop(), NodeSEBot(), xfaceE())+
+	  tetvolume(xc, NodeSETop(), NodeSEBot(), xfaceS())+
+	  tetvolume(xc, NodeSEBot(), NodeSWBot(), xfaceS())+
+	  tetvolume(xc, NodeSWBot(), NodeSWTop(), xfaceS())+
+	  tetvolume(xc, NodeSWTop(), NodeSETop(), xfaceS())+
+	  tetvolume(xc, NodeSWTop(), NodeSETop(), xfaceTop())+
+	  tetvolume(xc, NodeSETop(), NodeNETop(), xfaceTop())+
+	  tetvolume(xc, NodeNETop(), NodeNWTop(), xfaceTop())+
+	  tetvolume(xc, NodeNWTop(), NodeSWTop(), xfaceTop())+
+	  tetvolume(xc, NodeNWTop(), NodeSWTop(), xfaceW())+
+	  tetvolume(xc, NodeSWTop(), NodeSWBot(), xfaceW())+
+	  tetvolume(xc, NodeSWBot(), NodeNWBot(), xfaceW())+
+	  tetvolume(xc, NodeNWBot(), NodeNWTop(), xfaceW())+
+	  tetvolume(xc, NodeNWBot(), NodeNWTop(), xfaceN())+
+	  tetvolume(xc, NodeNWTop(), NodeNETop(), xfaceN())+
+	  tetvolume(xc, NodeNETop(), NodeNEBot(), xfaceN())+
+	  tetvolume(xc, NodeNEBot(), NodeNWBot(), xfaceN())); 
 }
 
 /******************************************************************

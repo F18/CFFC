@@ -115,13 +115,6 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
 		      Input_Parameters.NCells_Kdir,
 		      Input_Parameters.Nghost_Cells);
     
-    // TEMPORARY OUTPUT
-    ///////////////////
-    //ofstream fout;
-    //fout.open("Output_TEST_data.txt");
-    //Grid.Output_Cells_Tecplot(1,1,fout);
-    //fout.close();
-    //return(0);
     
     std::cout << " Set the Computational Domain:\n";
     // Set the Computation Domain
