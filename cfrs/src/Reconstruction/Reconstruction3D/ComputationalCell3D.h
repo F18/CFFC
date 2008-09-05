@@ -83,7 +83,8 @@ class ComputationalCell<ThreeD, GeometryType, SolutionType>{
   // Field access
   const Vector & CellCenter( ) {return geom.xc;}
   GeometryType& CellGeometry( ) { return geom;}
-  const double CellDomain() const {return geom.V();}
+  const double CellDomain() {return geom.V();}
+  //  const double CellDomain() const {return geom.V();}
 
 //  DerivIterator BeginD() {return TD.begin();}
 //  DerivIterator EndD() {return TD.end();}
@@ -116,6 +117,8 @@ class ComputationalCell<ThreeD, GeometryType, SolutionType>{
   SolutionType & CellMCC(void) {return MCC;}
   const double & CellMCC(int & VarPosition) const;
   double & CellMCC(int & VarPosition);
+
+  int NumberOfTaylorDerivatives() const {return TD.size();}
 
   /* CellDeriv() */
   const SolutionType & CellDeriv(int i, int j, int k) const {return TD(i,j,k);}
@@ -171,7 +174,7 @@ class ComputationalCell<ThreeD, GeometryType, SolutionType>{
 
   // ComputeReconstructionError()
   template<typename FO>
-    void ComputeReconstructionError(const FO FuncObj);
+  void ComputeReconstructionError(const FO FuncObj);
 
   // IntegrateOverTheCell()
   template<typename FO, class ReturnType>
@@ -182,8 +185,8 @@ class ComputationalCell<ThreeD, GeometryType, SolutionType>{
     Node3D SWBot(geom.NodeSWBot()), NWBot(geom.NodeNWBot());
     Node3D SEBot(geom.NodeSEBot()), NEBot(geom.NodeNEBot());
 
-    return AdaptiveGaussianQuadrature(FuncObj, NWBot.x, NEBot.x, NWBot.y, SWBot.y,
-                                      NWBot.z, NWTop.z, digits,_dummy_param);
+    return AdaptiveGaussianQuadrature(FuncObj, NWBot.X.x, NEBot.X.x, NWBot.X.y, SWBot.X.y,
+                                      NWBot.X.z, NWTop.X.z, digits,_dummy_param);
   }
 
   void OutputMeshNodesTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,

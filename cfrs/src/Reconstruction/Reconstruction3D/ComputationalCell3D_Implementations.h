@@ -206,37 +206,39 @@ SolutionType ComputationalCell<ThreeD,GeometryType,SolutionType>::
 /*******************************************************************
 Computes the error of the reconstructed function in all three norms
 ********************************************************************/
+// --> RR: To be commented back in later 20080905
+
 template<class GeometryType,class SolutionType>
   template<typename FO>
 void ComputationalCell<ThreeD,GeometryType,SolutionType>::ComputeReconstructionError(const FO FuncObj){
 
-  /* integrate the error for the L1 norm */
-  ErrorRecL1Norm = IntegrateOverTheCell(error_function(FuncObj,
-						       wrapped_member_function(this,
-									       &SolutionAtCoordinates,
-									       ErrorRecL1Norm)),
-					10, ErrorRecL1Norm);
-
-  /* integrate the error for the L2 norm*/
-  ErrorRecL2Norm = IntegrateOverTheCell(square_error_function(FuncObj,
-							      wrapped_member_function(this,
-										      &SolutionAtCoordinates,
-										      ErrorRecL2Norm)),
-					10, ErrorRecL2Norm);
-
-  /* generate 101 points over the cell domain and chose the maximum error */
-  ErrorRecMaxNorm = SolutionType(0.0);
-  for (int i=0; i<NbSubgridPoints[0]; ++i)
-    for (int j=0; j<NbSubgridPoints[1]; ++j)
-      for (int k=0; k<NbSubgridPoints[2]; ++k){
-	ErrorRecMaxNorm = max(ErrorRecMaxNorm,
-			      error_function(FuncObj,
-					     wrapped_member_function(this,
-								     &SolutionAtCoordinates,
-								     ErrorRecL1Norm))(SubgridSolution(i,j,k).GetNode().x(),
-										      SubgridSolution(i,j,k).GetNode().y(),
-										      SubgridSolution(i,j,k).GetNode().z()));
-      }
+//  /* integrate the error for the L1 norm */
+//  ErrorRecL1Norm = IntegrateOverTheCell(error_function(FuncObj,
+//						       wrapped_member_function(this,
+//									       &SolutionAtCoordinates,
+//									       ErrorRecL1Norm)),
+//					10, ErrorRecL1Norm);
+//
+//  /* integrate the error for the L2 norm*/
+//  ErrorRecL2Norm = IntegrateOverTheCell(square_error_function(FuncObj,
+//							      wrapped_member_function(this,
+//										      &SolutionAtCoordinates,
+//										      ErrorRecL2Norm)),
+//					10, ErrorRecL2Norm);
+//
+//  /* generate 101 points over the cell domain and chose the maximum error */
+//  ErrorRecMaxNorm = SolutionType(0.0);
+//  for (int i=0; i<NbSubgridPoints[0]; ++i)
+//    for (int j=0; j<NbSubgridPoints[1]; ++j)
+//      for (int k=0; k<NbSubgridPoints[2]; ++k){
+//	ErrorRecMaxNorm = max(ErrorRecMaxNorm,
+//			      error_function(FuncObj,
+//					     wrapped_member_function(this,
+//								     &SolutionAtCoordinates,
+//								     ErrorRecL1Norm))(SubgridSolution(i,j,k).GetNode().x(),
+//										      SubgridSolution(i,j,k).GetNode().y(),
+//										      SubgridSolution(i,j,k).GetNode().z()));
+//      }
 }
 
 // OutputSubgridTecplot()

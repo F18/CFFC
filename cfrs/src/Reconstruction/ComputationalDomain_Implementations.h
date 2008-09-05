@@ -1304,104 +1304,104 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
 void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   OutputSmoothnessIndicatorAtNodesTecplot(std::ofstream &output_file, const bool Title) const
 {
-
-  int i,j,k, _dummy_parameter_, SubgridNy, SubgridNz;
-
-  switch(SpaceDimension){
-  case OneD:
-    if (Title){
-      /* Write TECPLOT title */
-      output_file << "TITLE = \"Smoothness Indicator in " << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
-      output_file << "VARIABLES = \"x\" \n"
-		  << "\"SI\" \\ \n";
-      /* output dataset auxiliary data */
-      TecplotDatasetAuxData::PrintAuxData(output_file);
-
-      output_file << "ZONE T = \" SolBlock \" \\ \n";
-      output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
-		  << "F = POINT \n";
-      output_file << "DT = (DOUBLE DOUBLE) \n";
-    } else {
-      output_file << "ZONE T = \" SolBlock \" \\ \n";
-      output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
-		  << "F = POINT \n";
-      output_file << "DT = (DOUBLE DOUBLE) \n";
-    }
-
-    for(i=iStart(), _dummy_parameter_=0; i<=iEnd(); ++i){
-      SolnPtr[0][0][i].OutputSmoothnessIndicatorAtNodesTecplot(output_file, _dummy_parameter_, _dummy_parameter_);
-    }
-    break;
-
-  case TwoD:
-    if (Title){
-      /* Write TECPLOT title */
-      output_file << "TITLE = \"Smoothness Indicator in " << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
-      output_file << "VARIABLES = \"x\" \\ \n"
-		  << "\"y\" \\ \n"
-		  << "\"SI\" \\ \n";
-      /* output dataset auxiliary data */
-      TecplotDatasetAuxData::PrintAuxData(output_file);
-
-      output_file << "ZONE T = \" SolBlock \" \\ \n";
-      output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
-		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "F = POINT \n";
-      output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
-    } else {
-      output_file << "ZONE T = \" SolBlock \" \\ \n";
-      output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
-		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "F = POINT \n";
-      output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
-    }
-
-    for(j=jStart(), _dummy_parameter_=0; j<=jEnd(); ++j)
-      for(SubgridNy = 0; SubgridNy < SolnPtr[0][0][0].jSubgridPoints(); ++SubgridNy){
-	for(i=iStart(); i<=iEnd(); ++i){
-	  SolnPtr[0][j][i].OutputSmoothnessIndicatorAtNodesTecplot(output_file, SubgridNy, _dummy_parameter_);
-	}
-      }
-    break;
-
-  case ThreeD:
-    if (Title){
-      /* Write TECPLOT title */
-      output_file << "TITLE = \"Solution" << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
-      output_file << "VARIABLES = \"x\" \\ \n"
-		  << "\"y\" \\ \n"
-		  << "\"z\" \\ \n"
-		  << "\"SI\" \\ \n";
-      /* output dataset auxiliary data */
-      TecplotDatasetAuxData::PrintAuxData(output_file);
-
-      output_file << "ZONE T = \" SolBlock \" \\ \n";
-      output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
-		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "F = POINT \n";
-      output_file << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE) \n";
-    } else {
-      output_file << "ZONE T = \" SolBlock \" \\ \n";
-      output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
-		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "F = POINT \n";
-      output_file << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE) \n";
-    }
-
-    for(k=jStart(); k<=kEnd(); ++k)
-      for(SubgridNz = 0; SubgridNz < SolnPtr[0][0][0].kSubgridPoints(); ++SubgridNz){
-	for(j=jStart(); j<=jEnd(); ++j)
-	  for(SubgridNy = 0; SubgridNy < SolnPtr[0][0][0].jSubgridPoints(); ++SubgridNy){
-	    for(i=iStart(); i<=iEnd(); ++i){
-	      SolnPtr[k][j][i].OutputSmoothnessIndicatorAtNodesTecplot(output_file, SubgridNy, SubgridNz);
-	    }
-	  }
-      }
-    
-    break;
-  }
+  // --> RR: Comment back in later 20080905
+  //int i,j,k, _dummy_parameter_, SubgridNy, SubgridNz;
+  //
+  //switch(SpaceDimension){
+  //case OneD:
+  //  if (Title){
+  //    /* Write TECPLOT title */
+  //    output_file << "TITLE = \"Smoothness Indicator in " << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
+  //    output_file << "VARIABLES = \"x\" \n"
+  //      	  << "\"SI\" \\ \n";
+  //    /* output dataset auxiliary data */
+  //    TecplotDatasetAuxData::PrintAuxData(output_file);
+  //
+  //    output_file << "ZONE T = \" SolBlock \" \\ \n";
+  //    output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
+  //      	  << "F = POINT \n";
+  //    output_file << "DT = (DOUBLE DOUBLE) \n";
+  //  } else {
+  //    output_file << "ZONE T = \" SolBlock \" \\ \n";
+  //    output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
+  //      	  << "F = POINT \n";
+  //    output_file << "DT = (DOUBLE DOUBLE) \n";
+  //  }
+  //
+  //  for(i=iStart(), _dummy_parameter_=0; i<=iEnd(); ++i){
+  //    SolnPtr[0][0][i].OutputSmoothnessIndicatorAtNodesTecplot(output_file, _dummy_parameter_, _dummy_parameter_);
+  //  }
+  //  break;
+  //
+  //case TwoD:
+  //  if (Title){
+  //    /* Write TECPLOT title */
+  //    output_file << "TITLE = \"Smoothness Indicator in " << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
+  //    output_file << "VARIABLES = \"x\" \\ \n"
+  //      	  << "\"y\" \\ \n"
+  //      	  << "\"SI\" \\ \n";
+  //    /* output dataset auxiliary data */
+  //    TecplotDatasetAuxData::PrintAuxData(output_file);
+  //
+  //    output_file << "ZONE T = \" SolBlock \" \\ \n";
+  //    output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
+  //      	  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+  //      	  << "F = POINT \n";
+  //    output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
+  //  } else {
+  //    output_file << "ZONE T = \" SolBlock \" \\ \n";
+  //    output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
+  //      	  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+  //      	  << "F = POINT \n";
+  //    output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
+  //  }
+  //
+  //  for(j=jStart(), _dummy_parameter_=0; j<=jEnd(); ++j)
+  //    for(SubgridNy = 0; SubgridNy < SolnPtr[0][0][0].jSubgridPoints(); ++SubgridNy){
+  //      for(i=iStart(); i<=iEnd(); ++i){
+  //        SolnPtr[0][j][i].OutputSmoothnessIndicatorAtNodesTecplot(output_file, SubgridNy, _dummy_parameter_);
+  //      }
+  //    }
+  //  break;
+  //
+  //case ThreeD:
+  //  if (Title){
+  //    /* Write TECPLOT title */
+  //    output_file << "TITLE = \"Solution" << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
+  //    output_file << "VARIABLES = \"x\" \\ \n"
+  //      	  << "\"y\" \\ \n"
+  //      	  << "\"z\" \\ \n"
+  //      	  << "\"SI\" \\ \n";
+  //    /* output dataset auxiliary data */
+  //    TecplotDatasetAuxData::PrintAuxData(output_file);
+  //
+  //    output_file << "ZONE T = \" SolBlock \" \\ \n";
+  //    output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
+  //      	  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+  //      	  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+  //      	  << "F = POINT \n";
+  //    output_file << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE) \n";
+  //  } else {
+  //    output_file << "ZONE T = \" SolBlock \" \\ \n";
+  //    output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
+  //      	  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+  //      	  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+  //      	  << "F = POINT \n";
+  //    output_file << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE) \n";
+  //  }
+  //
+  //  for(k=jStart(); k<=kEnd(); ++k)
+  //    for(SubgridNz = 0; SubgridNz < SolnPtr[0][0][0].kSubgridPoints(); ++SubgridNz){
+  //      for(j=jStart(); j<=jEnd(); ++j)
+  //        for(SubgridNy = 0; SubgridNy < SolnPtr[0][0][0].jSubgridPoints(); ++SubgridNy){
+  //          for(i=iStart(); i<=iEnd(); ++i){
+  //            SolnPtr[k][j][i].OutputSmoothnessIndicatorAtNodesTecplot(output_file, SubgridNy, SubgridNz);
+  //          }
+  //        }
+  //    }
+  //  
+  //  break;
+  //}
 }
 
 // OutputMultipleCorrelationCoefficient
@@ -1455,78 +1455,78 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType>
 void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   OutputSmoothnessIndicatorFlag(std::ofstream &output_file,const bool Title) const{
-
-  switch(SpaceDimension){
-  case OneD:
-    if (Title) {
-      output_file << "TITLE = \"Smoothness Indicator Flag for " << SpaceDimension << "D" << " (at cell center locations)\"\n ";
-      output_file << "VARIABLES = \"x\" \n";
-      output_file << "\"SI\" \n";
-      /* output dataset auxiliary data */
-      TecplotDatasetAuxData::PrintAuxData(output_file);
-
-      output_file << "ZONE T = \" SolBlock \" \\ \n";
-      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
-		  << "F = POINT \n";
-      output_file << "DT = (DOUBLE DOUBLE) \n";
-    }
-    else {
-      output_file << "VARIABLES = \"x\" \n";
-      output_file << "\"SI\" \\ \n";
-      /* output dataset auxiliary data */
-      TecplotDatasetAuxData::PrintAuxData(output_file);
-
-      output_file << "ZONE T = \" SolBlock \" \\ \n";
-      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
-		  << "F = POINT \n";
-      output_file << "DT = (DOUBLE DOUBLE) \n";
-    }
-    
-    for(int i=iStart(); i<=iEnd(); ++i){
-      output_file << SolnPtr[0][0][i].CellCenter() << "\t" << SolnPtr[0][0][i].UnfitReconstructionFlag() << std::endl;
-    }
-    break;
-
-  case TwoD:
-    if (Title) {
-      output_file << "TITLE = \"Smoothness Indicator Flag for " << SpaceDimension << "D" << " (at cell center locations)\"\n ";
-      output_file << "VARIABLES = \"x\" \\ \n"
-		  << "\"y\" \\ \n";
-      output_file << "\"SI\" \\ \n";
-      /* output dataset auxiliary data */
-      TecplotDatasetAuxData::PrintAuxData(output_file);
-
-      output_file << "ZONE T = \" SolBlock \" \\ \n";
-      output_file << "I=" << (iEnd() - iStart() + 1) << "\\ \n"
-		  << "J=" << (jEnd() - jStart() + 1) << "\\ \n"
-		  << "F = POINT \n";
-      output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
-    }
-    else {
-      output_file << "VARIABLES = \"x\" \\ \n"
-		  << "\"y\" \\ \n";
-      output_file << "\"SI\" \\ \n";
-      /* output dataset auxiliary data */
-      TecplotDatasetAuxData::PrintAuxData(output_file);
-
-      output_file << "ZONE T = \" SolBlock \" \\ \n";
-      output_file << "I=" << (iEnd() - iStart() + 1) << "\\ \n"
-		  << "J=" << (jEnd() - jStart() + 1) << "\\ \n"
-		  << "F = POINT \n";
-      output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
-    }
-
-    for(int j=jStart(); j<=jEnd(); ++j){
-      for(int i=iStart(); i<=iEnd(); ++i){
-	output_file << SolnPtr[0][j][i].CellCenter() << "\t" << SolnPtr[0][j][i].UnfitReconstructionFlag() << std::endl;
-      }
-    }
-    break;
-    
-  case ThreeD:
-    
-    break;
-  }
+  // --> RR: To be commented back in later 20080905
+//  switch(SpaceDimension){
+//  case OneD:
+//    if (Title) {
+//      output_file << "TITLE = \"Smoothness Indicator Flag for " << SpaceDimension << "D" << " (at cell center locations)\"\n ";
+//      output_file << "VARIABLES = \"x\" \n";
+//      output_file << "\"SI\" \n";
+//      /* output dataset auxiliary data */
+//      TecplotDatasetAuxData::PrintAuxData(output_file);
+//
+//      output_file << "ZONE T = \" SolBlock \" \\ \n";
+//      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
+//		  << "F = POINT \n";
+//      output_file << "DT = (DOUBLE DOUBLE) \n";
+//    }
+//    else {
+//      output_file << "VARIABLES = \"x\" \n";
+//      output_file << "\"SI\" \\ \n";
+//      /* output dataset auxiliary data */
+//      TecplotDatasetAuxData::PrintAuxData(output_file);
+//
+//      output_file << "ZONE T = \" SolBlock \" \\ \n";
+//      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
+//		  << "F = POINT \n";
+//      output_file << "DT = (DOUBLE DOUBLE) \n";
+//    }
+//    
+//    for(int i=iStart(); i<=iEnd(); ++i){
+//      output_file << SolnPtr[0][0][i].CellCenter() << "\t" << SolnPtr[0][0][i].UnfitReconstructionFlag() << std::endl;
+//    }
+//    break;
+//
+//  case TwoD:
+//    if (Title) {
+//      output_file << "TITLE = \"Smoothness Indicator Flag for " << SpaceDimension << "D" << " (at cell center locations)\"\n ";
+//      output_file << "VARIABLES = \"x\" \\ \n"
+//		  << "\"y\" \\ \n";
+//      output_file << "\"SI\" \\ \n";
+//      /* output dataset auxiliary data */
+//      TecplotDatasetAuxData::PrintAuxData(output_file);
+//
+//      output_file << "ZONE T = \" SolBlock \" \\ \n";
+//      output_file << "I=" << (iEnd() - iStart() + 1) << "\\ \n"
+//		  << "J=" << (jEnd() - jStart() + 1) << "\\ \n"
+//		  << "F = POINT \n";
+//      output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
+//    }
+//    else {
+//      output_file << "VARIABLES = \"x\" \\ \n"
+//		  << "\"y\" \\ \n";
+//      output_file << "\"SI\" \\ \n";
+//      /* output dataset auxiliary data */
+//      TecplotDatasetAuxData::PrintAuxData(output_file);
+//
+//      output_file << "ZONE T = \" SolBlock \" \\ \n";
+//      output_file << "I=" << (iEnd() - iStart() + 1) << "\\ \n"
+//		  << "J=" << (jEnd() - jStart() + 1) << "\\ \n"
+//		  << "F = POINT \n";
+//      output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
+//    }
+//
+//    for(int j=jStart(); j<=jEnd(); ++j){
+//      for(int i=iStart(); i<=iEnd(); ++i){
+//	output_file << SolnPtr[0][j][i].CellCenter() << "\t" << SolnPtr[0][j][i].UnfitReconstructionFlag() << std::endl;
+//      }
+//    }
+//    break;
+//    
+//  case ThreeD:
+//    
+//    break;
+//  }
 }
 
 // OutputReconstructedSolutionTecplot
@@ -2268,8 +2268,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructS
 	  /* Make Stencil */
 	  MakeReconstructionStencil(SolnPtr[0][0][0].CellRings(),i,j,k,i_index,j_index,k_index);
 	  /* Solve reconstruction for the current cell */
-	  kExact_Reconstruction(*this,i_index,j_index,k_index,StencilSize); // --> RR: Must be created in Reconstruction3D/ReconstructionFunctions.h
-	  
+	  kExact_Reconstruction(*this,i_index,j_index,k_index,StencilSize);	  
 	  ++FinishedCell;
 	  Print_Progress(FinishedCell,ProgressFrequency);
 	}//endfor(k)
@@ -2277,7 +2276,10 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructS
     }//endfor(i)
     
     
-//    // Compute the Smoothness Indicator for each cell reconstruction
+    // Compute the Smoothness Indicator for each cell reconstruction
+
+    // --> RR: To be commented back in later 20080905
+
 //    for (i=iStart(); i<=iEnd(); ++i)
 //      for (j=jStart(); j<=jEnd(); ++j)
 //	for (k=kStart(); k<=kEnd(); ++k){
