@@ -9,6 +9,7 @@
 #ifndef _SCALARS_INCLUDED   
 #define _SCALARS_INCLUDED
 
+#include <cstdlib>
 #include <cmath>
 #include <iostream>
 #include <string>

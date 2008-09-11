@@ -5,6 +5,7 @@
 
 /* Include C++ math library. */
 
+#include <cstdlib>
 #include <cmath>
 #include <iostream>
 #include <cassert>
@@ -176,7 +177,7 @@ inline int factorial(const int &x) {
   int factor = 1;
   if (x<0) {
     cerr << "\nError in factorial function: No factorial for negative integers! "<<endl;
-    exit(1);
+    return (0);
   } else if (x==0) {
     return 1;
   } else {

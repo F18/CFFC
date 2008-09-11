@@ -31,6 +31,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <sstream>      //for stringstreams
 #include <cstdlib> 	//for system command calls and getenv()
 #include <cstdio>

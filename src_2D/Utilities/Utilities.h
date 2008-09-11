@@ -12,6 +12,8 @@
 #define _UTILITIES_INCLUDED
 
 /* Include required C++ libraries. */
+
+#include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <stdexcept>
