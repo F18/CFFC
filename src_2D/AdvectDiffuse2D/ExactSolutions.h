@@ -939,7 +939,7 @@ EvaluateSolutionAt_OneVariable(const double &Var) const {
  * 
  * This variation can represent an exact solution to an unsteady periodic problem, \n
  * which has as initial condition the variation:
- *   \f$ u(x,y) = A \, \cos(B\,\phi(Var)) \sin(C \,\pi \, \phi(Var)) \f$,
+ *   \f$ u(x,y) = A \, \cos(\pi \,\phi(Var)) \sin(C \,\pi \, \phi(Var)) \f$,
  * where \f$ \phi(Var) \f$ represents the mapping of Var into the domain [-1:1] \n
  * Var is either x or y, depending on the chosen direction. \n
  */
@@ -950,9 +950,9 @@ public:
   ModulatedSinusoidalVariation_ExactSolution(void): MinCoord(-1.0),
 						    MaxCoord( 1.0),
 						    Direction(X_DIRECTION),
-						    A(1.0), B(3.0), C(5.0){
+						    A(1.0), C(5.0){
     // Name the exact solution
-    ExactSolutionName = "Modulated sinusoidal wave, w(x,y) = A*cos(B*Var)*sin(C*PI*Var), Var in [Min Var,Max Var]";
+    ExactSolutionName = "Modulated sinusoidal wave, w(x,y) = A*cos(PI*Var)*sin(C*PI*Var), Var in [Min Var,Max Var]";
   };
 
   //! Return exact solution 
@@ -980,7 +980,7 @@ private:
   double MinCoord;      //!< minimum coordinate
   double MaxCoord;	//!< maximum coordinate
   short Direction;	//!< the direction of interest ('x' or 'y')
-  double A, B, C;       //!< variation parameters
+  double A, C;          //!< variation parameters
 };
 
 //! Return exact solution 
@@ -999,7 +999,7 @@ EvaluateSolutionAt_OneVariable(const double &Var) const {
   if (Var<MinCoord || Var>MaxCoord){
     return 0.0;
   } else {
-    return ( A * cos(B * (ConvertDomainToMinusOneOne(MinCoord,MaxCoord,Var))) *
+    return ( A * cos(PI * (ConvertDomainToMinusOneOne(MinCoord,MaxCoord,Var))) *
 	     sin(C * (ConvertDomainToMinusOneOne(MinCoord,MaxCoord,Var))*PI) );
   }
 }
