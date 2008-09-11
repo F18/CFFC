@@ -29,14 +29,14 @@ double SinVariationInYDir(const double x, const double y){
 
 double MultipleSinVariationInXDir(const double x, const double y){
 
-  return (1.0 + 0.5*std::cos(3*ConvertDomainToMinusOneOne(-100,100,x))*
+  return (1.0 + 0.5*std::cos(PI*ConvertDomainToMinusOneOne(-100,100,x))*
 	  std::sin(5*ConvertDomainToMinusOneOne(-100,100,x)*PI) );
 
 }
 
 double MultipleSinVariationInYDir(const double x, const double y){
 
-  return (1.0 + 0.5*std::cos(3*ConvertDomainToMinusOneOne(-100,100,y))*
+  return (1.0 + 0.5*std::cos(PI*ConvertDomainToMinusOneOne(-100,100,y))*
 	  std::sin(5*ConvertDomainToMinusOneOne(-100,100,y)*PI) );
 }
 

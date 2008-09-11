@@ -54,6 +54,15 @@ void Euler2D_ExactSolutions::SetExactSolution(const short &SolutionIndex){
   case EULER2D_EXACT_SOLUTION_RINGLEB_FLOW:
     ExactSoln = new Ringleb_Flow_ExactSolution;
     break;
+  case EULER2D_EXACT_SOLUTION_ABGRALL_FUNCTION:
+    ExactSoln = new Abgrall_Function_ExactSolution;
+    break;
+  case EULER2D_EXACT_SOLUTION_SINUSOIDAL_FUNCTION:
+    ExactSoln = new Sinusoidal_Function_ExactSolution;
+    break;
+  case EULER2D_EXACT_SOLUTION_COSSIN_FUNCTION:
+    ExactSoln = new CosSin_Function_ExactSolution;
+    break;
   default:
     throw runtime_error("Euler2D_ExactSolutions::SetExactSolution() ERROR! Unknown exact solution type index.");
   }
@@ -84,6 +93,12 @@ void Euler2D_ExactSolutions::Parse_Next_Input_Control_Parameter(Euler2D_Input_Pa
     IP.Get_Next_Input_Control_Parameter();
     if ( strcmp(IP.Next_Control_Parameter, "Ringleb_Flow") == 0 ){
       SetExactSolution(EULER2D_EXACT_SOLUTION_RINGLEB_FLOW);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Abgrall_Function") == 0 ){
+      SetExactSolution(EULER2D_EXACT_SOLUTION_ABGRALL_FUNCTION);     
+    } else if ( strcmp(IP.Next_Control_Parameter, "Sinusoidal_Function") == 0 ){
+      SetExactSolution(EULER2D_EXACT_SOLUTION_SINUSOIDAL_FUNCTION);      
+    } else if ( strcmp(IP.Next_Control_Parameter, "CosSine_Function") == 0 ){
+      SetExactSolution(EULER2D_EXACT_SOLUTION_COSSIN_FUNCTION);
     } else {
       i_command = INVALID_INPUT_CODE;
       return;
