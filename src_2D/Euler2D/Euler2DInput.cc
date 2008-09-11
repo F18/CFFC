@@ -2159,7 +2159,7 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
        if (IP.Local_Time_Stepping != GLOBAL_TIME_STEPPING &&
            IP.Local_Time_Stepping != SCALAR_LOCAL_TIME_STEPPING &&
 	   IP.Local_Time_Stepping != MATRIX_LOCAL_TIME_STEPPING &&
-           IP.Local_Time_Stepping != LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER) 
+           IP.Local_Time_Stepping != LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER)
          IP.Local_Time_Stepping = SCALAR_LOCAL_TIME_STEPPING;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Maximum_Number_of_Time_Steps") == 0) {
@@ -3462,7 +3462,15 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
       IP.Input_File >> IP.Accuracy_Assessment_Exact_Digits;
       IP.Input_File.getline(buffer, sizeof(buffer));
       if (IP.Accuracy_Assessment_Exact_Digits < 0) i_command = INVALID_INPUT_VALUE;
-      
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Accuracy_Assessment_Parameter") == 0) {
+      i_command = 0;
+      ++IP.Line_Number;
+      IP.Input_File >> IP.Accuracy_Assessment_Parameter;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      // check that index makes sense for 2D Euler state
+      if (IP.Accuracy_Assessment_Parameter < 1 || IP.Accuracy_Assessment_Parameter > 4)
+	i_command = INVALID_INPUT_VALUE;
 
     ////////////////////////////////////////////////////////////////////
     // INTERFACE PARAMETERS                                           //
@@ -3888,6 +3896,11 @@ int Process_Input_Control_Parameter_File(Euler2D_Input_Parameters &Input_Paramet
 
     // Set limiter in CENO class
     CENO_Execution_Mode::Limiter = Input_Parameters.i_Limiter;
+
+    // Perform consitency checks on the time marching parameters.
+    if (Input_Parameters.Time_Accurate == 1 && Input_Parameters.Local_Time_Stepping != GLOBAL_TIME_STEPPING){
+      Input_Parameters.Local_Time_Stepping = GLOBAL_TIME_STEPPING;
+    }
 
     /* Initial processing of input control parameters complete.  
        Return the error indicator flag. */

@@ -269,9 +269,9 @@ class Euler2D_Input_Parameters{
   //! @name Reconstruction related member functions:
   //@{
   /*! Return order of reconstruction based on Space_Accuracy.
-    To obtain a certain global space accuracy (i.e. convective, diffusive and source term)
-    a piecewise polynomial reconstruction of the same order as the space accuracy must be performed. */
-  int ReconstructionOrder(void) {return (Space_Accuracy);}
+    To obtain a certain space accuracy a piecewise polynomial reconstruction 
+    of one order lower than the space accuracy must be performed. */
+  int ReconstructionOrder(void) {return (Space_Accuracy-1);}
   int & Limiter(void) {return i_Limiter;}                    //!< write/read selected limiter
   const int & Limiter(void) const {return i_Limiter;}        //!< return selected limiter (read only)
   //@}

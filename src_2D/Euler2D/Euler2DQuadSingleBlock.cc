@@ -2102,16 +2102,22 @@ void ICs(Euler2D_Quad_Block &SolnBlk,
 	if (IP.ExactSoln->IsExactSolutionSet()) {
 	  for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
 	    for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	      SolnBlk.W[i][j] = 
-		SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
-								   wrapped_member_function(IP.ExactSoln,
-											   &Euler2D_ExactSolutions::Solution,
-											   Wl),
-								   wrapped_member_function(IP.ExactSoln,
-											   &Euler2D_ExactSolutions::
-											   XDependencyIntegrated_Solution,
-											   Wl),
-								   IP.Exact_Integration_Digits,Wl)/SolnBlk.Grid.Cell[i][j].A;
+	      // Compute the exact average value for each solution parameter.
+	      for ( k = 1; k <= SolnBlk.NumVar(); ++k){
+		SolnBlk.W[i][j][k] = 
+		  SolnBlk.Grid.Integration.
+		  IntegrateFunctionOverCell(i,j,
+					    wrapped_member_function_one_parameter(IP.ExactSoln,
+										  &Euler2D_ExactSolutions::SolutionForParameter,
+										  k,
+										  Wl[k]),
+					    wrapped_member_function_one_parameter(IP.ExactSoln,
+										  &Euler2D_ExactSolutions::
+										  XDependencyIntegrated_SolutionForParameter,
+										  k,
+										  Wl[k]),
+					    IP.Exact_Integration_Digits,Wl[k])/SolnBlk.Grid.Cell[i][j].A;
+	      }
 	      SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
 	    } /* endfor */
 	  } /* endfor */
@@ -2446,7 +2452,8 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
 	    // the ghost cell values unchanged and 
 	    // uses the ghost cell reconstruction to 
 	    // compute the inter-cellular state.
-	  
+	    break;
+
 	  default:
 	    for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
 	      SolnBlk.W[SolnBlk.ICu+ghost][j] = SolnBlk.W[SolnBlk.ICu][j];
@@ -2576,6 +2583,8 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
       // the ghost cell values unchanged and 
       // uses the ghost cell reconstruction to 
       // compute the inter-cellular state.
+      break;
+
     default:
       for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
 	SolnBlk.W[i][SolnBlk.JCl-ghost] = SolnBlk.W[i][SolnBlk.JCl];
@@ -2678,6 +2687,8 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
       // the ghost cell values unchanged and 
       // uses the ghost cell reconstruction to 
       // compute the inter-cellular state.
+      break;
+
     default:
       for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
 	SolnBlk.W[i][SolnBlk.JCu+ghost] = SolnBlk.W[i][SolnBlk.JCu];

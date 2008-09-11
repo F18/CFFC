@@ -41,6 +41,7 @@ public:
   Euler2D_pState Solution(const double &x, const double &y) const;
   double SolutionForParameter(const double &x, const double &y, const unsigned &parameter) const;
   Euler2D_pState XDependencyIntegrated_Solution(const double &x, const double &y) const;
+  double XDependencyIntegrated_SolutionForParameter(const double &x, const double &y, const unsigned &parameter) const;
   //@}
 
   //! Update the internal variables of the exact solution
@@ -106,4 +107,13 @@ inline Euler2D_pState Euler2D_ExactSolutions::XDependencyIntegrated_Solution(con
   return ExactSoln->XDependencyIntegrated_Solution(x,y);
 }
 
+/*! 
+ * Evaluate the integrated X dependency of the exact solution for a specified parameter.
+ * \param x,y Cartesian coordinates
+ * \param parameter the state variable for which the integrated x dependency is evaluated
+ */
+inline double Euler2D_ExactSolutions::XDependencyIntegrated_SolutionForParameter(const double &x, const double &y,
+										 const unsigned &parameter) const {
+  return ExactSoln->XDependencyIntegrated_Solution(x,y)[parameter];
+}
 #endif

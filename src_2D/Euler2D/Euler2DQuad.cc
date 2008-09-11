@@ -19,8 +19,8 @@ int Euler2D_Quad_Block::residual_variable = 1;
 int Euler2D_Quad_Block::Number_of_Residual_Norms = 1;
 // Initialize Flow_Type
 int Euler2D_Quad_Block::Flow_Type = FLOWTYPE_INVISCID;
-// Initialize RefU
-Euler2D_pState Euler2D_Quad_Block::RefU(1.0);
+// Initialize RefW
+Euler2D_pState Euler2D_Quad_Block::RefW(1.0);
 // Initialize ExactSoln
 Euler2D_ExactSolutions *Euler2D_Quad_Block::ExactSoln = NULL;
 

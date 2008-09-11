@@ -305,9 +305,11 @@ public:
   //! @name Normalization related functions:
   //@{
   //! Get normalization state
-  const Euler2D_pState getNormalizationState(const int &ii, const int &jj) const { return RefU; }
-  //! Set normalization state
-  static void Set_Normalization_Reference_State(const Euler2D_pState & State){ RefU = State; }
+  const Euler2D_pState getNormalizationState(const int &ii, const int &jj) const { return RefW; }
+  //! Set the normalization state which is used in the smoothness indicator computation.
+  static void Set_Normalization_Reference_State(const Euler2D_pState & State){ 
+    RefW = Euler2D_pState(State.d, State.a(), State.a(), State.p); 
+  }
   //@}
 
   //@{ @name Member functions for limiter freezing.
@@ -547,7 +549,7 @@ private:
   Euler2D_Quad_Block(const Euler2D_Quad_Block &Soln);  //! Private copy constructor.
   Euler2D_Quad_Block & operator = (const Euler2D_Quad_Block &Soln);   //!< Private assignment operator
 
-  static Euler2D_pState RefU;	//!< reference state for normalizing the solution
+  static Euler2D_pState RefW;	//!< reference state for normalizing the solution
 
   //! @name High-order variables and member functions
   //@{
@@ -3133,7 +3135,6 @@ extern int Output_Tecplot(Grid3D_Hexa_Block ***Grid_ptr,
 
 extern int Euler2DQuadSolver(char *Input_File_Name_ptr,
                              int batch_flag);
-
 
 /*
  * Include specializations CFFC header files.
