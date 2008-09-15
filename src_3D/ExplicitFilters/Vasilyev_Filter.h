@@ -619,7 +619,7 @@ inline Complex Vasilyev_Filter<Soln_pState,Soln_cState>::G_target(const double &
 //   
     int m;
     if (target_filter_sharpness > 0) {
-        m = target_filter_sharpness;
+        m = int(target_filter_sharpness);
     } else {
         m = int(ceil(commutation_order/2.0));
     }

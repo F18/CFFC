@@ -821,7 +821,7 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
         int number_of_rings = i+1;
         rings[i] = number_of_rings;
         
-        theNeighbours.GetNeighbours(theCell,number_of_rings);
+        theNeighbours.GetNeighbours(theCell,number_of_rings,FILTER_TYPE_HASELBACHER);
         
         Vector3D Delta = theNeighbours.Delta;
         Vector3D kmax(PI/Delta.x,PI/Delta.y,PI/Delta.z);
@@ -986,7 +986,7 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int number_of_
     }
     
     Neighbours theNeighbours(Grid_Blk);
-    theNeighbours.GetNeighbours(theCell,number_of_rings);
+    theNeighbours.GetNeighbours(theCell,number_of_rings,FILTER_TYPE_HASELBACHER);
     
     Vector3D Delta = theNeighbours.Delta;
     Vector3D kmax(PI/Delta.x,PI/Delta.y,PI/Delta.z);
@@ -1131,7 +1131,7 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int number_of_
     double *cost = new double [N_weight_factor];
     
     Neighbours theNeighbours(Grid_Blk);
-    theNeighbours.GetNeighbours(theCell, number_of_rings);
+    theNeighbours.GetNeighbours(theCell, number_of_rings, FILTER_TYPE_HASELBACHER);
     
     Vector3D Delta = theNeighbours.Delta;
     Vector3D kmax(PI/Delta.x,PI/Delta.y,PI/Delta.z);

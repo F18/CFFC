@@ -629,6 +629,14 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Block
 template<typename Soln_pState, typename Soln_cState>
 void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Block(Grid3D_Hexa_Block &Grid_Blk) {
     
+    //properties.number_of_rings_increased = properties.number_of_rings;
+    //Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(properties.commutation_order,properties.number_of_rings_increased);
+    
+    properties.derivative_accuracy = properties.commutation_order+2;
+    Finite_Difference_Class<Soln_pState,Soln_cState> finite_differencer(properties.derivative_accuracy);
+    properties.number_of_rings_increased = max(properties.number_of_rings,2*finite_differencer.Get_central_rings()+1);
+    
+    
     int number_of_cells_first = 0;
     int number_of_cells_second = 0;
     int number_of_cells_third = 0;
@@ -670,13 +678,6 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     
     int temporary_adaptor_type = adaptor.adaptor_type;
     
-    //properties.number_of_rings_increased = properties.number_of_rings;
-    //Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(properties.commutation_order,properties.number_of_rings_increased);
-    
-    properties.derivative_accuracy = properties.commutation_order+2;
-    Finite_Difference_Class<Soln_pState,Soln_cState> finite_differencer(properties.derivative_accuracy);
-    properties.number_of_rings_increased = max(properties.number_of_rings,2*finite_differencer.Get_central_rings()+1);
-
     /* ----- Filter ----- */
     //cout << " -- Filter " << endl;
     number_of_processed_cells = 0;
