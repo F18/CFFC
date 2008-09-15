@@ -34,6 +34,7 @@ public:
     using Discrete_Filter<Soln_pState,Soln_cState>::Calculate_wavenumber_of_Gvalue;
     using Discrete_Filter<Soln_pState,Soln_cState>::Calculate_wavenumber_of_dGvalue;
     using Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio;
+    using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments;
     
 
 
@@ -53,7 +54,11 @@ public:
     }
 
     void Get_Neighbours(Cell3D &theCell) {
-        theNeighbours.GetNeighbours(theCell, number_of_rings);
+        theNeighbours.GetNeighbours(theCell, number_of_rings, FILTER_TYPE_HASELBACHER);
+        theNeighbours.append_theCell(theCell);
+    }
+    void Get_Neighbours_1D(Cell3D &theCell, int direction) {
+        theNeighbours.GetNeighbours_1D(theCell, number_of_rings, FILTER_TYPE_HASELBACHER, direction);
         theNeighbours.append_theCell(theCell);
     }
     
@@ -96,6 +101,7 @@ private:
     DiagonalMatrix Matrix_W(Cell3D &theCell, Neighbours &theNeighbours, double weight_factor);
 
     RowVector Get_Weights(Cell3D &theCell, Neighbours &theNeighbours);
+    RowVector Get_Weights_1D(Cell3D &theCell, Neighbours &theNeighbours,int direction);
     void Apply_relaxation(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmax, RowVector &w);
     void Undo_relaxation(Neighbours &theNeighbours, RowVector &w);
     
@@ -118,7 +124,9 @@ private:
     int Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell,  int number_of_rings);
     int Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int number_of_rings, int commutation_order);
 
-
+    double filter_moment(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, int q, int r, int s);
+    double filter_moment_1D(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, int q, int direction);
+    
     void filter_tests(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
 
     int filter_type(void) { return FILTER_TYPE_HASELBACHER; }
@@ -128,6 +136,43 @@ private:
 };
 
 /******************************************************************************************************************************/
+template <typename Soln_pState, typename Soln_cState>
+double Haselbacher_Filter<Soln_pState,Soln_cState>::filter_moment(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, int q, int r, int s) {
+    
+    double M(0);
+    Vector3D X0(theCell.Xc);
+    Vector3D dX;
+    for(int n=0; n<theNeighbours.number_of_neighbours; n++) {
+        dX = theNeighbours.neighbour[n].Xc - X0;
+        M += w(n) * pow(dX.x,double(q)) * pow(dX.y,double(r)) * pow(dX.z,double(s)) ;
+    }
+    return M;
+}
+
+template <typename Soln_pState, typename Soln_cState>
+double Haselbacher_Filter<Soln_pState,Soln_cState>::filter_moment_1D(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, int q, int direction) {
+    double (Vector3D::*dX_member);
+    switch(direction){
+        case X_DIRECTION:
+            dX_member = &Vector3D::x;
+            break;
+        case Y_DIRECTION:
+            dX_member = &Vector3D::y;
+            break;
+        case Z_DIRECTION:
+            dX_member = &Vector3D::z;
+            break;
+    }
+    double M(0);
+    Vector3D X0(theCell.Xc);
+    Vector3D dX;
+    for(int n=0; n<theNeighbours.number_of_neighbours; n++) {
+        dX = theNeighbours.neighbour[n].Xc - X0;
+        double wn = w(n);
+        M += wn * pow(dX.*dX_member,double(q)) ;
+    }
+    return M;
+}
 
 
 template <typename Soln_pState, typename Soln_cState>
@@ -151,6 +196,12 @@ inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     kmax.z = PI/theNeighbours.Delta.z;
     Apply_relaxation(theCell, theNeighbours, kmax, w);
     return w;
+}
+
+
+template <typename Soln_pState, typename Soln_cState>
+inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights_1D(Cell3D &theCell, Neighbours &theNeighbours,int direction){
+    return RowVector(0);
 }
 
 template <typename Soln_pState, typename Soln_cState>
@@ -712,7 +763,9 @@ inline double Haselbacher_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio(Cel
 template <typename Soln_pState, typename Soln_cState>
 void Haselbacher_Filter<Soln_pState,Soln_cState>::filter_tests(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
     
-    Output_Filter_types(Grid_Blk,theCell);
+    check_filter_moments(Grid_Blk,theCell);
+    
+    //Output_Filter_types(Grid_Blk,theCell);
     
     //    Output_Filter_types(Grid_Blk,theCell,kmax,1);
     //    Output_Filter_types(Grid_Blk,theCell,kmax,2);

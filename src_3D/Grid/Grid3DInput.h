@@ -83,6 +83,7 @@ class Grid3D_Input_Parameters{
         Stretching_Type_Kdir; 
     double Stretching_Factor_Idir, Stretching_Factor_Jdir, 
            Stretching_Factor_Kdir;
+    int Mesh_Smoothing;
     //@}
 
     //@{ @name Mesh shifting, scaling and rotation parameters:
@@ -140,6 +141,7 @@ class Grid3D_Input_Parameters{
        Stretching_Factor_Idir = 1.10;
        Stretching_Factor_Jdir = 1.10;
        Stretching_Factor_Kdir = 1.10;
+       Mesh_Smoothing = OFF;
        X_Shift = Vector3D_ZERO;
        X_Scale = ONE;
        X_Rotate = ZERO;

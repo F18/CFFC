@@ -83,7 +83,7 @@ inline void Derivative_Reconstruction<Soln_pState,Soln_cState>::Allocate_Derivat
 
 template<typename Soln_pState, typename Soln_cState>
 inline void Derivative_Reconstruction<Soln_pState,Soln_cState>::Get_Neighbours(Cell3D &theCell) {
-    theNeighbours.GetNeighbours(theCell, number_of_rings);
+    theNeighbours.GetNeighbours(theCell, number_of_rings, FILTER_TYPE_HASELBACHER);
 }
 
 template <typename Soln_pState, typename Soln_cState>

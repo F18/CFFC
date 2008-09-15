@@ -670,11 +670,13 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     
     int temporary_adaptor_type = adaptor.adaptor_type;
     
-    properties.number_of_rings_increased = properties.number_of_rings+1;
-    properties.derivative_accuracy = properties.commutation_order+2;
-    //Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(properties.commutation_order+1,properties.number_of_rings+1);
-    Finite_Difference_Class<Soln_pState,Soln_cState> finite_differencer(properties.commutation_order+3);
+    //properties.number_of_rings_increased = properties.number_of_rings;
+    //Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(properties.commutation_order,properties.number_of_rings_increased);
     
+    properties.derivative_accuracy = properties.commutation_order+2;
+    Finite_Difference_Class<Soln_pState,Soln_cState> finite_differencer(properties.derivative_accuracy);
+    properties.number_of_rings_increased = max(properties.number_of_rings,2*finite_differencer.Get_central_rings()+1);
+
     /* ----- Filter ----- */
     //cout << " -- Filter " << endl;
     number_of_processed_cells = 0;
@@ -682,6 +684,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
         for (int j=Grid_Blk.JCl; j<=Grid_Blk.JCu; j++) {
             for (int k=Grid_Blk.KCl; k<=Grid_Blk.KCu; k++) {
                 Filtered[i][j][k] = filter_ptr->filter(Grid_Blk,Grid_Blk.Cell[i][j][k]);
+                //Filtered[i][j][k] = filter_ptr->filter_1D(Grid_Blk,Grid_Blk.Cell[i][j][k],X_DIRECTION);
                 number_of_processed_cells++;
                 ShowProgress(" -- Filter ",number_of_processed_cells,number_of_cells_first,properties.progress_mode);
             }
@@ -695,7 +698,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
         for (int j=Grid_Blk.JCl; j<=Grid_Blk.JCu; j++) {
             for (int k=Grid_Blk.KCl; k<=Grid_Blk.KCu; k++) {
                 //Divergence[i][j][k] = derivative_reconstructor.dfdx(Grid_Blk,Grid_Blk.Cell[i][j][k]);
-                Divergence[i][j][k] = finite_differencer.Finite_Difference(Grid_Blk,Grid_Blk.Cell[i][j][k], DFDR);
+                Divergence[i][j][k] = finite_differencer.Finite_Difference(Grid_Blk,Grid_Blk.Cell[i][j][k], DFDX);
                 number_of_processed_cells++;
                 ShowProgress(" -- Divergence ",number_of_processed_cells,number_of_cells_first,properties.progress_mode);
                 Truncation_Error[i][j][k] = (RowVector(adaptor.Exact_Derivative(Solution_Data_ptr->Input,
@@ -715,6 +718,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
         for (int j=Grid_Blk.JCl+properties.number_of_rings; j<=Grid_Blk.JCu-properties.number_of_rings; j++) {
             for (int k=Grid_Blk.KCl+properties.number_of_rings; k<=Grid_Blk.KCu-properties.number_of_rings; k++) {
                 Filtered_Divergence[i][j][k] = filter_ptr->filter(Grid_Blk,Grid_Blk.Cell[i][j][k]);
+                //Filtered_Divergence[i][j][k] = filter_ptr->filter_1D(Grid_Blk,Grid_Blk.Cell[i][j][k], X_DIRECTION);
                 number_of_processed_cells++;
                 ShowProgress(" -- Filter of Divergence ",number_of_processed_cells,number_of_cells_second,properties.progress_mode);
                 
@@ -730,7 +734,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
         for (int j=Grid_Blk.JCl+properties.number_of_rings_increased; j<=Grid_Blk.JCu-properties.number_of_rings_increased; j++) {
             for (int k=Grid_Blk.KCl+properties.number_of_rings_increased; k<=Grid_Blk.KCu-properties.number_of_rings_increased; k++) {
                 //Divergenced_Filtered[i][j][k] = derivative_reconstructor.dfdx(Grid_Blk,Grid_Blk.Cell[i][j][k]);
-                Divergenced_Filtered[i][j][k] = finite_differencer.Finite_Difference(Grid_Blk,Grid_Blk.Cell[i][j][k], DFDR);
+                Divergenced_Filtered[i][j][k] = finite_differencer.Finite_Difference(Grid_Blk,Grid_Blk.Cell[i][j][k], DFDX);
                 number_of_processed_cells++;
                 ShowProgress(" -- Divergence of Filtered ",number_of_processed_cells,number_of_cells_third,properties.progress_mode);
                 Commutation_Error[i][j][k] = (RowVector(Filtered_Divergence[i][j][k] - Divergenced_Filtered[i][j][k])).absolute_values();
@@ -761,6 +765,34 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
         cout << "   L1 norm  = " << p_norm(Grid_Blk, Truncation_Error, 1); 
         cout << "   L2 norm  = " << p_norm(Grid_Blk, Truncation_Error, 2); 
     }
+    
+    ofstream commutation_error_norms_file;
+    commutation_error_norms_file.open("commutation_error_norms.dat",ios::app);    // open file for appending
+    assert (!commutation_error_norms_file.fail( )); 
+    
+    commutation_error_norms_file 
+    << Grid_Blk.ICu - Grid_Blk.ICl + 1 
+    << " " << Commutation_Error_maxnorm(0)
+    << " " << Commutation_Error_L1norm(0)
+    << " " << Commutation_Error_L2norm(0)
+    << endl;
+    commutation_error_norms_file.close();
+    assert (!commutation_error_norms_file.fail( )); 
+    
+    ofstream truncation_error_norms_file;
+    truncation_error_norms_file.open("truncation_error_norms.dat",ios::app);    // open file for appending
+    assert (!truncation_error_norms_file.fail( )); 
+    
+    truncation_error_norms_file 
+    << Grid_Blk.ICu - Grid_Blk.ICl + 1 
+    << " " << maxnorm(Grid_Blk, Truncation_Error)(0)
+    << " " << p_norm(Grid_Blk, Truncation_Error, 1)(0)
+    << " " << p_norm(Grid_Blk, Truncation_Error, 2)(0)
+    << endl;
+    truncation_error_norms_file.close();
+    assert (!truncation_error_norms_file.fail( )); 
+
+    
 
 }
 
@@ -782,18 +814,20 @@ RowVector Explicit_Filters<Soln_pState,Soln_cState>::p_norm(Grid3D_Hexa_Block &G
     RowVector normRow(N);
     normRow.zero();
     
+    double total_volume = 0;
     for (int k = kmin ; k <= kmax ; ++k) {
         for (int j = jmin ; j <= jmax ; ++j) {
             for (int i = imin ; i <= imax ; ++i) {
                 for (int n = 0; n < N ; ++n) {
-                    normRow(n) += pow(Rows[i][j][k](n),double(p));
+                    normRow(n) += pow(Rows[i][j][k](n),double(p))*Grid_Blk.Cell[i][j][k].V;
                 }
+                total_volume += Grid_Blk.Cell[i][j][k].V;
             }
         }
     }
     
     for (int n = 0; n < N ; ++n) {
-        normRow(n) = pow(normRow(n),ONE/double(p));
+        normRow(n) = pow(normRow(n)/total_volume,ONE/double(p));
     }
     return normRow;
 }

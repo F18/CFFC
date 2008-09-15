@@ -1320,8 +1320,16 @@ void Grid3D_Hexa_Block::Update_Cells(void) {
                 Cell[i][j][k].K = k ;
                 Cell[i][j][k].Xc = centroid(i, j, k);
                 Cell[i][j][k].V = volume(Cell[i][j][k]);
+            } /* endfor */
+        } /* endfor */
+    } /* endfor */
+    
+    
+    for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+        for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+            for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
                 /* calculate jacobian to 4th order */
-                Cell[i][j][k].Jacobian = jacobian(i,j,k,4);
+                Cell[i][j][k].Jacobian = jacobian(i,j,k,2);
             } /* endfor */
         } /* endfor */
     } /* endfor */
@@ -1352,6 +1360,17 @@ void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
       } /* endfor */
     } /* endfor */
   } /* endfor */
+    
+    for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+        for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+            for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
+                if (k < KCl || k > KCu || j < JCl || j > JCu || i < ICl || i > ICu) {
+                    /* calculate jacobian to 4th order */
+                    Cell[i][j][k].Jacobian = jacobian(i,j,k,4);
+                } /* endif */
+            } /* endfor */
+        } /* endfor */
+    } /* endfor */
 
 }
 
@@ -1742,35 +1761,44 @@ double Grid3D_Hexa_Block::Forward_Finite_Difference(const int i, const int j, co
     int N=2*n+1;
     RowVector coefficients(N);
     ColumnVector samples(N);
-    
+    //double sample;
     for(int p=1; p<=N; p++) {
         switch (derivative) {
             case DXDI:
                 samples(N-p) = Cell[i-p][j][k].Xc.x;
+                //sample = samples(N-p);
                 break;
             case DYDI:
                 samples(N-p) = Cell[i-p][j][k].Xc.y;
+                //sample = samples(N-p);
                 break;
             case DZDI:       
                 samples(N-p) = Cell[i-p][j][k].Xc.z;
+                //sample = samples(N-p);
                 break;
             case DXDJ:
                 samples(N-p) = Cell[i][j-p][k].Xc.x;
+                //sample = samples(N-p);
                 break;
             case DYDJ:
                 samples(N-p) = Cell[i][j-p][k].Xc.y;
+                //sample = samples(N-p);
                 break;
             case DZDJ:
                 samples(N-p) = Cell[i][j-p][k].Xc.z;
+                //sample = samples(N-p);
                 break;
             case DXDK:
                 samples(N-p) = Cell[i][j][k-p].Xc.x;
+                //sample = samples(N-p);
                 break;
             case DYDK:
                 samples(N-p) = Cell[i][j][k-p].Xc.y;
+                //sample = samples(N-p);
                 break;
             case DZDK:
                 samples(N-p) = Cell[i][j][k-p].Xc.z;
+                //sample = samples(N-p);
                 break;
         }
     }
@@ -1845,35 +1873,46 @@ double Grid3D_Hexa_Block::Backward_Finite_Difference(const int i, const int j, c
     int N=2*n+1;
     RowVector coefficients(N);
     ColumnVector samples(N);
-    
+    //double sample ;
     for(int p=0; p<N; p++) {
         switch (derivative) {
             case DXDI:
                 samples(p) = Cell[i+p][j][k].Xc.x;
+                //cout << "Cell("<<i+p<<","<<j<<","<<k<<") = " << Cell[i+p][j][k].Xc << endl;
+                //sample = samples(p);
                 break;
             case DYDI:
                 samples(p) = Cell[i+p][j][k].Xc.y;
+                //sample = samples(p);
                 break;
             case DZDI:       
                 samples(p) = Cell[i+p][j][k].Xc.z;
+                //sample = samples(p);
                 break;
             case DXDJ:
                 samples(p) = Cell[i][j+p][k].Xc.x;
+                //cout << "Cell("<<i<<","<<j<<","<<k<<") = " << Cell[i+p][j][k].Xc << endl;
+                //sample = samples(p);
                 break;
             case DYDJ:
                 samples(p) = Cell[i][j+p][k].Xc.y;
+                //sample = samples(p);
                 break;
             case DZDJ:
                 samples(p) = Cell[i][j+p][k].Xc.z;
+                //sample = samples(p);
                 break;
             case DXDK:
                 samples(p) = Cell[i][j][k+p].Xc.x;
+                //sample = samples(p);
                 break;
             case DYDK:
                 samples(p) = Cell[i][j][k+p].Xc.y;
+                //sample = samples(p);
                 break;
             case DZDK:
                 samples(p) = Cell[i][j][k+p].Xc.z;
+                //sample = samples(p);
                 break;
         }
     }
@@ -1982,49 +2021,68 @@ double Grid3D_Hexa_Block::jacobian(const Cell3D &theCell, int order) {
 double Grid3D_Hexa_Block::jacobian(const int i, const int j, const int k, int order) {
     double dt = 1.0;
     
-    DenseMatrix J(3,3);
+    double dxdi, dxdj, dxdk, dydi, dydj, dydk, dzdi, dzdj, dzdk, detJm1, detJ;
     
     /* calculate  dxdi */
-    J(0,0) = Finite_Difference(i,j,k,DXDI, dt, order);
-    J(0,1) = Finite_Difference(i,j,k,DXDJ, dt, order);
-    J(0,2) = Finite_Difference(i,j,k,DXDK, dt, order);
-    J(1,0) = Finite_Difference(i,j,k,DYDI, dt, order);
-    J(1,1) = Finite_Difference(i,j,k,DYDJ, dt, order);
-    J(1,2) = Finite_Difference(i,j,k,DYDK, dt, order);
-    J(2,0) = Finite_Difference(i,j,k,DZDI, dt, order);
-    J(2,1) = Finite_Difference(i,j,k,DZDJ, dt, order);
-    J(2,2) = Finite_Difference(i,j,k,DZDK, dt, order);
+    dxdi = Finite_Difference(i,j,k,DXDI, dt, order);
+    dxdj = Finite_Difference(i,j,k,DXDJ, dt, order);
+    dxdk = Finite_Difference(i,j,k,DXDK, dt, order);
+    dydi = Finite_Difference(i,j,k,DYDI, dt, order);
+    dydj = Finite_Difference(i,j,k,DYDJ, dt, order);
+    dydk = Finite_Difference(i,j,k,DYDK, dt, order);
+    dzdi = Finite_Difference(i,j,k,DZDI, dt, order);
+    dzdj = Finite_Difference(i,j,k,DZDJ, dt, order);
+    dzdk = Finite_Difference(i,j,k,DZDK, dt, order);
     
-    Cell[i][j][k].dXc.x = J(0,0) + J(0,1) + J(0,2);
-    Cell[i][j][k].dXc.y = J(1,0) + J(1,1) + J(1,2);
-    Cell[i][j][k].dXc.z = J(2,0) + J(2,1) + J(2,2);
+    detJm1 = -dxdk*dydj*dzdi + dxdj*dydk*dzdi + dxdk*dydi*dzdj 
+        - dxdi*dydk*dzdj - dxdj*dydi*dzdk + dxdi*dydj*dzdk;
+    detJ = ONE/detJm1;
+      
+    Cell[i][j][k].dXc.x = dxdi + dxdj + dxdk;
+    Cell[i][j][k].dXc.y = dydi + dydj + dydk;
+    Cell[i][j][k].dXc.z = dzdi + dzdj + dzdk;
     
-    /* inverse = didx */
-    J.pseudo_inverse_override();
-
-    /* calculate determinant */
-    double DetJ = -J(0,2)*J(1,1)*J(2,0) + J(0,1)*J(1,2)*J(2,0) + J(0,2)*J(1,0)*J(2,1)
-    -J(0,0)*J(1,2)*J(2,1) - J(0,1)*J(1,0)*J(2,2) + J(0,0)*J(1,1)*J(2,2);
-    
-    return DetJ;
+    return detJ;
 }
 
 void Grid3D_Hexa_Block::Jacobian_Matrix(DenseMatrix &J, const int i, const int j, const int k, int order) {
     double dt = 1.0;
         
-    /* calculate  dxdi */
-    J(0,0) = Finite_Difference(i,j,k,DXDI, dt, order);
-    J(0,1) = Finite_Difference(i,j,k,DXDJ, dt, order);
-    J(0,2) = Finite_Difference(i,j,k,DXDK, dt, order);
-    J(1,0) = Finite_Difference(i,j,k,DYDI, dt, order);
-    J(1,1) = Finite_Difference(i,j,k,DYDJ, dt, order);
-    J(1,2) = Finite_Difference(i,j,k,DYDK, dt, order);
-    J(2,0) = Finite_Difference(i,j,k,DZDI, dt, order);
-    J(2,1) = Finite_Difference(i,j,k,DZDJ, dt, order);
-    J(2,2) = Finite_Difference(i,j,k,DZDK, dt, order);
+    DenseMatrix Jm1(3,3);
     
-    /* inverse = didx */
-    J.pseudo_inverse_override();
+    double dxdi, dxdj, dxdk, dydi, dydj, dydk, dzdi, dzdj, dzdk, detJm1, detJ;
+    
+    /* calculate  dxdi */
+    dxdi = Finite_Difference(i,j,k,DXDI, dt, order);
+    dxdj = Finite_Difference(i,j,k,DXDJ, dt, order);
+    dxdk = Finite_Difference(i,j,k,DXDK, dt, order);
+    dydi = Finite_Difference(i,j,k,DYDI, dt, order);
+    dydj = Finite_Difference(i,j,k,DYDJ, dt, order);
+    dydk = Finite_Difference(i,j,k,DYDK, dt, order);
+    dzdi = Finite_Difference(i,j,k,DZDI, dt, order);
+    dzdj = Finite_Difference(i,j,k,DZDJ, dt, order);
+    dzdk = Finite_Difference(i,j,k,DZDK, dt, order);
+    
+    Jm1(0,0) = dxdi;    Jm1(0,1) = dxdj;    Jm1(0,2) = dxdk;
+    Jm1(1,0) = dydi;    Jm1(1,1) = dydj;    Jm1(1,2) = dydk;
+    Jm1(2,0) = dzdi;    Jm1(2,1) = dzdj;    Jm1(2,2) = dzdk;
+    
+    detJm1 = -dxdk*dydj*dzdi + dxdj*dydk*dzdi + dxdk*dydi*dzdj 
+    - dxdi*dydk*dzdj - dxdj*dydi*dzdk + dxdi*dydj*dzdk;
+    detJ = ONE/detJm1;
+    
+    /* calculate inverse */
+    
+    J(0,0) = detJ*(-(dydk*dzdj) + dydj*dzdk);
+    J(0,1) = detJ*(dydk*dzdi - dydi*dzdk);
+    J(0,2) = detJ*(-(dydj*dzdi) + dydi*dzdj);
+    J(1,0) = detJ*(dxdk*dzdj - dxdj*dzdk);
+    J(1,1) = detJ*(-(dxdk*dzdi) + dxdi*dzdk);
+    J(1,2) = detJ*(dxdj*dzdi - dxdi*dzdj);
+    J(2,0) = detJ*(-(dxdk*dydj) + dxdj*dydk);
+    J(2,1) = detJ*(dxdk*dydi - dxdi*dydk);
+    J(2,2) = detJ*(-(dxdj*dydi) + dxdi*dydj);
+    
 }
 
 

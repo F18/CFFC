@@ -38,7 +38,7 @@ public:
 template <typename Soln_pState, typename Soln_cState>
 void Tophat_Filter<Soln_pState,Soln_cState>::Get_Neighbours(Cell3D &theCell) {
     int number_of_rings = int(ceil(FGR));
-    theNeighbours.GetNeighbours_Vasilyev(theCell,int(ceil(FGR/2.0)));
+    theNeighbours.GetNeighbours(theCell,int(ceil(FGR/2.0)),FILTER_TYPE_VASILYEV); //temporary choose same method as for Vasilyev)
 }
 
 template <typename Soln_pState, typename Soln_cState>

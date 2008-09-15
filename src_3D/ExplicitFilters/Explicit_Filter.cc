@@ -5,7 +5,7 @@
  *  Created by Willem Deconinck on 25/03/08. 
  */
 #include "Explicit_Filter_Helpers.h"
-bool   Explicit_Filter_Properties::debug_flag = false;
+bool   Explicit_Filter_Properties::debug_flag = true;
 bool   Explicit_Filter_Properties::Memory_Efficient = false;
 int    Explicit_Filter_Properties::commutation_order = 2;
 int    Explicit_Filter_Properties::number_of_rings = 2;
@@ -21,3 +21,4 @@ char   *(Explicit_Filter_Properties::output_file_name) = NULL;
 int    Explicit_Filter_Properties::batch_flag = 0;
 int    Explicit_Filter_Properties::number_of_rings_increased = 3;
 int    Explicit_Filter_Properties::derivative_accuracy = 3;
+double Explicit_Filter_Properties::G_cutoff = exp(-sqr(PI)/(4.*6.));

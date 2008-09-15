@@ -21,6 +21,7 @@ template <typename Soln_pState, typename Soln_cState>
 class General_Filter {
 public:
     virtual RowVector filter(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) = 0;
+    virtual RowVector filter_1D(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction) = 0;
     virtual void transfer_function(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) = 0;
     virtual void filter_tests(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) = 0;
     virtual void Reset_Filter_Weights(Grid3D_Hexa_Block &Grid_Blk) = 0;

@@ -52,6 +52,8 @@ public:
     int number_of_rings;
 
     RowVector filter(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
+    RowVector filter_1D(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction);
+
     virtual double Filter_Function(Vector3D &X, Vector3D &Delta) = 0;
     virtual double Filter_Function(double dx, double dy, double dz, double FGR) = 0;
     virtual double Filter_Function(Vector3D &X, double &Delta) = 0;
@@ -94,29 +96,42 @@ RowVector Analytic_Filter<Soln_pState,Soln_cState>::filter(Grid3D_Hexa_Block &Gr
 
 
 template <typename Soln_pState, typename Soln_cState>
-void Analytic_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
+RowVector Analytic_Filter<Soln_pState,Soln_cState>::filter_1D(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction) {
     
+    // Not implemented yet
+    
+    return RowVector(0);
+}
+
+template <typename Soln_pState, typename Soln_cState>
+void Analytic_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
+    // Not implemented yet
+
 }
 
 
 template <typename Soln_pState, typename Soln_cState>
 void Analytic_Filter<Soln_pState,Soln_cState>::Write_to_file(Grid3D_Hexa_Block &Grid_Blk, ofstream &out_file) {
+    // Not implemented yet
 
 }
 
 template <typename Soln_pState, typename Soln_cState>
 void Analytic_Filter<Soln_pState,Soln_cState>::Read_from_file(Grid3D_Hexa_Block &Grid_Blk, ifstream &in_file) {
+    // Not implemented yet
 
 }
 
 template <typename Soln_pState, typename Soln_cState>
 void Analytic_Filter<Soln_pState,Soln_cState>::filter_tests(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
+    // Not implemented yet
 
 }
 
 template <typename Soln_pState, typename Soln_cState>
 void Analytic_Filter<Soln_pState,Soln_cState>::Reset_Filter_Weights(Grid3D_Hexa_Block &Grid_Blk) {
-    
+    // Not implemented yet
+
 }
 
 

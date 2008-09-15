@@ -797,6 +797,9 @@ inline char *Date_And_Time() {
 #define NORTH_WEST                     12
 #define SOUTH_EAST                     13
 #define SOUTH_WEST                     14
+#define X_DIRECTION 20
+#define Y_DIRECTION 21
+#define Z_DIRECTION 22
 
 /**********************************************************************
  * CFD -- Inline functions.                                           *

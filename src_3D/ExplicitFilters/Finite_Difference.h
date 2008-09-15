@@ -18,6 +18,7 @@
 #define DFDI 1
 #define DFDJ 2
 #define DFDK 3
+
 #define DFDX 4
 #define DFDY 5
 #define DFDZ 6
@@ -25,18 +26,23 @@
 
 template <typename Soln_pState, typename Soln_cState>
 class Finite_Difference_Class {
-public:
-    Finite_Difference_Class(int order_of_accuracy) {
-        order = order_of_accuracy;
-    }
-    int order;
+private:
     typedef Explicit_Filter_Adaptor<Soln_pState,Soln_cState> adaptor;
+    int order;
     RowVector Central_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
     RowVector Forward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
     RowVector Backward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
-    RowVector Finite_Difference(Grid3D_Hexa_Block &Grid, Cell3D &theCell, const int derivative);
     RowVector Equally_Spaced_Finite_Difference(Grid3D_Hexa_Block &Grid, const int i, const int j, const int k, const int derivative);
+public:
+    Finite_Difference_Class(int order_of_accuracy) {
+        order = order_of_accuracy;
+        cout << "\n\n finite difference order = " << order << "    central_rings = " << Get_central_rings() << endl;
+    }
+    RowVector Finite_Difference(Grid3D_Hexa_Block &Grid, Cell3D &theCell, const int derivative);
+    int Get_central_rings(void) { return int(ceil(order/2)); }
+
 };
+
 /* Finite difference for equally spaced samples */
 template <typename Soln_pState, typename Soln_cState>
 RowVector Finite_Difference_Class<Soln_pState,Soln_cState>::Central_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
@@ -63,6 +69,7 @@ RowVector Finite_Difference_Class<Soln_pState,Soln_cState>::Central_Finite_Diffe
                 break;
         }
     }
+    
     
     switch (N) {
         case 2:
@@ -301,7 +308,7 @@ RowVector Finite_Difference_Class<Soln_pState,Soln_cState>::Equally_Spaced_Finit
     
     double dt = 1.0;
     
-    int n=int(ceil(order/2));
+    int n = Get_central_rings();
     
     int index, first_index, last_index;
     switch(derivative) {
@@ -321,8 +328,7 @@ RowVector Finite_Difference_Class<Soln_pState,Soln_cState>::Equally_Spaced_Finit
             last_index = Grid.NCk-Grid.Nghost-1;
             break;
     }
-    
-    
+        
     if (n > index - first_index) {
         if (last_index - index < n) {
             cout << "backward finite differencing: " << endl;
@@ -333,10 +339,8 @@ RowVector Finite_Difference_Class<Soln_pState,Soln_cState>::Equally_Spaced_Finit
             cout << "  order = " << order << endl;
             exit(1);
         }
-        //assert(last_index - index < n);
         return Backward_Finite_Difference(i,j,k, derivative, dt, order);
     } else if (n > last_index - index) {
-        //assert(index - first_index > n);
         if (index - first_index < n) {
             cout << "forward finite differencing: " << endl;
             cout << "  index = " << index << endl;

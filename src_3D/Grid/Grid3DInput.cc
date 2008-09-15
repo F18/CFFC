@@ -75,6 +75,9 @@ void Grid3D_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(Stretching_Factor_Kdir),
                           1,
                           MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(Mesh_Smoothing),
+                          1,
+                          MPI::INT,0);
    MPI::COMM_WORLD.Bcast(&(X_Shift.x), 
                          1, 
                          MPI::DOUBLE, 0);
@@ -407,7 +410,11 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
      i_command = 3015;
      value >> Stretching_Type_Kdir;
      if (Stretching_Type_Kdir < 0) i_command = INVALID_INPUT_VALUE;
-
+      
+  } else if (strcmp(code, "Mesh_Smoothing") == 0) {
+      i_command = 3018;
+      value >> Mesh_Smoothing;
+      
   } else if (strcmp(code, "X_Shift") == 0) {
      i_command = 3016;
      value >> X_Shift;

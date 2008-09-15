@@ -46,7 +46,7 @@ public:
         Explicit_Filters<Soln_pState,Soln_cState> explicit_filter;
         explicit_filter.Initialize(Data,Solution_Data);
         explicit_filter.transfer_function(FILTER_INNER_CELL);
-        //explicit_filter.test();
+        explicit_filter.test();
 
         typedef double (Soln_pState::*member_ptr);
         member_ptr rho_member = &Soln_pState::rho;
@@ -64,6 +64,8 @@ public:
     
     int Solver(char *Input_File_Name_ptr, int batch_flag) {
         int error_flag;
+        Data.batch_flag=batch_flag;
+
         /******************* INPUT PARAMETERS  **********************************
          Set default values for the input solution parameters and then read user 
          specified input values from the specified input parameter file.               

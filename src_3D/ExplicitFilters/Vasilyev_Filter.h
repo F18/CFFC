@@ -16,13 +16,10 @@
 #define DG_CONSTRAINT 1
 #define LS_CONSTRAINT 2
 
-#define X_DIRECTION 1
-#define Y_DIRECTION 2
-#define Z_DIRECTION 3
-
 #define LS_ABS  0
 #define LS_REAL 1
 #define LS_IMAG 2
+#define LS_ALL  3
 
 #define MAXIMUM_NUMBER_OF_EXTRA_CONSTRAINTS 20
 /**
@@ -105,6 +102,10 @@ public:
     using Discrete_Filter<Soln_pState,Soln_cState>::Filter_Width_strict;
     using Discrete_Filter<Soln_pState,Soln_cState>::Neighbouring_Values;
     using Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values;
+    using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments;
+    using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments_1D;
+    using Discrete_Filter<Soln_pState,Soln_cState>::G_cutoff;
+
 
     
     Vasilyev_Filter(void) : Discrete_Filter<Soln_pState,Soln_cState>() {
@@ -119,12 +120,23 @@ public:
     Vasilyev_Filter_Constraints Constraints[MAXIMUM_NUMBER_OF_EXTRA_CONSTRAINTS];
     
     bool Output_Constraints;
+    
+    RowVector symmetric_weights;
+    RowVector symmetric_weights_1D;
 
     void Get_Neighbours(Cell3D &theCell_) {
         theCell = theCell_;
-        theNeighbours.GetNeighbours_Vasilyev(theCell, number_of_rings);
+        theNeighbours.GetNeighbours(theCell, number_of_rings,FILTER_TYPE_VASILYEV);
     }
+    
+    void Get_Neighbours_1D(Cell3D &theCell_, int direction) {
+        theCell = theCell_;
+        theNeighbours.GetNeighbours_1D(theCell, number_of_rings,FILTER_TYPE_VASILYEV,direction);
+    }
+    
     RowVector Get_Weights(Cell3D &theCell, Neighbours &theNeighbours);
+    RowVector Get_Weights_1D(Cell3D &theCell, Neighbours &theNeighbours, int direction);
+    RowVector Calculate_Weights_1D(Cell3D &theCell, Neighbours &theNeighbours, int direction);
 
     int number_of_combinations(void);
     int fac(int n);
@@ -149,8 +161,9 @@ public:
     double LeastSquares_RHS_function_real(const int &m, const double &k, const int &LS_DOF, const int &direction);
     double LeastSquares_RHS_function_imag(const int &m, const double &k, const int &LS_DOF, const int &direction);
     double LeastSquares_RHS(const int &m, const int &LS_DOF, const int &direction, const int &type);
+    double filter_moment(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, int q, int r, int s);
+    double filter_moment_1D(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, int q, int direction);
 
-    
     void filter_tests(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
 
     int filter_type(void) { return FILTER_TYPE_VASILYEV; }
@@ -162,215 +175,176 @@ public:
 template<typename Soln_pState, typename Soln_cState>
 void Vasilyev_Filter<Soln_pState,Soln_cState>::filter_tests(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
     
+
+    check_filter_moments(Grid_Blk,theCell);
+    check_filter_moments_1D(Grid_Blk,theCell,X_DIRECTION);
+
     
-    theNeighbours.set_grid(Grid_Blk);
-    Get_Neighbours(theCell);    
-    RowVector w = Get_Weights(theCell, theNeighbours);
-    
-    double sum0(0), sum1(0);
-    for (int i=0; i<theNeighbours.number_of_neighbours; i++) {
-        sum0 += w(i);
-        sum1 += w(i) * (theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
-    }
-    if (sum0==0) {
-        cout << "commutation order 0 ok" << endl;
-    } else {
-        cout << "commutation order 0 sum = " << sum0 << endl;
-    }
-    if (sum1==0){
-        cout << "commutation order 1 ok" << endl;
-    } else {
-        cout << "commutation order 1 sum = " << sum1 << endl;
-    }
-    
-    return;
 }
 
 
-
 template <typename Soln_pState, typename Soln_cState>
-inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &theCell, Neighbours &theNeighbours) {
-        
-    int number_of_moment_combinations = number_of_combinations();
-    int number_of_neighbours = theNeighbours.number_of_neighbours;
-
-    complex<double> I(0.0,1.0);
-
+inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Calculate_Weights_1D(Cell3D &theCell, Neighbours &theNeighbours, int direction) {
     
-    int Lr; // number of remaining constraints after setting basic constraints
-    Lr = Set_basic_constraints(theNeighbours); 
-
-    /* ---------------------- X - direction filter ------------------------ */
-    int Ki,Li;
-    Ki = theNeighbours.Ki;     Li = theNeighbours.Li;
     
-    DenseMatrix Ax(commutation_order,Ki+Li+1);
+    /* ---------------- direction dependent configuration --------------- */
+    int K,L,N;
+    double (Vector3D::*k_member);
+    switch(direction){
+        case X_DIRECTION:
+            K = theNeighbours.Ki;     L = theNeighbours.Li;     N = theNeighbours.Ni;
+            k_member = &Vector3D::x;
+            break;
+        case Y_DIRECTION:
+            K = theNeighbours.Kj;     L = theNeighbours.Lj;     N = theNeighbours.Nj;
+            k_member = &Vector3D::y;
+            break;
+        case Z_DIRECTION:
+            K = theNeighbours.Kk;     L = theNeighbours.Lk;     N = theNeighbours.Nk;
+            k_member = &Vector3D::z;
+            break;
+    }
+    
+    
+    /* ------------------------ moment constraints ------------------------ */
+    
+    DenseMatrix A(commutation_order,N);
     int index_l;
     for (int q=0; q<commutation_order; q++) {
-        for (int l=-Ki; l<=Li; l++) {
-            index_l = Ki+l;
-            Ax(q,index_l) = pow(double(l),double(q));
+        for (int l=-K; l<=L; l++) {
+            index_l = K+l;
+            A(q,index_l) = pow(double(l),double(q));
         }
     }
-    ColumnVector bx(commutation_order);
-    bx.zero();
-    bx(0) = ONE;
-    
-    /* ---------------------- Y - direction filter ------------------------ */
-    int Kj,Lj;
-    Kj = theNeighbours.Kj;     Lj = theNeighbours.Lj;
-    DenseMatrix Ay(commutation_order,Kj+Lj+1);
-    int index_m;
-    for (int q=0; q<commutation_order; q++) {
-        for (int m=-Kj; m<=Lj; m++) {
-            index_m = Kj+m;
-            Ay(q,index_m) = pow(double(m),double(q));
-        }
-    }
-    ColumnVector by(commutation_order);
-    by.zero();
-    by(0) = ONE;
-    
-    /* ---------------------- Z - direction filter ------------------------ */
-    int Kk,Lk;
-    Kk = theNeighbours.Kk;     Lk = theNeighbours.Lk;
-    DenseMatrix Az(commutation_order,Kk+Lk+1);
-    int index_n;
-    for (int q=0; q<commutation_order; q++) {
-        for (int n=-Kk; n<=Lk; n++) {
-            index_n = Kk+n;
-            Az(q,index_n) = pow(double(n),double(q));
-        }
-    }
-    ColumnVector bz(commutation_order);
-    bz.zero();
-    bz(0) = ONE;
+    ColumnVector b(commutation_order);
+    b.zero();
+    b(0) = ONE;
     
     /* ------------------------ extra constraints ------------------------- */
-
     int type;
     double target;
-    Vector3D k;
+    double k;
     int p;
     int t;
     int LS_DOF;
     int LS_type;
-    RowVector Ax_row(Ki+Li+1);
-    RowVector Ay_row(Kj+Lj+1);
-    RowVector Az_row(Kk+Lk+1);
+    RowVector A_row(K+L+1);
     
     for (int i=0; i<number_of_constraints; i++) {
         
         type = Constraints[i].type;
         target = Constraints[i].target;
-        k = Constraints[i].k;
+        k = Constraints[i].k.*k_member;
         p = Constraints[i].order_of_derivative;
         LS_DOF = Constraints[i].LS_DOF;
         LS_type = Constraints[i].LS_type;
         switch (type) {
             case G_CONSTRAINT:
-                for (int l=-Ki; l<=Li; l++) {
-                    index_l = Ki+l;
-                    Ax_row(index_l) = real( exp(-I*(k.x*double(l))) );
+                for (int l=-K; l<=L; l++) {
+                    index_l = K+l;
+                    A_row(index_l) = real( exp(-I*(k*double(l))) );
                 }
-                Ax.append(Ax_row);      bx.append(target);
-                
-                for (int m=-Kj; m<=Lj; m++) {
-                    index_m = Kj+m;
-                    Ay_row(index_m) = real( exp(-I*(k.y*double(m))) );
-                }
-                Ay.append(Ay_row);      by.append(target);
-                
-                for (int n=-Kk; n<=Lk; n++) {
-                    index_n = Kk+n;
-                    Az_row(index_n) = real( exp(-I*(k.z*double(n))) );
-                }
-                Az.append(Az_row);      bz.append(target);
-                
+                A.append(A_row);      b.append(target);
                 break;
                 
             case DG_CONSTRAINT:
-                for (int l=-Ki; l<=Li; l++) {
-                    index_l = Ki+l;
+                for (int l=-K; l<=L; l++) {
+                    index_l = K+l;
                     if ( pow(-1.0,p) < ZERO )
-                        Ax_row(index_l) = imag( pow(-I*(k.x*double(l)),p) * exp(-I*(k.x*double(l))));
+                        A_row(index_l) = imag( pow(-I*(k*double(l)),p) * exp(-I*(k*double(l))));
                     else
-                        Ax_row(index_l) = real( pow(-I*(k.x*double(l)),p) * exp(-I*(k.x*double(l))));
+                        A_row(index_l) = real( pow(-I*(k*double(l)),p) * exp(-I*(k*double(l))));
                 }
-                Ax.append(Ax_row);     bx.append(target);
-                
-                for (int m=-Kj; m<=Lj; m++) {
-                    index_m = Kj+m;
-                    if ( pow(-1.0,p) < ZERO )
-                        Ay_row(index_m) = imag( pow(-I*(k.y*double(m)),p) * exp(-I*(k.y*double(m))));
-                    else
-                        Ay_row(index_m) = real( pow(-I*(k.y*double(m)),p) * exp(-I*(k.y*double(m))));
-                }
-                Ay.append(Ay_row);     by.append(target);
-                
-                for (int n=-Kk; n<=Lk; n++) {
-                    index_n = Kk+n;
-                    if ( pow(-1.0,p) < ZERO )
-                        Az_row(index_n) = imag( pow(-I*(k.z*double(n)),p) * exp(-I*(k.z*double(n))));
-                    else
-                        Az_row(index_n) = real( pow(-I*(k.z*double(n)),p) * exp(-I*(k.z*double(n))));
-                }
-                Az.append(Az_row);     bz.append(target);
-                
+                A.append(A_row);     b.append(target);
                 break;
-            
+                
             case LS_CONSTRAINT:
-                t = Ax.get_n()-1;       // the last row index
-                t -= Ki;                // the next undefined coefficient
-                for (int l=-Ki; l<=Li; l++) {
-                    index_l = Ki+l;
-                    Ax_row(index_l) = LeastSquares_coefficient(l,t,X_DIRECTION,LS_type);
+                t = A.get_n()-1;       // the last row index
+                t -= K;                // the next undefined coefficient
+                for (int l=-K; l<=L; l++) {
+                    index_l = K+l;
+                    A_row(index_l) = LeastSquares_coefficient(l,t,direction,LS_type);
                 }
-                Ax.append(Ax_row);     bx.append(LeastSquares_RHS(t,LS_DOF,X_DIRECTION,LS_type));
+                A.append(A_row);     b.append(LeastSquares_RHS(t,LS_DOF,direction,LS_type));
                 
-                t = Ay.get_n()-1;       // the last row index
-                t -= Kj;                // the next undefined coefficient
-                for (int m=-Kj; m<=Lj; m++) {
-                    index_m = Kj+m;
-                    Ay_row(index_m) = LeastSquares_coefficient(m,t,Y_DIRECTION,LS_type);
-                }
-                Ay.append(Ay_row);     by.append(LeastSquares_RHS(t,LS_DOF,Y_DIRECTION,LS_type));
-                
-                t = Az.get_n()-1;       // the last row index
-                t -= Kk;                // the next undefined coefficient
-                for (int n=-Kk; n<=Lk; n++) {
-                    index_n = Kk+n;
-                    Az_row(index_n) = LeastSquares_coefficient(n,t,Z_DIRECTION,LS_type);
-                }
-                Az.append(Az_row);     bz.append(LeastSquares_RHS(t,LS_DOF,Z_DIRECTION,LS_type));
-                
-                break;
+            break;
         }
     }
     
+    /* -------------------- Solve the linear system ---------------------- */
+    ColumnVector w(K+L+1);
+    assert(A.get_n() == A.get_m());
+    assert(A.get_n() == b.size());
+    assert(b.size() == w.size());
+    w = A.pseudo_inverse()*b;    
     
-    /* -------------------- Solve 3 linear system ---------------------- *
-     *               these are the basic filter weights                  *
-     * ----------------------------------------------------------------- */
-    ColumnVector w_i(Ki+Li+1);
+    return w;
+}
 
-    assert(Ax.get_n() == Ax.get_m());
-    assert(Ax.get_n() == bx.size());
-    assert(bx.size() == w_i.size());
-    w_i = Ax.pseudo_inverse()*bx;
+
+template <typename Soln_pState, typename Soln_cState>
+inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &theCell, Neighbours &theNeighbours) {
+    if (theNeighbours.symmetric_stencil && symmetric_weights.size()!=0) {
+        return symmetric_weights;
+    } else {
+        int number_of_moment_combinations = number_of_combinations();
+        int number_of_neighbours = theNeighbours.number_of_neighbours;
+        
+        complex<double> I(0.0,1.0);
+        
+        
+        int Lr; // number of remaining constraints after setting basic constraints
+        Lr = Set_basic_constraints(theNeighbours); 
+        
+        
+        RowVector w_i = Calculate_Weights_1D(theCell,theNeighbours,X_DIRECTION);
+        RowVector w_j = Calculate_Weights_1D(theCell,theNeighbours,Y_DIRECTION);
+        RowVector w_k = Calculate_Weights_1D(theCell,theNeighbours,Z_DIRECTION);
+        
+        // Load coefficients into neighbour_weights
+        RowVector W(number_of_neighbours);
+        double denominator = 0;
+        int index_l, index_m, index_n;
+        for(int i=0; i<number_of_neighbours; i++) {
+            index_l = theNeighbours.Ki - (theCell.I - theNeighbours.neighbour[i].I);
+            index_m = theNeighbours.Kj - (theCell.J - theNeighbours.neighbour[i].J);
+            index_n = theNeighbours.Kk - (theCell.K - theNeighbours.neighbour[i].K);
+            W(i) = w_i(index_l)*w_j(index_m)*w_k(index_n) ;// / theNeighbours.neighbour[i].Jacobian;
+            //denominator += W(i);
+        }
+        
+        //W *= theCell.Jacobian;
+        
+        if (theNeighbours.symmetric_stencil) {
+            symmetric_weights = W;
+        }
+        
+        return W;
+        
+    }
     
-    ColumnVector w_j(Kj+Lj+1);
-    assert(Ay.get_n() == Ay.get_m());
-    assert(Ay.get_n() == by.size());
-    assert(by.size() == w_j.size());
-    w_j = Ay.pseudo_inverse()*by;
+}
+
+
+template <typename Soln_pState, typename Soln_cState>
+inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights_1D(Cell3D &theCell, Neighbours &theNeighbours, int direction) {
     
-    ColumnVector w_k(Kk+Lk+1);
-    assert(Az.get_n() == Az.get_m());
-    assert(Az.get_n() == bz.size());
-    assert(bz.size() == w_k.size());
-    w_k = Az.pseudo_inverse()*bz;
-       
+    if (theNeighbours.symmetric_stencil && symmetric_weights_1D.size()!=0) {
+        return symmetric_weights_1D;
+    } else {
+        
+    int number_of_moment_combinations = number_of_combinations();
+    int number_of_neighbours = theNeighbours.number_of_neighbours;
+    
+    complex<double> I(0.0,1.0);
+    
+    
+    int Lr; // number of remaining constraints after setting basic constraints
+    Lr = Set_basic_constraints(theNeighbours); 
+    
+    
+    RowVector w = Calculate_Weights_1D(theCell,theNeighbours,direction);
+    
 #ifdef _GNUPLOT
     if (Explicit_Filter_Properties::debug_flag) {
         int n=200;
@@ -382,9 +356,9 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
         for (int i=0; i<n; i++) {
             double k = i*kmax/(n-ONE);
             k2[i] = k/kmax;
-            Gr[i] = real( G0_func(k, X_DIRECTION, theCell, theNeighbours, w_i) );
-            Gi[i] = imag( G0_func(k, X_DIRECTION, theCell, theNeighbours, w_i) );
-            Gt[i] = real( G_target(k, LS_DOF, X_DIRECTION) );
+            Gr[i] = real( G0_func(k, direction, theCell, theNeighbours, w) );
+            Gi[i] = imag( G0_func(k, direction, theCell, theNeighbours, w) );
+            Gt[i] = real( G_target(k, 0, direction) );
         }
         
         Gnuplot_Control h2;
@@ -405,25 +379,42 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
         delete[] k2;        
     }
 #endif
-
-    // Load coefficients into neighbour_weights
-    RowVector W(number_of_neighbours);
-    double denominator = 0;
-    for(int i=0; i<number_of_neighbours; i++) {
-        index_l = Ki - (theCell.I - theNeighbours.neighbour[i].I);
-        index_m = Kj - (theCell.J - theNeighbours.neighbour[i].J);
-        index_n = Kk - (theCell.K - theNeighbours.neighbour[i].K);
-        W(i) = w_i(index_l)*w_j(index_m)*w_k(index_n) * theNeighbours.neighbour[i].Jacobian;
-        denominator += W(i);
-    }
-    for(int i=0; i<number_of_neighbours; i++) {
-        W(i) /= denominator;
-    }
     
-    return W;
-}
+    /* ----------------------- non-uniform grid -------------------------- *
+    int J_index;
+    switch (direction) {
+        case X_DIRECTION:
+            J_index = 0;
+            break;
+        case Y_DIRECTION:
+            J_index = 1;
+            break;
+        case Z_DIRECTION:
+            J_index = 2;
+            break;
+    }
+    DenseMatrix Jacob(3,3);
+    DenseMatrix Jacob_Cell(3,3);
+    double denominator = 0;
+    theNeighbours.Grid_ptr->Jacobian_Matrix(Jacob_Cell,theCell.I,theCell.J,theCell.K,commutation_order+1);
+    for (int n=0; n<theNeighbours.number_of_neighbours; n++) {
+        int I,J,K;
+        I = theNeighbours.neighbour[n].I;
+        J = theNeighbours.neighbour[n].J;
+        K = theNeighbours.neighbour[n].K;
+        
+        theNeighbours.Grid_ptr->Jacobian_Matrix(Jacob,I,J,K,8);
+        w(n) *= Jacob(J_index,J_index) ; // * (theNeighbours.neighbour[n].dXc.x) ;// /Jacob_Cell(J_index,J_index);
+        denominator = Jacob_Cell(J_index,J_index);
+    }
+    w /= denominator; */
 
-
+    if (theNeighbours.symmetric_stencil) {
+        symmetric_weights_1D = w;
+    }
+    return w;
+    }
+};
 template<typename Soln_pState, typename Soln_cState>
 inline int Vasilyev_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Neighbours &theNeighbours) {
 
@@ -478,7 +469,7 @@ inline int Vasilyev_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Neigh
     if (number_of_remaining_constraints <= 2 || Filter_Width_strict) {
         /* ------------- Filter Grid Ratio --------------- */
         type = G_CONSTRAINT;
-        target = HALF;
+        target = G_cutoff;
         
         k = k_FGR;
         Add_extra_constraints(type, target, k);
@@ -527,6 +518,7 @@ inline int Vasilyev_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Neigh
         } else {
             LS_type = LS_IMAG;
         }
+        LS_type = LS_ALL;
         type = LS_CONSTRAINT;
         Add_extra_constraints(type,Lr,LS_type);
         number_of_remaining_constraints--;
@@ -572,6 +564,9 @@ inline double Vasilyev_Filter<Soln_pState,Soln_cState>::LeastSquares_coefficient
             return AdaptiveGaussianQuadrature(C_LS_real, ZERO, PI, dummy, numeric_limits<double>::digits10);
         case LS_IMAG:
             return AdaptiveGaussianQuadrature(C_LS_imag, ZERO, PI, dummy, numeric_limits<double>::digits10);
+        case LS_ALL:
+            return AdaptiveGaussianQuadrature(C_LS_real, ZERO, PI, dummy, numeric_limits<double>::digits10)
+                 + AdaptiveGaussianQuadrature(C_LS_imag, ZERO, PI, dummy, numeric_limits<double>::digits10);
     }
 }
 
@@ -591,6 +586,9 @@ inline double Vasilyev_Filter<Soln_pState,Soln_cState>::LeastSquares_RHS(const i
             return AdaptiveGaussianQuadrature(R_LS_real, ZERO, PI, dummy, numeric_limits<double>::digits10);
         case LS_IMAG:
             return AdaptiveGaussianQuadrature(R_LS_imag, ZERO, PI, dummy, numeric_limits<double>::digits10);
+        case LS_ALL:
+            return AdaptiveGaussianQuadrature(R_LS_real, ZERO, PI, dummy, numeric_limits<double>::digits10)
+                 + AdaptiveGaussianQuadrature(R_LS_imag, ZERO, PI, dummy, numeric_limits<double>::digits10);
     }
 }
 
@@ -611,14 +609,22 @@ template<typename Soln_pState, typename Soln_cState>
 inline Complex Vasilyev_Filter<Soln_pState,Soln_cState>::G_target(const double &k, const int &LS_DOF, const int &direction) {
     double kmax = PI;
 
-    double s;
-    if (target_filter_sharpness >= 0) {
-        s = -target_filter_sharpness*FGR;
+//    double s;
+//    if (target_filter_sharpness >= 0) {
+//        s = -target_filter_sharpness*FGR;
+//    } else {
+//        s = -FGR;
+//    }
+//    return Complex(HALF + HALF*tanh(s*(k-kmax/FGR)),ZERO);
+//   
+    int m;
+    if (target_filter_sharpness > 0) {
+        m = target_filter_sharpness;
     } else {
-        s = -FGR;
+        m = int(ceil(commutation_order/2.0));
     }
-    return Complex(HALF + HALF*tanh(s*(k-kmax/FGR)),ZERO);
-    
+    double a = -(TWO*m)*log(G_cutoff)*pow(PI/FGR,-TWO*m);
+    return Complex(exp(-a/(TWO*m)*pow(k,TWO*m)),ZERO);
 }
 
 
@@ -752,6 +758,41 @@ template <typename Soln_pState, typename Soln_cState>
 inline int Vasilyev_Filter<Soln_pState,Soln_cState>::number_of_combinations_with_moment(int k){
     int n=3; // 3 dimensions
     return (  fac(n+k-1)/(fac(k)*fac(n-1))  );
+}
+
+template <typename Soln_pState, typename Soln_cState>
+double Vasilyev_Filter<Soln_pState,Soln_cState>::filter_moment(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, int q, int r, int s) {
+    
+    double M(0);
+    for(int i=0; i<theNeighbours.number_of_neighbours; i++) {
+        int l = theNeighbours.neighbour[i].I - theCell.I;
+        int m = theNeighbours.neighbour[i].J - theCell.J;
+        int n = theNeighbours.neighbour[i].K - theCell.K;
+        M += w(i) * pow(double(l),double(q)) * pow(double(m),double(r)) * pow(double(n),double(s)) ;
+    }
+    return M;
+}
+
+template <typename Soln_pState, typename Soln_cState>
+double Vasilyev_Filter<Soln_pState,Soln_cState>::filter_moment_1D(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, int q, int direction) {
+    int K,L;
+    switch(direction){
+        case X_DIRECTION:
+            K = theNeighbours.Ki;    L = theNeighbours.Li;
+            break;
+        case Y_DIRECTION:
+            K = theNeighbours.Kj;    L = theNeighbours.Lj;
+            break;
+        case Z_DIRECTION:
+            K = theNeighbours.Kk;    L = theNeighbours.Lk;
+            break;
+    }
+    double M(0);
+
+    for(int l=-K; l<=L; l++) {
+        M += w(K+l) * pow(double(l),double(q)) ;
+    }
+    return M;
 }
 
 #endif

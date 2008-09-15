@@ -49,6 +49,7 @@ public:
         Store_Filter_Weights = !(Explicit_Filter_Properties::Memory_Efficient);
         theNeighbours.allocate(number_of_rings);
         I = Complex(0,1);
+        G_cutoff = Explicit_Filter_Properties::G_cutoff;
     }
     
     Complex I;
@@ -62,6 +63,7 @@ public:
     bool LS_constraints;
     int Derivative_constraints;
     bool Store_Filter_Weights;
+    double G_cutoff;
 
     void Allocate_Filter_Weights(Grid3D_Hexa_Block &Grid_Blk);
     void Reset_Filter_Weights(Grid3D_Hexa_Block &Grid_Blk);
@@ -70,6 +72,7 @@ public:
     void Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, Neighbours &theNeighbours);
 
     RowVector filter(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
+    RowVector filter_1D(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction);
 
     
     
@@ -93,10 +96,19 @@ public:
     Vector3D Calculate_wavenumber_of_Gvalue(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmax, RowVector &w, double G_value);
     Vector3D Calculate_wavenumber_of_dGvalue(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmin, Vector3D &kmax, RowVector &w, double dG_value);
 
+    virtual double filter_moment(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, int q, int r, int s) = 0;
+    virtual double filter_moment_1D(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, int q, int direction) = 0;
+    void check_filter_moments(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
+    void check_filter_moments_1D(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction);
+
     
     virtual void Get_Neighbours(Cell3D &theCell) = 0;
+    virtual void Get_Neighbours_1D(Cell3D &theCell, int direction) = 0;
     virtual RowVector Get_Weights(Cell3D &theCell, Neighbours &theNeighbours) = 0;
+    virtual RowVector Get_Weights_1D(Cell3D &theCell, Neighbours &theNeighbours, int direction) = 0;
+
     virtual string filter_name(void) = 0;
+    virtual int filter_type(void) = 0;
     
     void Write_to_file(Grid3D_Hexa_Block &Grid_Blk, ofstream &out_file);
     void Read_from_file(Grid3D_Hexa_Block &Grid_Blk, ifstream &in_file);
@@ -138,14 +150,103 @@ inline Complex Discrete_Filter<Soln_pState,Soln_cState>::G_function_1D_110(Cell3
 
 
 
+template <typename Soln_pState, typename Soln_cState>
+void Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
+    
+    if (!Explicit_Filter_Properties::batch_flag) {
+        cout << "\n\n Calculating filter moments in 1D at cell ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
+    }
+    
+    theNeighbours.set_grid(Grid_Blk);
+    
+    Get_Neighbours(theCell);
+    
+    RowVector w = Get_Weights(theCell, theNeighbours);
+    
+    /*
+    double ***M = new double **[commutation_order+1];
+    for (int q=0; q<=commutation_order; q++) {
+        M[q] = new double *[commutation_order+1];
+        for (int r=0; r<=commutation_order; r++) {
+            M[q][r] = new double [commutation_order+1];
+        }
+    }
+    */
+    
+    int real_commutation_order(1);
+    int error_in_M0=0;
+    int previous_order=0;
+    for(int order=0; order<=commutation_order+1; order++){
+        for( int q=0; q<=commutation_order+1; q++) {
+            for (int r=0; r<=commutation_order+1; r++) {
+                for (int s=0; s<=commutation_order+1; s++) {
+                    if (q + r + s == order) {
+                        double M = filter_moment(theCell, theNeighbours, w, q,r,s);
+                        //cout << "\n M(" << q << "," << r << "," << s << ") = " << M;
+                        if (order==0) {
+                            if (!(M-NANO<ONE && ONE<M+NANO)) {
+                                error_in_M0=1;
+                            }
+                        }
+                        if (order!=0 && order>previous_order && fabs(M)<NANO) {
+                            real_commutation_order = max(real_commutation_order,order+1);
+                        }
+                        
+                        previous_order=order;
+                    }
+                }
+            }
+        }
+    }
+    cout << endl;
+    if (error_in_M0) {
+        cout << " transfer function  G(0)!=1   :(" << endl;
+    }
+    cout << " Commutation order = " << real_commutation_order << endl;
+    
+    
+}
 
+template <typename Soln_pState, typename Soln_cState>
+void Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments_1D(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction) {
+    
+    if (!Explicit_Filter_Properties::batch_flag) {
+        cout << "\n\n Calculating filter moments at cell ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
+    }
+    
+    theNeighbours.set_grid(Grid_Blk);
+    
+    Get_Neighbours_1D(theCell,direction);
+    
+    RowVector w = Get_Weights_1D(theCell, theNeighbours,direction);
 
-
-
-
-
-
-
+    
+    int real_commutation_order(1);
+    int error_in_M0=0;
+    int previous_order=0;
+    for( int q=0; q<=commutation_order+1; q++) {
+        double M = filter_moment_1D(theCell, theNeighbours, w, q, direction);
+        //cout << "\n M(" << q << ") = " << M;
+        if (q==0) {
+            if (!(M-NANO<ONE && ONE<M+NANO)) {
+                error_in_M0=1;
+            }
+        }
+        if (q!=0 && q>previous_order && fabs(M)<NANO) {
+            real_commutation_order = max(real_commutation_order,q+1);
+        }
+        
+        previous_order=q;
+    }
+    
+    cout << endl;
+    if (error_in_M0) {
+        cout << " M0!=1   :(" << endl;
+    }
+    cout << " Commutation order = " << real_commutation_order << endl;
+    
+    
+}
 
 
 
@@ -173,11 +274,11 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Grid3D_Hexa_Block &Gr
             Grid_Blk.Filter_Weights_Assigned[I][J][K] = true;
         }
         Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
-        return Grid_Blk.Filter_Weights[I][J][K]*Neighbouring_Values;
+        return (Grid_Blk.Filter_Weights[I][J][K]*Neighbouring_Values);
     } else {
         RowVector W = Get_Weights(theCell,theNeighbours);
         Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
-        return W*Neighbouring_Values;
+        return (W*Neighbouring_Values);
     }
     
 
@@ -188,9 +289,49 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Grid3D_Hexa_Block &Gr
 
 
 template <typename Soln_pState, typename Soln_cState>
+RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter_1D(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction) {
+    
+    if (!Grid_Blk.Filter_Weights_Allocated && Store_Filter_Weights) {
+        Allocate_Filter_Weights(Grid_Blk);
+        Grid_Blk.Filter_Weights_Allocated = true;
+    }
+    
+    
+    theNeighbours.set_grid(Grid_Blk);
+    Get_Neighbours_1D(theCell, direction);
+    
+    
+    
+    if (Store_Filter_Weights) {
+        int I(theCell.I);
+        int J(theCell.J);
+        int K(theCell.K);
+        if (!Grid_Blk.Filter_Weights_Assigned[I][J][K]) {
+            Grid_Blk.Filter_Weights[I][J][K] = Get_Weights_1D(theCell,theNeighbours,direction);
+            Grid_Blk.Filter_Weights_Assigned[I][J][K] = true;
+        }
+        Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
+        return (Grid_Blk.Filter_Weights[I][J][K]*Neighbouring_Values);
+    } else {
+        RowVector W = Get_Weights_1D(theCell,theNeighbours,direction);
+        Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
+        return (W*Neighbouring_Values);
+    }
+
+}
+
+template <typename Soln_pState, typename Soln_cState>
 void Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, Neighbours &theNeighbours) {
     Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrix(Neighbouring_Values, theNeighbours);
+//    if (filter_type() == FILTER_TYPE_VASILYEV) {
+//        for (int row=0; row<theNeighbours.number_of_neighbours; row++) {
+//            for (int column=0; column<Neighbouring_Values.get_m(); column++) {
+//                Neighbouring_Values(row,column) /= theNeighbours.neighbour[row].Jacobian;
+//            }
+//        }
+//    }
 }
+
 template <typename Soln_pState, typename Soln_cState>
 void Discrete_Filter<Soln_pState,Soln_cState>::Allocate_Filter_Weights(Grid3D_Hexa_Block &Grid_Blk) {
     Grid_Blk.Allocate_Filter_Weights();
@@ -504,7 +645,7 @@ Complex Discrete_Filter<Soln_pState,Soln_cState>::dG_function_1D(Cell3D &theCell
 
 
 
-/* ------- calculate k_HALF where G(k_HALF) = 0.5 -------- */
+/* ------- calculate k_cutoff where G(k_cutoff) = G_cutoff -------- */
 template <typename Soln_pState, typename Soln_cState>
 Vector3D Discrete_Filter<Soln_pState,Soln_cState>::
 Calculate_wavenumber_of_Gvalue(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmax, RowVector &w, double G_value) {
@@ -608,12 +749,12 @@ double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio(Cell3D &theCe
 
 template <typename Soln_pState, typename Soln_cState>
 double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio_111(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax) {
-    Vector3D k_HALF = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax,w,HALF);
+    Vector3D k_cutoff = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax,w,G_cutoff);
     
-    // this k_HALF is on the diagonal that connects (0,0,0) with kmax
+    // this k_cutoff is on the diagonal that connects (0,0,0) with kmax
     // the norm of the vector touching the ellipsoid connecting the boundaries of the spectral domain:
     //      kmax.abs()/sqrt(3)
-    return (kmax.abs()/sqrt(THREE))/k_HALF.abs();
+    return (kmax.abs()/sqrt(THREE))/k_cutoff.abs();
 }
 
 
@@ -625,9 +766,9 @@ double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio_110(Cell3D &t
     kmax_110.x = kmax.x;
     kmax_110.y = kmax.y;
     
-    Vector3D k_HALF = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax_110,w,HALF);
+    Vector3D k_cutoff = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax_110,w,G_cutoff);
     
-    return (kmax.abs()/sqrt(THREE))/k_HALF.abs();
+    return (kmax.abs()/sqrt(THREE))/k_cutoff.abs();
 }
 
 
@@ -637,9 +778,9 @@ double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio_100(Cell3D &t
     kmax_100.zero();
     kmax_100.x = kmax.x;
     
-    Vector3D k_HALF = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax_100,w,HALF);
+    Vector3D k_cutoff = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax_100,w,G_cutoff);
     
-    return (kmax.abs()/sqrt(THREE))/k_HALF.abs();
+    return (kmax.abs()/sqrt(THREE))/k_cutoff.abs();
 }
 
 

@@ -512,6 +512,16 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Cube(Grid3D_Input_Parameters &Inp
                                               Input.NCells_Jdir,
                                               Input.Nghost);
     
+    if (Input.Mesh_Smoothing!=OFF){
+        /* This will make the mesh curved in case of mesh stretching */
+        for (int iBlk=0; iBlk<Input.NBlk_Idir; iBlk++) {
+            for (int jBlk=0; jBlk<Input.NBlk_Jdir; jBlk++) {
+                Smooth_Quad_Block(Grid2D_Box_XYplane[iBlk][jBlk],
+                                  Input.Mesh_Smoothing);
+            }
+        }
+    }
+    
     /* Create the mesh for each block representing
      the complete grid. */
     
@@ -607,6 +617,16 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Single_Block_Periodic_Box(Grid3D_
                                               Input.NCells_Jdir,
                                               Input.Nghost);
     
+    if (Input.Mesh_Smoothing!=OFF){
+        /* This will make the mesh curved in case of mesh stretching */
+        for (int iBlk=0; iBlk<Input.NBlk_Idir; iBlk++) {
+            for (int jBlk=0; jBlk<Input.NBlk_Jdir; jBlk++) {
+                Smooth_Quad_Block(Grid2D_Box_XYplane[iBlk][jBlk],
+                                  Input.Mesh_Smoothing);
+            }
+        }
+    }
+    
     /* Create the mesh for each block representing
      the complete grid. */
     
@@ -701,6 +721,16 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Paramet
                                            Input.NCells_Idir,
                                            Input.NCells_Jdir,
                                            Input.Nghost);
+    
+    if (Input.Mesh_Smoothing!=OFF){
+        /* This will make the mesh curved in case of mesh stretching */
+        for (int iBlk=0; iBlk<Input.NBlk_Idir; iBlk++) {
+            for (int jBlk=0; jBlk<Input.NBlk_Jdir; jBlk++) {
+                Smooth_Quad_Block(Grid2D_Box_XYplane[iBlk][jBlk],
+                                  Input.Mesh_Smoothing);
+            }
+        }
+    }
     
     /* Create the mesh for each block representing
      the complete grid. */

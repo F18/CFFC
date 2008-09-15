@@ -146,17 +146,21 @@ int Filter_Controller<Soln_pState,Soln_cState>::Initialize_Solution_Blocks(void)
 template <typename Soln_pState, typename Soln_cState>
 int Filter_Controller<Soln_pState,Soln_cState>::Explicit_Filter_Operations(void) {
     explicit_filter.Initialize(Initial_Mesh,Input,batch_flag);
-    //explicit_filter.transfer_function(FILTER_INNER_CELL);
+    explicit_filter.transfer_function(FILTER_INNER_CELL);
+    
+    explicit_filter.test();
     
     typedef double (Filter_State::*member_ptr);
     member_ptr filter_member = &Filter_State::member;
     
+    
+    
     //typedef Soln_cState *** (Hexa_Block<Soln_pState,Soln_cState>::*Soln_cState_3D_ptr_type);
     //Soln_cState_3D_ptr_type U_ptr = &Hexa_Block<Soln_pState,Soln_cState>::U; 
     
-   explicit_filter.filter(Fdouble);
-    explicit_filter.filter(Fstate);
-    explicit_filter.Calculate_Commutation_Error(Fdouble);
+   //explicit_filter.filter(Fdouble);
+   // explicit_filter.filter(Fstate);
+   // explicit_filter.Calculate_Commutation_Error(Fdouble);
     return 0;
 }
 

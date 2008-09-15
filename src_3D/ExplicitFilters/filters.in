@@ -27,24 +27,23 @@ Smagorinsky_Coefficient =
 #     Filter parameters      #
 ##############################
 Filter_Type =
-#Implicit
-#Vasilyev
-Haselbacher
+Vasilyev
+#Haselbacher
 #Tophat
 #Restart
 Filter_Grid_Ratio =
 2.0
 Target_Filter_Sharpness = 
-1.0
+0.0
 Filter_Initial_Condition =
 OFF
+Derivative_constraints=
+0
 Commutation_Order =
 2
-Number_of_Rings =
-2
 Filter_Memory_Efficient =
-ON
-###################
+OFF
+##############################
 #     Spectrum parameters    #
 ##############################
 Spectrum_Model =
@@ -64,14 +63,14 @@ OFF
 ##############################
 Grid_Type =
 Periodic_Box
-Number_of_Ghost_Cells =
+Number_of_Ghost_Cells = 
 3
-Number_of_Cells_Idir = 
-16
-Number_of_Cells_Jdir =
-16
-Number_of_Cells_Kdir =
-16
+Number_of_Cells_Idir =
+25
+Number_of_Cells_Jdir
+25
+Number_of_Cells_Kdir
+25
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =
@@ -99,19 +98,23 @@ Box_Length =
 Mesh_Stretching =
 ON
 Stretching_Factor_Idir = 
-1.1
+1.01
 Stretching_Factor_Jdir = 
-1.1
+1.01
 Stretching_Factor_Kdir = 
 1.1
 Stretching_Type_Idir = 
 3
 Stretching_Type_Jdir = 
-3
+0
 Stretching_Type_Kdir = 
-3
+1
 Disturb_Interior_Nodes =
-OFF #10
+OFF 
+#10
+Mesh_Smoothing =
+1000
+#10000
 ###################################
 #   Time stepping parameters      #
 ###################################
@@ -132,8 +135,8 @@ Maximum_Number_of_Time_Steps =
 0
 Number_of_Blocks_Per_Processor =
 1000
-Output_File_Name = 
-Commutation
+Output_File_Name =
+filters
 Restart_Solution_Save_Frequency =
 100
 #######################
