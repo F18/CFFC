@@ -89,7 +89,7 @@ int AdvectDiffuse2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr
       break;
       
     } else if (command_flag == TERMINATE_CODE) {
-      return (0);
+      break;
       
     } else if (command_flag == INVALID_INPUT_CODE ||
 	       command_flag == INVALID_INPUT_VALUE) {
@@ -3138,7 +3138,7 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
        if (Command_Flag == EXECUTE_CODE) {
           break;
        } else if (Command_Flag == TERMINATE_CODE) {
-	 return(0);
+	  break;
        } else if (Command_Flag == INVALID_INPUT_CODE ||
                   Command_Flag == INVALID_INPUT_VALUE) {
           line_number = -line_number;
