@@ -168,7 +168,7 @@ double Polynomial_Function(const double x, const double y){
 }
 
 // Initialization of static member variables in Translated_Solutions class
-Vector2D Translated_Solutions::InitialCentroid = Vector2D(0.0);
+Vector2D Translated_Solutions::InitialCentroid = Vector2D(10.0);
 Vector2D Translated_Solutions::TranslatedCentroid = Vector2D(0.0);
 double Translated_Solutions::Magnitude = 1.0;
 double Translated_Solutions::Steepness = 1.0;

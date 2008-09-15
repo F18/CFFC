@@ -2424,8 +2424,8 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_NEUMANN not implemented yet.");
       break;
 
-    case BC_SYMMETRY_PLANE :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_SYMMETRY_PLANE not implemented yet.");
+    case BC_SYMMETRY_PLANE : 	// same as BC_REFLECTION
+      Wr = Reflect(Wl, NormalDirection);
       break;
 
     case BC_EXTRAPOLATE :
@@ -2434,7 +2434,8 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       break;
 
     case BC_LINEAR_EXTRAPOLATION :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_LINEAR_EXTRAPOLATION not implemented yet.");
+      // Calculate Wr based on the reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii-1,jj,CalculationPoint);
       break;
 
     case BC_OUTFLOW :
@@ -2496,8 +2497,8 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_NEUMANN not implemented yet.");
       break;
 
-    case BC_SYMMETRY_PLANE :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_SYMMETRY_PLANE not implemented yet.");
+    case BC_SYMMETRY_PLANE : 	// same as BC_REFLECTION
+      Wr = Reflect(Wl, NormalDirection);
       break;
 
     case BC_EXTRAPOLATE :
@@ -2506,7 +2507,8 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       break;
 
     case BC_LINEAR_EXTRAPOLATION :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_LINEAR_EXTRAPOLATION not implemented yet.");
+      // Compute Wr based on the high-order reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii+1,jj,CalculationPoint);
       break;
 
     case BC_OUTFLOW :
@@ -2567,8 +2569,8 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_NEUMANN not implemented yet.");
       break;
 
-    case BC_SYMMETRY_PLANE :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_SYMMETRY_PLANE not implemented yet.");
+    case BC_SYMMETRY_PLANE : 	// same as BC_REFLECTION
+      Wr = Reflect(Wl, NormalDirection);
       break;
 
     case BC_EXTRAPOLATE :
@@ -2577,7 +2579,8 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       break;
 
     case BC_LINEAR_EXTRAPOLATION :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_LINEAR_EXTRAPOLATION not implemented yet.");
+      // Compute Wr based on the high-order reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj-1,CalculationPoint);
       break;
 
     case BC_OUTFLOW :
@@ -2638,8 +2641,8 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_NEUMANN not implemented yet.");
       break;
 
-    case BC_SYMMETRY_PLANE :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_SYMMETRY_PLANE not implemented yet.");
+    case BC_SYMMETRY_PLANE : 	// same as BC_REFLECTION
+      Wr = Reflect(Wl, NormalDirection);
       break;
 
     case BC_EXTRAPOLATE :
@@ -2648,7 +2651,8 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       break;
 
     case BC_LINEAR_EXTRAPOLATION :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_LINEAR_EXTRAPOLATION not implemented yet.");
+      // Compute Wr based on the high-order reconstruction in the ghost cell
+      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj+1,CalculationPoint);
       break;
 
     case BC_OUTFLOW :

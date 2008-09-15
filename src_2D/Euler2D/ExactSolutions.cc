@@ -431,3 +431,130 @@ void CosSin_Function_ExactSolution::Broadcast(void){
 #endif
 }
 
+
+/************************************************
+ * HyperTangent_Function_ExactSolution Members  *
+ ***********************************************/
+
+/*! 
+ * Update the translation point location based on the flow input parameters
+ */
+void HyperTangent_Function_ExactSolution::Set_ParticularSolution_Parameters(const Euler2D_Input_Parameters & IP){
+  
+  if (SetCentroid == false){
+    // Calculate the final centroid by translating the current position with the Wo.v velocity for Time_Max time
+
+    Centroid = Centroid + IP.Wo.v * IP.Time_Max;
+
+    // Confirm update
+    SetCentroid = true;
+  }
+
+};
+
+/*! 
+ * Parse next input control parameter
+ */
+void HyperTangent_Function_ExactSolution::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
+									     int & i_command){
+
+  // Call the parser from the base class
+  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  // Check if the next control parameter has already been identified
+  if (i_command != INVALID_INPUT_CODE){
+    return;
+  }
+  
+  char buffer[256];
+
+  // Try to match the next control parameter
+  if (strcmp(IP.Next_Control_Parameter, "Function_Centroid") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> Centroid;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Use_Centroid_As") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Initial") == 0 ){
+      SetCentroid = false;
+      i_command = 0;      
+    } else if ( strcmp(IP.Next_Control_Parameter, "Final") == 0 ){
+      SetCentroid = true;
+      i_command = 0;
+    } else {
+      i_command = INVALID_INPUT_CODE;
+    }
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Steepness") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> Steepness;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Reference_Value") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> ReferenceValue;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Amplitude") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> Amplitude;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else {
+    i_command = INVALID_INPUT_CODE;
+    return;
+  } // endif
+
+}
+
+/*! 
+ * Print relevant parameters
+ */
+void HyperTangent_Function_ExactSolution::Print_Info(std::ostream & out_file){
+
+  out_file << "\n     -> Centroid : " << setprecision(16) << Centroid
+	   << "\n     -> Reference Value : " << ReferenceValue
+	   << "\n     -> Steepness : " << Steepness
+	   << "\n     -> Amplitude : " << Amplitude;
+
+  // call the base Print_Info
+  ExactSolutionBasicType::Print_Info(out_file);
+
+}
+
+/*!
+ * Broadcast the HyperTangent_Function_ExactSolution variables to all      
+ * processors associated with the specified communicator
+ * from the specified processor using the MPI broadcast 
+ * routine.
+ */
+void HyperTangent_Function_ExactSolution::Broadcast(void){
+#ifdef _MPI_VERSION
+  
+  MPI::COMM_WORLD.Bcast(&Steepness,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&Centroid.x,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&Centroid.y,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&ReferenceValue,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&Amplitude,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&SetCentroid,
+			1, 
+			MPI::INT, 0);
+
+#endif
+}

@@ -14,6 +14,7 @@ using std::fabs;
 using std::cos;
 using std::tan;
 using std::sqrt;
+using std::tanh;
 
 /* Include CFFC header files */
 #include "../Math/Math.h"
@@ -36,6 +37,7 @@ using std::sqrt;
 #define EULER2D_EXACT_SOLUTION_ABGRALL_FUNCTION 1
 #define EULER2D_EXACT_SOLUTION_SINUSOIDAL_FUNCTION 2
 #define EULER2D_EXACT_SOLUTION_COSSIN_FUNCTION 3
+#define EULER2D_EXACT_SOLUTION_HYPERTANGENT_FUNCTION 4
 
 
 // Declare the input parameters class
@@ -76,7 +78,7 @@ public:
   }
 
   //! Update internal variables
-  virtual void Set_ParticularSolution_Parameters(void){ };
+  virtual void Set_ParticularSolution_Parameters(const Euler2D_Input_Parameters & IP){ };
 
   //! @name Functions for input-output and broadcast
   //@{
@@ -331,6 +333,77 @@ inline double CosSin_Function_ExactSolution::BaseCosSinVariation(const double & 
     return ReferenceValue + ( Amplitude * cos(PI * ConvertDomainToMinusOneOne(DomainMinLimit,DomainMaxLimit,Coord))*
 			      sin(5.0 * PI * ConvertDomainToMinusOneOne(DomainMinLimit,DomainMaxLimit,Coord)) );
   }
+}
+
+
+/*! 
+ * \class HyperTangent_Function_ExactSolution
+ * 
+ * \brief Implements the 2D trigonometric function 
+ *        \f$ rho(Val) = RefVal + A (1.0 - \tanh^2 (S Val)) \f$,
+ *        where Val is the distance between the calculation point
+ *        and the centroid of the function.
+ */
+class HyperTangent_Function_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  HyperTangent_Function_ExactSolution(void);
+
+  //! Return exact solution
+  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) const;
+
+  //! Update the translation point location based on the flow input parameters
+  void Set_ParticularSolution_Parameters(const Euler2D_Input_Parameters & IP);
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+
+  double ReferenceValue;	//!< Sets the magnitude of the function
+  double Amplitude,		//!< Sets the amplitude of the function
+    Steepness;			//!< Sets the steepness of the function
+  Vector2D Centroid;		//!< Sets the reference point for distance calculation
+  bool SetCentroid;		//!< Indicates if the centroid position is the initial (false) or the final one (true)
+  
+  double BaseHyperTangentVariation(const double & DistanceToCentroid) const;
+};
+
+// Basic Constructor
+inline HyperTangent_Function_ExactSolution::HyperTangent_Function_ExactSolution(void):
+  ReferenceValue(1.0), Amplitude(1.0), Steepness(1.0),
+  Centroid(0.0,0.0), SetCentroid(false)
+{
+  // Name the exact solution
+  ExactSolutionName = "HyperTangent Function";	
+}
+
+//! Return exact solution 
+inline Euler2D_pState HyperTangent_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) const {
+  // Compute distance between centroid and the current position
+  double Distance(abs(Centroid - Vector2D(x,y)));
+
+  return BaseHyperTangentVariation(Distance);
+}
+
+//! Return the basic sinusoidal variation
+inline double HyperTangent_Function_ExactSolution::BaseHyperTangentVariation(const double & DistanceToCentroid) const {
+
+  // Function: "1 - tanh(x)^2" modulated for amplitude and steepness
+  double Func;
+
+  Func = tanh(Steepness * DistanceToCentroid);
+  Func *= Func; 		// square hyperbolic tangent
+  Func = 1.0 - Func;
+
+  return ReferenceValue + Amplitude*Func;
 }
 
 #endif

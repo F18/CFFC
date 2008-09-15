@@ -45,8 +45,8 @@ public:
   //@}
 
   //! Update the internal variables of the exact solution
-  void Set_ParticularSolution_Parameters(void) const { 
-    if ( IsExactSolutionSet() ){ ExactSoln->Set_ParticularSolution_Parameters();}
+  void Set_ParticularSolution_Parameters(Euler2D_Input_Parameters & IP) const { 
+    if ( IsExactSolutionSet() ){ ExactSoln->Set_ParticularSolution_Parameters(IP);}
   }
 
   //! @name Functions for input-output and broadcast
