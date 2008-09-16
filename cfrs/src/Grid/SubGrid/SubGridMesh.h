@@ -6,6 +6,7 @@
 #include "Common/Containers/PointWiseSolution.h"
 #include "include/HeaderData.h"
 #include "include/TypeDefinition.h"
+#include "Grid/Grid3D/Cell3D.h" // added by RR
 
 template <class NodeType=Node2D, SpaceType SpaceDimension = TwoD, class SolutionType=double >
 class SubGridMesh;

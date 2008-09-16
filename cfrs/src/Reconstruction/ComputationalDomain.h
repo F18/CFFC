@@ -62,7 +62,7 @@ std::ostream& operator<< (std::ostream& os,
  * Container for ComputationalCells.                                        *
  * 
  * VARIABLES:                                                               *
- *                                                                          *
+ *                                                                       templated to SpaceDimension   *
  ***************************************************************************/
 
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType>

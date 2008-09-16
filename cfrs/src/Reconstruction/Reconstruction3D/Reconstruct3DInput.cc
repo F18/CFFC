@@ -52,11 +52,13 @@ ostream &operator << (ostream &out_file,
              << IP.Grid_Type;
 
     switch(IP.i_Grid) {
-      case GRID_CARTESIAN_UNIFORM :
+      case GRID_CUBE :
         out_file << "\n  -> Width of Solution Domain (m): " 
                  << IP.Box_Width;
         out_file << "\n  -> Height of Solution Domain (m): " 
                  << IP.Box_Height;
+        out_file << "\n  -> Length of Solution Domain (m): " 
+                 << IP.Box_Length;
         break;
       case GRID_SQUARE :
         out_file << "\n  -> Size of Solution Domain (m): " 
@@ -135,6 +137,8 @@ ostream &operator << (ostream &out_file,
                  << IP.Box_Width;
         out_file << "\n  -> Height of Solution Domain (m): " 
                  << IP.Box_Height;
+        out_file << "\n  -> Length of Solution Domain (m): " 
+                 << IP.Box_Length;
         break;
     } /* endswitch */
     out_file << "\n  -> Mesh shift, scale, and rotate: " 
@@ -142,22 +146,30 @@ ostream &operator << (ostream &out_file,
     out_file << "\n  -> Mesh Stretching Function I_Direction: "
 	     << IP.Stretching_Function_I
 	     << "\n  -> Mesh Stretching Function J_Direction: "
-	     << IP.Stretching_Function_J
-	     << "\n  -> Stretching Parameters: Beta_I, Beta_J, Tau_I, Tau_J: "
-	     << IP.Beta_I << " " << IP.Beta_J << " " << IP.Tau_I << " " << IP.Tau_J;
+             << IP.Stretching_Function_J
+             << "\n  -> Mesh Stretching Function K_Direction: "
+             << IP.Stretching_Function_K
+	     << "\n  -> Stretching Parameters: Beta_I, Beta_J, Beta_K, Tau_I, Tau_J, Tau_K: "
+	     << IP.Beta_I << " " << IP.Beta_J << " " << IP.Beta_K << " " << IP.Tau_I << " " << IP.Tau_J << " " << IP.Tau_K;
     out_file << "\n  -> Number of iteration for unsmoothing the mesh: " << IP.NumOfIter_UnsmoothMesh;
     out_file << "\n  -> Number of Blocks i-direction: "
              << IP.NBlk_Idir;
     out_file << "\n  -> Number of Blocks j-direction: " 
              << IP.NBlk_Jdir;
+    out_file << "\n  -> Number of Blocks k-direction: " 
+             << IP.NBlk_Kdir;
     out_file << "\n  -> Number of Cells i-direction: "
              << IP.NCells_Idir;
     out_file << "\n  -> Number of Cells j-direction: " 
              << IP.NCells_Jdir;
+    out_file << "\n  -> Number of Cells k-direction: " 
+             << IP.NCells_Kdir;
     out_file << "\n  -> Number of SubGrid Points in X-dir: "
 	     << IP.NSubGrid_Points_Idir;
     out_file << "\n  -> Number of SubGrid Points in Y-dir: "
 	     << IP.NSubGrid_Points_Jdir;
+    out_file << "\n  -> Number of SubGrid Points in Z-dir: "
+	     << IP.NSubGrid_Points_Kdir;
     out_file << "\n  -> Output File Name: " 
              << IP.Output_File_Name;
 

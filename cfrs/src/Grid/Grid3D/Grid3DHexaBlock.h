@@ -195,7 +195,7 @@ class Grid3D_Hexa_Block {
     
     /* Deallocate memory for structured hexahedral grid block. */
     void deallocate(void);
-    
+        
     /* Calculate centroid of cell. */
     Vector3D centroid(const Cell3D &Cell);
     Vector3D centroid(const int ii, const int jj, const int kk);
@@ -351,7 +351,7 @@ class Grid3D_Hexa_Block {
                       const int Number_of_Cells_Idir,
                       const int Number_of_Cells_Jdir,
                       const int Number_of_Cells_Kdir,
-                      const int Number_of_Ghost_Cells);
+                      const int Nghost);
 
     void Copy(Grid3D_Hexa_Block &Grid2);
 
@@ -361,8 +361,8 @@ class Grid3D_Hexa_Block {
     void Broadcast(MPI::Intracomm &Communicator);
 #endif
 
-    void Output_Tecplot(const int Block_Number, 
-                        const int Output_Title, 
+    void Output_Tecplot(const int Block_Number,
+                        const int Output_Title,
                         ostream &Out_File);
 
     void Output_Nodes_Tecplot(const int Block_Number,
@@ -374,7 +374,7 @@ class Grid3D_Hexa_Block {
                               ostream &Out_File);
 
     void Output_Gnuplot(const int Block_Number,
-                        const int Output_Title, 
+                        const int Output_Title,
                         ostream &Out_File);
 
     void Update_Exterior_Nodes(void);
