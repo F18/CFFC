@@ -38,6 +38,7 @@ using std::tanh;
 #define EULER2D_EXACT_SOLUTION_SINUSOIDAL_FUNCTION 2
 #define EULER2D_EXACT_SOLUTION_COSSIN_FUNCTION 3
 #define EULER2D_EXACT_SOLUTION_HYPERTANGENT_FUNCTION 4
+#define EULER2D_EXACT_SOLUTION_UNITTEST_FUNCTION 5
 
 
 // Declare the input parameters class
@@ -404,6 +405,49 @@ inline double HyperTangent_Function_ExactSolution::BaseHyperTangentVariation(con
   Func = 1.0 - Func;
 
   return ReferenceValue + Amplitude*Func;
+}
+
+
+/*! 
+ * \class UnitTest_Function_ExactSolution
+ * 
+ * \brief Implements a 2D function used for testing purposes.
+ *        
+ */
+class UnitTest_Function_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  UnitTest_Function_ExactSolution(void);
+
+  //! Return exact solution
+  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) const;
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+
+};
+
+// Basic Constructor
+inline UnitTest_Function_ExactSolution::UnitTest_Function_ExactSolution(void) {
+  // Name the exact solution
+  ExactSolutionName = "UnitTest Function";	
+}
+
+//! Return exact solution 
+inline Euler2D_pState UnitTest_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) const {
+  return Euler2D_pState(Euler2D_W_STDATM.d   * (1.1 + sin(x)*cos(y)),
+			Euler2D_W_STDATM.a() * sin(x),
+			Euler2D_W_STDATM.a() * cos(y),
+			Euler2D_W_STDATM.p   * exp(x-y)*(5.1 + x*sin(y)) );
 }
 
 #endif

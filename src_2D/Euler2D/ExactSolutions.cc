@@ -558,3 +558,48 @@ void HyperTangent_Function_ExactSolution::Broadcast(void){
 
 #endif
 }
+
+
+/************************************************
+ * UnitTest_Function_ExactSolution Members  *
+ ***********************************************/
+
+/*! 
+ * Parse next input control parameter
+ */
+void UnitTest_Function_ExactSolution::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
+									 int & i_command){
+
+  // Call the parser from the base class
+  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  // Check if the next control parameter has already been identified
+  if (i_command != INVALID_INPUT_CODE){
+    return;
+  }
+  
+  char buffer[256];
+
+}
+
+/*! 
+ * Print relevant parameters
+ */
+void UnitTest_Function_ExactSolution::Print_Info(std::ostream & out_file){
+
+  // call the base Print_Info
+  ExactSolutionBasicType::Print_Info(out_file);
+
+}
+
+/*!
+ * Broadcast the UnitTest_Function_ExactSolution variables to all      
+ * processors associated with the specified communicator
+ * from the specified processor using the MPI broadcast 
+ * routine.
+ */
+void UnitTest_Function_ExactSolution::Broadcast(void){
+#ifdef _MPI_VERSION
+  
+#endif
+}

@@ -835,7 +835,7 @@ private:
     the reconstructions of the stencil cells evaluated at their centroids. */
   Soln_State SS_Residual;
   //! Intermediate variables.
-  Soln_State Max_SS_Regression, Temp_Regression, Temp_Residual;
+  Soln_State Max_SS_Regression, Temp_Regression, Temp_Residual, Min_Mean_Solution;
   //! Normalization state characteristic to each solution state and cell
   Soln_State NormalizationState;
   //! Coefficient used to compute the smoothness indicator. It is based on the degrees of freedom (i.e. number of derivatives) and the size of the reconstruction stencil
@@ -1971,7 +1971,10 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
 
   // Set the mean solution of (iCell,jCell). It's used as a reference.
   MeanSolution = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
-  
+
+  // Initialize the minimum mean solution in absolute value.
+  Min_Mean_Solution = fabs(MeanSolution);
+
   /*! NOTE: The following used variables are set as private to the class:
     SS_Regression, SS_Residual, Max_SS_Regression, Temp_Regression, Temp_Residual. */
 
@@ -1986,6 +1989,9 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
 
   /* Compute SS_Regression and SS_Residual for all the variables at once */
   for( cell=1; cell<StencilSize; ++cell){
+
+    // Get minimum average solution in absolute value
+    Min_Mean_Solution = min(Min_Mean_Solution , fabs((SolnBlk.*ReconstructedSoln)(i_index[cell],j_index[cell])));
 
     Temp_Regression  = CellTaylorDerivState(i_index[cell],j_index[cell],0) - MeanSolution;
     Temp_Regression *= Temp_Regression;          /* compute Temp_Regression square */
@@ -2009,14 +2015,17 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
       // Update SS_Regression
       SS_Regression += Temp_Regression * GeomWeightSI;
       // Update SS_Residual
-      SS_Residual   += Temp_Residual * Temp_Residual * GeomWeightSI;
+      Temp_Residual *= Temp_Residual;       /* compute Temp_Residual square */
+      SS_Residual   += Temp_Residual * GeomWeightSI;
 
     } else {
 
       // Update SS_Regression
       SS_Regression += Temp_Regression;
+
       // Update SS_Residual
-      SS_Residual  += Temp_Residual * Temp_Residual;
+      Temp_Residual *= Temp_Residual;       /* compute Temp_Residual square */
+      SS_Residual  += Temp_Residual;
     }//endif
 
   }//endfor(cell)
@@ -2038,7 +2047,7 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
        current parameter.
     */
     if ( Max_SS_Regression[parameter]/sqr(NormalizationState[parameter]) > 
-	 CENO_Tolerances::SquareToleranceAroundValue(MeanSolution[parameter]/NormalizationState[parameter]) ){
+	 CENO_Tolerances::SquareToleranceAroundValue(Min_Mean_Solution[parameter]/NormalizationState[parameter]) ){
       
       // Compute 'alpha'
       alpha = 1.0 - (SS_Residual[parameter]/SS_Regression[parameter]);

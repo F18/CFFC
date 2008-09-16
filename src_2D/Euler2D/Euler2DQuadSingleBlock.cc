@@ -2133,12 +2133,22 @@ void ICs(Euler2D_Quad_Block &SolnBlk,
 	      if (i<SolnBlk.ICl || i>SolnBlk.ICu || j<SolnBlk.JCl || j>SolnBlk.JCu) {
 		// Set the solution state of the ghost cells to average values calculated with
 		// integration of the exact solution
-		SolnBlk.W[i][j] = 
-		  SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
-								     wrapped_member_function(IP.ExactSoln,
-											     &Euler2D_ExactSolutions::Solution,
-											     Wl),
-								     IP.Exact_Integration_Digits,Wl)/SolnBlk.Grid.Cell[i][j].A;
+		// Compute the exact average value for each solution parameter.
+		for ( k = 1; k <= SolnBlk.NumVar(); ++k){
+		  SolnBlk.W[i][j][k] = 
+		    SolnBlk.Grid.Integration.
+		    IntegrateFunctionOverCell(i,j,
+					      wrapped_member_function_one_parameter(IP.ExactSoln,
+										    &Euler2D_ExactSolutions::SolutionForParameter,
+										    k,
+										    Wl[k]),
+					      wrapped_member_function_one_parameter(IP.ExactSoln,
+										    &Euler2D_ExactSolutions::
+										    XDependencyIntegrated_SolutionForParameter,
+										    k,
+										    Wl[k]),
+					      IP.Exact_Integration_Digits,Wl[k])/SolnBlk.Grid.Cell[i][j].A;
+		}
 		SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
 	      } else {
 		// Set the solution state of the interior cells to the initial state Uo[0].

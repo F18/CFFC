@@ -66,6 +66,9 @@ void Euler2D_ExactSolutions::SetExactSolution(const short &SolutionIndex){
   case EULER2D_EXACT_SOLUTION_HYPERTANGENT_FUNCTION:
     ExactSoln = new HyperTangent_Function_ExactSolution;
     break;
+  case EULER2D_EXACT_SOLUTION_UNITTEST_FUNCTION:
+    ExactSoln = new UnitTest_Function_ExactSolution;
+    break;
   default:
     throw runtime_error("Euler2D_ExactSolutions::SetExactSolution() ERROR! Unknown exact solution type index.");
   }
@@ -104,6 +107,8 @@ void Euler2D_ExactSolutions::Parse_Next_Input_Control_Parameter(Euler2D_Input_Pa
       SetExactSolution(EULER2D_EXACT_SOLUTION_COSSIN_FUNCTION);
     } else if ( strcmp(IP.Next_Control_Parameter, "HyperTangent_Function") == 0 ){
       SetExactSolution(EULER2D_EXACT_SOLUTION_HYPERTANGENT_FUNCTION);
+    } else if ( strcmp(IP.Next_Control_Parameter, "UnitTest_Function") == 0 ){
+      SetExactSolution(EULER2D_EXACT_SOLUTION_UNITTEST_FUNCTION);
     } else {
       i_command = INVALID_INPUT_CODE;
       return;
