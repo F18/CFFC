@@ -29,10 +29,18 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>::GenerateCell(const int
   NbSubgridPoints.push_back(NbX);
   NbSubgridPoints.push_back(NbY);
   NbSubgridPoints.push_back(NbZ);
-  // generate the container of Taylor derivatives
-  TD.GenerateContainer(OrderOfRec);
+
+  // adjust the number of subgrid points
+  AdjustNumberOfSubgridPoints();
   // generate SubgridMesh
   SubgridSolution.SetMesh(NbSubgridPoints[0],NbSubgridPoints[1],NbSubgridPoints[2]);
+
+  // generate the container of Taylor derivatives
+  TD.GenerateContainer(OrderOfRec);
+  //TD_FistOrder.GenerateContainer(1) /*OrderOfRec = 1 */ --> RR: Copied from 2D_Implementations
+
+  // generate the container of the geometric coefficients
+  GeomCoeff.GenerateContainer(OrderOfRec);
 }
 
 // Set Rings
@@ -86,13 +94,60 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>::
   SetRings();
 }
 
+// AdjustNumberOfSubgridPoints -> this function is called before the subgrid is generated
+//                                but after the number of subgrid points is initialized
+template<class GeometryType,class SolutionType> inline
+void ComputationalCell<ThreeD,GeometryType,SolutionType>::AdjustNumberOfSubgridPoints(void){
+
+  /* Set the proper number of points in the x and y direction */
+  /* X dir */
+  if (NbSubgridPoints[0] < 3){
+    NbSubgridPoints[0] = 3;
+  } else if (NbSubgridPoints[0]%2 != 1){
+    NbSubgridPoints[0] ++; //only odd numbers
+  }
+  /* Y dir */
+  if (NbSubgridPoints[1] < 3){
+    NbSubgridPoints[1] = 3;
+  } else if (NbSubgridPoints[1]%2 != 1){
+    NbSubgridPoints[1] ++; //only odd numbers
+  }
+  /* Z dir */
+  if (NbSubgridPoints[2] < 3){
+    NbSubgridPoints[2] = 3;
+  } else if (NbSubgridPoints[2]%2 != 1){
+    NbSubgridPoints[2] ++; //only odd numbers
+  }
+}
+
 // SetSubGridGeometry()
 template< class GeometryType,class SolutionType> inline
 void ComputationalCell<ThreeD,GeometryType,SolutionType>::SetSubGridGeometry(){
-  Vector XStart;
-  
-  std::cout << "Not implemented yet\n";
+  Vector nodeXYZ;
+  double XdeltaSG, YdeltaSG, ZdeltaSG;
+  double x0, y0, z0;
 
+  x0 = geom.NodeSWBot().x;
+  y0 = geom.NodeSWBot().y;
+  z0 = geom.NodeSWBot().z;
+
+  XdeltaSG = fabs(geom.NodeSEBot().x-x0)/(NbSubgridPoints[0]-1);
+  YdeltaSG = fabs(geom.NodeNWBot().y-y0)/(NbSubgridPoints[1]-1);
+  ZdeltaSG = fabs(geom.NodeSWTop().z-z0)/(NbSubgridPoints[2]-1);
+  
+  //std::cout << "\n XdeltaSG = " << XdeltaSG << "\t YdeltaSG = " << YdeltaSG << "\t ZdeltaSG = " << ZdeltaSG << "\t NodeSWBot()  = " << geom.NodeSWBot();
+  //std::cout << "\n NodeSWtop = " << geom.NodeSWTop() << "\t Node SWBot = " << geom.NodeSWBot();
+
+  for (int i=0; i<NbSubgridPoints[0]; ++i)
+    for (int j=0; j<NbSubgridPoints[1]; ++j)
+      for (int k=0; k<NbSubgridPoints[2]; ++k){
+        nodeXYZ.x = x0+i*XdeltaSG;        
+        nodeXYZ.y = y0+j*YdeltaSG;
+        nodeXYZ.z = z0+k*ZdeltaSG;
+        //std::cout << "\n nodeXYZ = " << nodeXYZ;
+        /* Write the node in the container */
+        SubgridSolution(i,j,k).SetNode(nodeXYZ);
+      }
 }
 
 
@@ -241,6 +296,29 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>::ComputeReconstructionE
 //      }
 }
 
+// OutputNeshNodesTecplot()
+/* Outputs the coordinates of the nodes of the subgrid */
+template<class GeometryType,class SolutionType> inline
+void ComputationalCell<ThreeD,GeometryType,SolutionType>::
+OutputMeshNodesTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,const int & kCell,const bool Title)
+{
+  output_file << setprecision(14);
+  if (Title) {
+    output_file << "TITLE = \"" << " Mesh nodes \"\n";
+    output_file << "VARIABLES = \"x\" \\ \n"
+		<< "\"y\" \\ \n"
+		<< "\"z\" \\ \n";    
+    output_file << "ZONE T = \" Mesh \" \\ \n"
+		<< "F = POINT \n";
+    output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
+  }
+
+  //output_file << CellGeometry().NodeSWTop() << "\n"; --> RR: replaced for testing with the following line:
+  output_file << CellGeometry().NodeSWBot() << "\n";
+
+  output_file << setprecision(6);
+}
+
 // OutputSubgridTecplot()
 /* Does the output of the coordinates of the nodes of the subgrid */
 template<class GeometryType,class SolutionType> inline
@@ -309,6 +387,15 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>::
   output_file << geom.xc << "\t" << TD(0,0,0) << "\n";
 
   output_file << setprecision(6);
+}
+
+// OutputSolutionCellTecplotOneZone()
+/* Does the output of the whole domain solution at the nodes in only one zone */
+template<class GeometryType,class SolutionType> inline
+void ComputationalCell<ThreeD,GeometryType,SolutionType>::
+  OutputSolutionCellTecplotOneZone(std::ofstream &output_file)
+{
+  SubgridSolution.OutputSolutionTecplotOneZone(output_file,NbSubgridPoints[1],NbSubgridPoints[2]);
 }
 
 // OutputSolutionCellTecplotOneZone()

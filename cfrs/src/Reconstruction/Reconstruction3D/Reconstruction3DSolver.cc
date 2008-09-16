@@ -69,7 +69,6 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
   
   /***************************************************************  
    * Create the mesh variable and call for the proper solver:    *
-   * - Reconstruction3D_CartesianMesh                            *
    * - Reconstruction3D_HexahedralMesh                           *
    **************************************************************/
 
