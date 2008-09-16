@@ -60,9 +60,9 @@ class ComputationalCell<ThreeD, GeometryType, SolutionType>{
   vector<int> NbSubgridPoints;
   SubGridType SubgridSolution;
 
-  void AdjustNumberOfSubgridPoints(void){};
+  void AdjustNumberOfSubgridPoints(void);
 
- public:
+public:
 
   /* Static Variable */
   static HeaderData VarNames;
@@ -79,7 +79,7 @@ class ComputationalCell<ThreeD, GeometryType, SolutionType>{
   void SetCell (const std::vector<int> &SubGridPoints, const int & RO_);
   void SetCell (const GeometryType & geom_){ geom = geom_;}
   void ComputeGeometricCoefficients (void);
-
+  
   // Field access
   const Vector & CellCenter( ) {return geom.xc;}
   GeometryType& CellGeometry( ) { return geom;}
@@ -109,7 +109,7 @@ class ComputationalCell<ThreeD, GeometryType, SolutionType>{
 #endif
 
   const SolutionType& CellSolution() const {return U_cell;}
-  SolutionType & CellSolution( ) {return U_cell;}
+  SolutionType & CellSolution() {return U_cell;}
   const double & CellSolution(int & VarPosition) const;
   double & CellSolution(int & VarPosition);
 
@@ -190,23 +190,25 @@ class ComputationalCell<ThreeD, GeometryType, SolutionType>{
   }
 
   void OutputMeshNodesTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
-			      const int & kCell,const bool Title=false){ };
+			      const int & kCell,const bool Title=false); 
+  //--> RR: Needs to be implemented. Reference the call from ComputationalDomain_Implementations.h
   void OutputSubgridTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
 			    const int & kCell,const bool Title=false);
   void OutputSolutionTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
 			     const int & kCell,const bool Title=false);
   void OutputSolutionCellTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
 				 const int & kCell,const bool Title=false);
+  void OutputSolutionCellTecplotOneZone(std::ofstream &output_file);
   void OutputSolutionCellTecplotOneZone(std::ofstream &output_file, const int &SubgridNy, 
 					const int &SubgridNz);
-  void OutputPWC(std::ofstream &output_file, const int &SubgridNy, const int &SubgridNz){ };
+  void OutputPWC(std::ofstream &output_file, const int &SubgridNy, const int &SubgridNz){ }; // --> RR: Needs to be implemented.
   void OutputSmoothnessIndicatorAtNodesTecplot(std::ofstream &output_file, const int &SubgridNy, 
 					       const int &SubgridNz);
 
   void OutputReconstructedSolutionTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
-					  const int & kCell,const bool Title=false){};
+					  const int & kCell,const bool Title=false){}; // --> RR: Needs to be implemented.
 
-  void OutputSolutionAtGaussPointsTecplot(std::ofstream &output_file, int _dummy1_, int _dummy2_){ };
+  void OutputSolutionAtGaussPointsTecplot(std::ofstream &output_file, int _dummy1_, int _dummy2_){ }; // --> RR: Needs to be implemented.
 
   // Friend functions
   // == operator

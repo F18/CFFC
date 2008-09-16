@@ -37,12 +37,26 @@ void Grid3D_Hexa_Block::Create_Block(const double &Length,
                                      const int Number_of_Cells_Idir,
                                      const int Number_of_Cells_Jdir,
                                      const int Number_of_Cells_Kdir,
-                                     const int Number_of_Ghost_Cells) {
+                                     const int Nghost) {
 
    int i, j, k;
    double dx, dy, dz;
    double xx = 0.0;
    
+   /* Allocate (re-allocate) memory for the cells and nodes 
+       of the quadrilateral mesh block. */
+
+    if (Node != NULL && Cell != NULL) { 
+       deallocate();
+    } 
+    //else if (Node != NULL) {
+    //   deallocateNodes();
+    //} else if (Cell != NULL) {
+    //   deallocateCells();
+    //} /* endif */
+    allocate(Number_of_Cells_Idir, Number_of_Cells_Jdir, Number_of_Cells_Kdir, Nghost);
+
+
    dx = Length/double(Number_of_Cells_Idir);
    dy = Width/double(Number_of_Cells_Jdir);
    dz = Height/double(Number_of_Cells_Kdir);
@@ -237,6 +251,7 @@ void Grid3D_Hexa_Block::Copy(Grid3D_Hexa_Block &Grid2) {
 	     for (int i = Grid2.ICl-Grid2.Nghost; i <= Grid2.ICu+Grid2.Nghost; ++i) {
 	        Cell[i][j][k].I  = Grid2.Cell[i][j][k].I;
 	        Cell[i][j][k].J  = Grid2.Cell[i][j][k].J;
+	        Cell[i][j][k].K  = Grid2.Cell[i][j][k].K;
 	        Cell[i][j][k].Xc = Grid2.Cell[i][j][k].Xc;
 	        Cell[i][j][k].V  = Grid2.Cell[i][j][k].V;
 	     } /* endfor */

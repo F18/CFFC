@@ -5,7 +5,7 @@
 #define _TESTFUNCTIONS_3D_INCLUDED
 
 /********************************************************
- * Function Test_Default2D :                            *
+ * Function Test_Default3D :                            *
  *          f(x,y,z) = x^6 - 4x^4 + 2x                      *
  *******************************************************/
 

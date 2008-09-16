@@ -1112,7 +1112,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 	for(j=jStart(); j<=jEnd(); ++j)
 	  for(SubgridNy = 0; SubgridNy < SolnPtr[0][0][0].jSubgridPoints(); ++SubgridNy){
 	    for(i=iStart(); i<=iEnd(); ++i){
-	      SolnPtr[0][j][i].OutputSolutionCellTecplotOneZone(output_file, SubgridNy, SubgridNz);
+	      SolnPtr[k][j][i].OutputSolutionCellTecplotOneZone(output_file, SubgridNy, SubgridNz);
 	    }
 	  }
       }
@@ -3005,7 +3005,7 @@ void Output_Mesh_Nodes_Tecplot(SolutionBlock & SolnBlk, InputParameters &IP)
     cout.flush();
   }
 
-  cout << "\n Writing Reconstruction2D mesh nodes to output data file(s): ";
+  cout << "\n Writing Reconstruction mesh nodes to output data file(s): ";
 
   // Write the name of the file to the console
   std::cout << output_file_name << std::endl;
