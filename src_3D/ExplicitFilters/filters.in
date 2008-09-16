@@ -64,7 +64,7 @@ OFF
 Grid_Type =
 Periodic_Box
 Number_of_Ghost_Cells = 
-3
+5
 Number_of_Cells_Idir =
 25
 Number_of_Cells_Jdir
@@ -104,7 +104,7 @@ Stretching_Factor_Jdir =
 Stretching_Factor_Kdir = 
 1.1
 Stretching_Type_Idir = 
-3
+4
 Stretching_Type_Jdir = 
 0
 Stretching_Type_Kdir = 
@@ -113,7 +113,7 @@ Disturb_Interior_Nodes =
 OFF 
 #10
 Mesh_Smoothing =
-1000
+100000
 #10000
 ###################################
 #   Time stepping parameters      #

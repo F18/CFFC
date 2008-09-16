@@ -314,18 +314,18 @@ RowVector Finite_Difference_Class<Soln_pState,Soln_cState>::Equally_Spaced_Finit
     switch(derivative) {
         case DFDI:
             index = i;
-            first_index = Grid.Nghost;
-            last_index = Grid.NCi-Grid.Nghost-1;
+            first_index = 0;
+            last_index = Grid.NCi-1;
             break;
         case DFDJ:
             index = j;
-            first_index = Grid.Nghost;
-            last_index = Grid.NCj-Grid.Nghost-1;
+            first_index = 0;
+            last_index = Grid.NCj-1;
             break;
         case DFDK:
             index = k;
-            first_index = Grid.Nghost;
-            last_index = Grid.NCk-Grid.Nghost-1;
+            first_index = 0;
+            last_index = Grid.NCk-1;
             break;
     }
         
@@ -339,6 +339,7 @@ RowVector Finite_Difference_Class<Soln_pState,Soln_cState>::Equally_Spaced_Finit
             cout << "  order = " << order << endl;
             exit(1);
         }
+        cout << "backward Shouldn't be here!" << endl;
         return Backward_Finite_Difference(i,j,k, derivative, dt, order);
     } else if (n > last_index - index) {
         if (index - first_index < n) {
@@ -350,6 +351,7 @@ RowVector Finite_Difference_Class<Soln_pState,Soln_cState>::Equally_Spaced_Finit
             cout << "  order = " << order << endl;
             exit(1);
         }
+        cout << "forward Shouldn't be here!" << endl;
         return  Forward_Finite_Difference(i,j,k, derivative, dt, order);
     } else {
         if (last_index - index < n && index - first_index < n) {
