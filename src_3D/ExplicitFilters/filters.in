@@ -40,7 +40,9 @@ OFF
 Derivative_constraints=
 0
 Commutation_Order =
-2
+4
+Number_of_Rings = 
+4
 Filter_Memory_Efficient =
 OFF
 ##############################
@@ -64,13 +66,13 @@ OFF
 Grid_Type =
 Periodic_Box
 Number_of_Ghost_Cells = 
-5
+2
 Number_of_Cells_Idir =
-25
+30
 Number_of_Cells_Jdir
-25
+30
 Number_of_Cells_Kdir
-25
+30
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =
@@ -104,9 +106,9 @@ Stretching_Factor_Jdir =
 Stretching_Factor_Kdir = 
 1.1
 Stretching_Type_Idir = 
-4
+2
 Stretching_Type_Jdir = 
-0
+1
 Stretching_Type_Kdir = 
 1
 Disturb_Interior_Nodes =

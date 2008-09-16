@@ -636,7 +636,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     Finite_Difference_Class<Soln_pState,Soln_cState> finite_differencer(properties.derivative_accuracy);
     properties.number_of_rings_increased = finite_differencer.Get_central_rings();
     
-    assert(Grid_Blk.Nghost >= properties.number_of_rings+properties.number_of_rings_increased);
+    //assert(Grid_Blk.Nghost >= properties.number_of_rings+properties.number_of_rings_increased);
     
     
     int number_of_cells_first = 0;
@@ -685,12 +685,12 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     /* ----- Filter ----- */
     //cout << " -- Filter " << endl;
     
-    imin = Grid_Blk.ICl-Grid_Blk.Nghost+properties.number_of_rings;
-    imax = Grid_Blk.ICu+Grid_Blk.Nghost-properties.number_of_rings;
-    jmin = Grid_Blk.JCl-Grid_Blk.Nghost+properties.number_of_rings;
-    jmax = Grid_Blk.JCu+Grid_Blk.Nghost-properties.number_of_rings;
-    kmin = Grid_Blk.KCl-Grid_Blk.Nghost+properties.number_of_rings;
-    kmax = Grid_Blk.KCu+Grid_Blk.Nghost-properties.number_of_rings;
+    imin = Grid_Blk.ICl+properties.number_of_rings;
+    imax = Grid_Blk.ICu-properties.number_of_rings;
+    jmin = Grid_Blk.JCl+properties.number_of_rings;
+    jmax = Grid_Blk.JCu-properties.number_of_rings;
+    kmin = Grid_Blk.KCl+properties.number_of_rings;
+    kmax = Grid_Blk.KCu-properties.number_of_rings;
     
     number_of_cells_first = (imax-imin+1)*(jmax-jmin+1)*(kmax-kmin+1);
     
@@ -708,12 +708,12 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     
     /* ----- Divergence ----- */
     //cout << " -- Divergence " << endl;
-    imin = Grid_Blk.ICl-Grid_Blk.Nghost+properties.number_of_rings_increased;
-    imax = Grid_Blk.ICu+Grid_Blk.Nghost-properties.number_of_rings_increased;
-    jmin = Grid_Blk.JCl-Grid_Blk.Nghost+properties.number_of_rings_increased;
-    jmax = Grid_Blk.JCu+Grid_Blk.Nghost-properties.number_of_rings_increased;
-    kmin = Grid_Blk.KCl-Grid_Blk.Nghost+properties.number_of_rings_increased;
-    kmax = Grid_Blk.KCu+Grid_Blk.Nghost-properties.number_of_rings_increased;
+    imin = Grid_Blk.ICl+properties.number_of_rings_increased;
+    imax = Grid_Blk.ICu-properties.number_of_rings_increased;
+    jmin = Grid_Blk.JCl+properties.number_of_rings_increased;
+    jmax = Grid_Blk.JCu-properties.number_of_rings_increased;
+    kmin = Grid_Blk.KCl+properties.number_of_rings_increased;
+    kmax = Grid_Blk.KCu-properties.number_of_rings_increased;
     
     number_of_cells_first = (imax-imin+1)*(jmax-jmin+1)*(kmax-kmin+1);
 
@@ -736,12 +736,12 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     
     /* ----- Filter of Divergence ----- */
     //cout << " -- Filter of Divergence " << endl;
-    imin = Grid_Blk.ICl;
-    imax = Grid_Blk.ICu;
-    jmin = Grid_Blk.JCl;
-    jmax = Grid_Blk.JCu;
-    kmin = Grid_Blk.KCl;
-    kmax = Grid_Blk.KCu;
+    imin = Grid_Blk.ICl+(properties.number_of_rings+properties.number_of_rings_increased);
+    imax = Grid_Blk.ICu-(properties.number_of_rings+properties.number_of_rings_increased);
+    jmin = Grid_Blk.JCl+(properties.number_of_rings+properties.number_of_rings_increased);
+    jmax = Grid_Blk.JCu-(properties.number_of_rings+properties.number_of_rings_increased);
+    kmin = Grid_Blk.KCl+(properties.number_of_rings+properties.number_of_rings_increased);
+    kmax = Grid_Blk.KCu-(properties.number_of_rings+properties.number_of_rings_increased);
     
     number_of_cells_second = (imax-imin+1)*(jmax-jmin+1)*(kmax-kmin+1);
 
@@ -838,12 +838,12 @@ template<typename Soln_pState, typename Soln_cState>
 RowVector Explicit_Filters<Soln_pState,Soln_cState>::p_norm(Grid3D_Hexa_Block &Grid_Blk,
                                                       RowVector ***Rows,
                                                       int p) {
-    int imin = Grid_Blk.ICl,
-        imax = Grid_Blk.ICu,
-        jmin = Grid_Blk.JCl,
-        jmax = Grid_Blk.JCu,
-        kmin = Grid_Blk.KCl,
-        kmax = Grid_Blk.KCu;
+    int imin = Grid_Blk.ICl+(properties.number_of_rings+properties.number_of_rings_increased),
+        imax = Grid_Blk.ICu-(properties.number_of_rings+properties.number_of_rings_increased),
+        jmin = Grid_Blk.JCl+(properties.number_of_rings+properties.number_of_rings_increased),
+        jmax = Grid_Blk.JCu-(properties.number_of_rings+properties.number_of_rings_increased),
+        kmin = Grid_Blk.KCl+(properties.number_of_rings+properties.number_of_rings_increased),
+        kmax = Grid_Blk.KCu-(properties.number_of_rings+properties.number_of_rings_increased);
     
     
     int N = Rows[imin][jmin][jmax].size();
@@ -872,12 +872,12 @@ RowVector Explicit_Filters<Soln_pState,Soln_cState>::p_norm(Grid3D_Hexa_Block &G
 template<typename Soln_pState, typename Soln_cState>
 RowVector Explicit_Filters<Soln_pState,Soln_cState>::maxnorm(Grid3D_Hexa_Block &Grid_Blk,
                                                              RowVector ***Rows) {
-    int imin = Grid_Blk.ICl,
-        imax = Grid_Blk.ICu,
-        jmin = Grid_Blk.JCl,
-        jmax = Grid_Blk.JCu,
-        kmin = Grid_Blk.KCl,
-        kmax = Grid_Blk.KCu;
+    int imin = Grid_Blk.ICl+(properties.number_of_rings+properties.number_of_rings_increased),
+        imax = Grid_Blk.ICu-(properties.number_of_rings+properties.number_of_rings_increased),
+        jmin = Grid_Blk.JCl+(properties.number_of_rings+properties.number_of_rings_increased),
+        jmax = Grid_Blk.JCu-(properties.number_of_rings+properties.number_of_rings_increased),
+        kmin = Grid_Blk.KCl+(properties.number_of_rings+properties.number_of_rings_increased),
+        kmax = Grid_Blk.KCu-(properties.number_of_rings+properties.number_of_rings_increased);
     
     int N = Rows[imin][jmin][jmax].size();
     
@@ -1074,12 +1074,12 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Output_Commutation(Grid3D_Hexa_B
     
     
     int 
-    imin = Grid_Blk.ICl,
-    imax = Grid_Blk.ICu,
-    jmin = Grid_Blk.JCl,
-    jmax = Grid_Blk.JCu,
-    kmin = Grid_Blk.KCl,
-    kmax = Grid_Blk.KCu;
+    imin = Grid_Blk.ICl+(properties.number_of_rings+properties.number_of_rings_increased),
+    imax = Grid_Blk.ICu-(properties.number_of_rings+properties.number_of_rings_increased),
+    jmin = Grid_Blk.JCl+(properties.number_of_rings+properties.number_of_rings_increased),
+    jmax = Grid_Blk.JCu-(properties.number_of_rings+properties.number_of_rings_increased),
+    kmin = Grid_Blk.KCl+(properties.number_of_rings+properties.number_of_rings_increased),
+    kmax = Grid_Blk.KCu-(properties.number_of_rings+properties.number_of_rings_increased);
     
     /* Ensure boundary conditions are updated before
      evaluating solution at the nodes. */
