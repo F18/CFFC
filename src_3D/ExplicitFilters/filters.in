@@ -27,12 +27,12 @@ Smagorinsky_Coefficient =
 #     Filter parameters      #
 ##############################
 Filter_Type =
-Vasilyev
-#Haselbacher
+#Vasilyev
+Haselbacher
 #Tophat
 #Restart
 Filter_Grid_Ratio =
-2.0
+3.0
 Target_Filter_Sharpness = 
 0.0
 Filter_Initial_Condition =
@@ -42,7 +42,7 @@ Derivative_constraints=
 Commutation_Order =
 4
 Number_of_Rings = 
-4
+6
 Filter_Memory_Efficient =
 OFF
 ##############################
@@ -98,7 +98,7 @@ Box_Length =
 #3.14
 #16
 Mesh_Stretching =
-ON
+OFF
 Stretching_Factor_Idir = 
 1.01
 Stretching_Factor_Jdir = 
@@ -115,7 +115,7 @@ Disturb_Interior_Nodes =
 OFF 
 #10
 Mesh_Smoothing =
-100000
+0
 #10000
 ###################################
 #   Time stepping parameters      #

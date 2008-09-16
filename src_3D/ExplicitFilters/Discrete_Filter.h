@@ -154,7 +154,7 @@ template <typename Soln_pState, typename Soln_cState>
 void Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
     
     if (!Explicit_Filter_Properties::batch_flag) {
-        cout << "\n\n Calculating filter moments in 1D at cell ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
+        cout << "\n\n Calculating filter moments at cell ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
     }
     
     theNeighbours.set_grid(Grid_Blk);
@@ -211,7 +211,7 @@ template <typename Soln_pState, typename Soln_cState>
 void Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments_1D(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction) {
     
     if (!Explicit_Filter_Properties::batch_flag) {
-        cout << "\n\n Calculating filter moments at cell ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
+        cout << "\n\n Calculating filter moments in 1D at cell ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
     }
     
     theNeighbours.set_grid(Grid_Blk);

@@ -596,6 +596,54 @@ inline double Haselbacher_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio(int
                     temp += d * pow(x_in, 1.5);
                     temp += e;
                     return temp;
+                case 6:
+                case 7:
+                    a = 1.0345864710917796E+02;
+                    b = 1.0604007211535077E+02;
+                    c = 4.4684065741245442E+00;
+                    d = -2.8261109245951442E+01;
+                    e = -1.5982055989255858E+02;
+                    temp += a * atan(x_in);
+                    temp += b * pow(x_in, -1.0);
+                    temp += c * exp(-1.0 * x_in);
+                    temp += d * pow(x_in, -2.0);
+                    temp += e;
+                    return temp;
+                default:
+                    cout << "commutation_order " << commutation_order << 
+                    " with " << number_of_rings << " number of rings not supported, make curve fit." << endl;
+                    return ZERO;
+            }
+        case 5:
+            switch (commutation_order) {
+                case 6:
+                case 7:
+                    a = -3.7686465580425743E-01;
+                    b = 6.9777909729062601E-03;
+                    c = 2.8315002288423621E+00;
+                    d = -5.8241253402595605E+00;
+                    e = 5.6635934860988550E+00;
+                    temp += a * x_in;
+                    temp += b * pow(x_in, 2.0);
+                    temp += c * log(x_in);
+                    temp += d * tanh(x_in);
+                    temp += e;
+                    return temp;
+                default:
+                    cout << "commutation_order " << commutation_order << 
+                    " with " << number_of_rings << " number of rings not supported, make curve fit." << endl;
+                    return ZERO;
+            }
+        case 6:
+            switch (commutation_order) {
+                case 6:
+                case 7:
+                    a = 2.4808172161362614E+00;
+                    b = -5.9317013888515309E+00;
+                    c = -3.4691174352134446E-01;
+                    d = 8.0955778565039394E-01;
+                    temp = exp(a + (b/x_in) + c*log(x_in)) + d;
+                    return temp;
                 default:
                     cout << "commutation_order " << commutation_order << 
                     " with " << number_of_rings << " number of rings not supported, make curve fit." << endl;
@@ -618,7 +666,11 @@ inline double Haselbacher_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio(int
 template <typename Soln_pState, typename Soln_cState>
 int Haselbacher_Filter<Soln_pState,Soln_cState>::Calculate_weight_factor(void) {
     
-    if (number_of_rings == 2 || number_of_rings == 3 || number_of_rings == 4) {
+    if (number_of_rings == 2 ||
+        number_of_rings == 3 ||
+        number_of_rings == 4 || 
+        number_of_rings == 5 ||
+        number_of_rings == 6) {
         
         // Ridder's method
         double a,b,m,s,fa,fb,fm,fp,p;
@@ -772,7 +824,10 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::filter_tests(Grid3D_Hexa_Block
     //    Output_Filter_types(Grid_Blk,theCell,kmax,3);
     //    Output_Filter_types(Grid_Blk,theCell,kmax,4);
     //Output_Filter_types(Grid_Blk,theCell,4,2);
-    //Output_Filter_types(Grid_Blk,theCell,4,4);    
+    Output_Filter_types(Grid_Blk,theCell,4,6); 
+    Output_Filter_types(Grid_Blk,theCell,5,6);    
+    Output_Filter_types(Grid_Blk,theCell,6,6);    
+
 }
 
 
