@@ -808,7 +808,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     assert (!commutation_error_norms_file.fail( )); 
     
     commutation_error_norms_file 
-    << imax-imin+1
+    << Grid_Blk.ICu-Grid_Blk.ICl+1
     << " " << Commutation_Error_maxnorm(0)
     << " " << Commutation_Error_L1norm(0)
     << " " << Commutation_Error_L2norm(0)
@@ -821,7 +821,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     assert (!truncation_error_norms_file.fail( )); 
     
     truncation_error_norms_file 
-    << imax-imin+1
+    << Grid_Blk.ICu-Grid_Blk.ICl+1
     << " " << maxnorm(Grid_Blk, Truncation_Error)(0)
     << " " << p_norm(Grid_Blk, Truncation_Error, 1)(0)
     << " " << p_norm(Grid_Blk, Truncation_Error, 2)(0)
