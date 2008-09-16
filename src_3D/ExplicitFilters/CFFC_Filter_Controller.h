@@ -46,7 +46,7 @@ public:
         Explicit_Filters<Soln_pState,Soln_cState> explicit_filter;
         explicit_filter.Initialize(Data,Solution_Data);
         explicit_filter.transfer_function(FILTER_INNER_CELL);
-        explicit_filter.test();
+        //explicit_filter.test();
 
         typedef double (Soln_pState::*member_ptr);
         member_ptr rho_member = &Soln_pState::rho;

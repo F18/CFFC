@@ -32,7 +32,7 @@ Haselbacher
 #Tophat
 #Restart
 Filter_Grid_Ratio =
-3.0
+2.0
 Target_Filter_Sharpness = 
 0.0
 Filter_Initial_Condition =
@@ -42,7 +42,7 @@ Derivative_constraints=
 Commutation_Order =
 4
 Number_of_Rings = 
-6
+3
 Filter_Memory_Efficient =
 OFF
 ##############################
