@@ -8,6 +8,7 @@
 bool   Explicit_Filter_Properties::debug_flag = true;
 bool   Explicit_Filter_Properties::Memory_Efficient = false;
 int    Explicit_Filter_Properties::commutation_order = 2;
+int    Explicit_Filter_Properties::finite_differencing_order = 4;
 int    Explicit_Filter_Properties::number_of_rings = 2;
 bool   Explicit_Filter_Properties::LS_constraints = ON;
 int    Explicit_Filter_Properties::Derivative_constraints = DEFAULT;

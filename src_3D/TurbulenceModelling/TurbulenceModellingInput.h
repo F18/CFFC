@@ -57,6 +57,7 @@ class Turbulence_Modelling_Input_Parameters{
     double FGR;                                                 //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
     double Filter_Width;                                        //!< Constant filter width
     int commutation_order;                                      //!< Commutation order of explicit filter
+    int finite_differencing_order;                              //!< Finite differencing order in commutation error calculations
     int number_of_rings;                                        //!< Number of rings used in the explicit filter
     double Target_Filter_Sharpness;                             //!< Sharpness of target filter in case of Least squares constraint (vasilyev)
     bool Filter_Width_strict;                                   //!< This will strictly set the FGR and won't allow Least squares to approximate : default = false
@@ -95,7 +96,8 @@ class Turbulence_Modelling_Input_Parameters{
       i_filter_type = FILTER_TYPE_IMPLICIT;
       FGR = TWO;
       Filter_Width = ZERO;
-      commutation_order = 3;
+      commutation_order = 2;
+      finite_differencing_order = commutation_order+2;
       number_of_rings = 2;
       Target_Filter_Sharpness = -1;
       Filter_Initial_Condition = ON;

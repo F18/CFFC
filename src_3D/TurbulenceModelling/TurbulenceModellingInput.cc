@@ -42,6 +42,9 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(commutation_order),
                           1,
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(finite_differencing_order),
+                          1,
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(number_of_rings),
                           1,
                           MPI::INT, 0);
@@ -237,6 +240,12 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
       i_command = 131;
       value >> commutation_order;
       if (commutation_order < 1)
+          i_command = INVALID_INPUT_VALUE;
+      
+  } else if (strcmp(code, "Finite_Differencing_Order") == 0) {
+      i_command = 131;
+      value >> finite_differencing_order;
+      if (finite_differencing_order < 1)
           i_command = INVALID_INPUT_VALUE;
       
   } else if (strcmp(code, "Number_of_Rings") == 0) {

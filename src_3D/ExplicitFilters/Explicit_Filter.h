@@ -180,6 +180,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Set_Properties(Input_Parameters<
     properties.output_file_name = IPs.Output_File_Name_Prefix;
     properties.FGR = IPs.Turbulence_IP.FGR;
     properties.commutation_order = IPs.Turbulence_IP.commutation_order;
+    properties.finite_differencing_order = IPs.Turbulence_IP.finite_differencing_order;
     properties.number_of_rings = IPs.Turbulence_IP.number_of_rings;
     properties.filter_type = IPs.Turbulence_IP.i_filter_type;
     properties.target_filter_sharpness = IPs.Turbulence_IP.Target_Filter_Sharpness;
@@ -632,7 +633,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     //properties.number_of_rings_increased = properties.number_of_rings;
     //Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(properties.commutation_order,properties.number_of_rings_increased);
     
-    properties.derivative_accuracy = properties.commutation_order+2;
+    properties.derivative_accuracy = properties.finite_differencing_order;
     Finite_Difference_Class<Soln_pState,Soln_cState> finite_differencer(properties.derivative_accuracy);
     properties.number_of_rings_increased = finite_differencer.Get_central_rings();
     
@@ -803,8 +804,12 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
         cout << "   L2 norm  = " << p_norm(Grid_Blk, Truncation_Error, 2); 
     }
     
+    
+    std::stringstream filenamestream;
+    filenamestream << "commutation_error_norms_"<< filter_ptr->filter_name() << "_" << properties.commutation_order << ".dat";
+    
     ofstream commutation_error_norms_file;
-    commutation_error_norms_file.open("commutation_error_norms.dat",ios::app);    // open file for appending
+    commutation_error_norms_file.open(filenamestream.str().c_str(),ios::app);    // open file for appending
     assert (!commutation_error_norms_file.fail( )); 
     
     commutation_error_norms_file 
@@ -816,8 +821,11 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     commutation_error_norms_file.close();
     assert (!commutation_error_norms_file.fail( )); 
     
+    std::stringstream filenamestream2;
+    filenamestream2 << "truncation_error_norms_"<< finite_differencer.Get_order() << ".dat";
+    
     ofstream truncation_error_norms_file;
-    truncation_error_norms_file.open("truncation_error_norms.dat",ios::app);    // open file for appending
+    truncation_error_norms_file.open(filenamestream2.str().c_str(),ios::app);    // open file for appending
     assert (!truncation_error_norms_file.fail( )); 
     
     truncation_error_norms_file 

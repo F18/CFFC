@@ -35,18 +35,20 @@ private:
     RowVector Equally_Spaced_Finite_Difference(Grid3D_Hexa_Block &Grid, const int i, const int j, const int k, const int derivative);
 public:
     Finite_Difference_Class(int order_of_accuracy) {
-        order = order_of_accuracy;
+        order = int(ceil(order_of_accuracy/2.0)*2);
         cout << "\n\n finite difference order = " << order << "    central_rings = " << Get_central_rings() << endl;
     }
     RowVector Finite_Difference(Grid3D_Hexa_Block &Grid, Cell3D &theCell, const int derivative);
     int Get_central_rings(void) { return int(ceil(order/2)); }
+    int Get_order(void) { return order; }
+    
 
 };
 
 /* Finite difference for equally spaced samples */
 template <typename Soln_pState, typename Soln_cState>
 RowVector Finite_Difference_Class<Soln_pState,Soln_cState>::Central_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
-    int n=int(ceil(order/2));
+    int n=int(ceil(order/2.0));
     int N=2*n;
     
     RowVector coefficients(N);
@@ -132,7 +134,7 @@ template <typename Soln_pState, typename Soln_cState>
 RowVector Finite_Difference_Class<Soln_pState,Soln_cState>::Forward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
     
     
-    int n = int(ceil(order/2));
+    int n = int(ceil(order/2.0));
     order = 2*n;
     int N=2*n+1;
     
@@ -220,7 +222,7 @@ RowVector Finite_Difference_Class<Soln_pState,Soln_cState>::Forward_Finite_Diffe
 template <typename Soln_pState, typename Soln_cState>
 RowVector Finite_Difference_Class<Soln_pState,Soln_cState>::Backward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
     
-    int n=int(ceil(order/2));
+    int n=int(ceil(order/2.0));
     order=2*n;
     int N=2*n+1;
     

@@ -1329,7 +1329,7 @@ void Grid3D_Hexa_Block::Update_Cells(void) {
         for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
             for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
                 /* calculate jacobian to 4th order */
-                Cell[i][j][k].Jacobian = jacobian(i,j,k,2);
+                Cell[i][j][k].Jacobian = jacobian(i,j,k,8);
             } /* endfor */
         } /* endfor */
     } /* endfor */
@@ -1355,7 +1355,7 @@ void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
             Cell[i][j][k].Xc = centroid(i, j, k);
             Cell[i][j][k].V = volume(Cell[i][j][k]);
              /* calculate jacobian to 4th order */
-            Cell[i][j][k].Jacobian = jacobian(i,j,k,4);
+            Cell[i][j][k].Jacobian = jacobian(i,j,k,8);
          } /* endif */
       } /* endfor */
     } /* endfor */
@@ -1366,7 +1366,7 @@ void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
             for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
                 if (k < KCl || k > KCu || j < JCl || j > JCu || i < ICl || i > ICu) {
                     /* calculate jacobian to 4th order */
-                    Cell[i][j][k].Jacobian = jacobian(i,j,k,4);
+                    Cell[i][j][k].Jacobian = jacobian(i,j,k,8);
                 } /* endif */
             } /* endfor */
         } /* endfor */
@@ -1650,7 +1650,7 @@ Vector3D Grid3D_Hexa_Block::Delta_minimum(void) {
 /* Finite difference for equally spaced samples */
 double Grid3D_Hexa_Block::Central_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
     
-    int n=int(ceil(order/2));
+    int n=int(ceil(order/2.0));
     int N=2*n;
     RowVector coefficients(N);
     ColumnVector samples(N);
@@ -1756,7 +1756,7 @@ double Grid3D_Hexa_Block::Central_Finite_Difference(const int i, const int j, co
 double Grid3D_Hexa_Block::Forward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
     
     
-    int n = int(ceil(order/2));
+    int n = int(ceil(order/2.0));
     order = 2*n;
     int N=2*n+1;
     RowVector coefficients(N);
@@ -1868,7 +1868,7 @@ double Grid3D_Hexa_Block::Forward_Finite_Difference(const int i, const int j, co
 /* Finite difference for equally spaced samples */
 double Grid3D_Hexa_Block::Backward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
     
-    int n=int(ceil(order/2));
+    int n=int(ceil(order/2.0));
     order=2*n;
     int N=2*n+1;
     RowVector coefficients(N);
@@ -1980,7 +1980,7 @@ double Grid3D_Hexa_Block::Backward_Finite_Difference(const int i, const int j, c
 
 double Grid3D_Hexa_Block::Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
     
-    int n=int(ceil(order/2));
+    int n=int(ceil(order/2.0));
     
     int index, last_index;
     switch(derivative) {
