@@ -2337,7 +2337,17 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
 	  // uses the ghost cell reconstruction to 
 	  // compute the inter-cellular state.
 	  break;
-
+	case BC_CHARACTERISTIC_VELOCITY:
+	  SolnBlk.W[SolnBlk.ICl-1][j] = BC_Characteristic(SolnBlk.W[SolnBlk.ICl][j],
+							  SolnBlk.WoW[j], 
+							  SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+	  SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
+	  for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.W[SolnBlk.ICl-ghost][j] = SolnBlk.W[SolnBlk.ICl-1][j];
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.U[SolnBlk.ICl-1][j];
+	  }
+	  break;
+	  
 	default:
 	  // Impose constant extrapolation
 	  for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
@@ -2462,6 +2472,17 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
 	    // the ghost cell values unchanged and 
 	    // uses the ghost cell reconstruction to 
 	    // compute the inter-cellular state.
+	    break;
+	  case BC_CHARACTERISTIC_VELOCITY:
+	    SolnBlk.W[SolnBlk.ICu+1][j] = BC_Characteristic(SolnBlk.W[SolnBlk.ICu][j],
+							    SolnBlk.WoE[j],
+							    SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
+	    SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
+	    
+	    for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.W[SolnBlk.ICu+ghost][j] = SolnBlk.W[SolnBlk.ICu+1][j];
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.U[SolnBlk.ICu+1][j];
+	    }
 	    break;
 
 	  default:
@@ -2594,6 +2615,16 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
       // uses the ghost cell reconstruction to 
       // compute the inter-cellular state.
       break;
+    case BC_CHARACTERISTIC_VELOCITY:
+      SolnBlk.W[i][SolnBlk.JCl-1] = BC_Characteristic(SolnBlk.W[i][SolnBlk.JCl],
+						      SolnBlk.WoS[i],
+						      SolnBlk.Grid.nfaceS(i, SolnBlk.JCl));
+      SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]); 
+      for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCl-ghost] = SolnBlk.W[i][SolnBlk.JCl-1];
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCl-1];
+      }
+      break;
 
     default:
       for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
@@ -2697,6 +2728,16 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
       // the ghost cell values unchanged and 
       // uses the ghost cell reconstruction to 
       // compute the inter-cellular state.
+      break;
+    case BC_CHARACTERISTIC_VELOCITY:
+      SolnBlk.W[i][SolnBlk.JCu+1] = BC_Characteristic(SolnBlk.W[i][SolnBlk.JCu],
+						      SolnBlk.WoN[i],
+						      SolnBlk.Grid.nfaceN(i, SolnBlk.JCu));
+      SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
+      for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCu+ghost] = SolnBlk.W[i][SolnBlk.JCu+1];
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCu+1];
+      }
       break;
 
     default:

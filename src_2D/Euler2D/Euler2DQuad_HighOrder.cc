@@ -2374,6 +2374,8 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit_HighOrder(const int &i_stage,
  *
  * \return The solution state which is required to calculate the inviscid flux with 
  *         such that to satisfy the boundary condition.
+ *
+ * \todo Change the reference values to the high-order ones for some BCs!
  */
 void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const int &BOUNDARY,
 									  const int &ii, const int &jj,
@@ -2407,10 +2409,12 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii-1,jj,CalculationPoint);
       break;
       
-    case BC_DIRICHLET :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_DIRICHLET not implemented yet.");
+    case BC_DIRICHLET :		// BC_FIXED
+      // Set Wr to the reference value for the given location
+      // Note: The reference value should be changed to HO_WoW!
+      Wr = WoW[jj];
       break;
-
+      
     case BC_EXACT_SOLUTION :
       // Calculate W_face based on the exact solution
       if (ExactSoln->IsExactSolutionSet()){
@@ -2447,7 +2451,15 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       // Set Wr equal to the left side value (i.e Wl)
       Wr = Wl;
       break;
-      
+
+    case BC_CHARACTERISTIC :
+      // Set Wr based on the directions of propogation for the solution characteristics at the boundary
+      // Note: The reference value should be changed to HO_WoW!
+      Wr = BC_Characteristic_Pressure(Wl,
+				      WoW[jj],
+				      NormalDirection);
+      break;
+
     case BC_FARFIELD :
       throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_FARFIELD not implemented yet.");
       break;
@@ -2480,8 +2492,10 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii+1,jj,CalculationPoint);
       break;
       
-    case BC_DIRICHLET :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_DIRICHLET not implemented yet.");
+    case BC_DIRICHLET :		// BC_FIXED
+      // Set Wr to the reference value for the given location
+      // Note: The reference value should be changed to HO_WoE!
+      Wr = WoE[jj];
       break;
 
     case BC_EXACT_SOLUTION :
@@ -2521,6 +2535,14 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       Wr = Wl;
       break;
       
+    case BC_CHARACTERISTIC :
+      // Set Wr based on the directions of propogation for the solution characteristics at the boundary
+      // Note: The reference value should be changed to HO_WoE!
+      Wr = BC_Characteristic_Pressure(Wl,
+				      WoE[jj],
+				      NormalDirection);
+      break;
+
     case BC_FARFIELD :
       throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_FARFIELD not implemented yet.");
       break;
@@ -2552,8 +2574,10 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj-1,CalculationPoint);
       break;
       
-    case BC_DIRICHLET :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_DIRICHLET not implemented yet.");
+    case BC_DIRICHLET :		// BC_FIXED
+      // Set Wr to the reference value for the given location
+      // Note: The reference value should be changed to HO_WoS!
+      Wr = WoS[ii];
       break;
 
     case BC_EXACT_SOLUTION :
@@ -2593,6 +2617,14 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       Wr = Wl;
       break;
       
+    case BC_CHARACTERISTIC :
+      // Set Wr based on the directions of propogation for the solution characteristics at the boundary
+      // Note: The reference value should be changed to HO_WoS!
+      Wr = BC_Characteristic_Pressure(Wl,
+				      WoS[ii],
+				      NormalDirection);
+      break;
+
     case BC_FARFIELD :
       throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_FARFIELD not implemented yet.");
       break;
@@ -2624,10 +2656,12 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj+1,CalculationPoint);
       break;
       
-    case BC_DIRICHLET :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_DIRICHLET not implemented yet.");
+    case BC_DIRICHLET :		// BC_FIXED
+      // Set Wr to the reference value for the given location
+      // Note: The reference value should be changed to HO_WoN!
+      Wr = WoN[ii];
       break;
-
+      
     case BC_EXACT_SOLUTION :
       // Calculate W_face based on the exact solution
       if (ExactSoln->IsExactSolutionSet()){
@@ -2663,6 +2697,14 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
     case BC_CONSTANT_EXTRAPOLATION :
       // Set Wr equal to the left side value (i.e Wl)
       Wr = Wl;
+      break;
+
+    case BC_CHARACTERISTIC :
+      // Set Wr based on the directions of propogation for the solution characteristics at the boundary
+      // Note: The reference value should be changed to HO_WoN!
+      Wr = BC_Characteristic_Pressure(Wl,
+				      WoN[ii],
+				      NormalDirection);
       break;
       
     case BC_FARFIELD :

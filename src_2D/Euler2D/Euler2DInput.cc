@@ -3306,6 +3306,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	IP.BC_North = BC_LINEAR_EXTRAPOLATION;
       } else if (strcmp(IP.BC_North_Type,"Characteristic") == 0) {
 	IP.BC_North = BC_CHARACTERISTIC;
+      } else if (strcmp(IP.BC_North_Type,"Characteristic_Velocity") == 0) {
+	IP.BC_North = BC_CHARACTERISTIC_VELOCITY;
       } else if (strcmp(IP.BC_North_Type,"None") == 0) {
 	IP.BC_North = BC_NONE;
       } else if (strcmp(IP.BC_North_Type,"Ringleb") == 0) {
@@ -3357,6 +3359,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	IP.BC_South = BC_LINEAR_EXTRAPOLATION;
       } else if (strcmp(IP.BC_South_Type,"Characteristic") == 0) {
 	IP.BC_South = BC_CHARACTERISTIC;
+      } else if (strcmp(IP.BC_South_Type,"Characteristic_Velocity") == 0) {
+	IP.BC_South = BC_CHARACTERISTIC_VELOCITY;
       } else if (strcmp(IP.BC_South_Type,"None") == 0) {
 	IP.BC_South = BC_NONE;
       } else if (strcmp(IP.BC_South_Type,"Ringleb") == 0) {
@@ -3408,6 +3412,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	IP.BC_East = BC_LINEAR_EXTRAPOLATION;
       } else if (strcmp(IP.BC_East_Type,"Characteristic") == 0) {
 	IP.BC_East = BC_CHARACTERISTIC;
+      } else if (strcmp(IP.BC_East_Type,"Characteristic_Velocity") == 0) {
+	IP.BC_East = BC_CHARACTERISTIC_VELOCITY;
       } else if (strcmp(IP.BC_East_Type,"None") == 0) {
 	IP.BC_East = BC_NONE;
       } else if (strcmp(IP.BC_East_Type,"Ringleb") == 0) {
@@ -3459,6 +3465,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	IP.BC_West = BC_LINEAR_EXTRAPOLATION;
       } else if (strcmp(IP.BC_West_Type,"Characteristic") == 0) {
 	IP.BC_West = BC_CHARACTERISTIC;
+      } else if (strcmp(IP.BC_West_Type,"Characteristic_Velocity") == 0) {
+	IP.BC_West = BC_CHARACTERISTIC_VELOCITY;
       } else if (strcmp(IP.BC_West_Type,"None") == 0) {
 	IP.BC_West = BC_NONE;
       } else if (strcmp(IP.BC_West_Type,"Ringleb") == 0) {

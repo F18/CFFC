@@ -219,6 +219,7 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	if (i == ICl-1 && 
 	    (Grid.BCtypeW[j] == BC_REFLECTION ||
 	     Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
+	     Grid.BCtypeW[j] == BC_CHARACTERISTIC_VELOCITY ||
 	     Grid.BCtypeW[j] == BC_BURNING_SURFACE ||
 	     Grid.BCtypeW[j] == BC_MASS_INJECTION ||
 	     Grid.BCtypeW[j] == BC_RINGLEB_FLOW)) {
@@ -236,6 +237,10 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	    Wl = BC_Characteristic_Pressure(Wr, 
 					    WoW[j], 
 					    Grid.nfaceW(i+1, j));
+	  } else if (Grid.BCtypeW[j] == BC_CHARACTERISTIC_VELOCITY) {
+	    Wl = BC_Characteristic(Wr, 
+				   WoW[j], 
+				   Grid.nfaceW(i+1, j));
 	  } else if (Grid.BCtypeW[j] == BC_RINGLEB_FLOW) {
 	    Wl = RinglebFlow(Wl,Grid.xfaceW(i+1,j));
 	    //Wl = Reflect(Wr, Grid.nfaceW(i+1, j));
@@ -243,6 +248,7 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	} else if (i == ICu && 
 		   (Grid.BCtypeE[j] == BC_REFLECTION ||
 		    Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
+		    Grid.BCtypeE[j] == BC_CHARACTERISTIC_VELOCITY ||
 		    Grid.BCtypeE[j] == BC_BURNING_SURFACE ||
 		    Grid.BCtypeE[j] == BC_MASS_INJECTION ||
 		    Grid.BCtypeE[j] == BC_RINGLEB_FLOW)) {
@@ -260,6 +266,10 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	    Wr = BC_Characteristic_Pressure(Wl, 
 					    WoE[j], 
 					    Grid.nfaceE(i, j));
+	  } else if (Grid.BCtypeE[j] == BC_CHARACTERISTIC_VELOCITY) {
+	    Wr = BC_Characteristic(Wl, 
+				   WoE[j], 
+				   Grid.nfaceE(i, j));
 	  } else if (Grid.BCtypeE[j] == BC_RINGLEB_FLOW) {
 	    Wr = RinglebFlow(Wr,Grid.xfaceE(i,j));
 	    //Wr = Reflect(Wl, Grid.nfaceE(i, j));
@@ -356,6 +366,7 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
       if (j == JCl-1 && 
 	  (Grid.BCtypeS[i] == BC_REFLECTION ||
 	   Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
+	   Grid.BCtypeS[i] == BC_CHARACTERISTIC_VELOCITY ||
 	   Grid.BCtypeS[i] == BC_BURNING_SURFACE ||
 	   Grid.BCtypeS[i] == BC_MASS_INJECTION ||
 	   Grid.BCtypeS[i] == BC_RINGLEB_FLOW)) {
@@ -373,6 +384,10 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	  Wl = BC_Characteristic_Pressure(Wr, 
 					  WoS[i], 
 					  Grid.nfaceS(i, j+1));
+	} else if (Grid.BCtypeS[i] == BC_CHARACTERISTIC_VELOCITY) {
+	  Wl = BC_Characteristic(Wr, 
+				 WoS[i], 
+				 Grid.nfaceS(i, j+1));
 	} else if (Grid.BCtypeS[i] == BC_RINGLEB_FLOW) {
 	  //Wl = RinglebFlow(Wl,Grid.xfaceS(i,j+1));
 	  Wl = BC_Characteristic_Pressure(Wr,
@@ -382,6 +397,7 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
       } else if (j == JCu && 
 		 (Grid.BCtypeN[i] == BC_REFLECTION ||
 		  Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
+		  Grid.BCtypeN[i] == BC_CHARACTERISTIC_VELOCITY ||
 		  Grid.BCtypeN[i] == BC_BURNING_SURFACE ||
 		  Grid.BCtypeN[i] == BC_RINGLEB_FLOW)) {
 	dX = Grid.xfaceN(i, j)-Grid.Cell[i][j].Xc;
@@ -398,6 +414,10 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	  Wr = BC_Characteristic_Pressure(Wl, 
 					  WoN[i], 
 					  Grid.nfaceN(i, j));
+	} else if (Grid.BCtypeN[i] == BC_CHARACTERISTIC_VELOCITY) {
+	  Wr = BC_Characteristic(Wl, 
+				 WoN[i], 
+				 Grid.nfaceN(i, j));
 	} else if (Grid.BCtypeN[i] == BC_RINGLEB_FLOW) {
 	  //Wr = RinglebFlow(Wr,Grid.xfaceN(i,j));
 	  Wr = BC_Characteristic_Pressure(Wl, 
@@ -604,6 +624,7 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	if (i == ICl-1 && 
 	    (Grid.BCtypeW[j] == BC_REFLECTION ||
 	     Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
+	     Grid.BCtypeW[j] == BC_CHARACTERISTIC_VELOCITY ||
 	     Grid.BCtypeW[j] == BC_BURNING_SURFACE ||
 	     Grid.BCtypeW[j] == BC_MASS_INJECTION ||
 	     Grid.BCtypeW[j] == BC_RINGLEB_FLOW)) {
@@ -621,6 +642,10 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	    Wl = BC_Characteristic_Pressure(Wr, 
 					    WoW[j], 
 					    Grid.nfaceW(i+1, j));
+	  } else if (Grid.BCtypeW[j] == BC_CHARACTERISTIC_VELOCITY) {
+	    Wl = BC_Characteristic(Wr, 
+				   WoW[j], 
+				   Grid.nfaceW(i+1, j));
 	  } else if (Grid.BCtypeW[j] == BC_RINGLEB_FLOW) {
 	    Wl = RinglebFlow(Wl,Grid.xfaceW(i+1,j));
 	    //Wl = Reflect(Wr, Grid.nfaceW(i+1, j));
@@ -628,6 +653,7 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	} else if (i == ICu && 
 		   (Grid.BCtypeE[j] == BC_REFLECTION ||
 		    Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
+		    Grid.BCtypeE[j] == BC_CHARACTERISTIC_VELOCITY ||
 		    Grid.BCtypeE[j] == BC_BURNING_SURFACE ||
 		    Grid.BCtypeE[j] == BC_MASS_INJECTION ||
 		    Grid.BCtypeE[j] == BC_RINGLEB_FLOW)) {
@@ -645,6 +671,10 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	    Wr = BC_Characteristic_Pressure(Wl, 
 					    WoE[j], 
 					    Grid.nfaceE(i, j));
+	  } else if (Grid.BCtypeE[j] == BC_CHARACTERISTIC_VELOCITY) {
+	    Wr = BC_Characteristic(Wl, 
+				   WoE[j], 
+				   Grid.nfaceE(i, j));
 	  } else if (Grid.BCtypeE[j] == BC_RINGLEB_FLOW) {
 	    Wr = RinglebFlow(Wr,Grid.xfaceE(i,j));
 	    //Wr = Reflect(Wl, Grid.nfaceE(i, j));
@@ -744,6 +774,7 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
       if (j == JCl-1 && 
 	  (Grid.BCtypeS[i] == BC_REFLECTION ||
 	   Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
+	   Grid.BCtypeS[i] == BC_CHARACTERISTIC_VELOCITY ||
 	   Grid.BCtypeS[i] == BC_BURNING_SURFACE ||
 	   Grid.BCtypeS[i] == BC_MASS_INJECTION ||
 	   Grid.BCtypeS[i] == BC_RINGLEB_FLOW)) {
@@ -761,6 +792,10 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	  Wl = BC_Characteristic_Pressure(Wr, 
 					  WoS[i], 
 					  Grid.nfaceS(i, j+1));
+	} else if (Grid.BCtypeS[i] == BC_CHARACTERISTIC_VELOCITY) {
+	  Wl = BC_Characteristic(Wr, 
+				 WoS[i], 
+				 Grid.nfaceS(i, j+1));
 	} else if (Grid.BCtypeS[i] == BC_RINGLEB_FLOW) {
 	  //Wl = RinglebFlow(Grid.xfaceS(i,j+1));
 	  Wl = BC_Characteristic_Pressure(Wr,
@@ -770,6 +805,7 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
       } else if (j == JCu && 
 		 (Grid.BCtypeN[i] == BC_REFLECTION ||
 		  Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
+		  Grid.BCtypeN[i] == BC_CHARACTERISTIC_VELOCITY ||
 		  Grid.BCtypeN[i] == BC_BURNING_SURFACE ||
 		  Grid.BCtypeN[i] == BC_MASS_INJECTION ||
 		  Grid.BCtypeN[i] == BC_RINGLEB_FLOW)) {
@@ -787,6 +823,10 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	  Wr = BC_Characteristic_Pressure(Wl, 
 					  WoN[i], 
 					  Grid.nfaceN(i, j));
+	} else if (Grid.BCtypeN[i] == BC_CHARACTERISTIC_VELOCITY) {
+	  Wr = BC_Characteristic(Wl, 
+				 WoN[i], 
+				 Grid.nfaceN(i, j));
 	} else if (Grid.BCtypeN[i] == BC_RINGLEB_FLOW) {
 	  //Wr = RinglebFlow(Grid.xfaceN(i,j));
 	  Wr = BC_Characteristic_Pressure(Wl, 
