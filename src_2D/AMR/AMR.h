@@ -1334,7 +1334,10 @@ int Initial_AMR(Quad_Soln_Block              *Soln_ptr,
 
     error_flag = 0;
 
-    if (InputParameters.Number_of_Initial_Mesh_Refinements == 0) return(error_flag);
+    if (InputParameters.Number_of_Initial_Mesh_Refinements == 0) {
+      QuadTree.CoarsenThreshold = original_coarsenthreshold;
+      return(error_flag);
+    }
 
     for (number_of_initial_mesh_refinements = 1; 
          number_of_initial_mesh_refinements <= InputParameters.Number_of_Initial_Mesh_Refinements; 
