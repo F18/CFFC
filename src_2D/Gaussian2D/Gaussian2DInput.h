@@ -58,6 +58,13 @@
 class Gaussian2D_Input_Parameters{
   private:
   public:
+
+  //Default Constructor
+  Gaussian2D_Input_Parameters(void);
+
+  // Destructor
+  ~Gaussian2D_Input_Parameters(void);
+
   // CFFC root directory path:
   char CFFC_Path[INPUT_PARAMETER_LENGTH_GAUSSIAN2D];
 
@@ -289,6 +296,27 @@ class Gaussian2D_Input_Parameters{
 			       Gaussian2D_Input_Parameters &IP);
 
 };
+
+/************************************************************************
+ * Gaussian2D_Input_Parameters::~Gaussian2D_Input_Parameters()          *
+ * -->  Constructor                                                     *
+ ***********************************************************************/
+inline Gaussian2D_Input_Parameters::Gaussian2D_Input_Parameters(void){
+  ICEMCFD_FileNames = NULL;
+}
+
+/************************************************************************
+ * Gaussian2D_Input_Parameters::~Gaussian2D_Input_Parameters()          *
+ * -->  Destructor                                                      *
+ ***********************************************************************/
+inline Gaussian2D_Input_Parameters::~Gaussian2D_Input_Parameters(void){
+  if (ICEMCFD_FileNames != NULL){
+    for (int i = 0 ; i < 3 ; ++i){
+      delete [] ICEMCFD_FileNames[i]; ICEMCFD_FileNames[i] = NULL;
+    }
+    delete [] ICEMCFD_FileNames; ICEMCFD_FileNames = NULL;
+  }
+}
 
 /****************************************************************
  * Gaussian2D_Input_Parameters::get_cffc_path -- Get CFFC path. *
@@ -574,7 +602,6 @@ inline ostream &operator << (ostream &out_file,
     out_file << "\n  -> Number of Ghost Cells: "
 	     << IP.Number_of_Ghost_Cells;
     if (IP.Interface_IP.Component_List.Ni) out_file << IP.Interface_IP;
-    if(IP.i_ICs != IC_RESTART)
     out_file << "\n  -> Momentum Accomodation Coefficient: "
 	     << IP.alpha_m;
     out_file << "\n  -> Thermal Accomodation Coefficient: "
@@ -596,6 +623,10 @@ inline ostream &operator << (ostream &out_file,
 	     << IP.Number_of_Bounding_Box_Mesh_Refinements;
     if (IP.Number_of_Bounding_Box_Mesh_Refinements)
       out_file << "\n     -> Bounding-box for bounding-box AMR:" << IP.AMR_Xmin << IP.AMR_Xmax;
+    out_file << "\n  -> Threshold for refinement : "
+             << IP.Threshold_for_Refinement;
+    out_file << "\n  -> Threshold for coarsening : "
+             << IP.Threshold_for_Coarsening;
     out_file << "\n  -> CFL Number: " 
              << IP.CFL_Number;
     out_file << "\n  -> Maximum Time (ms): " 
