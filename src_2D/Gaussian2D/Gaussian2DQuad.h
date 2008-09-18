@@ -219,8 +219,8 @@ class Gaussian2D_Quad_Block{
     }
 
     /* Destructor. */
-    // ~Gaussian2D_Quad_Block(void);
-    // Use automatically generated destructor.
+    ~Gaussian2D_Quad_Block(void) {deallocate();}
+    //
 
     /* Assignment operator. */
     // Gaussian2D_Quad_Block operator = (const Gaussian2D_Quad_Block &Soln);
