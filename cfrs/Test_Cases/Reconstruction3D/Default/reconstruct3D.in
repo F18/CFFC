@@ -8,7 +8,9 @@
 Function_Definition =
 Default
 Reconstruction_Order =
-1
+0
+Method_Used =
+CENO
 ###########################
 # Set grid parameters
 ###########################
