@@ -454,6 +454,7 @@ T TaylorDerivativesContainer<ThreeD,T>::ComputeSolutionFor(const double DeltaX, 
     /* Update DeltaXtoPower */
     DeltaXtoPower *= DeltaX;
   }
+ //std::cout << "ComputeSolutionFor = " << phi*Solution + (OneT-phi)*DContainer[0].D() << endl;
 
  return phi*Solution + (OneT-phi)*DContainer[0].D();
 }
