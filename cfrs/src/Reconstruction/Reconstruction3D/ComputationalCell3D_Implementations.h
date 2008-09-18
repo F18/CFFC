@@ -256,6 +256,23 @@ SolutionType ComputationalCell<ThreeD,GeometryType,SolutionType>::
   return  TD.ComputeSolutionFor(difference.x,difference.y,difference.z);
 }
 
+// template<typename PointerToTestFunction>
+// SetInitialSolution(PointerToTestFunction)
+/***************************************************************
+Sets the value of the U_cell based on the integration of PtrFunc
+over the domain of the cell
+*****************************************************************/
+template<class GeometryType,class SolutionType>
+template<typename PointerToTestFunction> inline
+void ComputationalCell<ThreeD,GeometryType,SolutionType>::SetInitialSolution(PointerToTestFunction PtrFunc)
+{
+  /* compute the average solution */
+  U_cell = IntegrateOverTheCell(PtrFunc,6,U_cell)/geom.V();
+  /* update the first coefficient of the Taylor expansion */
+  TD(0,0,0) = U_cell;
+  //TD_FirstOrder(0,0,0) = U_cell; // --> RR: TD_FirstOrder must be implemented
+}
+
 // template<typename FunctionObject>
 // void ComputeReconstructionError(const FO FuncObj)
 /*******************************************************************

@@ -231,8 +231,8 @@ void Set_Default_Input_Parameters(Reconstruct3D_Input_Parameters &IP) {
 
     strcpy(IP.Input_File_Name, "reconstruct3D.in");
     // Method settings
-    strcpy(IP.Method_Used, "Normal_Equation");
-    IP.Method = DD_ENO;
+    strcpy(IP.Method_Used, "CENO");
+    IP.Method = CENO;
     strcpy(IP.Geometric_Weighting, "No");
     IP.geom_weighting = OFF;
     strcpy(IP.Data_Dependent_Weighting, "No");

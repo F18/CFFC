@@ -170,7 +170,7 @@ public:
 
   /* Operating functions */
   template<typename PointerToTestFunction>
-    void SetInitialSolution(PointerToTestFunction PtrFunc){}
+  void SetInitialSolution(PointerToTestFunction PtrFunc);
 
   // ComputeReconstructionError()
   template<typename FO>
