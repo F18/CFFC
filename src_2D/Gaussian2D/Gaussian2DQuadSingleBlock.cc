@@ -834,7 +834,7 @@ int Restrict_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Coarse,
       } /* endfor */
 
       for ( j = SolnBlk_Original_SW.JCl-SolnBlk_Original_SW.Nghost; 
-            j <= SolnBlk_Original_SW.JCu+SolnBlk_Original_SW.Nghost ; j += 2 ) {
+            j <= SolnBlk_Original_SW.JCu; j += 2 ) {
       	  j_coarse = (j-SolnBlk_Original_SW.JCl)/2+SolnBlk_Coarse.JCl;
           SolnBlk_Coarse.WoW[j_coarse] = SolnBlk_Original_SW.WoW[j];
           SolnBlk_Coarse.oldT_W[j_coarse] = SolnBlk_Original_SW.oldT_W[j];
@@ -845,7 +845,7 @@ int Restrict_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Coarse,
       } /* endfor */
 
       for ( i = SolnBlk_Original_SW.ICl-SolnBlk_Original_SW.Nghost ; 
-            i <= SolnBlk_Original_SW.ICu+SolnBlk_Original_SW.Nghost ; i += 2) {
+            i <= SolnBlk_Original_SW.ICu; i += 2) {
       	  i_coarse = (i-SolnBlk_Original_SW.ICl)/2+SolnBlk_Coarse.ICl;
           SolnBlk_Coarse.WoS[i_coarse] = SolnBlk_Original_SW.WoS[i];
           SolnBlk_Coarse.oldT_S[i_coarse] = SolnBlk_Original_SW.oldT_S[i];
@@ -880,8 +880,8 @@ int Restrict_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Coarse,
       } /* endfor */
 
       for ( j = SolnBlk_Original_SE.JCl-SolnBlk_Original_SE.Nghost; 
-            j <= SolnBlk_Original_SE.JCu+SolnBlk_Original_SE.Nghost ; j += 2 ) {
-      	  j_coarse = (j-SolnBlk_Original_SE.JCl)/2+SolnBlk_Coarse.JCl;
+            j <= SolnBlk_Original_SE.JCu; j += 2 ) {
+	  j_coarse = (j-SolnBlk_Original_SE.JCl)/2+SolnBlk_Coarse.JCl;
           SolnBlk_Coarse.WoE[j_coarse] = SolnBlk_Original_SE.WoE[j];
           SolnBlk_Coarse.oldT_E[j_coarse] = SolnBlk_Original_SE.oldT_E[j];
           if (j == SolnBlk_Original_SE.JCl-SolnBlk_Original_SE.Nghost) {
@@ -890,13 +890,13 @@ int Restrict_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Coarse,
           } /* endif */
       } /* endfor */
 
-      for ( i = SolnBlk_Original_SE.ICl-SolnBlk_Original_SE.Nghost ; 
+      for ( i = SolnBlk_Original_SE.ICl;
             i <= SolnBlk_Original_SE.ICu+SolnBlk_Original_SE.Nghost ; i += 2) {
      	  i_coarse = (i-SolnBlk_Original_SE.ICl)/2+
                      (SolnBlk_Coarse.ICu-SolnBlk_Coarse.ICl+1)/2+SolnBlk_Coarse.ICl;
           SolnBlk_Coarse.WoS[i_coarse] = SolnBlk_Original_SE.WoS[i];
           SolnBlk_Coarse.oldT_S[i_coarse] = SolnBlk_Original_SE.oldT_S[i];
-          if (i == SolnBlk_Original_SE.ICu+SolnBlk_Original_SE.Nghost) {
+          if (i == SolnBlk_Original_SE.ICu+SolnBlk_Original_SE.Nghost-1) {
              SolnBlk_Coarse.WoS[i_coarse+1] = SolnBlk_Original_SE.WoS[i];
              SolnBlk_Coarse.oldT_S[i_coarse+1] = SolnBlk_Original_SE.oldT_S[i];
           } /* endif */
@@ -926,20 +926,20 @@ int Restrict_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Coarse,
           } /* endfor */
       } /* endfor */
 
-      for ( j = SolnBlk_Original_NW.JCl-SolnBlk_Original_NW.Nghost; 
+      for ( j = SolnBlk_Original_NW.JCl;
             j <= SolnBlk_Original_NW.JCu+SolnBlk_Original_NW.Nghost ; j += 2 ) {
       	  j_coarse = (j-SolnBlk_Original_NW.JCl)/2+
                      (SolnBlk_Coarse.JCu-SolnBlk_Coarse.JCl+1)/2+SolnBlk_Coarse.JCl;
           SolnBlk_Coarse.WoW[j_coarse] = SolnBlk_Original_NW.WoW[j];
           SolnBlk_Coarse.oldT_W[j_coarse] = SolnBlk_Original_NW.oldT_W[j];
-          if (j == SolnBlk_Original_NW.JCu+SolnBlk_Original_NW.Nghost) {
+          if (j == SolnBlk_Original_NW.JCu+SolnBlk_Original_NW.Nghost-1) {
              SolnBlk_Coarse.WoW[j_coarse+1] = SolnBlk_Original_NW.WoW[j];
              SolnBlk_Coarse.oldT_W[j_coarse+1] = SolnBlk_Original_NW.oldT_W[j];
           } /* endif */
       } /* endfor */
 
       for ( i = SolnBlk_Original_NW.ICl-SolnBlk_Original_NW.Nghost ; 
-            i <= SolnBlk_Original_NW.ICu+SolnBlk_Original_NW.Nghost ; i += 2) {
+            i <= SolnBlk_Original_NW.ICu; i += 2) {
       	  i_coarse = (i-SolnBlk_Original_NW.ICl)/2+SolnBlk_Coarse.ICl;
           SolnBlk_Coarse.WoN[i_coarse] = SolnBlk_Original_NW.WoN[i];
           SolnBlk_Coarse.oldT_N[i_coarse] = SolnBlk_Original_NW.oldT_N[i];
@@ -973,25 +973,25 @@ int Restrict_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Coarse,
           } /* endfor */
       } /* endfor */
 
-      for ( j = SolnBlk_Original_NE.JCl-SolnBlk_Original_NE.Nghost; 
+      for ( j = SolnBlk_Original_NE.JCl;
             j <= SolnBlk_Original_NE.JCu+SolnBlk_Original_NE.Nghost ; j += 2 ) {
       	  j_coarse = (j-SolnBlk_Original_NE.JCl)/2+
                      (SolnBlk_Coarse.JCu-SolnBlk_Coarse.JCl+1)/2+SolnBlk_Coarse.JCl;
           SolnBlk_Coarse.WoE[j_coarse] = SolnBlk_Original_NE.WoE[j];
           SolnBlk_Coarse.oldT_E[j_coarse] = SolnBlk_Original_NE.oldT_E[j];
-          if (j == SolnBlk_Original_NE.JCu+SolnBlk_Original_NE.Nghost) {
+          if (j == SolnBlk_Original_NE.JCu+SolnBlk_Original_NE.Nghost-1) {
              SolnBlk_Coarse.WoE[j_coarse+1] = SolnBlk_Original_NE.WoE[j];
              SolnBlk_Coarse.oldT_E[j_coarse+1] = SolnBlk_Original_NE.oldT_E[j];
           } /* endif */
       } /* endfor */
 
-      for ( i = SolnBlk_Original_NE.ICl-SolnBlk_Original_NE.Nghost ; 
+      for ( i = SolnBlk_Original_NE.ICl;
             i <= SolnBlk_Original_NE.ICu+SolnBlk_Original_NE.Nghost ; i += 2) {
       	  i_coarse = (i-SolnBlk_Original_NE.ICl)/2+
                      (SolnBlk_Coarse.ICu-SolnBlk_Coarse.ICl+1)/2+SolnBlk_Coarse.ICl;
           SolnBlk_Coarse.WoN[i_coarse] = SolnBlk_Original_NE.WoN[i];
           SolnBlk_Coarse.oldT_N[i_coarse] = SolnBlk_Original_NE.oldT_N[i];
-          if (i == SolnBlk_Original_NE.ICu+SolnBlk_Original_NE.Nghost) {
+          if (i == SolnBlk_Original_NE.ICu+SolnBlk_Original_NE.Nghost-1) {
              SolnBlk_Coarse.WoN[i_coarse+1] = SolnBlk_Original_NE.WoN[i];
              SolnBlk_Coarse.oldT_N[i_coarse+1] = SolnBlk_Original_NE.oldT_N[i];
           } /* endif */
