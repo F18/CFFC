@@ -114,7 +114,7 @@ public:
   }
 
   //! Return exact solution
-  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) const {return Euler2D_pState(0);}
+  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) const;
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP, int & i_command);
@@ -127,7 +127,29 @@ public:
 
 private:
 
+  //! Determine the Cartesian coordinates (X_Coord,Y_Coord) corresponding to the pair of 
+  //  non-dimensional velocity q and the streamline parameter k.
+  void RinglebFlowCoordinates(const double &q , const double &k , double &X_Coord, double &Y_Coord);
 };
+
+/*
+ * This subroutine determines X_Coord and Y_Coord based on
+ * the non-dimensional velocity q and the streamline parameter k.
+ */
+inline void Ringleb_Flow_ExactSolution::RinglebFlowCoordinates(const double &q , const double &k,
+							       double &X_Coord, double &Y_Coord) {
+ 
+  double c, rho, J;
+  double g = 1.40;
+
+  c = sqrt(ONE - ((g-ONE)/TWO)*q*q);
+  rho = pow(c,TWO/(g-ONE));
+  J = ONE/c + ONE/(THREE*pow(c,THREE)) + ONE/(FIVE*pow(c,FIVE)) - HALF*log((ONE+c)/(ONE-c));
+
+  X_Coord = (HALF/rho)*(TWO/(k*k) - ONE/(q*q)) - HALF*J;
+  Y_Coord = (ONE/(k*rho*q))*sqrt(ONE - (q*q)/(k*k));  
+
+}
 
 
 /*! 

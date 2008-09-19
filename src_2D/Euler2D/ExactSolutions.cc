@@ -84,6 +84,75 @@ void ExactSolutionBasicType::Broadcast(void){
  **************************************/
 
 /*! 
+ * Return exact Ringleb's flow solution at a given location.
+ */
+inline Euler2D_pState Ringleb_Flow_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) const {
+
+  Euler2D_pState W;
+  double sin_theta, cos_theta, theta;
+  double f_a, f_ab, f_b;
+  double J; 
+  double rho;
+  double q, k;
+  double c, c_a = 0.7, c_b = 1.0, c_ab;
+  double g = GAMMA_AIR, po = PRESSURE_STDATM, rhoo = DENSITY_STDATM;
+  double TOL = 1.0e-14;
+
+  // Use bisection method to solve for the sound speed, c.
+
+  // Determine "f_a" for start
+  rho = pow(c_a,TWO/(g-ONE));
+  J   = ONE/c_a + ONE/(THREE*c_a*c_a*c_a) + 
+        ONE/(FIVE*c_a*c_a*c_a*c_a*c_a) - 
+        HALF*log((ONE+c_a)/(ONE-c_a));
+  q  = sqrt((TWO/(g-ONE))*(ONE-c_a*c_a));
+  f_a = (x + HALF*J)*(x + HALF*J) + y*y - 
+        ONE/(FOUR*rho*rho*q*q*q*q);
+
+  while (fabs(c_a - c_b) > TOL){
+    c_ab = HALF*(c_a + c_b);
+
+    // Determine f_ab.
+    rho = pow(c_ab,TWO/(g-ONE));
+    J   = ONE/c_ab + ONE/(THREE*c_ab*c_ab*c_ab) + 
+          ONE/(FIVE*c_ab*c_ab*c_ab*c_ab*c_ab) - 
+          HALF*log((ONE+c_ab)/(ONE-c_ab));
+    q   = sqrt((TWO/(g-ONE))*(ONE-c_ab*c_ab));
+    f_ab = (x + HALF*J)*(x + HALF*J) + y*y - 
+           ONE/(FOUR*rho*rho*q*q*q*q);
+
+    // Divide the interval
+    if (f_a*f_ab <= ZERO) {
+      c_b = c_ab;
+      f_b = f_ab;
+    } else {
+      c_a = c_ab;
+      f_a = f_ab;
+    }
+  }
+
+  // Final sound speed, density, and total velocity (speed).
+  c = HALF*(c_a + c_b); 
+  q = sqrt((TWO/(g-ONE))*(ONE-c*c));
+  W.d = pow(c,TWO/(g-ONE));
+  J = ONE/c + ONE/(THREE*c*c*c) + ONE/(FIVE*c*c*c*c*c) - HALF*log((ONE+c)/(ONE-c));
+  k = sqrt(TWO/(TWO*W.d*(x+HALF*J)+ONE/(q*q)));
+  sin_theta = max(ZERO,min(ONE,q/k));
+  theta = TWO*PI-asin(sin_theta);
+  sin_theta = sin(theta);
+  cos_theta = cos(theta);
+  W.d = rhoo*W.d;
+  W.v.x = sqrt(g*po/rhoo)*q*cos_theta;
+  if (y < ZERO) W.v.x = -ONE*W.v.x;
+  W.v.y = sqrt(g*po/rhoo)*q*sin_theta;
+  W.p   = po*(W.d/rhoo)*c*c;
+  W.g   = g;
+
+  // Return W state.
+  return W;
+}
+
+/*! 
  * Parse next input control parameter
  */
 void Ringleb_Flow_ExactSolution::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
@@ -99,38 +168,16 @@ void Ringleb_Flow_ExactSolution::Parse_Next_Input_Control_Parameter(Euler2D_Inpu
   
   char buffer[256];
 
-  // Try to match the next control parameter
-#if 0             		// Replace "..." with the proper variables
-  if (strcmp(IP.Next_Control_Parameter, "...") == 0) {
-    i_command = 0;
-    ++IP.Line_Number;
-    IP.Input_File >> ...;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-
-  } else if (strcmp(IP.Next_Control_Parameter, "...") == 0) {
-    i_command = 0;
-    ++IP.Line_Number;
-    IP.Input_File >> ...;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-
-  } else {
-    i_command = INVALID_INPUT_CODE;
-    return;
-  } // endif
-#endif
 }
 
 /*! 
  * Print relevant parameters
  */
 void Ringleb_Flow_ExactSolution::Print_Info(std::ostream & out_file){
-#if 0             		// Replace "..." with the proper variables
-  out_file << "\n     -> "..." : " << "..."
-	   << "\n     -> "..." : " << "...";
 
   // call the base Print_Info
   ExactSolutionBasicType::Print_Info(out_file);
-#endif
+
 }
 
 /*!
@@ -141,16 +188,7 @@ void Ringleb_Flow_ExactSolution::Print_Info(std::ostream & out_file){
  */
 void Ringleb_Flow_ExactSolution::Broadcast(void){
 #ifdef _MPI_VERSION
-  
-#if 0             		// Replace "..." with the proper variables
-  MPI::COMM_WORLD.Bcast(&"...",
-			1, 
-			MPI::DOUBLE, 0);
-  MPI::COMM_WORLD.Bcast(&"...",
-			1, 
-			MPI::DOUBLE, 0);
-#endif
-  
+  // None
 #endif
 }
 
