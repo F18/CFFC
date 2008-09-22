@@ -163,7 +163,7 @@ public:
                     //double Dz = Input.Grid_IP.Box_Length;
                     double r = sqrt(sqr(x) + sqr(y) + sqr(z));
                     //Soln_Blk_ptr->W[i][j][k].*Soln_pState_member_ptr = chebyshev_polynomial(kind,n,r/scaling);
-                    Soln_Blk_ptr->W[i][j][k].*Soln_pState_member_ptr = cos(b*r);
+                    Soln_Blk_ptr->W[i][j][k].*Soln_pState_member_ptr = cos(b*x);
                                                                                             
                 }
             }
@@ -181,7 +181,7 @@ public:
         double r = sqrt(sqr(x) + sqr(y) + sqr(z));
         RowVector temp(1);
         //temp(0) = 1./scaling*chebyshev_polynomial_derivative(kind,n,r);
-        temp(0) = -b*sin(b*r);
+        temp(0) = -b*sin(b*x);
         return temp;
     }
     
