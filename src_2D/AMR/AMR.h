@@ -714,6 +714,9 @@ int Refine_Grid(Quad_Soln_Block             *Soln_ptr,
         } /* endfor */
     } /* endfor */    
 
+    /* deallocate copy of solution block. */
+    if(solution_block_to_be_refined.W != NULL) solution_block_to_be_refined.deallocate();
+
     /* Mesh refinement complete.  Return zero value. */
 
     return(0);
@@ -1103,6 +1106,13 @@ int Coarsen_Grid(Quad_Soln_Block             *Soln_ptr,
 
         } /* endfor */
     } /* endfor */    
+
+
+    /* deallocate copies of solution blocks. */
+    if(solution_block_to_be_coarsened_SW_sibling.W != NULL) solution_block_to_be_coarsened_SW_sibling.deallocate();
+    if(solution_block_to_be_coarsened_SE_sibling.W != NULL) solution_block_to_be_coarsened_SE_sibling.deallocate();
+    if(solution_block_to_be_coarsened_NW_sibling.W != NULL) solution_block_to_be_coarsened_NW_sibling.deallocate();
+    if(solution_block_to_be_coarsened_NE_sibling.W != NULL) solution_block_to_be_coarsened_NE_sibling.deallocate();
 
     /* Mesh coarsening complete.  Return zero value. */
 
