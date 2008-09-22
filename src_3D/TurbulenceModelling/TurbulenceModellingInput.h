@@ -64,6 +64,10 @@ class Turbulence_Modelling_Input_Parameters{
     bool LS_constraints;                                        //!< This will turn on or off Least squares constraints for Vasilyev's filter : default = true
     int Derivative_constraints;                                 //!< Determines the number of derivative constraints for Vasilyev's filter : default = true
     bool Filter_Memory_Efficient;                               //!< Determines whether to store filter weights or not (not storing slows down tremendously)
+    double relaxation_factor;                                   //!< This coefficient is used in the least-squares reconstruction filter and should be left "DEFAULT".
+    int least_squares_filter_weighting;                         //!< This coefficient controls if a weighted least-squares is used in Haselbacher filter.
+    double least_squares_filter_weighting_factor;               //!< This coefficient controls if a weighted least-squares is used in Haselbacher filter.
+
     //@}
     
     //@{ @name Spectrum related input parameters:
@@ -99,6 +103,9 @@ class Turbulence_Modelling_Input_Parameters{
       commutation_order = 2;
       finite_differencing_order = commutation_order+2;
       number_of_rings = 2;
+      relaxation_factor = DEFAULT;
+      least_squares_filter_weighting = DEFAULT;
+      least_squares_filter_weighting = ON;
       Target_Filter_Sharpness = -1;
       Filter_Initial_Condition = ON;
       Filter_Width_strict = OFF;

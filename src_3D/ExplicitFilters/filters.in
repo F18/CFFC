@@ -27,26 +27,34 @@ Smagorinsky_Coefficient =
 #     Filter parameters      #
 ##############################
 Filter_Type =
-Vasilyev
-#Haselbacher
+#Vasilyev
+Haselbacher
 #Tophat
 #Restart
 Filter_Grid_Ratio =
 2.0
 Target_Filter_Sharpness = 
-0.0
+4
 Filter_Initial_Condition =
 OFF
 Derivative_constraints=
 0
 Commutation_Order =
-4
-Finite_Differencing_Order =
-7
-Number_of_Rings = 
 3
+Finite_Differencing_Order =
+3
+Number_of_Rings = 
+4
+Filter_Width_strict =
+ON
 Filter_Memory_Efficient =
 OFF
+Relaxation_Factor =
+ON
+Least_Squares_Filter_Weighting = 
+ON
+Least_Squares_Filter_Weighting_Factor = 
+3.5
 ##############################
 #     Spectrum parameters    #
 ##############################

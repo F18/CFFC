@@ -51,6 +51,9 @@ public:
     static int    number_of_rings_increased;
     static int    derivative_accuracy;
     static double G_cutoff;
+    static double relaxation_factor;
+    static int    least_squares_filter_weighting;
+    static double least_squares_filter_weighting_factor;
     
 };
 

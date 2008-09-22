@@ -188,6 +188,9 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Set_Properties(Input_Parameters<
     properties.Derivative_constraints = IPs.Turbulence_IP.Derivative_constraints;
     properties.Filter_Width_strict = IPs.Turbulence_IP.Filter_Width_strict;
     properties.Memory_Efficient = IPs.Turbulence_IP.Filter_Memory_Efficient;
+    properties.relaxation_factor = IPs.Turbulence_IP.relaxation_factor;
+    properties.least_squares_filter_weighting = IPs.Turbulence_IP.least_squares_filter_weighting;
+    properties.least_squares_filter_weighting_factor = IPs.Turbulence_IP.least_squares_filter_weighting_factor;
     properties.batch_flag = batch_flag;
 }
 

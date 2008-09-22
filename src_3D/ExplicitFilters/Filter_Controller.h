@@ -148,7 +148,7 @@ int Filter_Controller<Soln_pState,Soln_cState>::Explicit_Filter_Operations(void)
     explicit_filter.Initialize(Initial_Mesh,Input,batch_flag);
     explicit_filter.transfer_function(FILTER_INNER_CELL);
     
-    //explicit_filter.test();
+    explicit_filter.test();
     
     typedef double (Filter_State::*member_ptr);
     member_ptr filter_member = &Filter_State::member;

@@ -23,3 +23,6 @@ int    Explicit_Filter_Properties::batch_flag = 0;
 int    Explicit_Filter_Properties::number_of_rings_increased = 3;
 int    Explicit_Filter_Properties::derivative_accuracy = 3;
 double Explicit_Filter_Properties::G_cutoff = exp(-sqr(PI)/(4.*6.));
+int    Explicit_Filter_Properties::least_squares_filter_weighting = ON;
+double Explicit_Filter_Properties::relaxation_factor = DEFAULT;
+double Explicit_Filter_Properties::least_squares_filter_weighting_factor = DEFAULT;

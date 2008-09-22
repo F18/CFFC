@@ -175,7 +175,13 @@ public:
 template<typename Soln_pState, typename Soln_cState>
 void Vasilyev_Filter<Soln_pState,Soln_cState>::filter_tests(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
     
-
+    theNeighbours.set_grid(Grid_Blk);
+    Get_Neighbours_1D(theCell,X_DIRECTION);
+    RowVector w = Get_Weights_1D(theCell, theNeighbours,X_DIRECTION);
+    cout << "w = " << w << endl;
+    
+    
+    
     check_filter_moments(Grid_Blk,theCell);
     check_filter_moments_1D(Grid_Blk,theCell,X_DIRECTION);
 
@@ -466,7 +472,7 @@ inline int Vasilyev_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Neigh
     }
     
     
-    if (number_of_remaining_constraints <= 2 || Filter_Width_strict) {
+    if (number_of_remaining_constraints>0 && Filter_Width_strict) {
         /* ------------- Filter Grid Ratio --------------- */
         type = G_CONSTRAINT;
         target = G_cutoff;

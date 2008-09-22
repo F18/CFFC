@@ -45,8 +45,8 @@ public:
         UNIFORM_GRID = true;
         weight_factor = 1.5;
         the_number_of_unknowns = number_of_unknowns();
-        relaxation_factor = 0.08;
-        relaxation_applied = false;
+        relaxation_factor = Explicit_Filter_Properties::relaxation_factor;
+        weighting = Explicit_Filter_Properties::least_squares_filter_weighting;
     }
     //! Destructor
     ~Haselbacher_Filter(void) {
@@ -65,10 +65,8 @@ public:
 private:
     
     double relaxation_factor;
-    int relaxation_flag;
-    int weight_flag;
+    int weighting;
     double weight_factor;
-    bool relaxation_applied;
     
     /* ---------- non uniform grid -- save rows ------------- */
     RowVector ***W_row;
@@ -95,6 +93,7 @@ private:
     
     
     /* -------------- Least Squares Reconstruction ----------- */
+    string Reconstruction_Equation(int &commutation_order);
     DenseMatrix Matrix_A(Cell3D &theCell, Neighbours &theNeighbours);
     DenseMatrix Matrix_A(Cell3D &theCell, Neighbours &theNeighbours, int &commutation_order);
     DiagonalMatrix Matrix_W(Cell3D &theCell, Neighbours &theNeighbours);
@@ -206,9 +205,21 @@ inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights_1D(Cel
 
 template <typename Soln_pState, typename Soln_cState>
 inline void Haselbacher_Filter<Soln_pState,Soln_cState>::Apply_relaxation(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmax, RowVector &w){
-    relaxation_factor = Calculate_relaxation_factor(theCell,theNeighbours,kmax,w);
-    w *= (ONE-relaxation_factor);
-    w.append(relaxation_factor);
+    double w00;
+    if (relaxation_factor==DEFAULT) {
+        w00 = Calculate_relaxation_factor(theCell,theNeighbours,kmax,w);
+        cout << "relaxation_factor = " << relaxation_factor << endl;
+        cout << "default = " << DEFAULT << endl;
+        cout << "same" << endl;
+    } else {
+        w00 = relaxation_factor;
+        cout << "relaxation_factor = " << relaxation_factor << endl;
+        cout << "default = " << DEFAULT << endl;
+        cout << "not same" << endl;
+    }
+    cout << "w00 = " << w00;
+    w *= (ONE-w00);
+    w.append(w00);
     theNeighbours.append_theCell(theCell);
 }
 
@@ -261,6 +272,86 @@ DenseMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_A(Cell3D &theCel
     return A;
 }
 
+template <typename Soln_pState, typename Soln_cState>
+string Haselbacher_Filter<Soln_pState,Soln_cState>::Reconstruction_Equation(int &commutation_order) {
+    
+    int the_number_of_neighbours = theNeighbours.number_of_neighbours;
+    int the_number_of_unknowns = number_of_unknowns(commutation_order);
+    DenseMatrix A(the_number_of_neighbours,the_number_of_unknowns);
+    int j=0;
+    string dx="dx", dy="dy", dz="dz";
+    
+    string equation = "\\phi_i = \\overline{\\phi}_0";
+    for (int k=1; k<=commutation_order; k++) {
+        
+        // for all terms of degree k
+        for (int n3=0; n3<=k; n3++) {
+            for (int n2=0; n2<=k; n2++) {
+                for (int n1=0; n1<=k; n1++) {
+                    if (n1+n2+n3 == k) {
+                        
+                        std::stringstream term, numerator, denominator;
+                        if (k==1) {
+                            term << " + " ;
+                            numerator << "\\partial \\phi_0";
+                        }
+                        else {
+                            term << " + \\frac{" << trinomial_coefficient(n1,n2,n3) << "}{" << k << "!} ";
+                            numerator << "\\partial^" << k << "\\phi_0";
+                        }
+                        
+                        if (n1>0) {
+                            if (n1==1)                        
+                                term << " \\Delta x_{0i}";
+                            else
+                                term << " \\Delta x_{0i}^" << n1;
+                        }
+                        if (n2>0) {
+                            if (n2==1)                        
+                                term << " \\Delta y_{0i}";
+                            else
+                                term << " \\Delta y_{0i}^" << n2;
+                        }
+                        if (n3>0) {
+                            if (n3==1)                        
+                                term << " \\Delta z_{0i}";
+                            else
+                                term << " \\Delta z_{0i}^" << n3;
+                        }
+                        
+                        if (n1>0) {
+                            if (n1==1)
+                                denominator << " \\partial x";
+                            else
+                                denominator << " \\partial x^" << n1;
+                        }
+                        if (n2>0) {
+                            if (n2==1)
+                                denominator << " \\partial y";
+                            else
+                                denominator << " \\partial y^" << n2;
+                        }
+                        if (n3>0) {
+                            if (n3==1)
+                                denominator << " \\partial z";
+                            else
+                                denominator << " \\partial z^" << n3;
+                        }
+                        
+                        term << "\\frac{" << numerator.str() << "}{" << denominator.str() << "}";
+                        
+                        equation += term.str();
+                        term.str(std::string());
+                        numerator.str(std::string());
+                        denominator.str(std::string());
+
+                    }
+                }
+            }
+        } 
+    }
+    return equation;
+}
 
 template <typename Soln_pState, typename Soln_cState>
 inline DenseMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_A(Cell3D &theCell, Neighbours &theNeighbours) {
@@ -310,10 +401,50 @@ inline DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell
     
     Delta *= weight_factor;
     
-    for (int i=0; i<the_number_of_neighbours; i++) {
-        dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).sqr();
-        W(i) = sqrt(SIX/(PI*Delta.sqr())*exp(- SIX * dr/Delta.sqr())) ;
+    cout << "weight_factor = " << weight_factor;
+    if (weighting==ON) {
+        for (int i=0; i<the_number_of_neighbours; i++) {
+            dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).sqr();
+            W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- SIX * dr/Delta.sqr()) ;
+        }
+        cout << "\n gaussian weighting" << endl;
+    } else if (weighting==2) {  // hidden weighting functions
+        /* inverse distance */
+        double D = Delta.abs();
+        for (int i=0; i<the_number_of_neighbours; i++) {
+            dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
+            W(i) = ONE/(dr) ;
+        }
+        cout << "\n inverse distance" << endl;
+    } else if (weighting==3) {
+        /* inverse squared distance */
+        double D = Delta.sqr();
+        for (int i=0; i<the_number_of_neighbours; i++) {
+            dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).sqr();
+            W(i) = ONE/(dr) ;
+        }
+        cout << "\n inverse squared distance" << endl;
+    } else if (weighting==4){
+        int m = Explicit_Filter_Properties::target_filter_sharpness;
+        for (int i=0; i<the_number_of_neighbours; i++) {
+            dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
+            W(i) =  sqrt(SIX/(PI*pow(Delta.abs(),double(m))))*exp(-pow(dr,double(m))*SIX*pow(Delta.abs(),-double(m)));
+        }
+        cout << "\n Vanderven weighting" << endl;
+
+    } else if (weighting==5){
+        double D = Delta.abs();
+        int m = Explicit_Filter_Properties::target_filter_sharpness;
+        for (int i=0; i<the_number_of_neighbours; i++) {
+            dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
+            W(i) = sin(pow(dr/(HALF*D),double(m)))/pow(dr/(HALF*D),double(m));
+        }
+        cout << "\n Cutoff weighting" << endl;
+        
+    } else {
+        W.identity();
     }
+
     
     return W;
 }
@@ -666,6 +797,16 @@ inline double Haselbacher_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio(int
 template <typename Soln_pState, typename Soln_cState>
 int Haselbacher_Filter<Soln_pState,Soln_cState>::Calculate_weight_factor(void) {
     
+    if (weighting==OFF) {
+        weight_factor = 1.0;
+        return 0;
+    }
+    
+    if(Explicit_Filter_Properties::least_squares_filter_weighting_factor!=DEFAULT){
+        weight_factor = Explicit_Filter_Properties::least_squares_filter_weighting_factor;
+        return 0;
+    }
+    
     if (number_of_rings == 2 ||
         number_of_rings == 3 ||
         number_of_rings == 4 || 
@@ -705,6 +846,7 @@ int Haselbacher_Filter<Soln_pState,Soln_cState>::Calculate_weight_factor(void) {
         weight_factor = p;
         
         if (isnan(weight_factor) || isinf(weight_factor)) {
+            weight_factor = 1.0;
             return 1;
         }
         return 0;
@@ -718,6 +860,14 @@ int Haselbacher_Filter<Soln_pState,Soln_cState>::Calculate_weight_factor(void) {
 
 template <typename Soln_pState, typename Soln_cState>
 double Haselbacher_Filter<Soln_pState,Soln_cState>::Calculate_weight_factor(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmax, double &FGR_target, int &comm_order) {
+    
+    if (weighting==OFF) {
+        return 1.0;
+    }
+    
+    if(Explicit_Filter_Properties::least_squares_filter_weighting_factor!=DEFAULT){
+        return Explicit_Filter_Properties::least_squares_filter_weighting_factor;
+    }
     
     double weight;
     
@@ -816,6 +966,7 @@ template <typename Soln_pState, typename Soln_cState>
 void Haselbacher_Filter<Soln_pState,Soln_cState>::filter_tests(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
     
     check_filter_moments(Grid_Blk,theCell);
+    cout << "\n" << Reconstruction_Equation(commutation_order) << endl;
     
     //Output_Filter_types(Grid_Blk,theCell);
     
@@ -824,9 +975,9 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::filter_tests(Grid3D_Hexa_Block
     //    Output_Filter_types(Grid_Blk,theCell,kmax,3);
     //    Output_Filter_types(Grid_Blk,theCell,kmax,4);
     //Output_Filter_types(Grid_Blk,theCell,4,2);
-    Output_Filter_types(Grid_Blk,theCell,4,6); 
-    Output_Filter_types(Grid_Blk,theCell,5,6);    
-    Output_Filter_types(Grid_Blk,theCell,6,6);    
+    //Output_Filter_types(Grid_Blk,theCell,4,6); 
+    //Output_Filter_types(Grid_Blk,theCell,5,6);    
+    //Output_Filter_types(Grid_Blk,theCell,6,6);    
 
 }
 

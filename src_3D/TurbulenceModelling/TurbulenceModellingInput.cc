@@ -66,6 +66,15 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(Filter_Memory_Efficient),
                           1,
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(relaxation_factor),
+                          1,
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(least_squares_filter_weighting),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(least_squares_filter_weighting_factor),
+                          1,
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(spectrum,
                           TURBULENCEMODEL_INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
@@ -254,6 +263,42 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
       if (number_of_rings < 1)
           i_command = INVALID_INPUT_VALUE;
         
+      
+  } else if (strcmp(code, "Least_Squares_Filter_Weighting") == 0) {
+      i_command = 132;
+      value >> value_string;
+      if (strcmp(value_string.c_str(), "ON") == 0) {
+          least_squares_filter_weighting = ON;
+      } else if(strcmp(value_string.c_str(), "OFF") == 0) {
+          least_squares_filter_weighting = OFF; 
+      } else {
+          std::stringstream valuestream;
+          valuestream << value_string;
+          valuestream >> least_squares_filter_weighting;
+      }
+      
+  } else if (strcmp(code, "Least_Squares_Filter_Weighting_Factor") == 0) {
+      i_command = 131;
+      value >> value_string;
+      if (strcmp(value_string.c_str(), "DEFAULT") == 0) {
+          least_squares_filter_weighting_factor = DEFAULT;
+      } else {
+          std::stringstream valuestream;
+          valuestream << value_string;
+          valuestream >> least_squares_filter_weighting_factor;
+      }
+      
+  } else if (strcmp(code, "Relaxation_Factor") == 0) {
+      i_command = 131;
+      value >> value_string;
+      if (strcmp(value_string.c_str(), "DEFAULT") == 0) {
+          relaxation_factor = DEFAULT;
+      } else {
+          std::stringstream valuestream;
+          valuestream << value_string;
+          valuestream >> relaxation_factor;
+      }
+      
     /* ---- Spectrum Parameters ---- */
   } else if (strcmp(code, "Spectrum_Model") == 0) {
     i_command = 140;

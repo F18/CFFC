@@ -176,20 +176,25 @@ void Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments(Grid3D_Hexa_
     int real_commutation_order(1);
     int error_in_M0=0;
     int previous_order=0;
-    for(int order=0; order<=commutation_order+1; order++){
-        for( int q=0; q<=commutation_order+1; q++) {
-            for (int r=0; r<=commutation_order+1; r++) {
-                for (int s=0; s<=commutation_order+1; s++) {
+    for(int order=0; order<=commutation_order+2; order++){
+        for( int q=0; q<=commutation_order+2; q++) {
+            for (int r=0; r<=commutation_order+2; r++) {
+                for (int s=0; s<=commutation_order+2; s++) {
                     if (q + r + s == order) {
                         double M = filter_moment(theCell, theNeighbours, w, q,r,s);
-                        //cout << "\n M(" << q << "," << r << "," << s << ") = " << M;
                         if (order==0) {
-                            if (!(M-NANO<ONE && ONE<M+NANO)) {
+                            cout << "\n M(" << q << "," << r << "," << s << ") = " << M;
+                            if (!(M-PICO<ONE && ONE<M+PICO)) {
                                 error_in_M0=1;
                             }
                         }
-                        if (order!=0 && order>previous_order && fabs(M)<NANO) {
+                        if (order!=0 && order>previous_order && fabs(M)<PICO) {
                             real_commutation_order = max(real_commutation_order,order+1);
+                        }
+                        if (fabs(M)<PICO) {
+                            cout << "\n M(" << q << "," << r << "," << s << ") = " << 0;
+                        } else {
+                            cout << "\n M(" << q << "," << r << "," << s << ") = " << M;
                         }
                         
                         previous_order=order;
@@ -363,9 +368,9 @@ void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Blo
     
     Vector3D kmax;
     Vector3D Delta = theNeighbours.Delta;
-    kmax.x = PI/Delta.x;
-    kmax.y = PI/Delta.y;
-    kmax.z = PI/Delta.z;
+    kmax.x = fabs(PI/Delta.x);
+    kmax.y = fabs(PI/Delta.y);
+    kmax.z = fabs(PI/Delta.z);
     
     if (!Explicit_Filter_Properties::batch_flag) {
         cout << "\n\n Calculating Transfer function at cell ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
@@ -395,9 +400,9 @@ void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Blo
         G_111[i]=real(G_function(theCell,theNeighbours,K_111,w));
         G_110[i]=real(G_function(theCell,theNeighbours,K_110,w));
         G_100[i]=real(G_function(theCell,theNeighbours,K_100,w));
-        //k_111[i]/= (kmax.abs()/sqrt(THREE));
-        //k_110[i]/= (kmax.abs()/sqrt(THREE));
-        //k_100[i]/= (kmax.abs()/sqrt(THREE));
+        k_111[i]/= (kmax.abs()/sqrt(THREE));
+        k_110[i]/= (kmax.abs()/sqrt(THREE));
+        k_100[i]/= (kmax.abs()/sqrt(THREE));
     }
     string title ;
     std::stringstream Cellstring, legend_111, legend_110, legend_100;
