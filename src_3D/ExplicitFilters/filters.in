@@ -40,11 +40,11 @@ OFF
 Derivative_constraints=
 0
 Commutation_Order =
-3
+2
 Finite_Differencing_Order =
 3
 Number_of_Rings = 
-4
+2
 Filter_Width_strict =
 ON
 Filter_Memory_Efficient =
@@ -54,7 +54,7 @@ ON
 Least_Squares_Filter_Weighting = 
 ON
 Least_Squares_Filter_Weighting_Factor = 
-3.5
+2.0
 ##############################
 #     Spectrum parameters    #
 ##############################
@@ -108,7 +108,7 @@ Box_Length =
 #3.14
 #16
 Mesh_Stretching =
-OFF
+ON
 Stretching_Factor_Idir = 
 1.01
 Stretching_Factor_Jdir = 

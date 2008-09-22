@@ -208,16 +208,9 @@ inline void Haselbacher_Filter<Soln_pState,Soln_cState>::Apply_relaxation(Cell3D
     double w00;
     if (relaxation_factor==DEFAULT) {
         w00 = Calculate_relaxation_factor(theCell,theNeighbours,kmax,w);
-        cout << "relaxation_factor = " << relaxation_factor << endl;
-        cout << "default = " << DEFAULT << endl;
-        cout << "same" << endl;
     } else {
         w00 = relaxation_factor;
-        cout << "relaxation_factor = " << relaxation_factor << endl;
-        cout << "default = " << DEFAULT << endl;
-        cout << "not same" << endl;
     }
-    cout << "w00 = " << w00;
     w *= (ONE-w00);
     w.append(w00);
     theNeighbours.append_theCell(theCell);
@@ -397,17 +390,18 @@ inline DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell
     
     
     Vector3D Delta(theNeighbours.Delta);
+    Vector3D DR;
     double dr;
     
     Delta *= weight_factor;
-    
-    cout << "weight_factor = " << weight_factor;
     if (weighting==ON) {
         for (int i=0; i<the_number_of_neighbours; i++) {
-            dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).sqr();
-            W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- SIX * dr/Delta.sqr()) ;
+            DR = (theNeighbours.neighbour[i].Xc - theCell.Xc);
+            W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- (sqr(DR.x/Delta.x)+sqr(DR.y/Delta.y)+sqr(DR.z/Delta.z)) ) ;
+//            dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).sqr();
+//            W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- SIX * dr/Delta.sqr()) ;
+
         }
-        cout << "\n gaussian weighting" << endl;
     } else if (weighting==2) {  // hidden weighting functions
         /* inverse distance */
         double D = Delta.abs();
@@ -415,7 +409,6 @@ inline DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell
             dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
             W(i) = ONE/(dr) ;
         }
-        cout << "\n inverse distance" << endl;
     } else if (weighting==3) {
         /* inverse squared distance */
         double D = Delta.sqr();
@@ -423,24 +416,19 @@ inline DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell
             dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).sqr();
             W(i) = ONE/(dr) ;
         }
-        cout << "\n inverse squared distance" << endl;
     } else if (weighting==4){
         int m = Explicit_Filter_Properties::target_filter_sharpness;
         for (int i=0; i<the_number_of_neighbours; i++) {
             dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
             W(i) =  sqrt(SIX/(PI*pow(Delta.abs(),double(m))))*exp(-pow(dr,double(m))*SIX*pow(Delta.abs(),-double(m)));
         }
-        cout << "\n Vanderven weighting" << endl;
-
     } else if (weighting==5){
         double D = Delta.abs();
         int m = Explicit_Filter_Properties::target_filter_sharpness;
         for (int i=0; i<the_number_of_neighbours; i++) {
             dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
             W(i) = sin(pow(dr/(HALF*D),double(m)))/pow(dr/(HALF*D),double(m));
-        }
-        cout << "\n Cutoff weighting" << endl;
-        
+        }        
     } else {
         W.identity();
     }

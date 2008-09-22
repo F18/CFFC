@@ -401,8 +401,8 @@ void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Blo
         G_110[i]=real(G_function(theCell,theNeighbours,K_110,w));
         G_100[i]=real(G_function(theCell,theNeighbours,K_100,w));
         k_111[i]/= (kmax.abs()/sqrt(THREE));
-        k_110[i]/= (kmax.abs()/sqrt(THREE));
-        k_100[i]/= (kmax.abs()/sqrt(THREE));
+        k_110[i]/= sqrt(sqr(kmax.x)+sqr(kmax.y))/sqrt(TWO);
+        k_100[i]/= (kmax.x);
     }
     string title ;
     std::stringstream Cellstring, legend_111, legend_110, legend_100;
@@ -412,6 +412,9 @@ void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Blo
     legend_100 << "100  FGR = " << fixed << setprecision(2) <<  Filter_Grid_Ratio_100(theCell,theNeighbours,w,kmax);
     
     title = "Transfer function " + filter_name() + " :   " + Cellstring.str() ;    
+    
+    
+    cout << "N = " << N << endl;
     
 #ifdef _GNUPLOT
     Gnuplot_Control h1;
@@ -773,7 +776,7 @@ double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio_110(Cell3D &t
     
     Vector3D k_cutoff = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax_110,w,G_cutoff);
     
-    return (kmax.abs()/sqrt(THREE))/k_cutoff.abs();
+    return (sqrt(sqr(kmax.x)+sqr(kmax.y))/sqrt(TWO))/k_cutoff.abs();
 }
 
 
@@ -785,7 +788,7 @@ double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio_100(Cell3D &t
     
     Vector3D k_cutoff = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax_100,w,G_cutoff);
     
-    return (kmax.abs()/sqrt(THREE))/k_cutoff.abs();
+    return (kmax.x/k_cutoff.x);
 }
 
 
