@@ -386,3 +386,7 @@ double Test_Example18_Integral (double x1, double x2){
   cout << "Theoretic integration Test_Example8 is not defined!\n Please use Numeric Integration!!\n";
   return f;
 }
+
+double Test_Example19 (const double & x){
+  return exp(-2.0*(x+5.0)) - log(x+1.0)*sin(x);
+}

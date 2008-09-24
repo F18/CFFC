@@ -2569,6 +2569,58 @@ namespace tut
     ensure_distance("Result", NumericResultA, 610.53786993983962760, 1.0e-13);
   }
 
+
+
+
+  // ******************************************************
+  //                 TEST SUITE: RootFinding_TestSuite
+  // ******************************************************
+  // Data used for testing
+  // **********************
+  class Data_RootFinding: public TestData{
+  public:
+    double TheoreticResult;	// Result obtained with the exact integration
+    double NumericResultA, NumericResultB, NumericResult;
+    double StartPointX;		// One end of the interval (X dir)
+    double EndPointX;		// The other end of the interval (X dir)
+    double AcceptError;	        // Acceptable error
+    double MapleResult;		// Result obtained with Maple
+    double DummyParam;
+    int Flag;
+  };
+
+  typedef test_group<Data_RootFinding> RootFinding_TestSuite;
+  typedef RootFinding_TestSuite::object  RootFinding_Object;
+
+  /******************************************************************************************************
+   ******************************************************************************************************
+   *                      ********    *******        ***       ********        ***                      *
+   *                         **       **           **   **        **         **   **                    *
+   *                         **       **          **              **        **                          *
+   *                         **       *******      *****          **          *****                     *
+   *                         **       **                **        **               **                   *
+   *                         **       **            *    **       **          *   **                    *
+   *                         **       *******        ****         **           ****                     *
+   ******************************************************************************************************
+   ******************************************************************************************************/
+
+  /* Test 1:*/
+  template<>
+  template<>
+  void RootFinding_Object::test<1>()
+  {
+    set_test_name("Check Ridder's method");
+    
+    // Find the root for equation (Test_Example19(x) = 0)
+    StartPointX = 5.0;
+    EndPointX = 8.0;
+
+    Flag = ridder(Test_Example19, StartPointX, EndPointX, 100, 10, NumericResult); 
+
+    ensure_distance("Result", NumericResult, 6.283185307259324, AcceptedError(6.283185307259324));
+  }
+
+
 }
 
 
@@ -2589,3 +2641,6 @@ tut::AGQ3D_TestSuite AGQ3D_Test("Integration:AdaptiveGaussianQuadrature() in 3D"
 
 // ErrorSubroutines
 tut::ErrorSubroutines_TestSuite ErrorSubroutines_Test("Numerical Library:Error functors & wrappers");
+
+// RootFinding
+tut::RootFinding_TestSuite RootFinding_Test("Numerical Library:Root Equation Finding");

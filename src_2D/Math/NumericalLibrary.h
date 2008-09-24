@@ -7,18 +7,23 @@
 /* Include required C++ libraries. */
 #include <limits>
 #include <iostream>
+#include <cmath>
 
 /* Using std namespace functions */
 using std::numeric_limits;
 using std::cout;
 using std::endl;
 using std::ostream;
+using std::fabs;
+using std::pow;
+using std::sqrt;
+
 
 /* Include CFFC header files */
 #include "../Utilities/TypeDefinition.h"
 #include "../Utilities/Utilities.h"
 #include "Math.h"
-
+#include "../System/System_Linux.h"
 
 #define MaxAllowedFunctionEvaluation 8000000 /* maximum allowed function evaluations for the adaptive integration */
 
@@ -1576,6 +1581,277 @@ inline void GaussQuadratureData::getGaussQuadWeights(double * GaussQuadWeights, 
   } // endswitch
 
 }
+
+
+//#include "System_routines.h"
+
+/*******************************************************************************
+ *
+ * Routine: ridder
+ * 
+ * Copyright (C) 2007-2008 S. Guzik
+ * 
+ * Purpose
+ * =======
+ *
+ *   Finds a root using Ridder's method.  This routine uses a pointer to a
+ *   function to describe the equation.
+ *
+ * I/O
+ * ===
+ *
+ *   f                  - (I) function pointer - returns function result
+ *   bracketL           - (I) initial left bracket
+ *   bracketR           - (I) initial right bracket
+ *   maxIt              - (I) maximum number of iterations
+ *   precision          - (I) precision of the root
+ *   root               - (O) the root
+ *   return             - >0 - success - iteration count
+ *                        =0 - failure - maximum iterations reached or root
+ *                                       not bracketed
+ *
+ ******************************************************************************/
+
+template<typename T>
+int ridder(T (*f)(T), const T bracketL, const T bracketR, const int maxIt,
+           const int precision, T& root)
+
+{
+
+
+  /*==============================================================================
+   * Declarations
+   *============================================================================*/
+  
+  //----- Parameter Variables -----//
+  
+  const T toler = pow(10., -precision);
+  // Tolerance for given precision
+  
+  //----- Local Variables -----//
+
+  T a;                                 // Value at left ofinterval
+  T b;                                 // Value at right of interval
+  T m;                                 // Middle approximation
+  T p;                                 // Ridder's smoothed approximation
+  T p0;                                // Previous approximation
+  T fa;                                // Function evaluated at a
+  T fb;                                // Function evaluated at b
+  T fm;                                // Function evaluated at m
+  T fp;                                // Function evaluated at p
+
+  /*==============================================================================
+   * End of Declarations
+   *============================================================================*/
+
+
+  //--First results from bracket
+
+  a = bracketL;
+  fa = f(a);
+  if ( fa == 0. ) {
+    root = a;
+    return 1;
+  }
+  b = bracketR;
+  fb = f(b);
+  if ( fb == 0. ) {
+    root = b;
+    return 1;
+  }
+
+  //--Confirm root bracketed
+
+  if ( fa*fb > 0. ) return 0.;
+  p0 = 2.*b - a;
+
+  //--Begin iterating
+
+  int iter = 0;
+  while ( iter != maxIt ) {
+    ++iter;
+    m = a + 0.5*(b - a);  // Middle approximation
+    fm = f(m);
+    if ( fm == 0. ) {     // Lucky solution
+      root = m;
+      return iter;
+    }
+    p = m + (m - a)*System::Copysign(1., fa)*fm/sqrt(fm*fm - fa*fb);
+    // Check for sufficient precision in result
+      if ( fabs(p - p0) < (fabs(p) + toler)*toler ) {
+         root = p;
+         return iter;
+      }
+      fp = f(p);
+      if ( fp == 0. ) {  // Lucky solution
+         root = p;
+         return iter;
+      }
+      p0 = p;
+      if ( fa*fm < 0. ) {
+         if ( fa*fp < 0. ) {  // New interval from a to p
+            b = p;
+            fb = fp;
+         }
+         else {               // New interfal from p to m
+            a = p;
+            fa = fp;
+            b = m;
+            fb = fm;
+         }
+      }
+      else {
+	if ( fp*fb < 0. ) {  // New interval from p to b
+	  a = p;
+	  fa = fp;
+	}
+	else {               // New interval from m to p
+	  a = m;
+	  fa = fm;
+	  b = p;
+	  fb = fp;
+	}
+      }
+  }
+  root = p;
+  return 0;  // Error - max iterations reached
+   
+}
+
+
+/*******************************************************************************
+ *
+ * Routine: ridder
+ *
+ * Copyright (C) 2007-2008 S. Guzik
+ *
+ * Purpose
+ * =======
+ *
+ *   Finds a root using Ridder's method - this routine uses a functor to
+ *   describe the equation.
+ *
+ * I/O
+ * ===
+ *
+ *   f                  - (I) function object - operator() evaluates
+ *   bracketL           - (I) initial left bracket
+ *   bracketR           - (I) initial right bracket
+ *   maxIt              - (I) maximum number of iterations
+ *   precision          - (I) precision of the root
+ *   root               - (O) the root
+ *   return             - >0 - success - iteration count
+ *                        =0 - failure - maximum iterations reached or root not
+ *                                       bracketed
+ *
+ ******************************************************************************/
+
+template<typename T, typename F>
+int ridder(F& f, const T bracketL, const T bracketR, const int maxIt,
+           const int precision, T& root)
+  
+{
+  
+
+  /*==============================================================================
+   * Declarations
+   *============================================================================*/
+  
+  //----- Parameter Variables -----//
+
+  const T toler = pow(10., -precision);
+  // Tolerance for given precision
+
+  //----- Local Variables -----//
+
+  T a;                                 // Value at left ofinterval
+  T b;                                 // Value at right of interval
+  T m;                                 // Middle approximation
+  T p;                                 // Ridder's smoothed approximation
+  T p0;                                // Previous approximation
+  T fa;                                // Function evaluated at a
+  T fb;                                // Function evaluated at b
+  T fm;                                // Function evaluated at m
+  T fp;                                // Function evaluated at p
+
+  /*==============================================================================
+   * End of Declarations
+   *============================================================================*/
+
+
+  //--First results from bracket
+
+  a = bracketL;
+  fa = f(a);
+  if ( fa == 0. ) {
+    root = a;
+    return 1;
+  }
+  b = bracketR;
+  fb = f(b);
+  if ( fb == 0. ) {
+    root = b;
+    return 1;
+  }
+
+  //--Confirm root bracketed
+
+  if ( fa*fb > 0. ) return 0;
+  p0 = 2.*b - a;
+
+  //--Begin iterating
+
+  int iter = 0;
+  while ( iter != maxIt ) {
+    ++iter;
+    m = a + 0.5*(b - a);  // Middle approximation
+    fm = f(m);
+    if ( fm == 0. ) {     // Lucky solution
+      root = m;
+      return iter;
+    }
+    p = m + (m - a)*System::Copysign(1., fa)*fm/sqrt(fm*fm - fa*fb);
+    // Check for sufficient precision in result
+    if ( fabs(p - p0) < (fabs(p) + toler)*toler ) {
+      root = p;
+      return iter;
+    }
+    fp = f(p);
+    if ( fp == 0. ) {  // Lucky solution
+      root = p;
+      return iter;
+    }
+    p0 = p;
+    if ( fa*fm < 0. ) {
+      if ( fa*fp < 0. ) {  // New interval from a to p
+	b = p;
+	fb = fp;
+      }
+      else {               // New interfal from p to m
+	a = p;
+	fa = fp;
+	b = m;
+	fb = fm;
+      }
+    }
+    else {
+      if ( fp*fb < 0. ) {  // New interval from p to b
+	a = p;
+	fa = fp;
+      }
+      else {               // New interval from m to p
+	a = m;
+	fa = fm;
+	b = p;
+	fb = fp;
+      }
+    }
+  }
+  root = p;
+  return 0;  // Error - max iterations reached
+
+}
+
 
 /**************** Function Prototypes ********************/
 
