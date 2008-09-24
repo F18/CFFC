@@ -12,7 +12,6 @@
 #include "Euler2DInput.h"
 #include "ExactSolutions.h"
 
-
 ExactSolutionBasicType::ExactSolutionBasicType(void): ExactSolutionName("Not named"), Accuracy_Parameter(Soln) {  };
 ExactSolutionBasicType::~ExactSolutionBasicType(void){  };
 
@@ -86,57 +85,41 @@ void ExactSolutionBasicType::Broadcast(void){
 /*! 
  * Return exact Ringleb's flow solution at a given location.
  */
-inline Euler2D_pState Ringleb_Flow_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) const {
+Euler2D_pState Ringleb_Flow_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
 
   Euler2D_pState W;
   double sin_theta, cos_theta, theta;
-  double f_a, f_ab, f_b;
   double J; 
   double rho;
   double q, k;
-  double c, c_a = 0.7, c_b = 1.0, c_ab;
-  double g = GAMMA_AIR, po = PRESSURE_STDATM, rhoo = DENSITY_STDATM;
-  double TOL = 1.0e-14;
+  double c;
+  int Flag;
 
-  // Use bisection method to solve for the sound speed, c.
+  // Fix location of the calculation point
+  xLoc = x;
+  yLoc = y;
 
-  // Determine "f_a" for start
-  rho = pow(c_a,TWO/(g-ONE));
-  J   = ONE/c_a + ONE/(THREE*c_a*c_a*c_a) + 
-        ONE/(FIVE*c_a*c_a*c_a*c_a*c_a) - 
-        HALF*log((ONE+c_a)/(ONE-c_a));
-  q  = sqrt((TWO/(g-ONE))*(ONE-c_a*c_a));
-  f_a = (x + HALF*J)*(x + HALF*J) + y*y - 
-        ONE/(FOUR*rho*rho*q*q*q*q);
+  // Use Ridder's method to solve for the sound speed, c.
+  _Member_Function_Wrapper_<Ringleb_Flow_ExactSolution,
+    double (Ringleb_Flow_ExactSolution::*)(const double &) const,
+    double> RinglebResidualWrapper(this,
+				   &Ringleb_Flow_ExactSolution::RinglebResidual);
+  
+  // Call root-finder algorithm
+  Flag = ridder(RinglebResidualWrapper, c_a, c_b, MaxIter, Precision, c);
 
-  while (fabs(c_a - c_b) > TOL){
-    c_ab = HALF*(c_a + c_b);
-
-    // Determine f_ab.
-    rho = pow(c_ab,TWO/(g-ONE));
-    J   = ONE/c_ab + ONE/(THREE*c_ab*c_ab*c_ab) + 
-          ONE/(FIVE*c_ab*c_ab*c_ab*c_ab*c_ab) - 
-          HALF*log((ONE+c_ab)/(ONE-c_ab));
-    q   = sqrt((TWO/(g-ONE))*(ONE-c_ab*c_ab));
-    f_ab = (x + HALF*J)*(x + HALF*J) + y*y - 
-           ONE/(FOUR*rho*rho*q*q*q*q);
-
-    // Divide the interval
-    if (f_a*f_ab <= ZERO) {
-      c_b = c_ab;
-      f_b = f_ab;
-    } else {
-      c_a = c_ab;
-      f_a = f_ab;
-    }
+  // Interpret the flag
+  if (Flag == 0){
+    // Not converged solution or something else went wrong
+    throw std::runtime_error("Ringleb_Flow_ExactSolution::EvaluateSolutionAt() ERROR! The speed of sound couldn't be determined!");
   }
 
-  // Final sound speed, density, and total velocity (speed).
-  c = HALF*(c_a + c_b); 
-  q = sqrt((TWO/(g-ONE))*(ONE-c*c));
-  W.d = pow(c,TWO/(g-ONE));
-  J = ONE/c + ONE/(THREE*c*c*c) + ONE/(FIVE*c*c*c*c*c) - HALF*log((ONE+c)/(ONE-c));
-  k = sqrt(TWO/(TWO*W.d*(x+HALF*J)+ONE/(q*q)));
+  // Final density and total velocity (speed).
+  q   = q_Func(c);
+  W.d = rho_Func(c);
+  J   = J_Func(c);
+
+  k = sqrt(TWO/(TWO*W.d*(x + HALF*J_Func(c) ) + ONE/(q*q)) );
   sin_theta = max(ZERO,min(ONE,q/k));
   theta = TWO*PI-asin(sin_theta);
   sin_theta = sin(theta);

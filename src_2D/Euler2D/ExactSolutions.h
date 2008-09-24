@@ -68,7 +68,7 @@ public:
   virtual ~ExactSolutionBasicType(void) = 0;
 
   /*! Calculate the exact solution based on the location of interest */
-  virtual Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) const = 0;
+  virtual Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) = 0;
 
   /*! Calculate the integrated dependency of the solution with respect to x at the location of interest.
     This function can be used to integrate the RHS over domain with curved boundaries,
@@ -109,12 +109,10 @@ class Ringleb_Flow_ExactSolution: public ExactSolutionBasicType{
 public:
 
   //! Basic Constructor
-  Ringleb_Flow_ExactSolution(void){ 
-    ExactSolutionName = "Ringleb Flow";	// Name the exact solution
-  }
+  Ringleb_Flow_ExactSolution(void);
 
   //! Return exact solution
-  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) const;
+  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) ;
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP, int & i_command);
@@ -125,12 +123,52 @@ public:
   //! Broadcast relevant parameters
   void Broadcast(void);
 
+  /*! @brief Function for determining c inside Ringleb's flow at location xLoc, yLoc. */
+  double RinglebResidual(const double &c) const ;
+
 private:
+  double c_a, c_b;
+  double g, po, rhoo;
+  int Precision, MaxIter;
+  double TwoOver_gm1;
+  double xLoc, yLoc;
 
   //! Determine the Cartesian coordinates (X_Coord,Y_Coord) corresponding to the pair of 
   //  non-dimensional velocity q and the streamline parameter k.
   void RinglebFlowCoordinates(const double &q , const double &k , double &X_Coord, double &Y_Coord);
+
+  double J_Func(const double &c) const;
+  double rho_Func(const double &c) const;
+  double q_Func(const double &c) const;
+  
 };
+
+/*
+ * Default constructor
+ */
+inline Ringleb_Flow_ExactSolution::Ringleb_Flow_ExactSolution(void):
+  g(GAMMA_AIR), po(PRESSURE_STDATM), rhoo(DENSITY_STDATM),
+  c_a(0.7), c_b(0.999999),
+  Precision(14), MaxIter(200),
+  TwoOver_gm1(TWO/(g-ONE)),
+  xLoc(0.0), yLoc(0.0)
+{ 
+  ExactSolutionName = "Ringleb Flow";	// Name the exact solution
+}
+
+
+inline double Ringleb_Flow_ExactSolution::J_Func(const double &c) const{
+  return ONE/c + ONE/(THREE*c*c*c) + ONE/(FIVE*c*c*c*c*c) - HALF*log((ONE+c)/(ONE-c));
+}
+
+inline double Ringleb_Flow_ExactSolution::rho_Func(const double &c) const{
+  return pow(c,TwoOver_gm1);
+}
+
+inline double Ringleb_Flow_ExactSolution::q_Func(const double &c) const{
+  return sqrt(TwoOver_gm1*(ONE - c*c));
+}
+
 
 /*
  * This subroutine determines X_Coord and Y_Coord based on
@@ -143,12 +181,25 @@ inline void Ringleb_Flow_ExactSolution::RinglebFlowCoordinates(const double &q ,
   double g = 1.40;
 
   c = sqrt(ONE - ((g-ONE)/TWO)*q*q);
-  rho = pow(c,TWO/(g-ONE));
-  J = ONE/c + ONE/(THREE*pow(c,THREE)) + ONE/(FIVE*pow(c,FIVE)) - HALF*log((ONE+c)/(ONE-c));
+  rho = rho_Func(c);
+  J = J_Func(c);
 
   X_Coord = (HALF/rho)*(TWO/(k*k) - ONE/(q*q)) - HALF*J;
   Y_Coord = (ONE/(k*rho*q))*sqrt(ONE - (q*q)/(k*k));  
 
+}
+
+/*! Function for determining c inside Ringleb's flow at location xLoc, yLoc.
+ *  Returns residual of (x+J/2)^2 + y^2 - 1/(4*rho^2*q^4) based on a guess of c.
+ *  Parameters xLoc and yLoc must be preset in the class.
+ */
+inline double Ringleb_Flow_ExactSolution::RinglebResidual(const double &c) const {
+
+  const double J = J_Func(c);
+  const double rho = rho_Func(c);
+  const double q = q_Func(c);
+
+  return (xLoc + HALF*J)*(xLoc + 0.5*J) + yLoc*yLoc - 0.25/(rho*rho *q*q*q*q);
 }
 
 
@@ -167,7 +218,7 @@ public:
   }
 
   //! Return exact solution
-  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) const;
+  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) ;
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP, int & i_command);
@@ -186,7 +237,7 @@ private:
 };
 
 //! Return exact solution 
-inline Euler2D_pState Abgrall_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) const {
+inline Euler2D_pState Abgrall_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
   return Euler2D_pState(Abgrall_Function(x,y), ZERO, ZERO, PRESSURE_STDATM);
 }
 
@@ -241,7 +292,7 @@ public:
   Sinusoidal_Function_ExactSolution(void);
 
   //! Return exact solution
-  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) const;
+  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) ;
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP, int & i_command);
@@ -273,7 +324,7 @@ inline Sinusoidal_Function_ExactSolution::Sinusoidal_Function_ExactSolution(void
 }
 
 //! Return exact solution 
-inline Euler2D_pState Sinusoidal_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) const {
+inline Euler2D_pState Sinusoidal_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
   if (Direction == X_DIRECTION){ // X-direction variation
     return Euler2D_pState(BaseSinusoidalVariation(x), Velocity, ZERO, PRESSURE_STDATM);
   } else {			// Y-direction variation
@@ -306,7 +357,7 @@ public:
   CosSin_Function_ExactSolution(void);
 
   //! Return exact solution
-  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) const;
+  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) ;
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP, int & i_command);
@@ -340,7 +391,7 @@ inline CosSin_Function_ExactSolution::CosSin_Function_ExactSolution(void):
 }
 
 //! Return exact solution 
-inline Euler2D_pState CosSin_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) const {
+inline Euler2D_pState CosSin_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
   if (Direction == X_DIRECTION){		// X-direction variation
     return Euler2D_pState(BaseCosSinVariation(x), Velocity, ZERO, PRESSURE_STDATM);
   } else {			// Y-direction variation
@@ -374,7 +425,7 @@ public:
   HyperTangent_Function_ExactSolution(void);
 
   //! Return exact solution
-  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) const;
+  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) ;
 
   //! Update the translation point location based on the flow input parameters
   void Set_ParticularSolution_Parameters(const Euler2D_Input_Parameters & IP);
@@ -409,7 +460,7 @@ inline HyperTangent_Function_ExactSolution::HyperTangent_Function_ExactSolution(
 }
 
 //! Return exact solution 
-inline Euler2D_pState HyperTangent_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) const {
+inline Euler2D_pState HyperTangent_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
   // Compute distance between centroid and the current position
   double Distance(abs(Centroid - Vector2D(x,y)));
 
@@ -443,7 +494,7 @@ public:
   UnitTest_Function_ExactSolution(void);
 
   //! Return exact solution
-  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) const;
+  Euler2D_pState EvaluateSolutionAt(const double &x, const double &y);
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP, int & i_command);
@@ -465,7 +516,7 @@ inline UnitTest_Function_ExactSolution::UnitTest_Function_ExactSolution(void) {
 }
 
 //! Return exact solution 
-inline Euler2D_pState UnitTest_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) const {
+inline Euler2D_pState UnitTest_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
   return Euler2D_pState(Euler2D_W_STDATM.d   * (1.1 + sin(x)*cos(y)),
 			Euler2D_W_STDATM.a() * sin(x),
 			Euler2D_W_STDATM.a() * cos(y),

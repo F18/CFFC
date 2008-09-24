@@ -1662,7 +1662,6 @@ int ridder(T (*f)(T), const T bracketL, const T bracketR, const int maxIt,
 
   //--Confirm root bracketed
 
-  if ( fa*fb > 0. ) return 0.;
   p0 = 2.*b - a;
 
   //--Begin iterating
@@ -1796,7 +1795,6 @@ int ridder(F& f, const T bracketL, const T bracketR, const int maxIt,
 
   //--Confirm root bracketed
 
-  if ( fa*fb > 0. ) return 0;
   p0 = 2.*b - a;
 
   //--Begin iterating
