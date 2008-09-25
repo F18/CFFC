@@ -201,7 +201,7 @@ public:
   void OutputSolutionCellTecplotOneZone(std::ofstream &output_file);
   void OutputSolutionCellTecplotOneZone(std::ofstream &output_file, const int &SubgridNy, 
 					const int &SubgridNz);
-  void OutputPWC(std::ofstream &output_file, const int &SubgridNy, const int &SubgridNz){ }; // --> RR: Needs to be implemented.
+  void OutputPWC(std::ofstream &output_file, const int &SubgridNy, const int &SubgridNz);
   void OutputSmoothnessIndicatorAtNodesTecplot(std::ofstream &output_file, const int &SubgridNy, 
 					       const int &SubgridNz);
 
