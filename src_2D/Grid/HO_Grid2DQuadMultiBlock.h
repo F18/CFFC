@@ -421,6 +421,9 @@ public:
 			 const int Number_of_Ghost_Cells,
 			 const int Highest_Order_of_Reconstruction);
 
+  void Determine_Coordinates_Ringleb_Flow(const double & Streamline, const double & Isotachline,
+					  double & xLoc, double & yLoc);
+
   void Grid_Bump_Channel_Flow(int &_Number_of_Blocks_Idir_,
 			      int &_Number_of_Blocks_Jdir_,
 			      const int Smooth_Bump,

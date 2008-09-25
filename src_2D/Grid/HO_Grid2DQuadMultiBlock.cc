@@ -4614,6 +4614,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Unsteady_Blunt_Body_Without_Update(int &_Nu
   
 }
 
+
+void Grid2D_Quad_MultiBlock_HO::Determine_Coordinates_Ringleb_Flow(const double & Streamline, const double & Isotachline,
+								   double & xLoc, double & yLoc){
+  
+  const double g(1.40);
+  double c, J, rho;
+
+  const double Isotachline2(Isotachline*Isotachline);
+  const double Streamline2(Streamline*Streamline);
+
+  c = sqrt(ONE - ((g-ONE)/TWO)*Isotachline2);
+  rho = pow(c,TWO/(g-ONE));
+  J = ONE/c + ONE/(THREE*pow(c,THREE)) + ONE/(FIVE*pow(c,FIVE)) - HALF*log((ONE+c)/(ONE-c));
+
+  xLoc = (HALF/rho)*(TWO/(Streamline2) - ONE/(Isotachline2)) - HALF*J;
+  yLoc = (ONE/(Streamline*rho*Isotachline))*sqrt(ONE - (Isotachline2)/(Streamline2));
+  
+}
+
 /*!
  * Generates a uniform 2D mesh for Ringleb's flow.                    
  *                                                                    
@@ -4648,96 +4667,103 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow_Without_Update(int &_Number_of
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
   Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
     Bnd_Spline_East, Bnd_Spline_West;
-  double **rho;
-  double delta_q;
-  double delta_k;
-  double k_init, q_init, q_final;
-  double **q, **k, qo, ko, c, J;
-  double g = 1.40;
-  Vector2D norm_dir, X_norm, X_tan;
-  
+
+  double k, k1, k2;
+  double q, q1, q2;
+  double delk, delq;
+  int i,j;
+
+
   // Allocate memory for grid block.
   _Number_of_Blocks_Idir_ = 1;
   _Number_of_Blocks_Jdir_ = 1;
   allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
-
   // Create the mesh for each block representing the complete grid.
-  nk = 32;
-  nq = 50;
-  k = new double*[nk];
-  q = new double*[nk];
-  rho = new double*[nk];
-  for (int i = 0; i < nk; i++) {
-    k[i] = new double[nq];
-    q[i] = new double[nq];
-    rho[i] = new double[nq];
-    for (int j = 0; j < nq; j++) {
-      k[i][j] = ZERO;
-      q[i][j] = ZERO;
-      rho[i][j] = ZERO;
-    }
-  }
+  
+  // Set number of points in each direction
+  nk = min(32, 3*Number_of_Cells_Idir); // 3 points for each cell
+  nq = min(50, 3*Number_of_Cells_Jdir); // 3 points for each cell
 
-  delta_k = (Inner_Streamline_Number-Outer_Streamline_Number)/double(nk-1);
-  k_init = Outer_Streamline_Number;
-  q_init = Isotach_Line;
-  for (int i = 0; i < nk; i++){
-    ko = k_init + double(i)*delta_k;
-    q_final = ko; // condition y = 0
-    delta_q = (q_final - q_init)/double(nq-1);
-    for (int j = 0; j < nq; j++) {
-      if (j == nq-1) qo = q_final;
-      else qo = q_init + double(j)*delta_q;
-      k[i][j] = ko;
-      q[i][j] = qo;
-    }
-  }
+  // West streamline
+  k  = Inner_Streamline_Number;
+  q1 = Inner_Streamline_Number;
+  q2 = Isotach_Line;
+  delq = q2 - q1;
 
-  Bnd_Spline_North.allocate(nk); Bnd_Spline_North.settype(SPLINE2D_QUINTIC);
-  Bnd_Spline_South.allocate(nk); Bnd_Spline_South.settype(SPLINE2D_QUINTIC);
-  Bnd_Spline_East.allocate(nq);	 Bnd_Spline_East.settype(SPLINE2D_QUINTIC);
+  // Allocate memory
   Bnd_Spline_West.allocate(nq);	 Bnd_Spline_West.settype(SPLINE2D_QUINTIC);
 
-  for (int i = 0; i < nk; i++) {
-    for (int j = 0; j < nq; j++){
+  for (j = 0; j < nq; ++j ){
+    // Determine isotach line
+    q = q1 + delq*pow((0.5 - cos((j*PI)/(nq - 1))/2.0),1.3);
+    
+    // Determine (xLoc,yLoc) of the control point
+    Determine_Coordinates_Ringleb_Flow(k,q,
+				       Bnd_Spline_West.Xp[j].x,
+				       Bnd_Spline_West.Xp[j].y);
+    if (j == 0 || j == nq-1) {
+      Bnd_Spline_West.tp[j] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      Bnd_Spline_West.tp[j] = SPLINE2D_POINT_NORMAL;
+    }
 
-      c = sqrt(ONE - ((g-ONE)/TWO)*q[i][j]*q[i][j]);
-      rho[i][j] = pow(c,TWO/(g-ONE));
-      J = ONE/c + ONE/(THREE*pow(c,THREE)) + ONE/(FIVE*pow(c,FIVE)) - HALF*log((ONE+c)/(ONE-c));
-      // NORTH spline.
-      if (j == 0) {
-	Bnd_Spline_North.Xp[nk-1-i].x = (HALF/rho[i][j])*(TWO/(k[i][j]*k[i][j]) - ONE/(q[i][j]*q[i][j])) - HALF*J;
-	Bnd_Spline_North.Xp[nk-1-i].y = (ONE/(k[i][j]*rho[i][j]*q[i][j]))*sqrt(ONE - (q[i][j]*q[i][j])/(k[i][j]*k[i][j]));
-	Bnd_Spline_North.bc[nk-1-i] = BC_RINGLEB_FLOW;
-	if (i == 0 || i == nk-1) Bnd_Spline_North.tp[nk-1-i] = SPLINE2D_POINT_SHARP_CORNER;
-	else Bnd_Spline_North.tp[nk-1-i] = SPLINE2D_POINT_NORMAL;
-      }
-      // SOUTH spline.
-      if (j == nq-1) {
-	Bnd_Spline_South.Xp[nk-1-i].x = (HALF/rho[i][j])*(TWO/(k[i][j]*k[i][j]) - ONE/(q[i][j]*q[i][j])) - HALF*J;
-	Bnd_Spline_South.Xp[nk-1-i].y = ZERO;
-	Bnd_Spline_South.bc[nk-1-i] = BC_RINGLEB_FLOW;
-	if (i == 0 || i == nk-1) Bnd_Spline_South.tp[nk-1-i] = SPLINE2D_POINT_SHARP_CORNER;
-	else Bnd_Spline_South.tp[nk-1-i] = SPLINE2D_POINT_NORMAL;
-      }
-      // EAST spline.
-      if (i == 0) {
-	Bnd_Spline_East.Xp[nq-1-j].x = (HALF/rho[i][j])*(TWO/(k[i][j]*k[i][j]) - ONE/(q[i][j]*q[i][j])) - HALF*J;
-	Bnd_Spline_East.Xp[nq-1-j].y = (ONE/(k[i][j]*rho[i][j]*q[i][j]))*sqrt(ONE - (q[i][j]*q[i][j])/(k[i][j]*k[i][j]));
-	Bnd_Spline_East.bc[nq-1-j] = BC_RINGLEB_FLOW;//BC_REFLECTION;
-	if (j == 0 || j == nq-1) Bnd_Spline_East.tp[nq-1-j] = SPLINE2D_POINT_SHARP_CORNER;
-	else Bnd_Spline_East.tp[nq-1-j] = SPLINE2D_POINT_NORMAL;
-      }
-      // WEST spline.
-      if (i == nk-1) {
-	Bnd_Spline_West.Xp[nq-1-j].x = (HALF/rho[i][j])*(TWO/(k[i][j]*k[i][j]) - ONE/(q[i][j]*q[i][j])) - HALF*J;
-	Bnd_Spline_West.Xp[nq-1-j].y = (ONE/(k[i][j]*rho[i][j]*q[i][j]))*sqrt(ONE - (q[i][j]*q[i][j])/(k[i][j]*k[i][j]));
-	Bnd_Spline_West.bc[nq-1-j] = BC_RINGLEB_FLOW;//BC_REFLECTION;
-	if (j == 0 || j == nq-1) Bnd_Spline_West.tp[nq-1-j] = SPLINE2D_POINT_SHARP_CORNER;
-	else Bnd_Spline_West.tp[nq-1-j] = SPLINE2D_POINT_NORMAL;
-      }
+  }
 
+  // East streamline
+  k  = Outer_Streamline_Number;
+  q1 = Outer_Streamline_Number; 
+  q2 = Isotach_Line;
+  delq = q2 - q1;
+  
+  // Allocate memory
+  Bnd_Spline_East.allocate(nq);	 Bnd_Spline_East.settype(SPLINE2D_QUINTIC);
+
+  for (j = 0; j < nq; ++j ){
+    // Determine isotach line
+    q = q1 + delq*pow((0.5 - cos((j*PI)/(nq - 1))/2.0),1.3);
+
+    // Determine (xLoc,yLoc) of the control point
+    Determine_Coordinates_Ringleb_Flow(k,q,
+				       Bnd_Spline_East.Xp[j].x,
+				       Bnd_Spline_East.Xp[j].y);
+
+    if (j == 0 || j == nq-1) {
+      Bnd_Spline_East.tp[j] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      Bnd_Spline_East.tp[j] = SPLINE2D_POINT_NORMAL;
+    }
+  }
+
+
+  // South isotach 
+  // Line between the end-points of West and East streamline.
+  Bnd_Spline_South.Create_Spline_Line(Bnd_Spline_West.Xp[0],
+				      Bnd_Spline_East.Xp[0],
+				      2);
+
+  // North isotach
+  q  = Isotach_Line;
+  k1 = Outer_Streamline_Number; 
+  k2 = Inner_Streamline_Number; 
+  delk = k2 - k1;
+
+  // Allocate memory
+  Bnd_Spline_North.allocate(nk); Bnd_Spline_North.settype(SPLINE2D_QUINTIC);
+  
+  for (i = 0; i < nk; ++i ){
+    // Determine streamline
+    k = k1 + delk*(1. + sin((i/(nk - 1.) - 1.)*PI/2));
+
+    // Determine (xLoc,yLoc) of the control point
+    Determine_Coordinates_Ringleb_Flow(k,q,
+				       Bnd_Spline_North.Xp[nk-1-i].x,
+				       Bnd_Spline_North.Xp[nk-1-i].y);
+   
+    if (i == 0 || i == nk-1) {
+      Bnd_Spline_North.tp[nk-1-i] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      Bnd_Spline_North.tp[nk-1-i] = SPLINE2D_POINT_NORMAL;
     }
   }
 
@@ -4750,8 +4776,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow_Without_Update(int &_Number_of
   // splines.
   Bnd_Spline_North.setBCtype(BC_RINGLEB_FLOW);
   Bnd_Spline_South.setBCtype(BC_RINGLEB_FLOW);
-  Bnd_Spline_East.setBCtype(BC_REFLECTION);
-  Bnd_Spline_West.setBCtype(BC_REFLECTION);
   Bnd_Spline_East.setBCtype(BC_RINGLEB_FLOW);
   Bnd_Spline_West.setBCtype(BC_RINGLEB_FLOW);
 
@@ -4790,16 +4814,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow_Without_Update(int &_Number_of
 						  Orthogonal_West);
 
   Grid_ptr[0][0].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
-
-  // Deallocate memory for point, kq, and rho.
-  for (int i = 0; i < nk; i++) {
-    delete []k[i];   k[i]   = NULL;
-    delete []q[i];   q[i]   = NULL;
-    delete []rho[i]; rho[i] = NULL;
-  }
-  delete []k;   k   = NULL;
-  delete []q;   q   = NULL;
-  delete []rho; rho = NULL;
 
 }
 
