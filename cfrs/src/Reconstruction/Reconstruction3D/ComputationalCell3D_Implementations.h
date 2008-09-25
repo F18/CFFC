@@ -424,6 +424,22 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>::
   SubgridSolution.OutputSolutionTecplotOneZone(output_file,SubgridNy,SubgridNz);
 }
 
+// OutputPWC()
+/* Outputs the piecewise constant solution at the nodes of the subgrid */
+template<class GeometryType,class SolutionType> inline
+void ComputationalCell<ThreeD,GeometryType,SolutionType>::
+OutputPWC(std::ofstream &output_file, const int &SubgridNy, const int &SubgridNz)
+{
+
+  output_file << setprecision(14);
+  int SubgridNx = iSubgridPoints();
+
+  for(int i=0; i<SubgridNx; ++i)
+    output_file << SubgridSolution(i,SubgridNy,SubgridNz).GetNode() <<  "\t" <<  CellSolution() << "\n";
+
+  output_file << setprecision(6);
+}
+
 // Friend functions
 // Operator ==
 template< class GeometryType,class SolutionType> inline

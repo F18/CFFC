@@ -1217,7 +1217,7 @@ OutputPWC(std::ofstream &output_file, const bool Title) const{
 	for(j=jStart(); j<=jEnd(); ++j)
 	  for(SubgridNy = 0; SubgridNy < SolnPtr[0][0][0].jSubgridPoints(); ++SubgridNy){
 	    for(i=iStart(); i<=iEnd(); ++i){
-	      SolnPtr[0][j][i].OutputPWC(output_file, SubgridNy, SubgridNz);
+	      SolnPtr[k][j][i].OutputPWC(output_file, SubgridNy, SubgridNz);
 	    }
 	  }
       }
