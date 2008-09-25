@@ -179,7 +179,7 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 
   int i, j;
   Vector2D dX;
-  Euler2D_pState Wl, Wr;
+  Euler2D_pState Wl, Wr, Wi;
   Euler2D_cState Flux;
 
   /* Perform the linear reconstruction within each cell
@@ -222,7 +222,10 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	     Grid.BCtypeW[j] == BC_CHARACTERISTIC_VELOCITY ||
 	     Grid.BCtypeW[j] == BC_BURNING_SURFACE ||
 	     Grid.BCtypeW[j] == BC_MASS_INJECTION ||
-	     Grid.BCtypeW[j] == BC_RINGLEB_FLOW)) {
+	     Grid.BCtypeW[j] == BC_RINGLEB_FLOW ||
+	     Grid.BCtypeW[j] == BC_FROZEN ||
+	     Grid.BCtypeW[j] == BC_EXACT_SOLUTION ||
+	     Grid.BCtypeW[j] == BC_STREAMLINE)) {
 	  dX = Grid.xfaceW(i+1, j)-Grid.Cell[i+1][j].Xc;
 	  Wr = W[i+1][j] + 
 	    (phi[i+1][j]^dWdx[i+1][j])*dX.x +
@@ -244,6 +247,25 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	  } else if (Grid.BCtypeW[j] == BC_RINGLEB_FLOW) {
 	    Wl = RinglebFlow(Wl,Grid.xfaceW(i+1,j));
 	    //Wl = Reflect(Wr, Grid.nfaceW(i+1, j));
+	  } else if (Grid.BCtypeW[j] == BC_FROZEN) {
+	    // calculate Wl based on the ghost cell reconstruction
+	    Wl = PiecewiseLinearSolutionAtLocation(i,j,
+						   Grid.xfaceW(i+1,j));
+	  } else if (Grid.BCtypeW[j] == BC_EXACT_SOLUTION) {
+	    // calculate Wl using the exact solution at the interface and avoiding the problem to become ill-posed.
+	    if (ExactSoln->IsExactSolutionSet()){
+	      Wl = BC_Characteristic_Pressure(Wr,
+					      ExactSoln->Solution(Grid.xfaceW(i+1,j).x,Grid.xfaceW(i+1,j).y),
+					      Grid.nfaceW(i+1, j));
+	    } else {
+	      throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	    }
+	  } else if (Grid.BCtypeW[j] == BC_STREAMLINE) {
+	    Wl = Reflect(Wr, Grid.nfaceW(i+1, j));
+	    Wi = PiecewiseLinearSolutionAtLocation(i,j,
+						  Grid.xfaceW(i+1,j));
+	    Wl.d = Wi.d;
+	    Wl.p = Wi.p;
 	  } /* endif */
 	} else if (i == ICu && 
 		   (Grid.BCtypeE[j] == BC_REFLECTION ||
@@ -251,7 +273,10 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 		    Grid.BCtypeE[j] == BC_CHARACTERISTIC_VELOCITY ||
 		    Grid.BCtypeE[j] == BC_BURNING_SURFACE ||
 		    Grid.BCtypeE[j] == BC_MASS_INJECTION ||
-		    Grid.BCtypeE[j] == BC_RINGLEB_FLOW)) {
+		    Grid.BCtypeE[j] == BC_RINGLEB_FLOW ||
+		    Grid.BCtypeE[j] == BC_FROZEN ||
+		    Grid.BCtypeE[j] == BC_EXACT_SOLUTION ||
+		    Grid.BCtypeE[j] == BC_STREAMLINE)) {
 	  dX = Grid.xfaceE(i, j)-Grid.Cell[i][j].Xc;
 	  Wl = W[i][j] + 
 	    (phi[i][j]^dWdx[i][j])*dX.x +
@@ -273,6 +298,25 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	  } else if (Grid.BCtypeE[j] == BC_RINGLEB_FLOW) {
 	    Wr = RinglebFlow(Wr,Grid.xfaceE(i,j));
 	    //Wr = Reflect(Wl, Grid.nfaceE(i, j));
+	  } else if (Grid.BCtypeE[j] == BC_FROZEN) {
+	    // calculate Wr based on the ghost cell reconstruction
+	    Wr = PiecewiseLinearSolutionAtLocation(i+1,j,
+						   Grid.xfaceE(i,j));
+	  } else if (Grid.BCtypeE[j] == BC_EXACT_SOLUTION) {
+	    // calculate Wr using the exact solution at the interface and avoiding the problem to become ill-posed.
+	    if (ExactSoln->IsExactSolutionSet()){
+	      Wr = BC_Characteristic_Pressure(Wl,
+					      ExactSoln->Solution(Grid.xfaceE(i,j).x,Grid.xfaceE(i,j).y),
+					      Grid.nfaceE(i, j));
+	    } else {
+	      throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	    }	    
+	  } else if (Grid.BCtypeE[j] == BC_STREAMLINE) {
+	    Wr = Reflect(Wl, Grid.nfaceE(i, j));
+	    Wi = PiecewiseLinearSolutionAtLocation(i+1,j,
+						   Grid.xfaceW(i+1, j));
+	    Wl.d = Wi.d;
+	    Wl.p = Wi.p;
 	  } /* endif */
 	} else {            
 	  dX = Grid.xfaceE(i, j)-Grid.Cell[i][j].Xc;
@@ -369,7 +413,10 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	   Grid.BCtypeS[i] == BC_CHARACTERISTIC_VELOCITY ||
 	   Grid.BCtypeS[i] == BC_BURNING_SURFACE ||
 	   Grid.BCtypeS[i] == BC_MASS_INJECTION ||
-	   Grid.BCtypeS[i] == BC_RINGLEB_FLOW)) {
+	   Grid.BCtypeS[i] == BC_RINGLEB_FLOW ||
+	   Grid.BCtypeS[i] == BC_FROZEN ||
+	   Grid.BCtypeS[i] == BC_EXACT_SOLUTION ||
+	   Grid.BCtypeS[i] == BC_STREAMLINE)) {
 	dX = Grid.xfaceS(i, j+1)-Grid.Cell[i][j+1].Xc;
 	Wr = W[i][j+1] +
 	  (phi[i][j+1]^dWdx[i][j+1])*dX.x +
@@ -393,13 +440,35 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	  Wl = BC_Characteristic_Pressure(Wr,
 					  RinglebFlow(Wr,Grid.xfaceS(i,j+1)), 
 					  Grid.nfaceS(i, j+1));
+	} else if (Grid.BCtypeS[i] == BC_FROZEN) {
+	  // calculate Wl based on the ghost cell reconstruction
+	  Wl = PiecewiseLinearSolutionAtLocation(i,j,
+						 Grid.xfaceS(i, j+1));
+	} else if (Grid.BCtypeS[i] == BC_EXACT_SOLUTION) {
+	  // calculate Wl using the exact solution at the interface and avoiding the problem to become ill-posed.
+	  if (ExactSoln->IsExactSolutionSet()){
+	    Wl = BC_Characteristic_Pressure(Wr,
+					    ExactSoln->Solution(Grid.xfaceS(i,j+1).x,Grid.xfaceS(i,j+1).y),
+					    Grid.nfaceS(i, j+1));
+	  } else {
+	    throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	} else if (Grid.BCtypeS[i] == BC_STREAMLINE) {
+	  Wl = Reflect(Wr, Grid.nfaceS(i, j+1));
+	  Wi = PiecewiseLinearSolutionAtLocation(i,j,
+						 Grid.xfaceS(i, j+1));
+	  Wl.d = Wi.d;
+	  Wl.p = Wi.p;
 	} /* endif */
       } else if (j == JCu && 
 		 (Grid.BCtypeN[i] == BC_REFLECTION ||
 		  Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
 		  Grid.BCtypeN[i] == BC_CHARACTERISTIC_VELOCITY ||
 		  Grid.BCtypeN[i] == BC_BURNING_SURFACE ||
-		  Grid.BCtypeN[i] == BC_RINGLEB_FLOW)) {
+		  Grid.BCtypeN[i] == BC_RINGLEB_FLOW || 
+		  Grid.BCtypeN[i] == BC_FROZEN ||
+		  Grid.BCtypeN[i] == BC_EXACT_SOLUTION ||
+		  Grid.BCtypeN[i] == BC_STREAMLINE )) {
 	dX = Grid.xfaceN(i, j)-Grid.Cell[i][j].Xc;
 	Wl = W[i][j] + 
 	  (phi[i][j]^dWdx[i][j])*dX.x +
@@ -423,6 +492,25 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	  Wr = BC_Characteristic_Pressure(Wl, 
 					  RinglebFlow(Wr,Grid.xfaceN(i,j)), 
 					  Grid.nfaceN(i, j));
+	} else if (Grid.BCtypeN[i] == BC_FROZEN) {
+	  // calculate Wr based on the ghost cell reconstruction
+	  Wr = PiecewiseLinearSolutionAtLocation(i,j+1,
+						 Grid.xfaceN(i,j));
+	} else if (Grid.BCtypeN[i] == BC_EXACT_SOLUTION) {
+	  // calculate Wr using the exact solution at the interface and avoiding the problem to become ill-posed.
+	  if (ExactSoln->IsExactSolutionSet()){
+	    Wr = BC_Characteristic_Pressure(Wl,
+					    ExactSoln->Solution(Grid.xfaceN(i,j).x,Grid.xfaceN(i,j).y),
+					    Grid.nfaceN(i, j));
+	  } else {
+	    throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	} else if (Grid.BCtypeN[i] == BC_STREAMLINE) {
+	  Wr = Reflect(Wl, Grid.nfaceN(i, j));
+	  Wi = PiecewiseLinearSolutionAtLocation(i,j+1,
+						 Grid.xfaceN(i,j));
+	  Wr.d = Wi.d;
+	  Wr.p = Wi.p;
 	} /* endif */
       } else {
 	dX = Grid.xfaceN(i, j)-Grid.Cell[i][j].Xc;
@@ -514,7 +602,7 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
   int i, j, k_residual;
   double omega;
   Vector2D dX;
-  Euler2D_pState Wl, Wr;
+  Euler2D_pState Wl, Wr, Wi;
   Euler2D_cState Flux;
 
   /* Evaluate the solution residual for stage 
@@ -627,7 +715,10 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	     Grid.BCtypeW[j] == BC_CHARACTERISTIC_VELOCITY ||
 	     Grid.BCtypeW[j] == BC_BURNING_SURFACE ||
 	     Grid.BCtypeW[j] == BC_MASS_INJECTION ||
-	     Grid.BCtypeW[j] == BC_RINGLEB_FLOW)) {
+	     Grid.BCtypeW[j] == BC_RINGLEB_FLOW ||
+	     Grid.BCtypeW[j] == BC_FROZEN ||
+	     Grid.BCtypeW[j] == BC_EXACT_SOLUTION ||
+	     Grid.BCtypeW[j] == BC_STREAMLINE)) {
 	  dX = Grid.xfaceW(i+1, j)-Grid.Cell[i+1][j].Xc;
 	  Wr = W[i+1][j] + 
 	    (phi[i+1][j]^dWdx[i+1][j])*dX.x +
@@ -649,6 +740,25 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	  } else if (Grid.BCtypeW[j] == BC_RINGLEB_FLOW) {
 	    Wl = RinglebFlow(Wl,Grid.xfaceW(i+1,j));
 	    //Wl = Reflect(Wr, Grid.nfaceW(i+1, j));
+	  } else if (Grid.BCtypeW[j] == BC_FROZEN) {
+	    // calculate Wl based on the ghost cell reconstruction
+	    Wl = PiecewiseLinearSolutionAtLocation(i,j,
+						   Grid.xfaceW(i+1,j));
+	  } else if (Grid.BCtypeW[j] == BC_EXACT_SOLUTION) {
+	    // calculate Wl using the exact solution at the interface and avoiding the problem to become ill-posed.
+	    if (ExactSoln->IsExactSolutionSet()){
+	      Wl = BC_Characteristic_Pressure(Wr,
+					      ExactSoln->Solution(Grid.xfaceW(i+1,j).x,Grid.xfaceW(i+1,j).y),
+					      Grid.nfaceW(i+1, j));
+	    } else {
+	      throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	    }
+	  } else if (Grid.BCtypeW[j] == BC_STREAMLINE) {
+	    Wl = Reflect(Wr, Grid.nfaceW(i+1, j));
+	    Wi = PiecewiseLinearSolutionAtLocation(i,j,
+						  Grid.xfaceW(i+1,j));
+	    Wl.d = Wi.d;
+	    Wl.p = Wi.p;
 	  } /* endif */
 	} else if (i == ICu && 
 		   (Grid.BCtypeE[j] == BC_REFLECTION ||
@@ -656,7 +766,10 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 		    Grid.BCtypeE[j] == BC_CHARACTERISTIC_VELOCITY ||
 		    Grid.BCtypeE[j] == BC_BURNING_SURFACE ||
 		    Grid.BCtypeE[j] == BC_MASS_INJECTION ||
-		    Grid.BCtypeE[j] == BC_RINGLEB_FLOW)) {
+		    Grid.BCtypeE[j] == BC_RINGLEB_FLOW ||
+		    Grid.BCtypeE[j] == BC_FROZEN ||
+		    Grid.BCtypeE[j] == BC_EXACT_SOLUTION ||
+		    Grid.BCtypeE[j] == BC_STREAMLINE )) {
 	  dX = Grid.xfaceE(i, j)-Grid.Cell[i][j].Xc;
 	  Wl = W[i][j] + 
 	    (phi[i][j]^dWdx[i][j])*dX.x +
@@ -678,6 +791,25 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	  } else if (Grid.BCtypeE[j] == BC_RINGLEB_FLOW) {
 	    Wr = RinglebFlow(Wr,Grid.xfaceE(i,j));
 	    //Wr = Reflect(Wl, Grid.nfaceE(i, j));
+	  } else if (Grid.BCtypeE[j] == BC_FROZEN) {
+	    // calculate Wr based on the ghost cell reconstruction
+	    Wr = PiecewiseLinearSolutionAtLocation(i+1,j,
+						   Grid.xfaceE(i,j));
+	  } else if (Grid.BCtypeE[j] == BC_EXACT_SOLUTION) {
+	    // calculate Wr using the exact solution at the interface and avoiding the problem to become ill-posed.
+	    if (ExactSoln->IsExactSolutionSet()){
+	      Wr = BC_Characteristic_Pressure(Wl,
+					      ExactSoln->Solution(Grid.xfaceE(i,j).x,Grid.xfaceE(i,j).y),
+					      Grid.nfaceE(i, j));
+	    } else {
+	      throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	    }	    
+	  } else if (Grid.BCtypeE[j] == BC_STREAMLINE) {
+	    Wr = Reflect(Wl, Grid.nfaceE(i, j));
+	    Wi = PiecewiseLinearSolutionAtLocation(i+1,j,
+						   Grid.xfaceW(i+1, j));
+	    Wl.d = Wi.d;
+	    Wl.p = Wi.p;
 	  } /* endif */
 	} else {            
 	  dX = Grid.xfaceE(i, j)-Grid.Cell[i][j].Xc;
@@ -777,7 +909,10 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	   Grid.BCtypeS[i] == BC_CHARACTERISTIC_VELOCITY ||
 	   Grid.BCtypeS[i] == BC_BURNING_SURFACE ||
 	   Grid.BCtypeS[i] == BC_MASS_INJECTION ||
-	   Grid.BCtypeS[i] == BC_RINGLEB_FLOW)) {
+	   Grid.BCtypeS[i] == BC_RINGLEB_FLOW ||
+	   Grid.BCtypeS[i] == BC_FROZEN ||
+	   Grid.BCtypeS[i] == BC_EXACT_SOLUTION ||
+	   Grid.BCtypeS[i] == BC_STREAMLINE )) {
 	dX = Grid.xfaceS(i, j+1)-Grid.Cell[i][j+1].Xc;
 	Wr = W[i][j+1] +
 	  (phi[i][j+1]^dWdx[i][j+1])*dX.x +
@@ -801,6 +936,25 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	  Wl = BC_Characteristic_Pressure(Wr,
 					  RinglebFlow(Wl,Grid.xfaceS(i,j+1)), 
 					  Grid.nfaceS(i, j+1));
+	} else if (Grid.BCtypeS[i] == BC_FROZEN) {
+	  // calculate Wl based on the ghost cell reconstruction
+	  Wl = PiecewiseLinearSolutionAtLocation(i,j,
+						 Grid.xfaceS(i, j+1));
+	} else if (Grid.BCtypeS[i] == BC_EXACT_SOLUTION) {
+	  // calculate Wl using the exact solution at the interface and avoiding the problem to become ill-posed.
+	  if (ExactSoln->IsExactSolutionSet()){
+	    Wl = BC_Characteristic_Pressure(Wr,
+					    ExactSoln->Solution(Grid.xfaceS(i,j+1).x,Grid.xfaceS(i,j+1).y),
+					    Grid.nfaceS(i, j+1));
+	  } else {
+	    throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	} else if (Grid.BCtypeS[i] == BC_STREAMLINE) {
+	  Wl = Reflect(Wr, Grid.nfaceS(i, j+1));
+	  Wi = PiecewiseLinearSolutionAtLocation(i,j,
+						 Grid.xfaceS(i, j+1));
+	  Wl.d = Wi.d;
+	  Wl.p = Wi.p;
 	} /* endif */
       } else if (j == JCu && 
 		 (Grid.BCtypeN[i] == BC_REFLECTION ||
@@ -808,7 +962,10 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 		  Grid.BCtypeN[i] == BC_CHARACTERISTIC_VELOCITY ||
 		  Grid.BCtypeN[i] == BC_BURNING_SURFACE ||
 		  Grid.BCtypeN[i] == BC_MASS_INJECTION ||
-		  Grid.BCtypeN[i] == BC_RINGLEB_FLOW)) {
+		  Grid.BCtypeN[i] == BC_RINGLEB_FLOW || 
+		  Grid.BCtypeN[i] == BC_FROZEN ||
+		  Grid.BCtypeN[i] == BC_EXACT_SOLUTION ||
+		  Grid.BCtypeN[i] == BC_STREAMLINE )) {
 	dX = Grid.xfaceN(i, j)-Grid.Cell[i][j].Xc;
 	Wl = W[i][j] + 
 	  (phi[i][j]^dWdx[i][j])*dX.x +
@@ -832,6 +989,25 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	  Wr = BC_Characteristic_Pressure(Wl, 
 					  RinglebFlow(Wr,Grid.xfaceN(i,j)), 
 					  Grid.nfaceN(i, j));
+	} else if (Grid.BCtypeN[i] == BC_FROZEN) {
+	  // calculate Wr based on the ghost cell reconstruction
+	  Wr = PiecewiseLinearSolutionAtLocation(i,j+1,
+						 Grid.xfaceN(i,j));
+	} else if (Grid.BCtypeN[i] == BC_EXACT_SOLUTION) {
+	  // calculate Wr using the exact solution at the interface and avoiding the problem to become ill-posed.
+	  if (ExactSoln->IsExactSolutionSet()){
+	    Wr = BC_Characteristic_Pressure(Wl,
+					    ExactSoln->Solution(Grid.xfaceN(i,j).x,Grid.xfaceN(i,j).y),
+					    Grid.nfaceN(i, j));
+	  } else {
+	    throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	} else if (Grid.BCtypeN[i] == BC_STREAMLINE) {
+	  Wr = Reflect(Wl, Grid.nfaceN(i, j));
+	  Wi = PiecewiseLinearSolutionAtLocation(i,j+1,
+						 Grid.xfaceN(i,j));
+	  Wr.d = Wi.d;
+	  Wr.p = Wi.p;
 	} /* endif */
       } else {
 	dX = Grid.xfaceN(i, j)-Grid.Cell[i][j].Xc;

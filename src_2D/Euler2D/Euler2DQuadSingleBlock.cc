@@ -2347,7 +2347,28 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
 	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.U[SolnBlk.ICl-1][j];
 	  }
 	  break;
-	  
+	case BC_STREAMLINE:
+	  // Implement a strealine boundary condition 
+	  // (i.e. no mass flow through the streamline)
+
+	  Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+					       SolnBlk.ICl, j, 
+					       LIMITER_BARTH_JESPERSEN);
+
+	  for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    // Implement reflection of velocities
+	    SolnBlk.W[SolnBlk.ICl-ghost][j] = Reflect(SolnBlk.W[SolnBlk.ICl + ghost-1][j],
+						      SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+	    // Implement pressure and density based on linear extrapolation
+	    W = SolnBlk.PiecewiseLinearSolutionAtLocation(SolnBlk.ICl,j,
+							  SolnBlk.Grid.Cell[SolnBlk.ICl-ghost][j].Xc);
+	    SolnBlk.W[SolnBlk.ICl-ghost][j].p = W.p;
+	    SolnBlk.W[SolnBlk.ICl-ghost][j].d = W.d;
+	    // Calculate the conserved variables
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = U(SolnBlk.W[SolnBlk.ICl-ghost][j]);
+	  }
+	  break;	  
+
 	default:
 	  // Impose constant extrapolation
 	  for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
@@ -2484,6 +2505,27 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
 	      SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.U[SolnBlk.ICu+1][j];
 	    }
 	    break;
+	  case BC_STREAMLINE:
+	    // Implement a strealine boundary condition 
+	    // (i.e. no mass flow through the streamline)
+
+	    Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+						 SolnBlk.ICu, j, 
+						 LIMITER_BARTH_JESPERSEN);
+
+	    for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      // Implement reflection of velocities
+	      SolnBlk.W[SolnBlk.ICu+ghost][j] = Reflect(SolnBlk.W[SolnBlk.ICu - ghost+1][j],
+							SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
+	      // Implement pressure and density based on linear extrapolation
+	      W = SolnBlk.PiecewiseLinearSolutionAtLocation(SolnBlk.ICu,j,
+							    SolnBlk.Grid.Cell[SolnBlk.ICu+ghost][j].Xc);
+	      SolnBlk.W[SolnBlk.ICu+ghost][j].p = W.p;
+	      SolnBlk.W[SolnBlk.ICu+ghost][j].d = W.d;
+	      // Calculate the conserved variables
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = U(SolnBlk.W[SolnBlk.ICu+ghost][j]);
+	    }
+	    break;	  
 
 	  default:
 	    for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
@@ -2625,6 +2667,27 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
 	SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCl-1];
       }
       break;
+    case BC_STREAMLINE:
+      // Implement a strealine boundary condition 
+      // (i.e. no mass flow through the streamline)
+      
+      Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+					   i, SolnBlk.JCl, 
+					   LIMITER_BARTH_JESPERSEN);
+      
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	// Implement reflection of velocities
+	SolnBlk.W[i][SolnBlk.JCl-ghost] = Reflect(SolnBlk.W[i][SolnBlk.JCl + ghost-1],
+						  SolnBlk.Grid.nfaceS(i, SolnBlk.JCl));
+	// Implement pressure and density based on linear extrapolation
+	W = SolnBlk.PiecewiseLinearSolutionAtLocation(i,SolnBlk.JCl,
+						      SolnBlk.Grid.Cell[i][SolnBlk.JCl-ghost].Xc);
+	SolnBlk.W[i][SolnBlk.JCl-ghost].p = W.p;
+	SolnBlk.W[i][SolnBlk.JCl-ghost].d = W.d;
+	// Calculate the conserved variables
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = U(SolnBlk.W[i][SolnBlk.JCl-ghost]);
+      }
+      break;	  
 
     default:
       for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
@@ -2739,6 +2802,27 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
 	SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCu+1];
       }
       break;
+    case BC_STREAMLINE:
+      // Implement a strealine boundary condition 
+      // (i.e. no mass flow through the streamline)
+      
+      Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+					   i, SolnBlk.JCu, 
+					   LIMITER_BARTH_JESPERSEN);
+      
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	// Implement reflection of velocities
+	SolnBlk.W[i][SolnBlk.JCu+ghost] = Reflect(SolnBlk.W[i][SolnBlk.JCu-ghost+1],
+						  SolnBlk.Grid.nfaceN(i, SolnBlk.JCu));
+	// Implement pressure and density based on linear extrapolation
+	W = SolnBlk.PiecewiseLinearSolutionAtLocation(i,SolnBlk.JCu,
+						      SolnBlk.Grid.Cell[i][SolnBlk.JCu+ghost].Xc);
+	SolnBlk.W[i][SolnBlk.JCu+ghost].p = W.p;
+	SolnBlk.W[i][SolnBlk.JCu+ghost].d = W.d;
+	// Calculate the conserved variables
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = U(SolnBlk.W[i][SolnBlk.JCu+ghost]);
+      }
+      break;	  
 
     default:
       for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){

@@ -3324,6 +3324,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	IP.BC_North = BC_FROZEN;
       } else if (strcmp(IP.BC_North_Type,"Exact_Solution") == 0) {
 	IP.BC_North = BC_EXACT_SOLUTION;
+      } else if (strcmp(IP.BC_North_Type,"Streamline") == 0) {
+	IP.BC_North = BC_STREAMLINE;
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }
@@ -3377,6 +3379,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	IP.BC_South = BC_FROZEN;
       } else if (strcmp(IP.BC_South_Type,"Exact_Solution") == 0) {
 	IP.BC_South = BC_EXACT_SOLUTION;
+      } else if (strcmp(IP.BC_South_Type,"Streamline") == 0) {
+	IP.BC_South = BC_STREAMLINE;
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }
@@ -3430,6 +3434,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	IP.BC_East = BC_FROZEN;
       } else if (strcmp(IP.BC_East_Type,"Exact_Solution") == 0) {
 	IP.BC_East = BC_EXACT_SOLUTION;
+      } else if (strcmp(IP.BC_East_Type,"Streamline") == 0) {
+	IP.BC_East = BC_STREAMLINE;
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }
@@ -3483,6 +3489,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	IP.BC_West = BC_FROZEN;
       } else if (strcmp(IP.BC_West_Type,"Exact_Solution") == 0) {
 	IP.BC_West = BC_EXACT_SOLUTION;
+      } else if (strcmp(IP.BC_West_Type,"Streamline") == 0) {
+	IP.BC_West = BC_STREAMLINE;
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }

@@ -2418,7 +2418,9 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
     case BC_EXACT_SOLUTION :
       // Calculate W_face based on the exact solution
       if (ExactSoln->IsExactSolutionSet()){
-	Wr = Wl = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+	Wr = BC_Characteristic_Pressure(Wl,
+					ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y),
+					NormalDirection);
       } else {
 	throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -2501,7 +2503,9 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
     case BC_EXACT_SOLUTION :
       // Calculate W_face based on the exact solution
       if (ExactSoln->IsExactSolutionSet()){
-	Wr = Wl = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+	Wr = BC_Characteristic_Pressure(Wl,
+					ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y),
+					NormalDirection);
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -2583,7 +2587,9 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
     case BC_EXACT_SOLUTION :
       // Calculate W_face based on the exact solution
       if (ExactSoln->IsExactSolutionSet()){
-	Wr = Wl = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+	Wr = BC_Characteristic_Pressure(Wl,
+					ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y),
+					NormalDirection);
       } else {
 	throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -2665,7 +2671,9 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
     case BC_EXACT_SOLUTION :
       // Calculate W_face based on the exact solution
       if (ExactSoln->IsExactSolutionSet()){
-	Wr = Wl = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+	Wr = BC_Characteristic_Pressure(Wl,
+					ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y),
+					NormalDirection);
       } else {
 	throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }

@@ -348,7 +348,8 @@ inline char *Date_And_Time() {
 #define BC_WALL                         12000   // Core | CGNS
 //  Invisid walls
 #define BC_WALL_INVISCID                12001   //      | CGNS
-#define BC_FREE_SLIP_ISOTHERMAL         12002   //      | ????     
+#define BC_FREE_SLIP_ISOTHERMAL         12002   //      | ????  
+#define BC_STREAMLINE                   12003   //      | CFFC
 
 //  Viscous walls
 #define BC_WALL_VISCOUS                 12100   //      | CGNS
