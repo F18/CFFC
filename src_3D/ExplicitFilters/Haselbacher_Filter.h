@@ -414,14 +414,14 @@ inline DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell
             W(i) = ONE/(dr) ;
         }
     } else if (weighting==4){
-        int m = Explicit_Filter_Properties::target_filter_sharpness;
+        int m = int(Explicit_Filter_Properties::target_filter_sharpness);
         for (int i=0; i<the_number_of_neighbours; i++) {
             dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
             W(i) =  sqrt(SIX/(PI*pow(Delta.abs(),double(m))))*exp(-pow(dr,double(m))*SIX*pow(Delta.abs(),-double(m)));
         }
     } else if (weighting==5){
         double D = Delta.abs();
-        int m = Explicit_Filter_Properties::target_filter_sharpness;
+        int m = int(Explicit_Filter_Properties::target_filter_sharpness);
         for (int i=0; i<the_number_of_neighbours; i++) {
             dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
             W(i) = sin(pow(dr/(HALF*D),double(m)))/pow(dr/(HALF*D),double(m));
