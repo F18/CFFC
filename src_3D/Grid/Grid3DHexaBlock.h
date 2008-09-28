@@ -190,6 +190,7 @@ class Grid3D_Hexa_Block {
        BCtypeE = NULL; BCtypeW = NULL;
        BCtypeT = NULL; BCtypeB = NULL;
        Filter_Weights_Allocated = false;
+       Derivative_Reconstruction_Weights_Allocated = false;
     }
 
     Grid3D_Hexa_Block(const int Ni, 
@@ -198,6 +199,7 @@ class Grid3D_Hexa_Block {
                       const int Ng) {
        allocate(Ni, Nj, Nk, Ng);
        Filter_Weights_Allocated = false;
+       Derivative_Reconstruction_Weights_Allocated = false;
     }
 
     /* Destructor. */

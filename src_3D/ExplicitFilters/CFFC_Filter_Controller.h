@@ -52,13 +52,20 @@ public:
         member_ptr rho_member = &Soln_pState::rho;
         member_ptr p_member = &Soln_pState::p;
 
+        SpectralAnalysis<Soln_pState,Soln_cState> initial_spectrum(Data,Solution_Data), final_spectrum(Data,Solution_Data);
+        initial_spectrum.Set_Spectrum(rho_member);
+        initial_spectrum.Get_Spectrum(rho_member,"density_before");
 
         typedef Soln_cState *** (Hexa_Block<Soln_pState,Soln_cState>::*Soln_cState_3D_ptr_type);
         Soln_cState_3D_ptr_type U_ptr = &Hexa_Block<Soln_pState,Soln_cState>::U; 
         
         //explicit_filter.filter(U_ptr);
-        //explicit_filter.filter(rho_member);
-        explicit_filter.Calculate_Commutation_Error(rho_member);
+        explicit_filter.filter(rho_member);
+        
+        final_spectrum.Get_Spectrum_With_Reference(rho_member,"density",initial_spectrum);
+        //explicit_filter.Calculate_Commutation_Error(rho_member);
+        explicit_filter.Write_to_file();
+
     }
     
     

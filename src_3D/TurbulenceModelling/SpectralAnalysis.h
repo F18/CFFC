@@ -495,7 +495,8 @@ private:
     //! wave numbers
     double k0x, k0y, k0z, abs_k0, kcx, kcy, kcz, abs_kc;
     //! array of all wave numbers visible on grid
-    Spectral_container *K;
+    Spectral_container *K, *K_111, *K_110, *K_100;
+    bool diagonals_spectrum_allocated;
     //! number of wave numbers visible on grid
     int nK;
     //! k1 = n1 * 2*PI/L1
@@ -554,10 +555,22 @@ private:
     int Open_Spectrum_File(char *file_suffix);
     int Output_Spectrum_to_File(void);
     int Close_Spectrum_File(void);
-    void Average_Spectrum();
+    void Average_Spectrum(void);
+    void Diagonals_Spectrum(void);
+    void Reference_Spectrum(SpectralAnalysis<Soln_pState,Soln_cState> &reference_spectrum);
     
     void Output_Spectrum_1D(char *file_suffix){
         Average_Spectrum();
+        Diagonals_Spectrum();
+        Open_Spectrum_File(file_suffix);
+        Output_Spectrum_to_File();
+        Close_Spectrum_File();
+    }
+    
+    void Output_Spectrum_1D_With_Reference(char *file_suffix,SpectralAnalysis<Soln_pState,Soln_cState> &reference_spectrum){
+        Average_Spectrum();
+        Diagonals_Spectrum();
+        Reference_Spectrum(reference_spectrum);
         Open_Spectrum_File(file_suffix);
         Output_Spectrum_to_File();
         Close_Spectrum_File();
@@ -677,6 +690,13 @@ public:
         Assign_Scalar_Field(member_func);
         FFT_physical_to_spectral();
         Output_Spectrum_1D(scalar_name);
+    }
+    
+    template <typename Function_type>
+    void Get_Spectrum_With_Reference(Function_type member_func, char* scalar_name, SpectralAnalysis<Soln_pState,Soln_cState> &reference_spectrum){
+        Assign_Scalar_Field(member_func);
+        FFT_physical_to_spectral();
+        Output_Spectrum_1D_With_Reference(scalar_name,reference_spectrum);
     }
     
     
@@ -834,7 +854,8 @@ SpectralAnalysis(HexaSolver_Data &Data,
     s  = (double *) malloc(Nx*Ny*Nz * sizeof(double));
     ss = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
     Calculate_wave_numbers();
-
+    
+    diagonals_spectrum_allocated = false;
 
 }
 
@@ -915,6 +936,96 @@ Average_Spectrum(void) {
     } 
 
 }
+
+template<typename Soln_pState, typename Soln_cState>
+void SpectralAnalysis<Soln_pState, Soln_cState>::
+Diagonals_Spectrum(void) {
+    
+    int n = min(nx,min(ny,nz));
+    
+    if (!diagonals_spectrum_allocated) {
+        K_111 = new Spectral_container [n];  // Container of information for a wavenumber
+        K_110 = new Spectral_container [n];  // Container of information for a wavenumber
+        K_100 = new Spectral_container [n];  // Container of information for a wavenumber
+        diagonals_spectrum_allocated = true;
+    }
+    
+    
+    int index(0);
+    for (int i=0; i<n; i++) {
+        index = 0 + nz*(0+Ny*i);
+        K_100[i].k = k_1(i);
+        K_100[i].index = i;
+        K_100[i].realS = ss[index][0];
+        K_100[i].imagS = ss[index][1];
+        K_100[i].absS = sqrt(sqr(K_100[i].realS)+sqr(K_100[i].imagS));
+        if (ny==nx && nz==nx) {
+            index = 0 + nz*(i+Ny*0);
+            K_100[i].realS += ss[index][0];
+            K_100[i].imagS += ss[index][1];
+            K_100[i].absS += sqrt(sqr(ss[index][0])+sqr(ss[index][1]));
+            index = i + nz*(0+Ny*0);
+            K_100[i].realS += ss[index][0];
+            K_100[i].imagS += ss[index][1];
+            K_100[i].absS += sqrt(sqr(ss[index][0])+sqr(ss[index][1]));
+            K_100[i].realS /= 3.0;
+            K_100[i].imagS /= 3.0;
+            K_100[i].absS /= 3.0;
+        }
+        
+        index = 0 + nz*(i+Ny*i);
+        K_110[i].k = sqrt(sqr(k_1(i))+sqr(k_2(i)));
+        K_110[i].index = i;
+        K_110[i].realS = ss[index][0];
+        K_110[i].imagS = ss[index][1];
+        K_110[i].absS = sqrt(sqr(K_110[i].realS)+sqr(K_110[i].imagS));
+        if (ny==nx && nz==nx) {
+            index = i + nz*(0+Ny*i);
+            K_100[i].realS += ss[index][0];
+            K_100[i].imagS += ss[index][1];
+            K_100[i].absS += sqrt(sqr(ss[index][0])+sqr(ss[index][1]));
+            index = i + nz*(i+Ny*0);
+            K_100[i].realS += ss[index][0];
+            K_100[i].imagS += ss[index][1];
+            K_100[i].absS += sqrt(sqr(ss[index][0])+sqr(ss[index][1]));
+            K_100[i].realS /= 3.0;
+            K_100[i].imagS /= 3.0;
+            K_100[i].absS /= 3.0;
+        }
+        
+        index = i + nz*(i + Ny*i);
+        K_111[i].k = sqrt(sqr(k_1(i))+sqr(k_2(i))+sqr(k_3(i)));
+        K_111[i].index = i;
+        K_111[i].realS = ss[index][0];
+        K_111[i].imagS = ss[index][1];
+        K_111[i].absS = sqrt(sqr(K_111[i].realS)+sqr(K_111[i].imagS));
+    }
+}
+
+
+template<typename Soln_pState, typename Soln_cState>
+void SpectralAnalysis<Soln_pState, Soln_cState>::
+Reference_Spectrum(SpectralAnalysis<Soln_pState,Soln_cState> &reference_spectrum) {
+    
+    if (diagonals_spectrum_allocated){
+        int n = min(nx,min(ny,nz));
+        for (int i=0; i<n; i++) {
+            K_100[i].realS /= reference_spectrum.K_100[i].realS;
+            K_100[i].imagS /= reference_spectrum.K_100[i].imagS;
+            K_100[i].absS /= reference_spectrum.K_100[i].absS;
+
+            K_110[i].realS /= reference_spectrum.K_110[i].realS;
+            K_110[i].imagS /= reference_spectrum.K_110[i].imagS;
+            K_110[i].absS /= reference_spectrum.K_110[i].absS;
+            
+            K_111[i].realS /= reference_spectrum.K_111[i].realS;
+            K_111[i].imagS /= reference_spectrum.K_111[i].imagS;
+            K_111[i].absS /= reference_spectrum.K_111[i].absS;
+        }
+    }
+    
+}
+
 
 
 
@@ -1049,7 +1160,13 @@ Open_Spectrum_File(char *suffix) {
     << "\"" << spectrum_file_name_ptr << "\" using 1:3 \\\n"
     << "     title \"" << "imaginary part"    << "\" with lines , \\\n"
     << "\"" << spectrum_file_name_ptr << "\" using 1:4 \\\n"
-    << "     title \"" << "absolute"    << "\" with lines \n"
+    << "     title \"" << "absolute part"    << "\" with lines , \\\n"
+    << "\"" << spectrum_file_name_ptr << "\" using 5:6 \\\n"
+    << "     title \"" << "111 diagonal"    << "\" with lines , \\\n"
+    << "\"" << spectrum_file_name_ptr << "\" using 7:8 \\\n"
+    << "     title \"" << "110 diagonal"    << "\" with lines , \\\n"
+    << "\"" << spectrum_file_name_ptr << "\" using 9:10 \\\n"
+    << "     title \"" << "100 diagonal"    << "\" with lines \n"
     << "pause -1  \"Hit return to continue\"\n";
     
     gnuplot_file.close();
@@ -1072,11 +1189,20 @@ Output_Spectrum_to_File() {
     Spectrum_File_gnuplot << setprecision(6);
     Spectrum_File_gnuplot.setf(ios::scientific);
     
+    int n = min(nx,min(ny,nz));
     for (int ii=0; ii <nK; ii++) {
-        Spectrum_File_gnuplot    << K[ii].k  << " " << K[ii].realS 
-                                             << " " << K[ii].imagS
-                                             << " " << K[ii].absS
-                                             << "\n";
+        Spectrum_File_gnuplot    
+        << K[ii].k  << " " 
+        << K[ii].realS << " " 
+        << K[ii].imagS << " " 
+        << K[ii].absS << " ";
+        if (ii<n) {
+            Spectrum_File_gnuplot 
+            << K_111[ii].k << " " << K_111[ii].absS << " "
+            << K_110[ii].k << " " << K_110[ii].absS << " "
+            << K_100[ii].k << " " << K_100[ii].absS << " ";
+        }
+        Spectrum_File_gnuplot << "\n";
     } 
     
     Spectrum_File_gnuplot.unsetf(ios::scientific);

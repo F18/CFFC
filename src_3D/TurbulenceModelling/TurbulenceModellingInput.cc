@@ -75,6 +75,15 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(least_squares_filter_weighting_factor),
                           1,
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(solution_filtering_frequency),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(filter_solution_before_execution),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(uniform_grid),
+                          1,
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(spectrum,
                           TURBULENCEMODEL_INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
@@ -298,6 +307,25 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
           valuestream << value_string;
           valuestream >> relaxation_factor;
       }
+      
+  } else if (strcmp(code, "Solution_Filtering_Frequency") == 0) {
+      i_command = 132;
+      value >> solution_filtering_frequency;
+      
+  } else if (strcmp(code, "Filter_Solution_Before_Execution") == 0) {
+      i_command = 143;
+      value >> value_string;
+      if      (value_string == "ON")   filter_solution_before_execution = ON;
+      else if (value_string == "OFF")  filter_solution_before_execution = OFF;
+      else 
+          i_command = INVALID_INPUT_VALUE;
+  } else if (strcmp(code, "Uniform_Grid") == 0) {
+      i_command = 143;
+      value >> value_string;
+      if      (value_string == "ON")   uniform_grid = ON;
+      else if (value_string == "OFF")  uniform_grid = OFF;
+      else 
+          i_command = INVALID_INPUT_VALUE;
       
     /* ---- Spectrum Parameters ---- */
   } else if (strcmp(code, "Spectrum_Model") == 0) {

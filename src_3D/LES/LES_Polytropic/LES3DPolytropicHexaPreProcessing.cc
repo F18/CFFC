@@ -10,13 +10,24 @@ template<>
 int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                                         HexaSolver_Solution_Data<LES3D_Polytropic_pState, 
                                                                  LES3D_Polytropic_cState> &Solution_Data) {
-
+    
     int error_flag(0);
     
     /* -------------------------------------- *
      *                RESTART                 *
      * ---------------------------------------*/
     if (Solution_Data.Input.i_ICs == IC_RESTART) {
+        Solution_Data.Explicit_Filter.Initialize(Data,Solution_Data);
+        if(Solution_Data.Input.Turbulence_IP.filter_solution_before_execution == ON) {
+            if(!Data.batch_flag){
+                cout 
+                << "\n ==============================="
+                << "\n    Filtering solution first    "
+                << "\n ===============================";
+            }
+            error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Solution(Solution_Data.Explicit_Filter);
+        }
+        
         
         if (Solution_Data.Input.i_Flow_Type==FLOWTYPE_TURBULENT_LES) {
             /* ----------- Get turbulence statistics before computations -------- */
@@ -148,7 +159,16 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             
                 if (Solution_Data.Input.Turbulence_IP.Filter_Initial_Condition) {
                     // filter the initial condition
-                    error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Initial_Condition(Solution_Data.Explicit_Filter,Data.batch_flag);
+                    if (CFFC_Primary_MPI_Processor() && !Data.batch_flag) {
+                        cout << endl;
+                        cout << " ------------------------------------------------" << endl;
+                        cout << "    Explicitly filtering the initial condition   " << endl;
+                        cout << " ------------------------------------------------" << endl;        
+                    }
+                    error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Solution(Solution_Data.Explicit_Filter);
+                    if (CFFC_Primary_MPI_Processor() && !Data.batch_flag) {
+                        cout << "    Finished explicitly filtering the initial condition" << endl;
+                    }
                     // save filter to file so don't have to recompute.
                     if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_RESTART)
                         error_flag = Solution_Data.Explicit_Filter.Write_to_file();

@@ -67,7 +67,9 @@ class Turbulence_Modelling_Input_Parameters{
     double relaxation_factor;                                   //!< This coefficient is used in the least-squares reconstruction filter and should be left "DEFAULT".
     int least_squares_filter_weighting;                         //!< This coefficient controls if a weighted least-squares is used in Haselbacher filter.
     double least_squares_filter_weighting_factor;               //!< This coefficient controls if a weighted least-squares is used in Haselbacher filter.
-
+    int solution_filtering_frequency;                           //!< The solution is filtered each time after this number of timesteps has passed.
+    int filter_solution_before_execution;
+    bool uniform_grid;                                           //!< if the grid is uniform, the filter will generate weights only once (VERY FAST).
     //@}
     
     //@{ @name Spectrum related input parameters:
@@ -104,7 +106,7 @@ class Turbulence_Modelling_Input_Parameters{
       finite_differencing_order = commutation_order+2;
       number_of_rings = 2;
       relaxation_factor = DEFAULT;
-      least_squares_filter_weighting = DEFAULT;
+      least_squares_filter_weighting_factor = DEFAULT;
       least_squares_filter_weighting = ON;
       Target_Filter_Sharpness = -1;
       Filter_Initial_Condition = ON;
@@ -112,13 +114,15 @@ class Turbulence_Modelling_Input_Parameters{
       LS_constraints = ON;
       Derivative_constraints = DEFAULT; // this lets an algorithm put the number
       Filter_Memory_Efficient = OFF;
-    
+      solution_filtering_frequency = OFF;
       // Spectrum parameters
       strcpy(spectrum,"Pope");
       i_spectrum = SPECTRUM_POPE;
       LLR = 6;
       TKE = 150.0;
       rescale_spectrum = OFF;
+      filter_solution_before_execution = OFF;
+      uniform_grid = OFF;
 
 
       // Reacting LES parameters

@@ -54,6 +54,7 @@ public:
     static double relaxation_factor;
     static int    least_squares_filter_weighting;
     static double least_squares_filter_weighting_factor;
+    static bool   uniform_grid;
     
 };
 

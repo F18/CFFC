@@ -26,3 +26,4 @@ double Explicit_Filter_Properties::G_cutoff = exp(-sqr(PI)/(4.*6.));
 int    Explicit_Filter_Properties::least_squares_filter_weighting = ON;
 double Explicit_Filter_Properties::relaxation_factor = DEFAULT;
 double Explicit_Filter_Properties::least_squares_filter_weighting_factor = DEFAULT;
+bool   Explicit_Filter_Properties::uniform_grid = ON;

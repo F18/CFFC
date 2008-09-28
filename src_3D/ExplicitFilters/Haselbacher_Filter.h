@@ -42,16 +42,14 @@ public:
     //! Constructor
     Haselbacher_Filter(void) : Discrete_Filter<Soln_pState,Soln_cState>() {
         Assigned_w_Uniform_Grid = false;
-        UNIFORM_GRID = true;
         weight_factor = 1.5;
         the_number_of_unknowns = number_of_unknowns();
         relaxation_factor = Explicit_Filter_Properties::relaxation_factor;
         weighting = Explicit_Filter_Properties::least_squares_filter_weighting;
     }
-    //! Destructor
-    ~Haselbacher_Filter(void) {
-        deallocate_W_row();
-    }
+    //! Destructor default
+    //~Haselbacher_Filter(void) {
+    //}
 
     void Get_Neighbours(Cell3D &theCell) {
         theNeighbours.GetNeighbours(theCell, number_of_rings, FILTER_TYPE_HASELBACHER);
@@ -68,20 +66,10 @@ private:
     int weighting;
     double weight_factor;
     
-    /* ---------- non uniform grid -- save rows ------------- */
-    RowVector ***W_row;
-    bool *** Assigned_W_row;
-    bool Allocated_W_row;
-    void allocate_W_row(Grid3D_Hexa_Block &Grid_Blk);
-    void deallocate_W_row(void);
-    void Assign_W_row(Cell3D &theCell, Neighbours &theNeighbours);
-    int NCi, NCj, NCk;
     
     /* ------------------- uniform grid ---------------------- */
     RowVector w_Uniform_Grid;
     bool Assigned_w_Uniform_Grid;
-    bool UNIFORM_GRID;
-    void Assign_w_Uniform_Grid(Cell3D &theCell, Neighbours &theNeighbours);
     
     /* --------- functions for Matrix A calculations --------- */ 
     int number_of_unknowns();
@@ -176,6 +164,13 @@ double Haselbacher_Filter<Soln_pState,Soln_cState>::filter_moment_1D(Cell3D &the
 
 template <typename Soln_pState, typename Soln_cState>
 inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &theCell, Neighbours &theNeighbours) {
+    
+    if (Explicit_Filter_Properties::uniform_grid && theNeighbours.symmetric_stencil) {
+        if (Assigned_w_Uniform_Grid)
+            return w_Uniform_Grid;
+    }
+    
+    
     theNeighbours.delete_theCell();
     int error_flag;
     DenseMatrix A = Matrix_A(theCell,theNeighbours);
@@ -194,6 +189,11 @@ inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     kmax.y = PI/theNeighbours.Delta.y;
     kmax.z = PI/theNeighbours.Delta.z;
     Apply_relaxation(theCell, theNeighbours, kmax, w);
+    
+    if (Explicit_Filter_Properties::uniform_grid && theNeighbours.symmetric_stencil) {
+        w_Uniform_Grid = w;
+        Assigned_w_Uniform_Grid = true;
+    }
     return w;
 }
 
@@ -398,9 +398,6 @@ inline DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell
         for (int i=0; i<the_number_of_neighbours; i++) {
             DR = (theNeighbours.neighbour[i].Xc - theCell.Xc);
             W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- (sqr(DR.x/Delta.x)+sqr(DR.y/Delta.y)+sqr(DR.z/Delta.z)) ) ;
-//            dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).sqr();
-//            W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- SIX * dr/Delta.sqr()) ;
-
         }
     } else if (weighting==2) {  // hidden weighting functions
         /* inverse distance */
@@ -429,6 +426,14 @@ inline DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell
             dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
             W(i) = sin(pow(dr/(HALF*D),double(m)))/pow(dr/(HALF*D),double(m));
         }        
+    } else  if (weighting==6) {
+        for (int i=0; i<the_number_of_neighbours; i++) {
+            //            DR = (theNeighbours.neighbour[i].Xc - theCell.Xc);
+            //            W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- (sqr(DR.x/Delta.x)+sqr(DR.y/Delta.y)+sqr(DR.z/Delta.z)) ) ;
+            dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).sqr();
+            W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- SIX * dr/Delta.sqr()) ;
+            
+        }
     } else {
         W.identity();
     }

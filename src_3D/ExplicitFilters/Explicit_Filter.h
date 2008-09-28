@@ -151,8 +151,6 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(HexaSolver_Data &Data
             properties.filter_type = FILTER_TYPE_RESTART;
         
         Create_filter();
-        Solution_Data.Input.Turbulence_IP.i_filter_type = properties.filter_type;
-        properties.progress_mode = Solution_Data.Input.Progress_Mode; // Don't use terminal mode when outputting to file
         initialized = true;
     }
 }
@@ -168,7 +166,6 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(Grid3D_Hexa_Multi_Blo
             properties.filter_type = FILTER_TYPE_RESTART;
         
         Create_filter();
-        Input.Turbulence_IP.i_filter_type = properties.filter_type;
         properties.progress_mode = Input.Progress_Mode; // Don't use terminal mode when outputting to file
         initialized = true;
     }
@@ -191,7 +188,12 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Set_Properties(Input_Parameters<
     properties.relaxation_factor = IPs.Turbulence_IP.relaxation_factor;
     properties.least_squares_filter_weighting = IPs.Turbulence_IP.least_squares_filter_weighting;
     properties.least_squares_filter_weighting_factor = IPs.Turbulence_IP.least_squares_filter_weighting_factor;
+    properties.uniform_grid = IPs.Turbulence_IP.uniform_grid;
     properties.batch_flag = batch_flag;
+    properties.progress_mode = IPs.Progress_Mode; // Don't use terminal mode when outputting to file
+    if ((IPs.i_ICs == IC_RESTART && !properties.restarted) || IPs.Turbulence_IP.i_filter_type==FILTER_TYPE_RESTART)
+        properties.progress_mode = PROGRESS_MODE_SILENT;
+
 }
 
 

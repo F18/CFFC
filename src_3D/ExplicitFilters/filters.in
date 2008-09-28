@@ -34,27 +34,27 @@ Haselbacher
 Filter_Grid_Ratio =
 2.0
 Target_Filter_Sharpness = 
-4
+3
 Filter_Initial_Condition =
 OFF
 Derivative_constraints=
 0
 Commutation_Order =
-2
+3
 Finite_Differencing_Order =
 3
 Number_of_Rings = 
-2
+4
 Filter_Width_strict =
 ON
 Filter_Memory_Efficient =
-OFF
+ON
 Relaxation_Factor =
 ON
 Least_Squares_Filter_Weighting = 
-ON
+6
 Least_Squares_Filter_Weighting_Factor = 
-2.0
+3.5
 ##############################
 #     Spectrum parameters    #
 ##############################
@@ -76,13 +76,13 @@ OFF
 Grid_Type =
 Periodic_Box
 Number_of_Ghost_Cells = 
-2
+5
 Number_of_Cells_Idir =
-30
+64
 Number_of_Cells_Jdir
-30
+64
 Number_of_Cells_Kdir
-30
+64
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =
@@ -108,7 +108,7 @@ Box_Length =
 #3.14
 #16
 Mesh_Stretching =
-ON
+OFF
 Stretching_Factor_Idir = 
 1.01
 Stretching_Factor_Jdir = 

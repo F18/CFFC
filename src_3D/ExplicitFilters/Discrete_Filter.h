@@ -413,9 +413,7 @@ void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Blo
     
     title = "Transfer function " + filter_name() + " :   " + Cellstring.str() ;    
     
-    
-    cout << "N = " << N << endl;
-    
+        
 #ifdef _GNUPLOT
     Gnuplot_Control h1;
     h1.gnuplot_init(); 

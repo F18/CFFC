@@ -2421,7 +2421,8 @@ BCs_dUdt(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
                 
                 // Prescribe West boundary conditions.
                 switch(Grid.BCtypeW[j][k]) {
-                        
+                    case BC_NONE :
+                        break;
                     case BC_PERIODIC :  
                         for (int ghost = 1 ; ghost <= Nghost ; ++ghost){
                             dUdt[ICl-ghost][j][k][n] = dUdt[ICu-ghost+1][j][k][n];
@@ -2436,7 +2437,8 @@ BCs_dUdt(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
                 
                 // Prescribe East boundary conditions.  
                 switch(Grid.BCtypeE[j][k]) {
-                        
+                    case BC_NONE :
+                        break;
                     case BC_PERIODIC :
                         for (int ghost = 1 ; ghost <= Nghost ; ++ghost){	
                             dUdt[ICu+ghost][j][k][n] = dUdt[ICl+ghost-1][j][k][n];
@@ -2464,7 +2466,8 @@ BCs_dUdt(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
                 
                 // Prescribe South boundary conditions.
                 switch(Grid.BCtypeS[i][k]) {
-                        
+                    case BC_NONE :
+                        break;
                     case BC_PERIODIC :
                         for (int ghost = 1 ; ghost <= Nghost ; ++ghost){
                             dUdt[i][JCl-ghost][k][n] = dUdt[i][JCu-ghost+1][k][n];
@@ -2479,7 +2482,8 @@ BCs_dUdt(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
                 
                 // Prescribe North boundary conditions.
                 switch(Grid.BCtypeN[i][k]) {
-                        
+                    case BC_NONE :
+                        break;
                     case BC_PERIODIC :
                         for (int ghost = 1 ; ghost <= Nghost ; ++ghost){
                             dUdt[i][JCu+ghost][k][n] = dUdt[i][JCl+ghost-1][k][n];
@@ -2502,7 +2506,8 @@ BCs_dUdt(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
             
             // Prescribe Bottom boundary conditions.
             switch(Grid.BCtypeB[i][j]) {
-                    
+                case BC_NONE :
+                    break;
                 case BC_PERIODIC :
                     for (int ghost = 1 ; ghost <= Nghost ; ++ghost){
                         dUdt[i][j][KCl-ghost][n] = dUdt[i][j][KCu-ghost+1][n];
@@ -2517,7 +2522,8 @@ BCs_dUdt(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
             
             // Prescribe Top boundary conditions.
             switch(Grid.BCtypeT[i][j]) {
-                    
+                case BC_NONE :
+                    break;
                 case BC_PERIODIC :
                     for (int ghost = 1 ; ghost <= Nghost ; ++ghost){
                         dUdt[i][j][KCu+ghost][n] = dUdt[i][j][KCl+ghost-1][n];

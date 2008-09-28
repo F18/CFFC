@@ -168,6 +168,30 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
       } /* endif */
       /**************************************************/   
 
+        
+        /*************************** SOLUTION FILTERING *****************************/            
+        /* Periodically filter the solution to eliminate build-up of high frequency */
+        if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT &&
+            Solution_Data.Input.Turbulence_IP.solution_filtering_frequency != OFF) {
+
+            if (!first_step && 
+                Data.number_of_explicit_time_steps-Solution_Data.Input.Turbulence_IP.solution_filtering_frequency*
+                (Data.number_of_explicit_time_steps/Solution_Data.Input.Turbulence_IP.solution_filtering_frequency) == 0 ) {
+                if (!Data.batch_flag) {
+                    cout << "o";   // This symbol will notify a solution filtering operation
+                    cout.flush();
+                } /* endif */
+                error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Solution(Solution_Data.Explicit_Filter);
+                if (error_flag) {
+                    cout << "\n ERROR: Could not filter solution "
+                    << "on processor "
+                    << CFFC_MPI::This_Processor_Number
+                    << ".\n";
+                    cout.flush();
+                } /* endif */
+            }
+        }
+        
       /*********** BLOCK SOLUTION UPDATE *************************
        * Update solution for next time step using a multistage   *
        * time stepping scheme.                                   *
@@ -269,8 +293,14 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
        
     } // END WHILE(1) LOOP 
       
-    if (!Data.batch_flag) cout << "\n\n Explicit time-marching computations complete on " 
-                               << Date_And_Time() << "."; cout.flush();
+      if (!Data.batch_flag) {
+          cout 
+          << "\n\n Explicit time-marching computations complete on " 
+          << Date_And_Time() << " after"
+          << " n = " << Data.number_of_explicit_time_steps 
+          << " steps (iterations).";
+          cout.flush();   
+      }
     
   } // END ( Time or Steps) IF
 

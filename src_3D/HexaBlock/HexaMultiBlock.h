@@ -180,7 +180,7 @@ class Hexa_Multi_Block {
                                            const int I_Stage);
     
     
-    int Explicitly_Filter_Initial_Condition(Explicit_Filters<typename HEXA_BLOCK::Soln_pState, typename HEXA_BLOCK::Soln_cState> &Explicit_Filter, int batch_flag);
+    int Explicitly_Filter_Solution(Explicit_Filters<typename HEXA_BLOCK::Soln_pState, typename HEXA_BLOCK::Soln_cState> &Explicit_Filter);
     
     
 };
@@ -1389,19 +1389,12 @@ Output_Nodes_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
  ********************************************************/
 template<class HEXA_BLOCK>
 int Hexa_Multi_Block<HEXA_BLOCK>::
-Explicitly_Filter_Initial_Condition(Explicit_Filters<typename HEXA_BLOCK::Soln_pState,typename HEXA_BLOCK::Soln_cState> &Explicit_Filter, int batch_flag) {
+Explicitly_Filter_Solution(Explicit_Filters<typename HEXA_BLOCK::Soln_pState,typename HEXA_BLOCK::Soln_cState> &Explicit_Filter) {
     
     int error_flag(0);
     
     Soln_cState *** (Hexa_Block<Soln_pState,Soln_cState>::*U_ptr) = &Hexa_Block<Soln_pState,Soln_cState>::U;
     double Soln_pState::*p_ptr = p_ptr = &Soln_pState::p; 
-
-    if (CFFC_Primary_MPI_Processor() && !batch_flag) {
-        cout << endl;
-        cout << " ------------------------------------------------" << endl;
-        cout << "    Explicitly filtering the initial condition   " << endl;
-        cout << " ------------------------------------------------" << endl;        
-    }
     
     Explicit_Filter.filter(U_ptr);
     for (int nBlk = 0; nBlk < Number_of_Soln_Blks; ++nBlk) {
@@ -1428,13 +1421,7 @@ Explicitly_Filter_Initial_Condition(Explicit_Filters<typename HEXA_BLOCK::Soln_p
                 }
             }
         }
-    }
-
-
-   if (CFFC_Primary_MPI_Processor() && !batch_flag) {
-        cout << "    Finished explicitly filtering the initial condition" << endl;
-    }
-            
+    }            
 
     return (error_flag);    
 }
