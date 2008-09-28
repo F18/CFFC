@@ -89,8 +89,6 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
         
         if (Solution_Data.Input.i_Flow_Type==FLOWTYPE_TURBULENT_LES) {
             
-            cout << endl << endl << "Minimum spacing = " << Data.Initial_Mesh.Delta_minimum() << endl;
-
             /* ----------- Add turbulence to initial solution blocks -------- */
             if ( CFFC_Primary_MPI_Processor() ) {
                                 
@@ -183,7 +181,9 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             
             
             /* ----------- Get turbulence statistics before computations -------- */
-            cout << "Get turbulence statistics before computations" << endl;
+            if (CFFC_Primary_MPI_Processor() && !Data.batch_flag) {
+                cout << "    Get turbulence statistics before computations" << endl;
+            }
             // Get average velocity
             double u_ave, v_ave, w_ave, sqr_u;
             Time_Averaging_of_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
