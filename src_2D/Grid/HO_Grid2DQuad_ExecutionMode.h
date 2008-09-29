@@ -139,6 +139,14 @@ public:
       ----------------------------------------------------------------------------------------  */
   static short NORTH_RECONSTRUCTION_BASED_FLUX;
 
+  /*! This flag is used to specify whether an inaccurate integration near curved boundaries is accepted
+      in case the integration cannot be performed along the real curved geometry.
+      Such a situation might arise in the calculation of integrals of functions which don't have
+      an analytical x-dependency function defined. \n
+      Turn ON if you want to accept inaccuracies (i.e. the integration is performed as if the cell edges were straight). \n
+      Turn OFF if you don't tolerate these inaccuracies. (default) \n
+      ----------------------------------------------------------------------------------------  */
+  static short TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES;
 
   template<class Input_Parameters_Type>
   static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);
@@ -340,6 +348,24 @@ void HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Paramete
       NORTH_RECONSTRUCTION_BASED_FLUX = ON;
     } else if ( strcmp(IP.Next_Control_Parameter, "Riemann_Problem") == 0 ) {
       NORTH_RECONSTRUCTION_BASED_FLUX = OFF;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Allow_Inaccurate_Curved_Boundary_Integration") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "ON") == 0 || strcmp(IP.Next_Control_Parameter, "On") == 0 ){
+      TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES = ON;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setTolerateInaccurateIntegrationNearCurvedBoundaries();
+
+    } else if ( strcmp(IP.Next_Control_Parameter, "OFF") == 0 || strcmp(IP.Next_Control_Parameter, "Off") == 0 ) {
+      TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES = OFF;
+
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setNoGeometricInaccuraciesForIntegrationNearCurvedBoundaries();
     } else {
       i_command = INVALID_INPUT_VALUE;
       return;

@@ -80,6 +80,16 @@ int Grid2D_Quad_Block_HO::Mixed_Curvilinear_Integration = ON;
 int Grid2D_Quad_Block_HO::Minimize_Error_Calculation_Of_Geometric_Properties = OFF;
 
 /*!
+ * This flag is used to specify whether an inaccurate integration near curved boundaries is accepted
+ * in case the integration cannot be performed along the real curved geometry.
+ * Such a situation might arise in the calculation of integrals of functions which don't have
+ * an analytical x-dependency function defined. \n
+ * Turn ON if you want to accept inaccuracies (i.e. the integration is performed as if the cell edges were straight). \n
+ * Turn OFF if you don't tolerate these inaccuracies. (default) \n
+ */
+int Grid2D_Quad_Block_HO::Tolerate_Inaccurate_Integration_Near_Curved_Boundaries = OFF;
+
+/*!
  * Variable used for storing the South-West node position in the global coordinate system
  */
 Vector2D Grid2D_Quad_Block_HO::_SW_ = Vector2D(0.0);

@@ -18,6 +18,7 @@ short HO_Grid2D_Execution_Mode::EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THI
 short HO_Grid2D_Execution_Mode::CHECK_FOR_INCORRECT_QUADRILATERALS = ON; // check for incorrect quads
 short HO_Grid2D_Execution_Mode::REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = OFF; // stop on detecting incorrect quads
 short HO_Grid2D_Execution_Mode::USE_BROADCAST_MORE_THAN_RECOMPUTING = ON; // broadcast the majority of geometric properties
+short HO_Grid2D_Execution_Mode::TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES = OFF; // tolerate inaccurate integration
 
 // Block boundary flux calculation method
 short HO_Grid2D_Execution_Mode::CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = OFF; // use the default settings
@@ -43,6 +44,7 @@ void HO_Grid2D_Execution_Mode::SetDefaults(void){
   SOUTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
   NORTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
   EAST_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
+  TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES = OFF; // tolerate inaccurate integration
 }
 
 //! Print the current execution mode
@@ -110,6 +112,10 @@ void HO_Grid2D_Execution_Mode::Print_Info(std::ostream & out_file){
       }	// endswitch
     } // endif
 
+    if (TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES ){
+      out_file << "\n     -> Integration Along Curved Edges: " << "Force with straight edges";
+    } // endif   
+
   } // endif
 
   if (EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH == ON){
@@ -159,6 +165,9 @@ void HO_Grid2D_Execution_Mode::Broadcast(void){
  			1, 
  			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&USE_BROADCAST_MORE_THAN_RECOMPUTING,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES,
  			1, 
  			MPI::SHORT, 0);
 
@@ -226,5 +235,13 @@ void HO_Grid2D_Execution_Mode::Set_Affected_Switches(void){
   } else {
     // Set the affected switch
     Grid2D_Quad_Block_HO::setNoSpecialTreatmentForNumericalError();
+  }
+
+  if (TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES == ON){
+    // Set the affected switch
+    Grid2D_Quad_Block_HO::setTolerateInaccurateIntegrationNearCurvedBoundaries();
+  } else {
+    // Set the affected switch
+    Grid2D_Quad_Block_HO::setNoGeometricInaccuraciesForIntegrationNearCurvedBoundaries();
   }
 }

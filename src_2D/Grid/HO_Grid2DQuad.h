@@ -932,6 +932,19 @@ public:
   //! Set the designated switch to require the regular computation of geometric properties.
   static void setNoSpecialTreatmentForNumericalError(void) { Minimize_Error_Calculation_Of_Geometric_Properties = OFF; }
 
+  //! Set the designated switch to accept geometric inaccuracies near curved boundaries if necessary to obtain a result
+  static void setTolerateInaccurateIntegrationNearCurvedBoundaries(void) {
+    Tolerate_Inaccurate_Integration_Near_Curved_Boundaries = ON;
+  }
+  //! Set the designated switch to be intolerant to geometric inaccuracies near curved boundaries
+  static void setNoGeometricInaccuraciesForIntegrationNearCurvedBoundaries(void){
+    Tolerate_Inaccurate_Integration_Near_Curved_Boundaries = OFF;
+  }
+  //! Check if geometric inaccuracies for integration along curved boundaries are tolerated
+  bool IsIntegrationAlongCurvedBoundariesToleratedToGeometricInaccuracies(void) const{
+    return Tolerate_Inaccurate_Integration_Near_Curved_Boundaries == ON? true:false;
+  }
+
   //! Output only the cell data
   void Output_Cells_Data(const int &block_number, ostream &out_file);
   //! Output only the cell invariant geometric properties
@@ -960,6 +973,9 @@ private:
   
   //! Switch for error minimization in calculating the cell geometric properties.
   static int Minimize_Error_Calculation_Of_Geometric_Properties;
+
+  //! Switch for treatment of integrals along curved boundaries, in case they cannot be performed accurately along the real geometry.
+  static int Tolerate_Inaccurate_Integration_Near_Curved_Boundaries;
 
   //! Highest order of reconstruction that might occur in calculations with the current grid.
   int HighestReconstructionOrder;

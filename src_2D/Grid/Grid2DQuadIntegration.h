@@ -337,22 +337,36 @@ ReturnType Grid2DQuadIntegration<Grid2DQuadType>::IntegrateFunctionOverCell(cons
 									    FO ContourIntegrand, int digits,
 									    ReturnType _dummy_param) {
 
-  // === Analyse cell faces
-  AnalyseCellFaces(ii,jj);
+  try {
+    // === Analyse cell faces
+    AnalyseCellFaces(ii,jj);
   
-  // === Decide whether to use contour integration or surface integration
-  if (AtLeastOneCurvedFace){
-    // This cell needs Gauss contour integration (i.e. at least one of the faces is curved)
-    return IntegrateFunctionOverCellUsingContourIntegrand(ii,jj,
-							  FuncObj,
-							  ContourIntegrand,
-							  digits,_dummy_param);
-  } else {
-    // This is a cell unaffected by curved boundaries or for which 
-    // the presence of curved boundaries is ignored.
-    return IntegrateFunctionOverCell(ii,jj,FuncObj,digits,_dummy_param);
-  }
+    // === Decide whether to use contour integration or surface integration
+    if (AtLeastOneCurvedFace){
+      // This cell needs Gauss contour integration (i.e. at least one of the faces is curved)
+      return IntegrateFunctionOverCellUsingContourIntegrand(ii,jj,
+							    FuncObj,
+							    ContourIntegrand,
+							    digits,_dummy_param);
+    } else {
+      // This is a cell unaffected by curved boundaries or for which 
+      // the presence of curved boundaries is ignored.
+      return IntegrateFunctionOverCell(ii,jj,FuncObj,digits,_dummy_param);
+    }
 
+  } catch(std::runtime_error){
+
+    if ( Grid->IsIntegrationAlongCurvedBoundariesToleratedToGeometricInaccuracies() ){
+      // Force the integration by treating the cell as being unaffected
+      // by the presence of curved boundaries.
+      return IntegrateFunctionOverCell(ii,jj,FuncObj,digits,_dummy_param);      
+
+    } else {
+      // Be intolerant to imperfect geometry treatment or other errors.
+      throw;
+    }
+  }
+  
 }
 
 /*!
