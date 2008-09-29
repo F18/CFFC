@@ -399,6 +399,18 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        i_command = 45;
        value_stream >> CFL_Number;
        if (CFL_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
+        
+    } else if (strcmp(code, "Output_CFL_Limit") == 0) {
+        i_command = 45;
+        value_stream >> value_string;
+        if (value_string == "ON") {
+            Output_CFL_Limit = ON;
+        } else if (value_string == "OFF") {
+            Output_CFL_Limit = OFF;
+        } else {
+            i_command = INVALID_INPUT_VALUE;
+        } /* endif */
+        
 
     }  else if (strcmp(code, "Time_Max") == 0) {
        i_command = 46;
@@ -1039,6 +1051,9 @@ void CFD_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(CFL_Number),
                            1,
                            MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Output_CFL_Limit),
+                          1,
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Time_Max),
                           1,
                           MPI::DOUBLE, 0);

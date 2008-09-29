@@ -72,6 +72,8 @@ class Hexa_Block {
    int           Freeze_Limiter;  // Limiter freezing indicator.
    int                Flow_Type;  // Flow type indicator.
    double                 ***dt;  // Local time step.
+    double           dt_viscous;
+    double          dt_acoustic;
    
    SOLN_pSTATE             ***W;  // Primitive solution state.
    SOLN_cSTATE             ***U;  // Conserved solution state.

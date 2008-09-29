@@ -386,7 +386,9 @@ template<>
 double Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState>::
 CFL(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> &IPs){
     
-    double dt_acoustic(MILLION), dt_viscous(MILLION);
+    dt_acoustic = MILLION;
+    dt_viscous = MILLION;
+
     
     double dtMin, d_i, d_j, d_k, v_i, v_j, v_k, a, dt_vis, nu;
     double mr, aa_i, aa_j, aa_k;
@@ -429,6 +431,8 @@ CFL(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> &IPs){
                         
                     }  /* endif */
                     
+                    dt_acoustic = min(dt_acoustic,dt[i][j][k]);
+                    
                     /* ---------- Viscous limitation ------------ */
                     nu  = W[i][j][k].nu();
                     nu += W[i][j][k].nu_t(dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k], Grid.Cell[i][j][k].V);
@@ -436,6 +440,7 @@ CFL(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> &IPs){
                     dt[i][j][k]  = min(dt_vis, dt[i][j][k]);                        
                     dtMin = min(dtMin,  dt[i][j][k]);
                     
+                    dt_viscous = min(dt_viscous,dt_vis);
                 } /* endif */
                 
             } /* endfor */
@@ -456,7 +461,6 @@ CFL(Input_Parameters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> &IPs){
     } /* endfor */
     
     /* Return the global time step. */
-    
     return (dtMin);
     
 }

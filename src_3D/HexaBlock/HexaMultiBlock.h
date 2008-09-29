@@ -826,10 +826,9 @@ void Hexa_Multi_Block<HEXA_BLOCK>::BCs_dUdt(Input_Parameters<typename HEXA_BLOCK
 template<class HEXA_BLOCK>
 double Hexa_Multi_Block<HEXA_BLOCK>::CFL(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                                           typename HEXA_BLOCK::Soln_cState> &Input) {
-  
-   double dtMin;
-
-   dtMin = MILLION;
+    int Global_CFL_Limit;
+   double dtMin(MILLION);
+    double dt_acoustic(MILLION), dt_viscous(MILLION);
   
    /* Determine the allowable time step for each solution block. */
    /* Prescribe boundary data for each solution block. */
@@ -837,11 +836,31 @@ double Hexa_Multi_Block<HEXA_BLOCK>::CFL(Input_Parameters<typename HEXA_BLOCK::S
    for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) { 
       if (Block_Used[nblk]) {
          dtMin = min(dtMin, Soln_Blks[nblk].CFL(Input));
+          dt_acoustic = min(dt_acoustic,Soln_Blks[nblk].dt_acoustic);
+          dt_viscous = min(dt_viscous,Soln_Blks[nblk].dt_viscous);
       } /* endif */
    }  /* endfor */
    
+    dt_acoustic = CFFC_Minimum_MPI(dt_acoustic);
+    dt_viscous = CFFC_Minimum_MPI(dt_viscous);
+    
+    if (dt_viscous < dt_acoustic){
+        Global_CFL_Limit = CFL_LIMIT_VISCOUS;
+    } else {
+        Global_CFL_Limit = CFL_LIMIT_ACOUSTIC;
+    }
+    
+    if (CFFC_Primary_MPI_Processor() && Input.Output_CFL_Limit==ON){
+        if (Global_CFL_Limit == CFL_LIMIT_ACOUSTIC) {
+            cout << "a"; cout.flush();
+        }
+        if (Global_CFL_Limit == CFL_LIMIT_VISCOUS) {
+            cout << "v"; cout.flush();
+        }
+    }
+    
+    
    /* Return the global time step. */
-   
    return (dtMin);
     
 }

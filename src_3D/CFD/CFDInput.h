@@ -127,6 +127,7 @@ class CFD_Input_Parameters{
   int Residual_Norm;
   int Number_of_Residual_Norms;
   double CFL_Number, Time_Max;
+  int Output_CFL_Limit;
   //@}
 
   //@{ @name Reconstruction type indicator and related input parameters:
@@ -242,6 +243,7 @@ class CFD_Input_Parameters{
     Maximum_Number_of_Time_Steps = 100;
     N_Stage = 1;
     CFL_Number = HALF;
+    Output_CFL_Limit = OFF;
     Time_Max = ZERO;
     Residual_Norm = 1;   //density default
     Number_of_Residual_Norms =1;
