@@ -39,7 +39,7 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                 cout.flush();
             } /* endif */
             
-            Solution_Data.Explicit_Filter.reset();
+            solution_filter.reset();
             Explicit_Filter_Properties::FGR = Solution_Data.Input.Turbulence_IP.FGR;
 
         }
