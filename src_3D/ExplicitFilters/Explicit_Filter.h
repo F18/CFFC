@@ -147,8 +147,8 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(HexaSolver_Data &Data
 
         Set_Properties(Solution_Data.Input, Data.batch_flag);
         
-        if (Solution_Data.Input.i_ICs == IC_RESTART && !properties.restarted)
-            properties.filter_type = FILTER_TYPE_RESTART;
+        /*if (Solution_Data.Input.i_ICs == IC_RESTART && !properties.restarted)
+            properties.filter_type = FILTER_TYPE_RESTART; */
         
         Create_filter();
         initialized = true;
@@ -162,8 +162,8 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(Grid3D_Hexa_Multi_Blo
         Grid_List_ptr  = &Grid_List;
         Set_Properties(Input,batch_flag);
         
-        if (Input.i_ICs == IC_RESTART && !properties.restarted)
-            properties.filter_type = FILTER_TYPE_RESTART;
+        /*if (Input.i_ICs == IC_RESTART && !properties.restarted)
+            properties.filter_type = FILTER_TYPE_RESTART; */
         
         Create_filter();
         properties.progress_mode = Input.Progress_Mode; // Don't use terminal mode when outputting to file
@@ -191,7 +191,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Set_Properties(Input_Parameters<
     properties.uniform_grid = IPs.Turbulence_IP.uniform_grid;
     properties.batch_flag = batch_flag;
     properties.progress_mode = IPs.Progress_Mode; // Don't use terminal mode when outputting to file
-    if ((IPs.i_ICs == IC_RESTART && !properties.restarted) || IPs.Turbulence_IP.i_filter_type==FILTER_TYPE_RESTART)
+    if (/*(IPs.i_ICs == IC_RESTART && !properties.restarted) ||*/ IPs.Turbulence_IP.i_filter_type==FILTER_TYPE_RESTART)
         properties.progress_mode = PROGRESS_MODE_SILENT;
 
 }
