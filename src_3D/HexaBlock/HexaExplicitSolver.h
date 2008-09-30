@@ -1,6 +1,10 @@
 #ifndef _HEXA_EXPLICIT_SOLVER
 #define _HEXA_EXPLICIT_SOLVER
 
+//temporary
+#ifndef _EXPLICIT_FILTER_HELPERS_INCLUDED
+#include "../ExplicitFilters/Explicit_Filter_Helpers.h"
+#endif
 
 /*! ******************************************************
  * Routine: Hexa_Explicit_Solver                        *
@@ -173,7 +177,7 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
         /* Periodically filter the solution to eliminate build-up of high frequency */
         if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT &&
             Solution_Data.Input.Turbulence_IP.solution_filtering_frequency != OFF) {
-
+            
             if (!first_step && 
                 Data.number_of_explicit_time_steps-Solution_Data.Input.Turbulence_IP.solution_filtering_frequency*
                 (Data.number_of_explicit_time_steps/Solution_Data.Input.Turbulence_IP.solution_filtering_frequency) == 0 ) {
@@ -181,7 +185,12 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
                     cout << "o";   // This symbol will notify a solution filtering operation
                     cout.flush();
                 } /* endif */
-                error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Solution(Solution_Data.Explicit_Filter);
+                Explicit_Filters<SOLN_pSTATE,SOLN_cSTATE> solution_filter;
+                solution_filter.Initialize(Data,Solution_Data);
+                solution_filter.reset();
+                Explicit_Filter_Properties::FGR = Solution_Data.Input.Turbulence_IP.FGR_secondary;
+                
+                error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Solution(solution_filter);
                 if (error_flag) {
                     cout << "\n ERROR: Could not filter solution "
                     << "on processor "
@@ -189,6 +198,9 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
                     << ".\n";
                     cout.flush();
                 } /* endif */
+                
+                Solution_Data.Explicit_Filter.reset();
+                Explicit_Filter_Properties::FGR = Solution_Data.Input.Turbulence_IP.FGR;
             }
         }
         

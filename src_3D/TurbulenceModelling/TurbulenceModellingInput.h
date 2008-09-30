@@ -55,6 +55,7 @@ class Turbulence_Modelling_Input_Parameters{
     char filter_type[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];   //!< Filter type : default = implicit filtering
     int i_filter_type;                                          //!< Filter type : default = implicit filtering
     double FGR;                                                 //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
+    double FGR_secondary;                                       //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
     double Filter_Width;                                        //!< Constant filter width
     int commutation_order;                                      //!< Commutation order of explicit filter
     int finite_differencing_order;                              //!< Finite differencing order in commutation error calculations
@@ -101,6 +102,7 @@ class Turbulence_Modelling_Input_Parameters{
       smagorinsky_coefficient = 0.18;
       i_filter_type = FILTER_TYPE_IMPLICIT;
       FGR = TWO;
+      FGR_secondary = TWO;
       Filter_Width = ZERO;
       commutation_order = 2;
       finite_differencing_order = commutation_order+2;

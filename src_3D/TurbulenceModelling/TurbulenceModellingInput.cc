@@ -36,6 +36,9 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(FGR),
                           1,
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(FGR_secondary),
+                          1,
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Filter_Width),
                           1,
                           MPI::DOUBLE, 0);
@@ -206,6 +209,12 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
     value >> FGR;
     if (FGR < 1)
       i_command = INVALID_INPUT_VALUE;
+      
+  } else if (strcmp(code, "Filter_Grid_Ratio_secondary") == 0) {
+      i_command = 131;
+      value >> FGR_secondary;
+      if (FGR < 1)
+          i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Filter_Width") == 0) {
     i_command = 132;

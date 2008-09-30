@@ -290,6 +290,8 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Calculate_Weights_1D(
 
 template <typename Soln_pState, typename Soln_cState>
 inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &theCell, Neighbours &theNeighbours) {
+    // Set FGR to properties
+    FGR = Explicit_Filter_Properties::FGR;    
     if (theNeighbours.symmetric_stencil && symmetric_weights.size()!=0) {
         return symmetric_weights;
     } else {
