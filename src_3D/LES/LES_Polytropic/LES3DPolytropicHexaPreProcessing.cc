@@ -17,7 +17,6 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
      *                RESTART                 *
      * ---------------------------------------*/
     if (Solution_Data.Input.i_ICs == IC_RESTART) {
-        Solution_Data.Explicit_Filter.Initialize(Data,Solution_Data);
         if(Solution_Data.Input.Turbulence_IP.filter_solution_before_execution == ON) {
             if(!Data.batch_flag){
                 cout 
@@ -25,7 +24,24 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                 << "\n    Filtering solution first    "
                 << "\n ===============================";
             }
-            error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Solution(Solution_Data.Explicit_Filter);
+            
+            Explicit_Filters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> solution_filter;
+            solution_filter.Initialize(Data,Solution_Data);
+            solution_filter.reset();
+            Explicit_Filter_Properties::FGR = Solution_Data.Input.Turbulence_IP.FGR_secondary;
+            
+            error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Solution(solution_filter);
+            if (error_flag) {
+                cout << "\n ERROR: Could not filter solution "
+                << "on processor "
+                << CFFC_MPI::This_Processor_Number
+                << ".\n";
+                cout.flush();
+            } /* endif */
+            
+            Solution_Data.Explicit_Filter.reset();
+            Explicit_Filter_Properties::FGR = Solution_Data.Input.Turbulence_IP.FGR;
+
         }
         
         
