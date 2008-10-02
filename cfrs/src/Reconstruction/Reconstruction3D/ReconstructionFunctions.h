@@ -155,7 +155,7 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
   for (i=1; i<=SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv().LastElem(); ++i){
     for (parameter = 1; parameter <= NumberOfParameters; ++parameter){
       SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(i).D(parameter) = All_Delta_U(i-1,parameter-1);
-      std:: cout << "D[" << parameter <<"] = " << All_Delta_U(i-1,parameter-1) << endl;
+      //std:: cout << "D[" << parameter <<"] = " << All_Delta_U(i-1,parameter-1) << endl;
       /* this equation makes sure that the mean conservation of each parameter is satisfied inside the reconstructed cell */
       SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(0).D(parameter) -= 
         (SolnBlk(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i,true,true,true)*All_Delta_U(i-1,parameter-1));

@@ -35,18 +35,20 @@ double Test_Default3D_Integral (double x1, double x2, double y1, double y2, doub
 
 /********************************************************
  * Function Test_Example1:                              *
- *          f(x,y,z) = 
+ *          f(x,y,z) = z
  *******************************************************/
 
 double Test_Example1 (double x, double y, double z) {
   double f;
-  f = x; f = y; f=z; f= 0.0; 	// that's for the compiler !
+  f = x; f = y;  	// that's for the compiler !
+  f=z;
   return f;
 }
 
 double Test_Example1_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  assert((x1<x2)&&(y1<y2)&&(z1<z2));
   double f;
-  f = 0;
+  f = 0.5*(z2*z2 - z1*z1);
   return f;
 }
 /**********************************************************************
