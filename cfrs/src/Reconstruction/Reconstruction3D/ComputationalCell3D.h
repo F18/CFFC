@@ -185,8 +185,8 @@ public:
     Node3D SWBot(geom.NodeSWBot()), NWBot(geom.NodeNWBot());
     Node3D SEBot(geom.NodeSEBot()), NEBot(geom.NodeNEBot());
 
-    return AdaptiveGaussianQuadrature(FuncObj, NWBot.X.x, NEBot.X.x, NWBot.X.y, SWBot.X.y,
-                                      NWBot.X.z, NWTop.X.z, digits,_dummy_param);
+    return AdaptiveGaussianQuadrature(FuncObj, SWBot.X.x, SEBot.X.x, SWBot.X.y, NWBot.X.y,
+                                      SWBot.X.z, SWTop.X.z, digits,_dummy_param);
   }
 
   void OutputMeshNodesTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,

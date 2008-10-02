@@ -427,7 +427,7 @@ T TaylorDerivativesContainer<ThreeD,T>::ComputeSolutionFor(const double DeltaX, 
   T OneT(1.0);
 
   int OrderOfReconstruction = DContainer[LastElem()].P1();
-  int p1,p2,p3,Position;
+  int p1(0),p2(0),p3(0),Position(0);
 
   double DeltaXtoPower(1.0), DeltaYtoPower, DeltaZtoPower;
 

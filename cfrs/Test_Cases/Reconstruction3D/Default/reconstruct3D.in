@@ -6,7 +6,7 @@
 ###########################
 #
 Function_Definition =
-Default
+Example1
 Reconstruction_Order =
 0
 Method_Used =
@@ -46,7 +46,7 @@ Number_of_Subgrid_Points_Jdir =
 Number_of_Subgrid_Points_Kdir =
 10
 Output_File_Name =
-DefaultTestCase
+Example1R00
 #
 Output_Format_Type =
 tecplot
@@ -89,7 +89,7 @@ Write_Output_OneZone
 ######################
 ## Write mathematical function to file "_Function_" using subgrid points
 ######################
-#Write_Function_Graph
+Write_Function_Graph
 ######################
 ## Write the locations of the nodes "_mesh.dat"
 ######################
