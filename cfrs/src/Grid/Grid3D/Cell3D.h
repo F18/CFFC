@@ -452,15 +452,16 @@ public:
 
 /* Creation, copy, and assignment constructors. */
 inline Cell3D_Hexa::Cell3D_Hexa(void) {
-  xnNWTop.x = ZERO; xnNWTop.y = ZERO; xnNWTop.z =  ONE;
-  xnNETop.x =  ONE; xnNETop.y = ZERO; xnNETop.z =  ONE;  
-  xnSETop.x =  ONE; xnSETop.y =  ONE; xnSETop.z =  ONE; 
-  xnSWTop.x = ZERO; xnSWTop.y =  ONE; xnSWTop.z =  ONE;
 
-  xnNWBot.x = ZERO; xnNWBot.y = ZERO; xnNWBot.z = ZERO;
-  xnNEBot.x =  ONE; xnNEBot.y = ZERO; xnNEBot.z = ZERO;  
-  xnSEBot.x =  ONE; xnSEBot.y =  ONE; xnSEBot.z = ZERO; 
-  xnSWBot.x = ZERO; xnSWBot.y =  ONE; xnSWBot.z = ZERO;
+  xnSWTop.x = ZERO; xnSWTop.y = ZERO; xnSWTop.z =  ONE;
+  xnSETop.x =  ONE; xnSETop.y = ZERO; xnSETop.z =  ONE;
+  xnNETop.x =  ONE; xnNETop.y =  ONE; xnNETop.z =  ONE;
+  xnNWTop.x = ZERO; xnNWTop.y =  ONE; xnNWTop.z =  ONE;
+                                                     
+  xnSWBot.x = ZERO; xnSWBot.y = ZERO; xnSWBot.z = ZERO;
+  xnSEBot.x =  ONE; xnSEBot.y = ZERO; xnSEBot.z = ZERO;
+  xnNEBot.x =  ONE; xnNEBot.y =  ONE; xnNEBot.z = ZERO;
+  xnNWBot.x = ZERO; xnNWBot.y =  ONE; xnNWBot.z = ZERO;
 
   centroid();
 }

@@ -51,11 +51,17 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>::SetRings(void){
 
   // ThreeD
   switch(ND){
-  case 1:  rings = 0; break;
-  case 4:  rings = 1; break;
-  case 10: rings = 1; break;
-  case 20: rings = 2; break;
-  case 35: rings = 2; break;
+  case 1:  rings = 0; break;  // Reconstruction Order = 0
+  case 4:  rings = 1; break;  // Reconstruction Order = 1
+  case 10: rings = 1; break;  // Reconstruction Order = 2
+  case 20: rings = 2; break;  // Reconstruction Order = 3
+  case 35: rings = 2; break;  // Reconstruction Order = 4
+  case 56: rings = 2; break;  // Reconstruction Order = 5 --> RR: Check if number of rings should be increased here
+  //case 84: rings = ?; break;  // Reconstruction Order = 6
+  //case 120: rings = ?; break; // Reconstruction Order = 7
+  //case 165: rings = ?; break; // Reconstruction Order = 8
+  //case 220: rings = ?; break; // Reconstruction Order = 9
+  //case 286: rings = ?; break; // Reconstruction Order = 10
   default:
     rings = -1;
   }
@@ -432,9 +438,9 @@ OutputPWC(std::ofstream &output_file, const int &SubgridNy, const int &SubgridNz
 {
 
   output_file << setprecision(14);
-  int SubgridNx = iSubgridPoints();
+  //int SubgridNx = iSubgridPoints();
 
-  for(int i=0; i<SubgridNx; ++i)
+  for(int i=0; i<iSubgridPoints(); ++i)
     output_file << SubgridSolution(i,SubgridNy,SubgridNz).GetNode() <<  "\t" <<  CellSolution() << "\n";
 
   output_file << setprecision(6);

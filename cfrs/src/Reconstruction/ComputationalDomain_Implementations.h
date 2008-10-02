@@ -1095,24 +1095,24 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
 		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+		  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].kSubgridPoints() << "\\ \n"
 		  << "F = POINT \n";
       VarNames.PrintDataTypeTecplot(output_file,ThreeD);
     } else {
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
 		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+		  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].kSubgridPoints() << "\\ \n"
 		  << "F = POINT \n";
       VarNames.PrintDataTypeTecplot(output_file,ThreeD);
     }
 
-    for(k=jStart(); k<=kEnd(); ++k)
+    for(k=kStart(); k<=kEnd(); ++k)
       for(SubgridNz = 0; SubgridNz < SolnPtr[0][0][0].kSubgridPoints(); ++SubgridNz){
 	for(j=jStart(); j<=jEnd(); ++j)
 	  for(SubgridNy = 0; SubgridNy < SolnPtr[0][0][0].jSubgridPoints(); ++SubgridNy){
 	    for(i=iStart(); i<=iEnd(); ++i){
-	      SolnPtr[k][j][i].OutputSolutionCellTecplotOneZone(output_file, SubgridNy, SubgridNz);
+   	      SolnPtr[k][j][i].OutputSolutionCellTecplotOneZone(output_file, SubgridNy, SubgridNz);
 	    }
 	  }
       }
@@ -1294,6 +1294,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
     break;
 
   case ThreeD:
+    // --> RR: Needs to be implemented
     break;
   }
 }
@@ -1524,7 +1525,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 //    break;
 //    
 //  case ThreeD:
-//    
+//    // --> RR: Needs to be implemented
 //    break;
 //  }
 }
