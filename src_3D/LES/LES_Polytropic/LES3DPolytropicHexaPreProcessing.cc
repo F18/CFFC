@@ -46,6 +46,12 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
         
         
         if (Solution_Data.Input.i_Flow_Type==FLOWTYPE_TURBULENT_LES) {
+            
+            /* -------------------- ICs Specializations to generate reconstruction --------------------- */
+            error_flag = Solution_Data.Local_Solution_Blocks.ICs_Specializations(Solution_Data.Input);
+            if (error_flag) return error_flag;
+            
+            
             /* ----------- Get turbulence statistics before computations -------- */
             
             // Get average velocity
@@ -95,6 +101,7 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                                                              Vector3D(u_ave,v_ave,w_ave),
                                                              Global_Velocity_Field);
             }
+            
             
         }
 
