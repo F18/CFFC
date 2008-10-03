@@ -85,52 +85,8 @@ int Euler2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr){
     } /* endif */
   } /* endwhile */
 
-  /* Perform consistency checks on Input_Parameters */
-  if (!error_flag && 
-      i_Time_Integration == TIME_STEPPING_MULTIGRID) {
-    error_flag = Check_Input_Parameters<Euler2D_Input_Parameters>(*this);
-    if (error_flag) {
-      cout << "\n Euler2D ERROR: Input Parameters consistency check failure\n";
-      return (error_flag);
-    }
-  }
-
-  // Perform consitency checks on the refinement criteria.
-  Number_of_Refinement_Criteria = 0;
-  if (Refinement_Criteria_Gradient_Density) Number_of_Refinement_Criteria++;
-  if (Refinement_Criteria_Divergence_Velocity) Number_of_Refinement_Criteria++;
-  if (Refinement_Criteria_Curl_Velocity) Number_of_Refinement_Criteria++;
-
-  // Perform consitency checks on the time marching parameters.
-  if (Time_Accurate == 1 && Local_Time_Stepping != GLOBAL_TIME_STEPPING){
-    Local_Time_Stepping = GLOBAL_TIME_STEPPING;
-  }
-  
-  // Set Wo state based on the final input parameters
-  Wo = Euler2D_pState(Pressure/(Wo.R*Temperature), 
-		      ZERO, 
-		      ZERO, 
-		      Pressure);
-  Wo.v.x = Mach_Number*Wo.a()*cos(TWO*PI* Flow_Angle/360.00);
-  Wo.v.y = Mach_Number*Wo.a()*sin(TWO*PI* Flow_Angle/360.00);
-    
-  Uo.setgas(Gas_Type);
-  Uo = U(Wo);
-
-  Wo.Mr_min = Mr_Min_Factor*Mach_Number;
-  Uo.Mr_min = Mr_Min_Factor*Mach_Number;
-  
-  // Perform update of the internal variables of the exact solution
-  ExactSoln->Set_ParticularSolution_Parameters(*this);
-  
-  // Perform update of the internal variables of the high-order input parameters
-  HighOrder2D_Input::Set_Final_Parameters(*this);
-  
-  // Set reference state in the Euler2D_Quad_Block class
-  Euler2D_Quad_Block::Set_Normalization_Reference_State(RefU);
-  
-  // Set limiter in CENO class
-  CENO_Execution_Mode::Limiter = i_Limiter;
+  /* Perform consistency checks and internal parameter setup */
+  doInternalSetupAndConsistencyChecks(error_flag);
 
   /* Initial processing of input control parameters complete.  
      Return the error indicator flag. */
@@ -188,6 +144,61 @@ void Euler2D_Input_Parameters::Get_Next_Input_Control_Parameter(void){
   }//endwhile
 }
 
+/******************************************************//**
+ * Perform setup of internal and related external parameters.
+ * Do also check and validation of input parameters.
+ ********************************************************/
+void Euler2D_Input_Parameters::doInternalSetupAndConsistencyChecks(int & error_flag){
+
+  /* Perform consistency checks on input parameters for multigrid */
+  if (!error_flag &&
+      i_Time_Integration == TIME_STEPPING_MULTIGRID) {
+    error_flag = Check_Input_Parameters<Euler2D_Input_Parameters>(*this);
+    if (error_flag) {
+      cout << "\n Euler2D ERROR: Input Parameters consistency check failure\n";
+    }
+  }
+
+  // Perform consitency checks on the refinement criteria.
+  Number_of_Refinement_Criteria = 0;
+  if (Refinement_Criteria_Gradient_Density) Number_of_Refinement_Criteria++;
+  if (Refinement_Criteria_Divergence_Velocity) Number_of_Refinement_Criteria++;
+  if (Refinement_Criteria_Curl_Velocity) Number_of_Refinement_Criteria++;
+
+  // Perform consitency checks on the time marching parameters.
+  if (Time_Accurate == 1 && Local_Time_Stepping != GLOBAL_TIME_STEPPING){
+    Local_Time_Stepping = GLOBAL_TIME_STEPPING;
+  }
+
+  // Set Wo state based on the final input parameters
+  Wo = Euler2D_pState(Pressure/(Wo.R*Temperature), 
+		      ZERO, 
+		      ZERO, 
+		      Pressure);
+  Wo.v.x = Mach_Number*Wo.a()*cos(TWO*PI*
+				  Flow_Angle/360.00);
+  Wo.v.y = Mach_Number*Wo.a()*sin(TWO*PI*
+				  Flow_Angle/360.00);
+    
+  Uo.setgas(Gas_Type);
+  Uo = U(Wo);
+  
+  Wo.Mr_min = Mr_Min_Factor*Mach_Number;
+  Uo.Mr_min = Mr_Min_Factor*Mach_Number;
+  
+  // Perform update of the internal variables of the exact solution
+  ExactSoln->Set_ParticularSolution_Parameters(*this);
+
+  // Perform update of the internal variables of the high-order input parameters
+  HighOrder2D_Input::Set_Final_Parameters(*this);
+
+  // Set reference state in the Euler2D_Quad_Block class
+  Euler2D_Quad_Block::Set_Normalization_Reference_State(RefU);
+  
+  // Set limiter in CENO class
+  CENO_Execution_Mode::Limiter = i_Limiter;
+
+}
 
 /*************************************************************
  * Euler2D_Input_Parameters -- External subroutines.         *
@@ -1956,6 +1967,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	 IP.i_ICs = IC_INTERIOR_UNIFORM_GHOSTCELLS_EXACT;
        } else if (strcmp(IP.ICs_Type, "Restart") == 0) {
 	 IP.i_ICs = IC_RESTART;
+       } else if (strcmp(IP.ICs_Type, "Given_StartUp") == 0) {
+	 IP.i_ICs = IC_GIVEN_STARTUP;
        } else {
 	 std::cout << "\n ==> Unknown initial condition!";
 	 i_command = INVALID_INPUT_VALUE;
@@ -3932,55 +3945,8 @@ int Process_Input_Control_Parameter_File(Euler2D_Input_Parameters &Input_Paramet
        } /* endif */
     } /* endwhile */
 
-    /* Perform consistency checks on Input_Parameters */
-
-    if (!error_flag &&
-	Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
-      error_flag = Check_Input_Parameters<Euler2D_Input_Parameters>(Input_Parameters);
-      if (error_flag) {
-	cout << "\n Euler2D ERROR: Input Parameters consistency check failure\n";
-	return (error_flag);
-      }
-    }
-
-    // Perform consitency checks on the refinement criteria.
-    Input_Parameters.Number_of_Refinement_Criteria = 0;
-    if (Input_Parameters.Refinement_Criteria_Gradient_Density) Input_Parameters.Number_of_Refinement_Criteria++;
-    if (Input_Parameters.Refinement_Criteria_Divergence_Velocity) Input_Parameters.Number_of_Refinement_Criteria++;
-    if (Input_Parameters.Refinement_Criteria_Curl_Velocity) Input_Parameters.Number_of_Refinement_Criteria++;
-
-    // Perform consitency checks on the time marching parameters.
-    if (Input_Parameters.Time_Accurate == 1 && Input_Parameters.Local_Time_Stepping != GLOBAL_TIME_STEPPING){
-      Input_Parameters.Local_Time_Stepping = GLOBAL_TIME_STEPPING;
-    }
-
-    // Set Wo state based on the final input parameters
-    Input_Parameters.Wo = Euler2D_pState(Input_Parameters.Pressure/(Input_Parameters.Wo.R*Input_Parameters.Temperature), 
-					 ZERO, 
-					 ZERO, 
-					 Input_Parameters.Pressure);
-    Input_Parameters.Wo.v.x = Input_Parameters.Mach_Number*Input_Parameters.Wo.a()*cos(TWO*PI*
-										       Input_Parameters.Flow_Angle/360.00);
-    Input_Parameters.Wo.v.y = Input_Parameters.Mach_Number*Input_Parameters.Wo.a()*sin(TWO*PI*
-										       Input_Parameters.Flow_Angle/360.00);
-    
-    Input_Parameters.Uo.setgas(Input_Parameters.Gas_Type);
-    Input_Parameters.Uo = U(Input_Parameters.Wo);
-
-    Input_Parameters.Wo.Mr_min = Input_Parameters.Mr_Min_Factor*Input_Parameters.Mach_Number;
-    Input_Parameters.Uo.Mr_min = Input_Parameters.Mr_Min_Factor*Input_Parameters.Mach_Number;
-
-    // Perform update of the internal variables of the exact solution
-    Input_Parameters.ExactSoln->Set_ParticularSolution_Parameters(Input_Parameters);
-
-    // Perform update of the internal variables of the high-order input parameters
-    HighOrder2D_Input::Set_Final_Parameters(Input_Parameters);
-
-    // Set reference state in the Euler2D_Quad_Block class
-    Euler2D_Quad_Block::Set_Normalization_Reference_State(Input_Parameters.RefU);
-
-    // Set limiter in CENO class
-    CENO_Execution_Mode::Limiter = Input_Parameters.i_Limiter;
+    /* Perform consistency checks and internal parameter setup */
+    Input_Parameters.doInternalSetupAndConsistencyChecks(error_flag);
 
     /* Initial processing of input control parameters complete.  
        Return the error indicator flag. */

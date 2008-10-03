@@ -736,6 +736,8 @@ public:
   void Update_Corner_Ghost_Cells(void);
   void Update_SplineInfos(void);
 
+  void Update_Grid_Properties(const int &HighestRecOrder);
+
   int Check_Quad_Block(void);
   int Check_Quad_Block_Completely(void);
 
@@ -902,9 +904,9 @@ public:
   //! Set the boundary representation designated switch to the default value (i.e. low-order representation)
   static void setDefaultBoundaryRepresentation(void){ HighOrderBoundaryRepresentation = OFF; }
   //! Return true if geometric boundary representation is high-order otherwise return false.
-  bool IsHighOrderBoundary(void) const { return HighOrderBoundaryRepresentation == ON? true:false; }
+  static bool IsHighOrderBoundary(void) { return HighOrderBoundaryRepresentation == ON? true:false; }
   //! Get the value of the HighOrderBoundaryRepresentation variable.
-  int getHighOrderBoundaryValue(void) const {return HighOrderBoundaryRepresentation; }
+  static int getHighOrderBoundaryValue(void) {return HighOrderBoundaryRepresentation; }
   //! Set the designated switch to require the use of Gauss quadratures for evaluating curvilinear path integrals.
   static void setContourIntegrationBasedOnGaussQuadratures(void) {
     Gauss_Quad_Curvilinear_Integration = ON; Mixed_Curvilinear_Integration = OFF;

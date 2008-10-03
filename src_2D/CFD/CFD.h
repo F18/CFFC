@@ -467,6 +467,7 @@ inline char *Date_And_Time() {
  * CFD -- Initial Condition Types.                                    *
  **********************************************************************/
 
+#define IC_GIVEN_STARTUP               -2
 #define IC_RESTART                     -1
 
 #define	IC_CONSTANT                     0

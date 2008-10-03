@@ -14,6 +14,7 @@
 #include "HO_Grid2DQuad.h"	    // Include high-order quadrilateral block grid header file.
 #include "../HighOrderReconstruction/HighOrder2D_Input.h"	// Include 2D high-order input header file
 #include "HO_Grid2DQuad_ExecutionMode.h"
+#include "../AMR/AdaptiveBlock.h" // Include adaptive-block input header file
 
 
 /* Define the high-order quadrilateral 2D grid multi-block class. */
@@ -1095,6 +1096,12 @@ public:
 
   template<typename Input_Parameters_Type>
   int Output_Cells_Tecplot_Using_IP(const Input_Parameters_Type &Input_Parameters);
+
+  template<typename Quad_Soln_Block, typename Input_Parameters_Type>
+  static void Adjust_Grid_To_New_InputParameters(Quad_Soln_Block *Soln_ptr,
+						 AdaptiveBlock2D_List &Soln_Block_List,
+						 Input_Parameters_Type &IP,
+						 const int & MaxRequiredReconstructionOrder);
   //@}
 
   /////////////////////////////////////////////////
@@ -3190,6 +3197,61 @@ int Grid2D_Quad_MultiBlock_HO::Output_Cells_Tecplot_Using_IP(const Input_Paramet
 
   /* Writing of node locations file complete.  Return zero value. */
   return (0);
+}
+
+
+/*!
+ * Modify the properties of the grid (i.e. centroid, geometric moments, etc.)
+ * if necessary to accommodate new input parameters.
+ * This situation might arise when the spatial
+ * discretizations are changed during a restart.
+ */
+template<typename Quad_Soln_Block, typename Input_Parameters_Type>
+void Grid2D_Quad_MultiBlock_HO::Adjust_Grid_To_New_InputParameters(Quad_Soln_Block *Soln_ptr,
+								   AdaptiveBlock2D_List &Soln_Block_List,
+								   Input_Parameters_Type &IP,
+								   const int & MaxRequiredReconstructionOrder){
+
+  bool ChangeAllBlocks(false);
+
+
+  // Check for boundary representation
+  if ( (HO_Grid2D_Execution_Mode::USE_HIGH_ORDER_GEOMETRIC_BOUNDARY_REPRESENTATION == ON) && 
+       (Grid2D_Quad_Block_HO::IsHighOrderBoundary() != true) ){
+    // Impose high-order boundary representation
+
+    // Update all blocks
+    ChangeAllBlocks = true;
+    // Set the affected switch
+    Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+
+  } else if ( (HO_Grid2D_Execution_Mode::USE_HIGH_ORDER_GEOMETRIC_BOUNDARY_REPRESENTATION == OFF) && 
+	      (Grid2D_Quad_Block_HO::IsHighOrderBoundary() == true) ) {
+
+    // Impose low-order boundary representation
+
+    // Update all blocks
+    ChangeAllBlocks = true;
+    // Set the affected switch
+    Grid2D_Quad_Block_HO::setLowOrderBoundaryRepresentation();
+
+  }
+
+  // Modify the grid properties on a case by case basis.
+  for (int blk = 0 ; blk <= Soln_Block_List.Nblk-1 ; ++blk ) {
+    if (Soln_Block_List.Block[blk].used == ADAPTIVEBLOCK2D_USED) {
+      
+      // Check if grid modifications are required
+      if ( Soln_ptr[blk].Grid.MaxRecOrder() != MaxRequiredReconstructionOrder || // check for different reconstruction orders
+	   ChangeAllBlocks ){
+
+	// Update grid properties
+	Soln_ptr[blk].Grid.Update_Grid_Properties(MaxRequiredReconstructionOrder);
+	
+      }	// endif
+
+    } // endif
+  } // endfor
 }
 
 #endif	// _HO_GRID2D_QUAD_MULTIBLOCK_INCLUDED

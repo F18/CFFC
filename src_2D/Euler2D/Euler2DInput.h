@@ -295,6 +295,7 @@ class Euler2D_Input_Parameters{
   //@{
   int Parse_Input_File(char *Input_File_Name_ptr); //!< \brief Parse input file
   void Get_Next_Input_Control_Parameter(void);    //!< \brief Read the next input control parameter
+  void doInternalSetupAndConsistencyChecks(int & error_flag); //!< \brief Perform setup and check of different parameters
   //@}
 
   //@{ @name Input-output operators:

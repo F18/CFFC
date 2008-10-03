@@ -7366,6 +7366,24 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Cells(void) {
 }
 
 /*!
+ * Update all grid properties without 
+ * modifying the geometry.
+ */
+void Grid2D_Quad_Block_HO::Update_Grid_Properties(const int &HighestRecOrder){
+
+  // Allocate new memory for the geometric moment container, if necessary
+  allocate(NCi-2*Nghost, NCj-2*Nghost, Nghost, HighestRecOrder);
+
+  /* Require update of the whole mesh */
+  Schedule_Interior_Mesh_Update();
+  Schedule_Ghost_Cells_Update();
+
+  // Update properties for the whole mesh
+  Update_Cells();
+
+}
+
+/*!
  * Check the validity of the interior cells of the 
  * quadrilateral mesh block.
  * Returns a non-zero result if the interior mesh

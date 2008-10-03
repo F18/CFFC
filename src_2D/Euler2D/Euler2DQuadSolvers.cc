@@ -106,7 +106,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   /* Create initial mesh.  Read mesh from grid definition or data files 
      when specified by input parameters. */
 
-  if (Input_Parameters.i_ICs != IC_RESTART) {
+  if (Input_Parameters.i_ICs != IC_RESTART && Input_Parameters.i_ICs != IC_GIVEN_STARTUP) {
     // Generate the mesh only if the current run is NOT a restart!
 
     // The primary MPI processor creates the initial mesh.
@@ -175,7 +175,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 						   List_of_Local_Solution_Blocks);
 
     /* Create (allocate) the high-order variables in each of the
-       local 2D advection diffusion equation solution blocks */
+       local 2D Euler solution blocks */
     HighOrder2D_MultiBlock::Create_Initial_HighOrder_Variables(Local_SolnBlk,
 							       List_of_Local_Solution_Blocks);
   } else {
@@ -184,7 +184,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   }
   if (Local_SolnBlk == NULL) return (1);
 
-  if (Input_Parameters.i_ICs != IC_RESTART) {
+  if (Input_Parameters.i_ICs != IC_RESTART && Input_Parameters.i_ICs != IC_GIVEN_STARTUP) {
     /* Output multi-block solution-adaptive quadrilateral mesh statistics. */
 
     if (!batch_flag) {
@@ -220,7 +220,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   
   /* Initialize the conserved and primitive state
      solution variables. */
-  if (Input_Parameters.i_ICs == IC_RESTART) {
+  if (Input_Parameters.i_ICs == IC_RESTART || Input_Parameters.i_ICs == IC_GIVEN_STARTUP) {
     if (!batch_flag) { cout << "\n Reading Euler2D solution from restart data files."; cout.flush(); }
 
     //Check that restart files are probably not corrupt.
@@ -268,6 +268,23 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
      error_flag = CFFC_OR_MPI(error_flag);
      if (error_flag) return (error_flag);
 
+     // Ensure that grid and solution can be used with the new scheme parameters
+     if (Input_Parameters.i_ICs == IC_GIVEN_STARTUP){
+
+       // Adjust the grid properties based on the new input parameters
+       Grid2D_Quad_MultiBlock_HO::Adjust_Grid_To_New_InputParameters(Local_SolnBlk,
+								     List_of_Local_Solution_Blocks, 
+								     Input_Parameters,
+								     HighOrder2D_Input::MaximumReconstructionOrder());
+
+       /* Create (allocate) the high-order variables in each of the
+	  local 2D Euler solution blocks, if necessary. */
+       HighOrder2D_MultiBlock::Create_Initial_HighOrder_Variables(Local_SolnBlk,
+								  List_of_Local_Solution_Blocks);
+
+       //!\todo Set BCs values if possible.
+     }
+     
      // Ensure each processor has the correct time and time!!!
      number_of_time_steps = CFFC_Maximum_MPI(number_of_time_steps);
      Time = CFFC_Maximum_MPI(Time);
@@ -312,7 +329,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
   /* Perform uniform, boundary, and, initial mesh refinement. */
 
-  if (Input_Parameters.i_ICs != IC_RESTART) {
+  if (Input_Parameters.i_ICs != IC_RESTART && Input_Parameters.i_ICs != IC_GIVEN_STARTUP) {
     if (!batch_flag){ cout << "\n Performing Euler2D uniform mesh refinement."; cout.flush(); }
      error_flag = Uniform_AMR(Local_SolnBlk,
                               Input_Parameters,
@@ -1041,6 +1058,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
       Get_Next_Input_Control_Parameter(Input_Parameters);
       command_flag = Parse_Next_Input_Control_Parameter(Input_Parameters);
       line_number = Input_Parameters.Line_Number;
+      Input_Parameters.doInternalSetupAndConsistencyChecks(error_flag);
     } /* endif */
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
     Broadcast_Input_Parameters(Input_Parameters);
