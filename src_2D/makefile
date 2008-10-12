@@ -315,7 +315,8 @@ SRC_EULER_EXE = $(EULER_2D_DIR)Euler2D.cc
 SRC_EULER_TESTS = test_Euler2DState.cc \
 		  test_Euler2DQuadBlock.cc \
 	 	  test_Euler2DExactSolutions.cc \
-		  test_Euler2D_Simulations.cc
+		  test_Euler2D_Simulations.cc \
+	 	  test_Euler2D_Cauchy_BoundaryConditions.cc
 
 SRC_EULER_TESTS := $(addprefix $(EULER_2D_DIR)UnitTests/, $(SRC_EULER_TESTS))
 ifeq ($(TUT_TESTING),ON) 

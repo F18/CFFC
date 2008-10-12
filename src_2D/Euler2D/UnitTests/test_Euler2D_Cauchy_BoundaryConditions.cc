@@ -1,5 +1,5 @@
-/*!\file test_Cauchy_BoundaryConditions_Double.cc
-  \brief Regression tests for template class Cauchy_BCs with double datatype. */
+/*!\file test_Euler2D_Cauchy_BoundaryConditions.cc
+  \brief Regression tests for template class Cauchy_BCs with Euler2D_pState datatype. */
 
 /* Include required C++ libraries. */
 // None
@@ -9,47 +9,50 @@
 
 /* Include CFFC header files */
 #include "TestData.h"
-#include "../Cauchy_BoundaryConditions.h"
+#include "../../HighOrderReconstruction/Cauchy_BoundaryConditions.h"
+#include "../Euler2DState.h"
 
 namespace tut
 {
 
   /* Define the test-specific data class and add data members 
      when tests have complex or repeating creation phase. */
-  class Data_CauchyBCs : public TestData {
+  class Data_Euler2D_CauchyBCs : public TestData {
 
     // Local variables
   public:
 
     // Constructor
-    Data_CauchyBCs();
+    Data_Euler2D_CauchyBCs();
 
     // Fill data into container
-    void Initialize_Container(Cauchy_BCs<double> & BC, const int & NumOfObjects);
+    void Initialize_Container(Cauchy_BCs<Euler2D_pState> & BC,
+			      const int & NumOfObjects);
 
   private:
     
   };
 
   // Constructor
-  Data_CauchyBCs::Data_CauchyBCs(){
+  Data_Euler2D_CauchyBCs::Data_Euler2D_CauchyBCs(){
 
-    set_test_suite_path("HighOrderReconstruction/UnitTests/");
+    set_test_suite_path("Euler2D/UnitTests/");
     set_local_input_path("CauchyBCs_Data");
     set_local_output_path("CauchyBCs_Data");
     
   }
 
     // Fill data into container
-  void Data_CauchyBCs::Initialize_Container(Cauchy_BCs<double> & BC, const int & NumOfObjects){
+  void Data_Euler2D_CauchyBCs::Initialize_Container(Cauchy_BCs<Euler2D_pState> & BC,
+						    const int & NumOfObjects){
     
     BC.allocate(NumOfObjects);
 
     for (int n = 0; n < NumOfObjects; ++n){
-      BC.DirichletBC(n+1) = 1.0*(n+1);
-      BC.NeumannBC(n+1) = 2.0*(n+1);
-      BC.a(n+1) = 3.0*(n+1);
-      BC.b(n+1) = 4.0*(n+1);
+      BC.DirichletBC(n+1) = Euler2D_pState(1.0*(n+1), 2.0*(n+1), 3.0*(n+1), 4.0*(n+1) );
+      BC.NeumannBC(n+1)   = Euler2D_pState(2.0*(n+1), 2.0*(n+1), 3.0*(n+1), 4.0*(n+1) );
+      BC.a(n+1) = Euler2D_pState(3.0*(n+1), 2.0*(n+1), 3.0*(n+1), 4.0*(n+1) );
+      BC.b(n+1) = Euler2D_pState(4.0*(n+1), 2.0*(n+1), 3.0*(n+1), 4.0*(n+1) );
     }
   }
 
@@ -60,8 +63,8 @@ namespace tut
    * be unique in tut:: namespace. Alternatively, you
    * you may put it into anonymous namespace.
    */
-  typedef test_group<Data_CauchyBCs> CauchyBCs_TestSuite;
-  typedef CauchyBCs_TestSuite::object CauchyBCs_object;
+  typedef test_group<Data_Euler2D_CauchyBCs> Euler2D_CauchyBCs_TestSuite;
+  typedef Euler2D_CauchyBCs_TestSuite::object Euler2D_CauchyBCs_object;
 
 
   /******************************************************************************************************
@@ -94,11 +97,11 @@ namespace tut
   /* Test 1:*/
   template<>
   template<>
-  void CauchyBCs_object::test<1>()
+  void Euler2D_CauchyBCs_object::test<1>()
   {
     set_test_name("Defalt Constructor");
 
-    Cauchy_BCs<double> BCs;
+    Cauchy_BCs<Euler2D_pState> BCs;
 
     ensure("Dirichlet", BCs.DirichletBC() == NULL);
     ensure("Neumann", BCs.NeumannBC() == NULL);
@@ -109,14 +112,15 @@ namespace tut
     ensure_equals("Relational Constraints", BCs.RelationalConstraintsVector().size(), 0);
   }
 
+
   /* Test 2:*/
   template<>
   template<>
-  void CauchyBCs_object::test<2>()
+  void Euler2D_CauchyBCs_object::test<2>()
   {
     set_test_name("allocate()");
 
-    Cauchy_BCs<double> BCs;
+    Cauchy_BCs<Euler2D_pState> BCs;
 
     // call allocate()
     BCs.allocate(5);
@@ -126,20 +130,26 @@ namespace tut
     ensure("a", BCs.a() != NULL);
     ensure("b", BCs.b() != NULL);
     ensure_equals("NumLoc", BCs.NumOfPoints(), 5);
-    ensure_equals("Individual Constraints", BCs.IndividualConstraintsVector().size(), 1);
+    ensure_equals("Individual Constraints", BCs.IndividualConstraintsVector().size(), 4);
     ensure_equals("Individual Constraints value", BCs.NumberOfIndividualConstraints(1), 0);
-    ensure_equals("Relational Constraints", BCs.RelationalConstraintsVector().size(), 1);
+    ensure_equals("Individual Constraints value", BCs.NumberOfIndividualConstraints(2), 0);
+    ensure_equals("Individual Constraints value", BCs.NumberOfIndividualConstraints(3), 0);
+    ensure_equals("Individual Constraints value", BCs.NumberOfIndividualConstraints(4), 0);
+    ensure_equals("Relational Constraints", BCs.RelationalConstraintsVector().size(), 4);
     ensure_equals("Relational Constraints value", BCs.NumberOfRelationalConstraints(1), 0);
+    ensure_equals("Relational Constraints value", BCs.NumberOfRelationalConstraints(2), 0);
+    ensure_equals("Relational Constraints value", BCs.NumberOfRelationalConstraints(3), 0);
+    ensure_equals("Relational Constraints value", BCs.NumberOfRelationalConstraints(4), 0);
   }
 
   /* Test 3:*/
   template<>
   template<>
-  void CauchyBCs_object::test<3>()
+  void Euler2D_CauchyBCs_object::test<3>()
   {
     set_test_name("Check memory leaks");
 
-    Cauchy_BCs<double> BCs;
+    Cauchy_BCs<Euler2D_pState> BCs;
 
     // call allocate()
     BCs.allocate(5);
@@ -149,10 +159,16 @@ namespace tut
     ensure("a", BCs.a() != NULL);
     ensure("b", BCs.b() != NULL);
     ensure_equals("NumLoc", BCs.NumOfPoints(), 5);
-    ensure_equals("Individual Constraints", BCs.IndividualConstraintsVector().size(), 1);
+    ensure_equals("Individual Constraints", BCs.IndividualConstraintsVector().size(), 4);
     ensure_equals("Individual Constraints value", BCs.NumberOfIndividualConstraints(1), 0);
-    ensure_equals("Relational Constraints", BCs.RelationalConstraintsVector().size(), 1);
+    ensure_equals("Individual Constraints value", BCs.NumberOfIndividualConstraints(2), 0);
+    ensure_equals("Individual Constraints value", BCs.NumberOfIndividualConstraints(3), 0);
+    ensure_equals("Individual Constraints value", BCs.NumberOfIndividualConstraints(4), 0);
+    ensure_equals("Relational Constraints", BCs.RelationalConstraintsVector().size(), 4);
     ensure_equals("Relational Constraints value", BCs.NumberOfRelationalConstraints(1), 0);
+    ensure_equals("Relational Constraints value", BCs.NumberOfRelationalConstraints(2), 0);
+    ensure_equals("Relational Constraints value", BCs.NumberOfRelationalConstraints(3), 0);
+    ensure_equals("Relational Constraints value", BCs.NumberOfRelationalConstraints(4), 0);
 
     // call allocate()
     BCs.allocate(15);
@@ -174,13 +190,13 @@ namespace tut
   /* Test 4:*/
   template<>
   template<>
-  void CauchyBCs_object::test<4>()
+  void Euler2D_CauchyBCs_object::test<4>()
   {
     set_test_name("Output operator");
 
     RunRegression = ON;
 
-    Cauchy_BCs<double> BCs;
+    Cauchy_BCs<Euler2D_pState> BCs;
     Initialize_Container(BCs,4);
 
     MasterFile = "Output_Operator.dat";
@@ -204,11 +220,11 @@ namespace tut
   /* Test 5:*/
   template<>
   template<>
-  void CauchyBCs_object::test<5>()
+  void Euler2D_CauchyBCs_object::test<5>()
   {
     set_test_name("Input-output operators");
 
-    Cauchy_BCs<double> BCs;
+    Cauchy_BCs<Euler2D_pState> BCs;
 
     // initialize variable
     Initialize_Container(BCs,4);
@@ -220,14 +236,14 @@ namespace tut
   /* Test 6:*/
   template<>
   template<>
-  void CauchyBCs_object::test<6>()
+  void Euler2D_CauchyBCs_object::test<6>()
   {
     set_test_name("Copy constructor");
 
-    Cauchy_BCs<double> BCs;
+    Cauchy_BCs<Euler2D_pState> BCs;
     Initialize_Container(BCs,5);
 
-    Cauchy_BCs<double> BCs_Copy(BCs);
+    Cauchy_BCs<Euler2D_pState> BCs_Copy(BCs);
 
     // == check
     for (int n = 1; n <= BCs.NumOfPoints(); ++n){
@@ -240,25 +256,27 @@ namespace tut
     ensure_equals("Individual Constraints",
 		  BCs_Copy.IndividualConstraintsVector().size(),
 		  BCs.IndividualConstraintsVector().size());
-    ensure_equals("Individual Constraints value",
-		  BCs_Copy.NumberOfIndividualConstraints(1),
-		  BCs.NumberOfIndividualConstraints(1));
     ensure_equals("Relational Constraints",
 		  BCs_Copy.RelationalConstraintsVector().size(),
 		  BCs.RelationalConstraintsVector().size());
-    ensure_equals("Relational Constraints value",
-		  BCs_Copy.NumberOfRelationalConstraints(1),
-		  BCs.NumberOfRelationalConstraints(1));
+    for (int n = 1; n <= BCs_Copy.IndividualConstraintsVector().size(); ++n){
+      ensure_equals("Individual Constraints value",
+		    BCs_Copy.NumberOfIndividualConstraints(n),
+		    BCs.NumberOfIndividualConstraints(n));
+      ensure_equals("Relational Constraints value",
+		    BCs_Copy.NumberOfRelationalConstraints(n),
+		    BCs.NumberOfRelationalConstraints(n));
+    }
   }
 
   /* Test 7:*/
   template<>
   template<>
-  void CauchyBCs_object::test<7>()
+  void Euler2D_CauchyBCs_object::test<7>()
   {
     set_test_name("Assignment operator");
 
-    Cauchy_BCs<double> BCs, BCs_Copy;
+    Cauchy_BCs<Euler2D_pState> BCs, BCs_Copy;
     Initialize_Container(BCs,5);
     Initialize_Container(BCs_Copy,15);
 
@@ -276,18 +294,21 @@ namespace tut
       ensure_equals("b", BCs_Copy.b(n), BCs.b(n) );
     }
 
+
     ensure_equals("Individual Constraints",
 		  BCs_Copy.IndividualConstraintsVector().size(),
 		  BCs.IndividualConstraintsVector().size());
-    ensure_equals("Individual Constraints value",
-		  BCs_Copy.NumberOfIndividualConstraints(1),
-		  BCs.NumberOfIndividualConstraints(1));
     ensure_equals("Relational Constraints",
 		  BCs_Copy.RelationalConstraintsVector().size(),
 		  BCs.RelationalConstraintsVector().size());
-    ensure_equals("Relational Constraints value",
-		  BCs_Copy.NumberOfRelationalConstraints(1),
-		  BCs.NumberOfRelationalConstraints(1));
+    for (int n = 1; n <= BCs_Copy.IndividualConstraintsVector().size(); ++n){
+      ensure_equals("Individual Constraints value",
+		    BCs_Copy.NumberOfIndividualConstraints(n),
+		    BCs.NumberOfIndividualConstraints(n));
+      ensure_equals("Relational Constraints value",
+		    BCs_Copy.NumberOfRelationalConstraints(n),
+		    BCs.NumberOfRelationalConstraints(n));
+    }
   }
 
 
@@ -296,7 +317,7 @@ namespace tut
 
 
 // Test suite constructor
-tut::CauchyBCs_TestSuite CauchyBCsTestSuite("Template Class:Cauchy_BCs && double");
+tut::Euler2D_CauchyBCs_TestSuite Euler2D_CauchyBCsTestSuite("Template Class:Cauchy_BCs && Euler2D_pState");
 
 /*************************************************************
  Guidelines for naming "Test Suite Name".

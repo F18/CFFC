@@ -82,6 +82,14 @@ public:
   SOLN_STATE & b(const int &position) {return b_coeff[position-1];}
   const SOLN_STATE & b(const int &position) const {return b_coeff[position-1];}
   
+  const ShortIndexType & IndividualConstraintsVector(void) const { return IndividualConstraints; }
+  short int & NumberOfIndividualConstraints(const int &parameter){ return IndividualConstraints[parameter-1]; }
+  const short int & NumberOfIndividualConstraints(const int &parameter) const { return IndividualConstraints[parameter-1]; }
+
+  const ShortIndexType & RelationalConstraintsVector(void) const { return RelationalConstraints; }
+  short int & NumberOfRelationalConstraints(const int &parameter){ return RelationalConstraints[parameter-1]; }
+  const short int & NumberOfRelationalConstraints(const int &parameter) const { return RelationalConstraints[parameter-1]; }
+
   //! @name Friend functions:
   //@{
   friend std::ostream& operator<< <SOLN_STATE> (std::ostream& os, const Cauchy_BCs<SOLN_STATE>& rhs);
@@ -94,6 +102,9 @@ private:
   SOLN_STATE *a_coeff;		//!< Coefficient of Dirichlet BC in the mixed BC
   SOLN_STATE *b_coeff;		//!< Coefficient of Neumann BC in the mixed BC
   int NumLoc;			//!< Number of locations where the BCs are specified
+
+  ShortIndexType IndividualConstraints; //!< Total number of individual constraints imposed by the BCs type to each soln parameter
+  ShortIndexType RelationalConstraints; //!< Total number of relational constraints imposed by the BCs type to each soln parameter
 
   bool _allocated_container;	//!< allocation flag
 };
@@ -134,6 +145,10 @@ Cauchy_BCs<SOLN_STATE>::Cauchy_BCs(const Cauchy_BCs<SOLN_STATE> & rhs):
       a_coeff[i]   = rhs.a_coeff[i];
       b_coeff[i]   = rhs.b_coeff[i];      
     }
+
+    /* copy constraints values from the RHS */
+    IndividualConstraints = rhs.IndividualConstraints;
+    RelationalConstraints = rhs.RelationalConstraints;
   }
 }
 
@@ -159,11 +174,39 @@ void Cauchy_BCs<SOLN_STATE>::allocate(const int &NumOfObjects){
     Neumann   = new SOLN_STATE[NumLoc];
     a_coeff   = new SOLN_STATE[NumLoc];
     b_coeff   = new SOLN_STATE[NumLoc];
-  }
 
+    // allocate memory for the constraints vectors
+    IndividualConstraints.reserve(SOLN_STATE::NumVar());
+    RelationalConstraints.reserve(SOLN_STATE::NumVar());
+
+    // Initialize constraints vectors
+    for (int parameter = 1; parameter <= SOLN_STATE::NumVar(); ++parameter){
+      IndividualConstraints.push_back(0); // no individual constraints for this parameter
+      RelationalConstraints.push_back(0); // no relational constraints for this parameter
+    }
+  }
+  
   // Confirm the allocation
   _allocated_container = true;
 }
+
+
+// /*!
+//  * Allocate memory for the object 
+//  * and a particular bounary condition.
+//  */
+// template< class SOLN_STATE > inline
+// void Cauchy_BCs<SOLN_STATE>::allocate(const int &NumOfObjects,
+// 				      const int &BCtype){
+
+//   // allocate basic memory
+//   allocate();
+
+  
+//   allocate_constraints_vectors();
+  
+// }
+
 
 /*!
  * Deallocate memory
@@ -175,6 +218,9 @@ void Cauchy_BCs<SOLN_STATE>::deallocate(void){
   delete [] a_coeff; a_coeff = NULL;
   delete [] b_coeff; b_coeff = NULL;
   NumLoc = 0;
+
+  IndividualConstraints.clear();
+  RelationalConstraints.clear();
 
   // Confirm the de-allocation
   _allocated_container = false;
@@ -244,6 +290,79 @@ std::istream& operator>> (std::istream& is, Cauchy_BCs<SOLN_STATE>& rhs){
   }
 
   return is;
+}
+
+
+/*****************************************************************
+ *            SPECIALIZATIONS FOR CLASS DOUBLE                   *
+ ****************************************************************/
+
+/*!
+ * Allocate memory for the object.
+ */
+template< > inline
+void Cauchy_BCs<double>::allocate(const int &NumOfObjects){
+
+  if (NumLoc == NumOfObjects) {
+    return; /* enough memory already allocated */
+  } 
+
+  /* If there is not enough memory, deallocate the current one and allocate again */
+  if (_allocated_container){
+    deallocate();
+  }
+
+  // allocate new memory
+  if (NumOfObjects > 0){
+    NumLoc = NumOfObjects;
+    Dirichlet = new double[NumLoc];
+    Neumann   = new double[NumLoc];
+    a_coeff   = new double[NumLoc];
+    b_coeff   = new double[NumLoc];
+
+    // allocate memory for the constraints vectors
+    IndividualConstraints.reserve(1);
+    RelationalConstraints.reserve(1);
+
+    // Initialize constraints vectors
+    IndividualConstraints.push_back(0);
+    RelationalConstraints.push_back(0);
+  }
+  
+  // Confirm the allocation
+  _allocated_container = true;
+}
+
+/*!
+ * Access individual constraints
+ */
+template< > inline
+short int & Cauchy_BCs<double>::NumberOfIndividualConstraints(const int &parameter){
+  return IndividualConstraints[0];
+}
+
+/*!
+ * Access individual constraints with 'const'
+ */
+template< > inline
+const short int & Cauchy_BCs<double>::NumberOfIndividualConstraints(const int &parameter) const{
+  return IndividualConstraints[0];
+}
+
+/*!
+ * Access relational constraints
+ */
+template< > inline
+short int & Cauchy_BCs<double>::NumberOfRelationalConstraints(const int &parameter){
+  return RelationalConstraints[0];
+}
+
+/*!
+ * Access relational constraints with 'const'
+ */
+template< > inline
+const short int & Cauchy_BCs<double>::NumberOfRelationalConstraints(const int &parameter) const{
+  return RelationalConstraints[0];
 }
 
 #endif
