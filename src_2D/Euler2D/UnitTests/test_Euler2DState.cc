@@ -94,7 +94,43 @@ namespace tut
     ensure_distance("Flux",Flux, Flux_n, Euler2D_cState(tol));
   }
 
+  /* Test 2:*/
+  template<>
+  template<>
+  void Euler2D_pState_object::test<2>()
+  {
 
+    set_test_name("Min member function");
+
+    // Set initial data
+    Euler2D_pState W1(1.5, 2.5, 3.5, 4.5);
+    Euler2D_pState W2(-1.5, -2.5, -3.5, -4.5);
+    Euler2D_pState Wm(-23.434, 2.500001, 0.0, -4.5);
+
+    // === check max
+    ensure_equals("Min I"  , min(W1,W2), W2);
+    ensure_equals("Min II" , min(W1,Wm), Euler2D_pState(-23.434, 2.5, 0.0, -4.5) );
+    ensure_equals("Min III", min(W2,Wm), Euler2D_pState(-23.434, -2.5, -3.5, -4.5) );
+  }
+
+  /* Test 3:*/
+  template<>
+  template<>
+  void Euler2D_pState_object::test<3>()
+  {
+
+    set_test_name("Max member function");
+
+    // Set initial data
+    Euler2D_pState W1(1.5, 2.5, 3.5, 4.5);
+    Euler2D_pState W2(-1.5, -2.5, -3.5, -4.5);
+    Euler2D_pState Wm(-23.434, 2.500001, 0.0, -4.5);
+
+    // === check max
+    ensure_equals("Max I"  , max(W1,W2), W1);
+    ensure_equals("Max II" , max(W1,Wm), Euler2D_pState(1.5, 2.500001, 3.5, 4.5) );
+    ensure_equals("Max III", max(W2,Wm), Euler2D_pState(-1.5, 2.500001, 0.0, -4.5) );
+  }
 }
 
 

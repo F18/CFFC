@@ -173,7 +173,7 @@ public:
   }
 
   //! Value Constructor
-  Euler2D_pState(const double &Val);
+  explicit Euler2D_pState(const double &Val);
 
   /* Destructor. */
   // ~Euler2D_pState(void);
@@ -510,6 +510,7 @@ public:
   friend Euler2D_pState operator /(const Euler2D_pState &W1, const Euler2D_pState &W2);
   friend Euler2D_pState operator ^(const Euler2D_pState &W1, const Euler2D_pState &W2);
   friend Euler2D_pState max(const Euler2D_pState &W1, const Euler2D_pState &W2 );
+  friend Euler2D_pState min(const Euler2D_pState &W1, const Euler2D_pState &W2 );
   //@}
 
   //@{ @name Unary arithmetic operators.
@@ -673,6 +674,9 @@ public:
 
   //! Copy constructor.
   Euler2D_cState(const Euler2D_pState &W);
+
+  //! Value Constructor
+  explicit Euler2D_cState(const double &Val);
 
   //! Assignment constructor.
   Euler2D_cState(const double &rho,
@@ -1242,6 +1246,14 @@ inline Euler2D_pState max(const Euler2D_pState &W1, const Euler2D_pState &W2 ){
   return Euler2D_pState(max(W1.d,W2.d),max(W1.v.x,W2.v.x),max(W1.v.y,W2.v.y),max(W1.p,W2.p));
 }
 
+/*!
+ * Compute minimum between 2 states. 
+ * Return the state of minimum values.
+ */
+inline Euler2D_pState min(const Euler2D_pState &W1, const Euler2D_pState &W2 ){
+  return Euler2D_pState(min(W1.d,W2.d),min(W1.v.x,W2.v.x),min(W1.v.y,W2.v.y),min(W1.p,W2.p));
+}
+
 /********************************************************
  * Euler2D_pState -- Unary arithmetic operators.        *
  ********************************************************/
@@ -1340,6 +1352,13 @@ inline istream &operator >> (istream &in_file, Euler2D_pState &W) {
   in_file >> W.d >> W.v.x >> W.v.y >> W.p;
   in_file.unsetf(ios::skipws);
   return (in_file);
+}
+
+/********************************************
+ * Euler2D_cState Value Constructor.        *
+ *******************************************/
+inline Euler2D_cState::Euler2D_cState(const double &Val):
+  d(Val), dv(Val), E(Val){
 }
 
 /********************************************************

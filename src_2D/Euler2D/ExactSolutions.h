@@ -464,7 +464,7 @@ inline Euler2D_pState HyperTangent_Function_ExactSolution::EvaluateSolutionAt(co
   // Compute distance between centroid and the current position
   double Distance(abs(Centroid - Vector2D(x,y)));
 
-  return BaseHyperTangentVariation(Distance);
+  return Euler2D_pState(BaseHyperTangentVariation(Distance), ZERO, ZERO, PRESSURE_STDATM);
 }
 
 //! Return the basic sinusoidal variation
