@@ -738,10 +738,10 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.BC_South = BC_NONE;
     IP.BC_East  = BC_NONE;
     IP.BC_West  = BC_NONE;
-    IP.Ref_State_BC_North = 0.0;
-    IP.Ref_State_BC_South = 0.0;
-    IP.Ref_State_BC_East = 0.0;
-    IP.Ref_State_BC_West = 0.0;
+    IP.Ref_State_BC_North = AdvectDiffuse2D_State(0.0);
+    IP.Ref_State_BC_South = AdvectDiffuse2D_State(0.0);
+    IP.Ref_State_BC_East = AdvectDiffuse2D_State(0.0);
+    IP.Ref_State_BC_West = AdvectDiffuse2D_State(0.0);
 
     // AMR:
     IP.AMR = 0;

@@ -3745,7 +3745,7 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
     case BC_INFLOW :
       // Calculate U_face based on the inflow field
       if (Inflow->IsInflowFieldSet()){
-	U_face = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+	U_face = AdvectDiffuse2D_State(Inflow->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -3763,7 +3763,7 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
     case BC_EXACT_SOLUTION :
       // Calculate U_face based on the exact solution
       if (ExactSoln->IsExactSolutionSet()){
-	U_face = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+	U_face = AdvectDiffuse2D_State(ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -3865,7 +3865,7 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
     case BC_INFLOW :
       // Calculate U_face based on the inflow field
       if (Inflow->IsInflowFieldSet()){
-	U_face = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+	U_face = AdvectDiffuse2D_State(Inflow->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -3883,7 +3883,7 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
     case BC_EXACT_SOLUTION :
       // Calculate U_face based on the exact solution
       if (ExactSoln->IsExactSolutionSet()){
-	U_face = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+	U_face = AdvectDiffuse2D_State(ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -3984,7 +3984,7 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
     case BC_INFLOW :
       // Calculate U_face based on the inflow field
       if (Inflow->IsInflowFieldSet()){
-	U_face = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+	U_face = AdvectDiffuse2D_State(Inflow->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -4002,7 +4002,7 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
     case BC_EXACT_SOLUTION :
       // Calculate U_face based on the exact solution
       if (ExactSoln->IsExactSolutionSet()){
-	U_face = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+	U_face = AdvectDiffuse2D_State(ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -4103,7 +4103,7 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
     case BC_INFLOW :
       // Calculate U_face based on the inflow field
       if (Inflow->IsInflowFieldSet()){
-	U_face = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+	U_face = AdvectDiffuse2D_State(Inflow->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -4121,7 +4121,7 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
     case BC_EXACT_SOLUTION :
       // Calculate U_face based on the exact solution
       if (ExactSoln->IsExactSolutionSet()){
-	U_face = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+	U_face = AdvectDiffuse2D_State(ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -4251,7 +4251,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
     case BC_INFLOW :
       // Calculate Ur based on the inflow field
       if (Inflow->IsInflowFieldSet()){
-	Ur = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+	Ur = AdvectDiffuse2D_State(Inflow->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -4265,7 +4265,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
     case BC_EXACT_SOLUTION :
       // Calculate U_face based on the exact solution
       if (ExactSoln->IsExactSolutionSet()){
-	Ur = Ul = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+	Ur = Ul = AdvectDiffuse2D_State(ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -4354,7 +4354,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
     case BC_INFLOW :
       // Calculate Ur based on the inflow field
       if (Inflow->IsInflowFieldSet()){
-	Ur = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+	Ur = AdvectDiffuse2D_State(Inflow->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -4368,7 +4368,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
     case BC_EXACT_SOLUTION :
       // Calculate U_face based on the exact solution
       if (ExactSoln->IsExactSolutionSet()){
-	Ur = Ul = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+	Ur = Ul = AdvectDiffuse2D_State(ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -4456,7 +4456,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
     case BC_INFLOW :
       // Calculate Ur based on the inflow field
       if (Inflow->IsInflowFieldSet()){
-	Ur = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+	Ur = AdvectDiffuse2D_State(Inflow->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -4470,7 +4470,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
     case BC_EXACT_SOLUTION :
       // Calculate U_face based on the exact solution
       if (ExactSoln->IsExactSolutionSet()){
-	Ur = Ul = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+	Ur = Ul = AdvectDiffuse2D_State(ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -4558,7 +4558,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
     case BC_INFLOW :
       // Calculate Ur based on the inflow field
       if (Inflow->IsInflowFieldSet()){
-	Ur = Inflow->Solution(CalculationPoint.x,CalculationPoint.y);
+	Ur = AdvectDiffuse2D_State(Inflow->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -4572,7 +4572,7 @@ void AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrde
     case BC_EXACT_SOLUTION :
       // Calculate U_face based on the exact solution
       if (ExactSoln->IsExactSolutionSet()){
-	Ur = Ul = ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y);
+	Ur = Ul = AdvectDiffuse2D_State(ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y));
       } else {
 	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -5328,7 +5328,7 @@ Calculate_HighOrder_SolutionCoefficients_For_LaplacianOperator(const int &iCell,
     OriginalUave = U[i_index[cell]][j_index[cell]];
 
     // Perturb the current solution state
-    U[i_index[cell]][j_index[cell]] = FiniteDiffTol*OriginalUave + AbsoluteTol;
+    U[i_index[cell]][j_index[cell]] = FiniteDiffTol*OriginalUave + AdvectDiffuse2D_State(AbsoluteTol);
     DeltaUave = U[i_index[cell]][j_index[cell]] - OriginalUave;
 
     // Calculate delta Laplacian
@@ -5600,10 +5600,10 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	      PointOfInterest = GaussQuadPoints[Vertex-1];
 	    }
 	    // Set the boundary conditions at the current location
-	    BC_WestCell(j).DirichletBC(Vertex) = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
-	    BC_WestCell(j).a(Vertex) = 1.0;
-	    BC_WestCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_WestCell(j).b(Vertex) = 0.0;      
+	    BC_WestCell(j).DirichletBC(Vertex) = AdvectDiffuse2D_State(Inflow->Solution(PointOfInterest.x,PointOfInterest.y));
+	    BC_WestCell(j).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	    BC_WestCell(j).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_WestCell(j).b(Vertex) = AdvectDiffuse2D_State(0.0);      
 	  } else {
 	    throw runtime_error("BCs_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
 	  }
@@ -5612,17 +5612,17 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	case BC_DIRICHLET :	// Use UoW as reference value
 	  // Dirichlet constraint
 	  BC_WestCell(j).DirichletBC(Vertex) = UoW[j];
-	  BC_WestCell(j).a(Vertex) = 1.0;
-	  BC_WestCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	  BC_WestCell(j).b(Vertex) = 0.0;
+	  BC_WestCell(j).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	  BC_WestCell(j).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	  BC_WestCell(j).b(Vertex) = AdvectDiffuse2D_State(0.0);
 	  break;
 
 	case BC_NEUMANN :
 	  // Neumann constraint
-	  BC_WestCell(j).DirichletBC(Vertex) = 0.0; // this value doesn't matter
-	  BC_WestCell(j).a(Vertex) = 0.0;
+	  BC_WestCell(j).DirichletBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	  BC_WestCell(j).a(Vertex) = AdvectDiffuse2D_State(0.0);
 	  BC_WestCell(j).NeumannBC(Vertex) =  UoW[j];
-	  BC_WestCell(j).b(Vertex) = 1.0;
+	  BC_WestCell(j).b(Vertex) = AdvectDiffuse2D_State(1.0);
 	  break;
 
 	case BC_FARFIELD :
@@ -5654,19 +5654,19 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	    
 	    // Dirichlet constraint
 	    BC_WestCell(j).DirichletBC(Vertex) = UoW[j];
-	    BC_WestCell(j).a(Vertex) = 1.0;
-	    BC_WestCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_WestCell(j).b(Vertex) = 0.0;
+	    BC_WestCell(j).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	    BC_WestCell(j).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_WestCell(j).b(Vertex) = AdvectDiffuse2D_State(0.0);
 
 	  } else {
 	    // The flow leaves the domain
 	    // Impose outflow constraint
 
 	    // Neumann constraint
-	    BC_WestCell(j).DirichletBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_WestCell(j).a(Vertex) = 0.0;
-	    BC_WestCell(j).NeumannBC(Vertex) =  0.0;
-	    BC_WestCell(j).b(Vertex) = 1.0;
+	    BC_WestCell(j).DirichletBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_WestCell(j).a(Vertex) = AdvectDiffuse2D_State(0.0);
+	    BC_WestCell(j).NeumannBC(Vertex) =  AdvectDiffuse2D_State(0.0);
+	    BC_WestCell(j).b(Vertex) = AdvectDiffuse2D_State(1.0);
 	  }
 	  break;
 
@@ -5682,10 +5682,10 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	case BC_OUTFLOW :
 	  // Impose zero derivative in the normal direction at the boundary
 	  // Neumann constraint
-	  BC_WestCell(j).DirichletBC(Vertex) = 0.0; // this value doesn't matter
-	  BC_WestCell(j).a(Vertex) = 0.0;
-	  BC_WestCell(j).NeumannBC(Vertex) =  0.0;
-	  BC_WestCell(j).b(Vertex) = 1.0;
+	  BC_WestCell(j).DirichletBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	  BC_WestCell(j).a(Vertex) = AdvectDiffuse2D_State(0.0);
+	  BC_WestCell(j).NeumannBC(Vertex) =  AdvectDiffuse2D_State(0.0);
+	  BC_WestCell(j).b(Vertex) = AdvectDiffuse2D_State(1.0);
 	  break;
 
 	case BC_CONSTANT_EXTRAPOLATION :
@@ -5704,10 +5704,10 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	      PointOfInterest = GaussQuadPoints[Vertex-1];
 	    }
 	    // Set the boundary conditions at the current location
-	    BC_WestCell(j).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
-	    BC_WestCell(j).a(Vertex) = 1.0;
-	    BC_WestCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_WestCell(j).b(Vertex) = 0.0;      
+	    BC_WestCell(j).DirichletBC(Vertex) = AdvectDiffuse2D_State(ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y));
+	    BC_WestCell(j).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	    BC_WestCell(j).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_WestCell(j).b(Vertex) = AdvectDiffuse2D_State(0.0);      
 	  } else {
 	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
 	  }
@@ -5746,10 +5746,10 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	      PointOfInterest = GaussQuadPoints[Vertex-1];
 	    }
 	    // Set the boundary conditions at the current location
-	    BC_EastCell(j).DirichletBC(Vertex) = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
-	    BC_EastCell(j).a(Vertex) = 1.0;
-	    BC_EastCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_EastCell(j).b(Vertex) = 0.0;      
+	    BC_EastCell(j).DirichletBC(Vertex) = AdvectDiffuse2D_State(Inflow->Solution(PointOfInterest.x,PointOfInterest.y));
+	    BC_EastCell(j).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	    BC_EastCell(j).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_EastCell(j).b(Vertex) = AdvectDiffuse2D_State(0.0);      
 	  } else {
 	    throw runtime_error("BCs_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
 	  }
@@ -5758,17 +5758,17 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	case BC_DIRICHLET :	// Use UoE as reference value
 	  // Dirichlet constraint
 	  BC_EastCell(j).DirichletBC(Vertex) = UoE[j];
-	  BC_EastCell(j).a(Vertex) = 1.0;
-	  BC_EastCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	  BC_EastCell(j).b(Vertex) = 0.0;
+	  BC_EastCell(j).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	  BC_EastCell(j).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	  BC_EastCell(j).b(Vertex) = AdvectDiffuse2D_State(0.0);
 	  break;
 	  
 	case BC_NEUMANN :
 	  // Neumann constraint
-	  BC_EastCell(j).DirichletBC(Vertex) = 0.0; // this value doesn't matter
-	  BC_EastCell(j).a(Vertex) = 0.0;
+	  BC_EastCell(j).DirichletBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	  BC_EastCell(j).a(Vertex) = AdvectDiffuse2D_State(0.0);
 	  BC_EastCell(j).NeumannBC(Vertex) =  UoE[j];
-	  BC_EastCell(j).b(Vertex) = 1.0;
+	  BC_EastCell(j).b(Vertex) = AdvectDiffuse2D_State(1.0);
 	  break;
 
 	case BC_FARFIELD :
@@ -5800,19 +5800,19 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	    
 	    // Dirichlet constraint
 	    BC_EastCell(j).DirichletBC(Vertex) = UoE[j];
-	    BC_EastCell(j).a(Vertex) = 1.0;
-	    BC_EastCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_EastCell(j).b(Vertex) = 0.0;
+	    BC_EastCell(j).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	    BC_EastCell(j).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_EastCell(j).b(Vertex) = AdvectDiffuse2D_State(0.0);
 
 	  } else {
 	    // The flow leaves the domain
 	    // Impose outflow constraint
 
 	    // Neumann constraint
-	    BC_EastCell(j).DirichletBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_EastCell(j).a(Vertex) = 0.0;
-	    BC_EastCell(j).NeumannBC(Vertex) =  0.0;
-	    BC_EastCell(j).b(Vertex) = 1.0;
+	    BC_EastCell(j).DirichletBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_EastCell(j).a(Vertex) = AdvectDiffuse2D_State(0.0);
+	    BC_EastCell(j).NeumannBC(Vertex) =  AdvectDiffuse2D_State(0.0);
+	    BC_EastCell(j).b(Vertex) = AdvectDiffuse2D_State(1.0);
 	  }
 	  break;
 
@@ -5828,10 +5828,10 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	case BC_OUTFLOW :
 	  // Impose zero derivative in the normal direction at the boundary
 	  // Neumann constraint
-	  BC_EastCell(j).DirichletBC(Vertex) = 0.0; // this value doesn't matter
-	  BC_EastCell(j).a(Vertex) = 0.0;
-	  BC_EastCell(j).NeumannBC(Vertex) =  0.0;
-	  BC_EastCell(j).b(Vertex) = 1.0;
+	  BC_EastCell(j).DirichletBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	  BC_EastCell(j).a(Vertex) = AdvectDiffuse2D_State(0.0);
+	  BC_EastCell(j).NeumannBC(Vertex) =  AdvectDiffuse2D_State(0.0);
+	  BC_EastCell(j).b(Vertex) = AdvectDiffuse2D_State(1.0);
 	  break;
 
 	case BC_CONSTANT_EXTRAPOLATION :
@@ -5850,10 +5850,10 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	      PointOfInterest = GaussQuadPoints[Vertex-1];
 	    }
 	    // Set the boundary conditions at the current location
-	    BC_EastCell(j).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
-	    BC_EastCell(j).a(Vertex) = 1.0;
-	    BC_EastCell(j).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_EastCell(j).b(Vertex) = 0.0;      
+	    BC_EastCell(j).DirichletBC(Vertex) = AdvectDiffuse2D_State(ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y));
+	    BC_EastCell(j).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	    BC_EastCell(j).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_EastCell(j).b(Vertex) = AdvectDiffuse2D_State(0.0);      
 	  } else {
 	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
 	  }
@@ -5898,10 +5898,10 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	      PointOfInterest = GaussQuadPoints[Vertex-1];
 	    }
 	    // Set the boundary conditions at the current location
-	    BC_SouthCell(i).DirichletBC(Vertex) = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
-	    BC_SouthCell(i).a(Vertex) = 1.0;
-	    BC_SouthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_SouthCell(i).b(Vertex) = 0.0;      
+	    BC_SouthCell(i).DirichletBC(Vertex) = AdvectDiffuse2D_State(Inflow->Solution(PointOfInterest.x,PointOfInterest.y));
+	    BC_SouthCell(i).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	    BC_SouthCell(i).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_SouthCell(i).b(Vertex) = AdvectDiffuse2D_State(0.0);      
 	  } else {
 	    throw runtime_error("BCs_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
 	  }
@@ -5910,17 +5910,17 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	case BC_DIRICHLET :	// Use UoS as reference value
 	  // Dirichlet constraint
 	  BC_SouthCell(i).DirichletBC(Vertex) = UoS[i];
-	  BC_SouthCell(i).a(Vertex) = 1.0;
-	  BC_SouthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	  BC_SouthCell(i).b(Vertex) = 0.0;
+	  BC_SouthCell(i).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	  BC_SouthCell(i).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	  BC_SouthCell(i).b(Vertex) = AdvectDiffuse2D_State(0.0);
 	  break;
       
 	case BC_NEUMANN :
 	  // Neumann constraint
-	  BC_SouthCell(i).DirichletBC(Vertex) = 0.0; // this value doesn't matter
-	  BC_SouthCell(i).a(Vertex) = 0.0;
+	  BC_SouthCell(i).DirichletBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	  BC_SouthCell(i).a(Vertex) = AdvectDiffuse2D_State(0.0);
 	  BC_SouthCell(i).NeumannBC(Vertex) =  UoS[i];
-	  BC_SouthCell(i).b(Vertex) = 1.0;
+	  BC_SouthCell(i).b(Vertex) = AdvectDiffuse2D_State(1.0);
 	  break;
 
 	case BC_FARFIELD :
@@ -5952,19 +5952,19 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	  
 	    // Dirichlet constraint
 	    BC_SouthCell(i).DirichletBC(Vertex) = UoS[i];
-	    BC_SouthCell(i).a(Vertex) = 1.0;
-	    BC_SouthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_SouthCell(i).b(Vertex) = 0.0;
+	    BC_SouthCell(i).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	    BC_SouthCell(i).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_SouthCell(i).b(Vertex) = AdvectDiffuse2D_State(0.0);
 	  
 	  } else {
 	    // The flow leaves the domain
 	    // Impose outflow constraint
 	  
 	    // Neumann constraint
-	    BC_SouthCell(i).DirichletBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_SouthCell(i).a(Vertex) = 0.0;
-	    BC_SouthCell(i).NeumannBC(Vertex) =  0.0;
-	    BC_SouthCell(i).b(Vertex) = 1.0;
+	    BC_SouthCell(i).DirichletBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_SouthCell(i).a(Vertex) = AdvectDiffuse2D_State(0.0);
+	    BC_SouthCell(i).NeumannBC(Vertex) =  AdvectDiffuse2D_State(0.0);
+	    BC_SouthCell(i).b(Vertex) = AdvectDiffuse2D_State(1.0);
 	  }
 	  break;
 	
@@ -5980,10 +5980,10 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	case BC_OUTFLOW :
 	  // Impose zero derivative in the normal direction at the boundary
 	  // Neumann constraint
-	  BC_SouthCell(i).DirichletBC(Vertex) = 0.0; // this value doesn't matter
-	  BC_SouthCell(i).a(Vertex) = 0.0;
-	  BC_SouthCell(i).NeumannBC(Vertex) =  0.0;
-	  BC_SouthCell(i).b(Vertex) = 1.0;
+	  BC_SouthCell(i).DirichletBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	  BC_SouthCell(i).a(Vertex) = AdvectDiffuse2D_State(0.0);
+	  BC_SouthCell(i).NeumannBC(Vertex) =  AdvectDiffuse2D_State(0.0);
+	  BC_SouthCell(i).b(Vertex) = AdvectDiffuse2D_State(1.0);
 	  break;
 
 	case BC_CONSTANT_EXTRAPOLATION :
@@ -6002,10 +6002,10 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	      PointOfInterest = GaussQuadPoints[Vertex-1];
 	    }
 	    // Set the boundary conditions at the current location
-	    BC_SouthCell(i).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
-	    BC_SouthCell(i).a(Vertex) = 1.0;
-	    BC_SouthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_SouthCell(i).b(Vertex) = 0.0;      
+	    BC_SouthCell(i).DirichletBC(Vertex) = AdvectDiffuse2D_State(ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y));
+	    BC_SouthCell(i).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	    BC_SouthCell(i).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_SouthCell(i).b(Vertex) = AdvectDiffuse2D_State(0.0);      
 	  } else {
 	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
 	  }
@@ -6046,10 +6046,10 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	      PointOfInterest = GaussQuadPoints[Vertex-1];
 	    }
 	    // Set the boundary conditions at the current location
-	    BC_NorthCell(i).DirichletBC(Vertex) = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
-	    BC_NorthCell(i).a(Vertex) = 1.0;
-	    BC_NorthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_NorthCell(i).b(Vertex) = 0.0;      
+	    BC_NorthCell(i).DirichletBC(Vertex) = AdvectDiffuse2D_State(Inflow->Solution(PointOfInterest.x,PointOfInterest.y));
+	    BC_NorthCell(i).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	    BC_NorthCell(i).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_NorthCell(i).b(Vertex) = AdvectDiffuse2D_State(0.0);      
 	  } else {
 	    throw runtime_error("BCs_HighOrder() ERROR! There is no inflow field set for the Inflow BC.");
 	  }
@@ -6058,17 +6058,17 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	case BC_DIRICHLET :	// Use UoN as reference value
 	  // Dirichlet constraint
 	  BC_NorthCell(i).DirichletBC(Vertex) = UoN[i];
-	  BC_NorthCell(i).a(Vertex) = 1.0;
-	  BC_NorthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	  BC_NorthCell(i).b(Vertex) = 0.0;
+	  BC_NorthCell(i).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	  BC_NorthCell(i).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	  BC_NorthCell(i).b(Vertex) = AdvectDiffuse2D_State(0.0);
 	  break;
       
 	case BC_NEUMANN :
 	  // Neumann constraint
-	  BC_NorthCell(i).DirichletBC(Vertex) = 0.0; // this value doesn't matter
-	  BC_NorthCell(i).a(Vertex) = 0.0;
+	  BC_NorthCell(i).DirichletBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	  BC_NorthCell(i).a(Vertex) = AdvectDiffuse2D_State(0.0);
 	  BC_NorthCell(i).NeumannBC(Vertex) =  UoN[i];
-	  BC_NorthCell(i).b(Vertex) = 1.0;
+	  BC_NorthCell(i).b(Vertex) = AdvectDiffuse2D_State(1.0);
 	  break;
       
 	case BC_FARFIELD :
@@ -6100,19 +6100,19 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	  
 	    // Dirichlet constraint
 	    BC_NorthCell(i).DirichletBC(Vertex) = UoN[i];
-	    BC_NorthCell(i).a(Vertex) = 1.0;
-	    BC_NorthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_NorthCell(i).b(Vertex) = 0.0;
+	    BC_NorthCell(i).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	    BC_NorthCell(i).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_NorthCell(i).b(Vertex) = AdvectDiffuse2D_State(0.0);
 	  
 	  } else {
 	    // The flow leaves the domain
 	    // Impose outflow constraint
 	  
 	    // Neumann constraint
-	    BC_NorthCell(i).DirichletBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_NorthCell(i).a(Vertex) = 0.0;
-	    BC_NorthCell(i).NeumannBC(Vertex) =  0.0;
-	    BC_NorthCell(i).b(Vertex) = 1.0;
+	    BC_NorthCell(i).DirichletBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_NorthCell(i).a(Vertex) = AdvectDiffuse2D_State(0.0);
+	    BC_NorthCell(i).NeumannBC(Vertex) =  AdvectDiffuse2D_State(0.0);
+	    BC_NorthCell(i).b(Vertex) = AdvectDiffuse2D_State(1.0);
 	  }
 	  break;
       
@@ -6128,10 +6128,10 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	case BC_OUTFLOW :
 	  // Impose zero derivative in the normal direction at the boundary
 	  // Neumann constraint
-	  BC_NorthCell(i).DirichletBC(Vertex) = 0.0; // this value doesn't matter
-	  BC_NorthCell(i).a(Vertex) = 0.0;
-	  BC_NorthCell(i).NeumannBC(Vertex) =  0.0;
-	  BC_NorthCell(i).b(Vertex) = 1.0;
+	  BC_NorthCell(i).DirichletBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	  BC_NorthCell(i).a(Vertex) = AdvectDiffuse2D_State(0.0);
+	  BC_NorthCell(i).NeumannBC(Vertex) =  AdvectDiffuse2D_State(0.0);
+	  BC_NorthCell(i).b(Vertex) = AdvectDiffuse2D_State(1.0);
 	  break;
 
 	case BC_CONSTANT_EXTRAPOLATION :
@@ -6150,10 +6150,10 @@ void AdvectDiffuse2D_Quad_Block::BCs_HighOrder(void){
 	      PointOfInterest = GaussQuadPoints[Vertex-1];
 	    }
 	    // Set the boundary conditions at the current location
-	    BC_NorthCell(i).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
-	    BC_NorthCell(i).a(Vertex) = 1.0;
-	    BC_NorthCell(i).NeumannBC(Vertex) = 0.0; // this value doesn't matter
-	    BC_NorthCell(i).b(Vertex) = 0.0;      
+	    BC_NorthCell(i).DirichletBC(Vertex) = AdvectDiffuse2D_State(ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y));
+	    BC_NorthCell(i).a(Vertex) = AdvectDiffuse2D_State(1.0);
+	    BC_NorthCell(i).NeumannBC(Vertex) = AdvectDiffuse2D_State(0.0); // this value doesn't matter
+	    BC_NorthCell(i).b(Vertex) = AdvectDiffuse2D_State(0.0);      
 	  } else {
 	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
 	  }

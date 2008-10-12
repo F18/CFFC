@@ -1739,7 +1739,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the inflow field to set up the reference states for this boundary type
       if (Inflow->IsInflowFieldSet()){
 	PointOfInterest = Grid.xfaceW(ICl,j);
-	UoW[j] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoW[j] = AdvectDiffuse2D_State(Inflow->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -1764,7 +1764,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the exact solution to set up the reference states for this boundary type
       if (ExactSoln->IsExactSolutionSet()){
 	PointOfInterest = Grid.xfaceW(ICl,j);
-	UoW[j] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoW[j] = AdvectDiffuse2D_State(ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -1783,7 +1783,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the inflow field to set up the reference states for this boundary type
       if (Inflow->IsInflowFieldSet()){
 	PointOfInterest = Grid.xfaceE(ICu,j);
-	UoE[j] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoE[j] = AdvectDiffuse2D_State(Inflow->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -1808,7 +1808,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the exact solution to set up the reference states for this boundary type
       if (ExactSoln->IsExactSolutionSet()){
 	PointOfInterest = Grid.xfaceE(ICu,j);
-	UoE[j] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoE[j] = AdvectDiffuse2D_State(ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -1830,7 +1830,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the inflow field to set up the reference states for this boundary type
       if (Inflow->IsInflowFieldSet()){
 	PointOfInterest = Grid.xfaceS(i,JCl);
-	UoS[i] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoS[i] = AdvectDiffuse2D_State(Inflow->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -1855,7 +1855,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the exact solution to set up the reference states for this boundary type
       if (ExactSoln->IsExactSolutionSet()){
 	PointOfInterest = Grid.xfaceS(i,JCl);
-	UoS[i] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoS[i] = AdvectDiffuse2D_State(ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -1874,7 +1874,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the inflow field to set up the reference states for this boundary type
       if (Inflow->IsInflowFieldSet()){
 	PointOfInterest = Grid.xfaceN(i,JCu);
-	UoN[i] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoN[i] = AdvectDiffuse2D_State(Inflow->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -1899,7 +1899,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the exact solution to set up the reference states for this boundary type
       if (ExactSoln->IsExactSolutionSet()){
 	PointOfInterest = Grid.xfaceN(i,JCu);
-	UoN[i] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoN[i] = AdvectDiffuse2D_State(ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -2483,7 +2483,7 @@ istream &operator >> (istream &in_file,
     for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
       in_file >> SolnBlk.U[i][j];
       for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D-1 ; ++k ) {
-	SolnBlk.dUdt[i][j][k] = ZERO;
+	SolnBlk.dUdt[i][j][k] = AdvectDiffuse2D_State(ZERO);
       } /* endfor */
       SolnBlk.dUdx[i][j].Vacuum();
       SolnBlk.dUdy[i][j].Vacuum();
@@ -3851,7 +3851,7 @@ void AdvectDiffuse2D_Quad_Block::Output_Cells_Tecplot_Debug_Mode(AdaptiveBlock2D
       output_file << " " << Grid.Cell[i][j].Xc << U[i][j]
 		  << " " << U[i][j].V(Node.x,Node.y)
 		  << " " << U[i][j].k(Node.x,Node.y,U[i][j][1])
-		  << " " << source(Node.x,Node.y,U[i][j][1]);
+		  << " " << source(Node.x,Node.y,U[i][j]);
       if (ExactSoln->IsExactSolutionSet()){
 	output_file << " " << ExactSoln->Solution(Node.x,Node.y);
       }

@@ -192,7 +192,7 @@ namespace tut
 											 IntResult),
 								 IP.Exact_Integration_Digits,
 								 IntResult)/_SolnBlk_.Grid.Cell[i][j].A;
-	  _SolnBlk_.dUdt[i][j][k_residual] = IntResult;
+	  _SolnBlk_.dUdt[i][j][k_residual] = AdvectDiffuse2D_State(IntResult);
 	} /* endfor */
       } /* endfor */
     } else {

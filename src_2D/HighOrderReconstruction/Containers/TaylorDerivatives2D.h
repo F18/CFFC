@@ -562,12 +562,12 @@ T TaylorDerivativesContainer<TwoD,T>::ComputeXGradientFor(const double DeltaX, c
     break;
 
   case 0:
-    return 0.0;
+    return T(0.0);
     break;
 
   default:
     /* Orders higher than FOUR */
-    return 0.0;			/* TO DO LATER! */
+    return T(0.0);			/* TO DO LATER! */
 
   }
 }
@@ -608,12 +608,12 @@ T TaylorDerivativesContainer<TwoD,T>::ComputeYGradientFor(const double DeltaX, c
     break;
 
   case 0:
-    return 0.0;
+    return T(0.0);
     break;
 
   default:
     /* Orders higher than FOUR */
-    return 0.0;			/* TO DO LATER! */
+    return T(0.0);			/* TO DO LATER! */
   }
 }
 

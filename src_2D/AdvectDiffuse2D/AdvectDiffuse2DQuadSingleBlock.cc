@@ -976,7 +976,7 @@ void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
       Out_File << " " << SolnBlk.Grid.Cell[i][j].Xc << SolnBlk.U[i][j]
 	       << " " << SolnBlk.U[i][j].V(Node.x,Node.y)
 	       << " " << SolnBlk.U[i][j].k(Node.x,Node.y,SolnBlk.U[i][j][1])
-	       << " " << source(Node.x,Node.y,SolnBlk.U[i][j][1]);
+	       << " " << source(Node.x,Node.y,SolnBlk.U[i][j]);
       if (SolnBlk.ExactSoln->IsExactSolutionSet()){
 	Out_File << " " << SolnBlk.ExactSoln->Solution(Node.x,Node.y);
       }
@@ -2183,20 +2183,20 @@ void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block &SolnBlk,
       n_west = SolnBlk.Grid.nfaceW(i, j);
 
       u_face = HALF*(u_nw+u_ne)*l_north; 
-      SolnBlk.dUdx[i][j] = u_face*n_north.x;
-      SolnBlk.dUdy[i][j] = u_face*n_north.y;
+      SolnBlk.dUdx[i][j] = AdvectDiffuse2D_State(u_face*n_north.x);
+      SolnBlk.dUdy[i][j] = AdvectDiffuse2D_State(u_face*n_north.y);
 
       u_face = HALF*(u_sw+u_se)*l_south; 
-      SolnBlk.dUdx[i][j] += u_face*n_south.x;
-      SolnBlk.dUdy[i][j] += u_face*n_south.y;
+      SolnBlk.dUdx[i][j] += AdvectDiffuse2D_State(u_face*n_south.x);
+      SolnBlk.dUdy[i][j] += AdvectDiffuse2D_State(u_face*n_south.y);
 
       u_face = HALF*(u_ne+u_se)*l_east; 
-      SolnBlk.dUdx[i][j] += u_face*n_east.x;
-      SolnBlk.dUdy[i][j] += u_face*n_east.y;
+      SolnBlk.dUdx[i][j] += AdvectDiffuse2D_State(u_face*n_east.x);
+      SolnBlk.dUdy[i][j] += AdvectDiffuse2D_State(u_face*n_east.y);
 
       u_face = HALF*(u_nw+u_sw)*l_west; 
-      SolnBlk.dUdx[i][j] += u_face*n_west.x;
-      SolnBlk.dUdy[i][j] += u_face*n_west.y;
+      SolnBlk.dUdx[i][j] += AdvectDiffuse2D_State(u_face*n_west.x);
+      SolnBlk.dUdy[i][j] += AdvectDiffuse2D_State(u_face*n_west.y);
 
       SolnBlk.dUdx[i][j] = SolnBlk.dUdx[i][j]/
 	SolnBlk.Grid.Cell[i][j].A;
@@ -2424,7 +2424,7 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	break;
       } /* endswitch */
     
-      SolnBlk.phi[i][j] = phi;
+      SolnBlk.phi[i][j] = AdvectDiffuse2D_State(phi);
     } /* endif */
   } else {
     SolnBlk.dUdx[i][j].Vacuum();
