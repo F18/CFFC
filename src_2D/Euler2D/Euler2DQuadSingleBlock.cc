@@ -2347,9 +2347,9 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
 	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.U[SolnBlk.ICl-1][j];
 	  }
 	  break;
-	case BC_STREAMLINE:
-	  // Implement a strealine boundary condition 
-	  // (i.e. no mass flow through the streamline)
+	case BC_WALL_INVISCID:
+	  // Implement inviscid wall boundary condition 
+	  // (i.e. no mass flow through the wall)
 
 	  Linear_Reconstruction_LeastSquares_2(SolnBlk, 
 					       SolnBlk.ICl, j, 
@@ -2505,9 +2505,9 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
 	      SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.U[SolnBlk.ICu+1][j];
 	    }
 	    break;
-	  case BC_STREAMLINE:
-	    // Implement a strealine boundary condition 
-	    // (i.e. no mass flow through the streamline)
+	  case BC_WALL_INVISCID:
+	    // Implement inviscid wall boundary condition 
+	    // (i.e. no mass flow through the wall)
 
 	    Linear_Reconstruction_LeastSquares_2(SolnBlk, 
 						 SolnBlk.ICu, j, 
@@ -2667,9 +2667,9 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
 	SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCl-1];
       }
       break;
-    case BC_STREAMLINE:
-      // Implement a strealine boundary condition 
-      // (i.e. no mass flow through the streamline)
+    case BC_WALL_INVISCID:
+      // Implement inviscid wall boundary condition 
+      // (i.e. no mass flow through the wall)
       
       Linear_Reconstruction_LeastSquares_2(SolnBlk, 
 					   i, SolnBlk.JCl, 
@@ -2802,9 +2802,9 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
 	SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCu+1];
       }
       break;
-    case BC_STREAMLINE:
-      // Implement a strealine boundary condition 
-      // (i.e. no mass flow through the streamline)
+    case BC_WALL_INVISCID:
+      // Implement inviscid wall boundary condition 
+      // (i.e. no mass flow through the wall)
       
       Linear_Reconstruction_LeastSquares_2(SolnBlk, 
 					   i, SolnBlk.JCu, 

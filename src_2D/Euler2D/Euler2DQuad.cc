@@ -225,7 +225,7 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	     Grid.BCtypeW[j] == BC_RINGLEB_FLOW ||
 	     Grid.BCtypeW[j] == BC_FROZEN ||
 	     Grid.BCtypeW[j] == BC_EXACT_SOLUTION ||
-	     Grid.BCtypeW[j] == BC_STREAMLINE)) {
+	     Grid.BCtypeW[j] == BC_WALL_INVISCID)) {
 	  dX = Grid.xfaceW(i+1, j)-Grid.Cell[i+1][j].Xc;
 	  Wr = W[i+1][j] + 
 	    (phi[i+1][j]^dWdx[i+1][j])*dX.x +
@@ -260,7 +260,7 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	    } else {
 	      throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
 	    }
-	  } else if (Grid.BCtypeW[j] == BC_STREAMLINE) {
+	  } else if (Grid.BCtypeW[j] == BC_WALL_INVISCID) {
 	    Wl = Reflect(Wr, Grid.nfaceW(i+1, j));
 	    Wi = PiecewiseLinearSolutionAtLocation(i,j,
 						  Grid.xfaceW(i+1,j));
@@ -276,7 +276,7 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 		    Grid.BCtypeE[j] == BC_RINGLEB_FLOW ||
 		    Grid.BCtypeE[j] == BC_FROZEN ||
 		    Grid.BCtypeE[j] == BC_EXACT_SOLUTION ||
-		    Grid.BCtypeE[j] == BC_STREAMLINE)) {
+		    Grid.BCtypeE[j] == BC_WALL_INVISCID)) {
 	  dX = Grid.xfaceE(i, j)-Grid.Cell[i][j].Xc;
 	  Wl = W[i][j] + 
 	    (phi[i][j]^dWdx[i][j])*dX.x +
@@ -311,7 +311,7 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	    } else {
 	      throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
 	    }	    
-	  } else if (Grid.BCtypeE[j] == BC_STREAMLINE) {
+	  } else if (Grid.BCtypeE[j] == BC_WALL_INVISCID) {
 	    Wr = Reflect(Wl, Grid.nfaceE(i, j));
 	    Wi = PiecewiseLinearSolutionAtLocation(i+1,j,
 						   Grid.xfaceW(i+1, j));
@@ -416,7 +416,7 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	   Grid.BCtypeS[i] == BC_RINGLEB_FLOW ||
 	   Grid.BCtypeS[i] == BC_FROZEN ||
 	   Grid.BCtypeS[i] == BC_EXACT_SOLUTION ||
-	   Grid.BCtypeS[i] == BC_STREAMLINE)) {
+	   Grid.BCtypeS[i] == BC_WALL_INVISCID)) {
 	dX = Grid.xfaceS(i, j+1)-Grid.Cell[i][j+1].Xc;
 	Wr = W[i][j+1] +
 	  (phi[i][j+1]^dWdx[i][j+1])*dX.x +
@@ -453,7 +453,7 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	  } else {
 	    throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
 	  }
-	} else if (Grid.BCtypeS[i] == BC_STREAMLINE) {
+	} else if (Grid.BCtypeS[i] == BC_WALL_INVISCID) {
 	  Wl = Reflect(Wr, Grid.nfaceS(i, j+1));
 	  Wi = PiecewiseLinearSolutionAtLocation(i,j,
 						 Grid.xfaceS(i, j+1));
@@ -468,7 +468,7 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 		  Grid.BCtypeN[i] == BC_RINGLEB_FLOW || 
 		  Grid.BCtypeN[i] == BC_FROZEN ||
 		  Grid.BCtypeN[i] == BC_EXACT_SOLUTION ||
-		  Grid.BCtypeN[i] == BC_STREAMLINE )) {
+		  Grid.BCtypeN[i] == BC_WALL_INVISCID )) {
 	dX = Grid.xfaceN(i, j)-Grid.Cell[i][j].Xc;
 	Wl = W[i][j] + 
 	  (phi[i][j]^dWdx[i][j])*dX.x +
@@ -505,7 +505,7 @@ int Euler2D_Quad_Block::dUdt_Residual_Evaluation(const Euler2D_Input_Parameters 
 	  } else {
 	    throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
 	  }
-	} else if (Grid.BCtypeN[i] == BC_STREAMLINE) {
+	} else if (Grid.BCtypeN[i] == BC_WALL_INVISCID) {
 	  Wr = Reflect(Wl, Grid.nfaceN(i, j));
 	  Wi = PiecewiseLinearSolutionAtLocation(i,j+1,
 						 Grid.xfaceN(i,j));
@@ -718,7 +718,7 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	     Grid.BCtypeW[j] == BC_RINGLEB_FLOW ||
 	     Grid.BCtypeW[j] == BC_FROZEN ||
 	     Grid.BCtypeW[j] == BC_EXACT_SOLUTION ||
-	     Grid.BCtypeW[j] == BC_STREAMLINE)) {
+	     Grid.BCtypeW[j] == BC_WALL_INVISCID)) {
 	  dX = Grid.xfaceW(i+1, j)-Grid.Cell[i+1][j].Xc;
 	  Wr = W[i+1][j] + 
 	    (phi[i+1][j]^dWdx[i+1][j])*dX.x +
@@ -753,7 +753,7 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	    } else {
 	      throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
 	    }
-	  } else if (Grid.BCtypeW[j] == BC_STREAMLINE) {
+	  } else if (Grid.BCtypeW[j] == BC_WALL_INVISCID) {
 	    Wl = Reflect(Wr, Grid.nfaceW(i+1, j));
 	    Wi = PiecewiseLinearSolutionAtLocation(i,j,
 						  Grid.xfaceW(i+1,j));
@@ -769,7 +769,7 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 		    Grid.BCtypeE[j] == BC_RINGLEB_FLOW ||
 		    Grid.BCtypeE[j] == BC_FROZEN ||
 		    Grid.BCtypeE[j] == BC_EXACT_SOLUTION ||
-		    Grid.BCtypeE[j] == BC_STREAMLINE )) {
+		    Grid.BCtypeE[j] == BC_WALL_INVISCID )) {
 	  dX = Grid.xfaceE(i, j)-Grid.Cell[i][j].Xc;
 	  Wl = W[i][j] + 
 	    (phi[i][j]^dWdx[i][j])*dX.x +
@@ -804,7 +804,7 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	    } else {
 	      throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
 	    }	    
-	  } else if (Grid.BCtypeE[j] == BC_STREAMLINE) {
+	  } else if (Grid.BCtypeE[j] == BC_WALL_INVISCID) {
 	    Wr = Reflect(Wl, Grid.nfaceE(i, j));
 	    Wi = PiecewiseLinearSolutionAtLocation(i+1,j,
 						   Grid.xfaceW(i+1, j));
@@ -912,7 +912,7 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	   Grid.BCtypeS[i] == BC_RINGLEB_FLOW ||
 	   Grid.BCtypeS[i] == BC_FROZEN ||
 	   Grid.BCtypeS[i] == BC_EXACT_SOLUTION ||
-	   Grid.BCtypeS[i] == BC_STREAMLINE )) {
+	   Grid.BCtypeS[i] == BC_WALL_INVISCID )) {
 	dX = Grid.xfaceS(i, j+1)-Grid.Cell[i][j+1].Xc;
 	Wr = W[i][j+1] +
 	  (phi[i][j+1]^dWdx[i][j+1])*dX.x +
@@ -949,7 +949,7 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	  } else {
 	    throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
 	  }
-	} else if (Grid.BCtypeS[i] == BC_STREAMLINE) {
+	} else if (Grid.BCtypeS[i] == BC_WALL_INVISCID) {
 	  Wl = Reflect(Wr, Grid.nfaceS(i, j+1));
 	  Wi = PiecewiseLinearSolutionAtLocation(i,j,
 						 Grid.xfaceS(i, j+1));
@@ -965,7 +965,7 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 		  Grid.BCtypeN[i] == BC_RINGLEB_FLOW || 
 		  Grid.BCtypeN[i] == BC_FROZEN ||
 		  Grid.BCtypeN[i] == BC_EXACT_SOLUTION ||
-		  Grid.BCtypeN[i] == BC_STREAMLINE )) {
+		  Grid.BCtypeN[i] == BC_WALL_INVISCID )) {
 	dX = Grid.xfaceN(i, j)-Grid.Cell[i][j].Xc;
 	Wl = W[i][j] + 
 	  (phi[i][j]^dWdx[i][j])*dX.x +
@@ -1002,7 +1002,7 @@ int Euler2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	  } else {
 	    throw runtime_error("Euler2D_Quad_Block::dUdt_Residual_Evaluation() ERROR! There is no exact solution set for the Exact_Solution BC.");
 	  }
-	} else if (Grid.BCtypeN[i] == BC_STREAMLINE) {
+	} else if (Grid.BCtypeN[i] == BC_WALL_INVISCID) {
 	  Wr = Reflect(Wl, Grid.nfaceN(i, j));
 	  Wi = PiecewiseLinearSolutionAtLocation(i,j+1,
 						 Grid.xfaceN(i,j));
