@@ -232,11 +232,13 @@ int main(int num_arg, char *arg_ptr[]) {
    * RUN UNIT TESTS AS REQUIRED AND STOP (tests run using only 1 CPU). *
    *********************************************************************/
 
+#ifndef _NO_TUT_TESTING
   if (test_flag) {
      error_flag = Perform_UnitTesting(TestSuite, TestNumber, TestRootPath);
      CFFC_Finalize_MPI();
      return (error_flag);
   } /* endif */
+#endif
 
   /********************************************************************
    * PERFORM REQUIRED CALCULATIONS.                                   *
@@ -254,11 +256,14 @@ int main(int num_arg, char *arg_ptr[]) {
   // value problem(s)/boundary value problem(s) (IBVP/BVP) using the 
   // appropriate equation solver.
   if (strcmp(Equation_Type,"Euler2D") == 0) {
-    error_flag = EmbeddedBoundaries2D_Solver<Euler2D_cState,
-                                             Euler2D_pState,
-                                             Euler2D_Quad_Block,
-                                             Euler2D_Input_Parameters>(Input_File_Name_ptr,
-								       batch_flag);
+    //     error_flag = EmbeddedBoundaries2D_Solver<Euler2D_cState,
+    //                                              Euler2D_pState,
+    //                                              Euler2D_Quad_Block,
+    //                                              Euler2D_Input_Parameters>(Input_File_Name_ptr,
+    // 								       batch_flag);
+    if (CFFC_Primary_MPI_Processor() && !batch_flag)
+      cout << "\n\n EmbeddedBoundaries2D ERROR: Euler solver must be modified to work with the high-order grid.\n";
+    error_flag = 1;
   } else if (strcmp(Equation_Type,"NavierStokes2D") == 0) {
     error_flag = EmbeddedBoundaries2D_Solver<NavierStokes2D_cState,
                                              NavierStokes2D_pState,
