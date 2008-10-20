@@ -170,10 +170,12 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize_Secondary(HexaSolver_
         /*if (Solution_Data.Input.i_ICs == IC_RESTART && !properties.restarted)
          properties.filter_type = FILTER_TYPE_RESTART; */
         
-        
+        properties.Set_Operating_Property("memory_efficient",ON);
         properties.Set_Operating_Property("output_file_name",string("secondary_filter"));
         properties.Set_Filter_Property("FGR",Solution_Data.Input.Turbulence_IP.FGR_secondary);
-        properties.Set_Operating_Property("memory_efficient",ON);
+        if (properties.Get_Property_int("use_fixed_filter_width")) {
+            properties.Set_Filter_Property("fixed_filter_width",Solution_Data.Input.Turbulence_IP.Filter_Width_secondary);
+        }
         
         Create_filter();
         initialized = true;

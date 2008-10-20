@@ -46,9 +46,7 @@ public:
         Explicit_Filters<Soln_pState,Soln_cState> explicit_filter;
         Explicit_Filters<Soln_pState,Soln_cState> explicit_filter_2;
         explicit_filter.Initialize(Data,Solution_Data);
-        explicit_filter_2.Initialize(Data,Solution_Data);
-        explicit_filter_2.Set_Property("FGR",Solution_Data.Input.Turbulence_IP.FGR_secondary);
-        explicit_filter_2.Set_Property("output_file_name",string("secondary_filter"));
+        explicit_filter_2.Initialize_Secondary(Data,Solution_Data);
         explicit_filter.transfer_function(FILTER_INNER_CELL);
         explicit_filter_2.transfer_function(FILTER_INNER_CELL);
         

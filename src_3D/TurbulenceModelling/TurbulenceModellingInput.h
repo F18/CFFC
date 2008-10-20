@@ -57,6 +57,7 @@ class Turbulence_Modelling_Input_Parameters{
     double FGR;                                                 //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
     double FGR_secondary;                                       //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
     double Filter_Width;                                        //!< Constant filter width
+    double Filter_Width_secondary;                              //!< Constant filter width
     int commutation_order;                                      //!< Commutation order of explicit filter
     int finite_differencing_order;                              //!< Finite differencing order in commutation error calculations
     int number_of_rings;                                        //!< Number of rings used in the explicit filter
@@ -71,6 +72,7 @@ class Turbulence_Modelling_Input_Parameters{
     int solution_filtering_frequency;                           //!< The solution is filtered each time after this number of timesteps has passed.
     int filter_solution_before_execution;
     bool uniform_grid;                                           //!< if the grid is uniform, the filter will generate weights only once (VERY FAST).
+    bool use_fixed_filter_width;
     //@}
     
     //@{ @name Spectrum related input parameters:
@@ -104,6 +106,7 @@ class Turbulence_Modelling_Input_Parameters{
       FGR = TWO;
       FGR_secondary = TWO;
       Filter_Width = ZERO;
+      Filter_Width_secondary = ZERO;
       commutation_order = 2;
       finite_differencing_order = commutation_order+2;
       number_of_rings = 2;
@@ -125,6 +128,7 @@ class Turbulence_Modelling_Input_Parameters{
       rescale_spectrum = OFF;
       filter_solution_before_execution = OFF;
       uniform_grid = OFF;
+      use_fixed_filter_width = OFF;
 
 
       // Reacting LES parameters

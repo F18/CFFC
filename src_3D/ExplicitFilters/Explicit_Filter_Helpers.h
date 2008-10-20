@@ -132,6 +132,8 @@ public:
         Set_New_Property("least_squares_filter_weighting",IPs.Turbulence_IP.least_squares_filter_weighting);
         Set_New_Property("least_squares_filter_weighting_factor",IPs.Turbulence_IP.least_squares_filter_weighting_factor);
         Set_New_Property("uniform_grid",IPs.Turbulence_IP.uniform_grid);
+        Set_New_Property("use_fixed_filter_width",IPs.Turbulence_IP.use_fixed_filter_width);
+        Set_New_Property("fixed_filter_width",IPs.Turbulence_IP.Filter_Width);
 
         
         Set_New_Property("batch_flag",batch_flag);

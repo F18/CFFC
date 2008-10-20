@@ -31,10 +31,14 @@ Vasilyev
 #Haselbacher
 #Tophat
 #Restart
-Filter_Grid_Ratio =
-2.0
-Filter_Grid_Ratio_secondary =
-4.0
+#Filter_Grid_Ratio =
+#2.0
+Filter_Width =
+0.6
+#Filter_Grid_Ratio_secondary =
+#4.0
+Filter_Width_secondary =
+0.35
 Target_Filter_Sharpness = 
 1
 Filter_Initial_Condition =

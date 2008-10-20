@@ -103,6 +103,8 @@ public:
     using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments;
     using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments_1D;
     using Discrete_Filter<Soln_pState,Soln_cState>::G_cutoff;
+    using Discrete_Filter<Soln_pState,Soln_cState>::use_fixed_filter_width;
+    using Discrete_Filter<Soln_pState,Soln_cState>::fixed_filter_width;
     using Discrete_Filter<Soln_pState,Soln_cState>::properties;
 
     // To be defined out of properties
@@ -176,7 +178,7 @@ public:
     int number_of_combinations_with_moment(int k);
     
     
-    int Set_basic_constraints(Neighbours &theNeighbours);
+    int Set_basic_constraints(Cell3D &theCell, Neighbours &theNeighbours);
     void Add_extra_constraints(const int type, const int LS_DOF, const int LS_type);
     void Add_extra_constraints(const int type, const double target, const Vector3D &k);
     void Add_extra_constraints(const int type, const double target, const Vector3D &k, const int p);
@@ -339,7 +341,7 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
         
         
         int Lr; // number of remaining constraints after setting basic constraints
-        Lr = Set_basic_constraints(theNeighbours); 
+        Lr = Set_basic_constraints(theCell,theNeighbours); 
         
         
         RowVector w_i = Calculate_Weights_1D(theCell,theNeighbours,X_DIRECTION);
@@ -388,7 +390,7 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights_1D(Cell3D
     
     
     int Lr; // number of remaining constraints after setting basic constraints
-    Lr = Set_basic_constraints(theNeighbours); 
+    Lr = Set_basic_constraints(theCell, theNeighbours); 
     
     
     RowVector w = Calculate_Weights_1D(theCell,theNeighbours,direction);
@@ -464,7 +466,7 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights_1D(Cell3D
     }
 };
 template<typename Soln_pState, typename Soln_cState>
-inline int Vasilyev_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Neighbours &theNeighbours) {
+inline int Vasilyev_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Cell3D &theCell, Neighbours &theNeighbours) {
 
 
     number_of_constraints = 0;
@@ -475,6 +477,12 @@ inline int Vasilyev_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Neigh
     kmax.z = PI;
     Vector3D k_FGR = kmax/FGR;   
 
+    if (use_fixed_filter_width){
+        Vector3D FGR_temp(fixed_filter_width/theCell.dXc.x,fixed_filter_width/theCell.dXc.y,fixed_filter_width/theCell.dXc.z);
+        k_FGR = Vector3D(kmax.x/FGR_temp.x,kmax.y/FGR_temp.y,kmax.z/FGR_temp.z);
+    }
+    
+    
     int type;
     double target;
     Vector3D k;

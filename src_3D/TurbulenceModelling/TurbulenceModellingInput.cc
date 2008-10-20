@@ -42,6 +42,9 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(Filter_Width),
                           1,
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Filter_Width_secondary),
+                          1,
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(commutation_order),
                           1,
                           MPI::INT, 0);
@@ -52,6 +55,9 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
                           1,
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Filter_Initial_Condition),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(use_fixed_filter_width),
                           1,
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Target_Filter_Sharpness),
@@ -207,6 +213,7 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
   } else if (strcmp(code, "Filter_Grid_Ratio") == 0) {
     i_command = 131;
     value >> FGR;
+    use_fixed_filter_width = false;
     if (FGR < 1)
       i_command = INVALID_INPUT_VALUE;
       
@@ -219,8 +226,16 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
   } else if (strcmp(code, "Filter_Width") == 0) {
     i_command = 132;
     value >> Filter_Width;
+    use_fixed_filter_width = true;
     if ( Filter_Width < 0.0 )
       i_command = INVALID_INPUT_VALUE;
+      
+  } else if (strcmp(code, "Filter_Width_secondary") == 0) {
+      i_command = 132;
+      value >> Filter_Width_secondary;
+      use_fixed_filter_width = true;
+      if ( Filter_Width < 0.0 )
+          i_command = INVALID_INPUT_VALUE;
       
   } else if (strcmp(code, "Target_Filter_Sharpness") == 0) {
       i_command = 132;

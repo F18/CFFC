@@ -64,6 +64,8 @@ public:
         debug_flag              = properties->Get_Property_int("debug_flag");
         batch_flag              = properties->Get_Property_int("batch_flag");
         FGR                     = properties->Get_Property_double("FGR");
+        use_fixed_filter_width  = properties->Get_Property_int("use_fixed_filter_width");
+        fixed_filter_width      = properties->Get_Property_double("fixed_filter_width");
         commutation_order       = properties->Get_Property_int("commutation_order");
         number_of_rings         = properties->Get_Property_int("number_of_rings");
         Store_Filter_Weights    = !properties->Get_Property_int("memory_efficient");
@@ -83,6 +85,8 @@ public:
     int number_of_rings;
     int Store_Filter_Weights;
     double G_cutoff;
+    int use_fixed_filter_width;
+    double fixed_filter_width;
 
     void Allocate_Filter_Weights(Grid3D_Hexa_Block &Grid_Blk);
     void Reset_Filter_Weights(Grid3D_Hexa_Block &Grid_Blk);
