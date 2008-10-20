@@ -76,13 +76,13 @@ OFF
 Grid_Type =
 Periodic_Box
 Number_of_Ghost_Cells = 
-5
+2
 Number_of_Cells_Idir =
-64
+32
 Number_of_Cells_Jdir
-64
+32
 Number_of_Cells_Kdir
-64
+32
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =

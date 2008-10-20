@@ -96,33 +96,60 @@ public:
     using Discrete_Filter<Soln_pState,Soln_cState>::number_of_rings;
     using Discrete_Filter<Soln_pState,Soln_cState>::commutation_order;
     using Discrete_Filter<Soln_pState,Soln_cState>::FGR;
-    using Discrete_Filter<Soln_pState,Soln_cState>::target_filter_sharpness;
-    using Discrete_Filter<Soln_pState,Soln_cState>::LS_constraints;
-    using Discrete_Filter<Soln_pState,Soln_cState>::Derivative_constraints;
-    using Discrete_Filter<Soln_pState,Soln_cState>::Filter_Width_strict;
+    using Discrete_Filter<Soln_pState,Soln_cState>::debug_flag;
+    using Discrete_Filter<Soln_pState,Soln_cState>::batch_flag;
     using Discrete_Filter<Soln_pState,Soln_cState>::Neighbouring_Values;
     using Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values;
     using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments;
     using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments_1D;
     using Discrete_Filter<Soln_pState,Soln_cState>::G_cutoff;
+    using Discrete_Filter<Soln_pState,Soln_cState>::properties;
 
+    // To be defined out of properties
+    double target_filter_sharpness;
+    double LS_constraints;
+    double Derivative_constraints;
+    double Filter_Width_strict;
+    
 
+    int number_of_constraints;
+    bool Output_Constraints;
+    Vasilyev_Filter_Constraints Constraints[MAXIMUM_NUMBER_OF_EXTRA_CONSTRAINTS];
+    RowVector symmetric_weights;
+    RowVector symmetric_weights_1D;
+    
     
     Vasilyev_Filter(void) : Discrete_Filter<Soln_pState,Soln_cState>() {
+        target_filter_sharpness = Explicit_Filter_Properties::target_filter_sharpness;
+        LS_constraints = Explicit_Filter_Properties::LS_constraints;
+        Derivative_constraints = Explicit_Filter_Properties::Derivative_constraints;
+        Filter_Width_strict = Explicit_Filter_Properties::Filter_Width_strict;
         number_of_constraints = 0;
         Output_Constraints = true;
-        if (Explicit_Filter_Properties::batch_flag)
+        if (batch_flag)
             Output_Constraints = false;
     }
     
-    int number_of_constraints;
+    Vasilyev_Filter(Explicit_Filter_Properties &explicit_filter_properties) : Discrete_Filter<Soln_pState,Soln_cState>(explicit_filter_properties) {
+        Read_Properties();
+        
+        number_of_constraints = 0;
+        Output_Constraints = true;
+        if (batch_flag)
+            Output_Constraints = false;
+    }
     
-    Vasilyev_Filter_Constraints Constraints[MAXIMUM_NUMBER_OF_EXTRA_CONSTRAINTS];
+
     
-    bool Output_Constraints;
-    
-    RowVector symmetric_weights;
-    RowVector symmetric_weights_1D;
+    virtual void Read_Properties(void) {
+        Discrete_Filter<Soln_pState,Soln_cState>::Read_Properties();
+        target_filter_sharpness = properties->Get_Property_double("target_filter_sharpness");
+        LS_constraints          = properties->Get_Property_int("LS_constraints");
+        Derivative_constraints  = properties->Get_Property_int("Derivative_constraints");
+        Filter_Width_strict     = properties->Get_Property_int("Filter_Width_strict");
+        
+        properties->Output_Properties();
+    }
 
     void Get_Neighbours(Cell3D &theCell_) {
         theCell = theCell_;
@@ -291,12 +318,12 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Calculate_Weights_1D(
 template <typename Soln_pState, typename Soln_cState>
 inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &theCell, Neighbours &theNeighbours) {
     // Set FGR to properties
-    FGR = Explicit_Filter_Properties::FGR;    
     if (theNeighbours.symmetric_stencil && symmetric_weights.size()!=0) {
         return symmetric_weights;
     } else {
-        int number_of_moment_combinations = number_of_combinations();
         int number_of_neighbours = theNeighbours.number_of_neighbours;
+
+        int number_of_moment_combinations = number_of_combinations();
         
         complex<double> I(0.0,1.0);
         
@@ -314,6 +341,7 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
         double denominator = 0;
         int index_l, index_m, index_n;
         for(int i=0; i<number_of_neighbours; i++) {
+            Cell3D aNeighbour = theNeighbours.neighbour[i];
             index_l = theNeighbours.Ki - (theCell.I - theNeighbours.neighbour[i].I);
             index_m = theNeighbours.Kj - (theCell.J - theNeighbours.neighbour[i].J);
             index_n = theNeighbours.Kk - (theCell.K - theNeighbours.neighbour[i].K);
@@ -354,7 +382,7 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights_1D(Cell3D
     RowVector w = Calculate_Weights_1D(theCell,theNeighbours,direction);
     
 #ifdef _GNUPLOT
-    if (Explicit_Filter_Properties::debug_flag) {
+    if (properties->Get_Property_int("debug_flag")) {
         int n=200;
         double *Gr = new double [n];
         double *Gi = new double [n];

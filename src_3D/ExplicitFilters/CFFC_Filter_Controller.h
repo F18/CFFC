@@ -44,15 +44,15 @@ public:
     
     void Explicit_Filter_Operations(void){
         Explicit_Filters<Soln_pState,Soln_cState> explicit_filter;
-        Explicit_Filters<Soln_pState,Soln_cState> explicit_filter_2;
+        //Explicit_Filters<Soln_pState,Soln_cState> explicit_filter_2;
         explicit_filter.Initialize(Data,Solution_Data);
-        explicit_filter_2.Initialize(Data,Solution_Data);
+        //explicit_filter_2.Initialize(Data,Solution_Data);
         explicit_filter.transfer_function(FILTER_INNER_CELL);
-        explicit_filter_2.reset();
-        Explicit_Filter_Properties::FGR = Solution_Data.Input.Turbulence_IP.FGR_secondary;
-        explicit_filter_2.transfer_function(FILTER_INNER_CELL);
-        explicit_filter.reset();
-        Explicit_Filter_Properties::FGR = Solution_Data.Input.Turbulence_IP.FGR;
+        //explicit_filter_2.reset();
+        //Explicit_Filter_Properties::FGR = Solution_Data.Input.Turbulence_IP.FGR_secondary;
+        //explicit_filter_2.transfer_function(FILTER_INNER_CELL);
+        //explicit_filter.reset();
+        //Explicit_Filter_Properties::FGR = Solution_Data.Input.Turbulence_IP.FGR;
         
         //explicit_filter.test();
 

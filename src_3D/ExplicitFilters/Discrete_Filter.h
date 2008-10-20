@@ -47,14 +47,35 @@ public:
         LS_constraints = Explicit_Filter_Properties::LS_constraints;
         Derivative_constraints =  Explicit_Filter_Properties::Derivative_constraints;
         Store_Filter_Weights = !(Explicit_Filter_Properties::Memory_Efficient);
+        G_cutoff = Explicit_Filter_Properties::G_cutoff;
+        batch_flag = Explicit_Filter_Properties::batch_flag;
+        debug_flag = Explicit_Filter_Properties::debug_flag;
         theNeighbours.allocate(number_of_rings);
         I = Complex(0,1);
-        G_cutoff = Explicit_Filter_Properties::G_cutoff;
     }
     
+    Discrete_Filter(Explicit_Filter_Properties &explicit_filter_properties) {
+        properties = &explicit_filter_properties;
+        theNeighbours.allocate(number_of_rings);
+        I = Complex(0,1);
+    }
+    
+    virtual void Read_Properties(void) {
+        debug_flag              = properties->Get_Property_int("debug_flag");
+        batch_flag              = properties->Get_Property_int("batch_flag");
+        FGR                     = properties->Get_Property_double("FGR");
+        commutation_order       = properties->Get_Property_int("commutation_order");
+        number_of_rings         = properties->Get_Property_int("number_of_rings");
+        Store_Filter_Weights    = !properties->Get_Property_int("memory_efficient");
+        G_cutoff                = properties->Get_Property_double("G_cutoff");
+    }
+    
+    Explicit_Filter_Properties *properties;
     Complex I;
     Neighbours theNeighbours;
     Cell3D theCell;
+    int debug_flag;
+    int batch_flag;
     int commutation_order;
     double FGR;
     int number_of_rings;
@@ -153,7 +174,7 @@ inline Complex Discrete_Filter<Soln_pState,Soln_cState>::G_function_1D_110(Cell3
 template <typename Soln_pState, typename Soln_cState>
 void Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
     
-    if (!Explicit_Filter_Properties::batch_flag) {
+    if (!batch_flag) {
         cout << "\n\n Calculating filter moments at cell ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
     }
     
@@ -215,7 +236,7 @@ void Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments(Grid3D_Hexa_
 template <typename Soln_pState, typename Soln_cState>
 void Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments_1D(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction) {
     
-    if (!Explicit_Filter_Properties::batch_flag) {
+    if (!batch_flag) {
         cout << "\n\n Calculating filter moments in 1D at cell ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
     }
     
@@ -372,12 +393,13 @@ void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Blo
     kmax.y = fabs(PI/Delta.y);
     kmax.z = fabs(PI/Delta.z);
     
-    if (!Explicit_Filter_Properties::batch_flag) {
+    if (!batch_flag) {
         cout << "\n\n Calculating Transfer function at cell ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
     }
     int N=25;
     std::stringstream prefix;
     prefix << Explicit_Filter_Properties::output_file_name << "_";
+//    prefix << properties->Get_Property_char("output_file_name") << "_";
     prefix << "transfer_function_I" << theCell.I << "J" << theCell.J << "K" << theCell.K;
     
     /* -------------- Output gnuplot ----------------- */
@@ -685,7 +707,7 @@ Calculate_wavenumber_of_Gvalue(Cell3D &theCell, Neighbours &theNeighbours, Vecto
         
         counter++;
         if(counter >= 50) {
-            if (!Explicit_Filter_Properties::batch_flag)
+            if (!batch_flag)
                 cout << "max reached for Gvalue" << endl;
             break;
         }
@@ -736,7 +758,7 @@ Calculate_wavenumber_of_dGvalue(Cell3D &theCell, Neighbours &theNeighbours, Vect
         
         counter++;
         if(counter >= 50) {
-            if (!Explicit_Filter_Properties::batch_flag)
+            if (!batch_flag)
                 cout << "max reached for dGvalue" << endl;
             return kmax;
             break;

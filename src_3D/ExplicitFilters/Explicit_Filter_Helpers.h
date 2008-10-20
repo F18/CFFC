@@ -25,6 +25,8 @@
 #include "Filter_State.h"
 #endif
 
+#include <map>
+
 /* ------------------------------------------------------------------------------------------------------------------------------ */
 /**
  * CLASS : Explicit_Filter_Properties
@@ -33,6 +35,12 @@
 
 class Explicit_Filter_Properties {
 public:
+    std::map<string,int> map_int;
+    std::map<string,double> map_double;
+    std::map<string,char*> map_char;
+    
+public:
+    
     static bool   debug_flag;
     static int    commutation_order;
     static int    finite_differencing_order;
@@ -55,7 +63,148 @@ public:
     static int    least_squares_filter_weighting;
     static double least_squares_filter_weighting_factor;
     static bool   uniform_grid;
+    Explicit_Filter_Properties(void){
+        Set_New_Property("commutation_order",2);
+        Set_New_Property("debug_flag",OFF);
+        Set_New_Property("FGR",2.0);
+        Set_New_Property("number_of_rings",2);
+        Set_New_Property("memory_efficient",OFF);
+        Set_New_Property("finite_differencing_order",4);
+        Set_New_Property("LS_constraints",ON);
+        Set_New_Property("Derivative_constraints",DEFAULT);
+        Set_New_Property("Filter_Width_strict",OFF);
+        Set_New_Property("target_filter_sharpness",-1.0);
+        Set_New_Property("restarted",false);
+        Set_New_Property("progress_mode",PROGRESS_MODE_MESSAGE);
+        Set_New_Property("filter_type",FILTER_TYPE_VASILYEV);
+        Set_New_Property("output_file_name","output_file_name");
+        Set_New_Property("batch_flag",0);
+        Set_New_Property("number_of_rings_increased",3);
+        Set_New_Property("derivative_accuracy",3);
+        Set_New_Property("G_cutoff",exp(-sqr(PI)/(4.*6.)));
+        Set_New_Property("least_squares_filter_weighting",ON);
+        Set_New_Property("relaxation_factor",double(DEFAULT));
+        Set_New_Property("least_squares_filter_weighting_factor",double(DEFAULT));
+        Set_New_Property("uniform_grid",ON);
+    }
     
+//    ~Explicit_Filter_Properties(void){
+//        map_int.clear();
+//        map_double.clear();
+//        map_char.clear();
+////        map_int.erase(map_int.begin(),map_int.end());
+////        map_double.erase(map_double.begin(),map_double.end());
+////        map_char.erase(map_char.begin(),map_char.end());
+//    }
+    
+    template <typename Soln_pState, typename Soln_cState>
+    void Set_Properties(Input_Parameters<Soln_pState,Soln_cState> &IPs, int batch_flag){
+        Set_Property("output_file_name",IPs.Output_File_Name_Prefix);
+        Set_Property("FGR",IPs.Turbulence_IP.FGR);
+        Set_Property("commutation_order",IPs.Turbulence_IP.commutation_order);
+        Set_Property("finite_differencing_order",IPs.Turbulence_IP.finite_differencing_order);
+        Set_Property("number_of_rings",IPs.Turbulence_IP.number_of_rings);
+        Set_Property("filter_type",IPs.Turbulence_IP.i_filter_type);
+        Set_Property("target_filter_sharpness",IPs.Turbulence_IP.Target_Filter_Sharpness);
+        Set_Property("LS_constraints",IPs.Turbulence_IP.LS_constraints);
+        Set_Property("Derivative_constraints",IPs.Turbulence_IP.Derivative_constraints);
+        Set_Property("Filter_Width_strict",IPs.Turbulence_IP.Filter_Width_strict);
+        Set_Property("memory_efficient",IPs.Turbulence_IP.Filter_Memory_Efficient);
+        Set_Property("relaxation_factor",IPs.Turbulence_IP.relaxation_factor);
+        Set_Property("least_squares_filter_weighting",IPs.Turbulence_IP.least_squares_filter_weighting);
+        Set_Property("least_squares_filter_weighting_factor",IPs.Turbulence_IP.least_squares_filter_weighting_factor);
+        Set_Property("uniform_grid",IPs.Turbulence_IP.uniform_grid);
+        Set_Property("batch_flag",batch_flag);
+        if (IPs.Turbulence_IP.i_filter_type!=FILTER_TYPE_RESTART) {
+            Set_Property("progress_mode",IPs.Progress_Mode);
+        } else {
+            Set_Property("progress_mode",PROGRESS_MODE_SILENT);
+        }
+    }
+
+private:
+    void Set_New_Property(string property_name, int property_value) {
+        map_int[property_name]=property_value;
+    }
+    void Set_New_Property(string property_name, bool property_value) {
+        map_int[property_name]=property_value;
+    }
+    void Set_New_Property(string property_name, double property_value) {
+        map_double[property_name]=property_value;
+    }
+    void Set_New_Property(string property_name, char* property_value) {
+        map_char[property_name]=property_value;
+    }
+    
+public:
+    void Set_Property(string property_name, int property_value) {
+        map<string,int>::iterator p;
+        p = map_int.find(property_name);
+        if(p!=map_int.end()) {
+            map_int[property_name]=property_value;
+        } else {
+            cout << "\n ERROR: Property " << property_name << " does not exist in Explicit_Filter_Helpers.h"; cout.flush();
+        }
+    }
+    void Set_Property(string property_name, bool property_value) {
+        map<string,int>::iterator p;
+        p = map_int.find(property_name);
+        if(p!=map_int.end()) {
+            map_int[property_name]=property_value;
+        } else {
+            cout << "\n ERROR: Property " << property_name << " does not exist in Explicit_Filter_Helpers.h"; cout.flush();
+        }
+    }
+    void Set_Property(string property_name, double property_value) {
+        map<string,double>::iterator p;
+        p = map_double.find(property_name);
+        if(p!=map_double.end()) {
+            map_double[property_name]=property_value;
+        } else {
+            cout << "\n ERROR: Property " << property_name << " does not exist in Explicit_Filter_Helpers.h"; cout.flush();
+        }
+        
+    }
+    void Set_Property(string property_name, char* property_value) {
+        map<string,char*>::iterator p;
+        p = map_char.find(property_name);
+        if(p!=map_char.end()) {
+            map_char[property_name]=property_value;
+        } else {
+            cout << "\n ERROR: Property " << property_name << " does not exist in Explicit_Filter_Helpers.h"; cout.flush();
+        }
+    }
+    
+    int Get_Property_int(string property_name) {
+        map<string,int>::iterator p;
+        p = map_int.find(property_name);
+        assert(p!=map_int.end());
+        return p->second;
+    }
+    double Get_Property_double(string property_name) {
+        map<string,double>::iterator p;
+        p = map_double.find(property_name);
+        assert(p!=map_double.end());
+    return p->second;    
+    }
+    char* Get_Property_char(string property_name) {
+        map<string,char*>::iterator p;
+        p = map_char.find(property_name);
+        assert(p!=map_char.end());
+    return p->second;   
+    }
+    
+    void Output_Properties(void){
+        for (map<string,int>::iterator p=map_int.begin(); p!=map_int.end(); p++){
+            cout << "\n" << p->first << " = " << p->second; cout.flush();
+        }
+        for (map<string,double>::iterator p=map_double.begin(); p!=map_double.end(); p++){
+            cout << "\n" << p->first << " = " << p->second; cout.flush();
+        }
+        for (map<string,char*>::iterator p=map_char.begin(); p!=map_char.end(); p++){
+            cout << "\n" << p->first << " = " << p->second; cout.flush();
+        }
+    }
 };
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */

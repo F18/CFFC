@@ -166,7 +166,6 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(Grid3D_Hexa_Multi_Blo
             properties.filter_type = FILTER_TYPE_RESTART; */
         
         Create_filter();
-        properties.progress_mode = Input.Progress_Mode; // Don't use terminal mode when outputting to file
         initialized = true;
     }
 }
@@ -191,9 +190,11 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Set_Properties(Input_Parameters<
     properties.uniform_grid = IPs.Turbulence_IP.uniform_grid;
     properties.batch_flag = batch_flag;
     properties.progress_mode = IPs.Progress_Mode; // Don't use terminal mode when outputting to file
-    if (/*(IPs.i_ICs == IC_RESTART && !properties.restarted) ||*/ IPs.Turbulence_IP.i_filter_type==FILTER_TYPE_RESTART)
+    if (IPs.Turbulence_IP.i_filter_type==FILTER_TYPE_RESTART)
         properties.progress_mode = PROGRESS_MODE_SILENT;
 
+    properties.Set_Properties(IPs,batch_flag);
+    properties.Output_Properties();
 }
 
 
@@ -205,7 +206,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Create_filter(void) {
             filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;
             break;
         case FILTER_TYPE_VASILYEV:
-            filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>;
+            filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>(properties);
             break;
         case FILTER_TYPE_TOPHAT:
             filter_ptr = new Tophat_Filter<Soln_pState,Soln_cState>;
@@ -258,7 +259,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::transfer_function(int flag) {
         case FILTER_EDGE_CELL:
             transfer_function(Nghost, properties.number_of_rings, properties.number_of_rings);    break;
         case FILTER_INNER_CELL:
-            transfer_function(properties.number_of_rings, properties.number_of_rings, properties.number_of_rings);    break;
+            transfer_function(max(Nghost,properties.number_of_rings), max(Nghost,properties.number_of_rings), max(Nghost,properties.number_of_rings));    break;
         case FILTER_MIDDLE_CELL:
             transfer_function(NMi,NMj,NMk);    break;
     }
