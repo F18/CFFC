@@ -9,8 +9,7 @@
 
 /* Include CFFC header files */
 #include "TestData.h"
-#include "../../HighOrderReconstruction/Cauchy_BoundaryConditions.h"
-#include "../Euler2DState.h"
+#include "../Euler2DQuad.h"
 
 namespace tut
 {
@@ -27,7 +26,8 @@ namespace tut
 
     // Fill data into container
     void Initialize_Container(Cauchy_BCs<Euler2D_pState> & BC,
-			      const int & NumOfObjects);
+			      const int & NumOfObjects,
+			      const int & BCtype = BC_NONE);
 
   private:
     
@@ -42,18 +42,24 @@ namespace tut
     
   }
 
-    // Fill data into container
+  // Fill data into container
   void Data_Euler2D_CauchyBCs::Initialize_Container(Cauchy_BCs<Euler2D_pState> & BC,
-						    const int & NumOfObjects){
+						    const int & NumOfObjects,
+						    const int & BCtype){
     
-    BC.allocate(NumOfObjects);
-
+    if (BCtype == BC_NONE){
+      BC.allocate(NumOfObjects);
+    } else {
+      BC.InitializeCauchyBCs(NumOfObjects,
+			     BCtype);
+    }
+    
     for (int n = 0; n < NumOfObjects; ++n){
       BC.DirichletBC(n+1) = Euler2D_pState(1.0*(n+1), 2.0*(n+1), 3.0*(n+1), 4.0*(n+1) );
       BC.NeumannBC(n+1)   = Euler2D_pState(2.0*(n+1), 2.0*(n+1), 3.0*(n+1), 4.0*(n+1) );
       BC.a(n+1) = Euler2D_pState(3.0*(n+1), 2.0*(n+1), 3.0*(n+1), 4.0*(n+1) );
       BC.b(n+1) = Euler2D_pState(4.0*(n+1), 2.0*(n+1), 3.0*(n+1), 4.0*(n+1) );
-    }
+    }   
   }
 
   /**
@@ -311,6 +317,43 @@ namespace tut
     }
   }
 
+  /* Test 8:*/
+  template<>
+  template<>
+  void Euler2D_CauchyBCs_object::test<8>()
+  {
+    set_test_name("allocate with BCtype");
+
+    Cauchy_BCs<Euler2D_pState> BCs;
+    Initialize_Container(BCs,
+			 5,
+			 BC_WALL_INVISCID);
+
+    // == check
+    ensure_equals("Individual Constraints",
+		  BCs.IndividualConstraintsVector().size(),
+		  4);
+    ensure_equals("Relational Constraints",
+		  BCs.RelationalConstraintsVector().size(),
+		  4);
+
+    // == check rho
+    ensure_equals("rho Individual Constraints", BCs.NumberOfIndividualConstraints(1), 0 );
+    ensure_equals("rho Relational Constraints", BCs.NumberOfRelationalConstraints(1), 0 );
+    // == check u
+    ensure_equals("u Individual Constraints", BCs.NumberOfIndividualConstraints(2), 0 );
+    ensure_equals("u Relational Constraints", BCs.NumberOfRelationalConstraints(2), 1 );
+    // == check v
+    ensure_equals("v Individual Constraints", BCs.NumberOfIndividualConstraints(3), 0 );
+    ensure_equals("v Relational Constraints", BCs.NumberOfRelationalConstraints(3), 1 );
+    // == check p
+    ensure_equals("p Individual Constraints", BCs.NumberOfIndividualConstraints(4), 0 );
+    ensure_equals("p Relational Constraints", BCs.NumberOfRelationalConstraints(4), 0 );
+
+    // === check flags
+    ensure_equals("Relational Constraints Flag", BCs.IsThereAnyRelationalConstraintRequired(), true );
+    ensure_equals("Individual Constraints Flag", BCs.IsThereAnyIndividualConstraintRequired(), false);
+  }
 
 }
 

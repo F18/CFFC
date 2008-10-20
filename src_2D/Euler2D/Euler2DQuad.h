@@ -21,7 +21,7 @@
 #include "../System/System_Linux.h"    /* Include System Linux header file. */
 #include "../HighOrderReconstruction/AccuracyAssessment2D.h" /* Include 2D accuracy assessment header file. */
 #include "../HighOrderReconstruction/HighOrder2D.h" /* Include 2D high-order template class header file. */
-#include "../HighOrderReconstruction/Cauchy_BoundaryConditions.h" /* Include 2D high-order boundary conditions header file. */
+#include "Euler2D_Cauchy_BCs.h" /* Include 2D high-order boundary conditions header file, including Euler2D specializations. */
 #include "Euler2DExactSolutions.h"  /* Include 2D Euler exact solutions header file */
 
 /* Define the structures and classes. */
@@ -728,7 +728,8 @@ inline void Euler2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
 
     // allocate BC memory for each flux calculation point
     for (i=ICl; i<=ICu; ++i){
-      BC_NorthCell(i).allocate(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu));
+      BC_NorthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu),
+					  Grid.BCtypeN[i]);
     }
 
   } else if ( HO_WoN != NULL){
@@ -749,7 +750,8 @@ inline void Euler2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
     
     // allocate BC memory for each flux calculation point
     for (i=ICl; i<=ICu; ++i){
-      BC_SouthCell(i).allocate(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl));
+      BC_SouthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl),
+					  Grid.BCtypeS[i]);
     }    
   } else if (HO_WoS != NULL){
     // deallocate memory
@@ -769,7 +771,8 @@ inline void Euler2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
 
     // allocate BC memory for each flux calculation point
     for (j=JCl; j<=JCu; ++j){
-      BC_EastCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j));
+      BC_EastCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j),
+					 Grid.BCtypeE[j]);
     }
   } else if (HO_WoE != NULL){
     // deallocate memory
@@ -789,7 +792,8 @@ inline void Euler2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
 
     // allocate BC memory for each flux calculation point
     for (j=JCl; j<=JCu; ++j){
-      BC_WestCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j));
+      BC_WestCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j),
+					 Grid.BCtypeW[j]);
     }
   } else if (HO_WoW != NULL){
     // deallocate memory

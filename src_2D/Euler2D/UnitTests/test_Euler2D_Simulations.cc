@@ -116,13 +116,13 @@ namespace tut
       MasterFile  = "Master_Ringleb_Flow_40x40_cpu000000.dat";
       CurrentFile = "Current_Ringleb_Flow_40x40_cpu000000.dat";
       // check
-      RunRegressionTest("Nodal Solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+      RunRegressionTest("Nodal Solution", CurrentFile, MasterFile, 3.0e-5, 5.0e-9);
 
       //===== Check cell solution
       MasterFile  = "Master_Ringleb_Flow_40x40_cells_cpu000000.dat";
       CurrentFile = "Current_Ringleb_Flow_40x40_cells_cpu000000.dat";
       // check
-      RunRegressionTest("Cell Solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+      RunRegressionTest("Cell Solution", CurrentFile, MasterFile, 3.0e-5, 5.0e-9);
     }
   }
 

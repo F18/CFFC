@@ -470,6 +470,10 @@ public:
     of cell (iCell,jCell).  */
   void ComputeCellReconstructionPseudoInverse(const int &iCell, const int &jCell,
 					      const IndexType & i_index, const IndexType & j_index);
+  /*! @brief Compute the pseudo-inverse or LHS matrix for cell (iCell,jCell) which is influenced
+    by the presence of constrained boundaries.  */
+  void ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries(const int& BOUNDARY,
+								       const int& iCell, const int& jCell);
 
   //! @brief Compute the piecewise linear solution reconstruction of cell (iCell,jCell). 
   template<class Soln_Block_Type>
@@ -488,6 +492,15 @@ public:
 							 const int &iCell, const int &jCell,
 							 const IndexType & i_index, const IndexType & j_index);
 
+  //! @brief Compute the constrained unlimited high-order solution reconstruction of cell (iCell,jCell). 
+  template<class Soln_Block_Type>
+  void HighLevel_ConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
+							    const Soln_State & 
+							    (Soln_Block_Type::*ReconstructedSoln)(const int &,
+												  const int &) const,
+							    const int &iCell, const int &jCell,
+							    const IndexType & i_index, const IndexType & j_index);
+
   //! @brief Set the mean value conservation equations in the assemble matrix
   template<class Soln_Block_Type>
   void Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
@@ -499,6 +512,11 @@ public:
 					   const IndexType & ParameterIndex,
 					   const int &RowConstraint,
 					   const int &StartRow, const int &StartCol);
+
+  //! @brief Set the mean value conservation equations in the LHS matrix of the k-exact reconstruction procedure
+  void Set_LHS_MeanValueConservation_Equations(const int &iCell, const int &jCell,
+					       const IndexType & i_index, const IndexType & j_index,
+					       DenseMatrix & A, DoubleArrayType & GeometricWeights);
 
   //! @brief Set the individual constraint equations in the assemble matrix
   template<class Soln_Block_Type>
