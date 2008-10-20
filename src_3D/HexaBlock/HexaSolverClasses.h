@@ -86,6 +86,8 @@ class HexaSolver_Solution_Data {
   Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  Local_Solution_Blocks; 
 
     Explicit_Filters<SOLN_pSTATE,SOLN_cSTATE> Explicit_Filter;
+    Explicit_Filters<SOLN_pSTATE,SOLN_cSTATE> Explicit_Secondary_Filter;
+
   // Control Flag 
   int command_flag;
  

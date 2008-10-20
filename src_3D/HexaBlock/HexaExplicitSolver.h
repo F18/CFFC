@@ -17,6 +17,7 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
     SOLN_cSTATE **** (Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::*dUdt_ptr) = &Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::dUdt;
     if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT) {
         Solution_Data.Explicit_Filter.Initialize(Data,Solution_Data);
+        Solution_Data.Explicit_Secondary_Filter.Initialize_Secondary(Data,Solution_Data);
     }
 
 
@@ -185,12 +186,8 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
                     cout << "o";   // This symbol will notify a solution filtering operation
                     cout.flush();
                 } /* endif */
-                Explicit_Filters<SOLN_pSTATE,SOLN_cSTATE> solution_filter;
-                solution_filter.Initialize(Data,Solution_Data);
-                solution_filter.reset();
-                Explicit_Filter_Properties::FGR = Solution_Data.Input.Turbulence_IP.FGR_secondary;
                 
-                error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Solution(solution_filter);
+                error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Solution(Solution_Data.Explicit_Secondary_Filter);
                 if (error_flag) {
                     cout << "\n ERROR: Could not filter solution "
                     << "on processor "
@@ -198,9 +195,6 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
                     << ".\n";
                     cout.flush();
                 } /* endif */
-                
-                Solution_Data.Explicit_Filter.reset();
-                Explicit_Filter_Properties::FGR = Solution_Data.Input.Turbulence_IP.FGR;
             }
         }
         

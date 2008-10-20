@@ -107,9 +107,9 @@ public:
 
     // To be defined out of properties
     double target_filter_sharpness;
-    double LS_constraints;
-    double Derivative_constraints;
-    double Filter_Width_strict;
+    int LS_constraints;
+    int Derivative_constraints;
+    int Filter_Width_strict;
     
 
     int number_of_constraints;
@@ -119,36 +119,42 @@ public:
     RowVector symmetric_weights_1D;
     
     
-    Vasilyev_Filter(void) : Discrete_Filter<Soln_pState,Soln_cState>() {
-        target_filter_sharpness = Explicit_Filter_Properties::target_filter_sharpness;
-        LS_constraints = Explicit_Filter_Properties::LS_constraints;
-        Derivative_constraints = Explicit_Filter_Properties::Derivative_constraints;
-        Filter_Width_strict = Explicit_Filter_Properties::Filter_Width_strict;
-        number_of_constraints = 0;
-        Output_Constraints = true;
-        if (batch_flag)
-            Output_Constraints = false;
-    }
+//    Vasilyev_Filter(void) : Discrete_Filter<Soln_pState,Soln_cState>() {
+//        target_filter_sharpness = Explicit_Filter_Properties::target_filter_sharpness;
+//        LS_constraints = Explicit_Filter_Properties::LS_constraints;
+//        Derivative_constraints = Explicit_Filter_Properties::Derivative_constraints;
+//        Filter_Width_strict = Explicit_Filter_Properties::Filter_Width_strict;
+//        number_of_constraints = 0;
+//        Output_Constraints = true;
+//        if (batch_flag)
+//            Output_Constraints = false;
+//    }
     
     Vasilyev_Filter(Explicit_Filter_Properties &explicit_filter_properties) : Discrete_Filter<Soln_pState,Soln_cState>(explicit_filter_properties) {
         Read_Properties();
-        
-        number_of_constraints = 0;
-        Output_Constraints = true;
-        if (batch_flag)
-            Output_Constraints = false;
     }
     
 
     
-    virtual void Read_Properties(void) {
-        Discrete_Filter<Soln_pState,Soln_cState>::Read_Properties();
-        target_filter_sharpness = properties->Get_Property_double("target_filter_sharpness");
-        LS_constraints          = properties->Get_Property_int("LS_constraints");
-        Derivative_constraints  = properties->Get_Property_int("Derivative_constraints");
-        Filter_Width_strict     = properties->Get_Property_int("Filter_Width_strict");
-        
-        properties->Output_Properties();
+    void Read_Properties(void) {
+        if (properties->Changed()) {
+            Discrete_Filter<Soln_pState,Soln_cState>::Read_Basic_Properties();
+            target_filter_sharpness = properties->Get_Property_double("target_filter_sharpness");
+            LS_constraints          = properties->Get_Property_int("LS_constraints");
+            Derivative_constraints  = properties->Get_Property_int("Derivative_constraints");
+            Filter_Width_strict     = properties->Get_Property_int("Filter_Width_strict");
+            properties->Properties_Read();
+            cout << endl;
+            
+            number_of_constraints = 0;
+            Output_Constraints = true;
+            if (batch_flag)
+                Output_Constraints = false;
+            symmetric_weights_1D = RowVector(0);
+            symmetric_weights = RowVector(0);
+            
+        }
+                
     }
 
     void Get_Neighbours(Cell3D &theCell_) {
@@ -317,7 +323,11 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Calculate_Weights_1D(
 
 template <typename Soln_pState, typename Soln_cState>
 inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &theCell, Neighbours &theNeighbours) {
-    // Set FGR to properties
+
+    
+    Read_Properties();
+    
+    
     if (theNeighbours.symmetric_stencil && symmetric_weights.size()!=0) {
         return symmetric_weights;
     } else {
@@ -364,6 +374,8 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
 
 template <typename Soln_pState, typename Soln_cState>
 inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights_1D(Cell3D &theCell, Neighbours &theNeighbours, int direction) {
+    
+    Read_Properties();
     
     if (theNeighbours.symmetric_stencil && symmetric_weights_1D.size()!=0) {
         return symmetric_weights_1D;
@@ -470,17 +482,18 @@ inline int Vasilyev_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Neigh
     int number_of_extra_constraints = 2*number_of_rings+1 - commutation_order;
     if (number_of_extra_constraints <= 0){
         if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
-            cout << "Can not set filter width with " << number_of_rings << " number of rings and commutation order " << commutation_order << " ." << endl;
+            cout << "\n Can not set filter width with " << number_of_rings << " number of rings and commutation order " << commutation_order << " ." << endl;
         }
         while (number_of_extra_constraints <= 0) {
             commutation_order--;
             number_of_extra_constraints = 2*number_of_rings+1 - commutation_order;
         }
         if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
-            cout << "Commutation order lowered to " << commutation_order << " ." << endl;
+            cout << "\n Commutation order lowered to " << commutation_order << " ." << endl;
         }
     }
     if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
+        cout << endl;
         cout << "Setting extra constraints on discrete filter:" << endl;
         cout << "   --> Number of rings = " << number_of_rings << endl;
         cout << "   --> Commutation order = " << commutation_order << endl;

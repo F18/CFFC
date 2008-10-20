@@ -38,29 +38,29 @@ template <typename Soln_pState, typename Soln_cState>
 class Discrete_Filter : public General_Filter<Soln_pState,Soln_cState> {
 public:
     
-    Discrete_Filter(void) {
-        FGR = Explicit_Filter_Properties::FGR;
-        commutation_order = Explicit_Filter_Properties::commutation_order;
-        number_of_rings = Explicit_Filter_Properties::number_of_rings;
-        target_filter_sharpness = Explicit_Filter_Properties::target_filter_sharpness;
-        Filter_Width_strict = Explicit_Filter_Properties::Filter_Width_strict;
-        LS_constraints = Explicit_Filter_Properties::LS_constraints;
-        Derivative_constraints =  Explicit_Filter_Properties::Derivative_constraints;
-        Store_Filter_Weights = !(Explicit_Filter_Properties::Memory_Efficient);
-        G_cutoff = Explicit_Filter_Properties::G_cutoff;
-        batch_flag = Explicit_Filter_Properties::batch_flag;
-        debug_flag = Explicit_Filter_Properties::debug_flag;
-        theNeighbours.allocate(number_of_rings);
-        I = Complex(0,1);
-    }
+   // Discrete_Filter(void) {
+//        FGR = Explicit_Filter_Properties::FGR;
+//        commutation_order = Explicit_Filter_Properties::commutation_order;
+//        number_of_rings = Explicit_Filter_Properties::number_of_rings;
+//        target_filter_sharpness = Explicit_Filter_Properties::target_filter_sharpness;
+//        Filter_Width_strict = Explicit_Filter_Properties::Filter_Width_strict;
+//        LS_constraints = Explicit_Filter_Properties::LS_constraints;
+//        Derivative_constraints =  Explicit_Filter_Properties::Derivative_constraints;
+//        Store_Filter_Weights = !(Explicit_Filter_Properties::Memory_Efficient);
+//        G_cutoff = Explicit_Filter_Properties::G_cutoff;
+//        batch_flag = Explicit_Filter_Properties::batch_flag;
+//        debug_flag = Explicit_Filter_Properties::debug_flag;
+//        theNeighbours.allocate(number_of_rings);
+//        I = Complex(0,1);
+//    }
     
     Discrete_Filter(Explicit_Filter_Properties &explicit_filter_properties) {
         properties = &explicit_filter_properties;
-        theNeighbours.allocate(number_of_rings);
+        theNeighbours.allocate(properties->Get_Property_int("number_of_rings"));
         I = Complex(0,1);
     }
     
-    virtual void Read_Properties(void) {
+    virtual void Read_Basic_Properties(void) {
         debug_flag              = properties->Get_Property_int("debug_flag");
         batch_flag              = properties->Get_Property_int("batch_flag");
         FGR                     = properties->Get_Property_double("FGR");
@@ -69,6 +69,8 @@ public:
         Store_Filter_Weights    = !properties->Get_Property_int("memory_efficient");
         G_cutoff                = properties->Get_Property_double("G_cutoff");
     }
+    
+    virtual void Read_Properties(void) = 0;
     
     Explicit_Filter_Properties *properties;
     Complex I;
@@ -79,11 +81,7 @@ public:
     int commutation_order;
     double FGR;
     int number_of_rings;
-    double target_filter_sharpness;
-    bool Filter_Width_strict;
-    bool LS_constraints;
-    int Derivative_constraints;
-    bool Store_Filter_Weights;
+    int Store_Filter_Weights;
     double G_cutoff;
 
     void Allocate_Filter_Weights(Grid3D_Hexa_Block &Grid_Blk);
@@ -398,8 +396,7 @@ void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Blo
     }
     int N=25;
     std::stringstream prefix;
-    prefix << Explicit_Filter_Properties::output_file_name << "_";
-//    prefix << properties->Get_Property_char("output_file_name") << "_";
+    prefix << properties->Get_Property_string("output_file_name") << "_";
     prefix << "transfer_function_I" << theCell.I << "J" << theCell.J << "K" << theCell.K;
     
     /* -------------- Output gnuplot ----------------- */

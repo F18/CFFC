@@ -25,12 +25,9 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                 << "\n ===============================";
             }
             
-            Explicit_Filters<LES3D_Polytropic_pState,LES3D_Polytropic_cState> solution_filter;
-            solution_filter.Initialize(Data,Solution_Data);
-            solution_filter.reset();
-            Explicit_Filter_Properties::FGR = Solution_Data.Input.Turbulence_IP.FGR_secondary;
+            Solution_Data.Explicit_Secondary_Filter.Initialize_Secondary(Data,Solution_Data);
             
-            error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Solution(solution_filter);
+            error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Solution(Solution_Data.Explicit_Secondary_Filter);
             if (error_flag) {
                 cout << "\n ERROR: Could not filter solution "
                 << "on processor "
@@ -38,10 +35,6 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                 << ".\n";
                 cout.flush();
             } /* endif */
-            
-            solution_filter.reset();
-            Explicit_Filter_Properties::FGR = Solution_Data.Input.Turbulence_IP.FGR;
-
         }
         
         

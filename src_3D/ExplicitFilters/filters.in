@@ -33,6 +33,8 @@ Vasilyev
 #Restart
 Filter_Grid_Ratio =
 2.0
+Filter_Grid_Ratio_secondary =
+4.0
 Target_Filter_Sharpness = 
 1
 Filter_Initial_Condition =
@@ -48,7 +50,7 @@ Number_of_Rings =
 Filter_Width_strict =
 ON
 Filter_Memory_Efficient =
-OFF
+ON
 Relaxation_Factor =
 ON
 Least_Squares_Filter_Weighting = 
