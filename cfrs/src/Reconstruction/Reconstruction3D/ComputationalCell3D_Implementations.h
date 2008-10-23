@@ -162,7 +162,7 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>::SetSubGridGeometry(){
  * Computes the geometric coefficients by computing integral      *
  * over the volume of the cell of the polynomial function having  *
  * the form                                                       *
- *       ((x-xCC)^n)*((y-yCC)^m) and divide by aria A             * 
+ *       ((x-xCC)^l*(y-yCC)^m*(z-zCC)^n) and divide by volume V   * 
 ******************************************************************/
 template<class GeometryType,class SolutionType> inline
 void ComputationalCell<ThreeD,GeometryType,SolutionType>
@@ -190,11 +190,14 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>
 
 
   /* When the method of integration is used the moments associated with the first order are not quite accurate */
-  for (int p1 = GeomCoeff.FirstElem(); p1<=GeomCoeff.LastElem(); ++p1){
+  for (int i = GeomCoeff.FirstElem(); i<=GeomCoeff.LastElem(); ++i){
     /* Compute the geometric coefficient */
-    Polynom.ChangePowersTo(GeomCoeff(p1,true,true,true).P1(),GeomCoeff(p1,true,true,true).P2(),GeomCoeff(p1,true,true,true).P3());
-    GeomCoeff(p1,true,true,true).D() = IntegrateOverTheCell(Polynom,14,DummyParam)/geom.V();
+    Polynom.ChangePowersTo(GeomCoeff(i,true,true,true).P1(),
+                           GeomCoeff(i,true,true,true).P2(),
+                           GeomCoeff(i,true,true,true).P3());
+    GeomCoeff(i,true,true,true).D() = IntegrateOverTheCell(Polynom,14,DummyParam)/geom.V();
   }
+
 }
 
 
@@ -319,7 +322,7 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>::ComputeReconstructionE
 //      }
 }
 
-// OutputNeshNodesTecplot()
+// OutputMeshNodesTecplot()
 /* Outputs the coordinates of the nodes of the subgrid */
 template<class GeometryType,class SolutionType> inline
 void ComputationalCell<ThreeD,GeometryType,SolutionType>::
@@ -338,6 +341,28 @@ OutputMeshNodesTecplot(std::ofstream &output_file,const int & iCell,const int & 
 
   //output_file << CellGeometry().NodeSWTop() << "\n"; --> RR: replaced for testing with the following line:
   output_file << CellGeometry().NodeSWBot() << "\n";
+
+  output_file << setprecision(6);
+}
+
+// OutputMeshCellsTecplot()x
+/* Outputs the coordinates of the cell centers */
+template<class GeometryType,class SolutionType> inline
+void ComputationalCell<ThreeD,GeometryType,SolutionType>::
+OutputMeshCellsTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,const int & kCell,const bool Title)
+{
+  output_file << setprecision(14);
+  if (Title) {
+    output_file << "TITLE = \"" << " Mesh cells \"\n";
+    output_file << "VARIABLES = \"x\" \\ \n"
+		<< "\"y\" \\ \n"
+		<< "\"z\" \\ \n";    
+    output_file << "ZONE T = \" Mesh \" \\ \n"
+		<< "F = POINT \n";
+    output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
+  }
+
+  output_file << CellCenter() << "\n";
 
   output_file << setprecision(6);
 }

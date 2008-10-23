@@ -190,9 +190,10 @@ public:
   }
 
   void OutputMeshNodesTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
+			      const int & kCell,const bool Title=false);
+  void OutputMeshCellsTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
 			      const int & kCell,const bool Title=false); 
-  //--> RR: Needs to be implemented. Reference the call from ComputationalDomain_Implementations.h
-  void OutputSubgridTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
+    void OutputSubgridTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
 			    const int & kCell,const bool Title=false);
   void OutputSolutionTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
 			     const int & kCell,const bool Title=false);

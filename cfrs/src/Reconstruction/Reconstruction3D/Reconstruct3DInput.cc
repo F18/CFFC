@@ -439,8 +439,10 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
 	    IP.Message_Number++;
 	} // endif
 
-	// Set the required number of Ghost cells
-	IP.Nghost_Cells = 5;
+
+	/********** Set the required number of Ghost cells *************/
+	IP.Nghost_Cells = 2;
+        /* *************************************************************/
 
     } else if (strcmp(IP.Next_Control_Parameter, "Grid_Type") == 0) {
        i_command = 3;
