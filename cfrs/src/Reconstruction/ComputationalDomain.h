@@ -78,8 +78,10 @@ class ComputationalDomain{
 
   static const int NumberOfParameters = CompCellType::NumberOfVariables;
   
- private:
   CompCellType*** SolnPtr;      /* Solution variable */
+
+ private:
+  
   vector<int> N_XYZ;		/* Total number of cells in the X, Y and Z direction */
   vector<int> IndexLow;		/* Start of the computational domain */
   vector<int> IndexUp;		/* End of the computational domain */
@@ -178,6 +180,7 @@ class ComputationalDomain{
   /* Output functions */
   void DefineHeader(const HeaderData & NameOfThePrintedVariables){ VarNames = NameOfThePrintedVariables; }
   void OutputMeshNodesTecplot(std::ofstream &output_file,const bool Title = true) const;
+  void OutputMeshCellsTecplot(std::ofstream &output_file,const bool Title = true) const;
   void OutputNodesTecplot(std::ofstream &output_file,const bool Title = true) const;
   void OutputSolutionNodesTecplot(std::ofstream &output_file,const bool Title = true) const;
   void OutputFullSolutionNodesTecplot(std::ofstream &output_file,const bool Title = true) const;

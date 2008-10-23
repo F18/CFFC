@@ -96,7 +96,8 @@ endif
 # Tests for Containers:
 SRC_CONTAINERS_TESTS = $(CONTAINERS_TEST_DIR)/test_PointWiseSolution.cc \
 		       $(CONTAINERS_TEST_DIR)/test_TaylorDerivatives.cc \
-		       Reconstruction/UnitTests/test_ComputationalCell.cc
+		       Reconstruction/UnitTests/test_ComputationalCell.cc \
+		       Reconstruction/UnitTests/test_ComputationalDomain.cc
 
 # Tests for SubGrid:
 SRC_SUBGRID_TESTS := test_SubGridMesh.cc

@@ -257,6 +257,13 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
     } else if (command_flag == WRITE_OUTPUT_GRID_NODES_CODE) {
       // Output node solution data file.
       //      if (MeshBlk != NULL){
+	cout << "\n Writing grid at cells to"
+	     << " output data file(s): ";
+	Output_Mesh_Cells_Tecplot(SolnBlkDouble, Input_Parameters);
+	//      }
+    } else if (command_flag == WRITE_OUTPUT_GRID_CELLS_CODE) {
+      // Output node solution data file.
+      //      if (MeshBlk != NULL){
 	cout << "\n Writing Reconstruction3D solution at nodes to"
 	     << " output data file(s): ";
 	Output_Solution_Nodes_Tecplot(SolnBlkDouble, Input_Parameters);
@@ -269,7 +276,6 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
 	     << " output data file(s): ";
 	Output_Full_Solution_Nodes_Tecplot(SolnBlkDouble, Input_Parameters);
 	//      }
-
     } else if (command_flag == INVALID_INPUT_CODE ||
 	       command_flag == INVALID_INPUT_VALUE) {
       line_number = -line_number;

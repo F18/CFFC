@@ -9,12 +9,13 @@
 #include "Reconstruction/ReconstructionHelpers.h"
 
 /* Investigate matrix A -> parameters */
-#ifndef _RECONSTRUCTION_FUNCTION_2D_INCLUDED
+#ifndef _RECONSTRUCTION_FUNCTION_3D_INCLUDED
 static const  int InvestCellI = 0;
 static const  int InvestCellJ = 0;
+static const  int InvestCellK = 0;
 static int FoundIndexCell = 0;
 #endif
-static const  int InvestCellK = 0;
+
 
  /***************************************************************************
  * TEMPLATIZED Function: kExact_Reconstruction for 3D                       *
@@ -43,7 +44,7 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
   double PowDistanceXC, PowDistanceYC, PowDistanceZC;
   int cell, i, parameter;
   double WeightsSum(0.0);
-  double IntSum(0.0);
+  double IntSum1(0.0),IntSum2(0.0);
 
   // Allocate memory
   DeltaCellCenters = new Vector3D [StencilSize];
@@ -56,7 +57,7 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
   }
 
   // START:   Set the LHS and RHS of the linear system 
-  // ***************************************************
+  // **************************************************
 
   // Step1. Compute the normalized geometric weights
   for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
@@ -77,6 +78,7 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
     WeightsSum += GeomWeights(cell);
   }
 
+
   // Step2. Set the approximate equations
   for (cell=1 ; cell<StencilSize; ++cell){ //for each cell in the stencil
     
@@ -94,19 +96,20 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
       A(cell-1,i-1) = 0.0;  // set sumation variable to zero
       CombP3Z = 1.0;        // the binomial coefficient "nC k" for k=0 is 1
       PowDistanceZC = 1.0;  // initialize PowDistanceZC
-
+      
       // Compute geometric integral over the neighbour's domain      
       for (IndexSumZ = 0; IndexSumZ<=P3; ++IndexSumZ){
         CombP2Y = 1.0;        // the binomial coefficient "nC k" for k=0 is 1
         PowDistanceYC = 1.0;  // initialize PowDistanceYC
-        IntSum = 0.0;         // reset internal summation variable
-        
+        IntSum2 = 0.0;         // reset internal summation variable
+                
         for (IndexSumY = 0; IndexSumY<=P2; ++IndexSumY){
           CombP1X = 1.0;       // the binomial coefficient "nC k" for k=0 is 1
           PowDistanceXC = 1.0; // initialize PowDistanceXC
+          IntSum1 = 0.0;        // reset internal summation variable
           
           for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
-            IntSum += ( CombP1X*PowDistanceXC*
+            IntSum1 += ( CombP1X*PowDistanceXC*
                         SolnBlk(i_index[cell],j_index[cell],k_index[cell]).CellGeomCoeff(P1-IndexSumX,P2-IndexSumY,P3-IndexSumZ) );
 	    
             // update the binomial coefficients
@@ -114,25 +117,29 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
             PowDistanceXC *= DeltaCellCenters[cell].x;      // Update PowDistanceXC
           }//endfor
 
-          A(cell-1,i-1) += CombP2Y*PowDistanceYC*IntSum;  // update the external sum
-          
+          //A(cell-1,i-1) += CombP2Y*PowDistanceYC*IntSum;  // update the external sum
+          IntSum2 += CombP2Y*PowDistanceYC*IntSum1;
           CombP2Y = (P2-IndexSumY)*CombP2Y/(IndexSumY+1); // the index is still the old one => expression for "nC k+1"
           PowDistanceYC *= DeltaCellCenters[cell].y;      // Update PowDistanceYC
         }//endfor
 
-        A(cell-1,i-1) += CombP3Z*PowDistanceZC*IntSum;  // update the external sum
+        A(cell-1,i-1) += CombP3Z*PowDistanceZC*IntSum2;  // update the external sum
         
         CombP3Z = (P3-IndexSumZ)*CombP3Z/(IndexSumZ+1); // the index is still the old one => expression for "nC k+1"
         PowDistanceZC *= DeltaCellCenters[cell].z;      // Update PowDistanceYC
       }//endfor
-        
+
       // subtract the corresponding geometric moment of (i_index[0],j_index[0],k_index[0]) cell
       A(cell-1,i-1) -= SolnBlk(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i,true,true,true);
-
+      
+#if 0
       // apply geometric weighting
       A(cell-1,i-1) *= GeomWeights(cell);
+#endif
     }
       
+    Print_(A);
+
     // *** SET the matrix All_Delta_U of the linear system (RHS) ***
     for (parameter = 1; parameter <= NumberOfParameters; ++parameter){
       All_Delta_U(cell-1,parameter-1) = (SolnBlk(i_index[cell],j_index[cell],k_index[cell]).CellSolution(parameter) -
@@ -155,7 +162,7 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
   for (i=1; i<=SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv().LastElem(); ++i){
     for (parameter = 1; parameter <= NumberOfParameters; ++parameter){
       SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(i).D(parameter) = All_Delta_U(i-1,parameter-1);
-      //std:: cout << "D[" << parameter <<"] = " << All_Delta_U(i-1,parameter-1) << endl;
+      //std:: cout << "CellDeriv(" << i << ").D(" << parameter <<") = " << All_Delta_U(i-1,parameter-1) << endl;
       /* this equation makes sure that the mean conservation of each parameter is satisfied inside the reconstructed cell */
       SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(0).D(parameter) -= 
         (SolnBlk(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i,true,true,true)*All_Delta_U(i-1,parameter-1));
