@@ -530,7 +530,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   double XnodeSWBot, YnodeSWBot, ZnodeSWBot, XnodeSEBot, YnodeSEBot, ZnodeSEBot;
   double XnodeNEBot, YnodeNEBot, ZnodeNEBot, XnodeNWBot, YnodeNWBot, ZnodeNWBot;
   double CentroidX, CentroidY, CentroidZ;
-  GeometricIntegrals GeomCoeff; GeomCoeff.GenerateContainer(RecOrder);
+  GeometricIntegrals GeomCoeff; 
+
+  GeomCoeff.GenerateContainer(RecOrder);
 
   // Set the geometry
   Cell3D_Hexa InitCell;
@@ -756,6 +758,73 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       for(j=jStart(); j<=jEnd()+1; ++j)
 	for(i=iStart(); i<=iEnd()+1; ++i){
 	  SolnPtr[k][j][i].OutputMeshNodesTecplot(output_file,i,j,k);
+	}
+
+    break; 
+  }
+}
+
+// OutputMeshNodesTecplot
+/* Outputs the coordinates of the interior mesh nodes */
+template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
+void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
+  OutputMeshCellsTecplot(std::ofstream &output_file,const bool Title ) const
+{
+  output_file << setprecision(14);
+  int i,j,k, _dummy_parameter_(0);
+
+  switch(SpaceDimension){
+  case OneD:
+    if (Title) {
+      output_file << "VARIABLES = \"x\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+    }
+    output_file << "ZONE T = \" Mesh \" \\ \n"
+		<< "I=" << N_XYZ[0] << "\n"
+		<< "F = POINT \n";
+    
+    for(i=iStart(); i<=iEnd()+1; ++i){
+      SolnPtr[0][0][i].OutputMeshCellsTecplot(output_file,i,_dummy_parameter_,_dummy_parameter_);
+    }
+    break;
+
+  case TwoD:
+    if (Title) {
+      output_file << "VARIABLES = \"x\" \\ \n"
+		  << "\"y\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+    }
+    output_file << "ZONE T = \" Mesh \" \\ \n"
+		<< "I=" << N_XYZ[0] << "\n"
+		<< "J=" << N_XYZ[1] << "\n"
+		<< "F = POINT \n";
+
+    for(j=jStart(); j<=jEnd()+1; ++j)
+      for(i=iStart(); i<=iEnd()+1; ++i){
+	SolnPtr[0][j][i].OutputMeshCellsTecplot(output_file,i,j,_dummy_parameter_);
+      }
+    break;
+
+  case ThreeD:
+    if (Title) {
+      output_file << "VARIABLES = \"x\" \\ \n"
+		  << "\"y\" \\ \n"
+		  << "\"z\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+    }
+    output_file << "ZONE T = \" Mesh \" \\ \n"
+		<< "I=" << N_XYZ[0] << "\n"
+		<< "J=" << N_XYZ[1] << "\n"
+		<< "K=" << N_XYZ[2] << "\n"
+		<< "F = POINT \n";
+
+    for(k=kStart()-Nghost; k<=kEnd()+Nghost; ++k)
+      for(j=jStart()-Nghost; j<=jEnd()+Nghost; ++j)
+	for(i=iStart()-Nghost; i<=iEnd()+Nghost; ++i){
+	  SolnPtr[k][j][i].OutputMeshCellsTecplot(output_file,i,j,k);
 	}
 
     break; 
@@ -2269,7 +2338,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructS
 	  /* Make Stencil */
 	  MakeReconstructionStencil(SolnPtr[0][0][0].CellRings(),i,j,k,i_index,j_index,k_index);
 	  /* Solve reconstruction for the current cell */
-	  kExact_Reconstruction(*this,i_index,j_index,k_index,StencilSize);	  
+	  kExact_Reconstruction(*this,i_index,j_index,k_index,StencilSize);
 	  ++FinishedCell;
 	  Print_Progress(FinishedCell,ProgressFrequency);
 	}//endfor(k)
@@ -3017,6 +3086,57 @@ void Output_Mesh_Nodes_Tecplot(SolutionBlock & SolnBlk, InputParameters &IP)
 
   // Write solution data
   SolnBlk.OutputMeshNodesTecplot(output_file);
+
+  // Close the output data file.
+  output_file << setprecision(6);  
+  output_file.close();
+}
+
+template<typename SolutionBlock, typename InputParameters>
+void Output_Mesh_Cells_Tecplot(SolutionBlock & SolnBlk, InputParameters &IP)
+{
+  /* open the stream for outputing */
+
+  int i;
+  char prefix[256], output_file_name[256], output_directory[30];
+  ofstream output_file;    
+
+  // Determine prefix of output data file names.
+  
+  i = 0;
+  while (1) {
+    if (IP.Output_File_Name[i] == ' ' ||
+	IP.Output_File_Name[i] == '.') break;
+    prefix[i]=IP.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(IP.Output_File_Name) ) break;
+  } // endwhile
+  prefix[i] = '\0';
+  
+  // Determine output data file name.
+  strcpy(output_file_name, prefix);
+  strcat(output_file_name, "_mesh_cells.dat");
+  
+  // Open the output data file.
+  output_file.open(output_file_name, ios::out);
+
+  if (output_file.bad()) {
+    cout << "\n Reconstruct" << IP.IP_SpaceDimension << "D ERROR:" 
+	 << " Unable to open Reconstruct" << IP.IP_SpaceDimension << "D output data file(s) for mesh geometry.\n";
+    cout.flush();
+  }
+
+  cout << "\n Writing Reconstruction mesh nodes to output data file(s): ";
+
+  // Write the name of the file to the console
+  std::cout << output_file_name << std::endl;
+  
+  // Write the title.
+  output_file << setprecision(14);
+  output_file << "TITLE = \"" << " Mesh cells for grid " << IP.Grid_Type << "\"\n";
+
+  // Write solution data
+  SolnBlk.OutputMeshCellsTecplot(output_file);
 
   // Close the output data file.
   output_file << setprecision(6);  
