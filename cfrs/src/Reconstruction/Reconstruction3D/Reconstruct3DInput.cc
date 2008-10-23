@@ -164,6 +164,8 @@ ostream &operator << (ostream &out_file,
              << IP.NCells_Jdir;
     out_file << "\n  -> Number of Cells k-direction: " 
              << IP.NCells_Kdir;
+    out_file << "\n  -> Number of Ghost Cells in each direction: " 
+             << IP.Nghost_Cells;
     out_file << "\n  -> Number of SubGrid Points in X-dir: "
 	     << IP.NSubGrid_Points_Idir;
     out_file << "\n  -> Number of SubGrid Points in Y-dir: "
@@ -438,12 +440,7 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
 		 << " higher than 7.\a";
 	    IP.Message_Number++;
 	} // endif
-
-
-	/********** Set the required number of Ghost cells *************/
-	IP.Nghost_Cells = 2;
-        /* *************************************************************/
-
+   
     } else if (strcmp(IP.Next_Control_Parameter, "Grid_Type") == 0) {
        i_command = 3;
        Get_Next_Input_Control_Parameter(IP);
@@ -460,76 +457,6 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
           IP.Box_Height = ONE;
 	  IP.Box_Length = ONE;
        } /* endif */
-
-       /* ********** 2D Grid Types ******************************
-
-       else if (strcmp(IP.Grid_Type, "Square") == 0) {
-          IP.i_Grid = GRID_SQUARE;
-          IP.Box_Width = ONE;
-          IP.Box_Height = ONE;
-       } else if (strcmp(IP.Grid_Type, "Rectangular_Box") == 0) {
-          IP.i_Grid = GRID_RECTANGULAR_BOX;
-          IP.Box_Width = ONE;
-          IP.Box_Height = ONE;
-       } else if (strcmp(IP.Grid_Type, "Flat_Plate") == 0) {
-          IP.i_Grid = GRID_FLAT_PLATE;
-          IP.Plate_Length = ONE;
-       } else if (strcmp(IP.Grid_Type, "Pipe") == 0) {
-          IP.i_Grid = GRID_PIPE;
-          IP.Pipe_Length = ONE;
-          IP.Pipe_Radius = HALF;
-       } else if (strcmp(IP.Grid_Type, "Blunt_Body") == 0) {
-          IP.i_Grid = GRID_BLUNT_BODY;
-          IP.Blunt_Body_Radius = ONE;
-          IP.Blunt_Body_Mach_Number = TWO;
-       } else if (strcmp(IP.Grid_Type, "Rocket_Motor") == 0) {
-          IP.i_Grid = GRID_ROCKET_MOTOR;
-          IP.Grain_Length = 0.835;
-          IP.Grain_Radius = 0.020;
-          IP.Grain_To_Throat_Length = 0.05;
-          IP.Nozzle_Length = 0.150;
-          IP.Nozzle_Radius_Exit = 0.030;
-          IP.Nozzle_Radius_Throat = 0.010;
-       } else if (strcmp(IP.Grid_Type, "Rocket_Cold_Flow") == 0) {
-	  IP.i_Grid = GRID_ROCKET_MOTOR_COLD_FLOW ;
-       } else if (strcmp(IP.Grid_Type, "Circular_Cylinder") == 0) {
-          IP.i_Grid = GRID_CIRCULAR_CYLINDER;
-          IP.Cylinder_Radius = ONE;
-       } else if (strcmp(IP.Grid_Type, "Ellipse") == 0) {
-          IP.i_Grid = GRID_ELLIPSE;
-          IP.Ellipse_Length_X_Axis = TWO;
-	  IP.Ellipse_Length_Y_Axis = HALF;
-       } else if (strcmp(IP.Grid_Type, "NACA_Aerofoil") == 0) {
-          IP.i_Grid = GRID_NACA_AEROFOIL;
-          IP.Chord_Length = ONE;
-          strcpy(IP.NACA_Aerofoil_Type, "0012");
-       } else if (strcmp(IP.Grid_Type, "Free_Jet") == 0) {
-          IP.i_Grid = GRID_FREE_JET;
-          IP.Orifice_Radius = ONE;
-       } else if (strcmp(IP.Grid_Type, "Wedge") == 0) {
-	  IP.i_Grid = GRID_WEDGE;
-	  IP.Wedge_Angle = 25.0;
-	  IP.Wedge_Length = HALF;
-       } else if (strcmp(IP.Grid_Type, "Unsteady_Blunt_Body") == 0) {
-	  IP.i_Grid = GRID_UNSTEADY_BLUNT_BODY;
-	  IP.Blunt_Body_Radius = ONE;
-	  IP.Blunt_Body_Mach_Number = TWO;
-       } else if (strcmp(IP.Grid_Type,"Ringleb_Flow") == 0) {
-          IP.i_Grid = GRID_RINGLEB_FLOW;
-       } else if (strcmp(IP.Grid_Type,"Bump_Channel_Flow") == 0) {
-          IP.i_Grid = GRID_BUMP_CHANNEL_FLOW;
-       } else if (strcmp(IP.Grid_Type, "ICEMCFD") == 0) {
-          IP.i_Grid = GRID_ICEMCFD;
-       } else if (strcmp(IP.Grid_Type, "Read_From_Definition_File") == 0) {
-          IP.i_Grid = GRID_READ_FROM_DEFINITION_FILE;
-       } else if (strcmp(IP.Grid_Type, "Read_From_Data_File") == 0) {
-          IP.i_Grid = GRID_READ_FROM_GRID_DATA_FILE;
-       } else {
-          IP.i_Grid = GRID_SQUARE;
-          IP.Box_Width = ONE;
-          IP.Box_Height = ONE;
-       } 
-       **************** End of 2D Grid Types ************************* */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Cells_Idir") == 0) {
        i_command = 4;
@@ -552,7 +479,15 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.NCells_Kdir < 1) i_command = INVALID_INPUT_VALUE;
 
-    }else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Idir") == 0) {
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Ghost_Cells") == 0) {
+       i_command = 5;
+       ++IP.Line_Number;
+       IP.Input_File >> IP.Nghost_Cells;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Nghost_Cells < 2) i_command = INVALID_INPUT_VALUE;	
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Idir") == 0) {
        i_command = 6;
        ++IP.Line_Number;
        IP.Input_File >> IP.NBlk_Idir;
@@ -1192,3 +1127,74 @@ int Process_Input_Control_Parameter_File(Reconstruct3D_Input_Parameters
 
     return (error_flag);
 }
+
+
+/* ********** 2D Grid Types ******************************
+
+//   else if (strcmp(IP.Grid_Type, "Square") == 0) {
+//   IP.i_Grid = GRID_SQUARE;
+//   IP.Box_Width = ONE;
+//   IP.Box_Height = ONE;
+//   } else if (strcmp(IP.Grid_Type, "Rectangular_Box") == 0) {
+//   IP.i_Grid = GRID_RECTANGULAR_BOX;
+//   IP.Box_Width = ONE;
+//   IP.Box_Height = ONE;
+//   } else if (strcmp(IP.Grid_Type, "Flat_Plate") == 0) {
+//   IP.i_Grid = GRID_FLAT_PLATE;
+//   IP.Plate_Length = ONE;
+//   } else if (strcmp(IP.Grid_Type, "Pipe") == 0) {
+//   IP.i_Grid = GRID_PIPE;
+//   IP.Pipe_Length = ONE;
+//   IP.Pipe_Radius = HALF;
+//   } else if (strcmp(IP.Grid_Type, "Blunt_Body") == 0) {
+//   IP.i_Grid = GRID_BLUNT_BODY;
+//   IP.Blunt_Body_Radius = ONE;
+//   IP.Blunt_Body_Mach_Number = TWO;
+//   } else if (strcmp(IP.Grid_Type, "Rocket_Motor") == 0) {
+//   IP.i_Grid = GRID_ROCKET_MOTOR;
+//   IP.Grain_Length = 0.835;
+//   IP.Grain_Radius = 0.020;
+//   IP.Grain_To_Throat_Length = 0.05;
+//   IP.Nozzle_Length = 0.150;
+//   IP.Nozzle_Radius_Exit = 0.030;
+//   IP.Nozzle_Radius_Throat = 0.010;
+//   } else if (strcmp(IP.Grid_Type, "Rocket_Cold_Flow") == 0) {
+//   IP.i_Grid = GRID_ROCKET_MOTOR_COLD_FLOW ;
+//   } else if (strcmp(IP.Grid_Type, "Circular_Cylinder") == 0) {
+//   IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+//   IP.Cylinder_Radius = ONE;
+//   } else if (strcmp(IP.Grid_Type, "Ellipse") == 0) {
+//   IP.i_Grid = GRID_ELLIPSE;
+//   IP.Ellipse_Length_X_Axis = TWO;
+//   IP.Ellipse_Length_Y_Axis = HALF;
+//   } else if (strcmp(IP.Grid_Type, "NACA_Aerofoil") == 0) {
+//   IP.i_Grid = GRID_NACA_AEROFOIL;
+//   IP.Chord_Length = ONE;
+//   strcpy(IP.NACA_Aerofoil_Type, "0012");
+//   } else if (strcmp(IP.Grid_Type, "Free_Jet") == 0) {
+//   IP.i_Grid = GRID_FREE_JET;
+//   IP.Orifice_Radius = ONE;
+//   } else if (strcmp(IP.Grid_Type, "Wedge") == 0) {
+//   IP.i_Grid = GRID_WEDGE;
+//   IP.Wedge_Angle = 25.0;
+//   IP.Wedge_Length = HALF;
+//   } else if (strcmp(IP.Grid_Type, "Unsteady_Blunt_Body") == 0) {
+//   IP.i_Grid = GRID_UNSTEADY_BLUNT_BODY;
+//   IP.Blunt_Body_Radius = ONE;
+//   IP.Blunt_Body_Mach_Number = TWO;
+//   } else if (strcmp(IP.Grid_Type,"Ringleb_Flow") == 0) {
+//   IP.i_Grid = GRID_RINGLEB_FLOW;
+//   } else if (strcmp(IP.Grid_Type,"Bump_Channel_Flow") == 0) {
+//   IP.i_Grid = GRID_BUMP_CHANNEL_FLOW;
+//   } else if (strcmp(IP.Grid_Type, "ICEMCFD") == 0) {
+//   IP.i_Grid = GRID_ICEMCFD;
+//   } else if (strcmp(IP.Grid_Type, "Read_From_Definition_File") == 0) {
+//   IP.i_Grid = GRID_READ_FROM_DEFINITION_FILE;
+//   } else if (strcmp(IP.Grid_Type, "Read_From_Data_File") == 0) {
+//   IP.i_Grid = GRID_READ_FROM_GRID_DATA_FILE;
+//   } else {
+//   IP.i_Grid = GRID_SQUARE;
+//   IP.Box_Width = ONE;
+//   IP.Box_Height = ONE;
+//   } 
+   **************** End of 2D Grid Types ************************* */
