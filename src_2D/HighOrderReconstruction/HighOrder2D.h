@@ -492,6 +492,29 @@ public:
 							 const int &iCell, const int &jCell,
 							 const IndexType & i_index, const IndexType & j_index);
 
+  //! @brief Compute the individually constrained unlimited high-order solution reconstruction of cell (iCell,jCell).
+  template<class Soln_Block_Type>
+  void ComputeIndividuallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
+								     const Soln_State & 
+								     (Soln_Block_Type::*ReconstructedSoln)(const int &,
+													   const int &) const,
+								     const int &iCell, const int &jCell,
+								     const IndexType & i_index, const IndexType & j_index,
+								     const int & ConstrainedGQPs_West,
+								     const int & ConstrainedGQPs_South,
+								     const int & ConstrainedGQPs_East,
+								     const int & ConstrainedGQPs_North);
+
+  //! @brief Compute the unlimited high-order reconstruction of those parameters that are unconstrained in a cell (iCell,jCell). 
+  template<class Soln_Block_Type>
+  void ComputeUnconstrainedUnlimitedSolutionReconstructionInConstrainedCell(Soln_Block_Type &SolnBlk, 
+									    const Soln_State & 
+									    (Soln_Block_Type::*ReconstructedSoln)(const int &,
+														  const int &) const,
+									    const int &iCell, const int &jCell,
+									    const IndexType & i_index, const IndexType & j_index,
+									    const IndexType & ParameterIndex);
+
   //! @brief Compute the constrained unlimited high-order solution reconstruction of cell (iCell,jCell). 
   template<class Soln_Block_Type>
   void HighLevel_ConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
