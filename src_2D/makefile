@@ -88,7 +88,8 @@ SRC_MATH_TESTS = TestFunctions/TestFunctions_1D.cc \
 	         TestFunctions/TestFunctions_2D.cc \
 	         TestFunctions/TestFunctions_3D.cc \
 	         test_LeastSquaresSolvers.cc \
-	         test_NumericalLibrary.cc
+	         test_NumericalLibrary.cc \
+		 test_MathContainers.cc
 SRC_MATH_TESTS := $(addprefix $(MATH_DIR)UnitTests/, $(SRC_MATH_TESTS))
 ifeq ($(TUT_TESTING),ON) 
   SRC_MATH += $(SRC_MATH_TESTS)
