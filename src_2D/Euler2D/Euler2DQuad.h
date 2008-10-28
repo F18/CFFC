@@ -351,6 +351,8 @@ public:
 						const Euler2D_pState & Ref_West);
   //! Set boundary reference states based on user's input data
   void Set_Boundary_Reference_States_Based_On_Input(const Euler2D_Input_Parameters &IP);
+  //! @brief Set physical boundary condition constraints based on the current flow state and the BC_Type
+  void EnsurePhysicalBCsConstraints(const int & BOUNDARY, const int & BndCellIndex);
   //@}
 
   //! @name Residual evaluation functions:

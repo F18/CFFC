@@ -2729,3 +2729,12 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
   }  
 
 }
+
+/*!
+ * Set physical boundary condition constraints based on
+ * the current flow state and the BC_Type.
+ */
+void Euler2D_Quad_Block::EnsurePhysicalBCsConstraints(const int & BOUNDARY, const int & BndCellIndex){
+  // Add logic for enforcing physics of the BCs
+  // (i.e. which variables are constrained (physical BCs) and which are not (numerical BCs) )
+}
