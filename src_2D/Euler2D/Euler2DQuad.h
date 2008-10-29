@@ -3148,5 +3148,6 @@ extern int Euler2DQuadSolver(char *Input_File_Name_ptr,
  */
 #include "Euler2DAccuracyAssessment.h" /* Include 2D accuracy assessment header 
 					  file with specializations for Euler solution. */
+#include "Euler2DHighOrder.h"   /* Include 2D high-order header file with specializations for Euler solution. */
 
 #endif /* _EULER2D_QUAD_INCLUDED  */

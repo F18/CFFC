@@ -1786,7 +1786,7 @@ Set_LHS_MeanValueConservation_Equations(const int &iCell, const int &jCell,
 
 /*!
  * Set the constraints equations in the constrained least-square reconstruction.
- * This constraints are called individual because they are independent of
+ * These constraints are called individual because they are independent of
  * other solution parameters
  * (i.e they don't express any relationship between solution parameters).
  * The starting position for the entries in the LHS and RHS of the linear
@@ -1885,6 +1885,51 @@ Generalized_IndividualConstraints_Equations(Soln_Block_Type & SolnBlk,
 }
 
 
+/*!
+ * Set the constraints equations in the constrained least-square reconstruction.
+ * These constraints are called relational because they put in relationship
+ * several solution parameters.
+ * The starting position for the entries in the LHS and RHS of the linear
+ * system are specified by the (StartRow, StartCol) input parameters.   \n                                
+ *                                                                          
+ * The BCs handled by this subroutine are specific to each solver,
+ * so this subroutine MUST be specialized!
+ *
+ * The data passed:
+ *  GQP      -- Gauss Quadrature Point Locations (i.e. flux calculation points)
+ *  A_GQP    -- The coefficient for the Dirichlet boundary condition at GQP                                                
+ *  B_GQP    -- The coefficient for the Neumann boundary condition at GQP                                                
+ *  F1(GQP)  -- The value of the Dirichlet boundary condition at GQP  
+ *  F2(GQP)  -- The value of the Neumann boundary condition at GQP    
+ *
+ * \param SolnBlk the quad block for which the solution reconstruction is done.
+ * \param iCell i-index of the reconstructed cell
+ * \param jCell j-index of the reconstructed cell
+ * \param Constraints_Loc GQP array
+ * \param Constraints_Normals normal vectors at GQP locations
+ * \param Constraints_BCs provide the boundary condition coefficients (i.e. A_GQP, B_GQP, F1, F2)
+ * \param BC_Type the type of the boundary condition for which the relational constraint is built
+ * \param ParameterIndex related to the indexes of the solution
+ * \param A the LHS assemble matrix 
+ * \param B the RHS assemble matrix
+ *
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::
+Generalized_RelationalConstraints_Equations(Soln_Block_Type & SolnBlk,
+					    const int &iCell, const int &jCell,
+					    Vector2DArray & Constraints_Loc,
+					    Vector2DArray & Constraints_Normals,
+					    BC_Type_Array & Constraints_BCs,
+					    const int & BC_Type,
+					    DenseMatrix & A, DenseMatrix & All_U,
+					    const IndexType & ParameterIndex,
+					    const int &StartRow, const int &StartCol) {  
+  // Specialize this routine!
+}
+
+
 /*! 
  * Compute the unlimited k-exact high-order reconstruction
  * proposed by Barth (1993) combined with equations satisfied 
@@ -1978,8 +2023,12 @@ HighLevel_ConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
     
   } else if (RC_Flag){
     // There are only relational constraints
-    throw runtime_error("HighOrder2D<SOLN_STATE>::HighLevel_ConstrainedUnlimitedSolutionReconstruction() ERROR! Only relational constraints case cannot be handled yet!");
-
+    ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(SolnBlk,
+								  ReconstructedSoln,
+								  iCell, jCell,
+								  i_index, j_index,
+								  constrGQP_W, constrGQP_S,
+								  constrGQP_E, constrGQP_N);
   } else if (IC_Flag){
     // There are only individual constraints
     ComputeIndividuallyConstrainedUnlimitedSolutionReconstruction(SolnBlk,
@@ -1996,6 +2045,336 @@ HighLevel_ConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 							i_index, j_index);
   } // endif
 
+}
+
+
+/*! 
+ * Compute the unlimited k-exact high-order reconstruction
+ * proposed by Barth (1993) combined with exactly satisfied equations 
+ * (i.e. only relational constraints) which account for boundary conditions.
+ * This reconstruction procedure should be used for computational cells
+ * affected by the presence of a boundary condition enforced with relational constraints.
+ * Relational constraints represent exact equations relating multiple solution parameters.
+ * The mean quantity conservation is also enforced as a constraint for all solution parameters.
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::
+ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
+							      const Soln_State & 
+							      (Soln_Block_Type::*ReconstructedSoln)(const int &,
+												    const int &) const,
+							      const int &iCell, const int &jCell,
+							      const IndexType & i_index,
+							      const IndexType & j_index,
+							      const int & ConstrainedGQPs_West,
+							      const int & ConstrainedGQPs_South,
+							      const int & ConstrainedGQPs_East,
+							      const int & ConstrainedGQPs_North) {
+
+  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+  IndexType ParametersWithPhysicalBCs,   //!< List of solution parameters that have pysical BCs (i.e. have relational constraints)
+    ParametersWithNumericalBCs,		 //!< List of solution parameters that have numerical BCs (i.e. no constraints)
+    ParameterIndex(1);			 //!< List of constrained solution parameters (used for current calculations)
+  //! List for West edge of BCtype for each parameter (i.e. physical = true, numerical = false)
+  vector<bool> PhysicalBCs_W(NumberOfVariables()+1,false);
+  //! List for South edge of BCtype for each parameter (i.e. physical = true, numerical = false)
+  vector<bool> PhysicalBCs_S(NumberOfVariables()+1,false);
+  //! List for East edge of BCtype for each parameter (i.e. physical = true, numerical = false)
+  vector<bool> PhysicalBCs_E(NumberOfVariables()+1,false);
+  //! List for North edge of BCtype for each parameter (i.e. physical = true, numerical = false)
+  vector<bool> PhysicalBCs_N(NumberOfVariables()+1,false);
+  int parameter;
+  int TotalNumberOfEquations, TotalNumberOfExactlySatisfiedEquations;
+  int ApproxMeanConservationRow, MeanConservationRow, MeanConservationCol(0);
+  int cell, n, BC_Type;
+  int StencilSize(i_index.size());
+  DenseMatrix X;		//< the matrix of unknowns
+  
+
+  /***********************************************************************************
+   *  STEP 1. DETECT WHICH PARAMETERS NEED RELATIONAL CONSTRAINTS ON EACH CELL EDGE  *
+   **********************************************************************************/
+
+  // West edge
+  if (ConstrainedGQPs_West > 0){
+    // Update list of physical BCs for each parameter. The BCs for the rest of the parameters are numerical.
+    for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+      if (SolnBlk.BC_WestCell(jCell).NumberOfRelationalConstraints(parameter) > 0 ){
+	PhysicalBCs_W[parameter] = true;
+      }
+    }
+  }
+  
+  // South edge
+  if (ConstrainedGQPs_South > 0){
+    // Update list of physical BCs for each parameter. The BCs for the rest of the parameters are numerical.
+    for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+      if (SolnBlk.BC_SouthCell(iCell).NumberOfIndividualConstraints(parameter) > 0 ){
+	PhysicalBCs_S[parameter] = true;
+      }
+    }
+  }
+
+  // East edge
+  if (ConstrainedGQPs_East > 0){
+    // Update list of physical BCs for each parameter. The BCs for the rest of the parameters are numerical.
+    for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+      if (SolnBlk.BC_EastCell(jCell).NumberOfIndividualConstraints(parameter) > 0 ){
+	PhysicalBCs_E[parameter] = true;
+      }
+    }
+  }
+
+  // North edge
+  if (ConstrainedGQPs_North > 0){
+    // Update list of physical BCs for each parameter. The BCs for the rest of the parameters are numerical.
+    for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+      if (SolnBlk.BC_NorthCell(iCell).NumberOfIndividualConstraints(parameter) > 0 ){
+	PhysicalBCs_N[parameter] = true;
+      }
+    }
+  }
+
+  
+  /*****************************************************************************************
+   *  STEP 2. SORT THE PARAMETERS INTO THOSE THAT REQUIRE CONSTRAINTS AND THOSE THAT DON'T *
+   ****************************************************************************************/
+  for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+    if ( PhysicalBCs_W[parameter] || PhysicalBCs_S[parameter] ||
+	 PhysicalBCs_E[parameter] || PhysicalBCs_N[parameter] ){
+      // At least one edge has constraints for this parameter
+      ParametersWithPhysicalBCs.push_back(parameter);
+    } else {
+      // There are no constraints for this parameter.
+      ParametersWithNumericalBCs.push_back(parameter);
+    }
+  }
+
+  /****************************************************************************
+   *  STEP 3. SOLVE THE RECONSTRUCTION FOR PARAMETERS THAT HAVE NUMERICAL BCs *
+   ***************************************************************************/
+  ComputeUnconstrainedUnlimitedSolutionReconstructionInConstrainedCell(SolnBlk, ReconstructedSoln,
+								       iCell, jCell,
+								       i_index, j_index,
+								       ParametersWithNumericalBCs);
+  
+
+  /****************************************************************************************
+   *  STEP 4. SOLVE THE RECONSTRUCTION FOR PARAMETERS THAT HAVE PHYSICAL (RELATIONAL) BCs *
+   ***************************************************************************************/
+
+  // === Reset and initialize the local variables ===
+  // Initialize TotalNumberOfEquations with the number of equations for the k-exact reconstruction of all related variables
+  TotalNumberOfEquations = StencilSize * ParametersWithPhysicalBCs.size();
+  TotalNumberOfExactlySatisfiedEquations = 0;   //< Initialize TotalNumberOfExactlySatisfiedEquations
+
+  Constraints_Loc.clear();
+  Constraints_Normals.clear();
+  Constraints_BCs.clear();
+
+
+  /******** Determine the number of exactly satisfied constraints on each cell edge and fetch the data ************/
+  /****************************************************************************************************************/
+  /* Note: It is assumed that each GQP introduces one relational constraint 
+           that relates all parameters in the ParametersWithPhysicalBCs vector. */
+
+  //=== West edge ===
+  if ( ConstrainedGQPs_West ){
+    // Relational constraints detected on the West face
+    TotalNumberOfExactlySatisfiedEquations += ConstrainedGQPs_West;
+
+    // Fetch the data for imposing the constraints
+    if (Geom->BndWestSplineInfo != NULL){
+      Geom->BndWestSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndWestSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else {
+      Geom->addGaussQuadPointsFaceW(iCell,jCell,Constraints_Loc,ConstrainedGQPs_West);
+      for (n = 0; n < ConstrainedGQPs_West; ++n){
+	Constraints_Normals.push_back(Geom->nfaceW(iCell,jCell));
+      }
+    }
+      
+    Constraints_BCs.push_back(&SolnBlk.BC_WestCell(jCell));
+
+    // store the type of the boundary condition for this cell
+    BC_Type = Geom->BCtypeW[jCell];
+  }
+
+  //=== South edge ===
+  if ( ConstrainedGQPs_South ){
+    // Relational constraints detected on the South face
+    TotalNumberOfExactlySatisfiedEquations += ConstrainedGQPs_South;
+
+    // Fetch the data
+    if (Geom->BndSouthSplineInfo != NULL){
+      Geom->BndSouthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndSouthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else {
+      Geom->addGaussQuadPointsFaceS(iCell,jCell,Constraints_Loc,ConstrainedGQPs_South);
+      for (n = 0; n < ConstrainedGQPs_South; ++n){
+	Constraints_Normals.push_back(Geom->nfaceS(iCell,jCell));
+      }
+    }
+    
+    Constraints_BCs.push_back(&SolnBlk.BC_SouthCell(iCell));
+
+    // store the type of the boundary condition for this cell
+    BC_Type = Geom->BCtypeS[iCell];
+  }
+
+  //=== East edge ===
+  if ( ConstrainedGQPs_East ){
+    // Constraints detected on the East face for the current parameter
+    TotalNumberOfExactlySatisfiedEquations += ConstrainedGQPs_East;
+    
+    // Fetch the data
+    if (Geom->BndEastSplineInfo != NULL){
+      Geom->BndEastSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndEastSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else {
+      Geom->addGaussQuadPointsFaceE(iCell,jCell,Constraints_Loc,ConstrainedGQPs_East);
+      for (n = 0; n < ConstrainedGQPs_East; ++n){
+	Constraints_Normals.push_back(Geom->nfaceE(iCell,jCell));
+      }
+    }
+      
+    Constraints_BCs.push_back(&SolnBlk.BC_EastCell(jCell));
+
+    // store the type of the boundary condition for this cell
+    BC_Type = Geom->BCtypeE[jCell];
+  }
+
+  //=== North edge ===
+  if ( ConstrainedGQPs_North ){
+    // Constraints detected on the North face for the current parameter
+    TotalNumberOfExactlySatisfiedEquations += ConstrainedGQPs_North;
+      
+    // Fetch the data
+    if (Geom->BndNorthSplineInfo != NULL){
+      Geom->BndNorthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndNorthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else {
+      Geom->addGaussQuadPointsFaceN(iCell,jCell,Constraints_Loc,ConstrainedGQPs_North);
+      for (n = 0; n < ConstrainedGQPs_North; ++n){
+	Constraints_Normals.push_back(Geom->nfaceN(iCell,jCell));
+      }
+    }
+      
+    Constraints_BCs.push_back(&SolnBlk.BC_NorthCell(iCell));
+
+    // store the type of the boundary condition for this cell
+    BC_Type = Geom->BCtypeN[iCell];
+  }
+
+
+  /******** Determine dimensions of the least-squares problem and set matrices accordingly ************/
+  /****************************************************************************************************/
+  TotalNumberOfEquations += TotalNumberOfExactlySatisfiedEquations;
+    
+  A_Assembled.newsize(TotalNumberOfEquations, ParametersWithPhysicalBCs.size()*NumberOfTaylorDerivatives());
+  A_Assembled.zero();
+  All_U_Assembled.newsize(TotalNumberOfEquations, 1); // There is only ONE column
+  All_U_Assembled.zero();
+  X.newsize(ParametersWithPhysicalBCs.size()*NumberOfTaylorDerivatives(), 1); // There is only ONE column
+
+  /************ Generate exactly satisfied relational constraints for COUPLED variables *************/
+  /************ Only one type of relational constraint can be accommodated at a time *****************/
+  Generalized_RelationalConstraints_Equations(SolnBlk,
+  					      iCell, jCell,
+  					      Constraints_Loc,
+  					      Constraints_Normals,
+  					      Constraints_BCs,
+					      BC_Type,
+  					      A_Assembled, All_U_Assembled,
+  					      ParametersWithPhysicalBCs,
+  					      0, 0);
+
+  // TotalNumberOfExactlySatisfiedEquations is currently equal to the number of relational constraints!
+  // Each constrained 'parameter' will add one extra exactly satisfied equation (i.e. mean conservation)
+  
+  // Initialize entry indexes
+  MeanConservationRow = TotalNumberOfExactlySatisfiedEquations;
+  
+  // Set final TotalNumberOfExactlySatisfiedEquations
+  TotalNumberOfExactlySatisfiedEquations += ParametersWithPhysicalBCs.size();
+  
+  ApproxMeanConservationRow = TotalNumberOfExactlySatisfiedEquations;
+
+
+  /** Generate the exact and approximate mean conservation equations for each parameter in the ParametersWithPhysicalBCs **/
+  /************************************************************************************************************************/
+  if ( IsPseudoInverseAllocated() && IsPseudoInversePreComputed() ){  
+
+    // Copy the matrix (i.e. the least-squares equations + the mean conservation)
+    // into the assembled matrix for each parameter.
+    for (parameter = 0; parameter < ParametersWithPhysicalBCs.size(); ++parameter){
+
+      // ===== Copy mean conservation equation and set RHS =====
+      A_Assembled.incorporate_matrix(MeanConservationRow,MeanConservationCol,
+				     Cell_LHS_Inv(iCell,jCell),
+				     0, StencilSize-1); //< copy only the first row in the Cell_LHS_Inv matrix
+      All_U_Assembled(MeanConservationRow,0) = (SolnBlk.*ReconstructedSoln)(i_index[iCell],
+									    j_index[jCell])[ParametersWithPhysicalBCs[parameter]];
+      
+      // ===== Copy approximate mean conservation equations and set RHS =====
+      A_Assembled.incorporate_matrix(ApproxMeanConservationRow,MeanConservationCol,
+				     Cell_LHS_Inv(iCell,jCell),
+				     1); //< skip only the first row in the Cell_LHS_Inv matrix
+      
+      // Form the RHS for the least-squares problem
+      for (cell=1; cell<StencilSize; ++cell) { //for each cell in the stencil
+	All_U_Assembled(ApproxMeanConservationRow + cell-1, 0) = 
+	  ( GeomWeightValue(iCell,jCell,cell)*(SolnBlk.*ReconstructedSoln)(i_index[cell],
+									   j_index[cell])[ParametersWithPhysicalBCs[parameter]] );
+      } //endfor (cell)
+
+      // Update entry indexes for the next parameter
+      ++MeanConservationRow;
+      MeanConservationCol += NumberOfTaylorDerivatives();
+      ApproxMeanConservationRow += StencilSize - 1;
+    }
+
+  } else {
+
+    for (parameter = 0; parameter < ParametersWithPhysicalBCs.size(); ++parameter){
+      
+      ParameterIndex[0] = ParametersWithPhysicalBCs[parameter];
+    
+      // Set the mean conservation equation for the current parameter
+      Set_MeanValueConservation_Equations(SolnBlk,
+					  ReconstructedSoln,
+					  iCell,jCell,
+					  i_index, j_index,
+					  A_Assembled, All_U_Assembled,
+					  ParameterIndex,
+					  MeanConservationRow,
+					  ApproxMeanConservationRow, MeanConservationCol);
+
+      // Update entry indexes for the next parameter
+      ++MeanConservationRow;
+      MeanConservationCol += NumberOfTaylorDerivatives();
+      ApproxMeanConservationRow += StencilSize - 1;
+    }
+
+  } // endif
+
+
+  /** Obtain solution to the linear equality-constrained least-square problem ********/
+  /***********************************************************************************/
+  Solve_Constrained_LS_Householder(A_Assembled,
+				   All_U_Assembled,
+				   X,
+				   TotalNumberOfExactlySatisfiedEquations);
+  
+  /** Update the coefficients D (derivatives) ********/
+  /***************************************************/
+  for (parameter = 0; parameter < ParametersWithPhysicalBCs.size(); ++parameter){
+    MeanConservationRow = parameter*NumberOfTaylorDerivatives(); // < calculate the shift in X vector
+    for (n=0; n<=CellTaylorDeriv(iCell,jCell).LastElem(); ++n){
+      CellTaylorDerivState(iCell,jCell,n)[ParametersWithPhysicalBCs[parameter]] = X(MeanConservationRow + n,0);
+    }//endfor
+  }//endfor
 }
 
 
