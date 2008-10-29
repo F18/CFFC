@@ -21,6 +21,9 @@ namespace tut
     // Local variables
   public:
 
+    // Define some working matrices
+    DenseMatrix A, B, Result;
+
     // Constructor
     Data_DenseMatrix();
 
@@ -36,6 +39,29 @@ namespace tut
        otherwise the framework might not find the input and output files. */
     
     set_test_suite_path("/Math/UnitTests");
+
+    // Initialize A
+    A.newsize(6,5);
+    A(0,0)= -3.300330e-01; A(0,1)=  5.000000e-01; A(0,2)= -5.190278e-01;
+    A(0,3)=  4.037896e-01; A(0,4)= -2.534612e-01;
+    A(1,0)= -4.950495e-01; A(1,1)=  5.000000e-01; A(1,2)= -3.577083e-01;
+    A(1,3)=  1.912687e-01; A(1,4)= -8.326478e-02;
+    A(2,0)= -9.900990e-01; A(2,1)=  5.000000e-01; A(2,2)= -2.104167e-01;
+    A(2,3)=  6.375625e-02; A(2,4)= -1.627732e-02;
+    A(3,0)=  9.900990e-01; A(3,1)=  5.000000e-01; A(3,2)=  2.104167e-01;
+    A(3,3)=  6.375625e-02; A(3,4)=  1.627732e-02;
+    A(4,0)=  4.950495e-01; A(4,1)=  5.000000e-01; A(4,2)=  3.577083e-01;
+    A(4,3)=  1.912687e-01; A(4,4)=  8.326478e-02;
+    A(5,0)=  2.501813e-01; A(5,1)=  3.790247e-01; A(5,2)=  3.934487e-01;
+    A(5,3)=  3.060924e-01; A(5,4)= 1.921361e-01;
+    
+    // Initialize B
+    B.newsize(4,3);
+    B(0,0)= -2.093656e-01; B(0,1)= 2.114593e-01; B(0,2)= -1.512815e-01;
+    B(1,0)= -9.900990e-01; B(1,1)= 5.000000e-01; B(1,2)= -2.104167e-01;
+    B(2,0)=  9.900990e-01; B(2,1)= 5.000000e-01; B(2,2)=  2.104167e-01;
+    B(3,0)=  4.950495e-01; B(3,1)= 5.000000e-01; B(3,2)= 3.577083e-01;
+
   }
 
 
@@ -85,28 +111,6 @@ namespace tut
   {
     set_test_name("Incorporate matrix member function");
    
-    // Data
-    DenseMatrix A(6,5), B(4,3), Result;
-
-    // Initialize test matrices
-    A(0,0)= -3.300330e-01; A(0,1)=  5.000000e-01; A(0,2)= -5.190278e-01;
-    A(0,3)=  4.037896e-01; A(0,4)= -2.534612e-01;
-    A(1,0)= -4.950495e-01; A(1,1)=  5.000000e-01; A(1,2)= -3.577083e-01;
-    A(1,3)=  1.912687e-01; A(1,4)= -8.326478e-02;
-    A(2,0)= -9.900990e-01; A(2,1)=  5.000000e-01; A(2,2)= -2.104167e-01;
-    A(2,3)=  6.375625e-02; A(2,4)= -1.627732e-02;
-    A(3,0)=  9.900990e-01; A(3,1)=  5.000000e-01; A(3,2)=  2.104167e-01;
-    A(3,3)=  6.375625e-02; A(3,4)=  1.627732e-02;
-    A(4,0)=  4.950495e-01; A(4,1)=  5.000000e-01; A(4,2)=  3.577083e-01;
-    A(4,3)=  1.912687e-01; A(4,4)=  8.326478e-02;
-    A(5,0)=  2.501813e-01; A(5,1)=  3.790247e-01; A(5,2)=  3.934487e-01;
-    A(5,3)=  3.060924e-01; A(5,4)= 1.921361e-01;
-
-    B(0,0)= -2.093656e-01; B(0,1)= 2.114593e-01; B(0,2)= -1.512815e-01;
-    B(1,0)= -9.900990e-01; B(1,1)= 5.000000e-01; B(1,2)= -2.104167e-01;
-    B(2,0)=  9.900990e-01; B(2,1)= 5.000000e-01; B(2,2)=  2.104167e-01;
-    B(3,0)=  4.950495e-01; B(3,1)= 5.000000e-01; B(3,2)= 3.577083e-01;
-
     // Generate Result
     Result = A;
 
@@ -130,28 +134,6 @@ namespace tut
   {
     set_test_name("Incorporate matrix member function");
    
-    // Data
-    DenseMatrix A(6,5), B(4,3), Result;
-
-    // Initialize test matrices
-    A(0,0)= -3.300330e-01; A(0,1)=  5.000000e-01; A(0,2)= -5.190278e-01;
-    A(0,3)=  4.037896e-01; A(0,4)= -2.534612e-01;
-    A(1,0)= -4.950495e-01; A(1,1)=  5.000000e-01; A(1,2)= -3.577083e-01;
-    A(1,3)=  1.912687e-01; A(1,4)= -8.326478e-02;
-    A(2,0)= -9.900990e-01; A(2,1)=  5.000000e-01; A(2,2)= -2.104167e-01;
-    A(2,3)=  6.375625e-02; A(2,4)= -1.627732e-02;
-    A(3,0)=  9.900990e-01; A(3,1)=  5.000000e-01; A(3,2)=  2.104167e-01;
-    A(3,3)=  6.375625e-02; A(3,4)=  1.627732e-02;
-    A(4,0)=  4.950495e-01; A(4,1)=  5.000000e-01; A(4,2)=  3.577083e-01;
-    A(4,3)=  1.912687e-01; A(4,4)=  8.326478e-02;
-    A(5,0)=  2.501813e-01; A(5,1)=  3.790247e-01; A(5,2)=  3.934487e-01;
-    A(5,3)=  3.060924e-01; A(5,4)= 1.921361e-01;
-
-    B(0,0)= -2.093656e-01; B(0,1)= 2.114593e-01; B(0,2)= -1.512815e-01;
-    B(1,0)= -9.900990e-01; B(1,1)= 5.000000e-01; B(1,2)= -2.104167e-01;
-    B(2,0)=  9.900990e-01; B(2,1)= 5.000000e-01; B(2,2)=  2.104167e-01;
-    B(3,0)=  4.950495e-01; B(3,1)= 5.000000e-01; B(3,2)= 3.577083e-01;
-
     // Generate Result
     Result = A;
 
@@ -168,6 +150,68 @@ namespace tut
 
   }
 
+  /* Test 3:*/
+  template<>
+  template<>
+  void DenseMatrix_object::test<3>()
+  {
+    set_test_name("Incorporate matrix member function with skipped rows");
+   
+    // Generate Result
+    Result = A;
+
+    Result(2,1)=  9.900990e-01; Result(2,2)= 5.000000e-01; Result(2,3)=  2.104167e-01;
+    Result(3,1)=  4.950495e-01; Result(3,2)= 5.000000e-01; Result(3,3)= 3.577083e-01;
+
+    // Incorporate matrix B into A
+    A.incorporate_matrix(2,1,B,2);
+
+    // === Check 
+    ensure("Compare to solution", A == Result);
+
+  }
+
+  /* Test 4:*/
+  template<>
+  template<>
+  void DenseMatrix_object::test<4>()
+  {
+    set_test_name("Incorporate matrix member function with skipped rows forward and backward");
+
+    // Generate Result
+    Result = A;
+
+    Result(2,1)= -9.900990e-01; Result(2,2)= 5.000000e-01; Result(2,3)= -2.104167e-01;
+    Result(3,1)=  9.900990e-01; Result(3,2)= 5.000000e-01; Result(3,3)=  2.104167e-01;
+
+    // Incorporate matrix B into A
+    A.incorporate_matrix(2,1,B,1,1);
+
+    // === Check 
+    ensure("Compare to solution", A == Result);
+
+  }
+
+  /* Test 5:*/
+  template<>
+  template<>
+  void DenseMatrix_object::test<5>()
+  {
+    set_test_name("Incorporate matrix member function with skipped rows forward and backward II");
+
+    // Generate Result
+    Result = A;
+
+    Result(4,0)= -9.900990e-01; Result(4,1)= 5.000000e-01; Result(4,2)= -2.104167e-01;
+    Result(5,0)=  9.900990e-01; Result(5,1)= 5.000000e-01; Result(5,2)=  2.104167e-01;
+
+    // Incorporate matrix B into A
+    A.incorporate_matrix(4,0,B,1,1);
+
+    // === Check 
+    ensure("Compare to solution", A == Result);
+
+  }
 
 }
 

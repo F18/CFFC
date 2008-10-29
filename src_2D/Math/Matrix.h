@@ -855,7 +855,9 @@ class DenseMatrix: public MV_ColMat_double{
     
     /*! @brief Make matrix M part of the current matrix starting from (StartRow,StartCol) element */
     void incorporate_matrix(const int & StartRow, const int & StartCol, 
-			    const DenseMatrix &M);
+			    const DenseMatrix &M,
+			    const int & SkipRowsForward = 0,
+			    const int & SkipRowsBackward = 0);
 
     /* Assignment operator. */
     // DenseMatrix operator = (const DenseMatrix &M1);
@@ -1470,9 +1472,16 @@ inline double trace(const TriDiagonalMatrix &M) {
  *
  * \param StartRow the starting matrix row for filling with the elements of M (starts from 0)
  * \param StartCol the starting matrix column for filling with the elements of M (starts from 0)
+ * \param M the matrix which is incorporated
+ * \param SkipRowsForward the number of rows (starting from the first one) 
+ *                        that are skipped when copying M into the current one
+ * \param SkipRowsBackward the number of rows (starting from the last one backwards) 
+ *                         that are skipped when copying M into the current one
  */
 inline void DenseMatrix::incorporate_matrix(const int & StartRow, const int & StartCol, 
-					    const DenseMatrix &M){
+					    const DenseMatrix &M,
+					    const int & SkipRowsForward,
+					    const int & SkipRowsBackward){
 
   // copy the columns of M into the columns of *this
   // this should run much faster than just accessing each (i,j)
@@ -1481,9 +1490,9 @@ inline void DenseMatrix::incorporate_matrix(const int & StartRow, const int & St
   int col, row, index;
 
   for (col = 0; col < M.dim(1); ++col){
-    for (row = 0; row < M.lda(); ++row){
+    for (row = SkipRowsForward; row < M.lda()-SkipRowsBackward; ++row){
       // calculate the index in the current vector
-      index = (StartCol + col)*lda() + StartRow + row;
+      index = (StartCol + col)*lda() + StartRow + row - SkipRowsForward;
       v_[index] = M.v_[M.lda()*col + row];
     }
   }
