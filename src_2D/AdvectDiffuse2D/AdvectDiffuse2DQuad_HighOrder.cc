@@ -6192,3 +6192,12 @@ void AdvectDiffuse2D_Quad_Block::Calculate_Refinement_Criteria_HighOrder(double 
   Refinement_Criterion(0) = refinement_criteria[0];
 
 }
+
+/*!
+ * Set physical boundary condition constraints based on
+ * the current flow state and the BC_Type.
+ */
+void AdvectDiffuse2D_Quad_Block::EnsurePhysicalBCsConstraints(const int & BOUNDARY, const int & BndCellIndex){
+  // Add logic for enforcing physics of the BCs
+  // (i.e. which variables are constrained (physical BCs) and which are not (numerical BCs) )
+}

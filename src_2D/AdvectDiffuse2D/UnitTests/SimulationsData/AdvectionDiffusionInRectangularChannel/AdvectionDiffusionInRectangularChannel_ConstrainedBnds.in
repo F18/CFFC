@@ -1,0 +1,295 @@
+						##############################
+						# AdvectDiffuse2D input file #
+						##############################
+
+#
+# SOLVED PROBLEM: Advection-diffusion problem in a rectangular channel. 
+# 
+
+			###########################
+			# SET EQUATION PARAMETERS #
+			###########################
+
+	#####################
+	#  DEFINE GEOMETRY  #
+	#####################
+Flow_Geometry_Type = 
+		Planar
+Grid_Type =
+	 Rectangular_Box
+Box_Width =
+	3.00
+Box_Height =
+	1.00
+X_Shift = 
+	1.5 0.5
+
+	###############################
+	#  VELOCITY FIELD PARAMETERS  #
+	###############################
+Velocity_Field =
+	 Uniform_Xdir
+Velocity_Xdir =
+	  0.010
+
+
+	################################
+	#  DIFFUSION FIELD PARAMETERS  #
+	################################
+Diffusion_Field = 
+	Constant
+Diffusion_Coefficient =
+	0.01
+
+
+	############################
+	#  SOURCE TERM PARAMETERS  #
+	############################
+Source_Field =
+	No_Source
+
+	#########################
+	# SET INITIAL CONDITION #
+	#########################
+ICs_Type =
+	# Uniform_Interior_Exact_Ghost_Cells
+         Uniform
+        # Exact_Solution
+	# Restart
+
+	####################################
+	#  DEFINE FLUX CALCULATION METHOD  #
+	####################################
+Flux_Calculation_Method_Specified =
+        Yes
+Flux_West_Method = 
+        Constrained_Reconstruction
+Flux_East_Method =
+        Constrained_Reconstruction
+Flux_South_Method =
+        Constrained_Reconstruction
+Flux_North_Method =
+        Constrained_Reconstruction
+
+
+	################################
+	#  DEFINE BOUNDARY CONDITIONS  #
+	################################
+Boundary_Conditions_Specified =
+		 On
+		# Off
+BC_North =
+	# Exact_Solution
+	Dirichlet
+Ref_State_North = 
+	0.0
+
+BC_South =
+	# Exact_Solution
+	Dirichlet
+Ref_State_South = 
+	0.0
+
+BC_East =
+	#Exact_Solution
+	Outflow
+
+BC_West =
+	Inflow
+	# Exact_Solution
+
+Inflow_Field =
+	 Inflow_Sinusoidal_I
+
+
+	###########################
+	#  DEFINE EXACT SOLUTION  #
+	###########################
+Exact_Solution =
+		Advection_Diffusion_In_Rectangular_Channel
+
+XVelocity_Coeff =
+		0.010
+Diffusion_Coeff =
+		0.01
+Channel_Length_Coeff =
+		    3.0
+
+			###########################################
+			# SET NUMERICAL DISCRETIZATION PARAMETERS #
+			##########################################
+
+
+	#########################
+	#  SET MESH PARAMETERS  #
+	#########################
+
+Number_of_Cells_Idir = 
+	40
+Number_of_Cells_Jdir =
+	20
+Number_of_Blocks_Idir = 
+	1
+Number_of_Blocks_Jdir =
+	1
+Number_of_Ghost_Cells =
+	4
+Number_of_Blocks_Per_Processor =
+	100
+Iteration_Disturb_Mesh =
+        0
+
+	###########################################
+	#  SET SPATIAL DISCRETIZATION PARAMETERS  #
+	###########################################
+Reconstruction_Type =
+	CENO
+
+Space_Accuracy =
+        4
+
+Limiter_Type = 
+	# One
+	# Barth_Jespersen
+	 Venkatakrishnan
+	# Zero
+
+CENO_Execution_Mode =
+         Speed_Efficient
+        # Memory_Efficient
+CENO_Padding =
+         No
+CENO_Smoothness_Indicator =
+         Use_First_Neighbours
+CENO_Use_Geom_Weighting_For_Smoothness_Analysis =
+         No
+CENO_Square_Geom_Weighting =
+         No
+CENO_Apply_Geom_Weighting =
+         Yes
+CENO_Absolute_Epsilon =
+         5.0e-5
+CENO_Relative_Epsilon =
+         5.0e-4
+Ref_State_Normalization = 
+         1.0
+CENO_Drop_Order =
+         Yes
+CENO_Additional_Approximate_Constraints =
+         No
+CENO_Tolerance =
+         4000
+
+	################################
+	# SET TIME STEPPING PARAMETERS #
+	################################
+Time_Integration_Type =
+         Explicit_Runge_Kutta
+	# Explicit_Predictor_Corrector
+	# Multigrid
+
+Time_Accurate = 
+		0
+
+Local_Time_Stepping =
+		1
+CFL_Number =
+	0.4
+
+	# ====   Control time from this parameter  =====
+Maximum_Number_of_Time_Steps =
+	400
+
+Time_Max = 
+	1.00
+
+Full_Multigrid =
+	50
+
+Multigrid_Smoothing_Type =
+	Explicit_Predictor_Corrector
+
+# MULTIGRID PARAMETERS:
+Multigrid_Levels =
+    4
+Multigrid_Cycle_Type =
+    V
+Multigrid_Number_of_Smooths_on_Finest_Level =
+    2
+Multigrid_Number_of_Pre_Smooths =
+    2
+Multigrid_Number_of_Post_Smooths =
+    2
+Multigrid_Number_of_Smooths_on_Coarsest_Level =
+    4
+
+Maximum_Number_of_NKS_Iterations = 
+    0
+
+
+	######################
+	# SET AMR PARAMETERS #
+	######################
+
+# INITIAL AMR PARAMETERS:
+Number_of_Initial_Mesh_Refinements =
+    0
+Number_of_Uniform_Mesh_Refinements =
+    0
+Number_of_Boundary_Mesh_Refinements =
+    0
+
+# UNSTEADY AMR PARAMETERS:
+AMR =
+     OFF
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+    5
+Minimum_Refinement_Level =
+    2
+Threshold_for_Refinement =
+    0.80
+Threshold_for_Coarsening =
+    0.50
+AMR_Frequency =
+    500
+
+	#########################
+	# SET OUTPUT PARAMETERS #
+	#########################
+Output_File_Name = 
+    AdvectDiffuse2D/UnitTests/SimulationsData/AdvectionDiffusionInRectangularChannel/Current_ConstrainedBnds_AdvectionDiffusionInRectangularChannel
+
+Restart_Solution_Save_Frequency = 
+	2500
+
+	#########################
+	#  ACCURACY ASSESSMENT  #
+	#########################
+Accuracy_Assessment_Exact_Digits =
+         8
+
+
+	#######################
+	#   Execute program   #
+	#######################
+Execute
+
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+#Write_Restart
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+##Write_Mesh_Definition
+#Print_Accuracy
+Write_Accuracy_To_File
+
+#######################
+# Terminate program
+#######################
+Terminate

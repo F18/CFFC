@@ -326,7 +326,8 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
 
     // allocate BC memory for each flux calculation point
     for (i=ICl; i<=ICu; ++i){
-      BC_NorthCell(i).allocate(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu));
+      BC_NorthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu),
+					  Grid.BCtypeN[i]);
     }
 
   } else if ( HO_UoN != NULL){
@@ -347,7 +348,8 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
     
     // allocate BC memory for each flux calculation point
     for (i=ICl; i<=ICu; ++i){
-      BC_SouthCell(i).allocate(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl));
+      BC_SouthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl),
+					  Grid.BCtypeS[i]);
     }    
   } else if (HO_UoS != NULL){
     // deallocate memory
@@ -367,7 +369,8 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
 
     // allocate BC memory for each flux calculation point
     for (j=JCl; j<=JCu; ++j){
-      BC_EastCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j));
+      BC_EastCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j),
+					 Grid.BCtypeE[j]);
     }
   } else if (HO_UoE != NULL){
     // deallocate memory
@@ -387,7 +390,8 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
 
     // allocate BC memory for each flux calculation point
     for (j=JCl; j<=JCu; ++j){
-      BC_WestCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j));
+      BC_WestCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j),
+					 Grid.BCtypeW[j]);
     }
   } else if (HO_UoW != NULL){
     // deallocate memory

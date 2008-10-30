@@ -217,7 +217,7 @@ void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(void){
       // Calculate pseudo-inverse or part of LHS assemble matrix here
       for (j = StartJ_ConstrWest; j <= EndJ_ConstrWest; ++j){
 	for (i = StartI_ConstrWest; i <= EndI_ConstrWest; ++i){
-	  
+
 	  // Get matrix for the current cell (i.e. pseudo-inverse or LHS)
 	  ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries(WEST,i,j);
 
@@ -861,30 +861,28 @@ void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrai
   // Determine the number of constraints for the current cell and set the error message
   switch(BOUNDARY){
   case NORTH:
-    constrGQP = Geom->NumOfConstrainedGaussQuadPoints_North(iCell,jCell);
-    
     ErrorMsg = "HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries() ERROR! The pseudo-inverse couldn't be computed for a cell affected by the North boundary.";
     break;
 
   case SOUTH:
-    constrGQP = Geom->NumOfConstrainedGaussQuadPoints_South(iCell,jCell);
-
     ErrorMsg = "HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries() ERROR! The pseudo-inverse couldn't be computed for a cell affected by the South boundary.";
     break;
 
   case EAST:
-    constrGQP = Geom->NumOfConstrainedGaussQuadPoints_East(iCell,jCell);
-
     ErrorMsg = "HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries() ERROR! The pseudo-inverse couldn't be computed for a cell affected by the East boundary.";
     break;
 
   case WEST:
-    constrGQP = Geom->NumOfConstrainedGaussQuadPoints_West(iCell,jCell);
-
     ErrorMsg = "HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries() ERROR! The pseudo-inverse couldn't be computed for a cell affected by the West boundary.";
     break;
   }
 
+  // Determine the total number of constrained GQPs for the current cell (i.e. sum on all edges)
+  constrGQP = ( Geom->NumOfConstrainedGaussQuadPoints_West(iCell,jCell) +
+		Geom->NumOfConstrainedGaussQuadPoints_East(iCell,jCell) + 
+		Geom->NumOfConstrainedGaussQuadPoints_South(iCell,jCell) +
+		Geom->NumOfConstrainedGaussQuadPoints_North(iCell,jCell) );
+    
   if (constrGQP == 0){
     /* There are NO constraints for this cell,
        so a pseudo-inverse with the biased stencil may be computed. */
@@ -1256,8 +1254,6 @@ ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
  * affected by the presence of a boundary condition enforced with constrained 
  * reconstruction.
  * The mean quantity conservation is also enforced as a constraint.
- *
- * \note This routine is customized for advection-diffusion state class!
  */
 template<class SOLN_STATE>
 template<class Soln_Block_Type>
@@ -1269,265 +1265,99 @@ ComputeConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 						  const IndexType & i_index,
 						  const IndexType & j_index) {
 
-  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
-  int TotalNumberOfExactlySatisfiedConstraints(0),
-    TotalNumberOfExactlySatisfiedEquations(1), // account for average conservation in cell (iCell,jCell)
-    TotalNumberOfApproximatelySatisfiedConstraints(0),
-    TotalNumberOfApproximatelySatisfiedEquations(i_index.size() - 1); // account for average conservation in neighbour cells
-
-  int Temp, cell, n;
-  int NumGQP(Geom->getNumGQP());
-
-  IndexType ParameterIndex(1,1); //< for advection-diffusion!!!
-
-
-
   // == Check if the reconstruction polynomial is piecewise constant
   if (RecOrder() == 0){
-    // *********  Assign the average solution to D00 ***********
-    CellTaylorDerivState(iCell,jCell,0) = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
     // There is no need to calculate the reconstruction
     return;
   }
 
-  // Reset the memory pools
-  Constraints_Loc.clear();
-  Constraints_Normals.clear();
-  Constraints_BCs.clear();
-  Approx_Constraints_Loc.clear();
-  Approx_Constraints_Normals.clear();
-  Approx_Constraints_BCs.clear();
+  int constrGQP_W, constrGQP_E, constrGQP_N, constrGQP_S; // number of constrained points on each edge
+  bool IC_Flag(false), RC_Flag(false);			  // flags to indicate the type of constraints encountered
+
+  /**********************************************************************************
+   *  STEP 1. DETERMINE THE NUMBER AND TYPE OF CONSTRAINTS THAT NEED TO BE IMPOSED  *
+   *********************************************************************************/
   
-
-  // ========  Determine the number of exactly satisfied constraints and fetch the data  ==========
-  // Check North cell face
-  Temp = Geom->NumOfConstrainedGaussQuadPoints_North(iCell,jCell);
-  if (Temp > 0){
-    // Constraints detected on the North face
-    TotalNumberOfExactlySatisfiedConstraints += Temp;
-
-    // Fetch the data
-    if (Geom->BndNorthSplineInfo != NULL){
-      Geom->BndNorthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndNorthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
-    } else {
-      Geom->addGaussQuadPointsFaceN(iCell,jCell,Constraints_Loc,NumGQP);
-      for (n = 0; n < NumGQP; ++n){
-	Constraints_Normals.push_back(Geom->nfaceN(iCell,jCell));
-      }
+  // Determine the number of constraints for the West boundary.
+  constrGQP_W = SolnBlk.Grid.NumOfConstrainedGaussQuadPoints_West(iCell,jCell);
+  if (constrGQP_W > 0){
+    // Identify what type of constraints are present
+    if ( SolnBlk.BC_WestCell(jCell).IsThereAnyRelationalConstraintRequired() ){
+      RC_Flag = true;
     }
-    
-    Constraints_BCs.push_back(&SolnBlk.BC_NorthCell(iCell));
+    if ( SolnBlk.BC_WestCell(jCell).IsThereAnyIndividualConstraintRequired() ){
+      IC_Flag = true;
+    }
   }
 
-  // Check South cell face
-  Temp = Geom->NumOfConstrainedGaussQuadPoints_South(iCell,jCell);
-  if (Temp > 0){
-    // Constraints detected on the South face
-    TotalNumberOfExactlySatisfiedConstraints += Temp;
-
-    // Fetch the data
-    if (Geom->BndSouthSplineInfo != NULL){
-      Geom->BndSouthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndSouthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
-    } else {
-      Geom->addGaussQuadPointsFaceS(iCell,jCell,Constraints_Loc,NumGQP);
-      for (n = 0; n < NumGQP; ++n){
-	Constraints_Normals.push_back(Geom->nfaceS(iCell,jCell));
-      }
+  // Determine the number of constraints and for the South boundary
+  constrGQP_S = SolnBlk.Grid.NumOfConstrainedGaussQuadPoints_South(iCell,jCell);
+  if (constrGQP_S > 0){
+    // Identify what type of constraints are present
+    if ( SolnBlk.BC_SouthCell(iCell).IsThereAnyRelationalConstraintRequired() ){
+      RC_Flag = true;
     }
-    
-    Constraints_BCs.push_back(&SolnBlk.BC_SouthCell(iCell));
+    if ( SolnBlk.BC_SouthCell(iCell).IsThereAnyIndividualConstraintRequired() ){
+      IC_Flag = true;
+    }
+  }    
+
+  // Determine the number of constraints and for the East boundary
+  constrGQP_E = SolnBlk.Grid.NumOfConstrainedGaussQuadPoints_East(iCell,jCell);
+  if (constrGQP_E > 0){
+    // Identify what type of constraints are present
+    if ( SolnBlk.BC_EastCell(jCell).IsThereAnyRelationalConstraintRequired() ){
+      RC_Flag = true;
+    }
+    if ( SolnBlk.BC_EastCell(jCell).IsThereAnyIndividualConstraintRequired() ){
+      IC_Flag = true;
+    }
   }
+    
+  // Determine the number of constraints and for the North boundary
+  constrGQP_N = SolnBlk.Grid.NumOfConstrainedGaussQuadPoints_North(iCell,jCell);
+  if (constrGQP_N > 0){
+    // Identify what type of constraints are present
+    if ( SolnBlk.BC_NorthCell(iCell).IsThereAnyRelationalConstraintRequired() ){
+      RC_Flag = true;
+    }
+    if ( SolnBlk.BC_NorthCell(iCell).IsThereAnyIndividualConstraintRequired() ){
+      IC_Flag = true;
+    }
+  }
+
+
+  /***********************************************************************************************
+   * STEP 2. PROCEED WITH A DIFFERENT ALGORITHM DEPENDING ON THE TYPE OF ENCOUNTERED CONSTRAINTS *
+   **********************************************************************************************/
   
-  // Check East cell face
-  Temp = Geom->NumOfConstrainedGaussQuadPoints_East(iCell,jCell);
-  if (Temp > 0){
-    // Constraints detected on the East face
-    TotalNumberOfExactlySatisfiedConstraints += Temp;
-
-    // Fetch the data
-    if (Geom->BndEastSplineInfo != NULL){
-      Geom->BndEastSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndEastSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
-    } else {
-      Geom->addGaussQuadPointsFaceE(iCell,jCell,Constraints_Loc,NumGQP);
-      for (n = 0; n < NumGQP; ++n){
-	Constraints_Normals.push_back(Geom->nfaceE(iCell,jCell));
-      }
-    }
+  if (RC_Flag && IC_Flag){
+    // There are both relational and individual constraints
+    throw runtime_error("HighOrder2D<SOLN_STATE>::ComputeConstrainedUnlimitedSolutionReconstruction() ERROR! Both relational and individual constraints case cannot be handled yet!");
     
-    Constraints_BCs.push_back(&SolnBlk.BC_EastCell(jCell));
-  }
-
-  // Check West cell face
-  Temp = Geom->NumOfConstrainedGaussQuadPoints_West(iCell,jCell);
-  if (Temp > 0){
-    // Constraints detected on the West face
-    TotalNumberOfExactlySatisfiedConstraints += Temp;
-
-    // Fetch the data
-    if (Geom->BndWestSplineInfo != NULL){
-      Geom->BndWestSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndWestSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
-    } else {
-      Geom->addGaussQuadPointsFaceW(iCell,jCell,Constraints_Loc,NumGQP);
-      for (n = 0; n < NumGQP; ++n){
-	Constraints_Normals.push_back(Geom->nfaceW(iCell,jCell));
-      }
-    }
-    
-    Constraints_BCs.push_back(&SolnBlk.BC_WestCell(jCell));
-  }
-
-
-  if (CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS == ON && 
-      CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL == OFF) {
-
-    // ======= Determine the number of approximately satisfied constraints and fetch the data ======
-    for (cell = 1; cell < i_index.size(); ++cell){ // for each neighbour cell
-    
-      // Check North neighbour cell face
-      Temp = Geom->NumOfConstrainedGaussQuadPoints_North(i_index[cell],j_index[cell]);
-      if (Temp > 0){
-	// Constraints detected on the North face
-	TotalNumberOfApproximatelySatisfiedConstraints += Temp;
-
-	// Fetch the data
-	if (Geom->BndNorthSplineInfo != NULL){
-	  Geom->BndNorthSplineInfo[i_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
-	  Geom->BndNorthSplineInfo[i_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
-	} else {
-	  Geom->addGaussQuadPointsFaceN(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
-	  for (n = 0; n < NumGQP; ++n){
-	    Approx_Constraints_Normals.push_back(Geom->nfaceN(i_index[cell],j_index[cell]));
-	  }
-	}
-    
-	Approx_Constraints_BCs.push_back(&SolnBlk.BC_NorthCell(i_index[cell]));
-      }
-
-      // Check South neighbour cell face
-      Temp = Geom->NumOfConstrainedGaussQuadPoints_South(i_index[cell],j_index[cell]);
-      if (Temp > 0){
-	// Constraints detected on the South face
-	TotalNumberOfApproximatelySatisfiedConstraints += Temp;
-
-	// Fetch the data
-	if (Geom->BndSouthSplineInfo != NULL){
-	  Geom->BndSouthSplineInfo[i_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
-	  Geom->BndSouthSplineInfo[i_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
-	} else {
-	  Geom->addGaussQuadPointsFaceS(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
-	  for (n = 0; n < NumGQP; ++n){
-	    Approx_Constraints_Normals.push_back(Geom->nfaceS(i_index[cell],j_index[cell]));
-	  }
-	}
-    
-	Approx_Constraints_BCs.push_back(&SolnBlk.BC_SouthCell(i_index[cell]));
-      }
-  
-      // Check East neighbour cell face
-      Temp = Geom->NumOfConstrainedGaussQuadPoints_East(i_index[cell],j_index[cell]);
-      if (Temp > 0){
-	// Constraints detected on the East face
-	TotalNumberOfApproximatelySatisfiedConstraints += Temp;
-
-	// Fetch the data
-	if (Geom->BndEastSplineInfo != NULL){
-	  Geom->BndEastSplineInfo[j_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
-	  Geom->BndEastSplineInfo[j_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
-	} else {
-	  Geom->addGaussQuadPointsFaceE(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
-	  for (n = 0; n < NumGQP; ++n){
-	    Approx_Constraints_Normals.push_back(Geom->nfaceE(i_index[cell],j_index[cell]));
-	  }
-	}
-    
-	Approx_Constraints_BCs.push_back(&SolnBlk.BC_EastCell(j_index[cell]));
-      }
-
-      // Check West neighbour cell face
-      Temp = Geom->NumOfConstrainedGaussQuadPoints_West(i_index[cell],j_index[cell]);
-      if (Temp > 0){
-	// Constraints detected on the West face
-	TotalNumberOfApproximatelySatisfiedConstraints += Temp;
-
-	// Fetch the data
-	if (Geom->BndWestSplineInfo != NULL){
-	  Geom->BndWestSplineInfo[j_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
-	  Geom->BndWestSplineInfo[j_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
-	} else {
-	  Geom->addGaussQuadPointsFaceW(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
-	  for (n = 0; n < NumGQP; ++n){
-	    Approx_Constraints_Normals.push_back(Geom->nfaceW(i_index[cell],j_index[cell]));
-	  }
-	}
-    
-	Approx_Constraints_BCs.push_back(&SolnBlk.BC_WestCell(j_index[cell]));
-      }
-    } // endfor (cell)
-
+  } else if (RC_Flag){
+    // There are only relational constraints
+    ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(SolnBlk,
+								  ReconstructedSoln,
+								  iCell, jCell,
+								  i_index, j_index,
+								  constrGQP_W, constrGQP_S,
+								  constrGQP_E, constrGQP_N);
+  } else if (IC_Flag){
+    // There are only individual constraints
+    ComputeIndividuallyConstrainedUnlimitedSolutionReconstruction(SolnBlk,
+								  ReconstructedSoln,
+								  iCell, jCell,
+								  i_index, j_index,
+								  constrGQP_W, constrGQP_S,
+								  constrGQP_E, constrGQP_N);
+  } else {
+    // There are no constraints
+    ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk,
+							ReconstructedSoln,
+							iCell, jCell,
+							i_index, j_index);
   } // endif
-
-  /******** Determine dimensions of the least-squares problem and set matrices accordingly ************/
-  /****************************************************************************************************/
-  TotalNumberOfExactlySatisfiedEquations += TotalNumberOfExactlySatisfiedConstraints;
-  TotalNumberOfApproximatelySatisfiedEquations += TotalNumberOfApproximatelySatisfiedConstraints;
-
-  A_Assembled.newsize(TotalNumberOfExactlySatisfiedEquations + TotalNumberOfApproximatelySatisfiedEquations,
-		      NumberOfTaylorDerivatives());
-  All_U_Assembled.newsize(TotalNumberOfExactlySatisfiedEquations + TotalNumberOfApproximatelySatisfiedEquations,
-			  NumberOfVariables());
-
-  /************ Generate exactly satisfied individual constraints for UNCOUPLED variables *************/
-  /****************************************************************************************************/
-  Generalized_IndividualConstraints_Equations(SolnBlk,
-					      iCell, jCell,
-					      Constraints_Loc,
-					      Constraints_Normals,
-					      Constraints_BCs,
-					      A_Assembled, All_U_Assembled,
-					      ParameterIndex,
-					      0, 0);
-
-
-  /******** Generate approximately satisfied individual constraints for UNCOUPLED variables ***********/
-  /****************************************************************************************************/
-  Generalized_IndividualConstraints_Equations(SolnBlk,
-					      iCell, jCell,
-					      Approx_Constraints_Loc,
-					      Approx_Constraints_Normals,
-					      Approx_Constraints_BCs,
-					      A_Assembled, All_U_Assembled,
-					      ParameterIndex,
-					      TotalNumberOfExactlySatisfiedEquations, 0);
-
-  /******************** Generate the exact and approximate mean conservation equations ***************************/
-  /***************************************************************************************************************/
-  Set_MeanValueConservation_Equations(SolnBlk,
-				      ReconstructedSoln,
-				      iCell,jCell,
-				      i_index, j_index,
-				      A_Assembled, All_U_Assembled,
-				      ParameterIndex,
-				      TotalNumberOfExactlySatisfiedConstraints,
-				      TotalNumberOfExactlySatisfiedEquations + TotalNumberOfApproximatelySatisfiedConstraints,
-				      0);
-
-
-  /************* Obtain solution to the constrained least-square problem *************/
-  /***********************************************************************************/
-  Solve_Constrained_LS_Householder(A_Assembled,
-				   All_U_Assembled,
-				   X_Assembled,
-				   TotalNumberOfExactlySatisfiedEquations);
-
-  // Update the coefficients D (derivatives)
-  //**************************************************
-  for (n=0; n<=CellTaylorDeriv(iCell,jCell).LastElem(); ++n){
-    CellTaylorDerivState(iCell,jCell,n)[1] = X_Assembled(n,0);
-  }//endfor
 
 }
 
@@ -1927,124 +1757,6 @@ Generalized_RelationalConstraints_Equations(Soln_Block_Type & SolnBlk,
 					    const IndexType & ParameterIndex,
 					    const int &StartRow, const int &StartCol) {  
   // Specialize this routine!
-}
-
-
-/*! 
- * Compute the unlimited k-exact high-order reconstruction
- * proposed by Barth (1993) combined with equations satisfied 
- * exactly (i.e. constraints) which account for boundary conditions.
- * This reconstruction procedure should be used for computational cells
- * affected by the presence of a boundary condition enforced with constrained 
- * reconstruction.
- * The mean quantity conservation is also enforced as a constraint.
- */
-template<class SOLN_STATE>
-template<class Soln_Block_Type>
-void HighOrder2D<SOLN_STATE>::
-HighLevel_ConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
-						     const Soln_State & 
-						     (Soln_Block_Type::*ReconstructedSoln)(const int &,
-											   const int &) const,
-						     const int &iCell, const int &jCell,
-						     const IndexType & i_index,
-						     const IndexType & j_index) {
-
-  
-  // == Check if the reconstruction polynomial is piecewise constant
-  if (RecOrder() == 0){
-    // There is no need to calculate the reconstruction
-    return;
-  }
-
-  int constrGQP_W, constrGQP_E, constrGQP_N, constrGQP_S; // number of constrained points on each edge
-  bool IC_Flag(false), RC_Flag(false);			  // flags to indicate the type of constraints encountered
-
-  /**********************************************************************************
-   *  STEP 1. DETERMINE THE NUMBER AND TYPE OF CONSTRAINTS THAT NEED TO BE IMPOSED  *
-   *********************************************************************************/
-  
-  // Determine the number of constraints for the West boundary.
-  constrGQP_W = SolnBlk.Grid.NumOfConstrainedGaussQuadPoints_West(iCell,jCell);
-  if (constrGQP_W > 0){
-    // Identify what type of constraints are present
-    if ( SolnBlk.BC_WestCell(jCell).IsThereAnyRelationalConstraintRequired() ){
-      RC_Flag = true;
-    }
-    if ( SolnBlk.BC_WestCell(jCell).IsThereAnyIndividualConstraintRequired() ){
-      IC_Flag = true;
-    }
-  }
-
-  // Determine the number of constraints and for the South boundary
-  constrGQP_S = SolnBlk.Grid.NumOfConstrainedGaussQuadPoints_South(iCell,jCell);
-  if (constrGQP_S > 0){
-    // Identify what type of constraints are present
-    if ( SolnBlk.BC_SouthCell(iCell).IsThereAnyRelationalConstraintRequired() ){
-      RC_Flag = true;
-    }
-    if ( SolnBlk.BC_SouthCell(iCell).IsThereAnyIndividualConstraintRequired() ){
-      IC_Flag = true;
-    }
-  }    
-
-  // Determine the number of constraints and for the East boundary
-  constrGQP_E = SolnBlk.Grid.NumOfConstrainedGaussQuadPoints_East(iCell,jCell);
-  if (constrGQP_E > 0){
-    // Identify what type of constraints are present
-    if ( SolnBlk.BC_EastCell(jCell).IsThereAnyRelationalConstraintRequired() ){
-      RC_Flag = true;
-    }
-    if ( SolnBlk.BC_EastCell(jCell).IsThereAnyIndividualConstraintRequired() ){
-      IC_Flag = true;
-    }
-  }
-    
-  // Determine the number of constraints and for the North boundary
-  constrGQP_N = SolnBlk.Grid.NumOfConstrainedGaussQuadPoints_North(iCell,jCell);
-  if (constrGQP_N > 0){
-    // Identify what type of constraints are present
-    if ( SolnBlk.BC_NorthCell(iCell).IsThereAnyRelationalConstraintRequired() ){
-      RC_Flag = true;
-    }
-    if ( SolnBlk.BC_NorthCell(iCell).IsThereAnyIndividualConstraintRequired() ){
-      IC_Flag = true;
-    }
-  }
-
-  
-  /***********************************************************************************************
-   * STEP 2. PROCEED WITH A DIFFERENT ALGORITHM DEPENDING ON THE TYPE OF ENCOUNTERED CONSTRAINTS *
-   **********************************************************************************************/
-  
-  if (RC_Flag && IC_Flag){
-    // There are both relational and individual constraints
-    throw runtime_error("HighOrder2D<SOLN_STATE>::HighLevel_ConstrainedUnlimitedSolutionReconstruction() ERROR! Both relational and individual constraints case cannot be handled yet!");
-    
-  } else if (RC_Flag){
-    // There are only relational constraints
-    ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(SolnBlk,
-								  ReconstructedSoln,
-								  iCell, jCell,
-								  i_index, j_index,
-								  constrGQP_W, constrGQP_S,
-								  constrGQP_E, constrGQP_N);
-  } else if (IC_Flag){
-    // There are only individual constraints
-    ComputeIndividuallyConstrainedUnlimitedSolutionReconstruction(SolnBlk,
-								  ReconstructedSoln,
-								  iCell, jCell,
-								  i_index, j_index,
-								  constrGQP_W, constrGQP_S,
-								  constrGQP_E, constrGQP_N);
-  } else {
-    // There are no constraints
-    ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk,
-							ReconstructedSoln,
-							iCell, jCell,
-							i_index, j_index);
-  } // endif
-
 }
 
 
@@ -2491,6 +2203,7 @@ ComputeIndividuallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &S
     }
   }
 
+
   /****************************************************************************
    *  STEP 3. SOLVE THE RECONSTRUCTION FOR PARAMETERS THAT HAVE NUMERICAL BCs *
    ***************************************************************************/
@@ -2612,7 +2325,7 @@ ComputeIndividuallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &S
 						A_Assembled, All_U_Assembled,
 						ParameterIndex,
 						0, 0);
-    
+
     /******************** Generate the exact and approximate mean conservation equations ***************************/
     /***************************************************************************************************************/
     if ( IsPseudoInverseAllocated() && IsPseudoInversePreComputed() ){
@@ -2693,6 +2406,10 @@ ComputeUnconstrainedUnlimitedSolutionReconstructionInConstrainedCell(Soln_Block_
   int ParameterIndexSize(ParameterIndex.size());
   int n;
 
+  // === Check if there are any variables for which this reconstruction must be performed ===
+  if (ParameterIndexSize == 0){
+    return;
+  }
 
   // Check if the full matrix has been allocated and pre-computed
   if ( IsPseudoInverseAllocated() && IsPseudoInversePreComputed() ){

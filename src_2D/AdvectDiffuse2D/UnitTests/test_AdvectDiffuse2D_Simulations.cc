@@ -282,6 +282,87 @@ namespace tut
     }
   }
 
+
+  /* Test 5:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DSolver_object::test<5>()
+  {
+
+    set_test_name("High-order advection-diffusion in rectangular channel with constrained BCs and speed efficient");
+    set_local_output_path("SimulationsData/AdvectionDiffusionInRectangularChannel/");
+    set_local_input_path("SimulationsData/AdvectionDiffusionInRectangularChannel/");
+
+    RunRegression = ON;
+    
+    // Set input file name
+    Open_Input_File("AdvectionDiffusionInRectangularChannel_ConstrainedBnds.in");
+
+    // call solver
+    Solve_Problem();
+
+    if (RunRegression){
+
+      //===== Check nodal solution
+      MasterFile  = "ConstrainedBnds_AdvectionDiffusionInRectangularChannel_cpu000000.dat";
+      CurrentFile = "Current_ConstrainedBnds_AdvectionDiffusionInRectangularChannel_cpu000000.dat";
+      // check
+      RunRegressionTest("Nodal Solution", CurrentFile, MasterFile, 5.0e-8, 5.0e-8);
+
+      //===== Check cell solution
+      MasterFile  = "ConstrainedBnds_AdvectionDiffusionInRectangularChannel_cells_cpu000000.dat";
+      CurrentFile = "Current_ConstrainedBnds_AdvectionDiffusionInRectangularChannel_cells_cpu000000.dat";
+      // check
+      RunRegressionTest("Cell Solution", CurrentFile, MasterFile, 5.0e-8, 5.0e-8);
+
+      //===== Check solution error norms
+      MasterFile  = "ConstrainedBnds_AdvectionDiffusionInRectangularChannel_ErrorNorms.dat";
+      CurrentFile = "Current_ConstrainedBnds_AdvectionDiffusionInRectangularChannel_ErrorNorms.dat";
+      // check
+      RunRegressionTest("Solution Errors", CurrentFile, MasterFile, 5.0e-8, 5.0e-8);
+    }
+  }
+
+  /* Test 6:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DSolver_object::test<6>()
+  {
+
+    set_test_name("High-order advection-diffusion in rectangular channel with constrained BCs and memory efficient");
+    set_local_output_path("SimulationsData/AdvectionDiffusionInRectangularChannel/");
+    set_local_input_path("SimulationsData/AdvectionDiffusionInRectangularChannel/");
+
+    RunRegression = ON;
+    
+    // Set input file name
+    Open_Input_File("AdvectionDiffusionInRectangularChannel_ConstrainedBnds_MemEfficient.in");
+
+    // call solver
+    Solve_Problem();
+
+    if (RunRegression){
+
+      //===== Check nodal solution
+      MasterFile  = "ConstrainedBnds_AdvectionDiffusionInRectangularChannel_cpu000000.dat";
+      CurrentFile = "Current_ConstrainedBnds_AdvectionDiffusionInRectangularChannel_Mem_cpu000000.dat";
+      // check
+      RunRegressionTest("Nodal Solution", CurrentFile, MasterFile, 5.0e-8, 5.0e-8);
+
+      //===== Check cell solution
+      MasterFile  = "ConstrainedBnds_AdvectionDiffusionInRectangularChannel_cells_cpu000000.dat";
+      CurrentFile = "Current_ConstrainedBnds_AdvectionDiffusionInRectangularChannel_Mem_cells_cpu000000.dat";
+      // check
+      RunRegressionTest("Cell Solution", CurrentFile, MasterFile, 5.0e-8, 5.0e-8);
+
+      //===== Check solution error norms
+      MasterFile  = "ConstrainedBnds_AdvectionDiffusionInRectangularChannel_ErrorNorms.dat";
+      CurrentFile = "Current_ConstrainedBnds_AdvectionDiffusionInRectangularChannel_Mem_ErrorNorms.dat";
+      // check
+      RunRegressionTest("Solution Errors", CurrentFile, MasterFile, 5.0e-8, 5.0e-8);
+    }
+  }
+
 }
 
 
