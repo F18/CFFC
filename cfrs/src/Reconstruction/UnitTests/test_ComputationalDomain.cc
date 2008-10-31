@@ -18,7 +18,6 @@
 #include "include/TypeDefinition.h"
 #include "Reconstruction/ReconstructionHelpers.h"
 
-
 using namespace std;
 
 namespace tut
@@ -59,7 +58,7 @@ namespace tut
        otherwise the framework might not find the input and output files. */
     
     set_test_suite_path("Reconstruction/UnitTests/");
-    
+            
     CurrentOrderOfReconstruction = -1;
   }
 
@@ -103,15 +102,16 @@ namespace tut
 
 
 
-  /* Test 1: Set up the Grid and output the nodal points and cell centers to seperate files*/
+  /* Test 1: Set up the Grid and output the nodal points and cell centers to seperate output files*/
   template<>
   template<>
   void ComputationalDomain_object::test<1>()
   {
 
-    set_test_name("Coefficient Matrix");
-
-    //Set input file name
+    set_test_name("Grid check: nodal and cell center points");
+    
+    set_local_input_path("ComputationalDomain_Data/");
+    set_local_output_path("ComputationalDomain_Data/");        
     Open_Input_File("reconstruct3D.in");
 
     error_flag = Process_Input_Control_Parameter_File(Input_Parameters,
@@ -157,21 +157,21 @@ namespace tut
     // Output the cell center locations of the mesh to a file
     Output_Mesh_Cells_Tecplot(SolnBlkDouble, Input_Parameters);    
 
-
   }
 
 
 
-  /* Test 2: Generate the Matrix A for inspection. This is the matrix A which is associated with the kExactReconstruction procedure
-             in the file "Reconstruction3D/ReconstructionFunctions.h" */
+  /* Test 2: Generate the coefficient matrix A for inspection. This is the matrix A which is associated with the (Ax=b) used in 
+     the kExactReconstruction procedure */
   template<>
   template<>
   void ComputationalDomain_object::test<2>()
   {
 
     set_test_name("Coefficient Matrix");
-
-    //Set input file name
+    
+    set_local_input_path("ComputationalDomain_Data/");
+    set_local_output_path("ComputationalDomain_Data/");
     Open_Input_File("reconstruct3D.in");
 
     error_flag = Process_Input_Control_Parameter_File(Input_Parameters,
@@ -229,13 +229,16 @@ namespace tut
     k_index = new int [StencilSize];
     
 
-    //    i = SolnBlkDouble.iStart(); j = SolnBlkDouble.jStart(); k = SolnBlkDouble.kStart();
+    /* Loop Through each cell in the domain to make a stencil and reconstruct the solution
+       Solve reconstruction for each cell in the domain plus 2 additional layers of cells for each boundary.
+       These boundary cells are used for checking the goodness of fit of the first domain cell. */
+    
     for (i=SolnBlkDouble.iStart()-2; i<=SolnBlkDouble.iEnd()+2; ++i){
       for (j=SolnBlkDouble.jStart()-2; j<=SolnBlkDouble.jEnd()+2; ++j){
         for (k=SolnBlkDouble.kStart()-2; k<=SolnBlkDouble.kEnd()+2; ++k){
+          
           /* Make Stencil */
           MakeReconstructionStencil(SolnBlkDouble.SolnPtr[0][0][0].CellRings(),i,j,k,i_index,j_index,k_index);
-
 
           /***************************************************************************
            * kExact_Reconstruction for 3D                                             *
@@ -248,19 +251,19 @@ namespace tut
           static const int NumberOfParameters = 1;
     
           // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
-          int ND(SolnBlkDouble.NumberOfTaylorDerivatives());	/* number of Taylor expansion coefficients */
-          DenseMatrix A(StencilSize-1,ND-1);            /* the matrix which the linear system is solved for */
+          int ND(SolnBlkDouble.NumberOfTaylorDerivatives());	      /* number of Taylor expansion coefficients */
+          DenseMatrix A(StencilSize-1,ND-1);                          /* the matrix which the linear system is solved for */
           DenseMatrix All_Delta_U (StencilSize-1,NumberOfParameters); /* matrix for storing U[neighbour]-U[cell] */
-          ColumnVector GeomWeights(StencilSize);        /* the column vector of the geometric weights */
-          Vector3D* DeltaCellCenters;                   /* array for storing the X-distance and Y-distance between the cell center
-                                                           of neighbour cells and the one of i,j,k cell */
-          int krank;                                    /* the final rank of A matrix is returned here */
+          ColumnVector GeomWeights(StencilSize);                      /* the column vector of the geometric weights */
+          Vector3D* DeltaCellCenters;                                 /* array for storing the X-distance and Y-distance between  
+                                                                      the cell center of neighbour cells and the one of i,j,k cell */
+
+          int krank;                                                  /* the final rank of A matrix is returned here */
           int IndexSumZ, IndexSumY, IndexSumX, P1, P2, P3;
           double CombP1X, CombP2Y, CombP3Z;
           double PowDistanceXC, PowDistanceYC, PowDistanceZC;
           int cell, i_temp, parameter;
           double WeightsSum(0.0);
-          //double IntSum(0.0);
           double IntSum1(0.0),IntSum2(0.0);
     
           // Allocate memory
@@ -277,30 +280,28 @@ namespace tut
           // ***************************************************
 
           // Step1. Compute the normalized geometric weights
-//          for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
-//
-//            /* Compute the X, Y, and Z component of the distance between
-//               the cell center of the neighbours and the reconstructed cell */
-//            DeltaCellCenters[cell] = SolnBlkDouble(i_index[cell],j_index[cell],k_index[cell]).CellCenter() - 
-//              SolnBlkDouble(i_index[0],j_index[0],k_index[0]).CellCenter();
-//    
-//            /* Compute the geometric weights and their sum (this is used for normalization)
-//               based on the distance to each control volume */
-//            GeomWeights(cell) = sqrt(DeltaCellCenters[cell].x*DeltaCellCenters[cell].x + 
-//                                     DeltaCellCenters[cell].y*DeltaCellCenters[cell].y +
-//                                     DeltaCellCenters[cell].z*DeltaCellCenters[cell].z);
-//            GeomWeights(cell) *= GeomWeights(cell);
-//            GeomWeights(cell) = 1.0/(1.0E-15 + GeomWeights(cell));
-//    
-//            WeightsSum += GeomWeights(cell);
-//          }
+          for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
 
+            /* Compute the X, Y, and Z component of the distance between
+               the cell center of the neighbours and the reconstructed cell */
+            DeltaCellCenters[cell] = SolnBlkDouble(i_index[cell],j_index[cell],k_index[cell]).CellCenter() - 
+              SolnBlkDouble(i_index[0],j_index[0],k_index[0]).CellCenter();
+            /* Compute the geometric weights and their sum (this is used for normalization)
+               based on the distance to each control volume */
+            GeomWeights(cell) = sqrt(DeltaCellCenters[cell].x*DeltaCellCenters[cell].x + 
+                                     DeltaCellCenters[cell].y*DeltaCellCenters[cell].y +
+                                     DeltaCellCenters[cell].z*DeltaCellCenters[cell].z);
+            GeomWeights(cell) *= GeomWeights(cell);
+            GeomWeights(cell) = 1.0/(1.0E-15 + GeomWeights(cell));
+    
+            WeightsSum += GeomWeights(cell);
+          }
 
           // Step2. Set the approximate equations
           for (cell=1 ; cell<StencilSize; ++cell){ //for each cell in the stencil
     
             // compute the normalized geometric weight
-            //            GeomWeights(cell) /= WeightsSum;
+            GeomWeights(cell) /= WeightsSum;
 
             // *** SET the matrix A of the linear system (LHS) ***
             /* compute for each derivative the corresponding entry in the matrix of the linear system */
@@ -328,13 +329,11 @@ namespace tut
                   for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
                     IntSum1 += ( CombP1X*PowDistanceXC*
                                  SolnBlkDouble(i_index[cell],j_index[cell],k_index[cell]).CellGeomCoeff(P1-IndexSumX,P2-IndexSumY,P3-IndexSumZ) );
-	    
                     // update the binomial coefficients
                     CombP1X = (P1-IndexSumX)*CombP1X/(IndexSumX+1); // the index is still the old one => expression for "nC k+1"
                     PowDistanceXC *= DeltaCellCenters[cell].x;      // Update PowDistanceXC
                   }//endfor
 
-                  //A(cell-1,i_temp-1) += CombP2Y*PowDistanceYC*IntSum;  // update the external sum
                   IntSum2 += CombP2Y*PowDistanceYC*IntSum1;
                   CombP2Y = (P2-IndexSumY)*CombP2Y/(IndexSumY+1); // the index is still the old one => expression for "nC k+1"
                   PowDistanceYC *= DeltaCellCenters[cell].y;      // Update PowDistanceYC
@@ -346,39 +345,32 @@ namespace tut
                 PowDistanceZC *= DeltaCellCenters[cell].z;      // Update PowDistanceYC
               }//endfor
 
-              // subtract the corresponding geometric moment of (i_index[0],j_index[0],k_index[0]) cell
               A(cell-1,i_temp-1) -= SolnBlkDouble(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i_temp,true,true,true);
-      
 #if 0
               // apply geometric weighting
-              A(cell-1,i_temp-1) *= GeomWeights(cell);
+              // A(cell-1,i_temp-1) *= GeomWeights(cell);
 #endif
-            }
+            } // end for (i_temp) -- Number of Derivatives
 
-          }
+          } // end for (cell) -- Stencil Size
       
-          // Print_(A);
+          // The following prints the A matrix for inspection. Only the cells along the diagonal of the grid are printed out here
+          if (i==j && j==k) {
+            std::cout <<"Mesh Row Number: " << i <<endl;
+            Print_(A);
+          }
+          
+          // Free memory
+          delete [] DeltaCellCenters; DeltaCellCenters = NULL;
         } //end for k
       } //end for j
     }//end for i
 
-
-//    // Solve reconstruction for each cell in the domain plus 2 additional layers of cells for each boundary.
-//    // These boundary cells are used for checking the goodness of fit of the first domain cell.
-//    for (i=iStart()-2, FinishedCell=0; i<=iEnd()+2; ++i){
-//      for (j=jStart()-2; j<=jEnd()+2; ++j){
-//	for (k=kStart()-2; k<=kEnd()+2; ++k){
-//	  /* Make Stencil */
-//	  MakeReconstructionStencil(SolnPtr[0][0][0].CellRings(),i,j,k,i_index,j_index,k_index);
-//	  /* Solve reconstruction for the current cell */
-//	  kExact_Reconstruction(*this,i_index,j_index,k_index,StencilSize);	  
-//	  ++FinishedCell;
-//	  Print_Progress(FinishedCell,ProgressFrequency);
-//	}//endfor(k)
-//      }//endfor(j)
-//    }//endfor(i)
-
-
+    // Free memory
+    delete [] i_index; i_index = NULL;
+    delete [] j_index; j_index = NULL;
+    delete [] k_index; k_index = NULL;
+    
   }
 }
 

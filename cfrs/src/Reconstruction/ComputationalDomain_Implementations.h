@@ -2407,6 +2407,11 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructS
     std::cout << std::endl;
     Print_(UnfitCells);
     Print_(TotalModifiedCells);
+
+    // Free memory
+    delete [] i_index; i_index = NULL;
+    delete [] j_index; j_index = NULL;
+    delete [] k_index; k_index = NULL;
     break;
 
     /* DataDependent ENO-like reconstruction */
