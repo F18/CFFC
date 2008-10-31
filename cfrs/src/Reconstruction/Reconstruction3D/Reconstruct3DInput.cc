@@ -263,7 +263,7 @@ void Set_Default_Input_Parameters(Reconstruct3D_Input_Parameters &IP) {
     IP.NBlk_Idir = 1;
     IP.NBlk_Jdir = 1;
     IP.NBlk_Kdir = 1;
-    IP.Nghost_Cells = 2;
+    IP.Nghost_Cells = 4;
     IP.Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
     IP.Stretching_Type_Jdir = STRETCHING_FCN_LINEAR;
     IP.Stretching_Type_Kdir = STRETCHING_FCN_LINEAR;
@@ -485,7 +485,7 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
        ++IP.Line_Number;
        IP.Input_File >> IP.Nghost_Cells;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Nghost_Cells < 2) i_command = INVALID_INPUT_VALUE;	
+       if (IP.Nghost_Cells < 4) i_command = INVALID_INPUT_VALUE;	
 
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Idir") == 0) {
        i_command = 6;

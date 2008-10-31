@@ -34,7 +34,7 @@ Number_of_Cells_Jdir =
 Number_of_Cells_Kdir = 
 10
 Number_of_Ghost_Cells =
-2
+4
 Number_of_Blocks_Idir =
 1
 Number_of_Blocks_Jdir =
