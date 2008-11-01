@@ -150,6 +150,12 @@ public:
       --------------------------------------------------------------------------------------- */
   static short HIGH_ORDER_MESSAGE_PASSING;
 
+  /*! Control verboseness of some CENO related messages. \n
+      Turn ON if you want to be more vebose. (default) \n
+      Turn OFF if you want less verboseness. \n
+      --------------------------------------------------------------------------------------- */
+  static short CENO_VERBOSE;
+
   static int Limiter;   //!< the limiter used for the limited linear reconstruction performed for non-smooth solutions
 
   
@@ -302,6 +308,18 @@ void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Ty
       HIGH_ORDER_MESSAGE_PASSING = OFF;
     }
     i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Verbose") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 || strcmp(IP.Next_Control_Parameter, "YES") == 0 ){
+      CENO_VERBOSE = ON;
+      i_command = 0;
+    } else if ( strcmp(IP.Next_Control_Parameter, "No") == 0 || strcmp(IP.Next_Control_Parameter, "NO") == 0 ){
+      CENO_VERBOSE = OFF;
+      i_command = 0;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
 
   } else {
     i_command = INVALID_INPUT_CODE;

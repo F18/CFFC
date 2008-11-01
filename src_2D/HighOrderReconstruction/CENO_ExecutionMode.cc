@@ -29,6 +29,7 @@ int CENO_Execution_Mode::Limiter = LIMITER_VANLEER;
 short CENO_Execution_Mode::IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT = OFF; // don't ignore curved boundaries
 short CENO_Execution_Mode::USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA = ON; // use the smoothness indicator for CENO AMR
 short CENO_Execution_Mode::HIGH_ORDER_MESSAGE_PASSING = ON; // use high-order message passing for high-order AMR
+short CENO_Execution_Mode::CENO_VERBOSE = ON; // output more information (i.e. be verbose)
 
 //! Set all flags to default values
 // add all flag default values to this function
@@ -50,6 +51,7 @@ void CENO_Execution_Mode::SetDefaults(void){
   IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT = OFF; // don't ignore curved boundaries
   USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA = ON; // use the smoothness indicator for CENO AMR
   HIGH_ORDER_MESSAGE_PASSING = ON; // use high-order message passing for high-order AMR
+  CENO_VERBOSE = ON; // output more information (i.e. be verbose)
   Limiter = LIMITER_VANLEER;
 }
 
@@ -149,6 +151,10 @@ void CENO_Execution_Mode::Print_Info(std::ostream & out_file){
     out_file << "\n     -> High-order Message Passing: " << "Use low-order interpolant";
   }
 
+  // output verboseness level
+  if ( CENO_VERBOSE == OFF ){
+    out_file << "\n     -> CENO Verboseness: " << "Minimum! Default option gives you more execution info";
+  }
 }
 
 /*!
@@ -206,6 +212,9 @@ void CENO_Execution_Mode::Broadcast(void){
  			1, 
  			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&HIGH_ORDER_MESSAGE_PASSING,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&CENO_VERBOSE,
  			1, 
  			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&Limiter,
