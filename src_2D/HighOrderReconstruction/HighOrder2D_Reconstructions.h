@@ -1822,7 +1822,7 @@ ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &S
   if (ConstrainedGQPs_South > 0){
     // Update list of physical BCs for each parameter. The BCs for the rest of the parameters are numerical.
     for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
-      if (SolnBlk.BC_SouthCell(iCell).NumberOfIndividualConstraints(parameter) > 0 ){
+      if (SolnBlk.BC_SouthCell(iCell).NumberOfRelationalConstraints(parameter) > 0 ){
 	PhysicalBCs_S[parameter] = true;
       }
     }
@@ -1832,7 +1832,7 @@ ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &S
   if (ConstrainedGQPs_East > 0){
     // Update list of physical BCs for each parameter. The BCs for the rest of the parameters are numerical.
     for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
-      if (SolnBlk.BC_EastCell(jCell).NumberOfIndividualConstraints(parameter) > 0 ){
+      if (SolnBlk.BC_EastCell(jCell).NumberOfRelationalConstraints(parameter) > 0 ){
 	PhysicalBCs_E[parameter] = true;
       }
     }
@@ -1842,7 +1842,7 @@ ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &S
   if (ConstrainedGQPs_North > 0){
     // Update list of physical BCs for each parameter. The BCs for the rest of the parameters are numerical.
     for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
-      if (SolnBlk.BC_NorthCell(iCell).NumberOfIndividualConstraints(parameter) > 0 ){
+      if (SolnBlk.BC_NorthCell(iCell).NumberOfRelationalConstraints(parameter) > 0 ){
 	PhysicalBCs_N[parameter] = true;
       }
     }
@@ -1875,6 +1875,9 @@ ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &S
   /****************************************************************************************
    *  STEP 4. SOLVE THE RECONSTRUCTION FOR PARAMETERS THAT HAVE PHYSICAL (RELATIONAL) BCs *
    ***************************************************************************************/
+  if (ParametersWithPhysicalBCs.size() == 0){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::ComputeRelationallyConstrainedUnlimitedSolutionReconstruction() ERROR! Reconstruction with relational constraints is required but there are no relational constraints present!!");
+  }
 
   // === Reset and initialize the local variables ===
   // Initialize TotalNumberOfEquations with the number of equations for the k-exact reconstruction of all related variables
@@ -2013,7 +2016,6 @@ ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &S
   
   ApproxMeanConservationRow = TotalNumberOfExactlySatisfiedEquations;
 
-
   /** Generate the exact and approximate mean conservation equations for each parameter in the ParametersWithPhysicalBCs **/
   /************************************************************************************************************************/
   if ( IsPseudoInverseAllocated() && IsPseudoInversePreComputed() ){  
@@ -2026,8 +2028,8 @@ ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &S
       A_Assembled.incorporate_matrix(MeanConservationRow,MeanConservationCol,
 				     Cell_LHS_Inv(iCell,jCell),
 				     0, StencilSize-1); //< copy only the first row in the Cell_LHS_Inv matrix
-      All_U_Assembled(MeanConservationRow,0) = (SolnBlk.*ReconstructedSoln)(i_index[iCell],
-									    j_index[jCell])[ParametersWithPhysicalBCs[parameter]];
+
+      All_U_Assembled(MeanConservationRow,0) = (SolnBlk.*ReconstructedSoln)(iCell,jCell)[ParametersWithPhysicalBCs[parameter]];
       
       // ===== Copy approximate mean conservation equations and set RHS =====
       A_Assembled.incorporate_matrix(ApproxMeanConservationRow,MeanConservationCol,

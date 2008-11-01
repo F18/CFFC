@@ -22,7 +22,7 @@ public:
   Grid2DQuadIntegration(Grid2DQuadType * AssociatedGrid);
 
   //! Destructor
-  ~Grid2DQuadIntegration(void){ };
+  ~Grid2DQuadIntegration(void){ Deallocate(); }
 
   //! Re-associate geometry pointer
   void AssociateGeometry(Grid2DQuadType * AssociatedGrid){ Grid = AssociatedGrid; }
@@ -30,8 +30,11 @@ public:
   //! Access to grid
   Grid2DQuadType * getGrid(void) const { return Grid; }
 
+  //! Deallocate object memory
+  void Deallocate(void);
+
   //! Access to type of cell faces
-  const vector<bool> getCellFacesInfo(void){ return CellFacesInfo; }
+  const bool* getCellFacesInfo(void){ return CellFacesInfo; }
   bool getWestFaceInfo(void){ return CellFacesInfo[0]; }
   bool getSouthFaceInfo(void){ return CellFacesInfo[1]; }
   bool getEastFaceInfo(void){ return CellFacesInfo[2]; }
@@ -88,7 +91,7 @@ private:
 
   Grid2DQuadIntegration(void);	//!< Private default constructor  
 
-  vector<bool> CellFacesInfo;	//!< Array to track the type of each cell face
+  bool *CellFacesInfo;	        //!< Array to track the type of each cell face
   int IsTheSameBlockEdge;       /*!< Variable to mark the association between the curved cell face and the block side. 
 				  (e.g a West cell face corresponds to a West or East block side)
 				  It basically makes the distinction between interior cells and ghost cells. 
@@ -99,9 +102,22 @@ private:
 
 // Constructor with the Grid that is going to be associated with this object
 template<class Grid2DQuadType> inline
-Grid2DQuadIntegration<Grid2DQuadType>::Grid2DQuadIntegration(Grid2DQuadType * AssociatedGrid){
+Grid2DQuadIntegration<Grid2DQuadType>::Grid2DQuadIntegration(Grid2DQuadType * AssociatedGrid):
+  CellFacesInfo(NULL)
+{
   Grid = AssociatedGrid;
-  CellFacesInfo.assign(4, false); // The 4 faces are in counterclockwise order W,S,E and N.
+  // The 4 faces are in counterclockwise order W,S,E and N.
+  CellFacesInfo = new bool [4];
+  CellFacesInfo[0] = CellFacesInfo[1] = CellFacesInfo[2] = CellFacesInfo[3] = false;
+}
+
+// Deallocate memory
+template<class Grid2DQuadType>
+void Grid2DQuadIntegration<Grid2DQuadType>::Deallocate(void){
+  if (CellFacesInfo != NULL){
+    delete [] CellFacesInfo;
+    CellFacesInfo = NULL;
+  }
 }
 
 /*!

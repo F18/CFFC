@@ -2863,6 +2863,10 @@ void BCs(Euler2D_Quad_Block &SolnBlk,
     SolnBlk.U[SolnBlk.ICu+1][SolnBlk.JCu+1] = U(SolnBlk.W[SolnBlk.ICu+1][SolnBlk.JCu+1]);
   } /* endif */
 
+
+  // Impose high-order boundary conditions
+  SolnBlk.BCs_HighOrder();
+
 }
 
 /********************************************************

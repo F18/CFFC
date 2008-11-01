@@ -2434,6 +2434,10 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       Wr = Reflect(Wl, NormalDirection);
       break;
 
+    case BC_WALL_INVISCID : 	// same as BC_REFLECTION
+      Wr = Reflect(Wl, NormalDirection);
+      break;
+
     case BC_EXTRAPOLATE :
       // Set Wr equal to the left side value (i.e Wl)
       Wr = Wl;
@@ -2516,6 +2520,10 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       break;
 
     case BC_SYMMETRY_PLANE : 	// same as BC_REFLECTION
+      Wr = Reflect(Wl, NormalDirection);
+      break;
+
+    case BC_WALL_INVISCID : 	// same as BC_REFLECTION
       Wr = Reflect(Wl, NormalDirection);
       break;
 
@@ -2603,6 +2611,10 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       Wr = Reflect(Wl, NormalDirection);
       break;
 
+    case BC_WALL_INVISCID : 	// same as BC_REFLECTION
+      Wr = Reflect(Wl, NormalDirection);
+      break;
+
     case BC_EXTRAPOLATE :
       // Set Wr equal to the left side value (i.e Wl)
       Wr = Wl;
@@ -2687,6 +2699,10 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       Wr = Reflect(Wl, NormalDirection);
       break;
 
+    case BC_WALL_INVISCID : 	// same as BC_REFLECTION
+      Wr = Reflect(Wl, NormalDirection);
+      break;
+
     case BC_EXTRAPOLATE :
       // Set Wr equal to the left side value (i.e Wl)
       Wr = Wl;
@@ -2728,6 +2744,414 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
     throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such boundary!");
   }  
 
+}
+
+/*!
+ * Set high-order boundary conditions.
+ */
+void Euler2D_Quad_Block::BCs_HighOrder(void){
+
+  int i, j, Vertex;
+  double Vn;
+  Vector2D PointOfInterest, Normal;
+  int NumGQP(Grid.getNumGQP());
+  Vector2D *GaussQuadPoints = new Vector2D [NumGQP]; // the GQPs for flux calculation points if low-order geometry is used
+
+  // == If no high-order BCs are present just return
+  if ( BC_WestCell() == NULL && BC_EastCell() == NULL && 
+       BC_SouthCell() == NULL && BC_NorthCell() == NULL ){
+    return;
+  }
+
+
+  // == Set high-order boundary conditions
+  for ( j = JCl ; j <= JCu ; ++j ) {
+
+    // Prescribe West boundary conditions.
+    if (BC_WestCell() != NULL){
+      for (Vertex = 1; Vertex <= BC_WestCell(j).NumOfPoints(); ++Vertex){
+
+	switch(Grid.BCtypeW[j]) {	
+	case BC_FROZEN :
+	  throw runtime_error("BCs_HighOrder() ERROR! Frozen BC hasn't been implemented yet!");
+	  break;
+	case BC_NONE :
+	  // Do nothing
+	  break;
+
+	case BC_PERIODIC :
+	  throw runtime_error("BCs_HighOrder() ERROR! Periodic BC hasn't been implemented yet!");
+	  break;
+
+	case BC_INFLOW :
+	  throw runtime_error("BCs_HighOrder() ERROR! Inflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_DIRICHLET :	// Use WoW as reference value
+	  // Dirichlet constraint
+	  BC_WestCell(j).DirichletBC(Vertex) = WoW[j];
+	  BC_WestCell(j).a(Vertex) = Soln_State(1.0);
+	  BC_WestCell(j).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_WestCell(j).b(Vertex) = Soln_State(0.0);
+	  break;
+
+	case BC_NEUMANN :
+	  // Neumann constraint
+	  BC_WestCell(j).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_WestCell(j).a(Vertex) = Soln_State(0.0);
+	  BC_WestCell(j).NeumannBC(Vertex) =  WoW[j];
+	  BC_WestCell(j).b(Vertex) = Soln_State(1.0);
+	  break;
+
+	case BC_FARFIELD :
+	  throw runtime_error("BCs_HighOrder() ERROR! Farfield BC hasn't been implemented yet!");
+	  break;
+
+	case BC_SYMMETRY_PLANE :
+	  throw runtime_error("BCs_HighOrder() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_OUTFLOW :
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_WestCell(j).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_WestCell(j).a(Vertex) = Soln_State(0.0);
+	  BC_WestCell(j).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_WestCell(j).b(Vertex) = Soln_State(1.0);
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXACT_SOLUTION :
+	  // Use the exact solution to set up the reference states for this boundary type
+	  if (ExactSoln->IsExactSolutionSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( Grid.BndWestSplineInfo != NULL){
+	      PointOfInterest = Grid.BndWestSplineInfo[j].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_WestCell(j).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_WestCell(j).a(Vertex) = Soln_State(1.0);
+	    BC_WestCell(j).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	    BC_WestCell(j).b(Vertex) = Soln_State(0.0);      
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	  break;
+
+	case BC_WALL_INVISCID:
+	  // Do nothing
+	  break;
+
+	default:		
+	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");
+	  break;
+	} /* endswitch */
+      } /* endfor (Vertex) */
+    } // endif
+
+    // Prescribe East boundary conditions.
+    if (BC_EastCell() != NULL){
+      for (Vertex = 1; Vertex <= BC_EastCell(j).NumOfPoints(); ++Vertex){
+      
+	switch(Grid.BCtypeE[j]) {
+	case BC_FROZEN :
+	  throw runtime_error("BCs_HighOrder() ERROR! Frozen BC hasn't been implemented yet!");
+	case BC_NONE :
+	  // Do nothing
+	  break;
+	  
+	case BC_PERIODIC :
+	  throw runtime_error("BCs_HighOrder() ERROR! Periodic BC hasn't been implemented yet!");
+	  break;
+	  
+	case BC_INFLOW :
+	  throw runtime_error("BCs_HighOrder() ERROR! Inflow BC hasn't been implemented yet!");
+	  break;
+	
+	case BC_DIRICHLET :	// Use WoE as reference value
+	  // Dirichlet constraint
+	  BC_EastCell(j).DirichletBC(Vertex) = WoE[j];
+	  BC_EastCell(j).a(Vertex) = Soln_State(1.0);
+	  BC_EastCell(j).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_EastCell(j).b(Vertex) = Soln_State(0.0);
+	  break;
+	  
+	case BC_NEUMANN :
+	  // Neumann constraint
+	  BC_EastCell(j).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_EastCell(j).a(Vertex) = Soln_State(0.0);
+	  BC_EastCell(j).NeumannBC(Vertex) =  WoE[j];
+	  BC_EastCell(j).b(Vertex) = Soln_State(1.0);
+	  break;
+
+	case BC_FARFIELD :
+	  throw runtime_error("BCs_HighOrder() ERROR! Inflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_SYMMETRY_PLANE :
+	  throw runtime_error("BCs_HighOrder() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_OUTFLOW :
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_EastCell(j).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_EastCell(j).a(Vertex) = Soln_State(0.0);
+	  BC_EastCell(j).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_EastCell(j).b(Vertex) = Soln_State(1.0);
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXACT_SOLUTION :
+	  // Use the exact solution to set up the reference states for this boundary type
+	  if (ExactSoln->IsExactSolutionSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( Grid.BndEastSplineInfo != NULL){
+	      PointOfInterest = Grid.BndEastSplineInfo[j].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_EastCell(j).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_EastCell(j).a(Vertex) = Soln_State(1.0);
+	    BC_EastCell(j).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	    BC_EastCell(j).b(Vertex) = Soln_State(0.0);      
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	  break;
+
+	case BC_WALL_INVISCID:
+	  // Do nothing
+	  break;
+
+	default:	
+	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");	
+	  break;
+	} /* endswitch */
+      } /* endfor (Vertex) */	
+    } // endif
+
+  } /* endfor (j) */
+
+
+  for ( i = ICl ; i <= ICu ; ++i ) {
+
+    // Prescribe South boundary conditions.
+    if (BC_SouthCell() != NULL){
+      for (Vertex = 1; Vertex <= BC_SouthCell(i).NumOfPoints(); ++Vertex){
+
+	switch(Grid.BCtypeS[i]) {
+	case BC_FROZEN :
+	  throw runtime_error("BCs_HighOrder() ERROR! Frozen BC hasn't been implemented yet!");
+	  break;
+	case BC_NONE :
+	  // Do nothing
+	  break;
+      
+	case BC_PERIODIC :
+	  throw runtime_error("BCs_HighOrder() ERROR! Periodic BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_INFLOW :
+	  throw runtime_error("BCs_HighOrder() ERROR! Inflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_DIRICHLET :	// Use WoS as reference value
+	  // Dirichlet constraint
+	  BC_SouthCell(i).DirichletBC(Vertex) = WoS[i];
+	  BC_SouthCell(i).a(Vertex) = Soln_State(1.0);
+	  BC_SouthCell(i).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_SouthCell(i).b(Vertex) = Soln_State(0.0);
+	  break;
+      
+	case BC_NEUMANN :
+	  // Neumann constraint
+	  BC_SouthCell(i).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_SouthCell(i).a(Vertex) = Soln_State(0.0);
+	  BC_SouthCell(i).NeumannBC(Vertex) =  WoS[i];
+	  BC_SouthCell(i).b(Vertex) = Soln_State(1.0);
+	  break;
+
+	case BC_FARFIELD :
+	  throw runtime_error("BCs_HighOrder() ERROR! Farfield BC hasn't been implemented yet!");
+	  break;
+	
+	case BC_SYMMETRY_PLANE :
+	  throw runtime_error("BCs_HighOrder() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_OUTFLOW :
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_SouthCell(i).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_SouthCell(i).a(Vertex) = Soln_State(0.0);
+	  BC_SouthCell(i).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_SouthCell(i).b(Vertex) = Soln_State(1.0);
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  break;
+	
+	case BC_EXACT_SOLUTION :
+	  // Use the exact solution to set up the reference states for this boundary type
+	  if (ExactSoln->IsExactSolutionSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( Grid.BndSouthSplineInfo != NULL){
+	      PointOfInterest = Grid.BndSouthSplineInfo[i].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_SouthCell(i).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_SouthCell(i).a(Vertex) = Soln_State(1.0);
+	    BC_SouthCell(i).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	    BC_SouthCell(i).b(Vertex) = Soln_State(0.0);      
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	  break;
+
+	case BC_WALL_INVISCID:
+	  // Do nothing
+	  break;
+	
+	default:	
+	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");		
+	  break;
+	} /* endswitch */
+      } /* endfor (Vertex) */
+    } // endif    
+
+    // Prescribe North boundary conditions.
+    if (BC_NorthCell() != NULL){
+      for (Vertex = 1; Vertex <= BC_NorthCell(i).NumOfPoints(); ++Vertex){
+
+	switch(Grid.BCtypeN[i]) {
+	case BC_FROZEN :
+	  throw runtime_error("BCs_HighOrder() ERROR! Frozen BC hasn't been implemented yet!");
+	  break;
+	
+	case BC_NONE :
+	  // Do nothing
+	  break;
+      
+	case BC_PERIODIC :
+	  throw runtime_error("BCs_HighOrder() ERROR! Periodic BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_INFLOW :
+	  throw runtime_error("BCs_HighOrder() ERROR! Inflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_DIRICHLET :	// Use WoN as reference value
+	  // Dirichlet constraint
+	  BC_NorthCell(i).DirichletBC(Vertex) = WoN[i];
+	  BC_NorthCell(i).a(Vertex) = Soln_State(1.0);
+	  BC_NorthCell(i).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_NorthCell(i).b(Vertex) = Soln_State(0.0);
+	  break;
+      
+	case BC_NEUMANN :
+	  // Neumann constraint
+	  BC_NorthCell(i).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_NorthCell(i).a(Vertex) = Soln_State(0.0);
+	  BC_NorthCell(i).NeumannBC(Vertex) =  WoN[i];
+	  BC_NorthCell(i).b(Vertex) = Soln_State(1.0);
+	  break;
+      
+	case BC_FARFIELD :
+	  throw runtime_error("BCs_HighOrder() ERROR! Farfield BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_SYMMETRY_PLANE :
+	  throw runtime_error("BCs_HighOrder() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_OUTFLOW :
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_NorthCell(i).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_NorthCell(i).a(Vertex) = Soln_State(0.0);
+	  BC_NorthCell(i).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_NorthCell(i).b(Vertex) = Soln_State(1.0);
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXACT_SOLUTION :
+	  // Use the exact solution to set up the reference states for this boundary type
+	  if (ExactSoln->IsExactSolutionSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( Grid.BndNorthSplineInfo != NULL){
+	      PointOfInterest = Grid.BndNorthSplineInfo[i].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_NorthCell(i).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_NorthCell(i).a(Vertex) = Soln_State(1.0);
+	    BC_NorthCell(i).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	    BC_NorthCell(i).b(Vertex) = Soln_State(0.0);
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	  break;
+
+	case BC_WALL_INVISCID:
+	  // Do nothing
+	  break;
+
+	default:	
+	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");			
+	  break;
+	} /* endswitch */
+      } /* endfor (Vertex) */
+    } // endif    
+
+  } /* endfor */
+
+  delete [] GaussQuadPoints;
+  
 }
 
 /*!

@@ -2722,6 +2722,9 @@ inline void Euler2D_Quad_Block::Validate_Primitive_SolnState(Euler2D_pState & W,
 		<< " interface of (" << iCell << "," << jCell << ") cell: "
 		<< "\n W = " << W; 
       
+      error_msg << "\n Cell Centroid: "
+		<< Grid.Cell[iCell][jCell].Xc;
+
       error_msg << "\n High-order reconstruction data: "
 		<< "\n Derivatives: \n"
 		<< HighOrderVariable(IndexHO).CellTaylorDeriv(iCell,jCell)
