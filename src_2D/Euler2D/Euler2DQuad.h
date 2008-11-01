@@ -2703,13 +2703,16 @@ inline void Euler2D_Quad_Block::Validate_Primitive_SolnState(Euler2D_pState & W,
   if (W.d <= ZERO || W.p <= ZERO ) {
 
     if (CENO_Execution_Mode::FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE){
-      // output a brief error message
-      std::cout << "\n " << CFFC_Name() 
-		<< " Euler2D ERROR: Negative Density and/or Pressure at the "
-		<< Ref
-		<< " interface of (" << iCell << "," << jCell << ") cell: "
-		<< "\n W = " << W << "\n"; 
-            
+
+      if (CENO_Execution_Mode::CENO_VERBOSE){ 
+	// output a brief error message
+	std::cout << "\n " << CFFC_Name() 
+		  << " Euler2D ERROR: Negative Density and/or Pressure at the "
+		  << Ref
+		  << " interface of (" << iCell << "," << jCell << ") cell: "
+		  << "\n W = " << W << "\n"; 
+      }
+
       // try using the Piecewise Constant (PWC) solution instead
       W = CellSolution(iCell,jCell);
 

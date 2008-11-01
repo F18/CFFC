@@ -2808,7 +2808,7 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  break;
 
 	case BC_SYMMETRY_PLANE :
-	  throw runtime_error("BCs_HighOrder() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  // Do nothing
 	  break;
 
 	case BC_EXTRAPOLATE :
@@ -2901,7 +2901,7 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  break;
 
 	case BC_SYMMETRY_PLANE :
-	  throw runtime_error("BCs_HighOrder() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  // Do nothing
 	  break;
 
 	case BC_EXTRAPOLATE :
@@ -3000,7 +3000,7 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  break;
 	
 	case BC_SYMMETRY_PLANE :
-	  throw runtime_error("BCs_HighOrder() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  // Do nothing
 	  break;
       
 	case BC_EXTRAPOLATE :
@@ -3095,7 +3095,7 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  break;
       
 	case BC_SYMMETRY_PLANE :
-	  throw runtime_error("BCs_HighOrder() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  // Do nothing
 	  break;
       
 	case BC_EXTRAPOLATE :

@@ -27,6 +27,7 @@ void Cauchy_BCs<Euler2D_pState>::SetCharacteristicConstraintsBasedOnBCtype(const
   
   switch(BCtype){
 
+  case BC_REFLECTION:		// treat it in the same way as BC_WALL_INVISCID
   case BC_WALL_INVISCID:
     // Impose relational constraint between 'u' and 'v'
     RelationalConstraints[0] = 0; // rho

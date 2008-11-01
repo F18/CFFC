@@ -64,6 +64,7 @@ Generalized_RelationalConstraints_Equations(Euler2D_Quad_Block & SolnBlk,
   double GenTerm;
 
   switch(BC_Type){
+  case BC_REFLECTION:		// treat it in the same way as BC_WALL_INVISCID
   case BC_WALL_INVISCID:
     /* compute for each derivative the corresponding entry in the matrix of the linear system for this type of BCs */
     for(Point = 0; Point < Constraints_Loc.size(); ++Point){
