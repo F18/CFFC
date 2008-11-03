@@ -144,7 +144,7 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
 
   }//endfor (cell) - Stencil Size
 
-Print_(A);
+  //Print_(A);
 
   // STOP:   Matrix A of the linear system (LHS) built. The same matrix is used for all variables (same geometry).
   //         Matrix All_Delta_U of the linear system (RHS) built.

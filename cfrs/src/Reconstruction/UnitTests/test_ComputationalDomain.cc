@@ -222,7 +222,7 @@ namespace tut
 
 
     /* Determine the number of cells in the stencil based on the number of rings */
-    NumOfCellsInOneDirection = 2*SolnBlkDouble.SolnPtr[0][0][0].CellRings() + 1;
+    NumOfCellsInOneDirection = 2*SolnBlkDouble.NumberOfCellRings() + 1;
     StencilSize = NumOfCellsInOneDirection*NumOfCellsInOneDirection*NumOfCellsInOneDirection;
     i_index = new int [StencilSize];
     j_index = new int [StencilSize];
@@ -238,7 +238,7 @@ namespace tut
         for (k=SolnBlkDouble.kStart()-2; k<=SolnBlkDouble.kEnd()+2; ++k){
           
           /* Make Stencil */
-          MakeReconstructionStencil(SolnBlkDouble.SolnPtr[0][0][0].CellRings(),i,j,k,i_index,j_index,k_index);
+          MakeReconstructionStencil(SolnBlkDouble.NumberOfCellRings(),i,j,k,i_index,j_index,k_index);
 
           /***************************************************************************
            * kExact_Reconstruction for 3D                                             *

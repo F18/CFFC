@@ -78,9 +78,7 @@ class ComputationalDomain{
 
   static const int NumberOfParameters = CompCellType::NumberOfVariables;
   
-  CompCellType*** SolnPtr;      /* Solution variable */
-
- private:
+private:
   
   vector<int> N_XYZ;		/* Total number of cells in the X, Y and Z direction */
   vector<int> IndexLow;		/* Start of the computational domain */
@@ -94,6 +92,8 @@ class ComputationalDomain{
 						the whole computational domain */
   double CharacteristicLength;	/* The characteristic length of the geometry */
   double CutoffKnob;
+
+  CompCellType*** SolnPtr;      /* Solution variable */
 
  public:
 
@@ -147,6 +147,7 @@ class ComputationalDomain{
   double & MaxDeltaSolutionDomain(int parameter) { return MaxDeltaSolutionOverDomain[parameter]; }
   double & GeomCharacteristicLength(void) { return CharacteristicLength; }
   const double & KnobCutoff(void) { return CutoffKnob;}
+  const int & NumberOfCellRings(void) const { return SolnPtr[0][0][0].CellRings(); }
 
   /* Operation functions */
   int NumberOfTaylorDerivatives() const {
