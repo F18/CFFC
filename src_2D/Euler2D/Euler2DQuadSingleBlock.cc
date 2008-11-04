@@ -1018,8 +1018,14 @@ void Output_Tecplot(Euler2D_Quad_Block &SolnBlk,
                     const int Output_Title,
 	            ostream &Out_File) {
 
-    int i, j;
-    Euler2D_pState W_node;
+  int i, j, nRow, nLoop;
+  Euler2D_pState W_node;
+  Vector2D Node;
+
+
+  if (Tecplot_Execution_Mode::IsSmoothNodalSolnOutputRequired()){
+
+    // Output the interpolated nodal solution
 
     /* Ensure boundary conditions are updated before
        evaluating solution at the nodes. */
@@ -1030,45 +1036,175 @@ void Output_Tecplot(Euler2D_Quad_Block &SolnBlk,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Euler Solution, "
-                << "Time Step/Iteration Level = " << Number_of_Time_Steps
-                << ", Time = " << Time
-                << "\"" << "\n"
-	        << "VARIABLES = \"x\" \\ \n"
-                << "\"y\" \\ \n"
-                << "\"rho\" \\ \n"
-                << "\"u\" \\ \n"
-                << "\"v\" \\ \n"
-                << "\"p\" \\ \n"
-                << "\"T\" \n"
-                << "\"M\" \n"
-                << "\"H\" \n"
-                << "\"s\" \n"
-                << "ZONE T =  \"Block Number = " << Block_Number
-                << "\" \\ \n"
-                << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
-                << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
-                << "F = POINT \n";
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Euler Solution, "
+	       << "Time Step/Iteration Level = " << Number_of_Time_Steps
+	       << ", Time = " << Time
+	       << "\"" << "\n"
+	       << "VARIABLES = \"x\" \\ \n"
+	       << "\"y\" \\ \n"
+	       << "\"rho\" \\ \n"
+	       << "\"u\" \\ \n"
+	       << "\"v\" \\ \n"
+	       << "\"p\" \\ \n"
+	       << "\"T\" \n"
+	       << "\"M\" \n"
+	       << "\"H\" \n"
+	       << "\"s\" \n"
+	       << "ZONE T =  \"Block Number = " << Block_Number
+	       << "\" \\ \n"
+	       << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
+	       << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
+	       << "F = POINT \n";
     } else {
-       Out_File << "ZONE T =  \"Block Number = " << Block_Number
-                << "\" \\ \n"
-                << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
-                << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
-                << "F = POINT \n";
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	       << "\" \\ \n"
+	       << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
+	       << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
+	       << "F = POINT \n";
     } /* endif */
 
     for ( j  = SolnBlk.Grid.JNl ; j <= SolnBlk.Grid.JNu ; ++j ) {
-       for ( i = SolnBlk.Grid.INl ; i <= SolnBlk.Grid.INu ; ++i ) {
-	   W_node = SolnBlk.Wn(i, j);
-           Out_File << " "  << SolnBlk.Grid.Node[i][j].X << W_node;
-           Out_File.setf(ios::scientific);
-           Out_File << " " << W_node.T() << " " << W_node.v.abs()/W_node.a() 
-                    << " " << W_node.H() << " " << W_node.s() << "\n";
-           Out_File.unsetf(ios::scientific);
-       } /* endfor */
+      for ( i = SolnBlk.Grid.INl ; i <= SolnBlk.Grid.INu ; ++i ) {
+	W_node = SolnBlk.Wn(i, j);
+	Out_File << " "  << SolnBlk.Grid.Node[i][j].X << W_node;
+	Out_File.setf(ios::scientific);
+	Out_File << " " << W_node.T() << " " << W_node.v.abs()/W_node.a() 
+		 << " " << W_node.H() << " " << W_node.s() << "\n";
+	Out_File.unsetf(ios::scientific);
+      } /* endfor */
     } /* endfor */
     Out_File << setprecision(6);
     
+  } else {
+
+    // Output the discontinuous nodal solution
+
+    /* Output node solution data. */
+
+    Out_File << setprecision(14);
+    if (Output_Title) {
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Euler Solution, "
+	       << "Time Step/Iteration Level = " << Number_of_Time_Steps
+	       << ", Time = " << Time
+	       << "\"" << "\n"
+	       << "VARIABLES = \"x\" \\ \n"
+	       << "\"y\" \\ \n"
+	       << "\"rho\" \\ \n"
+	       << "\"u\" \\ \n"
+	       << "\"v\" \\ \n"
+	       << "\"p\" \\ \n";
+	
+      // Add more variables for the Detailed format
+      if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+	Out_File << "\"T\" \n"
+		 << "\"M\" \n"
+		 << "\"H\" \n"
+		 << "\"s\" \n";
+      }
+
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	       << "\" \\ \n"
+	       << "I = " << (SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 1)*3 << " \\ \n"
+	       << "J = " << (SolnBlk.Grid.JCu - SolnBlk.Grid.JCl + 1)*3 << " \\ \n"
+	       << "F = POINT \n";
+    } else {
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	       << "\" \\ \n"
+	       << "I = " << (SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 1)*3 << " \\ \n"
+	       << "J = " << (SolnBlk.Grid.JCu - SolnBlk.Grid.JCl + 1)*3 << " \\ \n"
+	       << "F = POINT \n";
+    } /* endif */
+
+    // Set the accuracy properly
+    if (Tecplot_Execution_Mode::IsDoublePrecision()){
+      Out_File << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE ";
+
+      // Detail format
+      if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+	Out_File << "DOUBLE DOUBLE DOUBLE DOUBLE ";
+      }
+
+      // Close line
+      Out_File << " ) \n";
+    } // endif (DoublePrecision)
+
+    // Output data
+    for ( j  = SolnBlk.Grid.JCl ; j <= SolnBlk.Grid.JCu ; ++j ) { // for every j cell
+      for ( nRow = 1; nRow <= 3; ++nRow){ // for 3 rows of nodes
+	for ( i = SolnBlk.Grid.ICl ; i <= SolnBlk.Grid.ICu ; ++i ) { // for every i cell  
+	  for (nLoop = 1; nLoop <= 3; ++nLoop){	// for every node
+	    // Get the node location
+	    switch(nRow){
+	    case 1: // output the 1st row of nodes (i.e. NodeSW(i,j), xfaceS(i,j), NodeSE(i,j))
+	      switch(nLoop){
+	      case 1:		// output NodeSW(i,j)
+		Node = SolnBlk.Grid.nodeSW(i,j).X;
+		break;
+	      case 2:		// output xfaceS(i,j)
+		Node = SolnBlk.Grid.xfaceS(i,j);
+		break;
+	      case 3:		// output NodeSE(i,j)
+		Node = SolnBlk.Grid.nodeSE(i,j).X;
+		break;
+	      }
+	      break;
+
+	    case 2: // output the 2nd row of nodes (i.e. xfaceW(i,j), Grid.CellCentroid(i,j), xfaceE(i,j))
+	      switch(nLoop){
+	      case 1:		// output xfaceW(i,j)
+		Node = SolnBlk.Grid.xfaceW(i,j);
+		break;
+	      case 2:		// output Grid.CellCentroid(i,j)
+		Node = SolnBlk.Grid.CellCentroid(i,j);
+		break;
+	      case 3:		// output xfaceE(i,j) 
+		Node = SolnBlk.Grid.xfaceE(i,j);
+		break;
+	      }
+	      break;
+
+	    case 3: // output the 3rd row of nodes (i.e. NodeNW(i,j), xfaceN(i,j), NodeNE(i,j))
+	      switch(nLoop){
+	      case 1:		// output NodeNW(i,j)
+		Node = SolnBlk.Grid.nodeNW(i,j).X;
+		break;
+	      case 2:		// output xfaceN(i,j)
+		Node = SolnBlk.Grid.xfaceN(i,j);
+		break;
+	      case 3:		// output NodeNE(i,j)
+		Node = SolnBlk.Grid.nodeNE(i,j).X;
+		break;
+	      }
+	      break;
+	    } // endswitch
+
+	    // Output Brief format
+	    W_node = SolnBlk.PiecewiseLinearSolutionAtLocation(i,j,Node);
+	    Out_File << " "  << Node 
+		     << " "  << W_node;
+
+	    // Add more variables for the Detailed format
+	    if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){ 
+	      Out_File.setf(ios::scientific);
+	      Out_File << " " << W_node.T() 
+		       << " " << W_node.v.abs()/W_node.a() 
+		       << " " << W_node.H() 
+		       << " " << W_node.s();
+	      Out_File.unsetf(ios::scientific);
+	    }
+
+	    // Close line
+	    Out_File << "\n";
+	    Out_File.unsetf(ios::scientific);
+
+	  }
+	} /* endfor */
+      }
+    } /* endfor */
+    Out_File << setprecision(6);  
+
+  } // endif (Tecplot_Execution_Mode::IsSmoothNodalSolnOutputRequired())
+
 }
 
 /********************************************************
