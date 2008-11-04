@@ -249,6 +249,9 @@ public:
   //! Make an identical copy of SolnBlk
   void makeCopy(const Euler2D_Quad_Block &SolnBlk){ *this = SolnBlk; }
 
+  //! @brief Make a copy of the high-order objects
+  void copy_HighOrder_Objects(const Euler2D_Quad_Block &SolnBlk);
+
   //@{ @name Bilinear interplation (Zingg & Yarrow).
   //! Return primitive solution state at specified node.
   Euler2D_pState Wn(const int ii, const int jj);
@@ -749,7 +752,7 @@ inline void Euler2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
 
     // allocate new memory    
     HO_WoS = new BC_Type[NCi];
-    
+
     // allocate BC memory for each flux calculation point
     for (i=ICl; i<=ICu; ++i){
       BC_SouthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl),
@@ -1479,6 +1482,130 @@ inline void Euler2D_Quad_Block::allocate_HighOrder_Array(const int & NumberOfRec
       NumberOfHighOrderVariables = NumberOfReconstructions;
     }
   }
+}
+
+/*!
+ * Copy the high-order objects from the SolnBlk.
+ */
+inline void Euler2D_Quad_Block::copy_HighOrder_Objects(const Euler2D_Quad_Block &SolnBlk){
+
+  int i, j, k;
+
+  if (SolnBlk.U != NULL){
+
+    /* Set the same number of high-order objects
+       as that of the rhs block. */
+    allocate_HighOrder_Array(SolnBlk.NumberOfHighOrderVariables);
+    
+    // Copy the high-order objects
+    for (k = 1; k <= NumberOfHighOrderVariables; ++k){
+      HighOrderVariable(k-1) = SolnBlk.HighOrderVariable(k-1);
+    }/* endfor */
+
+    // Copy the high-order boundary conditions.
+
+    // === North BCs
+    if (SolnBlk.HO_WoN != NULL){
+
+      if (HO_WoN != NULL){
+	// deallocate memory
+	delete [] HO_WoN; HO_WoN = NULL;
+      }
+
+      // allocate new memory based on the number of the current grid
+      HO_WoN = new BC_Type[NCi];
+
+      for (i=ICl; i<=ICu; ++i){
+	// allocate BC memory for each flux calculation point
+	BC_NorthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu),
+					    Grid.BCtypeN[i]);
+
+	// Copy North high-order BCs
+	HO_WoN[i] = SolnBlk.HO_WoN[i];
+      }
+      
+    } else if ( HO_WoN != NULL){
+      // deallocate memory
+      delete [] HO_WoN; HO_WoN = NULL;
+    }
+
+
+    // === South BCs
+    if (SolnBlk.HO_WoS != NULL){
+
+      if (HO_WoS != NULL){
+	// deallocate memory
+	delete [] HO_WoS; HO_WoS = NULL;
+      }
+
+      // allocate new memory    
+      HO_WoS = new BC_Type[NCi];
+
+      for (i=ICl; i<=ICu; ++i){
+	// allocate BC memory for each flux calculation point
+	BC_SouthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl),
+					    Grid.BCtypeS[i]);
+
+	// Copy South high-order BCs
+	HO_WoS[i] = SolnBlk.HO_WoS[i];
+      }
+
+    } else if (HO_WoS != NULL){
+      // deallocate memory
+      delete [] HO_WoS; HO_WoS = NULL;
+    }
+
+
+    // === East BCs
+    if (SolnBlk.HO_WoE != NULL){
+
+      if (HO_WoE != NULL){
+	// deallocate memory
+	delete [] HO_WoE; HO_WoE = NULL;
+      }
+
+      // allocate new memory    
+      HO_WoE = new BC_Type[NCj];
+
+      for (j=JCl; j<=JCu; ++j){
+	// allocate BC memory for each flux calculation point
+	BC_EastCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j),
+					   Grid.BCtypeE[j]);
+
+	// Copy East high-order BCs
+	HO_WoE[j] = SolnBlk.HO_WoE[j];
+      }
+    } else if (HO_WoE != NULL){
+      // deallocate memory
+      delete [] HO_WoE; HO_WoE = NULL;
+    }
+
+    // === West BCs
+    if (SolnBlk.HO_WoW != NULL){
+
+      if (HO_WoW != NULL){
+	// deallocate memory
+	delete [] HO_WoW; HO_WoW = NULL;
+      }
+
+      // allocate new memory    
+      HO_WoW = new BC_Type[NCj];
+      
+      for (j=JCl; j<=JCu; ++j){
+	// allocate BC memory for each flux calculation point
+	BC_WestCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j),
+					   Grid.BCtypeW[j]);
+	
+	// Copy West high-order BCs
+	HO_WoW[j] = SolnBlk.HO_WoW[j];
+      }
+    } else if (HO_WoW != NULL){
+      // deallocate memory
+      delete [] HO_WoW; HO_WoW = NULL;
+    }
+    
+  } // endif
+  
 }
 
 /*******************************************************************************

@@ -1014,6 +1014,7 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
 
     }//endif(RecOrder())
 
+
     // Calculate slope limiters or used the frozen ones.
     if (!SolnBlk.Freeze_Limiter) {
 
@@ -1035,9 +1036,16 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
       // Get North face GQPs
       n = 0;
       if (faceNorth){
-	// used GQPs from BndSplineInfo
-	Geom->BndNorthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
-      } else {
+
+	if (jCell == JCu){ // this is an interior cell
+	  // used GQPs from BndNorthSplineInfo
+	  Geom->BndNorthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+	} else { // this is a ghost cell
+	  // used GQPs from BndSouthSplineInfo
+	  Geom->BndSouthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+	}
+	
+      }	else {
 	// used GQPs from straight edge
 	Geom->getGaussQuadPointsFaceN(iCell,jCell,&GQP[n],GQP_North);
       }
@@ -1046,8 +1054,16 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
       
       // Get West face GQPs
       if (faceWest){
-	// used GQPs from BndSplineInfo
-	Geom->BndWestSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+
+	if (iCell == ICl){ // this is an interior cell
+	  // used GQPs from BndWestSplineInfo
+	  Geom->BndWestSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+	} else { // this is a ghost cell
+	  // used GQPs from BndEastSplineInfo
+	  Geom->BndEastSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+	}
+	
+	
       } else {
 	// used GQPs from straight edge
 	Geom->getGaussQuadPointsFaceW(iCell,jCell,&GQP[n],GQP_West);
@@ -1057,8 +1073,15 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
       
       // Get South face GQPs
       if (faceSouth){
-	// used GQPs from BndSplineInfo
-	Geom->BndSouthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+
+	if (jCell == JCl){ // this is an interior cell
+	  // used GQPs from BndSouthSplineInfo
+	  Geom->BndSouthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+	} else { // this is a ghost cell
+	  // used GQPs from BndNorthSplineInfo
+	  Geom->BndNorthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+	}
+
       } else {
 	// used GQPs from straight edge
 	Geom->getGaussQuadPointsFaceS(iCell,jCell,&GQP[n],GQP_South);
@@ -1068,8 +1091,15 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
       
       // Get East face GQPs
       if (faceEast){
-	// used GQPs from BndSplineInfo
-	Geom->BndEastSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+
+	if (iCell == ICu){ // this is an interior cell
+	  // used GQPs from BndEastSplineInfo
+	  Geom->BndEastSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+	} else { // this is a ghost cell
+	  // used GQPs from BndWestSplineInfo
+	  Geom->BndWestSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+	}
+
       } else {
 	// used GQPs from straight edge
 	Geom->getGaussQuadPointsFaceE(iCell,jCell,&GQP[n],GQP_East);
@@ -1184,6 +1214,7 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
     CellTaylorDeriv(iCell,jCell).Limiter().Vacuum();
     
   } /* endif */
+
 }
 
 

@@ -46,11 +46,6 @@ Euler2D_Quad_Block & Euler2D_Quad_Block::operator =(const Euler2D_Quad_Block &So
     allocate(Soln.NCi-2*Soln.Nghost,
 	     Soln.NCj-2*Soln.Nghost,
 	     Soln.Nghost);
-
-    /* Set the same number of high-order objects
-       as that of the rhs block. */
-    allocate_HighOrder_Array(Soln.NumberOfHighOrderVariables);
-
   } else {
     deallocate();
   }
@@ -87,40 +82,11 @@ Euler2D_Quad_Block & Euler2D_Quad_Block::operator =(const Euler2D_Quad_Block &So
       WoS[i] = Soln.WoS[i];
       WoN[i] = Soln.WoN[i];
     }/* endfor */
-
-    // allocate memory for high-order boundary conditions.
-    allocate_HighOrder_BoundaryConditions();
-
-    for (j  = JCl ; j <= JCu ; ++j ) {
-      // Copy West high-order BCs
-      if (HO_WoW != NULL){
-	HO_WoW[j] = Soln.HO_WoW[j];
-      }
-
-      // Copy East high-order BCs
-      if (HO_WoE != NULL){
-	HO_WoE[j] = Soln.HO_WoE[j];
-      }
-    }
-
-    for ( i = ICl ; i <= ICu ; ++i ) {
-      // Copy South high-order BCs
-      if (HO_WoS != NULL){
-	HO_WoS[i] = Soln.HO_WoS[i];
-      }
-      
-      // Copy North high-order BCs
-      if (HO_WoN != NULL){
-	HO_WoN[i] = Soln.HO_WoN[i];
-      }
-    }
-    
-    // Copy the high-order objects
-    for (k = 1; k <= NumberOfHighOrderVariables; ++k){
-      HighOrderVariable(k-1) = Soln.HighOrderVariable(k-1);
-    }/* endfor */
     
   }/* endif */
+
+  // Copy high-order objects
+  copy_HighOrder_Objects(Soln);
 
   // Copy boundary reference states
   Ref_State_BC_North = Soln.Ref_State_BC_North;
