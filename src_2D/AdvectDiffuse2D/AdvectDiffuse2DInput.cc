@@ -539,6 +539,12 @@ ostream &operator << (ostream &out_file,
       // output information related to Tecplot output
       Tecplot_Execution_Mode::Print_Info(out_file);
     }
+
+    // ==== Accuracy assessment 
+    out_file << "\n  -> Accuracy Assessment: ";
+    // output information related to assessment of accuracy
+    AccuracyAssessment_Execution_Mode::Print_Info(out_file);
+
     out_file << "\n  -> Restart Solution Save Frequency: "
              << IP.Restart_Solution_Save_Frequency
              << " steps (iterations)"; 
@@ -781,9 +787,7 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Number_of_Blocks_Per_Processor = 10;
 
     // Accuracy assessment parameters:
-    IP.Accuracy_Assessment_Mode = ACCURACY_ASSESSMENT_BASED_ON_EXACT_SOLUTION;
-    IP.Accuracy_Assessment_Exact_Digits = 10;
-    IP.Accuracy_Assessment_Parameter = 1;
+    AccuracyAssessment_Execution_Mode::SetDefaults();
 
     // High-order parameters:
     HighOrder2D_Input::SetDefaults();
@@ -1226,15 +1230,7 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
                           MPI::DOUBLE, 0);
 
     // Accuracy assessment parameters:
-    MPI::COMM_WORLD.Bcast(&(IP.Accuracy_Assessment_Mode), 
-			  1, 
-			  MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Accuracy_Assessment_Exact_Digits), 
-			  1, 
-			  MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Accuracy_Assessment_Parameter), 
-			  1, 
-			  MPI::INT, 0);
+    AccuracyAssessment_Execution_Mode::Broadcast();
 
     // CENO_Execution_Mode variables
     CENO_Execution_Mode::Broadcast();
@@ -1725,16 +1721,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Freeze_Limiter_Residual_Level), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
-    // Accuracy assessment parameters:
-    Communicator.Bcast(&(IP.Accuracy_Assessment_Mode), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Accuracy_Assessment_Exact_Digits), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Accuracy_Assessment_Parameter), 
-                       1, 
-                       MPI::INT, Source_Rank);
 }
 #endif
 
@@ -2983,13 +2969,6 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 	   << "Space Accuracy set to 1" << endl;
     }/* endif */
 
-  } else if (strcmp(IP.Next_Control_Parameter, "Accuracy_Assessment_Exact_Digits") == 0) {
-    i_command = 0;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.Accuracy_Assessment_Exact_Digits;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    if (IP.Accuracy_Assessment_Exact_Digits < 0) i_command = INVALID_INPUT_VALUE;
-
   } else if (strcmp(IP.Next_Control_Parameter, "Execute") == 0) {
     i_command = EXECUTE_CODE;
 
@@ -3041,9 +3020,8 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
   } else {
     i_command = INVALID_INPUT_CODE;
 
-  } /* endif */
+  }/* endif */
 
-  
 
   /* Parse next control parameter with VelocityFields parser */
   VelocityFields::Parse_Next_Input_Control_Parameter(IP,i_command);
@@ -3059,6 +3037,9 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 
   /* Parse next control parameter with Inflow parser */
   IP.Inflow->Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with AccuracyAssessment_Execution_Mode parser */
+  AccuracyAssessment_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   /* Parse next control parameter with CENO_Execution_Mode parser */
   CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);

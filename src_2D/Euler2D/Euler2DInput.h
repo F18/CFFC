@@ -22,6 +22,8 @@
 #include "Euler2DExactSolutions.h" /* Include 2D Euler exact solutions header file */
 #include "../HighOrderReconstruction/CENO_ExecutionMode.h" // Include high-order CENO execution mode header file
 #include "../HighOrderReconstruction/CENO_Tolerances.h"	   // Include high-order CENO tolerances header file
+#include "../HighOrderReconstruction/AccuracyAssessment_ExecutionMode.h" /* Include accuracy assessment framework 
+									    execution mode header file */
 
 /* Define the structures and classes. */
 
@@ -282,13 +284,6 @@ class Euler2D_Input_Parameters{
   const short & Verbose(void) const {return verbose_flag;}
   void Verbose(const int & batch_flag){ (batch_flag != 0) ? verbose_flag=OFF: verbose_flag=ON; }
   bool OutputBoundaryReferenceState(const int & BCtype) const;
-  //@}
-
-  //! @name Accuracy assessment parameters:
-  //@{
-  unsigned int Accuracy_Assessment_Mode;
-  unsigned int Accuracy_Assessment_Exact_Digits;
-  unsigned int Accuracy_Assessment_Parameter;
   //@}
 
   //! @name Operating functions:
@@ -769,6 +764,11 @@ inline ostream &operator << (ostream &out_file,
       // output information related to Tecplot output
       Tecplot_Execution_Mode::Print_Info(out_file);
     }
+
+    // ==== Accuracy assessment 
+    out_file << "\n  -> Accuracy Assessment: ";
+    // output information related to assessment of accuracy
+    AccuracyAssessment_Execution_Mode::Print_Info(out_file);
 
     out_file << "\n  -> Restart Solution Save Frequency: "
              << IP.Restart_Solution_Save_Frequency

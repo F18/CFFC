@@ -22,6 +22,7 @@ using std::cout;
 #include "../Utilities/Utilities.h"
 #include "../AMR/AdaptiveBlock.h"
 #include "../MPI/MPI.h"
+#include "AccuracyAssessment_ExecutionMode.h"
 
 /*!
  * \class AccuracyAssessment2D_MultiBlock
@@ -281,12 +282,13 @@ int AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracy(Quad_Soln_Block *Sol
   // Write message to user
   if ( Verbose ){
     std::cout << "\n Assess solution accuracy based on ";
+    std::cout.flush();
   }
 
 
   // Assess solution accuracy based on the required mode for the current problem
-  switch(IP.Accuracy_Assessment_Mode){
-  case ACCURACY_ASSESSMENT_BASED_ON_EXACT_SOLUTION:
+  switch(AccuracyAssessment_Execution_Mode::Method()){
+  case AccuracyAssessment_Execution_Mode::Based_On_Exact_Solution:
     if ( Verbose ){
       std::cout << "exact solution\n"
 		<< "   Wait patiently ... ";
@@ -296,6 +298,26 @@ int AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracy(Quad_Soln_Block *Sol
     error_flag =  AssessSolutionAccuracyBasedOnExactSolution(SolnBlk,Soln_Block_List,IP);
     break;
     
+  case AccuracyAssessment_Execution_Mode::Based_On_Entropy_Variation:
+    if ( Verbose ){
+      std::cout << "entropy variation relative to reference value\n"
+		<< "   Wait patiently ... ";
+      std::cout.flush();
+    }
+
+    throw runtime_error("AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracy() ERROR! Accuracy assessment based on entropy variation not implemented yet");
+    break;
+
+  case AccuracyAssessment_Execution_Mode::Based_On_Lift_And_Drag_Coefficients:
+    if ( Verbose ){
+      std::cout << "calculation of lift and drag coefficients\n"
+		<< "   Wait patiently ... ";
+      std::cout.flush();
+    }
+
+    throw runtime_error("AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracy() ERROR! Accuracy assessment based on lift and drag coefficients not implemented yet");    
+    break;
+
   default: 
     // Compute the error norms based on an exact solution
     if ( Verbose ){
@@ -347,12 +369,12 @@ int AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracyBasedOnExactSolution(
       if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
 	if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
 	  // Use the first high-order object to assess the accuracy
-	  SolnBlk[nb].AssessAccuracy.ComputeSolutionErrorsHighOrder(IP.Accuracy_Assessment_Parameter,
-								    IP.Accuracy_Assessment_Exact_Digits);
+	  SolnBlk[nb].AssessAccuracy.ComputeSolutionErrorsHighOrder(AccuracyAssessment_Execution_Mode::Assessment_Parameter(),
+								    AccuracyAssessment_Execution_Mode::Exact_Digits());
 	} else {
 	  // Use the low-order reconstruction
-	  SolnBlk[nb].AssessAccuracy.ComputeSolutionErrors(IP.Accuracy_Assessment_Parameter,
-							   IP.Accuracy_Assessment_Exact_Digits);
+	  SolnBlk[nb].AssessAccuracy.ComputeSolutionErrors(AccuracyAssessment_Execution_Mode::Assessment_Parameter(),
+							   AccuracyAssessment_Execution_Mode::Exact_Digits());
 	}
 	
 	L1() += SolnBlk[nb].AssessAccuracy.L1();

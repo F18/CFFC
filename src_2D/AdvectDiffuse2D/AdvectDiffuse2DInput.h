@@ -18,6 +18,8 @@
 #include "AdvectDiffuse2DParameterFields.h" /* Include 2D advection diffusion parameter fields */
 #include "../NewtonKrylovSchwarz2D/NKSInput2D.h" /* Include file for NKS */
 #include "../HighOrderReconstruction/HighOrder2D_Input.h" /* Include file for high-order */
+#include "../HighOrderReconstruction/AccuracyAssessment_ExecutionMode.h" /* Include accuracy assessment framework 
+									    execution mode header file */
 
 /* Define the structures and classes. */
 
@@ -274,13 +276,6 @@ public:
   const short & Verbose(void) const {return verbose_flag;}
   void Verbose(const int & batch_flag){ (batch_flag != 0) ? verbose_flag=OFF: verbose_flag=ON; }
   bool OutputBoundaryReferenceState(const int & BCtype) const;
-  //@}
-
-  //! @name Accuracy assessment parameters:
-  //@{
-  unsigned int Accuracy_Assessment_Mode;
-  unsigned int Accuracy_Assessment_Exact_Digits;
-  unsigned int Accuracy_Assessment_Parameter;
   //@}
 
   //! @name Operating functions:

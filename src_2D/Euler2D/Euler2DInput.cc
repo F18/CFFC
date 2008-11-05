@@ -474,9 +474,7 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     IP.Freeze_Limiter_Residual_Level = 1e-4;
 
     // Accuracy assessment parameters:
-    IP.Accuracy_Assessment_Mode = ACCURACY_ASSESSMENT_BASED_ON_EXACT_SOLUTION;
-    IP.Accuracy_Assessment_Exact_Digits = 10;
-    IP.Accuracy_Assessment_Parameter = 1;
+    AccuracyAssessment_Execution_Mode::SetDefaults();
 
     // High-order parameters:
     HighOrder2D_Input::SetDefaults();
@@ -1072,15 +1070,7 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
                           MPI::DOUBLE, 0);
 
     // Accuracy assessment parameters:
-    MPI::COMM_WORLD.Bcast(&(IP.Accuracy_Assessment_Mode), 
-			  1, 
-			  MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Accuracy_Assessment_Exact_Digits), 
-			  1, 
-			  MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Accuracy_Assessment_Parameter), 
-			  1, 
-			  MPI::INT, 0);
+    AccuracyAssessment_Execution_Mode::Broadcast();
 
     // CENO_Execution_Mode variables
     CENO_Execution_Mode::Broadcast();
@@ -1704,16 +1694,6 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Freeze_Limiter_Residual_Level), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
-    // Accuracy assessment parameters:
-    Communicator.Bcast(&(IP.Accuracy_Assessment_Mode), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Accuracy_Assessment_Exact_Digits), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Accuracy_Assessment_Parameter), 
-                       1, 
-                       MPI::INT, Source_Rank);
 
     // Update all dependent variables
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {    
@@ -3533,22 +3513,6 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	     << "Space Accuracy set to 1" << endl;
       }/* endif */
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Accuracy_Assessment_Exact_Digits") == 0) {
-      i_command = 0;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.Accuracy_Assessment_Exact_Digits;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.Accuracy_Assessment_Exact_Digits < 0) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Accuracy_Assessment_Parameter") == 0) {
-      i_command = 0;
-      ++IP.Line_Number;
-      IP.Input_File >> IP.Accuracy_Assessment_Parameter;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      // check that index makes sense for 2D Euler state
-      if (IP.Accuracy_Assessment_Parameter < 1 || IP.Accuracy_Assessment_Parameter > 4)
-	i_command = INVALID_INPUT_VALUE;
-
     ////////////////////////////////////////////////////////////////////
     // INTERFACE PARAMETERS                                           //
     ////////////////////////////////////////////////////////////////////
@@ -3841,6 +3805,9 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 
     /* Parse next control parameter with ExactSoln parser */
     IP.ExactSoln->Parse_Next_Input_Control_Parameter(IP,i_command);
+
+    /* Parse next control parameter with AccuracyAssessment_Execution_Mode parser */
+    AccuracyAssessment_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
 
     /* Parse next control parameter with CENO_Execution_Mode parser */
     CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);

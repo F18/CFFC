@@ -889,14 +889,6 @@ inline char *Date_And_Time() {
 #define IMPLICIT                          1
 
 
-/********************************************************
- * CFD -- Accuracy Assessment Modes                     *
- ********************************************************/
-#define ACCURACY_ASSESSMENT_BASED_ON_EXACT_SOLUTION        0
-#define ACCURACY_ASSESSMENT_BASES_ON_ENTROPY_PRODUCTION    1
-#define ACCURACY_ASSESSMENT_BASES_ON_DRAG_COEFFICIENT      2
-
-
 /*************************************************************************
  *                                                                       *
  * CFD -- Maximum length of codes and values of input parameter strings. *
