@@ -345,6 +345,14 @@ public:
 							    const Vector2D &CalculationPoint) const;
   //@}
 
+  //! @name Member functions to compute the solution entropy at a particular location
+  //@{
+  double SolutionEntropyAtLocation(const int &ii, const int &jj,
+				   const Vector2D &CalculationPoint,
+				   const unsigned int &parameter = 0) const;
+  //@}
+
+
   //! @name Member functions to set boundary states
   //@{
   //! Set reference values for boundary reference states
@@ -1462,6 +1470,22 @@ inline Euler2D_pState Euler2D_Quad_Block::UnlimitedPiecewiseLinearSolutionAtLoca
   // calculate the distance between the point of interest and the centroid of the cell
   Vector2D dX(CalculationPoint - Grid.Cell[ii][jj].Xc);	
   return UnlimitedPiecewiseLinearSolutionForDelta(ii,jj,dX.x,dX.y);
+}
+
+/*!
+ * Compute the solution entropy at a particular location 
+ * based on the piecewise linear reconstruction.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param CalculationPoint the Cartesian coordinates of the point of interest
+ * \param parameter only used for compatibility with other frameworks, otherwise useless
+ */
+inline double Euler2D_Quad_Block::SolutionEntropyAtLocation(const int &ii, const int &jj,
+							    const Vector2D &CalculationPoint,
+							    const unsigned int &parameter) const{
+  
+  return PiecewiseLinearSolutionAtLocation(ii,jj,CalculationPoint).s();
 }
 
 /*!

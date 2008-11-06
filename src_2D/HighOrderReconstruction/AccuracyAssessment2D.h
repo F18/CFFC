@@ -65,6 +65,21 @@ public:
 									  const unsigned int &) const =
 			     &Quad_Soln_Block::PiecewiseLinearSolutionAtLocation);
 
+  template<typename Input_Parameters_Type>
+  double ComputeSolutionEntropyErrorsHighOrder(const unsigned int &parameter,
+					       const unsigned int &accuracy_digits,
+					       const Input_Parameters_Type & IP,
+					       const unsigned short int &Pos = 0) throw(ArgumentNullException){ };
+
+  template<typename Input_Parameters_Type>
+  double ComputeSolutionEntropyErrors(const unsigned int &parameter,
+				      const unsigned int &accuracy_digits,
+				      const Input_Parameters_Type & IP,
+				      double (Quad_Soln_Block::*ComputeSolutionEntropyAt)(const int &, const int &,
+											  const Vector2D &,
+											  const unsigned int &) const =
+				      &Quad_Soln_Block::SolutionEntropyAtLocation) throw(ArgumentNullException){ };
+
   //! @name Access to the error data:
   //@{
   double & L1(void) {return LNorms[0]; }     //!< return the L1 component of the error-norm vector
@@ -420,6 +435,8 @@ ComputeSolutionErrorL2(const int &iCell, const int &jCell,
 								       _dummy_param),
 						 digits,_dummy_param) );
 }
+
+
 
 
 

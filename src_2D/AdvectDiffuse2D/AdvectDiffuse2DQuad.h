@@ -1562,4 +1562,11 @@ extern int Output_Cells_Tecplot(Grid2D_Quad_Block **Grid_ptr,
 extern int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 				     int batch_flag);
 
+/*
+ * Include specializations CFFC header files.
+ * Must be included at the end of the file!!!
+ */
+#include "AdvectDiffuse2DAccuracyAssessment.h" /* Include 2D accuracy assessment header 
+						  file with specializations for advection-diffusion solution. */
+
 #endif /* _ADVECTDIFFUSE2D_QUAD_INCLUDED  */

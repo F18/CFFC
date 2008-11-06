@@ -97,6 +97,10 @@ private:
   static int AssessSolutionAccuracyBasedOnExactSolution(Quad_Soln_Block *SolnBlk,
 							const AdaptiveBlock2D_List &Soln_Block_List,
 							const Input_Parameters_Type &IP);
+  template<typename Quad_Soln_Block, typename Input_Parameters_Type>
+  static int AssessSolutionAccuracyBasedOnEntropyVariation(Quad_Soln_Block *SolnBlk,
+							   const AdaptiveBlock2D_List &Soln_Block_List,
+							   const Input_Parameters_Type &IP);
 
 };
 
@@ -305,7 +309,7 @@ int AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracy(Quad_Soln_Block *Sol
       std::cout.flush();
     }
 
-    throw runtime_error("AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracy() ERROR! Accuracy assessment based on entropy variation not implemented yet");
+    error_flag =  AssessSolutionAccuracyBasedOnEntropyVariation(SolnBlk,Soln_Block_List,IP);
     break;
 
   case AccuracyAssessment_Execution_Mode::Based_On_Lift_And_Drag_Coefficients:
@@ -422,6 +426,94 @@ int AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracyBasedOnExactSolution(
 	      << " Please check that the exact solution is set or "             << endl
 	      << " don't require accuracy assessment!"                          << endl
 	      << " ============================================================ " 
+	      << endl;
+    
+    return 1;
+  }
+
+}
+
+/*!
+ * Assess the solution accuracy of the problem based on entropy variation
+ * relative to a reference state.
+ *
+ * \note For solution states to which this method doesn't apply,
+ *       the methods ComputeSolutionEntropyErrorsHighOrder() and
+ *       ComputeSolutionEntropyErrors() must be specialized and
+ *       throw ArgumentNullException error.
+ */
+template<typename Quad_Soln_Block, typename Input_Parameters_Type>
+int AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracyBasedOnEntropyVariation(Quad_Soln_Block *SolnBlk,
+										   const AdaptiveBlock2D_List &Soln_Block_List,
+										   const Input_Parameters_Type &IP){
+  double TotalCells_MPI;
+
+  try {
+
+    // reset errors values
+    L1() = ZERO; L2() = ZERO; LMax() = ZERO;
+    TotalDomainArea = ZERO;
+    TotalCells = 0;
+    
+    // compute the errors on each CPU for 
+    // all the blocks on that CPU
+    for (int nb = 0; nb < Soln_Block_List.Nblk; ++nb) {
+      if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+	if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+	  // Use the first high-order object to assess the accuracy
+	  SolnBlk[nb].AssessAccuracy.ComputeSolutionEntropyErrorsHighOrder(AccuracyAssessment_Execution_Mode::Assessment_Parameter(),
+									   AccuracyAssessment_Execution_Mode::Exact_Digits(),
+									   IP);
+	} else {
+	  // Use the low-order reconstruction
+	  SolnBlk[nb].AssessAccuracy.ComputeSolutionEntropyErrors(AccuracyAssessment_Execution_Mode::Assessment_Parameter(),
+								  AccuracyAssessment_Execution_Mode::Exact_Digits(),
+								  IP);
+	}
+	
+	L1() += SolnBlk[nb].AssessAccuracy.L1();
+	L2() += SolnBlk[nb].AssessAccuracy.L2();
+	LMax() = max(LMax(),SolnBlk[nb].AssessAccuracy.LMax());
+
+	TotalDomainArea += SolnBlk[nb].AssessAccuracy.BlockArea();
+
+	TotalCells += SolnBlk[nb].AssessAccuracy.UsedCells();
+      }
+    }
+
+    /* Total error for L1 norm on all CPUs */
+    L1() = CFFC_Summation_MPI(L1());
+
+    /* Total error for L2 norm on all CPUs */
+    L2() = CFFC_Summation_MPI(L2());
+  
+    /* Final LMax norm on all CPUs */
+    LMax() = CFFC_Maximum_MPI(LMax());
+
+    /* Total area of the computational domain */
+    TotalDomainArea = CFFC_Summation_MPI(TotalDomainArea);
+
+    /* Total number of used cells for accuracy assessment */
+    TotalCells_MPI = TotalCells;
+    TotalCells_MPI = CFFC_Summation_MPI(TotalCells_MPI);
+    TotalCells = (int)TotalCells_MPI;
+
+    // === Final L1 error norm ===
+    L1() /= TotalDomainArea;
+
+    // === Final L2 error norm ===
+    L2() = sqrt(L2()/TotalDomainArea);
+    
+    return 0;
+  }
+  catch (const ArgumentNullException & ){
+    std::cerr << endl
+	      << " ================================================================== " 
+	      << endl
+	      << " ERROR: The accuracy of the solution couldn't be determined!" << endl
+	      << " The entropy variation criterion couldn't be used for this flow! " << endl
+	      << " Please check the problem or don't require accuracy assessment!" << endl
+	      << " ================================================================== " 
 	      << endl;
     
     return 1;

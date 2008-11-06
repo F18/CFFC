@@ -11,7 +11,7 @@
 #include "TestData.h"
 #include "../AdvectDiffuse2DQuad.h"
 #include "../Grid/HO_Grid2DQuadMultiBlock.h" /* Include 2D quadrilateral multiblock grid header file */
-#include "../../HighOrderReconstruction/AccuracyAssessment2DMultiBlock.h"
+#include "../AdvectDiffuse2DAccuracyAssessmentMultiBlock.h"
 #include "../../HighOrderReconstruction/HighOrder2D_MultiBlock.h" /* Include 2D high-order header file for multi-block level. */
 
 namespace tut
