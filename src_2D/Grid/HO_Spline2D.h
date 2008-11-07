@@ -314,6 +314,22 @@ public:
   void Create_Spline_Ringleb_Flow(void);
   //@}
 
+  //! @name Solid body management member variables/functions
+  //@{
+  //! Return the total number of solid bodies instantiated for the problem
+  static int const & NumberOfSolidBodies(void) { return CounterSolidBodies; }
+  //! Reset the conter for solid bodies
+  static void ResetCounter(void) { CounterSolidBodies = 0; }
+  //! Determine if the current spline represents the boundary of a solid body or not
+  bool IsSolidBoundary(void) const { (bodyOwner != 0)?true:false; }
+  /*! Obtain the ID of the solid body to which the current spline is a boundary.
+    Zero means that it doesn't belong to any solid body. */
+  int const & getBodyID(void) const { return bodyOwner; }
+  //!
+  void makeSplineSolidBoundary(void) { ++CounterSolidBodies; bodyOwner = CounterSolidBodies; }
+  void makeSplineSolidBoundary(const int & BodyID){ (BodyID > 0 && BodyID <= CounterSolidBodies)? bodyOwner=BodyID: bodyOwner=0; }
+  //@}
+
   //! @name Binary arithmetic operators.
   //@{
   const Spline2D_HO operator + (const Spline2D_HO &S) const;
@@ -341,6 +357,7 @@ public:
   //@{
   friend ostream &operator << (ostream &out_file, const Spline2D_HO &S);
   friend istream &operator >> (istream &in_file, Spline2D_HO &S);
+  void Read_Object(istream &in_file);
   //@}
 
   //! @name MPI operation functions.
@@ -355,6 +372,20 @@ public:
 private:
   int FluxMethod;   //!< variable to set the flux calculation method through the boundary spline
 
+  //! @name Solid body management member variables/functions
+  //@{
+
+  /*!
+   * Counter to keep track of how many solid bodies are instantiated.
+   * A solid body is formed in 2D by a collection of block boundary splines 
+   * on which pressure forces generate lift and drag.
+   */
+  static int CounterSolidBodies;
+
+  int bodyOwner;	/*!< variable to keep track of the solid body ID for which the current spline is a boundary 
+			  or to indicate that the spline doesn't belong to any solid body (i.e. bodyOwner = 0) */
+  //@}
+
   //! Calculate the normal vector for a defined segment
   const Vector2D NormalVector(const Vector2D &StartPoint, const Vector2D &EndPoint) const;
 
@@ -365,7 +396,8 @@ private:
  */ 
 inline Spline2D_HO::Spline2D_HO(void)
   : type(SPLINE2D_CONSTANT), np(0), Xp(NULL),
-    sp(NULL), tp(NULL), bc(NULL), FluxMethod(SolveRiemannProblem)
+    sp(NULL), tp(NULL), bc(NULL), FluxMethod(SolveRiemannProblem),
+    bodyOwner(0)
 {
   // 
 }
@@ -375,7 +407,8 @@ inline Spline2D_HO::Spline2D_HO(void)
  */
 inline Spline2D_HO::Spline2D_HO(const Spline2D_HO &S)
   : type(SPLINE2D_CONSTANT), np(0), Xp(NULL),
-    sp(NULL), tp(NULL), bc(NULL), FluxMethod(SolveRiemannProblem)
+    sp(NULL), tp(NULL), bc(NULL), FluxMethod(SolveRiemannProblem),
+    bodyOwner(0)
 {
 
   /* allocate memory for the new spline */
@@ -383,6 +416,8 @@ inline Spline2D_HO::Spline2D_HO(const Spline2D_HO &S)
   /* assign the same type */
   type = S.type;
   FluxMethod = S.getFluxCalcMethod();
+  // inherit ownership
+  bodyOwner = S.bodyOwner;
   
   /* copy the values */
   for (int i=0; i<=np-1; ++i){
@@ -391,6 +426,7 @@ inline Spline2D_HO::Spline2D_HO(const Spline2D_HO &S)
     tp[i] = S.tp[i];
     bc[i] = S.bc[i]; 
   }
+
 }
 
 
@@ -504,6 +540,8 @@ inline Spline2D_HO & Spline2D_HO::operator=(const Spline2D_HO &S){
   /* assign the same type as S */
   type = S.type;
   FluxMethod = S.getFluxCalcMethod();
+  // inherit ownership
+  bodyOwner = S.bodyOwner;
 
   /* Copy the values from S */
   for (int i=0; i<=np-1; ++i){
@@ -528,6 +566,9 @@ inline Spline2D_HO & Spline2D_HO::operator=(const Spline2D &S){
 
   /* leave the flux method unchanged*/
   // 
+
+  bodyOwner = 0;   // no solid boundary
+
 
   /* Copy the values from S */
   for (int i=0; i<=np-1; ++i){
@@ -756,7 +797,9 @@ inline ostream &operator << (ostream &out_file, const Spline2D_HO &S) {
     // output more information if the spline has control points defined
     out_file << S.np << " "
 	     << S.type << " "
-	     << S.getFluxCalcMethod() << endl;   // output FluxMethod
+	     << S.getFluxCalcMethod() << " " // output FluxMethod
+	     << S.NumberOfSolidBodies() << " " // total number of defined solid bodies
+	     << S.getBodyID() << endl;	       // solid body ID of the current spline
     for ( i = 0; i <= S.np-1; ++i ) {
       out_file << S.Xp[i];
       out_file.setf(ios::scientific);
@@ -774,6 +817,16 @@ inline ostream &operator << (ostream &out_file, const Spline2D_HO &S) {
  * Input operator.
  */
 inline istream &operator >> (istream &in_file, Spline2D_HO &S) {
+
+  S.Read_Object(in_file);
+  return (in_file);
+}
+
+/*
+ * Read object from an input stream.
+ */
+inline void Spline2D_HO::Read_Object(istream &in_file){
+
   int i;
   in_file.setf(ios::skipws);
 
@@ -782,27 +835,32 @@ inline istream &operator >> (istream &in_file, Spline2D_HO &S) {
 
   if (i != 0) {
     /* allocate memory if there isn't enough */
-    S.allocate(i);
+    allocate(i);
+   
+    in_file >> type;
+    in_file >> FluxMethod;  // read FluxMethod
+    in_file >> CounterSolidBodies; // read total number of defined solid bodies
+    in_file >> bodyOwner;
 
-    in_file >> i; S.settype(i);
-    in_file >> i; S.setFluxCalcMethod(i);   // read FluxMethod
+    // Check ID
+    if (bodyOwner > CounterSolidBodies){
+      throw runtime_error("Spline2D_HO::Read_Object() ERROR! Mismatch between body ID and maximum defined solid bodies.");
+    }
 
     in_file.unsetf(ios::skipws);
-    for ( i = 0; i <= S.np-1; ++i ) {
-      in_file >> S.Xp[i];
+    for ( i = 0; i <= np-1; ++i ) {
+      in_file >> Xp[i];
       in_file.setf(ios::skipws); 
-      in_file >> S.tp[i] >> S.bc[i];
+      in_file >> tp[i] >> bc[i];
       in_file.unsetf(ios::skipws);
     } /* endfor */
 
     /* update pathlength */
-    S.pathlength();
+    pathlength();
   } else {
     // deallocate the current spline
-    S.deallocate();
+    deallocate();
   }
-
-  return (in_file);
 }
 
 #endif /* _SPLINE2D_INCLUDED  */

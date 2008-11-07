@@ -45,6 +45,9 @@ void HO_Grid2D_Execution_Mode::SetDefaults(void){
   NORTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
   EAST_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
   TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES = OFF; // tolerate inaccurate integration
+
+  // Reset solid body counter in Spline2D_HO class
+  Spline2D_HO::ResetCounter();
 }
 
 //! Print the current execution mode

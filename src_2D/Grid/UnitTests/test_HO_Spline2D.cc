@@ -75,6 +75,9 @@ namespace tut
     Length = 3.0;
     Width  = 2.4;
     TotalPoints = 0;
+
+    // Reset solid body counter
+    Spline2D_HO::ResetCounter();
   }
 
   Vector2D Data_Spline2D_HO::SplinePoint(const int &i){
@@ -164,6 +167,9 @@ namespace tut
     ensure_equals("tp",S.tp,tp);
     ensure_equals("bc",S.bc,bc);
     ensure_equals("sp",S.sp,sp);
+    ensure_equals("IsSolidBoundary()",S.IsSolidBoundary(),false);
+    ensure_equals("getBodyID()",S.getBodyID(),0);
+    ensure_equals("NumberOfSolidBodies()",S.NumberOfSolidBodies(),0);
   }
 
   /* Test 2: */
@@ -188,7 +194,9 @@ namespace tut
     ensure_equals("tp",S.tp[2],1);
     ensure_equals("bc",S.bc[0],3);
     ensure_equals("sp",S.sp[1],1.0);
-
+    ensure_equals("IsSolidBoundary()",S.IsSolidBoundary(),false);
+    ensure_equals("getBodyID()",S.getBodyID(),0);
+    ensure_equals("NumberOfSolidBodies()",S.NumberOfSolidBodies(),0);
   }
 
   /* Test 3: */
@@ -218,6 +226,9 @@ namespace tut
     ensure_equals("tp",S.tp,tp);
     ensure_equals("bc",S.bc,bc);
     ensure_equals("sp",S.sp,sp);
+    ensure_equals("IsSolidBoundary()",S.IsSolidBoundary(),false);
+    ensure_equals("getBodyID()",S.getBodyID(),0);
+    ensure_equals("NumberOfSolidBodies()",S.NumberOfSolidBodies(),0);
   }
 
   /* Test 4: */
@@ -283,6 +294,8 @@ namespace tut
 
     // Initialize S
     InitializeSpline(S,10);
+    // Make spline a solid body boundary
+    S.makeSplineSolidBoundary();
 
     // Create Copy
     Spline2D_HO Copy(S);
@@ -290,6 +303,9 @@ namespace tut
     ensure_equals("type",Copy.type,S.type);
     ensure_equals("np",Copy.np,S.np);
     ensure_equals("getFluxCalcMethod()",Copy.getFluxCalcMethod(),S.getFluxCalcMethod());
+    ensure_equals("getBodyID()",S.getBodyID(), 1);
+    ensure_equals("getBodyID()",Copy.getBodyID(),S.getBodyID());
+    ensure_equals("NumberOfSolidBodies()", Spline2D_HO::NumberOfSolidBodies(), 1);
 
     for(int i=0; i<=Copy.np-1; ++i){
       ensure_equals("Xp",Copy.Xp[i],SplinePoint(i));
@@ -308,11 +324,17 @@ namespace tut
 
     InitializeSpline(S,10);
 
+    // Make spline a solid body boundary
+    S.makeSplineSolidBoundary();
+
     Spline2D_HO Copy(S);
 
     ensure_equals("type",Copy.type,S.type);
     ensure_equals("np",Copy.np,S.np);
     ensure_equals("getFluxCalcMethod()",Copy.getFluxCalcMethod(),S.getFluxCalcMethod());
+    ensure_equals("getBodyID()",S.getBodyID(), 1);
+    ensure_equals("getBodyID()",Copy.getBodyID(),S.getBodyID());
+    ensure_equals("NumberOfSolidBodies()", Spline2D_HO::NumberOfSolidBodies(), 1);
 
     for(int i=0; i<=Copy.np-1; ++i){
       ensure_equals("Xp",Copy.Xp[i],SplinePoint(i));
@@ -330,6 +352,8 @@ namespace tut
     set_test_name("Assignment operator");
 
     InitializeSpline(S,10);
+    // Make spline a solid body boundary
+    S.makeSplineSolidBoundary();
 
     Spline2D_HO Copy;
     InitializeSpline(Copy,5);
@@ -340,6 +364,9 @@ namespace tut
     ensure_equals("type",Copy.type,S.type);
     ensure_equals("np",Copy.np,S.np);
     ensure_equals("getFluxCalcMethod()",Copy.getFluxCalcMethod(),S.getFluxCalcMethod());
+    ensure_equals("getBodyID()",S.getBodyID(), 1);
+    ensure_equals("getBodyID()",Copy.getBodyID(),S.getBodyID());
+    ensure_equals("NumberOfSolidBodies()", Spline2D_HO::NumberOfSolidBodies(), 1);
 
     for(int i=0; i<=Copy.np-1; ++i){
       ensure_equals("Xp",Copy.Xp[i],SplinePoint(i));
@@ -928,6 +955,7 @@ namespace tut
   {
     set_test_name("operator << >>");
     InitializeSpline(S,10);
+    S.makeSplineSolidBoundary();
 
     // check
     Check_Input_Output_Operator(S);
@@ -2201,7 +2229,75 @@ namespace tut
 
   }
 
+  /* Test 77: */
+  template<>
+  template<>
+  void Spline2D_HO_object::test<77>()
+  {
+    set_test_name("Two solid bodies");
 
+    // Create the circular arc
+    NumSplinePoints = 200;
+    V1 = Vector2D(3.0,2.0);	// centroid
+    Angle1 = 90;
+    Angle2 = 180;
+    S.Create_Spline_Circular_Arc(V1,Radius,Angle1,Angle2,NumSplinePoints);
+    // Make S solid boundary of a new body
+    S.makeSplineSolidBoundary();
+
+    // Create Copy
+    Spline2D_HO Copy(S);
+    // Make Copy solid boundary of a new body
+    Copy.makeSplineSolidBoundary();
+    
+    // == check
+    ensure_equals("total number of solid bodies", Spline2D_HO::NumberOfSolidBodies(), 2);
+    ensure_equals("bodyID for S", S.getBodyID(), 1);
+    ensure_equals("bodyID for Copy", Copy.getBodyID(), 2);
+
+    // Change body for spline 1
+    S.makeSplineSolidBoundary(2);
+
+    ensure_equals("bodyID for S", S.getBodyID(), 2);
+
+  }
+
+  /* Test 78: */
+  template<>
+  template<>
+  void Spline2D_HO_object::test<78>()
+  {
+    set_test_name("Concatenate two solid bodies");
+
+    // Create the circular arc
+    NumSplinePoints = 200;
+    V1 = Vector2D(3.0,2.0);	// centroid
+    Angle1 = 90;
+    Angle2 = 180;
+    S.Create_Spline_Circular_Arc(V1,Radius,Angle1,Angle2,NumSplinePoints);
+    // Make S solid boundary of a new body
+    S.makeSplineSolidBoundary();
+
+    // Create Copy
+    Spline2D_HO Copy(S);
+    // Make Copy solid boundary of a new body
+    Copy.makeSplineSolidBoundary();
+    // Translate Copy
+    Copy.Translate_Spline(Vector2D(3.5,4.5));
+    
+    // == check
+    ensure_equals("total number of solid bodies", Spline2D_HO::NumberOfSolidBodies(), 2);
+    ensure_equals("bodyID for S", S.getBodyID(), 1);
+    ensure_equals("bodyID for Copy", Copy.getBodyID(), 2);
+
+    // Concatenate splines
+    Spline2D_HO MergedCurve;
+    MergedCurve = S + Copy;
+
+    // == check
+    ensure_equals("total number of solid bodies", Spline2D_HO::NumberOfSolidBodies(), 2);
+    ensure_equals("bodyID for MergedCurve", MergedCurve.getBodyID(), 1);
+  }
 
 }
 

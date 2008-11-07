@@ -133,6 +133,8 @@ namespace tut
 
     Tecplot_Execution_Mode::SetDefaults();
     HighOrder2D_Input::SetDefaults();
+    
+    Spline2D_HO::ResetCounter();
   }
 
   Data_Grid2DQuadMultiBlock_HO::~Data_Grid2DQuadMultiBlock_HO(void){

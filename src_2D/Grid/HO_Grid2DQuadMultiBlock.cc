@@ -3292,18 +3292,18 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder_Without_Update(int &_Numb
 								      const int Number_of_Ghost_Cells,
 								      const int Highest_Order_of_Reconstruction) {
   
-  Grid_Circular_Cylinder(_Number_of_Blocks_Idir_,
-			 _Number_of_Blocks_Jdir_,
-			 Radius,
-			 32.00*Radius,
-			 Stretching_Type_Idir,
-			 Stretching_Type_Jdir,
-			 Stretching_Factor_Idir,
-			 Stretching_Factor_Jdir,
-			 Number_of_Cells_Idir,
-			 Number_of_Cells_Jdir,
-			 Number_of_Ghost_Cells,
-			 Highest_Order_of_Reconstruction);
+  Grid_Circular_Cylinder_Without_Update(_Number_of_Blocks_Idir_,
+					_Number_of_Blocks_Jdir_,
+					Radius,
+					32.00*Radius,
+					Stretching_Type_Idir,
+					Stretching_Type_Jdir,
+					Stretching_Factor_Idir,
+					Stretching_Factor_Jdir,
+					Number_of_Cells_Idir,
+					Number_of_Cells_Jdir,
+					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction);
   
 }
 
@@ -3386,11 +3386,13 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder_Without_Update(int &_Numb
     if (iBlk == 0) {
       Bnd_Spline_North.setBCtype(BC_FIXED);
       Bnd_Spline_South.setBCtype(BC_REFLECTION);
+      Bnd_Spline_South.makeSplineSolidBoundary(); // create first solid body
       Bnd_Spline_East.setBCtype(BC_NONE);
       Bnd_Spline_West.setBCtype(BC_NONE);
-    } else {
+    } else {      
       Bnd_Spline_North.setBCtype(BC_FIXED);
       Bnd_Spline_South.setBCtype(BC_REFLECTION);
+      Bnd_Spline_South.makeSplineSolidBoundary(1); // make this spline part of the first solid body
       Bnd_Spline_East.setBCtype(BC_NONE);
       Bnd_Spline_West.setBCtype(BC_NONE);
     } /* endif */
@@ -3859,11 +3861,13 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil_Without_Update(int &_Number_o
     } else if (iBlk == 1) {
       Bnd_Spline_North.setBCtype(BC_FIXED);
       Bnd_Spline_South.setBCtype(BC_WALL_VISCOUS_HEATFLUX);//BC_REFLECTION);
+      Bnd_Spline_South.makeSplineSolidBoundary(); // create first solid body      
       Bnd_Spline_East.setBCtype(BC_NONE);
       Bnd_Spline_West.setBCtype(BC_NONE);
     } else if (iBlk == 2) {
       Bnd_Spline_North.setBCtype(BC_FIXED);
       Bnd_Spline_South.setBCtype(BC_WALL_VISCOUS_HEATFLUX);//BC_REFLECTION);
+      Bnd_Spline_South.makeSplineSolidBoundary(1); // make this spline part of the first solid body
       Bnd_Spline_East.setBCtype(BC_NONE);
       Bnd_Spline_West.setBCtype(BC_NONE);
     } else {

@@ -54,6 +54,7 @@ namespace tut
     HighOrder2D_Input::SetDefaults();
 
     // set geometry
+    Spline2D_HO::ResetCounter();
     
     // set the pseudo-inverse situation
     A(0,0) = 1.0; A(0,1) = 2.0; A(0,2) = 3.0;

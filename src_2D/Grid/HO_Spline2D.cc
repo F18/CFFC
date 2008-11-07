@@ -12,17 +12,21 @@
 
 
 // ===== Member variables =====
+int Spline2D_HO::CounterSolidBodies = 0; // initialize counter
 
 // ===== Member functions =====
 
 /*!
  * Concatenation operator.
+ *
+ * \note The properties of the new spline are inherited from the spline to the left of the '+' sign. (i.e. first one)
  */
 const Spline2D_HO Spline2D_HO::operator + (const Spline2D_HO &S) const{
   int i, npts; Spline2D_HO Sc;
   npts = np + S.np - 1;
   Sc.allocate(npts); Sc.settype(type);
   Sc.setFluxCalcMethod(getFluxCalcMethod());
+  Sc.bodyOwner = bodyOwner;
   for ( i = 0; i <= np-1; ++i ) {
     Sc.Xp[i] = Xp[i];
     Sc.tp[i] = tp[i];
@@ -1158,6 +1162,13 @@ void Spline2D_HO::Broadcast_Spline(void) {
 
     MPI::COMM_WORLD.Bcast(&(FluxMethod), 1, MPI::INT, 0);
 
+    /* Broadcast the maximum number of solid bodies. */
+    MPI::COMM_WORLD.Bcast(&CounterSolidBodies, 1, MPI::INT, 0);
+
+    /* Broadcast the ID of the current spline. */
+    MPI::COMM_WORLD.Bcast(&bodyOwner, 1, MPI::INT, 0);
+
+
     /* Broadcast the the spline coordinates, pathlength, 
        point type, and boundary condition information. */
 
@@ -1247,6 +1258,13 @@ void Spline2D_HO::Broadcast_Spline(MPI::Intracomm &Communicator,
     /* Broadcast the flux calculation method associated with this spline. */
 
     Communicator.Bcast(&(FluxMethod), 1, MPI::INT, Source_Rank);
+
+    /* Broadcast the maximum number of solid bodies. */
+    Communicator.Bcast(&CounterSolidBodies, 1, MPI::INT, Source_Rank);
+
+    /* Broadcast the ID of the current spline. */
+    Communicator.Bcast(&bodyOwner, 1, MPI::INT, Source_Rank);
+
 
     /* Broadcast the the spline coordinates, pathlength, 
        point type, and boundary condition information. */
