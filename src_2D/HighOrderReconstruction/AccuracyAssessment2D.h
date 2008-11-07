@@ -66,19 +66,17 @@ public:
 			     &Quad_Soln_Block::PiecewiseLinearSolutionAtLocation);
 
   template<typename Input_Parameters_Type>
-  double ComputeSolutionEntropyErrorsHighOrder(const unsigned int &parameter,
-					       const unsigned int &accuracy_digits,
-					       const Input_Parameters_Type & IP,
-					       const unsigned short int &Pos = 0) throw(ArgumentNullException){ };
+  void ComputeSolutionEntropyErrorsHighOrder(const unsigned int &accuracy_digits,
+					     const Input_Parameters_Type & IP,
+					     const unsigned short int &Pos = 0) throw(ArgumentNullException);
 
   template<typename Input_Parameters_Type>
-  double ComputeSolutionEntropyErrors(const unsigned int &parameter,
-				      const unsigned int &accuracy_digits,
-				      const Input_Parameters_Type & IP,
-				      double (Quad_Soln_Block::*ComputeSolutionEntropyAt)(const int &, const int &,
-											  const Vector2D &,
-											  const unsigned int &) const =
-				      &Quad_Soln_Block::SolutionEntropyAtLocation) throw(ArgumentNullException){ };
+  void ComputeSolutionEntropyErrors(const unsigned int &accuracy_digits,
+				    const Input_Parameters_Type & IP,
+				    double (Quad_Soln_Block::*ComputeSolutionEntropyAt)(const int &, const int &,
+											const Vector2D &,
+											const unsigned int &) const =
+				    &Quad_Soln_Block::SolutionEntropyAtLocation) throw(ArgumentNullException);
 
   //! @name Access to the error data:
   //@{
@@ -96,6 +94,9 @@ public:
   double BlockLMaxNorm(void) { return LNorms[2]; } //!< return the LMax error norm for the block
 
   const unsigned int & UsedCells(void) const {return CellsUsed;}  //!< return the number of used cells for error calculation
+  
+  //! Return the reference entropy for any given location
+  double & ReferenceEntropy(const double &x, const double &y) { return RefEntropy; }
   //@}
 
   //! Prepare object for a new calculation
@@ -116,6 +117,8 @@ private:
   unsigned int digits;		//!< the number of accurate digits with which the errors are evaluated
 
   unsigned int CellsUsed;	//!< the number of cells used for accuracy assessment
+
+  double RefEntropy;	        //!< the reference entropy used for error calculation
 
   // Operating functions
   /*! @brief Compute errors for L1 norm calculation using the ComputeSolutionAt solution block member function */
@@ -210,9 +213,7 @@ void AccuracyAssessment2D<Quad_Soln_Block>::OutputErrorNormsTecplot(const Input_
  *
  * \param parameter the state variable which is used for computing the errors
  * \accuracy_digits the number of exact digits with which the error is sought
- * \param AccessToHighOrderVars Quad_Soln_Block member function which returns the 
- *                              array of high-order objects in the block.
- * \param Pos  The specific high-order object which is used to compute the error.
+ * \param Pos the specific high-order object which is used to compute the error.
  * \throw ArgumentNullException when the exact solution pointer is NULL
  */
 template<typename Quad_Soln_Block> inline
@@ -352,6 +353,116 @@ ComputeSolutionErrors(Function_Object_Type FuncObj,
     }
   }
 
+}
+
+/*!
+ * Compute solution entropy error relative to the provided reference state
+ * for a high-order solution.
+ *
+ * \param accuracy_digits the number of accurate digits targeted by the integration routine
+ * \param IP input parameters which provides the entropy reference state
+ * \param Pos the specific high-order object which is used to compute the error.
+ * \throw ArgumentNullException when the exact solution pointer is NULL
+ */
+template<typename Quad_Soln_Block>
+template<typename Input_Parameters_Type> inline
+void AccuracyAssessment2D<Quad_Soln_Block>::
+ComputeSolutionEntropyErrorsHighOrder(const unsigned int &accuracy_digits,
+				      const Input_Parameters_Type & IP,
+				      const unsigned short int &Pos)
+  throw(ArgumentNullException)
+{
+
+  // Set the required number of accurate digits and the reference entropy
+  digits = accuracy_digits;
+  RefEntropy = IP.ReferenceEntropy();
+
+  // Set the type of the returned value
+  double _dummy_param(0.0);
+
+  // Compute the errors
+  SolnBlk->HighOrderVariable(Pos).ComputeSolutionErrors(wrapped_member_function(this,
+										&AccuracyAssessment2D<Quad_Soln_Block>::
+										ReferenceEntropy,
+										_dummy_param),
+							0, //< indicates that error is calculated based on Entropy
+							accuracy_digits);
+    
+  // Write the final information in the designated variables
+  L1() = SolnBlk->HighOrderVariable(Pos).L1();
+  L2() = SolnBlk->HighOrderVariable(Pos).L2();
+  LMax() = SolnBlk->HighOrderVariable(Pos).LMax();
+  TotalBlockArea = SolnBlk->HighOrderVariable(Pos).BlockArea();
+  CellsUsed = SolnBlk->HighOrderVariable(Pos).UsedCells();
+
+}
+
+/*!
+ * Compute solution entropy error relative to the provided reference state.
+ * It is assumed that the piecewise solution representation
+ * in the computational cells has been already calculated and
+ * that the edges of the cells near boundaries are straight lines.
+ *
+ * \param accuracy_digits the number of accurate digits targeted by the integration routine
+ * \param IP input parameters which provides the entropy reference state
+ * \param ComputeSolutionEntropyAt Quad_Soln_Block member function which returns the solution entropy
+ *                                 at a given location (PointOfInterest) using the reconstruction of cell (i,j).
+ */
+template<typename Quad_Soln_Block>
+template<typename Input_Parameters_Type>
+void AccuracyAssessment2D<Quad_Soln_Block>::
+ComputeSolutionEntropyErrors(const unsigned int &accuracy_digits,
+			     const Input_Parameters_Type & IP,
+			     double (Quad_Soln_Block::*ComputeSolutionEntropyAt)(const int &, const int &,
+										 const Vector2D &,
+										 const unsigned int &) const)
+  throw(ArgumentNullException){
+
+  // Set the required number of accurate digits and the reference entropy
+  digits = accuracy_digits;
+  RefEntropy = IP.ReferenceEntropy();
+
+  double CellError(0.0); // individual cell error for L1 and LMax norms
+  int i,j;
+  int StartI(SolnBlk->ICl),  EndI(SolnBlk->ICu),  StartJ(SolnBlk->JCl),  EndJ(SolnBlk->JCu);
+
+  // reset errors values
+  L1() = ZERO; L2() = ZERO; LMax() = ZERO;
+  TotalBlockArea = ZERO;
+
+  // Update CellsUsed
+  CellsUsed = (EndI - StartI + 1)*(EndJ - StartJ + 1);
+
+
+  // Assess the accuracy
+  for (j = StartJ; j <= EndJ; ++j) {
+    for (i = StartI; i <= EndI; ++i) {
+
+      // Calculate the error in cell i,j for the given parameter and reconstruction
+      CellError = ComputeSolutionErrorL1(i,j,
+					 wrapped_member_function(this,
+								 &AccuracyAssessment2D<Quad_Soln_Block>::ReferenceEntropy,
+								 CellError),
+					 ComputeSolutionEntropyAt);
+
+      // Add current cell error contribution to L1 error norm
+      L1() += CellError;
+
+      // Add current cell error contribution to L2 error norm
+      L2() += ComputeSolutionErrorL2(i,j,
+				     wrapped_member_function(this,
+							     &AccuracyAssessment2D<Quad_Soln_Block>::ReferenceEntropy,
+							     CellError),
+				     ComputeSolutionEntropyAt);
+
+      // Compute block LMax Norm
+      LMax() = max(LMax(),CellError/SolnBlk->Grid.Cell[i][j].A);
+
+      // Compute the total area of the block
+      TotalBlockArea += SolnBlk->Grid.Cell[i][j].A;
+
+    }
+  }
 }
 
 

@@ -24,9 +24,8 @@
  */
 template<>
 template<> inline
-double AccuracyAssessment2D<AdvectDiffuse2D_Quad_Block>::
-ComputeSolutionEntropyErrorsHighOrder(const unsigned int &parameter,
-				      const unsigned int &accuracy_digits,
+void AccuracyAssessment2D<AdvectDiffuse2D_Quad_Block>::
+ComputeSolutionEntropyErrorsHighOrder(const unsigned int &accuracy_digits,
 				      const AdvectDiffuse2D_Input_Parameters & IP,
 				      const unsigned short int &Pos)
   throw(ArgumentNullException)
@@ -43,9 +42,8 @@ ComputeSolutionEntropyErrorsHighOrder(const unsigned int &parameter,
  */
 template<>
 template<> inline
-double AccuracyAssessment2D<AdvectDiffuse2D_Quad_Block>::
-ComputeSolutionEntropyErrors(const unsigned int &parameter,
-			     const unsigned int &accuracy_digits,
+void AccuracyAssessment2D<AdvectDiffuse2D_Quad_Block>::
+ComputeSolutionEntropyErrors(const unsigned int &accuracy_digits,
 			     const AdvectDiffuse2D_Input_Parameters & IP,
 			     double (AdvectDiffuse2D_Quad_Block::*ComputeSolutionEntropyAt)(const int &, const int &,
 											    const Vector2D &,

@@ -461,13 +461,11 @@ int AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracyBasedOnEntropyVariati
       if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
 	if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
 	  // Use the first high-order object to assess the accuracy
-	  SolnBlk[nb].AssessAccuracy.ComputeSolutionEntropyErrorsHighOrder(AccuracyAssessment_Execution_Mode::Assessment_Parameter(),
-									   AccuracyAssessment_Execution_Mode::Exact_Digits(),
+	  SolnBlk[nb].AssessAccuracy.ComputeSolutionEntropyErrorsHighOrder(AccuracyAssessment_Execution_Mode::Exact_Digits(),
 									   IP);
 	} else {
 	  // Use the low-order reconstruction
-	  SolnBlk[nb].AssessAccuracy.ComputeSolutionEntropyErrors(AccuracyAssessment_Execution_Mode::Assessment_Parameter(),
-								  AccuracyAssessment_Execution_Mode::Exact_Digits(),
+	  SolnBlk[nb].AssessAccuracy.ComputeSolutionEntropyErrors(AccuracyAssessment_Execution_Mode::Exact_Digits(),
 								  IP);
 	}
 	

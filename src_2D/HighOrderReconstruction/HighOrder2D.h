@@ -401,6 +401,13 @@ public:
   Soln_State YGradientStateAtLocation(const int & ii, const int & jj, const Vector2D &CalculationPoint) const {
     return YGradientAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
   }
+
+  //! Evaluate the entropy provided by the interpolant at a given location (X_Coord,Y_Coord),
+  //  using the reconstruction of cell (ii,jj)
+  double SolutionEntropyAtCoordinates(const int & ii, const int & jj, 
+				      const double & X_Coord, const double & Y_Coord) const {
+    return SolutionStateAtCoordinates(ii,jj,X_Coord,Y_Coord).s();
+  }
   //@}
 
   /*! @brief Integrate over the domain of the geometry associated with this high-order solution  */
@@ -670,6 +677,12 @@ public:
 				const Function_Object_Type FuncObj, const unsigned &parameter,
 				const int & digits = 8);
 
+  /*! @brief Compute the integral of the solution entropy error function (i.e. L1 norm) for cell (iCell,jCell) */
+  template<typename Function_Object_Type>
+  double ComputeSolutionEntropyErrorL1(const int &iCell, const int &jCell,
+				       const Function_Object_Type FuncObj,
+				       const int & digits = 8);
+
   /*! @brief Compute the integral of the error of two high-order reconstructions (i.e. L1 norm) for cell (iCell,jCell) */
   double ComputeReconstructionsErrorL1(const int &iCell, const int &jCell,
 				       const HighOrder2D<Soln_State> & Obj, const unsigned &parameter,
@@ -680,6 +693,12 @@ public:
   double ComputeSolutionErrorL2(const int &iCell, const int &jCell,
 				Function_Object_Type FuncObj, const unsigned &parameter,
 				const int & digits = 8);
+
+  /*! @brief Compute the integral of the squared solution entropy error function (i.e. L2 norm) for cell (iCell,jCell) */
+  template<typename Function_Object_Type>
+  double ComputeSolutionEntropyErrorL2(const int &iCell, const int &jCell,
+				       Function_Object_Type FuncObj,
+				       const int & digits = 8);
 
   /*! @brief Compute the integral of the squared error of two high-order reconstructions (i.e. L1 norm) for cell (iCell,jCell) */
   double ComputeReconstructionsErrorL2(const int &iCell, const int &jCell,
@@ -3078,6 +3097,7 @@ void HighOrder2D<SOLN_STATE>::ComputeSolutionErrors(const Function_Object_Type F
   int i,j;
   bool _integrate_with_curved_boundaries(false);
   double ErrorTemp;
+  char Case;
   
   /* Algorithm:
      1. Decide where integration for straight quads can be used.
@@ -3087,6 +3107,18 @@ void HighOrder2D<SOLN_STATE>::ComputeSolutionErrors(const Function_Object_Type F
      2. Integrate over straight quads.
      3. Integrate over the curved cells if necessary.
   */
+
+  /* Possible cases:
+     
+     a. Error based on entropy:  parameter = 0;
+     b. Error based on a particular parameter:  parameter = 1-NumberOfVariables();
+   */
+
+  if (parameter == 0){
+    Case = 'a';
+  } else if (parameter >= 1 && parameter <= NumberOfVariables() ){
+    Case = 'b';
+  }
 
   // Decide the range of integration
   if (Geom->IsHighOrderBoundary()){
@@ -3144,18 +3176,32 @@ void HighOrder2D<SOLN_STATE>::ComputeSolutionErrors(const Function_Object_Type F
   // Sum up the contribution from each straight quad cell
   for (j = StartJ_Int; j <= EndJ_Int; ++j){
     for (i = StartI_Int; i <= EndI_Int; ++i, ++CellsUsed){
-      ErrorTemp = ComputeSolutionErrorL1(i,j,
-					 FuncObj,
-					 parameter,
-					 digits);
- 
+
+      switch (Case){
+      case 'a': 
+	ErrorTemp = ComputeSolutionEntropyErrorL1(i,j,
+						  FuncObj,
+						  digits);
+
+	ErrorL2 += ComputeSolutionEntropyErrorL2(i,j,
+						 FuncObj,
+						 digits);
+	break;
+	
+      case 'b':
+	ErrorTemp = ComputeSolutionErrorL1(i,j,
+					   FuncObj,
+					   parameter,
+					   digits);
+
+	ErrorL2 += ComputeSolutionErrorL2(i,j,
+					  FuncObj,
+					  parameter,
+					  digits);
+	break;
+      }
+
       ErrorL1 += ErrorTemp;
-
-      ErrorL2 += ComputeSolutionErrorL2(i,j,
-					FuncObj,
-					parameter,
-					digits);
-
       ErrorMax = max(ErrorMax, ErrorTemp/Geom->CellArea(i,j));
 
       TotalBlockArea += Geom->CellArea(i,j);
@@ -3319,6 +3365,31 @@ double HighOrder2D<SOLN_STATE>::ComputeSolutionErrorL1(const int &iCell, const i
 }
 
 /*! 
+ * Compute the integral of the entropy error function between
+ * a reference solution and the reconstructed 
+ * polynomial over the domain of cell (iCell,jCell).
+ * This result is used in the evaluation of L1 error norm.
+ */
+template<class SOLN_STATE>
+template<typename Function_Object_Type> inline
+double HighOrder2D<SOLN_STATE>::ComputeSolutionEntropyErrorL1(const int &iCell, const int &jCell,
+							      const Function_Object_Type FuncObj,
+							      const int & digits){
+
+  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
+
+  return IntegrateOverTheCell(iCell,jCell,
+			      error_function(FuncObj,
+					     wrapped_soln_block_member_function(this,
+										&ClassType::SolutionEntropyAtCoordinates,
+										iCell, jCell,
+										_dummy_result),
+					     _dummy_result),
+			      digits, _dummy_result);
+
+}
+
+/*! 
  * Compute the integral of the error function between the
  * polynomial reconstructions of two high-order variables
  * over the domain of cell (iCell,jCell).
@@ -3374,6 +3445,30 @@ double HighOrder2D<SOLN_STATE>::ComputeSolutionErrorL2(const int &iCell, const i
 											  iCell, jCell,
 											  parameter,
 											  _dummy_result),
+						    _dummy_result),
+			      digits, _dummy_result);
+}
+
+/*! 
+ * Compute the integral of the squared entropy error function
+ * between a reference solution and the reconstructed
+ * polynomial over the domain of cell (iCell,jCell).
+ * This result is used in the evaluation of L2 error norm.
+ */
+template<class SOLN_STATE> 
+template<typename Function_Object_Type> inline
+double HighOrder2D<SOLN_STATE>::ComputeSolutionEntropyErrorL2(const int &iCell, const int &jCell,
+							      Function_Object_Type FuncObj,
+							      const int &digits){
+
+  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
+  
+  return IntegrateOverTheCell(iCell,jCell,
+			      square_error_function(FuncObj,
+						    wrapped_soln_block_member_function(this,
+										       &ClassType::SolutionEntropyAtCoordinates,
+										       iCell, jCell,
+										       _dummy_result),
 						    _dummy_result),
 			      digits, _dummy_result);
 }
