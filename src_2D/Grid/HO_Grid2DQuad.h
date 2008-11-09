@@ -236,6 +236,8 @@ public:
   typedef Node2D_HO NodeType;
   typedef Cell2D_HO::GeometricMoments GeometricMoments;
   typedef GeometricMoments::Derivative  GeomMoment;
+  typedef Spline2D_HO BndSplineType;
+  typedef Spline2DInterval_HO BndSplineIntervalType;
   //@}
   
   //! @name Mesh indexes

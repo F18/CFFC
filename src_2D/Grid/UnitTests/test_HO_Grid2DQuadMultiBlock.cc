@@ -4314,6 +4314,187 @@ namespace tut
     }
   }
 
+
+  // Test 59:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<59>()
+  {
+    set_test_name("Integrate function along boundary spline. No high-order boundary representation");
+    RunRegression = ON;
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 320;
+    IP.Number_of_Cells_Jdir = 160;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 2;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+    // Set 5-point Gauss integration
+    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+    
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    double ResultX(0), ResultY(0);
+    Vector2D AnalyticResult;
+
+    // ========== NORTH ============
+    AnalyticResult.x = 1608.4954386432;
+    AnalyticResult.y = 0.0;
+
+    MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(NORTH,
+									    Function_XCentroid,
+									    ResultX, ResultY);
+
+    // == check results on North boundary
+    ensure_distance("X Component Integral North", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-3));
+    ensure_distance("Y Component Integral North", ResultY, AnalyticResult.y, AcceptedError(AnalyticResult.y, 1.0e-9));
+
+
+    // ========== SOUTH ============
+    AnalyticResult.x = -0.5*PI;
+    AnalyticResult.y = 0.0;
+    ResultX = ResultY = 0.0;
+
+    MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(SOUTH,
+									    Function_XCentroid,
+									    ResultX, ResultY);
+
+    // == check results on South boundary
+    ensure_distance("X Component Integral South", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-3));
+    ensure_distance("Y Component Integral South", ResultY, AnalyticResult.y, AcceptedError(AnalyticResult.y, 1.0e-9));
+
+
+    // ========== EAST ============
+    AnalyticResult.x = 0.0;
+    AnalyticResult.y = -511.5;
+    ResultX = ResultY = 0.0;
+
+    MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(EAST,
+									    Function_XCentroid,
+									    ResultX, ResultY);
+
+    // == check results on East boundary
+    ensure_distance("X Component Integral East", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-9));
+    ensure_distance("Y Component Integral East", ResultY, AnalyticResult.y, AcceptedError(AnalyticResult.y, 1.0e-9));
+    
+    // ========== WEST ============
+    AnalyticResult.x = 0.0;
+    AnalyticResult.y = 511.5;
+    ResultX = ResultY = 0.0;
+
+    MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(WEST,
+									    Function_XCentroid,
+									    ResultX, ResultY);
+
+    // == check results on West boundary
+    ensure_distance("X Component Integral West", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-9));
+    ensure_distance("Y Component Integral West", ResultY, AnalyticResult.y, AcceptedError(AnalyticResult.y, 1.0e-9));
+  }
+
+  // Test 60:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<60>()
+  {
+    set_test_name("Integrate function along boundary spline. High-order boundary representation");
+    RunRegression = ON;
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 20;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 2;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = OFF;
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+    // Set 5-point Gauss integration
+    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+    
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    double ResultX(0), ResultY(0);
+    Vector2D AnalyticResult;
+
+    // ========== NORTH ============
+    AnalyticResult.x = 1608.4954386432;
+    AnalyticResult.y = 0.0;
+
+    MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(NORTH,
+									    Function_XCentroid,
+									    ResultX, ResultY);
+
+    // == check results on North boundary
+    ensure_distance("X Component Integral North", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-9));
+    ensure_distance("Y Component Integral North", ResultY, AnalyticResult.y, AcceptedError(AnalyticResult.y, 1.0e-9));
+
+
+    // ========== SOUTH ============
+    AnalyticResult.x = -0.5*PI;
+    AnalyticResult.y = 0.0;
+    ResultX = ResultY = 0.0;
+
+    MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(SOUTH,
+									    Function_XCentroid,
+									    ResultX, ResultY);
+
+    // == check results on South boundary
+    ensure_distance("X Component Integral South", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-9));
+    ensure_distance("Y Component Integral South", ResultY, AnalyticResult.y, AcceptedError(AnalyticResult.y, 1.0e-9));
+
+
+    // ========== EAST ============
+    AnalyticResult.x = 0.0;
+    AnalyticResult.y = -511.5;
+    ResultX = ResultY = 0.0;
+
+    MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(EAST,
+									    Function_XCentroid,
+									    ResultX, ResultY);
+
+    // == check results on East boundary
+    ensure_distance("X Component Integral East", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-9));
+    ensure_distance("Y Component Integral East", ResultY, AnalyticResult.y, AcceptedError(AnalyticResult.y, 1.0e-9));
+    
+    // ========== WEST ============
+    AnalyticResult.x = 0.0;
+    AnalyticResult.y = 511.5;
+    ResultX = ResultY = 0.0;
+
+    MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(WEST,
+									    Function_XCentroid,
+									    ResultX, ResultY);
+
+    // == check results on West boundary
+    ensure_distance("X Component Integral West", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-9));
+    ensure_distance("Y Component Integral West", ResultY, AnalyticResult.y, AcceptedError(AnalyticResult.y, 1.0e-9));
+  }
+
 }
 
 

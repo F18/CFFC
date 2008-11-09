@@ -202,6 +202,15 @@ public:
   //! Integrate the desired function with respect to the y-coordinate along the contour of this spline interval.
   template<typename FO, class ReturnType>
   ReturnType IntegrateFunctionWithRespectToY(FO FuncObj, ReturnType _dummy_param) const;
+
+  //! @brief Integrate the given function multiplied with the normal along the along the contour of this spline interval.
+  template<typename FO, class ReturnType>
+  void IntegrateFunctionProjectionOnNormalDirections(const Spline2D_HO & SupportCurve, FO FuncObj,
+						     ReturnType & ResultXdir, ReturnType & ResultYdir) const;
+
+  //! @brief Integrate the given function along the along the contour of this spline interval.
+  template<typename FO, class ReturnType>
+  ReturnType IntegrateFunctionAlongInterval(FO FuncObj, ReturnType _dummy_param) const;
   //@}
 
   //! @name Set the number of Gauss quadrature points for contour integration
@@ -434,6 +443,114 @@ ReturnType Spline2DInterval_HO::IntegrateFunctionWithRespectToY(FO FuncObj, Retu
   }
 
   return Result;
+}
+
+/*! 
+ * Integrate the given function multiplied with the normal along 
+ * the along the contour of this spline interval.
+ * One usage of this routine is to compute the integral of pressure
+ * forces that act on the surface of a solid body.
+ * 
+ * \param SupportCurve the spline associated with this interval. 
+ *                     It's required to compute the normals.
+ * \param FuncObj  the function to be integrated
+ * \param ResultXdir the result in the X-direction (i.e FuncObj * n_x)
+ * \param ResultYdir the result in the Y-direction (i.e FuncObj * n_y)
+ *
+ * \note The contributions of this interval are ADDED to the result variables!!!
+ */
+template<typename FO, class ReturnType>
+void Spline2DInterval_HO::IntegrateFunctionProjectionOnNormalDirections(const Spline2D_HO & SupportCurve, FO FuncObj,
+									ReturnType & ResultXdir,
+									ReturnType & ResultYdir) const {
+  
+  ReturnType FuncVal(0.0), TempX(0.0), TempY(0.0);
+  double const * GQ_Weight;
+  int GQP, index;
+  Vector2D Normal;
+
+  // Set the weights correctly
+  switch(NUMBER_OF_GQP_CONTOURINT){
+  case 3:
+    GQ_Weight = &GaussQuadratureData::GQ3_Weight[0];
+    break;
+    
+  case 5:
+    GQ_Weight = &GaussQuadratureData::GQ5_Weight[0];
+    break;
+  }
+  
+  for (int i=0; i<NumOfSubIntervals(); ++i){
+    // Calculate the contribution of each subinterval
+    
+    for (GQP = 1; GQP <= NUMBER_OF_GQP_CONTOURINT; ++GQP){
+      // Calculate the contribution of each Gauss-quadrature point
+      
+      // Determine the index of the current GQP in the array
+      index = NUMBER_OF_GQP_CONTOURINT*i+GQP;
+
+      // Evaluate weighted function at the current GQP
+      FuncVal = GQ_Weight[GQP-1] * FuncObj(GQPointContourIntegral(index).x,
+					   GQPointContourIntegral(index).y);
+
+      // Normal vector
+      Normal = SupportCurve.nSpline(GQPointContourIntegral(index));
+
+      // Update the X projection
+      TempX += FuncVal* Normal.x;
+
+      // Update the Y projection
+      TempY += FuncVal* Normal.y;
+    }
+  
+    // Update final result with the contribution of the current subinterval
+    ResultXdir += TempX * IntLength(i+1);
+    ResultYdir += TempY * IntLength(i+1);
+  }
+
+}
+
+/*!
+ * Integrate the given function along the interval and return the result.
+ */
+template<typename FO, class ReturnType>
+ReturnType Spline2DInterval_HO::IntegrateFunctionAlongInterval(FO FuncObj, ReturnType _dummy_param) const {
+
+  ReturnType Result(0.0);
+
+  switch(NUMBER_OF_GQP_CONTOURINT){
+
+  case 3:
+    for (int i=0; i<NumOfSubIntervals(); ++i){
+      // Calculate the contribution of each subinterval
+      Result +=  IntLength(i+1)*( GaussQuadratureData::GQ3_Weight[0] * FuncObj(GQPointContourIntegral(3*i+1).x,
+									       GQPointContourIntegral(3*i+1).y) + 
+				  GaussQuadratureData::GQ3_Weight[1] * FuncObj(GQPointContourIntegral(3*i+2).x,
+									       GQPointContourIntegral(3*i+2).y) +
+				  GaussQuadratureData::GQ3_Weight[2] * FuncObj(GQPointContourIntegral(3*i+3).x,
+									       GQPointContourIntegral(3*i+3).y) );
+    }
+    break;
+
+  case 5:
+    for (int i=0; i<NumOfSubIntervals(); ++i){
+      // Calculate the contribution of each subinterval
+      Result +=  IntLength(i+1)*( GaussQuadratureData::GQ5_Weight[0] * FuncObj(GQPointContourIntegral(5*i+1).x,
+									       GQPointContourIntegral(5*i+1).y) + 
+				  GaussQuadratureData::GQ5_Weight[1] * FuncObj(GQPointContourIntegral(5*i+2).x,
+									       GQPointContourIntegral(5*i+2).y) +
+				  GaussQuadratureData::GQ5_Weight[2] * FuncObj(GQPointContourIntegral(5*i+3).x,
+									       GQPointContourIntegral(5*i+3).y) +
+				  GaussQuadratureData::GQ5_Weight[3] * FuncObj(GQPointContourIntegral(5*i+4).x,
+									       GQPointContourIntegral(5*i+4).y) +
+				  GaussQuadratureData::GQ5_Weight[4] * FuncObj(GQPointContourIntegral(5*i+5).x,
+									       GQPointContourIntegral(5*i+5).y) );
+    }
+    break;
+  }
+
+  return Result;
+  
 }
 
 #endif /* _HO_SPLINE2DINTERVAL_INCLUDED  */
