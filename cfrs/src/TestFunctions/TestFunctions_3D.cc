@@ -53,37 +53,41 @@ double Test_Example1_Integral (double x1, double x2, double y1, double y2, doubl
 }
 /**********************************************************************
  * Function Test_Example2:
- *          f(x,y,z) = 
+ *          f(x,y,z) = y
  *********************************************************************/
 
 double Test_Example2 (double x, double y, double z) {
 
   double f;
-  f = x; f = y; f=z; f= 0.0; 	// that's for the compiler !
+  f = x; f = z;  	// that's for the compiler !
+  f=y;
   return f;
 }
 
 double Test_Example2_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  assert((x1<x2)&&(y1<y2)&&(z1<z2));
   double f;
-  f = 0;
+  f = 0.5*(y2*y2 - y1*y1);
   return f;
 }
 
 /*********************************************************
  * Function Test_Example3:
- *          f(x,y,z) = 
+ *          f(x,y,z) = x
  ********************************************************/
 
 double Test_Example3 (double x, double y, double z) {
 
   double f;
-  f = x; f = y; f=z; f= 0.0; 	// that's for the compiler !
-  return f;
+  f = y; f = z;  	// that's for the compiler !
+  f = x;
+return f;
 }
 
 double Test_Example3_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  assert((x1<x2)&&(y1<y2)&&(z1<z2));
   double f;
-  f = 0;
+  f = 0.5*(x2*x2 - x1*x1);
   return f;
 }
 
