@@ -6,7 +6,7 @@
 
 /********************************************************
  * Function Test_Default3D :                            *
- *          f(x,y,z) = x^6 - 4x^4 + 2x                      *
+ *          f(x,y,z) = z^6 - 4z^4 + 2z                  *
  *******************************************************/
 
 double Test_Default3D (double x, double y, double z);
@@ -14,7 +14,7 @@ double Test_Default3D_Integral (double x1, double x2, double y1, double y2, doub
 
 /********************************************************
  * Function Test_Example1:                              *
- *          f(x,y,z) = 
+ *          f(x,y,z) = z
  *******************************************************/
 
 double Test_Example1 (double x, double y, double z); 
@@ -22,7 +22,7 @@ double Test_Example1_Integral (double x1, double x2, double y1, double y2, doubl
 
 /**********************************************************************
  * Function Test_Example2:                                            *
- *          f(x,y,z) = 
+ *          f(x,y,z) = y
  ********************************************************************+
 */
 
@@ -31,7 +31,7 @@ double Test_Example2_Integral (double x1, double x2, double y1, double y2, doubl
 
 /********************************************************
  * Function Test_Example3:                              *
- *          f(x,y,z) = 
+ *          f(x,y,z) = x
  *******************************************************/
 
 double Test_Example3 (double x, double y, double z);

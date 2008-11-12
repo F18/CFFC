@@ -259,14 +259,14 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
       //      if (MeshBlk != NULL){
 	cout << "\n Writing grid at cells to"
 	     << " output data file(s): ";
-	Output_Mesh_Cells_Tecplot(SolnBlkDouble, Input_Parameters);
+	Output_Mesh_Nodes_Tecplot(SolnBlkDouble, Input_Parameters);
 	//      }
     } else if (command_flag == WRITE_OUTPUT_GRID_CELLS_CODE) {
       // Output node solution data file.
       //      if (MeshBlk != NULL){
 	cout << "\n Writing Reconstruction3D solution at nodes to"
 	     << " output data file(s): ";
-	Output_Solution_Nodes_Tecplot(SolnBlkDouble, Input_Parameters);
+	Output_Mesh_Cells_Tecplot(SolnBlkDouble, Input_Parameters);
 	//      }
 
     } else if (command_flag == WRITE_OUTPUT_FULL_GRID_NODES_CODE) {

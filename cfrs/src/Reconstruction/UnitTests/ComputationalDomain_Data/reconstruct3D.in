@@ -6,9 +6,11 @@
 ###########################
 #
 Function_Definition =
-Example1
+Default
 Reconstruction_Order =
 2
+Output_File_Name =
+DefaultR2
 Method_Used =
 CENO
 ###########################
@@ -47,8 +49,6 @@ Number_of_Subgrid_Points_Jdir =
 10
 Number_of_Subgrid_Points_Kdir =
 10
-Output_File_Name =
-UnitTestR1
 #
 Output_Format_Type =
 tecplot

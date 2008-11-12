@@ -580,16 +580,16 @@ void MakeReconstructionStencil(const int & rings, const int & iCell, const int &
     for (int k=kCell-2; k<=kCell+2; ++k){
       for (int j=jCell-2; j<=jCell+2; ++j){
         for (int i=iCell-2; i<=iCell+2; ++i){
-          // For k = -2 and k = 2 fill in all nine cells
-          if( (k*k) > 1 ){
+          // For cells on level k = -2 and level k = 2 fill in all nine cells
+          if( (k-kCell)*(k-kCell) > 1 ){
             i_index[Poz] = i;
             j_index[Poz] = j;
             k_index[Poz] = k;
             ++Poz;
           }
-          // For k=-1, 0, or 1: fill in outer cells only,
-          // since inner cells belong to first layer of stencil
-          else if ( (i*i) > 1 || (j*j) > 1 ){
+          // For cells on level k=-1, 0, or 1: fill in outer-ring (16) cells only,
+          // since inner cells belong to the first layer of stencil
+          else if ( (i-iCell)*(i-iCell) > 1 || (j-jCell)*(j-jCell) > 1 ){
               i_index[Poz] = i;
               j_index[Poz] = j;
               k_index[Poz] = k;
