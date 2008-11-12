@@ -192,10 +192,10 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>
   /* When the method of integration is used the moments associated with the first order are not quite accurate */
   for (int i = GeomCoeff.FirstElem(); i<=GeomCoeff.LastElem(); ++i){
     /* Compute the geometric coefficient */
-    Polynom.ChangePowersTo(GeomCoeff(i,true,true,true).P1(),
-                           GeomCoeff(i,true,true,true).P2(),
-                           GeomCoeff(i,true,true,true).P3());
-    GeomCoeff(i,true,true,true).D() = IntegrateOverTheCell(Polynom,14,DummyParam)/geom.V();
+    Polynom.ChangePowersTo(GeomCoeff(i).P1(),
+                           GeomCoeff(i).P2(),
+                           GeomCoeff(i).P3());
+    GeomCoeff(i).D() = IntegrateOverTheCell(Polynom,14,DummyParam)/geom.V();
   }
 
 }

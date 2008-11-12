@@ -243,12 +243,14 @@ class TaylorDerivativesContainer<ThreeD,T>{
   T & Limiter(void) {return phi;}
 
   /* Overloaded Operators */
-  Derivative & operator()(const unsigned & position, const bool, const bool, const bool) {return DContainer[position];}
-  Derivative & operator()(const unsigned & position, const bool, const bool, const bool) const {return DContainer[position];}
+  //  Derivative & operator()(const unsigned & position, const bool, const bool, const bool) {return DContainer[position];}
+  //  Derivative & operator()(const unsigned & position, const bool, const bool, const bool) const {return DContainer[position];}
+  Derivative & operator()(const unsigned & position) {return DContainer[position];}
+  Derivative & operator()(const unsigned & position) const {return DContainer[position];}
   T & operator()(const unsigned p1, const unsigned p2, const unsigned p3);
   T & operator()(const unsigned p1, const unsigned p2, const unsigned p3) const;
-  double & operator()(const unsigned p1, const unsigned p2, const unsigned p3, const unsigned VarPosition);
-  double & operator()(const unsigned p1, const unsigned p2, const unsigned p3, const unsigned VarPosition) const;
+  double  & operator()(const unsigned p1, const unsigned p2, const unsigned p3, const unsigned VarPosition);
+  double  & operator()(const unsigned p1, const unsigned p2, const unsigned p3, const unsigned VarPosition) const;
 
   /* Friend functions */
   friend bool operator== <ThreeD,T> (const TaylorDerivativesContainer<ThreeD,T>& left,
@@ -486,7 +488,7 @@ bool operator==(const TaylorDerivativesContainer<ThreeD,T>& left,
   if (left.size() != right.size() )
     return !answer;
   for (int i=0; i<=right.LastElem(); ++i){
-    answer = answer && ( left(i,true,true,true) == right(i,true,true,true) );
+    answer = answer && ( left(i) == right(i) );
   }
   return answer;
 }
