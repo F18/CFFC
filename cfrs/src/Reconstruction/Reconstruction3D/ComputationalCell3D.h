@@ -105,7 +105,7 @@ public:
   GeometricIntegrals & CellGeomCoeff() {return GeomCoeff;}
   const double & CellGeomCoeff(const int & p1, const int & p2, const int & p3) {return GeomCoeff(p1,p2,p3);}
 #ifndef __Use_Iterator__
-  const double & CellGeomCoeff(const int position, const bool, const bool, const bool) {return GeomCoeff(position,true,true,true).D();}
+  const double & CellGeomCoeff(const int position) {return GeomCoeff(position).D();}
 #endif
 
   const SolutionType& CellSolution() const {return U_cell;}
@@ -126,7 +126,7 @@ public:
   const DerivativesContainer & CellDeriv() const {return TD;}
   DerivativesContainer & CellDeriv() {return TD;}
 #ifndef __Use_Iterator__
-  Derivative & CellDeriv(const unsigned position) { return TD(position,true,true,true);}
+  Derivative & CellDeriv(const unsigned position) { return TD(position);}
   const double & CellDeriv(const int p1, const int p2, const int p3, const int Variable) const { return TD(p1,p2,p3,Variable);}
   double & CellDeriv(const int p1, const int p2,  const int p3, const int Variable) { return TD(p1,p2,p3,Variable);}
 

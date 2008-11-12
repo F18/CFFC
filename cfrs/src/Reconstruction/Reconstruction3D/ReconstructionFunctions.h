@@ -128,7 +128,7 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
       }//endfor
 
       // subtract the corresponding geometric moment of (i_index[0],j_index[0],k_index[0]) cell
-      A(cell-1,i-1) -= SolnBlk(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i,true,true,true);
+      A(cell-1,i-1) -= SolnBlk(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i);
 #if 0      
       // apply geometric weighting
       // A(cell-1,i-1) *= GeomWeights(cell);
@@ -161,7 +161,7 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
       SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(i).D(parameter) = All_Delta_U(i-1,parameter-1);
        /* this equation makes sure that the mean conservation of each parameter is satisfied inside the reconstructed cell */
       SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(0).D(parameter) -= 
-        (SolnBlk(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i,true,true,true)*All_Delta_U(i-1,parameter-1));
+        (SolnBlk(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i)*All_Delta_U(i-1,parameter-1));
     }
   }
 

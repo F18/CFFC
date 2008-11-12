@@ -93,19 +93,21 @@ double Test_Example3_Integral (double x1, double x2, double y1, double y2, doubl
 
 /********************************************************
  * Function Test_Example4:                              *
-
- *******************************************************/
+ *          f(x,y,z) = sin(z)
+ ********************************************************/
 
 double Test_Example4 (double x, double y, double z) {
 
   double f;
-  f = x; f = y; f=z; f= 0.0; 	// that's for the compiler !
+  f = x; f = y; 	// that's for the compiler !
+  f=sin(z);
   return f;
 }
 
 double Test_Example4_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  assert((x1<x2)&&(y1<y2)&&(z1<z2));
   double f;
-  f = 0;
+  f = cos(z2)-cos(z1);
   return f;
 }
 

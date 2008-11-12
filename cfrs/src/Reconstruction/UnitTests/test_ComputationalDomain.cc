@@ -347,7 +347,7 @@ namespace tut
                 PowDistanceZC *= DeltaCellCenters[cell].z;      // Update PowDistanceYC
               }//endfor
 
-              A(cell-1,i_temp-1) -= SolnBlkDouble(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i_temp,true,true,true);
+              A(cell-1,i_temp-1) -= SolnBlkDouble(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i_temp);
 #if 0
               // apply geometric weighting
               // A(cell-1,i_temp-1) *= GeomWeights(cell);

@@ -2348,16 +2348,17 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructS
     
     // Compute the Smoothness Indicator for each cell reconstruction
 
-    // --> RR: To be commented back in later 20080905
+ 
+    for (i=iStart(); i<=iEnd(); ++i)
+      for (j=jStart(); j<=jEnd(); ++j)
+	for (k=kStart(); k<=kEnd(); ++k){
+	  /* Make Stencil */
+	  MakeReconstructionStencil(SolnPtr[0][0][0].CellRings(),i,j,k,i_index,j_index,k_index);
+	  ComputeSmoothnessIndicator(*this,i_index,j_index,k_index,StencilSize,i,j,k); 
+	}
 
-//    for (i=iStart(); i<=iEnd(); ++i)
-//      for (j=jStart(); j<=jEnd(); ++j)
-//	for (k=kStart(); k<=kEnd(); ++k){
-//	  /* Make Stencil */
-//	  MakeReconstructionStencil(SolnPtr[0][0][0].CellRings(),i,j,k,i_index,j_index,k_index);
-//	  ComputeSmoothnessIndicator(*this,i_index,j_index,k_index,StencilSize,i,j,k); // --> RR: Must be created
-//	}
-//    
+
+// --> RR: To be commented back in later 20080905    
 //    // Flag the cells which didn't get a good reconstruction
 //    for (i=iStart(); i<=iEnd(); ++i)
 //      for (j=jStart(); j<=jEnd(); ++j)
@@ -2396,13 +2397,13 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructS
 //	  }
 //	}
 //
-//    for (i=iStart(); i<=iEnd(); ++i)
-//      for (j=jStart(); j<=jEnd(); ++j)
-//	for (k=kStart(); k<=kEnd(); ++k){
-//	// Update subgrid solution
-//	SolnPtr[k][j][i].UpdateSubgridSolution();
-//      }
-//
+    for (i=iStart(); i<=iEnd(); ++i)
+      for (j=jStart(); j<=jEnd(); ++j)
+	for (k=kStart(); k<=kEnd(); ++k){
+	// Update subgrid solution
+	SolnPtr[k][j][i].UpdateSubgridSolution();
+        }
+
     /* Print UnfitCells and TotalModifiedCells */
     std::cout << std::endl;
     Print_(UnfitCells);
