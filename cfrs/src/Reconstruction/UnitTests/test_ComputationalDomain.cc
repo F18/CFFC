@@ -18,6 +18,8 @@
 #include "include/TypeDefinition.h"
 #include "Reconstruction/ReconstructionHelpers.h"
 
+#include <iomanip>
+
 using namespace std;
 
 namespace tut
@@ -372,6 +374,156 @@ namespace tut
     delete [] k_index; k_index = NULL;
     
   }
+
+ /* Test 3: Make the Reconstruction Stencil for the given order of reconstruction */
+  template<>
+  template<>
+  void ComputationalDomain_object::test<3>()
+  {
+
+    set_test_name("Reconstruction Stencil");
+    
+    set_local_input_path("ComputationalDomain_Data/");
+    set_local_output_path("ComputationalDomain_Data/");
+    Open_Input_File("reconstruct3D.in");
+
+    error_flag = Process_Input_Control_Parameter_File(Input_Parameters,
+                                                      input_file_name,
+                                                      command_flag);
+    // update the CurrentOrderOfReconstruction
+    CurrentOrderOfReconstruction = Input_Parameters.RecOrder();
+    
+    // output the input parameters to the screen
+    cout << Input_Parameters << "\n";
+    cout.flush();
+
+    std::cout << "\n Create Grid:\n";
+    // Set Grid
+    Grid.Create_Block(Input_Parameters.Box_Length,
+		      Input_Parameters.Box_Width,
+		      Input_Parameters.Box_Height,
+		      ZERO,    // x-orig
+		      ZERO,    // y-orig
+		      ZERO,    // z-orig
+		      ZERO,    // alpha
+		      ZERO,    // beta
+		      ZERO,    // gamma
+		      BC_NONE, // top
+		      BC_NONE, // bottom
+		      BC_NONE, // north
+		      BC_NONE, // south
+		      BC_NONE, // west
+		      BC_NONE, // east
+		      Input_Parameters.NCells_Idir,
+		      Input_Parameters.NCells_Jdir,
+		      Input_Parameters.NCells_Kdir,
+		      Input_Parameters.Nghost_Cells);
+
+
+    std::cout << " Set the Computational Domain:\n";
+    // Set the Computation Domain
+    SolnBlkDouble.SetDomain(Grid,Input_Parameters);
+
+    // Variables for Reconstruction
+    // vector<int> i_index, j_index, k_index;
+    int *i_index(NULL), *j_index(NULL), *k_index(NULL);
+    int NumOfCellsInOneDirection, StencilSize;
+    int i, j, k;
+    int cell, iCell, jCell, kCell;
+    int it,jt,kt;
+
+
+    /* Determine the number of cells in the stencil based on the number of rings */
+    NumOfCellsInOneDirection = 2*SolnBlkDouble.NumberOfCellRings() + 1;
+    StencilSize = NumOfCellsInOneDirection*NumOfCellsInOneDirection*NumOfCellsInOneDirection;
+    i_index = new int [StencilSize];
+    j_index = new int [StencilSize];
+    k_index = new int [StencilSize];
+    
+
+    /* Loop Through each cell in the domain to make a stencil plus 2 additional layers of cells for each boundary.
+       These boundary cells are used for checking the goodness of fit of the first domain cell. */
+    
+    for (i=SolnBlkDouble.iStart()-2; i<=SolnBlkDouble.iEnd()+2; ++i){
+      for (j=SolnBlkDouble.jStart()-2; j<=SolnBlkDouble.jEnd()+2; ++j){
+        for (k=SolnBlkDouble.kStart()-2; k<=SolnBlkDouble.kEnd()+2; ++k){
+          
+          /**************  Make Reconstruction Stencil  ****************/
+
+          // Obs. The first position (i_index[0],j_index[0],k_index[0]) corresponds to (iCell,jCell,kCell)
+          iCell = i;
+          jCell = j;
+          kCell = k;
+
+          i_index[0]=iCell;
+          j_index[0]=jCell; 
+          k_index[0]=kCell;
+
+          int Poz = 1;
+
+          /* First layer */
+          for (kt=kCell-1; kt<=kCell+1; ++kt){
+            for (jt=jCell-1; jt<=jCell+1; ++jt){
+              for (it=iCell-1; it<=iCell+1; ++it){
+                if( !(it==iCell && jt==jCell && kt==kCell) ){
+                  i_index[Poz] = it;
+                  j_index[Poz] = jt;
+                  k_index[Poz] = kt;
+                  ++Poz;      
+                }
+              } /*end for*/
+            } /*end for*/
+          } /*end for*/
+
+
+          if (SolnBlkDouble.NumberOfCellRings() == 2){
+
+            /* Second layer */
+            for (kt=kCell-2; kt<=kCell+2; ++kt){
+              for (jt=jCell-2; jt<=jCell+2; ++jt){
+                for (it=iCell-2; it<=iCell+2; ++it){
+                  // For cells on level k = -2 and level k = 2 fill in all nine cells
+                  if( (kt-kCell)*(kt-kCell) > 1 ){
+                    i_index[Poz] = it;
+                    j_index[Poz] = jt;
+                    k_index[Poz] = kt;
+                    ++Poz;
+                  }
+                  // For cells on level k=-1, 0, or level k=1: fill in outer ring (16) cells only,
+                  // since inner cells belong to first layer of stencil
+                  else if ( (it-iCell)*(it-iCell) > 1 || (jt-jCell)*(jt-jCell) > 1 ){
+                    i_index[Poz] = it;
+                    j_index[Poz] = jt;
+                    k_index[Poz] = kt;
+                    ++Poz;
+                  }
+                } /*end for*/
+              } /*end for*/
+            } /*end for*/
+          } /*end if*/
+
+          if (i==j && j==k){
+            
+            std::cout <<"\n \n" << " Stencil for Cell ("<<i<<","<<j<<"."<<k<<"):" << endl;
+           
+            for (cell=0; cell<StencilSize; cell++){
+              std::cout << "i_index[" << setw(3) << cell <<"] = "<< setw(3) << i_index[cell] << "\t";
+              std::cout << "j_index[" << setw(3) << cell <<"] = "<< setw(3) << j_index[cell] << "\t";
+              std::cout << "k_index[" << setw(3) << cell <<"] = "<< setw(3) << k_index[cell] << endl;
+            }
+          }
+
+        } //end for k
+      } //end for j
+    }//end for i
+
+    // Free memory
+    //delete [] i_index; i_index = NULL;
+    //delete [] j_index; j_index = NULL;
+    //delete [] k_index; k_index = NULL;
+    
+  }
+
 }
 
 
