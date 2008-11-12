@@ -148,6 +148,7 @@ public:
   typedef HighOrder2D<Soln_State> HighOrderType; //!< high-order variable data type. Use primitive variables for reconstruction.
   typedef Cauchy_BCs<Soln_State> BC_Type;
   typedef std::vector<double> DoubleArrayType;
+  typedef Grid2D_Quad_Block_HO GridType;
   //@}
 
   //@{ @name Solution state arrays:
@@ -343,15 +344,14 @@ public:
 							  const double &DeltaYToCentroid) const;
   Euler2D_pState UnlimitedPiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
 							    const Vector2D &CalculationPoint) const;
-  //@}
-
-  //! @name Member functions to compute the solution entropy at a particular location
-  //@{
+  //! @brief Member function to compute the solution entropy at a particular location
   double SolutionEntropyAtLocation(const int &ii, const int &jj,
 				   const Vector2D &CalculationPoint,
 				   const unsigned int &parameter = 0) const;
+  //! @brief Member function to compute the solution pressure at a particular location
+  double SolutionPressureAtCoordinates(const int &ii, const int &jj,
+				       const double &X_Coord, const double &Y_Coord) const;
   //@}
-
 
   //! @name Member functions to set boundary states
   //@{
@@ -1486,6 +1486,22 @@ inline double Euler2D_Quad_Block::SolutionEntropyAtLocation(const int &ii, const
 							    const unsigned int &parameter) const{
   
   return PiecewiseLinearSolutionAtLocation(ii,jj,CalculationPoint).s();
+}
+
+/*!
+ * Compute the solution pressure at a particular location 
+ * based on the piecewise linear reconstruction of cell (ii,jj).
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param X_Coord the x-coordinate of the point of interest
+ * \param Y_Coord the y-coordinate of the point of interest
+ */
+inline double Euler2D_Quad_Block::SolutionPressureAtCoordinates(const int &ii, const int &jj,
+								const double &X_Coord, const double &Y_Coord) const{
+
+  return W[ii][jj][4] + (phi[ii][jj][4]*(dWdx[ii][jj][4]*(X_Coord - Grid.XCellCentroid(ii,jj)) + 
+					 dWdy[ii][jj][4]*(Y_Coord - Grid.YCellCentroid(ii,jj)) ));
 }
 
 /*!

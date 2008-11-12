@@ -292,6 +292,8 @@ class Euler2D_Input_Parameters{
   void Get_Next_Input_Control_Parameter(void);    //!< \brief Read the next input control parameter
   void doInternalSetupAndConsistencyChecks(int & error_flag); //!< \brief Perform setup and check of different parameters
   double ReferenceEntropy(void) const { return Wo.s(); } //!< Reference entropy at any given location
+  double FreeStreamVelocity(void) const { return abs(Wo.v); } //!< Return the magnitude of the free stream velocity
+  double FreeStreamDensity(void) const {return Wo[1]; }  //!< Return the density in the free stream
   //@}
 
   //@{ @name Input-output operators:

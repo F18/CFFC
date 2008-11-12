@@ -73,6 +73,23 @@ public:
   static unsigned int & TotalNumberOfCells(void) {return TotalCells; }  //!< return the total number of cells 
   //@}
 
+  //! @name Access to aerodynamic data:
+  //@{
+  static double getLift(void);	            //!< return total lift force produced by the current configuration
+  static double getLift(const int & BodyID); //!< return lift force produced by the solid body BodyID
+  static double getLiftCoefficient(void);    //!< return the lift coefficient characteristic for the current configuration
+  static double getLiftCoefficient(const int & BodyID); //!< return the lift coefficient for the solid body BodyID
+  static double getDrag(void);               //!< return total drag force produced by the current configuration
+  static double getDrag(const int & BodyID); //!< return drag force produced by the solid body BodyID
+  static double getDragCoefficient(void);    //!< return the drag coefficient characteristic for the current configuration
+  static double getDragCoefficient(const int & BodyID); //!< return the drag coefficient for the solid body BodyID
+  static double getWettedSurface(void);		       //!< return the total surface contributing to generate aerodynamic forces
+  static double getWettedSurface(const int & BodyID);   //!< return the wetted surface of the solid body BodyID
+
+  //! @brief Output the aerodynamics data (i.e. lift, drag, etc.) to the required stream
+  static void PrintAerodynamicsData(ostream & os);
+  //@}
+
   //! Prepare class for an accuracy reassessment
   template<typename Quad_Soln_Block>
   static void ResetForNewCalculation(Quad_Soln_Block *SolnBlk,
@@ -90,6 +107,15 @@ private:
   static bool Verbose;		      //!< internal flag controlling the screen output stream
   static unsigned int TotalCells;     //!< total number of interior cells used for assessing the accuracy
 
+  //! @name Member variables/functions related to lift and drag calculation:
+  //@{
+  static vector<double> Lift;	         //!< vector of lift forces. One entry for each solid body
+  static vector<double> Drag;		 //!< vector of drag forces. One entry for each solid body
+  static vector<double> SolidBodyLength; //!< vector of "wetted surfaces"
+  static double FreeStreamDensity;       //!< the free stream density
+  static double FreeStreamVelocity;	 //!< the free stream velocity
+  //@}
+
   template<typename Input_Parameters_Type>
   static void SetVerboseFlag(const Input_Parameters_Type & IP);
 
@@ -101,6 +127,10 @@ private:
   static int AssessSolutionAccuracyBasedOnEntropyVariation(Quad_Soln_Block *SolnBlk,
 							   const AdaptiveBlock2D_List &Soln_Block_List,
 							   const Input_Parameters_Type &IP);
+  template<typename Quad_Soln_Block, typename Input_Parameters_Type>
+  static int AssessSolutionAccuracyBasedOnLiftAndDragCoefficients(Quad_Soln_Block *SolnBlk,
+								  const AdaptiveBlock2D_List &Soln_Block_List,
+								  const Input_Parameters_Type &IP);
 
 };
 
@@ -156,18 +186,30 @@ int AccuracyAssessment2D_MultiBlock::PrintErrorNorms(Quad_Soln_Block *SolnBlk,
   if (error_flag){
     return error_flag;
   } else {
-    // output error norms to the os stream
     if( CFFC_Primary_MPI_Processor() && (os != cout || Verbose) ){
-      os << endl
-	 << " ==================================================================== "
-	 << endl
-	 << " The error norms for the solved problem are:"   << endl
-	 << "   #Cells   = "  << TotalCells                  << endl
-	 << "   L1_Norm  = "  << setprecision(10) << L1()    << endl
-	 << "   L2_Norm  = "  << setprecision(10) << L2()    << endl
-	 << "   Max_Norm = "  << setprecision(10) << LMax()  << endl
-	 << " ==================================================================== "
-	 << endl;
+      
+      // Customize the output based on the method
+      switch(AccuracyAssessment_Execution_Mode::Method()){
+
+      case AccuracyAssessment_Execution_Mode::Based_On_Lift_And_Drag_Coefficients:
+	// output lift and drag coefficients
+	PrintAerodynamicsData(os);
+	break;
+
+      default:
+	// output error norms to the os stream
+	os << endl
+	   << " ==================================================================== "
+	   << endl
+	   << " The error norms for the solved problem are:"   << endl
+	   << "   #Cells   = "  << TotalCells                  << endl
+	   << "   L1_Norm  = "  << setprecision(10) << L1()    << endl
+	   << "   L2_Norm  = "  << setprecision(10) << L2()    << endl
+	   << "   Max_Norm = "  << setprecision(10) << LMax()  << endl
+	   << " ==================================================================== "
+	   << endl;
+      }	// endswitch
+
     } // endif
 
     return 0;
@@ -319,7 +361,7 @@ int AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracy(Quad_Soln_Block *Sol
       std::cout.flush();
     }
 
-    throw runtime_error("AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracy() ERROR! Accuracy assessment based on lift and drag coefficients not implemented yet");    
+    error_flag = AssessSolutionAccuracyBasedOnLiftAndDragCoefficients(SolnBlk,Soln_Block_List,IP);
     break;
 
   default: 
@@ -517,6 +559,93 @@ int AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracyBasedOnEntropyVariati
     return 1;
   }
 
+}
+
+
+/*!
+ * Assess the solution accuracy by calculating 
+ * the lift and drag forces/coefficients.
+ */
+template<typename Quad_Soln_Block, typename Input_Parameters_Type>
+int AccuracyAssessment2D_MultiBlock::
+AssessSolutionAccuracyBasedOnLiftAndDragCoefficients(Quad_Soln_Block *SolnBlk,
+						     const AdaptiveBlock2D_List &Soln_Block_List,
+						     const Input_Parameters_Type &IP){
+
+  try {
+    
+    // === Set variables for lift and drag calculation
+    int NumberOfSolidBodies(Quad_Soln_Block::GridType::BndSplineType::NumberOfSolidBodies());
+    Lift.clear(); 
+    Lift.assign(NumberOfSolidBodies, 0.0);
+    Drag.clear(); 
+    Drag.assign(NumberOfSolidBodies, 0.0);
+    SolidBodyLength.clear();
+    SolidBodyLength.assign(NumberOfSolidBodies, 0.0);
+    FreeStreamDensity = IP.FreeStreamDensity();
+    FreeStreamVelocity = IP.FreeStreamVelocity();
+    double alpha;			 // angle of attack
+    alpha = TWO*PI*IP.Flow_Angle/360.00; // angle of attack in radians
+    double cos_alpha(cos(alpha)), sin_alpha(sin(alpha)); // cosine and sine of the angle of attach
+    double Fx, Fy;
+
+    // Counters
+    int nb;
+    
+    // Compute the contributions to aerodynamic forces (i.e. Fx and Fy)
+    // on each solid body due to each block on the current CPU.
+    // Lift variable stores Fx and Drag variable stores Fy
+    for (nb = 0; nb < Soln_Block_List.Nblk; ++nb) {
+      if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED && SolnBlk[nb].Grid.IsThereAnySolidBoundary() ) {
+	
+	if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+	  // Use the first high-order object to assess the accuracy
+	  SolnBlk[nb].AssessAccuracy.addAerodynamicForcesHighOrder(Lift,Drag,SolidBodyLength);
+	} else {
+	  // Use the low-order reconstruction
+	  SolnBlk[nb].AssessAccuracy.addAerodynamicForces(Lift,Drag,SolidBodyLength);
+	}
+	
+      }	//endif
+    } //endfor
+    
+    for (nb = 0; nb < NumberOfSolidBodies; ++nb){
+      /* Total aerodynamic force Fx on all CPUs for each of the solid bodies */
+      Lift[nb] = CFFC_Summation_MPI(Lift[nb]);
+      
+      /* Total aerodynamic force Fy on all CPUs for each of the solid bodies */
+      Drag[nb] = CFFC_Summation_MPI(Drag[nb]);
+            
+      /* Total wetted surface on all CPUs for each of the solid bodies */
+      SolidBodyLength[nb] = CFFC_Summation_MPI(SolidBodyLength[nb]);
+    }
+
+    // Calculate final lift and drag forces for each solid body
+    for (nb = 0; nb < NumberOfSolidBodies; ++nb){
+      // Current aerodynamic forces in 'x' and 'y' directions
+      Fx = Lift[nb];
+      Fy = Drag[nb];
+      
+      // Lift force for the current solid body
+      Lift[nb] = Fy*cos_alpha - Fx*sin_alpha;
+
+      // Drag force for the current solid body
+      Drag[nb] = Fy*sin_alpha + Fx*cos_alpha;
+    }
+
+    return 0;
+  }
+  catch (const ArgumentNullException & ){
+    std::cerr << endl
+	      << " ================================================================== " 
+	      << endl
+	      << " ERROR: The lift and drag coefficients couldn't be determined!" << endl
+	      << " Please check the problem or don't require accuracy assessment!" << endl
+	      << " ================================================================== " 
+	      << endl;
+    
+    return 1;
+  }
 }
 
 #endif	// _ACCURACY_ASSESSMENT_2D_MULTIBLOCK_INCLUDED

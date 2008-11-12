@@ -368,6 +368,23 @@ public:
     return (Obj->*Ptr)(iCell,
 		       val1);
   }
+
+  // change index (iCell)
+  void NewIndexes(const int & _iCell_){
+    iCell = _iCell_;
+  }
+  // change indexes (iCell,jCell)
+  void NewIndexes(const int & _iCell_, const int & _jCell_){
+    iCell = _iCell_;
+    jCell = _jCell_;
+  }
+  // change indexes (iCell,jCell,kCell)
+  void NewIndexes(const int & _iCell_, const int & _jCell_, const int & _kCell_){
+    iCell = _iCell_;
+    jCell = _jCell_;
+    kCell = _kCell_;
+  }
+
     
 private:
   /*! Private default constructor*/

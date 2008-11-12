@@ -14,6 +14,7 @@
 #include "../Math/Vector2D.h"
 #include "../Utilities/TypeDefinition.h"
 #include "../Utilities/Utilities.h"
+#include "../CFD/CFD.h"
 
 
 /*!
@@ -30,13 +31,10 @@ public:
   AccuracyAssessment2D(Quad_Soln_Block * AssociatedSolnBlock);
 
   //! Destructor
-  ~AccuracyAssessment2D(void){ };
+  ~AccuracyAssessment2D(void){ SolnBlk = NULL; }
  
   //! Re-associate solution block pointer
   void AssociateSolutionBlock(Quad_Soln_Block * AssociatedSolnBlock){ SolnBlk = AssociatedSolnBlock; }
-
-  //! Access to the solution block
-  Quad_Soln_Block *getGrid(void) const { return SolnBlk; }
 
   template<typename Input_Parameters_Type>
   void PrintErrorNorms(const Input_Parameters_Type & IP,
@@ -77,6 +75,19 @@ public:
 											const Vector2D &,
 											const unsigned int &) const =
 				    &Quad_Soln_Block::SolutionEntropyAtLocation) throw(ArgumentNullException);
+
+  /*! @brief Calculate and add to the provided variables the aerodynamic forces
+    on solid bodies predicted by a high-order reconstruction */
+  void addAerodynamicForcesHighOrder(vector<double> & Fx, 
+				     vector<double> & Fy,
+				     vector<double> & WettedSurface,
+				     const unsigned short int &Pos = 0);
+
+  /*! @brief Calculate and add to the provided variables the aerodynamic forces on 
+    solid bodies predicted by a piecewise linear reconstruction */
+  void addAerodynamicForces(vector<double> & Fx, 
+			    vector<double> & Fy,
+			    vector<double> & WettedSurface);
 
   //! @name Access to the error data:
   //@{
@@ -547,8 +558,187 @@ ComputeSolutionErrorL2(const int &iCell, const int &jCell,
 						 digits,_dummy_param) );
 }
 
+/*!
+ * Calculate the aerodynamic forces in the Cartesian x- and y-directions
+ * using the high-order solution reconstruction.
+ * The solid surfaces are detected based on the information carried by
+ * the spline.
+ * The forces are added to the provided variables.
+ * Aerodynamic forces are obtained by integrating the product of between 
+ * the pressure distrubtion and the local normal direction along the 
+ * contour of interest.
+ * 
+ * \param Fx the aerodynamic force in x-direction
+ * \param Fy the aerodynamic force in y-direction
+ * \param WettedSurface the size of the surface that shows up during integration
+ * \param Pos the index of the high-order variables
+ */
+template<typename Quad_Soln_Block>
+void AccuracyAssessment2D<Quad_Soln_Block>::
+addAerodynamicForcesHighOrder(vector<double> & Fx, vector<double> & Fy, vector<double> & WettedSurface,
+			      const unsigned short int &Pos){
+  
+  double _dummy_param;
+
+  // Define high-order data type
+  typedef typename Quad_Soln_Block::HighOrderType HighOrderType;
+
+  // Visit each block boundary
+
+  // === North Bnd
+  if (SolnBlk->Grid.BndNorthSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(NORTH,
+							      wrapped_soln_block_member_function(&SolnBlk->HighOrderVariable(Pos),
+												 &HighOrderType::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1]);
+  }
+
+  // === South Bnd
+  if (SolnBlk->Grid.BndSouthSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(SOUTH,
+							      wrapped_soln_block_member_function(&SolnBlk->HighOrderVariable(Pos),
+												 &HighOrderType::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1]);
+  }
+
+  // === East Bnd
+  if (SolnBlk->Grid.BndEastSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(EAST,
+							      wrapped_soln_block_member_function(&SolnBlk->HighOrderVariable(Pos),
+												 &HighOrderType::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndEastSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndEastSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndEastSpline.getBodyID() - 1]);
+  }
+  
+  // === West Bnd
+  if (SolnBlk->Grid.BndWestSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(WEST,
+							      wrapped_soln_block_member_function(&SolnBlk->HighOrderVariable(Pos),
+												 &HighOrderType::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndWestSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndWestSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndWestSpline.getBodyID() - 1]);
+  }
+}
 
 
+/*!
+ * Calculate the aerodynamic forces in the Cartesian x- and y-directions
+ * using the piecewise linear solution reconstruction.
+ * 
+ * \param Fx the aerodynamic force in x-direction
+ * \param Fy the aerodynamic force in y-direction
+ * \param WettedSurface the size of the surface that shows up during integration
+ */
+template<typename Quad_Soln_Block>
+void AccuracyAssessment2D<Quad_Soln_Block>::addAerodynamicForces(vector<double> & Fx, 
+								 vector<double> & Fy,
+								 vector<double> & WettedSurface){
 
+  double _dummy_param;
+
+  // Visit each block boundary
+
+  // === North Bnd
+  if (SolnBlk->Grid.BndNorthSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(NORTH,
+							      wrapped_soln_block_member_function(SolnBlk,
+												 &Quad_Soln_Block::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1]);
+  }
+
+  // === South Bnd
+  if (SolnBlk->Grid.BndSouthSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(SOUTH,
+							      wrapped_soln_block_member_function(SolnBlk,
+												 &Quad_Soln_Block::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1]);
+  }
+
+  // === East Bnd
+  if (SolnBlk->Grid.BndEastSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(EAST,
+							      wrapped_soln_block_member_function(SolnBlk,
+												 &Quad_Soln_Block::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndEastSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndEastSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndEastSpline.getBodyID() - 1]);
+  }
+  
+  // === West Bnd
+  if (SolnBlk->Grid.BndWestSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(WEST,
+							      wrapped_soln_block_member_function(SolnBlk,
+												 &Quad_Soln_Block::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndWestSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndWestSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndWestSpline.getBodyID() - 1]);
+  }
+}
 
 #endif

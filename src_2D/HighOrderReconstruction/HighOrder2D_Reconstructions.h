@@ -1820,13 +1820,13 @@ ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &S
     ParametersWithNumericalBCs,		 //!< List of solution parameters that have numerical BCs (i.e. no constraints)
     ParameterIndex(1);			 //!< List of constrained solution parameters (used for current calculations)
   //! List for West edge of BCtype for each parameter (i.e. physical = true, numerical = false)
-  vector<bool> PhysicalBCs_W(NumberOfVariables()+1,false);
+  bool *PhysicalBCs_W = new bool [NumberOfVariables()+1];
   //! List for South edge of BCtype for each parameter (i.e. physical = true, numerical = false)
-  vector<bool> PhysicalBCs_S(NumberOfVariables()+1,false);
+  bool *PhysicalBCs_S = new bool [NumberOfVariables()+1];
   //! List for East edge of BCtype for each parameter (i.e. physical = true, numerical = false)
-  vector<bool> PhysicalBCs_E(NumberOfVariables()+1,false);
+  bool *PhysicalBCs_E = new bool [NumberOfVariables()+1];
   //! List for North edge of BCtype for each parameter (i.e. physical = true, numerical = false)
-  vector<bool> PhysicalBCs_N(NumberOfVariables()+1,false);
+  bool *PhysicalBCs_N = new bool [NumberOfVariables()+1];
   int parameter;
   int TotalNumberOfEquations, TotalNumberOfExactlySatisfiedEquations;
   int ApproxMeanConservationRow, MeanConservationRow, MeanConservationCol(0);
@@ -1834,6 +1834,14 @@ ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &S
   int StencilSize(i_index.size());
   DenseMatrix X;		//< the matrix of unknowns
   
+  // Initialize PhysicalBCs
+  for (n = 0; n <= NumberOfVariables(); ++n){
+    PhysicalBCs_W[n] = false;
+    PhysicalBCs_S[n] = false;
+    PhysicalBCs_E[n] = false;
+    PhysicalBCs_N[n] = false;
+  }
+
 
   /***********************************************************************************
    *  STEP 1. DETECT WHICH PARAMETERS NEED RELATIONAL CONSTRAINTS ON EACH CELL EDGE  *
@@ -2120,6 +2128,12 @@ ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &S
       CellTaylorDerivState(iCell,jCell,n)[ParametersWithPhysicalBCs[parameter]] = X(MeanConservationRow + n,0);
     }//endfor
   }//endfor
+
+  // Deallocate memory
+  delete [] PhysicalBCs_W;
+  delete [] PhysicalBCs_S;
+  delete [] PhysicalBCs_E;
+  delete [] PhysicalBCs_N;
 }
 
 
@@ -2152,17 +2166,25 @@ ComputeIndividuallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &S
     ParametersWithNumericalBCs,		 //!< List of solution parameters that have numerical BCs (i.e. no constraints)
     ParameterIndex(1);			 //!< List of constrained solution parameters (used for current calculations)
   //! List for West edge of BCtype for each parameter (i.e. physical = true, numerical = false)
-  vector<bool> PhysicalBCs_W(NumberOfVariables()+1,false);
+  bool *PhysicalBCs_W = new bool [NumberOfVariables()+1];
   //! List for South edge of BCtype for each parameter (i.e. physical = true, numerical = false)
-  vector<bool> PhysicalBCs_S(NumberOfVariables()+1,false);
+  bool *PhysicalBCs_S = new bool [NumberOfVariables()+1];
   //! List for East edge of BCtype for each parameter (i.e. physical = true, numerical = false)
-  vector<bool> PhysicalBCs_E(NumberOfVariables()+1,false);
+  bool *PhysicalBCs_E = new bool [NumberOfVariables()+1];
   //! List for North edge of BCtype for each parameter (i.e. physical = true, numerical = false)
-  vector<bool> PhysicalBCs_N(NumberOfVariables()+1,false);
+  bool *PhysicalBCs_N = new bool [NumberOfVariables()+1];
   int parameter;
   int TotalNumberOfEquations, TotalNumberOfExactlySatisfiedEquations, StartRow;
   int cell, n;
   
+
+  // Initialize PhysicalBCs
+  for (n = 0; n <= NumberOfVariables(); ++n){
+    PhysicalBCs_W[n] = false;
+    PhysicalBCs_S[n] = false;
+    PhysicalBCs_E[n] = false;
+    PhysicalBCs_N[n] = false;
+  }
 
 
   /********************************************************************************************************************
@@ -2407,6 +2429,11 @@ ComputeIndividuallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &S
 
   } // endfor (parameter)
 
+  // Deallocate memory
+  delete [] PhysicalBCs_W;
+  delete [] PhysicalBCs_S;
+  delete [] PhysicalBCs_E;
+  delete [] PhysicalBCs_N;
 }
 
 

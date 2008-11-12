@@ -408,6 +408,13 @@ public:
 				      const double & X_Coord, const double & Y_Coord) const {
     return SolutionStateAtCoordinates(ii,jj,X_Coord,Y_Coord).s();
   }
+
+  //! Evaluate the pressure provided by the interpolant at a given location (X_Coord,Y_Coord),
+  //  using the reconstruction of cell (ii,jj)
+  double SolutionPressureAtCoordinates(const int & ii, const int & jj, 
+				      const double & X_Coord, const double & Y_Coord) const {
+    return SolutionStateAtCoordinates(ii,jj,X_Coord,Y_Coord).pressure();
+  }
   //@}
 
   /*! @brief Integrate over the domain of the geometry associated with this high-order solution  */
