@@ -321,7 +321,8 @@ public:
   //! Reset the conter for solid bodies
   static void ResetCounter(void) { CounterSolidBodies = 0; }
   //! Determine if the current spline represents the boundary of a solid body or not
-  bool IsSolidBoundary(void) const { (bodyOwner != 0)?true:false; }
+  bool IsSolidBoundary(void) const { return (bodyOwner != 0)? true: false; }
+
   /*! Obtain the ID of the solid body to which the current spline is a boundary.
     Zero means that it doesn't belong to any solid body. */
   int const & getBodyID(void) const { return bodyOwner; }

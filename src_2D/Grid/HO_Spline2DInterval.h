@@ -206,7 +206,8 @@ public:
   //! @brief Integrate the given function multiplied with the normal along the along the contour of this spline interval.
   template<typename FO, class ReturnType>
   void IntegrateFunctionProjectionOnNormalDirections(const Spline2D_HO & SupportCurve, FO FuncObj,
-						     ReturnType & ResultXdir, ReturnType & ResultYdir) const;
+						     ReturnType & ResultXdir, ReturnType & ResultYdir,
+						     double & WettedSurface) const;
 
   //! @brief Integrate the given function along the along the contour of this spline interval.
   template<typename FO, class ReturnType>
@@ -462,10 +463,11 @@ ReturnType Spline2DInterval_HO::IntegrateFunctionWithRespectToY(FO FuncObj, Retu
 template<typename FO, class ReturnType>
 void Spline2DInterval_HO::IntegrateFunctionProjectionOnNormalDirections(const Spline2D_HO & SupportCurve, FO FuncObj,
 									ReturnType & ResultXdir,
-									ReturnType & ResultYdir) const {
+									ReturnType & ResultYdir,
+									double & WettedSurface) const {
   
   ReturnType FuncVal(0.0), TempX(0.0), TempY(0.0);
-  double const * GQ_Weight;
+  double const * GQ_Weight(NULL);
   int GQP, index;
   Vector2D Normal;
 
@@ -506,8 +508,10 @@ void Spline2DInterval_HO::IntegrateFunctionProjectionOnNormalDirections(const Sp
     // Update final result with the contribution of the current subinterval
     ResultXdir += TempX * IntLength(i+1);
     ResultYdir += TempY * IntLength(i+1);
+    WettedSurface += IntLength(i+1);
   }
 
+  GQ_Weight = NULL;
 }
 
 /*!

@@ -562,7 +562,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 					     NUM_VAR_EULER2D,
 					     OFF);
 	      if (error_flag) {
-		cout << "\n AdvectDiffuse2D ERROR: AdvectDiffuse2D message passing error on processor "
+		cout << "\n Euler2D ERROR: Euler2D message passing error on processor "
 		     << List_of_Local_Solution_Blocks.ThisCPU
 		     << ".\n";
 		cout.flush();
@@ -1076,6 +1076,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
       List_of_Local_Solution_Blocks.deallocate();
       List_of_Global_Solution_Blocks.deallocate();
       QuadTree.deallocate();
+      Spline2D_HO::ResetCounter(); //< reset the counter for the number of track solid bodies.
       // Output input parameters for new caluculation.
       if (!batch_flag)  {
 	cout << "\n\n Starting a new calculation.";
@@ -1473,7 +1474,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 								    std::cout);
        
       if (CFFC_Primary_MPI_Processor() && error_flag) {
-	cout << "\n AdvectDiffuse2D ERROR: Unable to write AdvectDiffuse2D error norms data.\n"; cout.flush();
+	cout << "\n Euler2D ERROR: Unable to write Euler2D error norms data.\n"; cout.flush();
       } // endif
 
       CFFC_Broadcast_MPI(&error_flag, 1);
@@ -1496,7 +1497,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 										Input_Parameters);
        
       if (CFFC_Primary_MPI_Processor() && error_flag) {
-	cout << "\n AdvectDiffuse2D ERROR: Unable to write AdvectDiffuse2D error norms data.\n"; cout.flush();
+	cout << "\n Euler2D ERROR: Unable to write Euler2D error norms data.\n"; cout.flush();
       } // endif
 
       CFFC_Broadcast_MPI(&error_flag, 1);
@@ -1519,7 +1520,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 										 Input_Parameters);
        
       if (CFFC_Primary_MPI_Processor() && error_flag) {
-	cout << "\n AdvectDiffuse2D ERROR: Unable to write AdvectDiffuse2D error norms data.\n"; cout.flush();
+	cout << "\n Euler2D ERROR: Unable to write Euler2D error norms data.\n"; cout.flush();
       } // endif
 
       CFFC_Broadcast_MPI(&error_flag, 1);

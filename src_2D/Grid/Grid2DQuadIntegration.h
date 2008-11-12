@@ -88,8 +88,14 @@ public:
   //! @brief Compute the integral of the product between a scalar function and the normal vector
   template<typename FO, class ReturnType>
   void IntegrateFunctionProjectionAlongBoundarySpline(const int & BOUNDARY, const FO FuncObj,
-						      ReturnType & ResultXdir, ReturnType & ResultYdir) const;
-  
+						      ReturnType & ResultXdir, ReturnType & ResultYdir,
+						      double & WettedSurface) const;
+
+  //! @brief Similar to IntegrateFunctionProjectionAlongBoundarySpline() but for piecewise function (i.e. different for each cell)
+  template<typename FO, class ReturnType>
+  void IntegratePiecewiseFunctionProjectionAlongBoundarySpline(const int & BOUNDARY, FO FuncObj,
+							       ReturnType & ResultXdir, ReturnType & ResultYdir,
+							       double & WettedSurface) const;
 
 private:
   Grid2DQuadType *Grid;	        //!< pointer to the grid associated to this object
@@ -428,7 +434,8 @@ template<class Grid2DQuadType>
 template<typename FO, class ReturnType>
 void Grid2DQuadIntegration<Grid2DQuadType>::
 IntegrateFunctionProjectionAlongBoundarySpline(const int & BOUNDARY, const FO FuncObj,
-					       ReturnType & ResultXdir, ReturnType & ResultYdir) const {
+					       ReturnType & ResultXdir, ReturnType & ResultYdir,
+					       double & WettedSurface) const {
 
   ReturnType TempXdir(0), TempYdir(0), FuncVal;
   
@@ -475,7 +482,8 @@ IntegrateFunctionProjectionAlongBoundarySpline(const int & BOUNDARY, const FO Fu
 	// Add the contribution of this spline segment to the final results
 	Grid->BndNorthSplineInfo[iCell].IntegrateFunctionProjectionOnNormalDirections(SplineCopy,
 										      FuncObj,
-										      ResultXdir, ResultYdir);
+										      ResultXdir, ResultYdir,
+										      WettedSurface);
       } else {
 	/* Low-order boundary representation is required. */
 
@@ -504,6 +512,7 @@ IntegrateFunctionProjectionAlongBoundarySpline(const int & BOUNDARY, const FO Fu
 	// Update final result with the contribution of the current spline segment
 	ResultXdir += TempXdir * Grid->lfaceN(iCell,Grid->JCu);
 	ResultYdir += TempYdir * Grid->lfaceN(iCell,Grid->JCu);
+	WettedSurface += Grid->lfaceN(iCell,Grid->JCu);
       }
     }
     break;
@@ -534,7 +543,8 @@ IntegrateFunctionProjectionAlongBoundarySpline(const int & BOUNDARY, const FO Fu
 	// Add the contribution of this spline segment to the final results
 	Grid->BndSouthSplineInfo[iCell].IntegrateFunctionProjectionOnNormalDirections(SplineCopy,
 										      FuncObj,
-										      ResultXdir, ResultYdir);
+										      ResultXdir, ResultYdir,
+										      WettedSurface);
       } else {
 	/* Low-order boundary representation is required. */
 
@@ -563,6 +573,7 @@ IntegrateFunctionProjectionAlongBoundarySpline(const int & BOUNDARY, const FO Fu
 	// Update final result with the contribution of the current spline segment
 	ResultXdir += TempXdir * Grid->lfaceS(iCell,Grid->JCl);
 	ResultYdir += TempYdir * Grid->lfaceS(iCell,Grid->JCl);
+	WettedSurface += Grid->lfaceS(iCell,Grid->JCl);
       }
     }
     break;
@@ -593,7 +604,8 @@ IntegrateFunctionProjectionAlongBoundarySpline(const int & BOUNDARY, const FO Fu
 	// Add the contribution of this spline segment to the final results
 	Grid->BndEastSplineInfo[jCell].IntegrateFunctionProjectionOnNormalDirections(SplineCopy,
 										     FuncObj,
-										     ResultXdir, ResultYdir);
+										     ResultXdir, ResultYdir,
+										     WettedSurface);
       } else {
 	/* Low-order boundary representation is required. */
 
@@ -622,6 +634,7 @@ IntegrateFunctionProjectionAlongBoundarySpline(const int & BOUNDARY, const FO Fu
 	// Update final result with the contribution of the current spline segment
 	ResultXdir += TempXdir * Grid->lfaceE(Grid->ICu,jCell);
 	ResultYdir += TempYdir * Grid->lfaceE(Grid->ICu,jCell);
+	WettedSurface += Grid->lfaceE(Grid->ICu,jCell);
       }
     }
     break;
@@ -652,7 +665,8 @@ IntegrateFunctionProjectionAlongBoundarySpline(const int & BOUNDARY, const FO Fu
 	// Add the contribution of this spline segment to the final results
 	Grid->BndWestSplineInfo[jCell].IntegrateFunctionProjectionOnNormalDirections(SplineCopy,
 										     FuncObj,
-										     ResultXdir, ResultYdir);
+										     ResultXdir, ResultYdir,
+										     WettedSurface);
       } else {
 	/* Low-order boundary representation is required. */
 
@@ -681,10 +695,307 @@ IntegrateFunctionProjectionAlongBoundarySpline(const int & BOUNDARY, const FO Fu
 	// Update final result with the contribution of the current spline segment
 	ResultXdir += TempXdir * Grid->lfaceW(Grid->ICl,jCell);
 	ResultYdir += TempYdir * Grid->lfaceW(Grid->ICl,jCell);
+	WettedSurface += Grid->lfaceW(Grid->ICl,jCell);
       }
     }
     break;
   }
+
+}
+
+
+/*! 
+ * Compute the integral of the product between a piecewise scalar function and the normal vector.
+ * Use Gauss-quadrature rule to calculate the integral.
+ *
+ * \note FuncObj is an object that has a member function called NewIndexes()!
+ */
+template<class Grid2DQuadType>
+template<typename FO, class ReturnType>
+void Grid2DQuadIntegration<Grid2DQuadType>::
+IntegratePiecewiseFunctionProjectionAlongBoundarySpline(const int & BOUNDARY, FO FuncObj,
+							ReturnType & ResultXdir, ReturnType & ResultYdir,
+							double & WettedSurface) const {
+
+  ReturnType TempXdir(0), TempYdir(0), FuncVal;
+  
+  // Set number of Gauss quadrature points per face used to compute the integral
+  // to be the same as that specified in Spline2DInterval_HO
+  int NumGQP(Grid2DQuadType::BndSplineIntervalType::get_NumGQPoints_ContourIntegral());
+
+  Vector2D *GaussQuadPoints = new Vector2D [NumGQP]; // the GQPs at which the function is evaluated
+  double * GaussQuadWeights = new double [NumGQP];   // the Gauss integration weights for each Gauss quadrature
+  Vector2D Normal;
+  typename Grid2DQuadType::BndSplineType SplineCopy;
+  int iCell, jCell, GQPoint;
+
+
+  /* Set the GaussQuadWeights. */
+  GaussQuadratureData::getGaussQuadWeights(GaussQuadWeights, NumGQP);
+
+
+  switch(BOUNDARY){
+  case NORTH:			// North Bnd
+
+    // Ensure correct boundary spline definition if high-order boundary representation required
+    if ( Grid->BndNorthSplineInfo != NULL ){
+      // Copy the spline
+      SplineCopy = Grid->BndNorthSpline;
+
+      // Check if the North Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
+      // (i.e The spline pathlength increases from INu to INl)
+      if ( SplineCopy.getS(Grid->Node[Grid->INl][Grid->JNu]) < SplineCopy.getS(Grid->Node[Grid->INu][Grid->JNu]) ){
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+      }
+
+    } // endif
+
+    // Calculate the contribution to the integration result of each cell on the North block boundary
+    for (iCell=Grid->ICl; iCell<=Grid->ICu; ++iCell){
+
+      // Change indexes of FuncObj
+      FuncObj.NewIndexes(iCell,Grid->JCu);
+
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid->BndNorthSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
+
+	// Add the contribution of this spline segment to the final results
+	Grid->BndNorthSplineInfo[iCell].IntegrateFunctionProjectionOnNormalDirections(SplineCopy,
+										      FuncObj,
+										      ResultXdir, ResultYdir,
+										      WettedSurface);
+      } else {
+	/* Low-order boundary representation is required. */
+
+	// Reset temporal results
+	TempXdir = ReturnType(0);
+	TempYdir = ReturnType(0);
+
+	// Determine the location of the Gauss Quadrature Points
+	Grid->getGaussQuadPointsFaceN(iCell,Grid->JCu,GaussQuadPoints,NumGQP);
+	// Determine normal
+	Normal = Grid->nfaceN(iCell,Grid->JCu);
+	
+	for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+	  
+	  // Evaluate weighted function at the current GQP
+	  FuncVal = GaussQuadWeights[GQPoint] * FuncObj(GaussQuadPoints[GQPoint].x,
+							GaussQuadPoints[GQPoint].y);
+
+	  // Update the X projection
+	  TempXdir += FuncVal* Normal.x;
+	  
+	  // Update the Y projection
+	  TempYdir += FuncVal* Normal.y;
+	}
+
+	// Update final result with the contribution of the current spline segment
+	ResultXdir += TempXdir * Grid->lfaceN(iCell,Grid->JCu);
+	ResultYdir += TempYdir * Grid->lfaceN(iCell,Grid->JCu);
+	WettedSurface += Grid->lfaceN(iCell,Grid->JCu);
+      }
+    }
+    break;
+
+  case SOUTH:			// South Bnd
+    // Ensure correct boundary spline definition if high-order boundary representation required
+    if ( Grid->BndSouthSplineInfo != NULL ){
+      // Copy the spline
+      SplineCopy = Grid->BndSouthSpline;
+
+      // Check if the South Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
+      // (i.e The spline pathlength increases from INl to INu)
+      if ( SplineCopy.getS(Grid->Node[Grid->INl][Grid->JNl]) > SplineCopy.getS(Grid->Node[Grid->INu][Grid->JNl]) ){
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+      }
+
+    } // endif
+
+    // Calculate the contribution to the integration result of each cell on the South block boundary
+    for (iCell=Grid->ICl; iCell<=Grid->ICu; ++iCell){
+
+      // Change indexes of FuncObj
+      FuncObj.NewIndexes(iCell,Grid->JCl);
+
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid->BndSouthSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
+
+	// Add the contribution of this spline segment to the final results
+	Grid->BndSouthSplineInfo[iCell].IntegrateFunctionProjectionOnNormalDirections(SplineCopy,
+										      FuncObj,
+										      ResultXdir, ResultYdir,
+										      WettedSurface);
+      } else {
+	/* Low-order boundary representation is required. */
+
+	// Reset temporal results
+	TempXdir = ReturnType(0);
+	TempYdir = ReturnType(0);
+
+	// Determine the location of the Gauss Quadrature Points
+	Grid->getGaussQuadPointsFaceS(iCell,Grid->JCl,GaussQuadPoints,NumGQP);
+	// Determine normal
+	Normal = Grid->nfaceS(iCell,Grid->JCl);
+	
+	for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+	  
+	  // Evaluate weighted function at the current GQP
+	  FuncVal = GaussQuadWeights[GQPoint] * FuncObj(GaussQuadPoints[GQPoint].x,
+							GaussQuadPoints[GQPoint].y);
+
+	  // Update the X projection
+	  TempXdir += FuncVal* Normal.x;
+	  
+	  // Update the Y projection
+	  TempYdir += FuncVal* Normal.y;
+	}
+
+	// Update final result with the contribution of the current spline segment
+	ResultXdir += TempXdir * Grid->lfaceS(iCell,Grid->JCl);
+	ResultYdir += TempYdir * Grid->lfaceS(iCell,Grid->JCl);
+	WettedSurface += Grid->lfaceS(iCell,Grid->JCl);
+      }
+    }
+    break;
+
+  case EAST:			// East Bnd
+    // Ensure correct boundary spline definition if high-order boundary representation required
+    if ( Grid->BndEastSplineInfo != NULL ){
+      // Copy the spline
+      SplineCopy = Grid->BndEastSpline;
+
+      // Check if the East Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
+      // (i.e The spline pathlength increases from JNl to JNu)
+      if ( SplineCopy.getS(Grid->Node[Grid->INu][Grid->JNl]) > SplineCopy.getS(Grid->Node[Grid->INu][Grid->JNu]) ){
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+      }
+
+    } // endif
+
+    // Calculate the contribution to the integration result of each cell on the East block boundary
+    for (jCell=Grid->JCl; jCell<=Grid->JCu; ++jCell){
+
+      // Change indexes of FuncObj
+      FuncObj.NewIndexes(Grid->ICu,jCell);
+
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid->BndEastSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
+
+	// Add the contribution of this spline segment to the final results
+	Grid->BndEastSplineInfo[jCell].IntegrateFunctionProjectionOnNormalDirections(SplineCopy,
+										     FuncObj,
+										     ResultXdir, ResultYdir,
+										     WettedSurface);
+      } else {
+	/* Low-order boundary representation is required. */
+
+	// Reset temporal results
+	TempXdir = ReturnType(0);
+	TempYdir = ReturnType(0);
+
+	// Determine the location of the Gauss Quadrature Points
+	Grid->getGaussQuadPointsFaceE(Grid->ICu,jCell,GaussQuadPoints,NumGQP);
+	// Determine normal
+	Normal = Grid->nfaceE(Grid->ICu,jCell);
+	
+	for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+	  
+	  // Evaluate weighted function at the current GQP
+	  FuncVal = GaussQuadWeights[GQPoint] * FuncObj(GaussQuadPoints[GQPoint].x,
+							GaussQuadPoints[GQPoint].y);
+
+	  // Update the X projection
+	  TempXdir += FuncVal* Normal.x;
+	  
+	  // Update the Y projection
+	  TempYdir += FuncVal* Normal.y;
+	}
+
+	// Update final result with the contribution of the current spline segment
+	ResultXdir += TempXdir * Grid->lfaceE(Grid->ICu,jCell);
+	ResultYdir += TempYdir * Grid->lfaceE(Grid->ICu,jCell);
+	WettedSurface += Grid->lfaceE(Grid->ICu,jCell);
+      }
+    }
+    break;
+
+  case WEST:			// West Bnd
+    // Ensure correct boundary spline definition if high-order boundary representation required
+    if ( Grid->BndWestSplineInfo != NULL ){
+      // Copy the spline
+      SplineCopy = Grid->BndWestSpline;
+
+      // Check if the West Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
+      // (i.e The spline pathlength increases from JNu to JNl)
+      if ( SplineCopy.getS(Grid->Node[Grid->INl][Grid->JNl]) < SplineCopy.getS(Grid->Node[Grid->INl][Grid->JNu]) ){
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+      }
+
+    } // endif
+
+    // Calculate the contribution to the integration result of each cell on the West block boundary
+    for (jCell=Grid->JCl; jCell<=Grid->JCu; ++jCell){
+
+      // Change indexes of FuncObj
+      FuncObj.NewIndexes(Grid->ICl,jCell);
+
+      // == Check for the representation of the geometric boundary (i.e. high-order or low-order)
+      if ( Grid->BndWestSplineInfo != NULL){
+	/* High-order boundary representation is required.
+	   Use all geometric information from the correspondent BndSplineInfo */
+
+	// Add the contribution of this spline segment to the final results
+	Grid->BndWestSplineInfo[jCell].IntegrateFunctionProjectionOnNormalDirections(SplineCopy,
+										     FuncObj,
+										     ResultXdir, ResultYdir,
+										     WettedSurface);
+      } else {
+	/* Low-order boundary representation is required. */
+
+	// Reset temporal results
+	TempXdir = ReturnType(0);
+	TempYdir = ReturnType(0);
+	
+	// Determine the location of the Gauss Quadrature Points
+	Grid->getGaussQuadPointsFaceW(Grid->ICl,jCell,GaussQuadPoints,NumGQP);
+	// Determine normal
+	Normal = Grid->nfaceW(Grid->ICl,jCell);
+	
+	for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+	  
+	  // Evaluate weighted function at the current GQP
+	  FuncVal = GaussQuadWeights[GQPoint] * FuncObj(GaussQuadPoints[GQPoint].x,
+							GaussQuadPoints[GQPoint].y);
+
+	  // Update the X projection
+	  TempXdir += FuncVal* Normal.x;
+	  
+	  // Update the Y projection
+	  TempYdir += FuncVal* Normal.y;
+	}
+
+	// Update final result with the contribution of the current spline segment
+	ResultXdir += TempXdir * Grid->lfaceW(Grid->ICl,jCell);
+	ResultYdir += TempYdir * Grid->lfaceW(Grid->ICl,jCell);
+	WettedSurface += Grid->lfaceW(Grid->ICl,jCell);
+      }
+    }
+    break;
+  }
+
+  // Delete memory
+  delete [] GaussQuadPoints;
+  delete [] GaussQuadWeights;
 
 }
 

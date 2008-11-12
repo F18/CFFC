@@ -929,6 +929,8 @@ public:
   bool IsSouthBoundaryReconstructionConstrained(void) const;
   //! Check if the North boundary has constrained reconstruction (i.e. it is curved and set to reconstruction based flux)
   bool IsNorthBoundaryReconstructionConstrained(void) const;
+  //! Check if any block boundary is a solid body
+  bool IsThereAnySolidBoundary(void) const;
   //@}
 
   //! Set the designated switch to require computation of geometric properties with extra care for numerical errors
@@ -2939,6 +2941,12 @@ inline bool Grid2D_Quad_Block_HO::CheckExistenceOfCurvedBoundaries(void){
   
   // Check for necessity to compute high-order boundary representation
   if ( HighOrderBoundaryRepresentation == OFF ){
+    // Update spline interval information (i.e. ensure that no spline interval exits)
+    delete [] BndNorthSplineInfo; BndNorthSplineInfo = NULL;
+    delete [] BndSouthSplineInfo; BndSouthSplineInfo = NULL;
+    delete [] BndEastSplineInfo ; BndEastSplineInfo = NULL;
+    delete [] BndWestSplineInfo ; BndWestSplineInfo = NULL;
+
     // No curved boundary calculation needed
     return false;
   }
@@ -3028,6 +3036,16 @@ inline bool Grid2D_Quad_Block_HO::IsNorthBoundaryReconstructionConstrained(void)
   }
 }
 
+/*!
+ * Check if any of the block boundaries is 
+ * a solid body one.
+ * Return true if at least one boundary is solid,
+ * otherwise return false.
+ */
+inline bool Grid2D_Quad_Block_HO::IsThereAnySolidBoundary(void) const{
+  return ( BndNorthSpline.IsSolidBoundary() || BndSouthSpline.IsSolidBoundary() ||
+	   BndEastSpline.IsSolidBoundary()  || BndWestSpline.IsSolidBoundary() );
+}
 
 
 /* ---------------------------------------------------------------------------------------------- 

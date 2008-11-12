@@ -4348,7 +4348,7 @@ namespace tut
     // Build the mesh
     CreateMesh(MeshBlk,IP);
 
-    double ResultX(0), ResultY(0);
+    double ResultX(0), ResultY(0), Length(0);
     Vector2D AnalyticResult;
 
     // ========== NORTH ============
@@ -4357,7 +4357,8 @@ namespace tut
 
     MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(NORTH,
 									    Function_XCentroid,
-									    ResultX, ResultY);
+									    ResultX, ResultY,
+									    Length);
 
     // == check results on North boundary
     ensure_distance("X Component Integral North", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-3));
@@ -4367,11 +4368,12 @@ namespace tut
     // ========== SOUTH ============
     AnalyticResult.x = -0.5*PI;
     AnalyticResult.y = 0.0;
-    ResultX = ResultY = 0.0;
+    ResultX = ResultY = Length = 0.0;
 
     MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(SOUTH,
 									    Function_XCentroid,
-									    ResultX, ResultY);
+									    ResultX, ResultY,
+									    Length);
 
     // == check results on South boundary
     ensure_distance("X Component Integral South", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-3));
@@ -4381,11 +4383,12 @@ namespace tut
     // ========== EAST ============
     AnalyticResult.x = 0.0;
     AnalyticResult.y = -511.5;
-    ResultX = ResultY = 0.0;
+    ResultX = ResultY = Length = 0.0;
 
     MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(EAST,
 									    Function_XCentroid,
-									    ResultX, ResultY);
+									    ResultX, ResultY,
+									    Length);
 
     // == check results on East boundary
     ensure_distance("X Component Integral East", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-9));
@@ -4394,11 +4397,12 @@ namespace tut
     // ========== WEST ============
     AnalyticResult.x = 0.0;
     AnalyticResult.y = 511.5;
-    ResultX = ResultY = 0.0;
+    ResultX = ResultY = Length = 0.0;
 
     MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(WEST,
 									    Function_XCentroid,
-									    ResultX, ResultY);
+									    ResultX, ResultY,
+									    Length);
 
     // == check results on West boundary
     ensure_distance("X Component Integral West", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-9));
@@ -4438,7 +4442,7 @@ namespace tut
     // Build the mesh
     CreateMesh(MeshBlk,IP);
 
-    double ResultX(0), ResultY(0);
+    double ResultX(0), ResultY(0), Length(0);
     Vector2D AnalyticResult;
 
     // ========== NORTH ============
@@ -4447,7 +4451,7 @@ namespace tut
 
     MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(NORTH,
 									    Function_XCentroid,
-									    ResultX, ResultY);
+									    ResultX, ResultY, Length);
 
     // == check results on North boundary
     ensure_distance("X Component Integral North", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-9));
@@ -4457,11 +4461,12 @@ namespace tut
     // ========== SOUTH ============
     AnalyticResult.x = -0.5*PI;
     AnalyticResult.y = 0.0;
-    ResultX = ResultY = 0.0;
+    ResultX = ResultY = Length = 0.0;
 
     MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(SOUTH,
 									    Function_XCentroid,
-									    ResultX, ResultY);
+									    ResultX, ResultY,
+									    Length);
 
     // == check results on South boundary
     ensure_distance("X Component Integral South", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-9));
@@ -4471,11 +4476,12 @@ namespace tut
     // ========== EAST ============
     AnalyticResult.x = 0.0;
     AnalyticResult.y = -511.5;
-    ResultX = ResultY = 0.0;
+    ResultX = ResultY = Length = 0.0;
 
     MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(EAST,
 									    Function_XCentroid,
-									    ResultX, ResultY);
+									    ResultX, ResultY,
+									    Length);
 
     // == check results on East boundary
     ensure_distance("X Component Integral East", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-9));
@@ -4484,11 +4490,12 @@ namespace tut
     // ========== WEST ============
     AnalyticResult.x = 0.0;
     AnalyticResult.y = 511.5;
-    ResultX = ResultY = 0.0;
+    ResultX = ResultY = Length = 0.0;
 
     MeshBlk(0,0).Integration.IntegrateFunctionProjectionAlongBoundarySpline(WEST,
 									    Function_XCentroid,
-									    ResultX, ResultY);
+									    ResultX, ResultY,
+									    Length);
 
     // == check results on West boundary
     ensure_distance("X Component Integral West", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-9));

@@ -1805,13 +1805,13 @@ namespace tut
     // Initialize interval
     SInfo.InitializeInterval(S,S.Xp[0],S.Xp[9],2);
 
-    double IntX(3.0), IntY(5.0);
+    double IntX(3.0), IntY(5.0), Length(0);
 
     // Analytic result
     AnalyticResult = 31.8092282053127796;
 
     // Numerical result
-    SInfo.IntegrateFunctionProjectionOnNormalDirections(S, TestFunction, IntX, IntY);
+    SInfo.IntegrateFunctionProjectionOnNormalDirections(S, TestFunction, IntX, IntY, Length);
 
     // == check
     ensure_distance("X Component Integral", IntX, 3.0 + AnalyticResult*0.6, AcceptedError(3.0 + AnalyticResult*0.6, 1.0e-6));
