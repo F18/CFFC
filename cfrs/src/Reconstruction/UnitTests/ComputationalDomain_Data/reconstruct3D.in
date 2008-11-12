@@ -6,11 +6,15 @@
 ###########################
 #
 Function_Definition =
-Default
+Example4
+#Default
+#
 Reconstruction_Order =
-2
+3
+#
 Output_File_Name =
-DefaultR2
+Example4_k3
+#
 Method_Used =
 CENO
 ###########################
@@ -20,11 +24,11 @@ CENO
 Grid_Type      =
 Cube
 Box_Width      =
-1.0
+10.0
 Box_Height     =
-1.0
+10.0
 Box_Length     =
-1.0
+10.0
 Characteristic_Length =
 1.0
 Cutoff_Knob =
@@ -52,54 +56,83 @@ Number_of_Subgrid_Points_Kdir =
 #
 Output_Format_Type =
 tecplot
+#
 #######################
 ## Execute program
 #######################
 Execute
+#
+#
+#
+######################
+## Write mathematical function to file "_Function_" using subgrid points
+## creates file: "_Function_"
+######################
+#Write_Function_Graph
+#
 #######################
 ## Write output
+## creates the files (.dat, _PWC.dat, and _SI_Flag.dat)
 #######################
 #Write_Output
+#
 #######################
 ## Write output in One Zone using the subgrid points
+## creates the files: (_SubgridSol.dat, _PWC.dat, and _SI_Flag.dat)
 #######################
 Write_Output_OneZone
+#
 #######################
-## Write output based on cell centers
-#######################
-Write_Output_Cells
-#######################
-## Write Stencil reconstruction
-#######################
-# Write_Stencil_Reconstruction
-#######################
-## Print the norms on the screen
-######################
-# Print_Norms
-######################
-## Write the norms in the file
-######################
-# Write_Output_Accuracy
-######################
 ## Write the solution at the nodes of the mesh
+## creates the file: _mesh.dat
 ######################
-#Write_Output_Solution_Nodes
+Write_Output_Solution_Nodes
+#
 ######################
 ## Write the whole solution at the nodes of the mesh (including ghost cells)
 ######################
 #Write_Output_Full_Solution_Nodes
+#
 ######################
-## Write mathematical function to file "_Function_" using subgrid points
+## Write the locations of the nodes and solution at the nodes
+## creates the file: "_mesh.dat"
+## same thing as Write_Output_Solution_Nodes
 ######################
-Write_Function_Graph
+#Write_Output_Mesh
+#
 ######################
-## Write the locations of the nodes "_mesh.dat"
+## Write the locations of the cell centers (including the ghost cells) 
+## creates the file: "_mesh_cells.dat"
 ######################
-Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#
+#######################
+## Should Write output based on cell centers
+## Not Yet Implemented (does not generate an output file for the time being)
+#######################
+# Write_Output_Cells
+#
+#
+#
+#######################
+## Write Stencil reconstruction
+#######################
+# Write_Stencil_Reconstruction
+#
+#
+#
+#######################
+## Print the norms on the screen
 ######################
-## Write the locations of the nodes "_mesh_nodes.dat"
+# Print_Norms
+#
 ######################
-Write_Output_Mesh_Cells
+## Write the norms in the file
+######################
+# Write_Output_Accuracy
+#
+#
+#
 ############################
 # Terminate program
 ############################

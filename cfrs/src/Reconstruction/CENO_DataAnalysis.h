@@ -8,6 +8,8 @@
 #include "include/TypeDefinition.h"
 #include "CENO_Tolerances.h"
 
+#include "../../../src_3D/Utilities/Utilities.h"
+
 
 /**********************************************************************************************************************
  ----------------------------------------------------------------------------------------------------------------------
@@ -142,6 +144,76 @@ void ComputeSmoothnessIndicator(SolutionContainer & SolnBlk, const int *i_index,
  
     // Compute the smoothness indicator
     SolnBlk(iCell,jCell).CellMCC(parameter) = (alpha*(StencilSize - DOF))/(max(CENO_Tolerances::epsilon,1.0 - alpha)*(DOF - 1.0));
+  }
+}
+
+
+/**********************************************************************************************************************
+ ----------------------------------------------------------------------------------------------------------------------
+ ----------------------------------------------------------------------------------------------------------------------
+ *                                                                                                                    *
+ *                                         3D ANALYSIS                                                                *
+ *                                                                                                                    *
+ ----------------------------------------------------------------------------------------------------------------------
+ ----------------------------------------------------------------------------------------------------------------------
+**********************************************************************************************************************/
+template< class SolutionContainer>
+void ComputeSmoothnessIndicator(SolutionContainer & SolnBlk, const int *i_index, const int *j_index, const int *k_index,
+				const int & StencilSize,
+				const int iCell, const int jCell, const int kCell){
+
+  typedef typename SolutionContainer::CompCellType  ComputationalCellType;
+  static const int NumberOfParameters = ComputationalCellType::NumberOfVariables;
+
+  double SS_Regression, SS_Residual, MeanSolution, alpha;
+  double Temp, DeltaTol;
+  Vector3D Coordinate;
+  int DOF = SolnBlk(iCell,jCell,kCell).NumberOfTaylorDerivatives(); 			/* degrees of freedom */
+  int parameter, cell, ComputeSI;
+
+  for (parameter=1; parameter<=NumberOfParameters; ++parameter){
+
+    // Mean Solution
+    MeanSolution = SolnBlk(iCell,jCell,kCell).CellSolution(parameter);
+
+    /* DeltaTol */
+    DeltaTol = CENO_Tolerances::SquareToleranceAroundValue(MeanSolution);
+
+    /* Compute the regression and residual sums */
+    SS_Regression = 0.0;
+    SS_Residual = 0.0;
+    ComputeSI = OFF;		/* assume that the smoothness indicator is not computed but assigned */
+
+    /* compute S(quare)S(sum)_Regression and SS_Residual  */
+    for(cell=0; cell<StencilSize; ++cell){
+      /* compute SS_Regression */
+      Temp = SolnBlk(i_index[cell],j_index[cell],k_index[cell]).CellDeriv(0,0,0,parameter) - MeanSolution;
+      Temp *= Temp;
+      SS_Regression += Temp;
+	
+      /* Check if any of the Temp(s) is greater than DeltaTol */
+      if ((ComputeSI==OFF) && (Temp > DeltaTol)){
+	ComputeSI = ON; 	/* Decide to compute the smoothness indicator */
+      }
+
+      /* compute SS_Residual */
+      Coordinate = SolnBlk(i_index[cell],j_index[cell],k_index[cell]).CellCenter();
+      Temp = (SolnBlk(i_index[cell],j_index[cell],k_index[cell]).CellDeriv(0,0,0,parameter) - 
+	      SolnBlk(iCell,jCell,kCell).SolutionAtCoordinates(Coordinate.x, Coordinate.y, Coordinate.z, parameter));
+      SS_Residual += Temp*Temp;
+    }
+
+    /* Decide if the smoothness indicator is computed or not */
+    if (ComputeSI){ 
+      /* Compute alpha based on the ratio of the two sums */
+      alpha = 1.0 - SS_Residual/SS_Regression;
+    } else {
+      /* Assign the perfect fit value to the smoothness indicator */
+      alpha = 1.0;
+    }
+ 
+    // Compute the smoothness indicator
+    SolnBlk(iCell,jCell,kCell).CellMCC(parameter) = (alpha*(StencilSize - DOF))/(max(CENO_Tolerances::epsilon,1.0 - alpha)*(DOF - 1.0));
   }
 }
 
