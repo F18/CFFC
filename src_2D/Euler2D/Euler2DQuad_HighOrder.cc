@@ -3161,4 +3161,43 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 void Euler2D_Quad_Block::EnsurePhysicalBCsConstraints(const int & BOUNDARY, const int & BndCellIndex){
   // Add logic for enforcing physics of the BCs
   // (i.e. which variables are constrained (physical BCs) and which are not (numerical BCs) )
+
+  int CellBCtype;		// index for the boundary condition type of cell BndCellIndex
+  BC_Type *hoBC;		// pointer to cell high-order boundary condition
+  
+  switch (BOUNDARY){
+  case NORTH:
+    CellBCtype = Grid.BCtypeN[BndCellIndex];
+    hoBC = &BC_NorthCell(BndCellIndex);
+    break;
+
+  case SOUTH:
+    CellBCtype = Grid.BCtypeS[BndCellIndex];
+    hoBC = &BC_SouthCell(BndCellIndex);
+    break;
+
+  case EAST:
+    CellBCtype = Grid.BCtypeE[BndCellIndex];
+    hoBC = &BC_EastCell(BndCellIndex);
+    break;
+
+  case WEST:
+    CellBCtype = Grid.BCtypeW[BndCellIndex];
+    hoBC = &BC_WestCell(BndCellIndex);
+    break;
+  } // endswitch
+
+  // Impose physical constraints
+  switch(CellBCtype){
+
+  case BC_EXACT_SOLUTION:
+    // Impose density and velocity based on exact solution
+    // Obtain pressure from interior domain
+    hoBC->NumberOfIndividualConstraints(1) = 1;
+    hoBC->NumberOfIndividualConstraints(2) = 1;
+    hoBC->NumberOfIndividualConstraints(3) = 1;
+    hoBC->NumberOfIndividualConstraints(4) = 0;
+    break;
+
+  }
 }
