@@ -619,6 +619,19 @@ public:
   /*! @brief Set a stencil with all cells used for the reconstructions of the cells in the passed index arrays. */
   void getEnlargedReconstructionStencil(const int &iCell, const int &jCell,
 					IndexType & i_index, IndexType & j_index) const;
+  //! @brief Gather the data on each cell edge for imposing the required constraints
+  template<class Soln_Block_Type>
+  void FetchDataConstraints(Soln_Block_Type & SolnBlk,
+			    const int &iCell, const int &jCell,
+			    int & BC_Type,
+			    const int & parameter,
+			    const int & ConstrainedGQPs_West,  const int * ConstraintBCs_W,
+			    const int & ConstrainedGQPs_South, const int * ConstraintBCs_S,
+			    const int & ConstrainedGQPs_East,  const int * ConstraintBCs_E,
+			    const int & ConstrainedGQPs_North, const int * ConstraintBCs_N,
+			    Vector2DArray & Constraints_Loc,
+			    Vector2DArray & Constraints_Normals,
+			    BC_Type_Array & Constraints_BCs);
   //@} (Helper Functions)
 
   //! @name CENO Analysis:

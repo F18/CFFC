@@ -2615,94 +2615,24 @@ ComputeRelationallyAndIndividuallyConstrainedUnlimitedSolutionReconstruction(Sol
     // Calculate TotalNumberOfEquations (i.e. TotalNumberOfExactlySatisfiedEquations + approximate equations)
     TotalNumberOfEquations = TotalNumberOfExactlySatisfiedEquations + (StencilSize - 1);
 
-    Constraints_Loc.clear();
-    Constraints_Normals.clear();
-    Constraints_BCs.clear();
-    ParameterIndex[0] = parameter;
-
-    /******** Fetch the data on each cell edge for the exactly satisfied individual constraints ************/
-    /*******************************************************************************************************/
-
-    //=== West edge ===
-    if ( IndividualBCs_W[parameter] ){
-      // Constraints detected on the West face for the current parameter
-
-      // Fetch the data for imposing the constraints
-      if (Geom->BndWestSplineInfo != NULL){
-	Geom->BndWestSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
-	Geom->BndWestSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
-      } else {
-	Geom->addGaussQuadPointsFaceW(iCell,jCell,Constraints_Loc,ConstrainedGQPs_West);
-	for (n = 0; n < ConstrainedGQPs_West; ++n){
-	  Constraints_Normals.push_back(Geom->nfaceW(iCell,jCell));
-	}
-      }
-      
-      Constraints_BCs.push_back(&SolnBlk.BC_WestCell(jCell));
-    }
-
-    //=== South edge ===
-    if ( IndividualBCs_S[parameter] ){
-      // Constraints detected on the South face for the current parameter
-
-      // Fetch the data
-      if (Geom->BndSouthSplineInfo != NULL){
-	Geom->BndSouthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
-	Geom->BndSouthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
-      } else {
-	Geom->addGaussQuadPointsFaceS(iCell,jCell,Constraints_Loc,ConstrainedGQPs_South);
-	for (n = 0; n < ConstrainedGQPs_South; ++n){
-	  Constraints_Normals.push_back(Geom->nfaceS(iCell,jCell));
-	}
-      }
-    
-      Constraints_BCs.push_back(&SolnBlk.BC_SouthCell(iCell));
-    }
-
-    //=== East edge ===
-    if ( IndividualBCs_E[parameter] ){
-      // Constraints detected on the East face for the current parameter
-
-      // Fetch the data
-      if (Geom->BndEastSplineInfo != NULL){
-	Geom->BndEastSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
-	Geom->BndEastSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
-      } else {
-	Geom->addGaussQuadPointsFaceE(iCell,jCell,Constraints_Loc,ConstrainedGQPs_East);
-	for (n = 0; n < ConstrainedGQPs_East; ++n){
-	  Constraints_Normals.push_back(Geom->nfaceE(iCell,jCell));
-	}
-      }
-      
-      Constraints_BCs.push_back(&SolnBlk.BC_EastCell(jCell));
-    }
-
-    //=== North edge ===
-    if ( IndividualBCs_N[parameter] ){
-      // Constraints detected on the North face for the current parameter
-
-      // Fetch the data
-      if (Geom->BndNorthSplineInfo != NULL){
-	Geom->BndNorthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
-	Geom->BndNorthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
-      } else {
-	Geom->addGaussQuadPointsFaceN(iCell,jCell,Constraints_Loc,ConstrainedGQPs_North);
-	for (n = 0; n < ConstrainedGQPs_North; ++n){
-	  Constraints_Normals.push_back(Geom->nfaceN(iCell,jCell));
-	}
-      }
-      
-      Constraints_BCs.push_back(&SolnBlk.BC_NorthCell(iCell));
-    }
-
-
     /******** Determine dimensions of the least-squares problem and set matrices accordingly ************/
     /****************************************************************************************************/    
     A_Assembled.newsize(TotalNumberOfEquations, NumberOfTaylorDerivatives());
     All_U_Assembled.newsize(TotalNumberOfEquations, 1); // There is only ONE column
 
+    /******** Fetch the data on each cell edge for the exactly satisfied individual constraints ************/
+    /*******************************************************************************************************/
+    FetchDataConstraints(SolnBlk, iCell, jCell,
+			 BC_Type, parameter,
+			 ConstrainedGQPs_West,  IndividualBCs_W,
+			 ConstrainedGQPs_South, IndividualBCs_S,
+			 ConstrainedGQPs_East,  IndividualBCs_E,
+			 ConstrainedGQPs_North, IndividualBCs_N,
+			 Constraints_Loc, Constraints_Normals, Constraints_BCs);
+
     /************ Generate exactly satisfied individual constraints for UNCOUPLED variables *************/
     /****************************************************************************************************/
+    ParameterIndex[0] = parameter;
     Generalized_IndividualConstraints_Equations(SolnBlk,
 						iCell, jCell,
 						Constraints_Loc,
@@ -2774,12 +2704,6 @@ ComputeRelationallyAndIndividuallyConstrainedUnlimitedSolutionReconstruction(Sol
   }
 
   // === Reset and initialize the local variables ===
-
-  // Use these containers for invidividual equations
-  Constraints_Loc.clear();
-  Constraints_Normals.clear();
-  Constraints_BCs.clear();
-
   // Calculate TotalNumberOfExactlySatisfiedEquations
   // Initialize with the number of mean conservation constraints
   TotalNumberOfExactlySatisfiedEquations = ParametersWithRelationalBCs.size();
@@ -2817,87 +2741,13 @@ ComputeRelationallyAndIndividuallyConstrainedUnlimitedSolutionReconstruction(Sol
   /******** Fetch the data on each cell edge for the exactly satisfied RELATIONAL constraints ************/
   /*******************************************************************************************************/
   parameter = ParametersWithRelationalBCs[0];
-  //=== West edge ===
-  if ( RelationalBCs_W[parameter] ){
-    // Relational constraints detected on the West face
-    // Fetch the data for imposing the constraints
-    if (Geom->BndWestSplineInfo != NULL){
-      Geom->BndWestSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndWestSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
-    } else {
-      Geom->addGaussQuadPointsFaceW(iCell,jCell,Constraints_Loc,ConstrainedGQPs_West);
-      for (n = 0; n < ConstrainedGQPs_West; ++n){
-	Constraints_Normals.push_back(Geom->nfaceW(iCell,jCell));
-      }
-    }
-      
-    Constraints_BCs.push_back(&SolnBlk.BC_WestCell(jCell));
-
-    // store the type of the boundary condition for this cell
-    BC_Type = Geom->BCtypeW[jCell];
-  }
-
-
-  //=== South edge ===
-  if ( RelationalBCs_S[parameter] ){
-    // Relational constraints detected on the South face
-    // Fetch the data for imposing the constraints
-    if (Geom->BndSouthSplineInfo != NULL){
-      Geom->BndSouthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndSouthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
-    } else {
-      Geom->addGaussQuadPointsFaceS(iCell,jCell,Constraints_Loc,ConstrainedGQPs_South);
-      for (n = 0; n < ConstrainedGQPs_South; ++n){
-	Constraints_Normals.push_back(Geom->nfaceS(iCell,jCell));
-      }
-    }
-    
-    Constraints_BCs.push_back(&SolnBlk.BC_SouthCell(iCell));
-
-    // store the type of the boundary condition for this cell
-    BC_Type = Geom->BCtypeS[iCell];
-  }
-
-  //=== East edge ===
-  if ( RelationalBCs_E[parameter] ){
-    // Relational constraints detected on the East face
-    // Fetch the data for imposing the constraints
-    if (Geom->BndEastSplineInfo != NULL){
-      Geom->BndEastSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndEastSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
-    } else {
-      Geom->addGaussQuadPointsFaceE(iCell,jCell,Constraints_Loc,ConstrainedGQPs_East);
-      for (n = 0; n < ConstrainedGQPs_East; ++n){
-	Constraints_Normals.push_back(Geom->nfaceE(iCell,jCell));
-      }
-    }
-      
-    Constraints_BCs.push_back(&SolnBlk.BC_EastCell(jCell));
-
-    // store the type of the boundary condition for this cell
-    BC_Type = Geom->BCtypeE[jCell];
-  }
-
-  //=== North edge ===
-  if ( RelationalBCs_N[parameter] ){
-    // Relational constraints detected on the North face
-    // Fetch the data for imposing the constraints
-    if (Geom->BndNorthSplineInfo != NULL){
-      Geom->BndNorthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndNorthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
-    } else {
-      Geom->addGaussQuadPointsFaceN(iCell,jCell,Constraints_Loc,ConstrainedGQPs_North);
-      for (n = 0; n < ConstrainedGQPs_North; ++n){
-	Constraints_Normals.push_back(Geom->nfaceN(iCell,jCell));
-      }
-    }
-      
-    Constraints_BCs.push_back(&SolnBlk.BC_NorthCell(iCell));
-
-    // store the type of the boundary condition for this cell
-    BC_Type = Geom->BCtypeN[iCell];
-  }
-
+  FetchDataConstraints(SolnBlk, iCell, jCell,
+		       BC_Type, parameter,
+		       ConstrainedGQPs_West,  RelationalBCs_W,
+		       ConstrainedGQPs_South, RelationalBCs_S,
+		       ConstrainedGQPs_East,  RelationalBCs_E,
+		       ConstrainedGQPs_North, RelationalBCs_N,
+		       Constraints_Loc, Constraints_Normals, Constraints_BCs);
 
   /************ Generate exactly satisfied relational constraints for COUPLED variables *************/
   /************ Only one type of relational constraint can be accommodated at a time *****************/
@@ -2922,87 +2772,17 @@ ComputeRelationallyAndIndividuallyConstrainedUnlimitedSolutionReconstruction(Sol
 
     // === Reset and initialize the local variables ===
     parameter = ParametersWithRelationalBCs[iterator]; // index of current state variable
-
-    Constraints_Loc.clear();
-    Constraints_Normals.clear();
-    Constraints_BCs.clear();
     ParameterIndex[0] = parameter;
 
     /******** Fetch the data on each cell edge for the exactly satisfied individual constraints ************/
     /*******************************************************************************************************/
-
-    //=== West edge ===
-    if ( IndividualBCs_W[parameter] ){
-      // Constraints detected on the West face for the current parameter
-
-      // Fetch the data for imposing the constraints
-      if (Geom->BndWestSplineInfo != NULL){
-	Geom->BndWestSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
-	Geom->BndWestSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
-      } else {
-	Geom->addGaussQuadPointsFaceW(iCell,jCell,Constraints_Loc,ConstrainedGQPs_West);
-	for (n = 0; n < ConstrainedGQPs_West; ++n){
-	  Constraints_Normals.push_back(Geom->nfaceW(iCell,jCell));
-	}
-      }
-      
-      Constraints_BCs.push_back(&SolnBlk.BC_WestCell(jCell));
-    }
-
-    //=== South edge ===
-    if ( IndividualBCs_S[parameter] ){
-      // Constraints detected on the South face for the current parameter
-
-      // Fetch the data
-      if (Geom->BndSouthSplineInfo != NULL){
-	Geom->BndSouthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
-	Geom->BndSouthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
-      } else {
-	Geom->addGaussQuadPointsFaceS(iCell,jCell,Constraints_Loc,ConstrainedGQPs_South);
-	for (n = 0; n < ConstrainedGQPs_South; ++n){
-	  Constraints_Normals.push_back(Geom->nfaceS(iCell,jCell));
-	}
-      }
-    
-      Constraints_BCs.push_back(&SolnBlk.BC_SouthCell(iCell));
-    }
-
-    //=== East edge ===
-    if ( IndividualBCs_E[parameter] ){
-      // Constraints detected on the East face for the current parameter
-
-      // Fetch the data
-      if (Geom->BndEastSplineInfo != NULL){
-	Geom->BndEastSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
-	Geom->BndEastSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
-      } else {
-	Geom->addGaussQuadPointsFaceE(iCell,jCell,Constraints_Loc,ConstrainedGQPs_East);
-	for (n = 0; n < ConstrainedGQPs_East; ++n){
-	  Constraints_Normals.push_back(Geom->nfaceE(iCell,jCell));
-	}
-      }
-      
-      Constraints_BCs.push_back(&SolnBlk.BC_EastCell(jCell));
-    }
-
-    //=== North edge ===
-    if ( IndividualBCs_N[parameter] ){
-      // Constraints detected on the North face for the current parameter
-
-      // Fetch the data
-      if (Geom->BndNorthSplineInfo != NULL){
-	Geom->BndNorthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
-	Geom->BndNorthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
-      } else {
-	Geom->addGaussQuadPointsFaceN(iCell,jCell,Constraints_Loc,ConstrainedGQPs_North);
-	for (n = 0; n < ConstrainedGQPs_North; ++n){
-	  Constraints_Normals.push_back(Geom->nfaceN(iCell,jCell));
-	}
-      }
-      
-      Constraints_BCs.push_back(&SolnBlk.BC_NorthCell(iCell));
-    }
-
+    FetchDataConstraints(SolnBlk, iCell, jCell,
+			 BC_Type, parameter,
+			 ConstrainedGQPs_West,  IndividualBCs_W,
+			 ConstrainedGQPs_South, IndividualBCs_S,
+			 ConstrainedGQPs_East,  IndividualBCs_E,
+			 ConstrainedGQPs_North, IndividualBCs_N,
+			 Constraints_Loc, Constraints_Normals, Constraints_BCs);
 
     /************ Generate exactly satisfied individual constraints for UNCOUPLED variables *************/
     /****************************************************************************************************/
@@ -3332,6 +3112,113 @@ ComputeUnconstrainedUnlimitedSolutionReconstructionInConstrainedCell(Soln_Block_
 
   } // endif (IsPseudoInverseAllocated() && IsPseudoInversePreComputed())
   
+}
+
+
+/*!
+ * Gather the data on each cell edge for imposing the required constraints 
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::FetchDataConstraints(Soln_Block_Type & SolnBlk,
+						   const int &iCell, const int &jCell,
+						   int & BC_Type,
+						   const int & parameter,
+						   const int & ConstrainedGQPs_West,  const int * ConstraintBCs_W,
+						   const int & ConstrainedGQPs_South, const int * ConstraintBCs_S,
+						   const int & ConstrainedGQPs_East,  const int * ConstraintBCs_E,
+						   const int & ConstrainedGQPs_North, const int * ConstraintBCs_N,
+						   Vector2DArray & Constraints_Loc,
+						   Vector2DArray & Constraints_Normals,
+						   BC_Type_Array & Constraints_BCs){
+  int n;
+
+  // === Ensure clean containers
+  Constraints_Loc.clear();
+  Constraints_Normals.clear();
+  Constraints_BCs.clear();
+  
+  //=== West edge ===
+  if ( ConstraintBCs_W[parameter] ){
+    // Constraints detected on the West face
+    // Fetch the data for imposing the constraints
+    if (Geom->BndWestSplineInfo != NULL){
+      Geom->BndWestSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndWestSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else {
+      Geom->addGaussQuadPointsFaceW(iCell,jCell,Constraints_Loc,ConstrainedGQPs_West);
+      for (n = 0; n < ConstrainedGQPs_West; ++n){
+	Constraints_Normals.push_back(Geom->nfaceW(iCell,jCell));
+      }
+    }
+      
+    Constraints_BCs.push_back(&SolnBlk.BC_WestCell(jCell));
+
+    // store the type of the boundary condition for this cell
+    BC_Type = Geom->BCtypeW[jCell];
+  }
+
+
+  //=== South edge ===
+  if ( ConstraintBCs_S[parameter] ){
+    // Constraints detected on the South face
+    // Fetch the data for imposing the constraints
+    if (Geom->BndSouthSplineInfo != NULL){
+      Geom->BndSouthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndSouthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else {
+      Geom->addGaussQuadPointsFaceS(iCell,jCell,Constraints_Loc,ConstrainedGQPs_South);
+      for (n = 0; n < ConstrainedGQPs_South; ++n){
+	Constraints_Normals.push_back(Geom->nfaceS(iCell,jCell));
+      }
+    }
+    
+    Constraints_BCs.push_back(&SolnBlk.BC_SouthCell(iCell));
+
+    // store the type of the boundary condition for this cell
+    BC_Type = Geom->BCtypeS[iCell];
+  }
+
+  //=== East edge ===
+  if ( ConstraintBCs_E[parameter] ){
+    // Constraints detected on the East face
+    // Fetch the data for imposing the constraints
+    if (Geom->BndEastSplineInfo != NULL){
+      Geom->BndEastSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndEastSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else {
+      Geom->addGaussQuadPointsFaceE(iCell,jCell,Constraints_Loc,ConstrainedGQPs_East);
+      for (n = 0; n < ConstrainedGQPs_East; ++n){
+	Constraints_Normals.push_back(Geom->nfaceE(iCell,jCell));
+      }
+    }
+      
+    Constraints_BCs.push_back(&SolnBlk.BC_EastCell(jCell));
+
+    // store the type of the boundary condition for this cell
+    BC_Type = Geom->BCtypeE[jCell];
+  }
+
+  //=== North edge ===
+  if ( ConstraintBCs_N[parameter] ){
+    // Constraints detected on the North face
+    // Fetch the data for imposing the constraints
+    if (Geom->BndNorthSplineInfo != NULL){
+      Geom->BndNorthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndNorthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else {
+      Geom->addGaussQuadPointsFaceN(iCell,jCell,Constraints_Loc,ConstrainedGQPs_North);
+      for (n = 0; n < ConstrainedGQPs_North; ++n){
+	Constraints_Normals.push_back(Geom->nfaceN(iCell,jCell));
+      }
+    }
+      
+    Constraints_BCs.push_back(&SolnBlk.BC_NorthCell(iCell));
+
+    // store the type of the boundary condition for this cell
+    BC_Type = Geom->BCtypeN[iCell];
+  }
+
 }
 
 #endif
