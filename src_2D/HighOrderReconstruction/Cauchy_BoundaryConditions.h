@@ -101,6 +101,12 @@ public:
   bool IsThereAnyRelationalConstraintRequired(void) const { return RelationalConstraintsFlag; }
   bool IsThereAnyIndividualConstraintRequired(void) const { return IndividualConstraintsFlag; }
 
+  void setIndividualConstraints(void) { IndividualConstraintsFlag = true; }
+  void setNOIndividualConstraints(void) { IndividualConstraintsFlag = false; }
+  void setRelationalConstraints(void) { RelationalConstraintsFlag = true; }
+  void setNORelationalConstraints(void) { RelationalConstraintsFlag = false; }
+  
+
   //! @name Friend functions:
   //@{
   friend std::ostream& operator<< <SOLN_STATE> (std::ostream& os, const Cauchy_BCs<SOLN_STATE>& rhs);
