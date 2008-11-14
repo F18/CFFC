@@ -131,6 +131,29 @@ namespace tut
     ensure_equals("Max II" , max(W1,Wm), Euler2D_pState(1.5, 2.500001, 3.5, 4.5) );
     ensure_equals("Max III", max(W2,Wm), Euler2D_pState(-1.5, 2.500001, 0.0, -4.5) );
   }
+
+  /* Test 4:*/
+  template<>
+  template<>
+  void Euler2D_pState_object::test<4>()
+  {
+
+    set_test_name("Determine flow direction");
+
+    // Set initial data
+    Euler2D_pState Wi(4.5, -150.0, -150.0, 7.5E5);
+    Euler2D_pState Wo(5.5, 180.0, 50.0, 10.5E5);
+    Vector2D normal_dir(0.8,0.6);
+
+    int Direction;
+
+    Direction = DetermineFlowDirection(Wi, Wo, normal_dir);
+
+    // === check
+    ensure_equals("Flow direction", Direction, -1);
+  }
+
+
 }
 
 

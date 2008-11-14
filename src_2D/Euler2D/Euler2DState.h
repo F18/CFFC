@@ -462,6 +462,12 @@ public:
   friend void P_U_WS_inv(DenseMatrix &dWdU, const Euler2D_pState &W);
   //@}
 
+  //! @name Determine flow direction at inter-celular face
+  friend int DetermineFlowDirection(const Euler2D_pState &Wi,
+				    const Euler2D_pState &Wo,
+				    const Vector2D &normal_dir);
+  //@}
+
   /* Assignment operator. */
   // Euler2D_pState operator = (const Euler2D_pState &W);
   // Use automatically generated assignment operator.
