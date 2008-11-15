@@ -40,6 +40,7 @@ void Euler2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Tim
     int i, j, nRow, nLoop;
     Euler2D_pState W_node;
     Vector2D Node;
+    int Index_GQP(Spline2DInterval_HO::get_NumGQPoints_ContourIntegral()/2 + 1);
 
     if (NumberOfHighOrderVariables <= IndexHO){
       throw runtime_error("Euler2D_Quad_Block::Output_Nodes_Tecplot_HighOrder() ERROR! High-order object index out of range!");
@@ -150,9 +151,9 @@ void Euler2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Tim
 	      case 1:		// output NodeSW(i,j)
 		Node = Grid.nodeSW(i,j).X;
 		break;
-	      case 2:		// output xfaceS(i,j) or BndSouthSplineInfo[i].GQPointContourIntegral(2)
+	      case 2:		// output xfaceS(i,j) or BndSouthSplineInfo[i].GQPointContourIntegral(Index_GQP)
 		if(j == JCl && Grid.BndSouthSplineInfo != NULL){
-		  Node = Grid.BndSouthSplineInfo[i].GQPointContourIntegral(2);
+		  Node = Grid.BndSouthSplineInfo[i].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceS(i,j);
 		}
@@ -165,9 +166,9 @@ void Euler2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Tim
 
 	    case 2: // output the 2nd row of nodes (i.e. xfaceW(i,j), Grid.CellCentroid(i,j), xfaceE(i,j))
 	      switch(nLoop){
-	      case 1:		// output xfaceW(i,j) or BndWestSplineInfo[j].GQPointContourIntegral(2)
+	      case 1:		// output xfaceW(i,j) or BndWestSplineInfo[j].GQPointContourIntegral(Index_GQP)
 		if (i == ICl && Grid.BndWestSplineInfo != NULL){
-		  Node = Grid.BndWestSplineInfo[j].GQPointContourIntegral(2);
+		  Node = Grid.BndWestSplineInfo[j].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceW(i,j);
 		}
@@ -175,9 +176,9 @@ void Euler2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Tim
 	      case 2:		// output Grid.CellCentroid(i,j)
 		Node = Grid.CellCentroid(i,j);
 		break;
-	      case 3:		// output xfaceE(i,j) or BndEastSplineInfo[j].GQPointContourIntegral(2)
+	      case 3:		// output xfaceE(i,j) or BndEastSplineInfo[j].GQPointContourIntegral(Index_GQP)
 		if (i == ICu && Grid.BndEastSplineInfo != NULL){
-		  Node = Grid.BndEastSplineInfo[j].GQPointContourIntegral(2);
+		  Node = Grid.BndEastSplineInfo[j].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceE(i,j);
 		}
@@ -190,9 +191,9 @@ void Euler2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Tim
 	      case 1:		// output NodeNW(i,j)
 		Node = Grid.nodeNW(i,j).X;
 		break;
-	      case 2:		// output xfaceN(i,j) or BndNorthSplineInfo[i].GQPointContourIntegral(2)
+	      case 2:		// output xfaceN(i,j) or BndNorthSplineInfo[i].GQPointContourIntegral(Index_GQP)
 		if(j == JCu && Grid.BndNorthSplineInfo != NULL){
-		  Node = Grid.BndNorthSplineInfo[i].GQPointContourIntegral(2);
+		  Node = Grid.BndNorthSplineInfo[i].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceN(i,j);
 		}
@@ -2408,6 +2409,9 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       // Calculate Wr based on the reconstruction in the ghost cell
       Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii-1,jj,CalculationPoint);
       break;
+
+    case BC_FARFIELD :
+      // Setup value as in the case of Dirichlet BC
       
     case BC_DIRICHLET :		// BC_FIXED
       // Set Wr to the reference value for the given location
@@ -2466,10 +2470,6 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
 				      NormalDirection);
       break;
 
-    case BC_FARFIELD :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_FARFIELD not implemented yet.");
-      break;
-
     default:
       throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such West BCtype!");
     }// endswitch (Grid.BCtypeW[jj])
@@ -2498,6 +2498,9 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii+1,jj,CalculationPoint);
       break;
       
+    case BC_FARFIELD :
+      // Setup value as in the case of Dirichlet BC
+
     case BC_DIRICHLET :		// BC_FIXED
       // Set Wr to the reference value for the given location
       // Note: The reference value should be changed to HO_WoE!
@@ -2555,10 +2558,6 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
 				      NormalDirection);
       break;
 
-    case BC_FARFIELD :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_FARFIELD not implemented yet.");
-      break;
-
     default:
       throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such East BCtype!");
     }// endswitch (Grid.BCtypeE[jj])
@@ -2585,6 +2584,9 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       // Compute Wr based on the reconstruction in the ghost cell
       Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj-1,CalculationPoint);
       break;
+
+    case BC_FARFIELD :
+      // Setup value as in the case of Dirichlet BC
       
     case BC_DIRICHLET :		// BC_FIXED
       // Set Wr to the reference value for the given location
@@ -2643,10 +2645,6 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
 				      NormalDirection);
       break;
 
-    case BC_FARFIELD :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_FARFIELD not implemented yet.");
-      break;
-
     default:
       throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such South BCtype!");
     }// endswitch (Grid.BCtypeS[ii])
@@ -2674,6 +2672,9 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
       Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj+1,CalculationPoint);
       break;
       
+    case BC_FARFIELD :
+      // Setup value as in the case of Dirichlet BC
+
     case BC_DIRICHLET :		// BC_FIXED
       // Set Wr to the reference value for the given location
       // Note: The reference value should be changed to HO_WoN!
@@ -2731,10 +2732,6 @@ void Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder(const 
 				      NormalDirection);
       break;
       
-    case BC_FARFIELD :
-      throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_FARFIELD not implemented yet.");
-      break;
-
     default:
       throw runtime_error("Euler2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such North BCtype!");
     }// endswitch (Grid.BCtypeN[ii])
@@ -2787,6 +2784,9 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  throw runtime_error("BCs_HighOrder() ERROR! Inflow BC hasn't been implemented yet!");
 	  break;
 
+	case BC_FARFIELD :
+	  // Setup the data as in the case of Dirichlet BC.
+
 	case BC_DIRICHLET :	// Use WoW as reference value
 	  // Dirichlet constraint
 	  BC_WestCell(j).DirichletBC(Vertex) = WoW[j];
@@ -2801,10 +2801,6 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  BC_WestCell(j).a(Vertex) = Soln_State(0.0);
 	  BC_WestCell(j).NeumannBC(Vertex) =  WoW[j];
 	  BC_WestCell(j).b(Vertex) = Soln_State(1.0);
-	  break;
-
-	case BC_FARFIELD :
-	  throw runtime_error("BCs_HighOrder() ERROR! Farfield BC hasn't been implemented yet!");
 	  break;
 
 	case BC_SYMMETRY_PLANE :
@@ -2880,6 +2876,9 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  throw runtime_error("BCs_HighOrder() ERROR! Inflow BC hasn't been implemented yet!");
 	  break;
 	
+	case BC_FARFIELD :
+	  // Setup the data as in the case of Dirichlet BC.
+
 	case BC_DIRICHLET :	// Use WoE as reference value
 	  // Dirichlet constraint
 	  BC_EastCell(j).DirichletBC(Vertex) = WoE[j];
@@ -2894,10 +2893,6 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  BC_EastCell(j).a(Vertex) = Soln_State(0.0);
 	  BC_EastCell(j).NeumannBC(Vertex) =  WoE[j];
 	  BC_EastCell(j).b(Vertex) = Soln_State(1.0);
-	  break;
-
-	case BC_FARFIELD :
-	  throw runtime_error("BCs_HighOrder() ERROR! Inflow BC hasn't been implemented yet!");
 	  break;
 
 	case BC_SYMMETRY_PLANE :
@@ -2979,6 +2974,9 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  throw runtime_error("BCs_HighOrder() ERROR! Inflow BC hasn't been implemented yet!");
 	  break;
 
+	case BC_FARFIELD :
+	  // Setup the data as in the case of Dirichlet BC.
+
 	case BC_DIRICHLET :	// Use WoS as reference value
 	  // Dirichlet constraint
 	  BC_SouthCell(i).DirichletBC(Vertex) = WoS[i];
@@ -2995,10 +2993,6 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  BC_SouthCell(i).b(Vertex) = Soln_State(1.0);
 	  break;
 
-	case BC_FARFIELD :
-	  throw runtime_error("BCs_HighOrder() ERROR! Farfield BC hasn't been implemented yet!");
-	  break;
-	
 	case BC_SYMMETRY_PLANE :
 	  // Do nothing
 	  break;
@@ -3074,6 +3068,9 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  throw runtime_error("BCs_HighOrder() ERROR! Inflow BC hasn't been implemented yet!");
 	  break;
 
+	case BC_FARFIELD :
+	  // Setup the data as in the case of Dirichlet BC.
+
 	case BC_DIRICHLET :	// Use WoN as reference value
 	  // Dirichlet constraint
 	  BC_NorthCell(i).DirichletBC(Vertex) = WoN[i];
@@ -3088,10 +3085,6 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  BC_NorthCell(i).a(Vertex) = Soln_State(0.0);
 	  BC_NorthCell(i).NeumannBC(Vertex) =  WoN[i];
 	  BC_NorthCell(i).b(Vertex) = Soln_State(1.0);
-	  break;
-      
-	case BC_FARFIELD :
-	  throw runtime_error("BCs_HighOrder() ERROR! Farfield BC hasn't been implemented yet!");
 	  break;
       
 	case BC_SYMMETRY_PLANE :
@@ -3164,26 +3157,50 @@ void Euler2D_Quad_Block::EnsurePhysicalBCsConstraints(const int & BOUNDARY, cons
 
   int CellBCtype;		// index for the boundary condition type of cell BndCellIndex
   BC_Type *hoBC;		// pointer to cell high-order boundary condition
-  
+  int iCell, jCell;
+  Vector2D GQP, normal_dir;
+  Euler2D_pState Wi, Wo;	// interior and exterior states at the GQP
+  int flow_dir;
+    
   switch (BOUNDARY){
   case NORTH:
     CellBCtype = Grid.BCtypeN[BndCellIndex];
     hoBC = &BC_NorthCell(BndCellIndex);
+
+    // Determine geometric data
+    GQP = Grid.xfaceN(BndCellIndex,JCu);
+    normal_dir = Grid.nfaceN(BndCellIndex,JCu);
+    Wi = CellSolution(BndCellIndex,JCu);
     break;
 
   case SOUTH:
     CellBCtype = Grid.BCtypeS[BndCellIndex];
     hoBC = &BC_SouthCell(BndCellIndex);
+
+    // Determine geometric data
+    GQP = Grid.xfaceS(BndCellIndex,JCl);
+    normal_dir = Grid.nfaceS(BndCellIndex,JCl);
+    Wi = CellSolution(BndCellIndex,JCl);
     break;
 
   case EAST:
     CellBCtype = Grid.BCtypeE[BndCellIndex];
     hoBC = &BC_EastCell(BndCellIndex);
+
+    // Determine geometric data
+    GQP = Grid.xfaceE(ICu,BndCellIndex);
+    normal_dir = Grid.nfaceE(ICu,BndCellIndex);
+    Wi = CellSolution(ICu,BndCellIndex);
     break;
 
   case WEST:
     CellBCtype = Grid.BCtypeW[BndCellIndex];
     hoBC = &BC_WestCell(BndCellIndex);
+
+    // Determine geometric data
+    GQP = Grid.xfaceW(ICl,BndCellIndex);
+    normal_dir = Grid.nfaceW(ICl,BndCellIndex);
+    Wi = CellSolution(ICl,BndCellIndex);
     break;
   } // endswitch
 
@@ -3191,13 +3208,57 @@ void Euler2D_Quad_Block::EnsurePhysicalBCsConstraints(const int & BOUNDARY, cons
   switch(CellBCtype){
 
   case BC_EXACT_SOLUTION:
-    // Impose density and velocity based on exact solution
-    // Obtain pressure from interior domain
-    hoBC->NumberOfIndividualConstraints(1) = 1;
-    hoBC->NumberOfIndividualConstraints(2) = 1;
-    hoBC->NumberOfIndividualConstraints(3) = 1;
-    hoBC->NumberOfIndividualConstraints(4) = 0;
+    // Approximate direction of the flow
+    flow_dir = DetermineFlowDirection(Wi,hoBC->DirichletBC(1), normal_dir);
+
+    // Impose constraints based on the flow direction
+    if (flow_dir == 1){
+      // Outflow type boundary 
+      
+      // Impose velocity based on exact solution
+      // Obtain density and pressure from interior domain
+      hoBC->NumberOfIndividualConstraints(1) = 0;
+      hoBC->NumberOfIndividualConstraints(2) = 1;
+      hoBC->NumberOfIndividualConstraints(3) = 1;
+      hoBC->NumberOfIndividualConstraints(4) = 0;
+    } else {
+      // Inflow type boundary
+
+      // Impose density and velocity based on exact solution
+      // Obtain pressure from interior domain
+      hoBC->NumberOfIndividualConstraints(1) = 1;
+      hoBC->NumberOfIndividualConstraints(2) = 1;
+      hoBC->NumberOfIndividualConstraints(3) = 1;
+      hoBC->NumberOfIndividualConstraints(4) = 0;
+    }
+
     break;
 
+  case BC_FARFIELD:
+    // Approximate direction of the flow
+    flow_dir = DetermineFlowDirection(Wi,hoBC->DirichletBC(1), normal_dir);
+
+    // Impose constraints based on the flow direction
+    if (flow_dir == 1){
+      // Outflow type boundary 
+      
+      // Impose pressure based on far-field boundary
+      // Obtain density and velocity from interior domain
+      hoBC->NumberOfIndividualConstraints(1) = 0;
+      hoBC->NumberOfIndividualConstraints(2) = 0;
+      hoBC->NumberOfIndividualConstraints(3) = 0;
+      hoBC->NumberOfIndividualConstraints(4) = 1;
+    } else {
+      // Inflow type boundary
+
+      // Impose density and velocity based on exact solution
+      // Obtain pressure from interior domain
+      hoBC->NumberOfIndividualConstraints(1) = 1;
+      hoBC->NumberOfIndividualConstraints(2) = 1;
+      hoBC->NumberOfIndividualConstraints(3) = 1;
+      hoBC->NumberOfIndividualConstraints(4) = 0;
+    }
+
+    break;
   }
 }

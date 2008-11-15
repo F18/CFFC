@@ -59,6 +59,22 @@ void Cauchy_BCs<Euler2D_pState>::SetCharacteristicConstraintsBasedOnBCtype(const
     IndividualConstraintsFlag = true;
     break;
 
+  case BC_FARFIELD:
+    // Impose NO relational constraints
+    RelationalConstraints[0] = 0;
+    RelationalConstraints[1] = 0;
+    RelationalConstraints[2] = 0;
+    RelationalConstraints[3] = 0;
+    RelationalConstraintsFlag = false;
+    // Assume individual constraints for velocity and pressure.
+    // (the final implementation might be different depending on the flow conditions)
+    IndividualConstraints[0] = 0;
+    IndividualConstraints[1] = 1;
+    IndividualConstraints[2] = 1;
+    IndividualConstraints[3] = 1;
+    IndividualConstraintsFlag = true;
+    break;
+
   default:
     // Impose NO relational constraints
     RelationalConstraints[0] = 0;
