@@ -382,11 +382,21 @@ public:
 					 const unsigned short int Pos = 0);
   //@}
 
-  //! @name Functions for AMR:
+  //! @name Variables/functions for AMR:
   //@{
+  //! Return the array of refinement criteria
+  DoubleArrayType & Refinement_Criteria(void) { return refinement_criteria; }
+  //! Return the array of refinement criteria as constant
+  const DoubleArrayType & Refinement_Criteria(void) const { return refinement_criteria; }
+  //! Return a particular refinement criterion in the refinement criteria array
+  double & Refinement_Criterion(const int & index) {return refinement_criteria[index]; }
+  //! Return a particular refinement criterion in the refinement criteria array as constant
+  const double & Refinement_Criterion(const int & index) const {return refinement_criteria[index]; }
+  //! Return number of refinement criteria
+  int Number_Of_Refinement_Criteria(void) const { return refinement_criteria.size(); }
   void Calculate_Refinement_Criteria_HighOrder(double *refinement_criteria,
 					       Euler2D_Input_Parameters &IP,
-					       int &number_refinement_criteria){};
+					       int &number_refinement_criteria);
   //@}
 
   //! @name Functions for flux calculation:
@@ -581,6 +591,10 @@ private:
     *HO_WoW;            	//!< High-order boundary condition reference states for West boundary
   //@}
 
+  //! @name Variables/functions for AMR:
+  //@{
+  DoubleArrayType refinement_criteria;
+  //@}
 };
 
 /****************************************//**

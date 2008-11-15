@@ -3148,6 +3148,27 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 }
 
 /*!
+ * Calculate refinement criteria for AMR
+ * based on the CENO smoothness indicator.
+ */
+void Euler2D_Quad_Block::Calculate_Refinement_Criteria_HighOrder(double *refinement_criteria,
+								 Euler2D_Input_Parameters &IP,
+								 int &number_refinement_criteria){
+  
+  number_refinement_criteria = 1;
+
+  /* Allocate memory for the refinement criteria */
+  Refinement_Criteria().reserve(number_refinement_criteria);
+  
+  /* Return the refinement criteria. */
+  refinement_criteria[0] = HighOrderVariable(0).AMR_Criteria_Based_On_Minimum_Smoothness_Indicator(*this);
+
+  /* Store the refinement_criteria values in the solution block designated variable */
+  Refinement_Criterion(0) = refinement_criteria[0];
+
+}
+
+/*!
  * Set physical boundary condition constraints based on
  * the current flow state and the BC_Type.
  */
