@@ -1200,7 +1200,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
     } else if (command_flag == WRITE_OUTPUT_CODE) {
        // Output solution data.
-       if (!batch_flag) cout << "\n Writing Euler2D solution to output data file(s).";
+      if (!batch_flag) { cout << "\n Writing Euler2D solution to output data file(s)."; cout.flush(); }
 
        if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0 ||
            !(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
@@ -1226,7 +1226,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
    } else if (command_flag == WRITE_OUTPUT_CELLS_CODE) {
        // Output solution data.
-       if (!batch_flag) cout << "\n Writing cell-centered Euler2D solution to output data file(s).";
+      if (!batch_flag) { cout << "\n Writing cell-centered Euler2D solution to output data file(s)."; cout.flush(); }
        if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0 ||
 	   !(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
 	     Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
@@ -1250,7 +1250,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
        if (error_flag) return (error_flag);
 
     } else if (command_flag == WRITE_OUTPUT_NODES_CODE) {
-      if (!batch_flag) cout << "\n Writing Euler2D node locations to output data file(s).";
+      if (!batch_flag){ cout << "\n Writing Euler2D node locations to output data file(s)."; cout.flush(); }
       if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0 ||
 	  !(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
 	    Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
@@ -1273,7 +1273,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
       if (error_flag) return error_flag;
 
     } else if (command_flag == WRITE_OUTPUT_GRADIENTS_CODE) {
-      if (!batch_flag) cout << "\n Writing Euler2D primitive state gradients to output data file(s).";
+      if (!batch_flag){ cout << "\n Writing Euler2D primitive state gradients to output data file(s)."; cout.flush(); }
       error_flag = Output_Gradients_Tecplot(Local_SolnBlk,
 					    List_of_Local_Solution_Blocks,
 					    Input_Parameters,
@@ -1290,7 +1290,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 
     } else if (command_flag == WRITE_OUTPUT_QUASI3D_CODE) {
        // Output solution data.
-       if (!batch_flag) cout << "\n Writing Euler2D quasi3D solution to output data file(s).";
+      if (!batch_flag){ cout << "\n Writing Euler2D quasi3D solution to output data file(s)."; cout.flush(); }
        error_flag = Output_Tecplot_Quasi3D(Local_SolnBlk, 
 					   List_of_Local_Solution_Blocks, 
 					   Input_Parameters,
@@ -1323,7 +1323,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
 	 System::Set_Restart_Flag();  //Set flag to indicate a restart is being saved
        }
 
-       if (!batch_flag) cout << "\n Writing Euler2D solution to restart data file(s).";
+       if (!batch_flag){ cout << "\n Writing Euler2D solution to restart data file(s)."; cout.flush(); }
        error_flag = Write_QuadTree(QuadTree,
                                    Input_Parameters);
        if (error_flag) {
@@ -1357,7 +1357,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
     } else if (command_flag == WRITE_OUTPUT_GRID_CODE) {
        // Output multi-block solution-adaptive mesh data file.
        if (CFFC_Primary_MPI_Processor()) {
-          if (!batch_flag) cout << "\n Writing Euler2D multi-block mesh to grid data output file.";
+	 if (!batch_flag) { cout << "\n Writing Euler2D multi-block mesh to grid data output file."; cout.flush(); }
           error_flag = MeshBlk.Output_Tecplot_Using_IP(Input_Parameters);
           if (error_flag) {
              cout << "\n Euler2D ERROR: Unable to open Euler2D mesh data output file.\n";
@@ -1370,7 +1370,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
     } else if (command_flag == WRITE_GRID_DEFINITION_CODE) {
        // Write multi-block solution-adaptive mesh definition files.
        if (CFFC_Primary_MPI_Processor()) {
-          if (!batch_flag) cout << "\n Writing Euler2D multi-block mesh to grid definition files.";
+	 if (!batch_flag){ cout << "\n Writing Euler2D multi-block mesh to grid definition files."; cout.flush(); }
           error_flag = MeshBlk.Write_Multi_Block_Grid_Definition_Using_IP(Input_Parameters);
           if (error_flag) {
              cout << "\n Euler2D ERROR: Unable to open Euler2D multi-block mesh definition files.\n";
@@ -1383,7 +1383,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
     } else if (command_flag == WRITE_OUTPUT_GRID_NODES_CODE) {
        // Output multi-block solution-adaptive mesh node data file.
        if (CFFC_Primary_MPI_Processor()) {
-          if (!batch_flag) cout << "\n Writing Euler2D multi-block mesh to node data output file.";
+	 if (!batch_flag) { cout << "\n Writing Euler2D multi-block mesh to node data output file."; cout.flush(); }
           error_flag = MeshBlk.Output_Nodes_Tecplot_Using_IP(Input_Parameters);
           if (error_flag) {
              cout << "\n Euler2D ERROR: Unable to open Euler2D mesh node data output file.\n";
@@ -1396,7 +1396,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
     } else if (command_flag == WRITE_OUTPUT_GRID_CELLS_CODE) {
        // Output multi-block solution-adaptive mesh cell data file.
        if (CFFC_Primary_MPI_Processor()) {
-          if (!batch_flag) cout << "\n Writing Euler2D multi-block mesh to cell data output file.";
+	 if (!batch_flag){ cout << "\n Writing Euler2D multi-block mesh to cell data output file."; cout.flush(); }
           error_flag = MeshBlk.Output_Cells_Tecplot_Using_IP(Input_Parameters);
           if (error_flag) {
              cout << "\n Euler2D ERROR: Unable to open Euler2D mesh cell data output file.\n";
@@ -1409,7 +1409,7 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
     } else if (command_flag == WRITE_OUTPUT_RINGLEB_CODE) {
        // Output Ringleb flow solution information.
        if (CFFC_Primary_MPI_Processor()) {
-          if (!batch_flag) cout << "\n Writing Euler2D Ringleb flow solution data.";
+	 if (!batch_flag){ cout << "\n Writing Euler2D Ringleb flow solution data."; cout.flush(); }
           error_flag = Output_Ringleb_Flow(Local_SolnBlk, 
 					   List_of_Local_Solution_Blocks, 
                                            Input_Parameters);

@@ -705,29 +705,29 @@ void Euler2D_Quad_Block::Output_Cells_Tecplot_HighOrder(const int &Number_of_Tim
 	  if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
 	    switch(HighOrderVariable(IndexHO).RecOrder()){
 	    case 4:    // 4th-order derivatives
-	      Out_File << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,4,0) 
-		       << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,3,1) 
-		       << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,2,2) 
-		       << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,1,3) 
-		       << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,0,4);
+	      Out_File << " " << Euler2D_pState(0) 
+		       << " " << Euler2D_pState(0) 
+		       << " " << Euler2D_pState(0) 
+		       << " " << Euler2D_pState(0) 
+		       << " " << Euler2D_pState(0);
 
 	    case 3:   // 3rd-order derivatives
-	      Out_File << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,3,0)
-		       << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,2,1)
-		       << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,1,2)
-		       << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,0,3);
+	      Out_File << " " << Euler2D_pState(0) 
+		       << " " << Euler2D_pState(0) 
+		       << " " << Euler2D_pState(0) 
+		       << " " << Euler2D_pState(0);
 
 	    case 2:    // 2nd-order derivatives
-	      Out_File << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,2,0)
-		       << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,1,1)
-		       << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,0,2);
+	      Out_File << " " << Euler2D_pState(0) 
+		       << " " << Euler2D_pState(0) 
+		       << " " << Euler2D_pState(0);
 
 	    case 1:	    
-	      Out_File << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,1,0) 
-		       << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,0,1) 
-		       << " " << HighOrderVariable(IndexHO).CellTaylorDeriv(i,j).Limiter();
-	    }
-	    
+	      Out_File << " " << Euler2D_pState(0) 
+		       << " " << Euler2D_pState(0) 
+		       << " " << Euler2D_pState(0);
+	    } // endswitch
+
 	    Out_File << " " << 0.0;
 	  }
 
