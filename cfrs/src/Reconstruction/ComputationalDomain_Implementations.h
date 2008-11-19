@@ -442,10 +442,6 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   SetDomain(Grid3D_Hexa_Block & Grid, const Reconstruct3D_Input_Parameters & IP)
 {
 
-  ///////////////////////
-  /* CONSTRUCTION ZONE */
-  ///////////////////////
-
   int i,j,k;
 
   // allocate memory
@@ -497,10 +493,7 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
 void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   SetDomain(const Reconstruct3D_Input_Parameters & IP)
 {
-  ///////////////////////
-  /* CONSTRUCTION ZONE */
-  ///////////////////////
-
+ 
   ifstream In_File;
   int i,j,k, Nghost, RecOrder;
 
@@ -513,7 +506,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   }
 
   // Read the number of cells in the Xdir and in the Ydir. Read number of ghost cells and the reconstruction order
-  In_File >> i >> j >> k>> Nghost >> RecOrder;
+  In_File >> i >> j >> k >> Nghost >> RecOrder;
 
   // allocate memory
   SetDomain(i, j, k, Nghost);
@@ -1525,78 +1518,114 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType>
 void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   OutputSmoothnessIndicatorFlag(std::ofstream &output_file,const bool Title) const{
-  // --> RR: To be commented back in later 20080905
-//  switch(SpaceDimension){
-//  case OneD:
-//    if (Title) {
-//      output_file << "TITLE = \"Smoothness Indicator Flag for " << SpaceDimension << "D" << " (at cell center locations)\"\n ";
-//      output_file << "VARIABLES = \"x\" \n";
-//      output_file << "\"SI\" \n";
-//      /* output dataset auxiliary data */
-//      TecplotDatasetAuxData::PrintAuxData(output_file);
-//
-//      output_file << "ZONE T = \" SolBlock \" \\ \n";
-//      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
-//		  << "F = POINT \n";
-//      output_file << "DT = (DOUBLE DOUBLE) \n";
-//    }
-//    else {
-//      output_file << "VARIABLES = \"x\" \n";
-//      output_file << "\"SI\" \\ \n";
-//      /* output dataset auxiliary data */
-//      TecplotDatasetAuxData::PrintAuxData(output_file);
-//
-//      output_file << "ZONE T = \" SolBlock \" \\ \n";
-//      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
-//		  << "F = POINT \n";
-//      output_file << "DT = (DOUBLE DOUBLE) \n";
-//    }
-//    
-//    for(int i=iStart(); i<=iEnd(); ++i){
-//      output_file << SolnPtr[0][0][i].CellCenter() << "\t" << SolnPtr[0][0][i].UnfitReconstructionFlag() << std::endl;
-//    }
-//    break;
-//
-//  case TwoD:
-//    if (Title) {
-//      output_file << "TITLE = \"Smoothness Indicator Flag for " << SpaceDimension << "D" << " (at cell center locations)\"\n ";
-//      output_file << "VARIABLES = \"x\" \\ \n"
-//		  << "\"y\" \\ \n";
-//      output_file << "\"SI\" \\ \n";
-//      /* output dataset auxiliary data */
-//      TecplotDatasetAuxData::PrintAuxData(output_file);
-//
-//      output_file << "ZONE T = \" SolBlock \" \\ \n";
-//      output_file << "I=" << (iEnd() - iStart() + 1) << "\\ \n"
-//		  << "J=" << (jEnd() - jStart() + 1) << "\\ \n"
-//		  << "F = POINT \n";
-//      output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
-//    }
-//    else {
-//      output_file << "VARIABLES = \"x\" \\ \n"
-//		  << "\"y\" \\ \n";
-//      output_file << "\"SI\" \\ \n";
-//      /* output dataset auxiliary data */
-//      TecplotDatasetAuxData::PrintAuxData(output_file);
-//
-//      output_file << "ZONE T = \" SolBlock \" \\ \n";
-//      output_file << "I=" << (iEnd() - iStart() + 1) << "\\ \n"
-//		  << "J=" << (jEnd() - jStart() + 1) << "\\ \n"
-//		  << "F = POINT \n";
-//      output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
-//    }
-//
-//    for(int j=jStart(); j<=jEnd(); ++j){
-//      for(int i=iStart(); i<=iEnd(); ++i){
-//	output_file << SolnPtr[0][j][i].CellCenter() << "\t" << SolnPtr[0][j][i].UnfitReconstructionFlag() << std::endl;
-//      }
-//    }
-//    break;
-//    
-//  case ThreeD:
-//    // --> RR: Needs to be implemented
-//    break;
-//  }
+  switch(SpaceDimension){
+  case OneD:
+    if (Title) {
+      output_file << "TITLE = \"Smoothness Indicator Flag for " << SpaceDimension << "D" << " (at cell center locations)\"\n ";
+      output_file << "VARIABLES = \"x\" \n";
+      output_file << "\"SI\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
+      output_file << "ZONE T = \" SolBlock \" \\ \n";
+      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
+		  << "F = POINT \n";
+      output_file << "DT = (DOUBLE DOUBLE) \n";
+    }
+    else {
+      output_file << "VARIABLES = \"x\" \n";
+      output_file << "\"SI\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
+      output_file << "ZONE T = \" SolBlock \" \\ \n";
+      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
+		  << "F = POINT \n";
+      output_file << "DT = (DOUBLE DOUBLE) \n";
+    }
+    
+    for(int i=iStart(); i<=iEnd(); ++i){
+      output_file << SolnPtr[0][0][i].CellCenter() << "\t" << SolnPtr[0][0][i].UnfitReconstructionFlag() << std::endl;
+    }
+    break;
+
+  case TwoD:
+    if (Title) {
+      output_file << "TITLE = \"Smoothness Indicator Flag for " << SpaceDimension << "D" << " (at cell center locations)\"\n ";
+      output_file << "VARIABLES = \"x\" \\ \n"
+		  << "\"y\" \\ \n";
+      output_file << "\"SI\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
+      output_file << "ZONE T = \" SolBlock \" \\ \n";
+      output_file << "I=" << (iEnd() - iStart() + 1) << "\\ \n"
+		  << "J=" << (jEnd() - jStart() + 1) << "\\ \n"
+		  << "F = POINT \n";
+      output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
+    }
+    else {
+      output_file << "VARIABLES = \"x\" \\ \n"
+		  << "\"y\" \\ \n";
+      output_file << "\"SI\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
+      output_file << "ZONE T = \" SolBlock \" \\ \n";
+      output_file << "I=" << (iEnd() - iStart() + 1) << "\\ \n"
+		  << "J=" << (jEnd() - jStart() + 1) << "\\ \n"
+		  << "F = POINT \n";
+      output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
+    }
+
+    for(int j=jStart(); j<=jEnd(); ++j){
+      for(int i=iStart(); i<=iEnd(); ++i){
+	output_file << SolnPtr[0][j][i].CellCenter() << "\t" << SolnPtr[0][j][i].UnfitReconstructionFlag() << std::endl;
+      }
+    }
+    break;
+    
+  case ThreeD:
+    if (Title) {
+      output_file << "TITLE = \"Smoothness Indicator Flag for " << SpaceDimension << "D" << " (at cell center locations)\"\n ";
+      output_file << "VARIABLES = \"x\" \\ \n"
+		  << "\"y\" \\ \n"
+                  << "\"z\" \\ \n";
+      output_file << "\"SI\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
+      output_file << "ZONE T = \" SolBlock \" \\ \n";
+      output_file << "I=" << (iEnd() - iStart() + 1) << "\\ \n"
+		  << "J=" << (jEnd() - jStart() + 1) << "\\ \n"
+                  << "K=" << (kEnd() - kStart() + 1) << "\\ \n"
+		  << "F = POINT \n";
+      output_file << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE) \n";
+    }
+    else {
+      output_file << "VARIABLES = \"x\" \\ \n"
+		  << "\"y\" \\ \n"
+		  << "\"z\" \\ \n";
+      output_file << "\"SI\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
+      output_file << "ZONE T = \" SolBlock \" \\ \n";
+      output_file << "I=" << (iEnd() - iStart() + 1) << "\\ \n"
+		  << "J=" << (jEnd() - jStart() + 1) << "\\ \n"
+		  << "K=" << (kEnd() - kStart() + 1) << "\\ \n"
+		  << "F = POINT \n";
+      output_file << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE) \n";
+    }
+    for(int k=kStart(); k<=kEnd(); ++k){
+      for(int j=jStart(); j<=jEnd(); ++j){
+        for(int i=iStart(); i<=iEnd(); ++i){
+          output_file << SolnPtr[k][j][i].CellCenter() << "\t" << SolnPtr[k][j][i].UnfitReconstructionFlag() << std::endl;
+        }
+      }
+    }
+    break;
+  }
 }
 
 // OutputReconstructedSolutionTecplot
@@ -2357,36 +2386,33 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructS
 	  ComputeSmoothnessIndicator(*this,i_index,j_index,k_index,StencilSize,i,j,k); 
 	}
 
+    // Flag the cells which didn't get a good reconstruction
+    for (i=iStart(); i<=iEnd(); ++i)
+      for (j=jStart(); j<=jEnd(); ++j)
+	for (k=kStart(); k<=kEnd(); ++k){
+	  if ( SolnPtr[k][j][i].CellMCC() < CENO_Tolerances::Fit_Tolerance ){
+            /* Flag the cell with non-smooth reconstruction */
+            SolnPtr[k][j][i].UnfitReconstructionFlag() = ON;
+	  
+            //#ifdef CENO_Padding
+            //	  /* Flag all the cells surrounding this cell */
+            //	  SolnPtr[0][j-1][i-1].UnfitReconstructionFlag() = ON;
+            //	  SolnPtr[0][j-1][i].UnfitReconstructionFlag() = ON;
+            //	  SolnPtr[0][j-1][i+1].UnfitReconstructionFlag() = ON;
+            //
+            //	  SolnPtr[0][j][i-1].UnfitReconstructionFlag() = ON;
+            //	  SolnPtr[0][j][i+1].UnfitReconstructionFlag() = ON;
+            //
+            //	  SolnPtr[0][j+1][i-1].UnfitReconstructionFlag() = ON;
+            //	  SolnPtr[0][j+1][i].UnfitReconstructionFlag() = ON;
+            //	  SolnPtr[0][j+1][i+1].UnfitReconstructionFlag() = ON;
+            //#endif
 
-// --> RR: To be commented back in later 20080905    
-//    // Flag the cells which didn't get a good reconstruction
-//    for (i=iStart(); i<=iEnd(); ++i)
-//      for (j=jStart(); j<=jEnd(); ++j)
-//	for (k=kStart(); k<=kEnd(); ++k){
-//	  if ( SolnPtr[k][j][i].CellMCC() < CENO_Tolerances::Fit_Tolerance ){
-//	  
-//	  /* Flag the cell with non-smooth reconstruction */
-//	  SolnPtr[k][j][i].UnfitReconstructionFlag() = ON;
-//	  
-////#ifdef CENO_Padding
-////	  /* Flag all the cells surrounding this cell */
-////	  SolnPtr[0][j-1][i-1].UnfitReconstructionFlag() = ON;
-////	  SolnPtr[0][j-1][i].UnfitReconstructionFlag() = ON;
-////	  SolnPtr[0][j-1][i+1].UnfitReconstructionFlag() = ON;
-////
-////	  SolnPtr[0][j][i-1].UnfitReconstructionFlag() = ON;
-////	  SolnPtr[0][j][i+1].UnfitReconstructionFlag() = ON;
-////
-////	  SolnPtr[0][j+1][i-1].UnfitReconstructionFlag() = ON;
-////	  SolnPtr[0][j+1][i].UnfitReconstructionFlag() = ON;
-////	  SolnPtr[0][j+1][i+1].UnfitReconstructionFlag() = ON;
-////#endif
-//
-//	  /* Update the number of cell with not enough resolution */
-//	  ++UnfitCells;
-//	}
-//      }//endfor
-//
+            /* Update the number of cell with not enough resolution */
+            ++UnfitCells;
+          }//end if
+        }//endfor
+    //
 //    /* reduce to limited piecewise linear */
 //    for (i=iStart(); i<=iEnd(); ++i)
 //      for (j=jStart(); j<=jEnd(); ++j)
