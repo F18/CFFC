@@ -56,6 +56,9 @@ class ComputationalCell<ThreeD, GeometryType, SolutionType>{
   SolutionType ErrorRecL2Norm;
   SolutionType ErrorRecMaxNorm;  
 
+  /* Monotonicity Information */
+  int LimitedCell;
+
   /* SubDomain Variables */
   vector<int> NbSubgridPoints;
   SubGridType SubgridSolution;
@@ -92,7 +95,16 @@ public:
   
   const int & CellRings() const {return rings;}
   const int & CellRecOrder() const {return RO;}
+
+  const int & CellFOrder() const {return FinalOrder;}
   int & CellFOrder() {return FinalOrder;}
+
+  /* MonotonIcity Information */
+  const SolutionType & CellLimiter(void) const {return TD.Limiter();}
+  SolutionType & CellLimiter(void) {return TD.Limiter();}
+  
+  const int & UnfitReconstructionFlag(void) const {return LimitedCell; }
+  int & UnfitReconstructionFlag(void){return LimitedCell; }
 
   const SolutionType & CellErrorL1() const { return ErrorRecL1Norm;}
   SolutionType & CellErrorL1() { return ErrorRecL1Norm;}
@@ -148,7 +160,6 @@ public:
 #endif
   //
 
-
   const int & iSubgridPoints() const {return NbSubgridPoints[0];}
   const int & jSubgridPoints() const {return NbSubgridPoints[1];}
   const int & kSubgridPoints() const {return NbSubgridPoints[2];}
@@ -193,10 +204,11 @@ public:
 			      const int & kCell,const bool Title=false);
   void OutputMeshCellsTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
 			      const int & kCell,const bool Title=false); 
-    void OutputSubgridTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
+  void OutputSubgridTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
 			    const int & kCell,const bool Title=false);
   void OutputSolutionTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
-			     const int & kCell,const bool Title=false);
+	
+		     const int & kCell,const bool Title=false);
   void OutputSolutionCellTecplot(std::ofstream &output_file,const int & iCell,const int & jCell,
 				 const int & kCell,const bool Title=false);
   void OutputSolutionCellTecplotOneZone(std::ofstream &output_file);

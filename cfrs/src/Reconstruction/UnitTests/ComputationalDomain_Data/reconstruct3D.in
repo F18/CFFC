@@ -1,5 +1,5 @@
 #
-# Reconstruction3D input file
+# Reconstruction3D input filecase 
 #
 ###########################
 # Set function parameters
@@ -10,10 +10,10 @@ Example4
 #Default
 #
 Reconstruction_Order =
-3
+2
 #
 Output_File_Name =
-Example4_k3
+Example4_k2
 #
 Method_Used =
 CENO
@@ -38,7 +38,7 @@ Number_of_Cells_Idir =
 Number_of_Cells_Jdir =
 10
 Number_of_Cells_Kdir = 
-10
+30
 Number_of_Ghost_Cells =
 4
 Number_of_Blocks_Idir =
@@ -83,18 +83,20 @@ Execute
 Write_Output_OneZone
 #
 #######################
-## Write the solution at the nodes of the mesh
+## Should write the solution at the nodes of the mesh
+## Instead it writes only the locations of the nodes.
+## same thing as Write_Output_Mesh
 ## creates the file: _mesh.dat
 ######################
-Write_Output_Solution_Nodes
+#Write_Output_Solution_Nodes
 #
 ######################
 ## Write the whole solution at the nodes of the mesh (including ghost cells)
 ######################
-#Write_Output_Full_Solution_Nodes
+Write_Output_Full_Solution_Nodes
 #
 ######################
-## Write the locations of the nodes and solution at the nodes
+## Write the locations of the nodes
 ## creates the file: "_mesh.dat"
 ## same thing as Write_Output_Solution_Nodes
 ######################
