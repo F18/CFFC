@@ -1,15 +1,15 @@
 // ComputationalCell3D_Implementations.h defines the implementation of member functions of template ComputationalCell3D
 
 /*******************************************************
- * TEMPLATIZED CLASS: ComputationalCell                *
+ * TEMPLATIZED CLASS: ComputationalCell3D              *
  * Implementation of member functions                  *
  ******************************************************/
 
 // Constructor
 template< class GeometryType,class SolutionType> inline
 ComputationalCell<ThreeD,GeometryType,SolutionType>::ComputationalCell():
-  geom(),U_cell(0.0),TD(),SubgridSolution(),rings(0),RO(0),
-     FinalOrder(0),ErrorRecL1Norm(0.0),ErrorRecL2Norm(0.0),ErrorRecMaxNorm(0.0){
+  geom(),U_cell(0.0),TD()/*,TD_FirstOrder()*/,GeomCoeff(),SubgridSolution(),rings(0),RO(0),
+     FinalOrder(0),ErrorRecL1Norm(0.0),ErrorRecL2Norm(0.0),ErrorRecMaxNorm(0.0), LimitedCell(OFF){
   NbSubgridPoints.reserve(ThreeD);
 }
 
@@ -18,7 +18,7 @@ template< class GeometryType,class SolutionType> inline
 ComputationalCell<ThreeD,GeometryType,SolutionType>::ComputationalCell( const ComputationalCell & rhs):
   geom(rhs.geom), U_cell(rhs.U_cell),rings(rhs.rings),RO(rhs.RO),FinalOrder(rhs.FinalOrder),
      ErrorRecL1Norm(rhs.ErrorRecL1Norm), ErrorRecL2Norm(rhs.ErrorRecL2Norm), ErrorRecMaxNorm(rhs.ErrorRecMaxNorm),
-     NbSubgridPoints(rhs.NbSubgridPoints),SubgridSolution(rhs.SubgridSolution){ }
+  NbSubgridPoints(rhs.NbSubgridPoints),SubgridSolution(rhs.SubgridSolution), TD(rhs.TD){ }
 
 // Generate cell in 3D;
 template< class GeometryType,class SolutionType>
