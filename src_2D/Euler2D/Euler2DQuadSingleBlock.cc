@@ -126,7 +126,8 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk) {
     if (!CFFC_Primary_MPI_Processor()) {
       // allocate memory for high-order variables AFTER grid broadcast!
       SolnBlk.allocate_HighOrder(NumberOfHighOrderVariables,
-				 ReconstructionOrders);
+				 ReconstructionOrders,
+				 false); //< only the basics (e.g. no pseudo-inverse calculation)
       // allocate memory for high-order boundary conditions if necessary
       SolnBlk.allocate_HighOrder_BoundaryConditions();
     }
@@ -344,7 +345,8 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk,
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
       // allocate memory for high-order variables AFTER grid broadcast!
       SolnBlk.allocate_HighOrder(NumberOfHighOrderVariables,
-				 ReconstructionOrders);
+				 ReconstructionOrders,
+				 false); //< only the basics (e.g. no pseudo-inverse calculation)
       // allocate memory for high-order boundary conditions if necessary
       SolnBlk.allocate_HighOrder_BoundaryConditions();
     }

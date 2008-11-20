@@ -269,7 +269,8 @@ void AdvectDiffuse2D_Quad_Block::allocate(const int &Ni, const int &Nj, const in
  *       reconstructions more memory efficient.
  ********************************************/
 void AdvectDiffuse2D_Quad_Block::allocate_HighOrder(const int & NumberOfReconstructions,
-						    const vector<int> & ReconstructionOrders){
+						    const vector<int> & ReconstructionOrders,
+						    const bool _complete_initialization_){
 
   bool _pseudo_inverse_allocation_(false);
   int i;
@@ -287,9 +288,17 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder(const int & NumberOfReconstr
     
     // set the reconstruction order of each high-order object
     for (i=0; i<NumberOfHighOrderVariables; ++i){
-      HO_Ptr[i].InitializeVariable(ReconstructionOrders[i],
-				   Grid,
-				   _pseudo_inverse_allocation_);
+      if (_complete_initialization_){
+	// initialize the high-order variable completely 
+	HO_Ptr[i].InitializeVariable(ReconstructionOrders[i],
+				     Grid,
+				     _pseudo_inverse_allocation_);
+      } else {
+	// initialize the basic high-order variable
+	HO_Ptr[i].InitializeBasicVariable(ReconstructionOrders[i],
+					  Grid,
+					  _pseudo_inverse_allocation_);
+      }
     }
 
   } else {

@@ -232,7 +232,8 @@ public:
 
   //! Allocate memory for high-order variables
   void allocate_HighOrder(const int & NumberOfReconstructions,
-			  const vector<int> & ReconstructionOrders);
+			  const vector<int> & ReconstructionOrders,
+			  const bool _complete_initialization_ = true);
 
   //! Allocate memory for high-order boundary conditions
   void allocate_HighOrder_BoundaryConditions(void);

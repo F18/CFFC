@@ -340,6 +340,8 @@ public:
   void InitializeMonotonicityVariables(const int & ii, const int & jj);
   void InitializeVariable(int ReconstructionOrder, GeometryType & Block,
 			  const bool &_pseudo_inverse_allocation_ = false);
+  void InitializeBasicVariable(int ReconstructionOrder, GeometryType & Block,
+			       const bool &_pseudo_inverse_allocation_ = false);
   void SetReconstructionOrder(int ReconstructionOrder);
 
   //@}
@@ -1596,10 +1598,27 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
   }//endif
 }
 
-//! Initialize the high-order object
+/*!
+ * Initialize completely the high-order object.
+ */
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, GeometryType & Block,
 						 const bool &_pseudo_inverse_allocation_){
+
+  // Initialize the basic functionality of the high-order object
+  InitializeBasicVariable(ReconstructionOrder, Block, _pseudo_inverse_allocation_);
+
+  // Compute the pseudo-inverse if required
+  ComputeReconstructionPseudoInverse();
+}
+
+/*! 
+ * Initialize the basic functionality of the high-order object 
+ * (i.e. memory allocation, indexes etc.).
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::InitializeBasicVariable(int ReconstructionOrder, GeometryType & Block,
+						      const bool &_pseudo_inverse_allocation_){
 
   // Allocate (re-allocate) memory for the high-order object.
   allocate(Block.ICu-Block.ICl+1,
@@ -1616,9 +1635,6 @@ void HighOrder2D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, Geomet
 
   // Determine the range of cells in which !constrained! reconstruction is performed
   SetRangeOfQuadCellsWithConstrainedReconstruction();
-
-  // Compute the pseudo-inverse if required
-  ComputeReconstructionPseudoInverse();
 
   // Compute the smoothness indicator adjustment coefficient
   /* It adjusts the value of the smoothness indicator based on the degree of the reconstruction */

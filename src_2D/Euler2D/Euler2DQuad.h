@@ -232,7 +232,8 @@ public:
 
   //! Allocate memory for high-order variables
   void allocate_HighOrder(const int & NumberOfReconstructions,
-			  const vector<int> & ReconstructionOrders);
+			  const vector<int> & ReconstructionOrders,
+			  const bool _complete_initialization_ = true);
 
   //! Allocate memory for high-order boundary conditions
   void allocate_HighOrder_BoundaryConditions(void);
@@ -698,7 +699,8 @@ inline void Euler2D_Quad_Block::allocate(const int Ni, const int Nj, const int N
  * Allocate memory for high-order variables.
  ********************************************/
 inline void Euler2D_Quad_Block::allocate_HighOrder(const int & NumberOfReconstructions,
-						   const vector<int> & ReconstructionOrders){
+						   const vector<int> & ReconstructionOrders,
+						   const bool _complete_initialization_){
 
   bool _pseudo_inverse_allocation_(false);
   int i;
@@ -716,9 +718,17 @@ inline void Euler2D_Quad_Block::allocate_HighOrder(const int & NumberOfReconstru
     
     // set the reconstruction order of each high-order object
     for (i=0; i<NumberOfHighOrderVariables; ++i){
-      HO_Ptr[i].InitializeVariable(ReconstructionOrders[i],
-				   Grid,
-				   _pseudo_inverse_allocation_);
+      if (_complete_initialization_){
+	// initialize the high-order variable completely 
+	HO_Ptr[i].InitializeVariable(ReconstructionOrders[i],
+				     Grid,
+				     _pseudo_inverse_allocation_);
+      } else {
+	// initialize the basic high-order variable
+	HO_Ptr[i].InitializeBasicVariable(ReconstructionOrders[i],
+					  Grid,
+					  _pseudo_inverse_allocation_);
+      }
     }
 
   } else {
