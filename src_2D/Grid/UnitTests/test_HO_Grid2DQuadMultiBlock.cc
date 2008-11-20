@@ -307,7 +307,7 @@ namespace tut
    * be unique in tut:: namespace. Alternatively, you
    * you may put it into anonymous namespace.
    */
-  typedef test_group<Data_Grid2DQuadMultiBlock_HO,60> Grid2DQuadMultiBlock_HO_TestSuite;
+  typedef test_group<Data_Grid2DQuadMultiBlock_HO,100> Grid2DQuadMultiBlock_HO_TestSuite;
   typedef Grid2DQuadMultiBlock_HO_TestSuite::object Grid2DQuadMultiBlock_HO_object;
 
 
@@ -3478,6 +3478,11 @@ namespace tut
       // check mesh
       MeshBlk.Check_Multi_Block_Grid_Completely();
 
+      // check trackers
+      ensure_equals("Interior Tracker", MeshBlk(0,0).getInteriorStateTracker(), 1);
+      ensure_equals("Ghost Tracker", MeshBlk(0,0).getGhostStateTracker(), 1);
+      ensure_equals("Corner Ghost Tracker", MeshBlk(0,0).getCornerGhostStateTracker(), 1);
+
       // Set high-order flags
       Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
       Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
@@ -3489,6 +3494,11 @@ namespace tut
 
       // recompute the geoemtric properties with the current method
       MeshBlk.Update_All_Cells();
+
+      // check trackers
+      ensure_equals("Interior Tracker", MeshBlk(0,0).getInteriorStateTracker(), 2);
+      ensure_equals("Ghost Tracker", MeshBlk(0,0).getGhostStateTracker(), 2);
+      ensure_equals("Corner Ghost Tracker", MeshBlk(0,0).getCornerGhostStateTracker(), 2);
 
       // open CurrentFile
       Open_Output_File(CurrentFile);
@@ -4500,6 +4510,111 @@ namespace tut
     // == check results on West boundary
     ensure_distance("X Component Integral West", ResultX, AnalyticResult.x, AcceptedError(AnalyticResult.x, 1.0e-9));
     ensure_distance("Y Component Integral West", ResultY, AnalyticResult.y, AcceptedError(AnalyticResult.y, 1.0e-9));
+  }
+
+  // Test 61:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<61>()
+  {
+    set_test_name("Geometry state trackers");
+
+    RunRegression = ON;
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_DEFORMED_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 40;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
+    IP.IterationsOfInteriorNodesDisturbances = 300;
+
+    IP.VertexSW = Vector2D(0.0,0.0);
+    IP.VertexSE = Vector2D(4.0,1.0);
+    IP.VertexNE = Vector2D(2.5,4.0);
+    IP.VertexNW = Vector2D(0.5,5.0);
+
+    IP.X_Scale = 50;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+
+    char * MeshFile = "Large_Deformed_Box_Mesh.dat";
+    
+    if (RunRegression){
+      // read the mesh
+      Open_Input_File(MeshFile);
+      in() >> MeshBlk;
+
+      // check mesh
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // ==== Check trackers I
+      ensure_equals("Interior Tracker I", MeshBlk(0,0).getInteriorStateTracker(), 1);
+      ensure_equals("Ghost Tracker I", MeshBlk(0,0).getGhostStateTracker(), 1);
+      ensure_equals("Corner Ghost Tracker I", MeshBlk(0,0).getCornerGhostStateTracker(), 1);
+
+      // ==== Check trackers II
+      // Set high-order flags
+      Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
+      Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+      // schedule update of all cells
+      MeshBlk(0,0).Schedule_Interior_Mesh_Update();
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update();
+      // recompute the geoemtric properties with the current method
+      MeshBlk.Update_All_Cells();
+      ensure_equals("Interior Tracker II", MeshBlk(0,0).getInteriorStateTracker(), 2);
+      ensure_equals("Ghost Tracker II", MeshBlk(0,0).getGhostStateTracker(), 2);
+      ensure_equals("Corner Ghost Tracker II", MeshBlk(0,0).getCornerGhostStateTracker(), 2);
+
+      // ==== Check trackers III
+      // recompute the geoemtric properties
+      MeshBlk.Update_All_Cells();
+      ensure_equals("Interior Tracker III", MeshBlk(0,0).getInteriorStateTracker(), 2);
+      ensure_equals("Ghost Tracker III", MeshBlk(0,0).getGhostStateTracker(), 2);
+      ensure_equals("Corner Ghost Tracker III", MeshBlk(0,0).getCornerGhostStateTracker(), 2);
+
+      // ==== Check trackers IV
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update();
+      // recompute the geoemtric properties
+      MeshBlk.Update_All_Cells();
+      ensure_equals("Interior Tracker IV", MeshBlk(0,0).getInteriorStateTracker(), 2);
+      ensure_equals("Ghost Tracker IV", MeshBlk(0,0).getGhostStateTracker(), 3);
+      ensure_equals("Corner Ghost Tracker IV", MeshBlk(0,0).getCornerGhostStateTracker(), 2);
+
+      // ==== Check trackers V
+      MeshBlk(0,0).Schedule_Interior_Mesh_Update();
+      // recompute the geoemtric properties
+      MeshBlk.Update_All_Cells();
+      ensure_equals("Interior Tracker V", MeshBlk(0,0).getInteriorStateTracker(), 3);
+      ensure_equals("Ghost Tracker V", MeshBlk(0,0).getGhostStateTracker(), 3);
+      ensure_equals("Corner Ghost Tracker V", MeshBlk(0,0).getCornerGhostStateTracker(), 2);
+
+      // ==== Check trackers VI
+      MeshBlk(0,0).Schedule_Interior_Mesh_Update();
+      MeshBlk(0,0).Schedule_Corner_Ghost_Cells_Update();
+      // recompute the geoemtric properties
+      MeshBlk.Update_All_Cells();
+      ensure_equals("Interior Tracker VI", MeshBlk(0,0).getInteriorStateTracker(), 4);
+      ensure_equals("Ghost Tracker VI", MeshBlk(0,0).getGhostStateTracker(), 3);
+      ensure_equals("Corner Ghost Tracker VI", MeshBlk(0,0).getCornerGhostStateTracker(), 3);
+
+      // ==== Check trackers VII
+      // read the mesh again
+      Open_Input_File(MeshFile);
+      in() >> MeshBlk;
+      ensure_equals("Interior Tracker VII", MeshBlk(0,0).getInteriorStateTracker(), 5);
+      ensure_equals("Ghost Tracker VII", MeshBlk(0,0).getGhostStateTracker(), 4);
+      ensure_equals("Corner Ghost Tracker VII", MeshBlk(0,0).getCornerGhostStateTracker(), 4);
+    }
   }
 
 }

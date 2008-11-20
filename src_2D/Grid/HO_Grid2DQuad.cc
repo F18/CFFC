@@ -132,6 +132,8 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
    OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1),
    // Initialize mesh update flags to OFF (i.e. no update scheduled)
    InteriorMeshUpdate(OFF), GhostCellsUpdate(OFF), CornerGhostCellsUpdate(OFF),
+   // Initialize state trackers
+   InteriorCellGeometryStateTracker(0), GhostCellGeometryStateTracker(0), CornerGhostCellGeometryStateTracker(0),
    NumGQP(0)
 {
   int Ni, Nj;
@@ -378,6 +380,15 @@ void Grid2D_Quad_Block_HO::deallocate(void) {
   BetaJ = ONE; TauJ = ONE;
   OrthogonalN = 1; OrthogonalS = 1; OrthogonalE = 1; OrthogonalW = 1;
   NumGQP = 0;
+
+  // Reset state trackers
+  InteriorMeshUpdate = OFF;
+  GhostCellsUpdate = OFF;
+  CornerGhostCellsUpdate = OFF;
+
+  InteriorCellGeometryStateTracker = 0;
+  GhostCellGeometryStateTracker = 0;
+  CornerGhostCellGeometryStateTracker = 0;
 }
 
 /*!
@@ -535,6 +546,9 @@ Grid2D_Quad_Block_HO& Grid2D_Quad_Block_HO::operator=(const Grid2D_Quad_Block_HO
   /* No mesh update is required for this operation
      since all geometric values are copied directly. */
   Reset_Mesh_Update_Flags();
+
+  // Mark the current geometry different than the previous one
+  New_Global_Geometry_State();
 }
 
 /*!
@@ -2381,6 +2395,18 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(void) {
 
   } /* endif */
 
+  /* Broadcast state trackers. */
+  MPI::COMM_WORLD.Bcast(&(InteriorCellGeometryStateTracker), 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(GhostCellGeometryStateTracker), 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(CornerGhostCellGeometryStateTracker), 1, MPI::INT, 0);
+  
+  /* On non-primary MPI processors, mark the current geometry 
+     different than what it was stored before. */
+
+  if (!CFFC_Primary_MPI_Processor()) {
+    New_Global_Geometry_State();
+  }
+  
 #endif
 
 }
@@ -2616,6 +2642,17 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(MPI::Intracomm &Communicator,
     } /* endif */
 
   }/* endif */
+
+  /* Broadcast state trackers. */
+  Communicator.Bcast(&(InteriorCellGeometryStateTracker), 1, MPI::INT, Source_Rank);
+  Communicator.Bcast(&(GhostCellGeometryStateTracker), 1, MPI::INT, Source_Rank);
+  Communicator.Bcast(&(CornerGhostCellGeometryStateTracker), 1, MPI::INT, Source_Rank);
+  
+  /* On non-source MPI processors, mark the current geometry 
+     different than what it was stored before. */
+  if (CFFC_MPI::This_Processor_Number != Source_CPU) {
+    New_Global_Geometry_State();
+  }
 }
 #endif
 
@@ -3704,7 +3741,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 	  BCtypeW[j] != BC_MOVING_WALL_ISOTHERMAL &&
 	  BCtypeW[j] != BC_MOVING_WALL_HEATFLUX &&
 	  BCtypeW[j] != BC_BURNING_SURFACE &&
-	  BCtypeW[j] != BC_MASS_INJECTION) {
+	  BCtypeW[j] != BC_MASS_INJECTION &&
+	  BCtypeW[j] != BC_WALL_INVISCID) {
 	for(int GCell=1; GCell<=Nghost; ++GCell){
 	  Node[INl-GCell][j].X = Node[INl][j].X -
 	    (Node[INl+GCell][j].X - 
@@ -3719,7 +3757,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 		  BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
 		  BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
 		  BCtypeW[j] == BC_BURNING_SURFACE ||
-		  BCtypeW[j] == BC_MASS_INJECTION)) {
+		  BCtypeW[j] == BC_MASS_INJECTION || 
+		  BCtypeW[j] == BC_WALL_INVISCID)) {
 	if (j > JNl && j < JNu) {
 	  norm_dir = - HALF*(nfaceW(ICl, j) + 
 			     nfaceW(ICl, j-1));
@@ -3765,7 +3804,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 	  BCtypeE[j] != BC_MOVING_WALL_ISOTHERMAL &&
 	  BCtypeE[j] != BC_MOVING_WALL_HEATFLUX &&
 	  BCtypeE[j] != BC_BURNING_SURFACE &&
-	  BCtypeE[j] != BC_MASS_INJECTION) {
+	  BCtypeE[j] != BC_MASS_INJECTION &&
+	  BCtypeE[j] != BC_WALL_INVISCID) {
 	for(int GCell=1; GCell<=Nghost; ++GCell){
 	  Node[INu+GCell][j].X = ( Node[INu][j].X +
 				   (Node[INu][j].X - 
@@ -3780,7 +3820,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 		  BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
 		  BCtypeE[j] == BC_MOVING_WALL_HEATFLUX ||
 		  BCtypeE[j] == BC_BURNING_SURFACE ||
-		  BCtypeE[j] == BC_MASS_INJECTION)) {
+		  BCtypeE[j] == BC_MASS_INJECTION ||
+		  BCtypeE[j] == BC_WALL_INVISCID)) {
 	if (j > JNl && j < JNu) {
 	  norm_dir = HALF*(nfaceE(ICu, j) + 
 			   nfaceE(ICu, j-1));
@@ -3830,7 +3871,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 	      BCtypeS[i] != BC_MOVING_WALL_HEATFLUX &&
 	      BCtypeS[i] != BC_BURNING_SURFACE &&
 	      BCtypeS[i] != BC_MASS_INJECTION &&
-	      BCtypeS[i] != BC_RINGLEB_FLOW) {
+	      BCtypeS[i] != BC_RINGLEB_FLOW &&
+	      BCtypeS[i] != BC_WALL_INVISCID) {
 	    for(int GCell=1; GCell<=Nghost; ++GCell){
 	      Node[i][JNl-GCell].X = ( Node[i][JNl].X -
 				       (Node[i][JNl+GCell].X - 
@@ -3846,7 +3888,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 		      BCtypeS[i] == BC_MOVING_WALL_HEATFLUX ||
 		      BCtypeS[i] == BC_BURNING_SURFACE ||
 		      BCtypeS[i] == BC_MASS_INJECTION ||
-		      BCtypeS[i] == BC_RINGLEB_FLOW)) {
+		      BCtypeS[i] == BC_RINGLEB_FLOW ||
+		      BCtypeS[i] == BC_WALL_INVISCID)) {
 	    if (i > INl && i < INu) {
 	      if (lfaceS(i,JCl) > NANO &&
 		  lfaceS(i-1,JCl) > NANO) {
@@ -3900,7 +3943,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 	      BCtypeN[i] != BC_MOVING_WALL_ISOTHERMAL &&
 	      BCtypeN[i] != BC_MOVING_WALL_HEATFLUX  &&
 	      BCtypeN[i] != BC_BURNING_SURFACE &&
-	      BCtypeN[i] != BC_MASS_INJECTION) {
+	      BCtypeN[i] != BC_MASS_INJECTION &&
+	      BCtypeN[i] != BC_WALL_INVISCID) {
 	    for(int GCell=1; GCell<=Nghost; ++GCell){
 	      Node[i][JNu+GCell].X = ( Node[i][JNu].X +
 				       (Node[i][JNu].X - 
@@ -3915,7 +3959,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 		      BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL ||
 		      BCtypeN[i] == BC_MOVING_WALL_HEATFLUX ||
 		      BCtypeN[i] == BC_BURNING_SURFACE ||
-		      BCtypeN[i] == BC_MASS_INJECTION)) {
+		      BCtypeN[i] == BC_MASS_INJECTION ||
+		      BCtypeN[i] == BC_WALL_INVISCID)) {
 	    if (i > INl && i < INu) {
  	      norm_dir = HALF*(nfaceN(i, JCu) + 
                                nfaceN(i-1, JCu));
@@ -3963,7 +4008,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 	  BCtypeW[j] != BC_MOVING_WALL_ISOTHERMAL &&
 	  BCtypeW[j] != BC_MOVING_WALL_HEATFLUX &&
 	  BCtypeW[j] != BC_BURNING_SURFACE &&
-	  BCtypeW[j] != BC_MASS_INJECTION) {
+	  BCtypeW[j] != BC_MASS_INJECTION &&
+	  BCtypeW[j] != BC_WALL_INVISCID) {
 	for(int GCell=1; GCell<=Nghost; ++GCell){
 	  Node[INl-GCell][j].X = Node[INl][j].X -
 	    (Node[INl+GCell][j].X - 
@@ -3977,7 +4023,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 		 BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
 		 BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
 		 BCtypeW[j] == BC_BURNING_SURFACE ||
-		 BCtypeW[j] == BC_MASS_INJECTION) {
+		 BCtypeW[j] == BC_MASS_INJECTION ||
+		 BCtypeW[j] == BC_WALL_INVISCID) {
 	if (j != JNl-Nghost) {
 	  norm_dir = - HALF*(nfaceW(ICl, j) + 
 			     nfaceW(ICl, j-1));
@@ -4009,7 +4056,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 	  BCtypeE[j] != BC_MOVING_WALL_ISOTHERMAL &&
 	  BCtypeE[j] != BC_MOVING_WALL_HEATFLUX &&
 	  BCtypeE[j] != BC_BURNING_SURFACE &&
-	  BCtypeE[j] != BC_MASS_INJECTION) {
+	  BCtypeE[j] != BC_MASS_INJECTION &&
+	  BCtypeE[j] != BC_WALL_INVISCID) {
 	for(int GCell=1; GCell<=Nghost; ++GCell){
 	  Node[INu+GCell][j].X = ( Node[INu][j].X +
 				   (Node[INu][j].X - 
@@ -4023,7 +4071,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 		 BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
 		 BCtypeE[j] == BC_MOVING_WALL_HEATFLUX  ||
 		 BCtypeE[j] == BC_BURNING_SURFACE ||
-		 BCtypeE[j] == BC_MASS_INJECTION) {
+		 BCtypeE[j] == BC_MASS_INJECTION ||
+		 BCtypeE[j] == BC_WALL_INVISCID) {
 	if (j != JNl-Nghost) {
 	  norm_dir = HALF*(nfaceE(ICu, j) + 
 			   nfaceE(ICu, j-1));
@@ -4058,7 +4107,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 	  BCtypeW[j-1] != BC_MOVING_WALL_ISOTHERMAL &&
 	  BCtypeW[j-1] != BC_MOVING_WALL_HEATFLUX &&
 	  BCtypeW[j-1] != BC_BURNING_SURFACE &&
-	  BCtypeW[j-1] != BC_MASS_INJECTION) {
+	  BCtypeW[j-1] != BC_MASS_INJECTION &&
+	  BCtypeW[j-1] != BC_WALL_INVISCID) {
 	for(int GCell=1; GCell<=Nghost; ++GCell){
 	  Node[INl-GCell][j].X = ( Node[INl][j].X -
 				   (Node[INl+GCell][j].X - 
@@ -4072,7 +4122,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 		 BCtypeW[j-1] == BC_MOVING_WALL_ISOTHERMAL ||
 		 BCtypeW[j-1] == BC_MOVING_WALL_HEATFLUX ||
 		 BCtypeW[j-1] == BC_BURNING_SURFACE ||
-		 BCtypeW[j-1] == BC_MASS_INJECTION) {
+		 BCtypeW[j-1] == BC_MASS_INJECTION ||
+		 BCtypeW[j-1] == BC_WALL_INVISCID) {
 	if (j != JNu+Nghost) {
 	  norm_dir = - HALF*(nfaceW(ICl, j) + 
 			     nfaceW(ICl, j-1));
@@ -4104,7 +4155,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 	  BCtypeE[j-1] != BC_MOVING_WALL_ISOTHERMAL &&
 	  BCtypeE[j-1] != BC_MOVING_WALL_HEATFLUX &&
 	  BCtypeE[j-1] != BC_BURNING_SURFACE &&
-	  BCtypeE[j-1] != BC_MASS_INJECTION) {
+	  BCtypeE[j-1] != BC_MASS_INJECTION &&
+	  BCtypeE[j-1] != BC_WALL_INVISCID) {
 	for(int GCell=1; GCell<=Nghost; ++GCell){
 	  Node[INu+GCell][j].X = ( Node[INu][j].X +
 				   (Node[INu][j].X - 
@@ -4118,7 +4170,8 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 		 BCtypeE[j-1] == BC_MOVING_WALL_ISOTHERMAL ||
 		 BCtypeE[j-1] == BC_MOVING_WALL_HEATFLUX ||
 		 BCtypeE[j-1] == BC_BURNING_SURFACE ||
-		 BCtypeE[j-1] == BC_MASS_INJECTION) {
+		 BCtypeE[j-1] == BC_MASS_INJECTION ||
+		 BCtypeE[j-1] == BC_WALL_INVISCID) {
 	if (j != JNu+Nghost) {
 	  norm_dir = HALF*(nfaceE(ICu, j) + 
 			   nfaceE(ICu, j-1));
@@ -4176,7 +4229,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	      BCtypeS[INl-1] != BC_MOVING_WALL_HEATFLUX &&
 	      BCtypeS[INl-1] != BC_BURNING_SURFACE &&
 	      BCtypeS[INl-1] != BC_MASS_INJECTION &&
-	      BCtypeS[INl-1] != BC_RINGLEB_FLOW) &&
+	      BCtypeS[INl-1] != BC_RINGLEB_FLOW &&
+	      BCtypeS[INl-1] != BC_WALL_INVISCID) &&
 	     BCtypeW[JNl-1] == BC_NONE) {
     // Extrapolate cells south.
     for (int ng = 1; ng <= Nghost; ng++) {
@@ -4198,7 +4252,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	       BCtypeS[INl-1] != BC_MOVING_WALL_HEATFLUX &&
 	       BCtypeS[INl-1] != BC_BURNING_SURFACE &&
 	       BCtypeS[INl-1] != BC_MASS_INJECTION &&
-	       BCtypeS[INl-1] != BC_RINGLEB_FLOW)) &&
+	       BCtypeS[INl-1] != BC_RINGLEB_FLOW &&
+	       BCtypeS[INl-1] != BC_WALL_INVISCID)) &&
 	     (BCtypeW[JNl-1] != BC_REFLECTION &&
 	      BCtypeW[JNl-1] != BC_PERIODIC &&  
 	      BCtypeW[JNl-1] != BC_NO_SLIP &&
@@ -4208,7 +4263,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	      BCtypeW[JNl-1] != BC_MOVING_WALL_ISOTHERMAL &&
 	      BCtypeW[JNl-1] != BC_MOVING_WALL_HEATFLUX &&
 	      BCtypeW[JNl-1] != BC_BURNING_SURFACE &&
-	      BCtypeW[JNl-1] != BC_MASS_INJECTION)) {
+	      BCtypeW[JNl-1] != BC_MASS_INJECTION &&
+	      BCtypeW[JNl-1] != BC_WALL_INVISCID)) {
     // Extrapolate cells west.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int j = JNl-Nghost; j <= JNl; j++) {
@@ -4229,7 +4285,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	       BCtypeS[INl-1] != BC_MOVING_WALL_ISOTHERMAL &&
 	       BCtypeS[INl-1] != BC_BURNING_SURFACE &&
 	       BCtypeS[INl-1] != BC_MASS_INJECTION &&
-	       BCtypeS[INl-1] != BC_RINGLEB_FLOW)) &&
+	       BCtypeS[INl-1] != BC_RINGLEB_FLOW &&
+	       BCtypeS[INl-1] != BC_WALL_INVISCID)) &&
 	     (BCtypeW[JNl-1] == BC_REFLECTION ||
 	      BCtypeW[JNl-1] == BC_PERIODIC ||
 	      BCtypeW[JNl-1] == BC_NO_SLIP ||
@@ -4239,7 +4296,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	      BCtypeW[JNl-1] == BC_MOVING_WALL_ISOTHERMAL ||
 	      BCtypeW[JNl-1] == BC_MOVING_WALL_HEATFLUX ||
 	      BCtypeW[JNl-1] == BC_BURNING_SURFACE ||
-	      BCtypeW[JNl-1] == BC_MASS_INJECTION)) {
+	      BCtypeW[JNl-1] == BC_MASS_INJECTION ||
+	      BCtypeW[JNl-1] == BC_WALL_INVISCID)) {
     // Reflect cells west.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int j = JNl-Nghost; j <= JNl; j++) {
@@ -4268,7 +4326,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	     BCtypeS[INl-1] == BC_MOVING_WALL_HEATFLUX ||
 	     BCtypeS[INl-1] == BC_BURNING_SURFACE ||
 	     BCtypeS[INl-1] == BC_MASS_INJECTION ||
-	     BCtypeS[INl-1] == BC_RINGLEB_FLOW) {
+	     BCtypeS[INl-1] == BC_RINGLEB_FLOW || 
+	     BCtypeS[INl-1] == BC_WALL_INVISCID) {
     // Reflect cells south.
     for (int ng = 1; ng <= Nghost; ng++) {
       //for (int i = INl-Nghost; i <= INl; i++) {
@@ -4304,7 +4363,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	      BCtypeS[INu+1] != BC_MOVING_WALL_HEATFLUX &&
 	      BCtypeS[INu+1] != BC_BURNING_SURFACE &&
 	      BCtypeS[INu+1] != BC_MASS_INJECTION &&
-	      BCtypeS[INu+1] != BC_RINGLEB_FLOW) &&
+	      BCtypeS[INu+1] != BC_RINGLEB_FLOW &&
+	      BCtypeS[INu+1] != BC_WALL_INVISCID) &&
 	     BCtypeE[JNl-1] == BC_NONE) {
     // Extrapolate cells south.
     for (int ng = 1; ng <= Nghost; ng++) {
@@ -4326,7 +4386,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	       BCtypeS[INu+1] != BC_MOVING_WALL_HEATFLUX &&
 	       BCtypeS[INu+1] != BC_BURNING_SURFACE &&
 	       BCtypeS[INu+1] != BC_MASS_INJECTION &&
-	       BCtypeS[INu+1] != BC_RINGLEB_FLOW)) &&
+	       BCtypeS[INu+1] != BC_RINGLEB_FLOW &&
+	       BCtypeS[INu+1] != BC_WALL_INVISCID)) &&
 	     (BCtypeE[JNl-1] != BC_REFLECTION &&
 	      BCtypeE[JNl-1] != BC_PERIODIC &&  
 	      BCtypeE[JNl-1] != BC_NO_SLIP &&
@@ -4336,7 +4397,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	      BCtypeE[JNl-1] != BC_MOVING_WALL_ISOTHERMAL &&
 	      BCtypeE[JNl-1] != BC_MOVING_WALL_HEATFLUX &&
 	      BCtypeE[JNl-1] != BC_BURNING_SURFACE &&
-	      BCtypeE[JNl-1] != BC_MASS_INJECTION)) {
+	      BCtypeE[JNl-1] != BC_MASS_INJECTION &&
+	      BCtypeE[JNl-1] != BC_WALL_INVISCID)) {
     // Extrapolate cells east.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int j = JNl-Nghost; j <= JNl; j++) {
@@ -4357,7 +4419,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	       BCtypeS[INu+1] != BC_MOVING_WALL_HEATFLUX &&
 	       BCtypeS[INu+1] != BC_BURNING_SURFACE &&
 	       BCtypeS[INu+1] != BC_MASS_INJECTION &&
-	       BCtypeS[INu+1] != BC_RINGLEB_FLOW)) &&
+	       BCtypeS[INu+1] != BC_RINGLEB_FLOW &&
+	       BCtypeS[INu+1] != BC_WALL_INVISCID)) &&
 	     (BCtypeE[JNl-1] == BC_REFLECTION ||
 	      BCtypeE[JNl-1] == BC_PERIODIC ||
 	      BCtypeE[JNl-1] == BC_NO_SLIP ||
@@ -4367,7 +4430,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	      BCtypeE[JNl-1] == BC_MOVING_WALL_ISOTHERMAL ||
 	      BCtypeE[JNl-1] == BC_MOVING_WALL_HEATFLUX ||
 	      BCtypeE[JNl-1] == BC_BURNING_SURFACE ||
-	      BCtypeE[JNl-1] == BC_MASS_INJECTION)) {
+	      BCtypeE[JNl-1] == BC_MASS_INJECTION ||
+	      BCtypeE[JNl-1] == BC_WALL_INVISCID)) {
     // Reflect cells east.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int j = JNl; j >= JNl-Nghost; j--) {
@@ -4397,7 +4461,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	     BCtypeS[INu+1] == BC_MOVING_WALL_HEATFLUX ||
 	     BCtypeS[INu+1] == BC_BURNING_SURFACE ||
 	     BCtypeS[INu+1] == BC_MASS_INJECTION ||
-	     BCtypeS[INu+1] == BC_RINGLEB_FLOW) {
+	     BCtypeS[INu+1] == BC_RINGLEB_FLOW ||
+	     BCtypeS[INu+1] == BC_WALL_INVISCID) {
     // Reflect cells south.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int i = INu; i <= INu+Nghost; i++) {
@@ -4431,7 +4496,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	      BCtypeN[INl-1] != BC_MOVING_WALL_ISOTHERMAL &&
 	      BCtypeN[INl-1] != BC_MOVING_WALL_HEATFLUX &&
 	      BCtypeN[INl-1] != BC_BURNING_SURFACE &&
-	      BCtypeN[INl-1] != BC_MASS_INJECTION) &&
+	      BCtypeN[INl-1] != BC_MASS_INJECTION &&
+	      BCtypeN[INl-1] != BC_WALL_INVISCID) &&
 	     BCtypeW[JNu+1] == BC_NONE) {
     // Extrapolate cells north.
     for (int ng = 1; ng <= Nghost; ng++) {
@@ -4452,7 +4518,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	       BCtypeN[INl-1] != BC_MOVING_WALL_ISOTHERMAL &&
 	       BCtypeN[INl-1] != BC_MOVING_WALL_HEATFLUX &&
 	       BCtypeN[INl-1] != BC_BURNING_SURFACE &&
-	       BCtypeN[INl-1] != BC_MASS_INJECTION)) &&
+	       BCtypeN[INl-1] != BC_MASS_INJECTION &&
+	       BCtypeN[INl-1] != BC_WALL_INVISCID)) &&
 	     (BCtypeW[JNu+1] != BC_REFLECTION &&
 	      BCtypeW[JNu+1] != BC_PERIODIC &&  
 	      BCtypeW[JNu+1] != BC_NO_SLIP &&
@@ -4462,7 +4529,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	      BCtypeW[JNu+1] != BC_MOVING_WALL_ISOTHERMAL &&
 	      BCtypeW[JNu+1] != BC_MOVING_WALL_HEATFLUX &&
 	      BCtypeW[JNu+1] != BC_BURNING_SURFACE &&
-	      BCtypeW[JNu+1] != BC_MASS_INJECTION)) {
+	      BCtypeW[JNu+1] != BC_MASS_INJECTION &&
+	      BCtypeW[JNu+1] != BC_WALL_INVISCID)) {
     // Extrapolate cells west.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int j = JNu; j <= JNu+Nghost; j++) {
@@ -4482,7 +4550,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	       BCtypeN[INl-1] != BC_MOVING_WALL_ISOTHERMAL &&
 	       BCtypeN[INl-1] != BC_MOVING_WALL_HEATFLUX &&
 	       BCtypeN[INl-1] != BC_BURNING_SURFACE &&
-	       BCtypeN[INl-1] != BC_MASS_INJECTION)) &&
+	       BCtypeN[INl-1] != BC_MASS_INJECTION &&
+	       BCtypeN[INl-1] != BC_WALL_INVISCID)) &&
 	     (BCtypeW[JNu+1] == BC_REFLECTION ||
 	      BCtypeW[JNu+1] == BC_PERIODIC ||
 	      BCtypeW[JNu+1] == BC_NO_SLIP ||
@@ -4492,7 +4561,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	      BCtypeW[JNu+1] == BC_MOVING_WALL_ISOTHERMAL ||
 	      BCtypeW[JNu+1] == BC_MOVING_WALL_HEATFLUX ||
 	      BCtypeW[JNu+1] == BC_BURNING_SURFACE ||
-	      BCtypeW[JNu+1] == BC_MASS_INJECTION)) {
+	      BCtypeW[JNu+1] == BC_MASS_INJECTION ||
+	      BCtypeW[JNu+1] == BC_WALL_INVISCID)) {
     // Reflect cells west.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int j = JNu; j <= JNu+Nghost; j++) {
@@ -4520,7 +4590,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	     BCtypeN[INl-1] == BC_MOVING_WALL_ISOTHERMAL ||
 	     BCtypeN[INl-1] == BC_MOVING_WALL_HEATFLUX ||
 	     BCtypeN[INl-1] == BC_BURNING_SURFACE ||
-	     BCtypeN[INl-1] == BC_MASS_INJECTION) {
+	     BCtypeN[INl-1] == BC_MASS_INJECTION ||
+	     BCtypeN[INl-1] == BC_WALL_INVISCID) {
     // Reflect cells north.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int i = INl-Nghost; i <= INl; i++) {
@@ -4554,7 +4625,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	      BCtypeN[INu+1] != BC_MOVING_WALL_ISOTHERMAL &&
 	      BCtypeN[INu+1] != BC_MOVING_WALL_HEATFLUX &&
 	      BCtypeN[INu+1] != BC_BURNING_SURFACE &&
-	      BCtypeN[INu+1] != BC_MASS_INJECTION) &&
+	      BCtypeN[INu+1] != BC_MASS_INJECTION &&
+	      BCtypeN[INu+1] != BC_WALL_INVISCID) &&
 	     BCtypeE[JNu+1] == BC_NONE) {
     // Extrapolate cells north.
     for (int ng = 1; ng <= Nghost; ng++) {
@@ -4575,7 +4647,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	       BCtypeN[INu+1] != BC_MOVING_WALL_ISOTHERMAL &&
 	       BCtypeN[INu+1] != BC_MOVING_WALL_HEATFLUX &&
 	       BCtypeN[INu+1] != BC_BURNING_SURFACE &&
-	       BCtypeN[INu+1] != BC_MASS_INJECTION)) &&
+	       BCtypeN[INu+1] != BC_MASS_INJECTION &&
+	       BCtypeN[INu+1] != BC_WALL_INVISCID)) &&
 	     (BCtypeE[JNu+1] != BC_REFLECTION &&
 	      BCtypeE[JNu+1] != BC_PERIODIC &&  
 	      BCtypeE[JNu+1] != BC_NO_SLIP &&
@@ -4585,7 +4658,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	      BCtypeE[JNu+1] != BC_MOVING_WALL_ISOTHERMAL &&
 	      BCtypeE[JNu+1] != BC_MOVING_WALL_HEATFLUX &&
 	      BCtypeE[JNu+1] != BC_BURNING_SURFACE &&
-	      BCtypeE[JNu+1] != BC_MASS_INJECTION)) {
+	      BCtypeE[JNu+1] != BC_MASS_INJECTION &&
+	      BCtypeE[JNu+1] != BC_WALL_INVISCID)) {
     // Extrapolate cells east.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int j = JNu; j <= JNu+Nghost; j++) {
@@ -4605,7 +4679,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	       BCtypeN[INu+1] != BC_MOVING_WALL_ISOTHERMAL &&
 	       BCtypeN[INu+1] != BC_MOVING_WALL_HEATFLUX &&
 	       BCtypeN[INu+1] != BC_BURNING_SURFACE &&
-	       BCtypeN[INu+1] != BC_MASS_INJECTION)) &&
+	       BCtypeN[INu+1] != BC_MASS_INJECTION &&
+	       BCtypeN[INu+1] != BC_WALL_INVISCID)) &&
 	     (BCtypeE[JNu+1] == BC_REFLECTION ||
 	      BCtypeE[JNu+1] == BC_PERIODIC ||
 	      BCtypeE[JNu+1] == BC_NO_SLIP ||
@@ -4615,7 +4690,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	      BCtypeE[JNu+1] == BC_MOVING_WALL_ISOTHERMAL ||
 	      BCtypeE[JNu+1] == BC_MOVING_WALL_HEATFLUX ||
 	      BCtypeE[JNu+1] == BC_BURNING_SURFACE ||
-	      BCtypeE[JNu+1] == BC_MASS_INJECTION)) {
+	      BCtypeE[JNu+1] == BC_MASS_INJECTION ||
+	      BCtypeE[JNu+1] == BC_WALL_INVISCID)) {
     // Reflect cells east.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int j = JNu; j <= JNu+Nghost; j++) {
@@ -4643,7 +4719,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	     BCtypeN[INu+1] == BC_MOVING_WALL_ISOTHERMAL ||
 	     BCtypeN[INu+1] == BC_MOVING_WALL_HEATFLUX ||
 	     BCtypeN[INu+1] == BC_BURNING_SURFACE ||
-	     BCtypeN[INu+1] == BC_MASS_INJECTION) {
+	     BCtypeN[INu+1] == BC_MASS_INJECTION ||
+	     BCtypeN[INu+1] == BC_WALL_INVISCID) {
     // Reflect cells north.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int i = INu; i <= INu+Nghost; i++) {
@@ -6629,16 +6706,28 @@ void Grid2D_Quad_Block_HO::Update_Cells(void) {
   if (InteriorMeshUpdate == ON && GhostCellsUpdate == ON ){
     // Update all the cells and the boundary spline information
     Update_All_Cells();
-  } else if (InteriorMeshUpdate == ON) {
+    // Mark the current geometry different than the previous one
+    New_Global_Geometry_State();
+    return;
+  }
+  if (InteriorMeshUpdate == ON) {
     // Update only the information of the interior cells and the boundary spline information
     Update_Interior_Cells();
-  } else if (GhostCellsUpdate == ON) {
+    // Mark the interior geometry different than the previous one
+    New_Interior_Geometry_State();
+  } 
+  if (GhostCellsUpdate == ON) {
     // Update only the information of the ghost cells
     Update_Ghost_Cells();
+    // Mark the geometry in ghost layers different than the previous one
+    New_Ghost_Geometry_State();
   } else if (CornerGhostCellsUpdate == ON){
     // Update only the information of the corner ghost cells
     Update_Corner_Ghost_Cells();
+    // Mark the corner geometry different than the previous one
+    New_Corner_Geometry_State();
   }
+
 }
 
 /*!
@@ -9804,6 +9893,9 @@ istream &operator >> (istream &in_file,
 
   // No geometric properties update is required because everything was read.
   G.Confirm_Mesh_Update_Everywhere();
+
+  // Mark the current geometry different than the previous one
+  G.New_Global_Geometry_State();
 
   return (in_file);
 }

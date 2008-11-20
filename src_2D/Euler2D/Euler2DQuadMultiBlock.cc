@@ -1349,26 +1349,24 @@ int dUdt_Multistage_Explicit(Euler2D_Quad_Block *Soln_ptr,
                              Euler2D_Input_Parameters &Input_Parameters,
    	                     const int I_Stage) {
 
-    int i, error_flag;
+  int i, error_flag(0);
 
-    error_flag = 0;
-
-    /* Evaluate the stage solution residual for each solution block. */
-
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          error_flag = dUdt_Multistage_Explicit(Soln_ptr[i],
-                                                I_Stage,
-                                                Input_Parameters);
-          if (error_flag) return (error_flag);
-       } /* endif */
-    }  /* endfor */
-
-    /* Residuals for each quadrilateral multi-block solution block
-       successfully calcualted.  Return. */
-
-    return(error_flag);
-
+  /* Evaluate the stage solution residual for each solution block. */
+  
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      error_flag = dUdt_Multistage_Explicit(Soln_ptr[i],
+					    I_Stage,
+					    Input_Parameters);
+      if (error_flag) return (error_flag);
+    } /* endif */
+  }  /* endfor */
+  
+  /* Residuals for each quadrilateral multi-block solution block
+     successfully calcualted.  Return. */
+  
+  return(error_flag);
+  
 }
 
 /********************************************************

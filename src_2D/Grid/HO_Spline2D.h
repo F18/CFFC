@@ -483,6 +483,7 @@ inline void Spline2D_HO::deallocate(void) {
     np = 0;
     type = SPLINE2D_CONSTANT;
     FluxMethod = SolveRiemannProblem;
+    bodyOwner = 0;
   }
 }
 

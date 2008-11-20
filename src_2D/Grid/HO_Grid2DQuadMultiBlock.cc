@@ -3348,12 +3348,12 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder_Without_Update(int &_Numb
 						  Outer_Radius,
 						  360.00,
 						  180.00,
-						  min(361,4*Number_of_Cells_Idir));
+						  361);
       Bnd_Spline_South.Create_Spline_Circular_Arc(x1,
 						  Inner_Radius,
 						  360.00,
 						  180.00,
-						  min(361,4*Number_of_Cells_Idir));
+						  361);
       x1 = Vector2D(Inner_Radius, ZERO);
       x2 = Vector2D(Outer_Radius, ZERO);
       Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
@@ -3366,12 +3366,12 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder_Without_Update(int &_Numb
 						  Outer_Radius,
 						  180.00,
 						  ZERO,
-						  min(361,4*Number_of_Cells_Idir));
+						  361);
       Bnd_Spline_South.Create_Spline_Circular_Arc(x1,
 						  Inner_Radius,
 						  180.00,
 						  ZERO,
-						  min(361,4*Number_of_Cells_Idir));
+						  361);
       x1 = Vector2D(-Inner_Radius, ZERO);
       x2 = Vector2D(-Outer_Radius, ZERO);
       Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);

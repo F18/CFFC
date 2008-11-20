@@ -746,6 +746,10 @@ public:
   const int & Value_InteriorMeshUpdate_Flag(void) const { return InteriorMeshUpdate; }
   const int & Value_GhostCellsUpdate_Flag(void) const { return GhostCellsUpdate; }
   const int & Value_CornerGhostCellsUpdate_Flag(void) const { return CornerGhostCellsUpdate; }
+
+  const unsigned int & getInteriorStateTracker(void) const { return InteriorCellGeometryStateTracker; }
+  const unsigned int & getGhostStateTracker(void) const { return GhostCellGeometryStateTracker; }
+  const unsigned int & getCornerGhostStateTracker(void) const { return CornerGhostCellGeometryStateTracker; }
   //@}
   
   //!@name Input/Output functions
@@ -996,6 +1000,22 @@ private:
   int CornerGhostCellsUpdate; 
   //! Reset to NO update all the mesh update flags.
   void Reset_Mesh_Update_Flags(void){ InteriorMeshUpdate = OFF; GhostCellsUpdate = OFF; CornerGhostCellsUpdate = OFF;}
+
+  //! State tracker for the geometry of interior cells (i.e. indentifies uniquely the state of the interior cell geometry)
+  unsigned int InteriorCellGeometryStateTracker;
+  //! State tracker for the geometry of all ghost cells (i.e. indentifies uniquely the state of the ghost cell geometry)
+  unsigned int GhostCellGeometryStateTracker;
+  //! State tracker for the geometry of corner ghost cells (i.e. indentifies uniquely the state of the corner ghost cell geometry)
+  unsigned int CornerGhostCellGeometryStateTracker;
+
+  //! @brief Set trackers to identify a new state everywhere (i.e. interior and ghost cells)
+  void New_Global_Geometry_State(void);
+  //! @brief Set tracker to identify a new interior state
+  void New_Interior_Geometry_State(void);
+  //! @brief Set tracker to identify a new state for the ghost cells
+  void New_Ghost_Geometry_State(void);
+  //! @brief Set tracker to identify a new state for the corner ghost cells
+  void New_Corner_Geometry_State(void);
   //@}
 
   /*!
@@ -1037,6 +1057,8 @@ inline Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void)
     OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1),
     // Initialize mesh update flags to OFF (i.e. no update scheduled)
     InteriorMeshUpdate(OFF), GhostCellsUpdate(OFF), CornerGhostCellsUpdate(OFF),
+    // Initialize state trackers
+    InteriorCellGeometryStateTracker(0), GhostCellGeometryStateTracker(0), CornerGhostCellGeometryStateTracker(0),
     NumGQP(0)
 {
   // 
@@ -3045,6 +3067,39 @@ inline bool Grid2D_Quad_Block_HO::IsNorthBoundaryReconstructionConstrained(void)
 inline bool Grid2D_Quad_Block_HO::IsThereAnySolidBoundary(void) const{
   return ( BndNorthSpline.IsSolidBoundary() || BndSouthSpline.IsSolidBoundary() ||
 	   BndEastSpline.IsSolidBoundary()  || BndWestSpline.IsSolidBoundary() );
+}
+
+/*!
+ * Set all the state trackers to a new state.
+ */
+inline void Grid2D_Quad_Block_HO::New_Global_Geometry_State(void){
+
+  // Increment all trackers
+  ++InteriorCellGeometryStateTracker;
+  ++GhostCellGeometryStateTracker;
+  ++CornerGhostCellGeometryStateTracker;
+}
+
+/*!
+ * Set interior geometry state tracker to a new state.
+ */
+inline void Grid2D_Quad_Block_HO::New_Interior_Geometry_State(void){
+  ++InteriorCellGeometryStateTracker;
+}
+
+/*!
+ * Set ghost cell geometry state tracker to a new state.
+ */
+inline void Grid2D_Quad_Block_HO::New_Ghost_Geometry_State(void){
+  ++GhostCellGeometryStateTracker;
+}
+
+
+/*!
+ * Set corner ghost cell geometry state tracker to a new state.
+ */
+inline void Grid2D_Quad_Block_HO::New_Corner_Geometry_State(void){
+  ++CornerGhostCellGeometryStateTracker;
 }
 
 
