@@ -43,6 +43,19 @@ void HighOrder2D<SOLN_STATE>::ComputeUnlimitedSolutionReconstruction(Soln_Block_
   // Set the freeze limiter flag. It's value affects the reset monotonicity data!
   _freeze_limiter = SolnBlk.Freeze_Limiter;
 
+  /* If reconstruction with pseudo-inverse is required,
+     check if the associated grid encountered modifications
+     since the pseudo-inverse was computed last time. */
+  if ( IsPseudoInverseAllocated() &&
+       ( ObserverInteriorCellGeometryState != Geom->getInteriorStateTracker() ||
+	 ObserverGhostCellGeometryState != Geom->getGhostStateTracker() || 
+	 ObserverCornerGhostCellGeometryState != Geom->getCornerGhostStateTracker()) ){
+
+    // Require pseudo-inverse update
+    MustUpdatePseudoInverse();
+    ComputeReconstructionPseudoInverse();
+  }
+
   // Carry out the solution reconstruction for cells in the specified range.
   for ( j  = StartJ ; j <= EndJ ; ++j ) {
     for ( i = StartI ; i <= EndI ; ++i ) {
@@ -176,6 +189,11 @@ void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(void){
       // There is no need to calculate pseudo-inverse
       // Confirm the pseudo-inverse calculation
       _calculated_psinv = true;
+
+      // Memorise the corresponding state of the grid
+      ObserverInteriorCellGeometryState = Geom->getInteriorStateTracker();
+      ObserverGhostCellGeometryState = Geom->getGhostStateTracker();
+      ObserverCornerGhostCellGeometryState = Geom->getCornerGhostStateTracker();
       return;
     }
 
@@ -199,6 +217,11 @@ void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(void){
       // Confirm the pseudo-inverse calculation
       _calculated_psinv = true;
       
+      // Memorise the corresponding state of the grid
+      ObserverInteriorCellGeometryState = Geom->getInteriorStateTracker();
+      ObserverGhostCellGeometryState = Geom->getGhostStateTracker();
+      ObserverCornerGhostCellGeometryState = Geom->getCornerGhostStateTracker();
+
       return;
     }
 
@@ -266,6 +289,11 @@ void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(void){
     
     // Confirm the pseudo-inverse calculation
     _calculated_psinv = true;
+
+    // Memorise the corresponding state of the grid
+    ObserverInteriorCellGeometryState = Geom->getInteriorStateTracker();
+    ObserverGhostCellGeometryState = Geom->getGhostStateTracker();
+    ObserverCornerGhostCellGeometryState = Geom->getCornerGhostStateTracker();
 
   } // endif ( IsPseudoInverseAllocated() && !IsPseudoInversePreComputed() )
 

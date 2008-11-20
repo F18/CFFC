@@ -856,6 +856,13 @@ private:
 				* same value as CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS. */
   //@}
 
+  //! @name Correspondent grid trackers:
+  //@{
+  unsigned int ObserverInteriorCellGeometryState; //!< Observer to memorise the state of the interior grid.
+  unsigned int ObserverGhostCellGeometryState;	  //!< Observer to memorise the state of the ghost cell layers.
+  unsigned int ObserverCornerGhostCellGeometryState; //!< Observer to memorize the state of the corner ghost cells.
+  //@}
+
   //! @name Internal information in conjunction with the geometry:
   //@{
   GeometryType* Geom;          //!< Pointer to the associated geometry which is a 2D mesh block
@@ -1002,7 +1009,8 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(void):
   _constrained_block_reconstruction(false),
   _constrained_WEST_reconstruction(false) , _constrained_EAST_reconstruction(false),
   _constrained_NORTH_reconstruction(false), _constrained_SOUTH_reconstruction(false),
-  AdjustmentCoeff(0.0)
+  AdjustmentCoeff(0.0),
+  ObserverInteriorCellGeometryState(0), ObserverGhostCellGeometryState(0), ObserverCornerGhostCellGeometryState(0)
 {
   //
 }
@@ -1035,7 +1043,10 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder,
   _constrained_block_reconstruction(false),
   _constrained_WEST_reconstruction(false) , _constrained_EAST_reconstruction(false),
   _constrained_NORTH_reconstruction(false), _constrained_SOUTH_reconstruction(false),
-  AdjustmentCoeff(0.0)
+  AdjustmentCoeff(0.0),
+  ObserverInteriorCellGeometryState(Block.getInteriorStateTracker()),
+  ObserverGhostCellGeometryState(Block.getGhostStateTracker()),
+  ObserverCornerGhostCellGeometryState(Block.getCornerGhostStateTracker())
 {
   // Use the grid to get the number of interior block cells and the number of available ghost cells
   allocate(ICu_Grid()-ICl_Grid()+1,
@@ -1063,7 +1074,10 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
     rings(0), rings_SI(0), _calculated_psinv(false),
     CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
     Geom(rhs.Geom), _si_calculation(rhs._si_calculation),
-    AdjustmentCoeff(rhs.AdjustmentCoeff)
+    AdjustmentCoeff(rhs.AdjustmentCoeff),
+    ObserverInteriorCellGeometryState(rhs.ObserverInteriorCellGeometryState),
+    ObserverGhostCellGeometryState(rhs.ObserverGhostCellGeometryState),
+    ObserverCornerGhostCellGeometryState(rhs.ObserverCornerGhostCellGeometryState)
 {
 
   int i,j;
@@ -1221,6 +1235,11 @@ HighOrder2D<SOLN_STATE> & HighOrder2D<SOLN_STATE>::operator=(const HighOrder2D<S
     } //endif (rhs._allocated_cells)
 
   }//endif (rhs._allocated_block)
+
+  // Set grid observers
+  ObserverInteriorCellGeometryState = rhs.ObserverInteriorCellGeometryState;
+  ObserverGhostCellGeometryState = rhs.ObserverGhostCellGeometryState;
+  ObserverCornerGhostCellGeometryState = rhs.ObserverCornerGhostCellGeometryState;
 
   return *this;
 }
@@ -1461,6 +1480,10 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
 
     // Separate the high-order object from the associated geometry
     Geom = NULL;
+    // Reset grid observers
+    ObserverInteriorCellGeometryState = 0;
+    ObserverGhostCellGeometryState = 0;
+    ObserverCornerGhostCellGeometryState = 0;
     _constrained_block_reconstruction = false;
     _constrained_WEST_reconstruction  = false;
     _constrained_EAST_reconstruction  = false;
@@ -1475,6 +1498,7 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
 
     // Set other flags
     _freeze_limiter = false;
+
   }
 }
 
