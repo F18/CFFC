@@ -433,6 +433,8 @@ int AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracyBasedOnExactSolution(
       }
     }
 
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  
     /* Total error for L1 norm on all CPUs */
     L1() = CFFC_Summation_MPI(L1());
 
@@ -521,6 +523,8 @@ int AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracyBasedOnEntropyVariati
       }
     }
 
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+
     /* Total error for L1 norm on all CPUs */
     L1() = CFFC_Summation_MPI(L1());
 
@@ -608,7 +612,9 @@ AssessSolutionAccuracyBasedOnLiftAndDragCoefficients(Quad_Soln_Block *SolnBlk,
 	
       }	//endif
     } //endfor
-    
+   
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+
     for (nb = 0; nb < NumberOfSolidBodies; ++nb){
       /* Total aerodynamic force Fx on all CPUs for each of the solid bodies */
       Lift[nb] = CFFC_Summation_MPI(Lift[nb]);

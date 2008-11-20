@@ -434,6 +434,9 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
   continue_existing_calculation: ;
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
 
+  // Set the same number of maximum solid body objects on all CPUs
+  Spline2D_HO::Broadcast_Maximum_Number_Of_SolidBodies();
+
   // Reset accuracy assessment
   AccuracyAssessment2D_MultiBlock::ResetForNewCalculation(Local_SolnBlk,
 							  List_of_Local_Solution_Blocks);
@@ -597,6 +600,9 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
                                                Time);
                  return (error_flag);
               } /* endif */
+	      // Set the same number of maximum solid body objects on all CPUs after AMR
+	      Spline2D_HO::Broadcast_Maximum_Number_Of_SolidBodies();
+
               if (!batch_flag) {
 	         cout << "\n New multi-block solution-adaptive quadrilateral mesh statistics: "; 
 	         cout << "\n  -> Number of Root Blocks i-direction: "
@@ -1136,6 +1142,9 @@ int Euler2DQuadSolver(char *Input_File_Name_ptr,
       } /* endif */
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
+      // Set the same number of maximum solid body objects on all CPUs after AMR
+      Spline2D_HO::Broadcast_Maximum_Number_Of_SolidBodies();
+
       // Output multi-block solution-adaptive quadrilateral mesh statistics.
       if (!batch_flag) {
 	cout << "\n New multi-block solution-adaptive quadrilateral mesh statistics: "; 

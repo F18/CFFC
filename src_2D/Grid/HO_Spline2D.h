@@ -368,6 +368,8 @@ public:
   void Broadcast_Spline(MPI::Intracomm &Communicator,
 			const int Source_CPU);
 #endif
+
+  static void Broadcast_Maximum_Number_Of_SolidBodies(void);
   //@}
 
 private:

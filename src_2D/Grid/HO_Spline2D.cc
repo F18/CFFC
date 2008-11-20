@@ -1315,6 +1315,17 @@ void Spline2D_HO::Broadcast_Spline(MPI::Intracomm &Communicator,
 }
 #endif
 
+
+/*!
+ * Ensure that all processors involved in the calculation
+ * have correctly setup the maximum number of solid bodies.
+ */
+void Spline2D_HO::Broadcast_Maximum_Number_Of_SolidBodies(void){
+#ifdef _MPI_VERSION  
+  CounterSolidBodies = CFFC_Maximum_MPI(CounterSolidBodies);
+#endif
+}
+
 /*!
  * Apply a mirror reflection about the y=0 axis and
  * recompute the positions of all of the points in 
