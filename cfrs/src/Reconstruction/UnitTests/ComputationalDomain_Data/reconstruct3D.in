@@ -10,10 +10,10 @@ Example4
 #Default
 #
 Reconstruction_Order =
-2
+3
 #
 Output_File_Name =
-Example4_k2
+Example4_k3
 #
 Method_Used =
 CENO
@@ -34,9 +34,9 @@ Characteristic_Length =
 Cutoff_Knob =
 1.0
 Number_of_Cells_Idir =
-10
+5
 Number_of_Cells_Jdir =
-10
+5
 Number_of_Cells_Kdir = 
 30
 Number_of_Ghost_Cells =
@@ -93,7 +93,7 @@ Write_Output_OneZone
 ######################
 ## Write the whole solution at the nodes of the mesh (including ghost cells)
 ######################
-Write_Output_Full_Solution_Nodes
+# Write_Output_Full_Solution_Nodes
 #
 ######################
 ## Write the locations of the nodes

@@ -129,17 +129,17 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
 
       // subtract the corresponding geometric moment of (i_index[0],j_index[0],k_index[0]) cell
       A(cell-1,i-1) -= SolnBlk(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i);
-#if 0      
+
       // apply geometric weighting
       // A(cell-1,i-1) *= GeomWeights(cell);
-#endif
+
     } // endfor (i) - Number of Derivatives
       
     // *** SET the matrix All_Delta_U of the linear system (RHS) ***
     for (parameter = 1; parameter <= NumberOfParameters; ++parameter){
       All_Delta_U(cell-1,parameter-1) = (SolnBlk(i_index[cell],j_index[cell],k_index[cell]).CellSolution(parameter) -
 					 SolnBlk(i_index[0],j_index[0],k_index[0]).CellSolution(parameter));
-      All_Delta_U(cell-1,parameter-1) *= GeomWeights(cell);
+      // All_Delta_U(cell-1,parameter-1) *= GeomWeights(cell);
     }
 
   }//endfor (cell) - Stencil Size
