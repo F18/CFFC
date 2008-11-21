@@ -3726,15 +3726,82 @@ void HighOrder2D<SOLN_STATE>::Read_Object(istream & in_file) {
  * processors involved in the calculation from the      
  * primary processor using the MPI broadcast routine.
  * 
- * \param Block_Geometry the grid block to which the
- *                   high-order object is associated.
+ * \param Block_Geometry the grid block associated to the high-order object
  *
- * \todo Implement this subroutine!
+ * \note In the current implementation, only the container
+ *       of TaylorDerivatives needs to be broadcast.
  */
 template<class SOLN_STATE>
 void HighOrder2D<SOLN_STATE>::Broadcast_HighOrder_Data(GeometryType & Block_Geometry){
 
 #ifdef _MPI_VERSION
+  
+  int i, j, buffer_size, TD_Bcast, td, var, counter;
+  double *buffer;
+
+  // Obs: It is assumed that InitializeBasicVariable() routine
+  //      has been already run on each CPU.
+
+  /* Calculate how many derivatives must be broadcast, including the limiter value for each parameter */
+  TD_Bcast = NumberOfVariables() * (NumberOfTaylorDerivatives() + 1 );
+
+  /* Calculate the size of the buffer.*/
+  buffer_size = TD_Bcast*Ni*Nj;
+  
+  buffer = new double[buffer_size];
+
+  // Load the buffer on the primary CPU
+  if (CFFC_Primary_MPI_Processor()) {
+    counter = 0;
+    // Pack all the information 
+    for (j  = 0 ; j < Nj ; ++j ) { //< for each jCell
+      for ( i = 0 ; i < Ni ; ++i ) {  //< for each iCell
+	for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
+
+	  // Load the derivatives of the current solution state parameter
+	  for (td = 0; td <= CellTaylorDeriv(i,j).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell)
+	    buffer[counter] = CellTaylorDerivState(i,j,td)[var];
+	  } /* endfor(td) */
+
+	  // Load the limiter of the current solution state parameter
+	  buffer[counter] = CellTaylorDeriv(i,j).Limiter(var);
+	  ++counter;
+	}/* endfor(var) */
+      } /* endfor(i) */
+    } /* endfor(j) */
+
+  }/* endif(CFFC_Primary_MPI_Processor()) */
+
+
+  // Broadcast buffer
+  MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
+
+  // Unload the buffer on the receiver CPUs and set the variables
+  if (!CFFC_Primary_MPI_Processor()) {
+    counter = 0;
+    // Unpack all the information 
+    for (j  = 0 ; j < Nj; ++j ) { //< for each jCell
+      for ( i = 0; i < Ni; ++i ) {  //< for each iCell
+  	for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
+
+	  // Unload the derivatives of the current solution state parameter
+	  for (td = 0; td <= CellTaylorDeriv(i,j).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell)
+	    CellTaylorDerivState(i,j,td)[var] = buffer[counter];
+	  } /* endfor(td) */
+	  
+	  // Unload the limiter of the current solution state parameter
+	  CellTaylorDeriv(i,j).Limiter(var) = buffer[counter];
+	  ++counter;
+
+	}/* endfor(var) */
+      } /* endfor(i) */
+    } /* endfor(j) */
+  }/* endif(!CFFC_Primary_MPI_Processor()) */
+
+
+  // Deallocate memory
+  delete []buffer;
+  buffer = NULL;
 
 #endif
 
@@ -3750,14 +3817,78 @@ void HighOrder2D<SOLN_STATE>::Broadcast_HighOrder_Data(GeometryType & Block_Geom
  * \param Source_CPU the CPU used as source for the broadcast
  * \param Block_Geometry the grid block to which the
  *                   high-order object is associated. 
- *
- * \todo Implement this subroutine!
  */
 template<class SOLN_STATE>
 void HighOrder2D<SOLN_STATE>::Broadcast_HighOrder_Data(MPI::Intracomm &Communicator, 
 						       const int &Source_CPU,
 						       GeometryType & Block_Geometry){
+
+  int i, j, buffer_size, TD_Bcast, td, var, counter;
+  double *buffer;
   
+  // Obs: It is assumed that InitializeBasicVariable() routine
+  //      has been already run on each involved CPU.
+
+  /* Calculate how many derivatives must be broadcast, including the limiter value for each parameter */
+  TD_Bcast = NumberOfVariables() * (NumberOfTaylorDerivatives() + 1 );
+
+  /* Calculate the size of the buffer.*/
+  buffer_size = TD_Bcast*Ni*Nj;
+  
+  buffer = new double[buffer_size];
+
+  // Load the buffer on the source CPU
+  if (CFFC_MPI::This_Processor_Number == Source_CPU) {
+    counter = 0;
+    // Pack all the information 
+    for (j  = 0 ; j < Nj ; ++j ) { //< for each jCell
+      for ( i = 0 ; i < Ni ; ++i ) {  //< for each iCell
+	for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
+
+	  // Load the derivatives of the current solution state parameter
+	  for (td = 0; td <= CellTaylorDeriv(i,j).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell)
+	    buffer[counter] = CellTaylorDerivState(i,j,td)[var];
+	  } /* endfor(td) */
+
+	  // Load the limiter of the current solution state parameter
+	  buffer[counter] = CellTaylorDeriv(i,j).Limiter(var);
+	  ++counter;
+	}/* endfor(var) */
+      } /* endfor(i) */
+    } /* endfor(j) */
+
+  }/* endif(CFFC_MPI::This_Processor_Number == Source_CPU) */
+
+
+  // Broadcast buffer
+  Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_CPU);
+
+  // Unload the buffer on the receiver CPUs and set the variables
+  if (CFFC_MPI::This_Processor_Number != Source_CPU) {
+    counter = 0;
+    // Unpack all the information 
+    for (j  = 0 ; j < Nj; ++j ) { //< for each jCell
+      for ( i = 0; i < Ni; ++i ) {  //< for each iCell
+  	for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
+
+	  // Unload the derivatives of the current solution state parameter
+	  for (td = 0; td <= CellTaylorDeriv(i,j).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell)
+	    CellTaylorDerivState(i,j,td)[var] = buffer[counter];
+	  } /* endfor(td) */
+	  
+	  // Unload the limiter of the current solution state parameter
+	  CellTaylorDeriv(i,j).Limiter(var) = buffer[counter];
+	  ++counter;
+
+	}/* endfor(var) */
+      } /* endfor(i) */
+    } /* endfor(j) */
+  }/* endif(CFFC_MPI::This_Processor_Number != Source_CPU) */
+
+
+  // Deallocate memory
+  delete []buffer;
+  buffer = NULL;  
   
 }
 #endif

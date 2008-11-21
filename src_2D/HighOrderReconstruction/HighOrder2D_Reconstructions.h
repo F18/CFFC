@@ -46,10 +46,11 @@ void HighOrder2D<SOLN_STATE>::ComputeUnlimitedSolutionReconstruction(Soln_Block_
   /* If reconstruction with pseudo-inverse is required,
      check if the associated grid encountered modifications
      since the pseudo-inverse was computed last time. */
-  if ( IsPseudoInverseAllocated() &&
+  if ( IsPseudoInverseAllocated() && 
        ( ObserverInteriorCellGeometryState != Geom->getInteriorStateTracker() ||
 	 ObserverGhostCellGeometryState != Geom->getGhostStateTracker() || 
-	 ObserverCornerGhostCellGeometryState != Geom->getCornerGhostStateTracker()) ){
+	 ObserverCornerGhostCellGeometryState != Geom->getCornerGhostStateTracker() ||
+	 (IsPseudoInversePreComputed() == false) ) ){
 
     // Require pseudo-inverse update
     MustUpdatePseudoInverse();
