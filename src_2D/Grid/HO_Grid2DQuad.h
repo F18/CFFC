@@ -675,6 +675,8 @@ public:
   
   //! @name Smooth quad grid
   //@{
+  static void setGridSmoothing(void){ Smooth_Quad_Block_Flag = ON; }
+  static void setNoGridSmoothing(void) { Smooth_Quad_Block_Flag = OFF; }
   void Smooth_Quad_Block(const int Number_of_Iterations);
   friend void Smooth_Quad_Block(Grid2D_Quad_Block_HO &Grid,
 				const int Number_of_Iterations){

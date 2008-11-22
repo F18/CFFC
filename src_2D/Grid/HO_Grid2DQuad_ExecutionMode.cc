@@ -19,6 +19,7 @@ short HO_Grid2D_Execution_Mode::CHECK_FOR_INCORRECT_QUADRILATERALS = ON; // chec
 short HO_Grid2D_Execution_Mode::REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = OFF; // stop on detecting incorrect quads
 short HO_Grid2D_Execution_Mode::USE_BROADCAST_MORE_THAN_RECOMPUTING = ON; // broadcast the majority of geometric properties
 short HO_Grid2D_Execution_Mode::TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES = OFF; // tolerate inaccurate integration
+short HO_Grid2D_Execution_Mode::SMOOTH_QUAD_BLOCK_FLAG = ON; // smooth the grid
 
 // Block boundary flux calculation method
 short HO_Grid2D_Execution_Mode::CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = OFF; // use the default settings
@@ -45,6 +46,7 @@ void HO_Grid2D_Execution_Mode::SetDefaults(void){
   NORTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
   EAST_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
   TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES = OFF; // tolerate inaccurate integration
+  SMOOTH_QUAD_BLOCK_FLAG = ON; // smooth the grid
 
   // Reset solid body counter in Spline2D_HO class
   Spline2D_HO::ResetCounter();
@@ -138,6 +140,12 @@ void HO_Grid2D_Execution_Mode::Print_Info(std::ostream & out_file){
   } else if (REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION == ON){
     out_file << "\n     -> Warning: " << "Program won't stop the execution if invalid meshes are detected!!!";
   }
+
+  if (SMOOTH_QUAD_BLOCK_FLAG == ON){
+    out_file << "\n     -> Smooth Quad Block: Yes";
+  } else {
+    out_file << "\n     -> Smooth Quad Block: No";
+  }
 }
 
 /*!
@@ -188,6 +196,11 @@ void HO_Grid2D_Execution_Mode::Broadcast(void){
  			1, 
  			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&NORTH_RECONSTRUCTION_BASED_FLUX,
+ 			1, 
+ 			MPI::SHORT, 0);
+
+
+  MPI::COMM_WORLD.Bcast(&SMOOTH_QUAD_BLOCK_FLAG,
  			1, 
  			MPI::SHORT, 0);
 
@@ -247,4 +260,13 @@ void HO_Grid2D_Execution_Mode::Set_Affected_Switches(void){
     // Set the affected switch
     Grid2D_Quad_Block_HO::setNoGeometricInaccuraciesForIntegrationNearCurvedBoundaries();
   }
+
+  if (SMOOTH_QUAD_BLOCK_FLAG == ON){
+    // Set the affected switch
+    Grid2D_Quad_Block_HO::setGridSmoothing();
+  } else {
+    // Set the affected switch
+    Grid2D_Quad_Block_HO::setNoGridSmoothing();
+  }
+
 }

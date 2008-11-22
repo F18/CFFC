@@ -429,7 +429,7 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     IP.Morton = 0;
     IP.Morton_Reordering_Frequency = 1000;
 
-    // Smooth quad block flag:
+    // Smooth quad block flag is always ON (The grid will take care of the right value):
     IP.i_Smooth_Quad_Block = ON;
 
     // Embedded boundary parameters:
@@ -2978,17 +2978,6 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
       IP.Input_File >> IP.Mesh_Stretching_Factor_Jdir;
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Mesh_Stretching_Factor_Jdir < ONE) i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Quad_Block") == 0) {
-      i_command = 106;
-      Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
-	IP.i_Smooth_Quad_Block = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
-	IP.i_Smooth_Quad_Block = OFF;
-      } else {
-	i_command = INVALID_INPUT_VALUE;
-      }
 
     } else if (strcmp(IP.Next_Control_Parameter,"Iteration_Disturb_Mesh") == 0) {
       i_command = 0;

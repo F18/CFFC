@@ -647,12 +647,6 @@ inline ostream &operator << (ostream &out_file,
                  << IP.Box_Height;
         break;
     } /* endswitch */
-    out_file << "\n     -> Smooth Quad Block: ";
-    if (IP.i_Smooth_Quad_Block){
-      out_file << "Yes";
-    } else {
-      out_file << "No";
-    }
     if (IP.IterationsOfInteriorNodesDisturbances > 0){
       out_file << "\n     -> Disturbed Interior Quad Block Nodes: "
 	       << IP.IterationsOfInteriorNodesDisturbances << " iterations.";

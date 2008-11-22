@@ -148,6 +148,12 @@ public:
       ----------------------------------------------------------------------------------------  */
   static short TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES;
 
+  /*! This flag is used to specify whether the smoother is applied or not to the grid. \n
+      Turn ON if you want to smooth the grid. (default) \n
+      Turn OFF if you don't want the grid to be smoothed. \n
+      ----------------------------------------------------------------------------------------  */
+  static short SMOOTH_QUAD_BLOCK_FLAG;
+
   template<class Input_Parameters_Type>
   static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);
 
@@ -371,6 +377,25 @@ void HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Paramete
       return;
     }
     i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Smooth_Quad_Block") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if (strcmp(IP.Next_Control_Parameter, "ON") == 0 || strcmp(IP.Next_Control_Parameter, "On") == 0) {
+      SMOOTH_QUAD_BLOCK_FLAG = ON;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setGridSmoothing();
+      
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0 || strcmp(IP.Next_Control_Parameter, "Off") == 0) {
+      SMOOTH_QUAD_BLOCK_FLAG = OFF;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setNoGridSmoothing();
+
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
+
 
   } else {
     i_command = INVALID_INPUT_CODE;

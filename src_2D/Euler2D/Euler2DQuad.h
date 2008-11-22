@@ -1731,10 +1731,6 @@ inline int Euler2D_Quad_Block::LoadSendBuffer_F2C(double *buffer,
                                    Grid.Cell[i+1][j  ].A+
                                    Grid.Cell[i  ][j+1].A+
                                    Grid.Cell[i+1][j+1].A);
-/*            buffer[buffer_count] = (Grid.Cell[i  ][j  ].A*U[i  ][j  ][k]+ */
-/*                                    Grid.Cell[i+1][j  ].A*U[i+1][j  ][k]+ */
-/*                                    Grid.Cell[i  ][j+1].A*U[i  ][j+1][k]+ */
-/*                                    Grid.Cell[i+1][j+1].A*U[i+1][j+1][k]); */
         } /* endfor */
      } /* endfor */
   } /* endfor */

@@ -9092,41 +9092,24 @@ void Grid2D_Quad_Block_HO::Refine_Mesh(const Grid2D_Quad_Block_HO &Grid_Original
 
     for ( j  = j_min; j <= j_max ; ++j ) {
       for ( i = i_min ; i <= i_max ; ++i ) {
-	Node[2*(i-i_min)+INl  ]
-	  [2*(j-j_min)+JNl  ].X 
-	  = Grid_Original.nodeSW(i, j).X;
-	Node[2*(i-i_min)+INl+1]
-	  [2*(j-j_min)+JNl  ].X 
-	  = Grid_Original.xfaceS(i, j);
-	Node[2*(i-i_min)+INl  ]
-	  [2*(j-j_min)+JNl+1].X 
-	  = Grid_Original.xfaceW(i, j);
-	Node[2*(i-i_min)+INl+1]
-	  [2*(j-j_min)+JNl+1].X 
-	  = (Grid_Original.nodeSW(i,j).X +
-	     Grid_Original.nodeSE(i,j).X +
-	     Grid_Original.nodeNW(i,j).X +
-	     Grid_Original.nodeNE(i,j).X)/FOUR;
+	Node[2*(i-i_min)+INl  ][2*(j-j_min)+JNl  ].X  = Grid_Original.nodeSW(i, j).X;
+	Node[2*(i-i_min)+INl+1][2*(j-j_min)+JNl  ].X  = Grid_Original.xfaceS(i, j);
+	Node[2*(i-i_min)+INl  ][2*(j-j_min)+JNl+1].X  = Grid_Original.xfaceW(i, j);
+	Node[2*(i-i_min)+INl+1][2*(j-j_min)+JNl+1].X  = (Grid_Original.nodeSW(i,j).X +
+							 Grid_Original.nodeSE(i,j).X +
+							 Grid_Original.nodeNW(i,j).X +
+							 Grid_Original.nodeNE(i,j).X)/FOUR;
+
 	if (j == j_max) {
-	  Node[2*(i-i_min)+INl  ]
-	    [2*(j-j_min)+JNl+2].X 
-	    = Grid_Original.nodeNW(i, j).X;
-	  Node[2*(i-i_min)+INl+1]
-	    [2*(j-j_min)+JNl+2].X 
-	    = Grid_Original.xfaceN(i, j);
+	  Node[2*(i-i_min)+INl  ][2*(j-j_min)+JNl+2].X = Grid_Original.nodeNW(i, j).X;
+	  Node[2*(i-i_min)+INl+1][2*(j-j_min)+JNl+2].X = Grid_Original.xfaceN(i, j);
 	} /* endif */
 	if (i == i_max) {
-	  Node[2*(i-i_min)+INl+2]
-	    [2*(j-j_min)+JNl  ].X 
-	    = Grid_Original.nodeSE(i, j).X;
-	  Node[2*(i-i_min)+INl+2]
-	    [2*(j-j_min)+JNl+1].X 
-	    = Grid_Original.xfaceE(i, j);
+	  Node[2*(i-i_min)+INl+2][2*(j-j_min)+JNl  ].X = Grid_Original.nodeSE(i, j).X;
+	  Node[2*(i-i_min)+INl+2][2*(j-j_min)+JNl+1].X = Grid_Original.xfaceE(i, j);
 	} /* endif */
 	if (i == i_max && j == j_max) {
-	  Node[2*(i-i_min)+INl+2]
-	    [2*(j-j_min)+JNl+2].X 
-	    = Grid_Original.nodeNE(i, j).X;
+	  Node[2*(i-i_min)+INl+2][2*(j-j_min)+JNl+2].X = Grid_Original.nodeNE(i, j).X;
 	} /* endif */
       } /* endfor */
     } /* endfor */
@@ -9143,8 +9126,7 @@ void Grid2D_Quad_Block_HO::Refine_Mesh(const Grid2D_Quad_Block_HO &Grid_Original
 		 Node[INl][j  ].X);
 	ds_ratio = dl/(dl+dr);
 	sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-	Node[INl][j].X = 
-	  Spline(sp_m, BndWestSpline);
+	Node[INl][j].X = Spline(sp_m, BndWestSpline);
       } /* endfor */
     } /* endif */
 
@@ -9160,8 +9142,7 @@ void Grid2D_Quad_Block_HO::Refine_Mesh(const Grid2D_Quad_Block_HO &Grid_Original
 		 Node[INu][j  ].X);
 	ds_ratio = dl/(dl+dr);
 	sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-	Node[INu][j].X = 
-	  Spline(sp_m, BndEastSpline);
+	Node[INu][j].X = Spline(sp_m, BndEastSpline);
       } /* endfor */
     } /* endif */
 
@@ -9177,8 +9158,7 @@ void Grid2D_Quad_Block_HO::Refine_Mesh(const Grid2D_Quad_Block_HO &Grid_Original
 		 Node[i  ][JNl].X);
 	ds_ratio = dl/(dl+dr);
 	sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-	Node[i][JNl].X =  
-	  Spline(sp_m, BndSouthSpline);
+	Node[i][JNl].X = Spline(sp_m, BndSouthSpline);
       } /* endfor */
     } /* endif */
 
@@ -9194,8 +9174,7 @@ void Grid2D_Quad_Block_HO::Refine_Mesh(const Grid2D_Quad_Block_HO &Grid_Original
 		 Node[i  ][JNu].X);
 	ds_ratio = dl/(dl+dr);
 	sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-	Node[i][JNu].X =  
-	  Spline(sp_m, BndNorthSpline);
+	Node[i][JNu].X = Spline(sp_m, BndNorthSpline);
       } /* endfor */
     } /* endif */
 
@@ -9454,15 +9433,10 @@ void Grid2D_Quad_Block_HO::Fix_Refined_Mesh_Boundaries(const int Fix_North_Bound
 
   if (Fix_North_Boundary) {
     for ( i = INl+1 ; i <= INu-1 ; i+=2 ) {
-      dl = abs(Node[i  ][JNu].X - 
-	       Node[i-1][JNu].X);
-      dr = abs(Node[i+1][JNu].X - 
-	       Node[i  ][JNu].X);
+      dl = abs(Node[i  ][JNu].X - Node[i-1][JNu].X);
+      dr = abs(Node[i+1][JNu].X - Node[i  ][JNu].X);
       ds_ratio = dl/(dl+dr);
-      Node[i][JNu].X = 
-	Node[i-1][JNu].X +
-	ds_ratio*(Node[i+1][JNu].X-
-		  Node[i-1][JNu].X);
+      Node[i][JNu].X = 	Node[i-1][JNu].X + ds_ratio*(Node[i+1][JNu].X - Node[i-1][JNu].X);
     } /* endfor */
   } /* endif */
 
@@ -9471,15 +9445,10 @@ void Grid2D_Quad_Block_HO::Fix_Refined_Mesh_Boundaries(const int Fix_North_Bound
 
   if (Fix_South_Boundary) {
     for ( i = INl+1 ; i <= INu-1 ; i+=2 ) {
-      dl = abs(Node[i  ][JNl].X - 
-	       Node[i-1][JNl].X);
-      dr = abs(Node[i+1][JNl].X - 
-	       Node[i  ][JNl].X);
+      dl = abs(Node[i  ][JNl].X - Node[i-1][JNl].X);
+      dr = abs(Node[i+1][JNl].X - Node[i  ][JNl].X);
       ds_ratio = dl/(dl+dr);
-      Node[i][JNl].X = 
-	Node[i-1][JNl].X +
-	ds_ratio*(Node[i+1][JNl].X-
-		  Node[i-1][JNl].X);
+      Node[i][JNl].X =  Node[i-1][JNl].X + ds_ratio*(Node[i+1][JNl].X - Node[i-1][JNl].X);
     } /* endfor */
   } /* endif */
 
@@ -9488,15 +9457,10 @@ void Grid2D_Quad_Block_HO::Fix_Refined_Mesh_Boundaries(const int Fix_North_Bound
 
   if (Fix_East_Boundary) {
     for ( j  = JNl+1; j <= JNu-1; j+=2 ) {
-      dl = abs(Node[INu][j  ].X - 
-	       Node[INu][j-1].X);
-      dr = abs(Node[INu][j+1].X - 
-	       Node[INu][j  ].X);
+      dl = abs(Node[INu][j  ].X - Node[INu][j-1].X);
+      dr = abs(Node[INu][j+1].X - Node[INu][j  ].X);
       ds_ratio = dl/(dl+dr);
-      Node[INu][j].X = 
-	Node[INu][j-1].X +
-	ds_ratio*(Node[INu][j+1].X-
-		  Node[INu][j-1].X);
+      Node[INu][j].X = 	Node[INu][j-1].X + ds_ratio*(Node[INu][j+1].X - Node[INu][j-1].X);
     } /* endfor */
   } /* endif */
 
@@ -9505,15 +9469,10 @@ void Grid2D_Quad_Block_HO::Fix_Refined_Mesh_Boundaries(const int Fix_North_Bound
 
   if (Fix_West_Boundary) {
     for ( j  = JNl+1; j <= JNu-1; j+=2 ) {
-      dl = abs(Node[INl][j  ].X - 
-	       Node[INl][j-1].X);
-      dr = abs(Node[INl][j+1].X - 
-	       Node[INl][j  ].X);
+      dl = abs(Node[INl][j  ].X - Node[INl][j-1].X);
+      dr = abs(Node[INl][j+1].X - Node[INl][j  ].X);
       ds_ratio = dl/(dl+dr);
-      Node[INl][j].X = 
-	Node[INl][j-1].X +
-	ds_ratio*(Node[INl][j+1].X-
-		  Node[INl][j-1].X);
+      Node[INl][j].X = 	Node[INl][j-1].X + ds_ratio*(Node[INl][j+1].X - Node[INl][j-1].X);
     } /* endfor */
   }/* endif */
   
