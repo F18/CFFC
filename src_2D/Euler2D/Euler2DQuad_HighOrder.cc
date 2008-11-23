@@ -152,8 +152,10 @@ void Euler2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Tim
 		Node = Grid.nodeSW(i,j).X;
 		break;
 	      case 2:		// output xfaceS(i,j) or BndSouthSplineInfo[i].GQPointContourIntegral(Index_GQP)
-		if(j == JCl && Grid.BndSouthSplineInfo != NULL){
+		if(j == JCl && Grid.BndSouthSplineInfo != NULL && i>= ICl && i<= ICu ){
 		  Node = Grid.BndSouthSplineInfo[i].GQPointContourIntegral(Index_GQP);
+		} else if (j == JCu+1 && Grid.BndNorthSplineInfo != NULL & i>= ICl && i<= ICu ){
+		  Node = Grid.BndNorthSplineInfo[i].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceS(i,j);
 		}
@@ -167,8 +169,10 @@ void Euler2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Tim
 	    case 2: // output the 2nd row of nodes (i.e. xfaceW(i,j), Grid.CellCentroid(i,j), xfaceE(i,j))
 	      switch(nLoop){
 	      case 1:		// output xfaceW(i,j) or BndWestSplineInfo[j].GQPointContourIntegral(Index_GQP)
-		if (i == ICl && Grid.BndWestSplineInfo != NULL){
+		if (i == ICl && Grid.BndWestSplineInfo != NULL && j>=JCl && j<=JCu ){
 		  Node = Grid.BndWestSplineInfo[j].GQPointContourIntegral(Index_GQP);
+		} else if (i == ICu+1 && Grid.BndEastSplineInfo != NULL && j>=JCl && j<=JCu) {
+		  Node = Grid.BndEastSplineInfo[j].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceW(i,j);
 		}
@@ -177,8 +181,10 @@ void Euler2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Tim
 		Node = Grid.CellCentroid(i,j);
 		break;
 	      case 3:		// output xfaceE(i,j) or BndEastSplineInfo[j].GQPointContourIntegral(Index_GQP)
-		if (i == ICu && Grid.BndEastSplineInfo != NULL){
+		if (i == ICu && Grid.BndEastSplineInfo != NULL && j>=JCl && j<=JCu ){
 		  Node = Grid.BndEastSplineInfo[j].GQPointContourIntegral(Index_GQP);
+		} else if (i == ICl-1 && Grid.BndWestSplineInfo != NULL && j>=JCl && j<=JCu ) { 
+		  Node = Grid.BndWestSplineInfo[j].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceE(i,j);
 		}
@@ -192,8 +198,10 @@ void Euler2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Tim
 		Node = Grid.nodeNW(i,j).X;
 		break;
 	      case 2:		// output xfaceN(i,j) or BndNorthSplineInfo[i].GQPointContourIntegral(Index_GQP)
-		if(j == JCu && Grid.BndNorthSplineInfo != NULL){
+		if(j == JCu && Grid.BndNorthSplineInfo != NULL  && i>= ICl && i<= ICu ){
 		  Node = Grid.BndNorthSplineInfo[i].GQPointContourIntegral(Index_GQP);
+		} else if (j == JCl-1 && Grid.BndSouthSplineInfo != NULL && i>= ICl && i<= ICu ) {
+		  Node = Grid.BndSouthSplineInfo[i].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceN(i,j);
 		}
