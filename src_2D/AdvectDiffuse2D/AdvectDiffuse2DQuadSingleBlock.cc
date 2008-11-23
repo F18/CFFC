@@ -2704,17 +2704,22 @@ void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk,
     } /* endfor */
   } /* endif */
 
-  /* Require update of the interior cells geometric properties. */
-  SolnBlk.Grid.Schedule_Interior_Mesh_Update();
+  // Update geometric information only if modifications occurred
+  if (Fix_North_Boundary || Fix_South_Boundary || 
+      Fix_East_Boundary || Fix_West_Boundary ){
 
-  /* Reset the boundary condition types at the block boundaries. */
-  Set_BCs(SolnBlk.Grid);
+    /* Require update of the interior cells geometric properties. */
+    SolnBlk.Grid.Schedule_Interior_Mesh_Update();
 
-  /* Recompute the exterior nodes for the block quadrilateral mesh. */
-  Update_Exterior_Nodes(SolnBlk.Grid);
+    /* Reset the boundary condition types at the block boundaries. */
+    Set_BCs(SolnBlk.Grid);
 
-  /* Recompute the cells for the block quadrilateral mesh. */
-  Update_Cells(SolnBlk.Grid);
+    /* Recompute the exterior nodes for the block quadrilateral mesh. */
+    Update_Exterior_Nodes(SolnBlk.Grid);
+
+    /* Recompute the cells for the block quadrilateral mesh. */
+    Update_Cells(SolnBlk.Grid);
+  }
 
 }
 
@@ -2730,6 +2735,7 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
 
   int i, j;
   double sp_l, sp_r, sp_m, ds_ratio, dl, dr;
+  bool ModifiedGrid(false);
  
   /* Return the nodes at the north boundary
      to their original positions. */
@@ -2752,6 +2758,7 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
       SolnBlk.U[i][SolnBlk.JCu] = (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A/
 				   SolnBlk.Grid.area(i, SolnBlk.JCu))*SolnBlk.U[i][SolnBlk.JCu];
     } /* endfor */
+    ModifiedGrid = true;
   } /* endif */
 
     /* Return the nodes at the south boundary
@@ -2775,6 +2782,7 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
       SolnBlk.U[i][SolnBlk.JCl] = (SolnBlk.Grid.Cell[i][SolnBlk.JCl].A/
 				   SolnBlk.Grid.area(i, SolnBlk.JCl))*SolnBlk.U[i][SolnBlk.JCl];
     } /* endfor */
+    ModifiedGrid = true;
   } /* endif */
 
     /* Return the nodes at the east boundary
@@ -2798,6 +2806,7 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
       SolnBlk.U[SolnBlk.ICu][j] = (SolnBlk.Grid.Cell[SolnBlk.ICu][j].A/
 				   SolnBlk.Grid.area(SolnBlk.ICu, j))*SolnBlk.U[SolnBlk.ICu][j];
     } /* endfor */
+    ModifiedGrid = true;
   } /* endif */
 
     /* Return the nodes at the west boundary
@@ -2821,19 +2830,23 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
       SolnBlk.U[SolnBlk.ICl][j] = (SolnBlk.Grid.Cell[SolnBlk.ICl][j].A/
 				   SolnBlk.Grid.area(SolnBlk.ICl, j))*SolnBlk.U[SolnBlk.ICl][j];
     } /* endfor */
+    ModifiedGrid = true;
   } /* endif */
 
-  /* Require update of the interior cells geometric properties. */
-  SolnBlk.Grid.Schedule_Interior_Mesh_Update();
+  if (ModifiedGrid){
 
-  /* Reset the boundary condition types at the block boundaries. */
-  Set_BCs(SolnBlk.Grid);
+    /* Require update of the interior cells geometric properties. */
+    SolnBlk.Grid.Schedule_Interior_Mesh_Update();
 
-  /* Recompute the exterior nodes for the block quadrilateral mesh. */
-  Update_Exterior_Nodes(SolnBlk.Grid);
+    /* Reset the boundary condition types at the block boundaries. */
+    Set_BCs(SolnBlk.Grid);
+    
+    /* Recompute the exterior nodes for the block quadrilateral mesh. */
+    Update_Exterior_Nodes(SolnBlk.Grid);
 
-  /* Recompute the cells for the block quadrilateral mesh. */
-  Update_Cells(SolnBlk.Grid);
+    /* Recompute the cells for the block quadrilateral mesh. */
+    Update_Cells(SolnBlk.Grid);
+  }
 
 }
 

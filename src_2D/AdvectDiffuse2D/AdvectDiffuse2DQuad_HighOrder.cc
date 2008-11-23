@@ -36,6 +36,7 @@ void AdvectDiffuse2D_Quad_Block::Output_Tecplot_HighOrder(const int &Number_of_T
     int i, j, nRow, nLoop;
     AdvectDiffuse2D_State U_node;
     Vector2D Node;
+    int Index_GQP(Spline2DInterval_HO::get_NumGQPoints_ContourIntegral()/2 + 1);
 
     if (NumberOfHighOrderVariables <= IndexHO){
       throw runtime_error("AdvectDiffuse2D_Quad_Block::Output_Tecplot_HighOrder() ERROR! High-order object index out of range!");
@@ -130,9 +131,9 @@ void AdvectDiffuse2D_Quad_Block::Output_Tecplot_HighOrder(const int &Number_of_T
 	      case 1:		// output NodeSW(i,j)
 		Node = Grid.nodeSW(i,j).X;
 		break;
-	      case 2:		// output xfaceS(i,j) or BndSouthSplineInfo[i].GQPointContourIntegral(2)
+	      case 2:		// output xfaceS(i,j) or BndSouthSplineInfo[i].GQPointContourIntegral(Index_GQP)
 		if(j == JCl && Grid.BndSouthSplineInfo != NULL){
-		  Node = Grid.BndSouthSplineInfo[i].GQPointContourIntegral(2);
+		  Node = Grid.BndSouthSplineInfo[i].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceS(i,j);
 		}
@@ -145,9 +146,9 @@ void AdvectDiffuse2D_Quad_Block::Output_Tecplot_HighOrder(const int &Number_of_T
 
 	    case 2: // output the 2nd row of nodes (i.e. xfaceW(i,j), Grid.CellCentroid(i,j), xfaceE(i,j))
 	      switch(nLoop){
-	      case 1:		// output xfaceW(i,j) or BndWestSplineInfo[j].GQPointContourIntegral(2)
+	      case 1:		// output xfaceW(i,j) or BndWestSplineInfo[j].GQPointContourIntegral(Index_GQP)
 		if (i == ICl && Grid.BndWestSplineInfo != NULL){
-		  Node = Grid.BndWestSplineInfo[j].GQPointContourIntegral(2);
+		  Node = Grid.BndWestSplineInfo[j].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceW(i,j);
 		}
@@ -155,9 +156,9 @@ void AdvectDiffuse2D_Quad_Block::Output_Tecplot_HighOrder(const int &Number_of_T
 	      case 2:		// output Grid.CellCentroid(i,j)
 		Node = Grid.CellCentroid(i,j);
 		break;
-	      case 3:		// output xfaceE(i,j) or BndEastSplineInfo[j].GQPointContourIntegral(2)
+	      case 3:		// output xfaceE(i,j) or BndEastSplineInfo[j].GQPointContourIntegral(Index_GQP)
 		if (i == ICu && Grid.BndEastSplineInfo != NULL){
-		  Node = Grid.BndEastSplineInfo[j].GQPointContourIntegral(2);
+		  Node = Grid.BndEastSplineInfo[j].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceE(i,j);
 		}
@@ -170,9 +171,9 @@ void AdvectDiffuse2D_Quad_Block::Output_Tecplot_HighOrder(const int &Number_of_T
 	      case 1:		// output NodeNW(i,j)
 		Node = Grid.nodeNW(i,j).X;
 		break;
-	      case 2:		// output xfaceN(i,j) or BndNorthSplineInfo[i].GQPointContourIntegral(2)
+	      case 2:		// output xfaceN(i,j) or BndNorthSplineInfo[i].GQPointContourIntegral(Index_GQP)
 		if(j == JCu && Grid.BndNorthSplineInfo != NULL){
-		  Node = Grid.BndNorthSplineInfo[i].GQPointContourIntegral(2);
+		  Node = Grid.BndNorthSplineInfo[i].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceN(i,j);
 		}
@@ -317,6 +318,7 @@ void AdvectDiffuse2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Numbe
     int i, j, nRow, nLoop;
     AdvectDiffuse2D_State U_node;
     Vector2D Node;
+    int Index_GQP(Spline2DInterval_HO::get_NumGQPoints_ContourIntegral()/2 + 1);
 
     if (NumberOfHighOrderVariables <= IndexHO){
       throw runtime_error("AdvectDiffuse2D_Quad_Block::Output_Nodes_Tecplot_HighOrder() ERROR! High-order object index out of range!");
@@ -411,10 +413,12 @@ void AdvectDiffuse2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Numbe
 	      case 1:		// output NodeSW(i,j)
 		Node = Grid.nodeSW(i,j).X;
 		break;
-	      case 2:		// output xfaceS(i,j) or BndSouthSplineInfo[i].GQPointContourIntegral(2)
+	      case 2:		// output xfaceS(i,j) or BndSouthSplineInfo[i].GQPointContourIntegral(Index_GQP)
 		if(j == JCl && Grid.BndSouthSplineInfo != NULL && i>= ICl && i<= ICu ){
-		  Node = Grid.BndSouthSplineInfo[i].GQPointContourIntegral(2);
-		} else {
+		  Node = Grid.BndSouthSplineInfo[i].GQPointContourIntegral(Index_GQP);
+		} else if (j == JCu+1 && Grid.BndNorthSplineInfo != NULL & i>= ICl && i<= ICu ){
+		  Node = Grid.BndNorthSplineInfo[i].GQPointContourIntegral(Index_GQP);
+		}else {
 		  Node = Grid.xfaceS(i,j);
 		}
 		break;
@@ -426,9 +430,11 @@ void AdvectDiffuse2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Numbe
 
 	    case 2: // output the 2nd row of nodes (i.e. xfaceW(i,j), Grid.CellCentroid(i,j), xfaceE(i,j))
 	      switch(nLoop){
-	      case 1:		// output xfaceW(i,j) or BndWestSplineInfo[j].GQPointContourIntegral(2)
+	      case 1:		// output xfaceW(i,j) or BndWestSplineInfo[j].GQPointContourIntegral(Index_GQP)
 		if (i == ICl && Grid.BndWestSplineInfo != NULL && j>=JCl && j<=JCu ){
-		  Node = Grid.BndWestSplineInfo[j].GQPointContourIntegral(2);
+		  Node = Grid.BndWestSplineInfo[j].GQPointContourIntegral(Index_GQP);
+		} else if (i == ICu+1 && Grid.BndEastSplineInfo != NULL && j>=JCl && j<=JCu) {
+		  Node = Grid.BndEastSplineInfo[j].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceW(i,j);
 		}
@@ -436,9 +442,11 @@ void AdvectDiffuse2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Numbe
 	      case 2:		// output Grid.CellCentroid(i,j)
 		Node = Grid.CellCentroid(i,j);
 		break;
-	      case 3:		// output xfaceE(i,j) or BndEastSplineInfo[j].GQPointContourIntegral(2)
+	      case 3:		// output xfaceE(i,j) or BndEastSplineInfo[j].GQPointContourIntegral(Index_GQP)
 		if (i == ICu && Grid.BndEastSplineInfo != NULL && j>=JCl && j<=JCu ){
-		  Node = Grid.BndEastSplineInfo[j].GQPointContourIntegral(2);
+		  Node = Grid.BndEastSplineInfo[j].GQPointContourIntegral(Index_GQP);
+		} else if (i == ICl-1 && Grid.BndWestSplineInfo != NULL && j>=JCl && j<=JCu ) { 
+		  Node = Grid.BndWestSplineInfo[j].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceE(i,j);
 		}
@@ -451,9 +459,11 @@ void AdvectDiffuse2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Numbe
 	      case 1:		// output NodeNW(i,j)
 		Node = Grid.nodeNW(i,j).X;
 		break;
-	      case 2:		// output xfaceN(i,j) or BndNorthSplineInfo[i].GQPointContourIntegral(2)
+	      case 2:		// output xfaceN(i,j) or BndNorthSplineInfo[i].GQPointContourIntegral(Index_GQP)
 		if(j == JCu && Grid.BndNorthSplineInfo != NULL && i>= ICl && i<= ICu ){
-		  Node = Grid.BndNorthSplineInfo[i].GQPointContourIntegral(2);
+		  Node = Grid.BndNorthSplineInfo[i].GQPointContourIntegral(Index_GQP);
+		} else if (j == JCl-1 && Grid.BndSouthSplineInfo != NULL && i>= ICl && i<= ICu ) {
+		  Node = Grid.BndSouthSplineInfo[i].GQPointContourIntegral(Index_GQP);
 		} else {
 		  Node = Grid.xfaceN(i,j);
 		}
