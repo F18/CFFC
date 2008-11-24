@@ -63,7 +63,10 @@ bool AdvectDiffuse2D_Input_Parameters::OutputBoundaryReferenceState(const int & 
 int AdvectDiffuse2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr){
 
   ostringstream msg;
-  int command_flag;
+  int command_flag, error_flag;
+
+  /* Assign initial value for error indicator flag. */
+  error_flag = 0;
 
   strcpy(Input_File_Name, Input_File_Name_ptr);
   Open_Input_File(*this);
@@ -106,26 +109,12 @@ int AdvectDiffuse2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr
     } /* endif */
   } /* endwhile */
 
-  // Perform update of the internal variables of the exact solution
-  ExactSoln->Set_ParticularSolution_Parameters();
+  /* Perform consistency checks and internal parameter setup */
+  doInternalSetupAndConsistencyChecks(error_flag);
 
-  // Perform update of the internal variables of the inflow field
-  Inflow->Set_InflowField_Parameters();
-
-  // Perform update of the internal variables of the high-order input parameters
-  HighOrder2D_Input::Set_Final_Parameters(*this);
-
-  // Set reference state in the AdvectDiffuse2D_Quad_Block class
-  AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(RefU);
-
-  // Set flag for including/excluding source term in the model equation
-  AdvectDiffuse2D_Quad_Block::Include_Source_Term = Include_Source_Term;
-
-  // Set flag for including/excluding advection term in the model equation
-  AdvectDiffuse2D_Quad_Block::Include_Advection_Term = Include_Advection_Term;
-
-  // Set flag for including/excluding diffusion term in the model equation
-  AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = Include_Diffusion_Term;
+  /* Initial processing of input control parameters complete.  
+     Return the error indicator flag. */
+  return (error_flag);
 
 }
 
@@ -178,6 +167,72 @@ void AdvectDiffuse2D_Input_Parameters::Get_Next_Input_Control_Parameter(void){
     }
 
   }//endwhile
+}
+
+/******************************************************//**
+ * Perform setup of internal and related external parameters.
+ * Do also check and validation of input parameters.
+ ********************************************************/
+void AdvectDiffuse2D_Input_Parameters::doInternalSetupAndConsistencyChecks(int & error_flag){
+
+  /* Perform consistency checks on Input_Parameters */
+  if (!error_flag &&
+      i_Time_Integration == TIME_STEPPING_MULTIGRID) {
+    error_flag = Check_Input_Parameters<AdvectDiffuse2D_Input_Parameters>(*this);
+    if (error_flag) {
+      cout << "\n AdvectDiffuse2D ERROR: Input Parameters consistency check failure\n";
+    }
+  }
+
+  // Perform consitency checks on the time marching parameters.
+  if (Time_Accurate == 1 && Local_Time_Stepping != GLOBAL_TIME_STEPPING){
+    Local_Time_Stepping = GLOBAL_TIME_STEPPING;
+  }
+
+  // Perform update of the internal variables of the exact solution
+  ExactSoln->Set_ParticularSolution_Parameters();
+
+  // Perform update of the internal variables of the inflow field
+  Inflow->Set_InflowField_Parameters();
+
+  // Perform update of the internal variables of the high-order input parameters
+  HighOrder2D_Input::Set_Final_Parameters(*this);
+
+  // Set reference states
+  // Uo state
+  Uo = AdvectDiffuse2D_State(ONE);
+  // U1 state
+  U1 = Uo;
+  U1.u = ZERO;
+  
+  // U2 state
+  U2 = Uo;
+  U2.u = -ONE;
+
+  // Enforce NO mesh stretching is required
+  if (!i_Mesh_Stretching){
+    // Mesh stretching is not ON
+    Mesh_Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
+    Mesh_Stretching_Type_Jdir = STRETCHING_FCN_LINEAR;
+    Mesh_Stretching_Factor_Idir = 1.0;
+    Mesh_Stretching_Factor_Jdir = 1.0;
+  }
+
+  // Set reference state in the AdvectDiffuse2D_Quad_Block class
+  AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(RefU);
+
+  // Set flag for including/excluding source term in the model equation
+  AdvectDiffuse2D_Quad_Block::Include_Source_Term = Include_Source_Term;
+
+  // Set flag for including/excluding advection term in the model equation
+  AdvectDiffuse2D_Quad_Block::Include_Advection_Term = Include_Advection_Term;
+  
+  // Set flag for including/excluding diffusion term in the model equation
+  AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = Include_Diffusion_Term;
+  
+  // Set limiter in CENO class
+  CENO_Execution_Mode::Limiter = i_Limiter;
+
 }
 
 /***************************************************************
@@ -3130,50 +3185,8 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
        } /* endif */
     } /* endwhile */
 
-    /* Perform consistency checks on Input_Parameters */
-
-    if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
-      error_flag = Check_Input_Parameters<AdvectDiffuse2D_Input_Parameters>(Input_Parameters);
-      if (error_flag) {
-	cout << "\n AdvectDiffuse2D ERROR: Input Parameters consistency check failure\n";
-	return (error_flag);
-      }
-    }
-
-    // Perform update of the internal variables of the exact solution
-    Input_Parameters.ExactSoln->Set_ParticularSolution_Parameters();
-
-    // Perform update of the internal variables of the inflow field
-    Input_Parameters.Inflow->Set_InflowField_Parameters();
-
-    // Perform update of the internal variables of the high-order input parameters
-    HighOrder2D_Input::Set_Final_Parameters(Input_Parameters);
-
-    // Set reference states
-    // Uo state
-    Input_Parameters.Uo = AdvectDiffuse2D_State(ONE);
-    // U1 state
-    Input_Parameters.U1 = Input_Parameters.Uo;
-    Input_Parameters.U1.u = ZERO;
-
-    // U2 state
-    Input_Parameters.U2 = Input_Parameters.Uo;
-    Input_Parameters.U2.u = -ONE;
-
-    // Set reference state in the AdvectDiffuse2D_Quad_Block class
-    AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(Input_Parameters.RefU);
-
-    // Set flag for including/excluding source term in the model equation
-    AdvectDiffuse2D_Quad_Block::Include_Source_Term = Input_Parameters.Include_Source_Term;
-
-    // Set flag for including/excluding advection term in the model equation
-    AdvectDiffuse2D_Quad_Block::Include_Advection_Term = Input_Parameters.Include_Advection_Term;
-    
-    // Set flag for including/excluding diffusion term in the model equation
-    AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = Input_Parameters.Include_Diffusion_Term;
-
-    // Set limiter in CENO class
-    CENO_Execution_Mode::Limiter = Input_Parameters.i_Limiter;
+    /* Perform consistency checks and internal parameter setup */
+    Input_Parameters.doInternalSetupAndConsistencyChecks(error_flag);
 
     /* Initial processing of input control parameters complete.  
        Return the error indicator flag. */

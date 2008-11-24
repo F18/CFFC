@@ -186,6 +186,15 @@ void Euler2D_Input_Parameters::doInternalSetupAndConsistencyChecks(int & error_f
   Wo.Mr_min = Mr_Min_Factor*Mach_Number;
   Uo.Mr_min = Mr_Min_Factor*Mach_Number;
   
+  // Enforce NO mesh stretching is required
+  if (!i_Mesh_Stretching){
+    // Mesh stretching is not ON
+    Mesh_Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
+    Mesh_Stretching_Type_Jdir = STRETCHING_FCN_LINEAR;
+    Mesh_Stretching_Factor_Idir = 1.0;
+    Mesh_Stretching_Factor_Jdir = 1.0;
+  }
+
   // Perform update of the internal variables of the exact solution
   ExactSoln->Set_ParticularSolution_Parameters(*this);
 

@@ -1339,7 +1339,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
     Grid_Flat_Plate_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
 				   Input_Parameters.Number_of_Blocks_Jdir,
 				   Input_Parameters.Plate_Length,
-				   BC_DIRICHLET,
+				   Input_Parameters.BC_South,
 				   Input_Parameters.i_Mesh_Stretching,
 				   Input_Parameters.Mesh_Stretching_Factor_Idir,
 				   Input_Parameters.Mesh_Stretching_Factor_Jdir,
@@ -1398,7 +1398,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 						Input_Parameters.Chamber_Radius,
 						Input_Parameters.Nozzle_Length,
 						Input_Parameters.Nozzle_Radius_Exit,
-						BC_REFLECTION,
+						Input_Parameters.BC_North,
 						Input_Parameters.i_Mesh_Stretching,
 						Input_Parameters.Mesh_Stretching_Type_Jdir,
 						Input_Parameters.Mesh_Stretching_Factor_Idir,
@@ -1408,35 +1408,37 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 						Input_Parameters.Number_of_Ghost_Cells,
 						HighOrder2D_Input::MaximumReconstructionOrder());
     break;
+  case GRID_NOZZLE :
+    Grid_Nozzle_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+			       Input_Parameters.Number_of_Blocks_Jdir,
+			       Input_Parameters.Nozzle_Length,
+			       Input_Parameters.Chamber_Radius,
+			       Input_Parameters.Nozzle_Radius_Exit,
+			       Input_Parameters.Nozzle_Radius_Throat,
+			       Input_Parameters.Nozzle_Type,
+			       Input_Parameters.i_Mesh_Stretching,
+			       Input_Parameters.Mesh_Stretching_Type_Idir,
+			       Input_Parameters.Mesh_Stretching_Type_Jdir,
+			       Input_Parameters.Mesh_Stretching_Factor_Idir,
+			       Input_Parameters.Mesh_Stretching_Factor_Jdir,
+			       Input_Parameters.Number_of_Cells_Idir,
+			       Input_Parameters.Number_of_Cells_Jdir,
+			       Input_Parameters.Number_of_Ghost_Cells,
+			       HighOrder2D_Input::MaximumReconstructionOrder());
+    break;
   case GRID_CIRCULAR_CYLINDER :
-    if (!Input_Parameters.i_Mesh_Stretching) {
-      // No mesh stretching
-      Grid_Circular_Cylinder_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
-					    Input_Parameters.Number_of_Blocks_Jdir,
-					    Input_Parameters.Cylinder_Radius,
-					    Input_Parameters.Cylinder_Radius2,
-					    STRETCHING_FCN_LINEAR,
-					    STRETCHING_FCN_LINEAR,
-					    1.0,
-					    1.0,
-					    Input_Parameters.Number_of_Cells_Idir,
-					    Input_Parameters.Number_of_Cells_Jdir,
-					    Input_Parameters.Number_of_Ghost_Cells,
-					    HighOrder2D_Input::MaximumReconstructionOrder());
-    } else {
-      Grid_Circular_Cylinder_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
-					    Input_Parameters.Number_of_Blocks_Jdir,
-					    Input_Parameters.Cylinder_Radius,
-					    Input_Parameters.Cylinder_Radius2,
-					    Input_Parameters.Mesh_Stretching_Type_Idir,
-					    Input_Parameters.Mesh_Stretching_Type_Jdir,
-					    Input_Parameters.Mesh_Stretching_Factor_Idir,
-					    Input_Parameters.Mesh_Stretching_Factor_Jdir,
-					    Input_Parameters.Number_of_Cells_Idir,
-					    Input_Parameters.Number_of_Cells_Jdir,
-					    Input_Parameters.Number_of_Ghost_Cells,
-					    HighOrder2D_Input::MaximumReconstructionOrder());
-    }
+    Grid_Circular_Cylinder_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					  Input_Parameters.Number_of_Blocks_Jdir,
+					  Input_Parameters.Cylinder_Radius,
+					  Input_Parameters.Cylinder_Radius2,
+					  Input_Parameters.Mesh_Stretching_Type_Idir,
+					  Input_Parameters.Mesh_Stretching_Type_Jdir,
+					  Input_Parameters.Mesh_Stretching_Factor_Idir,
+					  Input_Parameters.Mesh_Stretching_Factor_Jdir,
+					  Input_Parameters.Number_of_Cells_Idir,
+					  Input_Parameters.Number_of_Cells_Jdir,
+					  Input_Parameters.Number_of_Ghost_Cells,
+					  HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_ANNULUS :
     Grid_Annulus_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
