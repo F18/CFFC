@@ -350,6 +350,9 @@ class NavierStokes2D_pState {
     rho = dens; v.x = vx; v.y = vy; p = pre; k = kk; omega = omga; ke = kee; ee = epsi_e;
   }
 
+  //! Value Constructor
+  explicit NavierStokes2D_pState(const double &Val);
+
   //! Destructor.
   ~NavierStokes2D_pState(void) { }
   //@}
@@ -1127,6 +1130,9 @@ class NavierStokes2D_cState {
     rho = dens; dv.x = dvx; dv.y = dvy; E = Etot; dk = dkdk; domega = domga; dke = dkedke; dee = deedee;
   }
 
+  //! Value Constructor
+  explicit NavierStokes2D_cState(const double &Val);
+
   //! Destructor.
   ~NavierStokes2D_cState(void) { }
   //@}
@@ -1511,6 +1517,14 @@ class NavierStokes2D_cState {
   //@}
 
 };
+
+/********************************************
+ * NavierStokes2D_pState Value Constructor. *
+ *******************************************/
+inline NavierStokes2D_pState::NavierStokes2D_pState(const double &Val):
+  rho(Val), v(Val), p(Val), k(Val), omega(Val), ke(Val), ee(Val) {
+  // Nothing
+}
 
 /**********************************************************************
  * NavierStokes2D_pState::Copy -- Copy operator.                      *
@@ -2325,6 +2339,14 @@ inline istream &operator >> (istream &in_file, NavierStokes2D_pState &W) {
   in_file >> W.rho >> W.v.x >> W.v.y >> W.p >> W.k >> W.omega >> W.ke >> W.ee;
   in_file.unsetf(ios::skipws);
   return in_file;
+}
+
+/********************************************
+ * NavierStokes2D_cState Value Constructor. *
+ *******************************************/
+inline NavierStokes2D_cState::NavierStokes2D_cState(const double &Val):
+  rho(Val), dv(Val), E(Val), dk(Val), domega(Val), dke(Val), dee(Val) {
+    // Nothing
 }
 
 /**********************************************************************

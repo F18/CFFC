@@ -65,7 +65,7 @@ NavierStokes2D_Quad_Block* Deallocate(NavierStokes2D_Quad_Block *Soln_ptr,
  * added to facilitate grid management.                               *
  *                                                                    *
  **********************************************************************/
-NavierStokes2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block **InitMeshBlk,
+NavierStokes2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block_HO **InitMeshBlk,
 						       NavierStokes2D_Quad_Block *Soln_ptr,
 						       NavierStokes2D_Input_Parameters &Input_Parameters,
 						       QuadTreeBlock_DataStructure &QuadTree,

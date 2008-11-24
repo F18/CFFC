@@ -6,58 +6,29 @@
 #ifndef _NAVIERSTOKES2D_INPUT_INCLUDED
 #define _NAVIERSTOKES2D_INPUT_INCLUDED
 
-// Include 2D NavierStokes state header file.
+/* Include required C++ libraries. */
+// None
 
-#ifndef _NAVIERSTOKES2D_STATE_INCLUDED
-#include "NavierStokes2DState.h"
-#endif // _NAVIERSTOKES2D_STATE_INCLUDED
+/* Using std namespace functions */
+// None
 
-// Include the math header file.
-
-#ifndef _MATH_MACROS_INCLUDED
-#include "../Math/Math.h"
-#endif // _MATH_MACROS_INCLUDED
-
-// Include the 2D cell header file.
-
-#ifndef _CELL2D_INCLUDED
-#include "../Grid/Cell2D.h"
-#endif // _CELL2D_INCLUDED
-
-// Include the 2D quadrilateral multiblock grid header file.
-
-#ifndef _GRID2D_QUAD_BLOCK_INCLUDED
-#include "../Grid/Grid2DQuad.h"
-#endif // _GRID2D_QUAD_BLOCK_INCLUDED
-
-// Include NASA rotor 37 and 67 header files.
-
-#ifndef _NASA_ROTOR37_INCLUDED
-#include "../Grid/NASARotor37.h"
-#endif // _NASA_ROTOR37_INCLUDED
-
-#ifndef _NASA_ROTOR67_INCLUDED
-#include "../Grid/NASARotor67.h"
-#endif // _NASA_ROTOR67_INCLUDED
-
-// Include ICEMCFD input header file.
-
-#ifndef _ICEMCFD_INCLUDED
-#include "../ICEM/ICEMCFD.h"
-#endif // _ICEMCFD_INCLUDED
-
-// Include multigrid input header file.
-
-#ifndef _FASMULTIGRID2DINPUT_INCLUDED
-#include "../FASMultigrid2D/FASMultigrid2DInput.h"
-#endif // _FASMULTIGRID2DINPUT_INCLUDED
-
-// Include embedded boundary input header file.
-
-#ifndef _EMBEDDEDBOUNDARIES2DINPUT_INCLUDED
-#include "../Interface2D/EmbeddedBoundaries2D_Input.h"
-#endif // _EMBEDDEDBOUNDARIES2DINPUT_INCLUDED
-#include "../NewtonKrylovSchwarz2D/NKSInput2D.h"
+/* Include CFFC header files */
+#include "NavierStokes2DState.h"   // Include 2D NavierStokes state header file.
+#include "../Math/Math.h"          // Include the math header file.
+#include "../Grid/Cell2D.h"        // Include the 2D cell header file.
+#include "../Grid/Grid2DQuad.h"    // Include the 2D quadrilateral multiblock grid header file.
+#include "../Grid/NASARotor37.h"   // Include NASA rotor 37 header file
+#include "../Grid/NASARotor67.h"   // Include NASA rotor 67 header file
+#include "../ICEM/ICEMCFD.h"       // Include ICEMCFD input header file.
+#include "../FASMultigrid2D/FASMultigrid2DInput.h"  // Include multigrid input header file.
+#include "../Interface2D/EmbeddedBoundaries2D_Input.h"  // Include embedded boundary input header file.
+#include "../NewtonKrylovSchwarz2D/NKSInput2D.h"   /* Include file for NKS */
+#include "../HighOrderReconstruction/HighOrder2D_Input.h" /* Include file for high-order */
+#include "NavierStokes2DExactSolutions.h" /* Include 2D Navier-Stokes exact solutions header file */
+#include "../HighOrderReconstruction/CENO_ExecutionMode.h" // Include high-order CENO execution mode header file
+#include "../HighOrderReconstruction/CENO_Tolerances.h"	   // Include high-order CENO tolerances header file
+#include "../HighOrderReconstruction/AccuracyAssessment_ExecutionMode.h" /* Include accuracy assessment framework 
+									    execution mode header file */
 
 // Define the structures and classes.
 
@@ -114,6 +85,9 @@ public:
   //@{ @name Reconstruction type indicator and related input parameters:
   char Reconstruction_Type[INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D];
   int i_Reconstruction;
+  int i_ReconstructionMethod;	/*!< Index to store the reconstruction method. */
+  int Space_Accuracy;		/*!< Parameter to show the order of accuracy in space. */
+  int IncludeHighOrderBoundariesRepresentation;	/*!< Flag for including or excluding high-order BCs. */
   //@}
 
   //@{ @name Limiter type indicator and related input parameters:
@@ -141,6 +115,10 @@ public:
   double Pressure, Temperature, Mach_Number, Mach_Number2, Flow_Angle, Reynolds_Number, dp, Re_lid;
   Vector2D Wave_Position;
   double Wave_Width;
+  NavierStokes2D_ExactSolutions *ExactSoln; /*!< Pointer to the exact solution */
+  NavierStokes2D_pState RefW;		     /*!< Reference state, used by CENO to normalize the
+					          variables in the computation of the smoothness indicator. */
+  unsigned int Exact_Integration_Digits;    //!< Number of exact digits with which the some integrations are carried out
   //@}
 
   //@{ @name Propellant parameters:
@@ -195,15 +173,19 @@ public:
          Blunt_Body_Radius, Blunt_Body_Mach_Number,
          Chamber_Length, Chamber_Radius, Chamber_To_Throat_Length,
          Nozzle_Length, Nozzle_Radius_Exit, Nozzle_Radius_Throat, Grain_Radius,
-         Cylinder_Radius, Ellipse_Length_X_Axis, 
+         Cylinder_Radius, Cylinder_Radius2, Ellipse_Length_X_Axis, 
          Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
          Inner_Streamline_Number, Outer_Streamline_Number, Isotach_Line,
          Wedge_Angle, Wedge_Length,
-         Step_Height, Top_Wall_Deflection;
+         Step_Height, Top_Wall_Deflection, Annulus_Theta_Start, Annulus_Theta_End;
   int Smooth_Bump, Nozzle_Type;
+  Vector2D VertexSW, VertexSE, VertexNE, VertexNW;
   double X_Scale, X_Rotate;
   Vector2D X_Shift;
   char **ICEMCFD_FileNames;
+  int IterationsOfInteriorNodesDisturbances; /*<! Number of iterations run to move (disturb) the interior nodes.
+						 (create an unsmooth interior mesh). */
+  int Num_Of_Spline_Control_Points;  /*<! Number of points used to define the spline curve. */
   //@}
 
   //@{ @name Mesh stretching factor.
@@ -306,14 +288,59 @@ public:
   int Restart_Solution_Save_Frequency;
   //! Output progress frequency:
   int Output_Progress_Frequency;
+  //! Batch mode or verbose
+  short verbose_flag;
   //@}
 
   //@{ @name Multi-block solution-adaption and parallel domain decomposition input parameters:
   int Number_of_Processors, Number_of_Blocks_Per_Processor;
   //@}
 
+  //! @name Default Constructor
+  //@{
+  NavierStokes2D_Input_Parameters(void);
+  //@}
+
+  //! @name Destructor
+  //@{
+  ~NavierStokes2D_Input_Parameters(void);
+  //@}
+
   //@{ @name Obtain the CFFC root directory path:
   void get_cffc_path();
+  //@}
+
+  //! Output the name of the solver which this input parameters belong to.
+  std::string Solver_Name(void){
+    return "NavierStokes2D";
+  }
+
+  //! @name Reconstruction related member functions:
+  //@{
+  /*! Return order of reconstruction based on Space_Accuracy.
+    To obtain a certain space accuracy the piecewise polynomial reconstruction
+    must be one order lower than the space accuracy if inviscid flow otherwise it must be the same order of accuracy. */
+  int ReconstructionOrder(void) { return (FlowType == FLOWTYPE_INVISCID) ? (Space_Accuracy-1) : Space_Accuracy; }
+  int & Limiter(void) {return i_Limiter;}                    //!< write/read selected limiter
+  const int & Limiter(void) const {return i_Limiter;}        //!< return selected limiter (read only)
+  //@}
+
+  //! @name Access fields:
+  //@{
+  short & Verbose(void) {return verbose_flag;}
+  const short & Verbose(void) const {return verbose_flag;}
+  void Verbose(const int & batch_flag){ (batch_flag != 0) ? verbose_flag=OFF: verbose_flag=ON; }
+  // bool OutputBoundaryReferenceState(const int & BCtype) const;
+  //@}
+
+  //! @name Operating functions:
+  //@{
+  int Parse_Input_File(char *Input_File_Name_ptr); //!< \brief Parse input file
+  void Get_Next_Input_Control_Parameter(void);    //!< \brief Read the next input control parameter
+  void doInternalSetupAndConsistencyChecks(int & error_flag); //!< \brief Perform setup and check of different parameters
+  double ReferenceEntropy(void) const { return Wo.s(); } //!< Reference entropy at any given location
+  double FreeStreamVelocity(void) const { return abs(Wo.v); } //!< Return the magnitude of the free stream velocity
+  double FreeStreamDensity(void) const {return Wo[1]; }  //!< Return the density in the free stream
   //@}
 
   //@{ @name Input-output operators:
@@ -322,6 +349,30 @@ public:
   //@}
 
 };
+
+/**********************************************************************
+ * NavierStokes2D_Input_Parameters::NavierStokes2D_Input_Parameters() *
+ * -->  Default Constructor                                           *
+ *********************************************************************/
+inline NavierStokes2D_Input_Parameters::NavierStokes2D_Input_Parameters(void): verbose_flag(OFF){
+  ICEMCFD_FileNames = NULL;
+
+  // Get access to the NavierStokes2D_ExactSolutions object
+  ExactSoln = &NavierStokes2D_ExactSolutions::getInstance();
+}
+
+/***********************************************************************
+ * NavierStokes2D_Input_Parameters::~NavierStokes2D_Input_Parameters() *
+ * -->  Default Destructor                                             *
+ **********************************************************************/
+inline NavierStokes2D_Input_Parameters::~NavierStokes2D_Input_Parameters(void){
+  if (ICEMCFD_FileNames != NULL){
+    for (int i = 0 ; i < 3 ; ++i){
+      delete [] ICEMCFD_FileNames[i]; ICEMCFD_FileNames[i] = NULL;
+    }
+    delete [] ICEMCFD_FileNames; ICEMCFD_FileNames = NULL;
+  }
+}
 
 /*************************************************************
  * NavierStokes2D_Input_Parameters::get_cffc_path -- Get CFFC path. *

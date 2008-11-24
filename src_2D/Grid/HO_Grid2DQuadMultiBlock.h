@@ -3000,7 +3000,7 @@ void Grid2D_Quad_MultiBlock_HO::Read_Multi_Block_Grid_Definition_Using_IP(Input_
 template<typename Input_Parameters_Type>
 int Grid2D_Quad_MultiBlock_HO::Write_Multi_Block_Grid_Using_IP(const Input_Parameters_Type &Input_Parameters){
 
-  char *mesh_file_name_ptr;
+  const char *mesh_file_name_ptr;
   ofstream mesh_file;
 
   /* Open the grid data output file. */

@@ -1,13 +1,185 @@
-/**********************************************************************
- * NavierStokes2DInput.cc: Subroutines for the 2D Navier-Stokes input *
- *                         class.                                     *
- **********************************************************************/
+/*!\file NavierStokes2DInput.cc
+  \brief Subroutines for the 2D Navier-Stokes Input Class. */
 
-// Include 2D NavierStokes input parameter header file.
+/* Include required C++ libraries. */
+// None
 
-#ifndef _NAVIERSTOKES2D_INPUT_INCLUDED
-#include "NavierStokes2DInput.h"
-#endif // _NAVIERSTOKES2D_INPUT_INCLUDED
+/* Using std namespace functions */
+// None
+
+/* Include CFFC header files */
+#include "NavierStokes2DInput.h"   // Include 2D NavierStokes input parameter header file.
+#include "NavierStokes2DQuad.h"    /* Include NavierStokes2D_Quad_Block header file. */
+#include "../Grid/HO_Grid2DQuad_ExecutionMode.h" // Include high-order 2D grid execution mode header file
+#include "../Grid/Tecplot_ExecutionMode.h" // Include Tecplot execution mode header file
+
+/*********************************************************
+ * NavierStokes2D_Input_Parameters -- Member functions.  *
+ ********************************************************/
+
+/******************************************************//**
+ * Parse the input file
+ ********************************************************/
+int NavierStokes2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr){
+
+  ostringstream msg;
+  int command_flag, error_flag;
+
+  /* Assign initial value for error indicator flag. */
+  error_flag = 0;
+
+  strcpy(Input_File_Name, Input_File_Name_ptr);
+  Open_Input_File(*this);
+  if (Input_File.fail()) {
+    msg << "NavierStokes2D_Input_Parameters::Parse_Input_File() ERROR: Unable to open "
+	<<string(Input_File_Name_ptr) 
+	<< " input data file.";
+    if (Verbose()) {
+      cerr << msg.str() << endl;
+    }
+    throw runtime_error(msg.str());
+  } /* endif */
+
+  if (Verbose()) {
+    cout << "\n Reading input data file `"
+	 << Input_File_Name << "'." << endl;
+    cout.flush();
+  }
+  while (1) {
+    Get_Next_Input_Control_Parameter();
+    command_flag = Parse_Next_Input_Control_Parameter(*this);
+    if (command_flag == EXECUTE_CODE) {
+      break;
+      
+    } else if (command_flag == TERMINATE_CODE) {
+      break;
+      
+    } else if (command_flag == INVALID_INPUT_CODE ||
+	       command_flag == INVALID_INPUT_VALUE) {
+      Line_Number = -Line_Number;
+      
+      msg << "NavierStokes2D_Input_Parameters::Parse_Input_File() ERROR: Error reading data at line # " 
+	  << -Line_Number
+	  << " of input data file.";
+      if (Verbose()){
+	cerr << msg.str() << endl;
+      }
+      
+      throw runtime_error(msg.str());
+    } /* endif */
+  } /* endwhile */
+
+  /* Perform consistency checks and internal parameter setup */
+  doInternalSetupAndConsistencyChecks(error_flag);
+
+  /* Initial processing of input control parameters complete.  
+     Return the error indicator flag. */
+  return (error_flag);
+
+}
+
+/******************************************************//**
+ * Get the next input control parameter from the input file.                                                
+ ********************************************************/
+void NavierStokes2D_Input_Parameters::Get_Next_Input_Control_Parameter(void){
+
+  int i, index, LineSize, IndexFirstChar(0);
+  char buffer[256], ControlParameter[256];
+
+  // Initialize ControlParameter and Next_Control_Parameter to end of string
+  ControlParameter[0] = '\0';
+  strcpy(Next_Control_Parameter, ControlParameter);
+
+  // While the input stream is 'good' for reading and the end of file is not attained
+  while ( Input_File.good() && !Input_File.getline(buffer, sizeof(buffer)).eof() ){
+
+    // Process the line 
+    Line_Number = Line_Number + 1;
+    LineSize = Input_File.gcount(); // Get the size of the line. Last character is "\0"!
+
+    // Determine the index of the first character different than 'space' and 'tab'
+    for (i=0; i<LineSize; ++i){
+      if (buffer[i] != ' ' && buffer[i] != '\t'){
+	IndexFirstChar = i;
+	break;
+      }
+    }
+
+    /* Parse the line if the first character different than 'space' 
+       is also different than '#' or end of string ('\0').
+       Otherwise skip the line because it is either a comment or an empty line. */
+    if ( buffer[IndexFirstChar] != '#' && buffer[IndexFirstChar] != '\0'){
+
+      // Get the ControlParameter
+      for(i=IndexFirstChar, index=0;  i<LineSize;  ++i, ++index){
+	if (buffer[i] == ' ' || buffer[i] == '=' || buffer[i] == '\t'){
+	  ControlParameter[index] = '\0';
+	  break;
+	} else {
+	  ControlParameter[index] = buffer[i];
+	}
+      }
+
+      // Set the Next_Control_Parameter
+      strcpy(Next_Control_Parameter, ControlParameter);
+      break;
+    }
+
+  }//endwhile
+}
+
+/******************************************************//**
+ * Perform setup of internal and related external parameters.
+ * Do also check and validation of input parameters.
+ ********************************************************/
+void NavierStokes2D_Input_Parameters::doInternalSetupAndConsistencyChecks(int & error_flag){
+
+  /* Perform consistency checks on input parameters for multigrid */
+  if (!error_flag &&
+      i_Time_Integration == TIME_STEPPING_MULTIGRID) {
+    error_flag = Check_Input_Parameters<NavierStokes2D_Input_Parameters>(*this);
+    if (error_flag) {
+      cout << "\n NavierStokes2D ERROR: Input Parameters consistency check failure\n";
+    }
+  }
+
+  // Perform consitency checks on the refinement criteria.
+  Number_of_Refinement_Criteria = 0;
+  if (Refinement_Criteria_Gradient_Density) Number_of_Refinement_Criteria++;
+  if (Refinement_Criteria_Divergence_Velocity) Number_of_Refinement_Criteria++;
+  if (Refinement_Criteria_Curl_Velocity) Number_of_Refinement_Criteria++;
+  if (Refinement_Criteria_Gradient_Turbulence_Kinetic_Energy) Number_of_Refinement_Criteria++;
+  if (Number_of_Refinement_Criteria < 1 || Number_of_Refinement_Criteria > 4){
+    error_flag = 1011;
+  }
+
+  // Perform consitency checks on the time marching parameters.
+  if (Time_Accurate == 1 && Local_Time_Stepping != GLOBAL_TIME_STEPPING){
+    Local_Time_Stepping = GLOBAL_TIME_STEPPING;
+  }
+
+  // Enforce NO mesh stretching is required
+  if (!i_Mesh_Stretching){
+    // Mesh stretching is not ON
+    Mesh_Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
+    Mesh_Stretching_Type_Jdir = STRETCHING_FCN_LINEAR;
+    Mesh_Stretching_Factor_Idir = 1.0;
+    Mesh_Stretching_Factor_Jdir = 1.0;
+  }
+
+  // Perform update of the internal variables of the exact solution
+  ExactSoln->Set_ParticularSolution_Parameters(*this);
+
+  // Perform update of the internal variables of the high-order input parameters
+  HighOrder2D_Input::Set_Final_Parameters(*this);
+
+  // Set reference state in the NavierStokes2D_Quad_Block class
+  NavierStokes2D_Quad_Block::Set_Normalization_Reference_State(RefW);
+  
+  // Set limiter in CENO class
+  CENO_Execution_Mode::Limiter = i_Limiter;
+
+}
 
 /**********************************************************************
  * NavierStokes2D_Input_Parameters -- External subroutines.           *
@@ -222,9 +394,19 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.Step_Height = 0.0127;
   IP.Top_Wall_Deflection = ZERO;
   IP.Smooth_Bump = OFF;
+
+  IP.VertexSW = Vector2D(-0.5,-0.5);
+  IP.VertexSE = Vector2D( 0.5,-0.5);
+  IP.VertexNE = Vector2D( 0.5, 0.5);
+  IP.VertexNW = Vector2D(-0.5, 0.5);
+
   IP.X_Shift = Vector2D_ZERO;
   IP.X_Scale = ONE;
   IP.X_Rotate = ZERO;
+
+  IP.IterationsOfInteriorNodesDisturbances = 0;     /* Number of iterations of disturbing the mesh 
+						       (create an unsmooth interior mesh) */
+  IP.Num_Of_Spline_Control_Points = 361; /* Number of control points on the 2D spline (used for some grids) */
 
   // Boundary conditions:
   string_ptr = "OFF";

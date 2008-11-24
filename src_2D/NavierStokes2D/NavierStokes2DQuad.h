@@ -1,64 +1,32 @@
-/**********************************************************************
- * NavierStokes2DQuad.h: Header file defining 2D Navier-Stokes        *
- *                       quadrilateral mesh solution classes.         *
- **********************************************************************/
+/*! NavierStokes2DQuad.h: Header file defining 2D Navier-Stokes
+                          quadrilateral mesh solution classes. */
 
 #ifndef _NAVIERSTOKES2D_QUAD_INCLUDED
 #define _NAVIERSTOKES2D_QUAD_INCLUDED
 
-// Include 2D Navier-Stokes state header file.
+/* Include required C++ libraries. */
+// None
 
-#ifndef _NAVIERSTOKES2D_STATE_INCLUDED
-#include "NavierStokes2DState.h"
-#endif // _NAVIERSTOKES2D_STATE_INCLUDED
+/* Using std namespace functions */
+// None
 
-// Include 2D Navier-Stokes input header file.
-
-#ifndef _NAVIERSTOKES2D_INPUT_INCLUDED
-#include "NavierStokes2DInput.h"
-#endif // _NAVIERSTOKES2D_INPUT_INCLUDED
-
-// Include the 2D cell header file.
-
-#ifndef _CELL2D_INCLUDED
-#include "../Grid/Cell2D.h"
-#endif // _CELL2D_INCLUDED
-
-// Include the 2D quadrilateral multiblock grid header file.
-
-#ifndef _GRID2D_QUAD_BLOCK_INCLUDED
-#include "../Grid/Grid2DQuad.h"
-#endif // _GRID2D_QUAD_BLOCK_INCLUDED
-
-// Include the quadtree header file.
-
-#ifndef _QUADTREE_INCLUDED
-#include "../AMR/QuadTree.h"
-#endif // _QUADTREE_INCLUDED
-
-// Include the AMR header file.
-
-#ifndef _AMR_INCLUDED
-#include "../AMR/AMR.h"
-#endif // _AMR_INCLUDED
-
-// Include the linear systems header file.
-
-#ifndef _LINEARSYSTEMS_INCLUDED
-#include "../Math/LinearSystems.h"
-#endif // _LINEARSYSTEMS_INCLUDED
-
-// Include ICEMCFD input header file.
-
-#ifndef _ICEMCFD_INCLUDED
-#include "../ICEM/ICEMCFD.h"
-#endif // _ICEMCFD_INCLUDED
-
-// Include the turbulent wall data header file.
-
-#ifndef _TURBULENT2D_WALLDATA_INCLUDED
-#include "../Turbulent2D/Turbulent2DWallData.h"
-#endif // _TURBULENT2D_WALLDATA_INCLUDED
+/* Include CFFC header files */
+#include "NavierStokes2DState.h"     // Include 2D Navier-Stokes state header file.
+#include "NavierStokes2DInput.h"     // Include 2D Navier-Stokes input header file.
+#include "../Grid/Cell2D.h"          // Include the 2D cell header file.
+#include "../Grid/Grid2DQuad.h"      // Include the 2D quadrilateral multiblock grid header file.
+#include "../Grid/HO_Grid2DQuad.h"   /* Include 2D quadrilateral block grid header file */
+#include "../AMR/QuadTree.h"         // Include the quadtree header file.
+#include "../AMR/AMR.h"              // Include the AMR header file.
+#include "../Math/LinearSystems.h"   // Include the linear systems header file.
+#include "../ICEM/ICEMCFD.h"         // Include ICEMCFD input header file.
+#include "../Turbulent2D/Turbulent2DWallData.h" // Include the turbulent wall data header file.
+#include "../System/System_Linux.h"    /* Include System Linux header file. */
+#include "../HighOrderReconstruction/AccuracyAssessment2D.h" /* Include 2D accuracy assessment header file. */
+#include "../HighOrderReconstruction/HighOrder2D.h" /* Include 2D high-order template class header file. */
+#include "NavierStokes2D_Cauchy_BCs.h"      /* Include 2D high-order boundary conditions header file,
+					       including NavierStokes2D specializations. */
+#include "NavierStokes2DExactSolutions.h"   /* Include 2D Navier-Stokes exact solutions header file */
 
 // Define the structures and classes.
 
@@ -190,8 +158,19 @@
  * \endverbatim
  */
 class NavierStokes2D_Quad_Block{
-private:
 public:
+
+  //! @name Defined public types:
+  //@{
+  typedef NavierStokes2D_ExactSolutions Exact_Solution_Type;
+  typedef AccuracyAssessment2D<NavierStokes2D_Quad_Block> Accuracy_Assessment_Type;
+  typedef NavierStokes2D_pState Soln_State;
+  // typedef HighOrder2D<Soln_State> HighOrderType; //!< high-order variable data type. Use primitive variables for reconstruction.
+  typedef Cauchy_BCs<Soln_State> BC_Type;
+  typedef std::vector<double> DoubleArrayType;
+  typedef Grid2D_Quad_Block_HO GridType;
+  //@}
+
   //@{ @name Solution state arrays:
   NavierStokes2D_pState     **W; //!< Primitive solution state.
   NavierStokes2D_cState     **U; //!< Conserved solution state.
@@ -205,7 +184,7 @@ public:
                             JCl, //!< First j-direction non-ghost cell counter.
                             JCu; //!< Final j-direction non-ghost cell counter.
   int                    Nghost; //!< Number of ghost cells.
-  Grid2D_Quad_Block        Grid; //!< 2D quadrilateral grid geometry.
+  GridType                 Grid; //!< 2D quadrilateral grid geometry.
   //@}
 
   //@{ @name Residual and time-stepping arrays:
@@ -256,6 +235,10 @@ public:
                            *WoS, //!< Boundary condition reference states for south boundary.
                            *WoE, //!< Boundary condition reference states for east boundary.
                            *WoW; //!< Boundary condition reference states for west boundary.
+  //! Reference values for north and south boundary conditon reference states
+  NavierStokes2D_pState Ref_State_BC_North, Ref_State_BC_South; 
+  //! Reference values for east and west boundary conditon reference states
+  NavierStokes2D_pState Ref_State_BC_East, Ref_State_BC_West;
   //@}
 
   //@{ @name Turbulence wall data arrays:
@@ -267,74 +250,20 @@ public:
   double                  Twall; //!< Specified wall temperature.
   //@}
 
-  //@{ @name Creation, copy, and assignment constructors.
-  //! Creation constructor.
-  NavierStokes2D_Quad_Block(void) {
-    // Problem flags:
-    Axisymmetric   = OFF;
-    Compressibility_Effect = OFF;
-    Transition_Model = OFF;
-    Flow_Type      = FLOWTYPE_INVISCID;
-    Freeze_Limiter = OFF;
-    Variable_Prandtl = OFF;
-    Vwall = Vector2D_ZERO;
-    Twall = ZERO;
-    // Grid size and variables:
-    NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
-    // Solution variables:
-    W = NULL; U = NULL;
-    dt = NULL; dUdt = NULL; Uo = NULL;
-    dWdx = NULL; dWdy = NULL; phi = NULL;
-    d_dWdx_dW = NULL; d_dWdy_dW = NULL;
-    face_grad_arrays_allocated = false;
-    dWdx_faceN = NULL; dWdy_faceN = NULL;
-    dWdx_faceE = NULL; dWdy_faceE = NULL;
-    FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
-    WoN = NULL; WoS = NULL; WoE = NULL; WoW = NULL;
-    // Turbulent wall data:
-    Wall = NULL;
-  }
-
-  //! Copy constructor.
-  NavierStokes2D_Quad_Block(const NavierStokes2D_Quad_Block &Soln) {
-    // Problem flags:
-    Axisymmetric   = Soln.Axisymmetric;
-    Compressibility_Effect = Soln.Compressibility_Effect;
-    Transition_Model = Soln.Transition_Model;
-    Flow_Type      = Soln.Flow_Type;
-    Freeze_Limiter = Soln.Freeze_Limiter;
-    Variable_Prandtl = Soln.Variable_Prandtl;
-    Vwall = Soln.Vwall;
-    Twall = Soln.Twall;
-    // Grid size and variables:
-    NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu;
-    NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu;
-    Nghost = Soln.Nghost;
-    Grid  = Soln.Grid;
-    // Solution variables:
-    W = Soln.W; U = Soln.U;
-    dt = Soln.dt; dUdt = Soln.dUdt; Uo = Soln.Uo;
-    dWdx = Soln.dWdx; dWdy = Soln.dWdy; phi = Soln.phi;
-    d_dWdx_dW = Soln.d_dWdx_dW; d_dWdy_dW = Soln.d_dWdy_dW;
-    face_grad_arrays_allocated = Soln.face_grad_arrays_allocated;
-    dWdx_faceN = Soln.dWdx_faceN; dWdy_faceN = Soln.dWdy_faceN;
-    dWdx_faceE = Soln.dWdx_faceE; dWdy_faceE = Soln.dWdy_faceE;
-    FluxN = Soln.FluxN; FluxS = Soln.FluxS; 
-    FluxE = Soln.FluxE; FluxW = Soln.FluxW;
-    WoN   = Soln.WoN;   WoS   = Soln.WoS;
-    WoE   = Soln.WoE;   WoW   = Soln.WoW;
-    // Turbulent wall data:
-    Wall = Soln.Wall;
-  }
-
-  // Destructor.
-  // ~NavierStokes2D_Quad_Block(void);
-  // Use automatically generated destructor.
+  //! @name Accuracy assessment data:
+  //@{
+  static Exact_Solution_Type *ExactSoln;          //!< Pointer to the exact solution
+  static Exact_Solution_Type *ExactSolution(void){ return ExactSoln;} //!< Return the exact solution pointer
+  Accuracy_Assessment_Type AssessAccuracy;   //!< Variable to provide access to accuracy assessment subroutines
   //@}
 
-  // Assignment operator.
-  // NavierStokes2D_Quad_Block operator = (const NavierStokes2D_Quad_Block &Soln);
-  // Use automatically generated assignment operator.
+  //@{ @name Creation, copy, and assignment constructors.
+  //! Creation constructor.
+  NavierStokes2D_Quad_Block(void);
+
+  // Destructor.
+  ~NavierStokes2D_Quad_Block(void){ deallocate(); }
+  //@}
 
   //@{ @name Allocate and deallocate functions.
   //! Allocate memory for structured quadrilateral solution block.
@@ -381,6 +310,16 @@ public:
   NavierStokes2D_cState UwNE(const int ii, const int jj); //!< Return conserved solution state at cell NE node.
   NavierStokes2D_cState UwSE(const int ii, const int jj); //!< Return conserved solution state at cell SE node.
   NavierStokes2D_cState UwSW(const int ii, const int jj); //!< Return conserved solution state at cell SW node.
+  //@}
+
+  //! @name Normalization related functions:
+  //@{
+  //! Get normalization state
+  const NavierStokes2D_pState getNormalizationState(const int &ii, const int &jj) const { return RefW; }
+  //! Set the normalization state which is used in the smoothness indicator computation.
+  static void Set_Normalization_Reference_State(const NavierStokes2D_pState & State){ 
+    RefW = NavierStokes2D_pState(State.rho, State.a(), State.a(), State.p, State.k, State.omega, State.ke, State.ee); 
+  }
   //@}
 
   //@{ @name Member functions for limiter freezing.
@@ -506,7 +445,87 @@ public:
   }
 #endif
 
+private:
+  NavierStokes2D_Quad_Block(const NavierStokes2D_Quad_Block &Soln); //!< Private copy constructor.
+  NavierStokes2D_Quad_Block & operator = (const NavierStokes2D_Quad_Block &Soln);   //!< Private assignment operator.
+  
+  static NavierStokes2D_pState RefW;	//!< reference state for normalizing the solution
+
+  //! @name Variables/functions for AMR:
+  //@{
+  DoubleArrayType refinement_criteria;
+  //@}
 };
+
+//! Default constructor.
+inline NavierStokes2D_Quad_Block::NavierStokes2D_Quad_Block(void):
+  AssessAccuracy(this),
+  Ref_State_BC_North(0.0), Ref_State_BC_South(0.0),
+  Ref_State_BC_East(0.0), Ref_State_BC_West(0.0)
+{
+  // Problem flags:
+  Axisymmetric   = OFF;
+  Compressibility_Effect = OFF;
+  Transition_Model = OFF;
+  Flow_Type      = FLOWTYPE_INVISCID;
+  Freeze_Limiter = OFF;
+  Variable_Prandtl = OFF;
+  Vwall = Vector2D_ZERO;
+  Twall = ZERO;
+  // Grid size and variables:
+  NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+  // Solution variables:
+  W = NULL; U = NULL;
+  dt = NULL; dUdt = NULL; Uo = NULL;
+  dWdx = NULL; dWdy = NULL; phi = NULL;
+  d_dWdx_dW = NULL; d_dWdy_dW = NULL;
+  face_grad_arrays_allocated = false;
+  dWdx_faceN = NULL; dWdy_faceN = NULL;
+  dWdx_faceE = NULL; dWdy_faceE = NULL;
+  FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
+  WoN = NULL; WoS = NULL; WoE = NULL; WoW = NULL;
+  // Turbulent wall data:
+  Wall = NULL;
+
+  // Get access to the Euler2D_ExactSolutions object
+  ExactSoln = &NavierStokes2D_ExactSolutions::getInstance();
+
+}
+
+//! Private copy constructor. (shallow copy)
+inline NavierStokes2D_Quad_Block::NavierStokes2D_Quad_Block(const NavierStokes2D_Quad_Block &Soln):
+  AssessAccuracy(this)
+{
+  // Problem flags:
+  Axisymmetric   = Soln.Axisymmetric;
+  Compressibility_Effect = Soln.Compressibility_Effect;
+  Transition_Model = Soln.Transition_Model;
+  Flow_Type      = Soln.Flow_Type;
+  Freeze_Limiter = Soln.Freeze_Limiter;
+  Variable_Prandtl = Soln.Variable_Prandtl;
+  Vwall = Soln.Vwall;
+  Twall = Soln.Twall;
+  // Grid size and variables:
+  NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu;
+  NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu;
+  Nghost = Soln.Nghost;
+  Grid  = Soln.Grid;
+  // Solution variables:
+  W = Soln.W; U = Soln.U;
+  dt = Soln.dt; dUdt = Soln.dUdt; Uo = Soln.Uo;
+  dWdx = Soln.dWdx; dWdy = Soln.dWdy; phi = Soln.phi;
+  d_dWdx_dW = Soln.d_dWdx_dW; d_dWdy_dW = Soln.d_dWdy_dW;
+  face_grad_arrays_allocated = Soln.face_grad_arrays_allocated;
+  dWdx_faceN = Soln.dWdx_faceN; dWdy_faceN = Soln.dWdy_faceN;
+  dWdx_faceE = Soln.dWdx_faceE; dWdy_faceE = Soln.dWdy_faceE;
+  FluxN = Soln.FluxN; FluxS = Soln.FluxS; 
+  FluxE = Soln.FluxE; FluxW = Soln.FluxW;
+  WoN   = Soln.WoN;   WoS   = Soln.WoS;
+  WoE   = Soln.WoE;   WoW   = Soln.WoW;
+  // Turbulent wall data:
+  Wall = Soln.Wall;
+}
+
 
 /**********************************************************************
  * NavierStokes2D_Quad_Block::allocate -- Allocate memory.            *
@@ -971,8 +990,9 @@ inline ostream &operator << (ostream &out_file,
 
 inline istream &operator >> (istream &in_file,
 			     NavierStokes2D_Quad_Block &SolnBlk) {
+  int i,j,k;
   int ni, il, iu, nj, jl, ju, ng;
-  Grid2D_Quad_Block New_Grid;
+  Grid2D_Quad_Block_HO New_Grid;
   in_file >> New_Grid;
   in_file.setf(ios::skipws);
   in_file >> ni >> il >> iu;
@@ -995,12 +1015,16 @@ inline istream &operator >> (istream &in_file,
     if (SolnBlk.U != NULL) SolnBlk.deallocate();
     SolnBlk.allocate(ni-2*ng,nj-2*ng,ng);
   }
-  Copy_Quad_Block(SolnBlk.Grid,New_Grid); New_Grid.deallocate();
-  for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
-    for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+
+  // Copy the temporary mesh into the grid of the current solution block
+  SolnBlk.Grid = New_Grid;
+
+  // Read the solution & Initialize some data structures
+  for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+    for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
       in_file >> SolnBlk.U[i][j];
       SolnBlk.W[i][j] = SolnBlk.U[i][j].W();
-      for (int k = 0; k < NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D; k++) {
+      for (k = 0; k < NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D; k++) {
 	SolnBlk.dUdt[i][j][k].Vacuum();
       }
       SolnBlk.dWdx[i][j].Vacuum();
@@ -2230,7 +2254,7 @@ extern NavierStokes2D_Quad_Block* Allocate(NavierStokes2D_Quad_Block *Soln_ptr,
 extern NavierStokes2D_Quad_Block* Deallocate(NavierStokes2D_Quad_Block *Soln_ptr,
 					     NavierStokes2D_Input_Parameters &Input_Parameters);
 
-extern NavierStokes2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block **InitMeshBlk,
+extern NavierStokes2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block_HO **InitMeshBlk,
 							      NavierStokes2D_Quad_Block *Soln_ptr,
 							      NavierStokes2D_Input_Parameters &Input_Parameters,
 							      QuadTreeBlock_DataStructure &QuadTree,
