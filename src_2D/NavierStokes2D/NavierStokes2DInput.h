@@ -204,6 +204,10 @@ public:
   char BC_East_Type[INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D];
   char BC_West_Type[INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D];
   int BC_North, BC_South, BC_East, BC_West;
+  //! Reference states for north and south boundary conditons
+  NavierStokes2D_pState Ref_State_BC_North, Ref_State_BC_South;
+  //! Reference states for east and west boundary conditons
+  NavierStokes2D_pState Ref_State_BC_East, Ref_State_BC_West; 
   //@}
 
   //@{ @name NASA rotor input variables:
@@ -330,7 +334,7 @@ public:
   short & Verbose(void) {return verbose_flag;}
   const short & Verbose(void) const {return verbose_flag;}
   void Verbose(const int & batch_flag){ (batch_flag != 0) ? verbose_flag=OFF: verbose_flag=ON; }
-  // bool OutputBoundaryReferenceState(const int & BCtype) const;
+  bool OutputBoundaryReferenceState(const int & BCtype) const;
   //@}
 
   //! @name Operating functions:
@@ -346,6 +350,7 @@ public:
   //@{ @name Input-output operators:
   friend ostream &operator << (ostream &out_file, const NavierStokes2D_Input_Parameters &IP);
   friend istream &operator >> (istream &in_file, NavierStokes2D_Input_Parameters &IP);
+  void OutputStretchingType(ostream &out_file, const int & StretchingType) const;
   //@}
 
 };
@@ -398,25 +403,38 @@ inline ostream &operator << (ostream &out_file,
   out_file << setprecision(6);
   out_file << "\n  -> CFFC Path: " 
 	   << IP.CFFC_Path;
+
+  /*********************************************************/
+  out_file << "\n\n Solving 2D";
+  if (IP.FlowType ==  FLOWTYPE_INVISCID){
+    out_file<<" Euler (Inviscid) ";
+  } else {
+    out_file<<" Navier-Stokes (Viscous) ";
+  }  
+  out_file<<"equations (IBVP/BVP) "; 
   if (IP.i_Grid == GRID_CARTESIAN_UNIFORM) {
-    out_file << "\n\n Solving 2D Navier-Stokes equations (IBVP/BVP) on uniform Cartesian mesh.";
+    out_file<<"\n on uniform Cartesian mesh.";
+  } else { 
+    out_file <<"\n on multi-block solution-adaptive quadrilateral mesh.";
+  } 
+
+  /*********************************************************/
+  if (IP.Axisymmetric) { 
+    out_file << "\n  -> 2D Axisymmetric ";
   } else {
-    out_file << "\n\n Solving 2D Navier-Stokes equations (IBVP/BVP) on multi-block solution-adaptive quadrilateral mesh.";
-  }
-  out_file << "\n  -> Input File Name: " << IP.Input_File_Name;
-  if (IP.Time_Accurate) { 
-    out_file << "\n  -> Time Accurate (Unsteady) Solution";
-  } else {
-    out_file << "\n  -> Time Invariant (Steady-State) Solution";
+    out_file << "\n  -> 2D Planar ";
   }
   if (IP.FlowType == FLOWTYPE_INVISCID) {
-    out_file << "\n  -> 2D Euler equations (inviscid flow)";   
+    out_file << "Inviscid Flow";
   } else if (IP.FlowType == FLOWTYPE_LAMINAR) {
-    out_file << "\n  -> 2D Laminar Navier-Stokes equations";
+    out_file << "Laminar Flow";
   } else if (IP.FlowType == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-    out_file << "\n  -> 2D Turbulent Navier-Stokes equations with the k-omega turbulence model";
-  } else {
-    out_file << "\n  -> 2D Inviscid Flow";   
+    out_file << "Turbulent Flow: RANS with k-omega turbulence model";
+    if (IP.i_Turbulence_BCs) {
+      out_file <<" (wall function formulation)";
+    } else {
+      out_file <<" (low-Reynolds-number formulation)";
+    }
   }
   if (IP.FlowType == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
     out_file << "\n  -> Turbulence boundary condition: " << IP.Turbulence_BC_Type;
@@ -432,14 +450,29 @@ inline ostream &operator << (ostream &out_file,
     if (IP.i_Turbulent_Wall_Injection)
       out_file << "\n  -> Turbulence wall injection is on.";
   }
-  if (!IP.Axisymmetric) out_file << "\n  -> 2D Planar Flow";
-  else out_file << "\n  -> 2D Axisymmetric Flow";
-  out_file << "\n  -> Time Integration: " << IP.Time_Integration_Type;
-  out_file << "\n  -> Number of Stages in Multi-Stage Scheme: " << IP.N_Stage;
+
+  /*********************************************************/
+  out_file << "\n  -> Input File Name: " 
+	   << IP.Input_File_Name;
+
+  // ==== Time marching scheme parameters ====
+  if (IP.Time_Accurate) { 
+    out_file << "\n  -> Time Accurate (Unsteady) Solution";
+  } else {
+    out_file << "\n  -> Time Invariant (Steady-State) Solution";
+  }
+  /********************************************************/
+  out_file << "\n  -> Time Integration: " 
+	   << IP.Time_Integration_Type;
+  out_file << "\n  -> Number of Stages in Multi-Stage Scheme: " 
+	   << IP.N_Stage;
+  /*****************************************************
+   *                     Multigrid                     */
   if (IP.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
       IP.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
     out_file << IP.Multigrid_IP;
   }
+  /*****************************************************/
   if (IP.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
     out_file << "\n  -> Global Time Stepping";
   } else if (IP.Local_Time_Stepping == SCALAR_LOCAL_TIME_STEPPING) {
@@ -447,18 +480,84 @@ inline ostream &operator << (ostream &out_file,
   } else if (IP.Local_Time_Stepping == SEMI_IMPLICIT_LOCAL_TIME_STEPPING) {
     out_file << "\n  -> Semi-Implicit Local Time Stepping";
   }
-  out_file << "\n  -> L1-, L2-, and max-norms computed on residual variable: " << IP.i_Residual_Variable;
+  out_file << "\n  -> CFL Number: "
+	   << IP.CFL_Number;
+  if (IP.Time_Accurate) { 
+    out_file << "\n  -> Maximum Time (ms): " 
+	     << IP.Time_Max*THOUSAND;
+  }
+  out_file << "\n  -> Maximum Number of ";
+  if (IP.Time_Accurate) { 
+    out_file << "Time Steps: ";
+  } else { 
+    out_file << "Relaxation (Pseudo-Time) Iterations: ";
+  }
+  out_file << IP.Maximum_Number_of_Time_Steps;
+  if (IP.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+  out_file << "\n  -> Maximum Number of NKS Iterations: " 
+             << IP.NKS_IP.Maximum_Number_of_NKS_Iterations;
+  }
+
+  out_file << "\n  -> L1-, L2-, and max-norms computed on residual variable: " 
+	   << IP.i_Residual_Variable;
   if (IP.Residual_Smoothing) {
     out_file << "\n  -> Residual Smoothing:";
     out_file << "\n     -> Epsilon: " << IP.Residual_Smoothing_Epsilon;
     out_file << "\n     -> Gauss_Seidel_Iterations: " 
 	     << IP.Residual_Smoothing_Gauss_Seidel_Iterations;
   }
-  out_file << "\n  -> Reconstruction: " << IP.Reconstruction_Type;
-  out_file << "\n  -> Limiter: " << IP.Limiter_Type;
-  if (IP.Limiter_Type != LIMITER_ZERO && IP.Freeze_Limiter)
+
+  // ==== Spatial approximation parameters ====
+  if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+    out_file << "\n  -> Space Accuracy : ";
+    switch(IP.Space_Accuracy){
+    case 1: 
+      out_file << "1st-order";
+      break;
+    case 2:
+      out_file << "2nd-order";
+      break;		
+    case 3:		
+      out_file << "3rd-order";
+      break;		
+    case 4:		
+      out_file << "4th-order";
+      break;		
+    case 5:		
+      out_file << "5th-order";
+      break;		
+    case 6:		
+      out_file << "6th-order";
+      break;
+    default:
+      out_file << "bigger than 6th-order";
+    }
+  } else {
+    out_file << "\n  -> Space Accuracy : 2nd-order";
+  }
+  out_file << "\n  -> Reconstruction: " 
+	   << IP.Reconstruction_Type;
+  if (IP.i_ReconstructionMethod == RECONSTRUCTION_CENO){
+    CENO_Execution_Mode::Print_Info(out_file);
+    CENO_Tolerances::Print_Info(out_file);
+    out_file << "\n     -> Reference State: "
+	     << IP.RefW;
+  }
+  
+  // output information related to auxiliary reconstructions.
+  HighOrder2D_Input::Print_Info(out_file);
+
+  out_file << "\n  -> Limiter: " 
+	   << IP.Limiter_Type;
+  if (IP.Limiter_Type != LIMITER_ZERO && IP.Freeze_Limiter) {
     out_file << "\n  -> Freeze Limiter when L2-norm of residual is < "
 	     << IP.Freeze_Limiter_Residual_Level;
+  } /* endif */
+
+  // output information related to the treatment of curved boundaries.
+  HO_Grid2D_Execution_Mode::Print_Info(out_file);
+
+  /*****************************************************/
   out_file << "\n  -> Hyperbolic Flux Function: " << IP.Flux_Function_Type;
   if (IP.FlowType)
     out_file << "\n  -> Elliptic Flux Evaluation: " << IP.Viscous_Reconstruction_Type;
@@ -472,6 +571,8 @@ inline ostream &operator << (ostream &out_file,
     out_file << "\n     -> Propellant flame temperature = " << IP.Wo.Tf;
     out_file << "\n     -> Propellant surface temperature = " << IP.Wo.Ts;
   }
+
+  /*****************************************************/
   switch(IP.i_ICs) {
   case IC_CONSTANT :
     out_file << "\n  -> Pressure (kPa): " 
@@ -540,6 +641,11 @@ inline ostream &operator << (ostream &out_file,
   default:
     break;
   }
+
+  // ====    Exact solution parameters ====
+  IP.ExactSoln->Print_Info(out_file);
+
+  // ==== Grid parameters ====
   out_file << "\n  -> Grid: " << IP.Grid_Type;
   switch(IP.i_Grid) {
   case GRID_CARTESIAN_UNIFORM :
@@ -553,16 +659,31 @@ inline ostream &operator << (ostream &out_file,
     out_file << "\n  -> Width of Solution Domain (m): " << IP.Box_Width;
     out_file << "\n  -> Height of Solution Domain (m): " << IP.Box_Height;
     break;
+  case GRID_DEFORMED_BOX :
+    out_file << "\n     -> SW Corner: " 
+	     << IP.VertexSW;
+    out_file << "\n     -> SE Corner: " 
+	     << IP.VertexSE;
+    out_file << "\n     -> NE Corner: " 
+	     << IP.VertexNE;
+    out_file << "\n     -> NW Corner: " 
+	     << IP.VertexNW;
+    break;
   case GRID_FLAT_PLATE :
-    out_file << "\n  -> Plate Length (m): " << IP.Plate_Length;
+    out_file << "\n  -> Plate Length (m): " 
+	     << IP.Plate_Length;
     break;
   case GRID_PIPE :
-    out_file << "\n  -> Pipe Length (m): " << IP.Pipe_Length;
-    out_file << "\n  -> Pipe Radius (m): " << IP.Pipe_Radius;
+    out_file << "\n  -> Pipe Length (m): " 
+	     << IP.Pipe_Length;
+    out_file << "\n  -> Pipe Radius (m): "
+	     << IP.Pipe_Radius;
     break;
   case GRID_BLUNT_BODY :
-    out_file << "\n  -> Cylinder Radius (m): " << IP.Blunt_Body_Radius;
-    out_file << "\n  -> Blunt Body Mach Number: " << IP.Blunt_Body_Mach_Number;
+    out_file << "\n  -> Cylinder Radius (m): " 
+	     << IP.Blunt_Body_Radius;
+    out_file << "\n  -> Blunt Body Mach Number: " 
+	     << IP.Blunt_Body_Mach_Number;
     break;
   case GRID_JET_FLOW:
     break;
@@ -577,7 +698,20 @@ inline ostream &operator << (ostream &out_file,
     out_file << "\n  -> Nozzle type: " << IP.Nozzle_Type;
     break;
   case GRID_CIRCULAR_CYLINDER :
-    out_file << "\n  -> Cylinder Radius (m): " << IP.Cylinder_Radius;
+    out_file << "\n     -> Inner Cylinder Radius (m): " 
+	     << IP.Cylinder_Radius
+	     << "\n     -> Outer Cylinder Radius (m): " 
+	     << IP.Cylinder_Radius2;
+    break;
+  case GRID_ANNULUS :
+    out_file << "\n     -> Inner Cylinder Radius (m): " 
+	     << IP.Cylinder_Radius
+	     << "\n     -> Outer Cylinder Radius (m): " 
+	     << IP.Cylinder_Radius2
+	     << "\n     -> Start Theta (degrees): " 
+	     << IP.Annulus_Theta_Start
+	     << "\n     -> End Theta (degrees): " 
+	     << IP.Annulus_Theta_End;
     break;
   case GRID_ELLIPSE :
     out_file << "\n  -> Width of Ellipse along x-axis (m): " 
@@ -611,15 +745,22 @@ inline ostream &operator << (ostream &out_file,
     }
     break;
   case GRID_BACKWARD_FACING_STEP :
-    out_file << "\n  -> Step height: " << IP.Step_Height;
-    out_file << "\n  -> Reynolds number: " << IP.Reynolds_Number;
-    out_file << "\n  -> Inflow height: " << IP.Top_Wall_Deflection;
-    out_file << "\n  -> Maximum inflow velocity x-component: " << IP.Wo.v.x;
+    out_file << "\n  -> Step height: " 
+	     << IP.Step_Height;
+    out_file << "\n  -> Reynolds number: " 
+	     << IP.Reynolds_Number;
+    out_file << "\n  -> Inflow height: " 
+	     << IP.Top_Wall_Deflection;
+    out_file << "\n  -> Maximum inflow velocity x-component: " 
+	     << IP.Wo.v.x;
     break;
   case GRID_MIXING_LAYER:
-    out_file << "\n  -> Reynolds Number: " << IP.Reynolds_Number;
-    out_file << "\n  -> Mach Number: "<<IP.Mach_Number;
-    out_file << "\n  -> Mach Number2: "<<IP.Mach_Number2;
+    out_file << "\n  -> Reynolds Number: " 
+	     << IP.Reynolds_Number;
+    out_file << "\n  -> Mach Number: "
+	     <<IP.Mach_Number;
+    out_file << "\n  -> Mach Number2: "
+	     <<IP.Mach_Number2;
     break;
   case GRID_NASA_ROTOR_37 :
   case GRID_NASA_ROTOR_67 :
@@ -638,25 +779,28 @@ inline ostream &operator << (ostream &out_file,
 	     << IP.Box_Height;
     break;
   }
-  if (IP.BCs_Specified) {
-    out_file << "\n  -> Boundary conditions specified as: "
-	     << "\n     -> BC_North = " << IP.BC_North_Type
-	     << "\n     -> BC_South = " << IP.BC_South_Type
-	     << "\n     -> BC_East = " << IP.BC_East_Type
-	     << "\n     -> BC_West = " << IP.BC_West_Type;
+  if (IP.IterationsOfInteriorNodesDisturbances > 0){
+    out_file << "\n     -> Disturbed Interior Quad Block Nodes: "
+	     << IP.IterationsOfInteriorNodesDisturbances << " iterations.";
   }
   out_file << "\n  -> Mesh shift, scale, and rotate: " 
 	   << IP.X_Shift << " " << IP.X_Scale << " " << IP.X_Rotate;
-  out_file << "\n  -> Mesh Stretching: "
-	   << IP.i_Mesh_Stretching;
-  out_file << "\n  -> Mesh Stretching Type Idir: "
-	   << IP.Mesh_Stretching_Type_Idir;
-  out_file << "\n  -> Mesh Stretching Type Jdir: "
-	   << IP.Mesh_Stretching_Type_Jdir;
-  out_file << "\n  -> Mesh Stretching Factor Idir: "
-	   << IP.Mesh_Stretching_Factor_Idir;
-  out_file << "\n  -> Mesh Stretching Factor Jdir: "
-	   << IP.Mesh_Stretching_Factor_Jdir;
+  if (IP.i_Mesh_Stretching){
+    out_file << "\n  -> Mesh Stretching Set in Input File: "
+	     << "Yes";
+    out_file << "\n  -> Mesh Stretching Type Idir: ";
+    IP.OutputStretchingType(out_file, IP.Mesh_Stretching_Type_Idir);
+    out_file << "\n  -> Mesh Stretching Type Jdir: ";
+    IP.OutputStretchingType(out_file, IP.Mesh_Stretching_Type_Jdir);
+    out_file << "\n  -> Mesh Stretching Factor Idir: "
+	     << IP.Mesh_Stretching_Factor_Idir;
+    out_file << "\n  -> Mesh Stretching Factor Jdir: "
+	     << IP.Mesh_Stretching_Factor_Jdir;
+  } else {
+    out_file << "\n  -> Mesh Stretching Set in Input File: "
+	     << "No";
+  }
+
   out_file << "\n  -> Number of Blocks i-direction: "
 	   << IP.Number_of_Blocks_Idir;
   out_file << "\n  -> Number of Blocks j-direction: " 
@@ -667,50 +811,86 @@ inline ostream &operator << (ostream &out_file,
 	   << IP.Number_of_Cells_Jdir;
   out_file << "\n  -> Number of Ghost Cells: "
 	   << IP.Number_of_Ghost_Cells;
+  
+  // ====    Boundary conditions ====
+  if (IP.BCs_Specified) {
+    out_file << "\n  -> Boundary conditions specified as: ";
+    
+    // North
+    out_file << "\n     -> BC_North = " << IP.BC_North_Type;
+    if (IP.OutputBoundaryReferenceState(IP.BC_North)){
+      out_file << "\n     -> Ref_State = " << IP.Ref_State_BC_North;
+    }
+    // South
+    out_file << "\n     -> BC_South = " << IP.BC_South_Type;
+    if (IP.OutputBoundaryReferenceState(IP.BC_South)){
+      out_file << "\n     -> Ref_State = " << IP.Ref_State_BC_South;
+    }
+    // East
+    out_file << "\n     -> BC_East  = " << IP.BC_East_Type;
+    if (IP.OutputBoundaryReferenceState(IP.BC_East)){
+      out_file << "\n     -> Ref_State = " << IP.Ref_State_BC_East;
+    }
+    // West
+    out_file << "\n     -> BC_West  = " << IP.BC_West_Type;
+    if (IP.OutputBoundaryReferenceState(IP.BC_West)){
+      out_file << "\n     -> Ref_State = " << IP.Ref_State_BC_West;
+    }
+  }
+
   if (IP.Interface_IP.Component_List.Ni) out_file << IP.Interface_IP;
-  out_file << "\n  -> Number of Initial Mesh Refinements: " 
-	   << IP.Number_of_Initial_Mesh_Refinements;
-  out_file << "\n  -> Number of Uniform Mesh Refinements: " 
-	   << IP.Number_of_Uniform_Mesh_Refinements;
-  out_file << "\n  -> Number of Boundary Mesh Refinements: " 
-	   << IP.Number_of_Boundary_Mesh_Refinements;
-  out_file << "\n  -> Number of Interface Mesh Refinements: " 
-	   << IP.Number_of_Interface_Mesh_Refinements;
-  out_file << "\n  -> Number of Bounding-Box Mesh Refinements: " 
-	   << IP.Number_of_Bounding_Box_Mesh_Refinements;
-  out_file << "\n  -> Number of Flat-Plate Mesh Refinements: " 
-	   << IP.Number_of_Flat_Plate_Mesh_Refinements;
+
+  // ==== AMR parameters ====
+  if (IP.Number_of_Initial_Mesh_Refinements > 0)
+    out_file << "\n  -> Number of Initial Mesh Refinements : " 
+             << IP.Number_of_Initial_Mesh_Refinements;
+  if (IP.Number_of_Uniform_Mesh_Refinements > 0)
+    out_file << "\n  -> Number of Uniform Mesh Refinements : " 
+	     << IP.Number_of_Uniform_Mesh_Refinements;
+  if (IP.Number_of_Boundary_Mesh_Refinements > 0)
+    out_file << "\n  -> Number of Boundary Mesh Refinements : " 
+	     << IP.Number_of_Boundary_Mesh_Refinements;
+  if (IP.Number_of_Interface_Mesh_Refinements > 0)
+    out_file << "\n  -> Number of Interface Mesh Refinements: " 
+	     << IP.Number_of_Interface_Mesh_Refinements;
+  if (IP.Number_of_Bounding_Box_Mesh_Refinements > 0)
+    out_file << "\n  -> Number of Bounding-Box Mesh Refinements: " 
+	     << IP.Number_of_Bounding_Box_Mesh_Refinements;
+  if (IP.Number_of_Flat_Plate_Mesh_Refinements > 0)
+    out_file << "\n  -> Number of Flat-Plate Mesh Refinements: " 
+	     << IP.Number_of_Flat_Plate_Mesh_Refinements;
   out_file << "\n  -> Refinement Criteria: ";
   if (IP.Refinement_Criteria_Gradient_Density)
-  out_file << "\n     -> Gradient of the density field refinement criteria";
+    out_file << "\n     -> Gradient of the density field refinement criteria";
   if (IP.Refinement_Criteria_Divergence_Velocity)
-  out_file << "\n     -> Divergence of the velocity field refinement criteria";
+    out_file << "\n     -> Divergence of the velocity field refinement criteria";
   if (IP.Refinement_Criteria_Curl_Velocity)
-  out_file << "\n     -> Curl of the velocity field refinement criteria";
+    out_file << "\n     -> Curl of the velocity field refinement criteria";
   if (IP.Refinement_Criteria_Gradient_Turbulence_Kinetic_Energy)
-  out_file << "\n     -> Gradient of the turbulence kinetic energy.";
+    out_file << "\n     -> Gradient of the turbulence kinetic energy.";
   if (IP.Number_of_Bounding_Box_Mesh_Refinements)
     out_file << "\n     -> Bounding-box for bounding-box AMR:" << IP.AMR_Xmin << IP.AMR_Xmax;
-  out_file << "\n  -> Smooth Quad Block: "
-	   << IP.i_Smooth_Quad_Block;
-  out_file << "\n  -> CFL Number: "
-	   << IP.CFL_Number;
-  out_file << "\n  -> Maximum Time (ms): " 
-	   << IP.Time_Max*THOUSAND;
-  out_file << "\n  -> Maximum Number of Time Steps (Iterations): " 
-	   << IP.Maximum_Number_of_Time_Steps;
-  if (IP.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-  out_file << "\n  -> Maximum Number of NKS Iterations: " 
-             << IP.NKS_IP.Maximum_Number_of_NKS_Iterations;
-  }
+
   out_file << "\n  -> Number of Processors: " 
 	   << IP.Number_of_Processors;
   out_file << "\n  -> Number of Blocks Per Processor: " 
 	   << IP.Number_of_Blocks_Per_Processor;
+
+  // ==== Output parameters ====
   out_file << "\n  -> Output File Name: " 
 	   << IP.Output_File_Name;
   out_file << "\n  -> Output Format: " 
 	   << IP.Output_Format_Type;
+  if (IP.i_Output_Format == IO_TECPLOT){
+    // output information related to Tecplot output
+    Tecplot_Execution_Mode::Print_Info(out_file);
+  }
+
+  // ==== Accuracy assessment 
+  out_file << "\n  -> Accuracy Assessment: ";
+  // output information related to assessment of accuracy
+  AccuracyAssessment_Execution_Mode::Print_Info(out_file);
+
   out_file << "\n  -> Restart Solution Save Frequency: "
 	   << IP.Restart_Solution_Save_Frequency
 	   << " steps (iterations)"; 
@@ -724,6 +904,7 @@ inline ostream &operator << (ostream &out_file,
       << " time steps (iterations)";
   }
   
+  out_file.flush();
   return out_file;
 }
 

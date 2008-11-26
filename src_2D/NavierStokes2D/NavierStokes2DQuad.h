@@ -532,6 +532,7 @@ inline NavierStokes2D_Quad_Block::NavierStokes2D_Quad_Block(const NavierStokes2D
  **********************************************************************/
 inline void NavierStokes2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng) {
   assert(Ni > 1 && Nj > 1 && Ng > 1);
+  int i,j,k,m;
   Grid.allocate(Ni,Nj,Ng);
   NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; 
   NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
@@ -543,12 +544,12 @@ inline void NavierStokes2D_Quad_Block::allocate(const int Ni, const int Nj, cons
   d_dWdy_dW = new double **[NCi];
   Uo = new NavierStokes2D_cState*[NCi];
   Wall = new Turbulent2DWallData*[NCi];
-  for (int i = 0; i < NCi; i++) {
+  for (i = 0; i < NCi; i++) {
     W[i] = new NavierStokes2D_pState[NCj]; U[i] = new NavierStokes2D_cState[NCj];
     dt[i] = new double[NCj]; dUdt[i] = new NavierStokes2D_cState*[NCj];
     d_dWdx_dW[i] = new double  *[NCj];
     d_dWdy_dW[i] = new double  *[NCj];
-    for (int j = 0; j < NCj; j++){
+    for ( j = 0; j < NCj; j++){
       dUdt[i][j] = new NavierStokes2D_cState[NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D];
       d_dWdx_dW[i][j] = new double [5];
       d_dWdy_dW[i][j] = new double [5];
@@ -562,10 +563,11 @@ inline void NavierStokes2D_Quad_Block::allocate(const int Ni, const int Nj, cons
   FluxN = new NavierStokes2D_cState[NCi]; FluxS = new NavierStokes2D_cState[NCi];
   FluxE = new NavierStokes2D_cState[NCj]; FluxW = new NavierStokes2D_cState[NCj];
   // Set the solution residuals, gradients, limiters, and other values to zero.
-  for (int j = JCl-Nghost; j <= JCu+Nghost; j++) {
-    for (int i = ICl-Nghost; i <= ICu+Nghost; i++) {
-      for (int k = 0; k < NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D; k++)
+  for ( j = JCl-Nghost; j <= JCu+Nghost; j++) {
+    for ( i = ICl-Nghost; i <= ICu+Nghost; i++) {
+      for ( k = 0; k < NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D; k++){
 	dUdt[i][j][k].Vacuum();
+      }
       dWdx[i][j].Vacuum(); dWdy[i][j].Vacuum();
       phi[i][j].Vacuum(); Uo[i][j].Vacuum();
       dt[i][j] = ZERO;
@@ -598,44 +600,48 @@ inline void NavierStokes2D_Quad_Block::allocate_face_grad_arrays(void) {
  * NavierStokes2D_Quad_Block::deallocate -- Deallocate memory.        *
  **********************************************************************/
 inline void NavierStokes2D_Quad_Block::deallocate(void) {
-  Grid.deallocate();
-  for (int i = 0; i < NCi; i++) {
-    delete []W[i]; W[i] = NULL; delete []U[i]; U[i] = NULL;
-    delete []dt[i]; dt[i] = NULL; 
-    for (int j = 0; j < NCj; j++) { 
-      delete []dUdt[i][j]; dUdt[i][j] = NULL; 
-      delete []d_dWdx_dW[i][j]; d_dWdx_dW[i][j] = NULL;
-      delete []d_dWdy_dW[i][j]; d_dWdy_dW[i][j] = NULL;
+  if (U != NULL){
+    /* free the memory if there is memory allocated */
+    int i,j;
+    Grid.deallocate();
+    for (i = 0; i < NCi; i++) {
+      delete []W[i]; W[i] = NULL; delete []U[i]; U[i] = NULL;
+      delete []dt[i]; dt[i] = NULL; 
+      for (j = 0; j < NCj; j++) { 
+	delete []dUdt[i][j]; dUdt[i][j] = NULL; 
+	delete []d_dWdx_dW[i][j]; d_dWdx_dW[i][j] = NULL;
+	delete []d_dWdy_dW[i][j]; d_dWdy_dW[i][j] = NULL;
+      }
+      delete []dUdt[i]; dUdt[i] = NULL;
+      delete []dWdx[i]; dWdx[i] = NULL; delete []dWdy[i]; dWdy[i] = NULL;
+      delete []d_dWdx_dW[i]; d_dWdx_dW[i] = NULL;
+      delete []d_dWdy_dW[i]; d_dWdy_dW[i] = NULL;
+      delete []phi[i];  phi[i]  = NULL; delete []Uo[i]; Uo[i] = NULL;
+      delete []Wall[i]; Wall[i] = NULL; 
     }
-    delete []dUdt[i]; dUdt[i] = NULL;
-    delete []dWdx[i]; dWdx[i] = NULL; delete []dWdy[i]; dWdy[i] = NULL;
-    delete []d_dWdx_dW[i]; d_dWdx_dW[i] = NULL;
-    delete []d_dWdy_dW[i]; d_dWdy_dW[i] = NULL;
-    delete []phi[i];  phi[i]  = NULL; delete []Uo[i]; Uo[i] = NULL;
-    delete []Wall[i]; Wall[i] = NULL; 
-  }
-  delete []W; W = NULL; delete []U; U = NULL;
-  delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
-  delete []dWdx; dWdx = NULL; delete []dWdy; dWdy = NULL; 
-  delete []d_dWdx_dW; d_dWdx_dW = NULL;
-  delete []d_dWdy_dW; d_dWdy_dW = NULL;
-  delete []phi; phi = NULL; delete []Uo; Uo = NULL;
-  delete []Wall; Wall = NULL;
-  delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
-  delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
-  delete []WoN; WoN = NULL; delete []WoS; WoS = NULL;
-  delete []WoE; WoE = NULL; delete []WoW; WoW = NULL;
-  if (face_grad_arrays_allocated) {
-    for (int i = 0; i < NCi; i++) {
-      delete []dWdx_faceN[i]; delete []dWdy_faceN[i]; 
-      delete []dWdx_faceE[i]; delete []dWdy_faceE[i]; 
-    }
-    delete []dWdx_faceN; delete []dWdy_faceN; 
-    delete []dWdx_faceE; delete []dWdy_faceE; 
+    delete []W; W = NULL; delete []U; U = NULL;
+    delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
+    delete []dWdx; dWdx = NULL; delete []dWdy; dWdy = NULL; 
+    delete []d_dWdx_dW; d_dWdx_dW = NULL;
+    delete []d_dWdy_dW; d_dWdy_dW = NULL;
+    delete []phi; phi = NULL; delete []Uo; Uo = NULL;
+    delete []Wall; Wall = NULL;
+    delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
+    delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
+    delete []WoN; WoN = NULL; delete []WoS; WoS = NULL;
+    delete []WoE; WoE = NULL; delete []WoW; WoW = NULL;
+    if (face_grad_arrays_allocated) {
+      for (i = 0; i < NCi; i++) {
+	delete []dWdx_faceN[i]; delete []dWdy_faceN[i]; 
+	delete []dWdx_faceE[i]; delete []dWdy_faceE[i]; 
+      }
+      delete []dWdx_faceN; delete []dWdy_faceN; 
+      delete []dWdx_faceE; delete []dWdy_faceE; 
 
-    face_grad_arrays_allocated = false;
-  }
-  NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+      face_grad_arrays_allocated = false;
+    }
+    NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+  } // endif
 }
 
 /**********************************************************************

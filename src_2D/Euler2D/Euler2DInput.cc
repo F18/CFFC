@@ -2038,7 +2038,6 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	  IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
 	  IP.Mesh_Stretching_Factor_Idir = 1.025;
 	  IP.Mesh_Stretching_Factor_Jdir = 1.001;
-	  IP.BC_South = BC_REFLECTION;
        } else if (strcmp(IP.Grid_Type, "Ellipse") == 0) {
           IP.i_Grid = GRID_ELLIPSE;
           IP.Ellipse_Length_X_Axis = TWO;
