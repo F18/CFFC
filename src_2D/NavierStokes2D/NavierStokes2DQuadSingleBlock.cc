@@ -398,6 +398,8 @@ void Broadcast_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk,
 void Copy_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk1,
                          NavierStokes2D_Quad_Block &SolnBlk2) {
 
+  int i,j,k;
+
   // Allocate (re-allocate) memory for the solution of the 
   // quadrilateral solution block SolnBlk1 as necessary.
   if (SolnBlk1.NCi    != SolnBlk2.NCi || 
@@ -436,28 +438,30 @@ void Copy_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk1,
 
   // Copy the solution information from SolnBlk2 to SolnBlk1.
   if (SolnBlk2.U != NULL) {
-    for (int j = SolnBlk1.JCl-SolnBlk1.Nghost; j <= SolnBlk1.JCu+SolnBlk1.Nghost; j++) {
-      for (int i = SolnBlk1.ICl-SolnBlk1.Nghost; i <= SolnBlk1.ICu+SolnBlk1.Nghost; i++) {
+    for (j = SolnBlk1.JCl-SolnBlk1.Nghost; j <= SolnBlk1.JCu+SolnBlk1.Nghost; j++) {
+      for (i = SolnBlk1.ICl-SolnBlk1.Nghost; i <= SolnBlk1.ICu+SolnBlk1.Nghost; i++) {
 	SolnBlk1.U[i][j] = SolnBlk2.U[i][j];
 	SolnBlk1.W[i][j] = SolnBlk2.W[i][j];
-	for (int k = 0; k < NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D; k++)
+	for (k = 0; k < NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D; k++)
 	  SolnBlk1.dUdt[i][j][k] = SolnBlk2.dUdt[i][j][k];
 	SolnBlk1.dWdx[i][j] = SolnBlk2.dWdx[i][j];
 	SolnBlk1.dWdy[i][j] = SolnBlk2.dWdy[i][j];
-	SolnBlk1.d_dWdx_dW[i][j] = SolnBlk2.d_dWdx_dW[i][j];
-	SolnBlk1.d_dWdy_dW[i][j] = SolnBlk2.d_dWdy_dW[i][j];
+	for (k = 0; k < 5; ++k){
+	  SolnBlk1.d_dWdx_dW[i][j][k] = SolnBlk2.d_dWdx_dW[i][j][k];
+	  SolnBlk1.d_dWdy_dW[i][j][k] = SolnBlk2.d_dWdy_dW[i][j][k];
+	}
 	SolnBlk1.phi[i][j]  = SolnBlk2.phi[i][j];
 	SolnBlk1.Uo[i][j]   = SolnBlk2.Uo[i][j];
 	SolnBlk1.dt[i][j]   = SolnBlk2.dt[i][j];
       }
     }
 
-    for (int j = SolnBlk1.JCl-SolnBlk1.Nghost; j <= SolnBlk1.JCu+SolnBlk1.Nghost; j++) {
+    for (j = SolnBlk1.JCl-SolnBlk1.Nghost; j <= SolnBlk1.JCu+SolnBlk1.Nghost; j++) {
       SolnBlk1.WoW[j] = SolnBlk2.WoW[j];
       SolnBlk1.WoE[j] = SolnBlk2.WoE[j];
     }
 
-    for (int i = SolnBlk1.ICl-SolnBlk1.Nghost; i <= SolnBlk1.ICu+SolnBlk1.Nghost; i++) {
+    for (i = SolnBlk1.ICl-SolnBlk1.Nghost; i <= SolnBlk1.ICu+SolnBlk1.Nghost; i++) {
       SolnBlk1.WoS[i] = SolnBlk2.WoS[i];
       SolnBlk1.WoN[i] = SolnBlk2.WoN[i];
     }
@@ -5754,25 +5758,29 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 	    if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX) {
 	      // WEST face of cell (i+1,j) is a WALL_VISCOUS_HEATFLUX boundary.
 	      viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
-	      //Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
+	      //Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; 
+	      //Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	      Wu = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wu.v = Vector2D_ZERO;
 	      Wd = HALF*(Wr+SolnBlk.W[i+1][j-1]); Wd.v = Vector2D_ZERO;
 	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
 	      // WEST face of cell (i+1,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
 	      viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
-	      //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
+	      //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p;
+	      //Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	      Wu = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wu.v = Vector2D_ZERO; Wu.rho = Wu.p/(Wr.R*SolnBlk.Twall);
 	      Wd = HALF*(Wr+SolnBlk.W[i+1][j-1]); Wd.v = Vector2D_ZERO; Wd.rho = Wd.p/(Wr.R*SolnBlk.Twall);
 	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL) {
 	      // WEST face of cell (i+1,j) is a MOVINGWALL_HEATFLUX boundary.
 	      viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
-	      //Wu.rho = Wr.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
+	      //Wu.rho = Wr.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p;
+	      //Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	      Wu = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wu.v = SolnBlk.Vwall;
 	      Wd = HALF*(Wr+SolnBlk.W[i+1][j-1]); Wd.v = SolnBlk.Vwall;
 	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL) {
 	      // WEST face of cell (i+1,j) is a MOVINGWALL_ISOTHERMAL boundary.
 	      viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
-	      //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
+	      //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p;
+	      //Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	      Wu = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wu.v = SolnBlk.Vwall; Wu.rho = Wu.p/(Wr.R*SolnBlk.Twall);
 	      Wd = HALF*(Wr+SolnBlk.W[i+1][j-1]); Wd.v = SolnBlk.Vwall; Wd.rho = Wd.p/(Wr.R*SolnBlk.Twall);
 	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_BURNING_SURFACE) {
@@ -5813,25 +5821,29 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 	    if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX) {
 	      // EAST face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
 	      viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
-	      //Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
+	      //Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p;
+	      //Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	      Wu = HALF*(Wl+SolnBlk.W[i][j+1]); Wu.v = Vector2D_ZERO;
 	      Wd = HALF*(Wl+SolnBlk.W[i][j-1]); Wd.v = Vector2D_ZERO;
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
 	      // EAST face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
 	      viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
-	      //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
+	      //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p;
+	      //Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	      Wu = HALF*(Wl+SolnBlk.W[i][j+1]); Wu.v = Vector2D_ZERO; Wu.rho = Wu.p/(Wl.R*SolnBlk.Twall);
 	      Wd = HALF*(Wl+SolnBlk.W[i][j-1]); Wd.v = Vector2D_ZERO; Wd.rho = Wd.p/(Wl.R*SolnBlk.Twall);
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX) {
 	      // EAST face of cell (i,j) is a MOVINGWALL_HEATFLUX boundary.
 	      viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
-	      //Wu.rho = Wl.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
+	      //Wu.rho = Wl.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p;
+	      //Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	      Wu = HALF*(Wl+SolnBlk.W[i][j+1]); Wu.v = SolnBlk.Vwall;
 	      Wd = HALF*(Wl+SolnBlk.W[i][j-1]); Wd.v = SolnBlk.Vwall;
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL) {
 	      // EAST face of cell (i,j) is a MOVINGWALL_ISOTHERMAL boundary.
 	      viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
-	      //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
+	      //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p;
+	      //Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	      Wu = HALF*(Wl+SolnBlk.W[i][j+1]); Wu.v = SolnBlk.Vwall; Wu.rho = Wu.p/(Wl.R*SolnBlk.Twall);
 	      Wd = HALF*(Wl+SolnBlk.W[i][j-1]); Wd.v = SolnBlk.Vwall; Wd.rho = Wd.p/(Wl.R*SolnBlk.Twall);
 	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL) {
@@ -6130,25 +6142,29 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 	  if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX) {
 	    // SOUTH face of cell (i,j+1) is a WALL_VISCOUS_HEATFLUX boundary.
 	    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
-	    //Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
+	    //Wu.rho = Wr.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p;
+	    //Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	    Wu = HALF*(Wr+SolnBlk.W[i-1][j+1]); Wu.v = Vector2D_ZERO;
 	    Wd = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wd.v = Vector2D_ZERO;
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
 	    // SOUTH face of cell (i,j+1) is a WALL_VISCOUS_ISOTHERMAL boundary.
 	    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
-	    //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
+	    //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wr.p;
+	    //Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	    Wu = HALF*(Wr+SolnBlk.W[i-1][j+1]); Wu.v = Vector2D_ZERO; Wu.rho = Wu.p/(Wr.R*SolnBlk.Twall);
 	    Wd = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wd.v = Vector2D_ZERO; Wd.rho = Wd.p/(Wr.R*SolnBlk.Twall);
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX) {
 	    // SOUTH face of cell (i,j+1) is a MOVINGWALL_HEATFLUX boundary.
 	    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_HEATFLUX;
-	    //Wu.rho = Wr.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
+	    //Wu.rho = Wr.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p;
+	    //Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	    Wu = HALF*(Wr+SolnBlk.W[i-1][j+1]); Wu.v = SolnBlk.Vwall;
 	    Wd = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wd.v = SolnBlk.Vwall;
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL) {
 	    // SOUTH face of cell (i,j+1) is a MOVINGWALL_ISOTHERMAL boundary.
 	    viscous_bc_flag = DIAMONDPATH_RIGHT_TRIANGLE_ISOTHERMAL;
-	    //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p; Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
+	    //Wu.rho = Wr.p/(Wr.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wr.p;
+	    //Wu.k = Wr.k; Wu.omega = Wr.omega;Wu.ke = Wr.ke; Wu.ee = Wr.ee;
 	    Wu = HALF*(Wr+SolnBlk.W[i-1][j+1]); Wu.v = SolnBlk.Vwall; Wu.rho = Wu.p/(Wr.R*SolnBlk.Twall);
 	    Wd = HALF*(Wr+SolnBlk.W[i+1][j+1]); Wd.v = SolnBlk.Vwall; Wd.rho = Wd.p/(Wr.R*SolnBlk.Twall);
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_BURNING_SURFACE) {
@@ -6189,25 +6205,29 @@ int dUdt_Multistage_Explicit(NavierStokes2D_Quad_Block &SolnBlk,
 	  if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX) {
 	    // NORTH face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
 	    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
-	    //Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
+	    //Wu.rho = Wl.rho; Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p;
+	    //Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	    Wu = HALF*(Wl+SolnBlk.W[i-1][j]); Wu.v = Vector2D_ZERO;
 	    Wd = HALF*(Wl+SolnBlk.W[i+1][j]); Wd.v = Vector2D_ZERO;
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
 	    // NORTH face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
 	    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
-	    //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
+	    //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = ZERO; Wu.v.y = ZERO; Wu.p = Wl.p; 
+	    //Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	    Wu = HALF*(Wl+SolnBlk.W[i-1][j]); Wu.v = Vector2D_ZERO; Wu.rho = Wu.p/(Wl.R*SolnBlk.Twall);
 	    Wd = HALF*(Wl+SolnBlk.W[i+1][j]); Wd.v = Vector2D_ZERO; Wd.rho = Wd.p/(Wl.R*SolnBlk.Twall);
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX) {
 	    // NORTH face of cell (i,j) is a MOVINGWALL_HEATFLUX boundary.
 	    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_HEATFLUX;
-	    //Wu.rho = Wl.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
+	    //Wu.rho = Wl.rho; Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; 
+	    //Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	    Wu = HALF*(Wl+SolnBlk.W[i-1][j]); Wu.v = SolnBlk.Vwall;
 	    Wd = HALF*(Wl+SolnBlk.W[i+1][j]); Wd.v = SolnBlk.Vwall;
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL) {
 	    // NORTH face of cell (i,j) is a MOVINGWALL_ISOTHERMAL boundary.
 	    viscous_bc_flag = DIAMONDPATH_LEFT_TRIANGLE_ISOTHERMAL;
-	    //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
+	    //Wu.rho = Wl.p/(Wl.R*SolnBlk.Twall); Wu.v.x = SolnBlk.Vwall.x; Wu.v.y = SolnBlk.Vwall.y; 
+	    //Wu.p = Wl.p; Wu.k = Wl.k; Wu.omega = Wl.omega;Wu.ke = Wl.ke; Wu.ee = Wl.ee;
 	    Wu = HALF*(Wl+SolnBlk.W[i-1][j]); Wu.v = SolnBlk.Vwall; Wu.rho = Wu.p/(Wl.R*SolnBlk.Twall);
 	    Wd = HALF*(Wl+SolnBlk.W[i+1][j]); Wd.v = SolnBlk.Vwall; Wd.rho = Wd.p/(Wl.R*SolnBlk.Twall);
 	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_BURNING_SURFACE) {
