@@ -6,14 +6,14 @@
 ###########################
 #
 Function_Definition =
-Example4
+Example7
 #Default
 #
 Reconstruction_Order =
-3
+2
 #
 Output_File_Name =
-Example4_k3
+Example7_k2n32
 #
 Method_Used =
 CENO
@@ -34,11 +34,11 @@ Characteristic_Length =
 Cutoff_Knob =
 1.0
 Number_of_Cells_Idir =
-5
+32
 Number_of_Cells_Jdir =
-5
+32
 Number_of_Cells_Kdir = 
-30
+32
 Number_of_Ghost_Cells =
 4
 Number_of_Blocks_Idir =
