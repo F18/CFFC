@@ -1660,6 +1660,14 @@ inline Euler2D_cState operator -(const Euler2D_cState &U) {
   return (Euler2D_cState(-U.d,-U.dv,-U.E));
 }
 
+inline Euler2D_cState fabs(const Euler2D_cState &U){
+  return Euler2D_cState(fabs(U.d), fabs(U.dv.x), fabs(U.dv.y), fabs(U.E));
+}
+
+inline Euler2D_cState sqr(const Euler2D_cState &U){
+  return Euler2D_cState(sqr(U.d), sqr(U.dv.x), sqr(U.dv.y), sqr(U.E));
+}
+
 /********************************************************
  * Euler2D_cState -- Shortcut arithmetic operators.     *
  ********************************************************/
