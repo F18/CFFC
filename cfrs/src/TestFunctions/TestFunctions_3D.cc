@@ -100,7 +100,7 @@ double Test_Example4 (double x, double y, double z) {
 
   double f;
   f = x; f = y; 	// that's for the compiler !
-  f=sin(z);
+  f = sin(z);
   return f;
 }
 
@@ -113,37 +113,40 @@ double Test_Example4_Integral (double x1, double x2, double y1, double y2, doubl
 
 /********************************************************
  * Function Test_Example5:                              *
-
+ *          f(x,y,z) = sin(y)
  *******************************************************/
 
 double Test_Example5 (double x, double y, double z) {
   double f;
-  f = x; f = y; f=z; f= 0.0; 	// that's for the compiler !
+  f = x; f = z;  	// that's for the compiler !
+  f = sin(y);
   return f;
 }
 
 double Test_Example5_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  assert((x1<x2)&&(y1<y2)&&(z1<z2));
   double f;
-  f = 0;
+  f = cos(y2)-cos(y1);
   return f;
 }
 
 /********************************************************
  * Function Test_Example6:                              *
-
+ *          f(x,y,z) = sin(x)
  *******************************************************/
 
 double Test_Example6 (double x, double y, double z) {
 
   double f;
-  f = x; f = y; f=z; f= 0.0; 	// that's for the compiler !
+  f = y; f=z;  	// that's for the compiler !
+  f = sin(x);
   return f;
 }
 
 double Test_Example6_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  assert((x1<x2)&&(y1<y2)&&(z1<z2));
   double f;
-  f = 0;
-  return f;
+  f = cos(x2)-cos(x1);
 }
 
 /********************************************************
@@ -154,13 +157,14 @@ double Test_Example6_Integral (double x1, double x2, double y1, double y2, doubl
 double Test_Example7 (double x, double y, double z) {
 
   double f;
-  f = x; f = y; f=z; f= 0.0; 	// that's for the compiler !
+  f = cos(x)*cos(x) + 3*sin(y) + 0.5*cos(z);
   return f;
 }
 
 double Test_Example7_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  assert((x1<x2)&&(y1<y2)&&(z1<z2));
   double f;
-  f = 0;
+  f = -sin(2*x2) + sin(2*x1) + 3*cos(y2) - 3*cos(y1) - 0.5*sin(z2) + 0.5*sin(z1);
   return f;
 }
 
@@ -172,12 +176,14 @@ double Test_Example7_Integral (double x1, double x2, double y1, double y2, doubl
 double Test_Example8 (double x, double y, double z)
 {
   double f;
-  f = x; f = y; f=z; f= 0.0; 	// that's for the compiler !
+  f = cos(x)*cos(x) + 3*sin(y) + 0.2*z;
+
   return f;
 }
 
 double Test_Example8_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  assert((x1<x2)&&(y1<y2)&&(z1<z2));
   double f;
-  f = 0;
+  f = -sin(2*x2) + sin(2*x1) + 3*cos(y2) - 3*cos(y1) + 0.1*z2*z2 - 0.1*z1*z1;
   return f;
 }
