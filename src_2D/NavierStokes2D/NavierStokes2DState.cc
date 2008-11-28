@@ -3520,19 +3520,16 @@ NavierStokes2D_cState ViscousFlux_n(const Vector2D &X,
 				    const double &ywall,
 	                            const double &yplus) {
 
-  NavierStokes2D_cState Gx, Gy, U;
-  // Compute the intermediate state viscous stress tensor and heat flux
-  // vector.
-  W.ComputeViscousTerms(dWdx,dWdy,X,Axisymmetric,adiabatic_flag,ywall,yplus);
-  U = W.U(); U.tau = W.tau; U.q = W.q;
+  NavierStokes2D_cState U(0);
 
-  // Compute the Cartesian components of the intermediate state
-  // solution viscous flux.
-  Gx = U.Gx(dWdx,W,ywall,yplus);
-  Gy = U.Gy(dWdy,W,ywall,yplus);
+  // Compute the intermediate state viscous stress tensor and heat flux vector.
+  W.ComputeViscousTerms(dWdx,dWdy,X,Axisymmetric,adiabatic_flag,ywall,yplus);
+  U = W.U();
+  U.tau = W.tau;
+  U.q = W.q;
 
   // Return the intermediate state solution viscous flux.
-  return Gx*norm_dir.x + Gy*norm_dir.y;
+  return ( U.Gx(dWdx,W,ywall,yplus)*norm_dir.x + U.Gy(dWdy,W,ywall,yplus)*norm_dir.y );
 
 }
 

@@ -3030,7 +3030,8 @@ inline double NavierStokes2D_cState::nuT(void) const {
   if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA){
     if (Transition_Model == TRANSITION_WILCOX) return alpha_o_star()*k()/max(omega(),TOLER);
     return k()/max(omega(),TOLER);
-  }  
+  }
+  return ZERO;
 }
 
 /**********************************************************************
@@ -3581,20 +3582,39 @@ inline void NavierStokes2D_pState::ComputeViscousTerms(const NavierStokes2D_pSta
 						       const int &adiabatic_flag,
 						       const double &ywall,
 						       const double &yplus) {
+
   double div, radius, mumu, kap;
-  mumu = mu() + muT(); kap = kappa() + kappaT(ywall,yplus);
-  if (Axisymmetric) radius = max(X.y,TOLER);
+
+  // Total (i.e. molecular + turbulent) dynamic viscosity and thermal conductivity
+  mumu = mu() + muT();
+  kap = kappa() + kappaT(ywall,yplus);
+
+
+  if (Axisymmetric){
+    radius = max(X.y,TOLER);
+  }
+
   // Divergence of the velocity field.
   div = dWdx.v.x + dWdy.v.y;
-  if (Axisymmetric) div += v.y/radius;
+  if (Axisymmetric){
+    div += v.y/radius;
+  }
+
   // Stress tensor.
-  tau.xx = 2.0*mumu*(dWdx.v.x - div/3.0);
+  div /= 3.0;	// divide divergence by three
+  tau.xx = 2.0*mumu*(dWdx.v.x - div);
   tau.xy = mumu*(dWdy.v.x + dWdx.v.y);
-  tau.yy = 2.0*mumu*(dWdy.v.y - div/3.0);
-  if (Axisymmetric) tau.zz = 2.0*mumu*(v.y/radius - div/3.0);
-  else tau.zz = ZERO;
+  tau.yy = 2.0*mumu*(dWdy.v.y - div);
+  if (Axisymmetric){
+    tau.zz = 2.0*mumu*(v.y/radius - div);
+  } else {
+    tau.zz = ZERO;
+  }
+
+  // Heat flux
   q.x = -kap*(dWdx.p - (p/rho)*dWdx.rho)/(rho*R);
   q.y = -kap*(dWdy.p - (p/rho)*dWdy.rho)/(rho*R);
+
 }
 
 /**********************************************************************
@@ -4275,6 +4295,7 @@ inline NavierStokes2D_cState NavierStokes2D_cState::Gy(const NavierStokes2D_pSta
   }
 }
 
+
 /**********************************************************************
  * NavierStokes2D_cState::ComputeViscousTerms -- Compute viscous      *
  *                                               stress tensor and    *
@@ -4288,18 +4309,35 @@ inline void NavierStokes2D_cState::ComputeViscousTerms(const NavierStokes2D_pSta
 						       const int &adiabatic_flag,
 						       const double &ywall,
 						       const double &yplus) {
+
   double div, radius, mumu, kap;
-  mumu = mu() + muT(); kap = kappa() + kappaT(W,ywall,yplus);
-  if (Axisymmetric) radius = max(X.y,TOLER);
+
+  // Total (i.e. molecular + turbulent) dynamic viscosity and thermal conductivity
+  mumu = mu() + muT();
+  kap = kappa() + kappaT(W,ywall,yplus);
+
+  if (Axisymmetric){
+    radius = max(X.y,TOLER);
+  }
+
   // Divergence of the velocity field.
   div = dWdx.v.x + dWdy.v.y;
-  if (Axisymmetric) div += v().y/radius;
+  if (Axisymmetric){
+    div += v().y/radius;
+  }
+
   // Stress tensor.
-  tau.xx = 2.0*mumu*(dWdx.v.x - div/3.0);
+  div /= 3.0;	// divide divergence by three
+  tau.xx = 2.0*mumu*(dWdx.v.x - div);
   tau.xy = mumu*(dWdy.v.x + dWdx.v.y);
-  tau.yy = 2.0*mumu*(dWdy.v.y - div/3.0);
-  if (Axisymmetric) tau.zz = 2.0*mumu*(v().y/radius - div/3.0); 
-  else tau.zz = ZERO;
+  tau.yy = 2.0*mumu*(dWdy.v.y - div);
+  if (Axisymmetric){
+    tau.zz = 2.0*mumu*(v().y/radius - div);
+  } else {
+    tau.zz = ZERO;
+  }
+
+  // Heat flux
   q.x = -kap*(dWdx.p - (p()/rho)*dWdx.rho)/(rho*R);
   q.y = -kap*(dWdy.p - (p()/rho)*dWdy.rho)/(rho*R);
 }
