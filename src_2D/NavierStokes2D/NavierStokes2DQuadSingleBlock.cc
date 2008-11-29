@@ -397,76 +397,7 @@ void Broadcast_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk,
  **********************************************************************/
 void Copy_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk1,
                          NavierStokes2D_Quad_Block &SolnBlk2) {
-
-  int i,j,k;
-
-  // Allocate (re-allocate) memory for the solution of the 
-  // quadrilateral solution block SolnBlk1 as necessary.
-  if (SolnBlk1.NCi    != SolnBlk2.NCi || 
-      SolnBlk1.NCj    != SolnBlk2.NCj || 
-      SolnBlk1.Nghost != SolnBlk2.Nghost) {
-    if (SolnBlk1.U != NULL) SolnBlk1.deallocate();
-    if (SolnBlk2.U != NULL) SolnBlk1.allocate(SolnBlk2.NCi-2*SolnBlk2.Nghost,
-					      SolnBlk2.NCj-2*SolnBlk2.Nghost,
-					      SolnBlk2.Nghost);
-  }
-
-  // Copy the viscous flow indicator.
-  SolnBlk1.Flow_Type = SolnBlk2.Flow_Type;
-
-  // Copy the axisymmetric/planar flow indicator.
-  SolnBlk1.Axisymmetric = SolnBlk2.Axisymmetric;
-
-  // Copy the compressibility effect correction indicator.
-  SolnBlk1.Compressibility_Effect = SolnBlk2.Compressibility_Effect;
-
-  // Copy the transition model correction indicator.
-  SolnBlk1.Transition_Model = SolnBlk2.Transition_Model;
-
-  // Copy the variable Prandtl number indicator.
-  SolnBlk1.Variable_Prandtl = SolnBlk2.Variable_Prandtl;
-
-  // Copy the wall velocity.
-  SolnBlk1.Vwall = SolnBlk2.Vwall;
-
-  // Copy the wall temperature.
-  SolnBlk1.Twall = SolnBlk2.Twall;
-
-  // Copy the grid of the second solution block to the first solution 
-  // block.
-  Copy_Quad_Block(SolnBlk1.Grid,SolnBlk2.Grid);
-
-  // Copy the solution information from SolnBlk2 to SolnBlk1.
-  if (SolnBlk2.U != NULL) {
-    for (j = SolnBlk1.JCl-SolnBlk1.Nghost; j <= SolnBlk1.JCu+SolnBlk1.Nghost; j++) {
-      for (i = SolnBlk1.ICl-SolnBlk1.Nghost; i <= SolnBlk1.ICu+SolnBlk1.Nghost; i++) {
-	SolnBlk1.U[i][j] = SolnBlk2.U[i][j];
-	SolnBlk1.W[i][j] = SolnBlk2.W[i][j];
-	for (k = 0; k < NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D; k++)
-	  SolnBlk1.dUdt[i][j][k] = SolnBlk2.dUdt[i][j][k];
-	SolnBlk1.dWdx[i][j] = SolnBlk2.dWdx[i][j];
-	SolnBlk1.dWdy[i][j] = SolnBlk2.dWdy[i][j];
-	for (k = 0; k < 5; ++k){
-	  SolnBlk1.d_dWdx_dW[i][j][k] = SolnBlk2.d_dWdx_dW[i][j][k];
-	  SolnBlk1.d_dWdy_dW[i][j][k] = SolnBlk2.d_dWdy_dW[i][j][k];
-	}
-	SolnBlk1.phi[i][j]  = SolnBlk2.phi[i][j];
-	SolnBlk1.Uo[i][j]   = SolnBlk2.Uo[i][j];
-	SolnBlk1.dt[i][j]   = SolnBlk2.dt[i][j];
-      }
-    }
-
-    for (j = SolnBlk1.JCl-SolnBlk1.Nghost; j <= SolnBlk1.JCu+SolnBlk1.Nghost; j++) {
-      SolnBlk1.WoW[j] = SolnBlk2.WoW[j];
-      SolnBlk1.WoE[j] = SolnBlk2.WoE[j];
-    }
-
-    for (i = SolnBlk1.ICl-SolnBlk1.Nghost; i <= SolnBlk1.ICu+SolnBlk1.Nghost; i++) {
-      SolnBlk1.WoS[i] = SolnBlk2.WoS[i];
-      SolnBlk1.WoN[i] = SolnBlk2.WoN[i];
-    }
-  }
-
+  SolnBlk1.makeCopy(SolnBlk2);
 }
 
 /**********************************************************************

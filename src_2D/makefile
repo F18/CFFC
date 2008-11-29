@@ -339,12 +339,13 @@ SRC_NAVIERSTOKES = $(NAVIERSTOKES_DIR)NavierStokes2DState.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadGrid.cc \
                    $(NAVIERSTOKES_DIR)NavierStokes2DQuadSolvers.cc \
 	    	   $(NAVIERSTOKES_DIR)NavierStokes2DExactSolutions.cc \
-	    	   $(NAVIERSTOKES_DIR)ExactSolutions.cc
+	    	   $(NAVIERSTOKES_DIR)ExactSolutions.cc \
+	    	   $(NAVIERSTOKES_DIR)NavierStokes2DQuad_HighOrder.cc
 
 SRC_NAVIERSTOKES_EXE = $(NAVIERSTOKES_DIR)NavierStokes2D.cc
 
 # Add Navier-Stokes 2D Testing If Required:
-#SRC_NAVIERSTOKES_TESTS = test_'NAME'.cc
+SRC_NAVIERSTOKES_TESTS = test_NavierStokes2DQuadBlock.cc
 
 SRC_NAVIERSTOKES_TESTS := $(addprefix $(NAVIERSTOKES_DIR)UnitTests/, $(SRC_NAVIERSTOKES_TESTS))
 ifeq ($(TUT_TESTING),ON) 

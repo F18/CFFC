@@ -388,6 +388,9 @@ class NavierStokes2D_pState {
   //! Standard atmosphere operator.
   void Standard_Atmosphere(void);
 
+  //! One operator. Set the solution to ONE.
+  void One(void);
+
   //! Check for unphysical state properties.
   int Unphysical_Properties(void) const;
   //@}
@@ -1149,6 +1152,9 @@ class NavierStokes2D_cState {
   //! Standard atmosphere operator.
   void Standard_Atmosphere(void);
 
+  //! One operator. Set the solution to ONE.
+  void One(void);
+
   //! Check for unphysical state properties.
   int Unphysical_Properties(void) const;
   //@}
@@ -1529,6 +1535,14 @@ inline void NavierStokes2D_pState::Standard_Atmosphere(void) {
   rho = DENSITY_STDATM; v.x = ZERO; v.y = ZERO; p = PRESSURE_STDATM;
   k = ZERO; omega = ZERO; ke = ZERO; ee = ZERO;
   tau.zero(); q.zero();
+}
+
+/****************************************************************
+ * NavierStokes2D_pState::One -- One operator.                  *
+ ***************************************************************/
+inline void NavierStokes2D_pState::One(void) {
+  rho = ONE; v.x = ONE; v.y = ONE; p = ONE;
+  k = ONE; omega = ONE; ke = ONE; ee = ONE;
 }
 
 /**********************************************************************
@@ -2468,6 +2482,14 @@ inline void NavierStokes2D_cState::Standard_Atmosphere(void) {
   rho = DENSITY_STDATM; dv.x = ZERO; dv.y = ZERO;
   E = PRESSURE_STDATM/(GAMMA_AIR-ONE); tau.zero(); q.zero();
   dk = ZERO; domega = ZERO; dke = ZERO; dee = ZERO;
+}
+
+/****************************************************************
+ * NavierStokes2D_cState::One -- One state.                     *
+ ***************************************************************/
+inline void NavierStokes2D_cState::One(void) {
+  rho = ONE; dv.x = ONE; dv.y = ONE; E = ONE;
+  dk = ONE; domega = ONE; dke = ONE; dee = ONE;
 }
 
 /**********************************************************************
