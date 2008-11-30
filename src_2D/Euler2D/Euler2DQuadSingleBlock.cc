@@ -598,15 +598,15 @@ int Prolong_Solution_Block(Euler2D_Quad_Block &SolnBlk_Fine,
 
        for ( j  = j_min; j <= j_max ; ++j ) {
 	   for ( i = i_min ; i <= i_max ; ++i ) {
-               area_total_fine = SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl  ]
-                                                       [2*(j-j_min)+SolnBlk_Fine.JCl  ].A+
-                                 SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl+1]
-                                                       [2*(j-j_min)+SolnBlk_Fine.JCl  ].A+
-                                 SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl  ]
-                                                       [2*(j-j_min)+SolnBlk_Fine.JCl+1].A+
-                                 SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl+1]
-                                                       [2*(j-j_min)+SolnBlk_Fine.JCl+1].A;
-
+               // area_total_fine = SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl  ]
+               //                                         [2*(j-j_min)+SolnBlk_Fine.JCl  ].A+
+               //                   SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl+1]
+               //                                         [2*(j-j_min)+SolnBlk_Fine.JCl  ].A+
+               //                   SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl  ]
+               //                                         [2*(j-j_min)+SolnBlk_Fine.JCl+1].A+
+               //                   SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl+1]
+               //                                         [2*(j-j_min)+SolnBlk_Fine.JCl+1].A;
+	     
      	       SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl  ]
                               [2*(j-j_min)+SolnBlk_Fine.JCl  ] 
                    = SolnBlk_Original.U[i][j];
