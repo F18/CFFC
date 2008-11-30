@@ -489,6 +489,7 @@ public:
   //@{ @name Member functions required for message passing.
   //! Number of solution state variables.
   int NumVar(void);
+
   //! Load send message passing buffer.
   int LoadSendBuffer(double *buffer,
 		     int &buffer_count,
@@ -3292,6 +3293,10 @@ extern void Linear_Reconstruction_LeastSquares_2(NavierStokes2D_Quad_Block &Soln
 extern void Linear_Reconstruction_LeastSquares(NavierStokes2D_Quad_Block &SolnBlk,
 					       const int Limiter);
 
+extern void Linear_Reconstruction(NavierStokes2D_Quad_Block &SolnBlk,
+				  const int & Reconstruction_Type,
+				  const int & Limiter);
+
 extern void Residual_Smoothing(NavierStokes2D_Quad_Block &SolnBlk,
                                const int k_residual,
 			       double &epsilon,
@@ -3355,6 +3360,10 @@ extern NavierStokes2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block_
 extern void ICs(NavierStokes2D_Quad_Block *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,
                 NavierStokes2D_Input_Parameters &Input_Parameters);
+
+extern void Linear_Reconstruction(NavierStokes2D_Quad_Block *Soln_ptr,
+				  AdaptiveBlock2D_List &Soln_Block_List,
+				  NavierStokes2D_Input_Parameters &Input_Parameters);
 
 extern void BCs(NavierStokes2D_Quad_Block *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,
@@ -3763,5 +3772,13 @@ extern int Turbulence_BCs(NavierStokes2D_Quad_Block *Soln_ptr,
 
 extern int NavierStokes2DQuadSolver(char *Input_File_Name_ptr,
 				    int batch_flag);
+
+/*
+ * Include specializations CFFC header files.
+ * Must be included at the end of the file!!!
+ */
+#include "NavierStokes2DAccuracyAssessment.h" /* Include 2D accuracy assessment header 
+						 file with specializations for Navier-Stokes solution. */
+#include "NavierStokes2DHighOrder.h"   /* Include 2D high-order header file with specializations for Navier-Stokes solution. */
 
 #endif // _NAVIERSTOKES2D_QUAD_INCLUDED

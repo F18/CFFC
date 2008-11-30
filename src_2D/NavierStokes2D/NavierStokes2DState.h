@@ -379,6 +379,9 @@ class NavierStokes2D_pState {
   //! Return the number of variables.
   static int NumVar(void) { return NUM_VAR_NAVIERSTOKES2D; }
 
+  //! Number of active solution state variables (i.e. it depends on the flow type)
+  static int NumVarActive(void);
+
   //! Copy operator.
   void Copy(const NavierStokes2D_pState &W);
 
@@ -1105,6 +1108,9 @@ class NavierStokes2D_cState {
   //! Return the number of variables.
   static int NumVar(void) { return NUM_VAR_NAVIERSTOKES2D; }
 
+  //! Number of active solution state variables (i.e. it depends on the flow type)
+  static int NumVarActive(void);
+
   //@{ @name Set static variables.
   void set_static_variables(void);
   void set_static_variables(char *gas_type,
@@ -1501,6 +1507,32 @@ class NavierStokes2D_cState {
  *****************************************************************************************************
  ****************************************************************************************************/
 
+/**********************************************************************
+ * NavierStokes2D_pState::NumVarActive --                             *
+ * Returns number of state variables based on the flow type.          *
+ **********************************************************************/
+inline int NavierStokes2D_pState::NumVarActive(void){
+  switch(flow_type){
+  case FLOWTYPE_INVISCID:
+    return 4;			// Four primitive variables (rho, v.x, v.y, p)
+    break;
+
+  case FLOWTYPE_LAMINAR:
+    return 4;                   // Four primitive variables (rho, v.x, v.y, p)
+    break;
+
+  case FLOWTYPE_TURBULENT_RANS_K_OMEGA:
+    if (Variable_Prandtl){
+      return NUM_VAR_NAVIERSTOKES2D; // Eight primitive variables (rho, v.x, v.y, p, k, omega, ke, ee )
+    } else {
+      return 6;			// Six primitive variables (rho, v.x, v.y, p, k, omega)
+    }
+    break;
+
+  default:
+    return NUM_VAR_NAVIERSTOKES2D;
+  }
+}
 
 /********************************************
  * NavierStokes2D_pState Value Constructor. *
@@ -2448,6 +2480,33 @@ inline void NavierStokes2D_pState::output_data(ostream &out_file,
  *                                                                                                   *
  *****************************************************************************************************
  ****************************************************************************************************/
+
+/**********************************************************************
+ * NavierStokes2D_cState::NumVarActive --                             *
+ * Returns number of state variables based on the flow type.          *
+ **********************************************************************/
+inline int NavierStokes2D_cState::NumVarActive(void){
+  switch(flow_type){
+  case FLOWTYPE_INVISCID:
+    return 4;			// Four conserved variables (rho, dv.x, dv.y, E)
+    break;
+
+  case FLOWTYPE_LAMINAR:
+    return 4;                   // Four conserved variables (rho, dv.x, dv.y, E)
+    break;
+
+  case FLOWTYPE_TURBULENT_RANS_K_OMEGA:
+    if (Variable_Prandtl){
+      return NUM_VAR_NAVIERSTOKES2D;  // Eight conserved quantities (rho, dv.x, dv.y, E, dk, domega, dke, dee)
+    } else {
+      return 6;			// Six conserved quantities (rho, dv.x, dv.y, E, dk, domega)
+    }
+    break;
+
+  default:
+    return NUM_VAR_NAVIERSTOKES2D;
+  }
+}
 
 /********************************************
  * NavierStokes2D_cState Value Constructor. *

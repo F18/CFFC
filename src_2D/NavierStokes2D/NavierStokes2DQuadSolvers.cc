@@ -169,6 +169,10 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 						List_of_Global_Solution_Blocks,
 						List_of_Local_Solution_Blocks);
 
+    /* Create (allocate) the high-order variables in each of the
+       local 2D Euler solution blocks */
+    HighOrder2D_MultiBlock::Create_Initial_HighOrder_Variables(Local_SolnBlk,
+							       List_of_Local_Solution_Blocks);
   } else {
     // Allocate the minimum information related to the solution blocks. (i.e. use the default constructors)
     Local_SolnBlk = Allocate(Local_SolnBlk,Input_Parameters);
@@ -271,12 +275,11 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 								    Input_Parameters,
 								    HighOrder2D_Input::MaximumReconstructionOrder());
 
-#if 0      
       /* Create (allocate) the high-order variables in each of the
 	 local 2D Navier-Stokes solution blocks, if necessary. */
       HighOrder2D_MultiBlock::Create_Initial_HighOrder_Variables(Local_SolnBlk,
 								 List_of_Local_Solution_Blocks);
-#endif      
+
       //!\todo Set BCs values if possible.
     }
 
@@ -1168,7 +1171,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   /*************************************************************************************************************************/
   /*************************************************************************************************************************/
 
-#if 0
+
   /***************************************************************
    * Perform solution reconstruction with the final average      *
    * states in order to use the true piecewise representation    *
@@ -1200,7 +1203,6 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   
   /*************************************************************************************************************************/
   /*************************************************************************************************************************/
-#endif
 
 
   /********************************************************************
@@ -1800,12 +1802,10 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	cout.flush();
       }
 
-#if 0				// Not proper interface yet
       error_flag = AccuracyAssessment2D_MultiBlock::PrintErrorNorms(Local_SolnBlk, 
 								    List_of_Local_Solution_Blocks, 
 								    Input_Parameters,
 								    std::cout);
-#endif
        
       if (CFFC_Primary_MPI_Processor() && error_flag) {
 	cout << "\n NavierStokes2D ERROR: Unable to write NavierStokes2D error norms data.\n"; cout.flush();
@@ -1825,11 +1825,11 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	     << " Writing error norms to output file ...\n";
 	cout.flush();
       }
-#if 0				// Not proper interface yet
+
       error_flag = AccuracyAssessment2D_MultiBlock::WriteErrorNormsToOutputFile(Local_SolnBlk, 
 										List_of_Local_Solution_Blocks, 
 										Input_Parameters);
-#endif       
+
       if (CFFC_Primary_MPI_Processor() && error_flag) {
 	cout << "\n NavierStokes2D ERROR: Unable to write NavierStokes2D error norms data.\n"; cout.flush();
       } // endif
@@ -1848,11 +1848,11 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	     << " Appending error norms to output file ...\n";
 	cout.flush();
       }
-#if 0				// Not proper interface yet
+
       error_flag = AccuracyAssessment2D_MultiBlock::AppendErrorNormsToOutputFile(Local_SolnBlk, 
 										 List_of_Local_Solution_Blocks, 
 										 Input_Parameters);
-#endif       
+
       if (CFFC_Primary_MPI_Processor() && error_flag) {
 	cout << "\n NavierStokes2D ERROR: Unable to write NavierStokes2D error norms data.\n"; cout.flush();
       } // endif
