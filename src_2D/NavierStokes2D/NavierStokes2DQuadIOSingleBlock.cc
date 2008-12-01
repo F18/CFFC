@@ -62,11 +62,9 @@ void Output_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 		    const int Output_Title,
 		    ostream &Out_File) {
 
+  int i, j, nRow, nLoop;
   NavierStokes2D_pState W_node;
-
-  // Ensure boundary conditions are updated before evaluating
-  // solution at the nodes.
-  BCs(SolnBlk,IP);
+  Vector2D Node;
 
   // Output node solution data.  
   Out_File << setprecision(14);
@@ -102,43 +100,147 @@ void Output_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
     Out_File << "\"Rex\" \\ \n";
   }
 
-  Out_File << "ZONE T =  \"Block Number = " << Block_Number
-	   << "\" \\ \n"
-	   << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
-	   << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
-	   << "F = POINT \\ \n";
+  if (Tecplot_Execution_Mode::IsSmoothNodalSolnOutputRequired()){
 
-  for (int j = SolnBlk.Grid.JNl; j <= SolnBlk.Grid.JNu; j++) {
-    for (int i = SolnBlk.Grid.INl; i <= SolnBlk.Grid.INu; i++) {
-      Out_File.setf(ios::scientific);
-      Out_File << " " << SolnBlk.Grid.Node[i][j].X;
-      W_node = SolnBlk.Wn(i,j);
-      Out_File << " " << W_node.rho 
-	       << W_node.v
-	       << " " << W_node.p
-	       << " " << W_node.T()
-	       << " " << W_node.v.abs()/W_node.a() 
-	       << " " << W_node.H()
-	       << " " << W_node.s();
-      if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-	Out_File << " " << W_node.k
-		 << " " << W_node.omega
-		 << " " << W_node.epsilon()
-		 << " " << W_node.ell()
-		 << " " << W_node.pmodified()
-		 << " " << W_node.PrT(SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus)
-		 << " " << SolnBlk.Wall[i][j].yplus;
-	if (SolnBlk.Variable_Prandtl == ON) {
-	  Out_File << " " << W_node.ke
-		   << " " << W_node.ee;
+    // Output the interpolated nodal solution
+
+    // Ensure boundary conditions are updated before evaluating
+    // solution at the nodes.
+    BCs(SolnBlk,IP);
+
+    Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	     << "\" \\ \n"
+	     << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
+	     << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
+	     << "F = POINT \\ \n";
+
+    for ( j = SolnBlk.Grid.JNl; j <= SolnBlk.Grid.JNu; j++) {
+      for ( i = SolnBlk.Grid.INl; i <= SolnBlk.Grid.INu; i++) {
+	Out_File.setf(ios::scientific);
+	Out_File << " " << SolnBlk.Grid.Node[i][j].X;
+	W_node = SolnBlk.Wn(i,j);
+	Out_File << " " << W_node.rho 
+		 << " " << W_node.v
+		 << " " << W_node.p
+		 << " " << W_node.T()
+		 << " " << W_node.v.abs()/W_node.a() 
+		 << " " << W_node.H()
+		 << " " << W_node.s();
+	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	  Out_File << " " << W_node.k
+		   << " " << W_node.omega
+		   << " " << W_node.epsilon()
+		   << " " << W_node.ell()
+		   << " " << W_node.pmodified()
+		   << " " << W_node.PrT(SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus)
+		   << " " << SolnBlk.Wall[i][j].yplus;
+	  if (SolnBlk.Variable_Prandtl == ON) {
+	    Out_File << " " << W_node.ke
+		     << " " << W_node.ee;
+	  }
 	}
+	Out_File << " " << IP.Wo.v.x/IP.Wo.nu()*SolnBlk.Grid.Node[i][j].X.x;
+	Out_File << endl;
       }
-      Out_File << " " << IP.Wo.v.x/IP.Wo.nu()*SolnBlk.Grid.Node[i][j].X.x;
-      Out_File << endl;
     }
-  }
 
-  Out_File << setprecision(6);
+    Out_File << setprecision(6);
+
+  } else {
+    
+    // Output the discontinuous nodal solution
+
+    /* Output node solution data. */
+   
+    Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	     << "\" \\ \n"
+	     << "I = " << (SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 1)*3 << " \\ \n"
+	     << "J = " << (SolnBlk.Grid.JCu - SolnBlk.Grid.JCl + 1)*3 << " \\ \n"
+	     << "F = POINT \\ \n";
+
+    // Output data
+    for ( j  = SolnBlk.Grid.JCl ; j <= SolnBlk.Grid.JCu ; ++j ) { // for every j cell
+      for ( nRow = 1; nRow <= 3; ++nRow){ // for 3 rows of nodes
+	for ( i = SolnBlk.Grid.ICl ; i <= SolnBlk.Grid.ICu ; ++i ) { // for every i cell  
+	  for (nLoop = 1; nLoop <= 3; ++nLoop){	// for every node
+	    // Get the node location
+	    switch(nRow){
+	    case 1: // output the 1st row of nodes (i.e. NodeSW(i,j), xfaceS(i,j), NodeSE(i,j))
+	      switch(nLoop){
+	      case 1:		// output NodeSW(i,j)
+		Node = SolnBlk.Grid.nodeSW(i,j).X;
+		break;
+	      case 2:		// output xfaceS(i,j)
+		Node = SolnBlk.Grid.xfaceS(i,j);
+		break;
+	      case 3:		// output NodeSE(i,j)
+		Node = SolnBlk.Grid.nodeSE(i,j).X;
+		break;
+	      }
+	      break;
+
+	    case 2: // output the 2nd row of nodes (i.e. xfaceW(i,j), Grid.CellCentroid(i,j), xfaceE(i,j))
+	      switch(nLoop){
+	      case 1:		// output xfaceW(i,j)
+		Node = SolnBlk.Grid.xfaceW(i,j);
+		break;
+	      case 2:		// output Grid.CellCentroid(i,j)
+		Node = SolnBlk.Grid.CellCentroid(i,j);
+		break;
+	      case 3:		// output xfaceE(i,j) 
+		Node = SolnBlk.Grid.xfaceE(i,j);
+		break;
+	      }
+	      break;
+
+	    case 3: // output the 3rd row of nodes (i.e. NodeNW(i,j), xfaceN(i,j), NodeNE(i,j))
+	      switch(nLoop){
+	      case 1:		// output NodeNW(i,j)
+		Node = SolnBlk.Grid.nodeNW(i,j).X;
+		break;
+	      case 2:		// output xfaceN(i,j)
+		Node = SolnBlk.Grid.xfaceN(i,j);
+		break;
+	      case 3:		// output NodeNE(i,j)
+		Node = SolnBlk.Grid.nodeNE(i,j).X;
+		break;
+	      }
+	      break;
+	    } // endswitch
+    
+	    // Output Brief format
+	    W_node = SolnBlk.PiecewiseLinearSolutionAtLocation(i,j,Node);
+	    Out_File << " " << Node;
+	    Out_File << " " << W_node.rho 
+		     << " " << W_node.v
+		     << " " << W_node.p
+		     << " " << W_node.T()
+		     << " " << W_node.v.abs()/W_node.a() 
+		     << " " << W_node.H()
+		     << " " << W_node.s();
+	    if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	      Out_File << " " << W_node.k
+		       << " " << W_node.omega
+		       << " " << W_node.epsilon()
+		       << " " << W_node.ell()
+		       << " " << W_node.pmodified()
+		       << " " << W_node.PrT(SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus)
+		       << " " << SolnBlk.Wall[i][j].yplus;
+	      if (SolnBlk.Variable_Prandtl == ON) {
+		Out_File << " " << W_node.ke
+			 << " " << W_node.ee;
+	      }
+	    }
+	    Out_File << " " << IP.Wo.v.x/IP.Wo.nu()*Node.x;
+	    Out_File << endl;
+
+	  }
+	} /* endfor */
+      }
+    } /* endfor */
+    Out_File << setprecision(6);  
+
+  } // endif (Tecplot_Execution_Mode::IsSmoothNodalSolnOutputRequired())
 
 }
 
@@ -269,10 +371,16 @@ void Output_Cells_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 		   << " " << SolnBlk.W[i][j].ee
 		   << " " << SolnBlk.W[i][j].deriv2(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j])
                    << " " << SolnBlk.W[i][j].f_lambda(SolnBlk.Wall[i][j].ywall)
-		   << " " << SolnBlk.W[i][j].productionE1(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus)
+		   << " " << SolnBlk.W[i][j].productionE1(SolnBlk.dWdx[i][j],
+							  SolnBlk.dWdy[i][j],
+							  SolnBlk.Wall[i][j].ywall,
+							  SolnBlk.Wall[i][j].yplus)
 		   << " " << SolnBlk.W[i][j].D1()
 		   << " " << SolnBlk.W[i][j].D2()
-		   << " " << SolnBlk.W[i][j].diff(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus);
+		   << " " << SolnBlk.W[i][j].diff(SolnBlk.dWdx[i][j],
+						  SolnBlk.dWdy[i][j],
+						  SolnBlk.Wall[i][j].ywall,
+						  SolnBlk.Wall[i][j].yplus);
 	}
       }
       if (SolnBlk.Flow_Type) {
