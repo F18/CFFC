@@ -1210,9 +1210,9 @@ int Euler2D_Quad_Block::dUdt_Residual_HighOrder(const Euler2D_Input_Parameters &
 	    
 	    /* Add the weighted contribution of the current GQP to the total 
 	       flux in the normal direction through the face. */
-	    Flux += GaussQuadWeights[GQPoint] * RiemannFlux_n(IP.i_Flux_Function,
-							      Wl, Wr,
-							      Grid.nfaceN(i,JCu));
+	    FluxN[i] += GaussQuadWeights[GQPoint] * RiemannFlux_n(IP.i_Flux_Function,
+								  Wl, Wr,
+								  Grid.nfaceN(i,JCu));
 	  } //endfor (GQPoint)
 	
 	} else {
@@ -1501,9 +1501,9 @@ int Euler2D_Quad_Block::dUdt_Residual_HighOrder(const Euler2D_Input_Parameters &
 	    
 	    /* Add the weighted contribution of the current GQP to the total 
 	       flux in the normal direction through the face. */
-	    Flux += GaussQuadWeights[GQPoint] * RiemannFlux_n(IP.i_Flux_Function,
-							      Wl, Wr,
-							      Grid.nfaceS(i,JCl));
+	    FluxS[i] += GaussQuadWeights[GQPoint] * RiemannFlux_n(IP.i_Flux_Function,
+								  Wl, Wr,
+								  Grid.nfaceS(i,JCl));
 	  } //endfor (GQPoint)
 	    
 	} else {
@@ -1789,9 +1789,9 @@ int Euler2D_Quad_Block::dUdt_Residual_HighOrder(const Euler2D_Input_Parameters &
 	    
 	    /* Add the weighted contribution of the current GQP to the total 
 	       flux in the normal direction through the face. */
-	    Flux += GaussQuadWeights[GQPoint] * RiemannFlux_n(IP.i_Flux_Function,
-							      Wl, Wr,
-							      Grid.nfaceE(ICu,j));
+	    FluxE[j] += GaussQuadWeights[GQPoint] * RiemannFlux_n(IP.i_Flux_Function,
+								  Wl, Wr,
+								  Grid.nfaceE(ICu,j));
 	  } //endfor (GQPoint)
 	    
 	} else {
@@ -2080,9 +2080,9 @@ int Euler2D_Quad_Block::dUdt_Residual_HighOrder(const Euler2D_Input_Parameters &
 	    
 	    /* Add the weighted contribution of the current GQP to the total 
 	       flux in the normal direction through the face. */
-	    Flux += GaussQuadWeights[GQPoint] * RiemannFlux_n(IP.i_Flux_Function,
-							      Wl, Wr,
-							      Grid.nfaceW(ICl,j));
+	    FluxW[j] += GaussQuadWeights[GQPoint] * RiemannFlux_n(IP.i_Flux_Function,
+								  Wl, Wr,
+								  Grid.nfaceW(ICl,j));
 	  } //endfor (GQPoint)
 	    
 	} else {
