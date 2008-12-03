@@ -85,6 +85,26 @@ public:
   virtual void Print_Info(std::ostream & out_file) = 0;
   virtual void Broadcast(void) = 0;
   //@}
+
+  //! @name Tecplot output functions
+  //@{
+  /*! @brief Output the variable names that defined the exact solution in a format 
+   * suitable for Tecplot to the provided output stream.
+   * Overwrite the standard format if customized output is desired. */
+  virtual void Output_Tecplot_Title(std::ostream & out_file) const;
+  /*! @brief Write the Tecplot double precision format for the associated exact solution. */
+  virtual void Output_Tecplot_Double_Precision(std::ostream & out_file) const;
+  /*! @brief Write the exact solution at the given location in a format suitable for plotting with Tecplot. */
+  virtual void Output_Tecplot_Solution(std::ostream & out_file,
+				       const double &x, const double &y) const {
+    // Overwrite me if you want special format and set IsSpecialTecplotFormatDefined() to true!
+  };
+  /*!@brief Indicate if the current exact solution is output in a special format.
+   * For special formats, overwrite this function and return TRUE.
+   */
+  virtual bool IsSpecialTecplotFormatDefined(void) const { return false; }
+  //@}
+
   //@}
 
   const string & whatExactSolution(void) const { return ExactSolutionName; }   //!< Get the name of the exact solution type

@@ -26,7 +26,8 @@
  * \param IndexHO the high-order variable index that is used to calculate the solution
  *
  */
-void NavierStokes2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Time_Steps,
+void NavierStokes2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const NavierStokes2D_Input_Parameters &IP,
+							       const int &Number_of_Time_Steps,
 							       const double &Time,
 							       const int &Block_Number,
 							       const int &Output_Title,
@@ -36,7 +37,373 @@ void NavierStokes2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number
 							       const int & StartJ_CellIndex,
 							       const int & EndJ_CellIndex,
 							       const int &IndexHO) {
-  // Nothing
+
+  int i, j, nRow, nLoop;
+  NavierStokes2D_pState W_node;
+  Vector2D Node;
+  int Index_GQP(Spline2DInterval_HO::get_NumGQPoints_ContourIntegral()/2 + 1);
+
+  if (NumberOfHighOrderVariables <= IndexHO){
+    throw runtime_error("NavierStokes2D_Quad_Block::Output_Nodes_Tecplot_HighOrder() ERROR! High-order object index out of range!");
+  }
+
+  /* Output node solution data. */
+
+  Out_File << setprecision(14);
+  if (Output_Title) {
+    // Set the Brief format
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Solution, "
+	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
+	     << ", Time = " << Time
+	     << "\"" << "\n"
+	     << "VARIABLES = \"x\" \\ \n"
+	     << "\"y\" \\ \n"
+	     << "\"rho\" \\ \n"
+	     << "\"u\" \\ \n"
+	     << "\"v\" \\ \n"
+	     << "\"p\" \\ \n";
+
+    // Add more variables for the Detailed format
+    if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+      Out_File << "\"T\" \n"
+	       << "\"M\" \n"
+	       << "\"H\" \n"
+	       << "\"s\" \n";
+    }
+
+    // Add more variables for turbulent flows
+    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+      
+      // Add to Brief format
+      Out_File << "\"k\" \\ \n"
+	       << "\"omega\" \\ \n";
+
+
+      // Add more variables for the Detailed format
+      if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+	Out_File << "\"epsilon\" \\ \n"
+		 << "\"ell\" \\ \n"
+		 << "\"p_modified\" \\ \n"
+		 << "\"PrT\" \\ \n"
+		 << "\"yplus\" \\ \n";
+      }
+
+      // Add to Brief format and variable Prandtl number
+      if (Variable_Prandtl == ON) {
+	Out_File << "\"ke\" \\ \n"
+		 << "\"ee\" \\ \n";
+      }
+    }
+
+    // Output Reynolds number along x direction
+    if (Tecplot_Execution_Mode::IsDetailedOutputRequired() && Flow_Type != FLOWTYPE_INVISCID){
+      Out_File << "\"Re_x\" \\ \n";
+    }
+
+    // Add more variables for the Full format
+    if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+      Out_File << "\"ValISrho\" \\ \n"
+	       << "\"ISrho\" \\ \n"
+	       << "\"ValISu\" \\ \n"
+	       << "\"ISu\" \\ \n"
+	       << "\"ValISv\" \\ \n"
+	       << "\"ISv\" \\ \n"
+	       << "\"ValISp\" \\ \n"
+	       << "\"ISp\" \\ \n";
+
+      // Add more variables for turbulent flows
+      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	Out_File << "\"ValISk\" \\ \n"
+		 << "\"ISk\" \\ \n"
+		 << "\"ValISomega\" \\ \n"
+		 << "\"ISomega\" \\ \n";
+
+	if (Variable_Prandtl == ON){
+	  Out_File << "\"ValISke\" \\ \n"
+		   << "\"ISke\" \\ \n"
+		   << "\"ValISee\" \\ \n"
+		   << "\"ISee\" \\ \n";
+	}
+      }
+
+      if (ExactSoln->IsExactSolutionSet()){
+	ExactSoln->Output_Tecplot_Title(Out_File);
+      }
+    }
+
+    // Add more variables for the Extended format
+    if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+      Out_File << "\"ResidualRho\" \\ \n"
+	       << "\"ResidualDvX\" \\ \n"
+	       << "\"ResidualDvY\" \\ \n"
+	       << "\"ResidualE\" \\ \n";
+
+      // Add more variables for turbulent flows
+      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	Out_File << "\"Residualdk\" \\ \n"
+		 << "\"Residualdomega\" \\ \n";
+
+	if (Variable_Prandtl == ON){
+	  Out_File << "\"Residualdke\" \\ \n"
+		   << "\"Residualdee\" \\ \n";
+	}
+      }
+    } /* endif */
+
+  } /* endif */
+
+  Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	   << "\" \\ \n"
+	   << "I = " << (EndI_CellIndex - StartI_CellIndex + 1)*3  << " \\ \n"
+	   << "J = " << (EndJ_CellIndex - StartJ_CellIndex + 1)*3 << " \\ \n"
+	   << "F = POINT \n";
+
+
+  // Set the accuracy properly
+  if (Tecplot_Execution_Mode::IsDoublePrecision()){
+    Out_File << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE ";
+
+    // Detail format
+    if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+      Out_File << "DOUBLE DOUBLE DOUBLE DOUBLE ";
+    }
+
+    // Add more variables for turbulent flows
+    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+      // Brief format
+      Out_File << "DOUBLE DOUBLE ";
+
+      // Detail format
+      if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+	Out_File << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE ";
+      }
+
+      // Brief format and variable Prandtl number
+      if (Variable_Prandtl == ON) {
+	Out_File << "DOUBLE DOUBLE ";
+      }
+    }
+
+    // Output Reynolds number along x direction
+    if (Tecplot_Execution_Mode::IsDetailedOutputRequired() && Flow_Type != FLOWTYPE_INVISCID){
+      Out_File << "DOUBLE ";
+    }
+
+    // Full format
+    if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+      Out_File << "DOUBLE SHORTINT DOUBLE SHORTINT DOUBLE SHORTINT DOUBLE SHORTINT ";
+
+      // Add more variables for turbulent flows
+      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	Out_File << "DOUBLE SHORTINT DOUBLE SHORTINT ";
+
+	if (Variable_Prandtl == ON){
+	  Out_File << "DOUBLE SHORTINT DOUBLE SHORTINT ";
+	}
+      }
+
+      if (ExactSoln->IsExactSolutionSet()){
+	ExactSoln->Output_Tecplot_Double_Precision(Out_File);
+      }
+    }
+
+    // Extended format
+    if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+      Out_File << "DOUBLE DOUBLE DOUBLE DOUBLE ";
+
+      // Add more variables for turbulent flows
+      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	Out_File << "DOUBLE DOUBLE ";
+
+	if (Variable_Prandtl == ON){
+	  Out_File << "DOUBLE DOUBLE ";
+	}
+      }    
+    }
+
+    // Close line
+    Out_File << " ) \n";
+  } // endif (DoublePrecision)
+
+
+    // Output data
+  for ( j  = StartJ_CellIndex ; j <= EndJ_CellIndex ; ++j ) {	// for every j Cell
+    for ( nRow = 1; nRow <= 3; ++nRow){ // for 3 rows of nodes
+      for ( i = StartI_CellIndex ; i <= EndI_CellIndex ; ++i ) { // for every i Cell
+	for (nLoop = 1; nLoop <= 3; ++nLoop){	// for every node
+	  // Get the node location
+	  switch(nRow){
+	  case 1: // output the 1st row of nodes (i.e. NodeSW(i,j), xfaceS(i,j), NodeSE(i,j))
+	    switch(nLoop){
+	    case 1:		// output NodeSW(i,j)
+	      Node = Grid.nodeSW(i,j).X;
+	      break;
+	    case 2:		// output xfaceS(i,j) or BndSouthSplineInfo[i].GQPointContourIntegral(Index_GQP)
+	      if(j == JCl && Grid.BndSouthSplineInfo != NULL && i>= ICl && i<= ICu ){
+		Node = Grid.BndSouthSplineInfo[i].GQPointContourIntegral(Index_GQP);
+	      } else if (j == JCu+1 && Grid.BndNorthSplineInfo != NULL & i>= ICl && i<= ICu ){
+		Node = Grid.BndNorthSplineInfo[i].GQPointContourIntegral(Index_GQP);
+	      } else {
+		Node = Grid.xfaceS(i,j);
+	      }
+	      break;
+	    case 3:		// output NodeSE(i,j)
+	      Node = Grid.nodeSE(i,j).X;
+	      break;
+	    }
+	    break;
+
+	  case 2: // output the 2nd row of nodes (i.e. xfaceW(i,j), Grid.CellCentroid(i,j), xfaceE(i,j))
+	    switch(nLoop){
+	    case 1:		// output xfaceW(i,j) or BndWestSplineInfo[j].GQPointContourIntegral(Index_GQP)
+	      if (i == ICl && Grid.BndWestSplineInfo != NULL && j>=JCl && j<=JCu ){
+		Node = Grid.BndWestSplineInfo[j].GQPointContourIntegral(Index_GQP);
+	      } else if (i == ICu+1 && Grid.BndEastSplineInfo != NULL && j>=JCl && j<=JCu) {
+		Node = Grid.BndEastSplineInfo[j].GQPointContourIntegral(Index_GQP);
+	      } else {
+		Node = Grid.xfaceW(i,j);
+	      }
+	      break;
+	    case 2:		// output Grid.CellCentroid(i,j)
+	      Node = Grid.CellCentroid(i,j);
+	      break;
+	    case 3:		// output xfaceE(i,j) or BndEastSplineInfo[j].GQPointContourIntegral(Index_GQP)
+	      if (i == ICu && Grid.BndEastSplineInfo != NULL && j>=JCl && j<=JCu ){
+		Node = Grid.BndEastSplineInfo[j].GQPointContourIntegral(Index_GQP);
+	      } else if (i == ICl-1 && Grid.BndWestSplineInfo != NULL && j>=JCl && j<=JCu ) { 
+		Node = Grid.BndWestSplineInfo[j].GQPointContourIntegral(Index_GQP);
+	      } else {
+		Node = Grid.xfaceE(i,j);
+	      }
+	      break;
+	    }
+	    break;
+
+	  case 3: // output the 3rd row of nodes (i.e. NodeNW(i,j), xfaceN(i,j), NodeNE(i,j))
+	    switch(nLoop){
+	    case 1:		// output NodeNW(i,j)
+	      Node = Grid.nodeNW(i,j).X;
+	      break;
+	    case 2:		// output xfaceN(i,j) or BndNorthSplineInfo[i].GQPointContourIntegral(Index_GQP)
+	      if(j == JCu && Grid.BndNorthSplineInfo != NULL  && i>= ICl && i<= ICu ){
+		Node = Grid.BndNorthSplineInfo[i].GQPointContourIntegral(Index_GQP);
+	      } else if (j == JCl-1 && Grid.BndSouthSplineInfo != NULL && i>= ICl && i<= ICu ) {
+		Node = Grid.BndSouthSplineInfo[i].GQPointContourIntegral(Index_GQP);
+	      } else {
+		Node = Grid.xfaceN(i,j);
+	      }
+	      break;
+	    case 3:		// output NodeNE(i,j)
+	      Node = Grid.nodeNE(i,j).X;
+	      break;
+	    }
+	    break;
+	  } // endswitch
+
+	  // Output Brief format
+	  W_node = HighOrderVariable(IndexHO).SolutionStateAtLocation(i,j,Node);
+	  Out_File << " "  << Node 
+		   << " "  << W_node.rho
+		   << " "  << W_node.v
+		   << " "  << W_node.p;
+	    
+	  // Add more variables for the Detailed format
+	  if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){ 
+	    Out_File.setf(ios::scientific);
+	    Out_File << " " << W_node.T()
+		     << " " << W_node.v.abs()/W_node.a() 
+		     << " " << W_node.H()
+		     << " " << W_node.s();
+	    Out_File.unsetf(ios::scientific);
+	  }
+
+	  // Add more variables for turbulent flows
+	  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	    Out_File << " " << W_node.k
+		     << " " << W_node.omega;
+
+	    // Add more variables for the Detailed format
+	    if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+	      Out_File << " " << W_node.epsilon()
+		       << " " << W_node.ell()
+		       << " " << W_node.pmodified()
+		       << " " << W_node.PrT(Wall[i][j].ywall,Wall[i][j].yplus)
+		       << " " << Wall[i][j].yplus;
+	    }
+
+	    // Brief format and variable Prandtl number
+	    if (Variable_Prandtl == ON) {
+	      Out_File << " " << W_node.ke
+		       << " " << W_node.ee; 
+	    }
+	  }
+
+	  // Output Reynolds number along x direction
+	  if (Tecplot_Execution_Mode::IsDetailedOutputRequired() && Flow_Type != FLOWTYPE_INVISCID){
+	    Out_File << " " << IP.Wo.v.x/IP.Wo.nu()*Node.x;
+	  }
+
+	  // Add more variables for the Full format
+	  if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+	    Out_File.setf(ios::scientific);
+	    Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,1)
+		     << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,1)
+		     << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,2)
+		     << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,2)
+		     << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,3)
+		     << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,3)
+		     << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,4)
+		     << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,4);
+
+	    // Add more variables for turbulent flows
+	    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	      Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,5)
+		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,5)
+		       << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,6)
+		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,6);
+
+	      if (Variable_Prandtl == ON){
+		Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,7)
+			 << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,7)
+			 << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,8)
+			 << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,8);
+	      }
+	    }
+	    Out_File.unsetf(ios::scientific);
+
+	    if (ExactSoln->IsExactSolutionSet()){
+	      ExactSoln->Output_Tecplot_Solution(Out_File,
+						 Node.x,Node.y);
+	    }
+	  }
+
+	  // Add more variables for the Extended format
+	  if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+	    Out_File << " " << dUdt[i][j][0].rho
+		     << " " << dUdt[i][j][0].dv
+		     << " " << dUdt[i][j][0].E;
+
+	    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	      Out_File << " " << dUdt[i][j][0].dk
+		       << " " << dUdt[i][j][0].domega;
+	      
+	      if (Variable_Prandtl == ON){
+		Out_File << " " << dUdt[i][j][0].dke
+			 << " " << dUdt[i][j][0].dee;
+	      }
+	    }
+	  } // endif (ExtendedOutput)
+
+	  // Close line
+	  Out_File << "\n";
+	  Out_File.unsetf(ios::scientific);
+
+	}
+      } /* endfor */
+    }
+  } /* endfor */
+  Out_File << setprecision(6);
+
 }
 
 /*!
@@ -47,14 +414,16 @@ void NavierStokes2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number
  *
  * \param IndexHO the high-order variable index that is used to calculate the solution
  */
-void NavierStokes2D_Quad_Block::Output_Tecplot_HighOrder(const int &Number_of_Time_Steps,
+void NavierStokes2D_Quad_Block::Output_Tecplot_HighOrder(const NavierStokes2D_Input_Parameters &IP,
+							 const int &Number_of_Time_Steps,
 							 const double &Time,
 							 const int &Block_Number,
 							 const int &Output_Title,
 							 ostream &Out_File,
 							 const int &IndexHO) {
 
-  return Output_Nodes_Tecplot_HighOrder(Number_of_Time_Steps,
+  return Output_Nodes_Tecplot_HighOrder(IP,
+					Number_of_Time_Steps,
 					Time,
 					Block_Number,
 					Output_Title,
@@ -109,7 +478,8 @@ void NavierStokes2D_Quad_Block::Output_Tecplot_HighOrder_Debug_Mode(AdaptiveBloc
   if (output_file.fail()) { throw runtime_error("Output_Tecplot_HighOrder_Debug_Mode() ERROR! Fail to open the output file!"); }
   
   try {
-    Output_Tecplot_HighOrder(0,0,
+    Output_Tecplot_HighOrder(IP,
+			     0,0,
 			     Block_Number,
 			     1,
 			     output_file,
@@ -141,14 +511,16 @@ void NavierStokes2D_Quad_Block::Output_Tecplot_HighOrder_Debug_Mode(AdaptiveBloc
  *
  * \note Only the ghost nodes for which the high-order solution can be calculated are included!
  */
-void NavierStokes2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Time_Steps,
-							const double &Time,
-							const int &Block_Number,
-							const int &Output_Title,
-							ostream &Out_File,
-							const int &IndexHO) {
+void NavierStokes2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const NavierStokes2D_Input_Parameters &IP,
+							       const int &Number_of_Time_Steps,
+							       const double &Time,
+							       const int &Block_Number,
+							       const int &Output_Title,
+							       ostream &Out_File,
+							       const int &IndexHO) {
 
-  return Output_Nodes_Tecplot_HighOrder(Number_of_Time_Steps,
+  return Output_Nodes_Tecplot_HighOrder(IP,
+					Number_of_Time_Steps,
 					Time,
 					Block_Number,
 					Output_Title,
@@ -210,7 +582,8 @@ void NavierStokes2D_Quad_Block::Output_Nodes_Tecplot_HighOrder_Debug_Mode(Adapti
 
   try{
     
-    Output_Nodes_Tecplot_HighOrder(0,0,
+    Output_Nodes_Tecplot_HighOrder(IP,
+				   0,0,
 				   Block_Number,
 				   1,
 				   output_file,
@@ -241,6 +614,8 @@ void NavierStokes2D_Quad_Block::Output_Nodes_Tecplot_HighOrder_Debug_Mode(Adapti
  * quadrilateral solution block to the specified output
  * stream suitable for plotting with TECPLOT.
  * \param IndexHO the high-order variable index that is used to calculate the solution
+ *
+ * \todo Add some omitted turbulent quantities!
  */
 void NavierStokes2D_Quad_Block::Output_Cells_Tecplot_HighOrder(const int &Number_of_Time_Steps,
 							       const double &Time,
@@ -248,7 +623,680 @@ void NavierStokes2D_Quad_Block::Output_Cells_Tecplot_HighOrder(const int &Number
 							       const int &Output_Title,
 							       ostream &Out_File,
 							       const int &IndexHO) {
-  // Nothing
+
+  int i, j;
+  NavierStokes2D_pState W_node, dWdx_node, dWdy_node;
+  Vector2D Node;
+
+  if (NumberOfHighOrderVariables <= IndexHO){
+    throw runtime_error("NavierStokes2D_Quad_Block::Output_Cells_Tecplot_HighOrder() ERROR! High-order object index out of range!");
+  }
+
+  /* Output cell centroid solution data. */
+
+  Out_File << setprecision(14);
+  if (Output_Title) {
+    // Set the Brief format
+    Out_File << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Solution, "
+	     << "Time Step/Iteration Level = " << Number_of_Time_Steps
+	     << ", Time = " << Time
+	     << "\"" << "\n"
+	     << "VARIABLES = \"x\" \\ \n"
+	     << "\"y\" \\ \n"
+	     << "\"rho\" \\ \n"
+	     << "\"u\" \\ \n"
+	     << "\"v\" \\ \n"
+	     << "\"p\" \\ \n";
+
+    // Add more variables to Brief format for turbulent flows
+    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {   
+      
+      Out_File << "\"k\" \\ \n"
+	       << "\"omega\" \\ \n";
+
+      if (Variable_Prandtl == ON){
+	Out_File << "\"ke\" \\ \n"
+		 << "\"ee\" \\ \n";
+      }
+    }
+      
+    // Add more variables for the Detailed format
+    if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+      Out_File << "\"T\" \\ \n"
+	       << "\"M\" \\ \n"
+	       << "\"H\" \\ \n"
+	       << "\"s\" \\ \n";
+      
+      Out_File << "\"rhoAvg\" \\ \n"
+	       << "\"uAvg\" \\ \n"
+	       << "\"vAvg\" \\ \n"
+	       << "\"pAvg\" \\ \n";
+      // Add more variables to Detailed format for turbulent flows
+      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {   
+	Out_File << "\"kAvg\" \\ \n"
+		 << "\"omegaAvg\" \\ \n";
+	if (Variable_Prandtl == ON){
+	  Out_File << "\"keAvg\" \\ \n"
+		   << "\"eeAvg\" \\ \n";
+	}
+      }
+
+      if (ExactSoln->IsExactSolutionSet()){
+	ExactSoln->Output_Tecplot_Title(Out_File);
+      }      
+    } // endif (DetailedOutput)
+
+
+    // Add more variables for the Full format
+    if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+
+      Out_File << "\"ValISrho\" \\ \n"
+	       << "\"ISrho\" \\ \n"
+	       << "\"ValISu\" \\ \n"
+	       << "\"ISu\" \\ \n"
+	       << "\"ValISv\" \\ \n"
+	       << "\"ISv\" \\ \n"
+	       << "\"ValISp\" \\ \n"
+	       << "\"ISp\" \\ \n";
+
+      // Add more variables to Full format for turbulent flows
+      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	Out_File << "\"ValISk\" \\ \n"
+		 << "\"ISk\" \\ \n"
+		 << "\"ValISomega\" \\ \n"
+		 << "\"ISomega\" \\ \n";
+		 	
+	if (Variable_Prandtl == ON){
+	  Out_File << "\"ValISke\" \\ \n"
+		   << "\"ISke\" \\ \n"
+		   << "\"ValISee\" \\ \n"
+		   << "\"ISee\" \\ \n";
+	}
+      }
+
+      if (Flow_Type != FLOWTYPE_INVISCID){
+	Out_File  << "\"tau_xx\" \\ \n"
+		  << "\"tau_xy\" \\ \n"
+		  << "\"tau_yy\" \\ \n";
+	if (Axisymmetric){
+	  Out_File << "\"tau_zz\" \\ \n";
+	}
+	Out_File << "\"qx\" \\ \n"
+		 << "\"qy\" \\ \n"
+		 << "\"alphaT\" \\ \n"
+		 << "\"kappaT\" \\ \n";
+      }
+      Out_File << "\"mu\" \\ \n";
+
+      Out_File << "\"ResidualRho\" \\ \n"
+	       << "\"ResidualDvX\" \\ \n"
+	       << "\"ResidualDvY\" \\ \n"
+	       << "\"ResidualE\" \\ \n";
+      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	Out_File << "\"ResidualK\" \\ \n"
+		 << "\"ResidualOmega\" \\ \n";
+		 	
+	if (Variable_Prandtl == ON){
+	  Out_File << "\"ResidualKe\" \\ \n"
+		   << "\"ResidualEe\" \\ \n";
+	}
+      }
+
+      Out_File << "\"dt\" \\ \n";
+
+    } // endif (FullOutput)
+      
+    // Add more variables for the Extended format
+    if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+      Out_File << "\"A\" \\ \n";
+
+      switch(HighOrderVariable(IndexHO).RecOrder()){
+      case 4:	  // 4th-order derivatives
+	Out_File << "\"dxxxxrho\" \\ \n"
+		 << "\"dxxxxu\" \\ \n"
+		 << "\"dxxxxv\" \\ \n"
+		 << "\"dxxxxp\" \\ \n"
+		 << "\"dxxxxk\" \\ \n"
+		 << "\"dxxxxomega\" \\ \n"
+		 << "\"dxxxxke\" \\ \n"
+		 << "\"dxxxxee\" \\ \n"
+		 << "\"dxxxyrho\" \\ \n"
+		 << "\"dxxxyu\" \\ \n"
+		 << "\"dxxxyv\" \\ \n"
+		 << "\"dxxxyp\" \\ \n"
+		 << "\"dxxxyk\" \\ \n"
+		 << "\"dxxxyomega\" \\ \n"
+		 << "\"dxxxyke\" \\ \n"
+		 << "\"dxxxyee\" \\ \n"
+		 << "\"dxxyyrho\" \\ \n"
+		 << "\"dxxyyu\" \\ \n"
+		 << "\"dxxyyv\" \\ \n"
+		 << "\"dxxyyp\" \\ \n"
+		 << "\"dxxyyk\" \\ \n"
+		 << "\"dxxyyomega\" \\ \n"
+		 << "\"dxxyyke\" \\ \n"
+		 << "\"dxxyyee\" \\ \n"
+		 << "\"dxyyyrho\" \\ \n"
+		 << "\"dxyyyu\" \\ \n"
+		 << "\"dxyyyv\" \\ \n"
+		 << "\"dxyyyp\" \\ \n"
+		 << "\"dxyyyk\" \\ \n"
+		 << "\"dxyyyomega\" \\ \n"
+		 << "\"dxyyyke\" \\ \n"
+		 << "\"dxyyyee\" \\ \n"
+		 << "\"dyyyyrho\" \\ \n"
+		 << "\"dyyyyu\" \\ \n"
+		 << "\"dyyyyv\" \\ \n"
+		 << "\"dyyyyp\" \\ \n"
+		 << "\"dyyyyk\" \\ \n"
+		 << "\"dyyyyomega\" \\ \n"
+		 << "\"dyyyyke\" \\ \n"
+		 << "\"dyyyyee\" \\ \n";
+	  
+      case 3:   // 3rd-order derivatives
+	Out_File << "\"dxxxrho\" \\ \n"
+		 << "\"dxxxu\" \\ \n"
+		 << "\"dxxxv\" \\ \n"
+		 << "\"dxxxp\" \\ \n"
+		 << "\"dxxxk\" \\ \n"
+		 << "\"dxxxomega\" \\ \n"
+		 << "\"dxxxke\" \\ \n"
+		 << "\"dxxxee\" \\ \n"
+		 << "\"dxxyrho\" \\ \n"
+		 << "\"dxxyu\" \\ \n"
+		 << "\"dxxyv\" \\ \n"
+		 << "\"dxxyp\" \\ \n"
+		 << "\"dxxyk\" \\ \n"
+		 << "\"dxxyomega\" \\ \n"
+		 << "\"dxxyke\" \\ \n"
+		 << "\"dxxyee\" \\ \n"
+		 << "\"dxyyrho\" \\ \n"
+		 << "\"dxyyu\" \\ \n"
+		 << "\"dxyyv\" \\ \n"
+		 << "\"dxyyp\" \\ \n"
+		 << "\"dxyyk\" \\ \n"
+		 << "\"dxyyomega\" \\ \n"
+		 << "\"dxyyke\" \\ \n"
+		 << "\"dxyyee\" \\ \n"
+		 << "\"dyyyrho\" \\ \n"
+		 << "\"dyyyu\" \\ \n"
+		 << "\"dyyyv\" \\ \n"
+		 << "\"dyyyp\" \\ \n"
+		 << "\"dyyyk\" \\ \n"
+		 << "\"dyyyomega\" \\ \n"
+		 << "\"dyyyke\" \\ \n"
+		 << "\"dyyyee\" \\ \n";
+
+      case 2: 	 // 2nd-order derivatives
+	Out_File << "\"dxxrho\" \\ \n"
+		 << "\"dxxu\" \\ \n"
+		 << "\"dxxv\" \\ \n"
+		 << "\"dxxp\" \\ \n"
+		 << "\"dxxk\" \\ \n"
+		 << "\"dxxomega\" \\ \n"
+		 << "\"dxxke\" \\ \n"
+		 << "\"dxxee\" \\ \n"
+		 << "\"dxyrho\" \\ \n"
+		 << "\"dxyu\" \\ \n"
+		 << "\"dxyv\" \\ \n"
+		 << "\"dxyp\" \\ \n"
+		 << "\"dxyk\" \\ \n"
+		 << "\"dxyomega\" \\ \n"
+		 << "\"dxyke\" \\ \n"
+		 << "\"dxyee\" \\ \n"
+		 << "\"dyyrho\" \\ \n"
+		 << "\"dyyu\" \\ \n"
+		 << "\"dyyv\" \\ \n"
+		 << "\"dyyp\" \\ \n"
+		 << "\"dyyk\" \\ \n"
+		 << "\"dyyomega\" \\ \n"
+		 << "\"dyyke\" \\ \n"
+		 << "\"dyyee\" \\ \n";
+
+      case 1:   // 1st-order derivatives
+	Out_File << "\"dxrho\" \\ \n"
+		 << "\"dxu\" \\ \n"
+		 << "\"dxv\" \\ \n"
+		 << "\"dxp\" \\ \n"
+		 << "\"dxk\" \\ \n"
+		 << "\"dxomega\" \\ \n"
+		 << "\"dxke\" \\ \n"
+		 << "\"dxee\" \\ \n"
+		 << "\"dyrho\" \\ \n"
+		 << "\"dyu\" \\ \n"
+		 << "\"dyv\" \\ \n"
+		 << "\"dyp\" \\ \n"
+		 << "\"dyk\" \\ \n"
+		 << "\"dyomega\" \\ \n"
+		 << "\"dyke\" \\ \n"
+		 << "\"dyee\" \\ \n"
+		 << "\"phirho\" \\ \n"
+		 << "\"phiu\" \\ \n"
+		 << "\"phiv\" \\ \n"
+		 << "\"phip\" \\ \n"
+		 << "\"phik\" \\ \n"
+		 << "\"phiomega\" \\ \n"
+		 << "\"phike\" \\ \n"
+		 << "\"phiee\" \\ \n";
+      } // endswitch
+
+    }
+  } /* endif */
+
+  Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	   << "\" \\ \n"
+	   << "I = " << ( ICu - ICl + 2*Nghost + 1 ) << " \\ \n"
+	   << "J = " << ( JCu - JCl + 2*Nghost + 1 ) << " \\ \n"
+	   << "F = POINT \n";
+
+  // Set the accuracy properly
+  if (Tecplot_Execution_Mode::IsDoublePrecision()){
+    Out_File << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE ";
+
+    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {   
+      Out_File << "DOUBLE DOUBLE ";
+      if (Variable_Prandtl == ON){
+	Out_File << "DOUBLE DOUBLE ";
+      }
+    }
+
+    // Detail format
+    if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+      Out_File << "DOUBLE DOUBLE DOUBLE DOUBLE ";
+
+      Out_File << "DOUBLE DOUBLE DOUBLE DOUBLE ";
+      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {   
+	Out_File << "DOUBLE DOUBLE ";
+	if (Variable_Prandtl == ON){
+	  Out_File << "DOUBLE DOUBLE ";
+	}
+      }
+
+      if (ExactSoln->IsExactSolutionSet()){
+	ExactSoln->Output_Tecplot_Double_Precision(Out_File);
+      }
+    }
+
+    // Full format
+    if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+      Out_File << "DOUBLE SHORTINT DOUBLE SHORTINT DOUBLE SHORTINT DOUBLE SHORTINT ";
+      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {   
+	Out_File << "DOUBLE SHORTINT DOUBLE SHORTINT ";
+	if (Variable_Prandtl == ON){
+	  Out_File << "DOUBLE SHORTINT DOUBLE SHORTINT ";
+	}
+      }
+
+      if (Flow_Type != FLOWTYPE_INVISCID){
+	Out_File << "DOUBLE DOUBLE DOUBLE ";
+	if (Axisymmetric){
+	  Out_File << "DOUBLE ";
+	}
+	Out_File << "DOUBLE DOUBLE DOUBLE DOUBLE ";
+      }
+
+      Out_File << "DOUBLE ";
+
+      Out_File << "DOUBLE DOUBLE DOUBLE DOUBLE ";
+      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {   
+	Out_File << "DOUBLE DOUBLE ";
+	if (Variable_Prandtl == ON){
+	  Out_File << "DOUBLE DOUBLE ";
+	}
+      }
+      
+      Out_File << "DOUBLE ";
+    }
+
+    // Extended format
+    if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+      Out_File << "\"A\" \\ \n";
+
+      switch(HighOrderVariable(IndexHO).RecOrder()){
+      case 4:	  // 4th-order derivatives
+	Out_File << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE "
+		 << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE "
+		 << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE "
+		 << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE ";
+
+      case 3:   // 3rd-order derivatives
+	Out_File << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE "
+		 << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE "
+		 << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE "
+		 << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE ";
+
+      case 2: 	 // 2nd-order derivatives
+	Out_File << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE "
+		 << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE "
+		 << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE "
+		 << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE ";
+
+      case 1:   // 1st-order derivatives
+	Out_File << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE "
+		 << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE "	  
+		 << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE "
+		 << "DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE ";
+      }
+    }
+
+    // Close line
+    Out_File << " ) \n";
+  } // endif (DoublePrecision)
+
+
+  // Output data
+  for (j = JCl-Nghost; j <= JCu+Nghost; ++j) {// for every j Cell
+    for (i = ICl-Nghost; i <= ICu+Nghost; ++i) {// for every i Cell
+
+      // Set the location
+      Node = Grid.CellCentroid(i,j);
+
+      if (i < ICl-HighOrderVariable(IndexHO).NghostHO() || 
+	  i > ICu+HighOrderVariable(IndexHO).NghostHO() || 
+	  j < JCl-HighOrderVariable(IndexHO).NghostHO() ||
+	  j > JCu+HighOrderVariable(IndexHO).NghostHO()  ) {
+	
+	// No high-order interpolant is calculated for this cells.
+	// The average solution is plotted at the centers of these cells.
+	  
+	// Output Brief format
+	Out_File << " "  << Node
+		 << " "  << CellSolution(i,j)[1]
+		 << " "  << CellSolution(i,j)[2]
+		 << " "  << CellSolution(i,j)[3]
+		 << " "  << CellSolution(i,j)[4];
+
+	// Add more variables to Brief format for turbulent flows
+	if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {   
+	  Out_File << " "  << CellSolution(i,j)[5]
+		   << " "  << CellSolution(i,j)[6];
+	  if (Variable_Prandtl == ON){
+	    Out_File << " "  << CellSolution(i,j)[7]
+		     << " "  << CellSolution(i,j)[8];
+	  }
+	}
+	
+	// Add more variables for the Detailed format
+	if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+	  Out_File << " " << CellSolution(i,j).T()
+		   << " " << CellSolution(i,j).v.abs()/CellSolution(i,j).a()
+		   << " " << CellSolution(i,j).H()
+		   << " " << CellSolution(i,j).s();
+
+	  Out_File << " "  << CellSolution(i,j)[1]
+		   << " "  << CellSolution(i,j)[2]
+		   << " "  << CellSolution(i,j)[3]
+		   << " "  << CellSolution(i,j)[4];
+	  // Add more variables to Brief format for turbulent flows
+	  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {   
+	    Out_File << " "  << CellSolution(i,j)[5]
+		     << " "  << CellSolution(i,j)[6];
+	    if (Variable_Prandtl == ON){
+	      Out_File << " "  << CellSolution(i,j)[7]
+		       << " "  << CellSolution(i,j)[8];
+	    }
+	  }
+
+	  if (ExactSoln->IsExactSolutionSet()){
+	    ExactSoln->Output_Tecplot_Solution(Out_File,
+					       Node.x,Node.y);
+	  }
+	} // endif (DetailedOutput)
+
+
+	// Add more variables for the Full format
+	if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+	  Out_File.setf(ios::scientific);
+	  Out_File << " " << 1.0E8
+		   << " " << 0
+		   << " " << 1.0E8
+		   << " " << 0
+		   << " " << 1.0E8
+		   << " " << 0
+		   << " " << 1.0E8
+		   << " " << 0;
+
+	  // Add more variables to Full format for turbulent flows
+	  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	    Out_File << " " << 1.0E8
+		     << " " << 0
+		     << " " << 1.0E8
+		     << " " << 0;
+	    if (Variable_Prandtl == ON){
+	      Out_File << " " << 1.0E8
+		       << " " << 0
+		       << " " << 1.0E8
+		       << " " << 0;
+	    }
+	  }
+	  Out_File.unsetf(ios::scientific);
+
+	  if (Flow_Type != FLOWTYPE_INVISCID){
+	    Out_File  << " " << 0.0
+		      << " " << 0.0
+		      << " " << 0.0;
+	    if (Axisymmetric){
+	      Out_File << " " << 0.0;
+	    }
+	    Out_File << " " << 0.0
+		     << " " << 0.0
+		     << " " << 0.0
+		     << " " << 0.0;
+	  }
+
+	  Out_File << " " << CellSolution(i,j).mu();
+	  Out_File << " " << dUdt[i][j][0][1]
+		   << " " << dUdt[i][j][0][2]
+		   << " " << dUdt[i][j][0][3]
+		   << " " << dUdt[i][j][0][4];
+
+	  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	    Out_File << " " << dUdt[i][j][0][5]
+		     << " " << dUdt[i][j][0][6];
+	    if (Variable_Prandtl == ON){
+	      Out_File << " " << dUdt[i][j][0][7]
+		       << " " << dUdt[i][j][0][8];
+	    }
+	  }
+
+	  Out_File << " " << dt[i][j];
+	}
+
+	// Add more variables for the Extended format
+	if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+	  Out_File << " " << Grid.CellArea(i,j);
+
+	  switch(HighOrderVariable(IndexHO).RecOrder()){
+	  case 4:    // 4th-order derivatives
+	    Out_File << " " << NavierStokes2D_pState(0) 
+		     << " " << NavierStokes2D_pState(0) 
+		     << " " << NavierStokes2D_pState(0) 
+		     << " " << NavierStokes2D_pState(0) 
+		     << " " << NavierStokes2D_pState(0);
+
+	  case 3:   // 3rd-order derivatives
+	    Out_File << " " << NavierStokes2D_pState(0) 
+		     << " " << NavierStokes2D_pState(0) 
+		     << " " << NavierStokes2D_pState(0) 
+		     << " " << NavierStokes2D_pState(0);
+
+	  case 2:    // 2nd-order derivatives
+	    Out_File << " " << NavierStokes2D_pState(0) 
+		     << " " << NavierStokes2D_pState(0) 
+		     << " " << NavierStokes2D_pState(0);
+
+	  case 1:	    
+	    Out_File << " " << NavierStokes2D_pState(0) 
+		     << " " << NavierStokes2D_pState(0) 
+		     << " " << NavierStokes2D_pState(0);
+	  } // endswitch
+	}
+
+	// Close line
+	Out_File << "\n";
+	Out_File.unsetf(ios::scientific);
+
+      } else {
+
+	// Use the high-order interpolant to calculate the solution at the cell centroids (i.e. it's equal to the state D00)
+	  
+	// Output Brief format
+	W_node = HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,0,0);
+
+	Out_File << " "  << Node 
+		 << " "  << W_node[1]
+		 << " "  << W_node[2]
+		 << " "  << W_node[3]
+		 << " "  << W_node[4];
+
+	// Add more variables to Brief format for turbulent flows
+	if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {   
+	  Out_File << " "  << W_node[5]
+		   << " "  << W_node[6];
+	  if (Variable_Prandtl == ON){
+	    Out_File << " "  << W_node[7]
+		     << " "  << W_node[8];
+	  }
+	}
+	
+
+	// Add more variables for the Detailed format
+	if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+	  Out_File << " "  << W_node.T()
+		   << " "  << W_node.v.abs()/W_node.a()
+		   << " "  << W_node.H()
+		   << " "  << W_node.s();
+
+	  Out_File << " "  << CellSolution(i,j)[1]
+		   << " "  << CellSolution(i,j)[2]
+		   << " "  << CellSolution(i,j)[3]
+		   << " "  << CellSolution(i,j)[4];
+	  // Add more variables to Brief format for turbulent flows
+	  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {   
+	    Out_File << " "  << CellSolution(i,j)[5]
+		     << " "  << CellSolution(i,j)[6];
+	    if (Variable_Prandtl == ON){
+	      Out_File << " "  << CellSolution(i,j)[7]
+		       << " "  << CellSolution(i,j)[8];
+	    }
+	  }
+
+	  if (ExactSoln->IsExactSolutionSet()){
+	    ExactSoln->Output_Tecplot_Solution(Out_File,
+					       Node.x,Node.y);
+	  }
+	}
+
+	// Add more variables for the Full format
+	if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+	  Out_File.setf(ios::scientific);
+	  Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,1)
+		   << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,1)
+		   << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,2)
+		   << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,2)
+		   << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,3)
+		   << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,3)
+		   << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,4)
+		   << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,4);
+	  // Add more variables to Full format for turbulent flows
+	  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	    Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,5)
+		     << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,5)
+		     << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,6)
+		     << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,6);
+	    if (Variable_Prandtl == ON){
+	      Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,7)
+		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,7)
+		       << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,8)
+		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,8);
+	    }
+	  }
+	  Out_File.unsetf(ios::scientific);
+
+	  if (Flow_Type != FLOWTYPE_INVISCID){
+	    // Set state gradients at centroid
+	    dWdx_node = HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,1,0);
+	    dWdy_node = HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,0,1);
+	    
+	    // Compute viscous terms based on the state and the state gradients at centroid
+	    W_node.ComputeViscousTerms(dWdx_node,
+				       dWdy_node,
+				       Node,
+				       Axisymmetric,
+				       OFF,
+				       Wall[i][j].ywall,
+				       Wall[i][j].yplus);
+	    
+	    Out_File << " " << W_node.tau.xx
+		     << " " << W_node.tau.xy
+		     << " " << W_node.tau.yy;
+	    if (Axisymmetric){
+	      Out_File << " " << W_node.tau.zz;
+	    }
+	    Out_File << " " << W_node.q.x
+		     << " " << W_node.q.y
+		     << " " << W_node.alphaT(Wall[i][j].ywall,Wall[i][j].yplus)
+		     << " " << W_node.kappaT(Wall[i][j].ywall,Wall[i][j].yplus);
+	  }
+
+	  Out_File << " " << W_node.mu();
+
+	  Out_File << " " << dUdt[i][j][0][1]
+		   << " " << dUdt[i][j][0][2]
+		   << " " << dUdt[i][j][0][3]
+		   << " " << dUdt[i][j][0][4];
+	  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	    Out_File << " " << dUdt[i][j][0][5]
+		     << " " << dUdt[i][j][0][6];
+	    if (Variable_Prandtl == ON){
+	      Out_File << " " << dUdt[i][j][0][7]
+		       << " " << dUdt[i][j][0][8];
+	    }
+	  }
+
+	  Out_File << " " << dt[i][j];
+	}
+
+	// Add more variables for the Extended format
+	if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+	  Out_File << " " << Grid.CellArea(i,j);
+
+	  switch(HighOrderVariable(IndexHO).RecOrder()){
+	  case 4:    // 4th-order derivatives
+	    Out_File << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,4,0) 
+		     << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,3,1) 
+		     << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,2,2) 
+		     << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,1,3) 
+		     << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,0,4);
+	      
+	  case 3:   // 3rd-order derivatives
+	    Out_File << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,3,0)
+		     << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,2,1)
+		     << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,1,2)
+		     << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,0,3);
+	      
+	  case 2:    // 2nd-order derivatives
+	    Out_File << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,2,0)
+		     << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,1,1)
+		     << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,0,2);
+
+	  case 1:	    
+	    Out_File << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,1,0) 
+		     << " " << HighOrderVariable(IndexHO).CellTaylorDerivState(i,j,0,1) 
+		     << " " << HighOrderVariable(IndexHO).CellTaylorDeriv(i,j).Limiter();
+	  }
+	}
+
+	// Close line
+	Out_File << "\n";
+	Out_File.unsetf(ios::scientific);
+
+      } // endif
+
+    }
+  } /* endfor */
+  Out_File << setprecision(6);
+
 }
 
 /*!

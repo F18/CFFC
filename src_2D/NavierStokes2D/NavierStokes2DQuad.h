@@ -602,7 +602,8 @@ public:
 
   //! @name Member functions used for plotting.
   //@{
-  void Output_Nodes_Tecplot_HighOrder(const int &Number_of_Time_Steps,
+  void Output_Nodes_Tecplot_HighOrder(const NavierStokes2D_Input_Parameters &IP,
+				      const int &Number_of_Time_Steps,
 				      const double &Time,
 				      const int &Block_Number,
 				      const int &Output_Title,
@@ -613,7 +614,8 @@ public:
 				      const int & EndJ_CellIndex,
 				      const int &IndexHO = 0);
 
-  void Output_Tecplot_HighOrder(const int &Number_of_Time_Steps,
+  void Output_Tecplot_HighOrder(const NavierStokes2D_Input_Parameters &IP,
+				const int &Number_of_Time_Steps,
 				const double &Time,
 				const int &Block_Number,
 				const int &Output_Title,
@@ -621,11 +623,12 @@ public:
 				const int &IndexHO = 0);
 
   void Output_Tecplot_HighOrder_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
-					   const NavierStokes2D_Input_Parameters &P,
+					   const NavierStokes2D_Input_Parameters &IP,
 					   const int &Block_Number,
 					   const int &IndexHO = 0);
 
-  void Output_Nodes_Tecplot_HighOrder(const int &Number_of_Time_Steps,
+  void Output_Nodes_Tecplot_HighOrder(const NavierStokes2D_Input_Parameters &IP,
+				      const int &Number_of_Time_Steps,
 				      const double &Time,
 				      const int &Block_Number,
 				      const int &Output_Title,
@@ -633,7 +636,7 @@ public:
 				      const int &IndexHO = 0);
 
   void Output_Nodes_Tecplot_HighOrder_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
-						 const NavierStokes2D_Input_Parameters &P,
+						 const NavierStokes2D_Input_Parameters &IP,
 						 const int &Block_Number,
 						 const int &IndexHO = 0);
 

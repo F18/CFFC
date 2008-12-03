@@ -257,16 +257,26 @@ int Output_Tecplot(NavierStokes2D_Quad_Block *Soln_ptr,
   i_output_title = 1;
   for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
     if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
-      Output_Tecplot(Soln_ptr[nb],
-		     IP,
-		     Number_of_Time_Steps, 
-		     Time,
-		     Soln_Block_List.Block[nb].gblknum,
-		     i_output_title,
-		     output_file);
+      if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+	// Use the first high-order object of the block
+	Soln_ptr[nb].Output_Tecplot_HighOrder(IP,
+					      Number_of_Time_Steps, 
+					      Time,
+					      Soln_Block_List.Block[nb].gblknum,
+					      i_output_title,
+					      output_file);
+      } else {
+	Output_Tecplot(Soln_ptr[nb],
+		       IP,
+		       Number_of_Time_Steps, 
+		       Time,
+		       Soln_Block_List.Block[nb].gblknum,
+		       i_output_title,
+		       output_file);
+      }
       if (i_output_title) i_output_title = 0;
-    }
-  }
+    } /* endif */
+  } /* endfor */
 
   // Close the output data file.
   output_file.close();
@@ -346,13 +356,23 @@ int Output_Cells_Tecplot(NavierStokes2D_Quad_Block *Soln_ptr,
   for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
     if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
       if (IP.i_Grid != GRID_NOZZLELESS_ROCKET_MOTOR) {
-	Output_Cells_Tecplot(Soln_ptr[nb],
-                             IP,
-			     Number_of_Time_Steps,
-			     Time,
-			     Soln_Block_List.Block[nb].gblknum,
-			     i_output_title,
-			     output_file);
+	if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+	  // Use the first high-order object of the block
+	  Soln_ptr[nb].Output_Cells_Tecplot_HighOrder(Number_of_Time_Steps, 
+						     Time,
+						     Soln_Block_List.Block[nb].gblknum,
+						     i_output_title,
+						     output_file);
+	} else {
+	  Output_Cells_Tecplot(Soln_ptr[nb],
+			       IP,
+			       Number_of_Time_Steps,
+			       Time,
+			       Soln_Block_List.Block[nb].gblknum,
+			       i_output_title,
+			       output_file);
+	} // endif
+
       } else {
 	Output_Nozzleless_Tecplot(Soln_ptr[nb],
 				  Number_of_Time_Steps,
@@ -424,12 +444,22 @@ int Output_Nodes_Tecplot(NavierStokes2D_Quad_Block *Soln_ptr,
   i_output_title = 1;
   for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
     if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
-      Output_Nodes_Tecplot(Soln_ptr[nb],
-			   Number_of_Time_Steps, 
-			   Time,
-			   Soln_Block_List.Block[nb].gblknum,
-			   i_output_title,
-			   output_file);
+      if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+	// Use the first high-order object of the block
+	Soln_ptr[nb].Output_Nodes_Tecplot_HighOrder(IP,
+						   Number_of_Time_Steps, 
+						   Time,
+						   Soln_Block_List.Block[nb].gblknum,
+						   i_output_title,
+						   output_file);
+      } else {
+	Output_Nodes_Tecplot(Soln_ptr[nb],
+			     Number_of_Time_Steps, 
+			     Time,
+			     Soln_Block_List.Block[nb].gblknum,
+			     i_output_title,
+			     output_file);
+      }
       if (i_output_title) i_output_title = 0;
     }
   }

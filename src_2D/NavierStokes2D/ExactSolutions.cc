@@ -78,6 +78,22 @@ void ExactSolutionBasicType::Broadcast(void){
 #endif
 }
 
+/*! Output the variable names that defined the exact solution in a format 
+ *  suitable for Tecplot to the provided output stream.
+ *  The default output assumes that only four variables (i.e. rho, u, v, p)
+ *  are known exactly.
+ */
+void ExactSolutionBasicType::Output_Tecplot_Title(std::ostream & out_file) const{
+  out_file << "\"ExactSoln_rho\" \\ \n"
+	   << "\"ExactSoln_u\" \\ \n"
+	   << "\"ExactSoln_v\" \\ \n"
+	   << "\"ExactSoln_p\" \\ \n";
+}
+
+/*! Write the Tecplot double precision format for the default output. */
+void ExactSolutionBasicType::Output_Tecplot_Double_Precision(std::ostream & out_file) const{
+  out_file << "DOUBLE DOUBLE DOUBLE DOUBLE ";
+}
 
 /*******************************************
  * Abgrall_Function_ExactSolution Members  *
