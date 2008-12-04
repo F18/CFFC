@@ -6,14 +6,13 @@
 ###########################
 #
 Function_Definition =
-Example7
-#Default
-#
+Default
+#Example1
 Reconstruction_Order =
 2
 #
 Output_File_Name =
-Example7_k2n32
+Default_k2n10
 #
 Method_Used =
 CENO
@@ -34,11 +33,11 @@ Characteristic_Length =
 Cutoff_Knob =
 1.0
 Number_of_Cells_Idir =
-32
+5
 Number_of_Cells_Jdir =
-32
+5
 Number_of_Cells_Kdir = 
-32
+10
 Number_of_Ghost_Cells =
 4
 Number_of_Blocks_Idir =
@@ -80,7 +79,7 @@ Execute
 ## Write output in One Zone using the subgrid points
 ## creates the files: (_SubgridSol.dat, _PWC.dat, and _SI_Flag.dat)
 #######################
-Write_Output_OneZone
+# Write_Output_OneZone
 #
 #######################
 ## Should write the solution at the nodes of the mesh
@@ -131,9 +130,19 @@ Write_Output_OneZone
 ######################
 ## Write the norms in the file
 ######################
-# Write_Output_Accuracy
+Write_Output_Accuracy
 #
 #
+######################
+Number_of_Cells_Kdir = 
+20
+Execute
+Write_Output_Accuracy
+######################
+Number_of_Cells_Kdir = 
+40
+Execute
+Write_Output_Accuracy
 #
 ############################
 # Terminate program
