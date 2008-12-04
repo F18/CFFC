@@ -287,11 +287,44 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>::SetInitialSolution(Poi
 /*******************************************************************
 Computes the error of the reconstructed function in all three norms
 ********************************************************************/
-// --> RR: To be commented back in later 20080905
 
 template<class GeometryType,class SolutionType>
   template<typename FO>
 void ComputationalCell<ThreeD,GeometryType,SolutionType>::ComputeReconstructionError(const FO FuncObj){
+
+  // Build member function wrapper
+  _Member_Function_Wrapper_<CompCellType,MemberFunctionType3D,SolutionType> 
+    WrappedMemberFunction(this, &CompCellType::SolutionAtCoordinates);
+
+  // Build ErrorFunction object for the L1 norm
+  ErrorFunc<SolutionType, const FO,_Member_Function_Wrapper_<CompCellType,MemberFunctionType3D,SolutionType> > 
+    ErrorFunction(FuncObj, WrappedMemberFunction);
+
+
+  /* integrate the error for the L1 norm*/
+  ErrorRecL1Norm = IntegrateOverTheCell(ErrorFunction,8, ErrorRecL1Norm);
+
+
+  // Build ErrorFunction object for the L2 norm
+  SquareErrorFunc<SolutionType, const FO,_Member_Function_Wrapper_<CompCellType,MemberFunctionType3D,SolutionType> > 
+    SquareErrorFunction(FuncObj, WrappedMemberFunction);
+
+
+  /* integrate the error for the L2 norm*/
+  ErrorRecL2Norm = IntegrateOverTheCell(SquareErrorFunction,10, ErrorRecL2Norm);
+
+  /* get the maximum error based on the error values at the subgrid points */
+  ErrorRecMaxNorm = SolutionType(0.0);
+  for (int i=0; i<NbSubgridPoints[0]; ++i){
+    for (int j=0; j<NbSubgridPoints[1]; ++j){
+      for(int k=0; k<NbSubgridPoints[2]; ++k){
+        ErrorRecMaxNorm = max(ErrorRecMaxNorm,
+                              ErrorFunction(SubgridSolution(i,j,k).GetNode().x(),
+                                            SubgridSolution(i,j,k).GetNode().y(),
+                                            SubgridSolution(i,j,k).GetNode().x()));
+      }
+    }
+  }
 
 //  /* integrate the error for the L1 norm */
 //  ErrorRecL1Norm = IntegrateOverTheCell(error_function(FuncObj,
