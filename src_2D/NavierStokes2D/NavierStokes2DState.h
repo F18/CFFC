@@ -594,6 +594,11 @@ class NavierStokes2D_pState {
   NavierStokes2D_cState F(const Vector2D &V) const;
   void dFdU(DenseMatrix &dFdU) const;
   void dFdW(DenseMatrix &dFdW) const;
+  //! @brief Inviscid solution flux in the normal direction
+  NavierStokes2D_cState Fn(const Vector2D & normal_dir) const;
+  //! @brief Calculate flux in the provided normal direction for a given solution state
+  friend NavierStokes2D_cState Fn(const NavierStokes2D_pState &W,
+				  const Vector2D & normal_dir){ return W.Fn(normal_dir); }
   //@}
 
   //@{ @name Viscous solution fluxes and Jacobians.
@@ -3529,6 +3534,37 @@ inline NavierStokes2D_cState NavierStokes2D_pState::F(const Vector2D &V) const {
 			       rho*(v.x-V.x)*k,
 			       rho*(v.x-V.x)*omega,
 			       ZERO, ZERO);
+  }
+}
+
+/*
+ * Calculate the inviscid flux in the normal direction 
+ * based on the current solution state.
+ *
+ * \param normal_dir vector defining the normal direction
+ */
+inline NavierStokes2D_cState NavierStokes2D_pState::Fn(const Vector2D &normal_dir) const {
+  double V_dot_n(v.x*normal_dir.x + v.y*normal_dir.y);  
+  double k_Term(0.66666666666666666667*dk()); // Turbulent kinetic energy term, (0.66666666666666666667 = 2/3)
+
+  if (Variable_Prandtl == ON){
+    return NavierStokes2D_cState(rho*V_dot_n,
+				 rho*v.x*V_dot_n + (p + k_Term)*normal_dir.x,
+				 rho*v.y*V_dot_n + (p + k_Term)*normal_dir.y,
+				 V_dot_n*H() + V_dot_n*k_Term,
+				 rho*V_dot_n*k,
+				 rho*V_dot_n*omega,
+				 rho*V_dot_n*ke,
+				 rho*V_dot_n*ee);
+  }else{
+    return NavierStokes2D_cState(rho*V_dot_n,
+				 rho*v.x*V_dot_n + (p + k_Term)*normal_dir.x,
+				 rho*v.y*V_dot_n + (p + k_Term)*normal_dir.y,
+				 V_dot_n*H() + V_dot_n*k_Term,
+				 rho*V_dot_n*k,
+				 rho*V_dot_n*omega,
+				 ZERO,
+				 ZERO);
   }
 }
 
