@@ -2829,7 +2829,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 	L1Norm += SolnPtr[0][j][i].CellErrorL1();
 	L2Norm += SolnPtr[0][j][i].CellErrorL2();
 	LMaxNorm = max(LMaxNorm,SolnPtr[0][j][i].CellErrorL1()/SolnPtr[0][j][i].CellDomain());
-	Domain += SolnPtr[0][0][i].CellDomain();
+	Domain += SolnPtr[0][j][i].CellDomain();
 
 	++FinishedCell;
 	Print_Progress(FinishedCell,ProgressFrequency);
@@ -2845,7 +2845,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       ProgressFrequency = 10;
     }
 
-    for (int i=iStart(); i<=iEnd(); ++i)
+    for (int i=iStart(), FinishedCell=0; i<=iEnd(); ++i)
       for (int j=jStart(); j<=jEnd(); ++j)
 	for (int k=kStart(); k<=kEnd(); ++k){
 	  /* compute error in each cell */
@@ -2853,10 +2853,15 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 	  /* update norms */
 	  L1Norm += SolnPtr[k][j][i].CellErrorL1();
 	  L2Norm += SolnPtr[k][j][i].CellErrorL2();
-	  LMaxNorm = max(LMaxNorm,SolnPtr[k][j][i].CellErrorMax());
+	  LMaxNorm = max(LMaxNorm,SolnPtr[k][j][i].CellErrorL1()/SolnPtr[k][j][i].CellDomain());
+          Domain += SolnPtr[k][j][i].CellDomain();
+
+          ++FinishedCell;
+          Print_Progress(FinishedCell,ProgressFrequency);
 	}
     /* compute final expression for norms */
-    L2Norm = sqrt(L2Norm);
+    L1Norm /= Domain;
+    L2Norm = sqrt(L2Norm/Domain);
     break;
   }
 }

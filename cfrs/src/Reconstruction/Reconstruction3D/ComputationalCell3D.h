@@ -38,7 +38,9 @@ class ComputationalCell<ThreeD, GeometryType, SolutionType>{
   typedef typename DerivativesContainer::Derivative  Derivative;
   typedef SubGridMesh<Node,ThreeD,SolutionType> SubGridType;
   typedef ComputationalCell<ThreeD, GeometryType, SolutionType> CompCellType;
-
+ 
+  typedef SolutionType (CompCellType::*MemberFunctionType3D)(double &, double &, double &);
+  
   static const int NumberOfVariables = SolutionParameters<SolutionType>::NUM_OF_VARIABLES;
 
  private:
