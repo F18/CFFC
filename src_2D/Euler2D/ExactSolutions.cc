@@ -12,18 +12,19 @@
 #include "Euler2DInput.h"
 #include "ExactSolutions.h"
 
-ExactSolutionBasicType::ExactSolutionBasicType(void): ExactSolutionName("Not named"), Accuracy_Parameter(Soln) {  };
-ExactSolutionBasicType::~ExactSolutionBasicType(void){  };
+ExactSolutionBasicType_Euler2D::ExactSolutionBasicType_Euler2D(void): ExactSolutionName("Not named"),
+								      Accuracy_Parameter(Soln) {  };
+ExactSolutionBasicType_Euler2D::~ExactSolutionBasicType_Euler2D(void){  };
 
-/************************************
- * ExactSolutionBasicType Members   *
- ***********************************/
+/********************************************
+ * ExactSolutionBasicType_Euler2D Members   *
+ *******************************************/
 
 /*! 
  * Parse next input control parameter
  */
-void ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
-								int & i_command){
+void ExactSolutionBasicType_Euler2D::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
+									int & i_command){
 
   // Check if the next control parameter has already been identified
   if (i_command != INVALID_INPUT_CODE){
@@ -54,7 +55,7 @@ void ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(Euler2D_Input_Pa
 /*! 
  * Print relevant parameters
  */
-void ExactSolutionBasicType::Print_Info(std::ostream & out_file){
+void ExactSolutionBasicType_Euler2D::Print_Info(std::ostream & out_file){
   if (Accuracy_Parameter == Soln){
     out_file << "\n     -> Measurement of Accuracy Based on Exact Solution";
   } else {
@@ -63,12 +64,12 @@ void ExactSolutionBasicType::Print_Info(std::ostream & out_file){
 }
 
 /*!
- * Broadcast the ExactSolutionBasicType variables to all      
+ * Broadcast the ExactSolutionBasicType_Euler2D variables to all      
  * processors associated with the specified communicator
  * from the specified processor using the MPI broadcast 
  * routine.
  */
-void ExactSolutionBasicType::Broadcast(void){
+void ExactSolutionBasicType_Euler2D::Broadcast(void){
 #ifdef _MPI_VERSION
 
   MPI::COMM_WORLD.Bcast(&Accuracy_Parameter,
@@ -79,13 +80,13 @@ void ExactSolutionBasicType::Broadcast(void){
 }
 
 /***************************************
- * Ringleb_Flow_ExactSolution Members  *
+ * Ringleb_Flow_ExactSolution_Euler Members  *
  **************************************/
 
 /*! 
  * Return exact Ringleb's flow solution at a given location.
  */
-Euler2D_pState Ringleb_Flow_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
+Euler2D_pState Ringleb_Flow_ExactSolution_Euler::EvaluateSolutionAt(const double &x, const double &y) {
 
   Euler2D_pState W;
   double sin_theta, cos_theta, theta;
@@ -100,10 +101,10 @@ Euler2D_pState Ringleb_Flow_ExactSolution::EvaluateSolutionAt(const double &x, c
   yLoc = y;
 
   // Use Ridder's method to solve for the sound speed, c.
-  _Member_Function_Wrapper_<Ringleb_Flow_ExactSolution,
-    double (Ringleb_Flow_ExactSolution::*)(const double &) const,
+  _Member_Function_Wrapper_<Ringleb_Flow_ExactSolution_Euler,
+    double (Ringleb_Flow_ExactSolution_Euler::*)(const double &) const,
     double> RinglebResidualWrapper(this,
-				   &Ringleb_Flow_ExactSolution::RinglebResidual);
+				   &Ringleb_Flow_ExactSolution_Euler::RinglebResidual);
   
   // Call root-finder algorithm
   Flag = ridder(RinglebResidualWrapper, c_a, c_b, MaxIter, Precision, c);
@@ -111,7 +112,7 @@ Euler2D_pState Ringleb_Flow_ExactSolution::EvaluateSolutionAt(const double &x, c
   // Interpret the flag
   if (Flag == 0){
     // Not converged solution or something else went wrong
-    throw std::runtime_error("Ringleb_Flow_ExactSolution::EvaluateSolutionAt() ERROR! The speed of sound couldn't be determined!");
+    throw std::runtime_error("Ringleb_Flow_ExactSolution_Euler::EvaluateSolutionAt() ERROR! The speed of sound couldn't be determined!");
   }
 
   // Final density and total velocity (speed).
@@ -138,11 +139,11 @@ Euler2D_pState Ringleb_Flow_ExactSolution::EvaluateSolutionAt(const double &x, c
 /*! 
  * Parse next input control parameter
  */
-void Ringleb_Flow_ExactSolution::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
-								    int & i_command){
+void Ringleb_Flow_ExactSolution_Euler::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
+									  int & i_command){
 
   // Call the parser from the base class
-  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+  ExactSolutionBasicType_Euler2D::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   // Check if the next control parameter has already been identified
   if (i_command != INVALID_INPUT_CODE){
@@ -156,37 +157,37 @@ void Ringleb_Flow_ExactSolution::Parse_Next_Input_Control_Parameter(Euler2D_Inpu
 /*! 
  * Print relevant parameters
  */
-void Ringleb_Flow_ExactSolution::Print_Info(std::ostream & out_file){
+void Ringleb_Flow_ExactSolution_Euler::Print_Info(std::ostream & out_file){
 
   // call the base Print_Info
-  ExactSolutionBasicType::Print_Info(out_file);
+  ExactSolutionBasicType_Euler2D::Print_Info(out_file);
 
 }
 
 /*!
- * Broadcast the Ringleb_Flow_ExactSolution variables to all      
+ * Broadcast the Ringleb_Flow_ExactSolution_Euler variables to all      
  * processors associated with the specified communicator
  * from the specified processor using the MPI broadcast 
  * routine.
  */
-void Ringleb_Flow_ExactSolution::Broadcast(void){
+void Ringleb_Flow_ExactSolution_Euler::Broadcast(void){
 #ifdef _MPI_VERSION
   // None
 #endif
 }
 
 /*******************************************
- * Abgrall_Function_ExactSolution Members  *
+ * Abgrall_Function_ExactSolution_Euler Members  *
  ******************************************/
 
 /*! 
  * Parse next input control parameter
  */
-void Abgrall_Function_ExactSolution::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
-									int & i_command){
+void Abgrall_Function_ExactSolution_Euler::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
+									      int & i_command){
 
   // Call the parser from the base class
-  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+  ExactSolutionBasicType_Euler2D::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   // Check if the next control parameter has already been identified
   if (i_command != INVALID_INPUT_CODE){
@@ -197,36 +198,36 @@ void Abgrall_Function_ExactSolution::Parse_Next_Input_Control_Parameter(Euler2D_
 /*! 
  * Print relevant parameters
  */
-void Abgrall_Function_ExactSolution::Print_Info(std::ostream & out_file){
+void Abgrall_Function_ExactSolution_Euler::Print_Info(std::ostream & out_file){
 
   // call the base Print_Info
-  ExactSolutionBasicType::Print_Info(out_file);
+  ExactSolutionBasicType_Euler2D::Print_Info(out_file);
 }
 
 /*!
- * Broadcast the Abgrall_Function_ExactSolution variables to all      
+ * Broadcast the Abgrall_Function_ExactSolution_Euler variables to all      
  * processors associated with the specified communicator
  * from the specified processor using the MPI broadcast 
  * routine.
  */
-void Abgrall_Function_ExactSolution::Broadcast(void){
+void Abgrall_Function_ExactSolution_Euler::Broadcast(void){
 #ifdef _MPI_VERSION
   // None
 #endif
 }
 
 /**********************************************
- * Sinusoidal_Function_ExactSolution Members  *
+ * Sinusoidal_Function_ExactSolution_Euler Members  *
  *********************************************/
 
 /*! 
  * Parse next input control parameter
  */
-void Sinusoidal_Function_ExactSolution::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
-									   int & i_command){
+void Sinusoidal_Function_ExactSolution_Euler::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
+										 int & i_command){
 
   // Call the parser from the base class
-  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+  ExactSolutionBasicType_Euler2D::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   // Check if the next control parameter has already been identified
   if (i_command != INVALID_INPUT_CODE){
@@ -282,7 +283,7 @@ void Sinusoidal_Function_ExactSolution::Parse_Next_Input_Control_Parameter(Euler
 /*! 
  * Print relevant parameters
  */
-void Sinusoidal_Function_ExactSolution::Print_Info(std::ostream & out_file){
+void Sinusoidal_Function_ExactSolution_Euler::Print_Info(std::ostream & out_file){
 
   if (Direction == X_DIRECTION){
     out_file << "\n     -> Direction : X";
@@ -296,17 +297,17 @@ void Sinusoidal_Function_ExactSolution::Print_Info(std::ostream & out_file){
 	   << "\n     -> Velocity : " << Velocity;
 
   // call the base Print_Info
-  ExactSolutionBasicType::Print_Info(out_file);
+  ExactSolutionBasicType_Euler2D::Print_Info(out_file);
 
 }
 
 /*!
- * Broadcast the Sinusoidal_Function_ExactSolution variables to all      
+ * Broadcast the Sinusoidal_Function_ExactSolution_Euler variables to all      
  * processors associated with the specified communicator
  * from the specified processor using the MPI broadcast 
  * routine.
  */
-void Sinusoidal_Function_ExactSolution::Broadcast(void){
+void Sinusoidal_Function_ExactSolution_Euler::Broadcast(void){
 #ifdef _MPI_VERSION
   
   MPI::COMM_WORLD.Bcast(&DomainMinLimit,
@@ -330,17 +331,17 @@ void Sinusoidal_Function_ExactSolution::Broadcast(void){
 
 
 /******************************************
- * CosSin_Function_ExactSolution Members  *
+ * CosSin_Function_ExactSolution_Euler Members  *
  *****************************************/
 
 /*! 
  * Parse next input control parameter
  */
-void CosSin_Function_ExactSolution::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
-								       int & i_command){
+void CosSin_Function_ExactSolution_Euler::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
+									     int & i_command){
 
   // Call the parser from the base class
-  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+  ExactSolutionBasicType_Euler2D::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   // Check if the next control parameter has already been identified
   if (i_command != INVALID_INPUT_CODE){
@@ -402,7 +403,7 @@ void CosSin_Function_ExactSolution::Parse_Next_Input_Control_Parameter(Euler2D_I
 /*! 
  * Print relevant parameters
  */
-void CosSin_Function_ExactSolution::Print_Info(std::ostream & out_file){
+void CosSin_Function_ExactSolution_Euler::Print_Info(std::ostream & out_file){
 
   if (Direction == X_DIRECTION){
     out_file << "\n     -> Direction : X";
@@ -417,17 +418,17 @@ void CosSin_Function_ExactSolution::Print_Info(std::ostream & out_file){
 	   << "\n     -> Velocity : " << Velocity;
 
   // call the base Print_Info
-  ExactSolutionBasicType::Print_Info(out_file);
+  ExactSolutionBasicType_Euler2D::Print_Info(out_file);
 
 }
 
 /*!
- * Broadcast the CosSin_Function_ExactSolution variables to all      
+ * Broadcast the CosSin_Function_ExactSolution_Euler variables to all      
  * processors associated with the specified communicator
  * from the specified processor using the MPI broadcast 
  * routine.
  */
-void CosSin_Function_ExactSolution::Broadcast(void){
+void CosSin_Function_ExactSolution_Euler::Broadcast(void){
 #ifdef _MPI_VERSION
   
   MPI::COMM_WORLD.Bcast(&DomainMinLimit,
@@ -454,13 +455,13 @@ void CosSin_Function_ExactSolution::Broadcast(void){
 
 
 /************************************************
- * HyperTangent_Function_ExactSolution Members  *
+ * HyperTangent_Function_ExactSolution_Euler Members  *
  ***********************************************/
 
 /*! 
  * Update the translation point location based on the flow input parameters
  */
-void HyperTangent_Function_ExactSolution::Set_ParticularSolution_Parameters(const Euler2D_Input_Parameters & IP){
+void HyperTangent_Function_ExactSolution_Euler::Set_ParticularSolution_Parameters(const Euler2D_Input_Parameters & IP){
   
   if (SetCentroid == false){
     // Calculate the final centroid by translating the current position with the Wo.v velocity for Time_Max time
@@ -476,11 +477,11 @@ void HyperTangent_Function_ExactSolution::Set_ParticularSolution_Parameters(cons
 /*! 
  * Parse next input control parameter
  */
-void HyperTangent_Function_ExactSolution::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
-									     int & i_command){
+void HyperTangent_Function_ExactSolution_Euler::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
+										   int & i_command){
 
   // Call the parser from the base class
-  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+  ExactSolutionBasicType_Euler2D::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   // Check if the next control parameter has already been identified
   if (i_command != INVALID_INPUT_CODE){
@@ -537,7 +538,7 @@ void HyperTangent_Function_ExactSolution::Parse_Next_Input_Control_Parameter(Eul
 /*! 
  * Print relevant parameters
  */
-void HyperTangent_Function_ExactSolution::Print_Info(std::ostream & out_file){
+void HyperTangent_Function_ExactSolution_Euler::Print_Info(std::ostream & out_file){
 
   out_file << "\n     -> Centroid : " << setprecision(16) << Centroid
 	   << "\n     -> Reference Value : " << ReferenceValue
@@ -545,17 +546,17 @@ void HyperTangent_Function_ExactSolution::Print_Info(std::ostream & out_file){
 	   << "\n     -> Amplitude : " << Amplitude;
 
   // call the base Print_Info
-  ExactSolutionBasicType::Print_Info(out_file);
+  ExactSolutionBasicType_Euler2D::Print_Info(out_file);
 
 }
 
 /*!
- * Broadcast the HyperTangent_Function_ExactSolution variables to all      
+ * Broadcast the HyperTangent_Function_ExactSolution_Euler variables to all      
  * processors associated with the specified communicator
  * from the specified processor using the MPI broadcast 
  * routine.
  */
-void HyperTangent_Function_ExactSolution::Broadcast(void){
+void HyperTangent_Function_ExactSolution_Euler::Broadcast(void){
 #ifdef _MPI_VERSION
   
   MPI::COMM_WORLD.Bcast(&Steepness,
@@ -582,17 +583,17 @@ void HyperTangent_Function_ExactSolution::Broadcast(void){
 
 
 /************************************************
- * UnitTest_Function_ExactSolution Members  *
+ * UnitTest_Function_ExactSolution_Euler Members  *
  ***********************************************/
 
 /*! 
  * Parse next input control parameter
  */
-void UnitTest_Function_ExactSolution::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
-									 int & i_command){
+void UnitTest_Function_ExactSolution_Euler::Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters & IP,
+									       int & i_command){
 
   // Call the parser from the base class
-  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+  ExactSolutionBasicType_Euler2D::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   // Check if the next control parameter has already been identified
   if (i_command != INVALID_INPUT_CODE){
@@ -606,20 +607,20 @@ void UnitTest_Function_ExactSolution::Parse_Next_Input_Control_Parameter(Euler2D
 /*! 
  * Print relevant parameters
  */
-void UnitTest_Function_ExactSolution::Print_Info(std::ostream & out_file){
+void UnitTest_Function_ExactSolution_Euler::Print_Info(std::ostream & out_file){
 
   // call the base Print_Info
-  ExactSolutionBasicType::Print_Info(out_file);
+  ExactSolutionBasicType_Euler2D::Print_Info(out_file);
 
 }
 
 /*!
- * Broadcast the UnitTest_Function_ExactSolution variables to all      
+ * Broadcast the UnitTest_Function_ExactSolution_Euler variables to all      
  * processors associated with the specified communicator
  * from the specified processor using the MPI broadcast 
  * routine.
  */
-void UnitTest_Function_ExactSolution::Broadcast(void){
+void UnitTest_Function_ExactSolution_Euler::Broadcast(void){
 #ifdef _MPI_VERSION
   
 #endif

@@ -82,7 +82,7 @@ namespace tut
 
     set_test_name("Ringleb Flow");
 
-    Ringleb_Flow_ExactSolution RinglebSoln;
+    Ringleb_Flow_ExactSolution_Euler RinglebSoln;
     Euler2D_pState Solution, Result;
 
     // First point

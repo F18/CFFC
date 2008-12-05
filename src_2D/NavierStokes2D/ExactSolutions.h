@@ -43,13 +43,13 @@ using std::tanh;
 class NavierStokes2D_Input_Parameters;
 
 /*! 
- * \class ExactSolutionBasicType
+ * \class ExactSolutionBasicType_NavierStokes2D
  *
  * \brief Basic data type for any exact solution type.
  *
  * This is an abstract data type (ADT).
  */
-class ExactSolutionBasicType{
+class ExactSolutionBasicType_NavierStokes2D{
 public:
 
   //! @name Public types
@@ -58,12 +58,12 @@ public:
   //@}
 
   //! Default ctor
-  ExactSolutionBasicType(void);
+  ExactSolutionBasicType_NavierStokes2D(void);
 
   //! @name Virtual member functions
   //@{
   //! Declare a pure virtual destructor
-  virtual ~ExactSolutionBasicType(void) = 0;
+  virtual ~ExactSolutionBasicType_NavierStokes2D(void) = 0;
 
   /*! Calculate the exact solution based on the location of interest */
   virtual NavierStokes2D_pState EvaluateSolutionAt(const double &x, const double &y) = 0;
@@ -118,16 +118,16 @@ protected:
 
 
 /*! 
- * \class Abgrall_Function_ExactSolution
+ * \class Abgrall_Function_ExactSolution_NS
  * 
  * \brief Implements a 2D non-smooth function used for testing the robustness of the reconstruction procedure;
  *
  */
-class Abgrall_Function_ExactSolution: public ExactSolutionBasicType{
+class Abgrall_Function_ExactSolution_NS: public ExactSolutionBasicType_NavierStokes2D{
 public:
 
   //! Basic Constructor
-  Abgrall_Function_ExactSolution(void){ 
+  Abgrall_Function_ExactSolution_NS(void){ 
     ExactSolutionName = "Abgrall Function";	// Name the exact solution
   }
 
@@ -151,14 +151,14 @@ private:
 };
 
 //! Return exact solution 
-inline NavierStokes2D_pState Abgrall_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
+inline NavierStokes2D_pState Abgrall_Function_ExactSolution_NS::EvaluateSolutionAt(const double &x, const double &y) {
   return NavierStokes2D_pState(Abgrall_Function(x,y), ZERO, ZERO, PRESSURE_STDATM);
 }
 
 /*!
  * Calculate the value of the function for a given location.
  */
-inline double Abgrall_Function_ExactSolution::Abgrall_Function(const double & x, const double & y) const {
+inline double Abgrall_Function_ExactSolution_NS::Abgrall_Function(const double & x, const double & y) const {
 
   if ( x <= 0.5*cos(PI * y) ){
     return (2.0 + Basic_1D_Variation(x - (1.0/tan(sqrt(0.5*PI))) * y) );
@@ -175,7 +175,7 @@ inline double Abgrall_Function_ExactSolution::Abgrall_Function(const double & x,
 /*!
  * Implement the basic 1D variation used by Abgrall's function.
  */
-inline double Abgrall_Function_ExactSolution::Basic_1D_Variation(const double & r) const {
+inline double Abgrall_Function_ExactSolution_NS::Basic_1D_Variation(const double & r) const {
 
   if (r <= -1.0/3.0){
     return (-r * sin(1.5 * PI * r * r));
@@ -194,16 +194,16 @@ inline double Abgrall_Function_ExactSolution::Basic_1D_Variation(const double & 
 
 
 /*! 
- * \class Sinusoidal_Function_ExactSolution
+ * \class Sinusoidal_Function_ExactSolution_NS
  * 
  * \brief Implements a 2D sinusoidal function, \f$ \sin[(x+1)\pi] \f$, in either x- or y-direction;
  *
  */
-class Sinusoidal_Function_ExactSolution: public ExactSolutionBasicType{
+class Sinusoidal_Function_ExactSolution_NS: public ExactSolutionBasicType_NavierStokes2D{
 public:
 
   //! Basic Constructor
-  Sinusoidal_Function_ExactSolution(void);
+  Sinusoidal_Function_ExactSolution_NS(void);
 
   //! Return exact solution
   NavierStokes2D_pState EvaluateSolutionAt(const double &x, const double &y) ;
@@ -229,7 +229,7 @@ private:
 };
 
 // Basic Constructor
-inline Sinusoidal_Function_ExactSolution::Sinusoidal_Function_ExactSolution(void):
+inline Sinusoidal_Function_ExactSolution_NS::Sinusoidal_Function_ExactSolution_NS(void):
   DomainMinLimit(-100.0), DomainMaxLimit(100.0),
   ReferenceValue(2.0), Velocity(100.0), Direction(X_DIRECTION)
 {
@@ -238,7 +238,7 @@ inline Sinusoidal_Function_ExactSolution::Sinusoidal_Function_ExactSolution(void
 }
 
 //! Return exact solution 
-inline NavierStokes2D_pState Sinusoidal_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
+inline NavierStokes2D_pState Sinusoidal_Function_ExactSolution_NS::EvaluateSolutionAt(const double &x, const double &y) {
   if (Direction == X_DIRECTION){ // X-direction variation
     return NavierStokes2D_pState(BaseSinusoidalVariation(x), Velocity, ZERO, PRESSURE_STDATM);
   } else {			// Y-direction variation
@@ -247,7 +247,7 @@ inline NavierStokes2D_pState Sinusoidal_Function_ExactSolution::EvaluateSolution
 }
 
 //! Return the basic sinusoidal variation
-inline double Sinusoidal_Function_ExactSolution::BaseSinusoidalVariation(const double & Coord) const{
+inline double Sinusoidal_Function_ExactSolution_NS::BaseSinusoidalVariation(const double & Coord) const{
   if (Coord < DomainMinLimit || Coord > DomainMaxLimit) {
     return ReferenceValue;
   } else {
@@ -257,18 +257,18 @@ inline double Sinusoidal_Function_ExactSolution::BaseSinusoidalVariation(const d
 
 
 /*! 
- * \class CosSin_Function_ExactSolution
+ * \class CosSin_Function_ExactSolution_NS
  * 
  * \brief Implements a 2D trigonometric function, 
  *        \f$ 1.0 + 0.5 \, \cos(\pi x) \sin(5 \pi x) \f$,
  *        in either x- or y-direction;
  *
  */
-class CosSin_Function_ExactSolution: public ExactSolutionBasicType{
+class CosSin_Function_ExactSolution_NS: public ExactSolutionBasicType_NavierStokes2D{
 public:
 
   //! Basic Constructor
-  CosSin_Function_ExactSolution(void);
+  CosSin_Function_ExactSolution_NS(void);
 
   //! Return exact solution
   NavierStokes2D_pState EvaluateSolutionAt(const double &x, const double &y) ;
@@ -295,7 +295,7 @@ private:
 };
 
 // Basic Constructor
-inline CosSin_Function_ExactSolution::CosSin_Function_ExactSolution(void):
+inline CosSin_Function_ExactSolution_NS::CosSin_Function_ExactSolution_NS(void):
   DomainMinLimit(-100.0), DomainMaxLimit(100.0),
   ReferenceValue(1.0), Amplitude(0.5), Velocity(100.0),
   Direction(X_DIRECTION)
@@ -305,7 +305,7 @@ inline CosSin_Function_ExactSolution::CosSin_Function_ExactSolution(void):
 }
 
 //! Return exact solution 
-inline NavierStokes2D_pState CosSin_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
+inline NavierStokes2D_pState CosSin_Function_ExactSolution_NS::EvaluateSolutionAt(const double &x, const double &y) {
   if (Direction == X_DIRECTION){ // X-direction variation
     return NavierStokes2D_pState(BaseCosSinVariation(x), Velocity, ZERO, PRESSURE_STDATM);
   } else {			// Y-direction variation
@@ -314,7 +314,7 @@ inline NavierStokes2D_pState CosSin_Function_ExactSolution::EvaluateSolutionAt(c
 }
 
 //! Return the basic sinusoidal variation
-inline double CosSin_Function_ExactSolution::BaseCosSinVariation(const double & Coord) const {
+inline double CosSin_Function_ExactSolution_NS::BaseCosSinVariation(const double & Coord) const {
   if (Coord < DomainMinLimit || Coord > DomainMaxLimit) {
     return ReferenceValue;
   } else {
@@ -325,16 +325,16 @@ inline double CosSin_Function_ExactSolution::BaseCosSinVariation(const double & 
 
 
 /*! 
- * \class UnitTest_Function_ExactSolution
+ * \class UnitTest_Function_ExactSolution_NS
  * 
  * \brief Implements a 2D function used for testing purposes.
  *        
  */
-class UnitTest_Function_ExactSolution: public ExactSolutionBasicType{
+class UnitTest_Function_ExactSolution_NS: public ExactSolutionBasicType_NavierStokes2D{
 public:
 
   //! Basic Constructor
-  UnitTest_Function_ExactSolution(void);
+  UnitTest_Function_ExactSolution_NS(void);
 
   //! Return exact solution
   NavierStokes2D_pState EvaluateSolutionAt(const double &x, const double &y);
@@ -353,13 +353,13 @@ private:
 };
 
 // Basic Constructor
-inline UnitTest_Function_ExactSolution::UnitTest_Function_ExactSolution(void) {
+inline UnitTest_Function_ExactSolution_NS::UnitTest_Function_ExactSolution_NS(void) {
   // Name the exact solution
   ExactSolutionName = "UnitTest Function";	
 }
 
 //! Return exact solution 
-inline NavierStokes2D_pState UnitTest_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
+inline NavierStokes2D_pState UnitTest_Function_ExactSolution_NS::EvaluateSolutionAt(const double &x, const double &y) {
   NavierStokes2D_pState NavierStokes2D_W_STDATM;
   NavierStokes2D_W_STDATM.Standard_Atmosphere();
   return NavierStokes2D_pState(NavierStokes2D_W_STDATM.rho * (1.1 + sin(x)*cos(y)),

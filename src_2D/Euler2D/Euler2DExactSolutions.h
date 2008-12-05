@@ -65,7 +65,7 @@ protected:
   Euler2D_ExactSolutions& operator=(const Euler2D_ExactSolutions&); //!< Private assignment operator
   
 private:
-  static ExactSolutionBasicType *ExactSoln; //!< pointer to the exact solution
+  static ExactSolutionBasicType_Euler2D *ExactSoln; //!< pointer to the exact solution
   static short i_Exact_Solution_Type;       //!< type indicator for the exact solution
 };
 

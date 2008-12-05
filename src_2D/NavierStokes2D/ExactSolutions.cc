@@ -12,18 +12,19 @@
 #include "NavierStokes2DInput.h"
 #include "ExactSolutions.h"
 
-ExactSolutionBasicType::ExactSolutionBasicType(void): ExactSolutionName("Not named"), Accuracy_Parameter(Soln) {  };
-ExactSolutionBasicType::~ExactSolutionBasicType(void){  };
+ExactSolutionBasicType_NavierStokes2D::ExactSolutionBasicType_NavierStokes2D(void): ExactSolutionName("Not named"),
+										    Accuracy_Parameter(Soln) {  };
+ExactSolutionBasicType_NavierStokes2D::~ExactSolutionBasicType_NavierStokes2D(void){  };
 
 /************************************
- * ExactSolutionBasicType Members   *
+ * ExactSolutionBasicType_NavierStokes2D Members   *
  ***********************************/
 
 /*! 
  * Parse next input control parameter
  */
-void ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters & IP,
-								int & i_command){
+void ExactSolutionBasicType_NavierStokes2D::Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters & IP,
+									       int & i_command){
 
   // Check if the next control parameter has already been identified
   if (i_command != INVALID_INPUT_CODE){
@@ -54,7 +55,7 @@ void ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(NavierStokes2D_I
 /*! 
  * Print relevant parameters
  */
-void ExactSolutionBasicType::Print_Info(std::ostream & out_file){
+void ExactSolutionBasicType_NavierStokes2D::Print_Info(std::ostream & out_file){
   if (Accuracy_Parameter == Soln){
     out_file << "\n     -> Measurement of Accuracy Based on Exact Solution";
   } else {
@@ -63,12 +64,12 @@ void ExactSolutionBasicType::Print_Info(std::ostream & out_file){
 }
 
 /*!
- * Broadcast the ExactSolutionBasicType variables to all      
+ * Broadcast the ExactSolutionBasicType_NavierStokes2D variables to all      
  * processors associated with the specified communicator
  * from the specified processor using the MPI broadcast 
  * routine.
  */
-void ExactSolutionBasicType::Broadcast(void){
+void ExactSolutionBasicType_NavierStokes2D::Broadcast(void){
 #ifdef _MPI_VERSION
 
   MPI::COMM_WORLD.Bcast(&Accuracy_Parameter,
@@ -83,7 +84,7 @@ void ExactSolutionBasicType::Broadcast(void){
  *  The default output assumes that only four variables (i.e. rho, u, v, p)
  *  are known exactly.
  */
-void ExactSolutionBasicType::Output_Tecplot_Title(std::ostream & out_file) const{
+void ExactSolutionBasicType_NavierStokes2D::Output_Tecplot_Title(std::ostream & out_file) const{
   out_file << "\"ExactSoln_rho\" \\ \n"
 	   << "\"ExactSoln_u\" \\ \n"
 	   << "\"ExactSoln_v\" \\ \n"
@@ -91,22 +92,22 @@ void ExactSolutionBasicType::Output_Tecplot_Title(std::ostream & out_file) const
 }
 
 /*! Write the Tecplot double precision format for the default output. */
-void ExactSolutionBasicType::Output_Tecplot_Double_Precision(std::ostream & out_file) const{
+void ExactSolutionBasicType_NavierStokes2D::Output_Tecplot_Double_Precision(std::ostream & out_file) const{
   out_file << "DOUBLE DOUBLE DOUBLE DOUBLE ";
 }
 
 /*******************************************
- * Abgrall_Function_ExactSolution Members  *
+ * Abgrall_Function_ExactSolution_NS Members  *
  ******************************************/
 
 /*! 
  * Parse next input control parameter
  */
-void Abgrall_Function_ExactSolution::Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters & IP,
+void Abgrall_Function_ExactSolution_NS::Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters & IP,
 									int & i_command){
 
   // Call the parser from the base class
-  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+  ExactSolutionBasicType_NavierStokes2D::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   // Check if the next control parameter has already been identified
   if (i_command != INVALID_INPUT_CODE){
@@ -117,36 +118,36 @@ void Abgrall_Function_ExactSolution::Parse_Next_Input_Control_Parameter(NavierSt
 /*! 
  * Print relevant parameters
  */
-void Abgrall_Function_ExactSolution::Print_Info(std::ostream & out_file){
+void Abgrall_Function_ExactSolution_NS::Print_Info(std::ostream & out_file){
 
   // call the base Print_Info
-  ExactSolutionBasicType::Print_Info(out_file);
+  ExactSolutionBasicType_NavierStokes2D::Print_Info(out_file);
 }
 
 /*!
- * Broadcast the Abgrall_Function_ExactSolution variables to all      
+ * Broadcast the Abgrall_Function_ExactSolution_NS variables to all      
  * processors associated with the specified communicator
  * from the specified processor using the MPI broadcast 
  * routine.
  */
-void Abgrall_Function_ExactSolution::Broadcast(void){
+void Abgrall_Function_ExactSolution_NS::Broadcast(void){
 #ifdef _MPI_VERSION
   // None
 #endif
 }
 
 /**********************************************
- * Sinusoidal_Function_ExactSolution Members  *
+ * Sinusoidal_Function_ExactSolution_NS Members  *
  *********************************************/
 
 /*! 
  * Parse next input control parameter
  */
-void Sinusoidal_Function_ExactSolution::Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters & IP,
-									   int & i_command){
+void Sinusoidal_Function_ExactSolution_NS::Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters & IP,
+									      int & i_command){
 
   // Call the parser from the base class
-  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+  ExactSolutionBasicType_NavierStokes2D::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   // Check if the next control parameter has already been identified
   if (i_command != INVALID_INPUT_CODE){
@@ -202,7 +203,7 @@ void Sinusoidal_Function_ExactSolution::Parse_Next_Input_Control_Parameter(Navie
 /*! 
  * Print relevant parameters
  */
-void Sinusoidal_Function_ExactSolution::Print_Info(std::ostream & out_file){
+void Sinusoidal_Function_ExactSolution_NS::Print_Info(std::ostream & out_file){
 
   if (Direction == X_DIRECTION){
     out_file << "\n     -> Direction : X";
@@ -216,17 +217,17 @@ void Sinusoidal_Function_ExactSolution::Print_Info(std::ostream & out_file){
 	   << "\n     -> Velocity : " << Velocity;
 
   // call the base Print_Info
-  ExactSolutionBasicType::Print_Info(out_file);
+  ExactSolutionBasicType_NavierStokes2D::Print_Info(out_file);
 
 }
 
 /*!
- * Broadcast the Sinusoidal_Function_ExactSolution variables to all      
+ * Broadcast the Sinusoidal_Function_ExactSolution_NS variables to all      
  * processors associated with the specified communicator
  * from the specified processor using the MPI broadcast 
  * routine.
  */
-void Sinusoidal_Function_ExactSolution::Broadcast(void){
+void Sinusoidal_Function_ExactSolution_NS::Broadcast(void){
 #ifdef _MPI_VERSION
   
   MPI::COMM_WORLD.Bcast(&DomainMinLimit,
@@ -250,17 +251,17 @@ void Sinusoidal_Function_ExactSolution::Broadcast(void){
 
 
 /******************************************
- * CosSin_Function_ExactSolution Members  *
+ * CosSin_Function_ExactSolution_NS Members  *
  *****************************************/
 
 /*! 
  * Parse next input control parameter
  */
-void CosSin_Function_ExactSolution::Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters & IP,
-								       int & i_command){
+void CosSin_Function_ExactSolution_NS::Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters & IP,
+									  int & i_command){
 
   // Call the parser from the base class
-  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+  ExactSolutionBasicType_NavierStokes2D::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   // Check if the next control parameter has already been identified
   if (i_command != INVALID_INPUT_CODE){
@@ -322,7 +323,7 @@ void CosSin_Function_ExactSolution::Parse_Next_Input_Control_Parameter(NavierSto
 /*! 
  * Print relevant parameters
  */
-void CosSin_Function_ExactSolution::Print_Info(std::ostream & out_file){
+void CosSin_Function_ExactSolution_NS::Print_Info(std::ostream & out_file){
 
   if (Direction == X_DIRECTION){
     out_file << "\n     -> Direction : X";
@@ -337,17 +338,17 @@ void CosSin_Function_ExactSolution::Print_Info(std::ostream & out_file){
 	   << "\n     -> Velocity : " << Velocity;
 
   // call the base Print_Info
-  ExactSolutionBasicType::Print_Info(out_file);
+  ExactSolutionBasicType_NavierStokes2D::Print_Info(out_file);
 
 }
 
 /*!
- * Broadcast the CosSin_Function_ExactSolution variables to all      
+ * Broadcast the CosSin_Function_ExactSolution_NS variables to all      
  * processors associated with the specified communicator
  * from the specified processor using the MPI broadcast 
  * routine.
  */
-void CosSin_Function_ExactSolution::Broadcast(void){
+void CosSin_Function_ExactSolution_NS::Broadcast(void){
 #ifdef _MPI_VERSION
   
   MPI::COMM_WORLD.Bcast(&DomainMinLimit,
@@ -374,17 +375,17 @@ void CosSin_Function_ExactSolution::Broadcast(void){
 
 
 /************************************************
- * UnitTest_Function_ExactSolution Members  *
+ * UnitTest_Function_ExactSolution_NS Members  *
  ***********************************************/
 
 /*! 
  * Parse next input control parameter
  */
-void UnitTest_Function_ExactSolution::Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters & IP,
-									 int & i_command){
+void UnitTest_Function_ExactSolution_NS::Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters & IP,
+									    int & i_command){
 
   // Call the parser from the base class
-  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+  ExactSolutionBasicType_NavierStokes2D::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   // Check if the next control parameter has already been identified
   if (i_command != INVALID_INPUT_CODE){
@@ -398,20 +399,20 @@ void UnitTest_Function_ExactSolution::Parse_Next_Input_Control_Parameter(NavierS
 /*! 
  * Print relevant parameters
  */
-void UnitTest_Function_ExactSolution::Print_Info(std::ostream & out_file){
+void UnitTest_Function_ExactSolution_NS::Print_Info(std::ostream & out_file){
 
   // call the base Print_Info
-  ExactSolutionBasicType::Print_Info(out_file);
+  ExactSolutionBasicType_NavierStokes2D::Print_Info(out_file);
 
 }
 
 /*!
- * Broadcast the UnitTest_Function_ExactSolution variables to all      
+ * Broadcast the UnitTest_Function_ExactSolution_NS variables to all      
  * processors associated with the specified communicator
  * from the specified processor using the MPI broadcast 
  * routine.
  */
-void UnitTest_Function_ExactSolution::Broadcast(void){
+void UnitTest_Function_ExactSolution_NS::Broadcast(void){
 #ifdef _MPI_VERSION
   
 #endif

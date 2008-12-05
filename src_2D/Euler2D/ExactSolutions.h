@@ -45,13 +45,13 @@ using std::tanh;
 class Euler2D_Input_Parameters;
 
 /*! 
- * \class ExactSolutionBasicType
+ * \class ExactSolutionBasicType_Euler2D
  *
  * \brief Basic data type for any exact solution type.
  *
  * This is an abstract data type (ADT).
  */
-class ExactSolutionBasicType{
+class ExactSolutionBasicType_Euler2D{
 public:
 
   //! @name Public types
@@ -60,12 +60,12 @@ public:
   //@}
 
   //! Default ctor
-  ExactSolutionBasicType(void);
+  ExactSolutionBasicType_Euler2D(void);
 
   //! @name Virtual member functions
   //@{
   //! Declare a pure virtual destructor
-  virtual ~ExactSolutionBasicType(void) = 0;
+  virtual ~ExactSolutionBasicType_Euler2D(void) = 0;
 
   /*! Calculate the exact solution based on the location of interest */
   virtual Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) = 0;
@@ -100,16 +100,16 @@ protected:
 
 
 /*! 
- * \class Ringleb_Flow_ExactSolution
+ * \class Ringleb_Flow_ExactSolution_Euler
  * 
  * \brief Implements a particular exact solution to the Euler equations: 
  *
  */
-class Ringleb_Flow_ExactSolution: public ExactSolutionBasicType{
+class Ringleb_Flow_ExactSolution_Euler: public ExactSolutionBasicType_Euler2D{
 public:
 
   //! Basic Constructor
-  Ringleb_Flow_ExactSolution(void);
+  Ringleb_Flow_ExactSolution_Euler(void);
 
   //! Return exact solution
   Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) ;
@@ -146,7 +146,7 @@ private:
 /*
  * Default constructor
  */
-inline Ringleb_Flow_ExactSolution::Ringleb_Flow_ExactSolution(void):
+inline Ringleb_Flow_ExactSolution_Euler::Ringleb_Flow_ExactSolution_Euler(void):
   g(GAMMA_AIR), po(PRESSURE_STDATM), rhoo(DENSITY_STDATM),
   c_a(0.7), c_b(0.999999),
   Precision(14), MaxIter(200),
@@ -157,15 +157,15 @@ inline Ringleb_Flow_ExactSolution::Ringleb_Flow_ExactSolution(void):
 }
 
 
-inline double Ringleb_Flow_ExactSolution::J_Func(const double &c) const{
+inline double Ringleb_Flow_ExactSolution_Euler::J_Func(const double &c) const{
   return ONE/c + ONE/(THREE*c*c*c) + ONE/(FIVE*c*c*c*c*c) - HALF*log((ONE+c)/(ONE-c));
 }
 
-inline double Ringleb_Flow_ExactSolution::rho_Func(const double &c) const{
+inline double Ringleb_Flow_ExactSolution_Euler::rho_Func(const double &c) const{
   return pow(c,TwoOver_gm1);
 }
 
-inline double Ringleb_Flow_ExactSolution::q_Func(const double &c) const{
+inline double Ringleb_Flow_ExactSolution_Euler::q_Func(const double &c) const{
   return sqrt(TwoOver_gm1*(ONE - c*c));
 }
 
@@ -174,7 +174,7 @@ inline double Ringleb_Flow_ExactSolution::q_Func(const double &c) const{
  * This subroutine determines X_Coord and Y_Coord based on
  * the non-dimensional velocity q and the streamline parameter k.
  */
-inline void Ringleb_Flow_ExactSolution::RinglebFlowCoordinates(const double &q , const double &k,
+inline void Ringleb_Flow_ExactSolution_Euler::RinglebFlowCoordinates(const double &q , const double &k,
 							       double &X_Coord, double &Y_Coord) {
  
   double c, rho, J;
@@ -193,7 +193,7 @@ inline void Ringleb_Flow_ExactSolution::RinglebFlowCoordinates(const double &q ,
  *  Returns residual of (x+J/2)^2 + y^2 - 1/(4*rho^2*q^4) based on a guess of c.
  *  Parameters xLoc and yLoc must be preset in the class.
  */
-inline double Ringleb_Flow_ExactSolution::RinglebResidual(const double &c) const {
+inline double Ringleb_Flow_ExactSolution_Euler::RinglebResidual(const double &c) const {
 
   const double J = J_Func(c);
   const double rho = rho_Func(c);
@@ -204,16 +204,16 @@ inline double Ringleb_Flow_ExactSolution::RinglebResidual(const double &c) const
 
 
 /*! 
- * \class Abgrall_Function_ExactSolution
+ * \class Abgrall_Function_ExactSolution_Euler
  * 
  * \brief Implements a 2D non-smooth function used for testing the robustness of the reconstruction procedure;
  *
  */
-class Abgrall_Function_ExactSolution: public ExactSolutionBasicType{
+class Abgrall_Function_ExactSolution_Euler: public ExactSolutionBasicType_Euler2D{
 public:
 
   //! Basic Constructor
-  Abgrall_Function_ExactSolution(void){ 
+  Abgrall_Function_ExactSolution_Euler(void){ 
     ExactSolutionName = "Abgrall Function";	// Name the exact solution
   }
 
@@ -237,14 +237,14 @@ private:
 };
 
 //! Return exact solution 
-inline Euler2D_pState Abgrall_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
+inline Euler2D_pState Abgrall_Function_ExactSolution_Euler::EvaluateSolutionAt(const double &x, const double &y) {
   return Euler2D_pState(Abgrall_Function(x,y), ZERO, ZERO, PRESSURE_STDATM);
 }
 
 /*!
  * Calculate the value of the function for a given location.
  */
-inline double Abgrall_Function_ExactSolution::Abgrall_Function(const double & x, const double & y) const {
+inline double Abgrall_Function_ExactSolution_Euler::Abgrall_Function(const double & x, const double & y) const {
 
   if ( x <= 0.5*cos(PI * y) ){
     return (2.0 + Basic_1D_Variation(x - (1.0/tan(sqrt(0.5*PI))) * y) );
@@ -261,7 +261,7 @@ inline double Abgrall_Function_ExactSolution::Abgrall_Function(const double & x,
 /*!
  * Implement the basic 1D variation used by Abgrall's function.
  */
-inline double Abgrall_Function_ExactSolution::Basic_1D_Variation(const double & r) const {
+inline double Abgrall_Function_ExactSolution_Euler::Basic_1D_Variation(const double & r) const {
 
   if (r <= -1.0/3.0){
     return (-r * sin(1.5 * PI * r * r));
@@ -280,16 +280,16 @@ inline double Abgrall_Function_ExactSolution::Basic_1D_Variation(const double & 
 
 
 /*! 
- * \class Sinusoidal_Function_ExactSolution
+ * \class Sinusoidal_Function_ExactSolution_Euler
  * 
  * \brief Implements a 2D sinusoidal function, \f$ \sin[(x+1)\pi] \f$, in either x- or y-direction;
  *
  */
-class Sinusoidal_Function_ExactSolution: public ExactSolutionBasicType{
+class Sinusoidal_Function_ExactSolution_Euler: public ExactSolutionBasicType_Euler2D{
 public:
 
   //! Basic Constructor
-  Sinusoidal_Function_ExactSolution(void);
+  Sinusoidal_Function_ExactSolution_Euler(void);
 
   //! Return exact solution
   Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) ;
@@ -315,7 +315,7 @@ private:
 };
 
 // Basic Constructor
-inline Sinusoidal_Function_ExactSolution::Sinusoidal_Function_ExactSolution(void):
+inline Sinusoidal_Function_ExactSolution_Euler::Sinusoidal_Function_ExactSolution_Euler(void):
   DomainMinLimit(-100.0), DomainMaxLimit(100.0),
   ReferenceValue(2.0), Velocity(100.0), Direction(X_DIRECTION)
 {
@@ -324,7 +324,7 @@ inline Sinusoidal_Function_ExactSolution::Sinusoidal_Function_ExactSolution(void
 }
 
 //! Return exact solution 
-inline Euler2D_pState Sinusoidal_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
+inline Euler2D_pState Sinusoidal_Function_ExactSolution_Euler::EvaluateSolutionAt(const double &x, const double &y) {
   if (Direction == X_DIRECTION){ // X-direction variation
     return Euler2D_pState(BaseSinusoidalVariation(x), Velocity, ZERO, PRESSURE_STDATM);
   } else {			// Y-direction variation
@@ -333,7 +333,7 @@ inline Euler2D_pState Sinusoidal_Function_ExactSolution::EvaluateSolutionAt(cons
 }
 
 //! Return the basic sinusoidal variation
-inline double Sinusoidal_Function_ExactSolution::BaseSinusoidalVariation(const double & Coord) const{
+inline double Sinusoidal_Function_ExactSolution_Euler::BaseSinusoidalVariation(const double & Coord) const{
   if (Coord < DomainMinLimit || Coord > DomainMaxLimit) {
     return ReferenceValue;
   } else {
@@ -343,18 +343,18 @@ inline double Sinusoidal_Function_ExactSolution::BaseSinusoidalVariation(const d
 
 
 /*! 
- * \class CosSin_Function_ExactSolution
+ * \class CosSin_Function_ExactSolution_Euler
  * 
  * \brief Implements a 2D trigonometric function, 
  *        \f$ 1.0 + 0.5 \, \cos(\pi x) \sin(5 \pi x) \f$,
  *        in either x- or y-direction;
  *
  */
-class CosSin_Function_ExactSolution: public ExactSolutionBasicType{
+class CosSin_Function_ExactSolution_Euler: public ExactSolutionBasicType_Euler2D{
 public:
 
   //! Basic Constructor
-  CosSin_Function_ExactSolution(void);
+  CosSin_Function_ExactSolution_Euler(void);
 
   //! Return exact solution
   Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) ;
@@ -381,7 +381,7 @@ private:
 };
 
 // Basic Constructor
-inline CosSin_Function_ExactSolution::CosSin_Function_ExactSolution(void):
+inline CosSin_Function_ExactSolution_Euler::CosSin_Function_ExactSolution_Euler(void):
   DomainMinLimit(-100.0), DomainMaxLimit(100.0),
   ReferenceValue(1.0), Amplitude(0.5), Velocity(100.0),
   Direction(X_DIRECTION)
@@ -391,7 +391,7 @@ inline CosSin_Function_ExactSolution::CosSin_Function_ExactSolution(void):
 }
 
 //! Return exact solution 
-inline Euler2D_pState CosSin_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
+inline Euler2D_pState CosSin_Function_ExactSolution_Euler::EvaluateSolutionAt(const double &x, const double &y) {
   if (Direction == X_DIRECTION){		// X-direction variation
     return Euler2D_pState(BaseCosSinVariation(x), Velocity, ZERO, PRESSURE_STDATM);
   } else {			// Y-direction variation
@@ -400,7 +400,7 @@ inline Euler2D_pState CosSin_Function_ExactSolution::EvaluateSolutionAt(const do
 }
 
 //! Return the basic sinusoidal variation
-inline double CosSin_Function_ExactSolution::BaseCosSinVariation(const double & Coord) const {
+inline double CosSin_Function_ExactSolution_Euler::BaseCosSinVariation(const double & Coord) const {
   if (Coord < DomainMinLimit || Coord > DomainMaxLimit) {
     return ReferenceValue;
   } else {
@@ -411,18 +411,18 @@ inline double CosSin_Function_ExactSolution::BaseCosSinVariation(const double & 
 
 
 /*! 
- * \class HyperTangent_Function_ExactSolution
+ * \class HyperTangent_Function_ExactSolution_Euler
  * 
  * \brief Implements the 2D trigonometric function 
  *        \f$ rho(Val) = RefVal + A (1.0 - \tanh^2 (S Val)) \f$,
  *        where Val is the distance between the calculation point
  *        and the centroid of the function.
  */
-class HyperTangent_Function_ExactSolution: public ExactSolutionBasicType{
+class HyperTangent_Function_ExactSolution_Euler: public ExactSolutionBasicType_Euler2D{
 public:
 
   //! Basic Constructor
-  HyperTangent_Function_ExactSolution(void);
+  HyperTangent_Function_ExactSolution_Euler(void);
 
   //! Return exact solution
   Euler2D_pState EvaluateSolutionAt(const double &x, const double &y) ;
@@ -451,7 +451,7 @@ private:
 };
 
 // Basic Constructor
-inline HyperTangent_Function_ExactSolution::HyperTangent_Function_ExactSolution(void):
+inline HyperTangent_Function_ExactSolution_Euler::HyperTangent_Function_ExactSolution_Euler(void):
   ReferenceValue(1.0), Amplitude(1.0), Steepness(1.0),
   Centroid(0.0,0.0), SetCentroid(false)
 {
@@ -460,7 +460,7 @@ inline HyperTangent_Function_ExactSolution::HyperTangent_Function_ExactSolution(
 }
 
 //! Return exact solution 
-inline Euler2D_pState HyperTangent_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
+inline Euler2D_pState HyperTangent_Function_ExactSolution_Euler::EvaluateSolutionAt(const double &x, const double &y) {
   // Compute distance between centroid and the current position
   double Distance(abs(Centroid - Vector2D(x,y)));
 
@@ -468,7 +468,7 @@ inline Euler2D_pState HyperTangent_Function_ExactSolution::EvaluateSolutionAt(co
 }
 
 //! Return the basic sinusoidal variation
-inline double HyperTangent_Function_ExactSolution::BaseHyperTangentVariation(const double & DistanceToCentroid) const {
+inline double HyperTangent_Function_ExactSolution_Euler::BaseHyperTangentVariation(const double & DistanceToCentroid) const {
 
   // Function: "1 - tanh(x)^2" modulated for amplitude and steepness
   double Func;
@@ -482,16 +482,16 @@ inline double HyperTangent_Function_ExactSolution::BaseHyperTangentVariation(con
 
 
 /*! 
- * \class UnitTest_Function_ExactSolution
+ * \class UnitTest_Function_ExactSolution_Euler
  * 
  * \brief Implements a 2D function used for testing purposes.
  *        
  */
-class UnitTest_Function_ExactSolution: public ExactSolutionBasicType{
+class UnitTest_Function_ExactSolution_Euler: public ExactSolutionBasicType_Euler2D{
 public:
 
   //! Basic Constructor
-  UnitTest_Function_ExactSolution(void);
+  UnitTest_Function_ExactSolution_Euler(void);
 
   //! Return exact solution
   Euler2D_pState EvaluateSolutionAt(const double &x, const double &y);
@@ -510,13 +510,13 @@ private:
 };
 
 // Basic Constructor
-inline UnitTest_Function_ExactSolution::UnitTest_Function_ExactSolution(void) {
+inline UnitTest_Function_ExactSolution_Euler::UnitTest_Function_ExactSolution_Euler(void) {
   // Name the exact solution
   ExactSolutionName = "UnitTest Function";	
 }
 
 //! Return exact solution 
-inline Euler2D_pState UnitTest_Function_ExactSolution::EvaluateSolutionAt(const double &x, const double &y) {
+inline Euler2D_pState UnitTest_Function_ExactSolution_Euler::EvaluateSolutionAt(const double &x, const double &y) {
   return Euler2D_pState(Euler2D_W_STDATM.d   * (1.1 + sin(x)*cos(y)),
 			Euler2D_W_STDATM.a() * sin(x),
 			Euler2D_W_STDATM.a() * cos(y),

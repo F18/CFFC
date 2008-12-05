@@ -14,7 +14,7 @@
 
 
 // ==== Member variables ====
-ExactSolutionBasicType * NavierStokes2D_ExactSolutions::ExactSoln = NULL; //!< no associated exact solution
+ExactSolutionBasicType_NavierStokes2D * NavierStokes2D_ExactSolutions::ExactSoln = NULL; //!< no associated exact solution
 short NavierStokes2D_ExactSolutions::i_Exact_Solution_Type = NAVIERSTOKES2D_NO_EXACT_SOLUTION; //!< value for no exact solution
 
 // ==== Member functions ====
@@ -52,16 +52,16 @@ void NavierStokes2D_ExactSolutions::SetExactSolution(const short &SolutionIndex)
     // Don't do anything. The values were set by DestroyExactSolutionObject() routine.
     break;
   case NAVIERSTOKES2D_EXACT_SOLUTION_ABGRALL_FUNCTION:
-    ExactSoln = new Abgrall_Function_ExactSolution;
+    ExactSoln = new Abgrall_Function_ExactSolution_NS;
     break;
   case NAVIERSTOKES2D_EXACT_SOLUTION_SINUSOIDAL_FUNCTION:
-    ExactSoln = new Sinusoidal_Function_ExactSolution;
+    ExactSoln = new Sinusoidal_Function_ExactSolution_NS;
     break;
   case NAVIERSTOKES2D_EXACT_SOLUTION_COSSIN_FUNCTION:
-    ExactSoln = new CosSin_Function_ExactSolution;
+    ExactSoln = new CosSin_Function_ExactSolution_NS;
     break;
   case NAVIERSTOKES2D_EXACT_SOLUTION_UNITTEST_FUNCTION:
-    ExactSoln = new UnitTest_Function_ExactSolution;
+    ExactSoln = new UnitTest_Function_ExactSolution_NS;
     break;
   default:
     throw runtime_error("NavierStokes2D_ExactSolutions::SetExactSolution() ERROR! Unknown exact solution type index.");
