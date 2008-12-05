@@ -641,8 +641,8 @@ public:
   Quad_Soln_Block *Local_SolnBlk;
 
   //! Copies of the grid required for grid management.
-  Grid2D_Quad_Block *OGrid;
-  Grid2D_Quad_Block *AGrid;
+  typename Quad_Soln_Block::GridType *OGrid;
+  typename Quad_Soln_Block::GridType *AGrid;
 
   //! Extra mesh information required for the mesh adjustment algorithm.
   Adjusted_Mesh_Quad_Block *Mesh;
@@ -858,7 +858,7 @@ public:
   int Prolong_Quadrilateral_Block(const int &Perform_Mesh_Adjustment,
 				  const int &nb,
 				  Quad_Soln_Block &SolnBlk_Original,
-				  Grid2D_Quad_Block &AGrid_Original,
+				  typename Quad_Soln_Block::GridType &AGrid_Original,
 				  Adjusted_Mesh_Quad_Block &AMesh_Original,
 				  const int &Sector);
 
@@ -869,10 +869,10 @@ public:
 				   Quad_Soln_Block &SolnBlk_Original_SE,
 				   Quad_Soln_Block &SolnBlk_Original_NW,
 				   Quad_Soln_Block &SolnBlk_Original_NE,
-				   Grid2D_Quad_Block &Agrid_Original_SW,
-				   Grid2D_Quad_Block &Agrid_Original_SE,
-				   Grid2D_Quad_Block &Agrid_Original_NW,
-				   Grid2D_Quad_Block &Agrid_Original_NE,
+				   typename Quad_Soln_Block::GridType &Agrid_Original_SW,
+				   typename Quad_Soln_Block::GridType &Agrid_Original_SE,
+				   typename Quad_Soln_Block::GridType &Agrid_Original_NW,
+				   typename Quad_Soln_Block::GridType &Agrid_Original_NE,
 				   Adjusted_Mesh_Quad_Block &Amesh_Original_SW,
 				   Adjusted_Mesh_Quad_Block &Amesh_Original_SE,
 				   Adjusted_Mesh_Quad_Block &Amesh_Original_NW,
@@ -1163,8 +1163,8 @@ allocate(Quad_Soln_Block *SolnBlk,
   Local_SolnBlk = SolnBlk;
 
   // Allocate memory for the extra grid information.
-  AGrid = new Grid2D_Quad_Block[IP->Number_of_Blocks_Per_Processor];
-  OGrid = new Grid2D_Quad_Block[IP->Number_of_Blocks_Per_Processor];
+  AGrid = new typename Quad_Soln_Block::GridType[IP->Number_of_Blocks_Per_Processor];
+  OGrid = new typename Quad_Soln_Block::GridType[IP->Number_of_Blocks_Per_Processor];
 
   // Allocate memory for the adjusted mesh data.
   Mesh = new Adjusted_Mesh_Quad_Block[IP->Number_of_Blocks_Per_Processor];
@@ -6720,7 +6720,7 @@ inline int EmbeddedBoundaries2D<cState, pState, Quad_Soln_Block, Quad_Soln_Input
 Prolong_Quadrilateral_Block(const int &Perform_Mesh_Adjustment,
 			    const int &nb,
 			    Quad_Soln_Block &SolnBlk_Original,
-			    Grid2D_Quad_Block &AGrid_Original,
+			    typename Quad_Soln_Block::GridType &AGrid_Original,
 			    Adjusted_Mesh_Quad_Block &AMesh_Original,
 			    const int &Sector) {
 
@@ -6917,10 +6917,10 @@ Restrict_Quadrilateral_Block(const int &Perform_Mesh_Adjustment,
 			     Quad_Soln_Block &SolnBlk_Original_SE,
 			     Quad_Soln_Block &SolnBlk_Original_NW,
 			     Quad_Soln_Block &SolnBlk_Original_NE,
-			     Grid2D_Quad_Block &AGrid_Original_SW,
-			     Grid2D_Quad_Block &AGrid_Original_SE,
-			     Grid2D_Quad_Block &AGrid_Original_NW,
-			     Grid2D_Quad_Block &AGrid_Original_NE,
+			     typename Quad_Soln_Block::GridType &AGrid_Original_SW,
+			     typename Quad_Soln_Block::GridType &AGrid_Original_SE,
+			     typename Quad_Soln_Block::GridType &AGrid_Original_NW,
+			     typename Quad_Soln_Block::GridType &AGrid_Original_NE,
 			     Adjusted_Mesh_Quad_Block &AMesh_Original_SW,
 			     Adjusted_Mesh_Quad_Block &AMesh_Original_SE,
 			     Adjusted_Mesh_Quad_Block &AMesh_Original_NW,
@@ -7492,7 +7492,7 @@ Refine_Grid(const int &Perform_Mesh_Adjustment) {
   int my_rank, undefined_rank, number_CPUs_in_new_blocks, CPUs_in_new_blocks[4];
 
   Quad_Soln_Block solution_block_to_be_refined;
-  Grid2D_Quad_Block agrid_block_to_be_refined;
+  typename Quad_Soln_Block::GridType agrid_block_to_be_refined;
   Adjusted_Mesh_Quad_Block amesh_block_to_be_refined;
   QuadTreeBlock *quadtree_block_to_be_refined_ptr;
 
@@ -7718,10 +7718,10 @@ Coarsen_Grid(const int &Perform_Mesh_Adjustment) {
                   solution_block_to_be_coarsened_SE_sibling,
                   solution_block_to_be_coarsened_NW_sibling,
                   solution_block_to_be_coarsened_NE_sibling;
-  Grid2D_Quad_Block agrid_block_to_be_coarsened_SW_sibling,
-                    agrid_block_to_be_coarsened_SE_sibling,
-                    agrid_block_to_be_coarsened_NW_sibling,
-                    agrid_block_to_be_coarsened_NE_sibling;
+  typename Quad_Soln_Block::GridType agrid_block_to_be_coarsened_SW_sibling,
+                                     agrid_block_to_be_coarsened_SE_sibling,
+                                     agrid_block_to_be_coarsened_NW_sibling,
+                                     agrid_block_to_be_coarsened_NE_sibling;
   Adjusted_Mesh_Quad_Block amesh_block_to_be_coarsened_SW_sibling,
                            amesh_block_to_be_coarsened_SE_sibling,
                            amesh_block_to_be_coarsened_NW_sibling,

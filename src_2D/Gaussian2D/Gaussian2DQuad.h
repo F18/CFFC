@@ -167,6 +167,11 @@
 class Gaussian2D_Quad_Block{
   private:
   public:
+    //! @name Defined public types:
+    //@{
+    typedef Grid2D_Quad_Block GridType;
+    //@}
+
     Gaussian2D_pState           **W;  // Primitive solution state.
     Gaussian2D_cState           **U;  // Conserved solution state.
     Grid2D_Quad_Block          Grid;  // 2D quadrilateral grid geometry.

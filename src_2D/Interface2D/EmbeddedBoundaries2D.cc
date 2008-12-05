@@ -24,6 +24,7 @@ using namespace std;
 
 #include "EmbeddedBoundaries2D.h"
 #include "EmbeddedBoundaries2D_Solver.h"
+#include "EmbeddedBoundaries2D_Solver_HO.h"
 #include "EmbeddedBoundaries2D_FASMultigrid.h"
 #include "EmbeddedBoundaries2D_Euler.h"
 #include "EmbeddedBoundaries2D_NavierStokes.h"
@@ -256,20 +257,17 @@ int main(int num_arg, char *arg_ptr[]) {
   // value problem(s)/boundary value problem(s) (IBVP/BVP) using the 
   // appropriate equation solver.
   if (strcmp(Equation_Type,"Euler2D") == 0) {
-    //     error_flag = EmbeddedBoundaries2D_Solver<Euler2D_cState,
-    //                                              Euler2D_pState,
-    //                                              Euler2D_Quad_Block,
-    //                                              Euler2D_Input_Parameters>(Input_File_Name_ptr,
-    // 								       batch_flag);
-    if (CFFC_Primary_MPI_Processor() && !batch_flag)
-      cout << "\n\n EmbeddedBoundaries2D ERROR: Euler solver must be modified to work with the high-order grid.\n";
-    error_flag = 1;
+    error_flag = EmbeddedBoundaries2D_Solver_HO<Euler2D_cState,
+                                                Euler2D_pState,
+                                                Euler2D_Quad_Block,
+                                                Euler2D_Input_Parameters>(Input_File_Name_ptr,
+									  batch_flag);
   } else if (strcmp(Equation_Type,"NavierStokes2D") == 0) {
-    error_flag = EmbeddedBoundaries2D_Solver<NavierStokes2D_cState,
-                                             NavierStokes2D_pState,
-                                             NavierStokes2D_Quad_Block, 
-                                             NavierStokes2D_Input_Parameters>(Input_File_Name_ptr,
-									      batch_flag);
+    error_flag = EmbeddedBoundaries2D_Solver_HO<NavierStokes2D_cState,
+                                                NavierStokes2D_pState,
+                                                NavierStokes2D_Quad_Block, 
+                                                NavierStokes2D_Input_Parameters>(Input_File_Name_ptr,
+										 batch_flag);
   } else if (strcmp(Equation_Type,"Dusty2D") == 0) {
     error_flag = EmbeddedBoundaries2D_Solver<Dusty2D_cState,
                                              Dusty2D_pState,
