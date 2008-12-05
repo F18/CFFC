@@ -597,8 +597,7 @@ class NavierStokes2D_pState {
   //! @brief Inviscid solution flux in the normal direction
   NavierStokes2D_cState Fn(const Vector2D & normal_dir) const;
   //! @brief Calculate flux in the provided normal direction for a given solution state
-  friend NavierStokes2D_cState Fn(const NavierStokes2D_pState &W,
-				  const Vector2D & normal_dir){ return W.Fn(normal_dir); }
+  friend NavierStokes2D_cState Fn(const NavierStokes2D_pState &W, const Vector2D & normal_dir);
   //@}
 
   //@{ @name Viscous solution fluxes and Jacobians.
@@ -3566,6 +3565,14 @@ inline NavierStokes2D_cState NavierStokes2D_pState::Fn(const Vector2D &normal_di
 				 ZERO,
 				 ZERO);
   }
+}
+
+/*
+ * Calculate the inviscid flux in the normal direction 
+ * based on the given solution state.
+ */
+inline NavierStokes2D_cState Fn(const NavierStokes2D_pState &W, const Vector2D & normal_dir){ 
+  return W.Fn(normal_dir); 
 }
 
 /**********************************************************************
