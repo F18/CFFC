@@ -118,11 +118,8 @@ namespace tut
 					       _GlobalList_Soln_Blocks_,
 					       _LocalList_Soln_Blocks_);
 
-    TurnOff(
-	     HighOrder2D_MultiBlock::Create_Initial_HighOrder_Variables(_SolnBlk_,
-									_LocalList_Soln_Blocks_);
-	     )
-
+    HighOrder2D_MultiBlock::Create_Initial_HighOrder_Variables(_SolnBlk_,
+							       _LocalList_Soln_Blocks_);
 
 
     if (_SolnBlk_ == NULL) {
