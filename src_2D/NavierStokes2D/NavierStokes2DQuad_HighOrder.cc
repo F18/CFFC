@@ -4713,6 +4713,7 @@ void NavierStokes2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder(
   double rho_over_p;
   int BC_Type;
   string ErrorMsg;
+  NavierStokes2D_pState *RefState;
 
   switch (BOUNDARY){
     
@@ -4721,7 +4722,8 @@ void NavierStokes2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder(
     // *******************************
   case WEST :			
     BC_Type = Grid.BCtypeW[jj];
-    ErrorMsg = "NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such West BCtype!";
+    ErrorMsg = "NavierStokes2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such West BCtype!";
+    RefState = &WoW[jj];
     break;
 
     // *******************************
@@ -4729,15 +4731,17 @@ void NavierStokes2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder(
     // *******************************
   case EAST :			
     BC_Type = Grid.BCtypeE[jj];
-    ErrorMsg = "NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such East BCtype!";
+    ErrorMsg = "NavierStokes2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such East BCtype!";
+    RefState = &WoE[jj];
     break;
 
     // *******************************
     // === NORTH boundary interface ==
     // *******************************
-  case NORTH :			
+  case NORTH :	
     BC_Type = Grid.BCtypeN[ii];
-    ErrorMsg = "NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such North BCtype!";
+    ErrorMsg = "NavierStokes2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such North BCtype!";
+    RefState = &WoN[ii];
     break;
 
     // *******************************
@@ -4745,12 +4749,22 @@ void NavierStokes2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder(
     // *******************************
   case SOUTH :			
     BC_Type = Grid.BCtypeS[ii];
-    ErrorMsg = "NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such South BCtype!";
+    ErrorMsg = "NavierStokes2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such South BCtype!";
+    RefState = &WoS[ii];
     break;
   }
 
   // Compute the face state and gradients based on the particular boundary condition
   switch(BC_Type){
+
+  case BC_NONE:
+    // Average the left and right states to determine the face state
+    W_face = 0.5*(Wl + Wr);
+
+    // Average the right and left gradients to determine the interface gradient
+    dWdx_face = 0.5*(dWdxL + dWdxR);
+    dWdy_face = 0.5*(dWdyL + dWdyR);
+    break;
 
   case BC_WALL_VISCOUS_HEATFLUX:
     W_face = 0.5*(Wl + Wr);
@@ -4772,6 +4786,32 @@ void NavierStokes2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder(
     dWdy_face.rho = rho_over_p * dWdy_face.p;
     break;
 
+  case BC_FIXED:
+    // Use the reference state for the face state
+    W_face = *RefState;
+
+    // Average the right and left gradients to determine the interface gradient
+    dWdx_face = 0.5*(dWdxL + dWdxR);
+    dWdy_face = 0.5*(dWdyL + dWdyR);    
+    break;
+
+  case BC_CONSTANT_EXTRAPOLATION:
+    // Use the interior reconstruction to set the state value
+    W_face = Wl;
+
+    // Average the right and left gradients to determine the interface gradient
+    dWdx_face = 0.5*(dWdxL + dWdxR);
+    dWdy_face = 0.5*(dWdyL + dWdyR);
+    break;
+
+  case BC_REFLECTION:
+    // Average the left and right states to determine the face state
+    W_face = 0.5*(Wl + Wr);
+
+    // Average the right and left gradients to determine the interface gradient
+    dWdx_face = 0.5*(dWdxL + dWdxR);
+    dWdy_face = 0.5*(dWdyL + dWdyR);
+    break;
 
   default:
     throw runtime_error(ErrorMsg);
