@@ -479,6 +479,16 @@ public:
 							const Vector2D &CalculationPoint,
 							const Vector2D &NormalDirection,
 							const unsigned short int Pos = 0) const;
+  void ViscousFluxStates_AtBoundaryInterface_HighOrder(const int &BOUNDARY,
+						       const int &ii, const int &jj,
+						       const NavierStokes2D_pState &Wl, const NavierStokes2D_pState &Wr,
+						       NavierStokes2D_pState &W_face,
+						       const NavierStokes2D_pState &dWdxL, const NavierStokes2D_pState &dWdyL,
+						       const NavierStokes2D_pState &dWdxR, const NavierStokes2D_pState &dWdyR,
+						       NavierStokes2D_pState &dWdx_face,
+						       NavierStokes2D_pState &dWdy_face,
+						       const Vector2D &CalculationPoint,
+						       const Vector2D &NormalDirection);
   //@}
 
   //@{ @name Input-output operators.
