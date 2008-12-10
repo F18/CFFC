@@ -84,6 +84,8 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
     
     // compute the normalized geometric weight
     GeomWeights(cell) /= WeightsSum;
+    // RR: --> The following simply gets rid of geometric weighting for the time being
+    GeomWeights(cell) = 1.0;
 
     // *** SET the matrix A of the linear system (LHS) ***
     /* compute for each derivative the corresponding entry in the matrix of the linear system */
@@ -131,7 +133,7 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
       A(cell-1,i-1) -= SolnBlk(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i);
 
       // apply geometric weighting
-      // A(cell-1,i-1) *= GeomWeights(cell);
+      A(cell-1,i-1) *= GeomWeights(cell);
 
     } // endfor (i) - Number of Derivatives
       
@@ -139,7 +141,7 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
     for (parameter = 1; parameter <= NumberOfParameters; ++parameter){
       All_Delta_U(cell-1,parameter-1) = (SolnBlk(i_index[cell],j_index[cell],k_index[cell]).CellSolution(parameter) -
 					 SolnBlk(i_index[0],j_index[0],k_index[0]).CellSolution(parameter));
-      // All_Delta_U(cell-1,parameter-1) *= GeomWeights(cell);
+      All_Delta_U(cell-1,parameter-1) *= GeomWeights(cell);
     }
 
   }//endfor (cell) - Stencil Size
@@ -172,5 +174,109 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
 
 
 
+ /***************************************************************************
+ * TEMPLATIZED Function: FirstOrder_kExact_Reconstruction for 3D            *
+ *                                                                          *
+ * This function determines the coefficients of a Taylor series expansion   *
+ * which approximates the solution over the domain of the cell specified    *
+ * by "i_index[0]","j_index[0]", and "k_index[0]" indexes using a first     *
+ * order polynomial function                                                *
+ ***************************************************************************/
+template< class SolutionContainer> inline
+void FirstOrder_kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, 
+				       const int *j_index, const int *k_index, const int & StencilSize)
+{
+
+  // Obs. (i_index[0],j_index[0],k_index[0]) --> The indexes of the cell for which the reconstruction is carried out.
+
+  typedef typename SolutionContainer::CompCellType  ComputationalCellType;
+  static const int NumberOfParameters = ComputationalCellType::NumberOfVariables;
+  
+  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+  int ND(4);	                          // Number of Taylor expansion coefficients (Derivatives)
+  DenseMatrix A(StencilSize-1,ND-1);      // The matrix which the linear system is solved for
+  DenseMatrix All_Delta_U (StencilSize-1,NumberOfParameters); //Matrix for storing U[neighbour]-U[cell].
+  ColumnVector GeomWeights(StencilSize);     // The column vector of the geometric weights
+  Vector3D *DeltaCellCenters;                /* array for storing the distances between the cell center
+						of neighbour cells and the one of i,j,k cell */
+  int krank;
+  int IndexSumX, IndexSumY, IndexSumZ, P1, P2, P3;
+  double CombP1X, CombP2Y, CombP3Z;
+  double PowDistanceXC, PowDistanceYC, PowDistanceZC;
+  int cell, i, parameter;
+  double WeightsSum(0.0);
+
+  // Allocate memory
+  DeltaCellCenters = new Vector3D [StencilSize];
+
+  // *********  Assign the average solution to D00 ***********
+  SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(0,0,0) = SolnBlk(i_index[0],j_index[0],k_index[0]).CellSolution();
+
+  // START:   Set the LHS and RHS of the linear system 
+  // ***************************************************
+
+  // Step1. Compute the normalized geometric weights
+  for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
+
+    /* Compute the X, Y, and Z component of the distance between
+       the cell center of the neighbours and the reconstructed cell */
+    DeltaCellCenters[cell] = SolnBlk(i_index[cell],j_index[cell],k_index[cell]).CellCenter() - 
+      SolnBlk(i_index[0],j_index[0],k_index[0]).CellCenter();
+    
+    /* Compute the geometric weights and their sum (this is used for normalization)
+       based on the distance to each control volume */
+    GeomWeights(cell) = sqrt(DeltaCellCenters[cell].x*DeltaCellCenters[cell].x + 
+			     DeltaCellCenters[cell].y*DeltaCellCenters[cell].y +
+                             DeltaCellCenters[cell].z*DeltaCellCenters[cell].z);
+    GeomWeights(cell) *= GeomWeights(cell);
+    GeomWeights(cell) = 1.0/(1.0E-15 + GeomWeights(cell));
+    
+    WeightsSum += GeomWeights(cell);
+  }
+
+  // Step2. Set the approximate equations
+  for (cell=1 ; cell<StencilSize; ++cell){ //for each cell in the stencil
+    
+    // compute the normalized geometric weight
+    GeomWeights(cell) /= WeightsSum;
+
+    // RR: --> The following simply gets rid of geometric weighting for the time being
+    GeomWeights(cell) = 1.0;
+    
+    // *** SET the matrix A of the linear system (LHS) ***
+    A(cell-1,0) = GeomWeights(cell)*DeltaCellCenters[cell].z; // D001 coefficient    
+    A(cell-1,1) = GeomWeights(cell)*DeltaCellCenters[cell].y; // D010 coefficient
+    A(cell-1,2) = GeomWeights(cell)*DeltaCellCenters[cell].x; // D100 coefficient
+    
+      
+    // *** SET the matrix All_Delta_U of the linear system (RHS) ***
+    for (parameter = 1; parameter <= NumberOfParameters; ++parameter){
+      All_Delta_U(cell-1,parameter-1) = (SolnBlk(i_index[cell],j_index[cell],k_index[cell]).CellSolution(parameter) -
+					 SolnBlk(i_index[0],j_index[0],k_index[0]).CellSolution(parameter));
+      All_Delta_U(cell-1,parameter-1) *= GeomWeights(cell);
+    }
+  
+  }//endfor (cell) - Stencil Size
+
+  // STOP:   Matrix A of the linear system (LHS) built. The same matrix is used for all variables (same geometry).
+  //         Matrix All_Delta_U of the linear system (RHS) built.
+  // **********************************************************************
+  
+  /* Solve the overdetermined linear system of equations using a least-squares procedure*/
+  /**************************************************************************************/
+  Solve_LS_Householder_F77(A, All_Delta_U, krank, NumberOfParameters, StencilSize-1, ND-1);
+  
+  // Update the coefficients D (derivatives)
+  //**************************************************
+  for (parameter = 1; parameter <= NumberOfParameters; ++parameter){
+    SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(0,0,1,parameter) = All_Delta_U(0,parameter-1);
+    SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(0,1,0,parameter) = All_Delta_U(1,parameter-1);
+    SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(1,0,0,parameter) = All_Delta_U(2,parameter-1);
+  }
+  
+  // Deallocate memory
+  delete [] DeltaCellCenters; DeltaCellCenters = NULL;
+  
+}
 
 #endif
