@@ -730,6 +730,7 @@ public:
   friend void Update_Corner_Ghost_Nodes(Grid2D_Quad_Block_HO &Grid){ return Grid.Update_Corner_Ghost_Nodes(); }
   
   void Update_Cell(const int & iCell, const int & jCell);
+  void Update_GhostCellProperties_DuringMessagePassing(const int &iCell, const int &jCell);
 
   void Update_Cells(void);
   friend void Update_Cells(Grid2D_Quad_Block_HO &Grid){ return Grid.Update_Cells(); }
@@ -2340,6 +2341,22 @@ inline void Grid2D_Quad_Block_HO::Update_Cell(const int & iCell, const int & jCe
   TranslateVertexesIntoGlobalCoordinateSystem(Node[iCell  ][jCell  ].X, Node[iCell+1][jCell  ].X,
 					      Node[iCell+1][jCell+1].X, Node[iCell  ][jCell+1].X,
 					      Cell[iCell][jCell].Xc);
+}
+
+/*!
+ * This function gets used during message passing.
+ * It doesn't actually update the geometric information
+ * of the cell with indexes (iCell,jCell).
+ * Instead it schedules for update all ghost cells.
+ * That's because of the complexity to update ghost 
+ * cell near curved boundaries.
+ *
+ * \param iCell dummy i-index of the cell
+ * \param jCell dummy j-index of the cell
+ */
+inline void Grid2D_Quad_Block_HO::Update_GhostCellProperties_DuringMessagePassing(const int &iCell,
+										  const int &jCell){
+  Schedule_Ghost_Cells_Update();
 }
 
 /*!
