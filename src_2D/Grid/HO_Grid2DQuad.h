@@ -278,6 +278,15 @@ public:
                 BndEastSpline,  //!< East boundary 2D spline.
                 BndWestSpline;  //!< West boundary 2D spline.
 
+  Spline2D_HO   ExtendWest_BndNorthSpline, //!< Extension of North boundary spline to west
+                ExtendEast_BndNorthSpline, //!< Extension of North boundary spline to east
+                ExtendWest_BndSouthSpline, //!< Extension of South boundary spline to west
+                ExtendEast_BndSouthSpline, //!< Extension of South boundary spline to east
+                ExtendNorth_BndEastSpline, //!< Extension of East boundary spline to north
+                ExtendSouth_BndEastSpline, //!< Extension of East boundary spline to south
+                ExtendNorth_BndWestSpline, //!< Extension of West boundary spline to north
+                ExtendSouth_BndWestSpline; //!< Extension of West boundary spline to south
+                
   Spline2DInterval_HO *BndNorthSplineInfo, //!< North boundary 2D spline info.
                       *BndSouthSplineInfo, //!< South boundary 2D spline info.
                       *BndEastSplineInfo,  //!< East boundary 2D spline info.
@@ -1051,6 +1060,10 @@ inline Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void)
     Node(NULL), Cell(NULL),
     BCtypeN(NULL), BCtypeS(NULL), BCtypeE(NULL), BCtypeW(NULL),
     BndNorthSpline(), BndSouthSpline(), BndEastSpline(), BndWestSpline(),
+    ExtendWest_BndNorthSpline(), ExtendEast_BndNorthSpline(),
+    ExtendWest_BndSouthSpline(), ExtendEast_BndSouthSpline(),
+    ExtendNorth_BndEastSpline(), ExtendSouth_BndEastSpline(),
+    ExtendNorth_BndWestSpline(), ExtendSouth_BndWestSpline(),
     BndNorthSplineInfo(NULL), BndSouthSplineInfo(NULL),
     BndEastSplineInfo(NULL), BndWestSplineInfo(NULL),
     SminN(ZERO), SmaxN(ZERO), SminS(ZERO), SmaxS(ZERO), 
@@ -2376,6 +2389,16 @@ inline void Grid2D_Quad_Block_HO::operator +(const Vector2D &V) {
   if (BndEastSpline.np != 0 ) BndEastSpline.Translate_Spline(V);
   if (BndWestSpline.np != 0 ) BndWestSpline.Translate_Spline(V);
 
+  if (ExtendWest_BndNorthSpline.np != 0) ExtendWest_BndNorthSpline.Translate_Spline(V);
+  if (ExtendEast_BndNorthSpline.np != 0) ExtendEast_BndNorthSpline.Translate_Spline(V);
+  if (ExtendWest_BndSouthSpline.np != 0) ExtendWest_BndSouthSpline.Translate_Spline(V);
+  if (ExtendEast_BndSouthSpline.np != 0) ExtendEast_BndSouthSpline.Translate_Spline(V);
+  if (ExtendNorth_BndEastSpline.np != 0) ExtendNorth_BndEastSpline.Translate_Spline(V);
+  if (ExtendSouth_BndEastSpline.np != 0) ExtendSouth_BndEastSpline.Translate_Spline(V);
+  if (ExtendNorth_BndWestSpline.np != 0) ExtendNorth_BndWestSpline.Translate_Spline(V);
+  if (ExtendSouth_BndWestSpline.np != 0) ExtendSouth_BndWestSpline.Translate_Spline(V);
+
+
   /* Require update of the whole mesh */
   Schedule_Interior_Mesh_Update();
   Schedule_Ghost_Cells_Update();
@@ -2404,6 +2427,16 @@ inline void Grid2D_Quad_Block_HO::operator *(const double &a) {
   if (BndSouthSpline.np != 0 ) BndSouthSpline.Scale_Spline(a);
   if (BndEastSpline.np != 0 ) BndEastSpline.Scale_Spline(a);
   if (BndWestSpline.np != 0 ) BndWestSpline.Scale_Spline(a);
+
+  if (ExtendWest_BndNorthSpline.np != 0) ExtendWest_BndNorthSpline.Scale_Spline(a);
+  if (ExtendEast_BndNorthSpline.np != 0) ExtendEast_BndNorthSpline.Scale_Spline(a);
+  if (ExtendWest_BndSouthSpline.np != 0) ExtendWest_BndSouthSpline.Scale_Spline(a);
+  if (ExtendEast_BndSouthSpline.np != 0) ExtendEast_BndSouthSpline.Scale_Spline(a);
+  if (ExtendNorth_BndEastSpline.np != 0) ExtendNorth_BndEastSpline.Scale_Spline(a);
+  if (ExtendSouth_BndEastSpline.np != 0) ExtendSouth_BndEastSpline.Scale_Spline(a);
+  if (ExtendNorth_BndWestSpline.np != 0) ExtendNorth_BndWestSpline.Scale_Spline(a);
+  if (ExtendSouth_BndWestSpline.np != 0) ExtendSouth_BndWestSpline.Scale_Spline(a);
+
 
   SminN *= a;
   SmaxN *= a;
@@ -2445,6 +2478,15 @@ inline void Grid2D_Quad_Block_HO::operator ^(const double &a) {
   if (BndSouthSpline.np != 0 ) BndSouthSpline.Rotate_Spline(a);
   if (BndEastSpline.np != 0 ) BndEastSpline.Rotate_Spline(a);
   if (BndWestSpline.np != 0 ) BndWestSpline.Rotate_Spline(a);
+
+  if (ExtendWest_BndNorthSpline.np != 0) ExtendWest_BndNorthSpline.Rotate_Spline(a);
+  if (ExtendEast_BndNorthSpline.np != 0) ExtendEast_BndNorthSpline.Rotate_Spline(a);
+  if (ExtendWest_BndSouthSpline.np != 0) ExtendWest_BndSouthSpline.Rotate_Spline(a);
+  if (ExtendEast_BndSouthSpline.np != 0) ExtendEast_BndSouthSpline.Rotate_Spline(a);
+  if (ExtendNorth_BndEastSpline.np != 0) ExtendNorth_BndEastSpline.Rotate_Spline(a);
+  if (ExtendSouth_BndEastSpline.np != 0) ExtendSouth_BndEastSpline.Rotate_Spline(a);
+  if (ExtendNorth_BndWestSpline.np != 0) ExtendNorth_BndWestSpline.Rotate_Spline(a);
+  if (ExtendSouth_BndWestSpline.np != 0) ExtendSouth_BndWestSpline.Rotate_Spline(a);
 
   /* Require update of the whole mesh */
   Schedule_Interior_Mesh_Update();

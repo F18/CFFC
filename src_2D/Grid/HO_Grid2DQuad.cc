@@ -122,6 +122,10 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
    Node(NULL), Cell(NULL),
    BCtypeN(NULL), BCtypeS(NULL), BCtypeE(NULL), BCtypeW(NULL),
    BndNorthSpline(), BndSouthSpline(), BndEastSpline(), BndWestSpline(),
+   ExtendWest_BndNorthSpline(), ExtendEast_BndNorthSpline(),
+   ExtendWest_BndSouthSpline(), ExtendEast_BndSouthSpline(),
+   ExtendNorth_BndEastSpline(), ExtendSouth_BndEastSpline(),
+   ExtendNorth_BndWestSpline(), ExtendSouth_BndWestSpline(),
    BndNorthSplineInfo(NULL), BndSouthSplineInfo(NULL),
    BndEastSplineInfo(NULL), BndWestSplineInfo(NULL),
    SminN(ZERO), SmaxN(ZERO), SminS(ZERO), SmaxS(ZERO), 
@@ -233,6 +237,52 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
   } else if (BndWestSpline.np != 0) {
     BndWestSpline.deallocate();
   } /* endif */
+
+  // Copy the extensions to boundary splines
+  if (G.ExtendWest_BndNorthSpline.np != 0) {
+    ExtendWest_BndNorthSpline = G.ExtendWest_BndNorthSpline;
+  } else if (ExtendWest_BndNorthSpline.np != 0) {
+    ExtendWest_BndNorthSpline.deallocate();
+  } /* endif */
+  if (G.ExtendEast_BndNorthSpline.np != 0) {
+    ExtendEast_BndNorthSpline = G.ExtendEast_BndNorthSpline;
+  } else if (ExtendEast_BndNorthSpline.np != 0) {
+    ExtendEast_BndNorthSpline.deallocate();
+  } /* endif */
+
+  if (G.ExtendWest_BndSouthSpline.np != 0) {
+    ExtendWest_BndSouthSpline = G.ExtendWest_BndSouthSpline;
+  } else if (ExtendWest_BndSouthSpline.np != 0) {
+    ExtendWest_BndSouthSpline.deallocate();
+  } /* endif */
+  if (G.ExtendEast_BndSouthSpline.np != 0) {
+    ExtendEast_BndSouthSpline = G.ExtendEast_BndSouthSpline;
+  } else if (ExtendEast_BndSouthSpline.np != 0) {
+    ExtendEast_BndSouthSpline.deallocate();
+  } /* endif */
+
+  if (G.ExtendNorth_BndEastSpline.np != 0) {
+    ExtendNorth_BndEastSpline = G.ExtendNorth_BndEastSpline;
+  } else if (ExtendNorth_BndEastSpline.np != 0) {
+    ExtendNorth_BndEastSpline.deallocate();
+  } /* endif */
+  if (G.ExtendSouth_BndEastSpline.np != 0) {
+    ExtendSouth_BndEastSpline = G.ExtendSouth_BndEastSpline;
+  } else if (ExtendSouth_BndEastSpline.np != 0) {
+    ExtendSouth_BndEastSpline.deallocate();
+  } /* endif */
+  
+  if (G.ExtendNorth_BndWestSpline.np != 0) {
+    ExtendNorth_BndWestSpline = G.ExtendNorth_BndWestSpline;
+  } else if (ExtendNorth_BndWestSpline.np != 0) {
+    ExtendNorth_BndWestSpline.deallocate();
+  } /* endif */
+  if (G.ExtendSouth_BndWestSpline.np != 0) {
+    ExtendSouth_BndWestSpline = G.ExtendSouth_BndWestSpline;
+  } else if (ExtendSouth_BndWestSpline.np != 0) {
+    ExtendSouth_BndWestSpline.deallocate();
+  } /* endif */
+
 
   // Copy boundary spline pathlength info of grid block G.
   SminN = G.SminN;
@@ -367,6 +417,11 @@ void Grid2D_Quad_Block_HO::deallocate(void) {
   // Deallocate boundary splines
   BndNorthSpline.deallocate(); BndSouthSpline.deallocate();
   BndEastSpline.deallocate(); BndWestSpline.deallocate();
+
+  ExtendWest_BndNorthSpline.deallocate(); ExtendEast_BndNorthSpline.deallocate();
+  ExtendWest_BndSouthSpline.deallocate(); ExtendEast_BndSouthSpline.deallocate();
+  ExtendNorth_BndEastSpline.deallocate(); ExtendSouth_BndEastSpline.deallocate();
+  ExtendNorth_BndWestSpline.deallocate(); ExtendSouth_BndWestSpline.deallocate();
 
   // Deallocate boundary spline info
   deallocateBndSplineInfo();
@@ -517,6 +572,52 @@ Grid2D_Quad_Block_HO& Grid2D_Quad_Block_HO::operator=(const Grid2D_Quad_Block_HO
     BndWestSpline.deallocate();
     deallocate_BndWestSplineInfo();
   } /* endif */
+
+  // Copy the extensions to boundary splines
+  if (Grid.ExtendWest_BndNorthSpline.np != 0) {
+    ExtendWest_BndNorthSpline = Grid.ExtendWest_BndNorthSpline;
+  } else if (ExtendWest_BndNorthSpline.np != 0) {
+    ExtendWest_BndNorthSpline.deallocate();
+  } /* endif */
+  if (Grid.ExtendEast_BndNorthSpline.np != 0) {
+    ExtendEast_BndNorthSpline = Grid.ExtendEast_BndNorthSpline;
+  } else if (ExtendEast_BndNorthSpline.np != 0) {
+    ExtendEast_BndNorthSpline.deallocate();
+  } /* endif */
+
+  if (Grid.ExtendWest_BndSouthSpline.np != 0) {
+    ExtendWest_BndSouthSpline = Grid.ExtendWest_BndSouthSpline;
+  } else if (ExtendWest_BndSouthSpline.np != 0) {
+    ExtendWest_BndSouthSpline.deallocate();
+  } /* endif */
+  if (Grid.ExtendEast_BndSouthSpline.np != 0) {
+    ExtendEast_BndSouthSpline = Grid.ExtendEast_BndSouthSpline;
+  } else if (ExtendEast_BndSouthSpline.np != 0) {
+    ExtendEast_BndSouthSpline.deallocate();
+  } /* endif */
+
+  if (Grid.ExtendNorth_BndEastSpline.np != 0) {
+    ExtendNorth_BndEastSpline = Grid.ExtendNorth_BndEastSpline;
+  } else if (ExtendNorth_BndEastSpline.np != 0) {
+    ExtendNorth_BndEastSpline.deallocate();
+  } /* endif */
+  if (Grid.ExtendSouth_BndEastSpline.np != 0) {
+    ExtendSouth_BndEastSpline = Grid.ExtendSouth_BndEastSpline;
+  } else if (ExtendSouth_BndEastSpline.np != 0) {
+    ExtendSouth_BndEastSpline.deallocate();
+  } /* endif */
+  
+  if (Grid.ExtendNorth_BndWestSpline.np != 0) {
+    ExtendNorth_BndWestSpline = Grid.ExtendNorth_BndWestSpline;
+  } else if (ExtendNorth_BndWestSpline.np != 0) {
+    ExtendNorth_BndWestSpline.deallocate();
+  } /* endif */
+  if (Grid.ExtendSouth_BndWestSpline.np != 0) {
+    ExtendSouth_BndWestSpline = Grid.ExtendSouth_BndWestSpline;
+  } else if (ExtendSouth_BndWestSpline.np != 0) {
+    ExtendSouth_BndWestSpline.deallocate();
+  } /* endif */
+
 
   // Copy boundary spline pathlength info of grid block Grid.
   SminN = Grid.SminN;
@@ -2206,13 +2307,22 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(void) {
     if (mesh_allocated) allocate(ni-2*ng, nj-2*ng, ng, Highest_Order_of_Reconstruction); 
   } /* endif */
 
-    /* Broadcast the north, south, east, and west 
-       boundary splines. */
+  /* Broadcast the north, south, east, and west 
+     boundary splines as well as their extensions. */
 
   BndNorthSpline.Broadcast_Spline();
   BndSouthSpline.Broadcast_Spline();
   BndEastSpline.Broadcast_Spline();
   BndWestSpline.Broadcast_Spline();
+
+  ExtendWest_BndNorthSpline.Broadcast_Spline();
+  ExtendEast_BndNorthSpline.Broadcast_Spline();
+  ExtendWest_BndSouthSpline.Broadcast_Spline();
+  ExtendEast_BndSouthSpline.Broadcast_Spline();
+  ExtendNorth_BndEastSpline.Broadcast_Spline();
+  ExtendSouth_BndEastSpline.Broadcast_Spline();
+  ExtendNorth_BndWestSpline.Broadcast_Spline();
+  ExtendSouth_BndWestSpline.Broadcast_Spline();
 
   /* Broadcast min/max pathlengths for boundary splines. */
 
@@ -2461,6 +2571,15 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(MPI::Intracomm &Communicator,
   BndSouthSpline.Broadcast_Spline(Communicator, Source_CPU);
   BndEastSpline.Broadcast_Spline(Communicator, Source_CPU);
   BndWestSpline.Broadcast_Spline(Communicator, Source_CPU);
+
+  ExtendWest_BndNorthSpline.Broadcast_Spline(Communicator, Source_CPU);
+  ExtendEast_BndNorthSpline.Broadcast_Spline(Communicator, Source_CPU);
+  ExtendWest_BndSouthSpline.Broadcast_Spline(Communicator, Source_CPU);
+  ExtendEast_BndSouthSpline.Broadcast_Spline(Communicator, Source_CPU);
+  ExtendNorth_BndEastSpline.Broadcast_Spline(Communicator, Source_CPU);
+  ExtendSouth_BndEastSpline.Broadcast_Spline(Communicator, Source_CPU);
+  ExtendNorth_BndWestSpline.Broadcast_Spline(Communicator, Source_CPU);
+  ExtendSouth_BndWestSpline.Broadcast_Spline(Communicator, Source_CPU);
   
   /* Broadcast min/max pathlengths for boundary splines. */
   
@@ -7596,6 +7715,30 @@ void Grid2D_Quad_Block_HO::Write_Quad_Block_Definition(ostream &Out_File) {
                 << BndWestSpline.np << "\n"
                 << BndWestSpline.type << "\n"
                 << BndWestSpline 
+                << ExtendWest_BndNorthSpline.np << "\n"
+                << ExtendWest_BndNorthSpline.type << "\n"
+                << ExtendWest_BndNorthSpline 
+                << ExtendEast_BndNorthSpline.np << "\n"
+                << ExtendEast_BndNorthSpline.type << "\n"
+                << ExtendEast_BndNorthSpline 
+                << ExtendWest_BndSouthSpline.np << "\n"
+                << ExtendWest_BndSouthSpline.type << "\n"
+                << ExtendWest_BndSouthSpline 
+                << ExtendEast_BndSouthSpline.np << "\n"
+                << ExtendEast_BndSouthSpline.type << "\n"
+                << ExtendEast_BndSouthSpline
+                << ExtendNorth_BndEastSpline.np << "\n"
+                << ExtendNorth_BndEastSpline.type << "\n"
+                << ExtendNorth_BndEastSpline 
+                << ExtendSouth_BndEastSpline.np << "\n"
+                << ExtendSouth_BndEastSpline.type << "\n"
+                << ExtendSouth_BndEastSpline 
+                << ExtendNorth_BndWestSpline.np << "\n"
+                << ExtendNorth_BndWestSpline.type << "\n"
+                << ExtendNorth_BndWestSpline 
+                << ExtendSouth_BndWestSpline.np << "\n"
+                << ExtendSouth_BndWestSpline.type << "\n"
+                << ExtendSouth_BndWestSpline 
                 << GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH << "\n";
        Out_File.setf(ios::scientific);
        Out_File << StretchI << " " 
@@ -7700,6 +7843,96 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
     BndWestSpline.pathlength();
     SminW = BndWestSpline.sp[0];
     SmaxW = BndWestSpline.sp[BndWestSpline.np-1];
+
+    /* Read the extensions of the boundary splines. */
+
+    In_File.setf(ios::skipws);
+    In_File >> npts;
+    In_File.unsetf(ios::skipws);
+    ExtendWest_BndNorthSpline.allocate(npts);
+    In_File.setf(ios::skipws);
+    In_File >> spline_type;
+    In_File.unsetf(ios::skipws);
+    ExtendWest_BndNorthSpline.settype(spline_type);
+    In_File >> ExtendWest_BndNorthSpline;
+    ExtendWest_BndNorthSpline.pathlength();
+
+    In_File.setf(ios::skipws);
+    In_File >> npts;
+    In_File.unsetf(ios::skipws);
+    ExtendEast_BndNorthSpline.allocate(npts);
+    In_File.setf(ios::skipws);
+    In_File >> spline_type;
+    In_File.unsetf(ios::skipws);
+    ExtendEast_BndNorthSpline.settype(spline_type);
+    In_File >> ExtendEast_BndNorthSpline;
+    ExtendEast_BndNorthSpline.pathlength();
+
+    In_File.setf(ios::skipws);
+    In_File >> npts;
+    In_File.unsetf(ios::skipws);
+    ExtendWest_BndSouthSpline.allocate(npts);
+    In_File.setf(ios::skipws);
+    In_File >> spline_type;
+    In_File.unsetf(ios::skipws);
+    ExtendWest_BndSouthSpline.settype(spline_type);
+    In_File >> ExtendWest_BndSouthSpline;
+    ExtendWest_BndSouthSpline.pathlength();
+
+    In_File.setf(ios::skipws);
+    In_File >> npts;
+    In_File.unsetf(ios::skipws);
+    ExtendEast_BndSouthSpline.allocate(npts);
+    In_File.setf(ios::skipws);
+    In_File >> spline_type;
+    In_File.unsetf(ios::skipws);
+    ExtendEast_BndSouthSpline.settype(spline_type);
+    In_File >> ExtendEast_BndSouthSpline;
+    ExtendEast_BndSouthSpline.pathlength();
+
+    In_File.setf(ios::skipws);
+    In_File >> npts;
+    In_File.unsetf(ios::skipws);
+    ExtendNorth_BndEastSpline.allocate(npts);
+    In_File.setf(ios::skipws);
+    In_File >> spline_type;
+    In_File.unsetf(ios::skipws);
+    ExtendNorth_BndEastSpline.settype(spline_type);
+    In_File >> ExtendNorth_BndEastSpline;
+    ExtendNorth_BndEastSpline.pathlength();
+
+    In_File.setf(ios::skipws);
+    In_File >> npts;
+    In_File.unsetf(ios::skipws);
+    ExtendSouth_BndEastSpline.allocate(npts);
+    In_File.setf(ios::skipws);
+    In_File >> spline_type;
+    In_File.unsetf(ios::skipws);
+    ExtendSouth_BndEastSpline.settype(spline_type);
+    In_File >> ExtendSouth_BndEastSpline;
+    ExtendSouth_BndEastSpline.pathlength();
+
+    In_File.setf(ios::skipws);
+    In_File >> npts;
+    In_File.unsetf(ios::skipws);
+    ExtendNorth_BndWestSpline.allocate(npts);
+    In_File.setf(ios::skipws);
+    In_File >> spline_type;
+    In_File.unsetf(ios::skipws);
+    ExtendNorth_BndWestSpline.settype(spline_type);
+    In_File >> ExtendNorth_BndWestSpline;
+    ExtendNorth_BndWestSpline.pathlength();
+
+    In_File.setf(ios::skipws);
+    In_File >> npts;
+    In_File.unsetf(ios::skipws);
+    ExtendSouth_BndWestSpline.allocate(npts);
+    In_File.setf(ios::skipws);
+    In_File >> spline_type;
+    In_File.unsetf(ios::skipws);
+    ExtendSouth_BndWestSpline.settype(spline_type);
+    In_File >> ExtendSouth_BndWestSpline;
+    ExtendSouth_BndWestSpline.pathlength();
 
     /* Read the node initialization procedure for this 
        quadrilateral grid block. */
@@ -8177,6 +8410,16 @@ void Grid2D_Quad_Block_HO::Translate_Quad_Block_Without_Update(const Vector2D &V
        BndEastSpline.Translate_Spline(V);
     if (BndWestSpline.np != 0 )
        BndWestSpline.Translate_Spline(V);
+
+    if (ExtendWest_BndNorthSpline.np != 0) ExtendWest_BndNorthSpline.Translate_Spline(V);
+    if (ExtendEast_BndNorthSpline.np != 0) ExtendEast_BndNorthSpline.Translate_Spline(V);
+    if (ExtendWest_BndSouthSpline.np != 0) ExtendWest_BndSouthSpline.Translate_Spline(V);
+    if (ExtendEast_BndSouthSpline.np != 0) ExtendEast_BndSouthSpline.Translate_Spline(V);
+    if (ExtendNorth_BndEastSpline.np != 0) ExtendNorth_BndEastSpline.Translate_Spline(V);
+    if (ExtendSouth_BndEastSpline.np != 0) ExtendSouth_BndEastSpline.Translate_Spline(V);
+    if (ExtendNorth_BndWestSpline.np != 0) ExtendNorth_BndWestSpline.Translate_Spline(V);
+    if (ExtendSouth_BndWestSpline.np != 0) ExtendSouth_BndWestSpline.Translate_Spline(V);
+    
  
     /* Require update of the whole mesh */
     Schedule_Interior_Mesh_Update();
@@ -8208,6 +8451,15 @@ void Grid2D_Quad_Block_HO::Scale_Quad_Block_Without_Update(const double &Scaling
        BndEastSpline.Scale_Spline(Scaling_Factor);
     if (BndWestSpline.np != 0 )
        BndWestSpline.Scale_Spline(Scaling_Factor);
+
+    if (ExtendWest_BndNorthSpline.np != 0) ExtendWest_BndNorthSpline.Scale_Spline(Scaling_Factor);
+    if (ExtendEast_BndNorthSpline.np != 0) ExtendEast_BndNorthSpline.Scale_Spline(Scaling_Factor);
+    if (ExtendWest_BndSouthSpline.np != 0) ExtendWest_BndSouthSpline.Scale_Spline(Scaling_Factor);
+    if (ExtendEast_BndSouthSpline.np != 0) ExtendEast_BndSouthSpline.Scale_Spline(Scaling_Factor);
+    if (ExtendNorth_BndEastSpline.np != 0) ExtendNorth_BndEastSpline.Scale_Spline(Scaling_Factor);
+    if (ExtendSouth_BndEastSpline.np != 0) ExtendSouth_BndEastSpline.Scale_Spline(Scaling_Factor);
+    if (ExtendNorth_BndWestSpline.np != 0) ExtendNorth_BndWestSpline.Scale_Spline(Scaling_Factor);
+    if (ExtendSouth_BndWestSpline.np != 0) ExtendSouth_BndWestSpline.Scale_Spline(Scaling_Factor);
 
     SminN = SminN*Scaling_Factor;
     SmaxN = SmaxN*Scaling_Factor;
@@ -8258,6 +8510,15 @@ void Grid2D_Quad_Block_HO::Rotate_Quad_Block_Without_Update(const double &Angle)
     if (BndWestSpline.np != 0 )
        BndWestSpline.Rotate_Spline(Angle);
 
+    if (ExtendWest_BndNorthSpline.np != 0) ExtendWest_BndNorthSpline.Rotate_Spline(Angle);
+    if (ExtendEast_BndNorthSpline.np != 0) ExtendEast_BndNorthSpline.Rotate_Spline(Angle);
+    if (ExtendWest_BndSouthSpline.np != 0) ExtendWest_BndSouthSpline.Rotate_Spline(Angle);
+    if (ExtendEast_BndSouthSpline.np != 0) ExtendEast_BndSouthSpline.Rotate_Spline(Angle);
+    if (ExtendNorth_BndEastSpline.np != 0) ExtendNorth_BndEastSpline.Rotate_Spline(Angle);
+    if (ExtendSouth_BndEastSpline.np != 0) ExtendSouth_BndEastSpline.Rotate_Spline(Angle);
+    if (ExtendNorth_BndWestSpline.np != 0) ExtendNorth_BndWestSpline.Rotate_Spline(Angle);
+    if (ExtendSouth_BndWestSpline.np != 0) ExtendSouth_BndWestSpline.Rotate_Spline(Angle);
+
     /* Require update of the whole mesh */
     Schedule_Interior_Mesh_Update();
     Schedule_Ghost_Cells_Update();
@@ -8307,6 +8568,15 @@ void Grid2D_Quad_Block_HO::Reflect_Quad_Block_Without_Update(void) {
     BndWestSpline = S;
     if (S.np != 0) S.deallocate();
   }/* endif */
+
+  if (ExtendWest_BndNorthSpline.np != 0) ExtendWest_BndNorthSpline.Reflect_Spline();
+  if (ExtendEast_BndNorthSpline.np != 0) ExtendEast_BndNorthSpline.Reflect_Spline();
+  if (ExtendWest_BndSouthSpline.np != 0) ExtendWest_BndSouthSpline.Reflect_Spline();
+  if (ExtendEast_BndSouthSpline.np != 0) ExtendEast_BndSouthSpline.Reflect_Spline();
+  if (ExtendNorth_BndEastSpline.np != 0) ExtendNorth_BndEastSpline.Reflect_Spline();
+  if (ExtendSouth_BndEastSpline.np != 0) ExtendSouth_BndEastSpline.Reflect_Spline();
+  if (ExtendNorth_BndWestSpline.np != 0) ExtendNorth_BndWestSpline.Reflect_Spline();
+  if (ExtendSouth_BndWestSpline.np != 0) ExtendSouth_BndWestSpline.Reflect_Spline();
 
   /* Require update of the whole mesh */
   Schedule_Interior_Mesh_Update();
@@ -8568,19 +8838,77 @@ void Grid2D_Quad_Block_HO::Double_Mesh_Resolution(const Grid2D_Quad_Block_HO &Gr
 
     if (Grid_Original.BndNorthSpline.np != 0) {
       BndNorthSpline = Grid_Original.BndNorthSpline;
+    } else if (BndNorthSpline.np != 0) {
+      BndNorthSpline.deallocate();
+      deallocate_BndNorthSplineInfo();
     } /* endif */
 
     if (Grid_Original.BndSouthSpline.np != 0) {
       BndSouthSpline = Grid_Original.BndSouthSpline;
+    } else if (BndSouthSpline.np != 0) {
+      BndSouthSpline.deallocate();
+      deallocate_BndSouthSplineInfo();
     } /* endif */
 
     if (Grid_Original.BndEastSpline.np != 0) {
       BndEastSpline = Grid_Original.BndEastSpline;
+    } else if (BndEastSpline.np != 0) {
+      BndEastSpline.deallocate();
+      deallocate_BndEastSplineInfo();
     } /* endif */
   
     if (Grid_Original.BndWestSpline.np != 0) {
       BndWestSpline = Grid_Original.BndWestSpline;
+    } else if (BndWestSpline.np != 0) {
+      BndWestSpline.deallocate();
+      deallocate_BndWestSplineInfo();
     } /* endif */
+
+    // Copy the extensions to boundary splines
+    if (Grid_Original.ExtendWest_BndNorthSpline.np != 0) {
+      ExtendWest_BndNorthSpline = Grid_Original.ExtendWest_BndNorthSpline;
+    } else if (ExtendWest_BndNorthSpline.np != 0) {
+      ExtendWest_BndNorthSpline.deallocate();
+    } /* endif */
+    if (Grid_Original.ExtendEast_BndNorthSpline.np != 0) {
+      ExtendEast_BndNorthSpline = Grid_Original.ExtendEast_BndNorthSpline;
+    } else if (ExtendEast_BndNorthSpline.np != 0) {
+      ExtendEast_BndNorthSpline.deallocate();
+    } /* endif */
+
+    if (Grid_Original.ExtendWest_BndSouthSpline.np != 0) {
+      ExtendWest_BndSouthSpline = Grid_Original.ExtendWest_BndSouthSpline;
+    } else if (ExtendWest_BndSouthSpline.np != 0) {
+      ExtendWest_BndSouthSpline.deallocate();
+    } /* endif */
+    if (Grid_Original.ExtendEast_BndSouthSpline.np != 0) {
+      ExtendEast_BndSouthSpline = Grid_Original.ExtendEast_BndSouthSpline;
+    } else if (ExtendEast_BndSouthSpline.np != 0) {
+      ExtendEast_BndSouthSpline.deallocate();
+    } /* endif */
+
+    if (Grid_Original.ExtendNorth_BndEastSpline.np != 0) {
+      ExtendNorth_BndEastSpline = Grid_Original.ExtendNorth_BndEastSpline;
+    } else if (ExtendNorth_BndEastSpline.np != 0) {
+      ExtendNorth_BndEastSpline.deallocate();
+    } /* endif */
+    if (Grid_Original.ExtendSouth_BndEastSpline.np != 0) {
+      ExtendSouth_BndEastSpline = Grid_Original.ExtendSouth_BndEastSpline;
+    } else if (ExtendSouth_BndEastSpline.np != 0) {
+      ExtendSouth_BndEastSpline.deallocate();
+    } /* endif */
+  
+    if (Grid_Original.ExtendNorth_BndWestSpline.np != 0) {
+      ExtendNorth_BndWestSpline = Grid_Original.ExtendNorth_BndWestSpline;
+    } else if (ExtendNorth_BndWestSpline.np != 0) {
+      ExtendNorth_BndWestSpline.deallocate();
+    } /* endif */
+    if (Grid_Original.ExtendSouth_BndWestSpline.np != 0) {
+      ExtendSouth_BndWestSpline = Grid_Original.ExtendSouth_BndWestSpline;
+    } else if (ExtendSouth_BndWestSpline.np != 0) {
+      ExtendSouth_BndWestSpline.deallocate();
+    } /* endif */
+
 
     /* Copy boundary spline pathlength info to quadrilateral mesh block 
        with twice the resolution. */
@@ -8768,18 +9096,75 @@ void Grid2D_Quad_Block_HO::Half_Mesh_Resolution(const Grid2D_Quad_Block_HO &Grid
 
     if (Grid_Original.BndNorthSpline.np != 0) {
       BndNorthSpline = Grid_Original.BndNorthSpline;
+    } else if (BndNorthSpline.np != 0) {
+      BndNorthSpline.deallocate();
+      deallocate_BndNorthSplineInfo();
     } /* endif */
 
     if (Grid_Original.BndSouthSpline.np != 0) {
       BndSouthSpline = Grid_Original.BndSouthSpline;
+    } else if (BndSouthSpline.np != 0) {
+      BndSouthSpline.deallocate();
+      deallocate_BndSouthSplineInfo();
     } /* endif */
 
     if (Grid_Original.BndEastSpline.np != 0) {
       BndEastSpline = Grid_Original.BndEastSpline;
+    } else if (BndEastSpline.np != 0) {
+      BndEastSpline.deallocate();
+      deallocate_BndEastSplineInfo();
     } /* endif */
   
     if (Grid_Original.BndWestSpline.np != 0) {
       BndWestSpline = Grid_Original.BndWestSpline;
+    } else if (BndWestSpline.np != 0) {
+      BndWestSpline.deallocate();
+      deallocate_BndWestSplineInfo();
+    } /* endif */
+
+    // Copy the extensions to boundary splines
+    if (Grid_Original.ExtendWest_BndNorthSpline.np != 0) {
+      ExtendWest_BndNorthSpline = Grid_Original.ExtendWest_BndNorthSpline;
+    } else if (ExtendWest_BndNorthSpline.np != 0) {
+      ExtendWest_BndNorthSpline.deallocate();
+    } /* endif */
+    if (Grid_Original.ExtendEast_BndNorthSpline.np != 0) {
+      ExtendEast_BndNorthSpline = Grid_Original.ExtendEast_BndNorthSpline;
+    } else if (ExtendEast_BndNorthSpline.np != 0) {
+      ExtendEast_BndNorthSpline.deallocate();
+    } /* endif */
+
+    if (Grid_Original.ExtendWest_BndSouthSpline.np != 0) {
+      ExtendWest_BndSouthSpline = Grid_Original.ExtendWest_BndSouthSpline;
+    } else if (ExtendWest_BndSouthSpline.np != 0) {
+      ExtendWest_BndSouthSpline.deallocate();
+    } /* endif */
+    if (Grid_Original.ExtendEast_BndSouthSpline.np != 0) {
+      ExtendEast_BndSouthSpline = Grid_Original.ExtendEast_BndSouthSpline;
+    } else if (ExtendEast_BndSouthSpline.np != 0) {
+      ExtendEast_BndSouthSpline.deallocate();
+    } /* endif */
+
+    if (Grid_Original.ExtendNorth_BndEastSpline.np != 0) {
+      ExtendNorth_BndEastSpline = Grid_Original.ExtendNorth_BndEastSpline;
+    } else if (ExtendNorth_BndEastSpline.np != 0) {
+      ExtendNorth_BndEastSpline.deallocate();
+    } /* endif */
+    if (Grid_Original.ExtendSouth_BndEastSpline.np != 0) {
+      ExtendSouth_BndEastSpline = Grid_Original.ExtendSouth_BndEastSpline;
+    } else if (ExtendSouth_BndEastSpline.np != 0) {
+      ExtendSouth_BndEastSpline.deallocate();
+    } /* endif */
+  
+    if (Grid_Original.ExtendNorth_BndWestSpline.np != 0) {
+      ExtendNorth_BndWestSpline = Grid_Original.ExtendNorth_BndWestSpline;
+    } else if (ExtendNorth_BndWestSpline.np != 0) {
+      ExtendNorth_BndWestSpline.deallocate();
+    } /* endif */
+    if (Grid_Original.ExtendSouth_BndWestSpline.np != 0) {
+      ExtendSouth_BndWestSpline = Grid_Original.ExtendSouth_BndWestSpline;
+    } else if (ExtendSouth_BndWestSpline.np != 0) {
+      ExtendSouth_BndWestSpline.deallocate();
     } /* endif */
 
     /* Copy boundary spline pathlength info to quadrilateral mesh block 
@@ -8875,29 +9260,198 @@ void Grid2D_Quad_Block_HO::Refine_Mesh(const Grid2D_Quad_Block_HO &Grid_Original
 
   if (mesh_refinement_permitted) {
 
-    if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_NW ||
-	 Sector == GRID2D_QUAD_BLOCK_SECTOR_NE) &&
-	Grid_Original.BndNorthSpline.np != 0) {
-      BndNorthSpline = Grid_Original.BndNorthSpline;
+    // NW Sector
+    if (Sector == GRID2D_QUAD_BLOCK_SECTOR_NW) {
+
+      // North spline
+      if (Grid_Original.BndNorthSpline.np != 0) {
+	BndNorthSpline = Grid_Original.BndNorthSpline;
+      } else if (BndNorthSpline.np != 0) {
+	BndNorthSpline.deallocate();
+	deallocate_BndNorthSplineInfo();
+      }
+
+      // Copy the extension of the original North spline to West
+      if (Grid_Original.ExtendWest_BndNorthSpline.np != 0){
+	ExtendWest_BndNorthSpline = Grid_Original.ExtendWest_BndNorthSpline;
+      } else if (ExtendWest_BndNorthSpline.np != 0){
+	ExtendWest_BndNorthSpline.deallocate();
+      }
+
+      // Extend the North spline to East with itself if necessary
+      if (BndNorthSpline.np != 0){
+	ExtendEast_BndNorthSpline = BndNorthSpline;
+      } else if (ExtendEast_BndNorthSpline.np != 0){
+	ExtendEast_BndNorthSpline.deallocate();
+      }
+
+      // West Spline
+      if (Grid_Original.BndWestSpline.np != 0){
+	BndWestSpline = Grid_Original.BndWestSpline;
+      } else if (BndWestSpline.np != 0){
+	BndWestSpline.deallocate();
+	deallocate_BndWestSplineInfo();
+      }
+
+      // Copy the extension of the original West spline to North
+      if (Grid_Original.ExtendNorth_BndWestSpline.np != 0){
+	ExtendNorth_BndWestSpline = Grid_Original.ExtendNorth_BndWestSpline;
+      } else if (ExtendNorth_BndWestSpline.np != 0){
+	ExtendNorth_BndWestSpline.deallocate();
+      }
+
+      // Extend the West spline to South with itself if necessary
+      if (BndWestSpline.np != 0){
+	ExtendSouth_BndWestSpline = BndWestSpline;
+      } else if (ExtendSouth_BndWestSpline.np != 0){
+	ExtendSouth_BndWestSpline.deallocate();
+      }
     } /* endif */
 
-    if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_SE ||
-	 Sector == GRID2D_QUAD_BLOCK_SECTOR_SW) &&
-	Grid_Original.BndSouthSpline.np != 0) {
-      BndSouthSpline = Grid_Original.BndSouthSpline;
+    // NE Sector
+    if (Sector == GRID2D_QUAD_BLOCK_SECTOR_NE) {
+
+      // North spline
+      if (Grid_Original.BndNorthSpline.np != 0) {
+	BndNorthSpline = Grid_Original.BndNorthSpline;
+      } else if (BndNorthSpline.np != 0) {
+	BndNorthSpline.deallocate();
+	deallocate_BndNorthSplineInfo();
+      }
+
+      // Copy the extension of the original North spline to East
+      if (Grid_Original.ExtendEast_BndNorthSpline.np != 0){
+	ExtendEast_BndNorthSpline = Grid_Original.ExtendEast_BndNorthSpline;
+      } else if (ExtendEast_BndNorthSpline.np != 0){
+	ExtendEast_BndNorthSpline.deallocate();
+      }
+
+      // Extend the North spline to West with itself if necessary
+      if (BndNorthSpline.np != 0){
+	ExtendWest_BndNorthSpline = BndNorthSpline;
+      } else if (ExtendWest_BndNorthSpline.np != 0){
+	ExtendWest_BndNorthSpline.deallocate();
+      }
+
+      // East Spline
+      if (Grid_Original.BndEastSpline.np != 0){
+	BndEastSpline = Grid_Original.BndEastSpline;
+      } else if (BndEastSpline.np != 0){
+	BndEastSpline.deallocate();
+	deallocate_BndEastSplineInfo();
+      }
+
+      // Copy the extension of the original East spline to North
+      if (Grid_Original.ExtendNorth_BndEastSpline.np != 0){
+	ExtendNorth_BndEastSpline = Grid_Original.ExtendNorth_BndEastSpline;
+      } else if (ExtendNorth_BndEastSpline.np != 0){
+	ExtendNorth_BndEastSpline.deallocate();
+      }
+
+      // Extend the East spline to South with itself if necessary
+      if (BndEastSpline.np != 0){
+	ExtendSouth_BndEastSpline = BndEastSpline;
+      } else if (ExtendSouth_BndEastSpline.np != 0){
+	ExtendSouth_BndEastSpline.deallocate();
+      }
     } /* endif */
 
-    if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_NE ||
-	 Sector == GRID2D_QUAD_BLOCK_SECTOR_SE) &&
-	Grid_Original.BndEastSpline.np != 0) {
-      BndEastSpline = Grid_Original.BndEastSpline;
+    // SW Sector
+    if (Sector == GRID2D_QUAD_BLOCK_SECTOR_SW) {
+
+      // South spline
+      if (Grid_Original.BndSouthSpline.np != 0) {
+	BndSouthSpline = Grid_Original.BndSouthSpline;
+      } else if (BndSouthSpline.np != 0) {
+	BndSouthSpline.deallocate();
+	deallocate_BndSouthSplineInfo();
+      }
+
+      // Copy the extension of the original South spline to West
+      if (Grid_Original.ExtendWest_BndSouthSpline.np != 0){
+	ExtendWest_BndSouthSpline = Grid_Original.ExtendWest_BndSouthSpline;
+      } else if (ExtendWest_BndSouthSpline.np != 0){
+	ExtendWest_BndSouthSpline.deallocate();
+      }
+
+      // Extend the South spline to East with itself if necessary
+      if (BndSouthSpline.np != 0){
+	ExtendEast_BndSouthSpline = BndSouthSpline;
+      } else if (ExtendEast_BndSouthSpline.np != 0){
+	ExtendEast_BndSouthSpline.deallocate();
+      }
+
+      // West Spline
+      if (Grid_Original.BndWestSpline.np != 0){
+	BndWestSpline = Grid_Original.BndWestSpline;
+      } else if (BndWestSpline.np != 0){
+	BndWestSpline.deallocate();
+	deallocate_BndWestSplineInfo();
+      }
+
+      // Copy the extension of the original West spline to South
+      if (Grid_Original.ExtendSouth_BndWestSpline.np != 0){
+	ExtendSouth_BndWestSpline = Grid_Original.ExtendSouth_BndWestSpline;
+      } else if (ExtendSouth_BndWestSpline.np != 0){
+	ExtendSouth_BndWestSpline.deallocate();
+      }
+
+      // Extend the West spline to North with itself if necessary
+      if (BndWestSpline.np != 0){
+	ExtendNorth_BndWestSpline = BndWestSpline;
+      } else if (ExtendNorth_BndWestSpline.np != 0){
+	ExtendNorth_BndWestSpline.deallocate();
+      }
     } /* endif */
-  
-    if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_NW ||
-	 Sector == GRID2D_QUAD_BLOCK_SECTOR_SW) &&
-	Grid_Original.BndWestSpline.np != 0) {
-      BndWestSpline = Grid_Original.BndWestSpline;
+    
+    // SE Sector
+    if (Sector == GRID2D_QUAD_BLOCK_SECTOR_SE) {
+
+      // South spline
+      if (Grid_Original.BndSouthSpline.np != 0) {
+	BndSouthSpline = Grid_Original.BndSouthSpline;
+      } else if (BndSouthSpline.np != 0) {
+	BndSouthSpline.deallocate();
+	deallocate_BndSouthSplineInfo();
+      }
+
+      // Copy the extension of the original South spline to East
+      if (Grid_Original.ExtendEast_BndSouthSpline.np != 0){
+	ExtendEast_BndSouthSpline = Grid_Original.ExtendEast_BndSouthSpline;
+      } else if (ExtendEast_BndSouthSpline.np != 0){
+	ExtendEast_BndSouthSpline.deallocate();
+      }
+
+      // Extend the South spline to West with itself if necessary
+      if (BndSouthSpline.np != 0){
+	ExtendWest_BndSouthSpline = BndSouthSpline;
+      } else if (ExtendWest_BndSouthSpline.np != 0){
+	ExtendWest_BndSouthSpline.deallocate();
+      }
+
+      // East Spline
+      if (Grid_Original.BndEastSpline.np != 0){
+	BndEastSpline = Grid_Original.BndEastSpline;
+      } else if (BndEastSpline.np != 0){
+	BndEastSpline.deallocate();
+	deallocate_BndEastSplineInfo();
+      }
+
+      // Copy the extension of the original East spline to South
+      if (Grid_Original.ExtendSouth_BndEastSpline.np != 0){
+	ExtendSouth_BndEastSpline = Grid_Original.ExtendSouth_BndEastSpline;
+      } else if (ExtendSouth_BndEastSpline.np != 0){
+	ExtendSouth_BndEastSpline.deallocate();
+      }
+
+      // Extend the East spline to North with itself if necessary
+      if (BndEastSpline.np != 0){
+	ExtendNorth_BndEastSpline = BndEastSpline;
+      } else if (ExtendNorth_BndEastSpline.np != 0){
+	ExtendNorth_BndEastSpline.deallocate();
+      }
     } /* endif */
+
 
     /* Assign boundary spline pathlength info for the refined
        quadrilateral mesh block. */
@@ -9247,25 +9801,85 @@ void Grid2D_Quad_Block_HO::Coarsen_Mesh(const Grid2D_Quad_Block_HO &Grid_Origina
 
   if (mesh_coarsening_permitted) {
 
+    // ====  North Spline ====
     if (Grid_Original_NW.BndNorthSpline.np != 0 &&
 	Grid_Original_NE.BndNorthSpline.np != 0) {
       BndNorthSpline = Grid_Original_NW.BndNorthSpline;
     } /* endif */
 
+    // Set the West extension of the North spline
+    if (Grid_Original_NW.ExtendWest_BndNorthSpline.np != 0){
+      ExtendWest_BndNorthSpline = Grid_Original_NW.ExtendWest_BndNorthSpline;
+    } else if (ExtendWest_BndNorthSpline.np != 0){
+      ExtendWest_BndNorthSpline.deallocate();
+    }
+
+    // Set the East extension of the North spline
+    if (Grid_Original_NE.ExtendEast_BndNorthSpline.np != 0){
+      ExtendEast_BndNorthSpline = Grid_Original_NE.ExtendEast_BndNorthSpline;
+    } else if (ExtendEast_BndNorthSpline.np != 0){
+      ExtendEast_BndNorthSpline.deallocate();
+    }
+
+    // ====  South Spline ====
     if (Grid_Original_SW.BndSouthSpline.np != 0 &&
 	Grid_Original_SE.BndSouthSpline.np != 0) {
       BndSouthSpline = Grid_Original_SW.BndSouthSpline;
     } /* endif */
 
+    // Set the West extension of the South spline
+    if (Grid_Original_SW.ExtendWest_BndSouthSpline.np != 0){
+      ExtendWest_BndSouthSpline = Grid_Original_SW.ExtendWest_BndSouthSpline;
+    } else if (ExtendWest_BndSouthSpline.np != 0){
+      ExtendWest_BndSouthSpline.deallocate();
+    }
+
+    // Set the East extension of the South spline
+    if (Grid_Original_SE.ExtendEast_BndSouthSpline.np != 0){
+      ExtendEast_BndSouthSpline = Grid_Original_SE.ExtendEast_BndSouthSpline;
+    } else if (ExtendEast_BndSouthSpline.np != 0){
+      ExtendEast_BndSouthSpline.deallocate();
+    }
+
+    // ====  East Spline ====
     if (Grid_Original_SE.BndEastSpline.np != 0 &&
 	Grid_Original_NE.BndEastSpline.np != 0) {
       BndEastSpline = Grid_Original_SE.BndEastSpline;
     } /* endif */
-  
+
+    // Set the South extension of the East spline
+    if (Grid_Original_SE.ExtendSouth_BndEastSpline.np != 0){
+      ExtendSouth_BndEastSpline = Grid_Original_SE.ExtendSouth_BndEastSpline;
+    } else if (ExtendSouth_BndEastSpline.np != 0){
+      ExtendSouth_BndEastSpline.deallocate();
+    }
+
+    // Set the North extension of the East spline
+    if (Grid_Original_NE.ExtendNorth_BndEastSpline.np != 0){
+      ExtendNorth_BndEastSpline = Grid_Original_NE.ExtendNorth_BndEastSpline;
+    } else if (ExtendNorth_BndEastSpline.np != 0){
+      ExtendNorth_BndEastSpline.deallocate();
+    }
+ 
+    // ====  West Spline ====
     if (Grid_Original_SW.BndWestSpline.np != 0 &&
 	Grid_Original_NW.BndWestSpline.np != 0) {
       BndWestSpline = Grid_Original_SW.BndWestSpline;
     } /* endif */
+
+    // Set the South extension of the West spline
+    if (Grid_Original_SW.ExtendSouth_BndWestSpline.np != 0){
+      ExtendSouth_BndWestSpline = Grid_Original_SW.ExtendSouth_BndWestSpline;
+    } else if (ExtendSouth_BndWestSpline.np != 0){
+      ExtendSouth_BndWestSpline.deallocate();
+    }
+
+    // Set the North extension of the West spline
+    if (Grid_Original_NW.ExtendNorth_BndWestSpline.np != 0){
+      ExtendNorth_BndWestSpline = Grid_Original_NW.ExtendNorth_BndWestSpline;
+    } else if (ExtendNorth_BndWestSpline.np != 0){
+      ExtendNorth_BndWestSpline.deallocate();
+    }
 
     /* Assign boundary spline pathlength info for the coarsened
        quadrilateral mesh block. */
