@@ -3450,6 +3450,22 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder_Without_Update(int &_Numb
 
   } /* endfor */
 
+  // Set the spline extensions for Block 0
+  // == South spline
+  Grid_ptr[0][0].ExtendWest_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  Grid_ptr[0][0].ExtendEast_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  // == North spline
+  Grid_ptr[0][0].ExtendWest_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+  Grid_ptr[0][0].ExtendEast_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+
+  // Set the spline extensions for Block 1
+  // == South spline
+  Grid_ptr[1][0].ExtendWest_BndSouthSpline = Grid_ptr[0][0].BndSouthSpline;
+  Grid_ptr[1][0].ExtendEast_BndSouthSpline = Grid_ptr[0][0].BndSouthSpline;
+  // == North spline
+  Grid_ptr[1][0].ExtendWest_BndNorthSpline = Grid_ptr[0][0].BndNorthSpline;
+  Grid_ptr[1][0].ExtendEast_BndNorthSpline = Grid_ptr[0][0].BndNorthSpline;  
+
 }
 
 /*!
@@ -5056,6 +5072,12 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Bump_Channel_Flow_Without_Update(int &_Numb
       
     }
   }
+
+  // Set the spline extensions for Block (0,0)
+  Grid_ptr[0][0].ExtendEast_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  
+  // Set the spline extensions for Block (2,0)
+  Grid_ptr[2][0].ExtendWest_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
 
 }
 
@@ -7832,6 +7854,23 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder_Without_Update(
 						       Orthogonal_West);
 	
   } /* endfor */
+
+  // Set the spline extensions for Block 0
+  // == South spline
+  Grid_ptr[0][0].ExtendWest_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  Grid_ptr[0][0].ExtendEast_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  // == North spline
+  Grid_ptr[0][0].ExtendWest_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+  Grid_ptr[0][0].ExtendEast_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+
+  // Set the spline extensions for Block 1
+  // == South spline
+  Grid_ptr[1][0].ExtendWest_BndSouthSpline = Grid_ptr[0][0].BndSouthSpline;
+  Grid_ptr[1][0].ExtendEast_BndSouthSpline = Grid_ptr[0][0].BndSouthSpline;
+  // == North spline
+  Grid_ptr[1][0].ExtendWest_BndNorthSpline = Grid_ptr[0][0].BndNorthSpline;
+  Grid_ptr[1][0].ExtendEast_BndNorthSpline = Grid_ptr[0][0].BndNorthSpline;  
+
 }
 
 /*!

@@ -292,6 +292,16 @@ public:
                       *BndEastSplineInfo,  //!< East boundary 2D spline info.
                       *BndWestSplineInfo;  //!< West boundary 2D spline info.
 
+  Spline2DInterval_HO   *ExtendWest_BndNorthSplineInfo, //!< Info for extension of North boundary spline to west
+                        *ExtendEast_BndNorthSplineInfo, //!< Info for extension of North boundary spline to east
+                        *ExtendWest_BndSouthSplineInfo, //!< Info for extension of South boundary spline to west
+                        *ExtendEast_BndSouthSplineInfo, //!< Info for extension of South boundary spline to east
+                        *ExtendNorth_BndEastSplineInfo, //!< Info for extension of East boundary spline to north
+                        *ExtendSouth_BndEastSplineInfo, //!< Info for extension of East boundary spline to south
+                        *ExtendNorth_BndWestSplineInfo, //!< Info for extension of West boundary spline to north
+                        *ExtendSouth_BndWestSplineInfo; //!< Info for extension of West boundary spline to south
+
+
   double                SminN,  //!< Minimum value of north face pathlength.
                         SmaxN,  //!< Maximum value of north face pathlength.
                         SminS,  //!< Minimum value of south face pathlength.
@@ -356,6 +366,24 @@ public:
   void deallocate_BndEastSplineInfo(void){ delete [] BndEastSplineInfo; BndEastSplineInfo = NULL; }
   //! Deallocate memory for North spline info
   void deallocate_BndWestSplineInfo(void){ delete [] BndWestSplineInfo; BndWestSplineInfo = NULL; }
+
+  //! Deallocate memory for the info of North spline extension to West
+  void deallocate_ExtendWest_BndNorthSplineInfo(void){
+    delete [] ExtendWest_BndNorthSplineInfo; ExtendWest_BndNorthSplineInfo = NULL; }
+  void deallocate_ExtendEast_BndNorthSplineInfo(void){
+    delete [] ExtendEast_BndNorthSplineInfo; ExtendEast_BndNorthSplineInfo = NULL; }
+  void deallocate_ExtendWest_BndSouthSplineInfo(void){
+    delete [] ExtendWest_BndSouthSplineInfo; ExtendWest_BndSouthSplineInfo = NULL; }
+  void deallocate_ExtendEast_BndSouthSplineInfo(void){
+    delete [] ExtendEast_BndSouthSplineInfo; ExtendEast_BndSouthSplineInfo = NULL; }
+  void deallocate_ExtendNorth_BndEastSplineInfo(void){
+    delete [] ExtendNorth_BndEastSplineInfo; ExtendNorth_BndEastSplineInfo = NULL; }
+  void deallocate_ExtendSouth_BndEastSplineInfo(void){
+    delete [] ExtendSouth_BndEastSplineInfo; ExtendSouth_BndEastSplineInfo = NULL; }
+  void deallocate_ExtendNorth_BndWestSplineInfo(void){
+    delete [] ExtendNorth_BndWestSplineInfo; ExtendNorth_BndWestSplineInfo = NULL; }
+  void deallocate_ExtendSouth_BndWestSplineInfo(void){
+    delete [] ExtendSouth_BndWestSplineInfo; ExtendSouth_BndWestSplineInfo = NULL; }
   //@}
 
   //! @name Calculate cell centroid.
@@ -947,6 +975,32 @@ public:
   bool IsNorthBoundaryReconstructionConstrained(void) const;
   //! Check if any block boundary is a solid body
   bool IsThereAnySolidBoundary(void) const;
+
+  //! Check if the West boundary is curved (i.e. has control points and is not an interior boundary based on the BCs)
+  bool IsWestBoundaryCurved(void) const;
+  //! Check if the East boundary is curved (i.e. has control points and is not an interior boundary based on the BCs)
+  bool IsEastBoundaryCurved(void) const;
+  //! Check if the South boundary is curved (i.e. has control points and is not an interior boundary based on the BCs)
+  bool IsSouthBoundaryCurved(void) const;
+  //! Check if the North boundary is curved (i.e. has control points and is not an interior boundary based on the BCs)
+  bool IsNorthBoundaryCurved(void) const;
+
+  //! Check if the North extension of the West boundary is curved (i.e. same conditions as for the West boundary)
+  bool IsNorthExtendWestBoundaryCurved(void) const;
+  //! Check if the South extension of the West boundary is curved (i.e. same conditions as for the West boundary)
+  bool IsSouthExtendWestBoundaryCurved(void) const;
+  //! Check if the North extension of the East boundary is curved (i.e. same conditions as for the East boundary)
+  bool IsNorthExtendEastBoundaryCurved(void) const;
+  //! Check if the South extension of the East boundary is curved (i.e. same conditions as for the East boundary)
+  bool IsSouthExtendEastBoundaryCurved(void) const;
+  //! Check if the East extension of the South boundary is curved (i.e. same conditions as for the South boundary)
+  bool IsEastExtendSouthBoundaryCurved(void) const;
+  //! Check if the West extension of the South boundary is curved (i.e. same conditions as for the South boundary)
+  bool IsWestExtendSouthBoundaryCurved(void) const;
+  //! Check if the East extension of the North boundary is curved (i.e. same conditions as for the North boundary)
+  bool IsEastExtendNorthBoundaryCurved(void) const;
+  //! Check if the West extension of the North boundary is curved (i.e. same conditions as for the North boundary)
+  bool IsWestExtendNorthBoundaryCurved(void) const;
   //@}
 
   //! Set the designated switch to require computation of geometric properties with extra care for numerical errors
@@ -1066,6 +1120,10 @@ inline Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void)
     ExtendNorth_BndWestSpline(), ExtendSouth_BndWestSpline(),
     BndNorthSplineInfo(NULL), BndSouthSplineInfo(NULL),
     BndEastSplineInfo(NULL), BndWestSplineInfo(NULL),
+    ExtendWest_BndNorthSplineInfo(NULL), ExtendEast_BndNorthSplineInfo(NULL),
+    ExtendWest_BndSouthSplineInfo(NULL), ExtendEast_BndSouthSplineInfo(NULL),
+    ExtendNorth_BndEastSplineInfo(NULL), ExtendSouth_BndEastSplineInfo(NULL),
+    ExtendNorth_BndWestSplineInfo(NULL), ExtendSouth_BndWestSplineInfo(NULL),
     SminN(ZERO), SmaxN(ZERO), SminS(ZERO), SmaxS(ZERO), 
     SminE(ZERO), SmaxE(ZERO), SminW(ZERO), SmaxW(ZERO),
     StretchI(0), StretchJ(0), BetaI(ONE), TauI(ONE),
@@ -1101,6 +1159,15 @@ inline void Grid2D_Quad_Block_HO::deallocateBndSplineInfo(void) {
   delete []BndSouthSplineInfo; BndSouthSplineInfo = NULL;
   delete []BndEastSplineInfo;  BndEastSplineInfo = NULL;
   delete []BndWestSplineInfo;  BndWestSplineInfo = NULL;
+
+  delete []ExtendWest_BndNorthSplineInfo; ExtendWest_BndNorthSplineInfo = NULL; 
+  delete []ExtendEast_BndNorthSplineInfo; ExtendEast_BndNorthSplineInfo = NULL;
+  delete []ExtendWest_BndSouthSplineInfo; ExtendWest_BndSouthSplineInfo = NULL; 
+  delete []ExtendEast_BndSouthSplineInfo; ExtendEast_BndSouthSplineInfo = NULL;
+  delete []ExtendNorth_BndEastSplineInfo; ExtendNorth_BndEastSplineInfo = NULL;
+  delete []ExtendSouth_BndEastSplineInfo; ExtendSouth_BndEastSplineInfo = NULL;
+  delete []ExtendNorth_BndWestSplineInfo; ExtendNorth_BndWestSplineInfo = NULL;
+  delete []ExtendSouth_BndWestSplineInfo; ExtendSouth_BndWestSplineInfo = NULL;
 }
 
 /*!
@@ -3025,10 +3092,7 @@ inline bool Grid2D_Quad_Block_HO::CheckExistenceOfCurvedBoundaries(void){
   // Check for necessity to compute high-order boundary representation
   if ( HighOrderBoundaryRepresentation == OFF ){
     // Update spline interval information (i.e. ensure that no spline interval exits)
-    delete [] BndNorthSplineInfo; BndNorthSplineInfo = NULL;
-    delete [] BndSouthSplineInfo; BndSouthSplineInfo = NULL;
-    delete [] BndEastSplineInfo ; BndEastSplineInfo = NULL;
-    delete [] BndWestSplineInfo ; BndWestSplineInfo = NULL;
+    deallocateBndSplineInfo();
 
     // No curved boundary calculation needed
     return false;
@@ -3053,12 +3117,71 @@ inline bool Grid2D_Quad_Block_HO::CheckExistenceOfCurvedBoundaries(void){
        BndWestSplineInfo != NULL){
     delete [] BndWestSplineInfo; BndWestSplineInfo = NULL;
   }
+
+  // Update spline extension interval information
+  if ( (ExtendWest_BndNorthSpline.Xp == NULL || 
+	ExtendWest_BndNorthSpline.bc[0] == BC_NONE || ExtendWest_BndNorthSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendWest_BndNorthSplineInfo != NULL){
+    delete [] ExtendWest_BndNorthSplineInfo; ExtendWest_BndNorthSplineInfo = NULL;
+  }
+  if ( (ExtendEast_BndNorthSpline.Xp == NULL || 
+	ExtendEast_BndNorthSpline.bc[0] == BC_NONE || ExtendEast_BndNorthSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendEast_BndNorthSplineInfo != NULL){
+    delete [] ExtendEast_BndNorthSplineInfo; ExtendEast_BndNorthSplineInfo = NULL;
+  }
+  if ( (ExtendWest_BndSouthSpline.Xp == NULL || 
+	ExtendWest_BndSouthSpline.bc[0] == BC_NONE || ExtendWest_BndSouthSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendWest_BndSouthSplineInfo != NULL){
+    delete [] ExtendWest_BndSouthSplineInfo; ExtendWest_BndSouthSplineInfo = NULL;
+  }
+  if ( (ExtendEast_BndSouthSpline.Xp == NULL || 
+	ExtendEast_BndSouthSpline.bc[0] == BC_NONE || ExtendEast_BndSouthSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendEast_BndSouthSplineInfo != NULL){
+    delete [] ExtendEast_BndSouthSplineInfo; ExtendEast_BndSouthSplineInfo = NULL;
+  }
+  if ( (ExtendNorth_BndEastSpline.Xp == NULL || 
+	ExtendNorth_BndEastSpline.bc[0] == BC_NONE || ExtendNorth_BndEastSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendNorth_BndEastSplineInfo != NULL){
+    delete [] ExtendNorth_BndEastSplineInfo; ExtendNorth_BndEastSplineInfo = NULL;
+  }
+  if ( (ExtendSouth_BndEastSpline.Xp == NULL || 
+	ExtendSouth_BndEastSpline.bc[0] == BC_NONE || ExtendSouth_BndEastSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendSouth_BndEastSplineInfo != NULL){
+    delete [] ExtendSouth_BndEastSplineInfo; ExtendSouth_BndEastSplineInfo = NULL;
+  }
+  if ( (ExtendNorth_BndWestSpline.Xp == NULL || 
+	ExtendNorth_BndWestSpline.bc[0] == BC_NONE || ExtendNorth_BndWestSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendNorth_BndWestSplineInfo != NULL){
+    delete [] ExtendNorth_BndWestSplineInfo; ExtendNorth_BndWestSplineInfo = NULL;
+  }
+  if ( (ExtendSouth_BndWestSpline.Xp == NULL || 
+	ExtendSouth_BndWestSpline.bc[0] == BC_NONE || ExtendSouth_BndWestSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendSouth_BndWestSplineInfo != NULL){
+    delete [] ExtendSouth_BndWestSplineInfo; ExtendSouth_BndWestSplineInfo = NULL;
+  }
+
   
   // Check for nonexistence of curved block boundaries.
   if ( (BndNorthSpline.Xp == NULL || BndNorthSpline.bc[0] == BC_NONE || BndNorthSpline.bc[0] == BC_PERIODIC) &&
        (BndSouthSpline.Xp == NULL || BndSouthSpline.bc[0] == BC_NONE || BndSouthSpline.bc[0] == BC_PERIODIC) &&
        (BndEastSpline.Xp == NULL  || BndEastSpline.bc[0] == BC_NONE || BndEastSpline.bc[0] == BC_PERIODIC) && 
-       (BndWestSpline.Xp == NULL  || BndWestSpline.bc[0] == BC_NONE || BndWestSpline.bc[0] == BC_PERIODIC) ){   
+       (BndWestSpline.Xp == NULL  || BndWestSpline.bc[0] == BC_NONE || BndWestSpline.bc[0] == BC_PERIODIC) &&
+       (ExtendWest_BndNorthSpline.Xp == NULL || 
+	ExtendWest_BndNorthSpline.bc[0] == BC_NONE || ExtendWest_BndNorthSpline.bc[0] == BC_PERIODIC) &&
+       (ExtendEast_BndNorthSpline.Xp == NULL || 
+	ExtendEast_BndNorthSpline.bc[0] == BC_NONE || ExtendEast_BndNorthSpline.bc[0] == BC_PERIODIC) && 
+       (ExtendWest_BndSouthSpline.Xp == NULL || 
+	ExtendWest_BndSouthSpline.bc[0] == BC_NONE || ExtendWest_BndSouthSpline.bc[0] == BC_PERIODIC) &&
+       (ExtendEast_BndSouthSpline.Xp == NULL || 
+	ExtendEast_BndSouthSpline.bc[0] == BC_NONE || ExtendEast_BndSouthSpline.bc[0] == BC_PERIODIC) && 
+       (ExtendNorth_BndEastSpline.Xp == NULL || 
+	ExtendNorth_BndEastSpline.bc[0] == BC_NONE || ExtendNorth_BndEastSpline.bc[0] == BC_PERIODIC) && 
+       (ExtendSouth_BndEastSpline.Xp == NULL || 
+	ExtendSouth_BndEastSpline.bc[0] == BC_NONE || ExtendSouth_BndEastSpline.bc[0] == BC_PERIODIC) && 
+       (ExtendNorth_BndWestSpline.Xp == NULL || 
+	ExtendNorth_BndWestSpline.bc[0] == BC_NONE || ExtendNorth_BndWestSpline.bc[0] == BC_PERIODIC) && 
+       (ExtendSouth_BndWestSpline.Xp == NULL || 
+	ExtendSouth_BndWestSpline.bc[0] == BC_NONE || ExtendSouth_BndWestSpline.bc[0] == BC_PERIODIC) ){
     // No curved boundaries are present.
     return false;
   }
@@ -3069,7 +3192,7 @@ inline bool Grid2D_Quad_Block_HO::CheckExistenceOfCurvedBoundaries(void){
 
 /*!
  * Check West boundary reconstruction type.
- * Return true is the reconstruction is done
+ * Return true if the reconstruction is done
  * with boundary constrains, otherwise return false.
  */
 inline bool Grid2D_Quad_Block_HO::IsWestBoundaryReconstructionConstrained(void) const{
@@ -3082,7 +3205,7 @@ inline bool Grid2D_Quad_Block_HO::IsWestBoundaryReconstructionConstrained(void) 
   
 /*!
  * Check East boundary reconstruction type.
- * Return true is the reconstruction is done
+ * Return true if the reconstruction is done
  * with boundary constrains, otherwise return false.
  */
 inline bool Grid2D_Quad_Block_HO::IsEastBoundaryReconstructionConstrained(void) const{
@@ -3095,7 +3218,7 @@ inline bool Grid2D_Quad_Block_HO::IsEastBoundaryReconstructionConstrained(void) 
 
 /*!
  * Check South boundary reconstruction type.
- * Return true is the reconstruction is done
+ * Return true if the reconstruction is done
  * with boundary constrains, otherwise return false.
  */
 inline bool Grid2D_Quad_Block_HO::IsSouthBoundaryReconstructionConstrained(void) const{
@@ -3108,7 +3231,7 @@ inline bool Grid2D_Quad_Block_HO::IsSouthBoundaryReconstructionConstrained(void)
 
 /*!
  * Check North boundary reconstruction type.
- * Return true is the reconstruction is done
+ * Return true if the reconstruction is done
  * with boundary constrains, otherwise return false.
  */
 inline bool Grid2D_Quad_Block_HO::IsNorthBoundaryReconstructionConstrained(void) const{
@@ -3129,6 +3252,121 @@ inline bool Grid2D_Quad_Block_HO::IsThereAnySolidBoundary(void) const{
   return ( BndNorthSpline.IsSolidBoundary() || BndSouthSpline.IsSolidBoundary() ||
 	   BndEastSpline.IsSolidBoundary()  || BndWestSpline.IsSolidBoundary() );
 }
+
+/*!
+ * Check West boundary spline type (i.e. curved or straight).
+ * Return true if the spline has control points
+ * and is not an interior boundary based on the BCs 
+ * (e.g. BC_NONE).
+ */
+inline bool Grid2D_Quad_Block_HO::IsWestBoundaryCurved(void) const{
+  if (BndWestSpline.Xp != NULL && 
+      BndWestSpline.bc[0] != BC_NONE && BndWestSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsEastBoundaryCurved(void) const{
+  if (BndEastSpline.Xp != NULL && 
+      BndEastSpline.bc[0] != BC_NONE && BndEastSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsSouthBoundaryCurved(void) const{
+  if (BndSouthSpline.Xp != NULL && 
+      BndSouthSpline.bc[0] != BC_NONE && BndSouthSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+ 
+inline bool Grid2D_Quad_Block_HO::IsNorthBoundaryCurved(void) const{
+  if (BndNorthSpline.Xp != NULL && 
+      BndNorthSpline.bc[0] != BC_NONE && BndNorthSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsNorthExtendWestBoundaryCurved(void) const{
+  if (ExtendNorth_BndWestSpline.Xp != NULL && 
+      ExtendNorth_BndWestSpline.bc[0] != BC_NONE && ExtendNorth_BndWestSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsSouthExtendWestBoundaryCurved(void) const{
+  if (ExtendSouth_BndWestSpline.Xp != NULL && 
+      ExtendSouth_BndWestSpline.bc[0] != BC_NONE && ExtendSouth_BndWestSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsNorthExtendEastBoundaryCurved(void) const{
+  if (ExtendNorth_BndEastSpline.Xp != NULL && 
+      ExtendNorth_BndEastSpline.bc[0] != BC_NONE && ExtendNorth_BndEastSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsSouthExtendEastBoundaryCurved(void) const{
+  if (ExtendSouth_BndEastSpline.Xp != NULL && 
+      ExtendSouth_BndEastSpline.bc[0] != BC_NONE && ExtendSouth_BndEastSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsEastExtendSouthBoundaryCurved(void) const{
+  if (ExtendEast_BndSouthSpline.Xp != NULL && 
+      ExtendEast_BndSouthSpline.bc[0] != BC_NONE && ExtendEast_BndSouthSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsWestExtendSouthBoundaryCurved(void) const{
+  if (ExtendWest_BndSouthSpline.Xp != NULL && 
+      ExtendWest_BndSouthSpline.bc[0] != BC_NONE && ExtendWest_BndSouthSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsEastExtendNorthBoundaryCurved(void) const{
+  if (ExtendEast_BndNorthSpline.Xp != NULL && 
+      ExtendEast_BndNorthSpline.bc[0] != BC_NONE && ExtendEast_BndNorthSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsWestExtendNorthBoundaryCurved(void) const{
+  if (ExtendWest_BndNorthSpline.Xp != NULL && 
+      ExtendWest_BndNorthSpline.bc[0] != BC_NONE && ExtendWest_BndNorthSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
 
 /*!
  * Set all the state trackers to a new state.

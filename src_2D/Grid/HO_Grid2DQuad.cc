@@ -128,6 +128,10 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
    ExtendNorth_BndWestSpline(), ExtendSouth_BndWestSpline(),
    BndNorthSplineInfo(NULL), BndSouthSplineInfo(NULL),
    BndEastSplineInfo(NULL), BndWestSplineInfo(NULL),
+   ExtendWest_BndNorthSplineInfo(NULL), ExtendEast_BndNorthSplineInfo(NULL),
+   ExtendWest_BndSouthSplineInfo(NULL), ExtendEast_BndSouthSplineInfo(NULL),
+   ExtendNorth_BndEastSplineInfo(NULL), ExtendSouth_BndEastSplineInfo(NULL),
+   ExtendNorth_BndWestSplineInfo(NULL), ExtendSouth_BndWestSplineInfo(NULL),
    SminN(ZERO), SmaxN(ZERO), SminS(ZERO), SmaxS(ZERO), 
    SminE(ZERO), SmaxE(ZERO), SminW(ZERO), SmaxW(ZERO),
    StretchI(0), StretchJ(0),
@@ -241,44 +245,116 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
   // Copy the extensions to boundary splines
   if (G.ExtendWest_BndNorthSpline.np != 0) {
     ExtendWest_BndNorthSpline = G.ExtendWest_BndNorthSpline;
+    // Copy Info
+    if (G.ExtendWest_BndNorthSplineInfo != NULL){
+      // allocate memory for ExtendWest_BndNorthSplineInfo
+      ExtendWest_BndNorthSplineInfo = new Spline2DInterval_HO [G.Nghost];
+      // copy values
+      for ( i = 0; i < G.Nghost; ++i) {
+	ExtendWest_BndNorthSplineInfo[i] = G.ExtendWest_BndNorthSplineInfo[i];
+      }
+    }
   } else if (ExtendWest_BndNorthSpline.np != 0) {
     ExtendWest_BndNorthSpline.deallocate();
   } /* endif */
   if (G.ExtendEast_BndNorthSpline.np != 0) {
     ExtendEast_BndNorthSpline = G.ExtendEast_BndNorthSpline;
+    // Copy Info
+    if (G.ExtendEast_BndNorthSplineInfo != NULL){
+      // allocate memory for ExtendEast_BndNorthSplineInfo
+      ExtendEast_BndNorthSplineInfo = new Spline2DInterval_HO [G.Nghost];
+      // copy values
+      for ( i = 0; i < G.Nghost; ++i) {
+	ExtendEast_BndNorthSplineInfo[i] = G.ExtendEast_BndNorthSplineInfo[i];
+      }
+    }
   } else if (ExtendEast_BndNorthSpline.np != 0) {
     ExtendEast_BndNorthSpline.deallocate();
   } /* endif */
 
   if (G.ExtendWest_BndSouthSpline.np != 0) {
     ExtendWest_BndSouthSpline = G.ExtendWest_BndSouthSpline;
+    // Copy Info
+    if (G.ExtendWest_BndSouthSplineInfo != NULL){
+      // allocate memory for ExtendWest_BndSouthSplineInfo
+      ExtendWest_BndSouthSplineInfo = new Spline2DInterval_HO [G.Nghost];
+      // copy values
+      for ( i = 0; i < G.Nghost; ++i) {
+	ExtendWest_BndSouthSplineInfo[i] = G.ExtendWest_BndSouthSplineInfo[i];
+      }
+    }
   } else if (ExtendWest_BndSouthSpline.np != 0) {
     ExtendWest_BndSouthSpline.deallocate();
   } /* endif */
   if (G.ExtendEast_BndSouthSpline.np != 0) {
     ExtendEast_BndSouthSpline = G.ExtendEast_BndSouthSpline;
+    // Copy Info
+    if (G.ExtendEast_BndSouthSplineInfo != NULL){
+      // allocate memory for ExtendEast_BndSouthSplineInfo
+      ExtendEast_BndSouthSplineInfo = new Spline2DInterval_HO [G.Nghost];
+      // copy values
+      for ( i = 0; i < G.Nghost; ++i) {
+	ExtendEast_BndSouthSplineInfo[i] = G.ExtendEast_BndSouthSplineInfo[i];
+      }
+    }
   } else if (ExtendEast_BndSouthSpline.np != 0) {
     ExtendEast_BndSouthSpline.deallocate();
   } /* endif */
 
   if (G.ExtendNorth_BndEastSpline.np != 0) {
     ExtendNorth_BndEastSpline = G.ExtendNorth_BndEastSpline;
+    // Copy Info
+    if (G.ExtendNorth_BndEastSplineInfo != NULL){
+      // allocate memory for ExtendNorth_BndEastSplineInfo
+      ExtendNorth_BndEastSplineInfo = new Spline2DInterval_HO [G.Nghost];
+      // copy values
+      for ( j = 0; j < G.Nghost; ++j) {
+	ExtendNorth_BndEastSplineInfo[j] = G.ExtendNorth_BndEastSplineInfo[j];
+      }
+    }
   } else if (ExtendNorth_BndEastSpline.np != 0) {
     ExtendNorth_BndEastSpline.deallocate();
   } /* endif */
   if (G.ExtendSouth_BndEastSpline.np != 0) {
     ExtendSouth_BndEastSpline = G.ExtendSouth_BndEastSpline;
+    // Copy Info
+    if (G.ExtendSouth_BndEastSplineInfo != NULL){
+      // allocate memory for ExtendSouth_BndEastSplineInfo
+      ExtendSouth_BndEastSplineInfo = new Spline2DInterval_HO [G.Nghost];
+      // copy values
+      for ( j = 0; j < G.Nghost; ++j) {
+	ExtendSouth_BndEastSplineInfo[j] = G.ExtendSouth_BndEastSplineInfo[j];
+      }
+    }
   } else if (ExtendSouth_BndEastSpline.np != 0) {
     ExtendSouth_BndEastSpline.deallocate();
   } /* endif */
   
   if (G.ExtendNorth_BndWestSpline.np != 0) {
     ExtendNorth_BndWestSpline = G.ExtendNorth_BndWestSpline;
+    // Copy Info
+    if (G.ExtendNorth_BndWestSplineInfo != NULL){
+      // allocate memory for ExtendNorth_BndWestSplineInfo
+      ExtendNorth_BndWestSplineInfo = new Spline2DInterval_HO [G.Nghost];
+      // copy values
+      for ( j = 0; j < G.Nghost; ++j) {
+	ExtendNorth_BndWestSplineInfo[j] = G.ExtendNorth_BndWestSplineInfo[j];
+      }
+    }
   } else if (ExtendNorth_BndWestSpline.np != 0) {
     ExtendNorth_BndWestSpline.deallocate();
   } /* endif */
   if (G.ExtendSouth_BndWestSpline.np != 0) {
     ExtendSouth_BndWestSpline = G.ExtendSouth_BndWestSpline;
+    // Copy Info
+    if (G.ExtendSouth_BndWestSplineInfo != NULL){
+      // allocate memory for ExtendSouth_BndWestSplineInfo
+      ExtendSouth_BndWestSplineInfo = new Spline2DInterval_HO [G.Nghost];
+      // copy values
+      for ( j = 0; j < G.Nghost; ++j) {
+	ExtendSouth_BndWestSplineInfo[j] = G.ExtendSouth_BndWestSplineInfo[j];
+      }
+    }
   } else if (ExtendSouth_BndWestSpline.np != 0) {
     ExtendSouth_BndWestSpline.deallocate();
   } /* endif */
@@ -576,46 +652,126 @@ Grid2D_Quad_Block_HO& Grid2D_Quad_Block_HO::operator=(const Grid2D_Quad_Block_HO
   // Copy the extensions to boundary splines
   if (Grid.ExtendWest_BndNorthSpline.np != 0) {
     ExtendWest_BndNorthSpline = Grid.ExtendWest_BndNorthSpline;
+    // Copy Info
+    if (Grid.ExtendWest_BndNorthSplineInfo != NULL){
+      // allocate memory for ExtendWest_BndNorthSplineInfo
+      ExtendWest_BndNorthSplineInfo = new Spline2DInterval_HO [Grid.Nghost];
+      // copy values
+      for ( i = 0; i < Grid.Nghost; ++i) {
+	ExtendWest_BndNorthSplineInfo[i] = Grid.ExtendWest_BndNorthSplineInfo[i];
+      }
+    }    
   } else if (ExtendWest_BndNorthSpline.np != 0) {
     ExtendWest_BndNorthSpline.deallocate();
+    deallocate_ExtendWest_BndNorthSplineInfo();
   } /* endif */
   if (Grid.ExtendEast_BndNorthSpline.np != 0) {
     ExtendEast_BndNorthSpline = Grid.ExtendEast_BndNorthSpline;
+    // Copy Info
+    if (Grid.ExtendEast_BndNorthSplineInfo != NULL){
+      // allocate memory for ExtendEast_BndNorthSplineInfo
+      ExtendEast_BndNorthSplineInfo = new Spline2DInterval_HO [Grid.Nghost];
+      // copy values
+      for ( i = 0; i < Grid.Nghost; ++i) {
+	ExtendEast_BndNorthSplineInfo[i] = Grid.ExtendEast_BndNorthSplineInfo[i];
+      }
+    }
   } else if (ExtendEast_BndNorthSpline.np != 0) {
     ExtendEast_BndNorthSpline.deallocate();
+    deallocate_ExtendEast_BndNorthSplineInfo();
   } /* endif */
 
   if (Grid.ExtendWest_BndSouthSpline.np != 0) {
     ExtendWest_BndSouthSpline = Grid.ExtendWest_BndSouthSpline;
+    // Copy Info
+    if (Grid.ExtendWest_BndSouthSplineInfo != NULL){
+      // allocate memory for ExtendWest_BndSouthSplineInfo
+      ExtendWest_BndSouthSplineInfo = new Spline2DInterval_HO [Grid.Nghost];
+      // copy values
+      for ( i = 0; i < Grid.Nghost; ++i) {
+	ExtendWest_BndSouthSplineInfo[i] = Grid.ExtendWest_BndSouthSplineInfo[i];
+      }
+    }
   } else if (ExtendWest_BndSouthSpline.np != 0) {
     ExtendWest_BndSouthSpline.deallocate();
+    deallocate_ExtendWest_BndSouthSplineInfo();
   } /* endif */
   if (Grid.ExtendEast_BndSouthSpline.np != 0) {
     ExtendEast_BndSouthSpline = Grid.ExtendEast_BndSouthSpline;
+    // Copy Info
+    if (Grid.ExtendEast_BndSouthSplineInfo != NULL){
+      // allocate memory for ExtendEast_BndSouthSplineInfo
+      ExtendEast_BndSouthSplineInfo = new Spline2DInterval_HO [Grid.Nghost];
+      // copy values
+      for ( i = 0; i < Grid.Nghost; ++i) {
+	ExtendEast_BndSouthSplineInfo[i] = Grid.ExtendEast_BndSouthSplineInfo[i];
+      }
+    }
   } else if (ExtendEast_BndSouthSpline.np != 0) {
     ExtendEast_BndSouthSpline.deallocate();
+    deallocate_ExtendEast_BndSouthSplineInfo();
   } /* endif */
 
   if (Grid.ExtendNorth_BndEastSpline.np != 0) {
     ExtendNorth_BndEastSpline = Grid.ExtendNorth_BndEastSpline;
+    // Copy Info
+    if (Grid.ExtendNorth_BndEastSplineInfo != NULL){
+      // allocate memory for ExtendNorth_BndEastSplineInfo
+      ExtendNorth_BndEastSplineInfo = new Spline2DInterval_HO [Grid.Nghost];
+      // copy values
+      for ( j = 0; j < Grid.Nghost; ++j) {
+	ExtendNorth_BndEastSplineInfo[j] = Grid.ExtendNorth_BndEastSplineInfo[j];
+      }
+    }
   } else if (ExtendNorth_BndEastSpline.np != 0) {
     ExtendNorth_BndEastSpline.deallocate();
+    deallocate_ExtendNorth_BndEastSplineInfo();
   } /* endif */
   if (Grid.ExtendSouth_BndEastSpline.np != 0) {
     ExtendSouth_BndEastSpline = Grid.ExtendSouth_BndEastSpline;
+    // Copy Info
+    if (Grid.ExtendSouth_BndEastSplineInfo != NULL){
+      // allocate memory for ExtendSouth_BndEastSplineInfo
+      ExtendSouth_BndEastSplineInfo = new Spline2DInterval_HO [Grid.Nghost];
+      // copy values
+      for ( j = 0; j < Grid.Nghost; ++j) {
+	ExtendSouth_BndEastSplineInfo[j] = Grid.ExtendSouth_BndEastSplineInfo[j];
+      }
+    }
   } else if (ExtendSouth_BndEastSpline.np != 0) {
     ExtendSouth_BndEastSpline.deallocate();
+    deallocate_ExtendSouth_BndEastSplineInfo();
   } /* endif */
   
   if (Grid.ExtendNorth_BndWestSpline.np != 0) {
     ExtendNorth_BndWestSpline = Grid.ExtendNorth_BndWestSpline;
+    // Copy Info
+    if (Grid.ExtendNorth_BndWestSplineInfo != NULL){
+      // allocate memory for ExtendNorth_BndWestSplineInfo
+      ExtendNorth_BndWestSplineInfo = new Spline2DInterval_HO [Grid.Nghost];
+      // copy values
+      for ( j = 0; j < Grid.Nghost; ++j) {
+	ExtendNorth_BndWestSplineInfo[j] = Grid.ExtendNorth_BndWestSplineInfo[j];
+      }
+    }
   } else if (ExtendNorth_BndWestSpline.np != 0) {
     ExtendNorth_BndWestSpline.deallocate();
+    deallocate_ExtendNorth_BndWestSplineInfo();
   } /* endif */
   if (Grid.ExtendSouth_BndWestSpline.np != 0) {
     ExtendSouth_BndWestSpline = Grid.ExtendSouth_BndWestSpline;
+    // Copy Info
+    if (Grid.ExtendSouth_BndWestSplineInfo != NULL){
+      // allocate memory for ExtendSouth_BndWestSplineInfo
+      ExtendSouth_BndWestSplineInfo = new Spline2DInterval_HO [Grid.Nghost];
+      // copy values
+      for ( j = 0; j < Grid.Nghost; ++j) {
+	ExtendSouth_BndWestSplineInfo[j] = Grid.ExtendSouth_BndWestSplineInfo[j];
+      }
+    }
   } else if (ExtendSouth_BndWestSpline.np != 0) {
     ExtendSouth_BndWestSpline.deallocate();
+    deallocate_ExtendSouth_BndWestSplineInfo();
   } /* endif */
 
 
@@ -4869,7 +5025,7 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
  */
 void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
 
-  int i;
+  int i, IndexShift;
   int NumGQPsPerSubinterval(NumGQP);
 
 #ifdef MODIFY_NUMBER_OF_FLUX_CALCULATION_POINTS_AT_BOUNDARIES
@@ -4887,8 +5043,8 @@ void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
     // Determine the geometric properties along the splines (e.g. Gauss Quadrature point locations,
     // normals, and spline segment length at each cell)
 
-    // Check the North boundary
-    if (BndNorthSpline.Xp != NULL && BndNorthSpline.bc[0] != BC_NONE && BndNorthSpline.bc[0] != BC_PERIODIC){
+    // ==== Check the North boundary
+    if (IsNorthBoundaryCurved()){
 
       // Determine the geometric properties along the splines (e.g. Gauss Quadrature point locations, normals, etc.)
       // Update BndNorthSplineInfo[]
@@ -4917,8 +5073,71 @@ void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
       }//endif
     } // endif (North Boundary)
 
-    // Check the South boundary
-    if (BndSouthSpline.Xp != NULL && BndSouthSpline.bc[0] != BC_NONE && BndSouthSpline.bc[0] != BC_PERIODIC){
+    // Check the North boundary extension to West
+    if ( IsWestExtendNorthBoundaryCurved() ){
+
+      // Determine the geometric properties along the spline (e.g. Gauss Quadrature point locations, normals, etc.)
+      // Update ExtendWest_BndNorthSplineInfo[]
+      // Check if memory is allocated for ExtendWest_BndNorthSplineInfo
+      if(ExtendWest_BndNorthSplineInfo == NULL){ // allocate array
+	ExtendWest_BndNorthSplineInfo = new Spline2DInterval_HO [Nghost];
+      }
+
+      // Check if the North Spline extension to West is defined such that the normals point outside of the domain
+      if ( ExtendWest_BndNorthSpline.getS(Node[INl-1][JNu]) > ExtendWest_BndNorthSpline.getS(Node[INl][JNu])){
+	// Update the geometric information 
+	for(i=0; i<=ICl-1; ++i){
+	  ExtendWest_BndNorthSplineInfo[i].UpdateInterval(ExtendWest_BndNorthSpline,
+							  Node[i][JNu],Node[i+1][JNu],NumGQPsPerSubinterval);
+	}
+      } else {
+	// Copy the spline
+	SplineCopy = ExtendWest_BndNorthSpline;
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+	  
+	// Update the geometric information 
+	for(i=0; i<ICl; ++i){
+	  ExtendWest_BndNorthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNu],Node[i+1][JNu],NumGQPsPerSubinterval);
+	}
+      }//endif
+    }//endif 
+
+    // Check the North boundary extension to East
+    if ( IsEastExtendNorthBoundaryCurved() ){
+
+      // Determine the geometric properties along the spline (e.g. Gauss Quadrature point locations, normals, etc.)
+      // Update ExtendEast_BndNorthSplineInfo[]
+      // Check if memory is allocated for ExtendEast_BndNorthSplineInfo
+      if(ExtendEast_BndNorthSplineInfo == NULL){ // allocate array
+	ExtendEast_BndNorthSplineInfo = new Spline2DInterval_HO [Nghost];
+      }
+
+      // Check if the North Spline extension to East is defined such that the normals point outside of the domain
+      if ( ExtendEast_BndNorthSpline.getS(Node[INu][JNu]) > ExtendEast_BndNorthSpline.getS(Node[INu+1][JNu])){
+	// Update the geometric information 
+	IndexShift = ICu + 1;	// due to the fact that only Nghost cells are stored
+	for(i=ICu+1; i<=ICu+Nghost; ++i){
+	  ExtendEast_BndNorthSplineInfo[i-IndexShift].UpdateInterval(ExtendEast_BndNorthSpline,
+								     Node[i][JNu],Node[i+1][JNu],NumGQPsPerSubinterval);
+	}
+      } else {
+	// Copy the spline
+	SplineCopy = ExtendEast_BndNorthSpline;
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+	  
+	// Update the geometric information 
+	IndexShift = ICu + 1;
+	for(i=ICu+1; i<=ICu+Nghost; ++i){
+	  ExtendEast_BndNorthSplineInfo[i-IndexShift].UpdateInterval(SplineCopy,
+								     Node[i][JNu],Node[i+1][JNu],NumGQPsPerSubinterval);
+	}
+      }//endif
+    }//endif 
+
+    // ==== Check the South boundary
+    if (IsSouthBoundaryCurved()){
 
       // Update BndSouthSplineInfo[]
       // Check if memory is allocated for BndSouthSplineInfo
@@ -4946,8 +5165,72 @@ void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
       }//endif
     } // endif (South Boundary)
 
-    // Check the East boundary
-    if (BndEastSpline.Xp != NULL && BndEastSpline.bc[0] != BC_NONE && BndEastSpline.bc[0] != BC_PERIODIC){
+    // Check the South boundary extension to West
+    if ( IsWestExtendSouthBoundaryCurved() ){
+
+      // Determine the geometric properties along the spline (e.g. Gauss Quadrature point locations, normals, etc.)
+      // Update ExtendWest_BndSouthSplineInfo[]
+      // Check if memory is allocated for ExtendWest_BndSouthSplineInfo
+      if(ExtendWest_BndSouthSplineInfo == NULL){ // allocate array
+	ExtendWest_BndSouthSplineInfo = new Spline2DInterval_HO [Nghost];
+      }
+      
+      // Check if the South Spline extension to West is defined such that the normals point outside of the domain
+      if ( ExtendWest_BndSouthSpline.getS(Node[INl-1][JNl]) < ExtendWest_BndSouthSpline.getS(Node[INl][JNl])){
+	// Update the geometric information 
+	for(i=0; i<=ICl-1; ++i){
+	  ExtendWest_BndSouthSplineInfo[i].UpdateInterval(ExtendWest_BndSouthSpline,
+							  Node[i][JNl],Node[i+1][JNl],NumGQPsPerSubinterval);
+	}
+      } else {
+	// Copy the spline
+	SplineCopy = ExtendWest_BndSouthSpline;
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+
+	// Update the geometric information 
+	for(i=0; i<=ICl-1; ++i){
+	  ExtendWest_BndSouthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNl],Node[i+1][JNl],NumGQPsPerSubinterval);
+	}
+      }//endif
+    }//endif
+
+    // Check the South boundary extension to East
+    if ( IsEastExtendSouthBoundaryCurved() ){
+
+      // Determine the geometric properties along the spline (e.g. Gauss Quadrature point locations, normals, etc.)
+      // Update ExtendEast_BndSouthSplineInfo[]
+      // Check if memory is allocated for ExtendEast_BndSouthSplineInfo
+      if(ExtendEast_BndSouthSplineInfo == NULL){ // allocate array
+	ExtendEast_BndSouthSplineInfo = new Spline2DInterval_HO [Nghost];
+      }
+
+      // Check if the South Spline extension to East is defined such that the normals point outside of the domain
+      if ( ExtendEast_BndSouthSpline.getS(Node[INu][JNl]) < ExtendEast_BndSouthSpline.getS(Node[INu+1][JNl])){
+	// Update the geometric information 
+	IndexShift = ICu + 1;	// due to the fact that only Nghost cells are stored
+	for(i=ICu+1; i<=ICu+Nghost; ++i){
+	  ExtendEast_BndSouthSplineInfo[i-IndexShift].UpdateInterval(ExtendEast_BndSouthSpline,
+								     Node[i][JNl],Node[i+1][JNl],NumGQPsPerSubinterval);
+	}
+      } else {
+	// Copy the spline
+	SplineCopy = ExtendEast_BndSouthSpline;
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+
+	// Update the geometric information 
+	IndexShift = ICu + 1;
+	for(i=ICu+1; i<=ICu+Nghost; ++i){
+	  ExtendEast_BndSouthSplineInfo[i-IndexShift].UpdateInterval(SplineCopy,
+								     Node[i][JNl],Node[i+1][JNl],NumGQPsPerSubinterval);
+	}
+      }//endif
+    }//endif
+
+
+    // ==== Check the East boundary
+    if (IsEastBoundaryCurved()){
 
       // Update BndEastSplineInfo[]
       // Check if memory is allocated for BndEastSplineInfo
@@ -4975,8 +5258,70 @@ void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
       }//endif
     } // endif (East Boundary)
 
-    // Check the West boundary
-    if (BndWestSpline.Xp != NULL && BndWestSpline.bc[0] != BC_NONE && BndWestSpline.bc[0] != BC_PERIODIC){
+    // Check the East boundary extension to North
+    if ( IsNorthExtendEastBoundaryCurved() ){
+
+      // Update ExtendNorth_BndEastSplineInfo[]
+      // Check if memory is allocated for ExtendNorth_BndEastSplineInfo
+      if(ExtendNorth_BndEastSplineInfo == NULL){ // allocate array
+	ExtendNorth_BndEastSplineInfo = new Spline2DInterval_HO [Nghost];
+      }
+
+      // Check if the East Spline extension to North is defined such that the normals point outside of the domain 
+      if ( ExtendNorth_BndEastSpline.getS(Node[INu][JNu]) < ExtendNorth_BndEastSpline.getS(Node[INu][JNu+1]) ){
+	// Update the geometric information 
+	IndexShift = JCu + 1;
+	for(i=JCu+1; i<=JCu+Nghost; ++i){
+	  ExtendNorth_BndEastSplineInfo[i-IndexShift].UpdateInterval(ExtendNorth_BndEastSpline,
+								     Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
+	}
+      } else {
+	// Copy the spline
+	SplineCopy = ExtendNorth_BndEastSpline;
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+
+	// Update the geometric information 
+	IndexShift = JCu + 1;
+	for(i=JCu+1; i<=JCu+Nghost; ++i){
+	  ExtendNorth_BndEastSplineInfo[i-IndexShift].UpdateInterval(SplineCopy,
+								     Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
+	}
+      }//endif
+    } // endif
+
+    // Check the East boundary extension to South
+    if ( IsSouthExtendEastBoundaryCurved() ){
+
+      // Update ExtendSouth_BndEastSplineInfo[]
+      // Check if memory is allocated for ExtendSouth_BndEastSplineInfo
+      if(ExtendSouth_BndEastSplineInfo == NULL){ // allocate array
+	ExtendSouth_BndEastSplineInfo = new Spline2DInterval_HO [Nghost];
+      }
+
+      // Check if the East Spline extension to South is defined such that the normals point outside of the domain 
+      if ( ExtendSouth_BndEastSpline.getS(Node[INu][JNl-1]) < ExtendSouth_BndEastSpline.getS(Node[INu][JNl]) ){
+	// Update the geometric information 
+	for(i=0; i<=JCl-1; ++i){
+	  ExtendSouth_BndEastSplineInfo[i].UpdateInterval(ExtendSouth_BndEastSpline,
+							  Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
+	}
+      } else {
+	// Copy the spline
+	SplineCopy = ExtendSouth_BndEastSpline;
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+
+	// Update the geometric information 
+	for(i=0; i<=JCl-1; ++i){
+	  ExtendSouth_BndEastSplineInfo[i].UpdateInterval(SplineCopy,Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
+	}
+      }//endif
+    } // endif
+
+
+    // ==== Check the West boundary
+    if (IsWestBoundaryCurved()){
 
       // Update BndWestSplineInfo[]
       // Check if memory is allocated for BndWestSplineInfo
@@ -5003,7 +5348,69 @@ void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
 	}
       }//endif
     } // endif (West Boundary)
-  }
+
+    // Check the West boundary extension to North
+    if ( IsNorthExtendWestBoundaryCurved() ){
+
+      // Update ExtendNorth_BndWestSplineInfo[]
+      // Check if memory is allocated for ExtendNorth_BndWestSplineInfo
+      if(ExtendNorth_BndWestSplineInfo == NULL){ // allocate array
+	ExtendNorth_BndWestSplineInfo = new Spline2DInterval_HO [Nghost];
+      }
+
+      // Check if the West Spline extension to North is defined such that the normals point outside of the domain 
+      if ( ExtendNorth_BndWestSpline.getS(Node[INl][JNu]) > ExtendNorth_BndWestSpline.getS(Node[INl][JNu+1]) ){
+	// Update the geometric information 
+	IndexShift = JCu + 1;
+	for(i=JCu+1; i<=JCu+Nghost; ++i){
+	  ExtendNorth_BndWestSplineInfo[i-IndexShift].UpdateInterval(ExtendNorth_BndWestSpline,
+								     Node[INl][i],Node[INl][i+1],NumGQPsPerSubinterval);
+	}
+      } else {
+	// Copy the spline
+	SplineCopy = ExtendNorth_BndWestSpline;
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+
+	// Update the geometric information 
+	IndexShift = JCu + 1;
+	for(i=JCu+1; i<=JCu+Nghost; ++i){
+	  ExtendNorth_BndWestSplineInfo[i-IndexShift].UpdateInterval(SplineCopy,
+								     Node[INl][i],Node[INl][i+1],NumGQPsPerSubinterval);
+	}
+      }//endif
+    } // endif
+
+    // Check the West boundary extension to South
+    if ( IsSouthExtendWestBoundaryCurved() ){
+
+      // Update ExtendSouth_BndWestSplineInfo[]
+      // Check if memory is allocated for ExtendSouth_BndWestSplineInfo
+      if(ExtendSouth_BndWestSplineInfo == NULL){ // allocate array
+	ExtendSouth_BndWestSplineInfo = new Spline2DInterval_HO [Nghost];
+      }
+
+      // Check if the West Spline extension to South is defined such that the normals point outside of the domain 
+      if ( ExtendSouth_BndWestSpline.getS(Node[INl][JNl-1]) > ExtendSouth_BndWestSpline.getS(Node[INl][JNl]) ){
+	// Update the geometric information 
+	for(i=0; i<=JCl-1; ++i){
+	  ExtendSouth_BndWestSplineInfo[i].UpdateInterval(ExtendSouth_BndWestSpline,
+							  Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
+	}
+      } else {
+	// Copy the spline
+	SplineCopy = ExtendSouth_BndWestSpline;
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+
+	// Update the geometric information 
+	for(i=0; i<=JCl-1; ++i){
+	  ExtendSouth_BndWestSplineInfo[i].UpdateInterval(SplineCopy,Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
+	}
+      }//endif
+    } // endif
+
+  } // endif (CheckExistenceOfCurvedBoundaries)
 }
 
 /*!
@@ -6885,128 +7292,15 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
        sharp point between two nodes.
     */
 
-    Spline2D_HO SplineCopy;
-
     // Determine which boundaries are curved
-    CurvedNorthBnd = BndNorthSpline.Xp != NULL && BndNorthSpline.bc[0] != BC_NONE && BndNorthSpline.bc[0] != BC_PERIODIC;
-    CurvedSouthBnd = BndSouthSpline.Xp != NULL && BndSouthSpline.bc[0] != BC_NONE && BndSouthSpline.bc[0] != BC_PERIODIC;
-    CurvedEastBnd  = BndEastSpline.Xp != NULL && BndEastSpline.bc[0] != BC_NONE && BndEastSpline.bc[0] != BC_PERIODIC;
-    CurvedWestBnd  = BndWestSpline.Xp != NULL && BndWestSpline.bc[0] != BC_NONE && BndWestSpline.bc[0] != BC_PERIODIC;
+    CurvedNorthBnd = IsNorthBoundaryCurved();
+    CurvedSouthBnd = IsSouthBoundaryCurved();
+    CurvedEastBnd  = IsEastBoundaryCurved();
+    CurvedWestBnd  = IsWestBoundaryCurved();
 
     // Generate BndSplineInfo(s) if necessary
-    // Determine the geometric properties along the splines (e.g. Gauss Quadrature point locations, normals, etc.)    
-
-    // Check the North boundary
-    if (CurvedNorthBnd){
-      // Update BndNorthSplineInfo[]
-      // Check if memory is allocated for BndNorthSplineInfo
-      if(BndNorthSplineInfo == NULL){ // allocate array
-	BndNorthSplineInfo = new Spline2DInterval_HO [NCi];
-      }
-      
-      // Check if the North Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
-      // (i.e The spline pathlength increases from INu to INl)
-      if ( BndNorthSpline.getS(Node[INl][JNu]) > BndNorthSpline.getS(Node[INu][JNu]) ){
-	// Update the geometric information 
-	for(i=ICl; i<=ICu; ++i){
-	  BndNorthSplineInfo[i].UpdateInterval(BndNorthSpline,Node[i][JNu],Node[i+1][JNu],NumGQPsPerSubinterval);
-	}
-      } else {
-	// Copy the spline
-	SplineCopy = BndNorthSpline;
-	// Change the direction of increasing the pathlength
-	SplineCopy.Reverse_Spline();
-	
-	// Update the geometric information 
-	for(i=ICl; i<=ICu; ++i){
-	  BndNorthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNu],Node[i+1][JNu],NumGQPsPerSubinterval);
-	}
-      }//endif
-    }// endif (North Boundary)
-
-    // Check the South boundary
-    if (CurvedSouthBnd){
-      // Update BndSouthSplineInfo[]
-      // Check if memory is allocated for BndSouthSplineInfo
-      if(BndSouthSplineInfo == NULL){ // allocate array
-	BndSouthSplineInfo = new Spline2DInterval_HO [NCi];
-      }
-
-      // Check if the South Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
-      // (i.e The spline pathlength increases from INl to INu)
-      if ( BndSouthSpline.getS(Node[INl][JNl]) < BndSouthSpline.getS(Node[INu][JNl]) ){
-	// Update the geometric information 
-	for(i=ICl; i<=ICu; ++i){
-	  BndSouthSplineInfo[i].UpdateInterval(BndSouthSpline,Node[i][JNl],Node[i+1][JNl],NumGQPsPerSubinterval);
-	}
-      } else {
-	// Copy the spline
-	SplineCopy = BndSouthSpline;
-	// Change the direction of increasing the pathlength
-	SplineCopy.Reverse_Spline();
-
-	// Update the geometric information 
-	for(i=ICl; i<=ICu; ++i){
-	  BndSouthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNl],Node[i+1][JNl],NumGQPsPerSubinterval);
-	}
-      }//endif
-    }// endif (South Boundary)
-
-    // Check the East boundary
-    if (CurvedEastBnd){
-      // Update BndEastSplineInfo[]
-      // Check if memory is allocated for BndEastSplineInfo
-      if(BndEastSplineInfo == NULL){ // allocate array
-	BndEastSplineInfo = new Spline2DInterval_HO [NCj];
-      }
-      
-      // Check if the East Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
-      // (i.e The spline pathlength increases from JNl to JNu)
-      if ( BndEastSpline.getS(Node[INu][JNl]) < BndEastSpline.getS(Node[INu][JNu]) ){
-	// Update the geometric information 
-	for(i=JCl; i<=JCu; ++i){
-	  BndEastSplineInfo[i].UpdateInterval(BndEastSpline,Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
-	}
-      } else {
-	// Copy the spline
-	SplineCopy = BndEastSpline;
-	// Change the direction of increasing the pathlength
-	SplineCopy.Reverse_Spline();
-
-	// Update the geometric information 
-	for(i=JCl; i<=JCu; ++i){
-	  BndEastSplineInfo[i].UpdateInterval(SplineCopy,Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
-	}
-      }//endif
-    }// endif (East Boundary)
-
-    // Check the West boundary
-    if (CurvedWestBnd){
-      // Update BndWestSplineInfo[]
-      // Check if memory is allocated for BndWestSplineInfo
-      if(BndWestSplineInfo == NULL){ // allocate array
-	BndWestSplineInfo = new Spline2DInterval_HO [NCj];
-      }
-      
-      // Check if the West Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
-      // (i.e The spline pathlength increases from JNu to JNl)
-      if ( BndWestSpline.getS(Node[INl][JNl]) > BndWestSpline.getS(Node[INl][JNu]) ){
-	// Update the geometric information 
-	for(i=JCl; i<=JCu; ++i){
-	  BndWestSplineInfo[i].UpdateInterval(BndWestSpline,Node[INl][i],Node[INl][i+1],NumGQPsPerSubinterval);
-	}
-      } else {
-	// Copy the spline
-	SplineCopy = BndWestSpline;
-	// Change the direction of increasing the pathlength
-	SplineCopy.Reverse_Spline();
-
-	// Update the geometric information 
-	for(i=JCl; i<=JCu; ++i){
-	  BndWestSplineInfo[i].UpdateInterval(SplineCopy,Node[INl][i],Node[INl][i+1],NumGQPsPerSubinterval);
-	}
-      }//endif
-    }// endif (West Boundary)
+    // Determine the geometric properties along the splines (e.g. Gauss Quadrature point locations, normals, etc.)
+    Update_SplineInfos();
 
     // Determine the geometric properties of the cell (e.g. centroid, area, geometric moments)
     // and the geometric properties along the splines (e.g. Gauss Quadrature point locations, normals, and
@@ -7174,6 +7468,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
   int i,j;
 
   int NumGQPsPerSubinterval(NumGQP);
+  bool CurvedEastBnd, CurvedWestBnd;
 
 #ifdef MODIFY_NUMBER_OF_FLUX_CALCULATION_POINTS_AT_BOUNDARIES
   NumGQPsPerSubinterval = NumGQP + 1;
@@ -7200,40 +7495,17 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
        sharp point between two nodes.
     */
     
-    Spline2D_HO SplineCopy;
-    
+    // Determine if East and West boundaries are curved
+    CurvedEastBnd  = IsEastBoundaryCurved();
+    CurvedWestBnd  = IsWestBoundaryCurved();
+
     // Determine the geometric properties of the cell (e.g. centroid, area, geometric moments)
     // and the geometric properties along the splines (e.g. Gauss Quadrature point locations, normals, and
     // spline segment length at each cell)
+    Update_SplineInfos();
 
     // Check the North boundary
-    if (BndNorthSpline.Xp != NULL && BndNorthSpline.bc[0] != BC_NONE && BndNorthSpline.bc[0] != BC_PERIODIC){
-
-      // Determine the geometric properties along the splines (e.g. Gauss Quadrature point locations, normals, etc.)
-      // Update BndNorthSplineInfo[]
-      // Check if memory is allocated for BndNorthSplineInfo
-      if(BndNorthSplineInfo == NULL){ // allocate array
-	BndNorthSplineInfo = new Spline2DInterval_HO [NCi];
-      }
-
-      // Check if the North Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
-      // (i.e The spline pathlength increases from INu to INl)
-      if ( BndNorthSpline.getS(Node[INl][JNu]) > BndNorthSpline.getS(Node[INu][JNu]) ){
-	// Update the geometric information 
-	for(i=ICl; i<=ICu; ++i){
-	  BndNorthSplineInfo[i].UpdateInterval(BndNorthSpline,Node[i][JNu],Node[i+1][JNu],NumGQPsPerSubinterval);
-	}
-      } else {
-	// Copy the spline
-	SplineCopy = BndNorthSpline;
-	// Change the direction of increasing the pathlength
-	SplineCopy.Reverse_Spline();
-
-	// Update the geometric information 
-	for(i=ICl; i<=ICu; ++i){
-	  BndNorthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNu],Node[i+1][JNu],NumGQPsPerSubinterval);
-	}
-      }//endif
+    if (IsNorthBoundaryCurved()){
 
       // Update the interior north cells
       for(i=ICl+1; i<=ICu-1; ++i){
@@ -7243,7 +7515,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
       }
 
       // Check the North-West Corner
-      if(BndWestSpline.Xp != NULL && BndWestSpline.bc[0] != BC_NONE && BndWestSpline.bc[0] != BC_PERIODIC){
+      if(CurvedWestBnd){
 	// both splines are curved
 	Cell[ICl][JCu].A = area_CurvedBoundaries(ICl,NORTH_WEST_SPLINE);
 	Cell[ICl][JCu].Xc = centroid_CurvedBoundaries(ICl,NORTH_WEST_SPLINE);
@@ -7255,7 +7527,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
       }
 
       // Check the North-East Corner
-      if (BndEastSpline.Xp != NULL && BndEastSpline.bc[0] != BC_NONE && BndEastSpline.bc[0] != BC_PERIODIC){
+      if (CurvedEastBnd){
 	// both spline are curved
 	Cell[ICu][JCu].A = area_CurvedBoundaries(ICu,NORTH_EAST_SPLINE);
 	Cell[ICu][JCu].Xc = centroid_CurvedBoundaries(ICu,NORTH_EAST_SPLINE);
@@ -7268,32 +7540,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
     } // endif (North Boundary)
 
     // Check the South boundary
-    if (BndSouthSpline.Xp != NULL && BndSouthSpline.bc[0] != BC_NONE && BndSouthSpline.bc[0] != BC_PERIODIC){
-
-      // Update BndSouthSplineInfo[]
-      // Check if memory is allocated for BndSouthSplineInfo
-      if(BndSouthSplineInfo == NULL){ // allocate array
-	BndSouthSplineInfo = new Spline2DInterval_HO [NCi];
-      }
-
-      // Check if the South Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
-      // (i.e The spline pathlength increases from INl to INu)
-      if ( BndSouthSpline.getS(Node[INl][JNl]) < BndSouthSpline.getS(Node[INu][JNl]) ){
-	// Update the geometric information 
-	for(i=ICl; i<=ICu; ++i){
-	  BndSouthSplineInfo[i].UpdateInterval(BndSouthSpline,Node[i][JNl],Node[i+1][JNl],NumGQPsPerSubinterval);
-	}
-      } else {
-	// Copy the spline
-	SplineCopy = BndSouthSpline;
-	// Change the direction of increasing the pathlength
-	SplineCopy.Reverse_Spline();
-
-	// Update the geometric information 
-	for(i=ICl; i<=ICu; ++i){
-	  BndSouthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNl],Node[i+1][JNl],NumGQPsPerSubinterval);
-	}
-      }//endif
+    if (IsSouthBoundaryCurved()){
 
       // Update the interior south cells
       for(i=ICl+1; i<=ICu-1; ++i){
@@ -7303,7 +7550,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
       }
 
       // Check the South-West Corner
-      if(BndWestSpline.Xp != NULL && BndWestSpline.bc[0] != BC_NONE && BndWestSpline.bc[0] != BC_PERIODIC){
+      if(CurvedWestBnd){
 	// both splines are curved
 	Cell[ICl][JCl].A = area_CurvedBoundaries(ICl,SOUTH_WEST_SPLINE);
 	Cell[ICl][JCl].Xc = centroid_CurvedBoundaries(ICl,SOUTH_WEST_SPLINE);
@@ -7315,7 +7562,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
       }
 
       // Check the South-East Corner
-      if(BndEastSpline.Xp != NULL && BndEastSpline.bc[0] != BC_NONE && BndEastSpline.bc[0] != BC_PERIODIC){
+      if(CurvedEastBnd){
 	// both spline are curved
 	Cell[ICu][JCl].A = area_CurvedBoundaries(ICu,SOUTH_EAST_SPLINE);
 	Cell[ICu][JCl].Xc = centroid_CurvedBoundaries(ICu,SOUTH_EAST_SPLINE);
@@ -7328,32 +7575,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
     } // endif (South Boundary)
 
     // Check the East boundary
-    if (BndEastSpline.Xp != NULL && BndEastSpline.bc[0] != BC_NONE && BndEastSpline.bc[0] != BC_PERIODIC){
-
-      // Update BndEastSplineInfo[]
-      // Check if memory is allocated for BndEastSplineInfo
-      if(BndEastSplineInfo == NULL){ // allocate array
-	BndEastSplineInfo = new Spline2DInterval_HO [NCj];
-      }
-
-      // Check if the East Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
-      // (i.e The spline pathlength increases from JNl to JNu)
-      if ( BndEastSpline.getS(Node[INu][JNl]) < BndEastSpline.getS(Node[INu][JNu]) ){
-	// Update the geometric information 
-	for(i=JCl; i<=JCu; ++i){
-	  BndEastSplineInfo[i].UpdateInterval(BndEastSpline,Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
-	}
-      } else {
-	// Copy the spline
-	SplineCopy = BndEastSpline;
-	// Change the direction of increasing the pathlength
-	SplineCopy.Reverse_Spline();
-
-	// Update the geometric information 
-	for(i=JCl; i<=JCu; ++i){
-	  BndEastSplineInfo[i].UpdateInterval(SplineCopy,Node[INu][i],Node[INu][i+1],NumGQPsPerSubinterval);
-	}
-      }//endif
+    if (CurvedEastBnd){
 
       // Update the interior east cells
       for(j=JCl+1; j<=JCu-1; ++j){
@@ -7364,32 +7586,7 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
     } // endif (East Boundary)
 
     // Check the West boundary
-    if (BndWestSpline.Xp != NULL && BndWestSpline.bc[0] != BC_NONE && BndWestSpline.bc[0] != BC_PERIODIC){
-
-      // Update BndWestSplineInfo[]
-      // Check if memory is allocated for BndWestSplineInfo
-      if(BndWestSplineInfo == NULL){ // allocate array
-	BndWestSplineInfo = new Spline2DInterval_HO [NCj];
-      }
-
-      // Check if the West Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
-      // (i.e The spline pathlength increases from JNu to JNl)
-      if ( BndWestSpline.getS(Node[INl][JNl]) > BndWestSpline.getS(Node[INl][JNu]) ){
-	// Update the geometric information 
-	for(i=JCl; i<=JCu; ++i){
-	  BndWestSplineInfo[i].UpdateInterval(BndWestSpline,Node[INl][i],Node[INl][i+1],NumGQPsPerSubinterval);
-	}
-      } else {
-	// Copy the spline
-	SplineCopy = BndWestSpline;
-	// Change the direction of increasing the pathlength
-	SplineCopy.Reverse_Spline();
-
-	// Update the geometric information 
-	for(i=JCl; i<=JCu; ++i){
-	  BndWestSplineInfo[i].UpdateInterval(SplineCopy,Node[INl][i],Node[INl][i+1],NumGQPsPerSubinterval);
-	}
-      }//endif
+    if (CurvedWestBnd){
 
       // Update the interior west cells
       for(j=JCl+1; j<=JCu-1; ++j){
@@ -7455,7 +7652,7 @@ void Grid2D_Quad_Block_HO::Update_Ghost_Cells(void) {
     // closed to curved boundaries
 
     // Check the North boundary
-    if (BndNorthSpline.Xp != NULL && BndNorthSpline.bc[0] != BC_NONE && BndNorthSpline.bc[0] != BC_PERIODIC){
+    if (IsNorthBoundaryCurved()){
       // Update the ghost cells
       for(i=ICl+1; i<=ICu-1; ++i){
 	Cell[i][JCu+1].A = area_GhostCell_CurvedBoundaries(i,NORTH_SPLINE);
@@ -7474,7 +7671,7 @@ void Grid2D_Quad_Block_HO::Update_Ghost_Cells(void) {
     } // endif (North Boundary)
 
     // Check the South boundary
-    if (BndSouthSpline.Xp != NULL && BndSouthSpline.bc[0] != BC_NONE && BndSouthSpline.bc[0] != BC_PERIODIC){
+    if (IsSouthBoundaryCurved()){
       // Update the ghost cells
       for(i=ICl+1; i<=ICu-1; ++i){
 	Cell[i][JCl-1].A = area_GhostCell_CurvedBoundaries(i,SOUTH_SPLINE);
@@ -7493,7 +7690,7 @@ void Grid2D_Quad_Block_HO::Update_Ghost_Cells(void) {
     } // endif (South Boundary)
 
     // Check the East boundary
-    if (BndEastSpline.Xp != NULL && BndEastSpline.bc[0] != BC_NONE && BndEastSpline.bc[0] != BC_PERIODIC){
+    if (IsEastBoundaryCurved()){
       // Update the ghost cells
       for(j=JCl+1; j<=JCu-1; ++j){
 	Cell[ICu+1][j].A = area_GhostCell_CurvedBoundaries(j,EAST_SPLINE);
@@ -7512,7 +7709,7 @@ void Grid2D_Quad_Block_HO::Update_Ghost_Cells(void) {
     } // endif (East Boundary)
     
     // Check the West boundary
-    if (BndWestSpline.Xp != NULL && BndWestSpline.bc[0] != BC_NONE && BndWestSpline.bc[0] != BC_PERIODIC){
+    if (IsWestBoundaryCurved()){
       // Update the ghost cells
       for(j=JCl+1; j<=JCu-1; ++j){
 	Cell[ICl-1][j].A = area_GhostCell_CurvedBoundaries(j,WEST_SPLINE);
