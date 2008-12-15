@@ -53,17 +53,49 @@ using namespace std;
 /* Define possible positions for a cell
    in the 2D quadrilateral block. */
 
-#define INTERIOR_CELL                   0
-/* Corner Boundary Cells (i.e. bounded to the specified directions by 2 splines) */
-#define NORTH_WEST_SPLINE               1
-#define NORTH_EAST_SPLINE               2
-#define SOUTH_WEST_SPLINE               3
-#define SOUTH_EAST_SPLINE               4
-/* Boundary Cells (i.e. bounded to the specified direction by 1 spline) */
-#define SOUTH_SPLINE                    5
-#define NORTH_SPLINE                    6
-#define EAST_SPLINE                     7
-#define WEST_SPLINE                     8
+#define INTERIOR_CELL                               0
+/* Boundary Cells (i.e. cells flanked by ONE spline in the specified direction) */
+#define SOUTH_SPLINE                                1
+#define NORTH_SPLINE                                2
+#define EAST_SPLINE                                 3
+#define WEST_SPLINE                                 4
+/* Extension Boundary Cells (i.e. cells flanked by ONE extension spline in the specified direction)
+   RIGHT or LEFT indicates whether the spline is present on the left or right side of the cell,
+   relative to the position of the other nodes. */
+#define EXTEND_W_NORTH_RIGHT_SPLINE                 5
+#define EXTEND_E_NORTH_RIGHT_SPLINE                 6
+#define EXTEND_W_NORTH_LEFT_SPLINE                  7
+#define EXTEND_E_NORTH_LEFT_SPLINE                  8
+#define EXTEND_W_SOUTH_RIGHT_SPLINE                 9
+#define EXTEND_E_SOUTH_RIGHT_SPLINE                 10
+#define EXTEND_W_SOUTH_LEFT_SPLINE                  11
+#define EXTEND_E_SOUTH_LEFT_SPLINE                  12
+#define EXTEND_N_EAST_RIGHT_SPLINE                  13
+#define EXTEND_S_EAST_RIGHT_SPLINE                  14
+#define EXTEND_N_EAST_LEFT_SPLINE                   15
+#define EXTEND_S_EAST_LEFT_SPLINE                   16
+#define EXTEND_N_WEST_RIGHT_SPLINE                  17
+#define EXTEND_S_WEST_RIGHT_SPLINE                  18
+#define EXTEND_N_WEST_LEFT_SPLINE                   19
+#define EXTEND_S_WEST_LEFT_SPLINE                   20
+
+/* Corner Boundary Cells (i.e. cells flanked in the specified directions by TWO splines) */
+#define CORNER_NORTH_WEST_SPLINES                   21
+#define CORNER_NORTH_EAST_SPLINES                   22
+#define CORNER_SOUTH_WEST_SPLINES                   23
+#define CORNER_SOUTH_EAST_SPLINES                   24
+#define CORNER_NORTH_EXTEND_N_WEST_SPLINES          25
+#define CORNER_EXTEND_N_WEST_EXTEND_W_NORTH_SPLINES 26
+#define CORNER_EXTEND_W_NORTH_WEST_SPLINES          27
+#define CORNER_WEST_EXTEND_W_SOUTH_SPLINES          28
+#define CORNER_EXTEND_W_SOUTH_EXTEND_S_WEST_SPLINES 29
+#define CORNER_EXTEND_S_WEST_SOUTH_SPLINES          30
+#define CORNER_SOUTH_EXTEND_S_EAST_SPLINES          31
+#define CORNER_EXTEND_S_EAST_EXTEND_E_SOUTH_SPLINES 32
+#define CORNER_EXTEND_E_SOUTH_EAST_SPLINES          33
+#define CORNER_EAST_EXTEND_E_NORTH_SPLINES          34
+#define CORNER_EXTEND_E_NORTH_EXTEND_N_EAST_SPLINES 35
+#define CORNER_EXTEND_N_EAST_NORTH_SPLINES          36
 
 
 /* Define the high-order quadrilateral 2D grid block class. */

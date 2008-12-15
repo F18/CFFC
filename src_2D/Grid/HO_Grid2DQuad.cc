@@ -5439,7 +5439,7 @@ double Grid2D_Quad_Block_HO::area_CurvedBoundaries(const int &CellIndex, const i
 	      // cell East side
 	      ZeroLineIntegration(Node[CellIndex+1][JCu],Node[CellIndex+1][JNu]) ); 
 
-    case NORTH_WEST_SPLINE:     // Use the North Spline and the West Spline
+    case CORNER_NORTH_WEST_SPLINES:     // Use the North Spline and the West Spline
       return (// cell North side
 	      BndNorthSplineInfo[CellIndex].AreaContribution() +
 	      // cell West side 
@@ -5449,7 +5449,7 @@ double Grid2D_Quad_Block_HO::area_CurvedBoundaries(const int &CellIndex, const i
 	      // cell East side
 	      ZeroLineIntegration(Node[CellIndex+1][JCu],Node[CellIndex+1][JNu]) ); 
 
-    case NORTH_EAST_SPLINE:    // Use the North Spline and the East Spline
+    case CORNER_NORTH_EAST_SPLINES:    // Use the North Spline and the East Spline
       return (// cell North side
 	      BndNorthSplineInfo[CellIndex].AreaContribution() +
 	      // cell West side
@@ -5469,7 +5469,7 @@ double Grid2D_Quad_Block_HO::area_CurvedBoundaries(const int &CellIndex, const i
 	      // cell East side
 	      ZeroLineIntegration(Node[CellIndex+1][JCl  ],Node[CellIndex+1][JCl+1]) ); 
 
-    case SOUTH_WEST_SPLINE:   // Use the South Spline and the West Spline
+    case CORNER_SOUTH_WEST_SPLINES:   // Use the South Spline and the West Spline
       return (// cell North side
 	      ZeroLineIntegration(Node[CellIndex+1][JCl+1],Node[CellIndex  ][JCl+1]) + 
 	      // cell West side
@@ -5479,7 +5479,7 @@ double Grid2D_Quad_Block_HO::area_CurvedBoundaries(const int &CellIndex, const i
 	      // cell East side
 	      ZeroLineIntegration(Node[CellIndex+1][JCl  ],Node[CellIndex+1][JCl+1]) ); 
 
-    case SOUTH_EAST_SPLINE:   // Use the South Spline and the East Spline
+    case CORNER_SOUTH_EAST_SPLINES:   // Use the South Spline and the East Spline
       return ( // cell North side
 	      ZeroLineIntegration(Node[CellIndex+1][JCl+1],Node[CellIndex  ][JCl+1]) +
 	      // cell West side
@@ -5531,7 +5531,7 @@ double Grid2D_Quad_Block_HO::area_CurvedBoundaries(const int &CellIndex, const i
 	      ZeroLineIntegration(Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
 				  Node[CellIndex+1][JNu].x(),Node[CellIndex+1][JNu].y()) ); 
 
-    case NORTH_WEST_SPLINE:     // Use the North Spline and the West Spline
+    case CORNER_NORTH_WEST_SPLINES:     // Use the North Spline and the West Spline
       return (// cell North side
 	      BndNorthSpline.ZeroOrderIntegration(Node[CellIndex+1][JNu], Node[CellIndex  ][JNu], 15) +
 	      // cell West side 
@@ -5543,7 +5543,7 @@ double Grid2D_Quad_Block_HO::area_CurvedBoundaries(const int &CellIndex, const i
 	      ZeroLineIntegration(Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
 				  Node[CellIndex+1][JNu].x(),Node[CellIndex+1][JNu].y()) ); 
 
-    case NORTH_EAST_SPLINE:    // Use the North Spline and the East Spline
+    case CORNER_NORTH_EAST_SPLINES:    // Use the North Spline and the East Spline
       return (// cell North side
 	      BndNorthSpline.ZeroOrderIntegration(Node[CellIndex+1][JNu], Node[CellIndex  ][JNu], 15) + 
 	      // cell West side
@@ -5569,7 +5569,7 @@ double Grid2D_Quad_Block_HO::area_CurvedBoundaries(const int &CellIndex, const i
 	      ZeroLineIntegration(Node[CellIndex+1][JCl  ].x(),Node[CellIndex+1][JCl  ].y(),
 				  Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y()) ); 
 
-    case SOUTH_WEST_SPLINE:   // Use the South Spline and the West Spline
+    case CORNER_SOUTH_WEST_SPLINES:   // Use the South Spline and the West Spline
       return (// cell North side
 	      ZeroLineIntegration(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
 				  Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y()) + 
@@ -5581,7 +5581,7 @@ double Grid2D_Quad_Block_HO::area_CurvedBoundaries(const int &CellIndex, const i
 	      ZeroLineIntegration(Node[CellIndex+1][JCl  ].x(),Node[CellIndex+1][JCl  ].y(),
 				  Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y()) ); 
 
-    case SOUTH_EAST_SPLINE:   // Use the South Spline and the East Spline
+    case CORNER_SOUTH_EAST_SPLINES:   // Use the South Spline and the East Spline
       return ( // cell North side
 	      ZeroLineIntegration(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
 				  Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y()) +
@@ -5627,15 +5627,14 @@ double Grid2D_Quad_Block_HO::area_CurvedBoundaries(const int &CellIndex, const i
 }
 
 /*!
- * Compute the area of a ghost cell that has one  
- * edge treated as high-order geometric boundary.
+ * Compute the area of a ghost cell that has one or two 
+ * edges treated as high-order geometric boundary.
  */
 double Grid2D_Quad_Block_HO::area_GhostCell_CurvedBoundaries(const int &CellIndex, const int &Boundary) const{
 
   // Obs. The sides of the cell that are not curved are treated as line segments and therefore
   //      the line integral is computed exactly based on the Nodes.
   // The edges are considered in counterclockwise order (i.e. right-hand rule applied)
-  // ***! This subroutine is for the first row of ghost cells and therefore only one boundary can be curved at a time
 
   if (Gauss_Quad_Curvilinear_Integration && (!Mixed_Curvilinear_Integration)) {
 
@@ -5681,6 +5680,91 @@ double Grid2D_Quad_Block_HO::area_GhostCell_CurvedBoundaries(const int &CellInde
 	      ZeroLineIntegration(Node[INu  ][CellIndex  ],Node[INu+1][CellIndex  ]) + 
 	      // cell East side
 	      ZeroLineIntegration(Node[INu+1][CellIndex  ],Node[INu+1][CellIndex+1]) ); 
+
+    case EXTEND_W_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to West (right side)
+      return 0.0;
+
+    case EXTEND_E_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to East (right side)
+      return 0.0;
+      
+    case EXTEND_W_NORTH_LEFT_SPLINE: // Use only the extension of North spline to West (left side)
+      return 0.0;
+
+    case EXTEND_E_NORTH_LEFT_SPLINE: // Use only the extension of North spline to East (left side)
+      return 0.0;
+
+    case EXTEND_W_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to West (right side)
+      return 0.0;
+
+    case EXTEND_E_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to East (right side)
+      return 0.0;
+      
+    case EXTEND_W_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to West (left side)
+      return 0.0;
+
+    case EXTEND_E_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to East (left side)
+      return 0.0;
+
+    case EXTEND_N_EAST_RIGHT_SPLINE: // Use only the extension of East spline to North (right side)
+      return 0.0;
+
+    case EXTEND_S_EAST_RIGHT_SPLINE: // Use only the extension of East spline to South (right side)
+      return 0.0;
+
+    case EXTEND_N_EAST_LEFT_SPLINE: // Use only the extension of East spline to North (left side)
+      return 0.0;
+
+    case EXTEND_S_EAST_LEFT_SPLINE: // Use only the extension of East spline to South (left side)
+      return 0.0;
+
+    case EXTEND_N_WEST_RIGHT_SPLINE: // Use only the extension of West spline to North (right side)
+      return 0.0;
+
+    case EXTEND_S_WEST_RIGHT_SPLINE: // Use only the extension of West spline to South (right side)
+      return 0.0;
+
+    case EXTEND_N_WEST_LEFT_SPLINE: // Use only the extension of West spline to North (left side)
+      return 0.0;
+
+    case EXTEND_S_WEST_LEFT_SPLINE: // Use only the extension of West spline to South (left side)
+      return 0.0;
+
+    case CORNER_NORTH_EXTEND_N_WEST_SPLINES: // Use the North spline and the extension of West spline to North
+      return 0.0;
+
+    case CORNER_EXTEND_N_WEST_EXTEND_W_NORTH_SPLINES: // Use the North extension of West and the West extension of North
+      return 0.0;
+
+    case CORNER_EXTEND_W_NORTH_WEST_SPLINES: // Use the West extension of North and the West spline
+      return 0.0;
+
+    case CORNER_WEST_EXTEND_W_SOUTH_SPLINES: // Use the West spline and the West extension of South
+      return 0.0;
+
+    case CORNER_EXTEND_W_SOUTH_EXTEND_S_WEST_SPLINES: // Use the West extension of South and the South extension of West
+      return 0.0;
+
+    case CORNER_EXTEND_S_WEST_SOUTH_SPLINES: // Use the South extension of West and the South spline
+      return 0.0;
+
+    case CORNER_SOUTH_EXTEND_S_EAST_SPLINES: // Use the South spline and the South extension of East
+      return 0.0;
+
+    case CORNER_EXTEND_S_EAST_EXTEND_E_SOUTH_SPLINES: // Use the South extension of East and the East extension of South
+      return 0.0;
+
+    case CORNER_EXTEND_E_SOUTH_EAST_SPLINES: // Use the East extension of South and the East spline
+      return 0.0;
+
+    case CORNER_EAST_EXTEND_E_NORTH_SPLINES: // Use the East spline and the East extension of North
+      return 0.0;
+
+    case CORNER_EXTEND_E_NORTH_EXTEND_N_EAST_SPLINES: // Use the East extention of North and North extension of East
+      return 0.0;
+
+    case CORNER_EXTEND_N_EAST_NORTH_SPLINES: // Use the North extension of East and the North spline
+      return 0.0;
+
     default:
       return 0.0;
     } // endswitch
@@ -5741,6 +5825,91 @@ double Grid2D_Quad_Block_HO::area_GhostCell_CurvedBoundaries(const int &CellInde
 	      // cell East side
 	      ZeroLineIntegration(Node[INu+1][CellIndex  ].x(),Node[INu+1][CellIndex  ].y(),
 				  Node[INu+1][CellIndex+1].x(),Node[INu+1][CellIndex+1].y()) ); 
+
+    case EXTEND_W_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to West (right side)
+      return 0.0;
+
+    case EXTEND_E_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to East (right side)
+      return 0.0;
+      
+    case EXTEND_W_NORTH_LEFT_SPLINE: // Use only the extension of North spline to West (left side)
+      return 0.0;
+
+    case EXTEND_E_NORTH_LEFT_SPLINE: // Use only the extension of North spline to East (left side)
+      return 0.0;
+
+    case EXTEND_W_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to West (right side)
+      return 0.0;
+
+    case EXTEND_E_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to East (right side)
+      return 0.0;
+      
+    case EXTEND_W_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to West (left side)
+      return 0.0;
+
+    case EXTEND_E_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to East (left side)
+      return 0.0;
+
+    case EXTEND_N_EAST_RIGHT_SPLINE: // Use only the extension of East spline to North (right side)
+      return 0.0;
+
+    case EXTEND_S_EAST_RIGHT_SPLINE: // Use only the extension of East spline to South (right side)
+      return 0.0;
+
+    case EXTEND_N_EAST_LEFT_SPLINE: // Use only the extension of East spline to North (left side)
+      return 0.0;
+
+    case EXTEND_S_EAST_LEFT_SPLINE: // Use only the extension of East spline to South (left side)
+      return 0.0;
+
+    case EXTEND_N_WEST_RIGHT_SPLINE: // Use only the extension of West spline to North (right side)
+      return 0.0;
+
+    case EXTEND_S_WEST_RIGHT_SPLINE: // Use only the extension of West spline to South (right side)
+      return 0.0;
+
+    case EXTEND_N_WEST_LEFT_SPLINE: // Use only the extension of West spline to North (left side)
+      return 0.0;
+
+    case EXTEND_S_WEST_LEFT_SPLINE: // Use only the extension of West spline to South (left side)
+      return 0.0;
+
+    case CORNER_NORTH_EXTEND_N_WEST_SPLINES: // Use the North spline and the extension of West spline to North
+      return 0.0;
+
+    case CORNER_EXTEND_N_WEST_EXTEND_W_NORTH_SPLINES: // Use the North extension of West and the West extension of North
+      return 0.0;
+
+    case CORNER_EXTEND_W_NORTH_WEST_SPLINES: // Use the West extension of North and the West spline
+      return 0.0;
+
+    case CORNER_WEST_EXTEND_W_SOUTH_SPLINES: // Use the West spline and the West extension of South
+      return 0.0;
+
+    case CORNER_EXTEND_W_SOUTH_EXTEND_S_WEST_SPLINES: // Use the West extension of South and the South extension of West
+      return 0.0;
+
+    case CORNER_EXTEND_S_WEST_SOUTH_SPLINES: // Use the South extension of West and the South spline
+      return 0.0;
+
+    case CORNER_SOUTH_EXTEND_S_EAST_SPLINES: // Use the South spline and the South extension of East
+      return 0.0;
+
+    case CORNER_EXTEND_S_EAST_EXTEND_E_SOUTH_SPLINES: // Use the South extension of East and the East extension of South
+      return 0.0;
+
+    case CORNER_EXTEND_E_SOUTH_EAST_SPLINES: // Use the East extension of South and the East spline
+      return 0.0;
+
+    case CORNER_EAST_EXTEND_E_NORTH_SPLINES: // Use the East spline and the East extension of North
+      return 0.0;
+
+    case CORNER_EXTEND_E_NORTH_EXTEND_N_EAST_SPLINES: // Use the East extention of North and North extension of East
+      return 0.0;
+
+    case CORNER_EXTEND_N_EAST_NORTH_SPLINES: // Use the North extension of East and the North spline
+      return 0.0;
+
     default:
       return 0.0;
     } // endswitch
@@ -5793,7 +5962,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, c
 					       Node[CellIndex+1][JNu].x(),Node[CellIndex+1][JNu].y(),
 					       0.0, 0.0, 0, 1)) ) /Cell[CellIndex][JCu].A;    
 
-    case NORTH_WEST_SPLINE:     // Use the North Spline and the West Spline
+    case CORNER_NORTH_WEST_SPLINES:     // Use the North Spline and the West Spline
       return Vector2D( (// cell North side
 			BndNorthSplineInfo[CellIndex].XCentroidContribution() +
 			// cell West side
@@ -5819,7 +5988,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, c
 						Node[CellIndex+1][JNu].x(),Node[CellIndex+1][JNu].y(),
 						0.0, 0.0, 0, 1) ) ) /Cell[ICl][JCu].A;        
 
-    case NORTH_EAST_SPLINE:    // Use the North Spline and the East Spline
+    case CORNER_NORTH_EAST_SPLINES:    // Use the North Spline and the East Spline
       return Vector2D( (// cell North side
 			BndNorthSplineInfo[CellIndex].XCentroidContribution() +
 			// cell West side
@@ -5875,7 +6044,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, c
 						Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
 						0.0, 0.0, 0, 1) )) /Cell[CellIndex][JCl].A; 
 
-    case SOUTH_WEST_SPLINE:   // Use the South Spline and the West Spline
+    case CORNER_SOUTH_WEST_SPLINES:   // Use the South Spline and the West Spline
       return Vector2D( (// cell North side
 			PolynomLineIntegration2(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
 						Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
@@ -5901,7 +6070,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, c
 						Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
 						0.0, 0.0, 0, 1) )) /Cell[ICl][JCl].A; 
 
-    case SOUTH_EAST_SPLINE:   // Use the South Spline and the East Spline
+    case CORNER_SOUTH_EAST_SPLINES:   // Use the South Spline and the East Spline
       return Vector2D( (// cell North side
 			PolynomLineIntegration2(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
 						Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
@@ -6029,7 +6198,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, c
 					       0.0, 0.0, 0, 1)) ) /Cell[CellIndex][JCu].A;    
     
 
-    case NORTH_WEST_SPLINE:     // Use the North Spline and the West Spline
+    case CORNER_NORTH_WEST_SPLINES:     // Use the North Spline and the West Spline
       return Vector2D( (// cell North side
 			BndNorthSpline.PolynomOrderIntegration(Node[CellIndex+1][JNu], Node[CellIndex  ][JNu],
 							       Vector2D(0.0,0.0),15,1,0) +       
@@ -6059,7 +6228,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, c
 						Node[CellIndex+1][JNu].x(),Node[CellIndex+1][JNu].y(),
 						0.0, 0.0, 0, 1) ) ) /Cell[ICl][JCu].A;        
 
-    case NORTH_EAST_SPLINE:    // Use the North Spline and the East Spline
+    case CORNER_NORTH_EAST_SPLINES:    // Use the North Spline and the East Spline
       return Vector2D( (// cell North side
 			BndNorthSpline.PolynomOrderIntegration(Node[CellIndex+1][JNu], Node[CellIndex  ][JNu],
 							       Vector2D(0.0,0.0),15,1,0) +                 
@@ -6120,7 +6289,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, c
 						Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
 						0.0, 0.0, 0, 1) )) /Cell[CellIndex][JCl].A; 
 
-    case SOUTH_WEST_SPLINE:   // Use the South Spline and the West Spline
+    case CORNER_SOUTH_WEST_SPLINES:   // Use the South Spline and the West Spline
       return Vector2D( (// cell North side
 			PolynomLineIntegration2(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
 						Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
@@ -6150,7 +6319,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, c
 						Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
 						0.0, 0.0, 0, 1) )) /Cell[ICl][JCl].A; 
 
-    case SOUTH_EAST_SPLINE:   // Use the South Spline and the East Spline
+    case CORNER_SOUTH_EAST_SPLINES:   // Use the South Spline and the East Spline
       return Vector2D( (// cell North side
 			PolynomLineIntegration2(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
 						Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
@@ -6357,6 +6526,90 @@ Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &Ce
 						Node[INu+1][CellIndex+1].x(),Node[INu+1][CellIndex+1].y(),
 						0.0, 0.0, 0, 1) )) /Cell[ICu+1][CellIndex].A; // cell East side & Division by A
 
+    case EXTEND_W_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to West (right side)
+      return 0.0;
+
+    case EXTEND_E_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to East (right side)
+      return 0.0;
+      
+    case EXTEND_W_NORTH_LEFT_SPLINE: // Use only the extension of North spline to West (left side)
+      return 0.0;
+
+    case EXTEND_E_NORTH_LEFT_SPLINE: // Use only the extension of North spline to East (left side)
+      return 0.0;
+
+    case EXTEND_W_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to West (right side)
+      return 0.0;
+
+    case EXTEND_E_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to East (right side)
+      return 0.0;
+      
+    case EXTEND_W_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to West (left side)
+      return 0.0;
+
+    case EXTEND_E_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to East (left side)
+      return 0.0;
+
+    case EXTEND_N_EAST_RIGHT_SPLINE: // Use only the extension of East spline to North (right side)
+      return 0.0;
+
+    case EXTEND_S_EAST_RIGHT_SPLINE: // Use only the extension of East spline to South (right side)
+      return 0.0;
+
+    case EXTEND_N_EAST_LEFT_SPLINE: // Use only the extension of East spline to North (left side)
+      return 0.0;
+
+    case EXTEND_S_EAST_LEFT_SPLINE: // Use only the extension of East spline to South (left side)
+      return 0.0;
+
+    case EXTEND_N_WEST_RIGHT_SPLINE: // Use only the extension of West spline to North (right side)
+      return 0.0;
+
+    case EXTEND_S_WEST_RIGHT_SPLINE: // Use only the extension of West spline to South (right side)
+      return 0.0;
+
+    case EXTEND_N_WEST_LEFT_SPLINE: // Use only the extension of West spline to North (left side)
+      return 0.0;
+
+    case EXTEND_S_WEST_LEFT_SPLINE: // Use only the extension of West spline to South (left side)
+      return 0.0;
+
+    case CORNER_NORTH_EXTEND_N_WEST_SPLINES: // Use the North spline and the extension of West spline to North
+      return 0.0;
+
+    case CORNER_EXTEND_N_WEST_EXTEND_W_NORTH_SPLINES: // Use the North extension of West and the West extension of North
+      return 0.0;
+
+    case CORNER_EXTEND_W_NORTH_WEST_SPLINES: // Use the West extension of North and the West spline
+      return 0.0;
+
+    case CORNER_WEST_EXTEND_W_SOUTH_SPLINES: // Use the West spline and the West extension of South
+      return 0.0;
+
+    case CORNER_EXTEND_W_SOUTH_EXTEND_S_WEST_SPLINES: // Use the West extension of South and the South extension of West
+      return 0.0;
+
+    case CORNER_EXTEND_S_WEST_SOUTH_SPLINES: // Use the South extension of West and the South spline
+      return 0.0;
+
+    case CORNER_SOUTH_EXTEND_S_EAST_SPLINES: // Use the South spline and the South extension of East
+      return 0.0;
+
+    case CORNER_EXTEND_S_EAST_EXTEND_E_SOUTH_SPLINES: // Use the South extension of East and the East extension of South
+      return 0.0;
+
+    case CORNER_EXTEND_E_SOUTH_EAST_SPLINES: // Use the East extension of South and the East spline
+      return 0.0;
+
+    case CORNER_EAST_EXTEND_E_NORTH_SPLINES: // Use the East spline and the East extension of North
+      return 0.0;
+
+    case CORNER_EXTEND_E_NORTH_EXTEND_N_EAST_SPLINES: // Use the East extention of North and North extension of East
+      return 0.0;
+
+    case CORNER_EXTEND_N_EAST_NORTH_SPLINES: // Use the North extension of East and the North spline
+      return 0.0;
+
     default:
       return 0.0;
     } // endswitch
@@ -6463,6 +6716,90 @@ Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &Ce
 			PolynomLineIntegration2(Node[INu+1][CellIndex  ].x(),Node[INu+1][CellIndex  ].y(),
 						Node[INu+1][CellIndex+1].x(),Node[INu+1][CellIndex+1].y(),
 						0.0, 0.0, 0, 1) )) /Cell[ICu+1][CellIndex].A; // cell East side & Division by A
+
+    case EXTEND_W_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to West (right side)
+      return 0.0;
+
+    case EXTEND_E_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to East (right side)
+      return 0.0;
+      
+    case EXTEND_W_NORTH_LEFT_SPLINE: // Use only the extension of North spline to West (left side)
+      return 0.0;
+
+    case EXTEND_E_NORTH_LEFT_SPLINE: // Use only the extension of North spline to East (left side)
+      return 0.0;
+
+    case EXTEND_W_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to West (right side)
+      return 0.0;
+
+    case EXTEND_E_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to East (right side)
+      return 0.0;
+      
+    case EXTEND_W_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to West (left side)
+      return 0.0;
+
+    case EXTEND_E_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to East (left side)
+      return 0.0;
+
+    case EXTEND_N_EAST_RIGHT_SPLINE: // Use only the extension of East spline to North (right side)
+      return 0.0;
+
+    case EXTEND_S_EAST_RIGHT_SPLINE: // Use only the extension of East spline to South (right side)
+      return 0.0;
+
+    case EXTEND_N_EAST_LEFT_SPLINE: // Use only the extension of East spline to North (left side)
+      return 0.0;
+
+    case EXTEND_S_EAST_LEFT_SPLINE: // Use only the extension of East spline to South (left side)
+      return 0.0;
+
+    case EXTEND_N_WEST_RIGHT_SPLINE: // Use only the extension of West spline to North (right side)
+      return 0.0;
+
+    case EXTEND_S_WEST_RIGHT_SPLINE: // Use only the extension of West spline to South (right side)
+      return 0.0;
+
+    case EXTEND_N_WEST_LEFT_SPLINE: // Use only the extension of West spline to North (left side)
+      return 0.0;
+
+    case EXTEND_S_WEST_LEFT_SPLINE: // Use only the extension of West spline to South (left side)
+      return 0.0;
+
+    case CORNER_NORTH_EXTEND_N_WEST_SPLINES: // Use the North spline and the extension of West spline to North
+      return 0.0;
+
+    case CORNER_EXTEND_N_WEST_EXTEND_W_NORTH_SPLINES: // Use the North extension of West and the West extension of North
+      return 0.0;
+
+    case CORNER_EXTEND_W_NORTH_WEST_SPLINES: // Use the West extension of North and the West spline
+      return 0.0;
+
+    case CORNER_WEST_EXTEND_W_SOUTH_SPLINES: // Use the West spline and the West extension of South
+      return 0.0;
+
+    case CORNER_EXTEND_W_SOUTH_EXTEND_S_WEST_SPLINES: // Use the West extension of South and the South extension of West
+      return 0.0;
+
+    case CORNER_EXTEND_S_WEST_SOUTH_SPLINES: // Use the South extension of West and the South spline
+      return 0.0;
+
+    case CORNER_SOUTH_EXTEND_S_EAST_SPLINES: // Use the South spline and the South extension of East
+      return 0.0;
+
+    case CORNER_EXTEND_S_EAST_EXTEND_E_SOUTH_SPLINES: // Use the South extension of East and the East extension of South
+      return 0.0;
+
+    case CORNER_EXTEND_E_SOUTH_EAST_SPLINES: // Use the East extension of South and the East spline
+      return 0.0;
+
+    case CORNER_EAST_EXTEND_E_NORTH_SPLINES: // Use the East spline and the East extension of North
+      return 0.0;
+
+    case CORNER_EXTEND_E_NORTH_EXTEND_N_EAST_SPLINES: // Use the East extention of North and North extension of East
+      return 0.0;
+
+    case CORNER_EXTEND_N_EAST_NORTH_SPLINES: // Use the North extension of East and the North spline
+      return 0.0;
 
     default:
       return 0.0;
@@ -6812,7 +7149,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellInd
 	       /(OrderX+1)/Cell[CellIndexI][JCu].A);  // Division by (OrderX+1) & Division by A
     
     
-    case NORTH_WEST_SPLINE:     // Use the North Spline and the West Spline
+    case CORNER_NORTH_WEST_SPLINES:     // Use the North Spline and the West Spline
       return ( (BndNorthSplineInfo[CellIndexI].IntegratePolynomialTerm(Cell[ICl][JCu].Xc,
 								       OrderX, OrderY) +                       // cell North side
 		BndWestSplineInfo[JCu].IntegratePolynomialTerm(Cell[ICl][JCu].Xc, 
@@ -6826,7 +7163,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellInd
 	       /(OrderX+1)/Cell[ICl][JCu].A);        // Division by (OrderX+1) & Division by A
       
     
-    case NORTH_EAST_SPLINE:    // Use the North Spline and the East Spline
+    case CORNER_NORTH_EAST_SPLINES:    // Use the North Spline and the East Spline
       return ( (BndNorthSplineInfo[CellIndexI].IntegratePolynomialTerm(Cell[ICu][JCu].Xc, 
 								       OrderX, OrderY) +                        // cell North side
 		PolynomLineIntegration2(Node[CellIndexI  ][JNu].x(),Node[CellIndexI  ][JNu].y(),
@@ -6853,7 +7190,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellInd
 					Cell[CellIndexI][JCl].Xc.x,Cell[CellIndexI][JCl].Xc.y, OrderX, OrderY) )   // cell East side
 	       /(OrderX+1)/Cell[CellIndexI][JCl].A);        // Division by (OrderX+1) & Division by A 
 
-    case SOUTH_WEST_SPLINE:   // Use the South Spline and the West Spline
+    case CORNER_SOUTH_WEST_SPLINES:   // Use the South Spline and the West Spline
       return ( (PolynomLineIntegration2(Node[CellIndexI+1][JCl+1].x(),Node[CellIndexI+1][JCl+1].y(),
 					Node[CellIndexI  ][JCl+1].x(),Node[CellIndexI  ][JCl+1].y(),
 					Cell[ICl][JCl].Xc.x,Cell[ICl][JCl].Xc.y, OrderX, OrderY) +               // cell North side
@@ -6866,7 +7203,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellInd
 					Cell[ICl][JCl].Xc.x,Cell[ICl][JCl].Xc.y, OrderX, OrderY) )               // cell East side
 	       /(OrderX+1)/Cell[ICl][JCl].A);        // Division by (OrderX+1) & Division by A
       
-    case SOUTH_EAST_SPLINE:   // Use the South Spline and the East Spline
+    case CORNER_SOUTH_EAST_SPLINES:   // Use the South Spline and the East Spline
       return ( (PolynomLineIntegration2(Node[CellIndexI+1][JCl+1].x(),Node[CellIndexI+1][JCl+1].y(),
 					Node[CellIndexI  ][JCl+1].x(),Node[CellIndexI  ][JCl+1].y(),
 					Cell[ICu][JCl].Xc.x,Cell[ICu][JCl].Xc.y, OrderX, OrderY) +               // cell North side
@@ -6932,7 +7269,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellInd
 	       /(OrderX+1)/Cell[CellIndexI][JCu].A);  // Division by (OrderX+1) & Division by A
     
     
-    case NORTH_WEST_SPLINE:     // Use the North Spline and the West Spline
+    case CORNER_NORTH_WEST_SPLINES:     // Use the North Spline and the West Spline
       return ( (BndNorthSpline.PolynomOrderIntegration(Node[CellIndexI+1][JNu], Node[CellIndexI  ][JNu],
 						       Cell[ICl][JCu].Xc, 15, OrderX, OrderY) +                 // cell North side
 		BndWestSpline.PolynomOrderIntegration(Node[CellIndexI ][JNu], Node[CellIndexI  ][JCu],
@@ -6946,7 +7283,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellInd
 	       /(OrderX+1)/Cell[ICl][JCu].A);        // Division by (OrderX+1) & Division by A
     
     
-    case NORTH_EAST_SPLINE:    // Use the North Spline and the East Spline
+    case CORNER_NORTH_EAST_SPLINES:    // Use the North Spline and the East Spline
       return ( (BndNorthSpline.PolynomOrderIntegration(Node[CellIndexI+1][JNu], Node[CellIndexI  ][JNu],
 						       Cell[ICu][JCu].Xc, 15, OrderX, OrderY) +            // cell North side
 		PolynomLineIntegration2(Node[CellIndexI  ][JNu].x(),Node[CellIndexI  ][JNu].y(),
@@ -6973,7 +7310,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellInd
 					Cell[CellIndexI][JCl].Xc.x,Cell[CellIndexI][JCl].Xc.y, OrderX, OrderY) )   // cell East side
 	       /(OrderX+1)/Cell[CellIndexI][JCl].A);        // Division by (OrderX+1) & Division by A 
 
-    case SOUTH_WEST_SPLINE:   // Use the South Spline and the West Spline
+    case CORNER_SOUTH_WEST_SPLINES:   // Use the South Spline and the West Spline
       return ( (PolynomLineIntegration2(Node[CellIndexI+1][JCl+1].x(),Node[CellIndexI+1][JCl+1].y(),
 					Node[CellIndexI  ][JCl+1].x(),Node[CellIndexI  ][JCl+1].y(),
 					Cell[ICl][JCl].Xc.x,Cell[ICl][JCl].Xc.y, OrderX, OrderY) +               // cell North side
@@ -6986,7 +7323,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellInd
 					Cell[ICl][JCl].Xc.x,Cell[ICl][JCl].Xc.y, OrderX, OrderY) )               // cell East side
 	       /(OrderX+1)/Cell[ICl][JCl].A);        // Division by (OrderX+1) & Division by A
 
-    case SOUTH_EAST_SPLINE:   // Use the South Spline and the East Spline
+    case CORNER_SOUTH_EAST_SPLINES:   // Use the South Spline and the East Spline
       return ( (PolynomLineIntegration2(Node[CellIndexI+1][JCl+1].x(),Node[CellIndexI+1][JCl+1].y(),
 					Node[CellIndexI  ][JCl+1].x(),Node[CellIndexI  ][JCl+1].y(),
 					Cell[ICu][JCl].Xc.x,Cell[ICu][JCl].Xc.y, OrderX, OrderY) +               // cell North side
@@ -7131,6 +7468,90 @@ double Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries(const in
 					Cell[ICu+1][CellIndexJ].Xc.x,Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) ) 
 	       /(OrderX+1)/Cell[ICu+1][CellIndexJ].A);        // Division by (OrderX+1) & Division by A
 
+    case EXTEND_W_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to West (right side)
+      return 0.0;
+
+    case EXTEND_E_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to East (right side)
+      return 0.0;
+      
+    case EXTEND_W_NORTH_LEFT_SPLINE: // Use only the extension of North spline to West (left side)
+      return 0.0;
+
+    case EXTEND_E_NORTH_LEFT_SPLINE: // Use only the extension of North spline to East (left side)
+      return 0.0;
+
+    case EXTEND_W_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to West (right side)
+      return 0.0;
+
+    case EXTEND_E_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to East (right side)
+      return 0.0;
+      
+    case EXTEND_W_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to West (left side)
+      return 0.0;
+
+    case EXTEND_E_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to East (left side)
+      return 0.0;
+
+    case EXTEND_N_EAST_RIGHT_SPLINE: // Use only the extension of East spline to North (right side)
+      return 0.0;
+
+    case EXTEND_S_EAST_RIGHT_SPLINE: // Use only the extension of East spline to South (right side)
+      return 0.0;
+
+    case EXTEND_N_EAST_LEFT_SPLINE: // Use only the extension of East spline to North (left side)
+      return 0.0;
+
+    case EXTEND_S_EAST_LEFT_SPLINE: // Use only the extension of East spline to South (left side)
+      return 0.0;
+
+    case EXTEND_N_WEST_RIGHT_SPLINE: // Use only the extension of West spline to North (right side)
+      return 0.0;
+
+    case EXTEND_S_WEST_RIGHT_SPLINE: // Use only the extension of West spline to South (right side)
+      return 0.0;
+
+    case EXTEND_N_WEST_LEFT_SPLINE: // Use only the extension of West spline to North (left side)
+      return 0.0;
+
+    case EXTEND_S_WEST_LEFT_SPLINE: // Use only the extension of West spline to South (left side)
+      return 0.0;
+
+    case CORNER_NORTH_EXTEND_N_WEST_SPLINES: // Use the North spline and the extension of West spline to North
+      return 0.0;
+
+    case CORNER_EXTEND_N_WEST_EXTEND_W_NORTH_SPLINES: // Use the North extension of West and the West extension of North
+      return 0.0;
+
+    case CORNER_EXTEND_W_NORTH_WEST_SPLINES: // Use the West extension of North and the West spline
+      return 0.0;
+
+    case CORNER_WEST_EXTEND_W_SOUTH_SPLINES: // Use the West spline and the West extension of South
+      return 0.0;
+
+    case CORNER_EXTEND_W_SOUTH_EXTEND_S_WEST_SPLINES: // Use the West extension of South and the South extension of West
+      return 0.0;
+
+    case CORNER_EXTEND_S_WEST_SOUTH_SPLINES: // Use the South extension of West and the South spline
+      return 0.0;
+
+    case CORNER_SOUTH_EXTEND_S_EAST_SPLINES: // Use the South spline and the South extension of East
+      return 0.0;
+
+    case CORNER_EXTEND_S_EAST_EXTEND_E_SOUTH_SPLINES: // Use the South extension of East and the East extension of South
+      return 0.0;
+
+    case CORNER_EXTEND_E_SOUTH_EAST_SPLINES: // Use the East extension of South and the East spline
+      return 0.0;
+
+    case CORNER_EAST_EXTEND_E_NORTH_SPLINES: // Use the East spline and the East extension of North
+      return 0.0;
+
+    case CORNER_EXTEND_E_NORTH_EXTEND_N_EAST_SPLINES: // Use the East extention of North and North extension of East
+      return 0.0;
+
+    case CORNER_EXTEND_N_EAST_NORTH_SPLINES: // Use the North extension of East and the North spline
+      return 0.0;
+
     default:
       return 0.0;
     } // endswitch
@@ -7212,6 +7633,90 @@ double Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries(const in
 					Node[INu+1][CellIndexJ+1].x(),Node[INu+1][CellIndexJ+1].y(),
 					Cell[ICu+1][CellIndexJ].Xc.x,Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) ) 
 	       /(OrderX+1)/Cell[ICu+1][CellIndexJ].A);        // Division by (OrderX+1) & Division by A
+
+    case EXTEND_W_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to West (right side)
+      return 0.0;
+
+    case EXTEND_E_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to East (right side)
+      return 0.0;
+      
+    case EXTEND_W_NORTH_LEFT_SPLINE: // Use only the extension of North spline to West (left side)
+      return 0.0;
+
+    case EXTEND_E_NORTH_LEFT_SPLINE: // Use only the extension of North spline to East (left side)
+      return 0.0;
+
+    case EXTEND_W_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to West (right side)
+      return 0.0;
+
+    case EXTEND_E_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to East (right side)
+      return 0.0;
+      
+    case EXTEND_W_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to West (left side)
+      return 0.0;
+
+    case EXTEND_E_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to East (left side)
+      return 0.0;
+
+    case EXTEND_N_EAST_RIGHT_SPLINE: // Use only the extension of East spline to North (right side)
+      return 0.0;
+
+    case EXTEND_S_EAST_RIGHT_SPLINE: // Use only the extension of East spline to South (right side)
+      return 0.0;
+
+    case EXTEND_N_EAST_LEFT_SPLINE: // Use only the extension of East spline to North (left side)
+      return 0.0;
+
+    case EXTEND_S_EAST_LEFT_SPLINE: // Use only the extension of East spline to South (left side)
+      return 0.0;
+
+    case EXTEND_N_WEST_RIGHT_SPLINE: // Use only the extension of West spline to North (right side)
+      return 0.0;
+
+    case EXTEND_S_WEST_RIGHT_SPLINE: // Use only the extension of West spline to South (right side)
+      return 0.0;
+
+    case EXTEND_N_WEST_LEFT_SPLINE: // Use only the extension of West spline to North (left side)
+      return 0.0;
+
+    case EXTEND_S_WEST_LEFT_SPLINE: // Use only the extension of West spline to South (left side)
+      return 0.0;
+
+    case CORNER_NORTH_EXTEND_N_WEST_SPLINES: // Use the North spline and the extension of West spline to North
+      return 0.0;
+
+    case CORNER_EXTEND_N_WEST_EXTEND_W_NORTH_SPLINES: // Use the North extension of West and the West extension of North
+      return 0.0;
+
+    case CORNER_EXTEND_W_NORTH_WEST_SPLINES: // Use the West extension of North and the West spline
+      return 0.0;
+
+    case CORNER_WEST_EXTEND_W_SOUTH_SPLINES: // Use the West spline and the West extension of South
+      return 0.0;
+
+    case CORNER_EXTEND_W_SOUTH_EXTEND_S_WEST_SPLINES: // Use the West extension of South and the South extension of West
+      return 0.0;
+
+    case CORNER_EXTEND_S_WEST_SOUTH_SPLINES: // Use the South extension of West and the South spline
+      return 0.0;
+
+    case CORNER_SOUTH_EXTEND_S_EAST_SPLINES: // Use the South spline and the South extension of East
+      return 0.0;
+
+    case CORNER_EXTEND_S_EAST_EXTEND_E_SOUTH_SPLINES: // Use the South extension of East and the East extension of South
+      return 0.0;
+
+    case CORNER_EXTEND_E_SOUTH_EAST_SPLINES: // Use the East extension of South and the East spline
+      return 0.0;
+
+    case CORNER_EAST_EXTEND_E_NORTH_SPLINES: // Use the East spline and the East extension of North
+      return 0.0;
+
+    case CORNER_EXTEND_E_NORTH_EXTEND_N_EAST_SPLINES: // Use the East extention of North and North extension of East
+      return 0.0;
+
+    case CORNER_EXTEND_N_EAST_NORTH_SPLINES: // Use the North extension of East and the North spline
+      return 0.0;
 
     default:
       return 0.0;
@@ -7333,9 +7838,9 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
       // Check the North-West Corner
       if(CurvedWestBnd){
 	// both splines are curved
-	Cell[ICl][JCu].A = area_CurvedBoundaries(ICl,NORTH_WEST_SPLINE);
-	Cell[ICl][JCu].Xc = centroid_CurvedBoundaries(ICl,NORTH_WEST_SPLINE);
-	ComputeGeometricCoefficients_CurvedBoundaries(ICl,JCu,NORTH_WEST_SPLINE);
+	Cell[ICl][JCu].A = area_CurvedBoundaries(ICl,CORNER_NORTH_WEST_SPLINES);
+	Cell[ICl][JCu].Xc = centroid_CurvedBoundaries(ICl,CORNER_NORTH_WEST_SPLINES);
+	ComputeGeometricCoefficients_CurvedBoundaries(ICl,JCu,CORNER_NORTH_WEST_SPLINES);
       } else {
 	Cell[ICl][JCu].A = area_CurvedBoundaries(ICl,NORTH_SPLINE);
 	Cell[ICl][JCu].Xc = centroid_CurvedBoundaries(ICl,NORTH_SPLINE);
@@ -7345,9 +7850,9 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
       // Check the North-East Corner
       if (CurvedEastBnd){
 	// both spline are curved
-	Cell[ICu][JCu].A = area_CurvedBoundaries(ICu,NORTH_EAST_SPLINE);
-	Cell[ICu][JCu].Xc = centroid_CurvedBoundaries(ICu,NORTH_EAST_SPLINE);
-	ComputeGeometricCoefficients_CurvedBoundaries(ICu,JCu,NORTH_EAST_SPLINE);
+	Cell[ICu][JCu].A = area_CurvedBoundaries(ICu,CORNER_NORTH_EAST_SPLINES);
+	Cell[ICu][JCu].Xc = centroid_CurvedBoundaries(ICu,CORNER_NORTH_EAST_SPLINES);
+	ComputeGeometricCoefficients_CurvedBoundaries(ICu,JCu,CORNER_NORTH_EAST_SPLINES);
       } else {
 	Cell[ICu][JCu].A = area_CurvedBoundaries(ICu,NORTH_SPLINE);
 	Cell[ICu][JCu].Xc = centroid_CurvedBoundaries(ICu,NORTH_SPLINE);
@@ -7382,9 +7887,9 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
       // Check the South-West Corner
       if(CurvedWestBnd){
 	// both splines are curved
-	Cell[ICl][JCl].A = area_CurvedBoundaries(ICl,SOUTH_WEST_SPLINE);
-	Cell[ICl][JCl].Xc = centroid_CurvedBoundaries(ICl,SOUTH_WEST_SPLINE);
-	ComputeGeometricCoefficients_CurvedBoundaries(ICl,JCl,SOUTH_WEST_SPLINE);
+	Cell[ICl][JCl].A = area_CurvedBoundaries(ICl,CORNER_SOUTH_WEST_SPLINES);
+	Cell[ICl][JCl].Xc = centroid_CurvedBoundaries(ICl,CORNER_SOUTH_WEST_SPLINES);
+	ComputeGeometricCoefficients_CurvedBoundaries(ICl,JCl,CORNER_SOUTH_WEST_SPLINES);
       } else {
 	Cell[ICl][JCl].A = area_CurvedBoundaries(ICl,SOUTH_SPLINE);
 	Cell[ICl][JCl].Xc = centroid_CurvedBoundaries(ICl,SOUTH_SPLINE);
@@ -7394,9 +7899,9 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
       // Check the South-East Corner
       if(CurvedEastBnd){
 	// both spline are curved
-	Cell[ICu][JCl].A = area_CurvedBoundaries(ICu,SOUTH_EAST_SPLINE);
-	Cell[ICu][JCl].Xc = centroid_CurvedBoundaries(ICu,SOUTH_EAST_SPLINE);
-	ComputeGeometricCoefficients_CurvedBoundaries(ICu,JCl,SOUTH_EAST_SPLINE);
+	Cell[ICu][JCl].A = area_CurvedBoundaries(ICu,CORNER_SOUTH_EAST_SPLINES);
+	Cell[ICu][JCl].Xc = centroid_CurvedBoundaries(ICu,CORNER_SOUTH_EAST_SPLINES);
+	ComputeGeometricCoefficients_CurvedBoundaries(ICu,JCl,CORNER_SOUTH_EAST_SPLINES);
       } else {
 	Cell[ICu][JCl].A = area_CurvedBoundaries(ICu,SOUTH_SPLINE);
 	Cell[ICu][JCl].Xc = centroid_CurvedBoundaries(ICu,SOUTH_SPLINE);
@@ -7517,9 +8022,9 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
       // Check the North-West Corner
       if(CurvedWestBnd){
 	// both splines are curved
-	Cell[ICl][JCu].A = area_CurvedBoundaries(ICl,NORTH_WEST_SPLINE);
-	Cell[ICl][JCu].Xc = centroid_CurvedBoundaries(ICl,NORTH_WEST_SPLINE);
-	ComputeGeometricCoefficients_CurvedBoundaries(ICl,JCu,NORTH_WEST_SPLINE);
+	Cell[ICl][JCu].A = area_CurvedBoundaries(ICl,CORNER_NORTH_WEST_SPLINES);
+	Cell[ICl][JCu].Xc = centroid_CurvedBoundaries(ICl,CORNER_NORTH_WEST_SPLINES);
+	ComputeGeometricCoefficients_CurvedBoundaries(ICl,JCu,CORNER_NORTH_WEST_SPLINES);
       } else {
 	Cell[ICl][JCu].A = area_CurvedBoundaries(ICl,NORTH_SPLINE);
 	Cell[ICl][JCu].Xc = centroid_CurvedBoundaries(ICl,NORTH_SPLINE);
@@ -7529,9 +8034,9 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
       // Check the North-East Corner
       if (CurvedEastBnd){
 	// both spline are curved
-	Cell[ICu][JCu].A = area_CurvedBoundaries(ICu,NORTH_EAST_SPLINE);
-	Cell[ICu][JCu].Xc = centroid_CurvedBoundaries(ICu,NORTH_EAST_SPLINE);
-	ComputeGeometricCoefficients_CurvedBoundaries(ICu,JCu,NORTH_EAST_SPLINE);
+	Cell[ICu][JCu].A = area_CurvedBoundaries(ICu,CORNER_NORTH_EAST_SPLINES);
+	Cell[ICu][JCu].Xc = centroid_CurvedBoundaries(ICu,CORNER_NORTH_EAST_SPLINES);
+	ComputeGeometricCoefficients_CurvedBoundaries(ICu,JCu,CORNER_NORTH_EAST_SPLINES);
       } else {
 	Cell[ICu][JCu].A = area_CurvedBoundaries(ICu,NORTH_SPLINE);
 	Cell[ICu][JCu].Xc = centroid_CurvedBoundaries(ICu,NORTH_SPLINE);
@@ -7552,9 +8057,9 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
       // Check the South-West Corner
       if(CurvedWestBnd){
 	// both splines are curved
-	Cell[ICl][JCl].A = area_CurvedBoundaries(ICl,SOUTH_WEST_SPLINE);
-	Cell[ICl][JCl].Xc = centroid_CurvedBoundaries(ICl,SOUTH_WEST_SPLINE);
-	ComputeGeometricCoefficients_CurvedBoundaries(ICl,JCl,SOUTH_WEST_SPLINE);
+	Cell[ICl][JCl].A = area_CurvedBoundaries(ICl,CORNER_SOUTH_WEST_SPLINES);
+	Cell[ICl][JCl].Xc = centroid_CurvedBoundaries(ICl,CORNER_SOUTH_WEST_SPLINES);
+	ComputeGeometricCoefficients_CurvedBoundaries(ICl,JCl,CORNER_SOUTH_WEST_SPLINES);
       } else {
 	Cell[ICl][JCl].A = area_CurvedBoundaries(ICl,SOUTH_SPLINE);
 	Cell[ICl][JCl].Xc = centroid_CurvedBoundaries(ICl,SOUTH_SPLINE);
@@ -7564,9 +8069,9 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
       // Check the South-East Corner
       if(CurvedEastBnd){
 	// both spline are curved
-	Cell[ICu][JCl].A = area_CurvedBoundaries(ICu,SOUTH_EAST_SPLINE);
-	Cell[ICu][JCl].Xc = centroid_CurvedBoundaries(ICu,SOUTH_EAST_SPLINE);
-	ComputeGeometricCoefficients_CurvedBoundaries(ICu,JCl,SOUTH_EAST_SPLINE);
+	Cell[ICu][JCl].A = area_CurvedBoundaries(ICu,CORNER_SOUTH_EAST_SPLINES);
+	Cell[ICu][JCl].Xc = centroid_CurvedBoundaries(ICu,CORNER_SOUTH_EAST_SPLINES);
+	ComputeGeometricCoefficients_CurvedBoundaries(ICu,JCl,CORNER_SOUTH_EAST_SPLINES);
       } else {
 	Cell[ICu][JCl].A = area_CurvedBoundaries(ICu,SOUTH_SPLINE);
 	Cell[ICu][JCl].Xc = centroid_CurvedBoundaries(ICu,SOUTH_SPLINE);
