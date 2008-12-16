@@ -1485,6 +1485,15 @@ double PolynomLineIntegration2(const double & N1x, const double & N1y,
 			       const double & xCC, const double & yCC,
 			       const int &OrderX, const int &OrderY);
 
+// PolynomLineIntegration2() for Node input
+template <class Node>
+inline double PolynomLineIntegration2(const Node& StartNode, const Node& EndNode,
+				      const double & xCC, const double & yCC,
+				      const int &OrderX, const int &OrderY){
+  return PolynomLineIntegration2(StartNode.x(), StartNode.y(), EndNode.x(), EndNode.y(),
+				 xCC, yCC, OrderX, OrderY);
+}
+
 /***********************************************************************//**
  * Compute the integral \f$ I = \int (x - xc)^{(OrderX+1)} * (y - yc)^OrderY dy \f$
  * along a segment line in a local coordinate system (LCS).

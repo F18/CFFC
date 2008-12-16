@@ -226,20 +226,20 @@ namespace tut
 	ostmClear();
 
 
+	// === Check area
+	ostm() << "Area, cell (" << iCell << "," << jCell << "), " << BaseMsg << "\n"; 
+	ensure_distance(ostm().str(), 
+			CheckedBlock.Grid.CellArea(iCell,jCell),
+			MasterBlock.Grid.CellArea(iMast,jMast),
+			AcceptedError(MasterBlock.Grid.CellArea(iMast,jMast),Tolerance));
+	ostmClear();
+
 	// === Check centroids
 	ostm() << "Centroid, cell (" << iCell << "," << jCell << "), " << BaseMsg << "\n"; 
 	ensure_distance(ostm().str(), 
 			CheckedBlock.Grid.CellCentroid(iCell,jCell),
 			MasterBlock.Grid.CellCentroid(iMast,jMast),
 			AcceptedError(MasterBlock.Grid.CellCentroid(iMast,jMast),Tolerance));
-	ostmClear();
-
-	// === Check centroids
-	ostm() << "Area, cell (" << iCell << "," << jCell << "), " << BaseMsg << "\n"; 
-	ensure_distance(ostm().str(), 
-			CheckedBlock.Grid.CellArea(iCell,jCell),
-			MasterBlock.Grid.CellArea(iMast,jMast),
-			AcceptedError(MasterBlock.Grid.CellArea(iMast,jMast),Tolerance));
 	ostmClear();
 
 	// === Check geometric moments
