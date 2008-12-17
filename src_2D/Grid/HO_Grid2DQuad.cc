@@ -8623,82 +8623,306 @@ double Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries(const in
 	       /(OrderX+1)/Cell[ICu+1][CellIndexJ].A);        // Division by (OrderX+1) & Division by A
 
     case EXTEND_W_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to West (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_W_NORTH_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		ExtendWest_BndNorthSplineInfo[CellIndexI].IntegratePolynomialTerm(Cell[CellIndexI][JCu].Xc,
+										  OrderX, OrderY) +
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNu  ],
+					Node[CellIndexI  ][JNu-1],
+					Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) + 
+		// cell South side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNu-1],
+					Node[CellIndexI+1][JNu-1],
+					Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) +
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNu-1],
+					Node[CellIndexI+1][JNu  ],
+					Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCu].A);        // Division by (OrderX+1) & Division by A
 
     case EXTEND_E_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to East (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_E_NORTH_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNu+1],
+					Node[CellIndexI  ][JNu+1],
+					Cell[CellIndexI][JCu+1].Xc.x, Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNu+1],
+					Node[CellIndexI  ][JNu  ],
+					Cell[CellIndexI][JCu+1].Xc.x, Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) -   
+		// cell South side
+		ExtendEast_BndNorthSplineInfo[CellIndexI-(ICu+1)].IntegratePolynomialTerm(Cell[CellIndexI][JCu+1].Xc,
+											  OrderX, OrderY) +      
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNu  ],
+					Node[CellIndexI+1][JNu+1],
+					Cell[CellIndexI][JCu+1].Xc.x, Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCu+1].A);  // Division by (OrderX+1) & Division by A
 
       
     case EXTEND_W_NORTH_LEFT_SPLINE: // Use only the extension of North spline to West (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_W_NORTH_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNu+1],
+					Node[CellIndexI  ][JNu+1],
+					Cell[CellIndexI][JCu+1].Xc.x,Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNu+1],
+					Node[CellIndexI  ][JNu  ],
+					Cell[CellIndexI][JCu+1].Xc.x,Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) -   
+		// cell South side
+		ExtendWest_BndNorthSplineInfo[CellIndexI].IntegratePolynomialTerm(Cell[CellIndexI][JCu+1].Xc,
+										  OrderX, OrderY) +      
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNu  ],
+					Node[CellIndexI+1][JNu+1],
+					Cell[CellIndexI][JCu+1].Xc.x,Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCu+1].A);        // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_E_NORTH_LEFT_SPLINE: // Use only the extension of North spline to East (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_E_NORTH_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		ExtendEast_BndNorthSplineInfo[CellIndexI-(ICu+1)].IntegratePolynomialTerm(Cell[CellIndexI][JCu].Xc,
+											  OrderX, OrderY) +
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNu  ],
+					Node[CellIndexI  ][JNu-1],
+					Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) +   
+		// cell South side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNu-1],
+					Node[CellIndexI+1][JNu-1],
+					Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNu-1],
+					Node[CellIndexI+1][JNu  ],
+					Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCu].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_W_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to West (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_W_SOUTH_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		-ExtendWest_BndSouthSplineInfo[CellIndexI].IntegratePolynomialTerm(Cell[CellIndexI][JCl-1].Xc,
+										   OrderX, OrderY) +
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNl  ],
+					Node[CellIndexI  ][JNl-1],
+					Cell[CellIndexI][JCl-1].Xc.x, Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) +   
+		// cell South side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNl-1],
+					Node[CellIndexI+1][JNl-1],
+					Cell[CellIndexI][JCl-1].Xc.x, Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNl-1],
+					Node[CellIndexI+1][JNl  ],
+					Cell[CellIndexI][JCl-1].Xc.x, Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCl-1].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_E_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to East (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_E_SOUTH_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNl+1],
+					Node[CellIndexI  ][JNl+1],
+					Cell[CellIndexI][JCl].Xc.x,Cell[CellIndexI][JCl].Xc.y,OrderX,OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNl+1],
+					Node[CellIndexI  ][JNl  ],
+					Cell[CellIndexI][JCl].Xc.x,Cell[CellIndexI][JCl].Xc.y,OrderX,OrderY) +   
+		// cell South side
+		ExtendEast_BndSouthSplineInfo[CellIndexI-(ICu+1)].IntegratePolynomialTerm(Cell[CellIndexI][JCl].Xc,
+											  OrderX,OrderY) +
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNl  ],
+					Node[CellIndexI+1][JNl+1],
+					Cell[CellIndexI][JCl].Xc.x,Cell[CellIndexI][JCl].Xc.y,OrderX,OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCl].A);  // Division by (OrderX+1) & Division by A
 
       
     case EXTEND_W_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to West (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_W_SOUTH_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNl+1],
+					Node[CellIndexI  ][JNl+1],
+					Cell[CellIndexI][JCl].Xc.x, Cell[CellIndexI][JCl].Xc.y, OrderX, OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNl+1],
+					Node[CellIndexI  ][JNl  ],
+					Cell[CellIndexI][JCl].Xc.x, Cell[CellIndexI][JCl].Xc.y, OrderX, OrderY) +
+		// cell South side
+		ExtendWest_BndSouthSplineInfo[CellIndexI].IntegratePolynomialTerm(Cell[CellIndexI][JCl].Xc,
+										  OrderX, OrderY) +      
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNl  ],
+					Node[CellIndexI+1][JNl+1],
+					Cell[CellIndexI][JCl].Xc.x, Cell[CellIndexI][JCl].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCl].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_E_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to East (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_E_SOUTH_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		-ExtendEast_BndSouthSplineInfo[CellIndexI-(ICu+1)].IntegratePolynomialTerm(Cell[CellIndexI][JCl-1].Xc,
+											   OrderX,OrderY) +
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNl  ],
+					Node[CellIndexI  ][JNl-1],
+					Cell[CellIndexI][JCl-1].Xc.x, Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) +   
+		// cell South side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNl-1],
+					Node[CellIndexI+1][JNl-1],
+					Cell[CellIndexI][JCl-1].Xc.x, Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNl-1],
+					Node[CellIndexI+1][JNl  ],
+					Cell[CellIndexI][JCl-1].Xc.x, Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCl-1].A);  // Division by (OrderX+1) & Division by A	       
 
 
     case EXTEND_N_EAST_RIGHT_SPLINE: // Use only the extension of East spline to North (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_N_EAST_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INu  ][CellIndexJ+1],
+					Node[INu-1][CellIndexJ+1],
+					Cell[ICu][CellIndexJ].Xc.x, Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[INu-1][CellIndexJ+1],
+					Node[INu-1][CellIndexJ  ],
+					Cell[ICu][CellIndexJ].Xc.x, Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell South side
+		PolynomLineIntegration2(Node[INu-1][CellIndexJ  ],
+					Node[INu  ][CellIndexJ  ],
+					Cell[ICu][CellIndexJ].Xc.x, Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		ExtendNorth_BndEastSplineInfo[CellIndexJ-(JCu+1)].IntegratePolynomialTerm(Cell[ICu][CellIndexJ].Xc,
+											  OrderX, OrderY) ) 
+	       /(OrderX+1)/Cell[ICu][CellIndexJ].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_S_EAST_RIGHT_SPLINE: // Use only the extension of East spline to South (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_S_EAST_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INu+1][CellIndexJ+1],
+					Node[INu  ][CellIndexJ+1],
+					Cell[ICu+1][CellIndexJ].Xc.x, Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) -
+		// cell West side
+		ExtendSouth_BndEastSplineInfo[CellIndexJ].IntegratePolynomialTerm(Cell[ICu+1][CellIndexJ].Xc,
+										  OrderX, OrderY) + 
+		// cell South side
+		PolynomLineIntegration2(Node[INu  ][CellIndexJ  ],
+					Node[INu+1][CellIndexJ  ],
+					Cell[ICu+1][CellIndexJ].Xc.x, Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		PolynomLineIntegration2(Node[INu+1][CellIndexJ  ],
+					Node[INu+1][CellIndexJ+1],
+					Cell[ICu+1][CellIndexJ].Xc.x, Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[ICu+1][CellIndexJ].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_N_EAST_LEFT_SPLINE: // Use only the extension of East spline to North (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_N_EAST_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INu+1][CellIndexJ+1],
+					Node[INu  ][CellIndexJ+1],
+					Cell[ICu+1][CellIndexJ].Xc.x, Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) -
+		// cell West side
+		ExtendNorth_BndEastSplineInfo[CellIndexJ-(JCu+1)].IntegratePolynomialTerm(Cell[ICu+1][CellIndexJ].Xc,
+											  OrderX, OrderY) + 
+		// cell South side
+		PolynomLineIntegration2(Node[INu  ][CellIndexJ  ],
+					Node[INu+1][CellIndexJ  ],
+					Cell[ICu+1][CellIndexJ].Xc.x, Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		PolynomLineIntegration2(Node[INu+1][CellIndexJ  ],
+					Node[INu+1][CellIndexJ+1],
+					Cell[ICu+1][CellIndexJ].Xc.x, Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) ) 
+	       /(OrderX+1)/Cell[ICu+1][CellIndexJ].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_S_EAST_LEFT_SPLINE: // Use only the extension of East spline to South (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_S_EAST_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INu  ][CellIndexJ+1],
+					Node[INu-1][CellIndexJ+1],
+					Cell[ICu][CellIndexJ].Xc.x, Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[INu-1][CellIndexJ+1],
+					Node[INu-1][CellIndexJ  ],
+					Cell[ICu][CellIndexJ].Xc.x, Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell South side
+		PolynomLineIntegration2(Node[INu-1][CellIndexJ  ],
+					Node[INu  ][CellIndexJ  ],
+					Cell[ICu][CellIndexJ].Xc.x, Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		ExtendSouth_BndEastSplineInfo[CellIndexJ].IntegratePolynomialTerm(Cell[ICu][CellIndexJ].Xc,
+										  OrderX, OrderY) )
+	       /(OrderX+1)/Cell[ICu][CellIndexJ].A);  // Division by (OrderX+1) & Division by A 
 
 
     case EXTEND_N_WEST_RIGHT_SPLINE: // Use only the extension of West spline to North (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_N_WEST_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INl  ][CellIndexJ+1],
+					Node[INl-1][CellIndexJ+1],
+					Cell[ICl-1][CellIndexJ].Xc.x, Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[INl-1][CellIndexJ+1],
+					Node[INl-1][CellIndexJ  ],
+					Cell[ICl-1][CellIndexJ].Xc.x, Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell South side
+		PolynomLineIntegration2(Node[INl-1][CellIndexJ  ],
+					Node[INl  ][CellIndexJ  ],
+					Cell[ICl-1][CellIndexJ].Xc.x, Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) - 
+		// cell East side
+		ExtendNorth_BndWestSplineInfo[CellIndexJ-(JCu+1)].IntegratePolynomialTerm(Cell[ICl-1][CellIndexJ].Xc,
+											  OrderX, OrderY) )
+	       /(OrderX+1)/Cell[ICl-1][CellIndexJ].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_S_WEST_RIGHT_SPLINE: // Use only the extension of West spline to South (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_S_WEST_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INl+1][CellIndexJ+1],
+					Node[INl  ][CellIndexJ+1],
+					Cell[ICl][CellIndexJ].Xc.x, Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell West side
+		ExtendSouth_BndWestSplineInfo[CellIndexJ].IntegratePolynomialTerm(Cell[ICl][CellIndexJ].Xc,
+										  OrderX, OrderY) + 
+		// cell South side
+		PolynomLineIntegration2(Node[INl  ][CellIndexJ  ],
+					Node[INl+1][CellIndexJ  ],
+					Cell[ICl][CellIndexJ].Xc.x, Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		PolynomLineIntegration2(Node[INl+1][CellIndexJ  ],
+					Node[INl+1][CellIndexJ+1],
+					Cell[ICl][CellIndexJ].Xc.x, Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[ICl][CellIndexJ].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_N_WEST_LEFT_SPLINE: // Use only the extension of West spline to North (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_N_WEST_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INl+1][CellIndexJ+1],
+					Node[INl  ][CellIndexJ+1],
+					Cell[ICl][CellIndexJ].Xc.x, Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell West side
+		ExtendNorth_BndWestSplineInfo[CellIndexJ-(JCu+1)].IntegratePolynomialTerm(Cell[ICl][CellIndexJ].Xc,
+											  OrderX, OrderY) + 
+		// cell South side
+		PolynomLineIntegration2(Node[INl  ][CellIndexJ  ],
+					Node[INl+1][CellIndexJ  ],
+					Cell[ICl][CellIndexJ].Xc.x, Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		PolynomLineIntegration2(Node[INl+1][CellIndexJ  ],
+					Node[INl+1][CellIndexJ+1],
+					Cell[ICl][CellIndexJ].Xc.x, Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[ICl][CellIndexJ].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_S_WEST_LEFT_SPLINE: // Use only the extension of West spline to South (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_S_WEST_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INl  ][CellIndexJ+1],
+					Node[INl-1][CellIndexJ+1],
+					Cell[ICl-1][CellIndexJ].Xc.x, Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[INl-1][CellIndexJ+1],
+					Node[INl-1][CellIndexJ  ],
+					Cell[ICl-1][CellIndexJ].Xc.x, Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell South side
+		PolynomLineIntegration2(Node[INl-1][CellIndexJ  ],
+					Node[INl  ][CellIndexJ  ],
+					Cell[ICl-1][CellIndexJ].Xc.x, Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) - 
+		// cell East side
+		ExtendSouth_BndWestSplineInfo[CellIndexJ].IntegratePolynomialTerm(Cell[ICl-1][CellIndexJ].Xc,
+										  OrderX, OrderY) )
+	       /(OrderX+1)/Cell[ICl-1][CellIndexJ].A);  // Division by (OrderX+1) & Division by A	       
 
 
     case CORNER_NORTH_EXTEND_N_WEST_SPLINES: // Use the North spline and the extension of West spline to North
@@ -8844,83 +9068,307 @@ double Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries(const in
 	       /(OrderX+1)/Cell[ICu+1][CellIndexJ].A);        // Division by (OrderX+1) & Division by A
 
     case EXTEND_W_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to West (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_W_NORTH_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		ExtendWest_BndNorthSpline.PolynomOrderIntegration(Node[CellIndexI+1][JNu  ],Node[CellIndexI  ][JNu  ],
+								  Cell[CellIndexI][JCu].Xc, 15, OrderX, OrderY) +
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNu  ],
+					Node[CellIndexI  ][JNu-1],
+					Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) + 
+		// cell South side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNu-1],
+					Node[CellIndexI+1][JNu-1],
+					Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) +
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNu-1],
+					Node[CellIndexI+1][JNu  ],
+					Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCu].A);        // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_E_NORTH_RIGHT_SPLINE: // Use only the extension of North spline to East (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_E_NORTH_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNu+1],
+					Node[CellIndexI  ][JNu+1],
+					Cell[CellIndexI][JCu+1].Xc.x, Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNu+1],
+					Node[CellIndexI  ][JNu  ],
+					Cell[CellIndexI][JCu+1].Xc.x, Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) +   
+		// cell South side
+		ExtendEast_BndNorthSpline.PolynomOrderIntegration(Node[CellIndexI  ][JNu  ],Node[CellIndexI+1][JNu  ],
+								  Cell[CellIndexI][JCu+1].Xc, 15, OrderX, OrderY) +      
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNu  ],
+					Node[CellIndexI+1][JNu+1],
+					Cell[CellIndexI][JCu+1].Xc.x, Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCu+1].A);  // Division by (OrderX+1) & Division by A
 
       
     case EXTEND_W_NORTH_LEFT_SPLINE: // Use only the extension of North spline to West (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_W_NORTH_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNu+1],
+					Node[CellIndexI  ][JNu+1],
+					Cell[CellIndexI][JCu+1].Xc.x,Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNu+1],
+					Node[CellIndexI  ][JNu  ],
+					Cell[CellIndexI][JCu+1].Xc.x,Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) +   
+		// cell South side
+		ExtendWest_BndNorthSpline.PolynomOrderIntegration(Node[CellIndexI  ][JNu  ],Node[CellIndexI+1][JNu  ],
+								  Cell[CellIndexI][JCu+1].Xc, 15, OrderX, OrderY) +      
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNu  ],
+					Node[CellIndexI+1][JNu+1],
+					Cell[CellIndexI][JCu+1].Xc.x,Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCu+1].A);        // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_E_NORTH_LEFT_SPLINE: // Use only the extension of North spline to East (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_E_NORTH_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		ExtendEast_BndNorthSpline.PolynomOrderIntegration(Node[CellIndexI+1][JNu  ], Node[CellIndexI  ][JNu  ],
+								  Cell[CellIndexI][JCu].Xc, 15, OrderX, OrderY) +
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNu  ],
+					Node[CellIndexI  ][JNu-1],
+					Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) +   
+		// cell South side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNu-1],
+					Node[CellIndexI+1][JNu-1],
+					Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNu-1],
+					Node[CellIndexI+1][JNu  ],
+					Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCu].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_W_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to West (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_W_SOUTH_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		ExtendWest_BndSouthSpline.PolynomOrderIntegration(Node[CellIndexI+1][JNl  ], Node[CellIndexI  ][JNl  ],
+								  Cell[CellIndexI][JCl-1].Xc, 15, OrderX, OrderY) +
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNl  ],
+					Node[CellIndexI  ][JNl-1],
+					Cell[CellIndexI][JCl-1].Xc.x, Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) +   
+		// cell South side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNl-1],
+					Node[CellIndexI+1][JNl-1],
+					Cell[CellIndexI][JCl-1].Xc.x, Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNl-1],
+					Node[CellIndexI+1][JNl  ],
+					Cell[CellIndexI][JCl-1].Xc.x, Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCl-1].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_E_SOUTH_RIGHT_SPLINE: // Use only the extension of South spline to East (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_E_SOUTH_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNl+1],
+					Node[CellIndexI  ][JNl+1],
+					Cell[CellIndexI][JCl].Xc.x,Cell[CellIndexI][JCl].Xc.y,OrderX,OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNl+1],
+					Node[CellIndexI  ][JNl  ],
+					Cell[CellIndexI][JCl].Xc.x,Cell[CellIndexI][JCl].Xc.y,OrderX,OrderY) +   
+		// cell South side
+		ExtendEast_BndSouthSpline.PolynomOrderIntegration(Node[CellIndexI  ][JNl  ], Node[CellIndexI+1][JNl  ],
+								  Cell[CellIndexI][JCl].Xc, 15, OrderX,OrderY) +
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNl  ],
+					Node[CellIndexI+1][JNl+1],
+					Cell[CellIndexI][JCl].Xc.x,Cell[CellIndexI][JCl].Xc.y,OrderX,OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCl].A);  // Division by (OrderX+1) & Division by A
 
       
     case EXTEND_W_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to West (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_W_SOUTH_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNl+1],
+					Node[CellIndexI  ][JNl+1],
+					Cell[CellIndexI][JCl].Xc.x, Cell[CellIndexI][JCl].Xc.y, OrderX, OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNl+1],
+					Node[CellIndexI  ][JNl  ],
+					Cell[CellIndexI][JCl].Xc.x, Cell[CellIndexI][JCl].Xc.y, OrderX, OrderY) +
+		// cell South side
+		ExtendWest_BndSouthSpline.PolynomOrderIntegration(Node[CellIndexI  ][JNl  ], Node[CellIndexI+1][JNl  ],
+								  Cell[CellIndexI][JCl].Xc, 15, OrderX, OrderY) +      
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNl  ],
+					Node[CellIndexI+1][JNl+1],
+					Cell[CellIndexI][JCl].Xc.x, Cell[CellIndexI][JCl].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCl].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_E_SOUTH_LEFT_SPLINE: // Use only the extension of South spline to East (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_E_SOUTH_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		ExtendEast_BndSouthSpline.PolynomOrderIntegration(Node[CellIndexI+1][JNl  ], Node[CellIndexI  ][JNl  ],
+								  Cell[CellIndexI][JCl-1].Xc, 15, OrderX,OrderY) +
+		// cell West side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNl  ],
+					Node[CellIndexI  ][JNl-1],
+					Cell[CellIndexI][JCl-1].Xc.x, Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) +   
+		// cell South side
+		PolynomLineIntegration2(Node[CellIndexI  ][JNl-1],
+					Node[CellIndexI+1][JNl-1],
+					Cell[CellIndexI][JCl-1].Xc.x, Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		PolynomLineIntegration2(Node[CellIndexI+1][JNl-1],
+					Node[CellIndexI+1][JNl  ],
+					Cell[CellIndexI][JCl-1].Xc.x, Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[CellIndexI][JCl-1].A);  // Division by (OrderX+1) & Division by A	       
 
 
     case EXTEND_N_EAST_RIGHT_SPLINE: // Use only the extension of East spline to North (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_N_EAST_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INu  ][CellIndexJ+1],
+					Node[INu-1][CellIndexJ+1],
+					Cell[ICu][CellIndexJ].Xc.x, Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[INu-1][CellIndexJ+1],
+					Node[INu-1][CellIndexJ  ],
+					Cell[ICu][CellIndexJ].Xc.x, Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell South side
+		PolynomLineIntegration2(Node[INu-1][CellIndexJ  ],
+					Node[INu  ][CellIndexJ  ],
+					Cell[ICu][CellIndexJ].Xc.x, Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		ExtendNorth_BndEastSpline.PolynomOrderIntegration(Node[INu  ][CellIndexJ  ], Node[INu  ][CellIndexJ+1],
+								  Cell[ICu][CellIndexJ].Xc, 15, OrderX, OrderY) ) 
+	       /(OrderX+1)/Cell[ICu][CellIndexJ].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_S_EAST_RIGHT_SPLINE: // Use only the extension of East spline to South (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_S_EAST_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INu+1][CellIndexJ+1],
+					Node[INu  ][CellIndexJ+1],
+					Cell[ICu+1][CellIndexJ].Xc.x, Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell West side
+		ExtendSouth_BndEastSpline.PolynomOrderIntegration(Node[INu  ][CellIndexJ+1], Node[INu  ][CellIndexJ  ],
+								  Cell[ICu+1][CellIndexJ].Xc, 15, OrderX, OrderY) + 
+		// cell South side
+		PolynomLineIntegration2(Node[INu  ][CellIndexJ  ],
+					Node[INu+1][CellIndexJ  ],
+					Cell[ICu+1][CellIndexJ].Xc.x, Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		PolynomLineIntegration2(Node[INu+1][CellIndexJ  ],
+					Node[INu+1][CellIndexJ+1],
+					Cell[ICu+1][CellIndexJ].Xc.x, Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[ICu+1][CellIndexJ].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_N_EAST_LEFT_SPLINE: // Use only the extension of East spline to North (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_N_EAST_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INu+1][CellIndexJ+1],
+					Node[INu  ][CellIndexJ+1],
+					Cell[ICu+1][CellIndexJ].Xc.x, Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell West side
+		ExtendNorth_BndEastSpline.PolynomOrderIntegration(Node[INu  ][CellIndexJ+1], Node[INu  ][CellIndexJ  ],
+								  Cell[ICu+1][CellIndexJ].Xc, 15, OrderX, OrderY) + 
+		// cell South side
+		PolynomLineIntegration2(Node[INu  ][CellIndexJ  ],
+					Node[INu+1][CellIndexJ  ],
+					Cell[ICu+1][CellIndexJ].Xc.x, Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		PolynomLineIntegration2(Node[INu+1][CellIndexJ  ],
+					Node[INu+1][CellIndexJ+1],
+					Cell[ICu+1][CellIndexJ].Xc.x, Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) ) 
+	       /(OrderX+1)/Cell[ICu+1][CellIndexJ].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_S_EAST_LEFT_SPLINE: // Use only the extension of East spline to South (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_S_EAST_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INu  ][CellIndexJ+1],
+					Node[INu-1][CellIndexJ+1],
+					Cell[ICu][CellIndexJ].Xc.x, Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[INu-1][CellIndexJ+1],
+					Node[INu-1][CellIndexJ  ],
+					Cell[ICu][CellIndexJ].Xc.x, Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell South side
+		PolynomLineIntegration2(Node[INu-1][CellIndexJ  ],
+					Node[INu  ][CellIndexJ  ],
+					Cell[ICu][CellIndexJ].Xc.x, Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		ExtendSouth_BndEastSpline.PolynomOrderIntegration(Node[INu  ][CellIndexJ  ], Node[INu  ][CellIndexJ+1],
+								  Cell[ICu][CellIndexJ].Xc, 15, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[ICu][CellIndexJ].A);  // Division by (OrderX+1) & Division by A 
 
 
     case EXTEND_N_WEST_RIGHT_SPLINE: // Use only the extension of West spline to North (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_N_WEST_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INl  ][CellIndexJ+1],
+					Node[INl-1][CellIndexJ+1],
+					Cell[ICl-1][CellIndexJ].Xc.x, Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[INl-1][CellIndexJ+1],
+					Node[INl-1][CellIndexJ  ],
+					Cell[ICl-1][CellIndexJ].Xc.x, Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell South side
+		PolynomLineIntegration2(Node[INl-1][CellIndexJ  ],
+					Node[INl  ][CellIndexJ  ],
+					Cell[ICl-1][CellIndexJ].Xc.x, Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell East side
+		ExtendNorth_BndWestSpline.PolynomOrderIntegration(Node[INl  ][CellIndexJ  ], Node[INl  ][CellIndexJ+1],
+								  Cell[ICl-1][CellIndexJ].Xc, 15, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[ICl-1][CellIndexJ].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_S_WEST_RIGHT_SPLINE: // Use only the extension of West spline to South (right side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_S_WEST_RIGHT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INl+1][CellIndexJ+1],
+					Node[INl  ][CellIndexJ+1],
+					Cell[ICl][CellIndexJ].Xc.x, Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell West side
+		ExtendSouth_BndWestSpline.PolynomOrderIntegration(Node[INl  ][CellIndexJ+1], Node[INl  ][CellIndexJ  ],
+								  Cell[ICl][CellIndexJ].Xc, 15, OrderX, OrderY) + 
+		// cell South side
+		PolynomLineIntegration2(Node[INl  ][CellIndexJ  ],
+					Node[INl+1][CellIndexJ  ],
+					Cell[ICl][CellIndexJ].Xc.x, Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		PolynomLineIntegration2(Node[INl+1][CellIndexJ  ],
+					Node[INl+1][CellIndexJ+1],
+					Cell[ICl][CellIndexJ].Xc.x, Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[ICl][CellIndexJ].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_N_WEST_LEFT_SPLINE: // Use only the extension of West spline to North (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_N_WEST_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INl+1][CellIndexJ+1],
+					Node[INl  ][CellIndexJ+1],
+					Cell[ICl][CellIndexJ].Xc.x, Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell West side
+		ExtendNorth_BndWestSpline.PolynomOrderIntegration(Node[INl  ][CellIndexJ+1], Node[INl  ][CellIndexJ  ],
+								  Cell[ICl][CellIndexJ].Xc, 15, OrderX, OrderY) + 
+		// cell South side
+		PolynomLineIntegration2(Node[INl  ][CellIndexJ  ],
+					Node[INl+1][CellIndexJ  ],
+					Cell[ICl][CellIndexJ].Xc.x, Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell East side
+		PolynomLineIntegration2(Node[INl+1][CellIndexJ  ],
+					Node[INl+1][CellIndexJ+1],
+					Cell[ICl][CellIndexJ].Xc.x, Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[ICl][CellIndexJ].A);  // Division by (OrderX+1) & Division by A
 
 
     case EXTEND_S_WEST_LEFT_SPLINE: // Use only the extension of West spline to South (left side)
-      throw runtime_error("Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries() ERROR! Case EXTEND_S_WEST_LEFT_SPLINE has not been encountered so far. Code and test this case!");
-      return 0.0;
+      return ( (// cell North side
+		PolynomLineIntegration2(Node[INl  ][CellIndexJ+1],
+					Node[INl-1][CellIndexJ+1],
+					Cell[ICl-1][CellIndexJ].Xc.x, Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+		// cell West side
+		PolynomLineIntegration2(Node[INl-1][CellIndexJ+1],
+					Node[INl-1][CellIndexJ  ],
+					Cell[ICl-1][CellIndexJ].Xc.x, Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell South side
+		PolynomLineIntegration2(Node[INl-1][CellIndexJ  ],
+					Node[INl  ][CellIndexJ  ],
+					Cell[ICl-1][CellIndexJ].Xc.x, Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) +
+		// cell East side
+		ExtendSouth_BndWestSpline.PolynomOrderIntegration(Node[INl  ][CellIndexJ  ], Node[INl  ][CellIndexJ+1],
+								  Cell[ICl-1][CellIndexJ].Xc, 15, OrderX, OrderY) )
+	       /(OrderX+1)/Cell[ICl-1][CellIndexJ].A);  // Division by (OrderX+1) & Division by A	       
 
 
     case CORNER_NORTH_EXTEND_N_WEST_SPLINES: // Use the North spline and the extension of West spline to North
