@@ -234,6 +234,7 @@ namespace tut
 			AcceptedError(MasterBlock.Grid.CellArea(iMast,jMast),Tolerance));
 	ostmClear();
 
+
 	// === Check centroids
 	ostm() << "Centroid, cell (" << iCell << "," << jCell << "), " << BaseMsg << "\n"; 
 	ensure_distance(ostm().str(), 
@@ -251,7 +252,7 @@ namespace tut
 			  AcceptedError(MasterBlock.Grid.CellGeomCoeffValue(iMast,jMast,GMom),Tolerance));
 	  ostmClear();
 	}
-	
+
       }
     }
   }
@@ -647,7 +648,7 @@ namespace tut
   void Euler2D_Quad_Block_object::test<5>()
   {
 
-    set_test_name("Consistent geometric properties check for mesh refinement");
+    set_test_name("Consistent geometric properties check for mesh refinement. Contour integration with mixed elements.");
 
     set_local_input_path("QuadBlockData");
     set_local_output_path("QuadBlockData");
@@ -667,6 +668,7 @@ namespace tut
     HighOrder2D_Input::Set_Final_Parameters(IP);
     CENO_Execution_Mode::CENO_SPEED_EFFICIENT = OFF;
     Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+    Grid2D_Quad_Block_HO::setMixedContourIntegration();
 
     // Create computational domain
     InitializeComputationalDomain(MeshBlk,QuadTree,
@@ -737,11 +739,12 @@ namespace tut
 	}
       }
 
+
       RunRegressionTest("Check geometric properties of cells in domain corners",
 			CurrentFile,
 			MasterFile,
 			5.0e-12, 5.0e-12);
-      
+
       //==== Check correlations between the cells of adjacent blocks ====
 
       // Block 0
@@ -932,6 +935,442 @@ namespace tut
 
     } // endif (RunRegression)
 
+  }
+
+
+  /* Test 6:*/
+  template<>
+  template<>
+  void Euler2D_Quad_Block_object::test<6>()
+  {
+
+    set_test_name("Consistent geometric properties check for mesh refinement. Contour integration based on Gauss quads.");
+
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    int i0, j0, i1, j1, ng_I, ng_J, GMom;
+    int iCell, jCell;
+    string ErrorMsg, BaseMsg;
+    CPUTime processor_cpu_time;
+    RunRegression = ON;
+ 
+    // Set input file name
+    Open_Input_File("RinglebGrid.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+    HighOrder2D_Input::Set_Final_Parameters(IP);
+    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = OFF;
+    Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+    Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+
+    // Send messages between blocks
+    error_flag = Send_All_Messages(SolnBlk, 
+				   LocalList_Soln_Blocks,
+				   NUM_COMP_VECTOR2D,
+				   ON);   
+
+    if (!error_flag) error_flag = Send_All_Messages(SolnBlk, 
+						    LocalList_Soln_Blocks,
+						    NUM_VAR_EULER2D,
+						    OFF);
+
+    /* Prescribe boundary data consistent with initial data. */
+    BCs(SolnBlk, LocalList_Soln_Blocks, IP);
+
+    // Perform uniform AMR
+    error_flag = Uniform_AMR(SolnBlk,
+			     IP,
+			     QuadTree,
+			     GlobalList_Soln_Blocks,
+			     LocalList_Soln_Blocks);
+
+    if (RunRegression){
+
+      //==== Check correlations between the cells of adjacent blocks ====
+
+      // Block 0
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICl-1, SolnBlk[0].ICl-SolnBlk[0].Nghost,
+					     SolnBlk[0].JCu+1, SolnBlk[0].JCu+SolnBlk[0].Nghost,
+					     SolnBlk[2],
+					     SolnBlk[2].ICl-1, SolnBlk[2].JCl,
+					     "Check Block 0 with West ghost cells of Block 2");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICl, SolnBlk[0].ICu,
+					     SolnBlk[0].JCu+1, SolnBlk[0].JCu+SolnBlk[0].Nghost,
+					     SolnBlk[2],
+					     SolnBlk[2].ICl, SolnBlk[2].JCl,
+					     "Check Block 0 with South interior cells of Block 2");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].Nghost,
+					     SolnBlk[0].JCu+1, SolnBlk[0].JCu+SolnBlk[0].Nghost,
+					     SolnBlk[3],
+					     SolnBlk[3].ICl  , SolnBlk[3].JCl,
+					     "Check Block0 with interior SW corner of Block 3");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].Nghost,
+					     SolnBlk[0].JCl, SolnBlk[0].JCu,
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCl,
+					     "Check Block0 with West interior cells of Block 1");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].Nghost,
+					     SolnBlk[0].JCl-1, SolnBlk[0].JCl-SolnBlk[0].Nghost,
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCl-1,
+					     "Check Block0 with South ghost cells of Block 1");
+
+
+      // Block 1
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].Nghost,
+					     SolnBlk[1].JCl-1, SolnBlk[1].JCl-SolnBlk[1].Nghost,
+					     SolnBlk[0],
+					     SolnBlk[0].ICu, SolnBlk[0].JCl-1,
+					     "Check Block 1 with South ghost cells of Block 0");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].Nghost,
+					     SolnBlk[1].JCl, SolnBlk[1].JCu,
+					     SolnBlk[0],
+					     SolnBlk[0].ICu, SolnBlk[0].JCl,
+					     "Check Block 1 with interior East cells of Block 0");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].Nghost,
+					     SolnBlk[1].JCu+1, SolnBlk[1].JCu+SolnBlk[1].Nghost,
+					     SolnBlk[2],
+					     SolnBlk[2].ICu, SolnBlk[2].JCl,
+					     "Check Block 1 with interior SE corner of Block 2");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].ICu,
+					     SolnBlk[1].JCu+1, SolnBlk[1].JCu+SolnBlk[1].Nghost,
+					     SolnBlk[3],
+					     SolnBlk[3].ICl, SolnBlk[3].JCl,
+					     "Check Block 1 with interior South cells of Block 3");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICu+1, SolnBlk[1].ICu+SolnBlk[1].Nghost,
+					     SolnBlk[1].JCu+1, SolnBlk[1].JCu+SolnBlk[1].Nghost,
+					     SolnBlk[3],
+					     SolnBlk[3].ICu+1, SolnBlk[3].JCl,
+					     "Check Block 1 with East ghost cells of Block 3");
+
+      // Block 2
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[2],
+					     SolnBlk[2].ICu+1, SolnBlk[2].ICu+SolnBlk[2].Nghost,
+					     SolnBlk[2].JCu+1, SolnBlk[2].JCu+SolnBlk[2].Nghost,
+					     SolnBlk[3],
+					     SolnBlk[3].ICl, SolnBlk[3].JCu+1,
+					     "Check Block 2 with North ghost cells of Block 3");
+    
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[2],
+					     SolnBlk[2].ICu+1, SolnBlk[2].ICu+SolnBlk[2].Nghost,
+					     SolnBlk[2].JCl, SolnBlk[2].JCu,
+					     SolnBlk[3],
+					     SolnBlk[3].ICl, SolnBlk[3].JCl,
+					     "Check Block 2 with interior West cells of Block 3");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[2],
+					     SolnBlk[2].ICu+1, SolnBlk[2].ICu+SolnBlk[2].Nghost,
+					     SolnBlk[2].JCl-1, SolnBlk[2].JCl-SolnBlk[2].Nghost,
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCu,
+					     "Check Block 2 with interior NW corner of Block 1");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[2],
+					     SolnBlk[2].ICl, SolnBlk[2].ICu,
+					     SolnBlk[2].JCl-1, SolnBlk[2].JCl-SolnBlk[2].Nghost,
+					     SolnBlk[0],
+					     SolnBlk[0].ICl, SolnBlk[0].JCu,
+					     "Check Block 2 with interior North cells of Block 0");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[2],
+					     SolnBlk[2].ICl-1, SolnBlk[2].ICl-SolnBlk[2].Nghost,
+					     SolnBlk[2].JCl-1, SolnBlk[2].JCl-SolnBlk[2].Nghost,
+					     SolnBlk[0],
+					     SolnBlk[0].ICl-1, SolnBlk[0].JCu,
+					     "Check Block 2 with West ghost cells of Block 0");
+
+      // Block 3
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[3],
+					     SolnBlk[3].ICl-1, SolnBlk[3].ICl-SolnBlk[3].Nghost,
+					     SolnBlk[3].JCu+1, SolnBlk[3].JCu+SolnBlk[3].Nghost,
+					     SolnBlk[2],
+					     SolnBlk[2].ICu, SolnBlk[2].JCu+1,
+					     "Check Block 3 with North ghost cells of Block 2");
+    
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[3],
+					     SolnBlk[3].ICl-1, SolnBlk[3].ICl-SolnBlk[3].Nghost,
+					     SolnBlk[3].JCl, SolnBlk[3].JCu,
+					     SolnBlk[2],
+					     SolnBlk[2].ICu, SolnBlk[2].JCl,
+					     "Check Block 3 with interior East cells of Block 2");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[3],
+					     SolnBlk[3].ICl-1, SolnBlk[3].ICl-SolnBlk[3].Nghost,
+					     SolnBlk[3].JCl-1, SolnBlk[3].JCl-SolnBlk[3].Nghost,
+					     SolnBlk[0],
+					     SolnBlk[0].ICu, SolnBlk[0].JCu,
+					     "Check Block 3 with interior NE corner of Block 0");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[3],
+					     SolnBlk[3].ICl, SolnBlk[3].ICu,
+					     SolnBlk[3].JCl-1, SolnBlk[3].JCl-SolnBlk[3].Nghost,
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCu,
+					     "Check Block 3 with interior North cells of Block 1");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[3],
+					     SolnBlk[3].ICu+1, SolnBlk[3].ICu+SolnBlk[3].Nghost,
+					     SolnBlk[3].JCl-1, SolnBlk[3].JCl-SolnBlk[3].Nghost,
+					     SolnBlk[1],
+					     SolnBlk[1].ICu+1, SolnBlk[1].JCu,
+					     "Check Block 3 with East ghost cells of Block 1");
+
+    } else {
+      
+      // Output Tecplot
+      Output_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      Output_Cells_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      Output_Nodes_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      
+    } // endif (RunRegression)
+  }
+
+
+  /* Test 7:*/
+  template<>
+  template<>
+  void Euler2D_Quad_Block_object::test<7>()
+  {
+
+    set_test_name("Consistent geometric properties check for mesh refinement. Contour integration based on line segments.");
+
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    int i0, j0, i1, j1, ng_I, ng_J, GMom;
+    int iCell, jCell;
+    string ErrorMsg, BaseMsg;
+    CPUTime processor_cpu_time;
+    RunRegression = ON;
+ 
+    // Set input file name
+    Open_Input_File("RinglebGrid.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+    HighOrder2D_Input::Set_Final_Parameters(IP);
+    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = OFF;
+    Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+    Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+
+    // Send messages between blocks
+    error_flag = Send_All_Messages(SolnBlk, 
+				   LocalList_Soln_Blocks,
+				   NUM_COMP_VECTOR2D,
+				   ON);   
+
+    if (!error_flag) error_flag = Send_All_Messages(SolnBlk, 
+						    LocalList_Soln_Blocks,
+						    NUM_VAR_EULER2D,
+						    OFF);
+
+    /* Prescribe boundary data consistent with initial data. */
+    BCs(SolnBlk, LocalList_Soln_Blocks, IP);
+
+    // Perform uniform AMR
+    error_flag = Uniform_AMR(SolnBlk,
+			     IP,
+			     QuadTree,
+			     GlobalList_Soln_Blocks,
+			     LocalList_Soln_Blocks);
+
+    if (RunRegression){
+
+      //==== Check correlations between the cells of adjacent blocks ====
+
+      // Block 0
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICl-1, SolnBlk[0].ICl-SolnBlk[0].Nghost,
+					     SolnBlk[0].JCu+1, SolnBlk[0].JCu+SolnBlk[0].Nghost,
+					     SolnBlk[2],
+					     SolnBlk[2].ICl-1, SolnBlk[2].JCl,
+					     "Check Block 0 with West ghost cells of Block 2");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICl, SolnBlk[0].ICu,
+					     SolnBlk[0].JCu+1, SolnBlk[0].JCu+SolnBlk[0].Nghost,
+					     SolnBlk[2],
+					     SolnBlk[2].ICl, SolnBlk[2].JCl,
+					     "Check Block 0 with South interior cells of Block 2");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].Nghost,
+					     SolnBlk[0].JCu+1, SolnBlk[0].JCu+SolnBlk[0].Nghost,
+					     SolnBlk[3],
+					     SolnBlk[3].ICl  , SolnBlk[3].JCl,
+					     "Check Block0 with interior SW corner of Block 3");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].Nghost,
+					     SolnBlk[0].JCl, SolnBlk[0].JCu,
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCl,
+					     "Check Block0 with West interior cells of Block 1");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].Nghost,
+					     SolnBlk[0].JCl-1, SolnBlk[0].JCl-SolnBlk[0].Nghost,
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCl-1,
+					     "Check Block0 with South ghost cells of Block 1");
+
+
+      // Block 1
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].Nghost,
+					     SolnBlk[1].JCl-1, SolnBlk[1].JCl-SolnBlk[1].Nghost,
+					     SolnBlk[0],
+					     SolnBlk[0].ICu, SolnBlk[0].JCl-1,
+					     "Check Block 1 with South ghost cells of Block 0");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].Nghost,
+					     SolnBlk[1].JCl, SolnBlk[1].JCu,
+					     SolnBlk[0],
+					     SolnBlk[0].ICu, SolnBlk[0].JCl,
+					     "Check Block 1 with interior East cells of Block 0");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].Nghost,
+					     SolnBlk[1].JCu+1, SolnBlk[1].JCu+SolnBlk[1].Nghost,
+					     SolnBlk[2],
+					     SolnBlk[2].ICu, SolnBlk[2].JCl,
+					     "Check Block 1 with interior SE corner of Block 2");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].ICu,
+					     SolnBlk[1].JCu+1, SolnBlk[1].JCu+SolnBlk[1].Nghost,
+					     SolnBlk[3],
+					     SolnBlk[3].ICl, SolnBlk[3].JCl,
+					     "Check Block 1 with interior South cells of Block 3");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICu+1, SolnBlk[1].ICu+SolnBlk[1].Nghost,
+					     SolnBlk[1].JCu+1, SolnBlk[1].JCu+SolnBlk[1].Nghost,
+					     SolnBlk[3],
+					     SolnBlk[3].ICu+1, SolnBlk[3].JCl,
+					     "Check Block 1 with East ghost cells of Block 3");
+
+      // Block 2
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[2],
+					     SolnBlk[2].ICu+1, SolnBlk[2].ICu+SolnBlk[2].Nghost,
+					     SolnBlk[2].JCu+1, SolnBlk[2].JCu+SolnBlk[2].Nghost,
+					     SolnBlk[3],
+					     SolnBlk[3].ICl, SolnBlk[3].JCu+1,
+					     "Check Block 2 with North ghost cells of Block 3");
+    
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[2],
+					     SolnBlk[2].ICu+1, SolnBlk[2].ICu+SolnBlk[2].Nghost,
+					     SolnBlk[2].JCl, SolnBlk[2].JCu,
+					     SolnBlk[3],
+					     SolnBlk[3].ICl, SolnBlk[3].JCl,
+					     "Check Block 2 with interior West cells of Block 3");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[2],
+					     SolnBlk[2].ICu+1, SolnBlk[2].ICu+SolnBlk[2].Nghost,
+					     SolnBlk[2].JCl-1, SolnBlk[2].JCl-SolnBlk[2].Nghost,
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCu,
+					     "Check Block 2 with interior NW corner of Block 1");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[2],
+					     SolnBlk[2].ICl, SolnBlk[2].ICu,
+					     SolnBlk[2].JCl-1, SolnBlk[2].JCl-SolnBlk[2].Nghost,
+					     SolnBlk[0],
+					     SolnBlk[0].ICl, SolnBlk[0].JCu,
+					     "Check Block 2 with interior North cells of Block 0");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[2],
+					     SolnBlk[2].ICl-1, SolnBlk[2].ICl-SolnBlk[2].Nghost,
+					     SolnBlk[2].JCl-1, SolnBlk[2].JCl-SolnBlk[2].Nghost,
+					     SolnBlk[0],
+					     SolnBlk[0].ICl-1, SolnBlk[0].JCu,
+					     "Check Block 2 with West ghost cells of Block 0");
+
+      // Block 3
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[3],
+					     SolnBlk[3].ICl-1, SolnBlk[3].ICl-SolnBlk[3].Nghost,
+					     SolnBlk[3].JCu+1, SolnBlk[3].JCu+SolnBlk[3].Nghost,
+					     SolnBlk[2],
+					     SolnBlk[2].ICu, SolnBlk[2].JCu+1,
+					     "Check Block 3 with North ghost cells of Block 2");
+    
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[3],
+					     SolnBlk[3].ICl-1, SolnBlk[3].ICl-SolnBlk[3].Nghost,
+					     SolnBlk[3].JCl, SolnBlk[3].JCu,
+					     SolnBlk[2],
+					     SolnBlk[2].ICu, SolnBlk[2].JCl,
+					     "Check Block 3 with interior East cells of Block 2");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[3],
+					     SolnBlk[3].ICl-1, SolnBlk[3].ICl-SolnBlk[3].Nghost,
+					     SolnBlk[3].JCl-1, SolnBlk[3].JCl-SolnBlk[3].Nghost,
+					     SolnBlk[0],
+					     SolnBlk[0].ICu, SolnBlk[0].JCu,
+					     "Check Block 3 with interior NE corner of Block 0");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[3],
+					     SolnBlk[3].ICl, SolnBlk[3].ICu,
+					     SolnBlk[3].JCl-1, SolnBlk[3].JCl-SolnBlk[3].Nghost,
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCu,
+					     "Check Block 3 with interior North cells of Block 1");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[3],
+					     SolnBlk[3].ICu+1, SolnBlk[3].ICu+SolnBlk[3].Nghost,
+					     SolnBlk[3].JCl-1, SolnBlk[3].JCl-SolnBlk[3].Nghost,
+					     SolnBlk[1],
+					     SolnBlk[1].ICu+1, SolnBlk[1].JCu,
+					     "Check Block 3 with East ghost cells of Block 1");
+
+    } else {
+      
+      // Output Tecplot
+      Output_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      Output_Cells_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      Output_Nodes_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      
+    } // endif (RunRegression)
   }
 
 }

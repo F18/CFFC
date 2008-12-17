@@ -1133,6 +1133,24 @@ private:
 						   Vector2D &NE, Vector2D &NW,
 						   Vector2D &Centroid);
   //@}
+
+  //! Update the interval infos associated to extension splines
+  void Update_ExtensionSplineInfos(void);
+
+  //! Update ghost cells in the proximity of curved extension splines
+  void Update_GhostCells_Near_CurvedExtensionSplines(const bool &CurvedNorthBnd,
+						     const bool &CurvedSouthBnd,
+						     const bool &CurvedEastBnd,
+						     const bool &CurvedWestBnd,
+						     const bool &Curved_Extend_N_WestBnd,
+						     const bool &Curved_Extend_S_WestBnd,
+						     const bool &Curved_Extend_N_EastBnd,
+						     const bool &Curved_Extend_S_EastBnd,
+						     const bool &Curved_Extend_E_SouthBnd,
+						     const bool &Curved_Extend_W_SouthBnd,
+						     const bool &Curved_Extend_E_NorthBnd,
+						     const bool &Curved_Extend_W_NorthBnd);
+
 };
 
 /*!
