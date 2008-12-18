@@ -13590,6 +13590,134 @@ ostream &operator << (ostream &out_file,
     out_file << 0 << "\n"; // zero SplineInterval2D elements
   }
 
+  // Output west extension of North boundary spline information
+  if (G.ExtendWest_BndNorthSpline.np != 0 ) {
+    out_file << G.ExtendWest_BndNorthSpline;
+  } else {
+    out_file << G.ExtendWest_BndNorthSpline.np << "\n";
+  } /* endif */
+  if (G.ExtendWest_BndNorthSplineInfo != NULL){
+    out_file << G.Nghost << "\n"; 	// number of SplineInterval2D elements
+    // Output each component of ExtendWest_BndNorthSplineInfo
+    for ( i = 0; i < G.Nghost; ++i) {
+      out_file << G.ExtendWest_BndNorthSplineInfo[i] << "\n";
+    }
+  } else {
+    out_file << 0 << "\n"; // zero SplineInterval2D elements
+  }
+
+  // Output east extension of North boundary spline information
+  if (G.ExtendEast_BndNorthSpline.np != 0 ) {
+    out_file << G.ExtendEast_BndNorthSpline;
+  } else {
+    out_file << G.ExtendEast_BndNorthSpline.np << "\n";
+  } /* endif */
+  if (G.ExtendEast_BndNorthSplineInfo != NULL){
+    out_file << G.Nghost << "\n"; 	// number of SplineInterval2D elements
+    // Output each component of ExtendEast_BndNorthSplineInfo
+    for ( i = 0; i < G.Nghost; ++i) {
+      out_file << G.ExtendEast_BndNorthSplineInfo[i] << "\n";
+    }
+  } else {
+    out_file << 0 << "\n"; // zero SplineInterval2D elements
+  }
+
+  // Output west extension of South boundary spline information
+  if (G.ExtendWest_BndSouthSpline.np != 0 ) {
+    out_file << G.ExtendWest_BndSouthSpline;
+  } else {
+    out_file << G.ExtendWest_BndSouthSpline.np << "\n";
+  } /* endif */
+  if (G.ExtendWest_BndSouthSplineInfo != NULL){
+    out_file << G.Nghost << "\n"; 	// number of SplineInterval2D elements
+    // Output each component of ExtendWest_BndSouthSplineInfo
+    for ( i = 0; i < G.Nghost; ++i) {
+      out_file << G.ExtendWest_BndSouthSplineInfo[i] << "\n";
+    }
+  } else {
+    out_file << 0 << "\n"; // zero SplineInterval2D elements
+  }
+
+  // Output east extension of South boundary spline information
+  if (G.ExtendEast_BndSouthSpline.np != 0 ) {
+    out_file << G.ExtendEast_BndSouthSpline;
+  } else {
+    out_file << G.ExtendEast_BndSouthSpline.np << "\n";
+  } /* endif */
+  if (G.ExtendEast_BndSouthSplineInfo != NULL){
+    out_file << G.Nghost << "\n"; 	// number of SplineInterval2D elements
+    // Output each component of ExtendEast_BndSouthSplineInfo
+    for ( i = 0; i < G.Nghost; ++i) {
+      out_file << G.ExtendEast_BndSouthSplineInfo[i] << "\n";
+    }
+  } else {
+    out_file << 0 << "\n"; // zero SplineInterval2D elements
+  }
+
+  // Output north extension of East boundary spline information
+  if (G.ExtendNorth_BndEastSpline.np != 0 ) {
+    out_file << G.ExtendNorth_BndEastSpline;
+  } else {
+    out_file << G.ExtendNorth_BndEastSpline.np << "\n";
+  } /* endif */
+  if (G.ExtendNorth_BndEastSplineInfo != NULL){
+    out_file << G.Nghost << "\n"; 	// number of SplineInterval2D elements
+    // Output each component of ExtendNorth_BndEastSplineInfo
+    for ( i = 0; i < G.Nghost; ++i) {
+      out_file << G.ExtendNorth_BndEastSplineInfo[i] << "\n";
+    }
+  } else {
+    out_file << 0 << "\n"; // zero SplineInterval2D elements
+  }
+
+  // Output south extension of East boundary spline information
+  if (G.ExtendSouth_BndEastSpline.np != 0 ) {
+    out_file << G.ExtendSouth_BndEastSpline;
+  } else {
+    out_file << G.ExtendSouth_BndEastSpline.np << "\n";
+  } /* endif */
+  if (G.ExtendSouth_BndEastSplineInfo != NULL){
+    out_file << G.Nghost << "\n"; 	// number of SplineInterval2D elements
+    // Output each component of ExtendSouth_BndEastSplineInfo
+    for ( i = 0; i < G.Nghost; ++i) {
+      out_file << G.ExtendSouth_BndEastSplineInfo[i] << "\n";
+    }
+  } else {
+    out_file << 0 << "\n"; // zero SplineInterval2D elements
+  }
+
+  // Output north extension of West boundary spline information
+  if (G.ExtendNorth_BndWestSpline.np != 0 ) {
+    out_file << G.ExtendNorth_BndWestSpline;
+  } else {
+    out_file << G.ExtendNorth_BndWestSpline.np << "\n";
+  } /* endif */
+  if (G.ExtendNorth_BndWestSplineInfo != NULL){
+    out_file << G.Nghost << "\n"; 	// number of SplineInterval2D elements
+    // Output each component of ExtendNorth_BndWestSplineInfo
+    for ( i = 0; i < G.Nghost; ++i) {
+      out_file << G.ExtendNorth_BndWestSplineInfo[i] << "\n";
+    }
+  } else {
+    out_file << 0 << "\n"; // zero SplineInterval2D elements
+  }
+
+  // Output south extension of West boundary spline information
+  if (G.ExtendSouth_BndWestSpline.np != 0 ) {
+    out_file << G.ExtendSouth_BndWestSpline;
+  } else {
+    out_file << G.ExtendSouth_BndWestSpline.np << "\n";
+  } /* endif */
+  if (G.ExtendSouth_BndWestSplineInfo != NULL){
+    out_file << G.Nghost << "\n"; 	// number of SplineInterval2D elements
+    // Output each component of ExtendSouth_BndWestSplineInfo
+    for ( i = 0; i < G.Nghost; ++i) {
+      out_file << G.ExtendSouth_BndWestSplineInfo[i] << "\n";
+    }
+  } else {
+    out_file << 0 << "\n"; // zero SplineInterval2D elements
+  }
+
   out_file.setf(ios::scientific);
   out_file << G.SminN << " " << G.SmaxN << " " << G.SminS << " " << G.SmaxS << "\n"; 
   out_file << G.SminE << " " << G.SmaxE << " " << G.SminW << " " << G.SmaxW << "\n";
@@ -13721,6 +13849,142 @@ istream &operator >> (istream &in_file,
     }
   } else {
     G.deallocate_BndWestSplineInfo();
+  }
+
+  // Read the west extention of North boundary spline
+  in_file >> G.ExtendWest_BndNorthSpline;
+  // Read the west extention of North boundary spline info
+  in_file.setf(ios::skipws);
+  in_file >> nj; 
+  in_file.unsetf(ios::skipws);
+  if (nj > 0){
+    // allocate memory
+    G.ExtendWest_BndNorthSplineInfo = new Spline2DInterval_HO [nj];
+    // Read spline info
+    for(j=0; j<nj; ++j) {
+      in_file >> G.ExtendWest_BndNorthSplineInfo[j];
+    }
+  } else {
+    G.deallocate_ExtendWest_BndNorthSplineInfo();
+  }
+
+  // Read the east extention of North boundary spline
+  in_file >> G.ExtendEast_BndNorthSpline;
+  // Read the east extention of North boundary spline info
+  in_file.setf(ios::skipws);
+  in_file >> nj; 
+  in_file.unsetf(ios::skipws);
+  if (nj > 0){
+    // allocate memory
+    G.ExtendEast_BndNorthSplineInfo = new Spline2DInterval_HO [nj];
+    // Read spline info
+    for(j=0; j<nj; ++j) {
+      in_file >> G.ExtendEast_BndNorthSplineInfo[j];
+    }
+  } else {
+    G.deallocate_ExtendEast_BndNorthSplineInfo();
+  }
+
+  // Read the west extention of South boundary spline
+  in_file >> G.ExtendWest_BndSouthSpline;
+  // Read the west extention of South boundary spline info
+  in_file.setf(ios::skipws);
+  in_file >> nj; 
+  in_file.unsetf(ios::skipws);
+  if (nj > 0){
+    // allocate memory
+    G.ExtendWest_BndSouthSplineInfo = new Spline2DInterval_HO [nj];
+    // Read spline info
+    for(j=0; j<nj; ++j) {
+      in_file >> G.ExtendWest_BndSouthSplineInfo[j];
+    }
+  } else {
+    G.deallocate_ExtendWest_BndSouthSplineInfo();
+  }
+
+  // Read the east extention of South boundary spline
+  in_file >> G.ExtendEast_BndSouthSpline;
+  // Read the east extention of South boundary spline info
+  in_file.setf(ios::skipws);
+  in_file >> nj; 
+  in_file.unsetf(ios::skipws);
+  if (nj > 0){
+    // allocate memory
+    G.ExtendEast_BndSouthSplineInfo = new Spline2DInterval_HO [nj];
+    // Read spline info
+    for(j=0; j<nj; ++j) {
+      in_file >> G.ExtendEast_BndSouthSplineInfo[j];
+    }
+  } else {
+    G.deallocate_ExtendEast_BndSouthSplineInfo();
+  }
+
+  // Read the north extention of East boundary spline
+  in_file >> G.ExtendNorth_BndEastSpline;
+  // Read the north extention of East boundary spline info
+  in_file.setf(ios::skipws);
+  in_file >> nj; 
+  in_file.unsetf(ios::skipws);
+  if (nj > 0){
+    // allocate memory
+    G.ExtendNorth_BndEastSplineInfo = new Spline2DInterval_HO [nj];
+    // Read spline info
+    for(j=0; j<nj; ++j) {
+      in_file >> G.ExtendNorth_BndEastSplineInfo[j];
+    }
+  } else {
+    G.deallocate_ExtendNorth_BndEastSplineInfo();
+  }
+
+  // Read the south extention of East boundary spline
+  in_file >> G.ExtendSouth_BndEastSpline;
+  // Read the south extention of East boundary spline info
+  in_file.setf(ios::skipws);
+  in_file >> nj; 
+  in_file.unsetf(ios::skipws);
+  if (nj > 0){
+    // allocate memory
+    G.ExtendSouth_BndEastSplineInfo = new Spline2DInterval_HO [nj];
+    // Read spline info
+    for(j=0; j<nj; ++j) {
+      in_file >> G.ExtendSouth_BndEastSplineInfo[j];
+    }
+  } else {
+    G.deallocate_ExtendSouth_BndEastSplineInfo();
+  }
+
+  // Read the north extention of West boundary spline
+  in_file >> G.ExtendNorth_BndWestSpline;
+  // Read the north extention of West boundary spline info
+  in_file.setf(ios::skipws);
+  in_file >> nj; 
+  in_file.unsetf(ios::skipws);
+  if (nj > 0){
+    // allocate memory
+    G.ExtendNorth_BndWestSplineInfo = new Spline2DInterval_HO [nj];
+    // Read spline info
+    for(j=0; j<nj; ++j) {
+      in_file >> G.ExtendNorth_BndWestSplineInfo[j];
+    }
+  } else {
+    G.deallocate_ExtendNorth_BndWestSplineInfo();
+  }
+
+  // Read the south extention of West boundary spline
+  in_file >> G.ExtendSouth_BndWestSpline;
+  // Read the south extention of West boundary spline info
+  in_file.setf(ios::skipws);
+  in_file >> nj; 
+  in_file.unsetf(ios::skipws);
+  if (nj > 0){
+    // allocate memory
+    G.ExtendSouth_BndWestSplineInfo = new Spline2DInterval_HO [nj];
+    // Read spline info
+    for(j=0; j<nj; ++j) {
+      in_file >> G.ExtendSouth_BndWestSplineInfo[j];
+    }
+  } else {
+    G.deallocate_ExtendSouth_BndWestSplineInfo();
   }
 
   in_file.setf(ios::skipws);

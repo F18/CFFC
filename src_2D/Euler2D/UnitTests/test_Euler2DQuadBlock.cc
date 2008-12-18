@@ -591,8 +591,6 @@ namespace tut
     set_local_input_path("QuadBlockData");
     set_local_output_path("QuadBlockData");
 
-    int i0, j0, i1, j1, ng_I, ng_J, GMom;
-    string ErrorMsg, BaseMsg;
     CPUTime processor_cpu_time;
     RunRegression = ON;
  
@@ -653,10 +651,7 @@ namespace tut
     set_local_input_path("QuadBlockData");
     set_local_output_path("QuadBlockData");
 
-    int i0, j0, i1, j1, ng_I, ng_J, GMom;
-    int iCell, jCell;
-    string ErrorMsg, BaseMsg;
-    CPUTime processor_cpu_time;
+    int iCell,jCell;
     RunRegression = ON;
  
     // Set input file name
@@ -949,10 +944,6 @@ namespace tut
     set_local_input_path("QuadBlockData");
     set_local_output_path("QuadBlockData");
 
-    int i0, j0, i1, j1, ng_I, ng_J, GMom;
-    int iCell, jCell;
-    string ErrorMsg, BaseMsg;
-    CPUTime processor_cpu_time;
     RunRegression = ON;
  
     // Set input file name
@@ -1167,10 +1158,6 @@ namespace tut
     set_local_input_path("QuadBlockData");
     set_local_output_path("QuadBlockData");
 
-    int i0, j0, i1, j1, ng_I, ng_J, GMom;
-    int iCell, jCell;
-    string ErrorMsg, BaseMsg;
-    CPUTime processor_cpu_time;
     RunRegression = ON;
  
     // Set input file name
@@ -1370,6 +1357,56 @@ namespace tut
       Output_Cells_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
       Output_Nodes_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
       
+    } // endif (RunRegression)
+  }
+
+
+  /* Test 8:*/
+  template<>
+  template<>
+  void Euler2D_Quad_Block_object::test<8>()
+  {
+
+    set_test_name("");
+
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    RunRegression = ON;
+ 
+    // Set input file name
+    Open_Input_File("CircularCylinderGrid.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+    HighOrder2D_Input::Set_Final_Parameters(IP);
+    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = OFF;
+    Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+
+    // Send messages between blocks
+    error_flag = Send_All_Messages(SolnBlk, 
+				   LocalList_Soln_Blocks,
+				   NUM_COMP_VECTOR2D,
+				   ON);   
+
+    if (RunRegression){
+
+    } else {
+
+      // Output Tecplot
+      Output_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      Output_Cells_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      Output_Nodes_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
     } // endif (RunRegression)
   }
 
