@@ -416,6 +416,9 @@ public:
     delete [] ExtendNorth_BndWestSplineInfo; ExtendNorth_BndWestSplineInfo = NULL; }
   void deallocate_ExtendSouth_BndWestSplineInfo(void){
     delete [] ExtendSouth_BndWestSplineInfo; ExtendSouth_BndWestSplineInfo = NULL; }
+
+  //! Remove the extension splines
+  void RemoveExtensionSplines(void);
   //@}
 
   //! @name Calculate cell centroid.
@@ -1218,6 +1221,32 @@ inline void Grid2D_Quad_Block_HO::deallocateBndSplineInfo(void) {
   delete []ExtendSouth_BndEastSplineInfo; ExtendSouth_BndEastSplineInfo = NULL;
   delete []ExtendNorth_BndWestSplineInfo; ExtendNorth_BndWestSplineInfo = NULL;
   delete []ExtendSouth_BndWestSplineInfo; ExtendSouth_BndWestSplineInfo = NULL;
+}
+
+/*!
+ * Remove all extension splines and associated Infos.
+ */
+inline void Grid2D_Quad_Block_HO::RemoveExtensionSplines(void){
+  
+  // Deallocate extension splines
+  ExtendWest_BndNorthSpline.deallocate();
+  ExtendEast_BndNorthSpline.deallocate();
+  ExtendWest_BndSouthSpline.deallocate();
+  ExtendEast_BndSouthSpline.deallocate();
+  ExtendNorth_BndEastSpline.deallocate();
+  ExtendSouth_BndEastSpline.deallocate();
+  ExtendNorth_BndWestSpline.deallocate();
+  ExtendSouth_BndWestSpline.deallocate();
+
+  // Deallocate associated infos
+  delete []ExtendWest_BndNorthSplineInfo; ExtendWest_BndNorthSplineInfo = NULL; 
+  delete []ExtendEast_BndNorthSplineInfo; ExtendEast_BndNorthSplineInfo = NULL;
+  delete []ExtendWest_BndSouthSplineInfo; ExtendWest_BndSouthSplineInfo = NULL; 
+  delete []ExtendEast_BndSouthSplineInfo; ExtendEast_BndSouthSplineInfo = NULL;
+  delete []ExtendNorth_BndEastSplineInfo; ExtendNorth_BndEastSplineInfo = NULL;
+  delete []ExtendSouth_BndEastSplineInfo; ExtendSouth_BndEastSplineInfo = NULL;
+  delete []ExtendNorth_BndWestSplineInfo; ExtendNorth_BndWestSplineInfo = NULL;
+  delete []ExtendSouth_BndWestSplineInfo; ExtendSouth_BndWestSplineInfo = NULL;  
 }
 
 /*!

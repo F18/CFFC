@@ -3913,6 +3913,36 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
        } /* endfor */
     } /* endif */
 
+    if (ExtendWest_BndNorthSpline.np != 0){
+      for (i = ICl-1 ; i>= ICl-Nghost; --i){
+	s_north = getS(Node[i+1][JNu].X, ExtendWest_BndNorthSpline);
+	bc_type_left = BCtype(s_north, ExtendWest_BndNorthSpline);
+	s_north = getS(Node[i  ][JNu].X, ExtendWest_BndNorthSpline);
+	bc_type_right = BCtype(s_north,  ExtendWest_BndNorthSpline);
+	
+	if (bc_type_left == bc_type_right) {
+	  BCtypeN[i] = bc_type_left;
+	} else {
+	  BCtypeN[i] = bc_type_right;
+	} /* endif */	 
+      }
+    }
+
+    if (ExtendEast_BndNorthSpline.np != 0){
+      for (i = ICu+1; i>= ICu+Nghost; ++i){
+	s_north = getS(Node[i ][JNu].X, ExtendEast_BndNorthSpline);
+	bc_type_left = BCtype(s_north, ExtendEast_BndNorthSpline);
+	s_north = getS(Node[i+1][JNu].X, ExtendEast_BndNorthSpline);
+	bc_type_right = BCtype(s_north,  ExtendEast_BndNorthSpline);
+
+	if (bc_type_left == bc_type_right) {
+	  BCtypeN[i] = bc_type_left;
+	} else {
+	  BCtypeN[i] = bc_type_right;
+	} /* endif */
+      }
+    }
+
     if (BndSouthSpline.np == 0) {
        for ( i = ICl-Nghost; i <= ICu+Nghost ; ++i) {
 	   BCtypeS[i] = BC_NONE;
@@ -3938,6 +3968,36 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
 	 } /* endif */
        } /* endfor */
     } /* endif */
+
+    if (ExtendWest_BndSouthSpline.np != 0){
+      for (i = ICl-1 ; i>= ICl-Nghost; --i){
+	s_south = getS(Node[i+1][JNl].X, ExtendWest_BndSouthSpline);
+	bc_type_left = BCtype(s_south, ExtendWest_BndSouthSpline);
+	s_south = getS(Node[i  ][JNl].X, ExtendWest_BndSouthSpline);
+	bc_type_right = BCtype(s_south,  ExtendWest_BndSouthSpline);
+	
+	if (bc_type_left == bc_type_right) {
+	  BCtypeS[i] = bc_type_left;
+	} else {
+	  BCtypeS[i] = bc_type_right;
+	} /* endif */	 
+      }
+    }
+
+    if (ExtendEast_BndSouthSpline.np != 0){
+      for (i = ICu+1; i>= ICu+Nghost; ++i){
+	s_south = getS(Node[i ][JNl].X, ExtendEast_BndSouthSpline);
+	bc_type_left = BCtype(s_south, ExtendEast_BndSouthSpline);
+	s_south = getS(Node[i+1][JNl].X, ExtendEast_BndSouthSpline);
+	bc_type_right = BCtype(s_south,  ExtendEast_BndSouthSpline);
+
+	if (bc_type_left == bc_type_right) {
+	  BCtypeS[i] = bc_type_left;
+	} else {
+	  BCtypeS[i] = bc_type_right;
+	} /* endif */
+      }
+    }
 
     if (BndEastSpline.np == 0) {
        for ( j = JCl-Nghost; j <= JCu+Nghost ; ++j) {
@@ -3965,6 +4025,36 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
        } /* endfor */
     } /* endif */
 
+    if (ExtendSouth_BndEastSpline.np != 0){
+      for ( j = JCl-1; j >= JCl-Nghost ; --j) {
+	s_east = getS(Node[INu][j+1].X, ExtendSouth_BndEastSpline);
+	bc_type_left = BCtype(s_east, ExtendSouth_BndEastSpline);
+	s_east = getS(Node[INu][j].X, ExtendSouth_BndEastSpline);
+	bc_type_right = BCtype(s_east, ExtendSouth_BndEastSpline);
+
+	if (bc_type_left == bc_type_right) {
+	  BCtypeE[j] = bc_type_left;
+	} else {
+	  BCtypeE[j] = bc_type_right;
+	} /* endif */
+      } /* endfor */      
+    }
+
+    if (ExtendNorth_BndEastSpline.np != 0){
+      for ( j = JCu+1; j >= JCu+Nghost ; ++j) {
+	s_east = getS(Node[INu][j  ].X, ExtendNorth_BndEastSpline);
+	bc_type_left = BCtype(s_east, ExtendNorth_BndEastSpline);
+	s_east = getS(Node[INu][j+1].X, ExtendNorth_BndEastSpline);
+	bc_type_right = BCtype(s_east, ExtendNorth_BndEastSpline);
+
+	if (bc_type_left == bc_type_right) {
+	  BCtypeE[j] = bc_type_left;
+	} else {
+	  BCtypeE[j] = bc_type_right;
+	} /* endif */
+      } /* endfor */      
+    }
+    
     if (BndWestSpline.np == 0) {
        for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
 	   BCtypeW[j] = BC_NONE;
@@ -3990,6 +4080,36 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
 	 } /* endif */
        } /* endfor */
     } /* endif */
+
+    if (ExtendSouth_BndWestSpline.np != 0){
+      for ( j = JCl-1; j >= JCl-Nghost ; --j) {
+	s_west = getS(Node[INl][j+1].X, ExtendSouth_BndWestSpline);
+	bc_type_left = BCtype(s_west, ExtendSouth_BndWestSpline);
+	s_west = getS(Node[INl][j].X, ExtendSouth_BndWestSpline);
+	bc_type_right = BCtype(s_west, ExtendSouth_BndWestSpline);
+
+	if (bc_type_left == bc_type_right) {
+	  BCtypeW[j] = bc_type_left;
+	} else {
+	  BCtypeW[j] = bc_type_right;
+	} /* endif */
+      } /* endfor */      
+    }
+
+    if (ExtendNorth_BndWestSpline.np != 0){
+      for ( j = JCu+1; j >= JCu+Nghost ; ++j) {
+	s_west = getS(Node[INl][j  ].X, ExtendNorth_BndWestSpline);
+	bc_type_left = BCtype(s_west, ExtendNorth_BndWestSpline);
+	s_west = getS(Node[INl][j+1].X, ExtendNorth_BndWestSpline);
+	bc_type_right = BCtype(s_west, ExtendNorth_BndWestSpline);
+
+	if (bc_type_left == bc_type_right) {
+	  BCtypeW[j] = bc_type_left;
+	} else {
+	  BCtypeW[j] = bc_type_right;
+	} /* endif */
+      } /* endfor */      
+    }    
 
 }
 

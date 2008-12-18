@@ -1842,6 +1842,15 @@ namespace tut
     // Build the mesh
     CreateMesh(MeshBlk,IP);
 
+    // Remove extension splines due to the fact that no message passing between blocks is done
+    MeshBlk(0,0).RemoveExtensionSplines();
+    MeshBlk(1,0).RemoveExtensionSplines();
+
+    // Update geometric properties
+    MeshBlk(0,0).Schedule_Ghost_Cells_Update(); MeshBlk(0,0).Update_Cells();
+    MeshBlk(1,0).Schedule_Ghost_Cells_Update(); MeshBlk(1,0).Update_Cells();      
+
+
     MasterFile = "Grid_Output_Operator.dat";
     CurrentFile = "Current_Grid_Output_Operator.dat";
 
@@ -3297,6 +3306,14 @@ namespace tut
       // Build the mesh
       CreateMesh(MeshBlk,IP);
 
+      // Remove extension splines due to the fact that no message passing between blocks is done
+      MeshBlk(0,0).RemoveExtensionSplines();
+      MeshBlk(1,0).RemoveExtensionSplines();
+
+      // Update geometric properties
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update(); MeshBlk(0,0).Update_Cells();
+      MeshBlk(1,0).Schedule_Ghost_Cells_Update(); MeshBlk(1,0).Update_Cells();      
+
       Open_Output_File(CurrentFile);
 
       out() << MeshBlk(0,0) << endl << endl;
@@ -3308,6 +3325,14 @@ namespace tut
     } else {
       // Build the mesh
       CreateMesh(MeshBlk,IP);
+
+      // Remove extension splines due to the fact that no message passing between blocks is done
+      MeshBlk(0,0).RemoveExtensionSplines();
+      MeshBlk(1,0).RemoveExtensionSplines();
+
+      // Update geometric properties
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update(); MeshBlk(0,0).Update_Cells();
+      MeshBlk(1,0).Schedule_Ghost_Cells_Update(); MeshBlk(1,0).Update_Cells();      
 
       Open_Output_File(MasterFile);
 
@@ -3355,6 +3380,14 @@ namespace tut
       // Build the mesh
       CreateMesh(MeshBlk,IP);
 
+      // Remove extension splines due to the fact that no message passing between blocks is done
+      MeshBlk(0,0).RemoveExtensionSplines();
+      MeshBlk(1,0).RemoveExtensionSplines();
+
+      // Update geometric properties
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update(); MeshBlk(0,0).Update_Cells();
+      MeshBlk(1,0).Schedule_Ghost_Cells_Update(); MeshBlk(1,0).Update_Cells();      
+
       Open_Output_File(CurrentFile);
 
       out() << MeshBlk(0,0) << endl << endl;
@@ -3366,6 +3399,14 @@ namespace tut
     } else {
       // Build the mesh
       CreateMesh(MeshBlk,IP);
+
+      // Remove extension splines due to the fact that no message passing between blocks is done
+      MeshBlk(0,0).RemoveExtensionSplines();
+      MeshBlk(1,0).RemoveExtensionSplines();
+
+      // Update geometric properties
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update(); MeshBlk(0,0).Update_Cells();
+      MeshBlk(1,0).Schedule_Ghost_Cells_Update(); MeshBlk(1,0).Update_Cells();      
 
       Open_Output_File(MasterFile);
 
@@ -3413,6 +3454,14 @@ namespace tut
       // Build the mesh
       CreateMesh(MeshBlk,IP);
 
+      // Remove extension splines due to the fact that no message passing between blocks is done
+      MeshBlk(0,0).RemoveExtensionSplines();
+      MeshBlk(1,0).RemoveExtensionSplines();
+
+      // Update geometric properties
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update(); MeshBlk(0,0).Update_Cells();
+      MeshBlk(1,0).Schedule_Ghost_Cells_Update(); MeshBlk(1,0).Update_Cells();      
+
       Open_Output_File(CurrentFile);
 
       out() << MeshBlk(0,0) << endl << endl;
@@ -3424,6 +3473,14 @@ namespace tut
     } else {
       // Build the mesh
       CreateMesh(MeshBlk,IP);
+
+      // Remove extension splines due to the fact that no message passing between blocks is done
+      MeshBlk(0,0).RemoveExtensionSplines();
+      MeshBlk(1,0).RemoveExtensionSplines();
+
+      // Update geometric properties
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update(); MeshBlk(0,0).Update_Cells();
+      MeshBlk(1,0).Schedule_Ghost_Cells_Update(); MeshBlk(1,0).Update_Cells();      
 
       Open_Output_File(MasterFile);
 
