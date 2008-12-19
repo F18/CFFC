@@ -8334,6 +8334,7 @@ void Grid2D_Quad_Block_HO::ComputeGeometricCoefficients_GhostCell_CurvedBoundari
 
   switch(HighestReconstructionOrder){
 
+  case 4:    // Quartic moments
     // coefficient (4,0)
     Cell[CellIndexI][CellIndexJ].GeomCoeffValue(4,0) = GeometricMoment_GhostCell_CurvedBoundaries(CellIndexI, CellIndexJ,
 												  Boundary, 4, 0);

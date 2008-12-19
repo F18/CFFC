@@ -75,6 +75,22 @@ namespace tut
 						const int &i_Master, const int &j_Master,
 						const std::string & BaseMsg = "");
 
+    // Check consistency of reconstruction data for a multi-block mesh
+    void CheckReconstructionDataConsistencyOfBlocks(const Euler2D_Quad_Block &CheckedBlock,
+						    const int &i_Start, const int &i_End,
+						    const int &j_Start, const int &j_End,
+						    const Euler2D_Quad_Block &MasterBlock,
+						    const int &i_Master, const int &j_Master,
+						    const std::string & BaseMsg = "");
+
+    // Check consistency of reconstruction coefficients for a multi-block mesh
+    void CheckReconstructionConsistencyOfBlocks(const Euler2D_Quad_Block &CheckedBlock,
+						const int &i_Start, const int &i_End,
+						const int &j_Start, const int &j_End,
+						const Euler2D_Quad_Block &MasterBlock,
+						const int &i_Master, const int &j_Master,
+						const std::string & BaseMsg = "");
+
   private:
     
   };
@@ -253,6 +269,121 @@ namespace tut
 	  ostmClear();
 	}
 
+      }
+    }
+  }
+
+  // === CheckReconstructionDataConsistencyOfBlocks()
+  void Data_Euler2D_Quad_Block::CheckReconstructionDataConsistencyOfBlocks(const Euler2D_Quad_Block &CheckedBlock,
+									   const int &i_Start, const int &i_End,
+									   const int &j_Start, const int &j_End,
+									   const Euler2D_Quad_Block &MasterBlock,
+									   const int &i_Master, const int &j_Master,
+									   const std::string & BaseMsg){
+    
+    int iCell,jCell;		// cell indexes for the checked block
+    int iMast,jMast;		// cell indexes for the master block that corresponds to the CheckedBlock cell
+    int iShift, jShift;		// i- and j-shift between the indexes of the two blocks
+    bool ICond, JCond;		// indicators for how to loop over indexes
+    int TD, GMom;
+    double Tolerance(1.0E-12);
+
+    // Determine looping conditions
+    ICond = (i_End - i_Start) > 0;
+    JCond = (j_End - j_Start) > 0;
+
+    // Determine index shifts
+    iShift = i_Master - i_Start;
+    jShift = j_Master - j_Start;
+   
+
+    // Compare reconstruction coefficients
+    for (iCell = i_Start; ICond? (iCell<=i_End): (iCell>=i_End); ICond? (++iCell): (--iCell)){
+      for (jCell = j_Start; JCond? (jCell<=j_End): (jCell>=j_End); JCond? (++jCell): (--jCell)){
+	iMast = iCell + iShift;
+	jMast = jCell + jShift;
+
+	// === Check area
+	ostm() << "Area, cell (" << iCell << "," << jCell << "), " << BaseMsg << "\n"; 
+	ensure_distance(ostm().str(), 
+			CheckedBlock.Grid.CellArea(iCell,jCell),
+			MasterBlock.Grid.CellArea(iMast,jMast),
+			AcceptedError(MasterBlock.Grid.CellArea(iMast,jMast),Tolerance));
+	ostmClear();
+
+
+	// === Check centroids
+	ostm() << "Centroid, cell (" << iCell << "," << jCell << "), " << BaseMsg << "\n"; 
+	ensure_distance(ostm().str(), 
+			CheckedBlock.Grid.CellCentroid(iCell,jCell),
+			MasterBlock.Grid.CellCentroid(iMast,jMast),
+			AcceptedError(MasterBlock.Grid.CellCentroid(iMast,jMast),Tolerance));
+	ostmClear();
+
+	// === Check geometric moments
+	for (GMom = 0; GMom<=CheckedBlock.Grid.CellGeomCoeff(iCell,jCell).LastElem(); ++GMom){
+	  ostm() << "Geometric moment " << GMom << ", cell (" << iCell << "," << jCell << "), " << BaseMsg << "\n"; 
+	  ensure_distance(ostm().str(), 
+			  CheckedBlock.Grid.CellGeomCoeffValue(iCell,jCell,GMom),
+			  MasterBlock.Grid.CellGeomCoeffValue(iMast,jMast,GMom),
+			  AcceptedError(MasterBlock.Grid.CellGeomCoeffValue(iMast,jMast,GMom),Tolerance));
+	  ostmClear();
+	}
+
+	// === Check cell average solutions
+	ostm() << "Average Solution, cell (" << iCell << "," << jCell << "), " << BaseMsg << "\n"; 
+	ensure_distance(ostm().str(), 
+			CheckedBlock.CellSolution(iCell,jCell),
+			MasterBlock.CellSolution(iMast,jMast),
+			AcceptedError(MasterBlock.CellSolution(iMast,jMast),Tolerance));
+	ostmClear();
+      }
+    }
+  }
+
+  // === CheckReconstructionConsistencyOfBlocks()
+  void Data_Euler2D_Quad_Block::CheckReconstructionConsistencyOfBlocks(const Euler2D_Quad_Block &CheckedBlock,
+								       const int &i_Start, const int &i_End,
+								       const int &j_Start, const int &j_End,
+								       const Euler2D_Quad_Block &MasterBlock,
+								       const int &i_Master, const int &j_Master,
+								       const std::string & BaseMsg){
+    
+    int iCell,jCell;		// cell indexes for the checked block
+    int iMast,jMast;		// cell indexes for the master block that corresponds to the CheckedBlock cell
+    int iShift, jShift;		// i- and j-shift between the indexes of the two blocks
+    bool ICond, JCond;		// indicators for how to loop over indexes
+    int TD, GMom;
+    double Tolerance(1.0E-8);
+
+    // Determine looping conditions
+    ICond = (i_End - i_Start) > 0;
+    JCond = (j_End - j_Start) > 0;
+
+    // Determine index shifts
+    iShift = i_Master - i_Start;
+    jShift = j_Master - j_Start;
+   
+
+    // Compare reconstruction coefficients
+    for (iCell = i_Start; ICond? (iCell<=i_End): (iCell>=i_End); ICond? (++iCell): (--iCell)){
+      for (jCell = j_Start; JCond? (jCell<=j_End): (jCell>=j_End); JCond? (++jCell): (--jCell)){
+	iMast = iCell + iShift;
+	jMast = jCell + jShift;
+
+	// === Check reconstruction coefficients
+	for (TD = 0; TD<=CheckedBlock.HighOrderVariable(0).CellTaylorDeriv(iCell,jCell).LastElem(); ++TD){
+	  ostm() << "TD (" 
+		 << CheckedBlock.HighOrderVariable(0).CellTaylorDeriv(iCell,jCell,TD).P1() << ","
+		 << CheckedBlock.HighOrderVariable(0).CellTaylorDeriv(iCell,jCell,TD).P2() << ")"
+		 << ", CheckedBlock cell (" << iCell << "," << jCell 
+		 << "), MasterBlock cell (" << iMast << "," << jMast << "), " << BaseMsg << "\n";
+	  ensure_distance(ostm().str(), 
+			  CheckedBlock.HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,TD),
+			  MasterBlock.HighOrderVariable(0).CellTaylorDerivState(iMast,jMast,TD),
+			  AcceptedError(MasterBlock.HighOrderVariable(0).CellTaylorDerivState(iMast,jMast,TD),Tolerance));
+	  ostmClear();
+	}
       }
     }
   }
@@ -1367,7 +1498,7 @@ namespace tut
   void Euler2D_Quad_Block_object::test<8>()
   {
 
-    set_test_name("");
+    set_test_name("Check reconstructions of adjacent blocks, low-order boundaries, constrained");
 
     set_local_input_path("QuadBlockData");
     set_local_output_path("QuadBlockData");
@@ -1375,7 +1506,103 @@ namespace tut
     RunRegression = ON;
  
     // Set input file name
-    Open_Input_File("CircularCylinderGrid.in");
+    Open_Input_File("HO_Reconstruction_CircularCylinderGrid.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+    HighOrder2D_Input::Set_Final_Parameters(IP);
+    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = OFF;
+    Grid2D_Quad_Block_HO::setLowOrderBoundaryRepresentation();
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+
+    // Send messages between blocks
+    error_flag = Send_All_Messages(SolnBlk, 
+				   LocalList_Soln_Blocks,
+				   NUM_COMP_VECTOR2D,
+				   ON);
+
+    error_flag = Send_All_Messages(SolnBlk, 
+				   LocalList_Soln_Blocks,
+				   NUM_VAR_EULER2D,
+				   OFF);
+
+    /* Prescribe boundary data consistent with initial data. */
+    BCs(SolnBlk, LocalList_Soln_Blocks, IP);
+
+
+    // Reconstruct solution on each block
+    SolnBlk[0].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[0],
+									   IP.Limiter());
+    SolnBlk[1].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[1],
+									   IP.Limiter());
+
+    if (RunRegression){
+
+      //==== Check correlations between the cell reconstructions of adjacent blocks ====
+
+      // Block 0
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].Nghost,
+					     SolnBlk[0].JCl, SolnBlk[0].JCu,
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCl,
+					     "Check Block 0 East ghost cells with Block 1 interior West cells");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICl-1, SolnBlk[0].ICl-SolnBlk[0].Nghost,
+					     SolnBlk[0].JCl, SolnBlk[0].JCu,
+					     SolnBlk[1],
+					     SolnBlk[1].ICu, SolnBlk[1].JCl,
+					     "Check Block 0 West ghost cells with Block 1 interior East cells");
+
+      // Block 1
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICu+1, SolnBlk[0].ICu+SolnBlk[1].Nghost,
+					     SolnBlk[1].JCl, SolnBlk[1].JCu,
+					     SolnBlk[0],
+					     SolnBlk[0].ICl, SolnBlk[0].JCl,
+					     "Check Block 1 East ghost cells with Block 0 interior West cells");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].Nghost,
+					     SolnBlk[1].JCl, SolnBlk[1].JCu,
+					     SolnBlk[0],
+					     SolnBlk[0].ICu, SolnBlk[0].JCl,
+					     "Check Block 1 West ghost cells with Block 0 interior East cells");      
+
+    } else {
+
+      // Output Tecplot
+      Output_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      Output_Cells_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      Output_Nodes_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+    } // endif (RunRegression)
+  }
+
+  /* Test 9:*/
+  template<>
+  template<>
+  void Euler2D_Quad_Block_object::test<9>()
+  {
+
+    set_test_name("Check reconstructions of adjacent blocks, high-order boundaries, constrained");
+
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    RunRegression = ON;
+ 
+    // Set input file name
+    Open_Input_File("HO_Reconstruction_CircularCylinderGrid.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1397,9 +1624,70 @@ namespace tut
     error_flag = Send_All_Messages(SolnBlk, 
 				   LocalList_Soln_Blocks,
 				   NUM_COMP_VECTOR2D,
-				   ON);   
+				   ON);
+
+    error_flag = Send_All_Messages(SolnBlk, 
+				   LocalList_Soln_Blocks,
+				   NUM_VAR_EULER2D,
+				   OFF);
+
+    /* Prescribe boundary data consistent with initial data. */
+    BCs(SolnBlk, LocalList_Soln_Blocks, IP);
+
+
+    // Reconstruct solution on each block
+    SolnBlk[0].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[0],
+									   IP.Limiter());
+    SolnBlk[1].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[1],
+									   IP.Limiter());
 
     if (RunRegression){
+
+      //==== Check correlations between the cell reconstructions of adjacent blocks ====
+
+      CheckReconstructionDataConsistencyOfBlocks(SolnBlk[0],
+						 SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].Nghost,
+						 SolnBlk[0].JCl, SolnBlk[0].JCu,
+						 SolnBlk[1],
+						 SolnBlk[1].ICl, SolnBlk[1].JCl,
+						 "Check Block 0 East ghost cells with Block 1 interior West cells");
+
+      CheckReconstructionDataConsistencyOfBlocks(SolnBlk[1],
+						 SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].Nghost,
+						 SolnBlk[1].JCl, SolnBlk[1].JCu,
+						 SolnBlk[0],
+						 SolnBlk[0].ICu, SolnBlk[0].JCl,
+						 "Check Block 1 West ghost cells with Block 0 interior East cells");
+
+      // Block 0
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].Nghost,
+					     SolnBlk[0].JCl, SolnBlk[0].JCu,
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCl,
+					     "Check Block 0 East ghost cells with Block 1 interior West cells");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICl-1, SolnBlk[0].ICl-SolnBlk[0].Nghost,
+					     SolnBlk[0].JCl, SolnBlk[0].JCu,
+					     SolnBlk[1],
+					     SolnBlk[1].ICu, SolnBlk[1].JCl,
+					     "Check Block 0 West ghost cells with Block 1 interior East cells");
+
+      // Block 1
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICu+1, SolnBlk[0].ICu+SolnBlk[1].Nghost,
+					     SolnBlk[1].JCl, SolnBlk[1].JCu,
+					     SolnBlk[0],
+					     SolnBlk[0].ICl, SolnBlk[0].JCl,
+					     "Check Block 1 East ghost cells with Block 0 interior West cells");
+
+      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].Nghost,
+					     SolnBlk[1].JCl, SolnBlk[1].JCu,
+					     SolnBlk[0],
+					     SolnBlk[0].ICu, SolnBlk[0].JCl,
+					     "Check Block 1 West ghost cells with Block 0 interior East cells");      
 
     } else {
 
