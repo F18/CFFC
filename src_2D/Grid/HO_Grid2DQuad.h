@@ -1008,6 +1008,25 @@ public:
   bool IsSouthBoundaryReconstructionConstrained(void) const;
   //! Check if the North boundary has constrained reconstruction (i.e. it is curved and set to reconstruction based flux)
   bool IsNorthBoundaryReconstructionConstrained(void) const;
+
+  //! Check if the North extension of West boundary has constrained reconstruction (i.e. same conditions as for the West boundary)
+  bool IsNorthExtendWestBoundaryReconstructionConstrained(void) const;
+  //! Check if the South extension of West boundary has constrained reconstruction (i.e. same conditions as for the West boundary)
+  bool IsSouthExtendWestBoundaryReconstructionConstrained(void) const;
+  //! Check if the North extension of East boundary has constrained reconstruction (i.e. same conditions as for the East boundary)
+  bool IsNorthExtendEastBoundaryReconstructionConstrained(void) const;
+  //! Check if the South extension of East boundary has constrained reconstruction (i.e. same conditions as for the East boundary)
+  bool IsSouthExtendEastBoundaryReconstructionConstrained(void) const;
+  //! Check if the East extension of South boundary has constrained reconstruction (i.e. same conditions as for the South boundary)
+  bool IsEastExtendSouthBoundaryReconstructionConstrained(void) const;
+  //! Check if the West extension of South boundary has constrained reconstruction (i.e. same conditions as for the South boundary)
+  bool IsWestExtendSouthBoundaryReconstructionConstrained(void) const;
+  //! Check if the East extension of North boundary has constrained reconstruction (i.e. same conditions as for the North boundary)
+  bool IsEastExtendNorthBoundaryReconstructionConstrained(void) const;
+  //! Check if the West extension of North boundary has constrained reconstruction (i.e. same conditions as for the North boundary)
+  bool IsWestExtendNorthBoundaryReconstructionConstrained(void) const;
+
+  
   //! Check if any block boundary is a solid body
   bool IsThereAnySolidBoundary(void) const;
 
@@ -3271,54 +3290,67 @@ inline bool Grid2D_Quad_Block_HO::CheckExistenceOfCurvedBoundaries(void){
 
 /*!
  * Check West boundary reconstruction type.
- * Return true if the reconstruction is done
- * with boundary constrains, otherwise return false.
+ * Return true if the boundary is curved and the reconstruction
+ * along the boundary is constrained to fulfill the boundary conditions,
+ * otherwise return false.
  */
 inline bool Grid2D_Quad_Block_HO::IsWestBoundaryReconstructionConstrained(void) const{
-  if ( (BndWestSpline.Xp == NULL) || (BndWestSpline.getFluxCalcMethod() == SolveRiemannProblem) ){
-    return false;
-  } else {
-    return true;
-  }
+  return (IsWestBoundaryCurved() && BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux)? true : false;
 }
   
-/*!
- * Check East boundary reconstruction type.
- * Return true if the reconstruction is done
- * with boundary constrains, otherwise return false.
- */
+/*! Check East boundary reconstruction type. */
 inline bool Grid2D_Quad_Block_HO::IsEastBoundaryReconstructionConstrained(void) const{
-  if ( (BndEastSpline.Xp == NULL) || (BndEastSpline.getFluxCalcMethod() == SolveRiemannProblem) ){
-    return false;
-  } else {
-    return true;
-  }
+  return (IsEastBoundaryCurved() && BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux)? true : false;
 }
 
-/*!
- * Check South boundary reconstruction type.
- * Return true if the reconstruction is done
- * with boundary constrains, otherwise return false.
- */
+/*! Check South boundary reconstruction type. */
 inline bool Grid2D_Quad_Block_HO::IsSouthBoundaryReconstructionConstrained(void) const{
-  if ( (BndSouthSpline.Xp == NULL) || (BndSouthSpline.getFluxCalcMethod() == SolveRiemannProblem) ){
-    return false;
-  } else {
-    return true;
-  }
+  return (IsSouthBoundaryCurved() && BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)? true : false;
 }
 
-/*!
- * Check North boundary reconstruction type.
- * Return true if the reconstruction is done
- * with boundary constrains, otherwise return false.
- */
+/*! Check North boundary reconstruction type. */
 inline bool Grid2D_Quad_Block_HO::IsNorthBoundaryReconstructionConstrained(void) const{
-  if ( (BndNorthSpline.Xp == NULL) || (BndNorthSpline.getFluxCalcMethod() == SolveRiemannProblem) ){
-    return false;
-  } else {
-    return true;
-  }
+  return (IsNorthBoundaryCurved() && BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)? true : false;
+}
+
+/*! Check reconstruction type of North extension of West boundary. */
+inline bool Grid2D_Quad_Block_HO::IsNorthExtendWestBoundaryReconstructionConstrained(void) const{
+  return (IsNorthExtendWestBoundaryCurved() && ExtendNorth_BndWestSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
+}
+
+/*! Check reconstruction type of South extension of West boundary. */
+inline bool Grid2D_Quad_Block_HO::IsSouthExtendWestBoundaryReconstructionConstrained(void) const{
+  return (IsSouthExtendWestBoundaryCurved() && ExtendSouth_BndWestSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
+}
+
+/*! Check reconstruction type of North extension of East boundary. */
+inline bool Grid2D_Quad_Block_HO::IsNorthExtendEastBoundaryReconstructionConstrained(void) const{
+  return (IsNorthExtendEastBoundaryCurved() && ExtendNorth_BndEastSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
+}
+
+/*! Check reconstruction type of South extension of East boundary. */
+inline bool Grid2D_Quad_Block_HO::IsSouthExtendEastBoundaryReconstructionConstrained(void) const{
+  return (IsSouthExtendEastBoundaryCurved() && ExtendSouth_BndEastSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
+}
+
+/*! Check reconstruction type of East extension of South boundary. */
+inline bool Grid2D_Quad_Block_HO::IsEastExtendSouthBoundaryReconstructionConstrained(void) const{
+  return (IsEastExtendSouthBoundaryCurved() && ExtendEast_BndSouthSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
+}
+
+/*! Check reconstruction type of West extension of South boundary. */
+inline bool Grid2D_Quad_Block_HO::IsWestExtendSouthBoundaryReconstructionConstrained(void) const{
+  return (IsWestExtendSouthBoundaryCurved() && ExtendWest_BndSouthSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
+}
+
+/*! Check reconstruction type of East extension of North boundary. */
+inline bool Grid2D_Quad_Block_HO::IsEastExtendNorthBoundaryReconstructionConstrained(void) const{
+  return (IsEastExtendNorthBoundaryCurved() && ExtendEast_BndNorthSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
+}
+
+/*! Check reconstruction type of West extension of North boundary. */
+inline bool Grid2D_Quad_Block_HO::IsWestExtendNorthBoundaryReconstructionConstrained(void) const{
+  return (IsWestExtendNorthBoundaryCurved() && ExtendWest_BndNorthSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
 }
 
 /*!

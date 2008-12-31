@@ -4235,7 +4235,7 @@ namespace tut
       MeshBlk.Output_Cells_Data(out());
 
       // == check geometric properties
-      RunRegressionTest("Large Deformed Box 4th-order moments", CurrentFile, MasterFile, 8.0e-7, 8.0e-7);
+      RunRegressionTest("Large Deformed Box 4th-order moments", CurrentFile, MasterFile, 5.0e-6, 5.0e-6);
       
     } else {
       // Build the mesh
@@ -4313,7 +4313,7 @@ namespace tut
     MeshBlk(0,0).BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
     ensure_equals("South Bnd", MeshBlk(0,0).IsSouthBoundaryReconstructionConstrained(), true);
     ensure_equals("North Bnd", MeshBlk(0,0).IsNorthBoundaryReconstructionConstrained(), true);
-    ensure_equals("East Bnd", MeshBlk(0,0).IsEastBoundaryReconstructionConstrained(), true);
+    ensure_equals("East Bnd", MeshBlk(0,0).IsEastBoundaryReconstructionConstrained(), false);
     ensure_equals("West Bnd", MeshBlk(0,0).IsWestBoundaryReconstructionConstrained(), true);
   }
 

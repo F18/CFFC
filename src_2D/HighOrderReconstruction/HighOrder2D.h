@@ -20,6 +20,7 @@ using std::vector;
 #include "../Grid/HO_Grid2DQuad.h"
 #include "ReconstructionHelpers.h"
 #include "Cauchy_BoundaryConditions.h"
+#include "HighOrder2D_BlockBoundary.h"
 
 /*********************************
  * Declare the HighOrder2D class *
@@ -318,6 +319,38 @@ public:
   const int & Nghost_Grid(void) const {return Geom->Nghost; }
   //@}
 
+  //! @name Block boundary information
+  //@{
+  //! Get information for West boundary
+  HighOrder2D_BlockBoundary & getWestBnd(void) { return WestBnd; }
+  const HighOrder2D_BlockBoundary & getWestBnd(void) const { return WestBnd; }
+  HighOrder2D_BlockBoundary & get_South_WestBnd(void) { return S_WestBnd; }
+  const HighOrder2D_BlockBoundary & get_South_WestBnd(void) const { return S_WestBnd; }
+  HighOrder2D_BlockBoundary & get_North_WestBnd(void) { return N_WestBnd; }
+  const HighOrder2D_BlockBoundary & get_North_WestBnd(void) const { return N_WestBnd; }
+
+  HighOrder2D_BlockBoundary & getEastBnd(void) { return EastBnd; }
+  const HighOrder2D_BlockBoundary & getEastBnd(void) const { return EastBnd; }
+  HighOrder2D_BlockBoundary & get_South_EastBnd(void) { return S_EastBnd; }
+  const HighOrder2D_BlockBoundary & get_South_EastBnd(void) const { return S_EastBnd; }
+  HighOrder2D_BlockBoundary & get_North_EastBnd(void) { return N_EastBnd; }
+  const HighOrder2D_BlockBoundary & get_North_EastBnd(void) const { return N_EastBnd; }
+
+  HighOrder2D_BlockBoundary & getNorthBnd(void) { return NorthBnd; }
+  const HighOrder2D_BlockBoundary & getNorthBnd(void) const { return NorthBnd; }
+  HighOrder2D_BlockBoundary & get_East_NorthBnd(void) { return E_NorthBnd; }
+  const HighOrder2D_BlockBoundary & get_East_NorthBnd(void) const { return E_NorthBnd; }
+  HighOrder2D_BlockBoundary & get_West_NorthBnd(void) { return W_NorthBnd; }
+  const HighOrder2D_BlockBoundary & get_West_NorthBnd(void) const { return W_NorthBnd; }
+
+  HighOrder2D_BlockBoundary & getSouthBnd(void) { return SouthBnd; }
+  const HighOrder2D_BlockBoundary & getSouthBnd(void) const { return SouthBnd; }
+  HighOrder2D_BlockBoundary & get_East_SouthBnd(void) { return E_SouthBnd; }
+  const HighOrder2D_BlockBoundary & get_East_SouthBnd(void) const { return E_SouthBnd; }
+  HighOrder2D_BlockBoundary & get_West_SouthBnd(void) { return W_SouthBnd; }
+  const HighOrder2D_BlockBoundary & get_West_SouthBnd(void) const { return W_SouthBnd; }
+  //@}
+
   //! @name Initialize container functions.
   //@{
   static int getMinimumNghost(const int &ReconstructionOrder); //!< return the minimum required number of ghost cells
@@ -343,7 +376,8 @@ public:
   void InitializeBasicVariable(int ReconstructionOrder, GeometryType & Block,
 			       const bool &_pseudo_inverse_allocation_ = false);
   void SetReconstructionOrder(int ReconstructionOrder);
-
+  void SetPropertiesHighOrderBlockBoundaries(void);
+  void CheckConsistencyOfGeometricSplineProperties(void);
   //@}
 
   //! @name Evaluate the polynomial interpolant.
@@ -874,6 +908,20 @@ private:
   bool _constrained_EAST_reconstruction; //!< Flag for the EAST boundary to show if constrained rec. is required.
   bool _constrained_NORTH_reconstruction; //!< Flag for the NORTH boundary to show if constrained rec. is required.
   bool _constrained_SOUTH_reconstruction; //!< Flag for the SOUTH boundary to show if constrained rec. is required.
+  HighOrder2D_BlockBoundary WestBnd,	  //!< Storage for information related to the West high-order block boundary
+    S_WestBnd,                  //!< Storage for information related to the South extension of West high-order block boundary
+    N_WestBnd,                  //!< Storage for information related to the North extension of West high-order block boundary
+    EastBnd,			//!< Storage for information related to the East high-order block boundary
+    S_EastBnd,			//!< Storage for information related to the South extension of East high-order block boundary
+    N_EastBnd,			//!< Storage for information related to the North extension of East high-order block boundary
+    NorthBnd,                   //!< Storage for information related to the North high-order block boundary
+    W_NorthBnd,                 //!< Storage for information related to the West extension of North high-order block boundary
+    E_NorthBnd,                 //!< Storage for information related to the East extension of North high-order block boundary
+    SouthBnd,                   //!< Storage for information related to the South high-order block boundary
+    W_SouthBnd,                 //!< Storage for information related to the West extension of South high-order block boundary
+    E_SouthBnd;                 //!< Storage for information related to the East extension of South high-order block boundary
+  //! Reset block boundaries information
+  void ResetBlockBoundaries(void);
   //@}
 
   //! Get the number of variables in the solution state
@@ -1182,6 +1230,22 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
     _constrained_NORTH_reconstruction = rhs._constrained_NORTH_reconstruction;
     _constrained_SOUTH_reconstruction = rhs._constrained_SOUTH_reconstruction;
 
+    // copy properties of block boundaries
+    WestBnd = rhs.WestBnd;
+    S_WestBnd = rhs.S_WestBnd;
+    N_WestBnd = rhs.N_WestBnd;
+
+    EastBnd = rhs.EastBnd;
+    S_EastBnd = rhs.S_EastBnd;
+    N_EastBnd = rhs.N_EastBnd;
+    
+    NorthBnd = rhs.NorthBnd;
+    E_NorthBnd = rhs.E_NorthBnd;
+    W_NorthBnd = rhs.W_NorthBnd;
+
+    SouthBnd = rhs.SouthBnd;
+    E_SouthBnd = rhs.E_SouthBnd;
+    W_SouthBnd = rhs.W_SouthBnd;
   }//endif (rhs._allocated_block)
 }
 
@@ -1492,6 +1556,9 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
     _constrained_NORTH_reconstruction = false;
     _constrained_SOUTH_reconstruction = false;
 
+    // Reset block boundaries
+    ResetBlockBoundaries();
+
     // Confirm the deallocation
     _allocated_block = false;
     _allocated_cells = false;
@@ -1599,6 +1666,33 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
 }
 
 /*!
+ * Reset information related to block boundaries in the high-order object.
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::ResetBlockBoundaries(void){
+
+  // West boundaries
+  WestBnd.Reset();
+  S_WestBnd.Reset();
+  N_WestBnd.Reset();
+
+  // East boundaries
+  EastBnd.Reset();
+  S_EastBnd.Reset();
+  N_EastBnd.Reset();
+
+  // North boundaries
+  NorthBnd.Reset();
+  W_NorthBnd.Reset();
+  E_NorthBnd.Reset();
+
+  // South boundaries
+  SouthBnd.Reset();
+  W_SouthBnd.Reset();
+  E_SouthBnd.Reset();
+}
+
+/*!
  * Initialize completely the high-order object.
  */
 template<class SOLN_STATE> inline
@@ -1630,6 +1724,9 @@ void HighOrder2D<SOLN_STATE>::InitializeBasicVariable(int ReconstructionOrder, G
   // Associate geometry
   SetGeometryPointer(Block);
 
+  // Set properties of block boundaries (i.e. which boundaries are constrained/unconstrained and which are opaque/transparent)
+  SetPropertiesHighOrderBlockBoundaries();
+
   // Determine the range of cells in which NO constrained reconstruction is performed
   SetRangeOfQuadCellsWithoutConstrainedReconstruction();
 
@@ -1652,6 +1749,261 @@ void HighOrder2D<SOLN_STATE>::SetReconstructionOrder(int ReconstructionOrder){
   InitializeVariable(ReconstructionOrder,
 		     *Geom,
 		     _pseudo_inverse_allocation_);
+}
+
+/*! 
+ * Set the properties of high-order block boundaries,
+ * based on the associated grid.
+ * There are three possible boundary types:
+ * 1. constrained and opaque
+ * 2. unconstrained and opaque
+ * 3. unconstrained and transparent
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::SetPropertiesHighOrderBlockBoundaries(void){
+
+  // Ensure that block splines require a valid scenario for constrained reconstruction
+  CheckConsistencyOfGeometricSplineProperties();
+
+  // Set properties of boundaries
+  
+  // === Reset all boundary properties (i.e. all boundaries are set to be unconstrained and transparent)
+  ResetBlockBoundaries();
+  // === Set constrained block to false
+  _constrained_block_reconstruction = false;
+
+  // === North boundary ===
+  if (Geom->IsNorthBoundaryReconstructionConstrained()){
+    // Set North boundary to be constrained
+    NorthBnd.setConstrainedBoundary();
+
+    // Set the North extensions of West and East boundaries to be opaque (see Rule #1)
+    N_WestBnd.setOpaqueBoundary();
+    N_EastBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+  // === West boundary ===
+  if (Geom->IsWestBoundaryReconstructionConstrained()){
+    // Set West boundary to be constrained
+    WestBnd.setConstrainedBoundary();
+    
+    // Set the West extensions of North and South boundaries to be unconstrained and opaque (see Rule #1)
+    W_NorthBnd.setOpaqueBoundary();
+    W_SouthBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+  // === South boundary ===
+  if (Geom->IsSouthBoundaryReconstructionConstrained()){
+    // Set South boundary to be constrained
+    SouthBnd.setConstrainedBoundary();
+
+    // Set the South extensions of West and East boundaries to be unconstrained and opaque (see Rule #1)
+    S_WestBnd.setOpaqueBoundary();
+    S_EastBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+  // === East boundary ===
+  if (Geom->IsEastBoundaryReconstructionConstrained()){
+    // Set East boundary to be constrained
+    EastBnd.setConstrainedBoundary();
+    
+    // Set the East extensions of North and South boundaries to be unconstrained and opaque (see Rule #1)
+    E_NorthBnd.setOpaqueBoundary();
+    E_SouthBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+  // === North-West corner ===
+  if (Geom->IsNorthExtendWestBoundaryReconstructionConstrained()){
+    // Set North extension of West boundary to be constrained
+    N_WestBnd.setConstrainedBoundary();
+    // Set West extension of North boundary to be opaque (i.e. avoid corner ghost cells)
+    W_NorthBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+  if (Geom->IsWestExtendNorthBoundaryReconstructionConstrained()){
+    // Set West extension of North boundary to be constrained
+    W_NorthBnd.setConstrainedBoundary();
+    // Set North extension of West boundary to be opaque (i.e. avoid corner ghost cells)
+    N_WestBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+
+  // === South-West corner ===
+  if (Geom->IsWestExtendSouthBoundaryReconstructionConstrained()){
+    // Set West extension of South boundary to be constrained
+    W_SouthBnd.setConstrainedBoundary();
+    // Set South extension of West boundary to be opaque (i.e. avoid corner ghost cells)
+    S_WestBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+  if (Geom->IsSouthExtendWestBoundaryReconstructionConstrained()){
+    // Set South extension of West boundary to be constrained
+    S_WestBnd.setConstrainedBoundary();
+    // Set West extension of South boundary to be opaque (i.e. avoid corner ghost cells)
+    W_SouthBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+
+  // === South-East corner ===
+  if (Geom->IsSouthExtendEastBoundaryReconstructionConstrained()){
+    // Set South extension of East boundary to be constrained
+    S_EastBnd.setConstrainedBoundary();
+    // Set East extension of South boundary to be opaque (i.e. avoid corner ghost cells)
+    E_SouthBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+  if (Geom->IsEastExtendSouthBoundaryReconstructionConstrained()){
+    // Set East extension of South boundary to be constrained
+    E_SouthBnd.setConstrainedBoundary();
+    // Set South extension of East boundary to be opaque (i.e. avoid corner ghost cells)
+    S_EastBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+
+  // === North-East corner ===
+  if (Geom->IsEastExtendNorthBoundaryReconstructionConstrained()){
+    // Set East extension of North boundary to be constrained
+    E_NorthBnd.setConstrainedBoundary();
+    // Set North extension of East boundary to be opaque (i.e. avoid corner ghost cells)
+    N_EastBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+  if (Geom->IsNorthExtendEastBoundaryReconstructionConstrained()){
+    // Set North extension of East boundary to be constrained
+    N_EastBnd.setConstrainedBoundary();
+    // Set East extension of North boundary to be opaque (i.e. avoid corner ghost cells)
+    E_NorthBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+}
+
+/*! 
+ * Ensure that the block geometric splines require a realizable
+ * constrained reconstruction scenario (i.e. some rules are fulfilled).
+ * 
+ * Rule 1. If one main spline is constrained, then the extensions of the main splines
+ *         perpendincular on it and which have contact with it, cannot be constrained.
+ *         (e.g. North spline constrained, then ExtendNorth_WestSpline and 
+ *               ExtendNorth_EastSpline cannot be constrained.)
+ * Rule 2. If both main splines that meet in a corner are constrained,
+ *         then the extension splines at that corner cannot be constrained. 
+ * Rule 3. If one extension spline is constrained, the other extension spline in the corner
+ *         and its correspondent main spline cannot be constrained 
+ *         (e.g. ExtendEast_SouthSpline constrained, then ExtendSouth_EastSpline and EastSpline
+ *          cannot be constrained)
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties(void){
+
+  // === Check main North boundary ===
+  if (Geom->IsNorthBoundaryReconstructionConstrained()){
+    // === Check Rule 1 ===
+    if (Geom->IsNorthExtendWestBoundaryReconstructionConstrained() ||
+	Geom->IsNorthExtendEastBoundaryReconstructionConstrained() ){
+      throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #1 violated for the constrained North boundary");
+    }
+
+    // === Check Rule 2 for NW corner ===
+    if (Geom->IsWestBoundaryReconstructionConstrained() && 
+	(Geom->IsWestExtendNorthBoundaryReconstructionConstrained() || Geom->IsNorthExtendWestBoundaryReconstructionConstrained()) ){
+      throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #2 violated for the North-West corner");
+    }
+
+    // === Check Rule 2 for NE corner ===
+    if (Geom->IsEastBoundaryReconstructionConstrained() && 
+	(Geom->IsEastExtendNorthBoundaryReconstructionConstrained() || Geom->IsNorthExtendEastBoundaryReconstructionConstrained()) ){
+      throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #2 violated for the North-East corner");
+    }
+  }
+
+  // === Check main South boundary ===
+  if (Geom->IsSouthBoundaryReconstructionConstrained()){
+    // === Check Rule 1 ===
+    if (Geom->IsSouthExtendWestBoundaryReconstructionConstrained() ||
+	Geom->IsSouthExtendEastBoundaryReconstructionConstrained() ){
+      throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #1 violated for the constrained South boundary");
+    }
+
+    // === Check Rule 2 for SW corner ===
+    if (Geom->IsWestBoundaryReconstructionConstrained() && 
+	(Geom->IsWestExtendSouthBoundaryReconstructionConstrained() || Geom->IsSouthExtendWestBoundaryReconstructionConstrained()) ){
+      throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #2 violated for the South-West corner");
+    }
+
+    // === Check Rule 2 for SE corner ===
+    if (Geom->IsEastBoundaryReconstructionConstrained() && 
+	(Geom->IsEastExtendSouthBoundaryReconstructionConstrained() || Geom->IsSouthExtendEastBoundaryReconstructionConstrained()) ){
+      throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #2 violated for the South-East corner");
+    }
+  }
+
+  // === Check Rule 1 for main East boundary (Obs: Rule #2 has been already checked) ===
+  if (Geom->IsEastBoundaryReconstructionConstrained() && (Geom->IsEastExtendNorthBoundaryReconstructionConstrained() || 
+							  Geom->IsEastExtendSouthBoundaryReconstructionConstrained()) ){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #1 violated for the constrained East boundary");
+  }
+
+  // === Check Rule 1 for main West boundary (Obs: Rule #2 has been already checked) ===
+  if (Geom->IsWestBoundaryReconstructionConstrained() && (Geom->IsWestExtendNorthBoundaryReconstructionConstrained() || 
+							  Geom->IsWestExtendSouthBoundaryReconstructionConstrained()) ){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #1 violated for the constrained West boundary");
+  }
+
+  // === Check Rule 3 for North-West corner (Obs: It's enough to check only the two extensions) ===
+  if (Geom->IsWestExtendNorthBoundaryReconstructionConstrained() && 
+      Geom->IsNorthExtendWestBoundaryReconstructionConstrained() ){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #3 violated for the North-West corner");
+  }
+
+  // === Check Rule 3 for North-East corner (Obs: It's enough to check only the two extensions) ===
+  if (Geom->IsEastExtendNorthBoundaryReconstructionConstrained() && 
+      Geom->IsNorthExtendEastBoundaryReconstructionConstrained() ){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #3 violated for the North-East corner");
+  }
+
+  // === Check Rule 3 for South-West corner (Obs: It's enough to check only the two extensions) ===
+  if (Geom->IsWestExtendSouthBoundaryReconstructionConstrained() && 
+      Geom->IsSouthExtendWestBoundaryReconstructionConstrained() ){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #3 violated for the South-West corner");
+  }
+
+  // === Check Rule 3 for South-East corner (Obs: It's enough to check only the two extensions) ===
+  if (Geom->IsEastExtendSouthBoundaryReconstructionConstrained() && 
+      Geom->IsSouthExtendEastBoundaryReconstructionConstrained() ){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #3 violated for the South-East corner");
+  }
 }
 
 // AssociateGeometry()
@@ -2318,7 +2670,6 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
   StartJ_LPWL = JCl - 1; EndJ_LPWL = JCu + 1;
 
   // Reset affected flags
-  _constrained_block_reconstruction = false;
   _constrained_WEST_reconstruction  = false; 
   _constrained_EAST_reconstruction  = false; 
   _constrained_NORTH_reconstruction = false; 
@@ -2371,11 +2722,6 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
     EndJ_LPWL -= 1;
   }
 
-  // Flag the block accordingly
-  if (_constrained_WEST_reconstruction  || _constrained_EAST_reconstruction || 
-      _constrained_SOUTH_reconstruction || _constrained_NORTH_reconstruction ){
-    _constrained_block_reconstruction = true;
-  }
 }
 
 /*! 

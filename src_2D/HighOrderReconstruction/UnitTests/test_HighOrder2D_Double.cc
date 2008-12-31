@@ -1154,8 +1154,8 @@ namespace tut
     ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), 0);
 
     // Change spline type
-    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
-    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux); Grid.BndNorthSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux); Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
     
     // Update
     HO.AssociateGeometry(Grid);
@@ -1340,10 +1340,10 @@ namespace tut
     HO.InitializeVariable(RecOrder,Grid,true);
 
     // Change spline type
-    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
-    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
-    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
-    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux); Grid.BndNorthSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);  Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux); Grid.BndSouthSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);  Grid.BndWestSpline.setBCtype(BC_SYMMETRY_PLANE);
     
     // Update
     HO.AssociateGeometry(Grid);
@@ -1416,9 +1416,9 @@ namespace tut
 
     // Change spline type
     Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
-    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux); Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
     Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
-    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux); Grid.BndWestSpline.setBCtype(BC_SYMMETRY_PLANE);
     
     // Update
     HO.AssociateGeometry(Grid);
@@ -1566,9 +1566,9 @@ namespace tut
 
     // Change spline type
     Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
-    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux); Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
     Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
-    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux); Grid.BndWestSpline.setBCtype(BC_SYMMETRY_PLANE);
     
     // Update
     HO.AssociateGeometry(Grid);
@@ -1640,9 +1640,9 @@ namespace tut
     HO.InitializeVariable(RecOrder,Grid,true);
 
     // Change spline type
-    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);  Grid.BndNorthSpline.setBCtype(BC_SYMMETRY_PLANE);
     Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
-    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);  Grid.BndSouthSpline.setBCtype(BC_SYMMETRY_PLANE);
     Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
     
     // Update
@@ -1654,6 +1654,23 @@ namespace tut
     ensure_equals("East Bnd Flag", HO.IsEastConstrainedReconstructionRequired(), false);
     ensure_equals("North Bnd Flag", HO.IsNorthConstrainedReconstructionRequired(), true);
     ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), true);
+
+    
+    ensure_equals("West Bnd Reconstruction Flag", HO.getWestBnd().IsReconstructionConstrained(), false);
+    ensure_equals("S_West Bnd Reconstruction Flag", HO.get_South_WestBnd().IsReconstructionConstrained(), false);
+    ensure_equals("N_West Bnd Reconstruction Flag", HO.get_North_WestBnd().IsReconstructionConstrained(), false);
+
+    ensure_equals("East Bnd Reconstruction Flag", HO.getEastBnd().IsReconstructionConstrained(), false);
+    ensure_equals("S_East Bnd Reconstruction Flag", HO.get_South_EastBnd().IsReconstructionConstrained(), false);
+    ensure_equals("N_East Bnd Reconstruction Flag", HO.get_North_EastBnd().IsReconstructionConstrained(), false);
+
+    ensure_equals("North Bnd Reconstruction Flag", HO.getNorthBnd().IsReconstructionConstrained(), true);
+    ensure_equals("E_North Bnd Reconstruction Flag", HO.get_East_NorthBnd().IsReconstructionConstrained(), false);
+    ensure_equals("W_North Bnd Reconstruction Flag", HO.get_West_NorthBnd().IsReconstructionConstrained(), false);
+
+    ensure_equals("South Bnd Reconstruction Flag", HO.getSouthBnd().IsReconstructionConstrained(), true);
+    ensure_equals("E_South Bnd Reconstruction Flag", HO.get_East_SouthBnd().IsReconstructionConstrained(), false);
+    ensure_equals("W_South Bnd Reconstruction Flag", HO.get_West_SouthBnd().IsReconstructionConstrained(), false);
 
     // == check indexes for smoothness indicator
     ensure_equals("Rings SI", HO.RingsSI(), 1);
@@ -1686,6 +1703,237 @@ namespace tut
     ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), HO.ICu_Grid()+2);
     ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), HO.JCu_Grid()-1);
     ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), HO.JCu_Grid());
+  }
+
+  /* Test 30:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<30>()
+  {
+    set_test_name("Check consistency rule violation for constrained reconstruction");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Change spline type
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux); Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux); Grid.BndWestSpline.setBCtype(BC_SYMMETRY_PLANE);
+
+    // Force rule violation
+    Grid.ExtendEast_BndNorthSpline = Grid.BndEastSpline;
+    
+    try {
+      // Update
+      HO.AssociateGeometry(Grid);
+
+      // Ensure test failure
+      fail("Check Rule #1 violation for East boundary");
+
+    } catch (runtime_error){
+      // Successful
+    }
+  }
+
+  /* Test 31:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<31>()
+  {
+    set_test_name("Check correct setup of block boundaries I");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendEast_BndNorthSpline = Grid.BndNorthSpline;
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline = Grid.BndSouthSpline;
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux); 
+
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline = Grid.BndWestSpline;
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux); 
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    // == check that the right setup is obtained
+    ensure_equals("Block Flag", HO.IsConstrainedReconstructionRequired(), true);
+
+    // === West Bnd 
+    ensure_equals("West Bnd Reconstruction Flag", HO.getWestBnd().IsReconstructionConstrained(), false);
+    ensure_equals("West Bnd Stencil Flag", HO.getWestBnd().IsReconstructionStencilAffected(), false);
+    
+    ensure_equals("S_West Bnd Reconstruction Flag", HO.get_South_WestBnd().IsReconstructionConstrained(), true);
+    ensure_equals("S_West Bnd Stencil Flag", HO.get_South_WestBnd().IsReconstructionStencilAffected(), true);
+
+    ensure_equals("N_West Bnd Reconstruction Flag", HO.get_North_WestBnd().IsReconstructionConstrained(), false);
+    ensure_equals("N_West Bnd Stencil Flag", HO.get_North_WestBnd().IsReconstructionStencilAffected(), true);
+
+    // === East Bnd
+    ensure_equals("East Bnd Reconstruction Flag", HO.getEastBnd().IsReconstructionConstrained(), false);
+    ensure_equals("East Bnd Stencil Flag", HO.getEastBnd().IsReconstructionStencilAffected(), false);
+
+    ensure_equals("S_East Bnd Reconstruction Flag", HO.get_South_EastBnd().IsReconstructionConstrained(), false);
+    ensure_equals("S_East Bnd Stencil Flag", HO.get_South_EastBnd().IsReconstructionStencilAffected(), true);
+
+    ensure_equals("N_East Bnd Reconstruction Flag", HO.get_North_EastBnd().IsReconstructionConstrained(), false);
+    ensure_equals("N_East Bnd Stencil Flag", HO.get_North_EastBnd().IsReconstructionStencilAffected(), true);
+
+    // === North Bnd
+    ensure_equals("North Bnd Reconstruction Flag", HO.getNorthBnd().IsReconstructionConstrained(), true);
+    ensure_equals("North Bnd Stencil Flag", HO.getNorthBnd().IsReconstructionStencilAffected(), true);
+
+    ensure_equals("E_North Bnd Reconstruction Flag", HO.get_East_NorthBnd().IsReconstructionConstrained(), true);
+    ensure_equals("E_North Bnd Stencil Flag", HO.get_East_NorthBnd().IsReconstructionStencilAffected(), true);
+
+    ensure_equals("W_North Bnd Reconstruction Flag", HO.get_West_NorthBnd().IsReconstructionConstrained(), false);
+    ensure_equals("W_North Bnd Stencil Flag", HO.get_West_NorthBnd().IsReconstructionStencilAffected(), false);
+
+    // === South Bnd
+    ensure_equals("South Bnd Reconstruction Flag", HO.getSouthBnd().IsReconstructionConstrained(), false);
+    ensure_equals("South Bnd Stencil Flag", HO.getSouthBnd().IsReconstructionStencilAffected(), false);
+
+    ensure_equals("E_South Bnd Reconstruction Flag", HO.get_East_SouthBnd().IsReconstructionConstrained(), true);
+    ensure_equals("E_South Bnd Stencil Flag", HO.get_East_SouthBnd().IsReconstructionStencilAffected(), true);
+
+    ensure_equals("W_South Bnd Reconstruction Flag", HO.get_West_SouthBnd().IsReconstructionConstrained(), false);
+    ensure_equals("W_South Bnd Stencil Flag", HO.get_West_SouthBnd().IsReconstructionStencilAffected(), true);
+  }
+
+  /* Test 32:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<32>()
+  {
+    set_test_name("Check correct setup of block boundaries II");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    // == check that the right setup is obtained
+    ensure_equals("Block Flag", HO.IsConstrainedReconstructionRequired(), true);
+
+    // === West Bnd 
+    ensure_equals("West Bnd Reconstruction Flag", HO.getWestBnd().IsReconstructionConstrained(), true);
+    ensure_equals("West Bnd Stencil Flag", HO.getWestBnd().IsReconstructionStencilAffected(), true);
+    
+    ensure_equals("S_West Bnd Reconstruction Flag", HO.get_South_WestBnd().IsReconstructionConstrained(), false);
+    ensure_equals("S_West Bnd Stencil Flag", HO.get_South_WestBnd().IsReconstructionStencilAffected(), true);
+
+    ensure_equals("N_West Bnd Reconstruction Flag", HO.get_North_WestBnd().IsReconstructionConstrained(), false);
+    ensure_equals("N_West Bnd Stencil Flag", HO.get_North_WestBnd().IsReconstructionStencilAffected(), true);
+
+    // === East Bnd
+    ensure_equals("East Bnd Reconstruction Flag", HO.getEastBnd().IsReconstructionConstrained(), true);
+    ensure_equals("East Bnd Stencil Flag", HO.getEastBnd().IsReconstructionStencilAffected(), true);
+
+    ensure_equals("S_East Bnd Reconstruction Flag", HO.get_South_EastBnd().IsReconstructionConstrained(), false);
+    ensure_equals("S_East Bnd Stencil Flag", HO.get_South_EastBnd().IsReconstructionStencilAffected(), true);
+
+    ensure_equals("N_East Bnd Reconstruction Flag", HO.get_North_EastBnd().IsReconstructionConstrained(), false);
+    ensure_equals("N_East Bnd Stencil Flag", HO.get_North_EastBnd().IsReconstructionStencilAffected(), true);
+
+    // === North Bnd
+    ensure_equals("North Bnd Reconstruction Flag", HO.getNorthBnd().IsReconstructionConstrained(), true);
+    ensure_equals("North Bnd Stencil Flag", HO.getNorthBnd().IsReconstructionStencilAffected(), true);
+
+    ensure_equals("E_North Bnd Reconstruction Flag", HO.get_East_NorthBnd().IsReconstructionConstrained(), false);
+    ensure_equals("E_North Bnd Stencil Flag", HO.get_East_NorthBnd().IsReconstructionStencilAffected(), true);
+
+    ensure_equals("W_North Bnd Reconstruction Flag", HO.get_West_NorthBnd().IsReconstructionConstrained(), false);
+    ensure_equals("W_North Bnd Stencil Flag", HO.get_West_NorthBnd().IsReconstructionStencilAffected(), true);
+
+    // === South Bnd
+    ensure_equals("South Bnd Reconstruction Flag", HO.getSouthBnd().IsReconstructionConstrained(), true);
+    ensure_equals("South Bnd Stencil Flag", HO.getSouthBnd().IsReconstructionStencilAffected(), true);
+
+    ensure_equals("E_South Bnd Reconstruction Flag", HO.get_East_SouthBnd().IsReconstructionConstrained(), false);
+    ensure_equals("E_South Bnd Stencil Flag", HO.get_East_SouthBnd().IsReconstructionStencilAffected(), true);
+
+    ensure_equals("W_South Bnd Reconstruction Flag", HO.get_West_SouthBnd().IsReconstructionConstrained(), false);
+    ensure_equals("W_South Bnd Stencil Flag", HO.get_West_SouthBnd().IsReconstructionStencilAffected(), true);
   }
 
 }

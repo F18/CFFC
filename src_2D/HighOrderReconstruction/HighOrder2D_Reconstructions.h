@@ -953,7 +953,7 @@ void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrai
  * approach is used in the evaluation of the unlimited  
  * solution gradients.  Several slope limiters may be   
  * used.
- * The high-order derivatives of the variable flag as unfit
+ * The high-order derivatives of the variables flagged as unfit
  * are replaced with the first-order ones computed with
  * this subroutine. 
  */

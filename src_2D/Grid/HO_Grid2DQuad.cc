@@ -3908,7 +3908,6 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
 
 	 if (bc_type_left == bc_type_right) {
 	   BCtypeN[i] = bc_type_left;
-	 } else {
 	 } /* endif */
        } /* endfor */
     } /* endif */
@@ -3964,7 +3963,6 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
 
 	 if (bc_type_left == bc_type_right) {
 	   BCtypeS[i] = bc_type_left;
-	 } else {
 	 } /* endif */
        } /* endfor */
     } /* endif */
@@ -4020,7 +4018,6 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
 
 	 if (bc_type_left == bc_type_right) {
 	   BCtypeE[j] = bc_type_left;
-	 } else {
 	 } /* endif */
        } /* endfor */
     } /* endif */
@@ -4076,7 +4073,6 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
 
 	 if (bc_type_left == bc_type_right) {
 	   BCtypeW[j] = bc_type_left;
-	 } else {
 	 } /* endif */
        } /* endfor */
     } /* endif */

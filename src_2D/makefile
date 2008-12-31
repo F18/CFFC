@@ -165,7 +165,8 @@ endif
 # HighOrderReconstruction only for 2D:
 SRC_HIGH_ORDER_RECONSTRUCTION_2D = AccuracyAssessment2DMultiBlock.cc \
 				   AccuracyAssessment_ExecutionMode.cc \
-				   HighOrder2D_Input.cc
+				   HighOrder2D_Input.cc \
+				   HighOrder2D_BlockBoundary.cc
 SRC_HIGH_ORDER_RECONSTRUCTION_2D := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION_2D))
 
 # Add High-Order Reconstruction Testing If Required:
