@@ -1936,6 +1936,75 @@ namespace tut
     ensure_equals("W_South Bnd Stencil Flag", HO.get_West_SouthBnd().IsReconstructionStencilAffected(), true);
   }
 
+  /* Test 33:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<33>()
+  {
+    set_test_name("Check stencil setting near opaque boundaries");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+    CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendEast_BndNorthSpline = Grid.BndNorthSpline;
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline = Grid.BndSouthSpline;
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux); 
+
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline = Grid.BndWestSpline;
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux); 
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    int iCell, jCell, i, j;
+    IndexType i_index, j_index;
+
+    // ==== Check cell (ICl,JCl) ====
+    iCell = Grid.ICl; 
+    jCell = Grid.JCl;
+
+    // Set stencil
+    HO.SetDeviatedReconstructionStencil(iCell, jCell, i_index, j_index, HO.Rings());
+
+    // Check stencil
+    //     ensure_equals("Stencil size", i_index.size(), 21);
+    
+    //     for (i = 0; i<i_index.size(); ++i){
+    //       Print_2(i_index[i], j_index[i])
+    //     }
+
+  }
+
 }
 
 
