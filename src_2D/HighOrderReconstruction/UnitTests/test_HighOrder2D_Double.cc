@@ -2005,6 +2005,654 @@ namespace tut
 
   }
 
+  /* Test 34:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<34>()
+  {
+    set_test_name("Check reconstruction map for unconstrained block");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+    CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    ensure("Map variable", HO.getReconstructionTypeMap() == NULL);
+  }
+
+  /* Test 35:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<35>()
+  {
+    set_test_name("Check reconstruction type map, All main boundaries constrained");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    RunRegression = ON;
+
+    MasterFile = "ReconstructionTypeMap_AllBoundariesConstrained.dat";
+    CurrentFile = "Current_ReconstructionTypeMap_AllBoundariesConstrained.dat";
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+    CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);      
+      out() << "Reconstruction type map all boundaries constrained\n";
+      HO.outputReconstructionTypeMap(out());
+
+      // == Check all setups
+      RunRegressionTest("Reconstruction type map", CurrentFile, MasterFile, 1.0e-12);
+    } else {
+      // Generate the master file
+      Open_Output_File(MasterFile);
+      out() << "Reconstruction type map all boundaries constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    }
+  }
+
+  /* Test 36:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<36>()
+  {
+    set_test_name("Check reconstruction map with complicated setup");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    RunRegression = ON;
+
+    MasterFile = "ReconstructionTypeMap_1.dat";
+    CurrentFile = "Current_ReconstructionTypeMap_1.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);     
+    } else {
+      // Open the master file
+      Open_Output_File(MasterFile);
+    }
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+    CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // ============= First Setup =================
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendEast_BndNorthSpline = Grid.BndNorthSpline;
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline = Grid.BndSouthSpline;
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux); 
+
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline = Grid.BndWestSpline;
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux); 
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    if (RunRegression){
+      out() << "First setup\n";
+      HO.outputReconstructionTypeMap(out());
+    } else {
+      // Generate the master file
+      out() << "First setup\n";
+      HO.outputReconstructionTypeMap(out());
+    }
+
+
+    // ============= Second Setup (Rotate first setup counterclockwise) =================
+    // Change spline type (i.e. create scenario)
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendNorth_BndWestSpline = Grid.BndWestSpline;
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndEastSpline = Grid.BndEastSpline;
+    Grid.ExtendNorth_BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux); 
+
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline = Grid.BndSouthSpline;
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux); 
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    if (RunRegression){
+      out() << "Second setup (Rotate first setup counterclockwise)\n";
+      HO.outputReconstructionTypeMap(out());
+    } else {
+      // Generate the master file
+      out() << "Second setup (Rotate first setup counterclockwise)\n";
+      HO.outputReconstructionTypeMap(out());
+    }
+
+
+    // ============= Third Setup (Rotate second setup counterclockwise) =================
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendWest_BndSouthSpline = Grid.BndWestSpline;
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndNorthSpline = Grid.BndNorthSpline;
+    Grid.ExtendWest_BndNorthSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux); 
+
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndEastSpline = Grid.BndEastSpline;
+    Grid.ExtendNorth_BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    if (RunRegression){
+      out() << "Third setup (Rotate second setup counterclockwise)\n";
+      HO.outputReconstructionTypeMap(out());
+    } else {
+      // Generate the master file
+      out() << "Third setup (Rotate second setup counterclockwise)\n";
+      HO.outputReconstructionTypeMap(out());
+    }
+
+
+    // ============= Fourth Setup (Rotate third setup counterclockwise) =================
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendSouth_BndEastSpline = Grid.BndEastSpline;
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline = Grid.BndWestSpline;
+    Grid.ExtendSouth_BndWestSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux); 
+
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndNorthSpline = Grid.BndNorthSpline;
+    Grid.ExtendWest_BndNorthSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    if (RunRegression){
+      out() << "Fourth setup (Rotate third setup counterclockwise)\n";
+      HO.outputReconstructionTypeMap(out());
+
+      // == Check all setups
+      RunRegressionTest("Reconstruction type map", CurrentFile, MasterFile, 1.0e-12);
+    } else {
+      // Generate the master file
+      out() << "Fourth setup (Rotate third setup counterclockwise)\n";
+      HO.outputReconstructionTypeMap(out());
+    }
+  }
+
+  /* Test 37:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<37>()
+  {
+    set_test_name("Check reconstruction map, One main spline and extensions constrained at a time");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    RunRegression = ON;
+
+    MasterFile = "ReconstructionTypeMap_2.dat";
+    CurrentFile = "Current_ReconstructionTypeMap_2.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);     
+    } else {
+      // Open the master file
+      Open_Output_File(MasterFile);
+    }
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+    CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // ====================== EAST side constrained ===========================
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendSouth_BndEastSpline = Grid.BndEastSpline;
+    Grid.ExtendNorth_BndEastSpline = Grid.BndEastSpline;
+
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    if (RunRegression){
+      out() << "East side constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    } else {
+      // Generate the master file
+      out() << "East side constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    }
+
+    // ====================== SOUTH side constrained ===========================
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndEastSpline = Grid.BndEastSpline;
+    Grid.ExtendNorth_BndEastSpline = Grid.BndEastSpline;
+
+    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendWest_BndSouthSpline = Grid.BndSouthSpline;
+    Grid.ExtendEast_BndSouthSpline = Grid.BndSouthSpline;
+
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    if (RunRegression){
+      out() << "South side constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    } else {
+      // Generate the master file
+      out() << "South side constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    }
+
+    // ====================== WEST side constrained ===========================
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndEastSpline = Grid.BndEastSpline;
+    Grid.ExtendNorth_BndEastSpline = Grid.BndEastSpline;
+
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndSouthSpline = Grid.BndSouthSpline;
+    Grid.ExtendEast_BndSouthSpline = Grid.BndSouthSpline;
+
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendNorth_BndWestSpline = Grid.BndWestSpline;
+    Grid.ExtendSouth_BndWestSpline = Grid.BndWestSpline;
+
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    if (RunRegression){
+      out() << "West side constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    } else {
+      // Generate the master file
+      out() << "West side constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    }
+
+    // ====================== NORTH side constrained ===========================
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndEastSpline = Grid.BndEastSpline;
+    Grid.ExtendNorth_BndEastSpline = Grid.BndEastSpline;
+
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndSouthSpline = Grid.BndSouthSpline;
+    Grid.ExtendEast_BndSouthSpline = Grid.BndSouthSpline;
+
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndWestSpline = Grid.BndWestSpline;
+    Grid.ExtendSouth_BndWestSpline = Grid.BndWestSpline;
+
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendWest_BndNorthSpline = Grid.BndNorthSpline;
+    Grid.ExtendEast_BndNorthSpline = Grid.BndNorthSpline;
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    if (RunRegression){
+      out() << "North side constrained\n";
+      HO.outputReconstructionTypeMap(out());
+
+      // == Check all setups
+      RunRegressionTest("Reconstruction type map", CurrentFile, MasterFile, 1.0e-12);
+    } else {
+      // Generate the master file
+      out() << "North side constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    }
+  }
+
+  /* Test 38:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<38>()
+  {
+    set_test_name("Check reconstruction map, Two main splines that meet in a corner constrained at a time");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    RunRegression = ON;
+
+    MasterFile = "ReconstructionTypeMap_3.dat";
+    CurrentFile = "Current_ReconstructionTypeMap_3.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);     
+    } else {
+      // Open the master file
+      Open_Output_File(MasterFile);
+    }
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+    CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // ====================== SOUTH-EAST corner constrained ===========================
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    if (RunRegression){
+      out() << "South-East corner constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    } else {
+      // Generate the master file
+      out() << "South-East corner constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    }
+
+
+    // ====================== SOUTH-WEST corner constrained ===========================
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    if (RunRegression){
+      out() << "South-West corner constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    } else {
+      // Generate the master file
+      out() << "South-West corner constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    }
+
+
+    // ====================== NORTH-WEST corner constrained ===========================
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    if (RunRegression){
+      out() << "North-West corner constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    } else {
+      // Generate the master file
+      out() << "North-West corner constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    }
+
+
+    // ====================== NORTH-EAST corner constrained ===========================
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    if (RunRegression){
+      out() << "North-East corner constrained\n";
+      HO.outputReconstructionTypeMap(out());
+
+      // == Check all setups
+      RunRegressionTest("Reconstruction type map", CurrentFile, MasterFile, 1.0e-12);
+    } else {
+      // Generate the master file
+      out() << "North-East corner constrained\n";
+      HO.outputReconstructionTypeMap(out());
+    }
+  }
+
 }
 
 

@@ -88,6 +88,7 @@ public:
   ~HighOrder2D(void){ deallocate(); }
   void deallocate_CellMemory(void);
   void deallocate(void);
+  void deallocate_ReconstructionTypeMap(void);
   //@} 
 
   HighOrder2D<Soln_State> & operator=(const HighOrder2D<Soln_State> & rhs); //!< Assignment operator
@@ -499,6 +500,10 @@ public:
 
   //! @name Cell Level Reconstructions:
   //@{
+  //! @brief Return the type of reconstruction for a given cell (iCell,jCell)
+  char getCellReconstructionType(const int& iCell, const int& jCell) const;
+  char** const getReconstructionTypeMap(void) const {return ReconstructionTypeMap; }
+
   //! @brief Compute the unlimited high-order solution reconstruction of cell (iCell,jCell). 
   template<class Soln_Block_Type>
   void ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
@@ -792,6 +797,7 @@ public:
   //@{
   void Output_Object(ostream & out_file) const;
   void Read_Object(istream & in_file);
+  void outputReconstructionTypeMap(ostream & out_file) const;
   //@}
 
   //! @name Broadcast functions (MPI):
@@ -884,6 +890,16 @@ private:
 
   DenseMatrix **CENO_LHS;      //!< Storage for the pseudo-inverse of the LHS term in the CENO reconstruction.
   DoubleArrayType **CENO_Geometric_Weights;   //!< Storage for the geometric weights used in CENO reconstruction.
+  /*!
+   * Storage for the reconstruction type of cells that are part of a block that is flagged as constrained.
+   * For unconstrained blocks this variable is NULL!
+   * Possible types: 
+   *    n - no reconstruction (i.e. cells for which no reconstruction is carried out)
+   *    r - regular reconstruction (i.e. cells that use the central stencil for reconstruction)
+   *    m - modified reconstruction (i.e. cells that have the modified reconstruction stencil and no constraints)
+   *    c - constrained reconstruction (i.e. cells that have the modified reconstruction stencil and constraints)
+   */
+  char **ReconstructionTypeMap;
   //@}
 
   //! @name Other internal variables/flags:
@@ -932,6 +948,10 @@ private:
 
   //! Allocate memory at the cell level based on the order of reconstruction
   void allocate_CellMemory(const int &ReconstructionOrder, const bool &_pseudo_inverse_allocation_);
+  //! Allocate memory for the reconstruction type map
+  void allocate_ReconstructionTypeMap(void);
+  //! @brief Build reconstruction type map
+  void BuildReconstructionTypeMap(void);
 
   //! @name Reconstruction memory pools:
   //@{
@@ -1058,6 +1078,7 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(void):
   TD(NULL), SI(NULL), LimitedCell(NULL), PreviousLimitedCell(NULL),
   rings(0), rings_SI(0), _calculated_psinv(false),
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
+  ReconstructionTypeMap(NULL),
   Geom(NULL), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
   _constrained_block_reconstruction(false),
   _constrained_WEST_reconstruction(false) , _constrained_EAST_reconstruction(false),
@@ -1092,6 +1113,7 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder,
   TD(NULL), SI(NULL), LimitedCell(NULL), PreviousLimitedCell(NULL),
   rings(0), rings_SI(0), _calculated_psinv(false),
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL), 
+  ReconstructionTypeMap(NULL),
   Geom(&Block), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
   _constrained_block_reconstruction(false),
   _constrained_WEST_reconstruction(false) , _constrained_EAST_reconstruction(false),
@@ -1108,11 +1130,18 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder,
 	   _pseudo_inverse_allocation_,
 	   ReconstructionOrder);
 
+  // Set properties of block boundaries (i.e. which boundaries are constrained/unconstrained and which are opaque/transparent)
+  SetPropertiesHighOrderBlockBoundaries();
+
   // Determine the range of cells in which NO constrained reconstruction is performed
   SetRangeOfQuadCellsWithoutConstrainedReconstruction();
 
   // Determine the range of cells in which !constrained! reconstruction is performed
   SetRangeOfQuadCellsWithConstrainedReconstruction();
+
+  // Build the reconstruction type map
+  BuildReconstructionTypeMap();
+
 }
 
 //! Copy constructor 
@@ -1126,6 +1155,7 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
     TD(NULL), SI(NULL), LimitedCell(NULL), PreviousLimitedCell(NULL),
     rings(0), rings_SI(0), _calculated_psinv(false),
     CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
+    ReconstructionTypeMap(NULL),
     Geom(rhs.Geom), _si_calculation(rhs._si_calculation),
     AdjustmentCoeff(rhs.AdjustmentCoeff),
     ObserverInteriorCellGeometryState(rhs.ObserverInteriorCellGeometryState),
@@ -1249,6 +1279,10 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
     SouthBnd = rhs.SouthBnd;
     E_SouthBnd = rhs.E_SouthBnd;
     W_SouthBnd = rhs.W_SouthBnd;
+
+    // determine the reconstruction type of each cell for a constrained block
+    BuildReconstructionTypeMap();
+    
   }//endif (rhs._allocated_block)
 }
 
@@ -1302,6 +1336,91 @@ HighOrder2D<SOLN_STATE> & HighOrder2D<SOLN_STATE>::operator=(const HighOrder2D<S
     } else {
       deallocate_CellMemory();
     } //endif (rhs._allocated_cells)
+
+    // set range of cells without constrained reconstruction
+    StartI = rhs.StartI;
+    EndI = rhs.EndI;
+    StartJ = rhs.StartJ;
+    EndJ = rhs.EndJ;
+
+    // set range of cells with central stencil smoothness indicator calculation
+    StartI_SI = rhs.StartI_SI;
+    EndI_SI = rhs.EndI_SI;
+    StartJ_SI = rhs.StartJ_SI;
+    EndJ_SI = rhs.EndJ_SI;
+
+    // set range of cells checked for non-smooth interpolant
+    StartI_LPWL = rhs.StartI_LPWL;
+    EndI_LPWL = rhs.EndI_LPWL;
+    StartJ_LPWL = rhs.StartJ_LPWL;
+    EndJ_LPWL = rhs.EndJ_LPWL;
+
+    // set range of cells which have constrained reconstruction if the West boundary condition is enforced with constraints
+    StartI_ConstrWest = rhs.StartI_ConstrWest;
+    EndI_ConstrWest = rhs.EndI_ConstrWest;
+    StartJ_ConstrWest = rhs.StartJ_ConstrWest;
+    EndJ_ConstrWest = rhs.EndJ_ConstrWest;
+
+    // set range of cells which have constrained reconstruction if the East boundary condition is enforced with constraints
+    StartI_ConstrEast = rhs.StartI_ConstrEast;
+    EndI_ConstrEast = rhs.EndI_ConstrEast;
+    StartJ_ConstrEast = rhs.StartJ_ConstrEast;
+    EndJ_ConstrEast = rhs.EndJ_ConstrEast;
+
+    // set range of cells which have constrained reconstruction if the North boundary condition is enforced with constraints
+    StartI_ConstrNorth = rhs.StartI_ConstrNorth;
+    EndI_ConstrNorth = rhs.EndI_ConstrNorth;
+    StartJ_ConstrNorth = rhs.StartJ_ConstrNorth;
+    EndJ_ConstrNorth = rhs.EndJ_ConstrNorth;
+
+    // set range of cells which have constrained reconstruction if the South boundary condition is enforced with constraints
+    StartI_ConstrSouth = rhs.StartI_ConstrSouth;
+    EndI_ConstrSouth = rhs.EndI_ConstrSouth;
+    StartJ_ConstrSouth = rhs.StartJ_ConstrSouth;
+    EndJ_ConstrSouth = rhs.EndJ_ConstrSouth;
+
+    // set range of cells which have SI calculation modified if the West boundary condition is enforced with constraints
+    StartJ_SI_ConstrWest = rhs.StartJ_SI_ConstrWest;
+    EndJ_SI_ConstrWest = rhs.EndJ_SI_ConstrWest;
+
+    // set range of cells which have SI calculation modified if the East boundary condition is enforced with constraints
+    StartJ_SI_ConstrEast = rhs.StartJ_SI_ConstrEast;
+    EndJ_SI_ConstrEast = rhs.EndJ_SI_ConstrEast;
+
+    // set range of cells which have SI calculation modified if the North boundary condition is enforced with constraints
+    StartI_SI_ConstrNorth = rhs.StartI_SI_ConstrNorth;
+    EndI_SI_ConstrNorth = rhs.EndI_SI_ConstrNorth;
+
+    // set range of cells which have SI calculation modified if the South boundary condition is enforced with constraints
+    StartI_SI_ConstrSouth = rhs.StartI_SI_ConstrSouth;
+    EndI_SI_ConstrSouth = rhs.EndI_SI_ConstrSouth;
+
+    // set the type of reconstruction required by the geometry setup
+    _constrained_block_reconstruction = rhs._constrained_block_reconstruction;
+    _constrained_WEST_reconstruction = rhs._constrained_WEST_reconstruction;
+    _constrained_EAST_reconstruction = rhs._constrained_EAST_reconstruction;
+    _constrained_NORTH_reconstruction = rhs._constrained_NORTH_reconstruction;
+    _constrained_SOUTH_reconstruction = rhs._constrained_SOUTH_reconstruction;
+
+    // copy properties of block boundaries
+    WestBnd = rhs.WestBnd;
+    S_WestBnd = rhs.S_WestBnd;
+    N_WestBnd = rhs.N_WestBnd;
+
+    EastBnd = rhs.EastBnd;
+    S_EastBnd = rhs.S_EastBnd;
+    N_EastBnd = rhs.N_EastBnd;
+    
+    NorthBnd = rhs.NorthBnd;
+    E_NorthBnd = rhs.E_NorthBnd;
+    W_NorthBnd = rhs.W_NorthBnd;
+
+    SouthBnd = rhs.SouthBnd;
+    E_SouthBnd = rhs.E_SouthBnd;
+    W_SouthBnd = rhs.W_SouthBnd;
+
+    // determine the reconstruction type of each cell for a constrained block
+    BuildReconstructionTypeMap();
 
   }//endif (rhs._allocated_block)
 
@@ -1403,7 +1522,7 @@ void HighOrder2D<SOLN_STATE>::allocate(const int &NC_IDir,
       // re-allocate only the cell memory
       allocate_CellMemory(ReconstructionOrder,
 			  _pseudo_inverse_allocation_);
- 
+
     } else {
       // Reset the backup of the monotonicity data
       ResetMonotonicityDataBackup();
@@ -1488,6 +1607,32 @@ void HighOrder2D<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder
   _si_calculation = CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS;
 }
 
+/*!
+ * Allocate memory for the reconstruction type 
+ * of each cell only if the block is flagged as constrained.
+ * If the block is not constrained and memory has 
+ * been previously allocated to ReconstructionTypeMap variable
+ * this will be deallocated.
+ *
+ * \note Call this routine AFTER the block type has been decided!
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::allocate_ReconstructionTypeMap(void){
+
+  if (_allocated_block && IsConstrainedReconstructionRequired()){
+    if (ReconstructionTypeMap == NULL){
+      // Allocate memory
+      ReconstructionTypeMap = new char* [Ni];
+      for (int i = 0; i < Ni ; ++i){
+	ReconstructionTypeMap[i] = new char [Nj];
+      }// endfor
+    }
+  } else {
+    deallocate_ReconstructionTypeMap();
+  }
+  
+}
+
 // deallocate()
 /*!
  * Deallocate all allocated memory.
@@ -1509,6 +1654,10 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
 	delete [] CENO_LHS[i]; CENO_LHS[i] = NULL; // deallocate pseudo-inverse
 	delete [] CENO_Geometric_Weights[i]; CENO_Geometric_Weights[i] = NULL; // deallocate geometric weights
       }
+
+      if (ReconstructionTypeMap != NULL){
+	delete [] ReconstructionTypeMap[i]; ReconstructionTypeMap[i] = NULL; // deallocate ReconstructionTypeMap
+      }
     }
 
     delete [] TD; TD = NULL;
@@ -1519,6 +1668,10 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
     if (_allocated_psinv){
       delete [] CENO_LHS; CENO_LHS = NULL;
       delete [] CENO_Geometric_Weights; CENO_Geometric_Weights = NULL;
+    }
+
+    if (ReconstructionTypeMap != NULL){
+      delete [] ReconstructionTypeMap; ReconstructionTypeMap = NULL;
     }
 
     // Reset all indexes
@@ -1669,6 +1822,21 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
 }
 
 /*!
+ * Deallocate memory allocated to the ReconstructionTypeMap variable.
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::deallocate_ReconstructionTypeMap(void){
+
+  if (ReconstructionTypeMap != NULL){
+    for (int i = 0; i < Ni ; ++i ) {
+      delete [] ReconstructionTypeMap[i]; ReconstructionTypeMap[i] = NULL; // deallocate ReconstructionTypeMap
+    }
+
+    delete [] ReconstructionTypeMap; ReconstructionTypeMap = NULL;
+  }
+}
+
+/*!
  * Reset information related to block boundaries in the high-order object.
  */
 template<class SOLN_STATE> inline
@@ -1735,6 +1903,9 @@ void HighOrder2D<SOLN_STATE>::InitializeBasicVariable(int ReconstructionOrder, G
 
   // Determine the range of cells in which !constrained! reconstruction is performed
   SetRangeOfQuadCellsWithConstrainedReconstruction();
+
+  // Build the reconstruction type map
+  BuildReconstructionTypeMap();
 
   // Compute the smoothness indicator adjustment coefficient
   /* It adjusts the value of the smoothness indicator based on the degree of the reconstruction */
@@ -3952,6 +4123,17 @@ void HighOrder2D<SOLN_STATE>::SetSmoothnessIndicatorStencilForConstrainedReconst
 
 }
 
+/*!
+ * Return the type of reconstruction for a given cell (iCell,jCell).
+ */
+template<class SOLN_STATE> inline
+char HighOrder2D<SOLN_STATE>::getCellReconstructionType(const int& iCell, const int& jCell) const {
+  if (ReconstructionTypeMap != NULL){
+    return ReconstructionTypeMap[iCell][jCell];
+  } else {
+    return 'n';
+  }
+}
 
 /*! 
  * Compute the gradient at an inter-cellular face using the first 
@@ -4640,6 +4822,28 @@ void HighOrder2D<SOLN_STATE>::Read_Object(istream & in_file) {
   in_file.unsetf(ios::skipws);
 }
 
+/*! 
+ * Output the reconstruction type of each cell
+ * to the provided output stream.
+ */
+template<class SOLN_STATE>
+void HighOrder2D<SOLN_STATE>::outputReconstructionTypeMap(ostream & out_file) const{
+
+  int i,j;
+
+  if (ReconstructionTypeMap != NULL){
+    out_file << endl;
+    for (j = Nj-1; j>=0; --j){
+      for (i=0; i<Ni; ++i){
+	out_file << getCellReconstructionType(i,j);
+      }
+      out_file << endl;
+    }
+  } else {
+    out_file << "NULL\n";
+  }
+}
+
 /*!
  * Broadcast high-order object to all            
  * processors involved in the calculation from the      
@@ -4850,6 +5054,517 @@ double HighOrder2D<SOLN_STATE>::AMR_Criteria_Based_On_Minimum_Smoothness_Indicat
   // Evaluate the block refinement criteria based on the minimum encountered SI.
   return ( exp( -max(ZERO, SI_Min) / (CENO_Tolerances::AMR_Smoothness_Units * CENO_Tolerances::Fit_Tolerance )) );
   
+}
+
+/*!
+ * Build the map of reconstruction types,
+ * which means to identify the type of reconstruction
+ * of each cell in a constrained block.
+ * This routine assumes that the block type has been 
+ * already identified and the properties of the 
+ * high-order block boundaries have been already setup.
+ */
+template<class SOLN_STATE>
+void HighOrder2D<SOLN_STATE>::BuildReconstructionTypeMap(void){
+
+  int i,j;
+
+  // Allocate memory for the ReconstructionTypeMap variable
+  allocate_ReconstructionTypeMap();
+
+  if (IsConstrainedReconstructionRequired()){
+
+    // Set the NO reconstruction
+    for (j = 0; j < Nj; ++j){
+      for (i = 0; i < ICl-Nghost_HO; ++i){
+	ReconstructionTypeMap[i][j] = 'n';
+      }
+
+      for (i = ICu+Nghost_HO+1; i < Ni; ++i){
+	ReconstructionTypeMap[i][j] = 'n';
+      }
+    }
+
+    for (i = ICl-Nghost_HO; i <= ICu+Nghost_HO; ++i){
+      for (j = 0; j < JCl-Nghost_HO; ++j){
+	ReconstructionTypeMap[i][j] = 'n';
+      }
+
+      for (j = JCu+Nghost_HO+1; j < Nj; ++j){
+	ReconstructionTypeMap[i][j] = 'n';
+      }
+    }
+
+    // Set regular reconstruction where central reconstruction normally occurs in the absence of constrained boundaries
+    for (i = ICl-Nghost_HO; i <= ICu+Nghost_HO; ++i){
+      for (j = JCl-Nghost_HO; j <= JCu+Nghost_HO; ++j){
+	ReconstructionTypeMap[i][j] = 'r';
+      }
+    }
+
+    // ==== North Boundary ====
+    if (NorthBnd.IsReconstructionConstrained()){
+      for (i = ICl; i <= ICu; ++i){
+	// Set the NO reconstruction cells
+	for (j = JCu+1; j<=JCu+Nghost_HO; ++j){
+	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells
+	ReconstructionTypeMap[i][JCu] = 'c';
+      
+	// Set the unconstrained cells with modified stencil
+	for (j = JCu-1; j>JCu-rings; --j){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+    }
+
+    // ==== South Boundary ====
+    if (SouthBnd.IsReconstructionConstrained()){
+      for (i = ICl; i <= ICu; ++i){
+	// Set the NO reconstruction cells
+	for (j = JCl-Nghost_HO; j<JCl; ++j){
+	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells
+	ReconstructionTypeMap[i][JCl] = 'c';
+      
+	// Set the unconstrained cells with modified stencil
+	for (j = JCl+1; j<JCl+rings; ++j){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+    }
+
+    // ==== West Boundary ====
+    if (WestBnd.IsReconstructionConstrained()){
+      for (j = JCl; j<=JCu; ++j){
+	// Set the NO reconstruction cells
+	for (i=ICl-Nghost_HO; i<ICl; ++i){
+	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells 
+	ReconstructionTypeMap[ICl][j] = 'c';
+      
+	// Set the unconstrained cells with modified stencil
+	for (i=ICl+1; i<ICl+rings; ++i){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+
+      // Check the North and South boundaries
+      if (NorthBnd.IsReconstructionConstrained()){
+	// Fix the cells
+	for (i=ICl+1; i<ICl+rings; ++i){
+	  ReconstructionTypeMap[i][JCu] = 'c';
+	}
+      }
+
+      if (SouthBnd.IsReconstructionConstrained()){
+	// Fix the cells
+	for (i=ICl+1; i<ICl+rings; ++i){
+	  ReconstructionTypeMap[i][JCl] = 'c';
+	}
+      }
+    }
+
+    // ==== East Boundary ====
+    if (EastBnd.IsReconstructionConstrained()){
+      for (j = JCl; j<=JCu; ++j){
+	// Set the NO reconstruction cells
+	for (i=ICu+1; i<=ICu+Nghost_HO; ++i){
+	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells 
+	ReconstructionTypeMap[ICu][j] = 'c';
+      
+	// Set the unconstrained cells with modified stencil
+	for (i=ICu-1; i>ICu-rings; --i){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+
+      // Check the North and South boundaries
+      if (NorthBnd.IsReconstructionConstrained()){
+	// Fix the cells
+	for (i=ICu-1; i>ICu-rings; --i){
+	  ReconstructionTypeMap[i][JCu] = 'c';
+	}
+      }
+
+      if (SouthBnd.IsReconstructionConstrained()){
+	// Fix the cells
+	for (i=ICu-1; i>ICu-rings; --i){
+	  ReconstructionTypeMap[i][JCl] = 'c';
+	}
+      }
+    }
+
+    // ==== Corner North-West ====
+    if (N_WestBnd.IsReconstructionConstrained()){
+      for (j = JCu+1; j<= JCu+Nghost_HO; ++j){
+	// Set the NO reconstruction cells
+	for (i=ICl-Nghost_HO; i<=ICl-1; ++i){
+ 	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells
+	ReconstructionTypeMap[ICl][j] = 'c';
+
+	// Set the unconstrained cells with modified stencil
+	for (i = ICl+1; i<ICl+rings; ++i){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+
+      if (!WestBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICl-Nghost_HO; i<ICl+rings; ++i){
+	  for (j = JCu; j > JCu-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else if (N_WestBnd.IsReconstructionStencilAffected()){
+
+      if (W_NorthBnd.IsReconstructionConstrained()){
+
+	for (i = ICl-Nghost_HO; i<ICl; ++i){
+	  // Set the NO reconstruction cells
+	  for (j = JCu+1; j<=JCu+Nghost_HO; ++j){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+
+	  // Set the constrained cells
+	  ReconstructionTypeMap[i][JCu] = 'c';
+
+	  // Set the unconstrained cells with modified stencil
+	  for (j = JCu-1; j>JCu-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+
+	if (!NorthBnd.IsReconstructionStencilAffected()){
+	  // Set the cells with modified stencil
+	  for (i = ICl; i<ICl+rings; ++i){
+	    for (j = JCu+Nghost_HO; j > JCu-rings; --j){
+	      ReconstructionTypeMap[i][j] = 'm';
+	    }
+	  }
+	} 
+
+      } else if (W_NorthBnd.IsReconstructionStencilAffected()) {
+	// Both extensions affect the stencil. 
+	// Set the corner ghost cells to NO reconstruction
+	for (j = JCu+1; j<= JCu+Nghost_HO; ++j){
+	  for (i=ICl-Nghost_HO; i<=ICl-1; ++i){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+	}
+
+      } else {
+	// W_NorthBnd is transparent
+	
+	// Set the cells with modified stencil
+	for (i = ICl-1; i>=ICl-rings; --i){
+	  for (j = JCu+Nghost_HO; j > JCu-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else {
+      // N_WestBnd is transparent
+
+      if (W_NorthBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICl-Nghost_HO; i<ICl+rings; ++i){
+	  for (j = JCu+1; j<=JCu+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } // endif (N_WestBnd)
+
+
+    // ==== Corner South-West ====
+    if (S_WestBnd.IsReconstructionConstrained()){
+      for (j = JCl-1; j>=JCl-Nghost_HO; --j){
+	// Set the NO reconstruction cells
+	for (i=ICl-Nghost_HO; i<ICl; ++i){
+ 	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells
+	ReconstructionTypeMap[ICl][j] = 'c';
+
+	// Set the unconstrained cells with modified stencil
+	for (i = ICl+1; i<ICl+rings; ++i){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+
+      if (!WestBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICl-Nghost_HO; i<ICl+rings; ++i){
+	  for (j = JCl; j < JCl+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else if (S_WestBnd.IsReconstructionStencilAffected()){
+
+      if (W_SouthBnd.IsReconstructionConstrained()){
+	
+	for (i = ICl-Nghost_HO; i<ICl; ++i){
+	  // Set the NO reconstruction cells
+	  for (j = JCl-1; j>=JCl-Nghost_HO; --j){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+
+	  // Set the constrained cells
+	  ReconstructionTypeMap[i][JCl] = 'c';
+
+	  // Set the unconstrained cells with modified stencil
+	  for (j = JCl+1; j<JCl+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+
+	if (!SouthBnd.IsReconstructionStencilAffected()){
+	  // Set the cells with modified stencil
+	  for (i = ICl; i<ICl+rings; ++i){
+	    for (j = JCl-Nghost_HO; j < JCl+rings; ++j){
+	      ReconstructionTypeMap[i][j] = 'm';
+	    }
+	  }
+	}
+
+      } else if (W_SouthBnd.IsReconstructionStencilAffected()) {
+	// Both extensions affect the stencil. 
+	// Set the corner ghost cells to NO reconstruction
+	for (j = JCl-Nghost_HO; j<= JCl-1; ++j){
+	  for (i=ICl-Nghost_HO; i<=ICl-1; ++i){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+	}
+
+      } else {
+	// W_SouthBnd is transparent
+	
+	// Set the cells with modified stencil
+	for (i = ICl-1; i>=ICl-rings; --i){
+	  for (j = JCl-Nghost_HO; j < JCl+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else {
+      // S_WestBnd is transparent
+
+      if (W_SouthBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICl-Nghost_HO; i<ICl+rings; ++i){
+	  for (j = JCl-1; j>=JCl-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+      
+    } // endif (S_WestBnd)
+
+
+    // ==== Corner South-East ====
+    if (S_EastBnd.IsReconstructionConstrained()){
+
+      for (j = JCl-1; j>=JCl-Nghost_HO; --j){
+	// Set the NO reconstruction cells
+	for (i=ICu+1; i<=ICu+Nghost_HO; ++i){
+ 	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells
+	ReconstructionTypeMap[ICu][j] = 'c';
+
+	// Set the unconstrained cells with modified stencil
+	for (i = ICu-1; i>ICu-rings; --i){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+
+      if (!EastBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICu+Nghost_HO; i>ICu-rings; --i){
+	  for (j = JCl; j < JCl+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else if (S_EastBnd.IsReconstructionStencilAffected()){
+      
+      if (E_SouthBnd.IsReconstructionConstrained()){
+	
+	for (i = ICu+1; i<=ICu+Nghost_HO; ++i){
+	  // Set the NO reconstruction cells
+	  for (j = JCl-1; j>=JCl-Nghost_HO; --j){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+
+	  // Set the constrained cells
+	  ReconstructionTypeMap[i][JCl] = 'c';
+
+	  // Set the unconstrained cells with modified stencil
+	  for (j = JCl+1; j<JCl+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+
+	if (!SouthBnd.IsReconstructionStencilAffected()){
+	  // Set the cells with modified stencil
+	  for (i = ICu; i>ICu-rings; --i){
+	    for (j = JCl-Nghost_HO; j < JCl+rings; ++j){
+	      ReconstructionTypeMap[i][j] = 'm';
+	    }
+	  }
+	}
+
+      } else if (E_SouthBnd.IsReconstructionStencilAffected()) {
+	// Both extensions affect the stencil. 
+	// Set the corner ghost cells to NO reconstruction
+	for (j = JCl-Nghost_HO; j<= JCl-1; ++j){
+	  for (i=ICu+1; i<=ICu+Nghost_HO; ++i){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+	}
+
+      } else {
+	// E_SouthBnd is transparent
+	
+	// Set the cells with modified stencil
+	for (i = ICu+1; i<=ICu+rings; ++i){
+	  for (j = JCl-Nghost_HO; j < JCl+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else {
+      // S_EastBnd is transparent
+
+      if (E_SouthBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICu+Nghost_HO; i>ICu-rings; --i){
+	  for (j = JCl-1; j>=JCl-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } // endif (S_EastBnd)
+
+
+    // ==== Corner North-East ====
+    if (N_EastBnd.IsReconstructionConstrained()){
+
+      for (j = JCu+1; j<= JCu+Nghost_HO; ++j){
+	// Set the NO reconstruction cells
+	for (i=ICu+1; i<=ICu+Nghost_HO; ++i){
+ 	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells
+	ReconstructionTypeMap[ICu][j] = 'c';
+
+	// Set the unconstrained cells with modified stencil
+	for (i = ICu-1; i>ICu-rings; --i){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+
+      if (!EastBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICu+Nghost_HO; i>ICu-rings; --i){
+	  for (j = JCu; j > JCu-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else if (N_EastBnd.IsReconstructionStencilAffected()){
+
+      if (E_NorthBnd.IsReconstructionConstrained()){
+
+	for (i = ICu+1; i<=ICu+Nghost_HO; ++i){
+	  // Set the NO reconstruction cells
+	  for (j = JCu+1; j<=JCu+Nghost_HO; ++j){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+
+	  // Set the constrained cells
+	  ReconstructionTypeMap[i][JCu] = 'c';
+
+	  // Set the unconstrained cells with modified stencil
+	  for (j = JCu-1; j>JCu-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+
+	if (!NorthBnd.IsReconstructionStencilAffected()){
+	  // Set the cells with modified stencil
+	  for (i = ICu; i>ICu-rings; --i){
+	    for (j = JCu+Nghost_HO; j > JCu-rings; --j){
+	      ReconstructionTypeMap[i][j] = 'm';
+	    }
+	  }
+	}
+
+      } else if (E_NorthBnd.IsReconstructionStencilAffected()) {
+	// Both extensions affect the stencil. 
+	// Set the corner ghost cells to NO reconstruction
+	for (j = JCu+1; j<= JCu+Nghost_HO; ++j){
+	  for (i=ICu+1; i<=ICu+Nghost_HO; ++i){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+	}
+
+      } else {
+	// E_NorthBnd is transparent
+	
+	// Set the cells with modified stencil
+	for (i = ICu+1; i<=ICu+rings; ++i){
+	  for (j = JCu+Nghost_HO; j > JCu-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else {
+      // N_EastBnd is transparent
+
+      if (E_NorthBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICu+Nghost_HO; i>ICu-rings; --i){
+	  for (j = JCu+1; j<=JCu+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } // endif (N_EastBnd)
+
+  } else {
+    // The block doesn't have ReconstructionTypeMap variable allocated
+    return;
+  }
 }
 
 // Friend functions
