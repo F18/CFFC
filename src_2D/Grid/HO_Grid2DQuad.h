@@ -1173,6 +1173,10 @@ private:
 						     const bool &Curved_Extend_E_NorthBnd,
 						     const bool &Curved_Extend_W_NorthBnd);
 
+  int NumOfConstrainedGaussQuadPoints_GenericBoundary(const BndSplineType & BndSpline,
+						      const BndSplineIntervalType * BndSplineInfo,
+						      const int &CellIndex);
+
 };
 
 /*!
@@ -2659,18 +2663,21 @@ inline void Grid2D_Quad_Block_HO::operator ^(const double &a) {
 }
 
 /*!
- * Return the number of Gauss quadrature points on the North
- * cell face which have boundary conditions enforced by constraints.
+ * Return the number of Gauss quadrature points at which 
+ * the boundary conditions are enforced as constraints
+ * for a CellIndex cell, a given boundary spline and 
+ * the associate spline interval.
  */
-inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_North(const int &ii, const int &jj){
-  if (jj != JCu || ii < ICl || ii > ICu || BndNorthSpline.getFluxCalcMethod() == SolveRiemannProblem ){
-    /* cell is not on the interior North boundary
-       OR
-       the North boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
+inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_GenericBoundary(const BndSplineType & BndSpline,
+										 const BndSplineIntervalType * BndSplineInfo,
+										 const int &CellIndex){
+
+  if (BndSpline.getFluxCalcMethod() == SolveRiemannProblem){
+    /* The boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
     return 0;
-  } else if (BndNorthSplineInfo != NULL){
+  } else if (BndSplineInfo != NULL){
     /* use high-order boundary info */
-    return BndNorthSplineInfo[ii].NumGQPoints();
+    return BndSplineInfo[CellIndex].NumGQPoints();
   } else {
     /* return the number of points based on the order of accuracy
        (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux" ) */
@@ -2679,22 +2686,58 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_North(const int
 }
 
 /*!
+ * Return the number of Gauss quadrature points on the North
+ * cell face which have boundary conditions enforced by constraints.
+ */
+inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_North(const int &ii, const int &jj){
+  if (jj == JCu){
+    if (ii < ICl){
+      // This cell is bounded by ExtendWest_BndNorthSpline to North
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendWest_BndNorthSpline,
+							     ExtendWest_BndNorthSplineInfo,
+							     ii);
+    } else if (ii <= ICu){
+      // This cell is bounded by BndNorthSpline to North
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(BndNorthSpline,
+							     BndNorthSplineInfo,
+							     ii);      
+    } else {
+      // This cell is bounded by ExtendEast_BndNorthSpline to North
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendEast_BndNorthSpline,
+							     ExtendEast_BndNorthSplineInfo,
+							     ii);
+    }
+  } else {
+    /* This cell is not on the interior side of North block boundaries */
+    return 0;
+  }
+}
+
+/*!
  * Return the number of Gauss quadrature points on the South
  * cell face which have boundary conditions enforced by constraints.
  */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_South(const int &ii, const int &jj){
-  if (jj != JCl || ii < ICl || ii > ICu || BndSouthSpline.getFluxCalcMethod() == SolveRiemannProblem ){
-    /* cell is not on the interior South boundary
-       OR
-       the South boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
-    return 0;
-  } else if (BndSouthSplineInfo != NULL){
-    /* use high-order boundary info */
-    return BndSouthSplineInfo[ii].NumGQPoints();
+  if (jj == JCl){
+    if (ii < ICl){
+      // This cell is bounded by ExtendWest_BndSouthSpline to South
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendWest_BndSouthSpline,
+							     ExtendWest_BndSouthSplineInfo,
+							     ii);
+    } else if (ii <= ICu){
+      // This cell is bounded by BndSouthSpline to South
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(BndSouthSpline,
+							     BndSouthSplineInfo,
+							     ii);      
+    } else {
+      // This cell is bounded by ExtendEast_BndSouthSpline to South
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendEast_BndSouthSpline,
+							     ExtendEast_BndSouthSplineInfo,
+							     ii);
+    }
   } else {
-    /* return the number of points based on the order of accuracy
-       (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux") */
-    return NumGQP;
+    /* This cell is not on the interior side of South block boundaries */
+    return 0;
   }
 }
 
@@ -2703,18 +2746,26 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_South(const int
  * cell face which have boundary conditions enforced by constraints.
  */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_East(const int &ii, const int &jj){
-  if (ii != ICu || jj < JCl || jj > JCu || BndEastSpline.getFluxCalcMethod() == SolveRiemannProblem ){
-    /* cell is not on the interior East boundary
-       OR
-       the East boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
-    return 0;
-  } else if (BndEastSplineInfo != NULL){
-    /* use high-order boundary info */
-    return BndEastSplineInfo[jj].NumGQPoints();
+  if (ii == ICu){
+    if (jj < JCl){
+      // This cell is bounded by ExtendSouth_BndEastSpline to East
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendSouth_BndEastSpline,
+							     ExtendSouth_BndEastSplineInfo,
+							     jj);
+    } else if (jj <= JCu){
+      // This cell is bounded by BndEastSpline to East
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(BndEastSpline,
+							     BndEastSplineInfo,
+							     jj);
+    } else {
+      // This cell is bounded by ExtendNorth_BndEastSpline to East
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendNorth_BndEastSpline,
+							     ExtendNorth_BndEastSplineInfo,
+							     jj);
+    }
   } else {
-    /* return the number of points based on the order of accuracy
-       (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux") */
-    return NumGQP;
+    /* This cell is not on the interior side of East block boundaries */
+    return 0;
   }
 }
 
@@ -2723,18 +2774,26 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_East(const int 
  * cell face which have boundary conditions enforced by constraints.
  */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_West(const int &ii, const int &jj){
-  if (ii != ICl || jj < JCl || jj > JCu || BndWestSpline.getFluxCalcMethod() == SolveRiemannProblem ){
-    /* cell is not on the interior West boundary
-       OR
-       the West boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
-    return 0;
-  } else if (BndWestSplineInfo != NULL){
-    /* use high-order boundary info */
-    return BndWestSplineInfo[jj].NumGQPoints();
+  if (ii == ICl){
+    if (jj < JCl){
+      // This cell is bounded by ExtendSouth_BndWestSpline to West
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendSouth_BndWestSpline,
+							     ExtendSouth_BndWestSplineInfo,
+							     jj);
+    } else if (jj <= JCu){
+      // This cell is bounded by BndWestSpline to West
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(BndWestSpline,
+							     BndWestSplineInfo,
+							     jj);
+    } else {
+      // This cell is bounded by ExtendNorth_BndWestSpline to West
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendNorth_BndWestSpline,
+							     ExtendNorth_BndWestSplineInfo,
+							     jj);
+    }
   } else {
-    /* return the number of points based on the order of accuracy
-       (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux") */
-    return NumGQP;
+    /* This cell is not on the interior side of West block boundaries */
+    return 0;
   }
 }
 
