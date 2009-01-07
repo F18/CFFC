@@ -198,95 +198,65 @@ void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(void){
       return;
     }
 
-    // Calculate the pseudo-inverse using the central stencil for cells in the specified range
-    for ( j  = StartJ ; j <= EndJ ; ++j ) {
-      for ( i = StartI ; i <= EndI ; ++i ) {
-	
-	// Set the stencil of points used for reconstruction
-	SetReconstructionStencil(i, j, i_index, j_index);
-
-	// Compute the pseudo-inverse for the current cell
-	ComputeCellReconstructionPseudoInverse(i, j, i_index, j_index);
-      }/* endfor */
-    }/* endfor */
-
-    
     // Check whether constrained reconstruction is required anywhere in the block.
     if ( !_constrained_block_reconstruction ){
-      // No need to calculate anything for the constrained reconstruction
-      
-      // Confirm the pseudo-inverse calculation
-      _calculated_psinv = true;
-      
-      // Memorise the corresponding state of the grid
-      ObserverInteriorCellGeometryState = Geom->getInteriorStateTracker();
-      ObserverGhostCellGeometryState = Geom->getGhostStateTracker();
-      ObserverCornerGhostCellGeometryState = Geom->getCornerGhostStateTracker();
 
-      return;
-    }
-
-
-    /********************************************************************************************
-     * Calculate the matrices that need to be stored in order to speed up the high-order solution
-     * reconstruction of the cells affected by the presence of constrained boundaries
-     * (i.e. calculate the pseudo-inverse of the unconstrained unlimited reconstruction
-     * for those cells that don't have constraints but use a biased supporting stencil,
-     * calculate the LHS matrix associate with the least-squares problem and the mean conservation
-     * for those cells that have also constraint equations.
-     ********************************************************************************************/
-    
-    // Check WEST boundary
-    if (_constrained_WEST_reconstruction){
-      // Calculate pseudo-inverse or part of LHS assemble matrix here
-      for (j = StartJ_ConstrWest; j <= EndJ_ConstrWest; ++j){
-	for (i = StartI_ConstrWest; i <= EndI_ConstrWest; ++i){
-
-	  // Get matrix for the current cell (i.e. pseudo-inverse or LHS)
-	  ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries(WEST,i,j);
-
-	} // endfor
-      }// endfor
-    } 
-
-    // Check EAST boundary
-    if (_constrained_EAST_reconstruction){
-      // Calculate pseudo-inverse or part of LHS assemble matrix here
-      for (j = StartJ_ConstrEast; j <= EndJ_ConstrEast; ++j){
-	for (i = StartI_ConstrEast; i <= EndI_ConstrEast; ++i){
-
-	  // Get matrix for the current cell (i.e. pseudo-inverse or LHS)
-	  ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries(EAST,i,j);
-
-	} // endfor
-      }// endfor
-    } 
-
-    // Check NORTH boundary
-    if (_constrained_NORTH_reconstruction){
-      // Calculate pseudo-inverse or part of LHS assemble matrix here
-      for (j = StartJ_ConstrNorth; j <= EndJ_ConstrNorth; ++j){
-	for (i = StartI_ConstrNorth; i <= EndI_ConstrNorth; ++i){
-
-	  // Get matrix for the current cell (i.e. pseudo-inverse or LHS)
-	  ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries(NORTH,i,j);
+      // Calculate the pseudo-inverse using the central stencil for cells in the specified range
+      for ( j  = StartJ ; j <= EndJ ; ++j ) {
+	for ( i = StartI ; i <= EndI ; ++i ) {
 	
-	} // endfor
-      }// endfor
-    } 
+	  // Set the stencil of points used for reconstruction
+	  SetReconstructionStencil(i, j, i_index, j_index);
 
-    // Check SOUTH boundary
-    if (_constrained_SOUTH_reconstruction){
-      // Calculate pseudo-inverse or part of LHS assemble matrix here
-      for (j = StartJ_ConstrSouth; j <= EndJ_ConstrSouth; ++j){
-	for (i = StartI_ConstrSouth; i <= EndI_ConstrSouth; ++i){
+	  // Compute the pseudo-inverse for the current cell
+	  ComputeCellReconstructionPseudoInverse(i, j, i_index, j_index);
+	}/* endfor */
+      }/* endfor */
 
-	  // Get matrix for the current cell (i.e. pseudo-inverse or LHS)
-	  ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries(SOUTH,i,j);
-	
-	} // endfor
-      }// endfor
-    }
+    } else {
+
+      // Calculate the pseudo-inverse for a block that has some constrained cells.
+      // The ReconstructionTypeMap variable indicates which cells are constrained, 
+      // which once have only the stencil modified and which ones use the central stencil.
+
+      /********************************************************************************************
+       * Calculate the matrices that need to be stored in order to speed up the high-order solution
+       * reconstruction of the cells affected by the presence of constrained boundaries
+       * (i.e. calculate the pseudo-inverse of the unconstrained unlimited reconstruction
+       * for those cells that don't have constraints but use a biased supporting stencil,
+       * calculate the LHS matrix associate with the least-squares problem and the mean conservation
+       * for those cells that have also constraint equations.
+       ********************************************************************************************/
+
+      for ( j  = StartJ ; j <= EndJ ; ++j ) {
+	for ( i = StartI ; i <= EndI ; ++i ) {
+	  
+	  switch (ReconstructionTypeMap[i][j]){
+	    
+	  case 'r':		// "Regular reconstruction" (i.e. uses the central stencil)
+	    // Set the stencil of points used for reconstruction
+	    SetReconstructionStencil(i, j, i_index, j_index);
+	    
+	    // Compute the pseudo-inverse for the current cell
+	    ComputeCellReconstructionPseudoInverse(i, j, i_index, j_index);
+	    break;
+
+	  case 'm':		// "Modified reconstruction" (i.e. uses a deviated stencil but it has no constraints)
+	  case 'c':		// "Constrained reconstruction" (i.e. uses a deviated stencil and it has constraints)
+	    // Get matrix for the current cell (i.e. pseudo-inverse or LHS)
+	    ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries(i,j);
+	    break;
+
+	  case 'n':		// "No reconstruction" (i.e. cell for which no reconstruction should be performed)
+	    // Do nothing
+	    break;
+	  }
+
+	}/* endfor */
+      }/* endfor */
+      
+    } // endif (_constrained_block_reconstruction)
+
     
     // Confirm the pseudo-inverse calculation
     _calculated_psinv = true;
@@ -875,46 +845,25 @@ void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverse(const int &
  * If the pseudo-inverse cannot be computed because boundary condition
  * constraints must be added to the linear system, the LHS matrix of the 
  * k-exact least-squares reconstruction is stored instead.
+ *
+ * \note This routine must be called ONLY IF the block is constrained (i.e. ReconstructionTypeMap has been created)
  */
 template<class SOLN_STATE>
-void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries(const int& BOUNDARY,
-											      const int &iCell,
+void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries(const int &iCell,
 											      const int &jCell){
 
-  int constrGQP;
-  string ErrorMsg;
+  ostringstream ErrorMsg;
 
   // Set the biased stencil of points used for the reconstruction of the current cell
-  SetConstrainedReconstructionStencil(iCell, jCell, i_index_ave, j_index_ave);
-
-  // Determine the number of constraints for the current cell and set the error message
-  switch(BOUNDARY){
-  case NORTH:
-    ErrorMsg = "HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries() ERROR! The pseudo-inverse couldn't be computed for a cell affected by the North boundary.";
-    break;
-
-  case SOUTH:
-    ErrorMsg = "HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries() ERROR! The pseudo-inverse couldn't be computed for a cell affected by the South boundary.";
-    break;
-
-  case EAST:
-    ErrorMsg = "HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries() ERROR! The pseudo-inverse couldn't be computed for a cell affected by the East boundary.";
-    break;
-
-  case WEST:
-    ErrorMsg = "HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries() ERROR! The pseudo-inverse couldn't be computed for a cell affected by the West boundary.";
-    break;
-  }
-
-  // Determine the total number of constrained GQPs for the current cell (i.e. sum on all edges)
-  constrGQP = ( Geom->NumOfConstrainedGaussQuadPoints_West(iCell,jCell) +
-		Geom->NumOfConstrainedGaussQuadPoints_East(iCell,jCell) + 
-		Geom->NumOfConstrainedGaussQuadPoints_South(iCell,jCell) +
-		Geom->NumOfConstrainedGaussQuadPoints_North(iCell,jCell) );
+  SetDeviatedReconstructionStencil(iCell, jCell,
+				   i_index_ave, j_index_ave,
+				   rings);
     
-  if (constrGQP == 0){
+
+  if (ReconstructionTypeMap[iCell][jCell] == 'm'){
     /* There are NO constraints for this cell,
-       so a pseudo-inverse with the biased stencil may be computed. */
+       so a pseudo-inverse with the biased stencil may be computed.
+       The reconstruction of this cell has only the stencil MODIFIED (i.e. deviated from central). */
 
     // Check overdeterminancy
     if ( i_index_ave.size() > NumberOfTaylorDerivatives() ){
@@ -926,10 +875,14 @@ void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrai
     } else {
       // The pseudo-inverse CANNOT be computed
       // Throw an error
-      throw runtime_error(ErrorMsg);
+      // Set the error message
+      ErrorMsg << "HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries() ERROR!"
+	       << " The pseudo-inverse couldn't be computed for cell (" 
+	       << iCell << "," << jCell << ")";
+      throw runtime_error(ErrorMsg.str());
     }
 
-  } else {
+  } else if (ReconstructionTypeMap[iCell][jCell] == 'c'){
     /* There are constraints for this cell, so the pseudo-inverse CANNOT be computed.
        Instead, the least-squares part of the reconstruction matrix will be stored.
        That is, the mean conservation equation in the reconstructed cell (first equation)
@@ -941,8 +894,15 @@ void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrai
 					    i_index_ave, j_index_ave,
 					    Cell_LHS_Inv(iCell,jCell),
 					    GeomWeights(iCell,jCell));
-  } // endif (constrGQP == 0)
-  
+  } else {
+    // The pseudo-inverse SHOULDN'T be computed with this routine
+    // Throw an error
+    // Set the error message
+    ErrorMsg << "HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries() ERROR!"
+	     << "This routine should be used to compute pseudo-inverse only for 'modified' and 'constrained' reconstructions"
+	     << "The reconstruction type of cell (" << iCell << "," << jCell << ") is different than those!"; 
+    throw runtime_error(ErrorMsg.str());    
+  } // endif (ReconstructionTypeMap[iCell][jCell])  
 }
 
 /*! 

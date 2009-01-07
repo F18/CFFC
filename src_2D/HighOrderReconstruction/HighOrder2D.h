@@ -527,8 +527,7 @@ public:
 					      const IndexType & i_index, const IndexType & j_index);
   /*! @brief Compute the pseudo-inverse or LHS matrix for cell (iCell,jCell) which is influenced
     by the presence of constrained boundaries.  */
-  void ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries(const int& BOUNDARY,
-								       const int& iCell, const int& jCell);
+  void ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries(const int& iCell, const int& jCell);
 
   //! @brief Compute the piecewise linear solution reconstruction of cell (iCell,jCell). 
   template<class Soln_Block_Type>
