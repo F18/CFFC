@@ -656,6 +656,9 @@ public:
   void SetDeviatedReconstructionStencil(const int &iCell, const int &jCell,
 					IndexType & i_index, IndexType & j_index,
 					const int &rings) const;
+  void displayDeviatedReconstructionStencil(ostream & out,
+					    const int &iCell, const int &jCell,
+					    const int &rings) const;
   /*! @brief Set a central stencil of cells with a given extend for a particular cell. */
   void SetCentralStencil(const int &iCell, const int &jCell,
 			 IndexType & i_index, IndexType & j_index,
@@ -3479,7 +3482,7 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
   Imax_E  = iCell+rings;
   Imax_NE = iCell+rings;
   Jmax_NE = jCell+rings;
-  Jmax_N  = iCell+rings;
+  Jmax_N  = jCell+rings;
 
 
   if (CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS == ON &&
@@ -3499,7 +3502,7 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
     if ( iCell < ICl ){
 
       // ==== Cover cells with iCell < ICl ====
-
+      
       if ( jCell < JCl){                // Case A
 	// South Bnd influence
 	if (W_SouthBnd.IsReconstructionStencilAffected()){
@@ -3543,10 +3546,6 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	  Jmax_NW += 1;
 	  Jmax_N  += 1;
 	  Jmax_NE += 1;
-	} else if (SouthBnd.IsReconstructionStencilAffected()){
-	  Jmin_SE = JCl;                            /* limit Jmin */
-
-	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */
 	} else if (W_SouthBnd.IsReconstructionStencilAffected()){
 	  if (iCell == ICl - 1){
 	    Jmin_SW = Jmin_S = JCl;                 /* limit Jmin */
@@ -3562,16 +3561,19 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Jmax_N  += 1;
 	    Jmax_NE += 1;
 	  }
-	}
+	} else if (SouthBnd.IsReconstructionStencilAffected()){
+	  if (ICl-1-iCell > jCell - JCl){
+	    Imax_SE = ICl - 1;                       /* limit Imax */
 
-	// West Bnd influence
-	if (S_WestBnd.IsReconstructionStencilAffected()){
-	  Imax_SE = ICl - 1;                       /* limit Imax */
+	    /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	  } else {
+	    Jmin_SE = JCl;                            /* limit Jmin */
 
-	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	    /* DON'T extend Jmax due to smoothness indicator calculation reasons */
+	  }
 	}
 	
-      } else if (jCell <= JCu){	        // Case C (JCu-rings < jCell <= JCu)
+      } else if (jCell>JCu-rings && jCell <= JCu){	        // Case C (JCu-rings < jCell <= JCu)
 	// North Bnd influence
 	if (W_NorthBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
 	  Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
@@ -3579,11 +3581,7 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	  /* extend Jmin */
 	  Jmin_SW -= 1;
 	  Jmin_S  -= 1;
-	  Jmin_SE -= 1;	  
-	} else if (NorthBnd.IsReconstructionStencilAffected()){
-	  Jmax_NE = JCu;                            /* limit Jmax */
-
-	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */
+	  Jmin_SE -= 1;
 	} else if (W_NorthBnd.IsReconstructionStencilAffected()){
 	  if (iCell == ICl -1){
 	    Jmax_NW = Jmax_N = JCu;                 /* limit Jmax */
@@ -3599,16 +3597,19 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Jmin_S  -= 1;
 	    Jmin_SE -= 1;	  
 	  }
+	} else if (NorthBnd.IsReconstructionStencilAffected()){
+	  if (ICl-1-iCell > JCu-jCell){
+	    Imax_NE = ICl - 1;                       /* limit Imax */
+	    
+	    /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	  } else {
+	    Jmax_NE = JCu;                            /* limit Jmax */
+
+	    /* DON'T extend Jmin due to smoothness indicator calculation reasons */
+	  }
 	}
 
-	// West Bnd influence
-	if (N_WestBnd.IsReconstructionStencilAffected()){
-	  Imax_NE = ICl - 1;                       /* limit Imax */
-
-	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
-	}
-
-      } else {	                 // Case D (jCell > JCu)
+      } else if (jCell > JCu){	                 // Case D (jCell > JCu)
 	// North Bnd influence
 	if (W_NorthBnd.IsReconstructionStencilAffected()){
 	  if (iCell == ICl - 1){
@@ -3656,10 +3657,6 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	  Imax_SE += 1;
 	  Imax_E  += 1;
 	  Imax_NE += 1;
-	} else if (WestBnd.IsReconstructionStencilAffected()){
-	  Imin_NW = ICl;              /* limit Imin */
-	  
-	  /* DON'T extend Imax due to smoothness indicator calculation reasons */
 	} else if (S_WestBnd.IsReconstructionStencilAffected()){
 	  if (jCell == JCl -1){
 	    Imin_SW = Imin_W = ICl;     /* limit Imin */
@@ -3675,31 +3672,35 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Imax_E  += 1;
 	    Imax_NE += 1;    
 	  }
-	}
-
-	// South Bnd influence
-	if (W_SouthBnd.IsReconstructionStencilAffected()){
-	  Jmax_NW = JCl - 1;                     /* limit Jmax */
-
-	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */
+	} else if (WestBnd.IsReconstructionStencilAffected()){
+	  if (iCell-ICl > JCl-1-jCell){
+	    Imin_NW = ICl;              /* limit Imin */
+	  
+	    /* DON'T extend Imax due to smoothness indicator calculation reasons */
+	  } else {
+	    // South Bnd influence
+	    Jmax_NW = JCl - 1;                     /* limit Jmax */
+	    
+	    /* DON'T extend Jmin due to smoothness indicator calculation reasons */
+	  }
 	}
 
       } else if (jCell < JCl + rings){   // Case B
 	if (WestBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
-	  Jmin_SW = Jmin_S = Jmin_SE = JCl;      /* limit Jmin */
-
-	  /* extend Jmax */
-	  Jmax_N  += 1;
-	  Jmax_NE += 1;
-
 	  Imin_SW = Imin_W = Imin_NW = ICl;      /* limit Imin */
-
 	  /* extend Imax */
+	  Imax_SE += 1;
 	  Imax_E  += 1;
 	  Imax_NE += 1;
+
+	  Jmin_SW = Jmin_S = Jmin_SE = JCl;      /* limit Jmin */
+	  /* extend Jmax */
+	  Jmax_NW += 1; 
+	  Jmax_N  += 1;
+	  Jmax_NE += 1;
 	} else if (WestBnd.IsReconstructionStencilAffected() && S_WestBnd.IsReconstructionStencilAffected()){
 	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
-	  
+  
 	  /* extend Imax */
 	  Imax_SE += 1;
 	  Imax_E  += 1;
@@ -3742,10 +3743,15 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Jmax_NE += 1;
 	  }
 	} else if (W_SouthBnd.IsReconstructionStencilAffected()){ // S_WestBnd is also affecting the stencil!
-	  Imin_SW = ICl;
-	  Jmin_SW = JCl;
-
-	  // DON'T extend stencil
+	  if (iCell > jCell){
+	    // Limit to West side
+	    Imin_SW = ICl;
+	    // DON'T extend stencil
+	  } else {
+	    // Limit to South side
+	    Jmin_SW = JCl;
+	    // DON'T extend stencil
+	  }
 	}
 
       } else if (jCell <= JCu - rings){  // Case C 
@@ -3768,35 +3774,102 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	  Imax_SE += 1;
 
 	  Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
-	  /* extend Imax */
+	  /* extend Jmin */
 	  Jmin_SW -= 1;
 	  Jmin_S  -= 1;
 	  Jmin_SE -= 1;
 
 	} else if (WestBnd.IsReconstructionStencilAffected() && N_WestBnd.IsReconstructionStencilAffected()){
 	  Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
+
 	  /* extend Imax */
 	  Imax_NE += 1;
 	  Imax_E  += 1;
 	  Imax_SE += 1;	  
-
 	} else if (NorthBnd.IsReconstructionStencilAffected() && W_NorthBnd.IsReconstructionStencilAffected()){
 	  Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
-	  /* extend Imax */
+
+	  /* extend Jmin */
 	  Jmin_SW -= 1;
 	  Jmin_S  -= 1;
 	  Jmin_SE -= 1;
-
 	} else if (WestBnd.IsReconstructionStencilAffected()){
-	throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell < ICl + rings) && (jCell <= JCu), Case A, not implemented yet!");	  
+	  if (jCell == JCu){
+	    Imin_W = Imin_SW = ICl;             /* limit Imin */
+	    
+	    /* extend Imax */
+	    Imax_E  += 1;
+	    Imax_SE += 1;	  	    
+	  } else {
+	    Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
+	    
+	    /* extend Imax */
+	    Imax_NE += 1;
+	    Imax_E  += 1;
+	    Imax_SE += 1;	  	    
+	  }
 	} else if (NorthBnd.IsReconstructionStencilAffected()){
-	throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell < ICl + rings) && (jCell <= JCu), Case B, not implemented yet!");	  	  
+	  if (iCell == ICl){
+	    Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+	    
+	    /* extend Jmin */
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;	    	    
+	  } else {
+	    Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+	    
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;	    
+	  }
 	} else if (W_NorthBnd.IsReconstructionStencilAffected()){ // N_WestBnd also affects the stencil
-	throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell < ICl + rings) && (jCell <= JCu), Case C, not implemented yet!");
+	  if (iCell-ICl > JCu-jCell){
+	    // Limit to West side
+	    Imin_NW = ICl;
+	    // DON'T extend stencil
+	  } else {
+	    // Limit to North side
+	    Jmax_NW = JCu;
+	    // DON'T extend stencil
+	  }
 	}
 
       } else {			         // Case E (jCell > JCu)
-	throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell < ICl + rings) && (jCell > JCu) not implemented yet!");	
+	// West Bnd influence
+	if (N_WestBnd.IsReconstructionStencilAffected() && WestBnd.IsReconstructionStencilAffected()){
+	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+	  
+	  /* extend Imax */
+	  Imax_SE += 1;
+	  Imax_E  += 1;
+	  Imax_NE += 1;	  
+	} else if (N_WestBnd.IsReconstructionStencilAffected()){
+	  if (jCell == JCu + 1){
+	    Imin_W = Imin_NW = ICl;     /* limit Imin */
+	    
+	    /* extend Imax */
+	    Imax_E  += 1;
+	    Imax_NE += 1;	  	    
+	  } else {
+	    Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+	    
+	    /* extend Imax */
+	    Imax_SE += 1;
+	    Imax_E  += 1;
+	    Imax_NE += 1;	  
+	  }
+	} else if (WestBnd.IsReconstructionStencilAffected()){
+	  if (iCell-ICl > jCell-(JCu+1)){	    
+	    Imin_SW = ICl;                         /* limit Imin */
+
+	    /* DON'T extend Imax due to smoothness indicator calculation reasons */
+	  } else {
+	    Jmin_SW = JCu + 1;                     /* limit Jmin */
+
+	    /* DON'T extend Jmax due to smoothness indicator calculation reasons */
+	  }
+	}
       }	// endif (Case E)
 
     } else if (iCell <= ICu - rings) {
@@ -3831,41 +3904,111 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
       // ==== Cover cells with (ICu-rings < iCell <= ICu) ====
 
       if ( jCell < JCl){	         // Case A
-	throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell <= ICu) && (jCell < JCl) not implemented yet!");
+	// East Bnd influence
+	if (S_EastBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
+	  Imax_NE = Imax_E = Imax_SE = ICu;     /* limit Imax */
+
+	  /* extend Imin */
+	  Imin_NW -= 1;
+	  Imin_W  -= 1;
+	  Imin_SW -= 1;
+	} else if (S_EastBnd.IsReconstructionStencilAffected()){
+	  if (jCell == JCl-1){
+	    Imax_E = Imax_SE = ICu;     /* limit Imax */
+
+	    /* extend Imin */
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;   
+	  } else {
+	    Imax_NE = Imax_E = Imax_SE = ICu;     /* limit Imax */
+
+	    /* extend Imin */
+	    Imin_NW -= 1;
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;
+	  }
+	} else if (EastBnd.IsReconstructionStencilAffected()){
+	  if (ICu-iCell > JCl-1-jCell){
+	    Imax_NE = ICu;                         /* limit Imax */
+
+	    /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	  } else {
+	    // South Bnd influence
+	    Jmax_NE = JCl - 1;                     /* limit Jmax */
+
+	    /* DON'T extend Jmin due to smoothness indicator calculation reasons */	  
+	  }
+	}
 
       } else if (jCell < JCl + rings){   // Case B
 	if (SouthBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
 	  Jmin_SW = Jmin_S = Jmin_SE = JCl;        /* limit Jmin */
+
 	  /* extend Jmax */
 	  Jmax_NW += 1;
 	  Jmax_N  += 1;
 	  Jmax_NE += 1;
 
 	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+
+	  /* extend Imin */
+	  Imin_NW -= 1;
+	  Imin_W  -= 1;
+	  Imin_SW -= 1;
+	} else if (EastBnd.IsReconstructionStencilAffected()  && S_EastBnd.IsReconstructionStencilAffected()){
+	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+
 	  /* extend Imin */
 	  Imin_NW -= 1;
 	  Imin_W  -= 1;
 	  Imin_SW -= 1;
 	} else if (SouthBnd.IsReconstructionStencilAffected() && E_SouthBnd.IsReconstructionStencilAffected()){
 	  Jmin_SW = Jmin_S = Jmin_SE = JCl;        /* limit Jmin */
+
 	  /* extend Jmax */
 	  Jmax_NW += 1;
 	  Jmax_N  += 1;
-	  Jmax_NE += 1;
-
-	} else if (EastBnd.IsReconstructionStencilAffected()  && S_EastBnd.IsReconstructionStencilAffected()){
-	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
-	  /* extend Imin */
-	  Imin_NW -= 1;
-	  Imin_W  -= 1;
-	  Imin_SW -= 1;
-	  
-	} else if (SouthBnd.IsReconstructionStencilAffected()){
-	  throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell <= ICu) && (jCell < JCl + rings), Case A, not implemented yet!");
+	  Jmax_NE += 1; 
 	} else if (EastBnd.IsReconstructionStencilAffected()){
-	  throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell <= ICu) && (jCell < JCl + rings), Case B, not implemented yet!");
+	  if (jCell == JCl){
+	    Imax_NE = Imax_E = ICu;              /* limit Imax */
+
+	    /* extend Imin */
+	    Imin_NW -= 1;
+	    Imin_W  -= 1;
+	  } else {
+	    Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+
+	    /* extend Imin */
+	    Imin_NW -= 1;
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;
+	  }
+	} else if (SouthBnd.IsReconstructionStencilAffected()){
+	  if (iCell == ICu){
+	    Jmin_SW = Jmin_S = JCl;     /* limit Jmin */
+
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	  } else {
+	    Jmin_SW = Jmin_S = Jmin_SE = JCl;    /* limit Jmin */
+
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;     
+	  }
 	} else if (E_SouthBnd.IsReconstructionStencilAffected()){ // S_EastBnd also affects the stencil
-	  throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell <= ICu) && (jCell < JCl + rings), Case C, not implemented yet!");
+	  if ( (ICu-iCell) > (jCell - JCl) ){
+	    // Limit to East side
+	    Imax_SE = ICu;
+	    // DON'T extend stencil
+	  } else {
+	    // Limit to South side 
+	    Jmin_SE = JCl;
+	    // DON'T extend stencil
+	  }
 	}
 
       } else if (jCell <= JCu - rings){  // Case C 
@@ -3879,19 +4022,13 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	}
 
       } else if (jCell <= JCu){	         // Case D
-	if (NorthBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
-	  Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
-	  /* extend Jmin */
-	  Jmin_SW -= 1;
-	  Jmin_S  -= 1;
-	  Jmin_SE -= 1;
-
+	if (EastBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
 	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
 	  /* extend Imin */
 	  Imin_NW -= 1;
 	  Imin_W  -= 1;
 	  Imin_SW -= 1;	  
-	} else if (NorthBnd.IsReconstructionStencilAffected() && E_NorthBnd.IsReconstructionStencilAffected()){
+
 	  Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
 	  /* extend Jmin */
 	  Jmin_SW -= 1;
@@ -3905,33 +4042,237 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	  Imin_NW -= 1;
 	  Imin_W  -= 1;
 	  Imin_SW -= 1;
-	} else if (NorthBnd.IsReconstructionStencilAffected()){
-	  throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell <= ICu) && (jCell <= JCu), Case A, not implemented yet!");
+	} else if (NorthBnd.IsReconstructionStencilAffected() && E_NorthBnd.IsReconstructionStencilAffected()){
+	  Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
+
+	  /* extend Jmin */
+	  Jmin_SW -= 1;
+	  Jmin_S  -= 1;
+	  Jmin_SE -= 1;
 	} else if (EastBnd.IsReconstructionStencilAffected()){
-	  throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell <= ICu) && (jCell <= JCu), Case B, not implemented yet!");
+	  if (jCell == JCu){
+	    Imax_E = Imax_SE = ICu;             /* limit Imax */
+
+	    /* extend Imin */
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;
+	  } else {
+	    Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+
+	    /* extend Imin */
+	    Imin_NW -= 1;
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;
+	  }
+	} else if (NorthBnd.IsReconstructionStencilAffected()){
+	  if (iCell == ICu){
+	    Jmax_NW = Jmax_N = JCu;        /* limit Jmax */
+	    
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	  } else {
+	    Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
+	    
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;
+	  }
 	} else if (E_NorthBnd.IsReconstructionStencilAffected()){ // N_EastBnd also affects the stencil
-	  throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell <= ICu) && (jCell <= JCu), Case C, not implemented yet!");
+	  if (ICu-iCell > JCu-jCell){
+	    // Limit to East side
+	    Imax_NE = ICu;
+	    // DON'T extend stencil
+	  } else {
+	    // Limit to North side
+	    Jmax_NE = JCu;
+	    // DON'T extend stencil
+	  }
 	}
 
       } else {			         // Case E (jCell > JCu)
-	throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell <= ICu) && (jCell > JCu) not implemented yet!");	
-      }	// endif (Case E)
+	// East Bnd influence
+	if (N_EastBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
+	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+	  
+	  /* extend Imin */
+	  Imin_NW -= 1;
+	  Imin_W  -= 1;
+	  Imin_SW -= 1;	  
+	} else if (N_EastBnd.IsReconstructionStencilAffected()){
+	  if (jCell == JCu + 1){
+	    Imax_NE = Imax_E = ICu;        /* limit Imax */
+	    
+	    /* extend Imin */
+	    Imin_NW -= 1;
+	    Imin_W  -= 1;    
+	  } else {
+	    Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+	    
+	    /* extend Imin */
+	    Imin_NW -= 1;
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;
+	  }
+	} else if (EastBnd.IsReconstructionStencilAffected()){
+	  if (ICu - iCell > jCell - (JCu+1)) {
+	    Imax_SE = ICu;                         /* limit Imax */
+	    
+	    /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	  } else {
+	    // North Bnd influence
+	    Jmin_SE = JCu + 1;                     /* limit Jmin */
+	    
+	    /* DON'T extend Jmax due to smoothness indicator calculation reasons */
+	  }
+	}
+      }// endif (Case E)
 
     } else {
 
       // ==== Cover cells with (iCell > ICu) ====
       if ( jCell < JCl){	         // Case A
 	// South Bnd influence
-	throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell > ICu) && (jCell < JCl) not implemented yet!");	
+	if (E_SouthBnd.IsReconstructionStencilAffected()){
+	  if (iCell == ICu + 1){
+	    Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
+
+	    /* extend Jmin */
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;
+	  } else {
+	    Jmax_NW = Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
+
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;
+	  }
+	} else if (S_EastBnd.IsReconstructionStencilAffected()){
+	  if (jCell == JCl - 1){
+	    Imin_W = Imin_SW = ICu+1;              /* limit Imin */
+
+	    /* extend Imax */
+	    Imax_E  += 1;
+	    Imax_SE += 1;
+	  } else {
+	    Imin_NW = Imin_W = Imin_SW = ICu+1;    /* limit Imin */
+
+	    /* extend Imax */
+	    Imax_NE += 1;
+	    Imax_E  += 1;
+	    Imax_SE += 1;
+	  }
+	}
 
       } else if (jCell < JCl+rings){     // Case B
-	throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell > ICu) && (jCell < JCl+rings) not implemented yet!");	
+	// South Bnd influence
+	if (E_SouthBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
+	  Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+	  
+	  /* extend Jmax */
+	  Jmax_NW += 1;
+	  Jmax_N  += 1;
+	  Jmax_NE += 1;	  
+	} else if (E_SouthBnd.IsReconstructionStencilAffected()){
+	  if (iCell == ICu + 1){
+	    Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+	    
+	    /* extend Jmax */
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;	  
+	  } else {
+	    Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+	    
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;	  
+	  }
+	} else if (SouthBnd.IsReconstructionStencilAffected()){
+	  if (iCell - (ICu+1) > jCell-JCl) {
+	    // East Bnd influence
+	    Imin_SW = ICu + 1;                       /* limit Imin */
+	    
+	    /* DON'T extend Imax due to smoothness indicator calculation reasons */
+	  } else {
+	    Jmin_SW = JCl;                            /* limit Jmin */
+	    
+	    /* DON'T extend Jmax due to smoothness indicator calculation reasons */	  
+	  }
+	} // endif (Case B)
 
-      } else if (jCell <= JCu){	        // Case C (JCu-rings < jCell <= JCu)
-	throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell > ICu) && (jCell <= JCu) not implemented yet!");	
+      } else if (jCell>JCu-rings && jCell <= JCu){	        // Case C (JCu-rings < jCell <= JCu)
+	// North Bnd influence
+	if (E_NorthBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
+	  Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+	  
+	  /* extend Jmin */
+	  Jmin_SW -= 1;
+	  Jmin_S  -= 1;
+	  Jmin_SE -= 1;	  
+	} else if (E_NorthBnd.IsReconstructionStencilAffected()){
+	  if (iCell == ICu + 1){
+	    Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+	    
+	    /* extend Jmin */
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;	  
+	  } else {
+	    Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+	    
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;	  
+	  }
+	} else if (NorthBnd.IsReconstructionStencilAffected()){
+	  if (iCell - (ICu+1) > JCu - jCell) {
+	    // East Bnd influence
+	    Imin_NW = ICu + 1;                        /* limit Imax */
+	    
+	    /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	  } else {
+	    Jmax_NW = JCu;                         /* limit Jmax */
+	    
+	    /* DON'T extend Jmin due to smoothness indicator calculation reasons */ 
+	  }
+	} // endif (Case C)
 
-      } else {	                        // Case D (jCell > JCu)
-	throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Case (iCell > ICu) && (jCell > JCu) not implemented yet!");	
+      } else if (jCell > JCu){	                        // Case D (jCell > JCu)
+	// North Bnd influence
+	if (E_NorthBnd.IsReconstructionStencilAffected()){
+	  if (iCell == ICu + 1){
+	    Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
+
+	    /* extend Jmax */
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;	    
+	  } else {
+	    Jmin_SW = Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
+	    
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;
+	  }
+	} else if (N_EastBnd.IsReconstructionStencilAffected()){
+	  if (jCell == JCu + 1){
+	    Imin_NW = Imin_W = ICu + 1;   /* limit Imin */
+
+	    /* extend Imax */
+	    Imax_NE += 1;
+	    Imax_E  += 1;
+	  } else {
+	    Imin_NW = Imin_W = Imin_SW = ICu + 1;   /* limit Imin */
+
+	    /* extend Imax */
+	    Imax_NE += 1;
+	    Imax_E  += 1;
+	    Imax_SE += 1;
+	  }
+	}
       }	// endif (Case D)
 
     } // endif (iCell)
@@ -3999,6 +4340,48 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
   }// endif
 
 }
+
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::displayDeviatedReconstructionStencil(ostream & out,
+								   const int &iCell, const int &jCell,
+								   const int &rings) const{
+
+  // Set local variables
+  int i,j;
+  IndexType i_index, j_index;
+  char** StencilMap;
+
+  // Allocate StencilMap memory
+  StencilMap = new char* [9];
+  for (i = 0; i<9; ++i){
+    StencilMap[i] = new char [9];
+    // Initialize StencilMap to emply character
+    for (j = 0; j<9; ++j){
+      StencilMap[i][j] = ' ';
+    }
+  }
+
+  // Mark the reconstructed cell with the '@' sign
+  StencilMap[4][4] = '@';
+
+  // Determine the deviated stencil for cell (iCell,jCell)
+  SetDeviatedReconstructionStencil(iCell, jCell, i_index, j_index, rings);  
+
+  // Mark the presence of each neighbour cell in the stencil with '*' sign
+  for (i = 1; i<i_index.size(); ++i){
+    StencilMap[4 + (i_index[i] - iCell)][4 + (j_index[i] - jCell)] = '*';
+  }
+
+  // Output StencilMap
+  for (j = 8; j>=0; --j){
+    for (i = 0; i<=8; ++i){
+      out << StencilMap[i][j];
+    }
+    out << endl;
+  }
+
+}
+
 
 /*! 
  * Write the 'i' and 'j' indexes of the cells that are part of

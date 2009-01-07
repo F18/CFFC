@@ -12,6 +12,7 @@
 #include "../HighOrder2D.h"
 #include "../../Math/UnitTests/TestFunctions/TestFunctions_2D.h"
 #include "../HighOrder2D_Input.h"
+#include "../../Grid/UnitTests/HO_Grid2DQuadMultiBlock_InputForTesting.h"
 
 namespace tut
 {
@@ -26,15 +27,25 @@ namespace tut
 
     // Local variables
   public:
+    typedef HighOrder2D<double> HighOrderVariable;
 
     // generate geometry 
 
     // generate a pseudo-inverse situation
     DenseMatrix A;
     ColumnVector B;
+    int rings;
 
     // Constructor
     Data_HighOrder2D();
+
+    // Check consistency of reconstruction stencils for a multi-block mesh
+    void CheckHighOrderReconstructionStencilConsistency(const HighOrderVariable &CheckedHO,
+							const int &i_Start, const int &i_End,
+							const int &j_Start, const int &j_End,
+							const HighOrderVariable &MasterHO,
+							const int &i_Master, const int &j_Master,
+							const std::string & BaseMsg = "");
 
   private:
     
@@ -64,6 +75,74 @@ namespace tut
     
   }
 
+  // === CheckHighOrderReconstructionStencilConsistency()
+  void Data_HighOrder2D::CheckHighOrderReconstructionStencilConsistency(const HighOrderVariable &CheckedHO,
+									const int &i_Start, const int &i_End,
+									const int &j_Start, const int &j_End,
+									const HighOrderVariable &MasterHO,
+									const int &i_Master, const int &j_Master,
+									const std::string & BaseMsg){
+
+    int iCell,jCell;		// cell indexes for the checked block
+    int iMast,jMast;		// cell indexes for the master block that corresponds to the CheckedBlock cell
+    int iShift, jShift;		// i- and j-shift between the indexes of the two blocks
+    bool ICond, JCond;		// indicators for how to loop over indexes
+
+    IndexType i_index_Master, j_index_Master, i_index_Checked, j_index_Checked;
+    bool EqualStencils(true);
+    int Counter;
+
+
+    // Determine looping conditions
+    ICond = (i_End - i_Start) > 0;
+    JCond = (j_End - j_Start) > 0;
+
+    // Determine index shifts
+    iShift = i_Master - i_Start;
+    jShift = j_Master - j_Start;
+   
+
+    // Compare geometric properties
+    for (iCell = i_Start; ICond? (iCell<=i_End): (iCell>=i_End); ICond? (++iCell): (--iCell)){
+      for (jCell = j_Start; JCond? (jCell<=j_End): (jCell>=j_End); JCond? (++jCell): (--jCell)){
+
+	iMast = iCell + iShift;
+	jMast = jCell + jShift;
+
+	// Determine stencil for the master cell
+	MasterHO.SetDeviatedReconstructionStencil(iMast, jMast,
+						  i_index_Master, j_index_Master,
+						  rings);
+
+	// Determine stencil for the checked cell
+	CheckedHO.SetDeviatedReconstructionStencil(iCell, jCell,
+						   i_index_Checked, j_index_Checked,
+						   rings);
+
+	// === Check stencils
+	for (Counter = 0; Counter<i_index_Master.size() ; ++Counter){
+	  if ( ((i_index_Master[Counter]-iMast) != (i_index_Checked[Counter]-iCell)) || 
+	       ((j_index_Master[Counter]-jMast) != (j_index_Checked[Counter]-jCell)) ){
+	    EqualStencils = false;
+	  }
+	}
+
+	if (EqualStencils == false){
+	  ostm() << "Equal Stencils, " << BaseMsg << "\n"
+		 << "Checked Cell (" << iCell << "," << jCell << ")"; 
+	  CheckedHO.displayDeviatedReconstructionStencil(ostm(), iCell, jCell, rings);
+	  
+	  ostm() << "Master Cell (" << iMast << "," << jMast << ")"; 
+	  MasterHO.displayDeviatedReconstructionStencil(ostm(), iMast, jMast, rings);
+	  ostm() << "\n";
+
+	  ensure_equals(ostm().str(), EqualStencils, true);
+	}
+
+      }
+    }
+  }
+  
   /**
    * This group of declarations is just to register
    * test group in test-application-wide singleton.
@@ -1941,9 +2020,11 @@ namespace tut
   template<>
   void HighOrder2D_object::test<33>()
   {
-    set_test_name("Check stencil setting near opaque boundaries");
+    set_test_name("Check stencil setting for complex opaque boundaries");
     set_local_input_path("HighOrder2D_Data");
     set_local_output_path("HighOrder2D_Data");
+
+    RunRegression = ON;
 
     HighOrder2D<double> HO;
     int RecOrder(3);
@@ -1988,21 +2069,46 @@ namespace tut
 
     int iCell, jCell, i, j;
     IndexType i_index, j_index;
+    rings = HO.Rings();
 
-    // ==== Check cell (ICl,JCl) ====
-    iCell = Grid.ICl; 
-    jCell = Grid.JCl;
+    MasterFile = "ReconstructionStencilSetupForComplexOpaqueBoundaryConfiguration.dat";
+    CurrentFile = "Current_ReconstructionStencilSetupForComplexOpaqueBoundaryConfiguration.dat";
 
-    // Set stencil
-    HO.SetDeviatedReconstructionStencil(iCell, jCell, i_index, j_index, HO.Rings());
+    if (RunRegression){
+      Open_Output_File(CurrentFile);      
+      out() << "Reconstruction type map for complex configuration\n";
+      HO.outputReconstructionTypeMap(out());
 
-    // Check stencil
-    //     ensure_equals("Stencil size", i_index.size(), 21);
-    
-    //     for (i = 0; i<i_index.size(); ++i){
-    //       Print_2(i_index[i], j_index[i])
-    //     }
+      out() << endl 
+	    << "Stencils for each cell between ICl-NghostHO, ICu+NghostHO, JCl-NghostHO, JCu+NghostHO\n"
+	    << "Warning! In the cells with 'n' reconstruction the stencils are probably wrong! That's okay!\n";
 
+      for (iCell = Grid.ICl-HO.NghostHO(); iCell<=Grid.ICu+HO.NghostHO(); ++iCell){
+	for (jCell = Grid.JCl-HO.NghostHO(); jCell<=Grid.JCu+HO.NghostHO(); ++jCell){
+	  HO.displayDeviatedReconstructionStencil(out(), iCell, jCell, rings);
+	}
+      }
+
+      // == Compare current file against master
+      RunRegressionTest("Reconstruction Map + Cell Stencils", CurrentFile, MasterFile, 1.0e-12);
+
+    } else {
+      // Generate the master file
+      Open_Output_File(MasterFile);
+
+      out() << "Reconstruction type map for complex configuration\n";
+      HO.outputReconstructionTypeMap(out());
+
+      out() << endl 
+	    << "Stencils for each cell between ICl-NghostHO, ICu+NghostHO, JCl-NghostHO, JCu+NghostHO\n"
+	    << "Warning! In the cells with 'n' reconstruction the stencils are probably wrong! That's okay!\n";
+
+      for (iCell = Grid.ICl-HO.NghostHO(); iCell<=Grid.ICu+HO.NghostHO(); ++iCell){
+	for (jCell = Grid.JCl-HO.NghostHO(); jCell<=Grid.JCu+HO.NghostHO(); ++jCell){
+	  HO.displayDeviatedReconstructionStencil(out(), iCell, jCell, rings);
+	}
+      }
+    }
   }
 
   /* Test 34:*/
@@ -2550,7 +2656,6 @@ namespace tut
       HO.outputReconstructionTypeMap(out());
     }
 
-
     // ====================== SOUTH-WEST corner constrained ===========================
 
     // Change spline type (i.e. create scenario)
@@ -2583,7 +2688,6 @@ namespace tut
       HO.outputReconstructionTypeMap(out());
     }
 
-
     // ====================== NORTH-WEST corner constrained ===========================
 
     // Change spline type (i.e. create scenario)
@@ -2615,7 +2719,6 @@ namespace tut
       out() << "North-West corner constrained\n";
       HO.outputReconstructionTypeMap(out());
     }
-
 
     // ====================== NORTH-EAST corner constrained ===========================
 
@@ -2652,6 +2755,574 @@ namespace tut
       HO.outputReconstructionTypeMap(out());
     }
   }
+
+  /* Test 39:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<39>()
+  {
+    set_test_name("Check stencil setting for complex opaque boundaries, Second setup");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    RunRegression = ON;
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+    CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendNorth_BndWestSpline = Grid.BndWestSpline;
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndEastSpline = Grid.BndEastSpline;
+    Grid.ExtendNorth_BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux); 
+
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline = Grid.BndSouthSpline;
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux); 
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    int iCell, jCell, i, j;
+    IndexType i_index, j_index;
+    rings = HO.Rings();
+
+    MasterFile = "ReconstructionStencilSetupForComplexOpaqueBoundaryConfiguration_II.dat";
+    CurrentFile = "Current_ReconstructionStencilSetupForComplexOpaqueBoundaryConfiguration_II.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);      
+      out() << "Reconstruction type map for complex configuration\n";
+      HO.outputReconstructionTypeMap(out());
+
+      out() << endl 
+	    << "Stencils for each cell between ICl-NghostHO, ICu+NghostHO, JCl-NghostHO, JCu+NghostHO\n"
+	    << "Warning! In the cells with 'n' reconstruction the stencils are probably wrong! That's okay!\n";
+
+      for (iCell = Grid.ICl-HO.NghostHO(); iCell<=Grid.ICu+HO.NghostHO(); ++iCell){
+	for (jCell = Grid.JCl-HO.NghostHO(); jCell<=Grid.JCu+HO.NghostHO(); ++jCell){
+	  HO.displayDeviatedReconstructionStencil(out(), iCell, jCell, rings);
+	}
+      }
+
+      // == Compare current file against master
+      RunRegressionTest("Reconstruction Map + Cell Stencils", CurrentFile, MasterFile, 1.0e-12);
+
+    } else {
+      // Generate the master file
+      Open_Output_File(MasterFile);
+
+      out() << "Reconstruction type map for complex configuration\n";
+      HO.outputReconstructionTypeMap(out());
+
+      out() << endl 
+	    << "Stencils for each cell between ICl-NghostHO, ICu+NghostHO, JCl-NghostHO, JCu+NghostHO\n"
+	    << "Warning! In the cells with 'n' reconstruction the stencils are probably wrong! That's okay!\n";
+
+      for (iCell = Grid.ICl-HO.NghostHO(); iCell<=Grid.ICu+HO.NghostHO(); ++iCell){
+	for (jCell = Grid.JCl-HO.NghostHO(); jCell<=Grid.JCu+HO.NghostHO(); ++jCell){
+	  HO.displayDeviatedReconstructionStencil(out(), iCell, jCell, rings);
+	}
+      }
+    }
+  }
+
+  /* Test 40:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<40>()
+  {
+    set_test_name("Check stencil setting for complex opaque boundaries, Third setup");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    RunRegression = ON;
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+    CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendWest_BndSouthSpline = Grid.BndWestSpline;
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndNorthSpline = Grid.BndNorthSpline;
+    Grid.ExtendWest_BndNorthSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux); 
+
+    Grid.BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndEastSpline = Grid.BndEastSpline;
+    Grid.ExtendNorth_BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    int iCell, jCell, i, j;
+    IndexType i_index, j_index;
+    rings = HO.Rings();
+
+    MasterFile = "ReconstructionStencilSetupForComplexOpaqueBoundaryConfiguration_III.dat";
+    CurrentFile = "Current_ReconstructionStencilSetupForComplexOpaqueBoundaryConfiguration_III.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);      
+      out() << "Reconstruction type map for complex configuration\n";
+      HO.outputReconstructionTypeMap(out());
+
+      out() << endl 
+	    << "Stencils for each cell between ICl-NghostHO, ICu+NghostHO, JCl-NghostHO, JCu+NghostHO\n"
+	    << "Warning! In the cells with 'n' reconstruction the stencils are probably wrong! That's okay!\n";
+
+      for (iCell = Grid.ICl-HO.NghostHO(); iCell<=Grid.ICu+HO.NghostHO(); ++iCell){
+	for (jCell = Grid.JCl-HO.NghostHO(); jCell<=Grid.JCu+HO.NghostHO(); ++jCell){
+	  HO.displayDeviatedReconstructionStencil(out(), iCell, jCell, rings);
+	}
+      }
+
+      // == Compare current file against master
+      RunRegressionTest("Reconstruction Map + Cell Stencils", CurrentFile, MasterFile, 1.0e-12);
+
+    } else {
+      // Generate the master file
+      Open_Output_File(MasterFile);
+
+      out() << "Reconstruction type map for complex configuration\n";
+      HO.outputReconstructionTypeMap(out());
+
+      out() << endl 
+	    << "Stencils for each cell between ICl-NghostHO, ICu+NghostHO, JCl-NghostHO, JCu+NghostHO\n"
+	    << "Warning! In the cells with 'n' reconstruction the stencils are probably wrong! That's okay!\n";
+
+      for (iCell = Grid.ICl-HO.NghostHO(); iCell<=Grid.ICu+HO.NghostHO(); ++iCell){
+	for (jCell = Grid.JCl-HO.NghostHO(); jCell<=Grid.JCu+HO.NghostHO(); ++jCell){
+	  HO.displayDeviatedReconstructionStencil(out(), iCell, jCell, rings);
+	}
+      }
+    }
+  }
+
+  /* Test 41:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<41>()
+  {
+    set_test_name("Check stencil setting for complex opaque boundaries, Fourth setup");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    RunRegression = ON;
+
+    HighOrder2D<double> HO;
+    int RecOrder(3);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+    CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Change spline type (i.e. create scenario)
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndEastSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendSouth_BndEastSpline = Grid.BndEastSpline;
+    Grid.ExtendSouth_BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendNorth_BndEastSpline.setFluxCalcMethod(SolveRiemannProblem); 
+
+    Grid.BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendEast_BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
+
+    Grid.BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendNorth_BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendSouth_BndWestSpline = Grid.BndWestSpline;
+    Grid.ExtendSouth_BndWestSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendSouth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux); 
+
+    Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
+    Grid.ExtendWest_BndNorthSpline = Grid.BndNorthSpline;
+    Grid.ExtendWest_BndNorthSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Grid.ExtendWest_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.ExtendEast_BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem); 
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    int iCell, jCell, i, j;
+    IndexType i_index, j_index;
+    rings = HO.Rings();
+
+    MasterFile = "ReconstructionStencilSetupForComplexOpaqueBoundaryConfiguration_IV.dat";
+    CurrentFile = "Current_ReconstructionStencilSetupForComplexOpaqueBoundaryConfiguration_IV.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);      
+      out() << "Reconstruction type map for complex configuration\n";
+      HO.outputReconstructionTypeMap(out());
+
+      out() << endl 
+	    << "Stencils for each cell between ICl-NghostHO, ICu+NghostHO, JCl-NghostHO, JCu+NghostHO\n"
+	    << "Warning! In the cells with 'n' reconstruction the stencils are probably wrong! That's okay!\n";
+
+      for (iCell = Grid.ICl-HO.NghostHO(); iCell<=Grid.ICu+HO.NghostHO(); ++iCell){
+	for (jCell = Grid.JCl-HO.NghostHO(); jCell<=Grid.JCu+HO.NghostHO(); ++jCell){
+	  HO.displayDeviatedReconstructionStencil(out(), iCell, jCell, rings);
+	}
+      }
+
+      // == Compare current file against master
+      RunRegressionTest("Reconstruction Map + Cell Stencils", CurrentFile, MasterFile, 1.0e-12);
+
+    } else {
+      // Generate the master file
+      Open_Output_File(MasterFile);
+
+      out() << "Reconstruction type map for complex configuration\n";
+      HO.outputReconstructionTypeMap(out());
+
+      out() << endl 
+	    << "Stencils for each cell between ICl-NghostHO, ICu+NghostHO, JCl-NghostHO, JCu+NghostHO\n"
+	    << "Warning! In the cells with 'n' reconstruction the stencils are probably wrong! That's okay!\n";
+
+      for (iCell = Grid.ICl-HO.NghostHO(); iCell<=Grid.ICu+HO.NghostHO(); ++iCell){
+	for (jCell = Grid.JCl-HO.NghostHO(); jCell<=Grid.JCu+HO.NghostHO(); ++jCell){
+	  HO.displayDeviatedReconstructionStencil(out(), iCell, jCell, rings);
+	}
+      }
+    }
+  }
+
+  /* Test 42:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<42>()
+  {
+    set_test_name("Check stencil setup for multi-block mesh with complex opaque boundaries");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    // Local variables
+    HighOrder2D<double> HO[9];
+    int RecOrder(4);
+    int iCell, jCell, i, j, index;
+    IndexType i_index, j_index;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+    CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL = ON;
+    
+    // Read geometry
+    Grid2D_Quad_MultiBlock_HO Mesh;
+    Grid2DTesting_Input_Parameters IP;
+    strcpy(IP.Grid_File_Name, "HighOrderReconstruction/UnitTests/HighOrder2D_Data/CartesianMesh_3x3.grid");
+    strcpy(IP.Output_File_Name, "StencilSettingMesh");
+    Mesh.Read_Multi_Block_Grid_Using_IP(IP);
+
+    // Set splines properties to create the desired scenario in Block (1,1)
+    Mesh(1,1).BndNorthSpline = Mesh(1,2).BndNorthSpline;
+    Mesh(1,1).BndNorthSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Mesh(1,1).BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Mesh(1,2).BndSouthSpline = Mesh(1,1).BndNorthSpline;    
+    Mesh(0,2).ExtendEast_BndSouthSpline = Mesh(1,1).BndNorthSpline;
+    Mesh(0,1).ExtendEast_BndNorthSpline = Mesh(1,1).BndNorthSpline;
+
+    Mesh(1,1).ExtendEast_BndNorthSpline = Mesh(1,1).BndNorthSpline;
+    Mesh(1,1).ExtendEast_BndNorthSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Mesh(2,2).BndSouthSpline = Mesh(1,1).ExtendEast_BndNorthSpline;
+    Mesh(2,2).ExtendWest_BndSouthSpline = Mesh(1,1).BndNorthSpline;
+    Mesh(2,1).BndNorthSpline = Mesh(1,1).ExtendEast_BndNorthSpline;
+    Mesh(2,1).ExtendWest_BndNorthSpline = Mesh(1,1).BndNorthSpline;
+    Mesh(1,2).ExtendEast_BndSouthSpline = Mesh(1,1).ExtendEast_BndNorthSpline;
+
+    Mesh(1,1).ExtendSouth_BndWestSpline = Mesh(0,0).BndWestSpline;
+    Mesh(1,1).ExtendSouth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Mesh(1,1).ExtendSouth_BndWestSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Mesh(0,0).BndEastSpline = Mesh(1,1).ExtendSouth_BndWestSpline;
+    Mesh(1,0).BndWestSpline = Mesh(1,1).ExtendSouth_BndWestSpline;
+    Mesh(0,1).ExtendSouth_BndEastSpline = Mesh(1,1).ExtendSouth_BndWestSpline;
+
+    Mesh(1,1).ExtendEast_BndSouthSpline = Mesh(2,0).BndSouthSpline;
+    Mesh(1,1).ExtendEast_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Mesh(1,1).ExtendEast_BndSouthSpline.setBCtype(BC_SYMMETRY_PLANE);
+    Mesh(2,1).BndSouthSpline = Mesh(1,1).ExtendEast_BndSouthSpline;
+    Mesh(2,0).BndNorthSpline = Mesh(1,1).ExtendEast_BndSouthSpline;
+    Mesh(1,0).ExtendEast_BndNorthSpline = Mesh(1,1).ExtendEast_BndSouthSpline;
+
+    // Initialize high-order variables
+    for (j=0, index=0; j<3; ++j){
+      for (i = 0; i<3; ++i, ++index){
+	HO[index].InitializeVariable(RecOrder,Mesh(i,j),true);
+      }
+    }
+
+    // == Check stencils
+    int ICl, ICu, JCl, JCu;
+    ICl = 5;
+    ICu = 14;
+    JCl = 5;
+    JCu = 24;
+
+    // Set stencil rings
+    rings = HO[0].Rings();
+
+    CheckHighOrderReconstructionStencilConsistency(HO[4],
+						   ICu+1, ICu+3,
+						   JCl  , JCu,
+						   HO[5],
+						   ICl, JCl,
+						   "HO[4] East against HO[5]");
+    CheckHighOrderReconstructionStencilConsistency(HO[5],
+						   ICl-1, ICl-3,
+						   JCl  , JCu,
+						   HO[4],
+						   ICu, JCl,
+						   "HO[5] West against HO[4]");
+
+
+    CheckHighOrderReconstructionStencilConsistency(HO[4],
+						   ICl  , ICl+2,
+						   JCl-1, JCl-3,
+						   HO[1],
+						   ICl, JCu,
+						   "HO[4] South against HO[1]");
+    CheckHighOrderReconstructionStencilConsistency(HO[1],
+						   ICl  , ICl+2,
+						   JCu+1, JCu+3,
+						   HO[4],
+						   ICl, JCl,
+						   "HO[1] North against HO[4]");
+
+
+    CheckHighOrderReconstructionStencilConsistency(HO[0],
+						   ICu  , ICu-2,
+						   JCu+1, JCu+3,
+						   HO[3],
+						   ICu, JCl,
+						   "HO[0] North against HO[3]");
+    CheckHighOrderReconstructionStencilConsistency(HO[3],
+						   ICu  , ICu-2,
+						   JCl-1, JCl-3,
+						   HO[0],
+						   ICu, JCu,
+						   "HO[3] South against HO[0]");
+
+
+    CheckHighOrderReconstructionStencilConsistency(HO[3],
+						   ICu+1, ICu+3,
+						   JCu  , JCu-2,
+						   HO[4],
+						   ICl, JCu,
+						   "HO[3] East against HO[4]");
+    CheckHighOrderReconstructionStencilConsistency(HO[4],
+						   ICl-1, ICl-3,
+						   JCu, JCu-2,
+						   HO[3],
+						   ICu, JCu,
+						   "HO[4] West against HO[3]");
+
+
+    CheckHighOrderReconstructionStencilConsistency(HO[6],
+						   ICu+1, ICu+3,
+						   JCl  , JCl+2,
+						   HO[7],
+						   ICl, JCl,
+						   "HO[6] East against HO[7]");
+    CheckHighOrderReconstructionStencilConsistency(HO[7],
+						   ICl-1, ICl-3,
+						   JCl, JCl+2,
+						   HO[6],
+						   ICu, JCl,
+						   "HO[7] West against HO[6]");
+
+
+    CheckHighOrderReconstructionStencilConsistency(HO[7],
+						   ICu+1, ICu+3,
+						   JCl  , JCl+2,
+						   HO[8],
+						   ICl, JCl,
+						   "HO[7] East against HO[8]");
+    CheckHighOrderReconstructionStencilConsistency(HO[8],
+						   ICl-1, ICl-3,
+						   JCl, JCl+2,
+						   HO[7],
+						   ICu, JCl,
+						   "HO[8] West against HO[7]");
+
+
+    CheckHighOrderReconstructionStencilConsistency(HO[1],
+						   ICu+1, ICu+3,
+						   JCu  , JCu-2,
+						   HO[2],
+						   ICl, JCu,
+						   "HO[1] East against HO[2]");
+    CheckHighOrderReconstructionStencilConsistency(HO[2],
+						   ICl-1, ICl-3,
+						   JCu, JCu-2,
+						   HO[1],
+						   ICu, JCu,
+						   "HO[2] West against HO[1]");
+
+
+    // Set stencil rings
+    rings = 1;
+
+    CheckHighOrderReconstructionStencilConsistency(HO[4],
+						   ICu+1, ICu+2,
+						   JCl  , JCu,
+						   HO[5],
+						   ICl, JCl,
+						   "HO[4] East against HO[5], 1 ring");
+    CheckHighOrderReconstructionStencilConsistency(HO[5],
+						   ICl-1, ICl-2,
+						   JCl  , JCu,
+						   HO[4],
+						   ICu, JCl,
+						   "HO[5] West against HO[4], 1 ring");
+
+
+    CheckHighOrderReconstructionStencilConsistency(HO[4],
+						   ICl  , ICl+1,
+						   JCl-1, JCl-2,
+						   HO[1],
+						   ICl, JCu,
+						   "HO[4] South against HO[1], 1 ring");
+    CheckHighOrderReconstructionStencilConsistency(HO[1],
+						   ICl  , ICl+1,
+						   JCu+1, JCu+2,
+						   HO[4],
+						   ICl, JCl,
+						   "HO[1] North against HO[4], 1 ring");
+
+
+    CheckHighOrderReconstructionStencilConsistency(HO[0],
+						   ICu  , ICu-1,
+						   JCu+1, JCu+2,
+						   HO[3],
+						   ICu, JCl,
+						   "HO[0] North against HO[3], 1 ring");
+    CheckHighOrderReconstructionStencilConsistency(HO[3],
+						   ICu  , ICu-1,
+						   JCl-1, JCl-2,
+						   HO[0],
+						   ICu, JCu,
+						   "HO[3] South against HO[0], 1 ring");
+
+
+    CheckHighOrderReconstructionStencilConsistency(HO[3],
+						   ICu+1, ICu+2,
+						   JCu  , JCu-1,
+						   HO[4],
+						   ICl, JCu,
+						   "HO[3] East against HO[4], 1 ring");
+    CheckHighOrderReconstructionStencilConsistency(HO[4],
+						   ICl-1, ICl-2,
+						   JCu, JCu-1,
+						   HO[3],
+						   ICu, JCu,
+						   "HO[4] West against HO[3], 1 ring");
+
+
+    CheckHighOrderReconstructionStencilConsistency(HO[6],
+						   ICu+1, ICu+2,
+						   JCl  , JCl+1,
+						   HO[7],
+						   ICl, JCl,
+						   "HO[6] East against HO[7], 1 ring");
+    CheckHighOrderReconstructionStencilConsistency(HO[7],
+						   ICl-1, ICl-2,
+						   JCl, JCl+1,
+						   HO[6],
+						   ICu, JCl,
+						   "HO[7] West against HO[6], 1 ring");
+
+
+    CheckHighOrderReconstructionStencilConsistency(HO[7],
+						   ICu+1, ICu+2,
+						   JCl  , JCl+1,
+						   HO[8],
+						   ICl, JCl,
+						   "HO[7] East against HO[8], 1 ring");
+    CheckHighOrderReconstructionStencilConsistency(HO[8],
+						   ICl-1, ICl-2,
+						   JCl, JCl+1,
+						   HO[7],
+						   ICu, JCl,
+						   "HO[8] West against HO[7], 1 ring");
+
+
+    CheckHighOrderReconstructionStencilConsistency(HO[1],
+						   ICu+1, ICu+2,
+						   JCu  , JCu-1,
+						   HO[2],
+						   ICl, JCu,
+						   "HO[1] East against HO[2], 1 ring");
+    CheckHighOrderReconstructionStencilConsistency(HO[2],
+						   ICl-1, ICl-2,
+						   JCu, JCu-1,
+						   HO[1],
+						   ICu, JCu,
+						   "HO[2] West against HO[1], 1 ring");
+  }
+
 
 }
 
