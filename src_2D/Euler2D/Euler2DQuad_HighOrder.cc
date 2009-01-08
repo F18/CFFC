@@ -2770,7 +2770,7 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 
 
   // == Set high-order boundary conditions
-  for ( j = JCl ; j <= JCu ; ++j ) {
+  for ( j = 0 ; j < NCj ; ++j ) {
 
     // Prescribe West boundary conditions.
     if (BC_WestCell() != NULL){
@@ -2837,8 +2837,12 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  // Use the exact solution to set up the reference states for this boundary type
 	  if (ExactSoln->IsExactSolutionSet()){
 	    // Determine the PointOfInterest if high-order boundaries are used
-	    if ( Grid.BndWestSplineInfo != NULL){
+	    if ( j<JCl && Grid.ExtendSouth_BndWestSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendSouth_BndWestSplineInfo[j].GQPoint(Vertex);
+	    } else if ( j>=JCl && j<=JCu && Grid.BndWestSplineInfo != NULL){
 	      PointOfInterest = Grid.BndWestSplineInfo[j].GQPoint(Vertex);
+	    } else if ( j>JCu && Grid.ExtendNorth_BndWestSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendNorth_BndWestSplineInfo[j].GQPoint(Vertex);
 	    } else {
 	      // Determine the PointOfInterest if low-order boundaries are used
 	      Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
@@ -2929,8 +2933,12 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  // Use the exact solution to set up the reference states for this boundary type
 	  if (ExactSoln->IsExactSolutionSet()){
 	    // Determine the PointOfInterest if high-order boundaries are used
-	    if ( Grid.BndEastSplineInfo != NULL){
+	    if ( j<JCl && Grid.ExtendSouth_BndEastSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendSouth_BndEastSplineInfo[j].GQPoint(Vertex);
+	    } else if ( j>=JCl && j<=JCu && Grid.BndEastSplineInfo != NULL){
 	      PointOfInterest = Grid.BndEastSplineInfo[j].GQPoint(Vertex);
+	    } else if ( j>JCu && Grid.ExtendNorth_BndEastSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendNorth_BndEastSplineInfo[j].GQPoint(Vertex);
 	    } else {
 	      // Determine the PointOfInterest if low-order boundaries are used
 	      Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
@@ -2960,7 +2968,7 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
   } /* endfor (j) */
 
 
-  for ( i = ICl ; i <= ICu ; ++i ) {
+  for ( i = 0 ; i < NCi ; ++i ) {
 
     // Prescribe South boundary conditions.
     if (BC_SouthCell() != NULL){
@@ -3027,8 +3035,12 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  // Use the exact solution to set up the reference states for this boundary type
 	  if (ExactSoln->IsExactSolutionSet()){
 	    // Determine the PointOfInterest if high-order boundaries are used
-	    if ( Grid.BndSouthSplineInfo != NULL){
+	    if ( i<ICl && Grid.ExtendWest_BndSouthSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendWest_BndSouthSplineInfo[i].GQPoint(Vertex);
+	    } else if ( i>=ICl && i<=ICu && Grid.BndSouthSplineInfo != NULL){
 	      PointOfInterest = Grid.BndSouthSplineInfo[i].GQPoint(Vertex);
+	    } else if ( i>ICu && Grid.ExtendEast_BndSouthSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendEast_BndSouthSplineInfo[i].GQPoint(Vertex);
 	    } else {
 	      // Determine the PointOfInterest if low-order boundaries are used
 	      Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
@@ -3121,8 +3133,12 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  // Use the exact solution to set up the reference states for this boundary type
 	  if (ExactSoln->IsExactSolutionSet()){
 	    // Determine the PointOfInterest if high-order boundaries are used
-	    if ( Grid.BndNorthSplineInfo != NULL){
+	    if ( i<ICl && Grid.ExtendWest_BndNorthSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendWest_BndNorthSplineInfo[i].GQPoint(Vertex);
+	    } else if ( i>=ICl && i<=ICu && Grid.BndNorthSplineInfo != NULL){
 	      PointOfInterest = Grid.BndNorthSplineInfo[i].GQPoint(Vertex);
+	    } else if ( i>ICu && Grid.ExtendEast_BndNorthSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendEast_BndNorthSplineInfo[i].GQPoint(Vertex);
 	    } else {
 	      // Determine the PointOfInterest if low-order boundaries are used
 	      Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);

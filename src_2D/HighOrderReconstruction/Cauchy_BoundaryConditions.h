@@ -234,9 +234,10 @@ void Cauchy_BCs<SOLN_STATE>::InitializeCauchyBCs(const int &NumOfObjects,
   // allocate memory
   allocate(NumOfObjects);
 
-  // set number of constraints per GQP for each solution parameter
-  SetCharacteristicConstraintsBasedOnBCtype(BCtype);
-  
+  if (NumOfObjects > 0){
+    // set number of constraints per GQP for each solution parameter
+    SetCharacteristicConstraintsBasedOnBCtype(BCtype);
+  }
 }
 
 
