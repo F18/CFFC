@@ -111,6 +111,13 @@ public:
       ----------------------------------------------------------------------------------------  */
   static short CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES;
 
+  /*! This flag is used to control whether the flux calculation method specified by the user 
+      is set to the extension splines of the boundaries blocks.\n
+      Turn ON if you want to loop over the flux calculation method at boundary blocks. \n
+      Turn OFF if you want to use the default behaviour. (default) \n
+      ----------------------------------------------------------------------------------------  */
+  static short LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES;
+
   /*! This flag is used to set the method to compute the flux through cell faces at the West block boundary.
       The flag becomes active only if the boundary condition imposed at the block boundary is different than BC_NONE.\n
       Turn ON if you want to use reconstruction based flux (i.e. constrained reconstruction). \n

@@ -23,6 +23,7 @@ short HO_Grid2D_Execution_Mode::SMOOTH_QUAD_BLOCK_FLAG = ON; // smooth the grid
 
 // Block boundary flux calculation method
 short HO_Grid2D_Execution_Mode::CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = OFF; // use the default settings
+short HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = OFF; // don't loop over the flux setting
 short HO_Grid2D_Execution_Mode::WEST_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
 short HO_Grid2D_Execution_Mode::SOUTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
 short HO_Grid2D_Execution_Mode::NORTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
@@ -41,6 +42,7 @@ void HO_Grid2D_Execution_Mode::SetDefaults(void){
   REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = OFF; // stop on detecting incorrect quads
   USE_BROADCAST_MORE_THAN_RECOMPUTING = ON; // broadcast the majority of geometric properties
   CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = OFF; // use the default settings
+  LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = OFF; // don't loop over the flux setting
   WEST_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
   SOUTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
   NORTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux

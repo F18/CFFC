@@ -498,6 +498,27 @@ void Grid2D_Quad_MultiBlock_HO::SetFluxCalculationMethod(void){
 	if ( HO_Grid2D_Execution_Mode::NORTH_RECONSTRUCTION_BASED_FLUX && 
 	     Grid_ptr[iBlock][jBlock].BndNorthSpline.bc[0] != BC_NONE ){
 	  Grid_ptr[iBlock][jBlock].BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+
+	  // Set the extension splines
+
+	  // === Set extension for iBlock == 0 and loop over flux calculation method (e.g. cylinder grid with constrained bnds)
+	  if (iBlock == 0 && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendWest_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension for iBlock == Last_iBlock() and loop over flux calculation method
+	  if (iBlock == Last_iBlock() && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendEast_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension in the block to the left ===
+	  if (iBlock - 1 >= 0){
+	    Grid_ptr[iBlock-1][jBlock].ExtendEast_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+	  // === Set extension in the block to the right ===
+	  if (iBlock + 1 <= Last_iBlock()){
+	    Grid_ptr[iBlock+1][jBlock].ExtendWest_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
 	} else {
 	  Grid_ptr[iBlock][jBlock].BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
 	}
@@ -506,6 +527,27 @@ void Grid2D_Quad_MultiBlock_HO::SetFluxCalculationMethod(void){
 	if( HO_Grid2D_Execution_Mode::SOUTH_RECONSTRUCTION_BASED_FLUX && 
 	    Grid_ptr[iBlock][jBlock].BndSouthSpline.bc[0] != BC_NONE ){
 	  Grid_ptr[iBlock][jBlock].BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+
+	  // Set the extension splines
+
+	  // === Set extension for iBlock == 0 and loop over flux calculation method 
+	  if (iBlock == 0 && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendWest_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension for iBlock == Last_iBlock() and loop over flux calculation method
+	  if (iBlock == Last_iBlock() && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendEast_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension in the block to the left ===
+	  if (iBlock - 1 >= 0){
+	    Grid_ptr[iBlock-1][jBlock].ExtendEast_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+	  // === Set extension in the block to the right ===
+	  if (iBlock + 1 <= Last_iBlock()){
+	    Grid_ptr[iBlock+1][jBlock].ExtendWest_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
 	} else {
 	  Grid_ptr[iBlock][jBlock].BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
 	}
@@ -514,6 +556,27 @@ void Grid2D_Quad_MultiBlock_HO::SetFluxCalculationMethod(void){
 	if( HO_Grid2D_Execution_Mode::EAST_RECONSTRUCTION_BASED_FLUX && 
 	    Grid_ptr[iBlock][jBlock].BndEastSpline.bc[0] != BC_NONE){
 	  Grid_ptr[iBlock][jBlock].BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+
+	  // Set the extension splines
+
+	  // === Set extension for jBlock == 0 and loop over flux calculation method 
+	  if (jBlock == 0 && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendSouth_BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension for jBlock == Last_jBlock() and loop over flux calculation method
+	  if (jBlock == Last_jBlock() && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendNorth_BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension in the block to the left ===
+	  if (jBlock - 1 >= 0){
+	    Grid_ptr[iBlock][jBlock-1].ExtendNorth_BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+	  // === Set extension in the block to the right ===
+	  if (jBlock + 1 <= Last_jBlock()){
+	    Grid_ptr[iBlock][jBlock+1].ExtendSouth_BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
 	} else {
 	  Grid_ptr[iBlock][jBlock].BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
 	}
@@ -522,6 +585,27 @@ void Grid2D_Quad_MultiBlock_HO::SetFluxCalculationMethod(void){
 	if( HO_Grid2D_Execution_Mode::WEST_RECONSTRUCTION_BASED_FLUX && 
 	    Grid_ptr[iBlock][jBlock].BndWestSpline.bc[0] != BC_NONE){
 	  Grid_ptr[iBlock][jBlock].BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+
+	  // Set the extension splines
+
+	  // === Set extension for jBlock == 0 and loop over flux calculation method 
+	  if (jBlock == 0 && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendSouth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension for jBlock == Last_jBlock() and loop over flux calculation method
+	  if (jBlock == Last_jBlock() && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendNorth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension in the block to the left ===
+	  if (jBlock - 1 >= 0){
+	    Grid_ptr[iBlock][jBlock-1].ExtendNorth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+	  // === Set extension in the block to the right ===
+	  if (jBlock + 1 <= Last_jBlock()){
+	    Grid_ptr[iBlock][jBlock+1].ExtendSouth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
 	} else {
 	  Grid_ptr[iBlock][jBlock].BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
 	}
@@ -3449,6 +3533,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder_Without_Update(int &_Numb
 						       Orthogonal_West);
 
   } /* endfor */
+
+  // Ensure that constrained boundaries are looped over
+  HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = ON;
 
   // Set the spline extensions for Block 0
   // == South spline
