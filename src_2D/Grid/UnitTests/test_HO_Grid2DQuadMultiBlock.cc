@@ -142,6 +142,8 @@ namespace tut
     Grid2D_Quad_Block_HO::setDefaultBoundaryRepresentation();
     Grid2D_Quad_Block_HO::setNoSpecialTreatmentForNumericalError();
     Tecplot_Execution_Mode::SetDefaults();
+
+    delete [] GQPoints; GQPoints = NULL;
   }
 
   template<class Input_Parameters>
@@ -1460,6 +1462,10 @@ namespace tut
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
+
+    // Enforce geometric properties update in ghost cells
+    MeshBlk.Schedule_Ghost_Cells_Update();
+    MeshBlk.Update_All_Cells();
 
     MasterFile = "GridCircularCylinder_GeomProperties_InteriorCell.dat";
     CurrentFile = "Current_GridCircularCylinder_GeomProperties_InteriorCell.dat";
@@ -4075,6 +4081,10 @@ namespace tut
 
     // Build the low-order mesh
     CreateMesh(MeshBlk,IP);
+
+    // Enforce geometric properties update in ghost cells
+    MeshBlk.Schedule_Ghost_Cells_Update();
+    MeshBlk.Update_All_Cells();
 
     // Set the file names
     MasterFile = "GridCircularCylinder_GeomProperties_InteriorCell.dat";

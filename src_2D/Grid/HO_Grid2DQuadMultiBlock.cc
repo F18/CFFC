@@ -12,6 +12,8 @@
 #include "../Grid/NASARotor37.h"       /* Include NASA rotor 37 header files. */
 #include "../Grid/NASARotor67.h"       /* Include NASA rotor 67 header files. */
 
+// ===== Static variables =====
+int Grid2D_Quad_MultiBlock_HO::GridsThatRequireSynchronizationPriorToGhostCellsUpdate[1] = {GRID_CIRCULAR_CYLINDER};
 
 // ===== Member functions =====
 
@@ -482,6 +484,67 @@ void Grid2D_Quad_MultiBlock_HO::Disturb_Interior_Nodes(const int &Number_of_Iter
 }
 
 /*!
+ * Setup the required boundary conditions for all boundary domain blocks.
+ */
+void Grid2D_Quad_MultiBlock_HO::SetUserSpecifiedBCs(const int& BC_North, const int& BC_South,
+						    const int& BC_East, const int & BC_West){
+
+  int iBlk, jBlk;
+
+  for (jBlk = 0; jBlk <= Last_jBlock(); ++jBlk) {
+    for ( iBlk = 0; iBlk <= Last_iBlock(); ++iBlk) {
+
+      if (jBlk == Last_jBlock()){
+	Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_North);
+	// Set the extension splines
+	if (Grid_ptr[iBlk][jBlk].ExtendWest_BndNorthSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendWest_BndNorthSpline.setBCtype(BC_North);
+	}
+	if (Grid_ptr[iBlk][jBlk].ExtendEast_BndNorthSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendEast_BndNorthSpline.setBCtype(BC_North);
+	}
+      }
+
+      if (jBlk == 0){
+	Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_South);
+	// Set the extension splines
+	if (Grid_ptr[iBlk][jBlk].ExtendWest_BndSouthSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendWest_BndSouthSpline.setBCtype(BC_South);
+	}
+	if (Grid_ptr[iBlk][jBlk].ExtendEast_BndSouthSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendEast_BndSouthSpline.setBCtype(BC_South);
+	}
+      }
+
+      if (iBlk == Last_iBlock()){
+	Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_East);
+	// Set the extension splines
+	if (Grid_ptr[iBlk][jBlk].ExtendSouth_BndEastSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendSouth_BndEastSpline.setBCtype(BC_East);
+	}
+	if (Grid_ptr[iBlk][jBlk].ExtendNorth_BndEastSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendNorth_BndEastSpline.setBCtype(BC_East);
+	}
+      }
+
+      if (iBlk == 0){
+	Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_West);
+	// Set the extension splines
+	if (Grid_ptr[iBlk][jBlk].ExtendSouth_BndWestSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendSouth_BndWestSpline.setBCtype(BC_West);
+	}
+	if (Grid_ptr[iBlk][jBlk].ExtendNorth_BndWestSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendNorth_BndWestSpline.setBCtype(BC_West);
+	}
+      }
+
+      Grid_ptr[iBlk][jBlk].Set_BCs();
+    }
+  }
+  
+}
+
+/*!
  * Setup the required flux calculation method based on the flags set in 
  * HO_Grid2D_Execution_Mode class for each 2D quadrilateral block of the multi-block grids.
  */
@@ -642,6 +705,22 @@ void Grid2D_Quad_MultiBlock_HO::Update_All_Cells(void){
     for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
       if (Grid_ptr[i][j].Node != NULL) {
 	Grid_ptr[i][j].Update_Cells();
+      } /* endif */
+    }  /* endfor */
+  }  /* endfor */  
+}
+
+/*!
+ * Set the ghost cells update flag to require update of the 
+ * geometric properties of these cells in all mesh blocks.
+ */
+void Grid2D_Quad_MultiBlock_HO::Schedule_Ghost_Cells_Update(void){
+  int i, j;
+  
+  for ( j = 0 ; j <= Last_jBlock() ; ++j ) {
+    for ( i = 0; i <= Last_iBlock() ; ++i ) {
+      if (Grid_ptr[i][j].Node != NULL) {
+	Grid_ptr[i][j].Schedule_Ghost_Cells_Update();
       } /* endif */
     }  /* endfor */
   }  /* endfor */  

@@ -32,6 +32,16 @@
 class Grid2D_Quad_MultiBlock_HO{
 public:
 
+  /*! Array of grid types which require synchronization between blocks 
+    (i.e. message passing) before update of geometric properties in ghost cells.
+    As a general rule, grids which incorporate correlations of extension splines and 
+    which are known that message passing will change their ghost node locations MUST be added to this list!!!
+    Major problems might appear when ghost cell properties are calculated
+    with grid nodes that are not located on the extension splines yet.
+    To add a new grid, increase the number of array elements and add the grid ID to the list in HO_Grid2DQuadMultiBlock.cc.
+  */
+  static int GridsThatRequireSynchronizationPriorToGhostCellsUpdate[1];
+
   //! @name 
   //@{ 
   Grid2D_Quad_Block_HO  **Grid_ptr; //!< 2D array of quadrilateral block grids.
@@ -108,12 +118,15 @@ public:
   void Disturb_Interior_Nodes(const int &Number_of_Iterations);
 
   void SetFluxCalculationMethod(void);
+  void SetUserSpecifiedBCs(const int& BC_North, const int& BC_South,
+			   const int& BC_East, const int & BC_West);
   //@}
   
   //!@name Update exterior nodes and cell geometric properties
   //@{
   void Update_All_Exterior_Nodes(void);
   void Update_All_Cells(void);
+  void Schedule_Ghost_Cells_Update(void);
   //@}
 
   //!@name Output functions for plotting.
@@ -1144,7 +1157,13 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
   int iBlk, jBlk;
   int HiBlk, HjBlk;
 
-  
+
+  /* Build vector of grids that are omitted from updating geometric properties in ghost cells,
+     based on the list GridsThatRequireSynchronizationPriorToGhostCellsUpdate */
+  vector<int> OmittedGrids_UpdateGhostCells(GridsThatRequireSynchronizationPriorToGhostCellsUpdate,
+					    GridsThatRequireSynchronizationPriorToGhostCellsUpdate + 
+					    sizeof(GridsThatRequireSynchronizationPriorToGhostCellsUpdate) / sizeof(int) );
+
 
   /* Generate appropriate mesh. */
 
@@ -1546,19 +1565,10 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
   /* Reset boundary conditions if required. */
 
   if (Input_Parameters.BCs_Specified) {
-    for (jBlk = 0; jBlk < Input_Parameters.Number_of_Blocks_Jdir; ++jBlk) {
-      for ( iBlk = 0; iBlk < Input_Parameters.Number_of_Blocks_Idir; ++iBlk) {
-	if (jBlk == Input_Parameters.Number_of_Blocks_Jdir-1)
-	  Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(Input_Parameters.BC_North);
-	if (jBlk == 0)
-	  Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(Input_Parameters.BC_South);
-	if (iBlk == Input_Parameters.Number_of_Blocks_Idir-1)
-	  Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(Input_Parameters.BC_East);
-	if (iBlk == 0)
-	  Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(Input_Parameters.BC_West);
-	Set_BCs(Grid_ptr[iBlk][jBlk]);
-      }
-    }
+    SetUserSpecifiedBCs(Input_Parameters.BC_North,
+			Input_Parameters.BC_South,
+			Input_Parameters.BC_East,
+			Input_Parameters.BC_West);
   }
 
   /* Set flux calculation method .*/
@@ -1597,6 +1607,24 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
     error_flag = 0;
     
     /* Update geometric properties of multi-block quadrilateral mesh cells. */
+    // === Determine if the update is allowed in ghost cells ===
+    for (int iter = 0; iter < OmittedGrids_UpdateGhostCells.size(); ++iter){
+      if (Input_Parameters.i_Grid == OmittedGrids_UpdateGhostCells[iter]){
+	
+	int i,j;
+
+	// Postpone the update of the ghost cells until message passing transfer the right nodal positions
+	for ( j = 0 ; j <= Number_of_Blocks_Jdir-1 ; ++j ) {
+	  for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
+	    if (Grid_ptr[i][j].Node != NULL) {
+	      Grid_ptr[i][j].Confirm_Ghost_Cells_Update();
+	    } /* endif */
+	  }  /* endfor */
+	}  /* endfor */  
+	
+      }
+    }
+
     Update_All_Cells();
   }
 

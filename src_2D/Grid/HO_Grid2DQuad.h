@@ -789,7 +789,7 @@ public:
   //! Confirm that the update of interior cells has been done and reset the flag accordingly
   void Confirm_Interior_Mesh_Update(void){ InteriorMeshUpdate = OFF; }
   //! Confirm that the update of ghost cells has been done and reset the flag accordingly
-  void Confirm_Ghost_Cells_Update(void){ GhostCellsUpdate = OFF; }
+  void Confirm_Ghost_Cells_Update(void){ GhostCellsUpdate = OFF; CornerGhostCellsUpdate = OFF;}
   //! Confirm that the update of corner ghost cells has been done and reset the flag accordingly
   void Confirm_Corner_Ghost_Cells_Update(void){ CornerGhostCellsUpdate = OFF; }
   //! Confirm that the update of ALL cells has been done and reset the flags accordingly
@@ -1114,7 +1114,7 @@ private:
   //@{
   //! Controls the update of the geometric properties of the interior cells.
   int InteriorMeshUpdate;
-  //! Controls the update of the geometric properties of all the ghost cells.
+  //! Controls the update of the geometric properties of all ghost cells.
   int GhostCellsUpdate;    
   //! Controls the update of the geometric properties of the corner ghost cells.
   int CornerGhostCellsUpdate; 
@@ -1175,7 +1175,8 @@ private:
 
   int NumOfConstrainedGaussQuadPoints_GenericBoundary(const BndSplineType & BndSpline,
 						      const BndSplineIntervalType * BndSplineInfo,
-						      const int &CellIndex);
+						      const int &CellIndex, 
+						      const int &CellIndex_Shift = 0);
 
 };
 
@@ -2667,17 +2668,21 @@ inline void Grid2D_Quad_Block_HO::operator ^(const double &a) {
  * the boundary conditions are enforced as constraints
  * for a CellIndex cell, a given boundary spline and 
  * the associate spline interval.
+ *
+ * \param CellIndex_Shift the difference between the CellIndex of the cell and
+ *                        the corresponding position in BndSplineInfo variable.
  */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_GenericBoundary(const BndSplineType & BndSpline,
 										 const BndSplineIntervalType * BndSplineInfo,
-										 const int &CellIndex){
+										 const int &CellIndex,
+										 const int &CellIndex_Shift){
 
   if (BndSpline.getFluxCalcMethod() == SolveRiemannProblem){
     /* The boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
     return 0;
   } else if (BndSplineInfo != NULL){
     /* use high-order boundary info */
-    return BndSplineInfo[CellIndex].NumGQPoints();
+    return BndSplineInfo[CellIndex-CellIndex_Shift].NumGQPoints();
   } else {
     /* return the number of points based on the order of accuracy
        (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux" ) */
@@ -2694,8 +2699,8 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_North(const int
     if (ii < ICl){
       // This cell is bounded by ExtendWest_BndNorthSpline to North
       return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendWest_BndNorthSpline,
-							     ExtendWest_BndNorthSplineInfo,
-							     ii);
+      							     ExtendWest_BndNorthSplineInfo,
+      							     ii);
     } else if (ii <= ICu){
       // This cell is bounded by BndNorthSpline to North
       return NumOfConstrainedGaussQuadPoints_GenericBoundary(BndNorthSpline,
@@ -2705,7 +2710,7 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_North(const int
       // This cell is bounded by ExtendEast_BndNorthSpline to North
       return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendEast_BndNorthSpline,
 							     ExtendEast_BndNorthSplineInfo,
-							     ii);
+							     ii, ICu+1);
     }
   } else {
     /* This cell is not on the interior side of North block boundaries */
@@ -2733,7 +2738,7 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_South(const int
       // This cell is bounded by ExtendEast_BndSouthSpline to South
       return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendEast_BndSouthSpline,
 							     ExtendEast_BndSouthSplineInfo,
-							     ii);
+							     ii, ICu+1);
     }
   } else {
     /* This cell is not on the interior side of South block boundaries */
@@ -2761,7 +2766,7 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_East(const int 
       // This cell is bounded by ExtendNorth_BndEastSpline to East
       return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendNorth_BndEastSpline,
 							     ExtendNorth_BndEastSplineInfo,
-							     jj);
+							     jj, JCu+1);
     }
   } else {
     /* This cell is not on the interior side of East block boundaries */
@@ -2789,7 +2794,7 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_West(const int 
       // This cell is bounded by ExtendNorth_BndWestSpline to West
       return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendNorth_BndWestSpline,
 							     ExtendNorth_BndWestSplineInfo,
-							     jj);
+							     jj, JCu+1);
     }
   } else {
     /* This cell is not on the interior side of West block boundaries */

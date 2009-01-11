@@ -3918,12 +3918,12 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
 	bc_type_left = BCtype(s_north, ExtendWest_BndNorthSpline);
 	s_north = getS(Node[i  ][JNu].X, ExtendWest_BndNorthSpline);
 	bc_type_right = BCtype(s_north,  ExtendWest_BndNorthSpline);
-	
+
 	if (bc_type_left == bc_type_right) {
 	  BCtypeN[i] = bc_type_left;
 	} else {
 	  BCtypeN[i] = bc_type_right;
-	} /* endif */	 
+	} /* endif */
       }
     }
 
@@ -5276,8 +5276,13 @@ void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
       }//endif
     } // endif (West Boundary)
 
-    // Update the spline infos for the extension splines
-    Update_ExtensionSplineInfos();
+    /* Update the spline infos for the extension splines only if the ghost cells update is required.
+     * This condition is necessary to prevent update of Infos before the ghost nodes are updated
+     * and also extra computational time.
+     */ 
+    if (GhostCellsUpdate == ON){
+      Update_ExtensionSplineInfos();
+    }
 
   } // endif (CheckExistenceOfCurvedBoundaries)
 }
@@ -10088,7 +10093,8 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
 
 /*!
  * Updates the cell information for the quadrilateral mesh block 
- * ghost cells (i.e. no interior cells and no boundary splines).
+ * ghost cells (i.e. no interior cells, no main boundary splines).
+ * This routine updates the corner ghost cells and ONLY the extension boundary splines.
  */
 void Grid2D_Quad_Block_HO::Update_Ghost_Cells(void) {
 
@@ -10321,7 +10327,7 @@ void Grid2D_Quad_Block_HO::Update_Ghost_Cells(void) {
 /*!
  * Updates the cell information for the quadrilateral mesh block 
  * corner ghost cells (i.e. no interior cells, no ghost cells other
- * than the corner ones, no boundary splines).
+ * than the corner ones and no extension or main boundary splines).
  */
 void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Cells(void) {
 
