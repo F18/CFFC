@@ -57,114 +57,69 @@ void HighOrder2D<SOLN_STATE>::ComputeUnlimitedSolutionReconstruction(Soln_Block_
     ComputeReconstructionPseudoInverse();
   }
 
-  // Carry out the solution reconstruction for cells in the specified range.
-  for ( j  = StartJ ; j <= EndJ ; ++j ) {
-    for ( i = StartI ; i <= EndI ; ++i ) {
-
-      // Reset the monotonicity data
-      ResetMonotonicityData(i,j);
-      
-      // Set the stencil of points used for reconstruction
-      SetReconstructionStencil(i, j, i_index, j_index);
-
-      // Compute the reconstruction for the current cell
-      ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
-							  i, j, i_index, j_index);
-      
-    } /* endfor */
-  }/* endfor */
-
   // Check whether constrained reconstruction is required anywhere in the block.
   if ( !_constrained_block_reconstruction ){
-    // No need to perform constrained reconstructions
-    return;
-  }
 
+    // Carry out the solution reconstruction using the central stencil for cells in the specified range.
+    for ( j  = StartJ ; j <= EndJ ; ++j ) {
+      for ( i = StartI ; i <= EndI ; ++i ) {
 
-  /***************************************************************************
-   *    Perform constrained unlimited high-order solution reconstruction     *
-   **************************************************************************/
+	// Reset the monotonicity data
+	ResetMonotonicityData(i,j);
+      
+	// Set the stencil of points used for reconstruction
+	SetReconstructionStencil(i, j, i_index, j_index);
 
-  // Check WEST boundary
-  if (_constrained_WEST_reconstruction){
-    // Add constrained reconstruction here
-    for (j = StartJ_ConstrWest; j <= EndJ_ConstrWest; ++j){
-      for (i = StartI_ConstrWest; i <= EndI_ConstrWest; ++i){
+	// Compute the reconstruction for the current cell
+	ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
+							    i, j, i_index, j_index);
+      
+      } /* endfor */
+    }/* endfor */
+
+  } else {
+    
+    /*****************************************************************************************
+     *    Depending on the ReconstructionTypeMap value for a given cell,                     *
+     *    perform constrained or unconstrained unlimited high-order solution reconstruction, *
+     *    or no reconstruction at all.                                                       *
+     ****************************************************************************************/
+
+    for (j = StartJ; j <= EndJ; ++j){
+      for (i = StartI; i <= EndI; ++i){
 	
 	// Reset the monotonicity data
 	ResetMonotonicityData(i,j);
 	
-	// Set the biased stencil of points used for reconstruction
-	SetConstrainedReconstructionStencil(i, j, i_index_ave, j_index_ave);
-	
-	// Compute the constrained reconstruction for the current cell
-	ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
-							  i, j, i_index_ave, j_index_ave);
+	switch (ReconstructionTypeMap[i][j]){
+	case 'r':		// "Regular reconstruction" (i.e. uses the central stencil)
+	  // Set the stencil of points used for reconstruction
+	  SetReconstructionStencil(i, j, i_index, j_index);
+
+	  // Compute the reconstruction for the current cell
+	  ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
+							      i, j, i_index, j_index);
+	  break;
+	  
+	case 'm':		// "Modified reconstruction" (i.e. uses a deviated stencil but it has no constraints)
+	case 'c':		// "Constrained reconstruction" (i.e. uses a deviated stencil and it has constraints)
+	  // Set the biased stencil of points used for reconstruction
+	  SetDeviatedReconstructionStencil(i, j, i_index_ave, j_index_ave, rings);
+
+	  // Compute the constrained reconstruction for the current cell
+	  ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
+							    i, j, i_index_ave, j_index_ave);
+	  break;
+	  
+	case 'n':		// "No reconstruction" (i.e. cell for which no reconstruction should be performed)
+	  // Do nothing
+	  break;
+	}
 
       }	// endfor
     }// endfor
-  } 
-
-  // Check EAST boundary
-  if (_constrained_EAST_reconstruction){
-    // Add constrained reconstruction here
-    for (j = StartJ_ConstrEast; j <= EndJ_ConstrEast; ++j){
-      for (i = StartI_ConstrEast; i <= EndI_ConstrEast; ++i){
-	
-	// Reset the monotonicity data
-	ResetMonotonicityData(i,j);
-	
-	// Set the biased stencil of points used for reconstruction
-	SetConstrainedReconstructionStencil(i, j, i_index_ave, j_index_ave);
-	
-	// Compute the constrained reconstruction for the current cell
-	ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
-							  i, j, i_index_ave, j_index_ave);
-
-      }	// endfor
-    }// endfor
-  } 
-
-  // Check NORTH boundary
-  if (_constrained_NORTH_reconstruction){
-    // Add constrained reconstruction here
-    for (j = StartJ_ConstrNorth; j <= EndJ_ConstrNorth; ++j){
-      for (i = StartI_ConstrNorth; i <= EndI_ConstrNorth; ++i){
-	
-	// Reset the monotonicity data
-	ResetMonotonicityData(i,j);
-	
-	// Set the biased stencil of points used for reconstruction
-	SetConstrainedReconstructionStencil(i, j, i_index_ave, j_index_ave);
-	
-	// Compute the constrained reconstruction for the current cell
-	ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
-							  i, j, i_index_ave, j_index_ave);
-
-      }	// endfor
-    }// endfor
-  } 
-
-  // Check SOUTH boundary
-  if (_constrained_SOUTH_reconstruction){
-    // Add constrained reconstruction here
-    for (j = StartJ_ConstrSouth; j <= EndJ_ConstrSouth; ++j){
-      for (i = StartI_ConstrSouth; i <= EndI_ConstrSouth; ++i){
-	
-	// Reset the monotonicity data
-	ResetMonotonicityData(i,j);
-	
-	// Set the biased stencil of points used for reconstruction
-	SetConstrainedReconstructionStencil(i, j, i_index_ave, j_index_ave);
-	
-	// Compute the constrained reconstruction for the current cell
-	ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
-							  i, j, i_index_ave, j_index_ave);
-
-      }	// endfor
-    }// endfor
-  }
-
+    
+  } // endif (_constrained_block_reconstruction)
 }
 
 /*! 
@@ -2916,9 +2871,15 @@ void HighOrder2D<SOLN_STATE>::FetchDataConstraints(Soln_Block_Type & SolnBlk,
   if ( ConstraintBCs_W[parameter] ){
     // Constraints detected on the West face
     // Fetch the data for imposing the constraints
-    if (Geom->BndWestSplineInfo != NULL){
+    if (jCell<JCl && Geom->ExtendSouth_BndWestSplineInfo != NULL){
+      Geom->ExtendSouth_BndWestSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendSouth_BndWestSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);
+    } else if ( jCell>=JCl && jCell<=JCu && Geom->BndWestSplineInfo != NULL){
       Geom->BndWestSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndWestSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
+      Geom->BndWestSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);
+    } else if ( jCell>JCu && Geom->ExtendNorth_BndWestSplineInfo != NULL){
+      Geom->ExtendNorth_BndWestSplineInfo[jCell-(JCu+1)].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendNorth_BndWestSplineInfo[jCell-(JCu+1)].CopyNormalGQPoints(Constraints_Normals);
     } else {
       Geom->addGaussQuadPointsFaceW(iCell,jCell,Constraints_Loc,ConstrainedGQPs_West);
       for (n = 0; n < ConstrainedGQPs_West; ++n){
@@ -2937,9 +2898,15 @@ void HighOrder2D<SOLN_STATE>::FetchDataConstraints(Soln_Block_Type & SolnBlk,
   if ( ConstraintBCs_S[parameter] ){
     // Constraints detected on the South face
     // Fetch the data for imposing the constraints
-    if (Geom->BndSouthSplineInfo != NULL){
+    if (iCell<ICl && Geom->ExtendWest_BndSouthSplineInfo != NULL){
+      Geom->ExtendWest_BndSouthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendWest_BndSouthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else if (iCell>=ICl && iCell<=ICu && Geom->BndSouthSplineInfo != NULL){
       Geom->BndSouthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
       Geom->BndSouthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else if (iCell>ICu && Geom->ExtendEast_BndSouthSplineInfo != NULL){
+      Geom->ExtendEast_BndSouthSplineInfo[iCell-(ICu+1)].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendEast_BndSouthSplineInfo[iCell-(ICu+1)].CopyNormalGQPoints(Constraints_Normals);      
     } else {
       Geom->addGaussQuadPointsFaceS(iCell,jCell,Constraints_Loc,ConstrainedGQPs_South);
       for (n = 0; n < ConstrainedGQPs_South; ++n){
@@ -2957,9 +2924,15 @@ void HighOrder2D<SOLN_STATE>::FetchDataConstraints(Soln_Block_Type & SolnBlk,
   if ( ConstraintBCs_E[parameter] ){
     // Constraints detected on the East face
     // Fetch the data for imposing the constraints
-    if (Geom->BndEastSplineInfo != NULL){
+    if (jCell<JCl && Geom->ExtendSouth_BndEastSplineInfo != NULL){
+      Geom->ExtendSouth_BndEastSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendSouth_BndEastSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);
+    } else if (jCell>=JCl && jCell<=JCu && Geom->BndEastSplineInfo != NULL){
       Geom->BndEastSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndEastSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
+      Geom->BndEastSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);
+    } else if (jCell>JCu && Geom->ExtendNorth_BndEastSplineInfo != NULL){
+      Geom->ExtendNorth_BndEastSplineInfo[jCell-(JCu+1)].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendNorth_BndEastSplineInfo[jCell-(JCu+1)].CopyNormalGQPoints(Constraints_Normals);
     } else {
       Geom->addGaussQuadPointsFaceE(iCell,jCell,Constraints_Loc,ConstrainedGQPs_East);
       for (n = 0; n < ConstrainedGQPs_East; ++n){
@@ -2977,9 +2950,15 @@ void HighOrder2D<SOLN_STATE>::FetchDataConstraints(Soln_Block_Type & SolnBlk,
   if ( ConstraintBCs_N[parameter] ){
     // Constraints detected on the North face
     // Fetch the data for imposing the constraints
-    if (Geom->BndNorthSplineInfo != NULL){
+    if (iCell<ICl && Geom->ExtendWest_BndNorthSplineInfo != NULL){
+      Geom->ExtendWest_BndNorthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendWest_BndNorthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else if (iCell>=ICl && iCell<=ICu && Geom->BndNorthSplineInfo != NULL){
       Geom->BndNorthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndNorthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
+      Geom->BndNorthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);
+    } else if (iCell>ICu && Geom->ExtendEast_BndNorthSplineInfo != NULL){
+      Geom->ExtendEast_BndNorthSplineInfo[iCell-(ICu+1)].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendEast_BndNorthSplineInfo[iCell-(ICu+1)].CopyNormalGQPoints(Constraints_Normals);
     } else {
       Geom->addGaussQuadPointsFaceN(iCell,jCell,Constraints_Loc,ConstrainedGQPs_North);
       for (n = 0; n < ConstrainedGQPs_North; ++n){

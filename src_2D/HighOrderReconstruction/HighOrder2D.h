@@ -211,38 +211,6 @@ public:
   const int & EndJdir_LPWL(void) const { return EndJ_LPWL; }
   //@}
 
-  //! @name Indexes of cells between which constrained reconstruction is calculated if West BC is imposed by constraints.
-  //@{
-  const int & StartIdir_ConstrWest(void) const { return StartI_ConstrWest; }
-  const int & EndIdir_ConstrWest(void) const { return EndI_ConstrWest; }
-  const int & StartJdir_ConstrWest(void) const { return StartJ_ConstrWest; }
-  const int & EndJdir_ConstrWest(void) const { return EndJ_ConstrWest; }
-  //@}
-
-  //! @name Indexes of cells between which constrained reconstruction is calculated if East BC is imposed by constraints.
-  //@{
-  const int & StartIdir_ConstrEast(void) const { return StartI_ConstrEast; }
-  const int & EndIdir_ConstrEast(void) const { return EndI_ConstrEast; }
-  const int & StartJdir_ConstrEast(void) const { return StartJ_ConstrEast; }
-  const int & EndJdir_ConstrEast(void) const { return EndJ_ConstrEast; }
-  //@}
-
-  //! @name Indexes of cells between which constrained reconstruction is calculated if North BC is imposed by constraints.
-  //@{
-  const int & StartIdir_ConstrNorth(void) const { return StartI_ConstrNorth; }
-  const int & EndIdir_ConstrNorth(void) const { return EndI_ConstrNorth; }
-  const int & StartJdir_ConstrNorth(void) const { return StartJ_ConstrNorth; }
-  const int & EndJdir_ConstrNorth(void) const { return EndJ_ConstrNorth; }
-  //@}
-
-  //! @name Indexes of cells between which constrained reconstruction is calculated if South BC is imposed by constraints.
-  //@{
-  const int & StartIdir_ConstrSouth(void) const { return StartI_ConstrSouth; }
-  const int & EndIdir_ConstrSouth(void) const { return EndI_ConstrSouth; }
-  const int & StartJdir_ConstrSouth(void) const { return StartJ_ConstrSouth; }
-  const int & EndJdir_ConstrSouth(void) const { return EndJ_ConstrSouth; }
-  //@}
-
   //! @name Pseudo-inverse of the LHS term in the CENO reconstruction
   //@{
   //! Get the pointer to the double array of reconstruction pseudo-inverse matrices.
@@ -844,22 +812,6 @@ private:
     EndI_LPWL,                 //!< Index of the last cell in i-direction which is checked for non-smooth interpolant
     StartJ_LPWL,               //!< Index of the first cell in j-direction which is checked for non-smooth interpolant
     EndJ_LPWL;                 //!< Index of the last cell in j-direction which is checked for non-smooth interpolant
-  int StartI_ConstrWest,       //!< Index of the first cell in i-direction which is influenced by a constrained West boundary 
-    EndI_ConstrWest,           //!< Index of the last cell in i-direction which is influenced by a constrained West boundary
-    StartJ_ConstrWest,         //!< Index of the first cell in j-direction which is influenced by a constrained West boundary
-    EndJ_ConstrWest;           //!< Index of the last cell in j-direction which is influenced by a constrained West boundary
-  int StartI_ConstrEast,       //!< Index of the first cell in i-direction which is influenced by a constrained East boundary 
-    EndI_ConstrEast,           //!< Index of the last cell in i-direction which is influenced by a constrained East boundary
-    StartJ_ConstrEast,         //!< Index of the first cell in j-direction which is influenced by a constrained East boundary
-    EndJ_ConstrEast;           //!< Index of the last cell in j-direction which is influenced by a constrained East boundary
-  int StartI_ConstrNorth,      //!< Index of the first cell in i-direction which is influenced by a constrained North boundary 
-    EndI_ConstrNorth,          //!< Index of the last cell in i-direction which is influenced by a constrained North boundary
-    StartJ_ConstrNorth,        //!< Index of the first cell in j-direction which is influenced by a constrained North boundary
-    EndJ_ConstrNorth;          //!< Index of the last cell in j-direction which is influenced by a constrained North boundary
-  int StartI_ConstrSouth,      //!< Index of the first cell in i-direction which is influenced by a constrained South boundary 
-    EndI_ConstrSouth,          //!< Index of the last cell in i-direction which is influenced by a constrained South boundary
-    StartJ_ConstrSouth,        //!< Index of the first cell in j-direction which is influenced by a constrained South boundary
-    EndJ_ConstrSouth;          //!< Index of the last cell in j-direction which is influenced by a constrained South boundary
   int StartJ_SI_ConstrWest,    //!< Index of the first cell in j-direction influenced by a constrained West boundary for SI calc.
     EndJ_SI_ConstrWest;        //!< Index of the last cell in j-direction influenced by a constrained West boundary for SI calc.
   int StartJ_SI_ConstrEast,    //!< Index of the first cell in j-direction influenced by a constrained East boundary for SI calc.
@@ -1067,10 +1019,6 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(void):
   StartI(0), EndI(0), StartJ(0), EndJ(0),
   StartI_SI(0), EndI_SI(0), StartJ_SI(0), EndJ_SI(0),
   StartI_LPWL(0), EndI_LPWL(0), StartJ_LPWL(0), EndJ_LPWL(0),
-  StartI_ConstrWest(0), EndI_ConstrWest(0), StartJ_ConstrWest(0), EndJ_ConstrWest(0),
-  StartI_ConstrNorth(0), EndI_ConstrNorth(0), StartJ_ConstrNorth(0), EndJ_ConstrNorth(0),
-  StartI_ConstrSouth(0), EndI_ConstrSouth(0), StartJ_ConstrSouth(0), EndJ_ConstrSouth(0),
-  StartI_ConstrEast(0), EndI_ConstrEast(0), StartJ_ConstrEast(0), EndJ_ConstrEast(0),
   StartJ_SI_ConstrWest(0),  EndJ_SI_ConstrWest(0),
   StartI_SI_ConstrNorth(0), EndI_SI_ConstrNorth(0),
   StartI_SI_ConstrSouth(0), EndI_SI_ConstrSouth(0),
@@ -1102,10 +1050,6 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder,
   StartI(0), EndI(0), StartJ(0), EndJ(0),
   StartI_SI(0), EndI_SI(0), StartJ_SI(0), EndJ_SI(0),
   StartI_LPWL(0), EndI_LPWL(0), StartJ_LPWL(0), EndJ_LPWL(0),
-  StartI_ConstrWest(0), EndI_ConstrWest(0), StartJ_ConstrWest(0), EndJ_ConstrWest(0),
-  StartI_ConstrNorth(0), EndI_ConstrNorth(0), StartJ_ConstrNorth(0), EndJ_ConstrNorth(0),
-  StartI_ConstrSouth(0), EndI_ConstrSouth(0), StartJ_ConstrSouth(0), EndJ_ConstrSouth(0),
-  StartI_ConstrEast(0), EndI_ConstrEast(0), StartJ_ConstrEast(0), EndJ_ConstrEast(0),
   StartJ_SI_ConstrWest(0),  EndJ_SI_ConstrWest(0),
   StartI_SI_ConstrNorth(0), EndI_SI_ConstrNorth(0),
   StartI_SI_ConstrSouth(0), EndI_SI_ConstrSouth(0),
@@ -1217,30 +1161,6 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
     EndI_LPWL = rhs.EndI_LPWL;
     StartJ_LPWL = rhs.StartJ_LPWL;
     EndJ_LPWL = rhs.EndJ_LPWL;
-
-    // set range of cells which have constrained reconstruction if the West boundary condition is enforced with constraints
-    StartI_ConstrWest = rhs.StartI_ConstrWest;
-    EndI_ConstrWest = rhs.EndI_ConstrWest;
-    StartJ_ConstrWest = rhs.StartJ_ConstrWest;
-    EndJ_ConstrWest = rhs.EndJ_ConstrWest;
-
-    // set range of cells which have constrained reconstruction if the East boundary condition is enforced with constraints
-    StartI_ConstrEast = rhs.StartI_ConstrEast;
-    EndI_ConstrEast = rhs.EndI_ConstrEast;
-    StartJ_ConstrEast = rhs.StartJ_ConstrEast;
-    EndJ_ConstrEast = rhs.EndJ_ConstrEast;
-
-    // set range of cells which have constrained reconstruction if the North boundary condition is enforced with constraints
-    StartI_ConstrNorth = rhs.StartI_ConstrNorth;
-    EndI_ConstrNorth = rhs.EndI_ConstrNorth;
-    StartJ_ConstrNorth = rhs.StartJ_ConstrNorth;
-    EndJ_ConstrNorth = rhs.EndJ_ConstrNorth;
-
-    // set range of cells which have constrained reconstruction if the South boundary condition is enforced with constraints
-    StartI_ConstrSouth = rhs.StartI_ConstrSouth;
-    EndI_ConstrSouth = rhs.EndI_ConstrSouth;
-    StartJ_ConstrSouth = rhs.StartJ_ConstrSouth;
-    EndJ_ConstrSouth = rhs.EndJ_ConstrSouth;
 
     // set range of cells which have SI calculation modified if the West boundary condition is enforced with constraints
     StartJ_SI_ConstrWest = rhs.StartJ_SI_ConstrWest;
@@ -1356,30 +1276,6 @@ HighOrder2D<SOLN_STATE> & HighOrder2D<SOLN_STATE>::operator=(const HighOrder2D<S
     EndI_LPWL = rhs.EndI_LPWL;
     StartJ_LPWL = rhs.StartJ_LPWL;
     EndJ_LPWL = rhs.EndJ_LPWL;
-
-    // set range of cells which have constrained reconstruction if the West boundary condition is enforced with constraints
-    StartI_ConstrWest = rhs.StartI_ConstrWest;
-    EndI_ConstrWest = rhs.EndI_ConstrWest;
-    StartJ_ConstrWest = rhs.StartJ_ConstrWest;
-    EndJ_ConstrWest = rhs.EndJ_ConstrWest;
-
-    // set range of cells which have constrained reconstruction if the East boundary condition is enforced with constraints
-    StartI_ConstrEast = rhs.StartI_ConstrEast;
-    EndI_ConstrEast = rhs.EndI_ConstrEast;
-    StartJ_ConstrEast = rhs.StartJ_ConstrEast;
-    EndJ_ConstrEast = rhs.EndJ_ConstrEast;
-
-    // set range of cells which have constrained reconstruction if the North boundary condition is enforced with constraints
-    StartI_ConstrNorth = rhs.StartI_ConstrNorth;
-    EndI_ConstrNorth = rhs.EndI_ConstrNorth;
-    StartJ_ConstrNorth = rhs.StartJ_ConstrNorth;
-    EndJ_ConstrNorth = rhs.EndJ_ConstrNorth;
-
-    // set range of cells which have constrained reconstruction if the South boundary condition is enforced with constraints
-    StartI_ConstrSouth = rhs.StartI_ConstrSouth;
-    EndI_ConstrSouth = rhs.EndI_ConstrSouth;
-    StartJ_ConstrSouth = rhs.StartJ_ConstrSouth;
-    EndJ_ConstrSouth = rhs.EndJ_ConstrSouth;
 
     // set range of cells which have SI calculation modified if the West boundary condition is enforced with constraints
     StartJ_SI_ConstrWest = rhs.StartJ_SI_ConstrWest;
@@ -1689,14 +1585,6 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
     StartJ_SI = 0; EndJ_SI = 0;
     StartI_LPWL = 0; EndI_LPWL = 0;
     StartJ_LPWL = 0; EndJ_LPWL = 0;
-    StartI_ConstrWest = 0; EndI_ConstrWest = 0;
-    StartJ_ConstrWest = 0; EndJ_ConstrWest = 0;
-    StartI_ConstrEast = 0; EndI_ConstrEast = 0;
-    StartJ_ConstrEast = 0; EndJ_ConstrEast = 0;
-    StartI_ConstrNorth = 0; EndI_ConstrNorth = 0;
-    StartJ_ConstrNorth = 0; EndJ_ConstrNorth = 0;
-    StartI_ConstrSouth = 0; EndI_ConstrSouth = 0;
-    StartJ_ConstrSouth = 0; EndJ_ConstrSouth = 0;
     StartJ_SI_ConstrWest = 0;  EndJ_SI_ConstrWest = 0;
     StartJ_SI_ConstrEast = 0;  EndJ_SI_ConstrEast = 0;
     StartI_SI_ConstrNorth = 0; EndI_SI_ConstrNorth = 0;
@@ -1805,14 +1693,6 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
     StartJ_SI = 0; EndJ_SI = 0;
     StartI_LPWL = 0; EndI_LPWL = 0;
     StartJ_LPWL = 0; EndJ_LPWL = 0;
-    StartI_ConstrWest = 0; EndI_ConstrWest = 0;
-    StartJ_ConstrWest = 0; EndJ_ConstrWest = 0;
-    StartI_ConstrEast = 0; EndI_ConstrEast = 0;
-    StartJ_ConstrEast = 0; EndJ_ConstrEast = 0;
-    StartI_ConstrNorth = 0; EndI_ConstrNorth = 0;
-    StartJ_ConstrNorth = 0; EndJ_ConstrNorth = 0;
-    StartI_ConstrSouth = 0; EndI_ConstrSouth = 0;
-    StartJ_ConstrSouth = 0; EndJ_ConstrSouth = 0;
     StartJ_SI_ConstrWest = 0;  EndJ_SI_ConstrWest = 0;
     StartJ_SI_ConstrEast = 0;  EndJ_SI_ConstrEast = 0;
     StartI_SI_ConstrNorth = 0; EndI_SI_ConstrNorth = 0;
@@ -2855,8 +2735,6 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
      at boundaries and modify the affected indexes accordingly. */
   // Check West boundary
   if (Geom->IsWestBoundaryReconstructionConstrained()) {
-    // Set StartI
-    StartI = ICl + rings;
     // Flag the boundary accordingly
     _constrained_WEST_reconstruction = true;
     // Set StartI_SI
@@ -2866,8 +2744,6 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
   } 
   // Check East boundary
   if (Geom->IsEastBoundaryReconstructionConstrained()){
-    // Set EndI
-    EndI = ICu - rings;
     // Flag the boundary accordingly
     _constrained_EAST_reconstruction = true;    
     // Set EndI_SI
@@ -2877,8 +2753,6 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
   } 
   // Check South boundary
   if (Geom->IsSouthBoundaryReconstructionConstrained()){
-    // Set StartJ
-    StartJ = JCl + rings;
     // Flag the boundary accordingly
     _constrained_SOUTH_reconstruction = true;
     // Set StartJ_SI
@@ -2888,8 +2762,6 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstructio
   } 
   // Check North boundary
   if (Geom->IsNorthBoundaryReconstructionConstrained()){
-    // Set EndJ
-    EndJ = JCu - rings;
     // Flag the boundary accordingly
     _constrained_NORTH_reconstruction = true;    
     // Set EndJ_SI
@@ -2914,21 +2786,10 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithConstrainedReconstruction(v
   // Check West boundary
   if (_constrained_WEST_reconstruction){
     
-    StartI_ConstrWest = ICl;
-    EndI_ConstrWest   = StartI - 1;
-
-    StartJ_ConstrWest = StartJ;
-    EndJ_ConstrWest   = EndJ;
-
     // SI calculation
     StartJ_SI_ConstrWest = StartJ_SI;
     EndJ_SI_ConstrWest   = EndJ_SI;
   } else {
-
-    StartI_ConstrWest = 0;
-    EndI_ConstrWest   = 0;
-    StartJ_ConstrWest = 0;
-    EndJ_ConstrWest   = 0;
 
     // SI calculation
     StartJ_SI_ConstrWest = 0;
@@ -2938,21 +2799,10 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithConstrainedReconstruction(v
   // Check East boundary
   if (_constrained_EAST_reconstruction){
     
-    StartI_ConstrEast = EndI+1;
-    EndI_ConstrEast   = ICu;
-
-    StartJ_ConstrEast = StartJ;
-    EndJ_ConstrEast   = EndJ;
-
     // SI calculation
     StartJ_SI_ConstrEast = StartJ_SI;
     EndJ_SI_ConstrEast   = EndJ_SI;
   } else {
-
-    StartI_ConstrEast = 0;
-    EndI_ConstrEast   = 0;
-    StartJ_ConstrEast = 0;
-    EndJ_ConstrEast   = 0;
 
     // SI calculation
     StartJ_SI_ConstrEast = 0;
@@ -2962,17 +2812,12 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithConstrainedReconstruction(v
   // Check South boundary
   if (_constrained_SOUTH_reconstruction){
 
-    StartJ_ConstrSouth = JCl;
-    EndJ_ConstrSouth   = StartJ - 1;    
-
     // check West
     if (_constrained_WEST_reconstruction){
-      StartI_ConstrSouth = ICl;
 
       // SI calculation
       StartI_SI_ConstrSouth = ICl;
     } else {
-      StartI_ConstrSouth = StartI;
 
       // SI calculation
       StartI_SI_ConstrSouth = StartI_SI;
@@ -2980,23 +2825,16 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithConstrainedReconstruction(v
 
     // check East
     if (_constrained_EAST_reconstruction){
-      EndI_ConstrSouth   = ICu;
 
       // SI calculation
       EndI_SI_ConstrSouth = ICu;  
     } else {
-      EndI_ConstrSouth   = EndI;
 
       // SI calculation
       EndI_SI_ConstrSouth = EndI_SI;
     }
 
   } else {
-
-    StartI_ConstrSouth = 0;
-    EndI_ConstrSouth   = 0;
-    StartJ_ConstrSouth = 0;
-    EndJ_ConstrSouth   = 0;
 
     // SI calculation
     StartI_SI_ConstrSouth = 0;
@@ -3006,17 +2844,12 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithConstrainedReconstruction(v
   // Check North boundary
   if (_constrained_NORTH_reconstruction){
 
-    StartJ_ConstrNorth = EndJ + 1;
-    EndJ_ConstrNorth   = JCu;
-
     // check West
     if (_constrained_WEST_reconstruction){
-      StartI_ConstrNorth = ICl;
 
       // SI calculation
       StartI_SI_ConstrNorth = ICl;
     } else {
-      StartI_ConstrNorth = StartI;
 
       // SI calculation
       StartI_SI_ConstrNorth = StartI_SI;
@@ -3024,23 +2857,16 @@ void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithConstrainedReconstruction(v
 
     // check East
     if (_constrained_EAST_reconstruction){
-      EndI_ConstrNorth   = ICu;
 
       // SI calculation
       EndI_SI_ConstrNorth = ICu;
     } else {
-      EndI_ConstrNorth   = EndI;
 
       // SI calculation
       EndI_SI_ConstrNorth = EndI_SI;
     }
 
   } else {
-
-    StartI_ConstrNorth = 0;
-    EndI_ConstrNorth   = 0;
-    StartJ_ConstrNorth = 0;
-    EndJ_ConstrNorth   = 0;
 
     // SI calculation
     StartI_SI_ConstrNorth = 0;

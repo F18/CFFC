@@ -1130,27 +1130,6 @@ namespace tut
     ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
     ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
     ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
-    // == check indexes for West constraints
-    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), 0);
-    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), 0);
-    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), 0);
-    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), 0);
-    // == check indexes for East constraints
-    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), 0);
-    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), 0);
-    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), 0);
-    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), 0);
-    // == check indexes for South constraints
-    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), 0);
-    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), 0);
-    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), 0);
-    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), 0);
-    // == check indexes for North constraints
-    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), 0);
-    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), 0);
-    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), 0);
-    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), 0);
-
 
     // == check solution
     double Result = 0.59509999999999985;
@@ -1211,26 +1190,6 @@ namespace tut
     ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
     ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
     ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
-    // == check indexes for West constraints
-    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), 0);
-    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), 0);
-    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), 0);
-    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), 0);
-    // == check indexes for East constraints
-    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), 0);
-    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), 0);
-    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), 0);
-    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), 0);
-    // == check indexes for South constraints
-    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), 0);
-    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), 0);
-    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), 0);
-    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), 0);
-    // == check indexes for North constraints
-    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), 0);
-    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), 0);
-    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), 0);
-    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), 0);
 
     // Change spline type
     Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux); Grid.BndNorthSpline.setBCtype(BC_SYMMETRY_PLANE);
@@ -1256,26 +1215,6 @@ namespace tut
     ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid());
     ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
     ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid());
-    // == check indexes for West constraints
-    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), 0);
-    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), 0);
-    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), 0);
-    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), 0);
-    // == check indexes for East constraints
-    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), HO.ICu_Grid()-1);
-    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), HO.ICu_Grid());
-    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), HO.JCl_Grid()-3);
-    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), HO.JCu_Grid() - 2);
-    // == check indexes for South constraints
-    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), 0);
-    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), 0);
-    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), 0);
-    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), 0);
-    // == check indexes for North constraints
-    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), HO.ICl_Grid()-3);
-    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), HO.ICu_Grid());
-    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), HO.JCu_Grid()-1);
-    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), HO.JCu_Grid());
 
     // Change spline types again
     Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
@@ -1303,26 +1242,6 @@ namespace tut
     ensure_equals("EndI_LPWL, II", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
     ensure_equals("StartJ_LPWL, II", HO.StartJdir_LPWL(), HO.JCl_Grid());
     ensure_equals("EndJ_LPWL, II", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
-    // == check indexes for West constraints
-    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), HO.ICl_Grid());
-    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), HO.ICl_Grid()+1);
-    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), HO.JCl_Grid()+2);
-    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), HO.JCu_Grid()+3);
-    // == check indexes for East constraints
-    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), 0);
-    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), 0);
-    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), 0);
-    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), 0);
-    // == check indexes for South constraints
-    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), HO.ICl_Grid());
-    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), HO.ICu_Grid()+3);
-    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), HO.JCl_Grid());
-    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), HO.JCl_Grid()+1);
-    // == check indexes for North constraints
-    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), 0);
-    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), 0);
-    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), 0);
-    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), 0);
   }
 
   /* Test 24:*/
@@ -1445,26 +1364,6 @@ namespace tut
     ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid());
     ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid());
     ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid());
-    // == check indexes for West constraints
-    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), HO.ICl_Grid());
-    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), HO.ICl_Grid()+1);
-    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), HO.JCl_Grid()+2);
-    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), HO.JCu_Grid()-2);
-    // == check indexes for East constraints
-    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), HO.ICu_Grid()-1);
-    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), HO.ICu_Grid());
-    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), HO.JCl_Grid()+2);
-    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), HO.JCu_Grid()-2);
-    // == check indexes for South constraints
-    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), HO.ICl_Grid());
-    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), HO.ICu_Grid());
-    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), HO.JCl_Grid());
-    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), HO.JCl_Grid()+1);
-    // == check indexes for North constraints
-    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), HO.ICl_Grid());
-    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), HO.ICu_Grid());
-    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), HO.JCu_Grid()-1);
-    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), HO.JCu_Grid());
   }
 
   /* Test 26:*/
@@ -1520,26 +1419,6 @@ namespace tut
     ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid());
     ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
     ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
-    // == check indexes for West constraints
-    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), HO.ICl_Grid());
-    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), HO.ICl_Grid()+1);
-    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), HO.JCl_Grid()-3);
-    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), HO.JCu_Grid()+3);
-    // == check indexes for East constraints
-    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), HO.ICu_Grid()-1);
-    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), HO.ICu_Grid());
-    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), HO.JCl_Grid()-3);
-    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), HO.JCu_Grid()+3);
-    // == check indexes for South constraints
-    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), 0);
-    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), 0);
-    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), 0);
-    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), 0);
-    // == check indexes for North constraints
-    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), 0);
-    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), 0);
-    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), 0);
-    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), 0);
   }
 
   /* Test 27:*/
@@ -1595,26 +1474,6 @@ namespace tut
     ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
     ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid());
     ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid());
-    // == check indexes for West constraints
-    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), 0);
-    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), 0);
-    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), 0);
-    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), 0);
-    // == check indexes for East constraints
-    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), 0);
-    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), 0);
-    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), 0);
-    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), 0);
-    // == check indexes for South constraints
-    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), HO.ICl_Grid()-3);
-    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), HO.ICu_Grid()+3);
-    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), HO.JCl_Grid());
-    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), HO.JCl_Grid()+1);
-    // == check indexes for North constraints
-    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), HO.ICl_Grid()-3);
-    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), HO.ICu_Grid()+3);
-    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), HO.JCu_Grid()-1);
-    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), HO.JCu_Grid());
   }
 
   /* Test 28:*/
@@ -1670,26 +1529,6 @@ namespace tut
     ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid());
     ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
     ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
-    // == check indexes for West constraints
-    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), HO.ICl_Grid());
-    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), HO.ICl_Grid()+1);
-    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), HO.JCl_Grid()-2);
-    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), HO.JCu_Grid()+2);
-    // == check indexes for East constraints
-    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), HO.ICu_Grid()-1);
-    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), HO.ICu_Grid());
-    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), HO.JCl_Grid()-2);
-    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), HO.JCu_Grid()+2);
-    // == check indexes for South constraints
-    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), 0);
-    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), 0);
-    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), 0);
-    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), 0);
-    // == check indexes for North constraints
-    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), 0);
-    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), 0);
-    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), 0);
-    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), 0);
   }
 
   /* Test 29:*/
@@ -1762,26 +1601,6 @@ namespace tut
     ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
     ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid());
     ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid());
-    // == check indexes for West constraints
-    ensure_equals("StartI_ConstrWest", HO.StartIdir_ConstrWest(), 0);
-    ensure_equals("EndI_ConstrWest", HO.EndIdir_ConstrWest(), 0);
-    ensure_equals("StartJ_ConstrWest", HO.StartJdir_ConstrWest(), 0);
-    ensure_equals("EndJ_ConstrWest", HO.EndJdir_ConstrWest(), 0);
-    // == check indexes for East constraints
-    ensure_equals("StartI_ConstrEast", HO.StartIdir_ConstrEast(), 0);
-    ensure_equals("EndI_ConstrEast", HO.EndIdir_ConstrEast(), 0);
-    ensure_equals("StartJ_ConstrEast", HO.StartJdir_ConstrEast(), 0);
-    ensure_equals("EndJ_ConstrEast", HO.EndJdir_ConstrEast(), 0);
-    // == check indexes for South constraints
-    ensure_equals("StartI_ConstrSouth", HO.StartIdir_ConstrSouth(), HO.ICl_Grid()-2);
-    ensure_equals("EndI_ConstrSouth", HO.EndIdir_ConstrSouth(), HO.ICu_Grid()+2);
-    ensure_equals("StartJ_ConstrSouth", HO.StartJdir_ConstrSouth(), HO.JCl_Grid());
-    ensure_equals("EndJ_ConstrSouth", HO.EndJdir_ConstrSouth(), HO.JCl_Grid()+1);
-    // == check indexes for North constraints
-    ensure_equals("StartI_ConstrNorth", HO.StartIdir_ConstrNorth(), HO.ICl_Grid()-2);
-    ensure_equals("EndI_ConstrNorth", HO.EndIdir_ConstrNorth(), HO.ICu_Grid()+2);
-    ensure_equals("StartJ_ConstrNorth", HO.StartJdir_ConstrNorth(), HO.JCu_Grid()-1);
-    ensure_equals("EndJ_ConstrNorth", HO.EndJdir_ConstrNorth(), HO.JCu_Grid());
   }
 
   /* Test 30:*/

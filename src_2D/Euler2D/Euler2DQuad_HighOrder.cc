@@ -2842,7 +2842,7 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	    } else if ( j>=JCl && j<=JCu && Grid.BndWestSplineInfo != NULL){
 	      PointOfInterest = Grid.BndWestSplineInfo[j].GQPoint(Vertex);
 	    } else if ( j>JCu && Grid.ExtendNorth_BndWestSplineInfo != NULL){
-	      PointOfInterest = Grid.ExtendNorth_BndWestSplineInfo[j].GQPoint(Vertex);
+	      PointOfInterest = Grid.ExtendNorth_BndWestSplineInfo[j-(JCu+1)].GQPoint(Vertex);
 	    } else {
 	      // Determine the PointOfInterest if low-order boundaries are used
 	      Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
@@ -2938,7 +2938,7 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	    } else if ( j>=JCl && j<=JCu && Grid.BndEastSplineInfo != NULL){
 	      PointOfInterest = Grid.BndEastSplineInfo[j].GQPoint(Vertex);
 	    } else if ( j>JCu && Grid.ExtendNorth_BndEastSplineInfo != NULL){
-	      PointOfInterest = Grid.ExtendNorth_BndEastSplineInfo[j].GQPoint(Vertex);
+	      PointOfInterest = Grid.ExtendNorth_BndEastSplineInfo[j-(JCu+1)].GQPoint(Vertex);
 	    } else {
 	      // Determine the PointOfInterest if low-order boundaries are used
 	      Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
@@ -3040,7 +3040,7 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	    } else if ( i>=ICl && i<=ICu && Grid.BndSouthSplineInfo != NULL){
 	      PointOfInterest = Grid.BndSouthSplineInfo[i].GQPoint(Vertex);
 	    } else if ( i>ICu && Grid.ExtendEast_BndSouthSplineInfo != NULL){
-	      PointOfInterest = Grid.ExtendEast_BndSouthSplineInfo[i].GQPoint(Vertex);
+	      PointOfInterest = Grid.ExtendEast_BndSouthSplineInfo[i-(ICu+1)].GQPoint(Vertex);
 	    } else {
 	      // Determine the PointOfInterest if low-order boundaries are used
 	      Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
@@ -3138,7 +3138,7 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	    } else if ( i>=ICl && i<=ICu && Grid.BndNorthSplineInfo != NULL){
 	      PointOfInterest = Grid.BndNorthSplineInfo[i].GQPoint(Vertex);
 	    } else if ( i>ICu && Grid.ExtendEast_BndNorthSplineInfo != NULL){
-	      PointOfInterest = Grid.ExtendEast_BndNorthSplineInfo[i].GQPoint(Vertex);
+	      PointOfInterest = Grid.ExtendEast_BndNorthSplineInfo[i-(ICu+1)].GQPoint(Vertex);
 	    } else {
 	      // Determine the PointOfInterest if low-order boundaries are used
 	      Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);

@@ -24,6 +24,8 @@ namespace tut
     // Local variables
   public:
 
+    enum InvestigationLevel {Brief, Detailed};
+
     // ==== Member data =====
 
     // Euler2D input variables and parameters:
@@ -90,6 +92,14 @@ namespace tut
 						const Euler2D_Quad_Block &MasterBlock,
 						const int &i_Master, const int &j_Master,
 						const std::string & BaseMsg = "");
+
+    // Check reconstructions of two correlated cells
+    void CheckReconstructionsOfCorrelatedCells(Euler2D_Quad_Block &SecondBlk,
+					       const int &iCell_S, const int &jCell_S,
+					       Euler2D_Quad_Block &MasterBlk,
+					       const int &iCell_M, const int &jCell_M,
+					       const InvestigationLevel & Level = Brief);
+
 
   private:
     
@@ -285,7 +295,7 @@ namespace tut
     int iMast,jMast;		// cell indexes for the master block that corresponds to the CheckedBlock cell
     int iShift, jShift;		// i- and j-shift between the indexes of the two blocks
     bool ICond, JCond;		// indicators for how to loop over indexes
-    int TD, GMom;
+    int TD, GMom, SolnVal;
     double Tolerance(1.0E-12);
 
     // Determine looping conditions
@@ -331,12 +341,16 @@ namespace tut
 	}
 
 	// === Check cell average solutions
-	ostm() << "Average Solution, cell (" << iCell << "," << jCell << "), " << BaseMsg << "\n"; 
-	ensure_distance(ostm().str(), 
-			CheckedBlock.CellSolution(iCell,jCell),
-			MasterBlock.CellSolution(iMast,jMast),
-			AcceptedError(MasterBlock.CellSolution(iMast,jMast),Tolerance));
-	ostmClear();
+	for (SolnVal = 1; SolnVal <= 4; ++SolnVal){
+	  ostm() << "Average Solution, cell (" << iCell << "," << jCell << "), parameter=" 
+		 << SolnVal << ", " << BaseMsg << "\n"; 
+	  ensure_distance(ostm().str(), 
+			  CheckedBlock.CellSolution(iCell,jCell)[SolnVal],
+			  MasterBlock.CellSolution(iMast,jMast)[SolnVal],
+			  AcceptedError(MasterBlock.CellSolution(iMast,jMast)[SolnVal],Tolerance));
+	  ostmClear();
+	}
+
       }
     }
   }
@@ -354,7 +368,8 @@ namespace tut
     int iShift, jShift;		// i- and j-shift between the indexes of the two blocks
     bool ICond, JCond;		// indicators for how to loop over indexes
     int TD, GMom;
-    double Tolerance(1.0E-8);
+    double Tolerance(1.0E-4);
+    int parameter;
 
     // Determine looping conditions
     ICond = (i_End - i_Start) > 0;
@@ -373,19 +388,238 @@ namespace tut
 
 	// === Check reconstruction coefficients
 	for (TD = 0; TD<=CheckedBlock.HighOrderVariable(0).CellTaylorDeriv(iCell,jCell).LastElem(); ++TD){
-	  ostm() << "TD (" 
-		 << CheckedBlock.HighOrderVariable(0).CellTaylorDeriv(iCell,jCell,TD).P1() << ","
-		 << CheckedBlock.HighOrderVariable(0).CellTaylorDeriv(iCell,jCell,TD).P2() << ")"
-		 << ", CheckedBlock cell (" << iCell << "," << jCell 
-		 << "), MasterBlock cell (" << iMast << "," << jMast << "), " << BaseMsg << "\n";
-	  ensure_distance(ostm().str(), 
-			  CheckedBlock.HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,TD),
-			  MasterBlock.HighOrderVariable(0).CellTaylorDerivState(iMast,jMast,TD),
-			  AcceptedError(MasterBlock.HighOrderVariable(0).CellTaylorDerivState(iMast,jMast,TD),Tolerance));
-	  ostmClear();
+	  for (parameter = 1; parameter <= 4; ++parameter){
+	    ostm() << "TD (" 
+		   << CheckedBlock.HighOrderVariable(0).CellTaylorDeriv(iCell,jCell,TD).P1() << ","
+		   << CheckedBlock.HighOrderVariable(0).CellTaylorDeriv(iCell,jCell,TD).P2() << ")"
+		   << ", parameter " << parameter 
+		   << ", CheckedBlock cell (" << iCell << "," << jCell 
+		   << "), MasterBlock cell (" << iMast << "," << jMast << "), \n" 
+		   << BaseMsg << "\n";
+	    ensure_distance(ostm().str(), 
+			    CheckedBlock.HighOrderVariable(0).CellTaylorDerivState(iCell,jCell,TD)[parameter],
+			    MasterBlock.HighOrderVariable(0).CellTaylorDerivState(iMast,jMast,TD)[parameter],
+			    AcceptedError(MasterBlock.HighOrderVariable(0).CellTaylorDerivState(iMast,jMast,TD)[parameter],
+					  Tolerance));
+	    ostmClear();
+	  }
 	}
+
       }
     }
+
+  }
+
+
+  // === Check reconstructions of two correlated cells
+  void Data_Euler2D_Quad_Block::CheckReconstructionsOfCorrelatedCells(Euler2D_Quad_Block &SecondBlk,
+								      const int &iCell_S, const int &jCell_S,
+								      Euler2D_Quad_Block &MasterBlk,
+								      const int &iCell_M, const int &jCell_M,
+								      const InvestigationLevel & Level){
+
+
+    // Create stencils
+    IndexType iS, jS, iM, jM;
+    char RecTypeS, RecTypeM;
+    double Tolerance(1.0E-12);
+    int GMom, SolnVal;
+
+    // Output empty line
+    cout << endl;
+    cout << "Data for comparing reconstruction of checked cell (" 
+	 << iCell_S << "," << jCell_S << ") and master cell ("
+	 << iCell_M << "," << jCell_M << ")\n";
+
+    // Get the reconstruction type of the checked and master cell
+    if (SecondBlk.HighOrderVariable(0).getReconstructionTypeMap() != NULL){
+      RecTypeS = SecondBlk.HighOrderVariable(0).getCellReconstructionType(iCell_S, jCell_S);
+    } else {
+      // Set regular reconstruction
+      RecTypeS = 'r';
+    }
+    
+    if (MasterBlk.HighOrderVariable(0).getReconstructionTypeMap() != NULL){
+      RecTypeM = MasterBlk.HighOrderVariable(0).getCellReconstructionType(iCell_M, jCell_M);
+    } else {
+      // Set regular reconstruction
+      RecTypeM = 'r';
+    }
+
+    // Build stencils
+    if (RecTypeS == 'r'){
+      iS.assign(SecondBlk.HighOrderVariable(0).getStencilSize(), 0);
+      jS.assign(SecondBlk.HighOrderVariable(0).getStencilSize(), 0);
+      
+      SecondBlk.HighOrderVariable(0).SetReconstructionStencil(iCell_S, jCell_S, iS, jS);
+    } else {
+      SecondBlk.HighOrderVariable(0).SetDeviatedReconstructionStencil(iCell_S, jCell_S,
+								      iS, jS, 
+								      SecondBlk.HighOrderVariable(0).Rings());
+    }
+
+    if (RecTypeM == 'r'){
+      iM.assign(MasterBlk.HighOrderVariable(0).getStencilSize(), 0);
+      jM.assign(MasterBlk.HighOrderVariable(0).getStencilSize(), 0);
+
+      MasterBlk.HighOrderVariable(0).SetReconstructionStencil(iCell_M, jCell_M, iM, jM);
+    } else {
+      MasterBlk.HighOrderVariable(0).SetDeviatedReconstructionStencil(iCell_M, jCell_M,
+								      iM, jM, 
+								      MasterBlk.HighOrderVariable(0).Rings());
+    }
+
+    // Output stencils if different than central
+    if (SecondBlk.HighOrderVariable(0).getReconstructionTypeMap() != NULL){
+      SecondBlk.HighOrderVariable(0).displayDeviatedReconstructionStencil(cout,
+									  iCell_S, jCell_S,
+									  SecondBlk.HighOrderVariable(0).Rings());
+    } else {
+      cout << "Checked cell has a central stencil\n";
+    }
+
+    if (MasterBlk.HighOrderVariable(0).getReconstructionTypeMap() != NULL){
+      MasterBlk.HighOrderVariable(0).displayDeviatedReconstructionStencil(cout,
+									  iCell_M, jCell_M,
+									  MasterBlk.HighOrderVariable(0).Rings());
+    } else {
+      cout << "Master cell has a central stencil\n";
+    }
+
+    
+    // Output properties of cells that are part of the stencil
+    if (Level == Brief){
+    
+      Print_(SecondBlk.Grid.CellArea(iCell_S,jCell_S));
+      Print_(MasterBlk.Grid.CellArea(iCell_M,jCell_M));
+      
+      Print_(SecondBlk.HighOrderVariable(0).CellGeomCoeff(iCell_S,jCell_S));
+      Print_(MasterBlk.HighOrderVariable(0).CellGeomCoeff(iCell_M,jCell_M));
+      
+      Print_(SecondBlk.CellSolution(iCell_S,jCell_S));
+      Print_(MasterBlk.CellSolution(iCell_M,jCell_M));
+      
+    } else if (Level == Detailed) {
+
+      for (int cell = 0; cell < iS.size(); ++cell){
+	Print_(cell);
+
+	Print_(SecondBlk.Grid.CellArea(iS[cell],jS[cell]));
+	Print_(MasterBlk.Grid.CellArea(iM[cell],jM[cell]));
+
+	Print_(SecondBlk.HighOrderVariable(0).CellGeomCoeff(iS[cell],jS[cell]));
+	Print_(MasterBlk.HighOrderVariable(0).CellGeomCoeff(iM[cell],jM[cell]));
+
+	Print_(SecondBlk.CellSolution(iS[cell],jS[cell]));
+	Print_(MasterBlk.CellSolution(iM[cell],jM[cell]));
+
+
+	// === Check area
+	ostm() << "Area, checked cell (" << iS[cell] << "," << jS[cell] << "), " 
+	       << "master cell (" << iM[cell] << "," << jM[cell] << ")" 
+	       << "\n"; 
+	ensure_distance(ostm().str(), 
+			SecondBlk.Grid.CellArea(iS[cell],jS[cell]),
+			MasterBlk.Grid.CellArea(iM[cell],jM[cell]),
+			AcceptedError(MasterBlk.Grid.CellArea(iM[cell],jM[cell]),Tolerance));
+	ostmClear();
+
+
+	// === Check centroids
+	ostm() << "Centroid, checked cell (" << iS[cell] << "," << jS[cell] << "), " 
+	       << "master cell (" << iM[cell] << "," << jM[cell] << ")" 
+	       << "\n"; 
+	ensure_distance(ostm().str(), 
+			SecondBlk.Grid.CellCentroid(iS[cell],jS[cell]),
+			MasterBlk.Grid.CellCentroid(iM[cell],jM[cell]),
+			AcceptedError(MasterBlk.Grid.CellCentroid(iM[cell],jM[cell]),Tolerance));
+	ostmClear();
+
+	// === Check geometric moments
+	for (GMom = 0; GMom<=SecondBlk.Grid.CellGeomCoeff(iS[cell],jS[cell]).LastElem(); ++GMom){
+	  ostm() << "Geometric moment " << GMom << ", checked cell ("  << iS[cell] << "," << jS[cell] << "), " 
+	       << "master cell (" << iM[cell] << "," << jM[cell] << ")" 
+	       << "\n"; 
+	  ensure_distance(ostm().str(), 
+			  SecondBlk.Grid.CellGeomCoeffValue(iS[cell],jS[cell],GMom),
+			  MasterBlk.Grid.CellGeomCoeffValue(iM[cell],jM[cell],GMom),
+			  AcceptedError(MasterBlk.Grid.CellGeomCoeffValue(iM[cell],jM[cell],GMom),Tolerance));
+	  ostmClear();
+	}
+
+	// === Check cell average solutions
+	for (SolnVal = 1; SolnVal <= 4; ++SolnVal){
+	  ostm() << "Average Solution, checked cell (" << iS[cell] << "," << jS[cell] << "), parameter=" 
+		 << SolnVal << "\n"; 
+	  ensure_distance(ostm().str(), 
+			  SecondBlk.CellSolution(iS[cell],jS[cell])[SolnVal],
+			  MasterBlk.CellSolution(iM[cell],jM[cell])[SolnVal],
+			  AcceptedError(MasterBlk.CellSolution(iM[cell],jM[cell])[SolnVal],Tolerance));
+	  ostmClear();
+	}
+
+      }
+    }
+
+    // Number of constrained GQPs
+    Print_(SecondBlk.Grid.NumOfConstrainedGaussQuadPoints_West(iCell_S, jCell_S));
+    Print_(MasterBlk.Grid.NumOfConstrainedGaussQuadPoints_West(iCell_M, jCell_M));
+
+    Print_(SecondBlk.Grid.NumOfConstrainedGaussQuadPoints_South(iCell_S, jCell_S));
+    Print_(MasterBlk.Grid.NumOfConstrainedGaussQuadPoints_South(iCell_M, jCell_M));
+
+    Print_(SecondBlk.Grid.NumOfConstrainedGaussQuadPoints_East(iCell_S, jCell_S));
+    Print_(MasterBlk.Grid.NumOfConstrainedGaussQuadPoints_East(iCell_M, jCell_M));
+
+    Print_(SecondBlk.Grid.NumOfConstrainedGaussQuadPoints_North(iCell_S, jCell_S));
+    Print_(MasterBlk.Grid.NumOfConstrainedGaussQuadPoints_North(iCell_M, jCell_M));
+
+    Print_(SecondBlk.BC_SouthCell(iCell_S).NumberOfIndividualConstraints(1));
+    Print_(SecondBlk.BC_SouthCell(iCell_S).NumberOfIndividualConstraints(2));
+    Print_(SecondBlk.BC_SouthCell(iCell_S).NumberOfIndividualConstraints(3));
+    Print_(SecondBlk.BC_SouthCell(iCell_S).NumberOfIndividualConstraints(4));
+
+    Print_(MasterBlk.BC_SouthCell(iCell_M).NumberOfIndividualConstraints(1));
+    Print_(MasterBlk.BC_SouthCell(iCell_M).NumberOfIndividualConstraints(2));
+    Print_(MasterBlk.BC_SouthCell(iCell_M).NumberOfIndividualConstraints(3));
+    Print_(MasterBlk.BC_SouthCell(iCell_M).NumberOfIndividualConstraints(4));
+
+
+    // Reconstruct solution
+    // Reset TD
+    for (int i=0; i<SecondBlk.HighOrderVariable(0).NumberOfTaylorDerivatives(); ++i){
+      SecondBlk.HighOrderVariable(0).CellTaylorDerivState(iCell_S, jCell_S, i) = Euler2D_pState(0);
+      MasterBlk.HighOrderVariable(0).CellTaylorDerivState(iCell_M, jCell_M, i) = Euler2D_pState(0);
+    }
+
+    if (RecTypeS == 'r'){
+      SecondBlk.HighOrderVariable(0).ComputeUnconstrainedUnlimitedSolutionReconstruction(SecondBlk,
+											 &Euler2D_Quad_Block::CellSolution,
+											 iCell_S, jCell_S,
+											 iS, jS);
+    } else {
+      SecondBlk.HighOrderVariable(0).ComputeConstrainedUnlimitedSolutionReconstruction(SecondBlk,
+										       &Euler2D_Quad_Block::CellSolution,
+										       iCell_S, jCell_S,
+										       iS, jS); 
+    }
+
+    if (RecTypeM == 'r'){
+      MasterBlk.HighOrderVariable(0).ComputeUnconstrainedUnlimitedSolutionReconstruction(MasterBlk,
+											 &Euler2D_Quad_Block::CellSolution,
+											 iCell_M, jCell_M,
+											 iM, jM);
+    } else {
+      MasterBlk.HighOrderVariable(0).ComputeConstrainedUnlimitedSolutionReconstruction(MasterBlk,
+										       &Euler2D_Quad_Block::CellSolution,
+										       iCell_M, jCell_M,
+										       iM, jM);
+    }
+
+
+    // Output Taylor derivatives
+    Print_(SecondBlk.HighOrderVariable(0).CellTaylorDeriv(iCell_S,jCell_S));
+    Print_(MasterBlk.HighOrderVariable(0).CellTaylorDeriv(iCell_M,jCell_M));
   }
 
 
@@ -1535,9 +1769,12 @@ namespace tut
 				   NUM_VAR_EULER2D,
 				   OFF);
 
+
     /* Prescribe boundary data consistent with initial data. */
     BCs(SolnBlk, LocalList_Soln_Blocks, IP);
 
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
 
     // Reconstruct solution on each block
     SolnBlk[0].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[0],
@@ -1550,34 +1787,66 @@ namespace tut
       //==== Check correlations between the cell reconstructions of adjacent blocks ====
 
       // Block 0
-      CheckReconstructionConsistencyOfBlocks(SolnBlk[0],
-					     SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].Nghost,
-					     SolnBlk[0].JCl, SolnBlk[0].JCu,
-					     SolnBlk[1],
-					     SolnBlk[1].ICl, SolnBlk[1].JCl,
-					     "Check Block 0 East ghost cells with Block 1 interior West cells");
+      // === West ghost cells ===
+      CheckReconstructionDataConsistencyOfBlocks(SolnBlk[0],
+						 SolnBlk[0].ICl-1, SolnBlk[0].ICl-SolnBlk[0].Nghost,
+						 SolnBlk[0].JCl, SolnBlk[0].JCu,
+						 SolnBlk[1],
+						 SolnBlk[1].ICu, SolnBlk[1].JCl,
+						 "Check Block 0 West ghost cells with Block 1 interior East cells");
 
-      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[0],
-					     SolnBlk[0].ICl-1, SolnBlk[0].ICl-SolnBlk[0].Nghost,
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICl-1, SolnBlk[0].ICl-SolnBlk[0].HighOrderVariable(0).NghostHO(),
 					     SolnBlk[0].JCl, SolnBlk[0].JCu,
 					     SolnBlk[1],
 					     SolnBlk[1].ICu, SolnBlk[1].JCl,
 					     "Check Block 0 West ghost cells with Block 1 interior East cells");
 
+
+      // === East ghost cells ===
+      CheckReconstructionDataConsistencyOfBlocks(SolnBlk[0],
+						 SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].Nghost,
+						 SolnBlk[0].JCl, SolnBlk[0].JCu,
+						 SolnBlk[1],
+						 SolnBlk[1].ICl, SolnBlk[1].JCl,
+						 "Check Block 0 East ghost cells with Block 1 interior West cells");
+
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[0].JCl, SolnBlk[0].JCu,
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCl,
+					     "Check Block 0 East ghost cells with Block 1 interior West cells");
+
       // Block 1
+      // === West ghost cells ===  
+      CheckReconstructionDataConsistencyOfBlocks(SolnBlk[1],
+						 SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].Nghost,
+						 SolnBlk[1].JCl, SolnBlk[1].JCu,
+						 SolnBlk[0],
+						 SolnBlk[0].ICu, SolnBlk[0].JCl,
+						 "Check Block 1 West ghost cells with Block 0 interior East cells");
+
       CheckReconstructionConsistencyOfBlocks(SolnBlk[1],
-					     SolnBlk[1].ICu+1, SolnBlk[0].ICu+SolnBlk[1].Nghost,
+					     SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[1].JCl, SolnBlk[1].JCu,
+					     SolnBlk[0],
+					     SolnBlk[0].ICu, SolnBlk[0].JCl,
+					     "Check Block 1 West ghost cells with Block 0 interior East cells");
+
+      CheckReconstructionDataConsistencyOfBlocks(SolnBlk[1],
+						 SolnBlk[1].ICu+1, SolnBlk[0].ICu+SolnBlk[1].Nghost,
+						 SolnBlk[1].JCl, SolnBlk[1].JCu,
+						 SolnBlk[0],
+						 SolnBlk[0].ICl, SolnBlk[0].JCl,
+						 "Check Block 1 East ghost cells with Block 0 interior West cells");
+
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICu+1, SolnBlk[0].ICu+SolnBlk[1].HighOrderVariable(0).NghostHO(),
 					     SolnBlk[1].JCl, SolnBlk[1].JCu,
 					     SolnBlk[0],
 					     SolnBlk[0].ICl, SolnBlk[0].JCl,
 					     "Check Block 1 East ghost cells with Block 0 interior West cells");
-
-      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[1],
-					     SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].Nghost,
-					     SolnBlk[1].JCl, SolnBlk[1].JCu,
-					     SolnBlk[0],
-					     SolnBlk[0].ICu, SolnBlk[0].JCl,
-					     "Check Block 1 West ghost cells with Block 0 interior East cells");      
 
     } else {
 
@@ -1619,7 +1888,6 @@ namespace tut
     // Apply initial condition
     ICs(SolnBlk,LocalList_Soln_Blocks,IP);
 
-
     // Send messages between blocks
     error_flag = Send_All_Messages(SolnBlk, 
 				   LocalList_Soln_Blocks,
@@ -1634,6 +1902,8 @@ namespace tut
     /* Prescribe boundary data consistent with initial data. */
     BCs(SolnBlk, LocalList_Soln_Blocks, IP);
 
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
 
     // Reconstruct solution on each block
     SolnBlk[0].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[0],
@@ -1643,7 +1913,20 @@ namespace tut
 
     if (RunRegression){
 
-      //==== Check correlations between the cell reconstructions of adjacent blocks ====
+      //==== Check correlations between the cell reconstruction data of adjacent blocks ====
+      CheckReconstructionDataConsistencyOfBlocks(SolnBlk[0],
+						 SolnBlk[0].ICl-1, SolnBlk[0].ICl-SolnBlk[0].Nghost,
+						 SolnBlk[0].JCl, SolnBlk[0].JCu,
+						 SolnBlk[1],
+						 SolnBlk[1].ICu, SolnBlk[1].JCl,
+						 "Check Block 0 West ghost cells with Block 1 interior East cells");
+
+      CheckReconstructionDataConsistencyOfBlocks(SolnBlk[1],
+						 SolnBlk[1].ICu+1, SolnBlk[0].ICu+SolnBlk[1].Nghost,
+						 SolnBlk[1].JCl, SolnBlk[1].JCu,
+						 SolnBlk[0],
+						 SolnBlk[0].ICl, SolnBlk[0].JCl,
+						 "Check Block 1 East ghost cells with Block 0 interior West cells");
 
       CheckReconstructionDataConsistencyOfBlocks(SolnBlk[0],
 						 SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].Nghost,
@@ -1651,7 +1934,7 @@ namespace tut
 						 SolnBlk[1],
 						 SolnBlk[1].ICl, SolnBlk[1].JCl,
 						 "Check Block 0 East ghost cells with Block 1 interior West cells");
-
+      
       CheckReconstructionDataConsistencyOfBlocks(SolnBlk[1],
 						 SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].Nghost,
 						 SolnBlk[1].JCl, SolnBlk[1].JCu,
@@ -1659,35 +1942,43 @@ namespace tut
 						 SolnBlk[0].ICu, SolnBlk[0].JCl,
 						 "Check Block 1 West ghost cells with Block 0 interior East cells");
 
-      // Block 0
-      CheckReconstructionConsistencyOfBlocks(SolnBlk[0],
-					     SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].Nghost,
-					     SolnBlk[0].JCl, SolnBlk[0].JCu,
-					     SolnBlk[1],
-					     SolnBlk[1].ICl, SolnBlk[1].JCl,
-					     "Check Block 0 East ghost cells with Block 1 interior West cells");
 
-      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[0],
-					     SolnBlk[0].ICl-1, SolnBlk[0].ICl-SolnBlk[0].Nghost,
+      //==== Check correlations between the cell reconstructions of adjacent blocks ====
+
+      // Block 0
+      // === West ghost cells ===
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICl-1, SolnBlk[0].ICl-SolnBlk[0].HighOrderVariable(0).NghostHO(),
 					     SolnBlk[0].JCl, SolnBlk[0].JCu,
 					     SolnBlk[1],
 					     SolnBlk[1].ICu, SolnBlk[1].JCl,
 					     "Check Block 0 West ghost cells with Block 1 interior East cells");
 
+
+      // === East ghost cells ===
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[0].JCl, SolnBlk[0].JCu,
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCl,
+					     "Check Block 0 East ghost cells with Block 1 interior West cells");
+
       // Block 1
+      // === West ghost cells ===  
       CheckReconstructionConsistencyOfBlocks(SolnBlk[1],
-					     SolnBlk[1].ICu+1, SolnBlk[0].ICu+SolnBlk[1].Nghost,
+					     SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[1].JCl, SolnBlk[1].JCu,
+					     SolnBlk[0],
+					     SolnBlk[0].ICu, SolnBlk[0].JCl,
+					     "Check Block 1 West ghost cells with Block 0 interior East cells");
+
+      // === East ghost cells ===
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICu+1, SolnBlk[0].ICu+SolnBlk[1].HighOrderVariable(0).NghostHO(),
 					     SolnBlk[1].JCl, SolnBlk[1].JCu,
 					     SolnBlk[0],
 					     SolnBlk[0].ICl, SolnBlk[0].JCl,
 					     "Check Block 1 East ghost cells with Block 0 interior West cells");
-
-      CheckGeomPropertiesConsistencyOfBlocks(SolnBlk[1],
-					     SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].Nghost,
-					     SolnBlk[1].JCl, SolnBlk[1].JCu,
-					     SolnBlk[0],
-					     SolnBlk[0].ICu, SolnBlk[0].JCl,
-					     "Check Block 1 West ghost cells with Block 0 interior East cells");      
 
     } else {
 
@@ -1696,6 +1987,175 @@ namespace tut
       Output_Cells_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
       Output_Nodes_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
     } // endif (RunRegression)
+  }
+
+
+  /* Test 10:*/
+  template<>
+  template<>
+  void Euler2D_Quad_Block_object::test<10>()
+  {
+
+    set_test_name("Consistent reconstructions for mesh refinement. ");
+
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    int iCell,jCell;
+    RunRegression = ON;
+ 
+    // Set input file name
+    Open_Input_File("HO_Reconstruction_RinglebGrid.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+    HighOrder2D_Input::Set_Final_Parameters(IP);
+    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = OFF;
+    Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+    Grid2D_Quad_Block_HO::setMixedContourIntegration();
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+
+    // Send messages between blocks
+    error_flag = Send_All_Messages(SolnBlk, 
+				   LocalList_Soln_Blocks,
+				   NUM_COMP_VECTOR2D,
+				   ON);   
+
+    if (!error_flag) error_flag = Send_All_Messages(SolnBlk, 
+						    LocalList_Soln_Blocks,
+						    NUM_VAR_EULER2D,
+						    OFF);
+
+    /* Prescribe boundary data consistent with initial data. */
+    BCs(SolnBlk, LocalList_Soln_Blocks, IP);
+
+    // Perform uniform AMR
+    error_flag = Uniform_AMR(SolnBlk,
+			     IP,
+			     QuadTree,
+			     GlobalList_Soln_Blocks,
+			     LocalList_Soln_Blocks);
+
+    // Reconstruct solution on each block
+    SolnBlk[0].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[0],
+									   IP.Limiter());
+    SolnBlk[1].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[1],
+									   IP.Limiter());
+    SolnBlk[2].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[2],
+									   IP.Limiter());
+    SolnBlk[3].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[3],
+									   IP.Limiter());
+
+    if (RunRegression){
+
+      //==== Check correlations between the cells of adjacent blocks ====
+
+      // Block 0
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICl, SolnBlk[0].ICu,
+					     SolnBlk[0].JCu+1, SolnBlk[0].JCu+SolnBlk[0].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[2],
+					     SolnBlk[2].ICl, SolnBlk[2].JCl,
+					     "Check Block 0 with South interior cells of Block 2");
+
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[0].JCu+1, SolnBlk[0].JCu+SolnBlk[0].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[3],
+					     SolnBlk[3].ICl  , SolnBlk[3].JCl,
+					     "Check Block0 with interior SW corner of Block 3");
+
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[0],
+					     SolnBlk[0].ICu+1, SolnBlk[0].ICu+SolnBlk[0].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[0].JCl, SolnBlk[0].JCu,
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCl,
+					     "Check Block0 with West interior cells of Block 1");
+
+      // Block 1
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[1].JCl, SolnBlk[1].JCu,
+					     SolnBlk[0],
+					     SolnBlk[0].ICu, SolnBlk[0].JCl,
+					     "Check Block 1 with interior East cells of Block 0");
+
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICl-1, SolnBlk[1].ICl-SolnBlk[1].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[1].JCu+1, SolnBlk[1].JCu+SolnBlk[1].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[2],
+					     SolnBlk[2].ICu, SolnBlk[2].JCl,
+					     "Check Block 1 with interior SE corner of Block 2");
+
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].ICu,
+					     SolnBlk[1].JCu+1, SolnBlk[1].JCu+SolnBlk[1].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[3],
+					     SolnBlk[3].ICl, SolnBlk[3].JCl,
+					     "Check Block 1 with interior South cells of Block 3");
+
+      // Block 2
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[2],
+					     SolnBlk[2].ICu+1, SolnBlk[2].ICu+SolnBlk[2].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[2].JCl, SolnBlk[2].JCu,
+					     SolnBlk[3],
+					     SolnBlk[3].ICl, SolnBlk[3].JCl,
+					     "Check Block 2 with interior West cells of Block 3");
+
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[2],
+					     SolnBlk[2].ICu+1, SolnBlk[2].ICu+SolnBlk[2].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[2].JCl-1, SolnBlk[2].JCl-SolnBlk[2].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCu,
+					     "Check Block 2 with interior NW corner of Block 1");
+
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[2],
+					     SolnBlk[2].ICl, SolnBlk[2].ICu,
+					     SolnBlk[2].JCl-1, SolnBlk[2].JCl-SolnBlk[2].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[0],
+					     SolnBlk[0].ICl, SolnBlk[0].JCu,
+					     "Check Block 2 with interior North cells of Block 0");
+
+      // Block 3
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[3],
+					     SolnBlk[3].ICl-1, SolnBlk[3].ICl-SolnBlk[3].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[3].JCl, SolnBlk[3].JCu,
+					     SolnBlk[2],
+					     SolnBlk[2].ICu, SolnBlk[2].JCl,
+					     "Check Block 3 with interior East cells of Block 2");
+
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[3],
+					     SolnBlk[3].ICl-1, SolnBlk[3].ICl-SolnBlk[3].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[3].JCl-1, SolnBlk[3].JCl-SolnBlk[3].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[0],
+					     SolnBlk[0].ICu, SolnBlk[0].JCu,
+					     "Check Block 3 with interior NE corner of Block 0");
+
+      CheckReconstructionConsistencyOfBlocks(SolnBlk[3],
+					     SolnBlk[3].ICl, SolnBlk[3].ICu,
+					     SolnBlk[3].JCl-1, SolnBlk[3].JCl-SolnBlk[3].HighOrderVariable(0).NghostHO(),
+					     SolnBlk[1],
+					     SolnBlk[1].ICl, SolnBlk[1].JCu,
+					     "Check Block 3 with interior North cells of Block 1");
+
+    } else {
+      
+      // Output Tecplot
+      Output_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      Output_Cells_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      Output_Nodes_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+
+    } // endif (RunRegression)
+
   }
 
 }
