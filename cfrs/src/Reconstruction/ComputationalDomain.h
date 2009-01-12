@@ -165,6 +165,7 @@ private:
   void ReconstructSolutionAndBoundary(const Reconstruct1D_Input_Parameters & IP);
   void ReconstructToLimitedPiecewiseLinear(int iCell, const int Limiter);
   void ReconstructToLimitedPiecewiseLinear(int iCell, int jCell, const int Limiter);
+  void ReconstructToLimitedPiecewiseLinear(int iCell, int jCell, int kCell, const int Limiter);
 
   template<class InputParameters>
     void SetInitialData(const InputParameters & IP); /* template based on the class of the input parameters */

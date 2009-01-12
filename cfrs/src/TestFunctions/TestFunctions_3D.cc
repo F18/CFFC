@@ -170,20 +170,35 @@ double Test_Example7_Integral (double x1, double x2, double y1, double y2, doubl
 
 /********************************************************
  * Function Test_Example8:                              *
- *          f(x) =                    *
+ *          f(x) = step function at y = 0.5             *
  *******************************************************/
 
 double Test_Example8 (double x, double y, double z)
 {
   double f;
-  f = cos(x)*cos(x) + 3*sin(y) + 0.2*z;
-
+  double a = 0.5;
+  //f = x;
+  if (y <= a)
+    f = 1.0e5;
+  else 
+    f = 1.0;
   return f;
 }
 
 double Test_Example8_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
   assert((x1<x2)&&(y1<y2)&&(z1<z2));
+  double tol = 0.1e-6;
   double f;
-  f = -sin(2*x2) + sin(2*x1) + 3*cos(y2) - 3*cos(y1) + 0.1*z2*z2 - 0.1*z1*z1;
+
+  double a = 0.5;
+
+  if (y2 <= (a-tol))
+    f = (y2-y1)*Test_Example8(x2,y2,z2);
+  else if ((y1<=a)&&(y2>a))
+    f = (a-y1)*Test_Example8(x1,y1,z1) + (y2-a)*Test_Example8(x2,y2,z2);
+  else
+    f = (y2 - y1)*Test_Example8(x1,y1,z1);
+  f *= (x2 - x1);
   return f;
+
 }

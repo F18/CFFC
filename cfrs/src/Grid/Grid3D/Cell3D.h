@@ -348,8 +348,15 @@ inline istream &operator >> (istream &in_file,
  *********************************************************/
 class Cell3D_Hexa{
 private:
+  static const double Gauss2QuadPoints_CoeffPoint1;
+  static const double Gauss2QuadPoints_CoeffPoint2;
+
 public:
   Vector3D            xc;   // Location of cell center.
+  static Vector3D     dx;   // Vector of cell lengths.
+  static Vector3D     dy;   // Vector of cell lengths.
+  static Vector3D     dz;   // Vector of cell lengths.
+
   Vector3D       xnNWTop;   // Location of top north-west node.
   Vector3D       xnNETop;   // Location of top north-east node.
   Vector3D       xnSETop;   // Location of top south-east node.
@@ -416,6 +423,15 @@ public:
 
   Vector3D NodeSEBot(void){return xnSEBot;}
   Vector3D NodeSEBot(void) const {return xnSEBot;}
+
+  /* Get cell face Gauss Quadrature Points */
+  /* -> 4 points per face */
+  //void GaussQuadPointsFaceN(Vector3D & Point1, Vector3D & Point2, Vector3D & Point3, , Vector3D & Point4);
+  //void GaussQuadPointsFaceS(Vector3D & Point1, Vector3D & Point2, Vector3D & Point3, , Vector3D & Point4);
+  //void GaussQuadPointsFaceE(Vector3D & Point1, Vector3D & Point2, Vector3D & Point3, , Vector3D & Point4);
+  //void GaussQuadPointsFaceW(Vector3D & Point1, Vector3D & Point2, Vector3D & Point3, , Vector3D & Point4);
+  //void GaussQuadPointsFaceTop(Vector3D & Point1, Vector3D & Point2, Vector3D & Point3, , Vector3D & Point4);
+  //void GaussQuadPointsFaceBot(Vector3D & Point1, Vector3D & Point2, Vector3D & Point3, , Vector3D & Point4);
 
 
   /* Set cell node locations. */

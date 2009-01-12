@@ -170,7 +170,7 @@ SRC_RECONSTRUCTION2D	+= $(SRC_GRID2D) $(SRC_2D_TEST_FUNCTIONS)
 ##################################################################################
 ##################################################################################
 # Grid:
-SRC_GRID3D		= Grid3DHexaBlock.cc
+SRC_GRID3D		= Cell3D.cc Grid3DHexaBlock.cc
 SRC_GRID3D		:= $(addprefix $(GRID3D_DIR)/, $(SRC_GRID3D))
 #
 

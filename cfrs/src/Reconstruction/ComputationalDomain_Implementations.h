@@ -2480,16 +2480,16 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructS
           }//end if
         }//endfor
     //
-//    /* reduce to limited piecewise linear */
-//    for (i=iStart(); i<=iEnd(); ++i)
-//      for (j=jStart(); j<=jEnd(); ++j)
-//	for (k=kStart(); k<=kEnd(); ++k){
-//	  if(SolnPtr[k][j][i].UnfitReconstructionFlag() == ON ){
-//	    ++TotalModifiedCells;
-//	    ReconstructToLimitedPiecewiseLinear(i,j,k,IP.Limiter());  // --> RR: Must be Created
-//	  }
-//	}
-//
+    /* reduce to limited piecewise linear */
+    for (i=iStart(); i<=iEnd(); ++i)
+      for (j=jStart(); j<=jEnd(); ++j)
+	for (k=kStart(); k<=kEnd(); ++k){
+	  if(SolnPtr[k][j][i].UnfitReconstructionFlag() == ON ){
+	    ++TotalModifiedCells;
+	    ReconstructToLimitedPiecewiseLinear(i,j,k,IP.Limiter());
+	  }
+	}
+
     for (i=iStart(); i<=iEnd(); ++i)
       for (j=jStart(); j<=jEnd(); ++j)
 	for (k=kStart(); k<=kEnd(); ++k){
@@ -2530,6 +2530,136 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructS
   }
 
 }
+
+/*****************************************************
+void ReconstructToLimitedPiecewiseLinear(iCell,jCell,kCell)
+Solves the reconstruction over the domain
+******************************************************/
+template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
+  void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructToLimitedPiecewiseLinear(int iCell, int jCell,
+													  int kCell, const int Limiter)
+{
+
+//--> RR: Needs to be commented back in later (limiter calcs)
+//#ifdef LimiterBasedOnlyOnGaussPoints
+//  int NQuad(8);
+//  double uQuad[8];
+//#else
+//  int NQuad(12);
+//  double uQuad[12];
+//#endif
+//
+//  int i, n, n2, n_pts, indexI[8], indexJ[8];
+  int i;
+//  double u0Min, u0Max;
+//
+//  n_pts = 8;
+//  /* First ring */
+//  indexI[0] = iCell-1; indexJ[0] = jCell-1;
+//  indexI[1] = iCell  ; indexJ[1] = jCell-1;
+//  indexI[2] = iCell+1; indexJ[2] = jCell-1;
+//  indexI[3] = iCell-1; indexJ[3] = jCell;
+//  indexI[4] = iCell+1; indexJ[4] = jCell;
+//  indexI[5] = iCell-1; indexJ[5] = jCell+1;
+//  indexI[6] = iCell  ; indexJ[6] = jCell+1;
+//  indexI[7] = iCell+1; indexJ[7] = jCell+1;
+ 
+  /*****************************************************************************
+   *                    COMPUTE THE RECONSTRUCTION                             *
+   *****************************************************************************/
+  int *i_index, *j_index, *k_index, StencilSize(27);
+  i_index = new int [StencilSize];
+  j_index = new int [StencilSize];
+  k_index = new int [StencilSize];
+
+  /* Make Stencil */
+  MakeReconstructionStencil(1,iCell,jCell,kCell,i_index,j_index,k_index);
+
+  /* Zero all the high-order derivatives */
+  for (i=1; i<SolnPtr[kCell][jCell][iCell].NumberOfTaylorDerivatives(); ++i){
+    SolnPtr[kCell][jCell][iCell].CellDeriv(i).D() = SolutionType(0.0);
+  }
+
+  /* Solve reconstruction for the current cell */
+  FirstOrder_kExact_Reconstruction(*this, i_index, j_index, k_index, StencilSize);
+
+//  /* Compute and assign the limiter */
+//  u0Min = SolnPtr[0][jCell][iCell].CellSolution();
+//  u0Max = u0Min;
+//  for ( n2 = 0 ; n2 < n_pts ; ++n2 ) {
+//    u0Min = min(u0Min, SolnPtr[0][ indexJ[n2] ][ indexI[n2] ].CellSolution());
+//    u0Max = max(u0Max, SolnPtr[0][ indexJ[n2] ][ indexI[n2] ].CellSolution());
+//  } /* endfor */
+//
+//  /* Gauss Quadrature Point values */
+//  Vector2D GP1, GP2;
+//
+//  /* N face */
+//  SolnPtr[0][jCell][iCell].CellGeometry().GaussQuadPointsFaceN(GP1,GP2);
+//  uQuad[0] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//  uQuad[1] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP2.x, GP2.y);
+//
+//  /* S face */
+//  SolnPtr[0][jCell][iCell].CellGeometry().GaussQuadPointsFaceS(GP1,GP2);
+//  uQuad[2] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//  uQuad[3] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP2.x, GP2.y);
+//
+//  /* E face */
+//  SolnPtr[0][jCell][iCell].CellGeometry().GaussQuadPointsFaceE(GP1,GP2);
+//  uQuad[4] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//  uQuad[5] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP2.x, GP2.y);
+//
+//  /* W face */
+//  SolnPtr[0][jCell][iCell].CellGeometry().GaussQuadPointsFaceW(GP1,GP2);
+//  uQuad[6] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//  uQuad[7] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP2.x, GP2.y);
+//
+//#ifndef LimiterBasedOnlyOnGaussPoints
+//  /* Use also the nodes of the cell */
+//  GP1 = SolnPtr[0][jCell][iCell].CellGeometry().NodeNW();
+//  uQuad[8] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//
+//  GP1 = SolnPtr[0][jCell][iCell].CellGeometry().NodeNE();
+//  uQuad[9] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//
+//  GP1 = SolnPtr[0][jCell][iCell].CellGeometry().NodeSW();
+//  uQuad[10] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//
+//  GP1 = SolnPtr[0][jCell][iCell].CellGeometry().NodeSE();
+//  uQuad[11] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//#endif
+//
+//  switch(Limiter) {
+//  case LIMITER_ZERO :
+//    SolnPtr[0][jCell][iCell].CellLimiter() = ZERO;
+//    break;
+//  case LIMITER_ONE :
+//    SolnPtr[0][jCell][iCell].CellLimiter() = ONE;
+//    break;
+//  case LIMITER_BARTH_JESPERSEN :
+//    SolnPtr[0][jCell][iCell].CellLimiter()=Limiter_BarthJespersen(uQuad,SolnPtr[0][jCell][iCell].CellSolution(),u0Min,u0Max,NQuad);
+//    break;
+//  case LIMITER_VENKATAKRISHNAN :
+//    SolnPtr[0][jCell][iCell].CellLimiter() = Limiter_Venkatakrishnan(uQuad,SolnPtr[0][jCell][iCell].CellSolution(),u0Min,u0Max,NQuad);
+//    break;
+//  case LIMITER_VANLEER :
+//    SolnPtr[0][jCell][iCell].CellLimiter() = Limiter_VanLeer(uQuad,SolnPtr[0][jCell][iCell].CellSolution(),u0Min,u0Max,NQuad);
+//    break;
+//  case LIMITER_VANALBADA :
+//    SolnPtr[0][jCell][iCell].CellLimiter() = Limiter_VanAlbada(uQuad,SolnPtr[0][jCell][iCell].CellSolution(),u0Min,u0Max,NQuad);
+//    break;
+//  default:
+//    SolnPtr[0][jCell][iCell].CellLimiter() = Limiter_BarthJespersen(uQuad,SolnPtr[0][jCell][iCell].CellSolution(),u0Min,u0Max,NQuad);
+//    break;
+//  } /* endswitch */
+
+  // Free memory
+  delete [] i_index; i_index = NULL;
+  delete [] j_index; j_index = NULL;
+  delete [] k_index; k_index = NULL;
+}
+
+
 
 /***********************************************************************************
 void ReconstructSolutionAndBoundary(Reconstruct1D_Input_Parameters)
