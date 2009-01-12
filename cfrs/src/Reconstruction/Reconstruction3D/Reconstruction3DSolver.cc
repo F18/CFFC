@@ -1,5 +1,5 @@
-/* Reconstruction2DSolver.cc:  Source file defining 
-   2D ReconstructionSolver function */
+/* Reconstruction3DSolver.cc:  Source file defining 
+   3D ReconstructionSolver function */
 
 /* Include header files. */
 #include "CFD/CFD.h"
