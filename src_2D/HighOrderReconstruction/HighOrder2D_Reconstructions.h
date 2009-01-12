@@ -256,9 +256,9 @@ void HighOrder2D<SOLN_STATE>::EnforceMonotonicityToNonSmoothInterpolants(Soln_Bl
   if (CENO_Execution_Mode::CENO_DROP_ORDER){
     // Carry on actions required to enforce monotonicity
 
-    // Switch to limited piecewise linear reconstruction those interpolants detected as non-smooth
-    for ( j  = StartJ_LPWL ; j <= EndJ_LPWL ; ++j ) {
-      for ( i = StartI_LPWL ; i <= EndI_LPWL ; ++i ) {
+    // Switch to limited piecewise linear reconstruction those interior interpolants detected as non-smooth
+    for ( j  = JCl ; j <= JCu ; ++j ) {
+      for ( i = ICl ; i <= ICu ; ++i ) {
       
 	if ( IsThereAnyNonSmoothHighOrderReconstruction(i,j) ){
 	  // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
@@ -273,92 +273,189 @@ void HighOrder2D<SOLN_STATE>::EnforceMonotonicityToNonSmoothInterpolants(Soln_Bl
 
     // Check whether reconstruction based flux calculation is required anywhere in the block.
     if ( !_constrained_block_reconstruction ){
-      // All cells involved in flux calculation have been checked for non-smooth interpolants.
-      // No need to do anything more.
-      return;
-    }
 
+      // Switch to limited piecewise linear reconstruction those ghost cells 
+      // involved in flux calculation and detected as non-smooth
 
-    /* Motivation of the algorithm below:
-       If reconstruction based flux calculation is required at some of the boundaries
-       and non-smooth solution interpolants are detected near these boundaries the 
-       flux is not going to be computed based on the high-order interpolant but on
-       solving a Riemann problem at the interface.
-       The purpose of the algorithm below is to ensure that a limited piecewise linear
-       reconstruction is available in the first ghost cells that have interface with an
-       interior cell detected with inadequate interpolant. Thus, when the flux calculation 
-       is performed, the Riemann problem for those interfaces can be solved.
-       Note that no interior cells are going to be affected by the code that follows!
-       Note also that trying to obtain a high-order interpolant in these ghost cells is not
-       justified based on accuracy and computational efficiency reasons.
-    */
-
-    // Check WEST boundary
-    if (_constrained_WEST_reconstruction){
-      for (j = JCl; j <= JCu; ++j){
-	if ( IsThereAnyNonSmoothHighOrderReconstruction(ICl,j) ) { // check the interior cell
-	  // flag all reconstructions of the adjacent ghost cell as non-smooth
-	  FlagCellReconstructionsAsNonSmooth(ICl-1,j);
-	  // perform a limited piecewise linear reconstruction
-	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
-							      ICl-1,j,
-							      Limiter,
-							      ReconstructedSoln);
-	}// endif
-      }// enfor 
-    }// endif 
-
-    // Check EAST boundary
-    if (_constrained_EAST_reconstruction){
-      for (j = JCl; j <= JCu; ++j){
-	if ( IsThereAnyNonSmoothHighOrderReconstruction(ICu,j) ) { // check the interior cell
-	  // flag all reconstructions of the adjacent ghost cell as non-smooth
-	  FlagCellReconstructionsAsNonSmooth(ICu+1,j);
-	  // perform a limited piecewise linear reconstruction
-	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
-							      ICu+1,j,
-							      Limiter,
-							      ReconstructedSoln);
-	}// endif
-      }// enfor 
-    }// endif 
-
-    // Check NORTH boundary
-    if (_constrained_NORTH_reconstruction){
-      for (i = ICl; i <= ICu; ++i){
-	if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCu) ) { // check the interior cell
-	  // flag all reconstructions of the adjacent ghost cell as non-smooth
-	  FlagCellReconstructionsAsNonSmooth(i,JCu+1);
-	  // perform a limited piecewise linear reconstruction
-	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
-							      i,JCu+1,
-							      Limiter,
-							      ReconstructedSoln);
-
-	}// endif
-      }// enfor 
-    }// endif 
-
-    // Check SOUTH boundary
-    if (_constrained_SOUTH_reconstruction){
-      for (i = ICl; i <= ICu; ++i){
-	if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCl) ) { // check the interior cell
-	  // flag all reconstructions of the adjacent ghost cell as non-smooth
-	  FlagCellReconstructionsAsNonSmooth(i,JCl-1);
-	  // perform a limited piecewise linear reconstruction
+      // == South and North boundaries ==
+      for (i = ICl; i<=ICu; ++i){
+	// == South bnd.
+	if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCl-1) ){
+	  // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
 	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
 							      i,JCl-1,
 							      Limiter,
 							      ReconstructedSoln);
+	}
+	
+	// == North bnd.
+	if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCu+1) ){
+	  // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+							      i,JCu+1,
+							      Limiter,
+							      ReconstructedSoln);
+	}
+      }	// endfor
 
-	}// endif
-      }// enfor 
-    }// endif 
+      // == West and East boundaries ==
+      for (j = JCl; j<=JCu; ++j){
+	// == West bnd.
+	if ( IsThereAnyNonSmoothHighOrderReconstruction(ICl-1,j) ){
+	  // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+							      ICl-1,j,
+							      Limiter,
+							      ReconstructedSoln);
+	}
+	
+	// == East bnd.
+	if ( IsThereAnyNonSmoothHighOrderReconstruction(ICu+1,j) ){
+	  // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+							      ICu+1,j,
+							      Limiter,
+							      ReconstructedSoln);
+	}
+      }	// endfor
+      
+    } else {
+
+      // === Some boundaries require reconstruction based flux calculation
+
+      /* Motivation of the algorithm below:
+	 If reconstruction based flux calculation is required at some of the boundaries
+	 and non-smooth solution interpolants are detected near these boundaries the 
+	 flux is not going to be computed based on the high-order interpolant but on
+	 solving a Riemann problem at the interface.
+	 The purpose of the algorithm below is to ensure that a limited piecewise linear
+	 reconstruction is available in the first ghost cells that have interface with an
+	 interior cell detected with inadequate interpolant. Thus, when the flux calculation 
+	 is performed, the Riemann problem for those interfaces can be solved.
+	 Note that no interior cells are going to be affected by the code that follows!
+	 Note also that trying to obtain a high-order interpolant in these ghost cells is not
+	 justified based on accuracy and computational efficiency reasons.
+      */
+
+      // Check WEST boundary
+      if (WestBnd.IsReconstructionConstrained()){
+	for (j = JCl; j <= JCu; ++j){
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(ICl,j) ) { // check the interior cell
+	    // flag all reconstructions of the adjacent ghost cell as non-smooth
+	    FlagCellReconstructionsAsNonSmooth(ICl-1,j);
+	    // perform a limited piecewise linear reconstruction
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								ICl-1,j,
+								Limiter,
+								ReconstructedSoln);
+	  }// endif
+	}// enfor 
+
+      } else {
+	// Check the ghost cells near this boundary
+	for (j = JCl; j<=JCu; ++j){
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(ICl-1,j) ){
+	    // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								ICl-1,j,
+								Limiter,
+								ReconstructedSoln);
+	  }
+	} // endfor
+
+      }// endif (WestBnd)
+
+      // Check EAST boundary
+      if (EastBnd.IsReconstructionConstrained()){
+	for (j = JCl; j <= JCu; ++j){
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(ICu,j) ) { // check the interior cell
+	    // flag all reconstructions of the adjacent ghost cell as non-smooth
+	    FlagCellReconstructionsAsNonSmooth(ICu+1,j);
+	    // perform a limited piecewise linear reconstruction
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								ICu+1,j,
+								Limiter,
+								ReconstructedSoln);
+	  }// endif
+	}// enfor 
+
+      } else {
+	// Check the ghost cells near this boundary	
+	for (j = JCl; j <= JCu; ++j){
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(ICu+1,j) ){
+	    // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								ICu+1,j,
+								Limiter,
+								ReconstructedSoln);
+	  }
+	} // endfor
+
+      }// endif (EastBnd)
+
+      // Check NORTH boundary
+      if (NorthBnd.IsReconstructionConstrained()){
+	for (i = ICl; i <= ICu; ++i){
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCu) ) { // check the interior cell
+	    // flag all reconstructions of the adjacent ghost cell as non-smooth
+	    FlagCellReconstructionsAsNonSmooth(i,JCu+1);
+	    // perform a limited piecewise linear reconstruction
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								i,JCu+1,
+								Limiter,
+								ReconstructedSoln);
+	  }// endif
+	}// enfor 
+
+      } else {
+	// Check the ghost cells near this boundary	
+	for (i = ICl; i <= ICu; ++i){ 
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCu+1) ){
+	    // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								i,JCu+1,
+								Limiter,
+								ReconstructedSoln);
+	  }
+	} // endfor
+
+      }// endif (NorthBnd)
+
+      // Check SOUTH boundary
+      if (SouthBnd.IsReconstructionConstrained()){
+	for (i = ICl; i <= ICu; ++i){
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCl) ) { // check the interior cell
+	    // flag all reconstructions of the adjacent ghost cell as non-smooth
+	    FlagCellReconstructionsAsNonSmooth(i,JCl-1);
+	    // perform a limited piecewise linear reconstruction
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								i,JCl-1,
+								Limiter,
+								ReconstructedSoln);
+	  }// endif
+	}// enfor 
+
+      } else {
+	// Check the ghost cells near this boundary	
+	for (i = ICl; i <= ICu; ++i){ 
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCl-1) ){
+	    // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								i,JCl-1,
+								Limiter,
+								ReconstructedSoln);
+	  }
+	} // endfor
+
+      }// endif (SouthBnd)
+
+    } // endif (_constrained_block_reconstruction)
+
 
   } else {
     /* Reset monotonicity flags for boundary cells near splines which require reconstruction based flux calculation.
        If Riemann based flux calculation is desired there is nothing to be done.
-     */
+    */
 
     // Check whether reset of monotonicity flags is required anywhere in the block.
     if ( !_constrained_block_reconstruction ){
@@ -367,7 +464,7 @@ void HighOrder2D<SOLN_STATE>::EnforceMonotonicityToNonSmoothInterpolants(Soln_Bl
     }
 
     // Check WEST boundary
-    if (_constrained_WEST_reconstruction){
+    if (WestBnd.IsReconstructionConstrained()){
       for (j = JCl - 1; j <= JCu + 1; ++j){
 	// reset the monotonicity flag for the interior cell
 	ResetMonotonicityData(ICl,j);
@@ -375,7 +472,7 @@ void HighOrder2D<SOLN_STATE>::EnforceMonotonicityToNonSmoothInterpolants(Soln_Bl
     } 
 
     // Check EAST boundary
-    if (_constrained_EAST_reconstruction){
+    if (EastBnd.IsReconstructionConstrained()){
       for (j = JCl - 1; j <= JCu + 1; ++j){
 	// reset the monotonicity flag for the interior cell
 	ResetMonotonicityData(ICu,j);
@@ -383,7 +480,7 @@ void HighOrder2D<SOLN_STATE>::EnforceMonotonicityToNonSmoothInterpolants(Soln_Bl
     } 
 
     // Check NORTH boundary
-    if (_constrained_NORTH_reconstruction){
+    if (NorthBnd.IsReconstructionConstrained()){
       for (i = ICl - 1; i <= ICu + 1; ++i){
 	// reset the monotonicity flag for the interior cell
 	ResetMonotonicityData(i,JCu);
@@ -391,7 +488,7 @@ void HighOrder2D<SOLN_STATE>::EnforceMonotonicityToNonSmoothInterpolants(Soln_Bl
     } 
 
     // Check SOUTH boundary
-    if (_constrained_SOUTH_reconstruction){
+    if (SouthBnd.IsReconstructionConstrained()){
       for (i = ICl - 1; i <= ICu + 1; ++i){
 	// reset the monotonicity flag for the interior cell
 	ResetMonotonicityData(i,JCl);

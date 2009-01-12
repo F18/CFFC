@@ -1120,16 +1120,6 @@ namespace tut
     ensure_equals("East Bnd Flag", HO.IsEastConstrainedReconstructionRequired(), false);
     ensure_equals("North Bnd Flag", HO.IsNorthConstrainedReconstructionRequired(), false);
     ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), false);
-    // == check indexes for smoothness indicator
-    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()-1);
-    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()+1);
-    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()-1);
-    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()+1);
-    // == check indexes for limited piecewise linear
-    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid()-1);
-    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
-    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
-    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
 
     // == check solution
     double Result = 0.59509999999999985;
@@ -1180,16 +1170,6 @@ namespace tut
     ensure_equals("East Bnd Flag", HO.IsEastConstrainedReconstructionRequired(), false);
     ensure_equals("North Bnd Flag", HO.IsNorthConstrainedReconstructionRequired(), false);
     ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), false);
-    // == check indexes for smoothness indicator
-    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()-1);
-    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()+1);
-    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()-1);
-    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()+1);
-    // == check indexes for limited piecewise linear
-    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid()-1);
-    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
-    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
-    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
 
     // Change spline type
     Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux); Grid.BndNorthSpline.setBCtype(BC_SYMMETRY_PLANE);
@@ -1206,15 +1186,6 @@ namespace tut
     ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), false);
     // == check indexes for smoothness indicator
     ensure_equals("Rings SI", HO.RingsSI(), 2);
-    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()-1);
-    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()-2);
-    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()-1);
-    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()-2);
-    // == check indexes for limited piecewise linear
-    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid()-1);
-    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid());
-    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
-    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid());
 
     // Change spline types again
     Grid.BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
@@ -1233,15 +1204,6 @@ namespace tut
     ensure_equals("South Bnd Flag, II", HO.IsSouthConstrainedReconstructionRequired(), true);
     // == check indexes for smoothness indicator
     ensure_equals("Rings SI, II", HO.RingsSI(), 2);
-    ensure_equals("StartI_SI, II", HO.StartIdir_SI(), HO.ICl_Grid()+2);
-    ensure_equals("EndI_SI, II", HO.EndIdir_SI(), HO.ICu_Grid()+1);
-    ensure_equals("StartJ_SI, II", HO.StartJdir_SI(), HO.JCl_Grid()+2);
-    ensure_equals("EndJ_SI, II", HO.EndJdir_SI(), HO.JCu_Grid()+1);
-    // == check indexes for limited piecewise linear
-    ensure_equals("StartI_LPWL, II", HO.StartIdir_LPWL(), HO.ICl_Grid());
-    ensure_equals("EndI_LPWL, II", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
-    ensure_equals("StartJ_LPWL, II", HO.StartJdir_LPWL(), HO.JCl_Grid());
-    ensure_equals("EndJ_LPWL, II", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
   }
 
   /* Test 24:*/
@@ -1355,15 +1317,6 @@ namespace tut
 
     // == check indexes for smoothness indicator
     ensure_equals("Rings SI", HO.RingsSI(), 2);
-    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()+2);
-    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()-2);
-    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()+2);
-    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()-2);
-    // == check indexes for limited piecewise linear
-    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid());
-    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid());
-    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid());
-    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid());
   }
 
   /* Test 26:*/
@@ -1410,15 +1363,6 @@ namespace tut
 
     // == check indexes for smoothness indicator
     ensure_equals("Rings SI", HO.RingsSI(), 2);
-    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()+2);
-    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()-2);
-    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()-1);
-    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()+1);
-    // == check indexes for limited piecewise linear
-    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid());
-    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid());
-    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
-    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
   }
 
   /* Test 27:*/
@@ -1465,15 +1409,6 @@ namespace tut
 
     // == check indexes for smoothness indicator
     ensure_equals("Rings SI", HO.RingsSI(), 2);
-    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()-1);
-    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()+1);
-    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()+2);
-    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()-2);
-    // == check indexes for limited piecewise linear
-    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid()-1);
-    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
-    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid());
-    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid());
   }
 
   /* Test 28:*/
@@ -1520,15 +1455,6 @@ namespace tut
 
     // == check indexes for smoothness indicator
     ensure_equals("Rings SI", HO.RingsSI(), 1);
-    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()+1);
-    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()-1);
-    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()-1);
-    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()+1);
-    // == check indexes for limited piecewise linear
-    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid());
-    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid());
-    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid()-1);
-    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid()+1);
   }
 
   /* Test 29:*/
@@ -1592,15 +1518,6 @@ namespace tut
 
     // == check indexes for smoothness indicator
     ensure_equals("Rings SI", HO.RingsSI(), 1);
-    ensure_equals("StartI_SI", HO.StartIdir_SI(), HO.ICl_Grid()-1);
-    ensure_equals("EndI_SI", HO.EndIdir_SI(), HO.ICu_Grid()+1);
-    ensure_equals("StartJ_SI", HO.StartJdir_SI(), HO.JCl_Grid()+1);
-    ensure_equals("EndJ_SI", HO.EndJdir_SI(), HO.JCu_Grid()-1);
-    // == check indexes for limited piecewise linear
-    ensure_equals("StartI_LPWL", HO.StartIdir_LPWL(), HO.ICl_Grid()-1);
-    ensure_equals("EndI_LPWL", HO.EndIdir_LPWL(), HO.ICu_Grid()+1);
-    ensure_equals("StartJ_LPWL", HO.StartJdir_LPWL(), HO.JCl_Grid());
-    ensure_equals("EndJ_LPWL", HO.EndJdir_LPWL(), HO.JCu_Grid());
   }
 
   /* Test 30:*/
