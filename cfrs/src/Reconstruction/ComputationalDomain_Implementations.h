@@ -2969,8 +2969,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
     L2Norm = sqrt(L2Norm/Domain);
     break;
   case ThreeD:
-    /* Must be modified!!!! */
-    ProgressFrequency = (IP.iCell()*IP.jCell()*IP.kCell())/10;
+     ProgressFrequency = (IP.iCell()*IP.jCell()*IP.kCell())/10;
     if (ProgressFrequency == 0){
       ProgressFrequency = 10;
     }
