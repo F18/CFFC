@@ -39,6 +39,27 @@ IntegrateFunctionOverCellUsingContourIntegrand(const int &ii, const int &jj,
 					       const FO FuncObj, FO ContourIntegrand,
 					       int digits, ReturnType _dummy_param) const {
 
+  ostringstream ostm;
+
+  // Check if the extension splines are not defined as curved.
+  // This routine is not implemented to integrate correctly the function over ghost cells in these cases.
+  if (Grid->IsNorthExtendWestBoundaryCurved() || 
+      Grid->IsSouthExtendWestBoundaryCurved() ||
+      Grid->IsNorthExtendEastBoundaryCurved() ||
+      Grid->IsSouthExtendEastBoundaryCurved() ||
+      Grid->IsEastExtendSouthBoundaryCurved() ||
+      Grid->IsWestExtendSouthBoundaryCurved() ||
+      Grid->IsEastExtendNorthBoundaryCurved() ||
+      Grid->IsWestExtendNorthBoundaryCurved() ){
+
+    // Build error message
+    ostm << "Grid2DQuadIntegration<Grid2D_Quad_Block_HO>::IntegrateFunctionOverCellUsingContourIntegrand() ERROR!\n"
+	 << "This routine doesn't know how to handle correctly integration over domains with curved extension splines.\n"
+	 << "Options: Add this logic or use Monte Carlo integration instead of Gauss quadrature integration\n";
+
+    throw runtime_error(ostm.str());
+  }
+
   // SET VARIABLES USED IN THE INTEGRATION PROCESS
 
   ReturnType IntResult(0.0);		// the integration result

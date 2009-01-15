@@ -108,13 +108,18 @@ private:
 				  It basically makes the distinction between interior cells and ghost cells. 
 				  This variable takes value +1 for interior cells and -1 for ghost cells. */
   bool AtLeastOneCurvedFace;	//!< Flag to indicate whether the cell does have at least one curved face
+
+  //! Define pointers to cell curved boundaries.
+  typename Grid2DQuadType::BndSplineType *CellBndWest, *CellBndSouth, *CellBndEast, *CellBndNorth;
 };
 
 
 // Constructor with the Grid that is going to be associated with this object
 template<class Grid2DQuadType> inline
 Grid2DQuadIntegration<Grid2DQuadType>::Grid2DQuadIntegration(Grid2DQuadType * AssociatedGrid):
-  CellFacesInfo(NULL)
+  CellFacesInfo(NULL),
+  CellBndWest(NULL), CellBndSouth(NULL),
+  CellBndEast(NULL), CellBndNorth(NULL)
 {
   Grid = AssociatedGrid;
   // The 4 faces are in counterclockwise order W,S,E and N.
@@ -129,6 +134,8 @@ void Grid2DQuadIntegration<Grid2DQuadType>::Deallocate(void){
     delete [] CellFacesInfo;
     CellFacesInfo = NULL;
   }
+  CellBndWest = NULL; CellBndSouth = NULL;
+  CellBndEast = NULL; CellBndNorth = NULL; 
 }
 
 /*!
@@ -215,9 +222,14 @@ void Grid2DQuadIntegration<Grid2DQuadType>::AnalyseCellFaces(const int &ii, cons
   
   // Reset variable
   AtLeastOneCurvedFace = false;
+  CellBndWest = NULL; CellBndSouth = NULL;
+  CellBndEast = NULL; CellBndNorth = NULL; 
 
   // == check if high-order boundary treatment is required
   if ( Grid->IsHighOrderBoundary() ){
+
+    // Consider to treat faces as straight edges
+    CellFacesInfo[0] = CellFacesInfo[1] = CellFacesInfo[2] = CellFacesInfo[3] = false;
 
     if (ii >= Grid->ICl && ii <= Grid->ICu && jj >= Grid->JCl && jj <= Grid->JCu ){
       // Analyze interior cells
@@ -231,36 +243,28 @@ void Grid2DQuadIntegration<Grid2DQuadType>::AnalyseCellFaces(const int &ii, cons
 	// the West face is curved
 	CellFacesInfo[0] = true;
 	AtLeastOneCurvedFace = true;
-      } else {
-	// the West face is treated as straight edge
-	CellFacesInfo[0] = false;
+	CellBndWest = &Grid->BndWestSpline;
       }
 
       if (jj == Grid->JCl  && Grid->BndSouthSplineInfo != NULL){
 	// the South face is curved
 	CellFacesInfo[1] = true;
 	AtLeastOneCurvedFace = true;
-      } else {
-	// the South face is treated as straight edge
-	CellFacesInfo[1] = false;      
+	CellBndSouth = &Grid->BndSouthSpline;
       }
 
       if (ii == Grid->ICu  && Grid->BndEastSplineInfo != NULL){
 	// the East face is curved
 	CellFacesInfo[2] = true;
 	AtLeastOneCurvedFace = true;
-      } else {
-	// the East face is treated as straight edge
-	CellFacesInfo[2] = false;
+	CellBndEast = &Grid->BndEastSpline;
       }
 
       if (jj == Grid->JCu  && Grid->BndNorthSplineInfo != NULL){
 	// the North face is curved
 	CellFacesInfo[3] = true;
-	AtLeastOneCurvedFace = true;      
-      } else {
-	// the North face is treated as straight edge
-	CellFacesInfo[3] = false;
+	AtLeastOneCurvedFace = true;
+	CellBndNorth = &Grid->BndNorthSpline;
       }
 
     } else {
@@ -273,41 +277,136 @@ void Grid2DQuadIntegration<Grid2DQuadType>::AnalyseCellFaces(const int &ii, cons
 
       // === Set the face types of this ghost cell
 
-      if (ii == Grid->ICu+1 && jj >= Grid->JCl && jj <= Grid->JCu && Grid->BndEastSplineInfo != NULL){
-	// the West face is curved
-	CellFacesInfo[0] = true;
-	AtLeastOneCurvedFace = true;
-      } else {
-	// the West face is treated as straight edge
-	CellFacesInfo[0] = false;
+      // === Check West face ===
+      if (ii == Grid->ICl){
+	if (jj < Grid->JCl && Grid->ExtendSouth_BndWestSplineInfo != NULL){
+	  // the South extension of West is curved
+	  CellFacesInfo[0] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndWest = &Grid->ExtendSouth_BndWestSpline;
+	} else if (jj > Grid->JCu && Grid->ExtendNorth_BndWestSplineInfo != NULL){
+	  // the North extension of West is curved
+	  CellFacesInfo[0] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndWest = &Grid->ExtendNorth_BndWestSpline;
+	}
+      } else if (ii == Grid->ICu+1){
+	if (jj < Grid->JCl && Grid->ExtendSouth_BndEastSplineInfo != NULL){
+	  // the South extension of East is curved
+	  CellFacesInfo[0] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndWest = &Grid->ExtendSouth_BndEastSpline;	  
+	} else if (jj >= Grid->JCl && jj <= Grid->JCu && Grid->BndEastSplineInfo != NULL){
+	  // the West face is curved
+	  CellFacesInfo[0] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndWest = &Grid->BndEastSpline;
+	} else if (jj > Grid->JCu && Grid->ExtendNorth_BndEastSplineInfo != NULL){
+	  // the North extension of East is curved
+	  CellFacesInfo[0] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndWest = &Grid->ExtendNorth_BndEastSpline;
+	}
       }
 
-      if (jj == Grid->JCu+1 && ii >= Grid->ICl && ii <= Grid->ICu && Grid->BndNorthSplineInfo != NULL){
-	// the South face is curved
-	CellFacesInfo[1] = true;
-	AtLeastOneCurvedFace = true;
-      } else {
-	// the South face is treated as straight edge
-	CellFacesInfo[1] = false;
+
+      // === Check South face ===
+      if (jj == Grid->JCl){
+	if (ii < Grid->ICl && Grid->ExtendWest_BndSouthSplineInfo != NULL){
+	  CellFacesInfo[1] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndSouth = &Grid->ExtendWest_BndSouthSpline;
+	} else if (ii > Grid->ICu && Grid->ExtendEast_BndSouthSplineInfo != NULL){
+	  CellFacesInfo[1] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndSouth = &Grid->ExtendEast_BndSouthSpline;
+	}
+      } else if (jj == Grid->JCu+1){
+	if (ii < Grid->ICl && Grid->ExtendWest_BndNorthSplineInfo != NULL){
+	  // the West extension of North is curved
+	  CellFacesInfo[1] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndSouth = &Grid->ExtendWest_BndNorthSpline;
+	} else if ( ii >= Grid->ICl && ii <= Grid->ICu && Grid->BndNorthSplineInfo != NULL){
+	  // the South face is curved
+	  CellFacesInfo[1] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndSouth = &Grid->BndNorthSpline;
+	} else if (ii > Grid->ICu && Grid->ExtendEast_BndNorthSplineInfo != NULL) {
+	  // the East extension of North is curved
+	  CellFacesInfo[1] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndSouth = &Grid->ExtendEast_BndNorthSpline;
+	}
       }
 
-      if (ii == Grid->ICl-1 && jj >= Grid->JCl && jj <= Grid->JCu && Grid->BndWestSplineInfo != NULL){
-	// the East face is curved
-	CellFacesInfo[2] = true;
-	AtLeastOneCurvedFace = true;
-      } else {
-	// the East face is treated as straight edge
-	CellFacesInfo[2] = false;
+
+      // === Check East face ===
+      if (ii == Grid->ICl-1){
+	if (jj < Grid->JCl && Grid->ExtendSouth_BndWestSplineInfo != NULL){
+	  // the South extension of West is curved
+	  CellFacesInfo[2] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndEast = &Grid->ExtendSouth_BndWestSpline;
+	} else if (jj >= Grid->JCl && jj <= Grid->JCu && Grid->BndWestSplineInfo != NULL){
+	  // the East face is curved
+	  CellFacesInfo[2] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndEast = &Grid->BndWestSpline;
+	} else if (jj > Grid->JCu && Grid->ExtendNorth_BndWestSplineInfo != NULL){
+	  // the North extension of West is curved
+	  CellFacesInfo[2] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndEast = &Grid->ExtendNorth_BndWestSpline;
+	}
+      } else if (ii == Grid->ICu){
+	if (jj < Grid->JCl && Grid->ExtendSouth_BndEastSplineInfo != NULL){
+	  // the South extension of East is curved
+	  CellFacesInfo[2] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndEast = &Grid->ExtendSouth_BndEastSpline;
+	} else if (jj > Grid->JCu && Grid->ExtendNorth_BndEastSplineInfo != NULL){
+	  // the North extension of East is curved
+	  CellFacesInfo[2] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndEast = &Grid->ExtendNorth_BndEastSpline;	  
+	}
       }
 
-      if (jj == Grid->JCl-1 && ii >= Grid->ICl && ii <= Grid->ICu && Grid->BndSouthSplineInfo != NULL){
-	// the North face is curved
-	CellFacesInfo[3] = true;
-	AtLeastOneCurvedFace = true;
-      } else {
-	// the North face is treated as straight edge
-	CellFacesInfo[3] = false;
+
+      // === Check North face ===
+      if (jj == Grid->JCl-1){
+	if (ii < Grid->ICl && Grid->ExtendWest_BndSouthSplineInfo != NULL){
+	  // the West extension of South is curved
+	  CellFacesInfo[3] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndNorth = &Grid->ExtendWest_BndSouthSpline;
+	} else if (ii >= Grid->ICl && ii <= Grid->ICu && Grid->BndSouthSplineInfo != NULL){
+	  // the North face is curved
+	  CellFacesInfo[3] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndNorth = &Grid->BndSouthSpline;
+	} else if (ii > Grid->ICu && Grid->ExtendEast_BndSouthSplineInfo != NULL){
+	  // the East extension of South is curved
+	  CellFacesInfo[3] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndNorth = &Grid->ExtendEast_BndSouthSpline;
+	}
+      } else if (jj == Grid->JCu){
+	if (ii < Grid->ICl && Grid->ExtendWest_BndNorthSplineInfo != NULL){
+	  // the West extension of North is curved
+	  CellFacesInfo[3] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndNorth = &Grid->ExtendWest_BndNorthSpline;	  
+	} else if (ii > Grid->ICu && Grid->ExtendEast_BndNorthSplineInfo != NULL){
+	  // the East extension of North is curved
+	  CellFacesInfo[3] = true;
+	  AtLeastOneCurvedFace = true;
+	  CellBndNorth = &Grid->ExtendEast_BndNorthSpline;
+	}
       }
+
+
     }
 
   } else {

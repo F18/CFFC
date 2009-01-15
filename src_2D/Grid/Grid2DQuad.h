@@ -253,6 +253,7 @@ class Grid2D_Quad_Block{
   //! @name Defined datatypes
   //@{
   typedef Node2D NodeType;
+  typedef Spline2D BndSplineType;
   //@}
   
     int                   NNi, //!< Number of nodes in i-direction (zeta-direction).
