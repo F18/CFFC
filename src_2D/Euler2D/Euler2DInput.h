@@ -767,6 +767,9 @@ inline ostream &operator << (ostream &out_file,
     // output information related to assessment of accuracy
     AccuracyAssessment_Execution_Mode::Print_Info(out_file);
 
+    // output information related to the numerical integration parameters
+    NumericalLibrary_Execution_Mode::Print_Info(out_file);
+
     out_file << "\n  -> Restart Solution Save Frequency: "
              << IP.Restart_Solution_Save_Frequency
              << " steps (iterations)"; 
