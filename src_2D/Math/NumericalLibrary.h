@@ -647,17 +647,21 @@ inline ReturnType adaptlobstp(FunctionType func, double a, double b, const Retur
   if ( (is+(i1-i2)==is) || (mll<=a) || (b<=mrr) || 
        (FunctionEvaluations > NumericalLibrary_Execution_Mode::Max_Function_Evaluations) || (fabs(i1-i2)<=eps) ){
     if ( ( (m <= a) || (b<=m) ) && (WriteMessage == 0)){
-      cerr << "\nWarning Integration Subroutine: Interval contains no more machine number.\n"
-       	   << "Required tolerance may not be met.\n";
-      WriteMessage = 1;
+      if (NumericalLibrary_Execution_Mode::Output_Error_Messages){
+	cerr << "\nWarning Integration Subroutine: Interval contains no more machine number.\n"
+	     << "Required tolerance may not be met.\n";
+	WriteMessage = 1;
+      }
       return i1;
     }
     if ((FunctionEvaluations > NumericalLibrary_Execution_Mode::Max_Function_Evaluations) && (WriteMessage == 0)){
-      cerr << "\nWarning Integration Subroutine: Maximum function count exceeded (" 
-	   << NumericalLibrary_Execution_Mode::Max_Function_Evaluations
-	   << "); singularity likely.\n"
-	   << "Required tolerance may not be met.\n";
-      WriteMessage = 1;
+      if (NumericalLibrary_Execution_Mode::Output_Error_Messages){
+	cerr << "\nWarning Integration Subroutine: Maximum function count exceeded (" 
+	     << NumericalLibrary_Execution_Mode::Max_Function_Evaluations
+	     << "); singularity likely.\n"
+	     << "Required tolerance may not be met.\n";
+	WriteMessage = 1;
+      }
       return i1;
     }
     if (Level < NumericalLibrary_Execution_Mode::Adaptive_Integration_Minimum_Refinement_Levels){

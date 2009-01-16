@@ -32,6 +32,10 @@ long int NumericalLibrary_Execution_Mode::Number_Monte_Carlo_Samples = 200000;
  */
 short NumericalLibrary_Execution_Mode::Adaptive_Integration_Minimum_Refinement_Levels = 0;
 
+/*!
+ * This value controls the error output.
+ */
+bool NumericalLibrary_Execution_Mode::Output_Error_Messages = true;
 
 // Set default epsilon values
 long int NumericalLibrary_Execution_Mode::Max_Function_Evaluations_default = 
@@ -98,5 +102,8 @@ void NumericalLibrary_Execution_Mode::Broadcast(void){
   MPI::COMM_WORLD.Bcast(&Adaptive_Integration_Minimum_Refinement_Levels,
 			1, 
 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&Output_Error_Messages,
+			1, 
+			MPI::BOOL, 0);
 #endif
 }
