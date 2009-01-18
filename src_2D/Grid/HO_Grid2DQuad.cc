@@ -90,6 +90,27 @@ int Grid2D_Quad_Block_HO::Minimize_Error_Calculation_Of_Geometric_Properties = O
 int Grid2D_Quad_Block_HO::Tolerate_Inaccurate_Integration_Near_Curved_Boundaries = OFF;
 
 /*!
+ * This flag is used to specify whether a polygonal adaptive quadrature integration for cells 
+ * near curved boundaries is accepted in case the integration cannot be performed with contour integration.
+ * Turn ON if you want to allow this method. (default) \n
+ * Turn OFF if you don't. \n
+ */
+int Grid2D_Quad_Block_HO::Polygonal_Adaptive_Quadrature_Integration_Allowed = ON;
+//! Parameter to set the minimum levels of refinement during the polygonal adaptive quadrature integration
+short Grid2D_Quad_Block_HO::Polygonal_Adaptive_Quadrature_Integration_Minimum_Levels = 2;
+
+/*!
+ * This flag is used to specify whether a Monte Carlo integration for cells 
+ * near curved boundaries is accepted in case the integration cannot be performed with contour integration
+ * or polygonal adaptive quadrature integration is not allowed.
+ * The number of sample points can be set in the input parameters (see NumericalLibrary_Execution_Mode class).
+ * Turn ON if you want to allow this method. (default) \n
+ * Turn OFF if you don't. \n
+ */
+int Grid2D_Quad_Block_HO::Monte_Carlo_Integration_Allowed = OFF;
+
+
+/*!
  * Variable used for storing the South-West node position in the global coordinate system
  */
 Vector2D Grid2D_Quad_Block_HO::_SW_ = Vector2D(0.0);

@@ -284,7 +284,7 @@ void Spline2D_HO::GenerateLineSegmentDiscretization(const Vector2D &StartPoint,
 						    const Vector2D &EndPoint,
 						    LinkedList<Vector2D> &DiscretizationVertexes) const {
 
-  static const int MaxDivisions(50000);
+  static const int MaxDivisions(1000);
   static const int DivisionFactor(4);
   int Divisions(1);
   double *Length(NULL), *PathLength(NULL);

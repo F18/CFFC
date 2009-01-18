@@ -161,6 +161,22 @@ public:
       ----------------------------------------------------------------------------------------  */
   static short SMOOTH_QUAD_BLOCK_FLAG;
 
+  /*! This flag is used to specify whether the polygonal adaptive quadrature integration is used. \n
+      Turn ON if you want to use the polygonal adaptive integration. (default) \n
+      Turn OFF if you don't want. \n
+      ----------------------------------------------------------------------------------------  */
+  static short POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_FLAG;
+
+  /*! This flag is used to specify whether the Monte Carlo integration is used. \n
+      Turn ON if you want to use the Monte Carlo integration (the polygonal adaptive integration must be turned off). \n
+      Turn OFF if you don't want. (default) \n
+      ----------------------------------------------------------------------------------------  */
+  static short MONTE_CARLO_INTEGRATION_FLAG;
+
+  /*! Number of minimum refinement levels in the polygonal adaptive quadrature integration. \n
+      ----------------------------------------------------------------------------------------  */
+  static short POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS;
+
   template<class Input_Parameters_Type>
   static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);
 
@@ -403,6 +419,47 @@ void HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Paramete
     }
     i_command = 0;
 
+  } else if (strcmp(IP.Next_Control_Parameter, "Integration_Method_Near_Curved_Boundaries") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if (strcmp(IP.Next_Control_Parameter, "Polygonal_Adaptive_Quadrature") == 0 ) {
+      POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_FLAG = ON;
+      MONTE_CARLO_INTEGRATION_FLAG = OFF;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setPolygonalAdaptiveQuadratureIntegrationON();
+      Grid2D_Quad_Block_HO::setMonteCarloIntegrationOFF();	  
+      
+    } else if (strcmp(IP.Next_Control_Parameter,"Monte_Carlo") == 0 ) {
+      POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_FLAG = OFF;
+      MONTE_CARLO_INTEGRATION_FLAG = ON;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setPolygonalAdaptiveQuadratureIntegrationOFF();
+      Grid2D_Quad_Block_HO::setMonteCarloIntegrationON();
+
+    } else if (strcmp(IP.Next_Control_Parameter,"None") == 0 ) {
+      POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_FLAG = OFF;
+      MONTE_CARLO_INTEGRATION_FLAG = OFF;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setPolygonalAdaptiveQuadratureIntegrationOFF();
+      Grid2D_Quad_Block_HO::setMonteCarloIntegrationOFF();
+      
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Minimum_Levels_Polygonal_Adaptive_Quadrature_Integration") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if ( POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS < 0 ){
+      i_command = INVALID_INPUT_VALUE;
+    } else {
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::Polygonal_Adaptive_Quadrature_Integration_Minimum_Levels = 
+	POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS;
+    }
 
   } else {
     i_command = INVALID_INPUT_CODE;

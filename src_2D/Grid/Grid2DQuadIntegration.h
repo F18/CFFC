@@ -12,6 +12,7 @@
 
 /* Include CFFC header files */
 #include "../Math/NumericalLibrary.h"
+#include "../Math/RandomGenerator.h"
 
 
 template<class Grid2DQuadType>
@@ -66,6 +67,29 @@ public:
     throw runtime_error("Grid2DQuadIntegration()::IntegrateFunctionOverCellUsingContourIntegrand() not implemented for this Grid type");
   }
 
+  //! Compute the integral of a general function over the domain of cell (ii,jj) which has curved faces using Monte Carlo method
+  template<typename FO, class ReturnType>
+  ReturnType IntegrateFunctionOverCellUsingMonteCarloMethod(const int &ii, const int &jj,
+							    FO FuncObj,
+							    int digits, ReturnType _dummy_param) const {
+    throw runtime_error("Grid2DQuadIntegration()::IntegrateFunctionOverCellUsingMonteCarloMethod() not implemented for this Grid type");
+  }
+  
+  /*! Compute the integral of a general function over the domain of cell (ii,jj) which
+    has curved faces using adaptive quadrilaterals method */
+  template<typename FO, class ReturnType>
+  ReturnType IntegrateFunctionOverCellUsingPolygonalAdaptiveQuadratures(const int &ii, const int &jj,
+									FO FuncObj,
+									int digits, ReturnType _dummy_param) const {
+    throw runtime_error("Grid2DQuadIntegration()::IntegrateFunctionOverCellUsingPolygonalAdaptiveQuadratures() not implemented for this Grid type");
+  }
+
+  //! Approximate the curvilinear domain of cell (ii,jj) with a polygon
+  void ConvertCurvedIntegrationDomainToPolygon(const int &ii, const int &jj,
+					       Polygon & PolygonalDomain) const {
+    throw runtime_error("Grid2DQuadIntegration()::ConvertCurvedIntegrationDomainToPolygon() not implemented for this Grid type");
+  }
+
   //! Compute the integral of an arbitrary function using Gauss quadrature rule with the provided data.
   template<typename FO, class ReturnType>
   ReturnType CalculateFunctionIntegralWithGaussQuadratures(FO FuncObj, 
@@ -111,6 +135,35 @@ private:
 
   //! Define pointers to cell curved boundaries.
   typename Grid2DQuadType::BndSplineType *CellBndWest, *CellBndSouth, *CellBndEast, *CellBndNorth;
+
+
+  /*!
+   * \class IntegrandFunctionOverPolygonalDefinitionDomain
+   *
+   * Functor class which enforces an arbitrary function to 
+   * be defined only on the inside domain of an arbitrary polygon.
+   * Outside of the polygon, the function value is zero.
+   */
+  template<class FunctionType, class ReturnType>
+  class IntegrandFunctionOverPolygonalDefinitionDomain {
+  public:
+    //! Main constructor
+    IntegrandFunctionOverPolygonalDefinitionDomain(FunctionType & Func, 
+						   Polygon &_DefinitionDomain_):
+      Ptr_F(&Func), DefinitionDomain(&_DefinitionDomain_)
+    { };
+
+    //! Evaluate functor at a given location (x,y)
+    ReturnType operator()(const double &x, const double &y);
+
+  private:
+    FunctionType* Ptr_F;
+    Polygon* DefinitionDomain;
+
+    //! Private default constructor
+    IntegrandFunctionOverPolygonalDefinitionDomain(void){};
+  }; 
+
 };
 
 
@@ -481,8 +534,20 @@ ReturnType Grid2DQuadIntegration<Grid2DQuadType>::IntegrateFunctionOverCell(cons
     }
 
   } catch(std::runtime_error){
+    
+    if ( Grid->IsPolygonalAdaptiveQuadraturesAllowed() ){
+      // Use adaptive quadrilateral quadratures to integrate the function (i.e. at least one of the faces is curved)
+      return IntegrateFunctionOverCellUsingPolygonalAdaptiveQuadratures(ii,jj,
+									FuncObj,
+									digits,_dummy_param);
 
-    if ( Grid->IsIntegrationAlongCurvedBoundariesToleratedToGeometricInaccuracies() ){
+    } else if ( Grid->IsMonteCarloIntegrationAllowed() ){
+      // Use Monte Carlo method to integrate the function (i.e. at least one of the faces is curved)
+      return IntegrateFunctionOverCellUsingMonteCarloMethod(ii,jj,
+							    FuncObj,
+							    digits,_dummy_param);
+
+    } else if ( Grid->IsIntegrationAlongCurvedBoundariesToleratedToGeometricInaccuracies() ){
       // Force the integration by treating the cell as being unaffected
       // by the presence of curved boundaries.
       return IntegrateFunctionOverCell(ii,jj,FuncObj,digits,_dummy_param);      
@@ -1098,5 +1163,22 @@ IntegratePiecewiseFunctionProjectionAlongBoundarySpline(const int & BOUNDARY, FO
 
 }
 
+
+/**************************************************************************************
+ * Implement member functions of IntegrandFunctionOverPolygonalDefinitionDomain class *
+ **************************************************************************************/
+//! Main constructor
+template<class Grid2DQuadType>
+template<class FunctionType, class ReturnType>
+ReturnType Grid2DQuadIntegration<Grid2DQuadType>::
+IntegrandFunctionOverPolygonalDefinitionDomain<FunctionType,ReturnType>::operator()(const double &x, const double &y){
+
+  if (DefinitionDomain->IsPointInPolygon(Vector2D(x,y))){
+    return (*Ptr_F)(x,y);
+  } else {
+    return ReturnType(0.0);
+  }
+
+}
 
 #endif

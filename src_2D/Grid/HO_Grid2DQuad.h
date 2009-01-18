@@ -1000,6 +1000,15 @@ public:
   static void setMixedContourIntegration(void) {
     Gauss_Quad_Curvilinear_Integration = ON; Mixed_Curvilinear_Integration = ON;
   }
+  //! Set Monte Carlo integration for cells with curved edges
+  static void setMonteCarloIntegrationON(void){ Monte_Carlo_Integration_Allowed = ON; }
+  //! Turn off Monte Carlo integration for cells with curved edges
+  static void setMonteCarloIntegrationOFF(void){ Monte_Carlo_Integration_Allowed = OFF; }
+  //! Set polygonal adaptive quadrature integration for cells with curved edges
+  static void setPolygonalAdaptiveQuadratureIntegrationON(void){  Polygonal_Adaptive_Quadrature_Integration_Allowed = ON; }
+  //! Turn off polygonal adaptive quadrature integration for cells with curved edges
+  static void setPolygonalAdaptiveQuadratureIntegrationOFF(void){ Polygonal_Adaptive_Quadrature_Integration_Allowed = OFF; }
+
   //! Check if the West boundary has constrained reconstruction (i.e. it is curved and set to reconstruction based flux)
   bool IsWestBoundaryReconstructionConstrained(void) const;
   //! Check if the East boundary has constrained reconstruction (i.e. it is curved and set to reconstruction based flux)
@@ -1075,6 +1084,16 @@ public:
     return Tolerate_Inaccurate_Integration_Near_Curved_Boundaries == ON? true:false;
   }
 
+  //! Check if Monte Carlo integration in cells with curved boundaries is allowed
+  bool IsMonteCarloIntegrationAllowed(void) const { 
+    return Monte_Carlo_Integration_Allowed == ON? true:false;
+  }
+
+  //! Check if adaptive polygonal integration in cells with curved boundaries is allowed
+  bool IsPolygonalAdaptiveQuadraturesAllowed(void) const {
+    return Polygonal_Adaptive_Quadrature_Integration_Allowed == ON? true:false;
+  }
+
   //! Output only the cell data
   void Output_Cells_Data(const int &block_number, ostream &out_file);
   //! Output only the cell invariant geometric properties
@@ -1085,6 +1104,9 @@ public:
   friend ostream &operator << (ostream &out_file, const Grid2D_Quad_Block_HO &G);
   friend istream &operator >> (istream &in_file, Grid2D_Quad_Block_HO &G);
   //@}
+
+  //! Parameter to set the minimum levels of refinement during the polygonal adaptive quadrature integration
+  static short Polygonal_Adaptive_Quadrature_Integration_Minimum_Levels;
 
 private:
   Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G);     //! Private copy constructor.
@@ -1106,6 +1128,13 @@ private:
 
   //! Switch for treatment of integrals along curved boundaries, in case they cannot be performed accurately along the real geometry.
   static int Tolerate_Inaccurate_Integration_Near_Curved_Boundaries;
+
+  //! Switch for Monte Carlo integration in curved boundaries (i.e. turn it OFF or ON). 
+  static int Monte_Carlo_Integration_Allowed;
+
+  /*! Switch for polygonal adaptive quadrature integration in curved boundaries (i.e. turn it OFF or ON).
+   *  It has higher priority than Monte_Carlo_Integration_Allowed */
+  static int Polygonal_Adaptive_Quadrature_Integration_Allowed;
 
   //! Highest order of reconstruction that might occur in calculations with the current grid.
   int HighestReconstructionOrder;

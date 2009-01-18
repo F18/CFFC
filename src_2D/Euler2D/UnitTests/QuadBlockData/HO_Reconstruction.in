@@ -176,7 +176,7 @@ Number_of_Blocks_Per_Processor =
 	# SET OUTPUT PARAMETERS #
 	#########################
 Output_File_Name = 
-        Euler2D/UnitTests/QuadBlockData/HighOrder_Reconstruction_Testing
+        Euler2D/UnitTests/QuadBlockData/Current_HighOrder_Reconstruction_Testing
 Tecplot_Output_Format =
         # Brief
 	# Detailed

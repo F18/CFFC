@@ -117,6 +117,11 @@ namespace tut
     // Initialize IP to default values
     Set_Default_Input_Parameters(IP);
 
+    // Turn Off integration of arbitrary functions in cells with curved boundaries.
+    // If this feature is required in a test, turn it ON locally
+    Grid2D_Quad_Block_HO::setPolygonalAdaptiveQuadratureIntegrationOFF();
+    Grid2D_Quad_Block_HO::setMonteCarloIntegrationOFF();
+
     Status = OFF;
   }
 
@@ -668,12 +673,12 @@ namespace tut
   void Euler2D_Quad_Block_object::test<1>()
   {
 
-    set_test_name("High-order reconstruction");
+    set_test_name("High-order reconstruction in a box, Analytic function");
 
     set_local_input_path("QuadBlockData");
     set_local_output_path("QuadBlockData");
 
-    RunRegression = OFF;
+    RunRegression = ON;
  
     // Set input file name
     Open_Input_File("HO_Reconstruction.in");
@@ -696,10 +701,29 @@ namespace tut
     SolnBlk[0].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[0],
 									   IP.Limiter());
    
-    // Output Tecplot
-    Output_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+    if (RunRegression){
 
-    Output_Cells_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      // Output Tecplot
+      Output_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      Output_Cells_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+
+      // == check nodal values
+      CurrentFile = "Current_HighOrder_Reconstruction_Testing_cpu000000.dat";
+      MasterFile  = "HighOrder_Reconstruction_Testing_cpu000000.dat";
+
+      RunRegressionTest("Nodal values", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+
+      // == check cell values
+      CurrentFile = "Current_HighOrder_Reconstruction_Testing_cells_cpu000000.dat";
+      MasterFile  = "HighOrder_Reconstruction_Testing_cells_cpu000000.dat";
+
+      RunRegressionTest("Centroid values", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+
+    } else {
+      // Output Tecplot
+      Output_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+      Output_Cells_Tecplot(SolnBlk,LocalList_Soln_Blocks,IP,0,0);
+    }
 
   }
 
