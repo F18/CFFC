@@ -40,7 +40,7 @@ public:
     with grid nodes that are not located on the extension splines yet.
     To add a new grid, increase the number of array elements and add the grid ID to the list in HO_Grid2DQuadMultiBlock.cc.
   */
-  static int GridsThatRequireSynchronizationPriorToGhostCellsUpdate[1];
+  static int GridsThatRequireSynchronizationPriorToGhostCellsUpdate[2];
 
   //! @name 
   //@{ 
@@ -385,7 +385,7 @@ public:
 		    const int Number_of_Cells_Jdir,
 		    const int Number_of_Ghost_Cells,
 		    const int Highest_Order_of_Reconstruction);
-  
+
   void Grid_NACA_Aerofoil(int &_Number_of_Blocks_Idir_,
 			  int &_Number_of_Blocks_Jdir_,
 			  char *NACA_Aerofoil_Type_ptr,
@@ -394,6 +394,20 @@ public:
 			  const int Number_of_Cells_Jdir,
 			  const int Number_of_Ghost_Cells,
 			  const int Highest_Order_of_Reconstruction);
+
+  void Grid_NACA_Aerofoil_Ogrid(int &_Number_of_Blocks_Idir_,
+				int &_Number_of_Blocks_Jdir_,
+				char *NACA_Aerofoil_Type_ptr,
+				const double &Chord_Length,
+				const double &Outer_Radius,
+				const int &Stretching_Type_Idir,
+				const int &Stretching_Type_Jdir,
+				const double &Stretching_Factor_Idir,
+				const double &Stretching_Factor_Jdir,
+				const int Number_of_Cells_Idir,
+				const int Number_of_Cells_Jdir,
+				const int Number_of_Ghost_Cells,
+				const int Highest_Order_of_Reconstruction);
   
   void Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 		     int &_Number_of_Blocks_Jdir_,
@@ -864,6 +878,21 @@ public:
 					 const int Number_of_Cells_Jdir,
 					 const int Number_of_Ghost_Cells,
 					 const int Highest_Order_of_Reconstruction);
+
+  void Grid_NACA_Aerofoil_Ogrid_Without_Update(int &_Number_of_Blocks_Idir_,
+					       int &_Number_of_Blocks_Jdir_,
+					       char *NACA_Aerofoil_Type_ptr,
+					       const double &Chord_Length,
+					       const double &Outer_Radius,
+					       const int &Stretching_Type_Idir,
+					       const int &Stretching_Type_Jdir,
+					       const double &Stretching_Factor_Idir,
+					       const double &Stretching_Factor_Jdir,
+					       const int Number_of_Cells_Idir,
+					       const int Number_of_Cells_Jdir,
+					       const int Number_of_Ghost_Cells,
+					       const int Highest_Order_of_Reconstruction);
+
   
   void Grid_Free_Jet_Without_Update(int &_Number_of_Blocks_Idir_,
 				    int &_Number_of_Blocks_Jdir_,
@@ -1494,6 +1523,21 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 				      Input_Parameters.Number_of_Cells_Jdir,
 				      Input_Parameters.Number_of_Ghost_Cells,
 				      HighOrder2D_Input::MaximumReconstructionOrder());
+    break;
+  case GRID_NACA_AEROFOIL_OGRID :
+    Grid_NACA_Aerofoil_Ogrid_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					    Input_Parameters.Number_of_Blocks_Jdir,
+					    Input_Parameters.NACA_Aerofoil_Type,
+					    Input_Parameters.Chord_Length,
+					    Input_Parameters.Cylinder_Radius2,
+					    Input_Parameters.Mesh_Stretching_Type_Idir,
+					    Input_Parameters.Mesh_Stretching_Type_Jdir,
+					    Input_Parameters.Mesh_Stretching_Factor_Idir,
+					    Input_Parameters.Mesh_Stretching_Factor_Jdir,
+					    Input_Parameters.Number_of_Cells_Idir,
+					    Input_Parameters.Number_of_Cells_Jdir,
+					    Input_Parameters.Number_of_Ghost_Cells,
+					    HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_FREE_JET :
     Grid_Free_Jet_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
@@ -2347,6 +2391,46 @@ inline void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil(int &_Number_of_Blocks
 
 }
   
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil_Ogrid(int &_Number_of_Blocks_Idir_,
+								int &_Number_of_Blocks_Jdir_,
+								char *NACA_Aerofoil_Type_ptr,
+								const double &Chord_Length,
+								const double &Outer_Radius,
+								const int &Stretching_Type_Idir,
+								const int &Stretching_Type_Jdir,
+								const double &Stretching_Factor_Idir,
+								const double &Stretching_Factor_Jdir,
+								const int Number_of_Cells_Idir,
+								const int Number_of_Cells_Jdir,
+								const int Number_of_Ghost_Cells,
+								const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_NACA_Aerofoil_Ogrid_Without_Update(Number_of_Blocks_Idir,
+					  Number_of_Blocks_Jdir,
+					  NACA_Aerofoil_Type_ptr,
+					  Chord_Length,
+					  Outer_Radius,
+					  Stretching_Type_Idir,
+					  Stretching_Type_Jdir,
+					  Stretching_Factor_Idir,
+					  Stretching_Factor_Jdir,
+					  Number_of_Cells_Idir,
+					  Number_of_Cells_Jdir,
+					  Number_of_Ghost_Cells,
+					  HighOrder2D_Input::MaximumReconstructionOrder());
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+
+}
+
+
 inline void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 						     int &_Number_of_Blocks_Jdir_,
 						     const double &Radius,

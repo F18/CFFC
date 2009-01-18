@@ -13,7 +13,8 @@
 #include "../Grid/NASARotor67.h"       /* Include NASA rotor 67 header files. */
 
 // ===== Static variables =====
-int Grid2D_Quad_MultiBlock_HO::GridsThatRequireSynchronizationPriorToGhostCellsUpdate[1] = {GRID_CIRCULAR_CYLINDER};
+int Grid2D_Quad_MultiBlock_HO::GridsThatRequireSynchronizationPriorToGhostCellsUpdate[2] = {GRID_CIRCULAR_CYLINDER,
+											    GRID_NACA_AEROFOIL_OGRID };
 
 // ===== Member functions =====
 
@@ -4179,6 +4180,178 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil_Without_Update(int &_Number_o
 
 }
 
+/*!
+ * Generates a O-type grid consisting of two           
+ * quadrilateral grid blocks for predicting flow past   
+ * NACA 4-digit and 5-digit aerofoils.                  
+ *                                                      
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil_Ogrid_Without_Update(int &_Number_of_Blocks_Idir_,
+									int &_Number_of_Blocks_Jdir_,
+									char *NACA_Aerofoil_Type_ptr,
+									const double &Chord_Length,
+									const double &Outer_Radius,
+									const int &Stretching_Type_Idir,
+									const int &Stretching_Type_Jdir,
+									const double &Stretching_Factor_Idir,
+									const double &Stretching_Factor_Jdir,
+									const int Number_of_Cells_Idir,
+									const int Number_of_Cells_Jdir,
+									const int Number_of_Ghost_Cells,
+									const int Highest_Order_of_Reconstruction){
+
+  int iBlk, n_cells_i, n_cells_j,
+    Stretch_I, Stretch_J,
+    Orthogonal_North, Orthogonal_South,
+    Orthogonal_East, Orthogonal_West;
+  double Beta_I, Tau_I, Beta_J, Tau_J;
+  Vector2D x1, x2;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
+
+  /* Allocate memory for grid blocks.  There are two grid
+     blocks for this mesh. */
+
+  _Number_of_Blocks_Idir_ = 2;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
+
+  /* Create the mesh for each block representing
+     the complete grid. */
+
+  for ( iBlk = 0; iBlk <= Number_of_Blocks_Idir-1; ++iBlk ) {
+
+    /* Create the splines defining the north, south,
+       east, and west boundaries of the grid. */
+
+    if (iBlk == 0) {
+      x1 = Vector2D(ZERO,ZERO);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Outer_Radius,
+						  360.00,
+						  180.00,
+						  361);
+      Bnd_Spline_South.Create_Spline_NACA_Aerofoil(NACA_Aerofoil_Type_ptr,
+						   Chord_Length,
+						   -1,
+						   501);
+      x1 = Vector2D(Chord_Length, ZERO);
+      x2 = Vector2D(Outer_Radius, ZERO);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
+      x1 = Vector2D(ZERO, ZERO);
+      x2 = Vector2D(-Outer_Radius, ZERO);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
+    } else {
+      x1 = Vector2D(ZERO,ZERO);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Outer_Radius,
+						  180.00,
+						  ZERO,
+						  361);
+      Bnd_Spline_South.Create_Spline_NACA_Aerofoil(NACA_Aerofoil_Type_ptr,
+						   Chord_Length,
+						   1,
+						   501);
+      x1 = Vector2D(ZERO, ZERO);
+      x2 = Vector2D(-Outer_Radius, ZERO);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
+      x1 = Vector2D(Chord_Length, ZERO);
+      x2 = Vector2D(Outer_Radius, ZERO);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
+    } /* endif */
+
+    /* Set the boundary condition types for each of the
+       boundary splines. */
+
+    if (iBlk == 0) {
+      Bnd_Spline_North.setBCtype(BC_FIXED);
+      Bnd_Spline_South.setBCtype(BC_REFLECTION);
+      Bnd_Spline_South.makeSplineSolidBoundary(); // create first solid body
+      Bnd_Spline_East.setBCtype(BC_NONE);
+      Bnd_Spline_West.setBCtype(BC_NONE);
+    } else {
+      Bnd_Spline_North.setBCtype(BC_FIXED);
+      Bnd_Spline_South.setBCtype(BC_REFLECTION);
+      Bnd_Spline_South.makeSplineSolidBoundary(1); // make this spline part of the first solid body
+      Bnd_Spline_East.setBCtype(BC_NONE);
+      Bnd_Spline_West.setBCtype(BC_NONE);
+    } /* endif */
+
+    /* Determine the number of cells for this block. */
+
+    n_cells_i = Number_of_Cells_Idir/2;
+    n_cells_j = Number_of_Cells_Jdir;
+
+    /* Assign values to the stretching function parameters
+       and boundary grid line orthogonality parameters. */
+
+    if (iBlk == 0) {
+      Stretch_I = Stretching_Type_Idir;
+      Beta_I = Stretching_Factor_Idir;
+      Tau_I = ZERO;
+      Stretch_J = Stretching_Type_Jdir;
+      Beta_J = Stretching_Factor_Jdir;
+      Tau_J = ZERO;
+    } else {
+      Stretch_I = Stretching_Type_Idir;
+      Beta_I = Stretching_Factor_Idir;
+      Tau_I = ZERO;
+      Stretch_J = Stretching_Type_Jdir;
+      Beta_J = Stretching_Factor_Jdir;
+      Tau_J = ZERO;
+    } /* endif */
+
+    Orthogonal_North = 0;
+    Orthogonal_South = 0;
+    Orthogonal_East = 0;
+    Orthogonal_West = 0;
+
+    /* Create the 2D quadrilateral grid block. */
+
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       n_cells_i,
+						       n_cells_j,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I, 
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
+
+  } /* endfor */
+
+  // Ensure that constrained boundaries are looped over
+  HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = ON;
+
+  // Set the spline extensions for Block 0
+  // == South spline
+  Grid_ptr[0][0].ExtendWest_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  Grid_ptr[0][0].ExtendEast_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  // == North spline
+  Grid_ptr[0][0].ExtendWest_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+  Grid_ptr[0][0].ExtendEast_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+
+  // Set the spline extensions for Block 1
+  // == South spline
+  Grid_ptr[1][0].ExtendWest_BndSouthSpline = Grid_ptr[0][0].BndSouthSpline;
+  Grid_ptr[1][0].ExtendEast_BndSouthSpline = Grid_ptr[0][0].BndSouthSpline;
+  // == North spline
+  Grid_ptr[1][0].ExtendWest_BndNorthSpline = Grid_ptr[0][0].BndNorthSpline;
+  Grid_ptr[1][0].ExtendEast_BndNorthSpline = Grid_ptr[0][0].BndNorthSpline;
+
+}
 
 /*!
  * Generates a multi-block grid for predicting free-jet 
@@ -4868,8 +5041,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow_Without_Update(int &_Number_of
   // Create the mesh for each block representing the complete grid.
   
   // Set number of points in each direction
-  nk = min(32, 3*Number_of_Cells_Idir); // 3 points for each cell
-  nq = min(50, 3*Number_of_Cells_Jdir); // 3 points for each cell
+  nk = min(32, 15*Number_of_Cells_Idir); // 3 points for each cell
+  nq = min(50, 15*Number_of_Cells_Jdir); // 3 points for each cell
 
   // West streamline
   k  = Inner_Streamline_Number;

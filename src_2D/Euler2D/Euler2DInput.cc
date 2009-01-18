@@ -2049,6 +2049,11 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
           IP.i_Grid = GRID_NACA_AEROFOIL;
           IP.Chord_Length = ONE;
           strcpy(IP.NACA_Aerofoil_Type, "0012");
+       } else if (strcmp(IP.Grid_Type, "NACA_Aerofoil_Ogrid") == 0) {
+          IP.i_Grid = GRID_NACA_AEROFOIL_OGRID;
+          IP.Chord_Length = ONE;
+	  IP.Cylinder_Radius2 = 32.0;
+          strcpy(IP.NACA_Aerofoil_Type, "0012");
        } else if (strcmp(IP.Grid_Type, "Free_Jet") == 0) {
           IP.i_Grid = GRID_FREE_JET;
           IP.Orifice_Radius = ONE;
