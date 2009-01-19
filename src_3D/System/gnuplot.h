@@ -78,6 +78,13 @@ public:
                              double *y,
                              int n_points,
                              const char *title);
+    void gnuplot_plot1d_var2(dpoint *d,
+                             int n_points,
+                             string title) ;
+    void gnuplot_plot1d_var2(double *x,
+                             double *y,
+                             int n_points,
+                             string title);
     void gnuplot_plot_slope(double a,
                             double b,
                             const char *title) ;
@@ -629,6 +636,16 @@ inline void Gnuplot_Control::gnuplot_plot1d_var1(
 /*--------------------------------------------------------------------------*/
 
 inline void Gnuplot_Control::gnuplot_plot1d_var2(
+                                                 dpoint          *   d,
+                                                 int                 n_points,
+                                                 string              title
+)
+{
+    gnuplot_plot1d_var2(d,n_points,title.c_str());
+}
+
+
+inline void Gnuplot_Control::gnuplot_plot1d_var2(
                                           dpoint          *   d,
                                           int                 n_points,
                                           const char      *   title
@@ -691,6 +708,16 @@ inline void Gnuplot_Control::gnuplot_plot1d_var2(
     return ;
 }
 
+
+inline void Gnuplot_Control::gnuplot_plot1d_var2(
+                                                 double          *   x,
+                                                 double          *   y,
+                                                 int                 n_points,
+                                                 string              title
+)
+{
+    gnuplot_plot1d_var2(x,y,n_points,title.c_str());
+}
 
 inline void Gnuplot_Control::gnuplot_plot1d_var2(
                                                  double          *   x,

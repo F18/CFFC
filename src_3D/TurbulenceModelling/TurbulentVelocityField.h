@@ -2287,7 +2287,7 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
     
     //  Allocate_spectrum();
     Nx = NCells_Idir * Initial_Mesh.NBlk_Idir;
-    Ny = NCells_Jdir * Initial_Mesh.NBlk_Idir;
+    Ny = NCells_Jdir * Initial_Mesh.NBlk_Jdir;
     Nz = NCells_Kdir * Initial_Mesh.NBlk_Kdir;
     nz = Nz/2+1;
     

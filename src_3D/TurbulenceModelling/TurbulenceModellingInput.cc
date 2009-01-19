@@ -33,6 +33,12 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(i_filter_type),
                           1,
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(filter_type_secondary,
+                          TURBULENCEMODEL_INPUT_PARAMETER_LENGTH,
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(i_filter_type_secondary),
+                          1,
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(FGR),
                           1,
                           MPI::DOUBLE, 0);
@@ -198,6 +204,26 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
       } else {
           i_command = INVALID_INPUT_VALUE;
       } /* endif */
+  } else if (strcmp(code, "Filter_Type_secondary") == 0) {
+      i_command = 130;
+      value >> value_string;
+      strcpy(filter_type_secondary, value_string.c_str());
+      if (strcmp(filter_type_secondary, "Implicit") == 0) {
+          i_filter_type_secondary = FILTER_TYPE_IMPLICIT;
+      } else if (strcmp(filter_type_secondary, "Haselbacher") == 0) {
+          i_filter_type_secondary = FILTER_TYPE_HASELBACHER;
+      } else if (strcmp(filter_type_secondary, "Vasilyev") == 0) {
+          i_filter_type_secondary = FILTER_TYPE_VASILYEV;
+      } else if (strcmp(filter_type_secondary, "Tophat") == 0) {
+          i_filter_type_secondary = FILTER_TYPE_TOPHAT;
+      } else if (strcmp(filter_type_secondary, "Gaussian") == 0) {
+          i_filter_type_secondary = FILTER_TYPE_GAUSSIAN;
+      } else if (strcmp(filter_type_secondary, "Restart") == 0) {
+          i_filter_type_secondary = FILTER_TYPE_RESTART;
+      } else {
+          i_command = INVALID_INPUT_VALUE;
+      } /* endif */
+      
       
   } else if (strcmp(code, "Filter_Memory_Efficient") == 0) {
       i_command = 132;

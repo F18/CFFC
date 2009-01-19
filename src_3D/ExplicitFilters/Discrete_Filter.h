@@ -61,15 +61,15 @@ public:
     }
     
     virtual void Read_Basic_Properties(void) {
-        debug_flag              = properties->Get_Property_int("debug_flag");
-        batch_flag              = properties->Get_Property_int("batch_flag");
-        FGR                     = properties->Get_Property_double("FGR");
-        use_fixed_filter_width  = properties->Get_Property_int("use_fixed_filter_width");
-        fixed_filter_width      = properties->Get_Property_double("fixed_filter_width");
-        commutation_order       = properties->Get_Property_int("commutation_order");
-        number_of_rings         = properties->Get_Property_int("number_of_rings");
-        Store_Filter_Weights    = !properties->Get_Property_int("memory_efficient");
-        G_cutoff                = properties->Get_Property_double("G_cutoff");
+        properties->Get_Property(debug_flag,"debug_flag");
+        properties->Get_Property(batch_flag,"batch_flag");
+        properties->Get_Property(FGR,"FGR");
+        properties->Get_Property(use_fixed_filter_width,"use_fixed_filter_width");
+        properties->Get_Property(fixed_filter_width,"fixed_filter_width");
+        properties->Get_Property(commutation_order,"commutation_order");
+        properties->Get_Property(number_of_rings,"number_of_rings");
+        properties->Get_Property(G_cutoff,"G_cutoff");
+        Store_Filter_Weights = !properties->Get_Property_int("memory_efficient");
     }
     
     virtual void Read_Properties(void) = 0;
@@ -115,6 +115,10 @@ public:
     double Filter_Grid_Ratio_111(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax);
     double Filter_Grid_Ratio_110(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax);
     double Filter_Grid_Ratio_100(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax);
+    double Filter_Grid_Ratio_010(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax);
+    double Filter_Grid_Ratio_001(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax);
+
+    double Filter_Width(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kdir, RowVector &w, double G_cutoff);
 
     Vector3D Calculate_wavenumber_of_Gvalue(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmax, RowVector &w, double G_value);
     Vector3D Calculate_wavenumber_of_dGvalue(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmin, Vector3D &kmax, RowVector &w, double dG_value);
@@ -407,12 +411,17 @@ void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Blo
     double *k_111 = new double [N];
     double *k_110 = new double [N];
     double *k_100 = new double [N];
+    double *k_010 = new double [N];
+    double *k_001 = new double [N];
     double *G_111 = new double [N];
     double *G_110 = new double [N];
     double *G_100 = new double [N];
+    double *G_010 = new double [N];
+    double *G_001 = new double [N];
+
     
-    Vector3D K_111, K_110, K_100;
-    K_110.zero(); K_100.zero();
+    Vector3D K_111, K_110, K_100, K_010, K_001;
+    K_110.zero(); K_100.zero(); K_010.zero(); K_001.zero();
     for (int i=0; i<N; i++) {
         K_111 = i*kmax/(N-1.0);
         k_111[i] = K_111.abs();
@@ -420,19 +429,42 @@ void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Blo
         k_110[i] = K_110.abs();
         K_100.x = i*kmax.x/(N-1.0);
         k_100[i] = K_100.abs();
+        K_010.y = i*kmax.y/(N-1.0);
+        k_010[i] = K_010.abs();
+        K_001.z = i*kmax.z/(N-1.0);
+        k_001[i] = K_001.abs();
+        
         G_111[i]=real(G_function(theCell,theNeighbours,K_111,w));
         G_110[i]=real(G_function(theCell,theNeighbours,K_110,w));
         G_100[i]=real(G_function(theCell,theNeighbours,K_100,w));
-        k_111[i]/= (kmax.abs()/sqrt(THREE));
-        k_110[i]/= sqrt(sqr(kmax.x)+sqr(kmax.y))/sqrt(TWO);
-        k_100[i]/= (kmax.x);
+        G_010[i]=real(G_function(theCell,theNeighbours,K_010,w));
+        G_001[i]=real(G_function(theCell,theNeighbours,K_001,w));
+        
+        if(!use_fixed_filter_width) {
+            k_111[i]/= (kmax.abs()/sqrt(THREE));
+            k_110[i]/= sqrt(sqr(kmax.x)+sqr(kmax.y))/sqrt(TWO);
+            k_100[i]/= (kmax.x);
+            k_010[i]/= (kmax.y);
+            k_001[i]/= (kmax.z);            
+        }
+
     }
     string title ;
-    std::stringstream Cellstring, legend_111, legend_110, legend_100;
+    std::stringstream Cellstring, legend_111, legend_110, legend_100, legend_010, legend_001;
     Cellstring << "Cell = ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
-    legend_111 << "111  FGR = " << fixed << setprecision(2) <<  Filter_Grid_Ratio_111(theCell,theNeighbours,w,kmax);
-    legend_110 << "110  FGR = " << fixed << setprecision(2) <<  Filter_Grid_Ratio_110(theCell,theNeighbours,w,kmax);
-    legend_100 << "100  FGR = " << fixed << setprecision(2) <<  Filter_Grid_Ratio_100(theCell,theNeighbours,w,kmax);
+    if (use_fixed_filter_width) {
+        legend_111 << "111  k_filt = " << fixed << setprecision(2) <<  Filter_Width(theCell,theNeighbours,K_111,w,G_cutoff);
+        legend_110 << "110  k_filt = " << fixed << setprecision(2) <<  Filter_Width(theCell,theNeighbours,K_110,w,G_cutoff);
+        legend_001 << "001  k_filt = " << fixed << setprecision(2) <<  Filter_Width(theCell,theNeighbours,K_001,w,G_cutoff);
+        legend_010 << "010  k_filt = " << fixed << setprecision(2) <<  Filter_Width(theCell,theNeighbours,K_010,w,G_cutoff);
+        legend_100 << "100  k_filt = " << fixed << setprecision(2) <<  Filter_Width(theCell,theNeighbours,K_100,w,G_cutoff);
+    } else {
+        legend_111 << "111  FGR = " << fixed << setprecision(2) <<  Filter_Grid_Ratio_111(theCell,theNeighbours,w,kmax);
+        legend_110 << "110  FGR = " << fixed << setprecision(2) <<  Filter_Grid_Ratio_110(theCell,theNeighbours,w,kmax);
+        legend_001 << "001  FGR = " << fixed << setprecision(2) <<  Filter_Grid_Ratio_001(theCell,theNeighbours,w,kmax);
+        legend_010 << "010  FGR = " << fixed << setprecision(2) <<  Filter_Grid_Ratio_010(theCell,theNeighbours,w,kmax);
+        legend_100 << "100  FGR = " << fixed << setprecision(2) <<  Filter_Grid_Ratio_100(theCell,theNeighbours,w,kmax);
+    }
     
     title = "Transfer function " + filter_name() + " :   " + Cellstring.str() ;    
     
@@ -442,12 +474,18 @@ void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Blo
     h1.gnuplot_init(); 
     h1.gnuplot_setstyle("lines") ;
     h1.gnuplot_cmd("set grid");
-    h1.gnuplot_set_xlabel("k");
+    if(use_fixed_filter_width) {
+        h1.gnuplot_set_xlabel("k");
+    } else {
+        h1.gnuplot_set_xlabel("k/kmax");
+    }
     h1.gnuplot_set_ylabel("G(k)");
     h1.gnuplot_set_title(title);
     
     h1.gnuplot_plot1d_var2(k_111,G_111,N,legend_111.str().c_str());
     h1.gnuplot_plot1d_var2(k_110,G_110,N,legend_110.str().c_str());
+    h1.gnuplot_plot1d_var2(k_001,G_001,N,legend_001.str().c_str());
+    h1.gnuplot_plot1d_var2(k_010,G_010,N,legend_010.str().c_str());
     h1.gnuplot_plot1d_var2(k_100,G_100,N,legend_100.str().c_str());
 #endif
     
@@ -812,6 +850,33 @@ double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio_100(Cell3D &t
     return (kmax.x/k_cutoff.x);
 }
 
+template <typename Soln_pState, typename Soln_cState>
+double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio_010(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax) {
+    Vector3D kmax_010;
+    kmax_010.zero();
+    kmax_010.y = kmax.y;
+    
+    Vector3D k_cutoff = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax_010,w,G_cutoff);
+    
+    return (kmax.y/k_cutoff.y);
+}
+
+template <typename Soln_pState, typename Soln_cState>
+double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio_001(Cell3D &theCell, Neighbours &theNeighbours, RowVector &w, Vector3D &kmax) {
+    Vector3D kmax_001;
+    kmax_001.zero();
+    kmax_001.z = kmax.z;
+    
+    Vector3D k_cutoff = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kmax_001,w,G_cutoff);
+    
+    return (kmax.z/k_cutoff.z);
+}
+
+template <typename Soln_pState, typename Soln_cState>
+double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Width(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kdir, RowVector &w, double G_cutoff) {
+    Vector3D k_cutoff = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kdir,w,G_cutoff);
+    return k_cutoff.abs();
+}
 
 template <typename Soln_pState, typename Soln_cState>
 void Discrete_Filter<Soln_pState,Soln_cState>::Write_to_file(Grid3D_Hexa_Block &Grid_Blk, ofstream &out_file) {

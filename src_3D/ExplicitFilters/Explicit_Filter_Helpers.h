@@ -193,6 +193,16 @@ public:
         }
     }
     
+    void Get_Property(int &property, std::string property_name) {
+        property = Get_Property_int(property_name);
+    }
+    void Get_Property(double &property, std::string property_name) {
+        property = Get_Property_double(property_name);
+    }
+    void Get_Property(std::string &property, std::string property_name) {
+        property = Get_Property_string(property_name);
+    }
+    
     void Output_Properties(void){
         for (map<std::string,int>::iterator p=map_int.begin(); p!=map_int.end(); p++){
             cout << "\n" << p->first << " = " << p->second; cout.flush();

@@ -20,12 +20,29 @@ template<typename Soln_pState, typename Soln_cState>
 class Haselbacher_Filter : public Discrete_Filter<Soln_pState,Soln_cState> {
 public:
     
+//    using Discrete_Filter<Soln_pState,Soln_cState>::theNeighbours;
+//    using Discrete_Filter<Soln_pState,Soln_cState>::number_of_rings;
+//    using Discrete_Filter<Soln_pState,Soln_cState>::commutation_order;
+//    using Discrete_Filter<Soln_pState,Soln_cState>::FGR;
+//    using Discrete_Filter<Soln_pState,Soln_cState>::Neighbouring_Values;
+//    using Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values;
+//    using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments;
+//    
+
+    using Discrete_Filter<Soln_pState,Soln_cState>::theCell;
     using Discrete_Filter<Soln_pState,Soln_cState>::theNeighbours;
     using Discrete_Filter<Soln_pState,Soln_cState>::number_of_rings;
     using Discrete_Filter<Soln_pState,Soln_cState>::commutation_order;
     using Discrete_Filter<Soln_pState,Soln_cState>::FGR;
+    using Discrete_Filter<Soln_pState,Soln_cState>::debug_flag;
+    using Discrete_Filter<Soln_pState,Soln_cState>::batch_flag;
     using Discrete_Filter<Soln_pState,Soln_cState>::Neighbouring_Values;
     using Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values;
+    using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments;
+    using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments_1D;
+    using Discrete_Filter<Soln_pState,Soln_cState>::G_cutoff;
+    using Discrete_Filter<Soln_pState,Soln_cState>::use_fixed_filter_width;
+    using Discrete_Filter<Soln_pState,Soln_cState>::fixed_filter_width;
     using Discrete_Filter<Soln_pState,Soln_cState>::G_function;
     using Discrete_Filter<Soln_pState,Soln_cState>::dG_function;
     using Discrete_Filter<Soln_pState,Soln_cState>::G_function_1D;
@@ -33,20 +50,53 @@ public:
     using Discrete_Filter<Soln_pState,Soln_cState>::G_function_1D_110;
     using Discrete_Filter<Soln_pState,Soln_cState>::Calculate_wavenumber_of_Gvalue;
     using Discrete_Filter<Soln_pState,Soln_cState>::Calculate_wavenumber_of_dGvalue;
-    using Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio;
-    using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments;
+    using Discrete_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio;    
+    using Discrete_Filter<Soln_pState,Soln_cState>::properties;
+    
     
 
-
-    
-    //! Constructor
-    Haselbacher_Filter(void) : Discrete_Filter<Soln_pState,Soln_cState>() {
-        Assigned_w_Uniform_Grid = false;
-        weight_factor = 1.5;
-        the_number_of_unknowns = number_of_unknowns();
-        relaxation_factor = Explicit_Filter_Properties::relaxation_factor;
-        weighting = Explicit_Filter_Properties::least_squares_filter_weighting;
+    Haselbacher_Filter(Explicit_Filter_Properties &explicit_filter_properties) : Discrete_Filter<Soln_pState,Soln_cState>(explicit_filter_properties) {
+        Read_Properties();
     }
+    
+    
+    
+    void Read_Properties(void) {
+        if (properties->Changed()) {
+            Discrete_Filter<Soln_pState,Soln_cState>::Read_Basic_Properties();
+            properties->Get_Property(relaxation_factor,"relaxation_factor");
+            properties->Get_Property(weighting,"least_squares_filter_weighting");
+            properties->Get_Property(least_squares_filter_weighting_factor,"least_squares_filter_weighting_factor");
+            properties->Get_Property(uniform_grid,"uniform_grid");
+            properties->Get_Property(target_filter_sharpness,"target_filter_sharpness");
+            properties->Properties_Read();
+            cout << endl;
+            
+            Assigned_w_Uniform_Grid = false;
+            weight_factor = 1.5;
+            the_number_of_unknowns = number_of_unknowns();
+            
+        }
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+//    //! Constructor
+//    Haselbacher_Filter(void) : Discrete_Filter<Soln_pState,Soln_cState>() {
+//        Assigned_w_Uniform_Grid = false;
+//        weight_factor = 1.5;
+//        the_number_of_unknowns = number_of_unknowns();
+//        relaxation_factor = Explicit_Filter_Properties::relaxation_factor;
+//        weighting = Explicit_Filter_Properties::least_squares_filter_weighting;
+//    }
     //! Destructor default
     //~Haselbacher_Filter(void) {
     //}
@@ -65,6 +115,9 @@ private:
     double relaxation_factor;
     int weighting;
     double weight_factor;
+    int uniform_grid;
+    double target_filter_sharpness;
+    double least_squares_filter_weighting_factor;
     
     
     /* ------------------- uniform grid ---------------------- */
@@ -165,7 +218,9 @@ double Haselbacher_Filter<Soln_pState,Soln_cState>::filter_moment_1D(Cell3D &the
 template <typename Soln_pState, typename Soln_cState>
 inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &theCell, Neighbours &theNeighbours) {
     
-    if (Explicit_Filter_Properties::uniform_grid && theNeighbours.symmetric_stencil) {
+    Read_Properties();
+    
+    if (uniform_grid && theNeighbours.symmetric_stencil) {
         if (Assigned_w_Uniform_Grid)
             return w_Uniform_Grid;
     }
@@ -190,7 +245,7 @@ inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     kmax.z = PI/theNeighbours.Delta.z;
     Apply_relaxation(theCell, theNeighbours, kmax, w);
     
-    if (Explicit_Filter_Properties::uniform_grid && theNeighbours.symmetric_stencil) {
+    if (uniform_grid && theNeighbours.symmetric_stencil) {
         w_Uniform_Grid = w;
         Assigned_w_Uniform_Grid = true;
     }
@@ -388,51 +443,21 @@ inline DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell
     int the_number_of_neighbours = theNeighbours.number_of_neighbours;
     DiagonalMatrix W(the_number_of_neighbours);
     
-    
-    Vector3D Delta(theNeighbours.Delta);
-    Vector3D DR;
-    double dr;
-    
-    Delta *= weight_factor;
     if (weighting==ON) {
-        for (int i=0; i<the_number_of_neighbours; i++) {
-            DR = (theNeighbours.neighbour[i].Xc - theCell.Xc);
-            W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- (sqr(DR.x/Delta.x)+sqr(DR.y/Delta.y)+sqr(DR.z/Delta.z)) ) ;
-        }
-    } else if (weighting==2) {  // hidden weighting functions
-        /* inverse distance */
-        double D = Delta.abs();
-        for (int i=0; i<the_number_of_neighbours; i++) {
-            dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
-            W(i) = ONE/(dr) ;
-        }
-    } else if (weighting==3) {
-        /* inverse squared distance */
-        double D = Delta.sqr();
-        for (int i=0; i<the_number_of_neighbours; i++) {
-            dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).sqr();
-            W(i) = ONE/(dr) ;
-        }
-    } else if (weighting==4){
-        int m = int(Explicit_Filter_Properties::target_filter_sharpness);
-        for (int i=0; i<the_number_of_neighbours; i++) {
-            dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
-            W(i) =  sqrt(SIX/(PI*pow(Delta.abs(),double(m))))*exp(-pow(dr,double(m))*SIX*pow(Delta.abs(),-double(m)));
-        }
-    } else if (weighting==5){
-        double D = Delta.abs();
-        int m = int(Explicit_Filter_Properties::target_filter_sharpness);
-        for (int i=0; i<the_number_of_neighbours; i++) {
-            dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).abs();
-            W(i) = sin(pow(dr/(HALF*D),double(m)))/pow(dr/(HALF*D),double(m));
-        }        
-    } else  if (weighting==6) {
-        for (int i=0; i<the_number_of_neighbours; i++) {
-            //            DR = (theNeighbours.neighbour[i].Xc - theCell.Xc);
-            //            W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- (sqr(DR.x/Delta.x)+sqr(DR.y/Delta.y)+sqr(DR.z/Delta.z)) ) ;
-            dr=(theNeighbours.neighbour[i].Xc - theCell.Xc).sqr();
-            W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- SIX * dr/Delta.sqr()) ;
-            
+        Vector3D Delta;
+        Vector3D DR;
+        if (use_fixed_filter_width) {
+            Delta = Vector3D(fixed_filter_width,fixed_filter_width,fixed_filter_width) * weight_factor;
+            for (int i=0; i<the_number_of_neighbours; i++) {
+                DR = (theNeighbours.neighbour[i].Xc - theCell.Xc);
+                W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- (sqr(DR.x/Delta.x)+sqr(DR.y/Delta.y)+sqr(DR.z/Delta.z)) ) ;
+            }
+        } else {
+            Delta = theNeighbours.Delta*weight_factor;
+            for (int i=0; i<the_number_of_neighbours; i++) {
+                DR = (theNeighbours.neighbour[i].Xc - theCell.Xc);
+                W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- (sqr(DR.x/Delta.x)+sqr(DR.y/Delta.y)+sqr(DR.z/Delta.z)) ) ;
+            }            
         }
     } else {
         W.identity();
@@ -607,7 +632,7 @@ Calculate_relaxation_factor(Cell3D &theCell, Neighbours &theNeighbours, Vector3D
         
         counter++;
         if(counter >= 100) {
-            if (!Explicit_Filter_Properties::batch_flag)
+            if (!batch_flag)
                 cout << "max reached for relaxation_factor" << endl;
             return 0.0;
         }
@@ -795,8 +820,8 @@ int Haselbacher_Filter<Soln_pState,Soln_cState>::Calculate_weight_factor(void) {
         return 0;
     }
     
-    if(Explicit_Filter_Properties::least_squares_filter_weighting_factor!=DEFAULT){
-        weight_factor = Explicit_Filter_Properties::least_squares_filter_weighting_factor;
+    if(least_squares_filter_weighting_factor!=DEFAULT){
+        weight_factor = least_squares_filter_weighting_factor;
         return 0;
     }
     
@@ -830,7 +855,7 @@ int Haselbacher_Filter<Soln_pState,Soln_cState>::Calculate_weight_factor(void) {
             
             counter++;
             if(counter >= 10) {
-                if (!Explicit_Filter_Properties::batch_flag)
+                if (!batch_flag)
                     cout << "max reached for FGR" << endl;
                 break;
             }
@@ -858,8 +883,8 @@ double Haselbacher_Filter<Soln_pState,Soln_cState>::Calculate_weight_factor(Cell
         return 1.0;
     }
     
-    if(Explicit_Filter_Properties::least_squares_filter_weighting_factor!=DEFAULT){
-        return Explicit_Filter_Properties::least_squares_filter_weighting_factor;
+    if(least_squares_filter_weighting_factor!=DEFAULT){
+        return least_squares_filter_weighting_factor;
     }
     
     double weight;
@@ -888,7 +913,7 @@ double Haselbacher_Filter<Soln_pState,Soln_cState>::Calculate_weight_factor(Cell
             
             counter++;
             if(counter >= 10) {
-                if (!Explicit_Filter_Properties::batch_flag)
+                if (!batch_flag)
                     cout << "max reached for FGR" << endl;
                 break;
             }
@@ -928,7 +953,7 @@ double Haselbacher_Filter<Soln_pState,Soln_cState>::Calculate_weight_factor(Cell
             
             counter++;
             if(counter >= 10) {
-                if (!Explicit_Filter_Properties::batch_flag)
+                if (!batch_flag)
                     cout << "max reached for FGR" << endl;
                 break;
             }
@@ -1062,7 +1087,7 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
     ofstream output_file;    
     
     /* Determine output data file name for this processor. */
-    prefix = Explicit_Filter_Properties::output_file_name;
+    prefix = properties->Get_Property_string("output_file_name");
     sprintf(suffix,"_filter_types");
     strcat(prefix,suffix);
         
@@ -1071,7 +1096,7 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
     strcat(output_file_name, extension);
     output_file_name_ptr = output_file_name;
     
-    if (!Explicit_Filter_Properties::batch_flag)
+    if (!batch_flag)
         cout << "Writing file " << output_file_name << endl;
     
     /* Open the output data file. */
@@ -1230,7 +1255,7 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int number_of_
     ofstream output_file;    
     
     /* Determine output data file name for this processor. */
-    strcpy(prefix,Explicit_Filter_Properties::output_file_name);
+    strcpy(prefix,properties->Get_Property_string("output_file_name").c_str());
     sprintf(suffix,"_filter_types_%d_rings",number_of_rings);
     strcat(prefix,suffix);
     
@@ -1240,7 +1265,7 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int number_of_
     output_file_name_ptr = output_file_name;
     
     /* Open the output data file. */
-    if (!Explicit_Filter_Properties::batch_flag)
+    if (!batch_flag)
         cout << "Writing file " << output_file_name << endl;
     
     output_file.open(output_file_name_ptr, ios::out);
@@ -1387,7 +1412,7 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int number_of_
     //    prefix[i] = '\0';
     
     /* Determine output data file name for this processor. */
-    strcpy(prefix,Explicit_Filter_Properties::output_file_name);
+    strcpy(prefix,properties->Get_Property_string("output_file_name").c_str());
     sprintf(suffix,"_filter_types_%d_rings_order_%d",number_of_rings,commutation_order);
     
     strcat(prefix,suffix);
@@ -1398,7 +1423,7 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int number_of_
     output_file_name_ptr = output_file_name;
     
     /* Open the output data file. */
-    if (!Explicit_Filter_Properties::batch_flag)
+    if (!batch_flag)
         cout << "Writing file " << output_file_name << endl;
     
     output_file.open(output_file_name_ptr, ios::out);

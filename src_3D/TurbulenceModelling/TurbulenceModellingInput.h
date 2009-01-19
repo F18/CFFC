@@ -54,6 +54,8 @@ class Turbulence_Modelling_Input_Parameters{
     int Filter_Initial_Condition;                               //!< Flag defines to filter the initial condition
     char filter_type[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];   //!< Filter type : default = implicit filtering
     int i_filter_type;                                          //!< Filter type : default = implicit filtering
+    char filter_type_secondary[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];   //!< Filter type : default = implicit filtering
+    int i_filter_type_secondary;                                          //!< Filter type : default = implicit filtering
     double FGR;                                                 //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
     double FGR_secondary;                                       //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
     double Filter_Width;                                        //!< Constant filter width
@@ -100,9 +102,11 @@ class Turbulence_Modelling_Input_Parameters{
       // LES parameters
       strcpy(SFS_model, "Smagorinsky");
       i_SFS_model = SFS_MODEL_SMAGORINSKY;
-      strcpy(filter_type, "Implicit");
       smagorinsky_coefficient = 0.18;
+      strcpy(filter_type, "Implicit");
       i_filter_type = FILTER_TYPE_IMPLICIT;
+      strcpy(filter_type_secondary, "Implicit");
+      i_filter_type_secondary = FILTER_TYPE_IMPLICIT;
       FGR = TWO;
       FGR_secondary = TWO;
       Filter_Width = ZERO;

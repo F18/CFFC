@@ -50,9 +50,7 @@ int main(int num_arg, char *arg_ptr[]) {
     
     // Other local integer variables:
     int i;
-    
-    int mode = FILTER_CFFC_MODE;
-    
+        
     // Name of program entered on the command line:
     char *command_name_ptr;
     
@@ -120,16 +118,6 @@ int main(int num_arg, char *arg_ptr[]) {
                 file_flag = 1;
             } else if (strcmp(arg_ptr[i-1], "-f") == 0) {
                 Input_File_Name_ptr = arg_ptr[i];
-            } else if (strcmp(arg_ptr[i], "-m") == 0) {
-                mode_flag = 1;
-            } else if (strcmp(arg_ptr[i-1], "-m") == 0) {
-                if (strcmp(arg_ptr[i],"CFFC") == 0) {
-                    mode = FILTER_CFFC_MODE;
-                } else if (strcmp(arg_ptr[i],"design") == 0) {
-                    mode = FILTER_DESIGN_MODE;
-                } else {
-                    error_flag = 1;
-                }
             } else if (strcmp(arg_ptr[i], "-p4pg") == 0) {
                 mpirun_flag = 1;
             } else if (strcmp(arg_ptr[i-1], "-p4pg") == 0) {
@@ -237,22 +225,11 @@ int main(int num_arg, char *arg_ptr[]) {
     /* Solve the corresponding initial-boundary value problem(s)/boundary 
      value problem(s) (IBVP/BVP). */
     
-    if (mode == FILTER_CFFC_MODE) {
         typedef Euler3D_Polytropic_pState Soln_pState;
         typedef Euler3D_Polytropic_cState Soln_cState;
-        CFFC_Filter_Controller<Soln_pState,Soln_cState> controller;
-        controller.Solver(Input_File_Name_ptr, batch_flag);
-        
-    } else if (mode == FILTER_DESIGN_MODE) {
-        typedef Filter_pState Soln_pState;
-        typedef Filter_cState Soln_cState;
         Filter_Controller<Soln_pState,Soln_cState> controller;
-        controller.Get_Input_Parameters(Input_File_Name_ptr, batch_flag);
-        controller.Initialize_Solution_Blocks();
-        controller.Explicit_Filter_Operations();
-    } 
-
-    
+        controller.Solver(Input_File_Name_ptr, batch_flag);
+       
 
     /*
     Object ***object;

@@ -166,7 +166,7 @@ inline void Neighbours::GetNeighbours(Cell3D &theCell, int number_of_rings,int f
             break;
     }
     
-    Delta = theCell.dXc;
+    Delta = theCell.dXc.vector_abs();
 }
 
 

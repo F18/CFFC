@@ -49,10 +49,6 @@
 #include "Filter_Controller.h"
 #endif // _FILTER_CONTROLLER_INCLUDED
 
-#ifndef _CFFC_FILTER_CONTROLLER_INCLUDED
-#include "CFFC_Filter_Controller.h"
-#endif // _FILTER_CONTROLLER_INCLUDED
-
 #ifndef _EXPLICIT_FILTER_INCLUDED
 #include "Explicit_Filter.h"
 #endif

@@ -9,14 +9,11 @@
 #ifndef _EXPLICIT_FILTER_INCLUDED
 #define _EXPLICIT_FILTER_INCLUDED
 
-#define FILTER_CFFC_MODE 1
-#define FILTER_DESIGN_MODE 2
-
 #include "../Grid/Grid3DHexaMultiBlock.h"
 #include "../CFD/Input.h"
 #include "Explicit_Filter_Helpers.h"
 #include "General_Filter.h"
-//#include "Haselbacher_Filter.h"
+#include "Haselbacher_Filter.h"
 #include "Vasilyev_Filter.h"
 //#include "Derivative_Reconstruction.h"
 //#include "Tophat_Filter.h"
@@ -42,10 +39,6 @@ public:
     HexaSolver_Data *Data_ptr;
     HexaSolver_Solution_Data<Soln_pState,Soln_cState> *Solution_Data_ptr;
     
-    /* Mode 2 : transfer function design */
-    Grid3D_Hexa_Multi_Block_List *Grid_List_ptr;
-
-        
     int initialized;
     
     /* ----- constructor ----- */
@@ -56,18 +49,17 @@ public:
             delete filter_ptr;
     }
 
-    /* Mode 1 */
     void Initialize(HexaSolver_Data &Data, HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data);    
     void Initialize_Secondary(HexaSolver_Data &Data, HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data);    
 
-    /* Mode 2 */
-    void Initialize(Grid3D_Hexa_Multi_Block_List &Grid_List, Input_Parameters<Soln_pState,Soln_cState> &Input, int batch_flag); 
     
-
     void Set_Properties(Input_Parameters<Soln_pState,Soln_cState> &IPs, int batch_flag);
     
     template <typename T>
-    void Set_Property(string property_name, T property_value);    
+    void Set_Filter_Property(string property_name, T property_value);  
+    
+    template <typename T>
+    void Set_Operating_Property(string property_name, T property_value);   
 
     void Create_filter(void);
     void transfer_function();
@@ -83,8 +75,6 @@ public:
     void filter(Filter_Variable_Type filter_variable, int extra_specification);
     
     void filter_Blocks(void);
-    template <typename Filter_Variable_Type>
-    void filter_Blocks_design_mode(Filter_Variable_Type filter_variable);
 
     RowVector ***Filtered;
     void allocate_Filtered(Grid3D_Hexa_Block &Grid_Blk);
@@ -143,7 +133,6 @@ public:
 
 template<typename Soln_pState,typename Soln_cState>
 void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(HexaSolver_Data &Data, HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data) {
-    mode = FILTER_CFFC_MODE;
     if (!initialized) {
         Data_ptr = &Data;
         Solution_Data_ptr = &Solution_Data;
@@ -160,7 +149,6 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(HexaSolver_Data &Data
 
 template<typename Soln_pState,typename Soln_cState>
 void Explicit_Filters<Soln_pState,Soln_cState>::Initialize_Secondary(HexaSolver_Data &Data, HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data) {
-    mode = FILTER_CFFC_MODE;
     if (!initialized) {
         Data_ptr = &Data;
         Solution_Data_ptr = &Solution_Data;
@@ -176,26 +164,12 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize_Secondary(HexaSolver_
         if (properties.Get_Property_int("use_fixed_filter_width")) {
             properties.Set_Filter_Property("fixed_filter_width",Solution_Data.Input.Turbulence_IP.Filter_Width_secondary);
         }
-        
+        properties.Set_Filter_Property("filter_type",Solution_Data.Input.Turbulence_IP.i_filter_type_secondary);
         Create_filter();
         initialized = true;
     }
 }
 
-template<typename Soln_pState,typename Soln_cState>
-void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(Grid3D_Hexa_Multi_Block_List &Grid_List, Input_Parameters<Soln_pState,Soln_cState> &Input, int batch_flag) {
-    mode = FILTER_DESIGN_MODE;
-    if (!initialized) {
-        Grid_List_ptr  = &Grid_List;
-        Set_Properties(Input,batch_flag);
-        
-        /*if (Input.i_ICs == IC_RESTART && !properties.restarted)
-            properties.filter_type = FILTER_TYPE_RESTART; */
-        
-        Create_filter();
-        initialized = true;
-    }
-}
 
 
 template<typename Soln_pState,typename Soln_cState>
@@ -205,8 +179,14 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Set_Properties(Input_Parameters<
 
 template<typename Soln_pState,typename Soln_cState>
 template<typename T>
-void Explicit_Filters<Soln_pState,Soln_cState>::Set_Property(string property_name, T property_value){
-    properties.Set_Property(property_name,property_value);
+void Explicit_Filters<Soln_pState,Soln_cState>::Set_Filter_Property(string property_name, T property_value){
+    properties.Set_Filter_Property(property_name,property_value);
+}
+
+template<typename Soln_pState,typename Soln_cState>
+template<typename T>
+void Explicit_Filters<Soln_pState,Soln_cState>::Set_Operating_Property(string property_name, T property_value){
+    properties.Set_Operating_Property(property_name,property_value);
 }
 
 template <typename Soln_pState, typename Soln_cState>
@@ -214,7 +194,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Create_filter(void) {
     int error_flag;
     switch (properties.Get_Property_int("filter_type")) {
         case FILTER_TYPE_HASELBACHER:
-            //filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>;
+            filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>(properties);
             break;
         case FILTER_TYPE_VASILYEV:
             filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>(properties);
@@ -243,7 +223,6 @@ void Explicit_Filters<Soln_pState,Soln_cState>::transfer_function(int flag) {
     }
     int Nghost, number_of_rings;
     int NMi, NMj, NMk;
-    if (mode == FILTER_CFFC_MODE ) {
         for (int nBlk = 0; nBlk <  Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks; ++nBlk ) {
             if (Solution_Data_ptr->Local_Solution_Blocks.Block_Used[nBlk] == HEXA_BLOCK_USED){
                 Nghost = Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid.Nghost;
@@ -253,15 +232,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::transfer_function(int flag) {
                 break;
             }
         }
-    } else if (mode == FILTER_DESIGN_MODE) {
-        for (int nBlk = 0; nBlk < Grid_List_ptr->NBlk; ++nBlk ) {
-            Nghost = Grid_List_ptr->Grid_Blks[nBlk].Nghost;
-            NMi = Grid_List_ptr->Grid_Blks[nBlk].NCi/2;
-            NMj = Grid_List_ptr->Grid_Blks[nBlk].NCj/2;
-            NMk = Grid_List_ptr->Grid_Blks[nBlk].NCk/2;
-            break;
-        }
-    }
+
     number_of_rings = properties.Get_Property_int("number_of_rings");
     switch (flag) {
         case FILTER_CORNER_CELL:
@@ -284,26 +255,19 @@ void Explicit_Filters<Soln_pState,Soln_cState>::transfer_function(int i, int j, 
         return;
     }
     int NBlk;
-    if (mode == FILTER_CFFC_MODE) {
         NBlk = Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks;
-    } else if (mode == FILTER_DESIGN_MODE) {
-        NBlk = Grid_List_ptr->NBlk;
-    }
+
     if (!initialized) {
         cout << "Explicit_Filters<Soln_pState,Soln_cState> not initialized, can not return transfer_function" << endl;
         return;
     }
     cout << "\n Calculating filter transfer function for cell (" << i << "," << j << "," << k << ")."<<endl;
     for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
-        if (mode == FILTER_CFFC_MODE) {
             if (Solution_Data_ptr->Local_Solution_Blocks.Block_Used[nBlk] == HEXA_BLOCK_USED){
                 filter_ptr->transfer_function(Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid,
                                               Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid.Cell[i][j][k]); 
             }
-        } else if (mode == FILTER_DESIGN_MODE) {
-            filter_ptr->transfer_function(Grid_List_ptr->Grid_Blks[nBlk],
-                                          Grid_List_ptr->Grid_Blks[nBlk].Cell[i][j][k]);            
-        }
+
         return; // This makes sure it is called only once
     }
     
@@ -327,11 +291,9 @@ void Explicit_Filters<Soln_pState,Soln_cState>::filter(Filter_Variable_Type filt
     }
     // Let an adaptor deal with what will be filtered
     adaptor.Set_Adaptor(filter_variable);
-    if (mode == FILTER_CFFC_MODE) {
+
         filter_Blocks();
-    } else if (mode == FILTER_DESIGN_MODE) {
-        filter_Blocks_design_mode(filter_variable);
-    }
+
 }
 
 
@@ -383,44 +345,6 @@ void Explicit_Filters<Soln_pState,Soln_cState>::filter_Blocks(void) {
             adaptor.Load_into_Solution_Block(Filtered);
             deallocate_Filtered(Soln_Blks[nBlk].Grid);
         }
-    }
-    if (progress_mode!=PROGRESS_MODE_SILENT){
-        properties.Set_Operating_Property("progress_mode",PROGRESS_MODE_SILENT);
-    }
-}
-
-template <typename Soln_pState, typename Soln_cState>
-template <typename Filter_Variable_Type>
-void Explicit_Filters<Soln_pState,Soln_cState>::filter_Blocks_design_mode(Filter_Variable_Type filter_variable) {
-    if (!initialized) {
-        cout << "Explicit_Filters not initialized, can not filter" << endl;
-        return;
-    }
-    int progress_mode = properties.Get_Property_int("progress_mode");
-    int NBlk = Grid_List_ptr->NBlk;
-    int number_of_cells = 0;
-    int number_of_processed_cells = 0;
-    for (int nBlk = 0; nBlk < NBlk; nBlk++ ) {
-        number_of_cells += (Grid_List_ptr->Grid_Blks[nBlk].ICu - Grid_List_ptr->Grid_Blks[nBlk].ICl + 1)
-                         * (Grid_List_ptr->Grid_Blks[nBlk].JCu - Grid_List_ptr->Grid_Blks[nBlk].JCl + 1)
-                         * (Grid_List_ptr->Grid_Blks[nBlk].KCu - Grid_List_ptr->Grid_Blks[nBlk].KCl + 1);
-    }
-    
-    for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
-        adaptor.Set_Solution_Block(filter_variable,Grid_List_ptr->Grid_Blks[nBlk],nBlk); // allows access from filter to solution block
-        allocate_Filtered(Grid_List_ptr->Grid_Blks[nBlk]);
-        for(int i=Grid_List_ptr->Grid_Blks[nBlk].ICl; i<=Grid_List_ptr->Grid_Blks[nBlk].ICu; i++) {
-            for (int j=Grid_List_ptr->Grid_Blks[nBlk].JCl; j<=Grid_List_ptr->Grid_Blks[nBlk].JCu; j++) {
-                for (int k=Grid_List_ptr->Grid_Blks[nBlk].KCl; k<=Grid_List_ptr->Grid_Blks[nBlk].KCu; k++) {
-                    Filtered[i][j][k] = filter_ptr->filter(Grid_List_ptr->Grid_Blks[nBlk],
-                                                           Grid_List_ptr->Grid_Blks[nBlk].Cell[i][j][k]);
-                    number_of_processed_cells++;
-                    ShowProgress(" Filtering  ", number_of_processed_cells, number_of_cells, progress_mode);
-                }
-            }
-        }
-        adaptor.Load_into_Solution_Block(Filtered);
-        deallocate_Filtered(Grid_List_ptr->Grid_Blks[nBlk]);
     }
     if (progress_mode!=PROGRESS_MODE_SILENT){
         properties.Set_Operating_Property("progress_mode",PROGRESS_MODE_SILENT);
@@ -598,7 +522,7 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Block
     
     bool first_flag = true;
         /* For every local solution block */
-    if (mode == FILTER_CFFC_MODE) {
+
         if (!properties.Get_Property_int("batch_flag"))
             cout << "\n\n Calculating Commutation Error: " << endl;
         Hexa_Block<Soln_pState,Soln_cState> *Soln_Blks = Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks;
@@ -641,7 +565,6 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Block
 
             }         
         } 
-    }         
         
     out_file.close();
     return (0);
@@ -669,7 +592,6 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     int number_of_processed_cells = 0;
     /* For every local solution block */
     
-    if (mode == FILTER_CFFC_MODE) {
         Hexa_Block<Soln_pState,Soln_cState> *Soln_Blks = Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks;
         for (int nBlk = 0; nBlk < Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks; nBlk++ ) {
             if (Solution_Data_ptr->Local_Solution_Blocks.Block_Used[nBlk] == HEXA_BLOCK_USED) {
@@ -685,20 +607,6 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
                 
             }
         }
-    } else if (mode == FILTER_DESIGN_MODE) {
-        for (int nBlk = 0; nBlk < Grid_List_ptr->NBlk; nBlk++ ) {
-            number_of_cells_first += (Grid_List_ptr->Grid_Blks[nBlk].ICu - Grid_List_ptr->Grid_Blks[nBlk].ICl + 1)
-                                   * (Grid_List_ptr->Grid_Blks[nBlk].JCu - Grid_List_ptr->Grid_Blks[nBlk].JCl + 1)
-                                   * (Grid_List_ptr->Grid_Blks[nBlk].KCu - Grid_List_ptr->Grid_Blks[nBlk].KCl + 1);
-            number_of_cells_second += ((Grid_List_ptr->Grid_Blks[nBlk].ICu-number_of_rings) - (Grid_List_ptr->Grid_Blks[nBlk].ICl+number_of_rings) + 1)
-                                    * ((Grid_List_ptr->Grid_Blks[nBlk].JCu-number_of_rings) - (Grid_List_ptr->Grid_Blks[nBlk].JCl+number_of_rings) + 1)
-                                    * ((Grid_List_ptr->Grid_Blks[nBlk].KCu-number_of_rings) - (Grid_List_ptr->Grid_Blks[nBlk].KCl+number_of_rings) + 1);
-        
-            number_of_cells_third += ((Grid_List_ptr->Grid_Blks[nBlk].ICu-number_of_rings_increased) - (Grid_List_ptr->Grid_Blks[nBlk].ICl+number_of_rings_increased) + 1)
-                                   * ((Grid_List_ptr->Grid_Blks[nBlk].JCu-number_of_rings_increased) - (Grid_List_ptr->Grid_Blks[nBlk].JCl+number_of_rings_increased) + 1)
-                                   * ((Grid_List_ptr->Grid_Blks[nBlk].KCu-number_of_rings_increased) - (Grid_List_ptr->Grid_Blks[nBlk].KCl+number_of_rings_increased) + 1);
-        }
-    }
     
     int imin,imax,jmin,jmax,kmin,kmax;
     
@@ -947,7 +855,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::reset(void) {
         cout << "Explicit_Filter not initialized, can not reset" << endl;
         return;
     }
-    if (mode == FILTER_CFFC_MODE) {
+
         int NBlk;
         NBlk = Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks;
         for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
@@ -955,13 +863,6 @@ void Explicit_Filters<Soln_pState,Soln_cState>::reset(void) {
                 filter_ptr->Reset_Filter_Weights(Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid); 
             }
         }
-    } else if (mode == FILTER_DESIGN_MODE) {
-        int NBlk;
-        NBlk = Grid_List_ptr->NBlk;
-        for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
-            filter_ptr->Reset_Filter_Weights(Grid_List_ptr->Grid_Blks[nBlk]); 
-        }
-    }
 }
 
 template<typename Soln_pState, typename Soln_cState>
@@ -970,7 +871,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::test(void) {
         cout << "Explicit_Filter not initialized, can not test" << endl;
         return;
     }
-    if (mode == FILTER_CFFC_MODE) {
+    
         int NBlk;
         NBlk = Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks;
         for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
@@ -979,14 +880,6 @@ void Explicit_Filters<Soln_pState,Soln_cState>::test(void) {
                                          Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid.Cell[12][12][12]); 
             }
         }
-    } else if (mode == FILTER_DESIGN_MODE) {
-        int NBlk;
-        NBlk = Grid_List_ptr->NBlk;
-        for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
-            filter_ptr->filter_tests(Grid_List_ptr->Grid_Blks[nBlk],
-                                     Grid_List_ptr->Grid_Blks[nBlk].Cell[12][12][12]); 
-        }
-    }
     
 }
 
@@ -1020,7 +913,6 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Write_to_file(void){
     
     out_file << filter_ptr->filter_type() << "\n";                    
     
-    if (mode == FILTER_CFFC_MODE) {
         int NBlk;
         NBlk = Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks;
         for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
@@ -1028,13 +920,6 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Write_to_file(void){
                 filter_ptr->Write_to_file(Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid,out_file);
             }         
         } 
-    } else if (mode == FILTER_DESIGN_MODE) {
-        int NBlk;
-        NBlk = Grid_List_ptr->NBlk;
-        for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
-            filter_ptr->Write_to_file(Grid_List_ptr->Grid_Blks[nBlk],out_file);
-        }
-    }
     
     out_file.close();
     return (0);
@@ -1072,7 +957,6 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Read_from_file(void) {
     in_file >> filter_type;
     Create_filter();
     
-    if (mode == FILTER_CFFC_MODE) {
         int NBlk;
         NBlk = Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks;
         for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
@@ -1080,13 +964,6 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Read_from_file(void) {
                     filter_ptr->Read_from_file(Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid,in_file);
             }         
         } 
-    } else if (mode == FILTER_DESIGN_MODE) {
-        int NBlk;
-        NBlk = Grid_List_ptr->NBlk;
-        for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
-            filter_ptr->Read_from_file(Grid_List_ptr->Grid_Blks[nBlk],in_file);
-        }
-    }
     
     in_file.unsetf(ios::skipws);
     in_file.close();

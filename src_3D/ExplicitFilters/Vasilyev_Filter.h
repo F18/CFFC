@@ -141,10 +141,10 @@ public:
     void Read_Properties(void) {
         if (properties->Changed()) {
             Discrete_Filter<Soln_pState,Soln_cState>::Read_Basic_Properties();
-            target_filter_sharpness = properties->Get_Property_double("target_filter_sharpness");
-            LS_constraints          = properties->Get_Property_int("LS_constraints");
-            Derivative_constraints  = properties->Get_Property_int("Derivative_constraints");
-            Filter_Width_strict     = properties->Get_Property_int("Filter_Width_strict");
+            properties->Get_Property(target_filter_sharpness,"target_filter_sharpness");
+            properties->Get_Property(LS_constraints,"LS_constraints");
+            properties->Get_Property(Derivative_constraints,"Derivative_constraints");
+            properties->Get_Property(Filter_Width_strict,"Filter_Width_strict");
             properties->Properties_Read();
             cout << endl;
             
@@ -348,6 +348,84 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
         RowVector w_j = Calculate_Weights_1D(theCell,theNeighbours,Y_DIRECTION);
         RowVector w_k = Calculate_Weights_1D(theCell,theNeighbours,Z_DIRECTION);
         
+#ifdef _GNUPLOT
+        if (properties->Get_Property_int("debug_flag")) {
+            int n=200;
+            double *Gr = new double [n];
+            double *Gi = new double [n];
+            double *Gt = new double [n];
+            double *k2 = new double [n];
+            double kmax = PI;
+            for (int i=0; i<n; i++) {
+                double k = i*kmax/(n-ONE);
+                k2[i] = k/kmax;
+                Gr[i] = real( G0_func(k, X_DIRECTION, theCell, theNeighbours, w_i) );
+                Gi[i] = imag( G0_func(k, X_DIRECTION, theCell, theNeighbours, w_i) );
+                Gt[i] = real( G_target(k, 0, X_DIRECTION) );
+            }
+            stringstream targetstream;
+            targetstream << "target, FGR = " << fixed_filter_width/theNeighbours.Delta.x;
+            Gnuplot_Control h2;
+            h2.gnuplot_init();
+            h2.gnuplot_setstyle("lines") ;
+            h2.gnuplot_cmd("set grid");
+            h2.gnuplot_set_xlabel("k");
+            h2.gnuplot_set_ylabel("G(k)");
+            //h2.gnuplot_cmd("set yrange [-1:1]");
+            h2.gnuplot_set_title("transfer function LS X-direction");
+            h2.gnuplot_plot1d_var2(k2,Gr,n,"real");
+            h2.gnuplot_plot1d_var2(k2,Gi,n,"imag");
+            h2.gnuplot_plot1d_var2(k2,Gt,n,targetstream.str());
+            
+            for (int i=0; i<n; i++) {
+                double k = i*kmax/(n-ONE);
+                k2[i] = k/kmax;
+                Gr[i] = real( G0_func(k, Y_DIRECTION, theCell, theNeighbours, w_j) );
+                Gi[i] = imag( G0_func(k, Y_DIRECTION, theCell, theNeighbours, w_j) );
+                Gt[i] = real( G_target(k, 0, Y_DIRECTION) );
+            }
+            targetstream.str("");
+            targetstream << "target, FGR = " << fixed_filter_width/theNeighbours.Delta.y;
+            Gnuplot_Control h3;
+            h3.gnuplot_init();
+            h3.gnuplot_setstyle("lines") ;
+            h3.gnuplot_cmd("set grid");
+            h3.gnuplot_set_xlabel("k");
+            h3.gnuplot_set_ylabel("G(k)");
+            //h3.gnuplot_cmd("set yrange [-1:1]");
+            h3.gnuplot_set_title("transfer function LS Y-direction");
+            h3.gnuplot_plot1d_var2(k2,Gr,n,"real");
+            h3.gnuplot_plot1d_var2(k2,Gi,n,"imag");
+            h3.gnuplot_plot1d_var2(k2,Gt,n,targetstream.str());
+            
+            for (int i=0; i<n; i++) {
+                double k = i*kmax/(n-ONE);
+                k2[i] = k/kmax;
+                Gr[i] = real( G0_func(k, Z_DIRECTION, theCell, theNeighbours, w_k) );
+                Gi[i] = imag( G0_func(k, Z_DIRECTION, theCell, theNeighbours, w_k) );
+                Gt[i] = real( G_target(k, 0, Z_DIRECTION) );
+            }
+            targetstream.str("");
+            targetstream << "target, FGR = " << fixed_filter_width/theNeighbours.Delta.z;
+            Gnuplot_Control h4;
+            h4.gnuplot_init();
+            h4.gnuplot_setstyle("lines") ;
+            h4.gnuplot_cmd("set grid");
+            h4.gnuplot_set_xlabel("k");
+            h4.gnuplot_set_ylabel("G(k)");
+            //h4.gnuplot_cmd("set yrange [-1:1]");
+            h4.gnuplot_set_title("transfer function LS Z-direction");
+            h4.gnuplot_plot1d_var2(k2,Gr,n,"real");
+            h4.gnuplot_plot1d_var2(k2,Gi,n,"imag");
+            h4.gnuplot_plot1d_var2(k2,Gt,n,targetstream.str());
+            
+            delete[] Gr;
+            delete[] Gi;
+            delete[] Gt;
+            delete[] k2;        
+        }
+#endif
+        
         // Load coefficients into neighbour_weights
         RowVector W(number_of_neighbours);
         double denominator = 0;
@@ -475,10 +553,11 @@ inline int Vasilyev_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Cell3
     kmax.x = PI;
     kmax.y = PI;
     kmax.z = PI;
-    Vector3D k_FGR = kmax/FGR;   
+    Vector3D k_FGR = kmax/FGR;
+    Vector3D FGR_temp;
 
     if (use_fixed_filter_width){
-        Vector3D FGR_temp(fixed_filter_width/theCell.dXc.x,fixed_filter_width/theCell.dXc.y,fixed_filter_width/theCell.dXc.z);
+        FGR_temp = Vector3D(fixed_filter_width/theNeighbours.Delta.x,fixed_filter_width/theNeighbours.Delta.y,fixed_filter_width/theNeighbours.Delta.z);
         k_FGR = Vector3D(kmax.x/FGR_temp.x,kmax.y/FGR_temp.y,kmax.z/FGR_temp.z);
     }
     
@@ -531,7 +610,13 @@ inline int Vasilyev_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Cell3
         k = k_FGR;
         Add_extra_constraints(type, target, k);
         if (Output_Constraints && CFFC_Primary_MPI_Processor()) {
-            cout << "   --> Filter grid ratio = " << FGR << endl;
+            if (use_fixed_filter_width){
+                cout << "   --> Filter Width = " << fixed_filter_width << endl;
+                cout << "       Filter grid ratio = " << FGR_temp << endl;
+            } else {
+                cout << "   --> Filter grid ratio = " << FGR << endl;
+                cout << "       Filter Width = " <<  FGR*theCell.dXc << endl;
+            }
         }
         number_of_remaining_constraints--;   
     }
@@ -613,6 +698,7 @@ inline double Vasilyev_Filter<Soln_pState,Soln_cState>::LeastSquares_coefficient
     LeastSquares_coefficient_function_class<Vasilyev_Filter<Soln_pState,Soln_cState>,LeastSquares_coefficient_function_ptr_type,double> C_LS_real (this, &Vasilyev_Filter<Soln_pState,Soln_cState>::LeastSquares_coefficient_function_real, l,  m,  direction);
     LeastSquares_coefficient_function_class<Vasilyev_Filter<Soln_pState,Soln_cState>,LeastSquares_coefficient_function_ptr_type,double> C_LS_imag (this, &Vasilyev_Filter<Soln_pState,Soln_cState>::LeastSquares_coefficient_function_imag, l,  m,  direction);
 
+    // WARNING: AdaptiveGaussianQuadrature is EXPENSIVE. Look into different efficient integrators.
     double dummy;
     switch (type) {
         case LS_ABS:
@@ -635,6 +721,7 @@ inline double Vasilyev_Filter<Soln_pState,Soln_cState>::LeastSquares_RHS(const i
     LeastSquares_RHS_function_class<Vasilyev_Filter<Soln_pState,Soln_cState>,LeastSquares_RHS_function_ptr_type,double> R_LS_real (this, &Vasilyev_Filter<Soln_pState,Soln_cState>::LeastSquares_RHS_function_real,m,LS_DOF,direction);
     LeastSquares_RHS_function_class<Vasilyev_Filter<Soln_pState,Soln_cState>,LeastSquares_RHS_function_ptr_type,double> R_LS_imag (this, &Vasilyev_Filter<Soln_pState,Soln_cState>::LeastSquares_RHS_function_imag,m,LS_DOF,direction);
 
+    // WARNING: AdaptiveGaussianQuadrature is EXPENSIVE Look into different efficient integrators.
     double dummy;
     switch (type) {
         case LS_ABS:
@@ -674,13 +761,34 @@ inline Complex Vasilyev_Filter<Soln_pState,Soln_cState>::G_target(const double &
 //    }
 //    return Complex(HALF + HALF*tanh(s*(k-kmax/FGR)),ZERO);
 //   
+    
+    double FGR_temp;
+    
+    if (use_fixed_filter_width){
+        
+        switch(direction){
+            case X_DIRECTION:
+                FGR_temp = fixed_filter_width/theNeighbours.Delta.x;
+                break;
+            case Y_DIRECTION:
+                FGR_temp = fixed_filter_width/theNeighbours.Delta.y;
+                break;
+            case Z_DIRECTION:
+                FGR_temp = fixed_filter_width/theNeighbours.Delta.z;
+                break;
+        }
+        
+    } else {
+        FGR_temp = FGR;
+    }
+    
     int m;
     if (target_filter_sharpness > 0) {
         m = int(target_filter_sharpness);
     } else {
         m = int(ceil(commutation_order/2.0));
     }
-    double a = -(TWO*m)*log(G_cutoff)*pow(PI/FGR,-TWO*m);
+    double a = -(TWO*m)*log(G_cutoff)*pow(PI/FGR_temp,-TWO*m);
     return Complex(exp(-a/(TWO*m)*pow(k,TWO*m)),ZERO);
 }
 
