@@ -109,6 +109,16 @@ short Grid2D_Quad_Block_HO::Polygonal_Adaptive_Quadrature_Integration_Minimum_Le
  */
 int Grid2D_Quad_Block_HO::Monte_Carlo_Integration_Allowed = OFF;
 
+/*! Switch to force non-reflection of ghost cells regardless of the boundary conditions
+ *  in order to generate a valid mesh (i.e. not crossed quadrilaterals in ghost cells).
+ *  Some meshes (e.g. O-grid NACA airfoil) are not correctly generated if this flag is turned OFF.
+ *  Even if the flag is ON, depending on the mesh resolution, the mesh might still be invalid, especially when
+ *  more ghost cell layers and high-order geometry treatment are required.
+ *  Turn ON if you want the ghost cells near solid boundaries not to represent reflection of interior cells.
+ *  Turn OFF if you want the same ghost cells to represent reflection of the corresponding interior cells.
+ */
+int Grid2D_Quad_Block_HO::Mesh_Requiring_NonReflected_South_Ghost_Cells = OFF;
+
 
 /*!
  * Variable used for storing the South-West node position in the global coordinate system
@@ -4284,7 +4294,7 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 	      BCtypeS[i] != BC_BURNING_SURFACE &&
 	      BCtypeS[i] != BC_MASS_INJECTION &&
 	      BCtypeS[i] != BC_RINGLEB_FLOW &&
-	      BCtypeS[i] != BC_WALL_INVISCID) {
+	      ( BCtypeS[i] != BC_WALL_INVISCID || Mesh_Requiring_NonReflected_South_Ghost_Cells == ON )) {
 	    for(int GCell=1; GCell<=Nghost; ++GCell){
 	      Node[i][JNl-GCell].X = ( Node[i][JNl].X -
 				       (Node[i][JNl+GCell].X - 
@@ -4642,7 +4652,7 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	      BCtypeS[INl-1] != BC_BURNING_SURFACE &&
 	      BCtypeS[INl-1] != BC_MASS_INJECTION &&
 	      BCtypeS[INl-1] != BC_RINGLEB_FLOW &&
-	      BCtypeS[INl-1] != BC_WALL_INVISCID) &&
+	      (BCtypeS[INl-1] != BC_WALL_INVISCID || Mesh_Requiring_NonReflected_South_Ghost_Cells == ON ) ) &&
 	     BCtypeW[JNl-1] == BC_NONE) {
     // Extrapolate cells south.
     for (int ng = 1; ng <= Nghost; ng++) {
@@ -4776,7 +4786,7 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 	      BCtypeS[INu+1] != BC_BURNING_SURFACE &&
 	      BCtypeS[INu+1] != BC_MASS_INJECTION &&
 	      BCtypeS[INu+1] != BC_RINGLEB_FLOW &&
-	      BCtypeS[INu+1] != BC_WALL_INVISCID) &&
+	      (BCtypeS[INu+1] != BC_WALL_INVISCID || Mesh_Requiring_NonReflected_South_Ghost_Cells == ON) ) &&
 	     BCtypeE[JNl-1] == BC_NONE) {
     // Extrapolate cells south.
     for (int ng = 1; ng <= Nghost; ng++) {

@@ -177,6 +177,11 @@ public:
       ----------------------------------------------------------------------------------------  */
   static short POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS;
 
+  /*! This flag is used to impose non-reflected ghost cells for the South boundary,
+    even if the boundary condition of that boundary is reflection. \n
+      ----------------------------------------------------------------------------------------  */
+  static short ENFORCE_NONREFLECTED_SOUTH_BOUNDARY_GHOST_CELLS;
+
   template<class Input_Parameters_Type>
   static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);
 
@@ -460,6 +465,24 @@ void HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Paramete
       Grid2D_Quad_Block_HO::Polygonal_Adaptive_Quadrature_Integration_Minimum_Levels = 
 	POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS;
     }
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Impose_NonReflected_South_Ghost_Cells") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if (strcmp(IP.Next_Control_Parameter, "Yes") == 0 || strcmp(IP.Next_Control_Parameter, "Yes") == 0) {
+      ENFORCE_NONREFLECTED_SOUTH_BOUNDARY_GHOST_CELLS = ON;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setNonReflectedGhostCellsNearSouthSolidBoundary();
+      
+    } else if (strcmp(IP.Next_Control_Parameter,"NO") == 0 || strcmp(IP.Next_Control_Parameter, "No") == 0) {
+      ENFORCE_NONREFLECTED_SOUTH_BOUNDARY_GHOST_CELLS = OFF;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setReflectedGhostCellsNearSouthSolidBoundary();
+
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
 
   } else {
     i_command = INVALID_INPUT_CODE;

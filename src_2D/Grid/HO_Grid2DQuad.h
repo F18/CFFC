@@ -1008,6 +1008,10 @@ public:
   static void setPolygonalAdaptiveQuadratureIntegrationON(void){  Polygonal_Adaptive_Quadrature_Integration_Allowed = ON; }
   //! Turn off polygonal adaptive quadrature integration for cells with curved edges
   static void setPolygonalAdaptiveQuadratureIntegrationOFF(void){ Polygonal_Adaptive_Quadrature_Integration_Allowed = OFF; }
+  //! Turn ON flag for non-reflected ghost cells
+  static void setNonReflectedGhostCellsNearSouthSolidBoundary(void) { Mesh_Requiring_NonReflected_South_Ghost_Cells = ON;}
+  //! Turn OFF flag for non-reflected ghost cells
+  static void setReflectedGhostCellsNearSouthSolidBoundary(void) { Mesh_Requiring_NonReflected_South_Ghost_Cells = OFF;}
 
   //! Check if the West boundary has constrained reconstruction (i.e. it is curved and set to reconstruction based flux)
   bool IsWestBoundaryReconstructionConstrained(void) const;
@@ -1135,6 +1139,11 @@ private:
   /*! Switch for polygonal adaptive quadrature integration in curved boundaries (i.e. turn it OFF or ON).
    *  It has higher priority than Monte_Carlo_Integration_Allowed */
   static int Polygonal_Adaptive_Quadrature_Integration_Allowed;
+
+  /*! Switch to force non-reflection of ghost cells regardless of the boundary conditions
+   *  in order to generate a valid mesh (i.e. not crossed quadrilaterals in ghost cells).
+   */
+  static int Mesh_Requiring_NonReflected_South_Ghost_Cells;
 
   //! Highest order of reconstruction that might occur in calculations with the current grid.
   int HighestReconstructionOrder;
