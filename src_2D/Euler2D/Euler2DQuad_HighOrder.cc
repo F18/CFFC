@@ -213,50 +213,103 @@ void Euler2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Tim
 	      break;
 	    } // endswitch
 
-	    // Output Brief format
-	    W_node = HighOrderVariable(IndexHO).SolutionStateAtLocation(i,j,Node);
-	    Out_File << " "  << Node 
-		     << " "  << W_node;
+	    if (i < ICl-HighOrderVariable(IndexHO).NghostHO() || 
+		i > ICu+HighOrderVariable(IndexHO).NghostHO() || 
+		j < JCl-HighOrderVariable(IndexHO).NghostHO() ||
+		j > JCu+HighOrderVariable(IndexHO).NghostHO()  ) {
 
-	    
-	    // Add more variables for the Detailed format
-	    if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){ 
-	      Out_File.setf(ios::scientific);
-	      Out_File << " " << W_node.T()
-		       << " " << W_node.v.abs()/W_node.a() 
-		       << " " << W_node.H()
-		       << " " << W_node.s();
-	      Out_File.unsetf(ios::scientific);
-	    }
+	      // No high-order interpolant is calculated for this cells.
+	      // The average solution is plotted at the nodes of these cells.
 
-
-	    // Add more variables for the Full format
-	    if (Tecplot_Execution_Mode::IsFullOutputRequired()){
-	      Out_File.setf(ios::scientific);
-	      Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,1)
-		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,1)
-		       << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,2)
-		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,2)
-		       << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,3)
-		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,3)
-		       << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,4)
-		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,4);
-	      Out_File.unsetf(ios::scientific);
-	      if (ExactSoln->IsExactSolutionSet()){
-		Out_File << " " << ExactSoln->Solution(Node.x,Node.y);
+	      // Output Brief format
+	      W_node = CellSolution(i,j);
+	      Out_File << " "  << Node 
+		       << " "  << W_node;
+	      	      
+	      // Add more variables for the Detailed format
+	      if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){ 
+		Out_File.setf(ios::scientific);
+		Out_File << " " << W_node.T()
+			 << " " << W_node.v.abs()/W_node.a() 
+			 << " " << W_node.H()
+			 << " " << W_node.s();
+		Out_File.unsetf(ios::scientific);
 	      }
+	      
+	      
+	      // Add more variables for the Full format
+	      if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+		Out_File.setf(ios::scientific);
+		Out_File << " " << 1.0E8
+			 << " " << 0
+			 << " " << 1.0E8
+			 << " " << 0
+			 << " " << 1.0E8
+			 << " " << 0
+			 << " " << 1.0E8
+			 << " " << 0;
+		Out_File.unsetf(ios::scientific);
+		if (ExactSoln->IsExactSolutionSet()){
+		  Out_File << " " << ExactSoln->Solution(Node.x,Node.y);
+		}
+	      }
+	      
+	      
+	      // Add more variables for the Extended format
+	      if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+		Out_File << " " << dUdt[i][j][0];
+	      }
+
+	      // Close line
+	      Out_File << "\n";
+	      Out_File.unsetf(ios::scientific);
+
+	    } else {
+	      
+	      // Output Brief format
+	      W_node = HighOrderVariable(IndexHO).SolutionStateAtLocation(i,j,Node);
+	      Out_File << " "  << Node 
+		       << " "  << W_node;
+	      	      
+	      // Add more variables for the Detailed format
+	      if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){ 
+		Out_File.setf(ios::scientific);
+		Out_File << " " << W_node.T()
+			 << " " << W_node.v.abs()/W_node.a() 
+			 << " " << W_node.H()
+			 << " " << W_node.s();
+		Out_File.unsetf(ios::scientific);
+	      }
+	      
+	      
+	      // Add more variables for the Full format
+	      if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+		Out_File.setf(ios::scientific);
+		Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,1)
+			 << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,1)
+			 << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,2)
+			 << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,2)
+			 << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,3)
+			 << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,3)
+			 << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,4)
+			 << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,4);
+		Out_File.unsetf(ios::scientific);
+		if (ExactSoln->IsExactSolutionSet()){
+		  Out_File << " " << ExactSoln->Solution(Node.x,Node.y);
+		}
+	      }
+	      
+	      
+	      // Add more variables for the Extended format
+	      if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+		Out_File << " " << dUdt[i][j][0];
+	      }
+
+	      // Close line
+	      Out_File << "\n";
+	      Out_File.unsetf(ios::scientific);
 	    }
-
-
-	    // Add more variables for the Extended format
-	    if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
-	      Out_File << " " << dUdt[i][j][0];
-	    }
-
-	    // Close line
-	    Out_File << "\n";
-	    Out_File.unsetf(ios::scientific);
-
+	      
 	  }
 	} /* endfor */
       }
@@ -379,10 +432,10 @@ void Euler2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Tim
 					Block_Number,
 					Output_Title,
 					Out_File,
-					ICl - HighOrderVariable(IndexHO).NghostHO(),
-					ICu + HighOrderVariable(IndexHO).NghostHO(),
-					JCl - HighOrderVariable(IndexHO).NghostHO(),
-					JCu + HighOrderVariable(IndexHO).NghostHO(),
+					ICl - Nghost,
+					ICu + Nghost,
+					JCl - Nghost,
+					JCu + Nghost,
 					IndexHO);
 }
 
