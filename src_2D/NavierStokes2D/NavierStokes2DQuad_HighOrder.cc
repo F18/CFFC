@@ -1810,7 +1810,7 @@ int NavierStokes2D_Quad_Block::dUdt_Residual_HighOrder(const NavierStokes2D_Inpu
 							      dWdxL, dWdyL, dWdxR, dWdyR,
 							      dWdx_face, dWdy_face,
 							      Grid.BndNorthSplineInfo[i].GQPoint(Position),
-							      Grid.BndNorthSplineInfo[i].NormalGQPoint(Position));
+							      Grid.BndNorthSplineInfo[i].NormalGQPoint(Position));	     
 
 	      /* Add the weighted contribution of the current GQP to the total 
 		 viscous flux through the spline segment in the local normal direction. */
@@ -1878,7 +1878,7 @@ int NavierStokes2D_Quad_Block::dUdt_Residual_HighOrder(const NavierStokes2D_Inpu
 							    dWdx_face, dWdy_face,
 							    GaussQuadPoints[GQPoint],
 							    Grid.nfaceN(i,JCu));
-	    
+
 	    /* Add the weighted contribution of the current GQP to the total 
 	       viscous flux through the face in the normal direction. */
 	    FluxN[i] -= GaussQuadWeights[GQPoint] * ViscousFlux_n(GaussQuadPoints[GQPoint],
@@ -4320,6 +4320,7 @@ void NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder
       Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii-1,jj,CalculationPoint);
       break;
 
+    case BC_OUTFLOW_SUBSONIC:
     case BC_OUTFLOW :
       // Set Wr equal to the left side value (i.e Wl)
       Wr = Wl;
@@ -4330,6 +4331,10 @@ void NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder
       Wr = Wl;
       break;
 
+    case BC_INFLOW_SUBSONIC:
+      Wr = WoW[jj];
+      Wr.v.y = ZERO;
+      break;
     case BC_CHARACTERISTIC :
       // Set Wr based on the directions of propogation for the solution characteristics at the boundary
       // Note: The reference value should be changed to HO_WoW!
@@ -4342,7 +4347,6 @@ void NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder
       Wr = WallViscousHeatFlux(Wl,
 			       NormalDirection);
       break;
-
     default:
       throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such West BCtype!");
     }// endswitch (Grid.BCtypeW[jj])
@@ -4413,6 +4417,7 @@ void NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder
       Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii+1,jj,CalculationPoint);
       break;
 
+    case BC_OUTFLOW_SUBSONIC:
     case BC_OUTFLOW :
       // Set Wr equal to the left side value (i.e Wl)
       Wr = Wl;
@@ -4423,6 +4428,11 @@ void NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder
       Wr = Wl;
       break;
       
+    case BC_INFLOW_SUBSONIC:
+      Wr = WoE[jj];
+      Wr.v.y = ZERO;
+      break;
+
     case BC_CHARACTERISTIC :
       // Set Wr based on the directions of propogation for the solution characteristics at the boundary
       // Note: The reference value should be changed to HO_WoE!
@@ -4505,6 +4515,7 @@ void NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder
       Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj-1,CalculationPoint);
       break;
 
+    case BC_OUTFLOW_SUBSONIC:
     case BC_OUTFLOW :
       // Set Wr equal to the left side value (i.e Wl)
       Wr = Wl;
@@ -4515,6 +4526,11 @@ void NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder
       Wr = Wl;
       break;
       
+    case BC_INFLOW_SUBSONIC:
+      Wr = WoS[ii];
+      Wr.v.y = ZERO;
+      break;
+
     case BC_CHARACTERISTIC :
       // Set Wr based on the directions of propogation for the solution characteristics at the boundary
       // Note: The reference value should be changed to HO_WoS!
@@ -4598,6 +4614,7 @@ void NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder
       Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj+1,CalculationPoint);
       break;
 
+    case BC_OUTFLOW_SUBSONIC:
     case BC_OUTFLOW :
       // Set Wr equal to the left side value (i.e Wl)
       Wr = Wl;
@@ -4606,6 +4623,11 @@ void NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder
     case BC_CONSTANT_EXTRAPOLATION :
       // Set Wr equal to the left side value (i.e Wl)
       Wr = Wl;
+      break;
+
+    case BC_INFLOW_SUBSONIC:
+      Wr = WoN[ii];
+      Wr.v.y = ZERO;
       break;
 
     case BC_CHARACTERISTIC :
@@ -4775,12 +4797,12 @@ void NavierStokes2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder(
     dWdx_face = 0.5*(dWdxL + dWdxR);
     dWdy_face = 0.5*(dWdyL + dWdyR);
 
-    // Impose BC_WALL_VISCOUS_HEATFLUX
+    // Impose viscous wall
     W_face.v = Vector2D_ZERO;
     W_face.k = ZERO;
     W_face.ke = ZERO;
 
-    // No heat flux (i.e. adiabatic wall)
+    // Impose no heat flux (i.e. adiabatic wall) by setting a ZERO temperature gradient
     rho_over_p = W_face.rho/W_face.p;
     dWdx_face.rho = rho_over_p * dWdx_face.p;
     dWdy_face.rho = rho_over_p * dWdy_face.p;
@@ -4805,6 +4827,24 @@ void NavierStokes2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder(
     break;
 
   case BC_REFLECTION:
+    // Average the left and right states to determine the face state
+    W_face = 0.5*(Wl + Wr);
+
+    // Average the right and left gradients to determine the interface gradient
+    dWdx_face = 0.5*(dWdxL + dWdxR);
+    dWdy_face = 0.5*(dWdyL + dWdyR);
+    break;
+
+  case BC_INFLOW_SUBSONIC:
+    // Average the left and right states to determine the face state
+    W_face = 0.5*(Wl + Wr);
+
+    // Average the right and left gradients to determine the interface gradient
+    dWdx_face = 0.5*(dWdxL + dWdxR);
+    dWdy_face = 0.5*(dWdyL + dWdyR);    
+    break;
+
+  case BC_OUTFLOW_SUBSONIC:
     // Average the left and right states to determine the face state
     W_face = 0.5*(Wl + Wr);
 

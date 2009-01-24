@@ -27,7 +27,7 @@
 void Broadcast_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk) {
 
 #ifdef _MPI_VERSION
-  int ni, nj, ng, nr, block_allocated, buffer_size;
+  int ni, nj, ng, nr, block_allocated, buffer_size, i;
   double *buffer;
 
   // High-order related variables
@@ -251,7 +251,7 @@ void Broadcast_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk,
                               const int Source_CPU) {
 
   int Source_Rank = 0;
-  int ni, nj, ng, nr, block_allocated, buffer_size;
+  int ni, nj, ng, nr, block_allocated, buffer_size, i;
   double *buffer;
 
   // High-order related variables
