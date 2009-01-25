@@ -35,7 +35,7 @@ short NumericalLibrary_Execution_Mode::Adaptive_Integration_Minimum_Refinement_L
 /*!
  * This value controls the error output.
  */
-bool NumericalLibrary_Execution_Mode::Output_Error_Messages = true;
+short NumericalLibrary_Execution_Mode::Output_Error_Messages = ON;
 
 // Set default epsilon values
 long int NumericalLibrary_Execution_Mode::Max_Function_Evaluations_default = 
@@ -104,6 +104,6 @@ void NumericalLibrary_Execution_Mode::Broadcast(void){
 			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&Output_Error_Messages,
 			1, 
-			MPI::BOOL, 0);
+			MPI::SHORT, 0);
 #endif
 }

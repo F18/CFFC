@@ -40,7 +40,7 @@ public:
   /*! This parameter controls whether the error messages are output. \n
    *  DON'T TURN OFF THE ERROR OUTPUT UNLESS YOU HAVE STRONG REASONS!!!!
       ---------------------------------------------------------------------------------------------------  */
-  static bool Output_Error_Messages;
+  static short Output_Error_Messages;
   
   template<class Input_Parameters_Type>
   static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);
@@ -101,10 +101,10 @@ void NumericalLibrary_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_P
   } else if (strcmp(IP.Next_Control_Parameter, "Numerical_Library_Output_Error_Messages") == 0) {
     IP.Get_Next_Input_Control_Parameter();
     if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 || strcmp(IP.Next_Control_Parameter, "YES") == 0 ){
-      Output_Error_Messages = true;
+      Output_Error_Messages = ON;
       i_command = 0;
     } else if ( strcmp(IP.Next_Control_Parameter, "No") == 0 || strcmp(IP.Next_Control_Parameter, "NO") == 0 ){
-      Output_Error_Messages = false;
+      Output_Error_Messages = OFF;
       i_command = 0;
     } else {
       i_command = INVALID_INPUT_VALUE;
