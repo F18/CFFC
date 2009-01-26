@@ -4719,6 +4719,7 @@ void HighOrder2D<SOLN_STATE>::Broadcast_HighOrder_Data(MPI::Intracomm &Communica
 						       const int &Source_CPU,
 						       GeometryType & Block_Geometry){
 
+  int Source_Rank = 0; 
   int i, j, buffer_size, TD_Bcast, td, var, counter;
   double *buffer;
   
@@ -4757,7 +4758,7 @@ void HighOrder2D<SOLN_STATE>::Broadcast_HighOrder_Data(MPI::Intracomm &Communica
 
 
   // Broadcast buffer
-  Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_CPU);
+  Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
 
   // Unload the buffer on the receiver CPUs and set the variables
   if (CFFC_MPI::This_Processor_Number != Source_CPU) {
