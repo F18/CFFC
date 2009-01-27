@@ -290,14 +290,15 @@ inline void TriDiagonalSystemLinEqs::solve(const int solver_type) {
 inline void Solve_LAPACK_dgesv(DenseMatrix &A,
 			       ColumnVector &B) {
 
-  static integer INFO;
-  static integer N(A.size(0));
-  static integer NRHS(1);
-  int *IPIV = new int[N];
+	cout<<"\n dgesv is missing, related to P6 compile problems ";
+//   static integer INFO;
+//   static integer N(A.size(0));
+//   static integer NRHS(1);
+//   int *IPIV = new int[N];
   
-  F77NAME(dgesv)(&N, &NRHS, &A(0,0), &N, IPIV, &B(0), &N, &INFO);
+//   F77NAME(dgesv)(&N, &NRHS, &A(0,0), &N, IPIV, &B(0), &N, &INFO);
 
-  delete []IPIV; IPIV = NULL;
+//   delete []IPIV; IPIV = NULL;
 }
 
 inline void Solve_LS_Householder_F77(DenseMatrix &A,

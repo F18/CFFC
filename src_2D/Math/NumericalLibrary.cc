@@ -453,7 +453,7 @@ void frenel(double x, double &s, double &c)
   double EPS(6.0e-8);
   int MAXIT(100);
   double XMIN(1.5), PIBY2(PI/2.0), FPMIN(1.0e-30);
-  int TRUE(1);
+  //int TRUE(1);
 
   int k,n,odd;
   float a,ax,fact,pix2,sign,sum,sumc,sums,term,test;

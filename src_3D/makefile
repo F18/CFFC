@@ -218,7 +218,7 @@ SRC_REACTIONS = $(REACTIONS_DIR)Reactions.cc \
 	  	$(REACTIONS_DIR)15step_GRI3.f
 SRC_REACTIONS_F90 = $(REACTIONS_DIR)c_15step_GRI211.f90 \
                     $(REACTIONS_DIR)c_15step_GRI3.f90
-SRC_REACTIONS += $(SRC_REACTIONS_F90)
+#SRC_REACTIONS += $(SRC_REACTIONS_F90)
 
 # TUT testing:
 SRC_TUT = TestRun.cc \
@@ -430,9 +430,9 @@ sparselib:
 	@echo Building $(SPARSELIB) library for a $(PLATFORM) platform.
 	@echo '--------------------------------------------------------'
 	@echo ' '
-	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
-	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
-	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) sp;
+	cd $(SPARSELIB_DIR); gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
+	cd $(SPARSELIB_DIR); gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
+	cd $(SPARSELIB_DIR); gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) sp;
 	@echo ' '
 	@echo $(SPARSELIB) library has been brought up to date.
 	@echo '------------------------------------------------'
@@ -443,8 +443,8 @@ bpkit:
 	@echo Building $(BPKIT) library for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------'
 	@echo ' '
-	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
-	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE);
+	cd $(BPKIT_DIR)/src; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
+	cd $(BPKIT_DIR)/src; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE);
 	@echo ' '
 	@echo $(BPKIT) library has been brought up to date.
 	@echo '--------------------------------------------'
@@ -501,7 +501,7 @@ $(EXE_MAIN): $(OBJ_MAIN) $(OBJ_CFFC)
 	@echo ' '
 
 $(EXE_EULER_POLYTROPIC): $(OBJ_EULER_POLYTROPIC_EXE) $(OBJ_BASE) $(OBJ_EULER_POLYTROPIC) \
-                         $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+                         $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_NASADATA)  
 	@echo ' '
 	@echo Building program $(EXE_EULER_POLYTROPIC) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'

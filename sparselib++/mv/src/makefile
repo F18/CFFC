@@ -55,7 +55,7 @@ lib: $(MV_LIB_A)
 
 
 $(MV_LIB_A) : $(OBJS)
-	@ ar rv $(MV_LIB_A) $?
+	@ ar rv  $(MV_LIB_A) $?
 	@ case x$(HASRANLIB) in xt ) echo ranlib; ranlib $(MV_LIB_A);; esac
 
 clean: 

@@ -4,17 +4,20 @@
 #define _POLYFIT_H
 
 #include <vector>
+#include <cmath>
 #include <iostream>
 
 using namespace std;
 
 
+#include "../../../bpkit/src/arch.h"
+
 extern "C" {
-  int dpolft_(int* n, double* x, double* y, double* w, 
+  int F77NAME(dpolft)(int* n, double* x, double* y, double* w, 
 	      int* maxdeg, int* ndeg, double* eps, double* r,
 	      int* ierr, double* a);
 
-  int dpcoef_(int* l, double* c, double* tc, double* a);
+  int F77NAME(dpcoef)(int* l, double* c, double* tc, double* a);
 }
 
 

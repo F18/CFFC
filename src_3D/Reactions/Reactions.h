@@ -40,7 +40,7 @@ using namespace std;
 
 #include "../Math/Complexify.h"
 
-#include "15step.h"
+//#include "15step.h"
 
 // Cantera libraries
 #ifdef _CANTERA_VERSION
@@ -640,9 +640,10 @@ inline void Reaction_set::omega(SOLN_cSTATE &U,
   //- 15 step CH4 based on GRI 2.11 -//
   //---------------------------------//
   case CH4_15STEP_ARM2:
+    cout<<"\n CH4_15STEP_ARM2: commented out for P6 compile ";
     // r(Wdot) - mol/(cm^3*s)
     // compute reaction rates calling the subroutine CKWYP15STEP211
-    ckwyp15step211_(PressDyne, Temp, c, r);
+    //ckwyp15step211_(PressDyne, Temp, c, r);
     for (int i=0; i<num_react_species; ++i) {
       // in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3             
       U.rhospec[i].c = M[i]*r[i]*THOUSAND;
@@ -653,9 +654,10 @@ inline void Reaction_set::omega(SOLN_cSTATE &U,
   //-- 15 step CH4 based on GRI 3 ---//
   //---------------------------------//
   case CH4_15STEP_ARM3:
+    cout<<"\n CH4_15STEP_ARM3: commented out for P6 compile ";
     // r(Wdot) - mol/(cm^3*s)
     // compute reaction rates calling the subroutine CKWYP15STEP3
-    ckwyp15step30_(PressDyne, Temp, c, r);
+    //ckwyp15step30_(PressDyne, Temp, c, r);
     for (int i=0; i<num_react_species; ++i) {
       // in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3             
       U.rhospec[i].c = M[i]*r[i]*THOUSAND;
@@ -1024,14 +1026,15 @@ inline void Reaction_set::Complex_Step_dSwdU(DenseMatrix &dSwdU,
   //  15step CH4 mechanism based on GRI 2.11   //
   //-------------------------------------------//
   case CH4_15STEP_ARM2 :
+ cout<<"\n CH4_15STEP_ARM2: commented out for P6 compile ";
+
     for(int j=0; j<num_react_species-1; j++){
       if ( W.spec[j].c > TOL ) {
 
 	// perturb
 	cc[j] += c_eps;
-	
 	// compute the perturbed reaction rates moles/(cm**3*sec)
-	cplx15step211_(PressDyne, Temp, cc, rc);
+	//cplx15step211_(PressDyne, Temp, cc, rc);
 
 	// set derivative
 	for (int i=0; i < num_react_species-1; ++i) {
@@ -1051,7 +1054,7 @@ inline void Reaction_set::Complex_Step_dSwdU(DenseMatrix &dSwdU,
   //  15step CH4 mechanism based on GRI 3
   //-------------------------------------------//
   case CH4_15STEP_ARM3 :
-
+  cout<<"\n CH4_15STEP_ARM2: commented out for P6 compile ";
     for(int j=0; j<num_react_species-1; j++){
       if ( W.spec[j].c > TOL ) {
 	
@@ -1059,7 +1062,7 @@ inline void Reaction_set::Complex_Step_dSwdU(DenseMatrix &dSwdU,
 	cc[j] += c_eps;
 	
 	// compute the perturbed reaction rates moles/(cm**3*sec)
-	cplx15step30_(PressDyne, Temp, cc, rc);
+	//cplx15step30_(PressDyne, Temp, cc, rc);
 
 	// set derivative
 	for (int i=0; i < num_react_species-1; ++i) {
