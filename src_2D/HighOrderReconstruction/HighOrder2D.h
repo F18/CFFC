@@ -3026,6 +3026,9 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    /* extend Jmin */
 	    Jmin_SW -= 1;
 	    Jmin_S  -= 1;
+	    /* ensure valid Jmin */
+	    Jmin_SW = max(Jmin_SW, 0);
+	    Jmin_S  = max(Jmin_S, 0);	    
 	  } else {
 	    Jmax_NW = Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
 
@@ -3033,6 +3036,10 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Jmin_SW -= 1;
 	    Jmin_S  -= 1;
 	    Jmin_SE -= 1;
+	    /* ensure valid Jmin */
+	    Jmin_SW = max(Jmin_SW, 0);
+	    Jmin_S  = max(Jmin_S, 0); 
+	    Jmin_SE = max(Jmin_SE, 0);
 	  }
 	} else if (S_WestBnd.IsReconstructionStencilAffected()){
 	  if (jCell == JCl - 1){
@@ -3041,6 +3048,9 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    /* extend Imin */
 	    Imin_W  -= 1;
 	    Imin_SW -= 1;
+	    /* ensure valid Imin */
+	    Imin_W  = max(Imin_W, 0);
+	    Imin_SW = max(Imin_SW, 0);
 	  } else {
 	    Imax_E = Imax_SE = Imax_NE = ICl-1;     /* limit Imax */
 	    
@@ -3048,6 +3058,10 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Imin_W  -= 1;
 	    Imin_SW -= 1;
 	    Imin_NW -= 1;
+	    /* ensure valid Imin */
+	    Imin_W  = max(Imin_W, 0);
+	    Imin_SW = max(Imin_SW, 0);
+	    Imin_NW = max(Imin_NW, 0);
 	  }
 	}
 
@@ -3132,6 +3146,9 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    /* extend Jmax */
 	    Jmax_NW += 1;
 	    Jmax_N  += 1;
+	    /* ensure valid Jmax */
+	    Jmax_NW = min(Jmax_NW, JCu+Ng);
+	    Jmax_N  = min(Jmax_N, JCu+Ng);	    
 	  } else {
 	    Jmin_SW = Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
 
@@ -3139,14 +3156,21 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Jmax_NW += 1;
 	    Jmax_N  += 1;
 	    Jmax_NE += 1;
+	    /* ensure valid Jmax */
+	    Jmax_NW = min(Jmax_NW, JCu+Ng);
+	    Jmax_N  = min(Jmax_N, JCu+Ng);
+	    Jmax_NE = min(Jmax_NE, JCu+Ng);
 	  }
 	} else if (N_WestBnd.IsReconstructionStencilAffected()){
 	  if (jCell == JCu + 1){
 	    Imax_NE = Imax_E = ICl-1;     /* limit Imax */
 
-	    /* extend Imin */
+ 	    /* extend Imin */
 	    Imin_NW -= 1;
 	    Imin_W  -= 1;
+ 	    /* ensure valid Imin */
+	    Imin_NW = max(Imin_NW, 0);
+	    Imin_W  = max(Imin_W, 0);
 	  } else {
 	    Imax_NE = Imax_E = Imax_SE = ICl-1;     /* limit Imax */
 
@@ -3154,6 +3178,10 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Imin_NW -= 1;
 	    Imin_W  -= 1;
 	    Imin_SW -= 1;
+ 	    /* ensure valid Imin */
+	    Imin_NW = max(Imin_NW, 0);
+	    Imin_W  = max(Imin_W, 0);
+	    Imin_SW = max(Imin_SW, 0);
 	  }
 	}
       }	// endif (Case D)
@@ -3655,6 +3683,9 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    /* extend Jmin */
 	    Jmin_S  -= 1;
 	    Jmin_SE -= 1;
+	    /* ensure valid Jmin */
+	    Jmin_S  = max(Jmin_S, 0);
+	    Jmin_SE = max(Jmin_SE, 0);
 	  } else {
 	    Jmax_NW = Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
 
@@ -3662,6 +3693,10 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Jmin_SW -= 1;
 	    Jmin_S  -= 1;
 	    Jmin_SE -= 1;
+	    /* ensure valid Jmin */
+	    Jmin_SW = max(Jmin_SW, 0);
+	    Jmin_S  = max(Jmin_S, 0);
+	    Jmin_SE = max(Jmin_SE, 0);
 	  }
 	} else if (S_EastBnd.IsReconstructionStencilAffected()){
 	  if (jCell == JCl - 1){
@@ -3670,6 +3705,9 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    /* extend Imax */
 	    Imax_E  += 1;
 	    Imax_SE += 1;
+	    /* ensure valid Imax */
+	    Imax_E  = min(Imax_E, ICu+Ng);
+	    Imax_SE = min(Imax_SE, ICu+Ng);	    
 	  } else {
 	    Imin_NW = Imin_W = Imin_SW = ICu+1;    /* limit Imin */
 
@@ -3677,6 +3715,10 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Imax_NE += 1;
 	    Imax_E  += 1;
 	    Imax_SE += 1;
+	    /* ensure valid Imax */
+	    Imax_NE = min(Imax_NE, ICu+Ng);	    
+	    Imax_E  = min(Imax_E, ICu+Ng);
+	    Imax_SE = min(Imax_SE, ICu+Ng);	    
 	  }
 	}
 
@@ -3762,7 +3804,10 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 
 	    /* extend Jmax */
 	    Jmax_N  += 1;
-	    Jmax_NE += 1;	    
+	    Jmax_NE += 1;
+	    /* ensure valid Jmax */
+	    Jmax_N  = min(Jmax_N, JCu+Ng);
+	    Jmax_NE = min(Jmax_NE, JCu+Ng);	    
 	  } else {
 	    Jmin_SW = Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
 	    
@@ -3770,6 +3815,10 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Jmax_NW += 1;
 	    Jmax_N  += 1;
 	    Jmax_NE += 1;
+	    /* ensure valid Jmax */
+	    Jmax_NW = min(Jmax_NW, JCu+Ng);	    
+	    Jmax_N  = min(Jmax_N, JCu+Ng);
+	    Jmax_NE = min(Jmax_NE, JCu+Ng);	    
 	  }
 	} else if (N_EastBnd.IsReconstructionStencilAffected()){
 	  if (jCell == JCu + 1){
@@ -3778,6 +3827,9 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    /* extend Imax */
 	    Imax_NE += 1;
 	    Imax_E  += 1;
+	    /* ensure valid Imax */
+	    Imax_NE = min(Imax_NE, ICu+Ng);
+	    Imax_E  = min(Imax_E, ICu+Ng);
 	  } else {
 	    Imin_NW = Imin_W = Imin_SW = ICu + 1;   /* limit Imin */
 
@@ -3785,6 +3837,10 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Imax_NE += 1;
 	    Imax_E  += 1;
 	    Imax_SE += 1;
+	    /* ensure valid Imax */
+	    Imax_NE = min(Imax_NE, ICu+Ng);
+	    Imax_E  = min(Imax_E, ICu+Ng);
+	    Imax_SE = min(Imax_SE, ICu+Ng);
 	  }
 	}
       }	// endif (Case D)
