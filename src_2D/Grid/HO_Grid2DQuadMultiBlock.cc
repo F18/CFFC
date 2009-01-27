@@ -5177,6 +5177,166 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow_Without_Update(int &_Number_of
 }
 
 /*!
+ * Generates a uniform 2D mesh with a straight 
+ * inflow boundary for Ringleb's flow.
+ *                                                                    
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
+ */
+void Grid2D_Quad_MultiBlock_HO::
+Grid_Ringleb_Flow_Straight_Inflow_Boundary_Without_Update(int &_Number_of_Blocks_Idir_,
+							  int &_Number_of_Blocks_Jdir_,
+							  const double &Inner_Streamline_Number,
+							  const double &Outer_Streamline_Number,
+							  const double &Isotach_Line,
+							  const int Number_of_Cells_Idir,
+							  const int Number_of_Cells_Jdir,
+							  const int Number_of_Ghost_Cells,
+							  const int Highest_Order_of_Reconstruction) {
+  
+  assert(Inner_Streamline_Number > Outer_Streamline_Number);
+  assert(Inner_Streamline_Number < 5.0/3.0);
+  assert(Outer_Streamline_Number > Isotach_Line); 
+
+  int nk, nq,
+    Stretch_I, Stretch_J,
+    Orthogonal_North, Orthogonal_South,
+    Orthogonal_East, Orthogonal_West;
+  double Beta_I, Tau_I, Beta_J, Tau_J;
+  Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+    Bnd_Spline_East, Bnd_Spline_West;
+
+  double k, k1, k2;
+  double q, q1, q2;
+  double delk, delq;
+  int i,j;
+
+
+  // Allocate memory for grid block.
+  _Number_of_Blocks_Idir_ = 1;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
+
+  // Create the mesh for each block representing the complete grid.
+  
+  // Set number of points in each direction
+  nq = min(50, 15*Number_of_Cells_Jdir); // 3 points for each cell
+
+  // West streamline
+  k  = Inner_Streamline_Number;
+  q1 = Inner_Streamline_Number;
+  q2 = Isotach_Line;
+  delq = q2 - q1;
+
+  // Allocate memory
+  Bnd_Spline_West.allocate(nq);	 Bnd_Spline_West.settype(SPLINE2D_QUINTIC);
+
+  for (j = 0; j < nq; ++j ){
+    // Determine isotach line
+    q = q1 + delq*pow((0.5 - cos((j*PI)/(nq - 1))/2.0),1.3);
+    
+    // Determine (xLoc,yLoc) of the control point
+    Determine_Coordinates_Ringleb_Flow(k,q,
+				       Bnd_Spline_West.Xp[j].x,
+				       Bnd_Spline_West.Xp[j].y);
+    if (j == 0 || j == nq-1) {
+      Bnd_Spline_West.tp[j] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      Bnd_Spline_West.tp[j] = SPLINE2D_POINT_NORMAL;
+    }
+
+  }
+
+  // East streamline
+  k  = Outer_Streamline_Number;
+  q1 = Outer_Streamline_Number; 
+  q2 = Isotach_Line;
+  delq = q2 - q1;
+  
+  // Allocate memory
+  Bnd_Spline_East.allocate(nq);	 Bnd_Spline_East.settype(SPLINE2D_QUINTIC);
+
+  for (j = 0; j < nq; ++j ){
+    // Determine isotach line
+    q = q1 + delq*pow((0.5 - cos((j*PI)/(nq - 1))/2.0),1.3);
+
+    // Determine (xLoc,yLoc) of the control point
+    Determine_Coordinates_Ringleb_Flow(k,q,
+				       Bnd_Spline_East.Xp[j].x,
+				       Bnd_Spline_East.Xp[j].y);
+
+    if (j == 0 || j == nq-1) {
+      Bnd_Spline_East.tp[j] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      Bnd_Spline_East.tp[j] = SPLINE2D_POINT_NORMAL;
+    }
+  }
+
+
+  // South isotach 
+  // Line between the end-points of West and East streamline.
+  Bnd_Spline_South.Create_Spline_Line(Bnd_Spline_West.Xp[0],
+				      Bnd_Spline_East.Xp[0],
+				      2);
+
+  // North boundary (This is not an isotach line!!!)
+  // Line between the end-points of West and East streamline.
+  Bnd_Spline_North.Create_Spline_Line(Bnd_Spline_West.Xp[nq-1],
+				      Bnd_Spline_East.Xp[nq-1],
+				      2);
+
+  Bnd_Spline_North.pathlength();
+  Bnd_Spline_South.pathlength();
+  Bnd_Spline_East.pathlength();
+  Bnd_Spline_West.pathlength();
+
+  // Set the boundary condition types for each of the boundary 
+  // splines.
+  Bnd_Spline_North.setBCtype(BC_RINGLEB_FLOW);
+  Bnd_Spline_South.setBCtype(BC_RINGLEB_FLOW);
+  Bnd_Spline_East.setBCtype(BC_RINGLEB_FLOW);
+  Bnd_Spline_West.setBCtype(BC_RINGLEB_FLOW);
+
+  // Assign values to the stretching function parameters and
+  // boundary grid line orthogonality parameters.
+  Stretch_I = STRETCHING_FCN_LINEAR;
+  Beta_I = ZERO; 
+  Tau_I = ZERO;
+  Stretch_J = STRETCHING_FCN_LINEAR;
+  Beta_J = ONE;
+  Tau_J = THREE;
+  Orthogonal_North = 1;
+  Orthogonal_South = 1;
+  Orthogonal_East = 1;
+  Orthogonal_West = 1;
+
+  // Create the 2D quadrilateral grid block representing the mesh.
+  Grid_ptr[0][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						  Bnd_Spline_South,
+						  Bnd_Spline_East,
+						  Bnd_Spline_West,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction,
+						  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
+						  Stretch_I,
+						  Beta_I,
+						  Tau_I,
+						  Stretch_J,
+						  Beta_J,
+						  Tau_J,
+						  Orthogonal_North,
+						  Orthogonal_South,
+						  Orthogonal_East,
+						  Orthogonal_West);
+
+  Grid_ptr[0][0].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
+
+}
+
+/*!
  * Generates a single block quadilateral mesh with clustering for     
  * predicting supersonic flow around a cirucular cylinder blunt body. 
  *                                                                    

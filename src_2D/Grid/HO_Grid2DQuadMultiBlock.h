@@ -449,6 +449,16 @@ public:
 			 const int Number_of_Ghost_Cells,
 			 const int Highest_Order_of_Reconstruction);
 
+  void Grid_Ringleb_Flow_Straight_Inflow_Boundary(int &_Number_of_Blocks_Idir_,
+						  int &_Number_of_Blocks_Jdir_,
+						  const double &Inner_Streamline_Number,
+						  const double &Outer_Streamline_Number,
+						  const double &Isotach_Line,
+						  const int Number_of_Cells_Idir,
+						  const int Number_of_Cells_Jdir,
+						  const int Number_of_Ghost_Cells,
+						  const int Highest_Order_of_Reconstruction);
+
   void Determine_Coordinates_Ringleb_Flow(const double & Streamline, const double & Isotachline,
 					  double & xLoc, double & yLoc);
 
@@ -933,6 +943,16 @@ public:
 					const int Number_of_Cells_Jdir,
 					const int Number_of_Ghost_Cells,
 					const int Highest_Order_of_Reconstruction);
+
+  void Grid_Ringleb_Flow_Straight_Inflow_Boundary_Without_Update(int &_Number_of_Blocks_Idir_,
+								 int &_Number_of_Blocks_Jdir_,
+								 const double &Inner_Streamline_Number,
+								 const double &Outer_Streamline_Number,
+								 const double &Isotach_Line,
+								 const int Number_of_Cells_Idir,
+								 const int Number_of_Cells_Jdir,
+								 const int Number_of_Ghost_Cells,
+								 const int Highest_Order_of_Reconstruction);
 
   void Grid_Bump_Channel_Flow_Without_Update(int &_Number_of_Blocks_Idir_,
 					     int &_Number_of_Blocks_Jdir_,
@@ -1582,6 +1602,17 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 				     Input_Parameters.Number_of_Cells_Jdir,
 				     Input_Parameters.Number_of_Ghost_Cells,
 				     HighOrder2D_Input::MaximumReconstructionOrder());
+    break;
+  case GRID_RINGLEB_FLOW_STRAIGHT_INFLOW_BOUNDARY :
+    Grid_Ringleb_Flow_Straight_Inflow_Boundary_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+							      Input_Parameters.Number_of_Blocks_Jdir,
+							      Input_Parameters.Inner_Streamline_Number,
+							      Input_Parameters.Outer_Streamline_Number,
+							      Input_Parameters.Isotach_Line,
+							      Input_Parameters.Number_of_Cells_Idir,
+							      Input_Parameters.Number_of_Cells_Jdir,
+							      Input_Parameters.Number_of_Ghost_Cells,
+							      HighOrder2D_Input::MaximumReconstructionOrder());
     break;
   case GRID_BUMP_CHANNEL_FLOW :
     Grid_Bump_Channel_Flow_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
@@ -2538,6 +2569,35 @@ inline void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow(int &_Number_of_Blocks_
 				   Number_of_Cells_Jdir,
 				   Number_of_Ghost_Cells,
 				   Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow_Straight_Inflow_Boundary(int &_Number_of_Blocks_Idir_,
+										  int &_Number_of_Blocks_Jdir_,
+										  const double &Inner_Streamline_Number,
+										  const double &Outer_Streamline_Number,
+										  const double &Isotach_Line,
+										  const int Number_of_Cells_Idir,
+										  const int Number_of_Cells_Jdir,
+										  const int Number_of_Ghost_Cells,
+										  const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Ringleb_Flow_Straight_Inflow_Boundary_Without_Update(_Number_of_Blocks_Idir_,
+							    _Number_of_Blocks_Jdir_,
+							    Inner_Streamline_Number,
+							    Outer_Streamline_Number,
+							    Isotach_Line,
+							    Number_of_Cells_Idir,
+							    Number_of_Cells_Jdir,
+							    Number_of_Ghost_Cells,
+							    Highest_Order_of_Reconstruction);
 
   /* Update multi-block quadrilateral mesh exterior nodes. */
   Update_All_Exterior_Nodes();

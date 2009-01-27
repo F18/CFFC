@@ -2105,6 +2105,11 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	  IP.Inner_Streamline_Number = 0.80;
 	  IP.Outer_Streamline_Number = 0.40;
 	  IP.Isotach_Line = 0.30;
+       } else if (strcmp(IP.Grid_Type,"Ringleb_Flow_Straight_Inflow_Boundary") == 0) {
+          IP.i_Grid = GRID_RINGLEB_FLOW_STRAIGHT_INFLOW_BOUNDARY;
+	  IP.Inner_Streamline_Number = 0.80;
+	  IP.Outer_Streamline_Number = 0.40;
+	  IP.Isotach_Line = 0.30;
        } else if (strcmp(IP.Grid_Type,"Bump_Channel_Flow") == 0) {
           IP.i_Grid = GRID_BUMP_CHANNEL_FLOW;
        } else if (strcmp(IP.Grid_Type,"Non_Smooth_Bump_Channel_Flow") == 0) {
