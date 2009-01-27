@@ -159,11 +159,15 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize_Secondary(HexaSolver_
          properties.filter_type = FILTER_TYPE_RESTART; */
         
         properties.Set_Operating_Property("memory_efficient",ON);
-        properties.Set_Operating_Property("output_file_name",string("secondary_filter"));
+        string output_file_name;
+        properties.Get_Property(output_file_name,"output_file_name");
+        properties.Set_Operating_Property("output_file_name",output_file_name+string("_secondary_filter"));
         properties.Set_Filter_Property("FGR",Solution_Data.Input.Turbulence_IP.FGR_secondary);
         if (properties.Get_Property_int("use_fixed_filter_width")) {
             properties.Set_Filter_Property("fixed_filter_width",Solution_Data.Input.Turbulence_IP.Filter_Width_secondary);
         }
+        properties.Set_Operating_Property("progress_mode",Solution_Data.Input.Progress_Mode);
+
         properties.Set_Filter_Property("filter_type",Solution_Data.Input.Turbulence_IP.i_filter_type_secondary);
         Create_filter();
         initialized = true;
@@ -346,6 +350,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::filter_Blocks(void) {
             deallocate_Filtered(Soln_Blks[nBlk].Grid);
         }
     }
+    
     if (progress_mode!=PROGRESS_MODE_SILENT){
         properties.Set_Operating_Property("progress_mode",PROGRESS_MODE_SILENT);
     }
@@ -501,11 +506,12 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error(Filt
 template<typename Soln_pState, typename Soln_cState>
 int Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Blocks(void) {
     
-    char *prefix, cpu_id[256], extension[256], out_file_name[256];
+    char prefix[256], cpu_id[256], extension[256], out_file_name[256];
     char *out_file_name_ptr;
     
-
-    prefix = properties.Get_Property_string("output_file_name");
+    string prefix_string;
+    properties.Get_Property(prefix_string,"output_file_name");
+    strcpy(prefix,prefix_string.c_str());
     strcat(prefix, "_commutation_error");
     strcpy(extension, ".dat");
     
@@ -515,7 +521,7 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Block
     strcat(out_file_name, cpu_id);
     strcat(out_file_name, extension);
     out_file_name_ptr = out_file_name;
-    
+        
     ofstream out_file;
     out_file.open(out_file_name, ios::out);
     if (out_file.bad()) return (1);
@@ -578,9 +584,9 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     //properties.number_of_rings_increased = properties.number_of_rings;
     //Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(properties.commutation_order,properties.number_of_rings_increased);
     
-    properties.Set_Property("derivative_accuracy",properties.Get_Property_int("finite_differencing_order"));
+    properties.Set_Operating_Property("derivative_accuracy",properties.Get_Property_int("finite_differencing_order"));
     Finite_Difference_Class<Soln_pState,Soln_cState> finite_differencer(properties.Get_Property_int("derivative_accuracy"));
-    properties.Set_Property("number_of_rings_increased",finite_differencer.Get_central_rings());
+    properties.Set_Operating_Property("number_of_rings_increased",finite_differencer.Get_central_rings());
     
     //assert(Grid_Blk.Nghost >= properties.number_of_rings+properties.number_of_rings_increased);
     int number_of_rings = properties.Get_Property_int("number_of_rings");
@@ -953,8 +959,9 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Read_from_file(void) {
     in_file.open(in_file_name, ios::in);
     if (in_file.bad()) return (1);        
     in_file.setf(ios::skipws);
-    int filter_type = properties.Get_Property_int("filter_type");
+    int filter_type;
     in_file >> filter_type;
+    properties.Set_Operating_Property("filter_type",filter_type);
     Create_filter();
     
         int NBlk;

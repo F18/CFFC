@@ -37,6 +37,8 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             } /* endif */
         }
         
+        cout << "\n done filtering" << endl;
+        
         
         if (Solution_Data.Input.i_Flow_Type==FLOWTYPE_TURBULENT_LES) {
             
@@ -45,8 +47,8 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             if (error_flag) return error_flag;
             
             
-            /* ----------- Get turbulence statistics before computations -------- */
             
+            /* ----------- Get turbulence statistics after computations -------- */
             // Get average velocity
             double u_ave, v_ave, w_ave, sqr_u;
             Time_Averaging_of_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
@@ -58,42 +60,72 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             // Make local velocity field blocks containing fluctuations around average velocity
             Turbulent_Velocity_Field_Multi_Block_List  Local_Velocity_Field;
             Local_Velocity_Field.Create_Local_Velocity_Field_Multi_Block_List(Data.Initial_Mesh, 
-                                                         Solution_Data.Local_Solution_Blocks.Soln_Blks,
-                                                         Data.Local_Adaptive_Block_List);
+                                                                              Solution_Data.Local_Solution_Blocks.Soln_Blks,
+                                                                              Data.Local_Adaptive_Block_List);
             Get_Local_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
                                                             Data.Local_Adaptive_Block_List,
                                                             Vector3D(u_ave,v_ave,w_ave),
                                                             Local_Velocity_Field);
             
             // Collect all local velocity field blocks and put them in a global list
-            Turbulent_Velocity_Field_Multi_Block_List  Global_Velocity_Field;
-            Global_Velocity_Field.Create(Data.Initial_Mesh, Solution_Data.Input.Grid_IP);
-            Global_Velocity_Field.Assign_Local_Velocity_Field_Blocks(Local_Velocity_Field);
-            Global_Velocity_Field.Collect_Blocks_from_all_processors(Data.Octree,
-                                                                     Data.Local_Adaptive_Block_List,
-                                                                     Data.Global_Adaptive_Block_List);
+            Data.Velocity_Field.Create(Data.Initial_Mesh, Solution_Data.Input.Grid_IP);
+            Data.Velocity_Field.Assign_Local_Velocity_Field_Blocks(Local_Velocity_Field);
+            Data.Velocity_Field.Collect_Blocks_from_all_processors(Data.Octree,
+                                                                   Data.Local_Adaptive_Block_List,
+                                                                   Data.Global_Adaptive_Block_List);
+            Local_Velocity_Field.Deallocate();
             
-            // Get the kinetic energy spectrum
-            RandomFieldRogallo<LES3D_Polytropic_pState, LES3D_Polytropic_cState>  Spectrum(Solution_Data.Input);
-            Spectrum.Get_Energy_Spectrum(Data.Initial_Mesh, 
-                                         Data.batch_flag,
-                                         Global_Velocity_Field);
-            
-            if(Solution_Data.Input.Turbulence_IP.rescale_spectrum == ON) {
+            if (CFFC_Primary_MPI_Processor()) {
+                bool Use_Auxiliary_Mesh = false;
+                if(Solution_Data.Input.Grid_IP.Mesh_Stretching==ON || Solution_Data.Input.Grid_IP.Disturb_Interior_Nodes!=OFF)
+                    Use_Auxiliary_Mesh = true;
                 
-                // Rescale the kinetic energy spectrum and update solution blocks
-                if(!Data.batch_flag)
-                    cout << "\n ==============================="
-                         << "\n    Rescaling Energy Spectrum   "
-                         << "\n ===============================";
-                Spectrum.Rescale_Energy_Spectrum_to_Initial_Spectrum();
-                Spectrum.FFT_spectral_to_physical();
-                Spectrum.Export_to_Velocity_Field_Blocks(Data.Initial_Mesh,Global_Velocity_Field);
-                Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-                                                             Data.Local_Adaptive_Block_List,
-                                                             Vector3D(u_ave,v_ave,w_ave),
-                                                             Global_Velocity_Field);
+                if (!Use_Auxiliary_Mesh) {
+                    // Get the kinetic energy spectrum
+                    RandomFieldRogallo<LES3D_Polytropic_pState, LES3D_Polytropic_cState> Spectrum(Solution_Data.Input);
+                    Spectrum.Get_Energy_Spectrum(Data.Initial_Mesh, 
+                                                 Data.batch_flag,
+                                                 Data.Velocity_Field);
+                } else {
+                    // Create a uniform single block with same dimensions as Initial_Mesh
+                    Data.Auxiliary_Mesh.Create_Uniform_Initial_Grid(Solution_Data.Input.Grid_IP,Data.Initial_Mesh);
+                    
+                    // Make velocity field blocks where turbulence will be written
+                    Turbulent_Velocity_Field_Multi_Block_List  Auxiliary_Velocity_Field;
+                    Auxiliary_Velocity_Field.Create(Data.Auxiliary_Mesh, Solution_Data.Input.Grid_IP);
+                    // Interpolate the Data.Velocity_Field to the Auxiliary_Velocity_Field.
+                    error_flag = Data.Velocity_Field.Interpolate_Turbulent_Field(Data.Auxiliary_Mesh, Auxiliary_Velocity_Field);
+                    if (error_flag)   return error_flag;
+                    
+                    // Get the kinetic energy spectrum
+                    RandomFieldRogallo<LES3D_Polytropic_pState, LES3D_Polytropic_cState> Spectrum(Solution_Data.Input);
+                    Spectrum.Get_Energy_Spectrum(Data.Auxiliary_Mesh, 
+                                                 Data.batch_flag,
+                                                 Auxiliary_Velocity_Field);
+                    //Deallocate Auxiliary Mesh
+                    Data.Auxiliary_Mesh.Deallocate();
+                }
             }
+            
+            Data.Velocity_Field.Deallocate();
+
+//                if(Solution_Data.Input.Turbulence_IP.rescale_spectrum == ON) {
+//                    
+//                    // Rescale the kinetic energy spectrum and update solution blocks
+//                    if(!Data.batch_flag)
+//                        cout << "\n ==============================="
+//                        << "\n    Rescaling Energy Spectrum   "
+//                        << "\n ===============================";
+//                    Spectrum.Rescale_Energy_Spectrum_to_Initial_Spectrum();
+//                    Spectrum.FFT_spectral_to_physical();
+//                    Spectrum.Export_to_Velocity_Field_Blocks(Data.Initial_Mesh,Global_Velocity_Field);
+//                    Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+//                                                                 Data.Local_Adaptive_Block_List,
+//                                                                 Vector3D(u_ave,v_ave,w_ave),
+//                                                                 Global_Velocity_Field);
+//                }
+                
+            
             
             
         }
@@ -223,6 +255,7 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             Data.Velocity_Field.Collect_Blocks_from_all_processors(Data.Octree,
                                                                    Data.Local_Adaptive_Block_List,
                                                                    Data.Global_Adaptive_Block_List);
+            Local_Velocity_Field.Deallocate();
 
             if (CFFC_Primary_MPI_Processor()) {
                 bool Use_Auxiliary_Mesh = false;
@@ -270,7 +303,6 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
    int error_flag(0);
 
     if (Solution_Data.Input.i_Flow_Type==FLOWTYPE_TURBULENT_LES) {
-        
         /* ----------- Get turbulence statistics after computations -------- */
         // Get average velocity
         double u_ave, v_ave, w_ave, sqr_u;
@@ -296,7 +328,7 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
         Data.Velocity_Field.Collect_Blocks_from_all_processors(Data.Octree,
                                                                Data.Local_Adaptive_Block_List,
                                                                Data.Global_Adaptive_Block_List);
-        
+        Local_Velocity_Field.Deallocate();
         if (CFFC_Primary_MPI_Processor()) {
             bool Use_Auxiliary_Mesh = false;
             if(Solution_Data.Input.Grid_IP.Mesh_Stretching==ON || Solution_Data.Input.Grid_IP.Disturb_Interior_Nodes!=OFF)
@@ -311,7 +343,6 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
             } else {
                 // Create a uniform single block with same dimensions as Initial_Mesh
                 Data.Auxiliary_Mesh.Create_Uniform_Initial_Grid(Solution_Data.Input.Grid_IP,Data.Initial_Mesh);
-                
                 // Make velocity field blocks where turbulence will be written
                 Turbulent_Velocity_Field_Multi_Block_List  Auxiliary_Velocity_Field;
                 Auxiliary_Velocity_Field.Create(Data.Auxiliary_Mesh, Solution_Data.Input.Grid_IP);
@@ -328,7 +359,7 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
                 Data.Auxiliary_Mesh.Deallocate();
             }
         }
-
+        Data.Velocity_Field.Deallocate();
         
         
         Time_Averaging_of_Solution(Solution_Data.Local_Solution_Blocks.Soln_Blks,

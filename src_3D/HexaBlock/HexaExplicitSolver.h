@@ -2,9 +2,9 @@
 #define _HEXA_EXPLICIT_SOLVER
 
 //temporary
-#ifndef _EXPLICIT_FILTER_HELPERS_INCLUDED
-#include "../ExplicitFilters/Explicit_Filter_Helpers.h"
-#endif
+//#ifndef _EXPLICIT_FILTER_HELPERS_INCLUDED
+//#include "../ExplicitFilters/Explicit_Filter_Helpers.h"
+//#endif
 
 /*! ******************************************************
  * Routine: Hexa_Explicit_Solver                        *
@@ -18,6 +18,8 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
     if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT) {
         Solution_Data.Explicit_Filter.Initialize(Data,Solution_Data);
         Solution_Data.Explicit_Secondary_Filter.Initialize_Secondary(Data,Solution_Data);
+        Solution_Data.Explicit_Secondary_Filter.transfer_function(3);
+        Solution_Data.Explicit_Secondary_Filter.transfer_function(4);
     }
 
 

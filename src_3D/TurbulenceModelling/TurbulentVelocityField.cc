@@ -17,6 +17,7 @@ void Turbulent_Velocity_Field_Block::allocate(const int Ni,
                                               const int Nj, 
                                               const int Nk,
                                               const int Ng) {
+
     assert( Ni >= 1 && Nj >= 1 && Nk >= 1 && Ng >=1 && !Allocated);
     NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1;
     NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1;
@@ -650,10 +651,11 @@ void Turbulent_Velocity_Field_Multi_Block_List::Create(const Grid3D_Hexa_Multi_B
     if (Grid.NBlk >= 1 && Grid.Allocated) {
         Allocate(Grid.NBlk_Idir, Grid.NBlk_Jdir, Grid.NBlk_Kdir);
         for (int nBlk = 0; nBlk <= NBlk-1; ++nBlk ) {
-            if (Grid.Grid_Blks[nBlk].Allocated) Vel_Blks[nBlk].allocate(Grid.Grid_Blks[nBlk].NCi-2*Grid.Grid_Blks[nBlk].Nghost,
-                                                                        Grid.Grid_Blks[nBlk].NCj-2*Grid.Grid_Blks[nBlk].Nghost,
-                                                                        Grid.Grid_Blks[nBlk].NCk-2*Grid.Grid_Blks[nBlk].Nghost,
-                                                                        Grid.Grid_Blks[nBlk].Nghost);
+            if (Grid.Grid_Blks[nBlk].Allocated && !Vel_Blks[nBlk].Allocated) 
+                Vel_Blks[nBlk].allocate(Grid.Grid_Blks[nBlk].NCi-2*Grid.Grid_Blks[nBlk].Nghost,
+                                        Grid.Grid_Blks[nBlk].NCj-2*Grid.Grid_Blks[nBlk].Nghost,
+                                        Grid.Grid_Blks[nBlk].NCk-2*Grid.Grid_Blks[nBlk].Nghost,
+                                        Grid.Grid_Blks[nBlk].Nghost);
         } /* endfor */
     } /* endif */
 }

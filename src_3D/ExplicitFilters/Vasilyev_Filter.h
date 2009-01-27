@@ -329,10 +329,16 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
     
     Read_Properties();
     
-    
-    if (theNeighbours.symmetric_stencil && symmetric_weights.size()!=0) {
-        return symmetric_weights;
+    if (fixed_filter_width) {
+        if (theNeighbours.symmetric_stencil && theNeighbours.uniform_stencil && symmetric_weights.size()!=0) {
+            return symmetric_weights;
+        }
     } else {
+        if (theNeighbours.symmetric_stencil && symmetric_weights.size()!=0) {
+            return symmetric_weights;
+        }
+    } 
+    
         int number_of_neighbours = theNeighbours.number_of_neighbours;
 
         int number_of_moment_combinations = number_of_combinations();
@@ -441,13 +447,23 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
         
         //W *= theCell.Jacobian;
         
-        if (theNeighbours.symmetric_stencil) {
-            symmetric_weights = W;
+    
+    if (fixed_filter_width) {
+        if (theNeighbours.symmetric_stencil && theNeighbours.uniform_stencil) {
+            if (symmetric_weights.size()==0)
+                symmetric_weights = W;
         }
+    } else {
+        if (theNeighbours.symmetric_stencil && symmetric_weights_1D.size()!=0) {
+            if (symmetric_weights.size()==0)
+                symmetric_weights = W;
+        }
+    } 
+    
+
         
-        return W;
+    return W;
         
-    }
     
 }
 
@@ -457,9 +473,21 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights_1D(Cell3D
     
     Read_Properties();
     
-    if (theNeighbours.symmetric_stencil && symmetric_weights_1D.size()!=0) {
-        return symmetric_weights_1D;
+    if (fixed_filter_width) {
+        if (theNeighbours.symmetric_stencil && theNeighbours.uniform_stencil && symmetric_weights_1D.size()!=0) {
+            if (theNeighbours.uniform_stencil)
+                cout << "u"; cout.flush();
+            return symmetric_weights_1D;
+        }
     } else {
+        if (theNeighbours.symmetric_stencil && symmetric_weights_1D.size()!=0) {
+            return symmetric_weights_1D;
+        }
+    } 
+    
+//    if (theNeighbours.symmetric_stencil && symmetric_weights_1D.size()!=0 && theNeighbours.uniform_stencil) {
+//        return symmetric_weights_1D;
+//    } else {
         
     int number_of_moment_combinations = number_of_combinations();
     int number_of_neighbours = theNeighbours.number_of_neighbours;
@@ -537,11 +565,19 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights_1D(Cell3D
     }
     w /= denominator; */
 
-    if (theNeighbours.symmetric_stencil) {
-        symmetric_weights_1D = w;
-    }
+    if (fixed_filter_width) {
+        if (theNeighbours.symmetric_stencil && theNeighbours.uniform_stencil) {
+            symmetric_weights_1D = w;
+        }
+    } else {
+        if (theNeighbours.symmetric_stencil && symmetric_weights_1D.size()!=0) {
+            symmetric_weights_1D = w;
+        }
+    } 
+    
+
     return w;
-    }
+    
 };
 template<typename Soln_pState, typename Soln_cState>
 inline int Vasilyev_Filter<Soln_pState,Soln_cState>::Set_basic_constraints(Cell3D &theCell, Neighbours &theNeighbours) {

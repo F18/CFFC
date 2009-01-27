@@ -1428,7 +1428,6 @@ Explicitly_Filter_Solution(Explicit_Filters<typename HEXA_BLOCK::Soln_pState,typ
             }
         }
     }
-
     Explicit_Filter.filter(p_ptr);    
     for (int nBlk = 0; nBlk < Number_of_Soln_Blks; ++nBlk) {
         if (Block_Used[nBlk]) {

@@ -51,9 +51,10 @@ public:
         //explicit_filter.Set_Filter_Property("debug_flag",ON);
         //explicit_filter_2.Set_Filter_Property("debug_flag",ON);
 
-        explicit_filter.transfer_function(FILTER_INNER_CELL);
-        explicit_filter_2.transfer_function(FILTER_INNER_CELL);
+        explicit_filter.transfer_function(FILTER_MIDDLE_CELL);
+        explicit_filter_2.transfer_function(FILTER_MIDDLE_CELL);
         
+        //explicit_filter.test();
         
         //explicit_filter.test();
 
@@ -62,7 +63,7 @@ public:
         member_ptr p_member = &Soln_pState::p;
 
         SpectralAnalysis<Soln_pState,Soln_cState> initial_spectrum(Data,Solution_Data), final_spectrum(Data,Solution_Data);
-        initial_spectrum.Set_Spectrum(rho_member);
+        //initial_spectrum.Set_Spectrum(rho_member);
         initial_spectrum.Get_Spectrum(rho_member,"density_before");
 
         typedef Soln_cState *** (Hexa_Block<Soln_pState,Soln_cState>::*Soln_cState_3D_ptr_type);
@@ -73,7 +74,7 @@ public:
         
         final_spectrum.Get_Spectrum_With_Reference(rho_member,"density",initial_spectrum);
         //explicit_filter.Calculate_Commutation_Error(rho_member);
-        explicit_filter.Write_to_file();
+        //explicit_filter.Write_to_file();
 
     }
     

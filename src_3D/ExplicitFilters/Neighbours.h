@@ -33,6 +33,7 @@ public:
     int number_of_neighbours;
     bool theCell_included;
     bool symmetric_stencil;
+    bool uniform_stencil;
     
     
     Vector3D Delta;
@@ -140,6 +141,10 @@ inline void Neighbours::GetNeighbours(Cell3D &theCell, int number_of_rings,int f
         symmetric_stencil = false;
     }
     
+    
+    uniform_stencil=true;
+    Vector3D CellWidth(theCell.dXc.vector_abs());
+    
     switch (filter_type) {
         case FILTER_TYPE_HASELBACHER:
             for (int i=imin; i<=imax; i++) {
@@ -147,6 +152,8 @@ inline void Neighbours::GetNeighbours(Cell3D &theCell, int number_of_rings,int f
                     for (int k=kmin; k<=kmax; k++) {
                         if (theCell != Grid_ptr->Cell[i][j][k]) {
                             neighbour[number_of_neighbours] = Grid_ptr->Cell[i][j][k];
+                            if (uniform_stencil == true)
+                                uniform_stencil = (uniform_stencil && (vector_abs(Grid_ptr->Cell[i][j][k].dXc.vector_abs() - CellWidth) < Vector3D(PICO,PICO,PICO)) );
                             number_of_neighbours++;
                         }
                     }
@@ -159,13 +166,16 @@ inline void Neighbours::GetNeighbours(Cell3D &theCell, int number_of_rings,int f
                 for (int j=jmin; j<=jmax; j++) {
                     for (int k=kmin; k<=kmax; k++) {   // includes theCell !!!
                         neighbour[number_of_neighbours] = Grid_ptr->Cell[i][j][k];
+                        if (uniform_stencil == true) {
+                            uniform_stencil = (uniform_stencil && (vector_abs(Grid_ptr->Cell[i][j][k].dXc.vector_abs() - CellWidth) < Vector3D(PICO,PICO,PICO)) );
+                        }
                         number_of_neighbours++;
                     }
                 }
             }
             break;
     }
-    
+        
     Delta = theCell.dXc.vector_abs();
 }
 

@@ -151,8 +151,8 @@ private:
   //  void Optimize_Filter(Cell3D &theCell, Neighbours &theNeighbours, double &kmax, double &FGR, int &commutation_order);
     double Calculate_weight_factor(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmax, double &FGR, int &commutation_order);
     int Calculate_weight_factor(void);
+    double Get_Weight_Factor_from_FGR(double FGR_in) ;
     double Filter_Grid_Ratio(Cell3D &theCell, Neighbours &theNeighbours, double &weight, DenseMatrix &A, Vector3D &kmax);
-    double Filter_Grid_Ratio(int number_of_rings, double commutation_order, double weight);
     double Calculate_relaxation_factor(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmax, RowVector &w);
     double filter_quality(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, double &kmax, int number_of_rings, int commutation_order, double weight_factor);
     double filter_quality(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmax, RowVector &w);
@@ -220,7 +220,7 @@ inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     
     Read_Properties();
     
-    if (uniform_grid && theNeighbours.symmetric_stencil) {
+    if (theNeighbours.uniform_stencil && theNeighbours.symmetric_stencil) {
         if (Assigned_w_Uniform_Grid)
             return w_Uniform_Grid;
     }
@@ -245,7 +245,7 @@ inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     kmax.z = PI/theNeighbours.Delta.z;
     Apply_relaxation(theCell, theNeighbours, kmax, w);
     
-    if (uniform_grid && theNeighbours.symmetric_stencil) {
+    if (theNeighbours.uniform_stencil && theNeighbours.symmetric_stencil) {
         w_Uniform_Grid = w;
         Assigned_w_Uniform_Grid = true;
     }
@@ -447,7 +447,14 @@ inline DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell
         Vector3D Delta;
         Vector3D DR;
         if (use_fixed_filter_width) {
-            Delta = Vector3D(fixed_filter_width,fixed_filter_width,fixed_filter_width) * weight_factor;
+            
+            Vector3D weight_factors(Get_Weight_Factor_from_FGR(fixed_filter_width/theNeighbours.Delta.x),
+                                    Get_Weight_Factor_from_FGR(fixed_filter_width/theNeighbours.Delta.y),
+                                    Get_Weight_Factor_from_FGR(fixed_filter_width/theNeighbours.Delta.z));
+            Delta.x = theNeighbours.Delta.x * weight_factors.x;
+            Delta.y = theNeighbours.Delta.y * weight_factors.y;
+            Delta.z = theNeighbours.Delta.z * weight_factors.z;
+            
             for (int i=0; i<the_number_of_neighbours; i++) {
                 DR = (theNeighbours.neighbour[i].Xc - theCell.Xc);
                 W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- (sqr(DR.x/Delta.x)+sqr(DR.y/Delta.y)+sqr(DR.z/Delta.z)) ) ;
@@ -641,177 +648,6 @@ Calculate_relaxation_factor(Cell3D &theCell, Neighbours &theNeighbours, Vector3D
 }
 
 
-//! curve fits
-template <typename Soln_pState, typename Soln_cState>
-inline double Haselbacher_Filter<Soln_pState,Soln_cState>::Filter_Grid_Ratio(int number_of_rings, double comm_order, double weight) {
-/* 
- * Curve fits made with zunzun.com website 
- * Generate Data FGR versus weight for the desired commutation error and number of neighbouring rings
- * through Output_Filter_types(Grid_Blk, theCell, number_of_rings, commutation_order)
- * in filter_tests(Grid_Blk, theCell)
- */
-    double x_in = weight;
-    double temp(0.0);
-    double a,b,c,d,e; // coefficients
-
-    switch(number_of_rings) {
-        case 2:
-            switch (commutation_order) {
-                case 2:
-                case 3:
-                    a = 1.2618132070805663E+00;
-                    b = -1.5652264079596057E+00;
-                    c = 1.0271073495343523E+00;
-                    d = -6.8595127739351558E-01;
-                    e = 4.4017996869326392E-01;
-                    temp += (a + b * x_in + c * x_in * x_in) / (1.0 + d * x_in + e * x_in * x_in);
-                    return temp;
-                case 4:
-                case 5:
-                    a = -5.9700306784590824E-02;
-                    b = 1.4906257654202673E-04;
-                    c = 4.2964779587709421E+00;
-                    d = -5.6358841379335569E+00;
-                    e = 2.2338885178389103E+00;
-                    temp += a * pow(x_in, 0.5);
-                    temp += b * pow(x_in, 2.0);
-                    temp += c * pow(x_in, -2.0);
-                    temp += d * pow(x_in, -1.5);
-                    temp += e;
-                    return temp;
-                default:
-                    cout << "commutation_order " << commutation_order << 
-                    " with " << number_of_rings << " number of rings not supported, make curve fit." << endl;
-                    return ZERO;
-            }
-        case 3:
-            switch (commutation_order) {
-                case 2:
-                case 3:
-                    a = -7.4547319587168670E-01;
-                    b = -5.1576731798758173E+00;
-                    c = -8.7194396722989236E+00;
-                    d = -6.2091839207957884E+00;
-                    e = 1.5705916687174923E+01;
-                    temp += a * log(x_in);
-                    temp += b * exp(-1.0 * x_in);
-                    temp += c * tanh(x_in);
-                    temp += d * pow(x_in, -0.5);
-                    temp += e;
-                    return temp; 
-                case 4:
-                case 5:
-                    a = 5.8366080575745464E+01;
-                    b = 5.9578033255065705E+01;
-                    c = -1.2855074423429333E+00;
-                    d = -1.5683703991817932E+01;
-                    e = -8.7921184020434339E+01;
-                    temp += a * atan(x_in);
-                    temp += b * pow(x_in, -1.0);
-                    temp += c * tanh(x_in);
-                    temp += d * pow(x_in, -2.0);
-                    temp += e;
-                    return temp;
-                default:
-                    cout << "commutation_order " << commutation_order << 
-                    " with " << number_of_rings << " number of rings not supported, make curve fit." << endl;
-                    return ZERO;
-            }
-        case 4:
-            switch (commutation_order) {
-                case 2:
-                case 3:
-                    a = 1.3194950599947615E-02;
-                    b = -9.9714656466242175E+00;
-                    c = -9.7502277171658793E+00;
-                    d = -7.8971169401914315E-02;
-                    e = 1.8375899683424766E+01;
-                    temp += a * pow(x_in, 2.0);
-                    temp += b * tanh(x_in);
-                    temp += c * pow(x_in, -0.5);
-                    temp += d * pow(x_in, 1.5);
-                    temp += e;
-                    return temp;
-                case 4:
-                case 5:
-                    a = -3.4725296572424318E+00;
-                    b = 4.5446201107087303E+00;
-                    c = -6.1712195629000455E+00;
-                    d = 2.7754065845661348E-02;
-                    e = 8.9774240210873870E+00;
-                    temp += a * pow(x_in, 0.5);
-                    temp += b * log(x_in);
-                    temp += c * tanh(x_in);
-                    temp += d * pow(x_in, 1.5);
-                    temp += e;
-                    return temp;
-                case 6:
-                case 7:
-                    a = 1.0345864710917796E+02;
-                    b = 1.0604007211535077E+02;
-                    c = 4.4684065741245442E+00;
-                    d = -2.8261109245951442E+01;
-                    e = -1.5982055989255858E+02;
-                    temp += a * atan(x_in);
-                    temp += b * pow(x_in, -1.0);
-                    temp += c * exp(-1.0 * x_in);
-                    temp += d * pow(x_in, -2.0);
-                    temp += e;
-                    return temp;
-                default:
-                    cout << "commutation_order " << commutation_order << 
-                    " with " << number_of_rings << " number of rings not supported, make curve fit." << endl;
-                    return ZERO;
-            }
-        case 5:
-            switch (commutation_order) {
-                case 6:
-                case 7:
-                    a = -3.7686465580425743E-01;
-                    b = 6.9777909729062601E-03;
-                    c = 2.8315002288423621E+00;
-                    d = -5.8241253402595605E+00;
-                    e = 5.6635934860988550E+00;
-                    temp += a * x_in;
-                    temp += b * pow(x_in, 2.0);
-                    temp += c * log(x_in);
-                    temp += d * tanh(x_in);
-                    temp += e;
-                    return temp;
-                default:
-                    cout << "commutation_order " << commutation_order << 
-                    " with " << number_of_rings << " number of rings not supported, make curve fit." << endl;
-                    return ZERO;
-            }
-        case 6:
-            switch (commutation_order) {
-                case 6:
-                case 7:
-                    a = 2.4808172161362614E+00;
-                    b = -5.9317013888515309E+00;
-                    c = -3.4691174352134446E-01;
-                    d = 8.0955778565039394E-01;
-                    temp = exp(a + (b/x_in) + c*log(x_in)) + d;
-                    return temp;
-                default:
-                    cout << "commutation_order " << commutation_order << 
-                    " with " << number_of_rings << " number of rings not supported, make curve fit." << endl;
-                    return ZERO;
-            }
-        default:
-            cout << "commutation_order " << commutation_order << 
-            " with " << number_of_rings << " number of rings not supported, make curve fit." << endl;
-            return ZERO;
-    }
-    
-    
-    
-    
-    
-}
-
-
-
 template <typename Soln_pState, typename Soln_cState>
 int Haselbacher_Filter<Soln_pState,Soln_cState>::Calculate_weight_factor(void) {
     
@@ -831,38 +667,7 @@ int Haselbacher_Filter<Soln_pState,Soln_cState>::Calculate_weight_factor(void) {
         number_of_rings == 5 ||
         number_of_rings == 6) {
         
-        // Ridder's method
-        double a,b,m,s,fa,fb,fm,fp,p;
-        int counter;
-        a=1.0, b=10.0;
-        fa = Filter_Grid_Ratio(number_of_rings,commutation_order,a) - FGR;
-        fb = Filter_Grid_Ratio(number_of_rings,commutation_order,b) - FGR;
-        fp = 100;
-        counter = 0;
-        while( fabs(fp) >= 0.001 ) {
-            m = a + (b-a)/TWO;
-            fm = Filter_Grid_Ratio(number_of_rings,commutation_order,m) - FGR;
-            
-            if (fa<ZERO)    s = -ONE;
-            else            s = ONE;
-            p = m + (m-a)*s*fm/(sqrt(fm*fm - fa*fb)+PICO);
-            
-            fp = Filter_Grid_Ratio(number_of_rings,commutation_order,p) - FGR;
-            
-            if (fa*fm < ZERO) { b = m; fb = fm; } else { a = m; fa = fm; }; 
-            if (fa*fp < ZERO) { b = p; fb = fp; } else { a = p; fa = fp; }; 
-            
-            
-            counter++;
-            if(counter >= 10) {
-                if (!batch_flag)
-                    cout << "max reached for FGR" << endl;
-                break;
-            }
-        }
-        
-        weight_factor = p;
-        
+        weight_factor = Get_Weight_Factor_from_FGR(FGR);
         if (isnan(weight_factor) || isinf(weight_factor)) {
             weight_factor = 1.0;
             return 1;
@@ -874,6 +679,159 @@ int Haselbacher_Filter<Soln_pState,Soln_cState>::Calculate_weight_factor(void) {
         return 1;
     }
 }
+
+template <typename Soln_pState, typename Soln_cState>
+double Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weight_Factor_from_FGR(double FGR_in) {
+    /* 
+     * Curve fits made with zunzun.com website 
+     * Generate Data weight versus FGR for the desired commutation error and number of neighbouring rings
+     * through Output_Filter_types(Grid_Blk, theCell, number_of_rings, commutation_order)
+     * in filter_tests(Grid_Blk, theCell)
+     * fitting function type = NIST Hahn
+     */
+    
+    
+    bool not_supported=false;
+	double temp = 0.0;
+    double x_in = FGR_in;
+	double a,b,c,d,e,f,g;
+    
+	// coefficients
+    
+    switch (commutation_order){
+        case 2:
+        case 3:
+            switch (number_of_rings){
+                case 2:
+                    // 2RINGS, ORDER2,3
+                    a = -3.0140751826231790E+03;
+                    b = 6.2841545987077097E+03;
+                    c = -3.1317049743541656E+03;
+                    d = 4.5293107921096691E+02;
+                    e = 1.8146241964340607E+03;
+                    f = -1.2922496009634167E+03;
+                    g = 2.2980281466493403E+02;
+                    break;
+                case 3:
+                    // 3RINGS, ORDER2,3
+                    a = 3.4357518949360310E+03;
+                    b = -6.3060701011942265E+03;
+                    c = 1.9297038560169781E+03;
+                    d = -1.4555898528024727E+02;
+                    e = -2.3180770229651507E+03;
+                    f = 1.0842858962506270E+03;
+                    g = -1.2615464091327252E+02;
+                    break;
+                case 4:
+                    // 4RINGS, ORDER2,3
+                    a = -4.2404649518127042E+02;
+                    b = 7.0955051057927221E+02;
+                    c = -1.0902741777903421E+02;
+                    d = -1.6941336473353654E+00;
+                    e = 3.1322423354893340E+02;
+                    f = -1.0567847273001135E+02;
+                    g = 8.6762233720351443E+00;
+                    break;
+                case 5:
+                    // 5RINGS, ORDER2,3
+                    a = -1.1985412579860616E+09;
+                    b = 1.8125645149833450E+09;
+                    c = 1.2927408063997599E+08;
+                    d = -5.3017437452576041E+07;
+                    e = 1.0805095114115376E+09;
+                    f = -2.4789600499725601E+08;
+                    g = 1.2229223336981714E+07;
+                    break;
+                case 6:
+                    // 6RINGS, ORDER2,3
+                    a = 3.2061922586124655E+15;
+                    b = -4.4084233884181905E+15;
+                    c = -1.4971205587097480E+15;
+                    d = 2.3504575565694050E+14;
+                    e = -3.5419648474916920E+15;
+                    f = 5.7778551364900050E+14;
+                    g = -1.4271454806817041E+13;
+                    break;
+                default:
+                    not_supported=true;
+                    break;
+            }
+            break;
+        case 4:
+        case 5:
+            switch (number_of_rings) {
+                case 2:
+                    // 2RINGS, ORDER4,5
+                    a = -9.1002187107878208E+16;
+                    b = 2.2217694352337606E+17;
+                    c = -1.2095552722303850E+17;
+                    d = 1.7737038684551338E+16;
+                    e = 7.6213148553424512E+16;
+                    f = -6.7032261872652584E+16;
+                    g = 1.4715767437761356E+16;
+                    break;
+                case 3:
+                    // 3RINGS, ORDER4,5
+                    a = 1.5460528732337981E+28;
+                    b = -3.4038946747384971E+28;
+                    c = 3.9250754524436671E+28;
+                    d = -9.9245625774474450E+27;
+                    e = 1.4216863523877390E+28;
+                    f = -4.8861228717812966E+27;
+                    g = -5.2003705205911889E+25;
+                    break;
+                case 4:
+                    // 4RINGS, ORDER4,5
+                    a = 3.7027165890867844E+07;
+                    b = -7.4543227123703763E+07;
+                    c = 2.0395741348987468E+07;
+                    d = -9.7054022492336365E+05;
+                    e = -2.6962161138882220E+07;
+                    f = 1.2939798619173352E+07;
+                    g = -1.5345582271938729E+06;
+                    break;
+                case 5:
+                    // 5RINGS, ORDER4,5
+                    a = 1.2989111154329037E+03;
+                    b = -2.4201118542869854E+03;
+                    c = 3.2421503374454130E+02;
+                    d = 2.5420812434345123E+01;
+                    e = -1.0018822551301112E+03;
+                    f = 3.7079265551148973E+02;
+                    g = -3.3155930667554379E+01;
+                    break;
+                case 6:
+                    // 6RINGS, ORDER4,5
+                    a = -3.5032203193030575E+04;
+                    b = 6.0149046859355643E+04;
+                    c = 2.9083464693638043E+03;
+                    d = -2.0036206825518561E+03;
+                    e = 3.0155713796316581E+04;
+                    f = -8.2943845958678758E+03;
+                    g = 5.0875356408944953E+02;
+                    break;
+                default:
+                    not_supported=true;
+                    break;
+            }
+            break;
+        default:
+            not_supported=true;
+            break;
+    }
+
+    if (not_supported) {
+        cout << "commutation_order " << commutation_order << 
+        " with " << number_of_rings << " number of rings not supported, make curve fit." << endl;
+        return ZERO;
+    } else {
+        temp += (a + b * x_in + c * x_in * x_in + d * x_in * x_in * x_in) / (1.0 + e * x_in + f * x_in * x_in + g * x_in * x_in * x_in);
+        return temp;
+    }
+	
+
+}
+
 
 
 template <typename Soln_pState, typename Soln_cState>
@@ -992,10 +950,11 @@ void Haselbacher_Filter<Soln_pState,Soln_cState>::filter_tests(Grid3D_Hexa_Block
     //    Output_Filter_types(Grid_Blk,theCell,kmax,2);
     //    Output_Filter_types(Grid_Blk,theCell,kmax,3);
     //    Output_Filter_types(Grid_Blk,theCell,kmax,4);
-    //Output_Filter_types(Grid_Blk,theCell,4,2);
-    //Output_Filter_types(Grid_Blk,theCell,4,6); 
-    //Output_Filter_types(Grid_Blk,theCell,5,6);    
-    //Output_Filter_types(Grid_Blk,theCell,6,6);    
+    //Output_Filter_types(Grid_Blk,theCell,2,commutation_order);
+//    Output_Filter_types(Grid_Blk,theCell,3,commutation_order);
+//    Output_Filter_types(Grid_Blk,theCell,4,commutation_order); 
+//    Output_Filter_types(Grid_Blk,theCell,5,commutation_order);    
+//    Output_Filter_types(Grid_Blk,theCell,6,commutation_order);    
 
 }
 
@@ -1343,7 +1302,9 @@ int Haselbacher_Filter<Soln_pState,Soln_cState>::
 Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int number_of_rings, int commutation_order) {
     
     
-    int N_weight_factor = 29;   double max_weight_factor = 15.0;
+    int N_weight_factor = 29;   
+    double min_weight_factor = 0.5;
+    double max_weight_factor = 15.0;
     
     double *weight_factors = new double[N_weight_factor];
     
@@ -1365,7 +1326,7 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int number_of_
     
     
     for (int k=0; k<N_weight_factor; k++) {
-        double weight_factor = 1.0 + k*(max_weight_factor-1.0)/(N_weight_factor-1.0);
+        double weight_factor = min_weight_factor + k*(max_weight_factor-min_weight_factor)/(N_weight_factor-1.0);
         weight_factors[k]=weight_factor;
         
         //Print_3(number_of_rings,commutation_order,weight_factor);
@@ -1436,8 +1397,8 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int number_of_
     output_file << "TITLE = \"" << "Filter types, "
     << "\"" << "\n"
     << "VARIABLES = "
-    << "\"Weight factor\" \\ \n"
     << "\"FGR\" \\ \n"
+    << "\"Weight factor\" \\ \n"
     << "\"filter quality\" \\ \n"
     << "\"sharpness\" \\ \n"
     << "\"smoothness\" \\ \n"
@@ -1450,8 +1411,8 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int number_of_
     
     
     for (int k=0; k<N_weight_factor; k++) {
-        output_file << " " << weight_factors[k] 
-        << " " << FGR[k]
+        output_file         << " " << FGR[k]
+        << " " << weight_factors[k] 
         << " " << Q[k]*100
         << " " << sharpness[k]*100
         << " " << smoothness[k]*100
