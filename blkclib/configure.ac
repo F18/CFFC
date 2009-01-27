@@ -59,7 +59,7 @@ AC_MSG_RESULT($use_gcc)
 # Get the C++ compiler
 #--------------------------------------------------------------------
 
-AC_PROG_CXX([$CXX cxx icpc g++])
+AC_PROG_CXX([$CXX cxx icpc xlc++ g++])
 
 # Check for debug
 AC_MSG_CHECKING([if debugging is enabled])
@@ -88,7 +88,11 @@ case "$CXX" in
    icpc) DEBUGFLAGS="-O -g"
          OPTFLAGS=-O3
          REGFLAGS="-mp -w"
-         DEPFLAGS=-MM ;;
+         DEPFLAGS=-MM ;; 
+   xlc++) DEBUGFLAGS=-g
+          OPTFLAGS="-O3 -qarch=auto -qtune=auto -qsuppress=1500-029"
+          REGFLAGS=-DUNIX_NAMES
+          DEPFLAGS="-qmakedep=gcc" ;;
 esac
 
 # Set compilation flags

@@ -468,7 +468,7 @@ void frenel(double x, double &s, double &c)
     sumc=ax;
     sign=1.0;
     fact=PIBY2*ax*ax;
-    odd=TRUE;
+    odd=true;
     term=ax;
     n=3;
     for (k=1; k<=MAXIT; ++k) {
