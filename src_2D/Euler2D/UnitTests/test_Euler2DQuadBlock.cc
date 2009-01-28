@@ -688,6 +688,7 @@ namespace tut
     IP.Parse_Input_File(input_file_name);
     HighOrder2D_Input::Set_Final_Parameters(IP);
     CENO_Execution_Mode::CENO_SPEED_EFFICIENT = OFF;
+    Grid2D_Quad_Block_HO::setLowOrderBoundaryRepresentation();        
 
     // Create computational domain
     InitializeComputationalDomain(MeshBlk,QuadTree,
