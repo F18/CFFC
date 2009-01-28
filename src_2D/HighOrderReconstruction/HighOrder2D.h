@@ -602,7 +602,8 @@ public:
 					   IndexType & i_index, IndexType & j_index) const;  
   void SetDeviatedReconstructionStencil(const int &iCell, const int &jCell,
 					IndexType & i_index, IndexType & j_index,
-					const int &rings) const;
+					const int &rings,
+					bool IsStencilExtended = true) const;
   void displayDeviatedReconstructionStencil(ostream & out,
 					    const int &iCell, const int &jCell,
 					    const int &rings) const;
@@ -2424,10 +2425,10 @@ void HighOrder2D<SOLN_STATE>::ComputeCellSmoothnessDataWithDeviatedStencil(Soln_
 														 const int &) const,
 									   const int &iCell, const int &jCell){
   
-  // Set the biased supporting stencil (i.e. deviated from central)
+  // Set the biased supporting stencil (i.e. deviated from central and not extended)
   SetDeviatedReconstructionStencil(iCell,jCell,
 				   i_index_ave, j_index_ave,
-				   RingsSI());
+				   RingsSI(), false);
 
   // Evaluate the Smoothness Indicator for the current cell for all solution state variables
   ComputeSmoothnessIndicator(SolnBlk, ReconstructedSoln,
@@ -2959,13 +2960,15 @@ void HighOrder2D<SOLN_STATE>::getEnlargedReconstructionStencil(const int &iCell,
  *
  * \param [out] i_index The i-index of the cells.
  * \param [out] j_index The j-index of the cells.
+ * \param [in] IsStencilExtended flag for extending or not the stencil. By default is true.
  *
  * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
  */
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell, const int &jCell,
 							       IndexType & i_index, IndexType & j_index,
-							       const int &rings) const{
+							       const int &rings,
+							       bool IsStencilExtended) const{
 
   // Reset indexes
   i_index.clear();
@@ -2998,40 +3001,42 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
   Jmax_NE = jCell+rings;
   Jmax_N  = jCell+rings;
 
+  
+  // Decide whether the stencil is extended or not.
+  // An extended stencil will add cells in the opposite direction of the restricted boundary.
+  // By default the stencil is extended.
+  if ( (CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS == ON &&
+	CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL == OFF) ){
+    
+    IsStencilExtended = false;
+  }
 
-  if (CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS == ON &&
-      CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL == OFF) {
 
-    // Additional equations come from approximate constraints.
+  /* ===  Cell to the left of West block boundary === 
+   * Obs: This cell is unrestricted to West.
+   */
+  if ( iCell < ICl ){
 
-    throw runtime_error("HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil() ERROR! Variant not implemented yet!");
-
-  } else {
-
-    // Additional equations come from extending the stencil in the opposite direction of the restrictive boundary
-
-    /* ===  Cell to the left of West block boundary === 
-     * Obs: This cell is unrestricted to West.
-     */
-    if ( iCell < ICl ){
-
-      // ==== Cover cells with iCell < ICl ====
+    // ==== Cover cells with iCell < ICl ====
       
-      if ( jCell < JCl){                // Case A
-	// South Bnd influence
-	if (W_SouthBnd.IsReconstructionStencilAffected()){
-	  if (iCell == ICl - 1){
-	    Jmax_NW = Jmax_N = JCl-1;     /* limit Jmax */
+    if ( jCell < JCl){                // Case A
+      // South Bnd influence
+      if (W_SouthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICl - 1){
+	  Jmax_NW = Jmax_N = JCl-1;     /* limit Jmax */
 
+	  if (IsStencilExtended){
 	    /* extend Jmin */
 	    Jmin_SW -= 1;
 	    Jmin_S  -= 1;
 	    /* ensure valid Jmin */
 	    Jmin_SW = max(Jmin_SW, 0);
-	    Jmin_S  = max(Jmin_S, 0);	    
-	  } else {
-	    Jmax_NW = Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
+	    Jmin_S  = max(Jmin_S, 0);
+	  }
+	} else {
+	  Jmax_NW = Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
 
+	  if (IsStencilExtended){
 	    /* extend Jmin */
 	    Jmin_SW -= 1;
 	    Jmin_S  -= 1;
@@ -3041,19 +3046,23 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Jmin_S  = max(Jmin_S, 0); 
 	    Jmin_SE = max(Jmin_SE, 0);
 	  }
-	} else if (S_WestBnd.IsReconstructionStencilAffected()){
-	  if (jCell == JCl - 1){
-	    Imax_E = Imax_SE = ICl-1;     /* limit Imax */
+	}
+      } else if (S_WestBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCl - 1){
+	  Imax_E = Imax_SE = ICl-1;     /* limit Imax */
 
+	  if (IsStencilExtended){
 	    /* extend Imin */
 	    Imin_W  -= 1;
 	    Imin_SW -= 1;
 	    /* ensure valid Imin */
 	    Imin_W  = max(Imin_W, 0);
 	    Imin_SW = max(Imin_SW, 0);
-	  } else {
-	    Imax_E = Imax_SE = Imax_NE = ICl-1;     /* limit Imax */
+	  }
+	} else {
+	  Imax_E = Imax_SE = Imax_NE = ICl-1;     /* limit Imax */
 	    
+	  if (IsStencilExtended){
 	    /* extend Imin */
 	    Imin_W  -= 1;
 	    Imin_SW -= 1;
@@ -3064,94 +3073,110 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Imin_NW = max(Imin_NW, 0);
 	  }
 	}
+      }
 
-      } else if (jCell < JCl+rings){    // Case B
-	// South Bnd influence
-	if (W_SouthBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
-	  Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+    } else if (jCell < JCl+rings){    // Case B
+      // South Bnd influence
+      if (W_SouthBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
+	Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
 	  
+	if (IsStencilExtended){
 	  /* extend Jmax */
 	  Jmax_NW += 1;
 	  Jmax_N  += 1;
 	  Jmax_NE += 1;
-	} else if (W_SouthBnd.IsReconstructionStencilAffected()){
-	  if (iCell == ICl - 1){
-	    Jmin_SW = Jmin_S = JCl;                 /* limit Jmin */
+	}
+      } else if (W_SouthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICl - 1){
+	  Jmin_SW = Jmin_S = JCl;                 /* limit Jmin */
 	    
+	  if (IsStencilExtended){
 	    /* extend Jmax */
 	    Jmax_NW += 1;
 	    Jmax_N  += 1;
-	  } else {
-	    Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+	  }
+	} else {
+	  Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
 	    
+	  if (IsStencilExtended){
 	    /* extend Jmax */
 	    Jmax_NW += 1;
 	    Jmax_N  += 1;
 	    Jmax_NE += 1;
 	  }
-	} else if (SouthBnd.IsReconstructionStencilAffected()){
-	  if (ICl-1-iCell > jCell - JCl){
-	    Imax_SE = ICl - 1;                       /* limit Imax */
-
-	    /* DON'T extend Imin due to smoothness indicator calculation reasons */
-	  } else {
-	    Jmin_SE = JCl;                            /* limit Jmin */
-
-	    /* DON'T extend Jmax due to smoothness indicator calculation reasons */
-	  }
 	}
-	
-      } else if (jCell>JCu-rings && jCell <= JCu){	        // Case C (JCu-rings < jCell <= JCu)
-	// North Bnd influence
-	if (W_NorthBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
-	  Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+      } else if (SouthBnd.IsReconstructionStencilAffected()){
+	if (ICl-1-iCell > jCell - JCl){
+	  Imax_SE = ICl - 1;                       /* limit Imax */
 
+	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	} else {
+	  Jmin_SE = JCl;                            /* limit Jmin */
+
+	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */
+	}
+      }
+	
+    } else if (jCell>JCu-rings && jCell <= JCu){	        // Case C (JCu-rings < jCell <= JCu)
+      // North Bnd influence
+      if (W_NorthBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
+	Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+
+	if (IsStencilExtended){
 	  /* extend Jmin */
 	  Jmin_SW -= 1;
 	  Jmin_S  -= 1;
 	  Jmin_SE -= 1;
-	} else if (W_NorthBnd.IsReconstructionStencilAffected()){
-	  if (iCell == ICl -1){
-	    Jmax_NW = Jmax_N = JCu;                 /* limit Jmax */
-	    
-	    /* extend Jmin */
-	    Jmin_SW -= 1;
-	    Jmin_S  -= 1;
-	  } else {
-	    Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
-	    
-	    /* extend Jmin */
-	    Jmin_SW -= 1;
-	    Jmin_S  -= 1;
-	    Jmin_SE -= 1;	  
-	  }
-	} else if (NorthBnd.IsReconstructionStencilAffected()){
-	  if (ICl-1-iCell > JCu-jCell){
-	    Imax_NE = ICl - 1;                       /* limit Imax */
-	    
-	    /* DON'T extend Imin due to smoothness indicator calculation reasons */
-	  } else {
-	    Jmax_NE = JCu;                            /* limit Jmax */
-
-	    /* DON'T extend Jmin due to smoothness indicator calculation reasons */
-	  }
 	}
+      } else if (W_NorthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICl -1){
+	  Jmax_NW = Jmax_N = JCu;                 /* limit Jmax */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	  }
+	} else {
+	  Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1; 
+	  } 
+	}
+      } else if (NorthBnd.IsReconstructionStencilAffected()){
+	if (ICl-1-iCell > JCu-jCell){
+	  Imax_NE = ICl - 1;                       /* limit Imax */
+	    
+	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	} else {
+	  Jmax_NE = JCu;                            /* limit Jmax */
 
-      } else if (jCell > JCu){	                 // Case D (jCell > JCu)
-	// North Bnd influence
-	if (W_NorthBnd.IsReconstructionStencilAffected()){
-	  if (iCell == ICl - 1){
-	    Jmin_SW = Jmin_S = JCu+1;     /* limit Jmin */
+	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */
+	}
+      }
 
+    } else if (jCell > JCu){	                 // Case D (jCell > JCu)
+      // North Bnd influence
+      if (W_NorthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICl - 1){
+	  Jmin_SW = Jmin_S = JCu+1;     /* limit Jmin */
+
+	  if (IsStencilExtended){
 	    /* extend Jmax */
 	    Jmax_NW += 1;
 	    Jmax_N  += 1;
 	    /* ensure valid Jmax */
 	    Jmax_NW = min(Jmax_NW, JCu+Ng);
 	    Jmax_N  = min(Jmax_N, JCu+Ng);	    
-	  } else {
-	    Jmin_SW = Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
+	  }
+	} else {
+	  Jmin_SW = Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
 
+	  if (IsStencilExtended){
 	    /* extend Jmax */
 	    Jmax_NW += 1;
 	    Jmax_N  += 1;
@@ -3161,534 +3186,632 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Jmax_N  = min(Jmax_N, JCu+Ng);
 	    Jmax_NE = min(Jmax_NE, JCu+Ng);
 	  }
-	} else if (N_WestBnd.IsReconstructionStencilAffected()){
-	  if (jCell == JCu + 1){
-	    Imax_NE = Imax_E = ICl-1;     /* limit Imax */
+	}
+      } else if (N_WestBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCu + 1){
+	  Imax_NE = Imax_E = ICl-1;     /* limit Imax */
 
- 	    /* extend Imin */
+	  if (IsStencilExtended){
+	    /* extend Imin */
 	    Imin_NW -= 1;
 	    Imin_W  -= 1;
- 	    /* ensure valid Imin */
+	    /* ensure valid Imin */
 	    Imin_NW = max(Imin_NW, 0);
 	    Imin_W  = max(Imin_W, 0);
-	  } else {
-	    Imax_NE = Imax_E = Imax_SE = ICl-1;     /* limit Imax */
+	  }
+	} else {
+	  Imax_NE = Imax_E = Imax_SE = ICl-1;     /* limit Imax */
 
+	  if (IsStencilExtended){
 	    /* extend Imin */
 	    Imin_NW -= 1;
 	    Imin_W  -= 1;
 	    Imin_SW -= 1;
- 	    /* ensure valid Imin */
+	    /* ensure valid Imin */
 	    Imin_NW = max(Imin_NW, 0);
 	    Imin_W  = max(Imin_W, 0);
 	    Imin_SW = max(Imin_SW, 0);
 	  }
 	}
-      }	// endif (Case D)
+      }
+    }	// endif (Case D)
 
-    } else if (iCell < ICl + rings) {
+  } else if (iCell < ICl + rings) {
 
-      // ==== Cover cells with (ICl <= iCell < ICl+rings) ====
+    // ==== Cover cells with (ICl <= iCell < ICl+rings) ====
 
-      if ( jCell < JCl){	         // Case A
-	// West Bnd influence
-	if (S_WestBnd.IsReconstructionStencilAffected() && WestBnd.IsReconstructionStencilAffected()){
-	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+    if ( jCell < JCl){	         // Case A
+      // West Bnd influence
+      if (S_WestBnd.IsReconstructionStencilAffected() && WestBnd.IsReconstructionStencilAffected()){
+	Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
 
+	if (IsStencilExtended){
 	  /* extend Imax */
 	  Imax_SE += 1;
 	  Imax_E  += 1;
 	  Imax_NE += 1;
-	} else if (S_WestBnd.IsReconstructionStencilAffected()){
-	  if (jCell == JCl -1){
-	    Imin_SW = Imin_W = ICl;     /* limit Imin */
-	    
-	    /* extend Imax */
-	    Imax_SE += 1;
-	    Imax_E  += 1;
-	  } else {
-	    Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
-	    
-	    /* extend Imax */
-	    Imax_SE += 1;
-	    Imax_E  += 1;
-	    Imax_NE += 1;    
-	  }
-	} else if (WestBnd.IsReconstructionStencilAffected()){
-	  if (iCell-ICl > JCl-1-jCell){
-	    Imin_NW = ICl;              /* limit Imin */
-	  
-	    /* DON'T extend Imax due to smoothness indicator calculation reasons */
-	  } else {
-	    // South Bnd influence
-	    Jmax_NW = JCl - 1;                     /* limit Jmax */
-	    
-	    /* DON'T extend Jmin due to smoothness indicator calculation reasons */
-	  }
 	}
+      } else if (S_WestBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCl -1){
+	  Imin_SW = Imin_W = ICl;     /* limit Imin */
+	    
+	  if (IsStencilExtended){
+	    /* extend Imax */
+	    Imax_SE += 1;
+	    Imax_E  += 1;
+	  }
+	} else {
+	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+	    
+	  if (IsStencilExtended){
+	    /* extend Imax */
+	    Imax_SE += 1;
+	    Imax_E  += 1;
+	    Imax_NE += 1;  
+	  }  
+	}
+      } else if (WestBnd.IsReconstructionStencilAffected()){
+	if (iCell-ICl > JCl-1-jCell){
+	  Imin_NW = ICl;              /* limit Imin */
+	  
+	  /* DON'T extend Imax due to smoothness indicator calculation reasons */
+	} else {
+	  // South Bnd influence
+	  Jmax_NW = JCl - 1;                     /* limit Jmax */
+	    
+	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */
+	}
+      }
 
-      } else if (jCell < JCl + rings){   // Case B
-	if (WestBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
-	  Imin_SW = Imin_W = Imin_NW = ICl;      /* limit Imin */
+    } else if (jCell < JCl + rings){   // Case B
+      if (WestBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
+	Imin_SW = Imin_W = Imin_NW = ICl;      /* limit Imin */
+	Jmin_SW = Jmin_S = Jmin_SE = JCl;      /* limit Jmin */
+
+	if (IsStencilExtended){
 	  /* extend Imax */
 	  Imax_SE += 1;
 	  Imax_E  += 1;
 	  Imax_NE += 1;
-
-	  Jmin_SW = Jmin_S = Jmin_SE = JCl;      /* limit Jmin */
+	  
 	  /* extend Jmax */
 	  Jmax_NW += 1; 
 	  Jmax_N  += 1;
 	  Jmax_NE += 1;
-	} else if (WestBnd.IsReconstructionStencilAffected() && S_WestBnd.IsReconstructionStencilAffected()){
-	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+	}
+      } else if (WestBnd.IsReconstructionStencilAffected() && S_WestBnd.IsReconstructionStencilAffected()){
+	Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
   
+	if (IsStencilExtended){
 	  /* extend Imax */
 	  Imax_SE += 1;
 	  Imax_E  += 1;
-	  Imax_NE += 1;	  
-	} else if (SouthBnd.IsReconstructionStencilAffected() && W_SouthBnd.IsReconstructionStencilAffected()){
-	  Jmin_SW = Jmin_S = Jmin_SE = JCl;     /* limit Jmin */
+	  Imax_NE += 1;	
+	}  
+      } else if (SouthBnd.IsReconstructionStencilAffected() && W_SouthBnd.IsReconstructionStencilAffected()){
+	Jmin_SW = Jmin_S = Jmin_SE = JCl;     /* limit Jmin */
 
+	if (IsStencilExtended){
 	  /* extend Jmax */
 	  Jmax_NW += 1;
 	  Jmax_N  += 1;
 	  Jmax_NE += 1;
-	} else if (WestBnd.IsReconstructionStencilAffected()){
-	  if (jCell == JCl){
-	    Imin_W = Imin_NW = ICl;             /* limit Imin */
+	}
+      } else if (WestBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCl){
+	  Imin_W = Imin_NW = ICl;             /* limit Imin */
 
+	  if (IsStencilExtended){
 	    /* extend Imax */
 	    Imax_NE += 1;
 	    Imax_E  += 1;
-	  } else {
-	    Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+	  }
+	} else {
+	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
 	    
+	  if (IsStencilExtended){
 	    /* extend Imax */
 	    Imax_SE += 1;
 	    Imax_E  += 1;
-	    Imax_NE += 1;	  
-	  }
-	} else if (SouthBnd.IsReconstructionStencilAffected()){
-	  if (iCell == ICl){
-	    Jmin_S = Jmin_SE = JCl;              /* limit Jmin */
+	    Imax_NE += 1;
+	  } 
+	}
+      } else if (SouthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICl){
+	  Jmin_S = Jmin_SE = JCl;              /* limit Jmin */
 
+	  if (IsStencilExtended){
 	    /* extend Jmax */
 	    Jmax_N  += 1;
 	    Jmax_NE += 1;
-	  } else {
-	    Jmin_SW = Jmin_S = Jmin_SE = JCl;              /* limit Jmin */
+	  }
+	} else {
+	  Jmin_SW = Jmin_S = Jmin_SE = JCl;              /* limit Jmin */
 
+	  if (IsStencilExtended){
 	    /* extend Jmax */
 	    Jmax_NW += 1;
 	    Jmax_N  += 1;
 	    Jmax_NE += 1;
 	  }
-	} else if (W_SouthBnd.IsReconstructionStencilAffected()){ // S_WestBnd is also affecting the stencil!
-	  if (iCell > jCell){
-	    // Limit to West side
-	    Imin_SW = ICl;
-	    // DON'T extend stencil
-	  } else {
-	    // Limit to South side
-	    Jmin_SW = JCl;
-	    // DON'T extend stencil
-	  }
 	}
+      } else if (W_SouthBnd.IsReconstructionStencilAffected()){ // S_WestBnd is also affecting the stencil!
+	if (iCell > jCell){
+	  // Limit to West side
+	  Imin_SW = ICl;
+	  // DON'T extend stencil
+	} else {
+	  // Limit to South side
+	  Jmin_SW = JCl;
+	  // DON'T extend stencil
+	}
+      }
 
-      } else if (jCell <= JCu - rings){  // Case C 
-	// West Bnd influence
-	if (WestBnd.IsReconstructionStencilAffected()){
-	  Imin_NW = Imin_W = Imin_SW = ICl;              /* limit Imin */
+    } else if (jCell <= JCu - rings){  // Case C 
+      // West Bnd influence
+      if (WestBnd.IsReconstructionStencilAffected()){
+	Imin_NW = Imin_W = Imin_SW = ICl;              /* limit Imin */
 
+	if (IsStencilExtended){
 	  /* extend Imax */
 	  Imax_NE += 1;
 	  Imax_E  += 1;
 	  Imax_SE += 1;
 	}
+      }
 
-      } else if (jCell <= JCu){	         // Case D
-	if (WestBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
-	  Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
+    } else if (jCell <= JCu){	         // Case D
+      if (WestBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
+	Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
+	Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+
+	if (IsStencilExtended){
 	  /* extend Imax */
 	  Imax_NE += 1;
 	  Imax_E  += 1;
 	  Imax_SE += 1;
-
-	  Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+	  
 	  /* extend Jmin */
 	  Jmin_SW -= 1;
 	  Jmin_S  -= 1;
 	  Jmin_SE -= 1;
+	}
 
-	} else if (WestBnd.IsReconstructionStencilAffected() && N_WestBnd.IsReconstructionStencilAffected()){
-	  Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
+      } else if (WestBnd.IsReconstructionStencilAffected() && N_WestBnd.IsReconstructionStencilAffected()){
+	Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
 
+	if (IsStencilExtended){
 	  /* extend Imax */
 	  Imax_NE += 1;
 	  Imax_E  += 1;
-	  Imax_SE += 1;	  
-	} else if (NorthBnd.IsReconstructionStencilAffected() && W_NorthBnd.IsReconstructionStencilAffected()){
-	  Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+	  Imax_SE += 1;	
+	}  
+      } else if (NorthBnd.IsReconstructionStencilAffected() && W_NorthBnd.IsReconstructionStencilAffected()){
+	Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
 
+	if (IsStencilExtended){
 	  /* extend Jmin */
 	  Jmin_SW -= 1;
 	  Jmin_S  -= 1;
 	  Jmin_SE -= 1;
-	} else if (WestBnd.IsReconstructionStencilAffected()){
-	  if (jCell == JCu){
-	    Imin_W = Imin_SW = ICl;             /* limit Imin */
+	}
+      } else if (WestBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCu){
+	  Imin_W = Imin_SW = ICl;             /* limit Imin */
 	    
+	  if (IsStencilExtended){
 	    /* extend Imax */
 	    Imax_E  += 1;
-	    Imax_SE += 1;	  	    
-	  } else {
-	    Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
+	    Imax_SE += 1;	 
+	  } 	    
+	} else {
+	  Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
 	    
+	  if (IsStencilExtended){
 	    /* extend Imax */
 	    Imax_NE += 1;
 	    Imax_E  += 1;
-	    Imax_SE += 1;	  	    
-	  }
-	} else if (NorthBnd.IsReconstructionStencilAffected()){
-	  if (iCell == ICl){
-	    Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+	    Imax_SE += 1;	 
+	  } 	    
+	}
+      } else if (NorthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICl){
+	  Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
 	    
+	  if (IsStencilExtended){
 	    /* extend Jmin */
 	    Jmin_S  -= 1;
-	    Jmin_SE -= 1;	    	    
-	  } else {
-	    Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+	    Jmin_SE -= 1;	 
+	  }   	    
+	} else {
+	  Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
 	    
+	  if (IsStencilExtended){
 	    /* extend Jmin */
 	    Jmin_SW -= 1;
 	    Jmin_S  -= 1;
-	    Jmin_SE -= 1;	    
-	  }
-	} else if (W_NorthBnd.IsReconstructionStencilAffected()){ // N_WestBnd also affects the stencil
-	  if (iCell-ICl > JCu-jCell){
-	    // Limit to West side
-	    Imin_NW = ICl;
-	    // DON'T extend stencil
-	  } else {
-	    // Limit to North side
-	    Jmax_NW = JCu;
-	    // DON'T extend stencil
-	  }
+	    Jmin_SE -= 1;	 
+	  }   
 	}
+      } else if (W_NorthBnd.IsReconstructionStencilAffected()){ // N_WestBnd also affects the stencil
+	if (iCell-ICl > JCu-jCell){
+	  // Limit to West side
+	  Imin_NW = ICl;
+	  // DON'T extend stencil
+	} else {
+	  // Limit to North side
+	  Jmax_NW = JCu;
+	  // DON'T extend stencil
+	}
+      }
 
-      } else {			         // Case E (jCell > JCu)
-	// West Bnd influence
-	if (N_WestBnd.IsReconstructionStencilAffected() && WestBnd.IsReconstructionStencilAffected()){
-	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+    } else {			         // Case E (jCell > JCu)
+      // West Bnd influence
+      if (N_WestBnd.IsReconstructionStencilAffected() && WestBnd.IsReconstructionStencilAffected()){
+	Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
 	  
+	if (IsStencilExtended){
 	  /* extend Imax */
 	  Imax_SE += 1;
 	  Imax_E  += 1;
-	  Imax_NE += 1;	  
-	} else if (N_WestBnd.IsReconstructionStencilAffected()){
-	  if (jCell == JCu + 1){
-	    Imin_W = Imin_NW = ICl;     /* limit Imin */
+	  Imax_NE += 1;	
+	}  
+      } else if (N_WestBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCu + 1){
+	  Imin_W = Imin_NW = ICl;     /* limit Imin */
 	    
+	  if (IsStencilExtended){
 	    /* extend Imax */
 	    Imax_E  += 1;
-	    Imax_NE += 1;	  	    
-	  } else {
-	    Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
-	    
+	    Imax_NE += 1;	 
+	  } 	    
+	} else {
+	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+
+	  if (IsStencilExtended){	    
 	    /* extend Imax */
 	    Imax_SE += 1;
 	    Imax_E  += 1;
-	    Imax_NE += 1;	  
-	  }
-	} else if (WestBnd.IsReconstructionStencilAffected()){
-	  if (iCell-ICl > jCell-(JCu+1)){	    
-	    Imin_SW = ICl;                         /* limit Imin */
-
-	    /* DON'T extend Imax due to smoothness indicator calculation reasons */
-	  } else {
-	    Jmin_SW = JCu + 1;                     /* limit Jmin */
-
-	    /* DON'T extend Jmax due to smoothness indicator calculation reasons */
-	  }
+	    Imax_NE += 1;	 
+	  } 
 	}
-      }	// endif (Case E)
+      } else if (WestBnd.IsReconstructionStencilAffected()){
+	if (iCell-ICl > jCell-(JCu+1)){	    
+	  Imin_SW = ICl;                         /* limit Imin */
 
-    } else if (iCell <= ICu - rings) {
+	  /* DON'T extend Imax due to smoothness indicator calculation reasons */
+	} else {
+	  Jmin_SW = JCu + 1;                     /* limit Jmin */
 
-      // ==== Cover cells with (ICl+rings <= iCell <= ICu-rings) ====
+	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */
+	}
+      }
+    }	// endif (Case E)
 
-      if ( jCell < JCl + rings){         // Case A
-	// South Bnd influence
-	if (SouthBnd.IsReconstructionStencilAffected()){
-	  Jmin_SW = Jmin_S = Jmin_SE = JCl;     /* limit Jmin */
+  } else if (iCell <= ICu - rings) {
 
+    // ==== Cover cells with (ICl+rings <= iCell <= ICu-rings) ====
+
+    if ( jCell < JCl + rings){         // Case A
+      // South Bnd influence
+      if (SouthBnd.IsReconstructionStencilAffected()){
+	Jmin_SW = Jmin_S = Jmin_SE = JCl;     /* limit Jmin */
+
+	if (IsStencilExtended){
 	  /* extend Jmax */
 	  Jmax_NW += 1;
 	  Jmax_N  += 1;
 	  Jmax_NE += 1;
 	}
+      }
 
-      } else if (jCell > JCu - rings){   // Case B
-	// North Bnd influence
-	if (NorthBnd.IsReconstructionStencilAffected()){
-	  Jmax_NW = Jmax_N = Jmax_NE = JCu;     /* limit Jmax */
+    } else if (jCell > JCu - rings){   // Case B
+      // North Bnd influence
+      if (NorthBnd.IsReconstructionStencilAffected()){
+	Jmax_NW = Jmax_N = Jmax_NE = JCu;     /* limit Jmax */
 
+	if (IsStencilExtended){
 	  /* extend Jmin */
 	  Jmin_SW -= 1;
 	  Jmin_S  -= 1;
-	  Jmin_SE -= 1;	  
-	}
-      }	// endif (Case B)
+	  Jmin_SE -= 1;	
+	}  
+      }
+    }	// endif (Case B)
 
-    } else if (iCell <= ICu) {
+  } else if (iCell <= ICu) {
 
-      // ==== Cover cells with (ICu-rings < iCell <= ICu) ====
+    // ==== Cover cells with (ICu-rings < iCell <= ICu) ====
 
-      if ( jCell < JCl){	         // Case A
-	// East Bnd influence
-	if (S_EastBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
-	  Imax_NE = Imax_E = Imax_SE = ICu;     /* limit Imax */
+    if ( jCell < JCl){	         // Case A
+      // East Bnd influence
+      if (S_EastBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
+	Imax_NE = Imax_E = Imax_SE = ICu;     /* limit Imax */
 
+	if (IsStencilExtended){
 	  /* extend Imin */
 	  Imin_NW -= 1;
 	  Imin_W  -= 1;
 	  Imin_SW -= 1;
-	} else if (S_EastBnd.IsReconstructionStencilAffected()){
-	  if (jCell == JCl-1){
-	    Imax_E = Imax_SE = ICu;     /* limit Imax */
+	}
+      } else if (S_EastBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCl-1){
+	  Imax_E = Imax_SE = ICu;     /* limit Imax */
 
+	  if (IsStencilExtended){
 	    /* extend Imin */
 	    Imin_W  -= 1;
-	    Imin_SW -= 1;   
-	  } else {
-	    Imax_NE = Imax_E = Imax_SE = ICu;     /* limit Imax */
+	    Imin_SW -= 1;  
+	  } 
+	} else {
+	  Imax_NE = Imax_E = Imax_SE = ICu;     /* limit Imax */
 
+	  if (IsStencilExtended){
 	    /* extend Imin */
 	    Imin_NW -= 1;
 	    Imin_W  -= 1;
 	    Imin_SW -= 1;
 	  }
-	} else if (EastBnd.IsReconstructionStencilAffected()){
-	  if (ICu-iCell > JCl-1-jCell){
-	    Imax_NE = ICu;                         /* limit Imax */
-
-	    /* DON'T extend Imin due to smoothness indicator calculation reasons */
-	  } else {
-	    // South Bnd influence
-	    Jmax_NE = JCl - 1;                     /* limit Jmax */
-
-	    /* DON'T extend Jmin due to smoothness indicator calculation reasons */	  
-	  }
 	}
+      } else if (EastBnd.IsReconstructionStencilAffected()){
+	if (ICu-iCell > JCl-1-jCell){
+	  Imax_NE = ICu;                         /* limit Imax */
 
-      } else if (jCell < JCl + rings){   // Case B
-	if (SouthBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
-	  Jmin_SW = Jmin_S = Jmin_SE = JCl;        /* limit Jmin */
+	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	} else {
+	  // South Bnd influence
+	  Jmax_NE = JCl - 1;                     /* limit Jmax */
 
+	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */	  
+	}
+      }
+
+    } else if (jCell < JCl + rings){   // Case B
+      if (SouthBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
+	Jmin_SW = Jmin_S = Jmin_SE = JCl;        /* limit Jmin */
+	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+
+	if (IsStencilExtended){
 	  /* extend Jmax */
 	  Jmax_NW += 1;
 	  Jmax_N  += 1;
 	  Jmax_NE += 1;
 
-	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
-
 	  /* extend Imin */
 	  Imin_NW -= 1;
 	  Imin_W  -= 1;
 	  Imin_SW -= 1;
-	} else if (EastBnd.IsReconstructionStencilAffected()  && S_EastBnd.IsReconstructionStencilAffected()){
-	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+	}
+      } else if (EastBnd.IsReconstructionStencilAffected()  && S_EastBnd.IsReconstructionStencilAffected()){
+	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
 
+	if (IsStencilExtended){
 	  /* extend Imin */
 	  Imin_NW -= 1;
 	  Imin_W  -= 1;
 	  Imin_SW -= 1;
-	} else if (SouthBnd.IsReconstructionStencilAffected() && E_SouthBnd.IsReconstructionStencilAffected()){
-	  Jmin_SW = Jmin_S = Jmin_SE = JCl;        /* limit Jmin */
+	}
+      } else if (SouthBnd.IsReconstructionStencilAffected() && E_SouthBnd.IsReconstructionStencilAffected()){
+	Jmin_SW = Jmin_S = Jmin_SE = JCl;        /* limit Jmin */
 
+	if (IsStencilExtended){
 	  /* extend Jmax */
 	  Jmax_NW += 1;
 	  Jmax_N  += 1;
 	  Jmax_NE += 1; 
-	} else if (EastBnd.IsReconstructionStencilAffected()){
-	  if (jCell == JCl){
-	    Imax_NE = Imax_E = ICu;              /* limit Imax */
+	}
+      } else if (EastBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCl){
+	  Imax_NE = Imax_E = ICu;              /* limit Imax */
 
+	  if (IsStencilExtended){
 	    /* extend Imin */
 	    Imin_NW -= 1;
 	    Imin_W  -= 1;
-	  } else {
-	    Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+	  }
+	} else {
+	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
 
+	  if (IsStencilExtended){
 	    /* extend Imin */
 	    Imin_NW -= 1;
 	    Imin_W  -= 1;
 	    Imin_SW -= 1;
 	  }
-	} else if (SouthBnd.IsReconstructionStencilAffected()){
-	  if (iCell == ICu){
-	    Jmin_SW = Jmin_S = JCl;     /* limit Jmin */
-
-	    /* extend Jmax */
-	    Jmax_NW += 1;
-	    Jmax_N  += 1;
-	  } else {
-	    Jmin_SW = Jmin_S = Jmin_SE = JCl;    /* limit Jmin */
-
-	    /* extend Jmax */
-	    Jmax_NW += 1;
-	    Jmax_N  += 1;
-	    Jmax_NE += 1;     
-	  }
-	} else if (E_SouthBnd.IsReconstructionStencilAffected()){ // S_EastBnd also affects the stencil
-	  if ( (ICu-iCell) > (jCell - JCl) ){
-	    // Limit to East side
-	    Imax_SE = ICu;
-	    // DON'T extend stencil
-	  } else {
-	    // Limit to South side 
-	    Jmin_SE = JCl;
-	    // DON'T extend stencil
-	  }
 	}
+      } else if (SouthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICu){
+	  Jmin_SW = Jmin_S = JCl;     /* limit Jmin */
 
-      } else if (jCell <= JCu - rings){  // Case C 
-	if (EastBnd.IsReconstructionStencilAffected()){
-	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+	  if (IsStencilExtended){
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	  }
+	} else {
+	  Jmin_SW = Jmin_S = Jmin_SE = JCl;    /* limit Jmin */
 
+	  if (IsStencilExtended){
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;  
+	  }   
+	}
+      } else if (E_SouthBnd.IsReconstructionStencilAffected()){ // S_EastBnd also affects the stencil
+	if ( (ICu-iCell) > (jCell - JCl) ){
+	  // Limit to East side
+	  Imax_SE = ICu;
+	  // DON'T extend stencil
+	} else {
+	  // Limit to South side 
+	  Jmin_SE = JCl;
+	  // DON'T extend stencil
+	}
+      }
+
+    } else if (jCell <= JCu - rings){  // Case C 
+      if (EastBnd.IsReconstructionStencilAffected()){
+	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+
+	if (IsStencilExtended){
 	  /* extend Imin */
 	  Imin_NW -= 1;
 	  Imin_W  -= 1;
 	  Imin_SW -= 1;
 	}
+      }
 
-      } else if (jCell <= JCu){	         // Case D
-	if (EastBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
-	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+    } else if (jCell <= JCu){	         // Case D
+      if (EastBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
+	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+	Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
+
+	if (IsStencilExtended){
 	  /* extend Imin */
 	  Imin_NW -= 1;
 	  Imin_W  -= 1;
 	  Imin_SW -= 1;	  
 
-	  Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
 	  /* extend Jmin */
 	  Jmin_SW -= 1;
 	  Jmin_S  -= 1;
 	  Jmin_SE -= 1;
+	}
 
-	} else if (EastBnd.IsReconstructionStencilAffected()  && N_EastBnd.IsReconstructionStencilAffected()){
-	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+      } else if (EastBnd.IsReconstructionStencilAffected()  && N_EastBnd.IsReconstructionStencilAffected()){
+	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
 
+	if (IsStencilExtended){
 	  /* extend Imin */
 	  Imin_NW -= 1;
 	  Imin_W  -= 1;
 	  Imin_SW -= 1;
-	} else if (NorthBnd.IsReconstructionStencilAffected() && E_NorthBnd.IsReconstructionStencilAffected()){
-	  Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
+	}
+      } else if (NorthBnd.IsReconstructionStencilAffected() && E_NorthBnd.IsReconstructionStencilAffected()){
+	Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
 
+	if (IsStencilExtended){
 	  /* extend Jmin */
 	  Jmin_SW -= 1;
 	  Jmin_S  -= 1;
 	  Jmin_SE -= 1;
-	} else if (EastBnd.IsReconstructionStencilAffected()){
-	  if (jCell == JCu){
-	    Imax_E = Imax_SE = ICu;             /* limit Imax */
+	}
+      } else if (EastBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCu){
+	  Imax_E = Imax_SE = ICu;             /* limit Imax */
 
+	  if (IsStencilExtended){
 	    /* extend Imin */
 	    Imin_W  -= 1;
 	    Imin_SW -= 1;
-	  } else {
-	    Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+	  }
+	} else {
+	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
 
+	  if (IsStencilExtended){
 	    /* extend Imin */
 	    Imin_NW -= 1;
 	    Imin_W  -= 1;
 	    Imin_SW -= 1;
 	  }
-	} else if (NorthBnd.IsReconstructionStencilAffected()){
-	  if (iCell == ICu){
-	    Jmax_NW = Jmax_N = JCu;        /* limit Jmax */
+	}
+      } else if (NorthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICu){
+	  Jmax_NW = Jmax_N = JCu;        /* limit Jmax */
 	    
+	  if (IsStencilExtended){
 	    /* extend Jmin */
 	    Jmin_SW -= 1;
 	    Jmin_S  -= 1;
-	  } else {
-	    Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
+	  }
+	} else {
+	  Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
 	    
+	  if (IsStencilExtended){
 	    /* extend Jmin */
 	    Jmin_SW -= 1;
 	    Jmin_S  -= 1;
 	    Jmin_SE -= 1;
 	  }
-	} else if (E_NorthBnd.IsReconstructionStencilAffected()){ // N_EastBnd also affects the stencil
-	  if (ICu-iCell > JCu-jCell){
-	    // Limit to East side
-	    Imax_NE = ICu;
-	    // DON'T extend stencil
-	  } else {
-	    // Limit to North side
-	    Jmax_NE = JCu;
-	    // DON'T extend stencil
-	  }
 	}
+      } else if (E_NorthBnd.IsReconstructionStencilAffected()){ // N_EastBnd also affects the stencil
+	if (ICu-iCell > JCu-jCell){
+	  // Limit to East side
+	  Imax_NE = ICu;
+	  // DON'T extend stencil
+	} else {
+	  // Limit to North side
+	  Jmax_NE = JCu;
+	  // DON'T extend stencil
+	}
+      }
 
-      } else {			         // Case E (jCell > JCu)
-	// East Bnd influence
-	if (N_EastBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
-	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+    } else {			         // Case E (jCell > JCu)
+      // East Bnd influence
+      if (N_EastBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
+	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
 	  
+	if (IsStencilExtended){
 	  /* extend Imin */
 	  Imin_NW -= 1;
 	  Imin_W  -= 1;
-	  Imin_SW -= 1;	  
-	} else if (N_EastBnd.IsReconstructionStencilAffected()){
-	  if (jCell == JCu + 1){
-	    Imax_NE = Imax_E = ICu;        /* limit Imax */
+	  Imin_SW -= 1;	
+	}  
+      } else if (N_EastBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCu + 1){
+	  Imax_NE = Imax_E = ICu;        /* limit Imax */
 	    
+	  if (IsStencilExtended){
 	    /* extend Imin */
 	    Imin_NW -= 1;
-	    Imin_W  -= 1;    
-	  } else {
-	    Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+	    Imin_W  -= 1;  
+	  }  
+	} else {
+	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
 	    
+	  if (IsStencilExtended){
 	    /* extend Imin */
 	    Imin_NW -= 1;
 	    Imin_W  -= 1;
 	    Imin_SW -= 1;
 	  }
-	} else if (EastBnd.IsReconstructionStencilAffected()){
-	  if (ICu - iCell > jCell - (JCu+1)) {
-	    Imax_SE = ICu;                         /* limit Imax */
-	    
-	    /* DON'T extend Imin due to smoothness indicator calculation reasons */
-	  } else {
-	    // North Bnd influence
-	    Jmin_SE = JCu + 1;                     /* limit Jmin */
-	    
-	    /* DON'T extend Jmax due to smoothness indicator calculation reasons */
-	  }
 	}
-      }// endif (Case E)
+      } else if (EastBnd.IsReconstructionStencilAffected()){
+	if (ICu - iCell > jCell - (JCu+1)) {
+	  Imax_SE = ICu;                         /* limit Imax */
+	    
+	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	} else {
+	  // North Bnd influence
+	  Jmin_SE = JCu + 1;                     /* limit Jmin */
+	    
+	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */
+	}
+      }
+    }// endif (Case E)
 
-    } else {
+  } else {
 
-      // ==== Cover cells with (iCell > ICu) ====
-      if ( jCell < JCl){	         // Case A
-	// South Bnd influence
-	if (E_SouthBnd.IsReconstructionStencilAffected()){
-	  if (iCell == ICu + 1){
-	    Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
+    // ==== Cover cells with (iCell > ICu) ====
+    if ( jCell < JCl){	         // Case A
+      // South Bnd influence
+      if (E_SouthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICu + 1){
+	  Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
 
+	  if (IsStencilExtended){
 	    /* extend Jmin */
 	    Jmin_S  -= 1;
 	    Jmin_SE -= 1;
 	    /* ensure valid Jmin */
 	    Jmin_S  = max(Jmin_S, 0);
 	    Jmin_SE = max(Jmin_SE, 0);
-	  } else {
-	    Jmax_NW = Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
+	  }
+	} else {
+	  Jmax_NW = Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
 
+	  if (IsStencilExtended){
 	    /* extend Jmin */
 	    Jmin_SW -= 1;
 	    Jmin_S  -= 1;
@@ -3698,19 +3821,23 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Jmin_S  = max(Jmin_S, 0);
 	    Jmin_SE = max(Jmin_SE, 0);
 	  }
-	} else if (S_EastBnd.IsReconstructionStencilAffected()){
-	  if (jCell == JCl - 1){
-	    Imin_W = Imin_SW = ICu+1;              /* limit Imin */
+	}
+      } else if (S_EastBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCl - 1){
+	  Imin_W = Imin_SW = ICu+1;              /* limit Imin */
 
+	  if (IsStencilExtended){
 	    /* extend Imax */
 	    Imax_E  += 1;
 	    Imax_SE += 1;
 	    /* ensure valid Imax */
 	    Imax_E  = min(Imax_E, ICu+Ng);
 	    Imax_SE = min(Imax_SE, ICu+Ng);	    
-	  } else {
-	    Imin_NW = Imin_W = Imin_SW = ICu+1;    /* limit Imin */
+	  }
+	} else {
+	  Imin_NW = Imin_W = Imin_SW = ICu+1;    /* limit Imin */
 
+	  if (IsStencilExtended){
 	    /* extend Imax */
 	    Imax_NE += 1;
 	    Imax_E  += 1;
@@ -3721,96 +3848,112 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Imax_SE = min(Imax_SE, ICu+Ng);	    
 	  }
 	}
+      }
 
-      } else if (jCell < JCl+rings){     // Case B
-	// South Bnd influence
-	if (E_SouthBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
-	  Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+    } else if (jCell < JCl+rings){     // Case B
+      // South Bnd influence
+      if (E_SouthBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
+	Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
 	  
+	if (IsStencilExtended){
 	  /* extend Jmax */
 	  Jmax_NW += 1;
 	  Jmax_N  += 1;
-	  Jmax_NE += 1;	  
-	} else if (E_SouthBnd.IsReconstructionStencilAffected()){
-	  if (iCell == ICu + 1){
-	    Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+	  Jmax_NE += 1;	
+	}  
+      } else if (E_SouthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICu + 1){
+	  Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
 	    
+	  if (IsStencilExtended){
 	    /* extend Jmax */
 	    Jmax_N  += 1;
-	    Jmax_NE += 1;	  
-	  } else {
-	    Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+	    Jmax_NE += 1;	 
+	  } 
+	} else {
+	  Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
 	    
+	  if (IsStencilExtended){
 	    /* extend Jmax */
 	    Jmax_NW += 1;
 	    Jmax_N  += 1;
-	    Jmax_NE += 1;	  
-	  }
-	} else if (SouthBnd.IsReconstructionStencilAffected()){
-	  if (iCell - (ICu+1) > jCell-JCl) {
-	    // East Bnd influence
-	    Imin_SW = ICu + 1;                       /* limit Imin */
+	    Jmax_NE += 1;	 
+	  } 
+	}
+      } else if (SouthBnd.IsReconstructionStencilAffected()){
+	if (iCell - (ICu+1) > jCell-JCl) {
+	  // East Bnd influence
+	  Imin_SW = ICu + 1;                       /* limit Imin */
 	    
-	    /* DON'T extend Imax due to smoothness indicator calculation reasons */
-	  } else {
-	    Jmin_SW = JCl;                            /* limit Jmin */
+	  /* DON'T extend Imax due to smoothness indicator calculation reasons */
+	} else {
+	  Jmin_SW = JCl;                            /* limit Jmin */
 	    
-	    /* DON'T extend Jmax due to smoothness indicator calculation reasons */	  
-	  }
-	} // endif (Case B)
+	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */	  
+	}
+      } // endif (Case B)
 
-      } else if (jCell>JCu-rings && jCell <= JCu){	        // Case C (JCu-rings < jCell <= JCu)
-	// North Bnd influence
-	if (E_NorthBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
-	  Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+    } else if (jCell>JCu-rings && jCell <= JCu){	        // Case C (JCu-rings < jCell <= JCu)
+      // North Bnd influence
+      if (E_NorthBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
+	Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
 	  
+	if (IsStencilExtended){
 	  /* extend Jmin */
 	  Jmin_SW -= 1;
 	  Jmin_S  -= 1;
-	  Jmin_SE -= 1;	  
-	} else if (E_NorthBnd.IsReconstructionStencilAffected()){
-	  if (iCell == ICu + 1){
-	    Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+	  Jmin_SE -= 1;	
+	}  
+      } else if (E_NorthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICu + 1){
+	  Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
 	    
+	  if (IsStencilExtended){
 	    /* extend Jmin */
 	    Jmin_S  -= 1;
-	    Jmin_SE -= 1;	  
-	  } else {
-	    Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+	    Jmin_SE -= 1;	 
+	  } 
+	} else {
+	  Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
 	    
+	  if (IsStencilExtended){
 	    /* extend Jmin */
 	    Jmin_SW -= 1;
 	    Jmin_S  -= 1;
-	    Jmin_SE -= 1;	  
-	  }
-	} else if (NorthBnd.IsReconstructionStencilAffected()){
-	  if (iCell - (ICu+1) > JCu - jCell) {
-	    // East Bnd influence
-	    Imin_NW = ICu + 1;                        /* limit Imax */
+	    Jmin_SE -= 1;	 
+	  } 
+	}
+      } else if (NorthBnd.IsReconstructionStencilAffected()){
+	if (iCell - (ICu+1) > JCu - jCell) {
+	  // East Bnd influence
+	  Imin_NW = ICu + 1;                        /* limit Imax */
 	    
-	    /* DON'T extend Imin due to smoothness indicator calculation reasons */
-	  } else {
-	    Jmax_NW = JCu;                         /* limit Jmax */
+	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	} else {
+	  Jmax_NW = JCu;                         /* limit Jmax */
 	    
-	    /* DON'T extend Jmin due to smoothness indicator calculation reasons */ 
-	  }
-	} // endif (Case C)
+	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */ 
+	}
+      } // endif (Case C)
 
-      } else if (jCell > JCu){	                        // Case D (jCell > JCu)
-	// North Bnd influence
-	if (E_NorthBnd.IsReconstructionStencilAffected()){
-	  if (iCell == ICu + 1){
-	    Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
+    } else if (jCell > JCu){	                        // Case D (jCell > JCu)
+      // North Bnd influence
+      if (E_NorthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICu + 1){
+	  Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
 
+	  if (IsStencilExtended){
 	    /* extend Jmax */
 	    Jmax_N  += 1;
 	    Jmax_NE += 1;
 	    /* ensure valid Jmax */
 	    Jmax_N  = min(Jmax_N, JCu+Ng);
 	    Jmax_NE = min(Jmax_NE, JCu+Ng);	    
-	  } else {
-	    Jmin_SW = Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
+	  }
+	} else {
+	  Jmin_SW = Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
 	    
+	  if (IsStencilExtended){
 	    /* extend Jmax */
 	    Jmax_NW += 1;
 	    Jmax_N  += 1;
@@ -3820,19 +3963,23 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Jmax_N  = min(Jmax_N, JCu+Ng);
 	    Jmax_NE = min(Jmax_NE, JCu+Ng);	    
 	  }
-	} else if (N_EastBnd.IsReconstructionStencilAffected()){
-	  if (jCell == JCu + 1){
-	    Imin_NW = Imin_W = ICu + 1;   /* limit Imin */
+	}
+      } else if (N_EastBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCu + 1){
+	  Imin_NW = Imin_W = ICu + 1;   /* limit Imin */
 
+	  if (IsStencilExtended){
 	    /* extend Imax */
 	    Imax_NE += 1;
 	    Imax_E  += 1;
 	    /* ensure valid Imax */
 	    Imax_NE = min(Imax_NE, ICu+Ng);
 	    Imax_E  = min(Imax_E, ICu+Ng);
-	  } else {
-	    Imin_NW = Imin_W = Imin_SW = ICu + 1;   /* limit Imin */
+	  }
+	} else {
+	  Imin_NW = Imin_W = Imin_SW = ICu + 1;   /* limit Imin */
 
+	  if (IsStencilExtended){
 	    /* extend Imax */
 	    Imax_NE += 1;
 	    Imax_E  += 1;
@@ -3843,11 +3990,10 @@ void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell,
 	    Imax_SE = min(Imax_SE, ICu+Ng);
 	  }
 	}
-      }	// endif (Case D)
+      }
+    }	// endif (Case D)
 
-    } // endif (iCell)
-
-  } // endif
+  } // endif (iCell)
 
   /* ===== Form stencil ===== */
   i_index.push_back(iCell);
