@@ -2300,6 +2300,11 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.Inner_Streamline_Number = 0.80;
       IP.Outer_Streamline_Number = 0.40;
       IP.Isotach_Line = 0.30;
+    } else if (strcmp(IP.Grid_Type,"Ringleb_Flow_Straight_Inflow_Boundary") == 0) {
+      IP.i_Grid = GRID_RINGLEB_FLOW_STRAIGHT_INFLOW_BOUNDARY;
+      IP.Inner_Streamline_Number = 0.80;
+      IP.Outer_Streamline_Number = 0.40;
+      IP.Isotach_Line = 0.30;
     } else if (strcmp(IP.Grid_Type,"Wedge") == 0) {
       IP.i_Grid = GRID_WEDGE;
       IP.Wedge_Angle = 25.0;
@@ -2313,8 +2318,6 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.i_Grid = GRID_NASA_ROTOR_67;
       IP.Rotor_Flow_Type = PEAK_FLOW;
       IP.Rotor_Percent_Span = 50.00;
-    } else if (strcmp(IP.Grid_Type,"Ringleb_Flow") == 0) {
-      IP.i_Grid = GRID_RINGLEB_FLOW;
     } else if (strcmp(IP.Grid_Type,"Unsteady_Blunt_Body") == 0) {
       IP.i_Grid = GRID_UNSTEADY_BLUNT_BODY;
       IP.Blunt_Body_Radius = ONE;

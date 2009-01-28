@@ -24,8 +24,8 @@ using std::sqrt;
 #include "../Utilities/Utilities.h"
 #include "Math.h"
 #include "../System/System_Linux.h"
+#include "NumericalLibrary_ExecutionMode.h"
 
-#define MaxAllowedFunctionEvaluation 8000000 /* maximum allowed function evaluations for the adaptive integration */
 
 /*******************************************************************
  *                                                                 *
@@ -618,7 +618,7 @@ inline ReturnType qgauss5(FunctionType func, double a, double b, const ReturnTyp
 // Lucian Ivan, 31/09/2005
 template <class FunctionType, class ReturnType>
 inline ReturnType adaptlobstp(FunctionType func, double a, double b, const ReturnType & fa, const ReturnType & fb, 
-			      const ReturnType & is, int &FunctionEvaluations, int & WriteMessage)
+			      const ReturnType & is, int Level, int &FunctionEvaluations, int & WriteMessage)
   throw(TooShortInterval,MaximumIterationsExceeded){
 
   const ReturnType eps(numeric_limits<double>::epsilon());
@@ -644,26 +644,45 @@ inline ReturnType adaptlobstp(FunctionType func, double a, double b, const Retur
   i2=(h/6.0)*(fa+fb+5.0*(y2+y4));
   i1=(h/1470.0)*(77.0*(fa+fb)+432.0*(y1+y5)+625.0*(y2+y4)+672.0*y3);
 
-  if ( (is+(i1-i2)==is) || (mll<=a) || (b<=mrr) || (FunctionEvaluations>MaxAllowedFunctionEvaluation) || (fabs(i1-i2)<=eps) ){
+  if ( (is+(i1-i2)==is) || (mll<=a) || (b<=mrr) || 
+       (FunctionEvaluations > NumericalLibrary_Execution_Mode::Max_Function_Evaluations) || (fabs(i1-i2)<=eps) ){
     if ( ( (m <= a) || (b<=m) ) && (WriteMessage == 0)){
-      cerr << "\nWarning Integration Subroutine: Interval contains no more machine number.\n"
-       	   << "Required tolerance may not be met.\n";
-      WriteMessage = 1;
+      if (NumericalLibrary_Execution_Mode::Output_Error_Messages){
+	cerr << "\nWarning Integration Subroutine: Interval contains no more machine number.\n"
+	     << "Required tolerance may not be met.\n";
+	WriteMessage = 1;
+      }
+      return i1;
     }
-    if ((FunctionEvaluations>MaxAllowedFunctionEvaluation) && (WriteMessage == 0)){
-      cerr << "\nWarning Integration Subroutine: Maximum function count exceeded (" << MaxAllowedFunctionEvaluation
-	   << "); singularity likely.\n"
-	   << "Required tolerance may not be met.\n";
-      WriteMessage = 1;
+    if ((FunctionEvaluations > NumericalLibrary_Execution_Mode::Max_Function_Evaluations) && (WriteMessage == 0)){
+      if (NumericalLibrary_Execution_Mode::Output_Error_Messages){
+	cerr << "\nWarning Integration Subroutine: Maximum function count exceeded (" 
+	     << NumericalLibrary_Execution_Mode::Max_Function_Evaluations
+	     << "); singularity likely.\n"
+	     << "Required tolerance may not be met.\n";
+	WriteMessage = 1;
+      }
+      return i1;
     }
+    if (Level < NumericalLibrary_Execution_Mode::Adaptive_Integration_Minimum_Refinement_Levels){
+      // The minimum user specified levels of adaptation has not been obtained
+      // Keep refining
+      return (adaptlobstp(func,a,mll,fa,y1,is,Level+1,FunctionEvaluations,WriteMessage)+
+	      adaptlobstp(func,mll,ml,y1,y2,is,Level+1,FunctionEvaluations,WriteMessage)+
+	      adaptlobstp(func,ml,m,y2,y3,is,Level+1,FunctionEvaluations,WriteMessage)+
+	      adaptlobstp(func,m,mr,y3,y4,is,Level+1,FunctionEvaluations,WriteMessage)+
+	      adaptlobstp(func,mr,mrr,y4,y5,is,Level+1,FunctionEvaluations,WriteMessage)+
+	      adaptlobstp(func,mrr,b,y5,fb,is,Level+1,FunctionEvaluations,WriteMessage));
+    }
+    // None of the previous conditions applied. Return the result.
     return i1;
   } else {
-    return (adaptlobstp(func,a,mll,fa,y1,is,FunctionEvaluations,WriteMessage)+
-	    adaptlobstp(func,mll,ml,y1,y2,is,FunctionEvaluations,WriteMessage)+
-	    adaptlobstp(func,ml,m,y2,y3,is,FunctionEvaluations,WriteMessage)+
-	    adaptlobstp(func,m,mr,y3,y4,is,FunctionEvaluations,WriteMessage)+
-	    adaptlobstp(func,mr,mrr,y4,y5,is,FunctionEvaluations,WriteMessage)+
-	    adaptlobstp(func,mrr,b,y5,fb,is,FunctionEvaluations,WriteMessage));
+    return (adaptlobstp(func,a,mll,fa,y1,is,Level+1,FunctionEvaluations,WriteMessage)+
+	    adaptlobstp(func,mll,ml,y1,y2,is,Level+1,FunctionEvaluations,WriteMessage)+
+	    adaptlobstp(func,ml,m,y2,y3,is,Level+1,FunctionEvaluations,WriteMessage)+
+	    adaptlobstp(func,m,mr,y3,y4,is,Level+1,FunctionEvaluations,WriteMessage)+
+	    adaptlobstp(func,mr,mrr,y4,y5,is,Level+1,FunctionEvaluations,WriteMessage)+
+	    adaptlobstp(func,mrr,b,y5,fb,is,Level+1,FunctionEvaluations,WriteMessage));
   }
 }
 
@@ -776,7 +795,7 @@ inline ReturnType GaussLobattoAdaptiveQuadrature(FunctionType func, double Start
 
   FunctionEvaluations = 13;
 
-  return IntSign*adaptlobstp(func,a,b,y1,y13,is,FunctionEvaluations,WriteMessage);
+  return IntSign*adaptlobstp(func,a,b,y1,y13,is,0,FunctionEvaluations,WriteMessage);
 }
 
 /**
@@ -1484,6 +1503,15 @@ double PolynomLineIntegration2(const double & N1x, const double & N1y,
 			       const double & N2x, const double & N2y,
 			       const double & xCC, const double & yCC,
 			       const int &OrderX, const int &OrderY);
+
+// PolynomLineIntegration2() for Node input
+template <class Node>
+inline double PolynomLineIntegration2(const Node& StartNode, const Node& EndNode,
+				      const double & xCC, const double & yCC,
+				      const int &OrderX, const int &OrderY){
+  return PolynomLineIntegration2(StartNode.x(), StartNode.y(), EndNode.x(), EndNode.y(),
+				 xCC, yCC, OrderX, OrderY);
+}
 
 /***********************************************************************//**
  * Compute the integral \f$ I = \int (x - xc)^{(OrderX+1)} * (y - yc)^OrderY dy \f$

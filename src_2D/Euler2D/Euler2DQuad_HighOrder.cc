@@ -213,50 +213,103 @@ void Euler2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Tim
 	      break;
 	    } // endswitch
 
-	    // Output Brief format
-	    W_node = HighOrderVariable(IndexHO).SolutionStateAtLocation(i,j,Node);
-	    Out_File << " "  << Node 
-		     << " "  << W_node;
+	    if (i < ICl-HighOrderVariable(IndexHO).NghostHO() || 
+		i > ICu+HighOrderVariable(IndexHO).NghostHO() || 
+		j < JCl-HighOrderVariable(IndexHO).NghostHO() ||
+		j > JCu+HighOrderVariable(IndexHO).NghostHO()  ) {
 
-	    
-	    // Add more variables for the Detailed format
-	    if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){ 
-	      Out_File.setf(ios::scientific);
-	      Out_File << " " << W_node.T()
-		       << " " << W_node.v.abs()/W_node.a() 
-		       << " " << W_node.H()
-		       << " " << W_node.s();
-	      Out_File.unsetf(ios::scientific);
-	    }
+	      // No high-order interpolant is calculated for this cells.
+	      // The average solution is plotted at the nodes of these cells.
 
-
-	    // Add more variables for the Full format
-	    if (Tecplot_Execution_Mode::IsFullOutputRequired()){
-	      Out_File.setf(ios::scientific);
-	      Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,1)
-		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,1)
-		       << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,2)
-		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,2)
-		       << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,3)
-		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,3)
-		       << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,4)
-		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,4);
-	      Out_File.unsetf(ios::scientific);
-	      if (ExactSoln->IsExactSolutionSet()){
-		Out_File << " " << ExactSoln->Solution(Node.x,Node.y);
+	      // Output Brief format
+	      W_node = CellSolution(i,j);
+	      Out_File << " "  << Node 
+		       << " "  << W_node;
+	      	      
+	      // Add more variables for the Detailed format
+	      if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){ 
+		Out_File.setf(ios::scientific);
+		Out_File << " " << W_node.T()
+			 << " " << W_node.v.abs()/W_node.a() 
+			 << " " << W_node.H()
+			 << " " << W_node.s();
+		Out_File.unsetf(ios::scientific);
 	      }
+	      
+	      
+	      // Add more variables for the Full format
+	      if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+		Out_File.setf(ios::scientific);
+		Out_File << " " << 1.0E8
+			 << " " << 0
+			 << " " << 1.0E8
+			 << " " << 0
+			 << " " << 1.0E8
+			 << " " << 0
+			 << " " << 1.0E8
+			 << " " << 0;
+		Out_File.unsetf(ios::scientific);
+		if (ExactSoln->IsExactSolutionSet()){
+		  Out_File << " " << ExactSoln->Solution(Node.x,Node.y);
+		}
+	      }
+	      
+	      
+	      // Add more variables for the Extended format
+	      if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+		Out_File << " " << dUdt[i][j][0];
+	      }
+
+	      // Close line
+	      Out_File << "\n";
+	      Out_File.unsetf(ios::scientific);
+
+	    } else {
+	      
+	      // Output Brief format
+	      W_node = HighOrderVariable(IndexHO).SolutionStateAtLocation(i,j,Node);
+	      Out_File << " "  << Node 
+		       << " "  << W_node;
+	      	      
+	      // Add more variables for the Detailed format
+	      if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){ 
+		Out_File.setf(ios::scientific);
+		Out_File << " " << W_node.T()
+			 << " " << W_node.v.abs()/W_node.a() 
+			 << " " << W_node.H()
+			 << " " << W_node.s();
+		Out_File.unsetf(ios::scientific);
+	      }
+	      
+	      
+	      // Add more variables for the Full format
+	      if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+		Out_File.setf(ios::scientific);
+		Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,1)
+			 << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,1)
+			 << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,2)
+			 << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,2)
+			 << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,3)
+			 << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,3)
+			 << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,4)
+			 << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,4);
+		Out_File.unsetf(ios::scientific);
+		if (ExactSoln->IsExactSolutionSet()){
+		  Out_File << " " << ExactSoln->Solution(Node.x,Node.y);
+		}
+	      }
+	      
+	      
+	      // Add more variables for the Extended format
+	      if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+		Out_File << " " << dUdt[i][j][0];
+	      }
+
+	      // Close line
+	      Out_File << "\n";
+	      Out_File.unsetf(ios::scientific);
 	    }
-
-
-	    // Add more variables for the Extended format
-	    if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
-	      Out_File << " " << dUdt[i][j][0];
-	    }
-
-	    // Close line
-	    Out_File << "\n";
-	    Out_File.unsetf(ios::scientific);
-
+	      
 	  }
 	} /* endfor */
       }
@@ -379,10 +432,10 @@ void Euler2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const int &Number_of_Tim
 					Block_Number,
 					Output_Title,
 					Out_File,
-					ICl - HighOrderVariable(IndexHO).NghostHO(),
-					ICu + HighOrderVariable(IndexHO).NghostHO(),
-					JCl - HighOrderVariable(IndexHO).NghostHO(),
-					JCu + HighOrderVariable(IndexHO).NghostHO(),
+					ICl - Nghost,
+					ICu + Nghost,
+					JCl - Nghost,
+					JCu + Nghost,
 					IndexHO);
 }
 
@@ -2770,7 +2823,7 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 
 
   // == Set high-order boundary conditions
-  for ( j = JCl ; j <= JCu ; ++j ) {
+  for ( j = 0 ; j < NCj ; ++j ) {
 
     // Prescribe West boundary conditions.
     if (BC_WestCell() != NULL){
@@ -2837,8 +2890,12 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  // Use the exact solution to set up the reference states for this boundary type
 	  if (ExactSoln->IsExactSolutionSet()){
 	    // Determine the PointOfInterest if high-order boundaries are used
-	    if ( Grid.BndWestSplineInfo != NULL){
+	    if ( j<JCl && Grid.ExtendSouth_BndWestSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendSouth_BndWestSplineInfo[j].GQPoint(Vertex);
+	    } else if ( j>=JCl && j<=JCu && Grid.BndWestSplineInfo != NULL){
 	      PointOfInterest = Grid.BndWestSplineInfo[j].GQPoint(Vertex);
+	    } else if ( j>JCu && Grid.ExtendNorth_BndWestSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendNorth_BndWestSplineInfo[j-(JCu+1)].GQPoint(Vertex);
 	    } else {
 	      // Determine the PointOfInterest if low-order boundaries are used
 	      Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
@@ -2929,8 +2986,12 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  // Use the exact solution to set up the reference states for this boundary type
 	  if (ExactSoln->IsExactSolutionSet()){
 	    // Determine the PointOfInterest if high-order boundaries are used
-	    if ( Grid.BndEastSplineInfo != NULL){
+	    if ( j<JCl && Grid.ExtendSouth_BndEastSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendSouth_BndEastSplineInfo[j].GQPoint(Vertex);
+	    } else if ( j>=JCl && j<=JCu && Grid.BndEastSplineInfo != NULL){
 	      PointOfInterest = Grid.BndEastSplineInfo[j].GQPoint(Vertex);
+	    } else if ( j>JCu && Grid.ExtendNorth_BndEastSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendNorth_BndEastSplineInfo[j-(JCu+1)].GQPoint(Vertex);
 	    } else {
 	      // Determine the PointOfInterest if low-order boundaries are used
 	      Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
@@ -2960,7 +3021,7 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
   } /* endfor (j) */
 
 
-  for ( i = ICl ; i <= ICu ; ++i ) {
+  for ( i = 0 ; i < NCi ; ++i ) {
 
     // Prescribe South boundary conditions.
     if (BC_SouthCell() != NULL){
@@ -3027,8 +3088,12 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  // Use the exact solution to set up the reference states for this boundary type
 	  if (ExactSoln->IsExactSolutionSet()){
 	    // Determine the PointOfInterest if high-order boundaries are used
-	    if ( Grid.BndSouthSplineInfo != NULL){
+	    if ( i<ICl && Grid.ExtendWest_BndSouthSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendWest_BndSouthSplineInfo[i].GQPoint(Vertex);
+	    } else if ( i>=ICl && i<=ICu && Grid.BndSouthSplineInfo != NULL){
 	      PointOfInterest = Grid.BndSouthSplineInfo[i].GQPoint(Vertex);
+	    } else if ( i>ICu && Grid.ExtendEast_BndSouthSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendEast_BndSouthSplineInfo[i-(ICu+1)].GQPoint(Vertex);
 	    } else {
 	      // Determine the PointOfInterest if low-order boundaries are used
 	      Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
@@ -3121,8 +3186,12 @@ void Euler2D_Quad_Block::BCs_HighOrder(void){
 	  // Use the exact solution to set up the reference states for this boundary type
 	  if (ExactSoln->IsExactSolutionSet()){
 	    // Determine the PointOfInterest if high-order boundaries are used
-	    if ( Grid.BndNorthSplineInfo != NULL){
+	    if ( i<ICl && Grid.ExtendWest_BndNorthSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendWest_BndNorthSplineInfo[i].GQPoint(Vertex);
+	    } else if ( i>=ICl && i<=ICu && Grid.BndNorthSplineInfo != NULL){
 	      PointOfInterest = Grid.BndNorthSplineInfo[i].GQPoint(Vertex);
+	    } else if ( i>ICu && Grid.ExtendEast_BndNorthSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendEast_BndNorthSplineInfo[i-(ICu+1)].GQPoint(Vertex);
 	    } else {
 	      // Determine the PointOfInterest if low-order boundaries are used
 	      Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);

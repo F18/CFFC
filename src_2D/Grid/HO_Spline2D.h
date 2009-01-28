@@ -184,6 +184,9 @@ public:
   double ZeroOrderIntegration(const Vector2D &StartPoint,
 			      const Vector2D &EndPoint,
 			      const int &digits) const;
+  void GenerateLineSegmentDiscretization(const Vector2D &StartPoint,
+					 const Vector2D &EndPoint,
+					 LinkedList<Vector2D> &DiscretizationVertexes) const;
   //@}
 
   //! @name Normal and tangential vectors at a specified location on the spline

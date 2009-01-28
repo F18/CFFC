@@ -20,9 +20,14 @@ short HO_Grid2D_Execution_Mode::REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXE
 short HO_Grid2D_Execution_Mode::USE_BROADCAST_MORE_THAN_RECOMPUTING = ON; // broadcast the majority of geometric properties
 short HO_Grid2D_Execution_Mode::TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES = OFF; // tolerate inaccurate integration
 short HO_Grid2D_Execution_Mode::SMOOTH_QUAD_BLOCK_FLAG = ON; // smooth the grid
+short HO_Grid2D_Execution_Mode::POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_FLAG = ON; // use polygonal adaptive integration
+short HO_Grid2D_Execution_Mode::MONTE_CARLO_INTEGRATION_FLAG = OFF; // don't use Monte Carlo integration unless user specifies
+short HO_Grid2D_Execution_Mode::POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS = 2;
+short HO_Grid2D_Execution_Mode::ENFORCE_NONREFLECTED_SOUTH_BOUNDARY_GHOST_CELLS = OFF; // leave the BCs to take care of
 
 // Block boundary flux calculation method
 short HO_Grid2D_Execution_Mode::CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = OFF; // use the default settings
+short HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = OFF; // don't loop over the flux setting
 short HO_Grid2D_Execution_Mode::WEST_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
 short HO_Grid2D_Execution_Mode::SOUTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
 short HO_Grid2D_Execution_Mode::NORTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
@@ -41,12 +46,17 @@ void HO_Grid2D_Execution_Mode::SetDefaults(void){
   REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = OFF; // stop on detecting incorrect quads
   USE_BROADCAST_MORE_THAN_RECOMPUTING = ON; // broadcast the majority of geometric properties
   CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = OFF; // use the default settings
+  LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = OFF; // don't loop over the flux setting
   WEST_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
   SOUTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
   NORTH_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
   EAST_RECONSTRUCTION_BASED_FLUX = OFF; // set to SolveRiemannProblem to compute the flux
   TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES = OFF; // tolerate inaccurate integration
   SMOOTH_QUAD_BLOCK_FLAG = ON; // smooth the grid
+  POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_FLAG = ON; // use polygonal adaptive integration
+  MONTE_CARLO_INTEGRATION_FLAG = OFF; // don't use Monte Carlo integration unless user specifies
+  POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS = 2;
+  ENFORCE_NONREFLECTED_SOUTH_BOUNDARY_GHOST_CELLS = OFF; // leave the boundary condition to take care of
 
   // Reset solid body counter in Spline2D_HO class
   Spline2D_HO::ResetCounter();
@@ -117,7 +127,15 @@ void HO_Grid2D_Execution_Mode::Print_Info(std::ostream & out_file){
       }	// endswitch
     } // endif
 
-    if (TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES ){
+    if (POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_FLAG){
+      out_file << "\n     -> Integration Along Curved Edges: " << "Polygonal adaptive quadrature"
+	       << "\n     -> Minimum refinement levels: " << POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS;
+    } else if (MONTE_CARLO_INTEGRATION_FLAG){
+      out_file << "\n     -> Integration Along Curved Edges: " 
+	       << "Monte Carlo, #Samples(" 
+	       << NumericalLibrary_Execution_Mode::Number_Monte_Carlo_Samples 
+	       << ")";
+    } else if (TOLERATE_INACCURATE_INTEGRATION_NEAR_CURVED_BOUNDARIES ){
       out_file << "\n     -> Integration Along Curved Edges: " << "Force with straight edges";
     } // endif   
 
@@ -146,6 +164,11 @@ void HO_Grid2D_Execution_Mode::Print_Info(std::ostream & out_file){
   } else {
     out_file << "\n     -> Smooth Quad Block: No";
   }
+
+  if (ENFORCE_NONREFLECTED_SOUTH_BOUNDARY_GHOST_CELLS == ON){
+    out_file << "\n     -> Ghost cells South boundary: Enforce non-reflected geometry";
+  }
+
 }
 
 /*!
@@ -201,6 +224,22 @@ void HO_Grid2D_Execution_Mode::Broadcast(void){
 
 
   MPI::COMM_WORLD.Bcast(&SMOOTH_QUAD_BLOCK_FLAG,
+ 			1, 
+ 			MPI::SHORT, 0);
+
+  MPI::COMM_WORLD.Bcast(&POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_FLAG,
+ 			1, 
+ 			MPI::SHORT, 0);
+
+  MPI::COMM_WORLD.Bcast(&MONTE_CARLO_INTEGRATION_FLAG,
+ 			1, 
+ 			MPI::SHORT, 0);
+
+  MPI::COMM_WORLD.Bcast(&POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS,
+ 			1, 
+ 			MPI::SHORT, 0);
+
+  MPI::COMM_WORLD.Bcast(&ENFORCE_NONREFLECTED_SOUTH_BOUNDARY_GHOST_CELLS,
  			1, 
  			MPI::SHORT, 0);
 
@@ -269,4 +308,29 @@ void HO_Grid2D_Execution_Mode::Set_Affected_Switches(void){
     Grid2D_Quad_Block_HO::setNoGridSmoothing();
   }
 
+  if (POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_FLAG){
+    // Set the affected switches
+    Grid2D_Quad_Block_HO::setPolygonalAdaptiveQuadratureIntegrationON();
+    Grid2D_Quad_Block_HO::setMonteCarloIntegrationOFF();
+    Grid2D_Quad_Block_HO::Polygonal_Adaptive_Quadrature_Integration_Minimum_Levels = 
+      POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS;
+
+  } else if (MONTE_CARLO_INTEGRATION_FLAG){
+    // Set the affected switches
+    Grid2D_Quad_Block_HO::setPolygonalAdaptiveQuadratureIntegrationOFF();
+    Grid2D_Quad_Block_HO::setMonteCarloIntegrationON();
+
+  } else {
+    // Set the affected switches
+    Grid2D_Quad_Block_HO::setPolygonalAdaptiveQuadratureIntegrationOFF();
+    Grid2D_Quad_Block_HO::setMonteCarloIntegrationOFF();
+  }
+
+  if (ENFORCE_NONREFLECTED_SOUTH_BOUNDARY_GHOST_CELLS == ON){
+    // Set the affected switch
+    Grid2D_Quad_Block_HO::setNonReflectedGhostCellsNearSouthSolidBoundary();
+  } else {
+    // Set the affected switch
+    Grid2D_Quad_Block_HO::setReflectedGhostCellsNearSouthSolidBoundary();
+  }
 }

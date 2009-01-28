@@ -142,6 +142,8 @@ namespace tut
     Grid2D_Quad_Block_HO::setDefaultBoundaryRepresentation();
     Grid2D_Quad_Block_HO::setNoSpecialTreatmentForNumericalError();
     Tecplot_Execution_Mode::SetDefaults();
+
+    delete [] GQPoints; GQPoints = NULL;
   }
 
   template<class Input_Parameters>
@@ -1461,6 +1463,10 @@ namespace tut
     // Build the mesh
     CreateMesh(MeshBlk,IP);
 
+    // Enforce geometric properties update in ghost cells
+    MeshBlk.Schedule_Ghost_Cells_Update();
+    MeshBlk.Update_All_Cells();
+
     MasterFile = "GridCircularCylinder_GeomProperties_InteriorCell.dat";
     CurrentFile = "Current_GridCircularCylinder_GeomProperties_InteriorCell.dat";
 
@@ -1841,6 +1847,15 @@ namespace tut
 
     // Build the mesh
     CreateMesh(MeshBlk,IP);
+
+    // Remove extension splines due to the fact that no message passing between blocks is done
+    MeshBlk(0,0).RemoveExtensionSplines();
+    MeshBlk(1,0).RemoveExtensionSplines();
+
+    // Update geometric properties
+    MeshBlk(0,0).Schedule_Ghost_Cells_Update(); MeshBlk(0,0).Update_Cells();
+    MeshBlk(1,0).Schedule_Ghost_Cells_Update(); MeshBlk(1,0).Update_Cells();      
+
 
     MasterFile = "Grid_Output_Operator.dat";
     CurrentFile = "Current_Grid_Output_Operator.dat";
@@ -3297,6 +3312,14 @@ namespace tut
       // Build the mesh
       CreateMesh(MeshBlk,IP);
 
+      // Remove extension splines due to the fact that no message passing between blocks is done
+      MeshBlk(0,0).RemoveExtensionSplines();
+      MeshBlk(1,0).RemoveExtensionSplines();
+
+      // Update geometric properties
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update(); MeshBlk(0,0).Update_Cells();
+      MeshBlk(1,0).Schedule_Ghost_Cells_Update(); MeshBlk(1,0).Update_Cells();      
+
       Open_Output_File(CurrentFile);
 
       out() << MeshBlk(0,0) << endl << endl;
@@ -3308,6 +3331,14 @@ namespace tut
     } else {
       // Build the mesh
       CreateMesh(MeshBlk,IP);
+
+      // Remove extension splines due to the fact that no message passing between blocks is done
+      MeshBlk(0,0).RemoveExtensionSplines();
+      MeshBlk(1,0).RemoveExtensionSplines();
+
+      // Update geometric properties
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update(); MeshBlk(0,0).Update_Cells();
+      MeshBlk(1,0).Schedule_Ghost_Cells_Update(); MeshBlk(1,0).Update_Cells();      
 
       Open_Output_File(MasterFile);
 
@@ -3355,6 +3386,14 @@ namespace tut
       // Build the mesh
       CreateMesh(MeshBlk,IP);
 
+      // Remove extension splines due to the fact that no message passing between blocks is done
+      MeshBlk(0,0).RemoveExtensionSplines();
+      MeshBlk(1,0).RemoveExtensionSplines();
+
+      // Update geometric properties
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update(); MeshBlk(0,0).Update_Cells();
+      MeshBlk(1,0).Schedule_Ghost_Cells_Update(); MeshBlk(1,0).Update_Cells();      
+
       Open_Output_File(CurrentFile);
 
       out() << MeshBlk(0,0) << endl << endl;
@@ -3366,6 +3405,14 @@ namespace tut
     } else {
       // Build the mesh
       CreateMesh(MeshBlk,IP);
+
+      // Remove extension splines due to the fact that no message passing between blocks is done
+      MeshBlk(0,0).RemoveExtensionSplines();
+      MeshBlk(1,0).RemoveExtensionSplines();
+
+      // Update geometric properties
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update(); MeshBlk(0,0).Update_Cells();
+      MeshBlk(1,0).Schedule_Ghost_Cells_Update(); MeshBlk(1,0).Update_Cells();      
 
       Open_Output_File(MasterFile);
 
@@ -3413,6 +3460,14 @@ namespace tut
       // Build the mesh
       CreateMesh(MeshBlk,IP);
 
+      // Remove extension splines due to the fact that no message passing between blocks is done
+      MeshBlk(0,0).RemoveExtensionSplines();
+      MeshBlk(1,0).RemoveExtensionSplines();
+
+      // Update geometric properties
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update(); MeshBlk(0,0).Update_Cells();
+      MeshBlk(1,0).Schedule_Ghost_Cells_Update(); MeshBlk(1,0).Update_Cells();      
+
       Open_Output_File(CurrentFile);
 
       out() << MeshBlk(0,0) << endl << endl;
@@ -3424,6 +3479,14 @@ namespace tut
     } else {
       // Build the mesh
       CreateMesh(MeshBlk,IP);
+
+      // Remove extension splines due to the fact that no message passing between blocks is done
+      MeshBlk(0,0).RemoveExtensionSplines();
+      MeshBlk(1,0).RemoveExtensionSplines();
+
+      // Update geometric properties
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update(); MeshBlk(0,0).Update_Cells();
+      MeshBlk(1,0).Schedule_Ghost_Cells_Update(); MeshBlk(1,0).Update_Cells();      
 
       Open_Output_File(MasterFile);
 
@@ -4019,6 +4082,10 @@ namespace tut
     // Build the low-order mesh
     CreateMesh(MeshBlk,IP);
 
+    // Enforce geometric properties update in ghost cells
+    MeshBlk.Schedule_Ghost_Cells_Update();
+    MeshBlk.Update_All_Cells();
+
     // Set the file names
     MasterFile = "GridCircularCylinder_GeomProperties_InteriorCell.dat";
     CurrentFile = "Current_GridCircularCylinder_GeomProperties_InteriorCell_SpecialTreatmentMesh.dat";
@@ -4178,7 +4245,7 @@ namespace tut
       MeshBlk.Output_Cells_Data(out());
 
       // == check geometric properties
-      RunRegressionTest("Large Deformed Box 4th-order moments", CurrentFile, MasterFile, 8.0e-7, 8.0e-7);
+      RunRegressionTest("Large Deformed Box 4th-order moments", CurrentFile, MasterFile, 5.0e-6, 5.0e-6);
       
     } else {
       // Build the mesh
@@ -4256,7 +4323,7 @@ namespace tut
     MeshBlk(0,0).BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
     ensure_equals("South Bnd", MeshBlk(0,0).IsSouthBoundaryReconstructionConstrained(), true);
     ensure_equals("North Bnd", MeshBlk(0,0).IsNorthBoundaryReconstructionConstrained(), true);
-    ensure_equals("East Bnd", MeshBlk(0,0).IsEastBoundaryReconstructionConstrained(), true);
+    ensure_equals("East Bnd", MeshBlk(0,0).IsEastBoundaryReconstructionConstrained(), false);
     ensure_equals("West Bnd", MeshBlk(0,0).IsWestBoundaryReconstructionConstrained(), true);
   }
 

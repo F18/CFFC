@@ -78,7 +78,9 @@ SRC_MATH = $(MATH_DIR)Vector2D.cc \
 	   $(MATH_DIR)Polyfit/dp1vlu.f \
 	   $(MATH_DIR)Polyfit/dpcoef.f \
 	   $(MATH_DIR)Polyfit/dpolft.f \
-	   $(MATH_DIR)NumericalLibrary.cc
+	   $(MATH_DIR)NumericalLibrary.cc \
+	   $(MATH_DIR)NumericalLibrary_ExecutionMode.cc \
+	   $(MATH_DIR)RandomGenerator.cc 
 SRC_MATH_F90 = $(MATH_DIR)complexify.f90
 SRC_MATH += $(SRC_MATH_F90)
 SRC_MATH += Utilities/EpsilonTol.cc
@@ -165,7 +167,8 @@ endif
 # HighOrderReconstruction only for 2D:
 SRC_HIGH_ORDER_RECONSTRUCTION_2D = AccuracyAssessment2DMultiBlock.cc \
 				   AccuracyAssessment_ExecutionMode.cc \
-				   HighOrder2D_Input.cc
+				   HighOrder2D_Input.cc \
+				   HighOrder2D_BlockBoundary.cc
 SRC_HIGH_ORDER_RECONSTRUCTION_2D := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION_2D))
 
 # Add High-Order Reconstruction Testing If Required:

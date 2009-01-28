@@ -111,6 +111,13 @@ public:
       ----------------------------------------------------------------------------------------  */
   static short CUSTOMIZE_FLUX_CALCULATION_METHOD_AT_BOUNDARIES;
 
+  /*! This flag is used to control whether the flux calculation method specified by the user 
+      is set to the extension splines of the boundaries blocks.\n
+      Turn ON if you want to loop over the flux calculation method at boundary blocks. \n
+      Turn OFF if you want to use the default behaviour. (default) \n
+      ----------------------------------------------------------------------------------------  */
+  static short LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES;
+
   /*! This flag is used to set the method to compute the flux through cell faces at the West block boundary.
       The flag becomes active only if the boundary condition imposed at the block boundary is different than BC_NONE.\n
       Turn ON if you want to use reconstruction based flux (i.e. constrained reconstruction). \n
@@ -153,6 +160,27 @@ public:
       Turn OFF if you don't want the grid to be smoothed. \n
       ----------------------------------------------------------------------------------------  */
   static short SMOOTH_QUAD_BLOCK_FLAG;
+
+  /*! This flag is used to specify whether the polygonal adaptive quadrature integration is used. \n
+      Turn ON if you want to use the polygonal adaptive integration. (default) \n
+      Turn OFF if you don't want. \n
+      ----------------------------------------------------------------------------------------  */
+  static short POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_FLAG;
+
+  /*! This flag is used to specify whether the Monte Carlo integration is used. \n
+      Turn ON if you want to use the Monte Carlo integration (the polygonal adaptive integration must be turned off). \n
+      Turn OFF if you don't want. (default) \n
+      ----------------------------------------------------------------------------------------  */
+  static short MONTE_CARLO_INTEGRATION_FLAG;
+
+  /*! Number of minimum refinement levels in the polygonal adaptive quadrature integration. \n
+      ----------------------------------------------------------------------------------------  */
+  static short POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS;
+
+  /*! This flag is used to impose non-reflected ghost cells for the South boundary,
+    even if the boundary condition of that boundary is reflection. \n
+      ----------------------------------------------------------------------------------------  */
+  static short ENFORCE_NONREFLECTED_SOUTH_BOUNDARY_GHOST_CELLS;
 
   template<class Input_Parameters_Type>
   static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);
@@ -396,6 +424,65 @@ void HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Paramete
     }
     i_command = 0;
 
+  } else if (strcmp(IP.Next_Control_Parameter, "Integration_Method_Near_Curved_Boundaries") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if (strcmp(IP.Next_Control_Parameter, "Polygonal_Adaptive_Quadrature") == 0 ) {
+      POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_FLAG = ON;
+      MONTE_CARLO_INTEGRATION_FLAG = OFF;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setPolygonalAdaptiveQuadratureIntegrationON();
+      Grid2D_Quad_Block_HO::setMonteCarloIntegrationOFF();	  
+      
+    } else if (strcmp(IP.Next_Control_Parameter,"Monte_Carlo") == 0 ) {
+      POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_FLAG = OFF;
+      MONTE_CARLO_INTEGRATION_FLAG = ON;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setPolygonalAdaptiveQuadratureIntegrationOFF();
+      Grid2D_Quad_Block_HO::setMonteCarloIntegrationON();
+
+    } else if (strcmp(IP.Next_Control_Parameter,"None") == 0 ) {
+      POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_FLAG = OFF;
+      MONTE_CARLO_INTEGRATION_FLAG = OFF;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setPolygonalAdaptiveQuadratureIntegrationOFF();
+      Grid2D_Quad_Block_HO::setMonteCarloIntegrationOFF();
+      
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Minimum_Levels_Polygonal_Adaptive_Quadrature_Integration") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if ( POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS < 0 ){
+      i_command = INVALID_INPUT_VALUE;
+    } else {
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::Polygonal_Adaptive_Quadrature_Integration_Minimum_Levels = 
+	POLYGONAL_ADAPTIVE_QUADRATURE_INTEGRATION_MINIMUM_LEVELS;
+    }
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Impose_NonReflected_South_Ghost_Cells") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if (strcmp(IP.Next_Control_Parameter, "Yes") == 0 || strcmp(IP.Next_Control_Parameter, "Yes") == 0) {
+      ENFORCE_NONREFLECTED_SOUTH_BOUNDARY_GHOST_CELLS = ON;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setNonReflectedGhostCellsNearSouthSolidBoundary();
+      
+    } else if (strcmp(IP.Next_Control_Parameter,"NO") == 0 || strcmp(IP.Next_Control_Parameter, "No") == 0) {
+      ENFORCE_NONREFLECTED_SOUTH_BOUNDARY_GHOST_CELLS = OFF;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setReflectedGhostCellsNearSouthSolidBoundary();
+
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
 
   } else {
     i_command = INVALID_INPUT_CODE;

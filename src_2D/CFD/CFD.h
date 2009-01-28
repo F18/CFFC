@@ -235,6 +235,7 @@ inline char *Date_And_Time() {
 #define GRID_ANNULUS                         31
 #define GRID_DEFORMED_BOX                    32
 #define GRID_NACA_AEROFOIL_OGRID             33
+#define GRID_RINGLEB_FLOW_STRAIGHT_INFLOW_BOUNDARY    34
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000

@@ -726,6 +726,7 @@ inline ostream &operator << (ostream &out_file,
   case GRID_FREE_JET :
     out_file << "\n  -> Orifice Radius (m): " << IP.Orifice_Radius;
     break;
+  case GRID_RINGLEB_FLOW_STRAIGHT_INFLOW_BOUNDARY :    
   case GRID_RINGLEB_FLOW :
     out_file << "\n  -> Inner streamline number: " << IP.Inner_Streamline_Number;
     out_file << "\n  -> Outer streamline number: " << IP.Outer_Streamline_Number;
