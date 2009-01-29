@@ -910,7 +910,9 @@ inline void NavierStokes2D_Quad_Block::allocate_HighOrder_BoundaryConditions(voi
   int i,j;
   
   // allocate North BCs
-  if ( Grid.IsNorthBoundaryReconstructionConstrained() ){
+  if ( Grid.IsWestExtendNorthBoundaryReconstructionConstrained() ||  
+       Grid.IsNorthBoundaryReconstructionConstrained() || 
+       Grid.IsEastExtendNorthBoundaryReconstructionConstrained() ){
     
     if (HO_WoN != NULL){
       // deallocate memory
@@ -920,8 +922,8 @@ inline void NavierStokes2D_Quad_Block::allocate_HighOrder_BoundaryConditions(voi
     // allocate new memory
     HO_WoN = new BC_Type[NCi];
 
-    // allocate BC memory for each flux calculation point
-    for (i=ICl; i<=ICu; ++i){
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (i=0; i<NCi; ++i){
       BC_NorthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu),
 					  Grid.BCtypeN[i]);
     }
@@ -932,7 +934,9 @@ inline void NavierStokes2D_Quad_Block::allocate_HighOrder_BoundaryConditions(voi
   }
 
   // allocate South BCs
-  if ( Grid.IsSouthBoundaryReconstructionConstrained() ){
+  if ( Grid.IsWestExtendSouthBoundaryReconstructionConstrained() ||
+       Grid.IsSouthBoundaryReconstructionConstrained() || 
+       Grid.IsEastExtendSouthBoundaryReconstructionConstrained() ){
 
     if (HO_WoS != NULL){
       // deallocate memory
@@ -942,8 +946,8 @@ inline void NavierStokes2D_Quad_Block::allocate_HighOrder_BoundaryConditions(voi
     // allocate new memory    
     HO_WoS = new BC_Type[NCi];
 
-    // allocate BC memory for each flux calculation point
-    for (i=ICl; i<=ICu; ++i){
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (i=0; i<NCi; ++i){
       BC_SouthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl),
 					  Grid.BCtypeS[i]);
     }    
@@ -953,7 +957,9 @@ inline void NavierStokes2D_Quad_Block::allocate_HighOrder_BoundaryConditions(voi
   }
 
   // allocate East BCs
-  if ( Grid.IsEastBoundaryReconstructionConstrained() ){
+  if ( Grid.IsSouthExtendEastBoundaryReconstructionConstrained() ||
+       Grid.IsEastBoundaryReconstructionConstrained() ||
+       Grid.IsNorthExtendEastBoundaryReconstructionConstrained() ){
 
     if (HO_WoE != NULL){
       // deallocate memory
@@ -963,8 +969,8 @@ inline void NavierStokes2D_Quad_Block::allocate_HighOrder_BoundaryConditions(voi
     // allocate new memory    
     HO_WoE = new BC_Type[NCj];
 
-    // allocate BC memory for each flux calculation point
-    for (j=JCl; j<=JCu; ++j){
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (j=0; j<NCj; ++j){
       BC_EastCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j),
 					 Grid.BCtypeE[j]);
     }
@@ -974,7 +980,9 @@ inline void NavierStokes2D_Quad_Block::allocate_HighOrder_BoundaryConditions(voi
   }
 
   // allocate West BCs
-  if ( Grid.IsWestBoundaryReconstructionConstrained() ){
+  if ( Grid.IsSouthExtendWestBoundaryReconstructionConstrained() ||
+       Grid.IsWestBoundaryReconstructionConstrained() || 
+       Grid.IsNorthExtendWestBoundaryReconstructionConstrained() ){
 
     if (HO_WoW != NULL){
       // deallocate memory
@@ -984,8 +992,8 @@ inline void NavierStokes2D_Quad_Block::allocate_HighOrder_BoundaryConditions(voi
     // allocate new memory    
     HO_WoW = new BC_Type[NCj];
 
-    // allocate BC memory for each flux calculation point
-    for (j=JCl; j<=JCu; ++j){
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (j=0; j<NCj; ++j){
       BC_WestCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j),
 					 Grid.BCtypeW[j]);
     }
@@ -1964,8 +1972,8 @@ inline void NavierStokes2D_Quad_Block::copy_HighOrder_Objects(const NavierStokes
       // allocate new memory based on the number of the current grid
       HO_WoN = new BC_Type[NCi];
 
-      for (i=ICl; i<=ICu; ++i){
-	// allocate BC memory for each flux calculation point
+      for (i=0; i<NCi; ++i){
+	// allocate BC memory for each constrained Gauss quadrature point
 	BC_NorthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu),
 					    Grid.BCtypeN[i]);
 
@@ -1990,11 +1998,11 @@ inline void NavierStokes2D_Quad_Block::copy_HighOrder_Objects(const NavierStokes
       // allocate new memory    
       HO_WoS = new BC_Type[NCi];
 
-      for (i=ICl; i<=ICu; ++i){
-	// allocate BC memory for each flux calculation point
+      for (i=0; i<NCi; ++i){
+	// allocate BC memory for each constrained Gauss quadrature point
 	BC_SouthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl),
 					    Grid.BCtypeS[i]);
-
+	
 	// Copy South high-order BCs
 	HO_WoS[i] = SolnBlk.HO_WoS[i];
       }
@@ -2016,8 +2024,8 @@ inline void NavierStokes2D_Quad_Block::copy_HighOrder_Objects(const NavierStokes
       // allocate new memory    
       HO_WoE = new BC_Type[NCj];
 
-      for (j=JCl; j<=JCu; ++j){
-	// allocate BC memory for each flux calculation point
+      for (j=0; j<NCj; ++j){
+	// allocate BC memory for each constrained Gauss quadrature point
 	BC_EastCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j),
 					   Grid.BCtypeE[j]);
 
@@ -2040,14 +2048,15 @@ inline void NavierStokes2D_Quad_Block::copy_HighOrder_Objects(const NavierStokes
       // allocate new memory    
       HO_WoW = new BC_Type[NCj];
       
-      for (j=JCl; j<=JCu; ++j){
-	// allocate BC memory for each flux calculation point
+      for (j=0; j<NCj; ++j){
+	// allocate BC memory for each constrained Gauss quadrature point
 	BC_WestCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j),
 					   Grid.BCtypeW[j]);
 	
 	// Copy West high-order BCs
 	HO_WoW[j] = SolnBlk.HO_WoW[j];
       }
+
     } else if (HO_WoW != NULL){
       // deallocate memory
       delete [] HO_WoW; HO_WoW = NULL;

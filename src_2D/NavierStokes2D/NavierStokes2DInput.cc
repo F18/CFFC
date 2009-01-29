@@ -1340,6 +1340,9 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
     NavierStokes2D_Quad_Block::Set_Normalization_Reference_State(IP.RefW);
   }
 
+  // NumericalLibrary_Execution_Mode variables
+  NumericalLibrary_Execution_Mode::Broadcast();
+
 #endif
 
 }
@@ -2285,6 +2288,11 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.i_Grid = GRID_NACA_AEROFOIL;
       IP.Chord_Length = ONE;
       strcpy(IP.NACA_Aerofoil_Type,"0012");
+    } else if (strcmp(IP.Grid_Type, "NACA_Aerofoil_Ogrid") == 0) {
+      IP.i_Grid = GRID_NACA_AEROFOIL_OGRID;
+      IP.Chord_Length = ONE;
+      IP.Cylinder_Radius2 = 32.0;
+      strcpy(IP.NACA_Aerofoil_Type, "0012");
     } else if (strcmp(IP.Grid_Type,"Free_Jet") == 0) {
       IP.i_Grid = GRID_FREE_JET;
       IP.Orifice_Radius = ONE;
@@ -4292,6 +4300,9 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
 
   /* Parse next control parameter with HighOrder2D_Input parser */
   HighOrder2D_Input::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with NumericalLibrary_Execution_Mode parser */
+  NumericalLibrary_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   if (i_command == INVALID_INPUT_CODE) {
     // that is, we have an input line which:

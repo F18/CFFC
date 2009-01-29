@@ -670,19 +670,19 @@ inline ostream &operator << (ostream &out_file,
 	     << IP.VertexNW;
     break;
   case GRID_FLAT_PLATE :
-    out_file << "\n  -> Plate Length (m): " 
+    out_file << "\n     -> Plate Length (m): " 
 	     << IP.Plate_Length;
     break;
   case GRID_PIPE :
-    out_file << "\n  -> Pipe Length (m): " 
+    out_file << "\n     -> Pipe Length (m): " 
 	     << IP.Pipe_Length;
-    out_file << "\n  -> Pipe Radius (m): "
+    out_file << "\n     -> Pipe Radius (m): "
 	     << IP.Pipe_Radius;
     break;
   case GRID_BLUNT_BODY :
-    out_file << "\n  -> Cylinder Radius (m): " 
+    out_file << "\n     -> Cylinder Radius (m): " 
 	     << IP.Blunt_Body_Radius;
-    out_file << "\n  -> Blunt Body Mach Number: " 
+    out_file << "\n     -> Blunt Body Mach Number: " 
 	     << IP.Blunt_Body_Mach_Number;
     break;
   case GRID_JET_FLOW:
@@ -714,30 +714,40 @@ inline ostream &operator << (ostream &out_file,
 	     << IP.Annulus_Theta_End;
     break;
   case GRID_ELLIPSE :
-    out_file << "\n  -> Width of Ellipse along x-axis (m): " 
+    out_file << "\n     -> Width of Ellipse along x-axis (m): " 
 	     << IP.Ellipse_Length_X_Axis;
-    out_file << "\n  -> Height of Ellipse along y-axis (m): " 
+    out_file << "\n     -> Height of Ellipse along y-axis (m): " 
 	     << IP.Ellipse_Length_Y_Axis;
     break;
   case GRID_NACA_AEROFOIL :
-    out_file << "\n  -> NACA " << IP.NACA_Aerofoil_Type;
-    out_file << "\n  -> Chord Length (m): " << IP.Chord_Length;
+    out_file << "\n     -> NACA " 
+	     << IP.NACA_Aerofoil_Type;
+    out_file << "\n     -> Chord Length (m): " 
+	     << IP.Chord_Length;
+    break;
+  case GRID_NACA_AEROFOIL_OGRID :
+    out_file << "\n     -> NACA " 
+	     << IP.NACA_Aerofoil_Type;
+    out_file << "\n     -> Chord Length (m): " 
+	     << IP.Chord_Length
+	     << "\n     -> Outer Cylinder Radius (m): " 
+	     << IP.Cylinder_Radius2;
     break;
   case GRID_FREE_JET :
-    out_file << "\n  -> Orifice Radius (m): " << IP.Orifice_Radius;
+    out_file << "\n     -> Orifice Radius (m): " << IP.Orifice_Radius;
     break;
   case GRID_RINGLEB_FLOW_STRAIGHT_INFLOW_BOUNDARY :    
   case GRID_RINGLEB_FLOW :
-    out_file << "\n  -> Inner streamline number: " << IP.Inner_Streamline_Number;
-    out_file << "\n  -> Outer streamline number: " << IP.Outer_Streamline_Number;
-    out_file << "\n  -> Isotach line: " << IP.Isotach_Line;
+    out_file << "\n     -> Inner streamline number: " << IP.Inner_Streamline_Number;
+    out_file << "\n     -> Outer streamline number: " << IP.Outer_Streamline_Number;
+    out_file << "\n     -> Isotach line: " << IP.Isotach_Line;
     break;
   case GRID_WEDGE :
-    out_file << "\n  -> Wedge Angle (degrees): " << IP.Wedge_Angle;
-    out_file << "\n  -> Wedge Length (m): " << IP.Wedge_Length;
+    out_file << "\n     -> Wedge Angle (degrees): " << IP.Wedge_Angle;
+    out_file << "\n     -> Wedge Length (m): " << IP.Wedge_Length;
     break;
   case GRID_UNSTEADY_BLUNT_BODY :
-    out_file << "\n  -> Cylinder Radius (m): " << IP.Blunt_Body_Radius;
+    out_file << "\n     -> Cylinder Radius (m): " << IP.Blunt_Body_Radius;
     break;
   case GRID_BUMP_CHANNEL_FLOW :
     if (strcmp(IP.Grid_Type,"Bump_Channel_Flow") == 0) {
@@ -891,6 +901,9 @@ inline ostream &operator << (ostream &out_file,
   out_file << "\n  -> Accuracy Assessment: ";
   // output information related to assessment of accuracy
   AccuracyAssessment_Execution_Mode::Print_Info(out_file);
+
+  // output information related to the numerical integration parameters
+  NumericalLibrary_Execution_Mode::Print_Info(out_file);
 
   out_file << "\n  -> Restart Solution Save Frequency: "
 	   << IP.Restart_Solution_Save_Frequency

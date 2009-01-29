@@ -2981,6 +2981,9 @@ void BCs(NavierStokes2D_Quad_Block &SolnBlk, NavierStokes2D_Input_Parameters &IP
     } // endfor (i)
   } // endif
 
+  // Impose high-order boundary conditions
+  SolnBlk.BCs_HighOrder();
+
 }
 
 /**********************************************************************

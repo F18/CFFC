@@ -300,103 +300,212 @@ void NavierStokes2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const NavierStoke
 	    break;
 	  } // endswitch
 
-	  // Output Brief format
-	  W_node = HighOrderVariable(IndexHO).SolutionStateAtLocation(i,j,Node);
-	  Out_File << " "  << Node 
-		   << " "  << W_node.rho
-		   << " "  << W_node.v
-		   << " "  << W_node.p;
+	  if (i < ICl-HighOrderVariable(IndexHO).NghostHO() || 
+	      i > ICu+HighOrderVariable(IndexHO).NghostHO() || 
+	      j < JCl-HighOrderVariable(IndexHO).NghostHO() ||
+	      j > JCu+HighOrderVariable(IndexHO).NghostHO()  ) {
 	    
-	  // Add more variables for the Detailed format
-	  if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){ 
-	    Out_File.setf(ios::scientific);
-	    Out_File << " " << W_node.T()
-		     << " " << W_node.v.abs()/W_node.a() 
-		     << " " << W_node.H()
-		     << " " << W_node.s();
-	    Out_File.unsetf(ios::scientific);
-	  }
-
-	  // Add more variables for turbulent flows
-	  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-	    Out_File << " " << W_node.k
-		     << " " << W_node.omega;
+	    // No high-order interpolant is calculated for this cells.
+	    // The average solution is plotted at the nodes of these cells.
+	    
+	    // Output Brief format
+	    W_node = CellSolution(i,j);
+	    Out_File << " "  << Node 
+		     << " "  << W_node.rho
+		     << " "  << W_node.v
+		     << " "  << W_node.p;
 
 	    // Add more variables for the Detailed format
-	    if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
-	      Out_File << " " << W_node.epsilon()
-		       << " " << W_node.ell()
-		       << " " << W_node.pmodified()
-		       << " " << W_node.PrT(Wall[i][j].ywall,Wall[i][j].yplus)
-		       << " " << Wall[i][j].yplus;
+	    if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){ 
+	      Out_File.setf(ios::scientific);
+	      Out_File << " " << W_node.T()
+		       << " " << W_node.v.abs()/W_node.a() 
+		       << " " << W_node.H()
+		       << " " << W_node.s();
+	      Out_File.unsetf(ios::scientific);
 	    }
-
-	    // Brief format and variable Prandtl number
-	    if (Variable_Prandtl == ON) {
-	      Out_File << " " << W_node.ke
-		       << " " << W_node.ee; 
-	    }
-	  }
-
-	  // Output Reynolds number along x direction
-	  if (Tecplot_Execution_Mode::IsDetailedOutputRequired() && Flow_Type != FLOWTYPE_INVISCID){
-	    Out_File << " " << IP.Wo.v.x/IP.Wo.nu()*Node.x;
-	  }
-
-	  // Add more variables for the Full format
-	  if (Tecplot_Execution_Mode::IsFullOutputRequired()){
-	    Out_File.setf(ios::scientific);
-	    Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,1)
-		     << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,1)
-		     << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,2)
-		     << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,2)
-		     << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,3)
-		     << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,3)
-		     << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,4)
-		     << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,4);
 
 	    // Add more variables for turbulent flows
 	    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-	      Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,5)
-		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,5)
-		       << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,6)
-		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,6);
+	      Out_File << " " << W_node.k
+		       << " " << W_node.omega;
 
-	      if (Variable_Prandtl == ON){
-		Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,7)
-			 << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,7)
-			 << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,8)
-			 << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,8);
+	      // Add more variables for the Detailed format
+	      if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+		Out_File << " " << W_node.epsilon()
+			 << " " << W_node.ell()
+			 << " " << W_node.pmodified()
+			 << " " << W_node.PrT(Wall[i][j].ywall,Wall[i][j].yplus)
+			 << " " << Wall[i][j].yplus;
+	      }
+
+	      // Brief format and variable Prandtl number
+	      if (Variable_Prandtl == ON) {
+		Out_File << " " << W_node.ke
+			 << " " << W_node.ee; 
 	      }
 	    }
-	    Out_File.unsetf(ios::scientific);
 
-	    if (ExactSoln->IsExactSolutionSet()){
-	      ExactSoln->Output_Tecplot_Solution(Out_File,
-						 Node.x,Node.y);
+	    // Output Reynolds number along x direction
+	    if (Tecplot_Execution_Mode::IsDetailedOutputRequired() && Flow_Type != FLOWTYPE_INVISCID){
+	      Out_File << " " << IP.Wo.v.x/IP.Wo.nu()*Node.x;
 	    }
-	  }
 
-	  // Add more variables for the Extended format
-	  if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
-	    Out_File << " " << dUdt[i][j][0].rho
-		     << " " << dUdt[i][j][0].dv
-		     << " " << dUdt[i][j][0].E;
+	    // Add more variables for the Full format
+	    if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+	      Out_File.setf(ios::scientific);
+	      Out_File << " " << 1.0E8
+		       << " " << 0
+		       << " " << 1.0E8
+		       << " " << 0
+		       << " " << 1.0E8
+		       << " " << 0
+		       << " " << 1.0E8
+		       << " " << 0;
 
-	    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-	      Out_File << " " << dUdt[i][j][0].dk
-		       << " " << dUdt[i][j][0].domega;
+	      // Add more variables for turbulent flows
+	      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+		Out_File << " " << 1.0E8
+			 << " " << 0
+			 << " " << 1.0E8
+			 << " " << 0;
+
+		if (Variable_Prandtl == ON){
+		  Out_File << " " << 1.0E8
+			   << " " << 0
+			   << " " << 1.0E8
+			   << " " << 0;
+		}
+	      }
+	      Out_File.unsetf(ios::scientific);
+
+	      if (ExactSoln->IsExactSolutionSet()){
+		ExactSoln->Output_Tecplot_Solution(Out_File,
+						   Node.x,Node.y);
+	      }
+	    }
+
+	    // Add more variables for the Extended format
+	    if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+	      Out_File << " " << dUdt[i][j][0].rho
+		       << " " << dUdt[i][j][0].dv
+		       << " " << dUdt[i][j][0].E;
+
+	      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+		Out_File << " " << dUdt[i][j][0].dk
+			 << " " << dUdt[i][j][0].domega;
 	      
-	      if (Variable_Prandtl == ON){
-		Out_File << " " << dUdt[i][j][0].dke
-			 << " " << dUdt[i][j][0].dee;
+		if (Variable_Prandtl == ON){
+		  Out_File << " " << dUdt[i][j][0].dke
+			   << " " << dUdt[i][j][0].dee;
+		}
+	      }
+	    } // endif (ExtendedOutput)
+
+	    // Close line
+	    Out_File << "\n";
+	    Out_File.unsetf(ios::scientific);
+	    
+	  } else {
+
+	    // Output Brief format
+	    W_node = HighOrderVariable(IndexHO).SolutionStateAtLocation(i,j,Node);
+	    Out_File << " "  << Node 
+		     << " "  << W_node.rho
+		     << " "  << W_node.v
+		     << " "  << W_node.p;
+	    
+	    // Add more variables for the Detailed format
+	    if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){ 
+	      Out_File.setf(ios::scientific);
+	      Out_File << " " << W_node.T()
+		       << " " << W_node.v.abs()/W_node.a() 
+		       << " " << W_node.H()
+		       << " " << W_node.s();
+	      Out_File.unsetf(ios::scientific);
+	    }
+
+	    // Add more variables for turbulent flows
+	    if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	      Out_File << " " << W_node.k
+		       << " " << W_node.omega;
+
+	      // Add more variables for the Detailed format
+	      if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+		Out_File << " " << W_node.epsilon()
+			 << " " << W_node.ell()
+			 << " " << W_node.pmodified()
+			 << " " << W_node.PrT(Wall[i][j].ywall,Wall[i][j].yplus)
+			 << " " << Wall[i][j].yplus;
+	      }
+
+	      // Brief format and variable Prandtl number
+	      if (Variable_Prandtl == ON) {
+		Out_File << " " << W_node.ke
+			 << " " << W_node.ee; 
 	      }
 	    }
-	  } // endif (ExtendedOutput)
 
-	  // Close line
-	  Out_File << "\n";
-	  Out_File.unsetf(ios::scientific);
+	    // Output Reynolds number along x direction
+	    if (Tecplot_Execution_Mode::IsDetailedOutputRequired() && Flow_Type != FLOWTYPE_INVISCID){
+	      Out_File << " " << IP.Wo.v.x/IP.Wo.nu()*Node.x;
+	    }
+
+	    // Add more variables for the Full format
+	    if (Tecplot_Execution_Mode::IsFullOutputRequired()){
+	      Out_File.setf(ios::scientific);
+	      Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,1)
+		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,1)
+		       << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,2)
+		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,2)
+		       << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,3)
+		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,3)
+		       << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,4)
+		       << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,4);
+
+	      // Add more variables for turbulent flows
+	      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+		Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,5)
+			 << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,5)
+			 << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,6)
+			 << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,6);
+
+		if (Variable_Prandtl == ON){
+		  Out_File << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,7)
+			   << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,7)
+			   << " " << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(i,j,8)
+			   << " " << HighOrderVariable(IndexHO).CellInadequateFitValue(i,j,8);
+		}
+	      }
+	      Out_File.unsetf(ios::scientific);
+
+	      if (ExactSoln->IsExactSolutionSet()){
+		ExactSoln->Output_Tecplot_Solution(Out_File,
+						   Node.x,Node.y);
+	      }
+	    }
+
+	    // Add more variables for the Extended format
+	    if (Tecplot_Execution_Mode::IsExtendedOutputRequired()){
+	      Out_File << " " << dUdt[i][j][0].rho
+		       << " " << dUdt[i][j][0].dv
+		       << " " << dUdt[i][j][0].E;
+
+	      if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+		Out_File << " " << dUdt[i][j][0].dk
+			 << " " << dUdt[i][j][0].domega;
+	      
+		if (Variable_Prandtl == ON){
+		  Out_File << " " << dUdt[i][j][0].dke
+			   << " " << dUdt[i][j][0].dee;
+		}
+	      }
+	    } // endif (ExtendedOutput)
+
+	    // Close line
+	    Out_File << "\n";
+	    Out_File.unsetf(ios::scientific);
+	  }
 
 	}
       } /* endfor */
@@ -525,10 +634,10 @@ void NavierStokes2D_Quad_Block::Output_Nodes_Tecplot_HighOrder(const NavierStoke
 					Block_Number,
 					Output_Title,
 					Out_File,
-					ICl - HighOrderVariable(IndexHO).NghostHO(),
-					ICu + HighOrderVariable(IndexHO).NghostHO(),
-					JCl - HighOrderVariable(IndexHO).NghostHO(),
-					JCu + HighOrderVariable(IndexHO).NghostHO(),
+					ICl - Nghost,
+					ICu + Nghost,
+					JCl - Nghost,
+					JCu + Nghost,
 					IndexHO);
 }
 
@@ -4659,7 +4768,420 @@ void NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder
  * Set high-order boundary conditions.
  */
 void NavierStokes2D_Quad_Block::BCs_HighOrder(void){
-  // Nothing
+
+  int i, j, Vertex;
+  double Vn;
+  Vector2D PointOfInterest, Normal;
+  int NumGQP(Grid.getNumGQP());
+  Vector2D *GaussQuadPoints = new Vector2D [NumGQP]; // the GQPs for flux calculation points if low-order geometry is used
+
+  // == If no high-order BCs are present just return
+  if ( BC_WestCell() == NULL && BC_EastCell() == NULL && 
+       BC_SouthCell() == NULL && BC_NorthCell() == NULL ){
+    return;
+  }
+
+
+  // == Set high-order boundary conditions
+  for ( j = 0 ; j < NCj ; ++j ) {
+
+    // Prescribe West boundary conditions.
+    if (BC_WestCell() != NULL){
+      for (Vertex = 1; Vertex <= BC_WestCell(j).NumOfPoints(); ++Vertex){
+
+	switch(Grid.BCtypeW[j]) {	
+	case BC_FROZEN :
+	  throw runtime_error("BCs_HighOrder() ERROR! Frozen BC hasn't been implemented yet!");
+	  break;
+	case BC_NONE :
+	  // Do nothing
+	  break;
+
+	case BC_PERIODIC :
+	  throw runtime_error("BCs_HighOrder() ERROR! Periodic BC hasn't been implemented yet!");
+	  break;
+
+	case BC_INFLOW :
+	  throw runtime_error("BCs_HighOrder() ERROR! Inflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_FARFIELD :
+	  // Setup the data as in the case of Dirichlet BC.
+
+	case BC_DIRICHLET :	// Use WoW as reference value
+	  // Dirichlet constraint
+	  BC_WestCell(j).DirichletBC(Vertex) = WoW[j];
+	  BC_WestCell(j).a(Vertex) = Soln_State(1.0);
+	  BC_WestCell(j).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_WestCell(j).b(Vertex) = Soln_State(0.0);
+	  break;
+
+	case BC_NEUMANN :
+	  // Neumann constraint
+	  BC_WestCell(j).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_WestCell(j).a(Vertex) = Soln_State(0.0);
+	  BC_WestCell(j).NeumannBC(Vertex) =  WoW[j];
+	  BC_WestCell(j).b(Vertex) = Soln_State(1.0);
+	  break;
+
+	case BC_SYMMETRY_PLANE :
+	  // Do nothing
+	  break;
+
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_OUTFLOW :
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_WestCell(j).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_WestCell(j).a(Vertex) = Soln_State(0.0);
+	  BC_WestCell(j).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_WestCell(j).b(Vertex) = Soln_State(1.0);
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXACT_SOLUTION :
+	  // Use the exact solution to set up the reference states for this boundary type
+	  if (ExactSoln->IsExactSolutionSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( j<JCl && Grid.ExtendSouth_BndWestSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendSouth_BndWestSplineInfo[j].GQPoint(Vertex);
+	    } else if ( j>=JCl && j<=JCu && Grid.BndWestSplineInfo != NULL){
+	      PointOfInterest = Grid.BndWestSplineInfo[j].GQPoint(Vertex);
+	    } else if ( j>JCu && Grid.ExtendNorth_BndWestSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendNorth_BndWestSplineInfo[j-(JCu+1)].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceW(ICl,j,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_WestCell(j).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_WestCell(j).a(Vertex) = Soln_State(1.0);
+	    BC_WestCell(j).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	    BC_WestCell(j).b(Vertex) = Soln_State(0.0);      
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	  break;
+
+	case BC_WALL_INVISCID:
+	  // Do nothing
+	  break;
+
+	default:		
+	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");
+	  break;
+	} /* endswitch */
+      } /* endfor (Vertex) */
+    } // endif
+
+    // Prescribe East boundary conditions.
+    if (BC_EastCell() != NULL){
+      for (Vertex = 1; Vertex <= BC_EastCell(j).NumOfPoints(); ++Vertex){
+      
+	switch(Grid.BCtypeE[j]) {
+	case BC_FROZEN :
+	  throw runtime_error("BCs_HighOrder() ERROR! Frozen BC hasn't been implemented yet!");
+	case BC_NONE :
+	  // Do nothing
+	  break;
+	  
+	case BC_PERIODIC :
+	  throw runtime_error("BCs_HighOrder() ERROR! Periodic BC hasn't been implemented yet!");
+	  break;
+	  
+	case BC_INFLOW :
+	  throw runtime_error("BCs_HighOrder() ERROR! Inflow BC hasn't been implemented yet!");
+	  break;
+	
+	case BC_FARFIELD :
+	  // Setup the data as in the case of Dirichlet BC.
+
+	case BC_DIRICHLET :	// Use WoE as reference value
+	  // Dirichlet constraint
+	  BC_EastCell(j).DirichletBC(Vertex) = WoE[j];
+	  BC_EastCell(j).a(Vertex) = Soln_State(1.0);
+	  BC_EastCell(j).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_EastCell(j).b(Vertex) = Soln_State(0.0);
+	  break;
+	  
+	case BC_NEUMANN :
+	  // Neumann constraint
+	  BC_EastCell(j).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_EastCell(j).a(Vertex) = Soln_State(0.0);
+	  BC_EastCell(j).NeumannBC(Vertex) =  WoE[j];
+	  BC_EastCell(j).b(Vertex) = Soln_State(1.0);
+	  break;
+
+	case BC_SYMMETRY_PLANE :
+	  // Do nothing
+	  break;
+
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_OUTFLOW :
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_EastCell(j).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_EastCell(j).a(Vertex) = Soln_State(0.0);
+	  BC_EastCell(j).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_EastCell(j).b(Vertex) = Soln_State(1.0);
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXACT_SOLUTION :
+	  // Use the exact solution to set up the reference states for this boundary type
+	  if (ExactSoln->IsExactSolutionSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( j<JCl && Grid.ExtendSouth_BndEastSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendSouth_BndEastSplineInfo[j].GQPoint(Vertex);
+	    } else if ( j>=JCl && j<=JCu && Grid.BndEastSplineInfo != NULL){
+	      PointOfInterest = Grid.BndEastSplineInfo[j].GQPoint(Vertex);
+	    } else if ( j>JCu && Grid.ExtendNorth_BndEastSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendNorth_BndEastSplineInfo[j-(JCu+1)].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceE(ICu,j,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_EastCell(j).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_EastCell(j).a(Vertex) = Soln_State(1.0);
+	    BC_EastCell(j).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	    BC_EastCell(j).b(Vertex) = Soln_State(0.0);      
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	  break;
+
+	case BC_WALL_INVISCID:
+	  // Do nothing
+	  break;
+
+	default:	
+	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");	
+	  break;
+	} /* endswitch */
+      } /* endfor (Vertex) */	
+    } // endif
+
+  } /* endfor (j) */
+
+
+  for ( i = 0 ; i < NCi ; ++i ) {
+
+    // Prescribe South boundary conditions.
+    if (BC_SouthCell() != NULL){
+      for (Vertex = 1; Vertex <= BC_SouthCell(i).NumOfPoints(); ++Vertex){
+
+	switch(Grid.BCtypeS[i]) {
+	case BC_FROZEN :
+	  throw runtime_error("BCs_HighOrder() ERROR! Frozen BC hasn't been implemented yet!");
+	  break;
+	case BC_NONE :
+	  // Do nothing
+	  break;
+      
+	case BC_PERIODIC :
+	  throw runtime_error("BCs_HighOrder() ERROR! Periodic BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_INFLOW :
+	  throw runtime_error("BCs_HighOrder() ERROR! Inflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_FARFIELD :
+	  // Setup the data as in the case of Dirichlet BC.
+
+	case BC_DIRICHLET :	// Use WoS as reference value
+	  // Dirichlet constraint
+	  BC_SouthCell(i).DirichletBC(Vertex) = WoS[i];
+	  BC_SouthCell(i).a(Vertex) = Soln_State(1.0);
+	  BC_SouthCell(i).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_SouthCell(i).b(Vertex) = Soln_State(0.0);
+	  break;
+      
+	case BC_NEUMANN :
+	  // Neumann constraint
+	  BC_SouthCell(i).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_SouthCell(i).a(Vertex) = Soln_State(0.0);
+	  BC_SouthCell(i).NeumannBC(Vertex) =  WoS[i];
+	  BC_SouthCell(i).b(Vertex) = Soln_State(1.0);
+	  break;
+
+	case BC_SYMMETRY_PLANE :
+	  // Do nothing
+	  break;
+      
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_OUTFLOW :
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_SouthCell(i).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_SouthCell(i).a(Vertex) = Soln_State(0.0);
+	  BC_SouthCell(i).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_SouthCell(i).b(Vertex) = Soln_State(1.0);
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  break;
+	
+	case BC_EXACT_SOLUTION :
+	  // Use the exact solution to set up the reference states for this boundary type
+	  if (ExactSoln->IsExactSolutionSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( i<ICl && Grid.ExtendWest_BndSouthSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendWest_BndSouthSplineInfo[i].GQPoint(Vertex);
+	    } else if ( i>=ICl && i<=ICu && Grid.BndSouthSplineInfo != NULL){
+	      PointOfInterest = Grid.BndSouthSplineInfo[i].GQPoint(Vertex);
+	    } else if ( i>ICu && Grid.ExtendEast_BndSouthSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendEast_BndSouthSplineInfo[i-(ICu+1)].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceS(i,JCl,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_SouthCell(i).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_SouthCell(i).a(Vertex) = Soln_State(1.0);
+	    BC_SouthCell(i).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	    BC_SouthCell(i).b(Vertex) = Soln_State(0.0);      
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	  break;
+
+	case BC_WALL_INVISCID:
+	  // Do nothing
+	  break;
+	
+	default:	
+	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");		
+	  break;
+	} /* endswitch */
+      } /* endfor (Vertex) */
+    } // endif    
+
+    // Prescribe North boundary conditions.
+    if (BC_NorthCell() != NULL){
+      for (Vertex = 1; Vertex <= BC_NorthCell(i).NumOfPoints(); ++Vertex){
+
+	switch(Grid.BCtypeN[i]) {
+	case BC_FROZEN :
+	  throw runtime_error("BCs_HighOrder() ERROR! Frozen BC hasn't been implemented yet!");
+	  break;
+	
+	case BC_NONE :
+	  // Do nothing
+	  break;
+      
+	case BC_PERIODIC :
+	  throw runtime_error("BCs_HighOrder() ERROR! Periodic BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_INFLOW :
+	  throw runtime_error("BCs_HighOrder() ERROR! Inflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_FARFIELD :
+	  // Setup the data as in the case of Dirichlet BC.
+
+	case BC_DIRICHLET :	// Use WoN as reference value
+	  // Dirichlet constraint
+	  BC_NorthCell(i).DirichletBC(Vertex) = WoN[i];
+	  BC_NorthCell(i).a(Vertex) = Soln_State(1.0);
+	  BC_NorthCell(i).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_NorthCell(i).b(Vertex) = Soln_State(0.0);
+	  break;
+      
+	case BC_NEUMANN :
+	  // Neumann constraint
+	  BC_NorthCell(i).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_NorthCell(i).a(Vertex) = Soln_State(0.0);
+	  BC_NorthCell(i).NeumannBC(Vertex) =  WoN[i];
+	  BC_NorthCell(i).b(Vertex) = Soln_State(1.0);
+	  break;
+      
+	case BC_SYMMETRY_PLANE :
+	  // Do nothing
+	  break;
+      
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+      
+	case BC_OUTFLOW :
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_NorthCell(i).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_NorthCell(i).a(Vertex) = Soln_State(0.0);
+	  BC_NorthCell(i).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_NorthCell(i).b(Vertex) = Soln_State(1.0);
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXACT_SOLUTION :
+	  // Use the exact solution to set up the reference states for this boundary type
+	  if (ExactSoln->IsExactSolutionSet()){
+	    // Determine the PointOfInterest if high-order boundaries are used
+	    if ( i<ICl && Grid.ExtendWest_BndNorthSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendWest_BndNorthSplineInfo[i].GQPoint(Vertex);
+	    } else if ( i>=ICl && i<=ICu && Grid.BndNorthSplineInfo != NULL){
+	      PointOfInterest = Grid.BndNorthSplineInfo[i].GQPoint(Vertex);
+	    } else if ( i>ICu && Grid.ExtendEast_BndNorthSplineInfo != NULL){
+	      PointOfInterest = Grid.ExtendEast_BndNorthSplineInfo[i-(ICu+1)].GQPoint(Vertex);
+	    } else {
+	      // Determine the PointOfInterest if low-order boundaries are used
+	      Grid.getGaussQuadPointsFaceN(i,JCu,GaussQuadPoints,NumGQP);
+	      PointOfInterest = GaussQuadPoints[Vertex-1];
+	    }
+	    // Set the boundary conditions at the current location
+	    BC_NorthCell(i).DirichletBC(Vertex) = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	    BC_NorthCell(i).a(Vertex) = Soln_State(1.0);
+	    BC_NorthCell(i).NeumannBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	    BC_NorthCell(i).b(Vertex) = Soln_State(0.0);
+	  } else {
+	    throw runtime_error("BCs_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	  }
+	  break;
+
+	case BC_WALL_INVISCID:
+	  // Do nothing
+	  break;
+
+	default:	
+	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");			
+	  break;
+	} /* endswitch */
+      } /* endfor (Vertex) */
+    } // endif    
+
+  } /* endfor */
+
+  delete [] GaussQuadPoints;
+
 }
 
 /*!
