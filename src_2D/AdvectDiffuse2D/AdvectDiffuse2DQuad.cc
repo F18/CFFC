@@ -117,11 +117,6 @@ AdvectDiffuse2D_Quad_Block & AdvectDiffuse2D_Quad_Block::operator =(const Advect
     allocate(Soln.NCi-2*Soln.Nghost,
 	     Soln.NCj-2*Soln.Nghost,
 	     Soln.Nghost);
-
-    /* Set the same number of high-order objects
-       as that of the rhs block. */
-    allocate_HighOrder_Array(Soln.NumberOfHighOrderVariables);
-
   } else {
     deallocate();
   }
@@ -157,40 +152,11 @@ AdvectDiffuse2D_Quad_Block & AdvectDiffuse2D_Quad_Block::operator =(const Advect
       UoS[i] = Soln.UoS[i];
       UoN[i] = Soln.UoN[i];
     }/* endfor */
-
-    // allocate memory for high-order boundary conditions.
-    allocate_HighOrder_BoundaryConditions();
-
-    for (j  = JCl ; j <= JCu ; ++j ) {
-      // Copy West high-order BCs
-      if (HO_UoW != NULL){
-	HO_UoW[j] = Soln.HO_UoW[j];
-      }
-
-      // Copy East high-order BCs
-      if (HO_UoE != NULL){
-	HO_UoE[j] = Soln.HO_UoE[j];
-      }
-    }
-
-    for ( i = ICl ; i <= ICu ; ++i ) {
-      // Copy South high-order BCs
-      if (HO_UoS != NULL){
-	HO_UoS[i] = Soln.HO_UoS[i];
-      }
-      
-      // Copy North high-order BCs
-      if (HO_UoN != NULL){
-	HO_UoN[i] = Soln.HO_UoN[i];
-      }
-    }
-    
-    // Copy the high-order objects
-    for (k = 1; k <= NumberOfHighOrderVariables; ++k){
-      HighOrderVariable(k-1) = Soln.HighOrderVariable(k-1);
-    }/* endfor */
     
   }/* endif */
+
+  // Copy high-order objects
+  copy_HighOrder_Objects(Soln);
 
   // Copy boundary reference states
   Ref_State_BC_North = Soln.Ref_State_BC_North;
@@ -323,7 +289,9 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
   int i,j;
 
   // allocate North BCs
-  if ( Grid.IsNorthBoundaryReconstructionConstrained() ){
+  if ( Grid.IsWestExtendNorthBoundaryReconstructionConstrained() ||  
+       Grid.IsNorthBoundaryReconstructionConstrained() || 
+       Grid.IsEastExtendNorthBoundaryReconstructionConstrained() ){
 
     if (HO_UoN != NULL){
       // deallocate memory
@@ -333,8 +301,8 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
     // allocate new memory
     HO_UoN = new BC_Type[NCi];
 
-    // allocate BC memory for each flux calculation point
-    for (i=ICl; i<=ICu; ++i){
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (i=0; i<NCi; ++i){
       BC_NorthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu),
 					  Grid.BCtypeN[i]);
     }
@@ -345,7 +313,9 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
   }
 
   // allocate South BCs
-  if ( Grid.IsSouthBoundaryReconstructionConstrained() ){
+  if ( Grid.IsWestExtendSouthBoundaryReconstructionConstrained() ||
+       Grid.IsSouthBoundaryReconstructionConstrained() || 
+       Grid.IsEastExtendSouthBoundaryReconstructionConstrained() ){
 
     if (HO_UoS != NULL){
       // deallocate memory
@@ -355,8 +325,8 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
     // allocate new memory    
     HO_UoS = new BC_Type[NCi];
     
-    // allocate BC memory for each flux calculation point
-    for (i=ICl; i<=ICu; ++i){
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (i=0; i<NCi; ++i){
       BC_SouthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl),
 					  Grid.BCtypeS[i]);
     }    
@@ -366,7 +336,9 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
   }
 
   // allocate East BCs
-  if ( Grid.IsEastBoundaryReconstructionConstrained() ){
+  if ( Grid.IsSouthExtendEastBoundaryReconstructionConstrained() ||
+       Grid.IsEastBoundaryReconstructionConstrained() ||
+       Grid.IsNorthExtendEastBoundaryReconstructionConstrained() ){
 
     if (HO_UoE != NULL){
       // deallocate memory
@@ -376,8 +348,8 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
     // allocate new memory    
     HO_UoE = new BC_Type[NCj];
 
-    // allocate BC memory for each flux calculation point
-    for (j=JCl; j<=JCu; ++j){
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (j=0; j<NCj; ++j){
       BC_EastCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j),
 					 Grid.BCtypeE[j]);
     }
@@ -387,7 +359,9 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
   }
 
   // allocate West BCs
-  if ( Grid.IsWestBoundaryReconstructionConstrained() ){
+  if ( Grid.IsSouthExtendWestBoundaryReconstructionConstrained() ||
+       Grid.IsWestBoundaryReconstructionConstrained() || 
+       Grid.IsNorthExtendWestBoundaryReconstructionConstrained() ){
 
     if (HO_UoW != NULL){
       // deallocate memory
@@ -397,8 +371,8 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
     // allocate new memory    
     HO_UoW = new BC_Type[NCj];
 
-    // allocate BC memory for each flux calculation point
-    for (j=JCl; j<=JCu; ++j){
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (j=0; j<NCj; ++j){
       BC_WestCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j),
 					 Grid.BCtypeW[j]);
     }

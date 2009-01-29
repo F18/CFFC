@@ -257,6 +257,9 @@ public:
   //! Make an identical copy of SolnBlk
   void makeCopy(const AdvectDiffuse2D_Quad_Block &SolnBlk){ *this = SolnBlk; }
 
+  //! @brief Make a copy of the high-order objects
+  void copy_HighOrder_Objects(const AdvectDiffuse2D_Quad_Block &SolnBlk);
+
   //! @name Bilinear interplation (Zingg & Yarrow).
   //@{
   //! Return solution state at specified node.
@@ -1005,6 +1008,129 @@ inline void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_Array(const int & Num
       NumberOfHighOrderVariables = NumberOfReconstructions;
     }
   }
+}
+
+/*!
+ * Copy the high-order objects from the SolnBlk.
+ */
+inline void AdvectDiffuse2D_Quad_Block::copy_HighOrder_Objects(const AdvectDiffuse2D_Quad_Block &SolnBlk){
+
+  int i, j, k;
+
+  if (SolnBlk.U != NULL){
+
+    /* Set the same number of high-order objects
+       as that of the rhs block. */
+    allocate_HighOrder_Array(SolnBlk.NumberOfHighOrderVariables);
+    
+    // Copy the high-order objects
+    for (k = 1; k <= NumberOfHighOrderVariables; ++k){
+      HighOrderVariable(k-1) = SolnBlk.HighOrderVariable(k-1);
+    }/* endfor */
+
+    // Copy the high-order boundary conditions.
+
+    // === North BCs
+    if (SolnBlk.HO_UoN != NULL){
+
+      if (HO_UoN != NULL){
+	// deallocate memory
+	delete [] HO_UoN; HO_UoN = NULL;
+      }
+
+      // allocate new memory based on the number of the current grid
+      HO_UoN = new BC_Type[NCi];
+
+      for (i=0; i<NCi; ++i){
+	// allocate BC memory for each constrained Gauss quadrature point
+	BC_NorthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu),
+					    Grid.BCtypeN[i]);
+
+	// Copy North high-order BCs
+	HO_UoN[i] = SolnBlk.HO_UoN[i];
+      }
+      
+    } else if ( HO_UoN != NULL){
+      // deallocate memory
+      delete [] HO_UoN; HO_UoN = NULL;
+    }
+
+
+    // === South BCs
+    if (SolnBlk.HO_UoS != NULL){
+
+      if (HO_UoS != NULL){
+	// deallocate memory
+	delete [] HO_UoS; HO_UoS = NULL;
+      }
+
+      // allocate new memory    
+      HO_UoS = new BC_Type[NCi];
+
+      for (i=0; i<NCi; ++i){
+	// allocate BC memory for each constrained Gauss quadrature point
+	BC_SouthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl),
+					    Grid.BCtypeS[i]);
+	// Copy South high-order BCs
+	HO_UoS[i] = SolnBlk.HO_UoS[i];
+      }
+
+    } else if (HO_UoS != NULL){
+      // deallocate memory
+      delete [] HO_UoS; HO_UoS = NULL;
+    }
+
+
+    // === East BCs
+    if (SolnBlk.HO_UoE != NULL){
+
+      if (HO_UoE != NULL){
+	// deallocate memory
+	delete [] HO_UoE; HO_UoE = NULL;
+      }
+
+      // allocate new memory    
+      HO_UoE = new BC_Type[NCj];
+
+      for (j=0; j<NCj; ++j){
+	// allocate BC memory for each constrained Gauss quadrature point
+	BC_EastCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j),
+					   Grid.BCtypeE[j]);
+	// Copy East high-order BCs
+	HO_UoE[j] = SolnBlk.HO_UoE[j];
+      }
+
+    } else if (HO_UoE != NULL){
+      // deallocate memory
+      delete [] HO_UoE; HO_UoE = NULL;
+    }
+
+    // === West BCs
+    if (SolnBlk.HO_UoW != NULL){
+
+      if (HO_UoW != NULL){
+	// deallocate memory
+	delete [] HO_UoW; HO_UoW = NULL;
+      }
+
+      // allocate new memory    
+      HO_UoW = new BC_Type[NCj];
+
+      for (j=0; j<NCj; ++j){
+	// allocate BC memory for each constrained Gauss quadrature point
+	BC_WestCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j),
+					   Grid.BCtypeW[j]);
+	// Copy West high-order BCs
+	HO_UoW[j] = SolnBlk.HO_UoW[j];
+      }
+
+    } else if (HO_UoW != NULL){
+      // deallocate memory
+      delete [] HO_UoW; HO_UoW = NULL;
+    }
+    
+  } // endif
+  
 }
 
 /*!
