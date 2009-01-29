@@ -37,6 +37,7 @@ using std::tanh;
 #define NAVIERSTOKES2D_EXACT_SOLUTION_SINUSOIDAL_FUNCTION 1
 #define NAVIERSTOKES2D_EXACT_SOLUTION_COSSIN_FUNCTION 2
 #define NAVIERSTOKES2D_EXACT_SOLUTION_UNITTEST_FUNCTION 3
+#define NAVIERSTOKES2D_EXACT_SOLUTION_VISCOUS_CHANNEL_FLOW 4
 
 
 // Declare the input parameters class
@@ -366,6 +367,61 @@ inline NavierStokes2D_pState UnitTest_Function_ExactSolution_NS::EvaluateSolutio
 			       NavierStokes2D_W_STDATM.a() * sin(x),
 			       NavierStokes2D_W_STDATM.a() * cos(y),
 			       NavierStokes2D_W_STDATM.p   * exp(x-y)*(5.1 + x*sin(y)) );
+}
+
+
+/*! 
+ * \class Viscous_Channel_Flow_ExactSolution_NS
+ * 
+ * \brief Implements the exact laminar channel flow solution
+ *        (Couette/Poiseuille).
+ *        
+ */
+class Viscous_Channel_Flow_ExactSolution_NS: public ExactSolutionBasicType_NavierStokes2D{
+public:
+
+  //! Basic Constructor
+  Viscous_Channel_Flow_ExactSolution_NS(void);
+
+  //! Return exact solution
+  NavierStokes2D_pState EvaluateSolutionAt(const double &x, const double &y);
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+  //! Set the reference state, the pressure difference, the channel dimensions and the wall velocity
+  void Set_ParticularSolution_Parameters(const NavierStokes2D_Input_Parameters & IP);
+
+private:
+
+  NavierStokes2D_pState Wo;	//! Reference state that defines density and pressure at exit
+  double DeltaPressure;		//! Pressure difference between inlet and exit. It's used to determine the pressure gradient
+  double HeightDomain;		//! Channel height
+  double LengthDomain;		//! Channel length
+  Vector2D Vwall;		//! Wall velocity
+
+};
+
+// Basic Constructor
+inline Viscous_Channel_Flow_ExactSolution_NS::Viscous_Channel_Flow_ExactSolution_NS(void) {
+  // Name the exact solution
+  ExactSolutionName = "Viscous Channel Flow";	
+}
+
+//! Return exact solution. This is valid only inside the domain!
+inline NavierStokes2D_pState Viscous_Channel_Flow_ExactSolution_NS::EvaluateSolutionAt(const double &x, const double &y) {
+  return ViscousChannelFlow(Wo,
+			    Vector2D(x,y),
+			    Vwall,
+			    DeltaPressure,
+			    LengthDomain,
+			    HeightDomain);
 }
 
 #endif

@@ -112,7 +112,8 @@ public:
   int i_ICs;
   NavierStokes2D_pState Wo, W1, W2;
   NavierStokes2D_cState Uo;
-  double Pressure, Temperature, Mach_Number, Mach_Number2, Flow_Angle, Reynolds_Number, dp, Re_lid;
+  double Pressure, Temperature, Mach_Number, Mach_Number2, Flow_Angle, Reynolds_Number, dp, dpdx, Re_lid;
+  short FlagPressureDefined;
   Vector2D Wave_Position;
   double Wave_Width;
   NavierStokes2D_ExactSolutions *ExactSoln; /*!< Pointer to the exact solution */

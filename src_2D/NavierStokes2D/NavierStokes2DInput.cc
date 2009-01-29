@@ -215,6 +215,23 @@ void NavierStokes2D_Input_Parameters::doInternalSetupAndConsistencyChecks(int & 
     Mesh_Stretching_Factor_Jdir = 1.0;
   }
 
+  if ( FlagPressureDefined == 2){
+    // Pressure gradient has been defined.
+    // Calculate the pressure change using information from the geometry.
+    switch(i_Grid){
+    case GRID_CARTESIAN_UNIFORM:
+    case GRID_RECTANGULAR_BOX:
+    case GRID_SQUARE:      
+      dp = dpdx * Box_Width;
+      break;
+    case GRID_PIPE:
+      dp = dpdx * Pipe_Length;
+      break;
+    default :
+      throw runtime_error("NavierStokes2D_Input_Parameters::doInternalSetupAndConsistencyChecks() ERROR! The pressure gradient has been defined but there is no rule on how to compute the pressure change for the current mesh. \n Please define the rule!");
+    } // endswitch
+  }
+
   // Perform update of the internal variables of the exact solution
   ExactSoln->Set_ParticularSolution_Parameters(*this);
 
@@ -396,6 +413,8 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.Wo.v.y = IP.Mach_Number*IP.Wo.a()*sin_angle;
   IP.Reynolds_Number = ZERO;
   IP.dp = ZERO;
+  IP.dpdx = ZERO;
+  IP.FlagPressureDefined = OFF;
   IP.Re_lid = 100.0;
   IP.Wave_Position = Vector2D_ZERO;
   IP.Wave_Width = ZERO;
@@ -2788,10 +2807,18 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Reynolds_Number < ZERO) i_command = INVALID_INPUT_VALUE;
 
-  } else if (strcmp(IP.Next_Control_Parameter,"Pressure_Gradient") == 0) {
+  } else if (strcmp(IP.Next_Control_Parameter,"Pressure_Change") == 0) {
     i_command = 44;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.dp;
+    IP.FlagPressureDefined = 1;	// indicates that pressure change has been defined
+    IP.Input_File.getline(buffer,sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Gradient_Pressure") == 0) {
+    i_command = 44;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.dpdx;
+    IP.FlagPressureDefined = 2;	// indicates that pressure gradient has been defined
     IP.Input_File.getline(buffer,sizeof(buffer));
 
   } else if (strcmp(IP.Next_Control_Parameter,"Re_lid") == 0) {

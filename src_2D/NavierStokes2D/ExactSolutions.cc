@@ -417,3 +417,118 @@ void UnitTest_Function_ExactSolution_NS::Broadcast(void){
   
 #endif
 }
+
+
+/************************************************
+ * Viscous_Channel_Flow_ExactSolution_NS Members  *
+ ***********************************************/
+
+/*! 
+ * Parse next input control parameter
+ */
+void Viscous_Channel_Flow_ExactSolution_NS::Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters & IP,
+									       int & i_command){
+
+  // Call the parser from the base class
+  ExactSolutionBasicType_NavierStokes2D::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  // Check if the next control parameter has already been identified
+  if (i_command != INVALID_INPUT_CODE){
+    return;
+  }
+  
+  char buffer[256];
+
+}
+
+/*! 
+ * Print relevant parameters
+ */
+void Viscous_Channel_Flow_ExactSolution_NS::Print_Info(std::ostream & out_file){
+
+  out_file << "\n     -> Channel Height : " << HeightDomain
+	   << "\n     -> Channel Length : " << LengthDomain
+    	   << "\n     -> Pressure Change : " << DeltaPressure
+	   << "\n     -> Reference Density : " << Wo.rho
+	   << "\n     -> Reference Pressure : " << Wo.p
+	   << "\n     -> Upper Wall Speed : " << Vwall.x;
+
+  // call the base Print_Info
+  ExactSolutionBasicType_NavierStokes2D::Print_Info(out_file);
+
+}
+
+/*!
+ * Broadcast the Viscous_Channel_Flow_ExactSolution_NS variables to all      
+ * processors associated with the specified communicator
+ * from the specified processor using the MPI broadcast 
+ * routine.
+ */
+void Viscous_Channel_Flow_ExactSolution_NS::Broadcast(void){
+#ifdef _MPI_VERSION
+
+  MPI::COMM_WORLD.Bcast(&Wo.rho,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&Wo.v.x,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&Wo.v.y,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&Wo.p,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&DeltaPressure,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&HeightDomain,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&LengthDomain,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&Vwall.x,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&Vwall.y,
+			1, 
+			MPI::DOUBLE, 0);
+  
+#endif
+}
+
+/*!
+ * Broadcast the Viscous_Channel_Flow_ExactSolution_NS variables to all      
+ * processors associated with the specified communicator
+ * from the specified processor using the MPI broadcast 
+ * routine.
+ */
+void Viscous_Channel_Flow_ExactSolution_NS::
+Set_ParticularSolution_Parameters(const NavierStokes2D_Input_Parameters & IP){
+
+  ostringstream ErrorMsg;
+
+  Wo = IP.Wo;
+  DeltaPressure = IP.dp;
+  switch(IP.i_Grid) {
+  case GRID_CARTESIAN_UNIFORM :
+    HeightDomain = IP.Box_Height;
+    LengthDomain = IP.Box_Width;
+    break;
+  case GRID_SQUARE :
+    HeightDomain = IP.Box_Width;
+    LengthDomain = IP.Box_Width;
+    break;
+  case GRID_RECTANGULAR_BOX :
+    HeightDomain = IP.Box_Height;
+    LengthDomain = IP.Box_Width;
+    break;
+  default:
+    ErrorMsg << "Viscous_Channel_Flow_ExactSolution_NS::Set_ParticularSolution_Parameters() ERROR!\n"
+	     << "The current mesh is not suitable for this exact solution!\n";
+    throw runtime_error(ErrorMsg.str());
+  }
+  Vwall = IP.Vwall;
+  
+}
