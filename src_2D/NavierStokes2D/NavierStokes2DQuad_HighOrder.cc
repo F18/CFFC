@@ -4363,404 +4363,180 @@ void NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder
 										 const Vector2D &NormalDirection,
 										 const unsigned short int Pos) const {
 
-  switch(BOUNDARY){
+  double rho_over_p;
+  int BC_Type;
+  string ErrorMsg;
+  NavierStokes2D_pState *RefState;
+  int iGhost, jGhost;
 
+  switch (BOUNDARY){
+    
     // *******************************
     // === WEST boundary interface ===
     // *******************************
   case WEST :			
-    // Compute right interface state based on reconstruction or the particular boundary condition
-    switch (Grid.BCtypeW[jj]){
-
-    case BC_NONE :
-      // Compute Wr based on the high-order reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii-1,jj,CalculationPoint);
-      break;
-
-    case BC_PERIODIC :
-      // Compute Wr based on the high-order reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii-1,jj,CalculationPoint);
-      break;
-
-    case BC_FROZEN :
-      // Calculate Wr based on the reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii-1,jj,CalculationPoint);
-      break;
-
-    case BC_FARFIELD :
-      // Setup value as in the case of Dirichlet BC
-      
-    case BC_DIRICHLET :		// BC_FIXED
-      // Set Wr to the reference value for the given location
-      // Note: The reference value should be changed to HO_WoW!
-      Wr = WoW[jj];
-      break;
-      
-    case BC_EXACT_SOLUTION :
-      // Calculate W_face based on the exact solution
-      if (ExactSoln->IsExactSolutionSet()){
-	Wr = BC_Characteristic_Pressure(Wl,
-					ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y),
-					NormalDirection);
-      } else {
-	throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
-      }
-      break;
-      
-    case BC_NEUMANN :
-      throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_NEUMANN not implemented yet.");
-      break;
-
-    case BC_SYMMETRY_PLANE : 	// same as BC_REFLECTION
-      Wr = Reflect(Wl, NormalDirection);
-      break;
-
-    case BC_WALL_INVISCID : 	// same as BC_REFLECTION
-      Wr = Reflect(Wl, NormalDirection);
-      break;
-
-    case BC_EXTRAPOLATE :
-      // Set Wr equal to the left side value (i.e Wl)
-      Wr = Wl;
-      break;
-
-    case BC_LINEAR_EXTRAPOLATION :
-      // Calculate Wr based on the reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii-1,jj,CalculationPoint);
-      break;
-
-    case BC_OUTFLOW_SUBSONIC:
-    case BC_OUTFLOW :
-      // Set Wr equal to the left side value (i.e Wl)
-      Wr = Wl;
-      break;
-
-    case BC_CONSTANT_EXTRAPOLATION :
-      // Set Wr equal to the left side value (i.e Wl)
-      Wr = Wl;
-      break;
-
-    case BC_INFLOW_SUBSONIC:
-      Wr = WoW[jj];
-      Wr.v.y = ZERO;
-      break;
-    case BC_CHARACTERISTIC :
-      // Set Wr based on the directions of propogation for the solution characteristics at the boundary
-      // Note: The reference value should be changed to HO_WoW!
-      Wr = BC_Characteristic_Pressure(Wl,
-				      WoW[jj],
-				      NormalDirection);
-      break;
-    case BC_WALL_VISCOUS_HEATFLUX:
-      // Set Wr to resemble a viscous wall with no heatflux
-      Wr = WallViscousHeatFlux(Wl,
-			       NormalDirection);
-      break;
-    default:
-      throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such West BCtype!");
-    }// endswitch (Grid.BCtypeW[jj])
+    BC_Type = Grid.BCtypeW[jj];
+    ErrorMsg = "NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such West BCtype!";
+    RefState = &WoW[jj];     // Note: The reference value should be changed to HO_WoW!
+    iGhost = ii-1;
+    jGhost = jj;
     break;
-
 
     // *******************************
     // === EAST boundary interface ===
     // *******************************
-  case EAST :
-    // Compute right interface state based on reconstruction or the particular boundary condition
-    switch (Grid.BCtypeE[jj]){
-
-    case BC_NONE :
-      // Compute Wr based on the high-order reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii+1,jj,CalculationPoint);
-      break;
-
-    case BC_PERIODIC :
-      // Compute Wr based on the high-order reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii+1,jj,CalculationPoint);
-      break;
-
-    case BC_FROZEN :
-      // Compute Wr based on the high-order reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii+1,jj,CalculationPoint);
-      break;
-      
-    case BC_FARFIELD :
-      // Setup value as in the case of Dirichlet BC
-
-    case BC_DIRICHLET :		// BC_FIXED
-      // Set Wr to the reference value for the given location
-      // Note: The reference value should be changed to HO_WoE!
-      Wr = WoE[jj];
-      break;
-
-    case BC_EXACT_SOLUTION :
-      // Calculate W_face based on the exact solution
-      if (ExactSoln->IsExactSolutionSet()){
-	Wr = BC_Characteristic_Pressure(Wl,
-					ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y),
-					NormalDirection);
-      } else {
-	throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
-      }
-      break;
-      
-    case BC_NEUMANN : 
-      throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_NEUMANN not implemented yet.");
-      break;
-
-    case BC_SYMMETRY_PLANE : 	// same as BC_REFLECTION
-      Wr = Reflect(Wl, NormalDirection);
-      break;
-
-    case BC_WALL_INVISCID : 	// same as BC_REFLECTION
-      Wr = Reflect(Wl, NormalDirection);
-      break;
-
-    case BC_EXTRAPOLATE :
-      // Set Wr equal to the left side value (i.e Wl)
-      Wr = Wl;
-      break;
-
-    case BC_LINEAR_EXTRAPOLATION :
-      // Compute Wr based on the high-order reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii+1,jj,CalculationPoint);
-      break;
-
-    case BC_OUTFLOW_SUBSONIC:
-    case BC_OUTFLOW :
-      // Set Wr equal to the left side value (i.e Wl)
-      Wr = Wl;
-      break;
-
-    case BC_CONSTANT_EXTRAPOLATION :
-      // Set Wr equal to the left side value (i.e Wl)
-      Wr = Wl;
-      break;
-      
-    case BC_INFLOW_SUBSONIC:
-      Wr = WoE[jj];
-      Wr.v.y = ZERO;
-      break;
-
-    case BC_CHARACTERISTIC :
-      // Set Wr based on the directions of propogation for the solution characteristics at the boundary
-      // Note: The reference value should be changed to HO_WoE!
-      Wr = BC_Characteristic_Pressure(Wl,
-				      WoE[jj],
-				      NormalDirection);
-      break;
-    case BC_WALL_VISCOUS_HEATFLUX:
-      // Set Wr to resemble a viscous wall with no heatflux
-      Wr = WallViscousHeatFlux(Wl,
-			       NormalDirection);
-      break;
-
-    default:
-      throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such East BCtype!");
-    }// endswitch (Grid.BCtypeE[jj])
+  case EAST :			
+    BC_Type = Grid.BCtypeE[jj];
+    ErrorMsg = "NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such East BCtype!";
+    RefState = &WoE[jj];    // Note: The reference value should be changed to HO_WoE!
+    iGhost = ii+1;
+    jGhost = jj;
     break;
 
-    // ********************************
-    // === SOUTH boundary interface ===
-    // ********************************
-  case SOUTH :
-    // Compute left interface state based on reconstruction or the particular boundary condition
-    switch (Grid.BCtypeS[ii]){
-
-    case BC_NONE :
-      // Compute Wr based on the high-order reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj-1,CalculationPoint);
-      break;
-
-    case BC_PERIODIC :
-      // Compute Wr based on the high-order reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj-1,CalculationPoint);
-      break;
-
-    case BC_FROZEN :
-      // Compute Wr based on the reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj-1,CalculationPoint);
-      break;
-
-    case BC_FARFIELD :
-      // Setup value as in the case of Dirichlet BC
-      
-    case BC_DIRICHLET :		// BC_FIXED
-      // Set Wr to the reference value for the given location
-      // Note: The reference value should be changed to HO_WoS!
-      Wr = WoS[ii];
-      break;
-
-    case BC_EXACT_SOLUTION :
-      // Calculate W_face based on the exact solution
-      if (ExactSoln->IsExactSolutionSet()){
-	Wr = BC_Characteristic_Pressure(Wl,
-					ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y),
-					NormalDirection);
-      } else {
-	throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
-      }
-      break;
-      
-    case BC_NEUMANN : 
-      throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_NEUMANN not implemented yet.");
-      break;
-
-    case BC_SYMMETRY_PLANE : 	// same as BC_REFLECTION
-      Wr = Reflect(Wl, NormalDirection);
-      break;
-
-    case BC_WALL_INVISCID : 	// same as BC_REFLECTION
-      Wr = Reflect(Wl, NormalDirection);
-      break;
-
-    case BC_EXTRAPOLATE :
-      // Set Wr equal to the left side value (i.e Wl)
-      Wr = Wl;
-      break;
-
-    case BC_LINEAR_EXTRAPOLATION :
-      // Compute Wr based on the high-order reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj-1,CalculationPoint);
-      break;
-
-    case BC_OUTFLOW_SUBSONIC:
-    case BC_OUTFLOW :
-      // Set Wr equal to the left side value (i.e Wl)
-      Wr = Wl;
-      break;
-
-    case BC_CONSTANT_EXTRAPOLATION :
-      // Set Wr equal to the left side value (i.e Wl)
-      Wr = Wl;
-      break;
-      
-    case BC_INFLOW_SUBSONIC:
-      Wr = WoS[ii];
-      Wr.v.y = ZERO;
-      break;
-
-    case BC_CHARACTERISTIC :
-      // Set Wr based on the directions of propogation for the solution characteristics at the boundary
-      // Note: The reference value should be changed to HO_WoS!
-      Wr = BC_Characteristic_Pressure(Wl,
-				      WoS[ii],
-				      NormalDirection);
-      break;
-
-    case BC_WALL_VISCOUS_HEATFLUX:
-      // Set Wr to resemble a viscous wall with no heatflux
-      Wr = WallViscousHeatFlux(Wl,
-			       NormalDirection);
-      break;
-
-    default:
-      throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such South BCtype!");
-    }// endswitch (Grid.BCtypeS[ii])
+    // *******************************
+    // === NORTH boundary interface ==
+    // *******************************
+  case NORTH :	
+    BC_Type = Grid.BCtypeN[ii];
+    ErrorMsg = "NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such North BCtype!";
+    RefState = &WoN[ii];    // Note: The reference value should be changed to HO_WoN!
+    iGhost = ii;
+    jGhost = jj+1;
     break;
 
-    // ********************************
-    // === NORTH boundary interface ===
-    // ********************************
-  case NORTH :
-    // Compute right interface state based on reconstruction or the particular boundary condition
-    switch (Grid.BCtypeN[ii]){
+    // *******************************
+    // === SOUTH boundary interface ==
+    // *******************************
+  case SOUTH :			
+    BC_Type = Grid.BCtypeS[ii];
+    ErrorMsg = "NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such South BCtype!";
+    RefState = &WoS[ii];    // Note: The reference value should be changed to HO_WoS!
+    iGhost = ii;
+    jGhost = jj-1;
+    break;
+  }
 
-    case BC_NONE :
-      // Compute Wr based on the high-order reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj+1,CalculationPoint);
-      break;
+  // Compute right interface state based on reconstruction or the particular boundary condition
+  switch(BC_Type){
+  
+  case BC_NONE :
+    // Compute Wr based on the high-order reconstruction in the ghost cell
+    Wr = HighOrderVariable(Pos).SolutionStateAtLocation(iGhost,jGhost,CalculationPoint);
+    break;
 
-    case BC_PERIODIC :
-      // Compute Wr based on the high-order reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj+1,CalculationPoint);
-      break;
+  case BC_PERIODIC :
+    // Compute Wr based on the high-order reconstruction in the ghost cell
+    Wr = HighOrderVariable(Pos).SolutionStateAtLocation(iGhost,jGhost,CalculationPoint);
+    break;
 
-    case BC_FROZEN :
-      // Compute Wr based on the high-order reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj+1,CalculationPoint);
-      break;
+  case BC_FROZEN :
+    // Calculate Wr based on the reconstruction in the ghost cell
+    Wr = HighOrderVariable(Pos).SolutionStateAtLocation(iGhost,jGhost,CalculationPoint);
+    break;
+
+  case BC_FARFIELD :
+    // Setup value as in the case of Dirichlet BC
       
-    case BC_FARFIELD :
-      // Setup value as in the case of Dirichlet BC
-
-    case BC_DIRICHLET :		// BC_FIXED
-      // Set Wr to the reference value for the given location
-      // Note: The reference value should be changed to HO_WoN!
-      Wr = WoN[ii];
-      break;
+  case BC_DIRICHLET :		// BC_FIXED
+    // Set Wr to the reference value for the given location
+    Wr = *RefState;
+    break;
       
-    case BC_EXACT_SOLUTION :
-      // Calculate W_face based on the exact solution
-      if (ExactSoln->IsExactSolutionSet()){
-	Wr = BC_Characteristic_Pressure(Wl,
-					ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y),
-					NormalDirection);
-      } else {
-	throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
-      }
-      break;
-      
-    case BC_NEUMANN : 
-      throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_NEUMANN not implemented yet.");
-      break;
-
-    case BC_SYMMETRY_PLANE : 	// same as BC_REFLECTION
-      Wr = Reflect(Wl, NormalDirection);
-      break;
-
-    case BC_WALL_INVISCID : 	// same as BC_REFLECTION
-      Wr = Reflect(Wl, NormalDirection);
-      break;
-
-    case BC_EXTRAPOLATE :
-      // Set Wr equal to the left side value (i.e Wl)
-      Wr = Wl;
-      break;
-
-    case BC_LINEAR_EXTRAPOLATION :
-      // Compute Wr based on the high-order reconstruction in the ghost cell
-      Wr = HighOrderVariable(Pos).SolutionStateAtLocation(ii,jj+1,CalculationPoint);
-      break;
-
-    case BC_OUTFLOW_SUBSONIC:
-    case BC_OUTFLOW :
-      // Set Wr equal to the left side value (i.e Wl)
-      Wr = Wl;
-      break;
-
-    case BC_CONSTANT_EXTRAPOLATION :
-      // Set Wr equal to the left side value (i.e Wl)
-      Wr = Wl;
-      break;
-
-    case BC_INFLOW_SUBSONIC:
-      Wr = WoN[ii];
-      Wr.v.y = ZERO;
-      break;
-
-    case BC_CHARACTERISTIC :
-      // Set Wr based on the directions of propogation for the solution characteristics at the boundary
-      // Note: The reference value should be changed to HO_WoN!
+  case BC_EXACT_SOLUTION :
+    // Calculate W_face based on the exact solution
+    if (ExactSoln->IsExactSolutionSet()){
       Wr = BC_Characteristic_Pressure(Wl,
-				      WoN[ii],
+				      ExactSoln->Solution(CalculationPoint.x,CalculationPoint.y),
 				      NormalDirection);
-      break;
+    } else {
+      throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! There is no exact solution set for the Exact_Solution BC.");
+    }
+    break;
       
-    case BC_WALL_VISCOUS_HEATFLUX:
-      // Set Wr to resemble a viscous wall with no heatflux
-      Wr = WallViscousHeatFlux(Wl,
-			       NormalDirection);
-      break;
+  case BC_NEUMANN :
+    throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! BC_NEUMANN not implemented yet.");
+    break;
 
-    default:
-      throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such North BCtype!");
-    }// endswitch (Grid.BCtypeN[ii])
+  case BC_SYMMETRY_PLANE : 	// same as BC_REFLECTION
+    Wr = Reflect(Wl, NormalDirection);
+    break;
+
+  case BC_WALL_INVISCID : 	// same as BC_REFLECTION
+    Wr = Reflect(Wl, NormalDirection);
+    break;
+
+  case BC_EXTRAPOLATE :
+    // Set Wr equal to the left side value (i.e Wl)
+    Wr = Wl;
+    break;
+
+  case BC_LINEAR_EXTRAPOLATION :
+    // Calculate Wr based on the reconstruction in the ghost cell
+    Wr = HighOrderVariable(Pos).SolutionStateAtLocation(iGhost,jGhost,CalculationPoint);
+    break;
+
+  case BC_OUTFLOW_SUBSONIC:
+  case BC_OUTFLOW :
+    // Set Wr equal to the left side value (i.e Wl)
+    Wr = Wl;
+    break;
+
+  case BC_CONSTANT_EXTRAPOLATION :
+    // Set Wr equal to the left side value (i.e Wl)
+    Wr = Wl;
+    break;
+
+  case BC_INFLOW_SUBSONIC:
+    Wr = *RefState;
+    Wr.v.y = ZERO;
+    break;
+
+  case BC_CHARACTERISTIC :
+    // Set Wr based on the directions of propogation for the solution characteristics at the boundary
+    // Note: The reference value should be changed to HO_WoW!
+    Wr = BC_Characteristic_Pressure(Wl,
+				    *RefState,
+				    NormalDirection);
+    break;
+
+  case BC_WALL_VISCOUS_HEATFLUX:
+    // Set Wr to resemble a viscous wall with no heatflux
+    Wr = WallViscousHeatFlux(Wl,
+			     NormalDirection);
+    break;
+
+  case BC_WALL_VISCOUS_ISOTHERMAL:
+    // Set Wr for a viscous isothermal wall
+    Wr = WallViscousIsothermal(Wl,
+			       NormalDirection,
+			       Twall);
+    break;
+
+  case BC_MOVING_WALL_HEATFLUX :
+    // Set Wr for a moving viscous wall with no heatflux
+    Wr = MovingWallHeatFlux(Wl,
+			    NormalDirection,
+			    Vwall.x);
+    break;
+
+  case BC_MOVING_WALL_ISOTHERMAL :
+    // Set Wr for a moving viscous and isothermal wall
+    Wr = MovingWallIsothermal(Wl,
+			      NormalDirection,
+			      Vwall.x, 
+			      Twall);
+    break;
+
+  case BC_FIXED_PRESSURE :
+    // Constant extrapolation with fixed pressure.
+    // Use the interior reconstruction to set the right state and the reference state for the pressure.    
+    Wr = Wl;
+    Wr.p = RefState->p;
     break;
 
   default:
-    throw runtime_error("NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder() ERROR! No such boundary!");
-  }  
+    throw runtime_error(ErrorMsg);    
+  }
 
 }
 
@@ -5330,10 +5106,79 @@ void NavierStokes2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder(
     dWdy_face.rho = rho_over_p * dWdy_face.p;
     break;
 
+  case BC_WALL_VISCOUS_ISOTHERMAL:
+    W_face = 0.5*(Wl + Wr);
+    if (W_face.Unphysical_Properties()){
+      W_face = CellSolution(ii,jj);
+    }
+
+    dWdx_face = 0.5*(dWdxL + dWdxR);
+    dWdy_face = 0.5*(dWdyL + dWdyR);
+
+    // Impose viscous wall
+    W_face.v = Vector2D_ZERO;
+    W_face.k = ZERO;
+    W_face.ke = ZERO;
+
+    // Impose isothermal wall (i.e. apply the specified wall temperature by modifying density)
+    W_face.rho = W_face.p/(W_face.R * Twall);
+    break;
+
+  case BC_MOVING_WALL_HEATFLUX :
+    W_face = 0.5*(Wl + Wr);
+    if (W_face.Unphysical_Properties()){
+      W_face = CellSolution(ii,jj);
+    }
+
+    dWdx_face = 0.5*(dWdxL + dWdxR);
+    dWdy_face = 0.5*(dWdyL + dWdyR);
+
+    // Impose impermeable moving wall
+    W_face.v.x = - Vwall.x * NormalDirection.y;
+    W_face.v.y =   Vwall.x * NormalDirection.x;
+    W_face.k = ZERO;
+    W_face.ke = ZERO;
+
+    // Impose no heat flux (i.e. adiabatic wall) by setting a ZERO temperature gradient
+    rho_over_p = W_face.rho/W_face.p;
+    dWdx_face.rho = rho_over_p * dWdx_face.p;
+    dWdy_face.rho = rho_over_p * dWdy_face.p;
+    break;
+
+  case BC_MOVING_WALL_ISOTHERMAL :
+    W_face = 0.5*(Wl + Wr);
+    if (W_face.Unphysical_Properties()){
+      W_face = CellSolution(ii,jj);
+    }
+
+    dWdx_face = 0.5*(dWdxL + dWdxR);
+    dWdy_face = 0.5*(dWdyL + dWdyR);
+
+    // Impose impermeable moving wall
+    W_face.v.x = - Vwall.x * NormalDirection.y;
+    W_face.v.y =   Vwall.x * NormalDirection.x;
+    W_face.k = ZERO;
+    W_face.ke = ZERO;
+
+    // Impose isothermal wall (i.e. apply the specified wall temperature by modifying density)
+    W_face.rho = W_face.p/(W_face.R * Twall);
+    break;
+
   case BC_FIXED:
     // Use the reference state for the face state
     W_face = *RefState;
 
+    // Average the right and left gradients to determine the interface gradient
+    dWdx_face = 0.5*(dWdxL + dWdxR);
+    dWdy_face = 0.5*(dWdyL + dWdyR);    
+    break;
+
+  case BC_FIXED_PRESSURE:
+    // Constant extrapolation with fixed pressure.
+    // Use the interior reconstruction to set the state values and the reference state for the face pressure.
+    W_face = Wl;
+    W_face.p = RefState->p;
+    
     // Average the right and left gradients to determine the interface gradient
     dWdx_face = 0.5*(dWdxL + dWdxR);
     dWdy_face = 0.5*(dWdyL + dWdyR);    

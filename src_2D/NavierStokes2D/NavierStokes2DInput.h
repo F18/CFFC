@@ -560,7 +560,7 @@ inline ostream &operator << (ostream &out_file,
 
   /*****************************************************/
   out_file << "\n  -> Hyperbolic Flux Function: " << IP.Flux_Function_Type;
-  if (IP.FlowType)
+  if (IP.FlowType && IP.i_ReconstructionMethod != RECONSTRUCTION_CENO)
     out_file << "\n  -> Elliptic Flux Evaluation: " << IP.Viscous_Reconstruction_Type;
   out_file << "\n  -> Initial Conditions: " << IP.ICs_Type;
   out_file << "\n  -> Gas Type: " << IP.Gas_Type;
