@@ -1634,15 +1634,16 @@ void Grid3D_Hexa_Multi_Block_List::Create_Uniform_Initial_Grid(Grid3D_Input_Para
     cout << "Delta_min = " << Delta_min << endl;
     
     // Set number of cells in each direction
-    Input.NCells_Turbulence_Idir = int(ceil(Input.Turbulence_Box_Width/Delta_min.x));
-    Input.NCells_Turbulence_Jdir = int(ceil(Input.Turbulence_Box_Height/Delta_min.y));
-    Input.NCells_Turbulence_Kdir = int(ceil(Input.Turbulence_Box_Length/Delta_min.z));
+    Input.NCells_Turbulence_Idir = int(ceil(Input.Turbulence_Box_Width/Delta_min.x/2.)*2);
+    Input.NCells_Turbulence_Jdir = int(ceil(Input.Turbulence_Box_Height/Delta_min.y/2.)*2);
+    Input.NCells_Turbulence_Kdir = int(ceil(Input.Turbulence_Box_Length/Delta_min.z/2.)*2);
 
     Input.NCells_Idir = Input.NCells_Turbulence_Idir;
     Input.NCells_Jdir = Input.NCells_Turbulence_Jdir;
     Input.NCells_Kdir = Input.NCells_Turbulence_Kdir;
 
     cout << endl;
+    cout << "Auxiliary Mesh dimensions: " << endl;
     cout << "NCells_Turbulence_Idir = " << Input.NCells_Turbulence_Idir << endl;
     cout << "NCells_Turbulence_Jdir = " << Input.NCells_Turbulence_Jdir << endl;
     cout << "NCells_Turbulence_Kdir = " << Input.NCells_Turbulence_Kdir << endl;
