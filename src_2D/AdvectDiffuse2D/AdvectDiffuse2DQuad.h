@@ -192,7 +192,7 @@ public:
   static int    Include_Diffusion_Term; //!< Flag for including/excluding the diffusion term in the model equation.
   //@}
 
-  //! @name Boundary condtion reference states:
+  //! @name Boundary condition reference states:
   //@{
   AdvectDiffuse2D_State   *UoN, //!< Boundary condition reference states for north boundary.
                           *UoS, //!< Boundary condition reference states for south boundary.

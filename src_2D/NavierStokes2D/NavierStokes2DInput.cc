@@ -232,6 +232,26 @@ void NavierStokes2D_Input_Parameters::doInternalSetupAndConsistencyChecks(int & 
     } // endswitch
   }
 
+  // Set the reference pressures for the Fixed_Pressure BC on opposite faces.
+  if (BCs_Specified){
+    if (BC_North == BC_FIXED_PRESSURE && BC_South == BC_FIXED_PRESSURE){
+      // Use Wo to set the reference pressure value for the South boundary
+      Ref_State_BC_South.p = Wo.p;
+
+      // Use dp and Wo to set the reference pressure value for the North boundary
+      Ref_State_BC_North.p = Wo.p - dp;
+    }
+
+    if (BC_East == BC_FIXED_PRESSURE && BC_West == BC_FIXED_PRESSURE){
+      // Use Wo to set the reference pressure value for the East boundary
+      Ref_State_BC_East.p = Wo.p;
+
+      // Use dp and Wo to set the reference pressure value for the West boundary
+      Ref_State_BC_West.p = Wo.p - dp;
+    }
+  }
+
+
   // Perform update of the internal variables of the exact solution
   ExactSoln->Set_ParticularSolution_Parameters(*this);
 

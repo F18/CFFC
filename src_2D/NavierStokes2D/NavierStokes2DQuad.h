@@ -230,7 +230,7 @@ public:
   int                Variable_Prandtl; //!< Variable Prandtl number indicator. 
   //@}
 
-  //@{ @name Boundary condtion reference states:
+  //@{ @name Boundary condition reference states:
   NavierStokes2D_pState    *WoN, //!< Boundary condition reference states for north boundary.
                            *WoS, //!< Boundary condition reference states for south boundary.
                            *WoE, //!< Boundary condition reference states for east boundary.
@@ -420,6 +420,10 @@ public:
 						const NavierStokes2D_pState & Ref_South,
 						const NavierStokes2D_pState & Ref_East,
 						const NavierStokes2D_pState & Ref_West);
+  //! Set boundary reference states
+  void Set_Boundary_Reference_States(void);
+  //! Set boundary reference states to default
+  void Set_Default_Boundary_Reference_States(void);
   //! Set boundary reference states based on user's input data
   void Set_Boundary_Reference_States_Based_On_Input(const NavierStokes2D_Input_Parameters &IP);
   //! @brief Set physical boundary condition constraints based on the current flow state and the BC_Type

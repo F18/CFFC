@@ -1940,31 +1940,8 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
     break;
   };
 
-  // Set default values for the boundary condition reference states.
-  for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
-    if (j >= SolnBlk.JCl && j <= SolnBlk.JCu) {
-      SolnBlk.WoW[j] = SolnBlk.W[SolnBlk.ICl][j];
-      SolnBlk.WoE[j] = SolnBlk.W[SolnBlk.ICu][j];
-    } else if (j < SolnBlk.JCl) {
-      SolnBlk.WoW[j] = SolnBlk.W[SolnBlk.ICl][SolnBlk.JCl];
-      SolnBlk.WoE[j] = SolnBlk.W[SolnBlk.ICu][SolnBlk.JCl];
-    } else {
-      SolnBlk.WoW[j] = SolnBlk.W[SolnBlk.ICl][SolnBlk.JCu];
-      SolnBlk.WoE[j] = SolnBlk.W[SolnBlk.ICu][SolnBlk.JCu];
-    }
-  }
-  for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
-    if (i >= SolnBlk.ICl && i <= SolnBlk.ICu) {
-      SolnBlk.WoS[i] = SolnBlk.W[i][SolnBlk.JCl];
-      SolnBlk.WoN[i] = SolnBlk.W[i][SolnBlk.JCu];
-    } else if (i < SolnBlk.ICl) {
-      SolnBlk.WoS[i] = SolnBlk.W[SolnBlk.ICl][SolnBlk.JCl];
-      SolnBlk.WoN[i] = SolnBlk.W[SolnBlk.ICl][SolnBlk.JCu];
-    } else {
-      SolnBlk.WoS[i] = SolnBlk.W[SolnBlk.ICu][SolnBlk.JCl];
-      SolnBlk.WoN[i] = SolnBlk.W[SolnBlk.ICu][SolnBlk.JCu];
-    }
-  }
+  /* Assign the boundary reference states based on the boundary condition and the user's input. */
+  SolnBlk.Set_Boundary_Reference_States_Based_On_Input(IP);
 
 }
 
@@ -2006,7 +1983,7 @@ void BCs(NavierStokes2D_Quad_Block &SolnBlk, NavierStokes2D_Input_Parameters &IP
 	  }
 	  break;
 	case BC_INFLOW_SUBSONIC :
-	  if (IP.i_ICs == IC_VISCOUS_CHANNEL_FLOW) {
+	  if (IP.i_ICs == IC_VISCOUS_CHANNEL_FLOW || IP.i_ICs == IC_RESTART) {
 	    // Fixed mass flux (rho and v) and linear extrapolatation of p.
 	    // Calculate pressure gradient
 	    dWdx.p = ( (SolnBlk.WoE[j].p - SolnBlk.WoW[j].p)/
@@ -2264,7 +2241,7 @@ void BCs(NavierStokes2D_Quad_Block &SolnBlk, NavierStokes2D_Input_Parameters &IP
 	  }
 	  break;
 	case BC_OUTFLOW_SUBSONIC :
-	  if (IP.i_ICs == IC_VISCOUS_CHANNEL_FLOW) {
+	  if (IP.i_ICs == IC_VISCOUS_CHANNEL_FLOW || IP.i_ICs == IC_RESTART) {
 	    // Constant extrapolation for rho, v.x, and v.y but linear extrapolation of p.
 	    // Calculate pressure gradient
 	    dWdx.p = ( (SolnBlk.WoE[j].p - SolnBlk.WoW[j].p)/
