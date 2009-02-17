@@ -57,6 +57,7 @@ NASADATA_DIR = $(PHYSICS_DIR)NASAData/
 SNBCK_DIR = $(PHYSICS_DIR)SNBCK/
 REACTIONS_DIR = Reactions/
 HIGH_ORDER_RECONSTRUCTION_DIR = HighOrderReconstruction/
+IDEALMHD_DIR = IdealMHD2D/
 #
 # Set default f90 module directory
 MODULE_DIR = F90_Modules
@@ -496,6 +497,19 @@ SRC_LEVELSET = $(LEVELSET_DIR)LevelSet2DInput.cc \
                $(LEVELSET_DIR)LevelSet2DQuadSolvers.cc
 SRC_LEVELSET_EXE = $(LEVELSET_DIR)LevelSet2D.cc
 
+# Ideal MHD2D:
+SRC_IDEALMHD = $(IDEALMHD_DIR)MHD2DState.cc
+
+SRC_IDEALMHD_EXE = $(IDEALMHD_DIR)IdealMHD2D.cc
+
+# Add Ideal MHD 2D Testing If Required:
+SRC_IDEALMHD_TESTS = test_MHD2DState.cc
+
+SRC_IDEALMHD_TESTS := $(addprefix $(IDEALMHD_DIR)UnitTests/, $(SRC_IDEALMHD_TESTS))
+ifeq ($(TUT_TESTING),ON) 
+  SRC_IDEALMHD += $(SRC_IDEALMHD_TESTS)
+endif
+
 # Physics, Turbulence, Thermodynamics, and Chemistry:
 SRC_TURBULENT = $(TURBULENT_DIR)SFSModelling.cc
 SRC_EOS = $(EOS_DIR)tgas.f \
@@ -545,7 +559,7 @@ SRC_CFFC = $(SRC_BASE) \
            $(SRC_DUSTY) $(SRC_LESPREMIXED) $(SRC_GAUSSIAN) $(SRC_ION) $(SRC_ELECTROSTATIC) \
            $(SRC_RTE) $(SRC_INTERFACE) $(SRC_LEVELSET) $(SRC_LEVERMORE1D) $(SRC_BGK1D) \
            $(SRC_TURBULENT) $(SRC_EOS) $(SRC_NASADATA) $(SRC_REACTIONS) $(SRC_SNBCK) $(SRC_ICEMCFD) \
-           $(SRC_HIGH_ORDER_RECONSTRUCTION_1D) $(SRC_SHOCK_RELATIONS)
+           $(SRC_HIGH_ORDER_RECONSTRUCTION_1D) $(SRC_SHOCK_RELATIONS) $(SRC_IDEALMHD)
 
 # Executable sources:
 SRC_MAIN = cffc2D.cc
@@ -673,6 +687,10 @@ OBJ_EMBEDDEDBOUNDARIES_EXE = $(SRC_EMBEDDEDBOUNDARIES_EXE:.cc=.o)
 OBJ_LEVELSET = $(SRC_LEVELSET:.cc=.o)
 OBJ_LEVELSET_EXE = $(SRC_LEVELSET_EXE:.cc=.o)
 
+# Ideal MHD2D:
+OBJ_IDEALMHD = $(SRC_IDEALMHD:.cc=.o)
+OBJ_IDEALMHD_EXE = $(SRC_IDEALMHD_EXE:.cc=.o)
+
 # Physics, Turbulence, Thermodynamics, and Chemistry:
 OBJ_TURBULENT = $(SRC_TURBULENT:.cc=.o)
 OBJ_EOS = $(SRC_EOS:.f=.o)
@@ -742,6 +760,7 @@ EXE_ELECTROSTATIC2D = electrostatic2D
 EXE_RTE2D = rte2D
 EXE_LEVELSET2D = levelset2D
 EXE_EMBEDDEDBOUNDARIES2D = embeddedboundaries2D
+EXE_IDEALMHD2D = mhd2D
 
 ###############################################################################
 # Define dependencies
@@ -780,6 +799,7 @@ help:
 	@echo "|        make rte2D                compile rte2D stand alone program                |"
 	@echo "|        make levelset2D           compile levelset2D stand alone program           |"
 	@echo "|        make embeddedboundaries2D compile embeddedboundaries2D stand alone program |"
+	@echo "|        make mhd2D                compile ideal mhd2D stand alone program          |"
 	@echo "|        make libraries-all        create all supporting libraries                  |"
 	@echo "|        make sparselib            create SparseLib++ library                       |"
 	@echo "|        make bpkit                create BPKIT library                             |"
@@ -815,7 +835,7 @@ all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
      $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
      $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
      $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-     $(EXE_EMBEDDEDBOUNDARIES2D)
+     $(EXE_EMBEDDEDBOUNDARIES2D)  $(EXE_IDEALMHD2D)
 	@echo ' '
 	@echo All programs have been brought up to date.
 	@echo '------------------------------------------'
@@ -1099,6 +1119,17 @@ $(EXE_EMBEDDEDBOUNDARIES2D): $(OBJ_EMBEDDEDBOUNDARIES_EXE) $(OBJ_BASE) $(OBJ_EMB
 	@echo '----------------------------------------------------------'
 	@echo ' '
 
+$(EXE_IDEALMHD2D): $(OBJ_IDEALMHD_EXE) $(OBJ_BASE) $(OBJ_IDEALMHD) $(OBJ_ICEMCFD)
+	@echo ' '
+	@echo Building program $(EXE_IDEALMHD2D) for a $(PLATFORM) platform.
+	@echo '-----------------------------------------------------------'
+	@echo ' '
+	$(LD) -o $(EXE_IDEALMHD2D) $(OBJ_IDEALMHD_EXE) $(OBJ_BASE) $(OBJ_IDEALMHD) $(OBJ_ICEMCFD) $(LDFLAGS)
+	@echo ' '
+	@echo Program $(EXE_IDEALMHD2D) has been brought up to date.
+	@echo '---------------------------------------------------'
+	@echo ' '
+
 $(EXE_ICEMCFD_UTIL1): $(OBJ_ICEMCFD_UTIL1)
 	@echo ' '
 	@echo Building program $(EXE_ICEMCFD_UTIL1) for a $(PLATFORM) platform.
@@ -1136,13 +1167,13 @@ install-all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
         $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D)
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_IDEALMHD2D)
 	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
         $(EXE_EULER1D) $(EXE_SOLVERS1D) $(EXE_LEVERMORE1D) $(EXE_BGK1D) \
         $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D); \
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_IDEALMHD2D); \
 	do \
 	  echo "Installing $$f"; \
 	  cp $$f $(CFFC_BIN_DIR); \
@@ -1166,7 +1197,7 @@ uninstall-all:
         $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
-        $(EXE_EMBEDDEDBOUNDARIES2D); \
+        $(EXE_EMBEDDEDBOUNDARIES2D) $(EXE_IDEALMHD2D); \
 	do \
 	  echo "Uninstalling $$f"; \
 	  cd $(CFFC_BIN_DIR); \
@@ -1248,6 +1279,7 @@ clean:
 	rm -f $(RTE_DIR)*.o $(RTE_DIR)*.il $(RTE_DIR)*~ $(RTE_DIR)*.depend $(RTE_DIR)*.bak
 	rm -f $(INTERFACE_DIR)*.o $(INTERFACE_DIR)*.il $(INTERFACE_DIR)*~ $(INTERFACE_DIR)*.depend $(INTERFACE_DIR)*.bak
 	rm -f $(LEVELSET_DIR)*.o $(LEVELSET_DIR)*.il $(LEVELSET_DIR)*~ $(LEVELSET_DIR)*.depend $(LEVELSET_DIR)*.bak
+	rm -f $(IDEALMHD_DIR)*.o $(IDEALMHD_DIR)*.il $(IDEALMHD_DIR)*~ $(IDEALMHD_DIR)*.depend $(IDEALMHD_DIR)*.bak
 	rm -f $(PHYSICS_DIR)*.o $(PHYSICS_DIR)*.il $(PHYSICS_DIR)*~
 	rm -f $(PHYSICS_DIR)UnitTests/*.o $(PHYSICS_DIR)UnitTests/*.il $(PHYSICS_DIR)UnitTests/*~ $(PHYSICS_DIR)UnitTests/*.bak
 	rm -f $(TURBULENT_DIR)*.o $(TURBULENT_DIR)*.il $(TURBULENT_DIR)*~
@@ -1283,6 +1315,7 @@ clean:
 	rm -f $(EXE_RTE2D)
 	rm -f $(EXE_LEVELSET2D)
 	rm -f $(EXE_EMBEDDEDBOUNDARIES2D)
+	rm -f $(EXE_IDEALMHD2D)
 	rm -fr $(DEPEND_DIR)
 	@echo ' '
 	@echo All source file directories are now clean.
@@ -1388,6 +1421,7 @@ ifeq ($(strip $(filter $(MAKECMDGOALS), $(NODEP_LIST)) ), )
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_RTE_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_LEVELSET_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_EMBEDDEDBOUNDARIES_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_IDEALMHD_EXE)))
 endif
 endif
 
