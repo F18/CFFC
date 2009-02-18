@@ -205,8 +205,8 @@ double Test_Example8_Integral (double x1, double x2, double y1, double y2, doubl
 }
 
 /*************************************************************************
- * Function Test_Example9:                                              *
- *          f(x,y,z) = x + y + z
+ * Function Test_Example9: 
+ *          f(x,y,z) = x + y + z  (Linear Variation in all directions)
  ************************************************************************/
 
 double Test_Example9 (double x, double y, double z) {
@@ -225,39 +225,62 @@ double Test_Example9_Integral (double x1, double x2, double y1, double y2, doubl
 
 /*************************************************************************
  * Function Test_Example10:                                              *
- *          f(x,y,z) = cos(10*x)*cos(10*x) + 3*sin(10*y) + 0.5*cos(10*z)
+ *          f(x,y,z) = step funtion at (x,y,z)=(0.5,0.5,0.5)             *
  ************************************************************************/
 
 double Test_Example10 (double x, double y, double z) {
-
   double f;
-  f = cos(10*x)*cos(10*x) + 3*sin(10*y) + 0.5*cos(10*z);
+  double a = 0.5;
+  double b = 0.5;
+  double c = 0.5;
+ 
+  if (x <= a && y <= b && z <= c)
+    f = 1.0e5;
+  else 
+    f = 1.0;
   return f;
 }
 
 double Test_Example10_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
   assert((x1<x2)&&(y1<y2)&&(z1<z2));
   double f;
-  f = -20*cos(10*x2)*sin(10*x2) + 30*cos(10*y2) - 5.0*sin(10*z2) - (-20*cos(10*x1)*sin(10*x1) + 30*cos(10*y1) - 5.0*sin(10*z1));
+  f=0.0;
   return f;
 }
 
 /*************************************************************************
  * Function Test_Example11:                                              *
- *          f(x,y,z) = cos(10*x)*cos(10*x) + 3*sin(10*y) + 0.5*cos(10*z)
+ *          f(x,y,z) = 2D Abgrall Function Extruding in the z-direction  *
  ************************************************************************/
-
+double Test_Example11_f (double r)
+{
+  double cgret;
+  if (r <= -0.1e1 / 0.3e1)
+    cgret = -r * sin(0.3e1 / 0.2e1 * PI * r * r);
+  else if (fabs(r) < 0.1e1 / 0.3e1)
+    cgret = fabs(sin(0.2e1 * PI * r));
+  else if (0.1e1 / 0.3e1 <= r)
+    cgret = 0.2e1 * r - 0.1e1 + sin(0.3e1 * PI * r) / 0.6e1;
+  else
+    cgret = 0.0e0;
+  return(cgret);
+}
 double Test_Example11 (double x, double y, double z) {
-
-  double f;
-  f = cos(10*x)*cos(10*x) + 3*sin(10*y) + 0.5*cos(10*z);
-  return f;
+  double cgret;
+  if (x <= cos(PI * y) / 0.2e1)
+    cgret = Test_Example11_f(x - 1.0/tan(sqrt(PI / 0.2e1)) * y);
+  else if (cos(PI * y) / 0.2e1 < x)
+    cgret = Test_Example11_f(x + 1.0/tan(sqrt(PI / 0.2e1)) * y) +
+      cos(0.2e1 * PI * y);
+  else
+    cgret = 0.0e0;
+  return(cgret);
 }
 
 double Test_Example11_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
   assert((x1<x2)&&(y1<y2)&&(z1<z2));
   double f;
-  f = -20*cos(10*x2)*sin(10*x2) + 30*cos(10*y2) - 5.0*sin(10*z2) - (-20*cos(10*x1)*sin(10*x1) + 30*cos(10*y1) - 5.0*sin(10*z1));
+  f = 0.0;
   return f;
 }
 

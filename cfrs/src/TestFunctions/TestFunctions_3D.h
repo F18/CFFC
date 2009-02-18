@@ -4,6 +4,9 @@
 #ifndef _TESTFUNCTIONS_3D_INCLUDED
 #define _TESTFUNCTIONS_3D_INCLUDED
 
+#include "Grid/Grid3D/Cell3D.h"
+#include "../../../src_3D/Math/NumericalLibrary.h"
+
 /********************************************************
  * Function Test_Default3D :                            *
  *          f(x,y,z) = z^6 - 4z^4 + 2z                  *
@@ -99,6 +102,7 @@ double Test_Example10_Integral (double x1, double x2, double y1, double y2, doub
  ************************************************************************/
 
 double Test_Example11 (double x, double y, double z);
+double Test_Example11_f (double r);
 double Test_Example11_Integral (double x1, double x2, double y1, double y2, double z1, double z2);
 
 /*************************************************************************
