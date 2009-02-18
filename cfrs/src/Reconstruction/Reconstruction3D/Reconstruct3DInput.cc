@@ -501,7 +501,10 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
        ++IP.Line_Number;
        IP.Input_File >> IP.Nghost_Cells;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Nghost_Cells < 4) i_command = INVALID_INPUT_VALUE;	
+       if (IP.Nghost_Cells < 4) {
+	 i_command = INVALID_INPUT_VALUE;
+	 std::cout << "\n\n Error: Number of Ghost Cells must be set as >= 4.";
+       }
 
     } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Idir") == 0) {
        i_command = 6;
