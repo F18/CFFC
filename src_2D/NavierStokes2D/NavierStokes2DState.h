@@ -1675,6 +1675,11 @@ inline void NavierStokes2D_pState::set_gas(char *gas_type) {
     g  = GAMMA_AIR;
     R  = R_UNIVERSAL/(MOLE_WT_AIR*MILLI);
     v1 = 0.0000056; v2 = AIR_c2; v3 = AIR_c3; v4 = AIR_c4; v5 = AIR_c5;
+  } else if (strcmp(gas_type,"AIR-constant") == 0) {
+    // This AIR has the viscosity and thermal conductivity constant and equal to the ones at standard temperature (i.e. 288.15 K)
+    g  = GAMMA_AIR;
+    R  = R_UNIVERSAL/(MOLE_WT_AIR*MILLI);
+    v1 = 0.0; v2 = 0.0; v3 = 0.0; v4 = 0.0; v5 = 1.83255359613465e-5;
   } else {
     g  = GAMMA_AIR;
     R  = R_UNIVERSAL/(MOLE_WT_AIR*MILLI);

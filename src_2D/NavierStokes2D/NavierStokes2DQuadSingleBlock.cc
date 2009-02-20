@@ -1866,8 +1866,8 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
       for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
 	for (int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 	  // Compute the exact average value for each solution parameter.
+	  SolnBlk.W[i][j].Vacuum();
 	  for (int k = 1; k <= NavierStokes2D_pState::NumVarActive(); ++k){
-	    SolnBlk.W[i][j].Vacuum();
 	    SolnBlk.W[i][j][k] = 
 	      SolnBlk.Grid.Integration.
 	      IntegrateFunctionOverCell(i,j,
@@ -1983,7 +1983,7 @@ void BCs(NavierStokes2D_Quad_Block &SolnBlk, NavierStokes2D_Input_Parameters &IP
 	  }
 	  break;
 	case BC_INFLOW_SUBSONIC :
-	  if (IP.i_ICs == IC_VISCOUS_CHANNEL_FLOW || IP.i_ICs == IC_RESTART) {
+	  if (IP.i_ICs == IC_VISCOUS_CHANNEL_FLOW) {
 	    // Fixed mass flux (rho and v) and linear extrapolatation of p.
 	    // Calculate pressure gradient
 	    dWdx.p = ( (SolnBlk.WoE[j].p - SolnBlk.WoW[j].p)/
@@ -2236,12 +2236,11 @@ void BCs(NavierStokes2D_Quad_Block &SolnBlk, NavierStokes2D_Input_Parameters &IP
 	  for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
 	    SolnBlk.W[SolnBlk.ICu+ghost][j]     = SolnBlk.WoE[j];
 	    SolnBlk.W[SolnBlk.ICu+ghost][j].v.x = SolnBlk.W[SolnBlk.ICu][j].v.x;
-	    //SolnBlk.W[SolnBlk.ICu+ghost][j].u.x = SolnBlk.W[SolnBlk.ICu][j].u.x;
 	    SolnBlk.U[SolnBlk.ICu+ghost][j]     = U(SolnBlk.W[SolnBlk.ICu+ghost][j]);
 	  }
 	  break;
 	case BC_OUTFLOW_SUBSONIC :
-	  if (IP.i_ICs == IC_VISCOUS_CHANNEL_FLOW || IP.i_ICs == IC_RESTART) {
+	  if (IP.i_ICs == IC_VISCOUS_CHANNEL_FLOW) {
 	    // Constant extrapolation for rho, v.x, and v.y but linear extrapolation of p.
 	    // Calculate pressure gradient
 	    dWdx.p = ( (SolnBlk.WoE[j].p - SolnBlk.WoW[j].p)/
@@ -2405,6 +2404,7 @@ void BCs(NavierStokes2D_Quad_Block &SolnBlk, NavierStokes2D_Input_Parameters &IP
 	  SolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
 	  break;
 	case BC_EXACT_SOLUTION:
+	  // Leave the ghost cell values unchanged.
 	  break;
 	case BC_FROZEN :
 	  // Equivalent to BC_NONE in the sense that it leaves 
@@ -2616,6 +2616,7 @@ void BCs(NavierStokes2D_Quad_Block &SolnBlk, NavierStokes2D_Input_Parameters &IP
       SolnBlk.U[i][SolnBlk.JCl-2] = U(SolnBlk.W[i][SolnBlk.JCl-2]);
       break;
     case BC_EXACT_SOLUTION:
+      // Leave the ghost cell values unchanged.
       break;
     case BC_FROZEN :
       // Equivalent to BC_NONE in the sense that it leaves 
@@ -2809,6 +2810,7 @@ void BCs(NavierStokes2D_Quad_Block &SolnBlk, NavierStokes2D_Input_Parameters &IP
       SolnBlk.U[i][SolnBlk.JCu+2] = U(SolnBlk.W[i][SolnBlk.JCu+2]);
       break;
     case BC_EXACT_SOLUTION:
+      // Leave the ghost cell values unchanged.
       break;
     case BC_FROZEN :
       // Equivalent to BC_NONE in the sense that it leaves 

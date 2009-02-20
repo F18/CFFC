@@ -1601,7 +1601,6 @@ int NavierStokes2D_Quad_Block::dUdt_Residual_HighOrder(const NavierStokes2D_Inpu
 							      Wall[i][j].yplus);
 	  } //endfor (GQPoint)
 
-	  
 	  /* Evaluate cell-averaged solution changes. */
 	  if (UseTimeStep) {
 	    dUdt[i  ][j][k_residual] += ( (IP.CFL_Number * dt[i  ][j])*
@@ -1660,7 +1659,6 @@ int NavierStokes2D_Quad_Block::dUdt_Residual_HighOrder(const NavierStokes2D_Inpu
 							      Wall[i][j].ywall,
 							      Wall[i][j].yplus);
 	  } //endfor (GQPoint)
-
 
 	  /* Evaluate cell-averaged solution changes. */
 	  if (UseTimeStep) {
@@ -1731,7 +1729,7 @@ int NavierStokes2D_Quad_Block::dUdt_Residual_HighOrder(const NavierStokes2D_Inpu
     } // endfor (i)
   } // endfor (j)
 
-  
+
 #ifdef CHANGE_NUMBER_OF_GQP_AT_BOUNDARY
   delete [] GaussQuadPoints;
   delete [] GaussQuadWeights;
@@ -2821,7 +2819,6 @@ int NavierStokes2D_Quad_Block::dUdt_Residual_HighOrder(const NavierStokes2D_Inpu
 
   } // endif (Flow_Type != FLOWTYPE_INVISCID)
 
-
   /*****************************************************************
    * --------------------------------------------------------------*
      Evaluate the time rate of change of the solution 
@@ -2871,7 +2868,7 @@ int NavierStokes2D_Quad_Block::dUdt_Residual_HighOrder(const NavierStokes2D_Inpu
 
 	} //endfor (GQPoint)
       
-	  /* Evaluate cell-averaged solution changes. */
+	/* Evaluate cell-averaged solution changes. */
 	if (UseTimeStep) {
 	  dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number * dt[i  ][j])*
 					Flux * Grid.lfaceE(i  , j)/Grid.Cell[i  ][j].A );
@@ -5219,6 +5216,15 @@ void NavierStokes2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder(
     dWdx_face = 0.5*(dWdxL + dWdxR);
     dWdy_face = 0.5*(dWdyL + dWdyR);
     break;
+
+  case BC_EXACT_SOLUTION:
+    // Average the left and right states to determine the face state
+    W_face = 0.5*(Wl + Wr);
+
+    // Average the right and left gradients to determine the interface gradient
+    dWdx_face = 0.5*(dWdxL + dWdxR);
+    dWdy_face = 0.5*(dWdyL + dWdyR);
+    break;    
 
   default:
     throw runtime_error(ErrorMsg);

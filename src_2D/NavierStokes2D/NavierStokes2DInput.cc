@@ -2229,8 +2229,14 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.i_ICs = IC_RINGLEB_FLOW;
     } else if (strcmp(IP.ICs_Type,"Electrostatic_Channel") == 0) {
       IP.i_ICs = IC_ELECTROSTATIC_CHANNEL;
+    } else if (strcmp(IP.ICs_Type,"Exact_Solution") == 0) {
+      IP.i_ICs = IC_EXACT_SOLUTION;
+    } else if (strcmp(IP.ICs_Type,"Uniform_Interior_Exact_Ghost_Cells") == 0) {
+      IP.i_ICs = IC_INTERIOR_UNIFORM_GHOSTCELLS_EXACT;
     } else if (strcmp(IP.ICs_Type,"Restart") == 0) {
       IP.i_ICs = IC_RESTART;
+    } else if (strcmp(IP.ICs_Type, "Given_StartUp") == 0) {
+      IP.i_ICs = IC_GIVEN_STARTUP;
     } else {
       std::cout << "\n ==> Unknown initial condition!";
       i_command = INVALID_INPUT_VALUE;
@@ -2781,7 +2787,8 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
 	strcmp(IP.Gas_Type,"N2") != 0 &&
 	strcmp(IP.Gas_Type,"O2") != 0 &&
 	strcmp(IP.Gas_Type,"AIR-viscous") != 0 &&
-	strcmp(IP.Gas_Type,"AP_HTPB") != 0) {
+	strcmp(IP.Gas_Type,"AP_HTPB") != 0 &&
+	strcmp(IP.Gas_Type,"AIR-constant") ) {
       i_command = INVALID_INPUT_VALUE;
     }
 
