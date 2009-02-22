@@ -327,7 +327,7 @@ public:
   /*! Return order of reconstruction based on Space_Accuracy.
     To obtain a certain space accuracy the piecewise polynomial reconstruction
     must be one order lower than the space accuracy if inviscid flow otherwise it must be the same order of accuracy. */
-  int ReconstructionOrder(void) { return (FlowType == FLOWTYPE_INVISCID) ? (Space_Accuracy-1) : Space_Accuracy; }
+  int ReconstructionOrder(void) const { return (FlowType == FLOWTYPE_INVISCID) ? (Space_Accuracy-1) : Space_Accuracy; }
   int & Limiter(void) {return i_Limiter;}                    //!< write/read selected limiter
   const int & Limiter(void) const {return i_Limiter;}        //!< return selected limiter (read only)
   //@}
@@ -535,6 +535,7 @@ inline ostream &operator << (ostream &out_file,
     default:
       out_file << "bigger than 6th-order";
     }
+    out_file << " ( Reconstruction Order = " << IP.ReconstructionOrder() << ")";
   } else {
     out_file << "\n  -> Space Accuracy : 2nd-order";
   }
