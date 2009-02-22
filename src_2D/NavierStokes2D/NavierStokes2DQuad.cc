@@ -132,17 +132,31 @@ NavierStokes2D_Quad_Block & NavierStokes2D_Quad_Block::operator =(const NavierSt
  ********************************************************/
 void NavierStokes2D_Quad_Block::Set_Boundary_Reference_States_Based_On_Input(const NavierStokes2D_Input_Parameters &IP){
 
+  bool SetNorth(false), SetSouth(false), SetEast(false), SetWest(false);
+
   // Set boundary reference states to default values
   Set_Default_Boundary_Reference_States();
 
-  // Set the reference values for boundary reference states
-  Set_Reference_Values_For_Boundary_States(IP.Ref_State_BC_North,
-					   IP.Ref_State_BC_South,
-					   IP.Ref_State_BC_East,
-					   IP.Ref_State_BC_West);
+  // Set the reference values for boundary reference states based on user input if they have been specified
+  if (IP.BC_North_Ref_State_Specified){ 
+    Ref_State_BC_North = IP.Ref_State_BC_North;
+    SetNorth = true;
+  }
+  if (IP.BC_South_Ref_State_Specified){ 
+    Ref_State_BC_South = IP.Ref_State_BC_South;
+    SetSouth = true;
+  }
+  if (IP.BC_East_Ref_State_Specified){ 
+    Ref_State_BC_East = IP.Ref_State_BC_East;
+    SetEast = true;
+  }
+  if (IP.BC_West_Ref_State_Specified){
+    Ref_State_BC_West = IP.Ref_State_BC_West;
+    SetWest = true;
+  }
 
   // Set boundary reference states for particular boundary condition types
-  Set_Boundary_Reference_States();
+  Set_Boundary_Reference_States(SetNorth, SetSouth, SetEast, SetWest);
 
 }
 
@@ -205,170 +219,181 @@ void NavierStokes2D_Quad_Block::Set_Default_Boundary_Reference_States(void){
  * the boundary type for the quadrilateral solution block. 
  * 
  ********************************************************/
-void NavierStokes2D_Quad_Block::Set_Boundary_Reference_States(void){
+void NavierStokes2D_Quad_Block::Set_Boundary_Reference_States(const bool &SetNorth,
+							      const bool &SetSouth,
+							      const bool &SetEast,
+ 							      const bool &SetWest){
 
   int i,j;
   Vector2D PointOfInterest;
 
   for (j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
     // === Set reference data for WoW ===
-    switch(Grid.BCtypeW[j]) { 				   
+    if (SetWest){
+      switch(Grid.BCtypeW[j]) { 				   
 
-    case BC_DIRICHLET :
-      // Reference data represents the solution value
-      WoW[j] = Ref_State_BC_West;
-      break;
+      case BC_DIRICHLET :	// Same as BC_FIXED
+	// Reference data represents the solution value
+	WoW[j] = Ref_State_BC_West;
+	break;
 
-    case BC_NEUMANN :
-      // Reference data represents the value of the solution gradient
-      WoW[j] = Ref_State_BC_West;
-      break;
+      case BC_NEUMANN :
+	// Reference data represents the value of the solution gradient
+	WoW[j] = Ref_State_BC_West;
+	break;
 
-    case BC_FARFIELD :
-      // Reference data represents the solution value
-      WoW[j] = Ref_State_BC_West;
-      break;
+      case BC_FARFIELD :
+	// Reference data represents the solution value
+	WoW[j] = Ref_State_BC_West;
+	break;
 
-    case BC_FIXED_PRESSURE :
-      // Reference data represents the solution pressure
-      WoW[j].p = Ref_State_BC_West.p;
-      break;
+      case BC_FIXED_PRESSURE :
+	// Reference data represents the solution pressure
+	WoW[j].p = Ref_State_BC_West.p;
+	break;
 
-    case BC_EXACT_SOLUTION :
-      // Use the exact solution to set up the reference states for this boundary type
-      if (ExactSoln->IsExactSolutionSet()){
-	PointOfInterest = Grid.xfaceW(ICl,j);
-	WoW[j] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
-      } else {
-	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      case BC_EXACT_SOLUTION :
+	// Use the exact solution to set up the reference states for this boundary type
+	if (ExactSoln->IsExactSolutionSet()){
+	  PointOfInterest = Grid.xfaceW(ICl,j);
+	  WoW[j] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	} else {
+	  throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	}
+	break;
+
+      default:
+	// Leave the values unchanged
+	// WoW[j];
+	break;
       }
-      break;
-
-    default:
-      // Leave the values unchanged
-      // WoW[j];
-      break;
     }
 
     // === Set reference data for WoE ===
-    switch(Grid.BCtypeE[j]) {									   
+    if (SetEast){
+      switch(Grid.BCtypeE[j]) {									   
 
-    case BC_DIRICHLET :
-      // Reference data represents the solution value
-      WoE[j] = Ref_State_BC_East;
-      break;
+      case BC_DIRICHLET :	// Same as BC_FIXED
+	// Reference data represents the solution value
+	WoE[j] = Ref_State_BC_East;
+	break;
 
-    case BC_NEUMANN :
-      // Reference data represents the value of the solution gradient
-      WoE[j] = Ref_State_BC_East;
-      break;
+      case BC_NEUMANN :
+	// Reference data represents the value of the solution gradient
+	WoE[j] = Ref_State_BC_East;
+	break;
 
-    case BC_FARFIELD :
-      // Reference data represents the solution value
-      WoE[j] = Ref_State_BC_East;
-      break;
+      case BC_FARFIELD :
+	// Reference data represents the solution value
+	WoE[j] = Ref_State_BC_East;
+	break;
 
-    case BC_FIXED_PRESSURE :
-      // Reference data represents the solution pressure
-      WoE[j].p = Ref_State_BC_East.p;
-      break;
+      case BC_FIXED_PRESSURE :
+	// Reference data represents the solution pressure
+	WoE[j].p = Ref_State_BC_East.p;
+	break;
 
-    case BC_EXACT_SOLUTION :
-      // Use the exact solution to set up the reference states for this boundary type
-      if (ExactSoln->IsExactSolutionSet()){
-	PointOfInterest = Grid.xfaceE(ICu,j);
-	WoE[j] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
-      } else {
-	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
-      }
-      break;
+      case BC_EXACT_SOLUTION :
+	// Use the exact solution to set up the reference states for this boundary type
+	if (ExactSoln->IsExactSolutionSet()){
+	  PointOfInterest = Grid.xfaceE(ICu,j);
+	  WoE[j] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	} else {
+	  throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	}
+	break;
 
-    default:
-      // Leave the values unchanged
-      // WoE[j];
-      break;
-    } // endswitch
+      default:
+	// Leave the values unchanged
+	// WoE[j];
+	break;
+      } // endswitch
+    }
   } // endfor(j)
 
 
   for (i = ICl-Nghost ; i<= ICu+Nghost ; ++i ) {
     // === Set reference data for WoS ===
-    switch(Grid.BCtypeS[i]) {
+    if (SetSouth){
+      switch(Grid.BCtypeS[i]) {
 
-    case BC_DIRICHLET :
-      // Reference data represents the solution value
-      WoS[i] = Ref_State_BC_South;
-      break;
+      case BC_DIRICHLET :	// Same as BC_FIXED
+	// Reference data represents the solution value
+	WoS[i] = Ref_State_BC_South;
+	break;
 
-    case BC_NEUMANN :
-      // Reference data represents the value of the solution gradient
-      WoS[i] = Ref_State_BC_South;
-      break;
+      case BC_NEUMANN :
+	// Reference data represents the value of the solution gradient
+	WoS[i] = Ref_State_BC_South;
+	break;
 
-    case BC_FARFIELD :
-      // Reference data represents the solution value
-      WoS[i] = Ref_State_BC_South;
-      break;
+      case BC_FARFIELD :
+	// Reference data represents the solution value
+	WoS[i] = Ref_State_BC_South;
+	break;
 
-    case BC_FIXED_PRESSURE :
-      // Reference data represents the solution pressure
-      WoS[i].p = Ref_State_BC_South.p;
-      break;      
+      case BC_FIXED_PRESSURE :
+	// Reference data represents the solution pressure
+	WoS[i].p = Ref_State_BC_South.p;
+	break;      
 
-    case BC_EXACT_SOLUTION :
-      // Use the exact solution to set up the reference states for this boundary type
-      if (ExactSoln->IsExactSolutionSet()){
-	PointOfInterest = Grid.xfaceS(i,JCl);
-	WoS[i] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
-      } else {
-	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      case BC_EXACT_SOLUTION :
+	// Use the exact solution to set up the reference states for this boundary type
+	if (ExactSoln->IsExactSolutionSet()){
+	  PointOfInterest = Grid.xfaceS(i,JCl);
+	  WoS[i] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	} else {
+	  throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	}
+	break;
+
+      default:
+	// Leave the values unchanged
+	// WoS[i];
+	break;
       }
-      break;
-
-    default:
-      // Leave the values unchanged
-      // WoS[i];
-      break;
     }
 
     // === Set reference data for WoN ===
-    switch(Grid.BCtypeN[i]) {
+    if (SetNorth){
+      switch(Grid.BCtypeN[i]) {
 
-    case BC_DIRICHLET :
-      // Reference data represents the solution value
-      WoN[i] = Ref_State_BC_North;
-      break;
+      case BC_DIRICHLET :	// Same as BC_FIXED
+	// Reference data represents the solution value
+	WoN[i] = Ref_State_BC_North;
+	break;
 
-    case BC_NEUMANN :
-      // Reference data represents the value of the solution gradient
-      WoN[i] = Ref_State_BC_North;
-      break;
+      case BC_NEUMANN :
+	// Reference data represents the value of the solution gradient
+	WoN[i] = Ref_State_BC_North;
+	break;
 
-    case BC_FARFIELD :
-      // Reference data represents the solution value
-      WoN[i] = Ref_State_BC_North;
-      break;
+      case BC_FARFIELD :
+	// Reference data represents the solution value
+	WoN[i] = Ref_State_BC_North;
+	break;
 
-    case BC_FIXED_PRESSURE :
-      // Reference data represents the solution pressure
-      WoN[i].p = Ref_State_BC_North.p;
-      break;
+      case BC_FIXED_PRESSURE :
+	// Reference data represents the solution pressure
+	WoN[i].p = Ref_State_BC_North.p;
+	break;
 
-    case BC_EXACT_SOLUTION :
-      // Use the exact solution to set up the reference states for this boundary type
-      if (ExactSoln->IsExactSolutionSet()){
-	PointOfInterest = Grid.xfaceN(i,JCu);
-	WoN[i] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
-      } else {
-	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no exact solution set for the Exact_Solution BC.");
-      }
-      break;
+      case BC_EXACT_SOLUTION :
+	// Use the exact solution to set up the reference states for this boundary type
+	if (ExactSoln->IsExactSolutionSet()){
+	  PointOfInterest = Grid.xfaceN(i,JCu);
+	  WoN[i] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	} else {
+	  throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no exact solution set for the Exact_Solution BC.");
+	}
+	break;
 
-    default:
-      // Leave the values unchanged
-      // WoN[i];
-      break;
-    } // endswitch
+      default:
+	// Leave the values unchanged
+	// WoN[i];
+	break;
+      } // endswitch
+    }
   } // enfor(i)
 
 }
@@ -1210,7 +1235,7 @@ int NavierStokes2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
   double omega;
   Vector2D dX;
   NavierStokes2D_pState Wl, Wr;
-  NavierStokes2D_cState Flux;
+  NavierStokes2D_cState Flux(0.0);
 
   NavierStokes2D_pState Wu, Wd, dWdxl, dWdyl, dWdxr, dWdyr;
   Vector2D Xl, Xr, Xu, Xd;

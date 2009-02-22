@@ -205,6 +205,8 @@ public:
   char BC_East_Type[INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D];
   char BC_West_Type[INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D];
   int BC_North, BC_South, BC_East, BC_West;
+  int BC_North_Ref_State_Specified, BC_South_Ref_State_Specified,
+    BC_East_Ref_State_Specified, BC_West_Ref_State_Specified;
   //! Reference states for north and south boundary conditons
   NavierStokes2D_pState Ref_State_BC_North, Ref_State_BC_South;
   //! Reference states for east and west boundary conditons
@@ -830,22 +832,22 @@ inline ostream &operator << (ostream &out_file,
     
     // North
     out_file << "\n     -> BC_North = " << IP.BC_North_Type;
-    if (IP.OutputBoundaryReferenceState(IP.BC_North)){
+    if (IP.OutputBoundaryReferenceState(IP.BC_North) || IP.BC_North_Ref_State_Specified){
       out_file << "\n     -> Ref_State = " << IP.Ref_State_BC_North;
     }
     // South
     out_file << "\n     -> BC_South = " << IP.BC_South_Type;
-    if (IP.OutputBoundaryReferenceState(IP.BC_South)){
+    if (IP.OutputBoundaryReferenceState(IP.BC_South) || IP.BC_South_Ref_State_Specified){
       out_file << "\n     -> Ref_State = " << IP.Ref_State_BC_South;
     }
     // East
     out_file << "\n     -> BC_East  = " << IP.BC_East_Type;
-    if (IP.OutputBoundaryReferenceState(IP.BC_East)){
+    if (IP.OutputBoundaryReferenceState(IP.BC_East) || IP.BC_East_Ref_State_Specified){
       out_file << "\n     -> Ref_State = " << IP.Ref_State_BC_East;
     }
     // West
     out_file << "\n     -> BC_West  = " << IP.BC_West_Type;
-    if (IP.OutputBoundaryReferenceState(IP.BC_West)){
+    if (IP.OutputBoundaryReferenceState(IP.BC_West) || IP.BC_West_Ref_State_Specified){
       out_file << "\n     -> Ref_State = " << IP.Ref_State_BC_West;
     }
   }

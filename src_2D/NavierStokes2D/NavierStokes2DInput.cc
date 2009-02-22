@@ -507,6 +507,10 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   string_ptr = "OFF";
   strcpy(IP.Boundary_Conditions_Specified,string_ptr);
   IP.BCs_Specified = OFF;
+  IP.BC_North_Ref_State_Specified = OFF;
+  IP.BC_South_Ref_State_Specified = OFF;
+  IP.BC_East_Ref_State_Specified = OFF;
+  IP.BC_West_Ref_State_Specified = OFF;
   string_ptr = "None";
   strcpy(IP.BC_North_Type,string_ptr);
   strcpy(IP.BC_South_Type,string_ptr);
@@ -1075,6 +1079,18 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
 			1,
 			MPI::INT,0);
   MPI::COMM_WORLD.Bcast(&(IP.BC_West),
+			1,
+			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.BC_North_Ref_State_Specified),
+			1,
+			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.BC_South_Ref_State_Specified),
+			1,
+			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.BC_East_Ref_State_Specified),
+			1,
+			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.BC_West_Ref_State_Specified),
 			1,
 			MPI::INT,0);
   MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_North.rho),
@@ -3813,6 +3829,8 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     IP.Input_File >> IP.Ref_State_BC_North;
     IP.Input_File.setf(ios::skipws);
     IP.Input_File.getline(buffer, sizeof(buffer));
+    // North reference state has been specified
+    IP.BC_North_Ref_State_Specified = ON;
     
   } else if (strcmp(IP.Next_Control_Parameter,"BC_South") == 0) {
     i_command = 502;
@@ -3874,6 +3892,8 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     IP.Input_File >> IP.Ref_State_BC_South;
     IP.Input_File.setf(ios::skipws);
     IP.Input_File.getline(buffer, sizeof(buffer));
+    // South reference state has been specified
+    IP.BC_South_Ref_State_Specified = ON;
     
   } else if (strcmp(IP.Next_Control_Parameter,"BC_East") == 0) {
     i_command = 503;
@@ -3935,6 +3955,8 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     IP.Input_File >> IP.Ref_State_BC_East;
     IP.Input_File.setf(ios::skipws);
     IP.Input_File.getline(buffer, sizeof(buffer));
+    // East reference state has been specified
+    IP.BC_East_Ref_State_Specified = ON;
 
   } else if (strcmp(IP.Next_Control_Parameter,"BC_West") == 0) {
     i_command = 504;
@@ -3996,6 +4018,8 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     IP.Input_File >> IP.Ref_State_BC_West;
     IP.Input_File.setf(ios::skipws);
     IP.Input_File.getline(buffer, sizeof(buffer));
+    // West reference state has been specified
+    IP.BC_West_Ref_State_Specified = ON;
 
   } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_Normalization") == 0) {
     i_command = 0;

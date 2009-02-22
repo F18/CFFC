@@ -421,7 +421,10 @@ public:
 						const NavierStokes2D_pState & Ref_East,
 						const NavierStokes2D_pState & Ref_West);
   //! Set boundary reference states
-  void Set_Boundary_Reference_States(void);
+  void Set_Boundary_Reference_States(const bool &SetNorth,
+				     const bool &SetSouth,
+				     const bool &SetEast,
+				     const bool &SetWest);
   //! Set boundary reference states to default
   void Set_Default_Boundary_Reference_States(void);
   //! Set boundary reference states based on user's input data
