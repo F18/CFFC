@@ -1510,7 +1510,7 @@ int NavierStokes2D_Quad_Block::dUdt_Residual_HighOrder(const NavierStokes2D_Inpu
 
   Vector2D *GaussQuadPoints = new Vector2D [NumGQP]; // the GQPs at which a Riemann-like problem is solved
   double * GaussQuadWeights = new double [NumGQP];   // the Gauss integration weights for each Gauss quadrature
-  int _dummy_flag(0);				     // defined only for convenience. It doesn't get used in the routine
+  int _dummy_flag(OFF);				     // defined only for convenience. It doesn't get used in the routine
 
   /* Set the GaussQuadWeights. */
   GaussQuadratureData::getGaussQuadWeights(GaussQuadWeights, NumGQP);
@@ -4480,7 +4480,7 @@ void NavierStokes2D_Quad_Block::InviscidFluxStates_AtBoundaryInterface_HighOrder
 
   case BC_CONSTANT_EXTRAPOLATION :
     // Set Wr equal to the left side value (i.e Wl)
-    Wr = Wl;
+    Wr = HighOrderVariable(Pos).SolutionStateAtLocation(iGhost,jGhost,CalculationPoint);
     break;
 
   case BC_INFLOW_SUBSONIC:
@@ -5183,7 +5183,7 @@ void NavierStokes2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder(
 
   case BC_CONSTANT_EXTRAPOLATION:
     // Use the interior reconstruction to set the state value
-    W_face = Wl;
+    W_face = 0.5*(Wl + Wr);
 
     // Average the right and left gradients to determine the interface gradient
     dWdx_face = 0.5*(dWdxL + dWdxR);

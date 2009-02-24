@@ -1647,7 +1647,7 @@ int NavierStokes2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	    case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 	    case VISCOUS_RECONSTRUCTION_HYBRID :
 	      Xu = Grid.xfaceE(i,j); Wu = HALF*(Wl + Wr);
-	      dWdxl = dWdx[i][j]; dWdxr = dWdy[i+1][j];
+	      dWdxl = dWdx[i][j]; dWdxr = dWdx[i+1][j];
 	      dWdyl = dWdy[i][j]; dWdyr = dWdy[i+1][j];
 	      break;
 	    };
@@ -2031,7 +2031,7 @@ int NavierStokes2D_Quad_Block::dUdt_Multistage_Explicit(const int &i_stage,
 	  case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
 	  case VISCOUS_RECONSTRUCTION_HYBRID :
 	    Xu = Grid.xfaceN(i,j); Wu = HALF*(Wl + Wr);
-	    dWdxl = dWdx[i][j]; dWdxr = dWdy[i][j+1];
+	    dWdxl = dWdx[i][j]; dWdxr = dWdx[i][j+1];
 	    dWdyl = dWdy[i][j]; dWdyr = dWdy[i][j+1];
 	    break;
 	  };
