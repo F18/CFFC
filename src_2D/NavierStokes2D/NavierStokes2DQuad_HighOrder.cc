@@ -4551,6 +4551,7 @@ void NavierStokes2D_Quad_Block::BCs_HighOrder(void){
   // == If no high-order BCs are present just return
   if ( BC_WestCell() == NULL && BC_EastCell() == NULL && 
        BC_SouthCell() == NULL && BC_NorthCell() == NULL ){
+    delete [] GaussQuadPoints;
     return;
   }
 
