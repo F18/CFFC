@@ -80,7 +80,109 @@ namespace tut
   void MHD2D_object::test<1>()
   {
 
-    set_test_name("Name of the test");
+    set_test_name("State constructors for pState");
+
+    double d, vx, vy, p, B0x, B0y, B1x, B1y;
+
+    // Initialize variables
+    d = 1.224;
+    vx = -1.23;
+    vy = 101.3434;
+    p = -1.2323e5;
+    B0x = 10.23;
+    B0y = 1.2323;
+    B1x = 56454.3434;
+    B1y = 0.00002345;
+
+    Vector2D V(vx,vy), B0(B0x,B0y), B1(B1x,B1y);
+
+    // Create states
+    MHD2D_pState W1,
+      W2(d),
+      W3(d, Vector2D(vx, vy), Vector2D(B1x,B1y), p),
+      W4(d, Vector2D(vx, vy), Vector2D(B1x,B1y), Vector2D(B0x,B0y), p),
+      W5(d, vx, vy, B1x, B1y, p),
+      W6(d, vx, vy, B1x, B1y, B0x, B0y, p);
+
+    // == Check correct setup
+
+    // = Default constructor =
+    ensure_equals("Default constructor density", W1.d(), 1.0);
+    ensure_equals("Default constructor velocity", W1.V(), Vector2D(0));
+    ensure_equals("Default constructor velocity x", W1.vx(), 0.0);
+    ensure_equals("Default constructor velocity y", W1.vy(), 0.0);
+    ensure_equals("Default constructor pressure", W1.p(), 1.0);
+    ensure_equals("Default constructor perturbative field", W1.B1(), Vector2D(0.0));
+    ensure_equals("Default constructor perturbative field x", W1.B1x(), 0.0);
+    ensure_equals("Default constructor perturbative field y", W1.B1y(), 0.0);
+    ensure_equals("Default constructor intrinsic field", W1.B0(), Vector2D(0.0));
+    ensure_equals("Default constructor intrinsic field x", W1.B0x(), 0.0);
+    ensure_equals("Default constructor intrinsic field y", W1.B0y(), 0.0);
+
+    // = Value constructor =
+    ensure_equals("Value constructor density", W2.d(), d);
+    ensure_equals("Value constructor velocity", W2.V(), d);
+    ensure_equals("Value constructor velocity x", W2.vx(), d);
+    ensure_equals("Value constructor velocity y", W2.vy(), d);
+    ensure_equals("Value constructor pressure", W2.p(), d);
+    ensure_equals("Value constructor perturbative field", W2.B1(), d);
+    ensure_equals("Value constructor perturbative field x", W2.B1x(), d);
+    ensure_equals("Value constructor perturbative field y", W2.B1y(), d);
+    ensure_equals("Value constructor intrinsic field", W2.B0(), d);
+    ensure_equals("Value constructor intrinsic field x", W2.B0x(), d);
+    ensure_equals("Value constructor intrinsic field y", W2.B0y(), d);
+
+    // = Constructor with density, velocity, pressure and perturbative magnetic field set =
+    ensure_equals("W3 set constructor density", W3.d(), d);
+    ensure_equals("W3 set constructor velocity", W3.V(), V);
+    ensure_equals("W3 set constructor velocity x", W3.vx(), vx);
+    ensure_equals("W3 set constructor velocity y", W3.vy(), vy);
+    ensure_equals("W3 set constructor pressure", W3.p(), p);
+    ensure_equals("W3 set constructor perturbative field", W3.B1(), B1);
+    ensure_equals("W3 set constructor perturbative field x", W3.B1x(), B1x);
+    ensure_equals("W3 set constructor perturbative field y", W3.B1y(), B1y);
+    ensure_equals("W3 set constructor intrinsic field", W3.B0(), Vector2D(0));
+    ensure_equals("W3 set constructor intrinsic field x", W3.B0x(), 0.0);
+    ensure_equals("W3 set constructor intrinsic field y", W3.B0y(), 0.0);
+
+    // = Constructor with density, velocity, pressure, perturbative and intrinsic magnetic field set =
+    ensure_equals("W4 set constructor density", W4.d(), d);
+    ensure_equals("W4 set constructor velocity", W4.V(), V);
+    ensure_equals("W4 set constructor velocity x", W4.vx(), vx);
+    ensure_equals("W4 set constructor velocity y", W4.vy(), vy);
+    ensure_equals("W4 set constructor pressure", W4.p(), p);
+    ensure_equals("W4 set constructor perturbative field", W4.B1(), B1);
+    ensure_equals("W4 set constructor perturbative field x", W4.B1x(), B1x);
+    ensure_equals("W4 set constructor perturbative field y", W4.B1y(), B1y);
+    ensure_equals("W4 set constructor intrinsic field", W4.B0(), B0);
+    ensure_equals("W4 set constructor intrinsic field x", W4.B0x(), B0x);
+    ensure_equals("W4 set constructor intrinsic field y", W4.B0y(), B0y);
+
+    // = Constructor with all components set and zero intrinsic magnetic field
+    ensure_equals("W5 set constructor density", W5.d(), d);
+    ensure_equals("W5 set constructor velocity", W5.V(), V);
+    ensure_equals("W5 set constructor velocity x", W5.vx(), vx);
+    ensure_equals("W5 set constructor velocity y", W5.vy(), vy);
+    ensure_equals("W5 set constructor pressure", W5.p(), p);
+    ensure_equals("W5 set constructor perturbative field", W5.B1(), B1);
+    ensure_equals("W5 set constructor perturbative field x", W5.B1x(), B1x);
+    ensure_equals("W5 set constructor perturbative field y", W5.B1y(), B1y);
+    ensure_equals("W5 set constructor intrinsic field", W5.B0(), Vector2D(0));
+    ensure_equals("W5 set constructor intrinsic field x", W5.B0x(), 0.0);
+    ensure_equals("W5 set constructor intrinsic field y", W5.B0y(), 0.0);
+
+    // = Constructor with all components set =
+    ensure_equals("All components set constructor density", W6.d(), d);
+    ensure_equals("All components set constructor velocity", W6.V(), V);
+    ensure_equals("All components set constructor velocity x", W6.vx(), vx);
+    ensure_equals("All components set constructor velocity y", W6.vy(), vy);
+    ensure_equals("All components set constructor pressure", W6.p(), p);
+    ensure_equals("All components set constructor perturbative field", W6.B1(), B1);
+    ensure_equals("All components set constructor perturbative field x", W6.B1x(), B1x);
+    ensure_equals("All components set constructor perturbative field y", W6.B1y(), B1y);
+    ensure_equals("All components set constructor intrinsic field", W6.B0(), B0);
+    ensure_equals("All components set constructor intrinsic field x", W6.B0x(), B0x);
+    ensure_equals("All components set constructor intrinsic field y", W6.B0y(), B0y);
 
   }
 
