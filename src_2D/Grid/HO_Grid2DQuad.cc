@@ -6716,7 +6716,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, c
 			BndEastSplineInfo[CellIndex].YCentroidContribution() )) /Cell[ICu][CellIndex].A; 
 
     default:
-      return 0.0;
+      return Vector2D(0.0);
     } // endswitch
 
   } else {
@@ -6973,7 +6973,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, c
 							      Vector2D(0.0,0.0),15,0,1) )) /Cell[ICu][CellIndex].A; 
 
     default:
-      return 0.0;
+      return Vector2D(0.0);
     } // endswitch
 
   }// endif
@@ -7502,7 +7502,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &Ce
 			ExtendNorth_BndEastSplineInfo[0].YCentroidContribution() )) /Cell[ICu][JCu+1].A;
 
     default:
-      return 0.0;
+      return Vector2D(0.0);
     } // endswitch
 
   } else {
@@ -8108,7 +8108,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &Ce
 									  Vector2D(0.0,0.0),15,0,1) )) /Cell[ICu][JCu+1].A;
 
     default:
-      return 0.0;
+      return Vector2D(0.0);
     } // endswitch
 
   }// endif

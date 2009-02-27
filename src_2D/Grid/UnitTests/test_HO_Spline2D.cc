@@ -182,7 +182,7 @@ namespace tut
     S.allocate(3,SPLINE2D_POINT_SHARP_CORNER);
 
     // try to give values
-    S.Xp[2] = 2.0;
+    S.Xp[2] = Vector2D(2.0);
     S.sp[1] = 1.0;
     S.bc[0] = 3;
 
@@ -212,7 +212,7 @@ namespace tut
     S.allocate(3,SPLINE2D_POINT_SHARP_CORNER);
 
     // try to give values
-    S.Xp[2] = 2.0;
+    S.Xp[2] = Vector2D(2.0);
     S.sp[1] = 1.0;
     S.bc[0] = 3;
 
@@ -440,7 +440,7 @@ namespace tut
     Spline2D_HO Copy(S);
 
     // modify Copy
-    Copy.Xp[9] = 0.000123;
+    Copy.Xp[9] = Vector2D(0.000123);
     ensure_equals("1) Xp", Copy == S, false);
 
     Copy = S;
@@ -480,7 +480,7 @@ namespace tut
     Spline2D_HO Copy(S);
 
     // modify
-    Copy.Xp[1] = 1.23e5;
+    Copy.Xp[1] = Vector2D(1.23e5);
     Copy.Xp[1] = S.Xp[1];
     // check
     ensure_equals("Direct copy", Copy == S, true);
@@ -510,7 +510,7 @@ namespace tut
     Spline2D_HO Copy(S);
 
     // modify Copy
-    Copy.Xp[9] = 0.000123;
+    Copy.Xp[9] = Vector2D(0.000123);
     ensure_equals("1) Xp", Copy != S, true);
 
     Copy = S;

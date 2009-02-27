@@ -1326,13 +1326,13 @@ inline void Grid2D_Quad_Block_HO::TranslateVertexesIntoLocalCoordinateSystem(Vec
   // Check if translation to local coordinate system is required
   if (Minimize_Error_Calculation_Of_Geometric_Properties){
     // save the current node locations 
-   _SW_ = SW;
-   _SE_ = SE;
-   _NE_ = NE;
-   _NW_ = NW;
-
+    _SW_ = SW;
+    _SE_ = SE;
+    _NE_ = NE;
+    _NW_ = NW;
+    
     // translate the vertexes into a local reference system with the origin in SW.
-    SW = 0.0;
+    SW = Vector2D(0.0);
     SE -= _SW_;
     NE -= _SW_;
     NW -= _SW_;

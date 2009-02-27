@@ -1393,7 +1393,7 @@ void HighOrder2D<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder
   }/* endfor */
 
   // Set the reconstruction helper variables
-  DeltaCellCenters.assign(StencilSize, 0.0); // This variable is overwritten for each cell
+  DeltaCellCenters.assign(StencilSize, Vector2D(0.0)); // This variable is overwritten for each cell
   i_index.assign(StencilSize, 0); // This variable is overwritten for each cell
   j_index.assign(StencilSize, 0); // This variable is overwritten for each cell
   A.newsize(StencilSize - 1, NumberOfTaylorDerivatives() - 1);
