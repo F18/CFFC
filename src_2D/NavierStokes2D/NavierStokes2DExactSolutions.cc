@@ -66,6 +66,9 @@ void NavierStokes2D_ExactSolutions::SetExactSolution(const short &SolutionIndex)
   case NAVIERSTOKES2D_EXACT_SOLUTION_VISCOUS_CHANNEL_FLOW:
     ExactSoln = new Viscous_Channel_Flow_ExactSolution_NS;
     break;    
+  case NAVIERSTOKES2D_EXACT_SOLUTION_LAMINAR_FLAT_PLATE:
+    ExactSoln = new Laminar_Flat_Plate_ExactSolution_NS;
+    break;    
   default:
     throw runtime_error("NavierStokes2D_ExactSolutions::SetExactSolution() ERROR! Unknown exact solution type index.");
   }
@@ -104,6 +107,8 @@ void NavierStokes2D_ExactSolutions::Parse_Next_Input_Control_Parameter(NavierSto
       SetExactSolution(NAVIERSTOKES2D_EXACT_SOLUTION_UNITTEST_FUNCTION);
     } else if ( strcmp(IP.Next_Control_Parameter, "Viscous_Channel_Flow") == 0 ){
       SetExactSolution(NAVIERSTOKES2D_EXACT_SOLUTION_VISCOUS_CHANNEL_FLOW);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Laminar_Flat_Plate") == 0 ){
+      SetExactSolution(NAVIERSTOKES2D_EXACT_SOLUTION_LAMINAR_FLAT_PLATE);
     } else {
       i_command = INVALID_INPUT_CODE;
       return;

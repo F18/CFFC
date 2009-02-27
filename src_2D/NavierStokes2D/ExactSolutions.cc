@@ -499,10 +499,8 @@ void Viscous_Channel_Flow_ExactSolution_NS::Broadcast(void){
 }
 
 /*!
- * Broadcast the Viscous_Channel_Flow_ExactSolution_NS variables to all      
- * processors associated with the specified communicator
- * from the specified processor using the MPI broadcast 
- * routine.
+ * Set particular solution parameters based on
+ * the input parameters.
  */
 void Viscous_Channel_Flow_ExactSolution_NS::
 Set_ParticularSolution_Parameters(const NavierStokes2D_Input_Parameters & IP){
@@ -531,4 +529,80 @@ Set_ParticularSolution_Parameters(const NavierStokes2D_Input_Parameters & IP){
   }
   Vwall = IP.Vwall;
   
+}
+
+
+/************************************************
+ * Laminar_Flat_Plate_ExactSolution_NS Members  *
+ ***********************************************/
+
+/*! 
+ * Parse next input control parameter
+ */
+void Laminar_Flat_Plate_ExactSolution_NS::Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters & IP,
+									     int & i_command){
+
+  // Call the parser from the base class
+  ExactSolutionBasicType_NavierStokes2D::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  // Check if the next control parameter has already been identified
+  if (i_command != INVALID_INPUT_CODE){
+    return;
+  }
+  
+  char buffer[256];
+
+}
+
+/*! 
+ * Print relevant parameters
+ */
+void Laminar_Flat_Plate_ExactSolution_NS::Print_Info(std::ostream & out_file){
+
+  out_file << "\n     -> Plate length : " << plate_length
+	   << "\n     -> Reference Density : " << Winf.rho
+	   << "\n     -> Reference Pressure : " << Winf.p;
+
+  // call the base Print_Info
+  ExactSolutionBasicType_NavierStokes2D::Print_Info(out_file);
+
+}
+
+/*!
+ * Broadcast the Viscous_Channel_Flow_ExactSolution_NS variables to all      
+ * processors associated with the specified communicator
+ * from the specified processor using the MPI broadcast 
+ * routine.
+ */
+void Laminar_Flat_Plate_ExactSolution_NS::Broadcast(void){
+#ifdef _MPI_VERSION
+
+  MPI::COMM_WORLD.Bcast(&Winf.rho,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&Winf.v.x,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&Winf.v.y,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&Winf.p,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&plate_length,
+			1, 
+			MPI::DOUBLE, 0);
+  
+#endif
+}
+
+/*!
+ * Set particular solution parameters based on
+ * the input parameters.
+ */
+void Laminar_Flat_Plate_ExactSolution_NS::
+Set_ParticularSolution_Parameters(const NavierStokes2D_Input_Parameters & IP){
+
+  Winf = IP.Wo;
+  plate_length = IP.Plate_Length;
 }

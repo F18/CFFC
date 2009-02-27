@@ -38,6 +38,7 @@ using std::tanh;
 #define NAVIERSTOKES2D_EXACT_SOLUTION_COSSIN_FUNCTION 2
 #define NAVIERSTOKES2D_EXACT_SOLUTION_UNITTEST_FUNCTION 3
 #define NAVIERSTOKES2D_EXACT_SOLUTION_VISCOUS_CHANNEL_FLOW 4
+#define NAVIERSTOKES2D_EXACT_SOLUTION_LAMINAR_FLAT_PLATE 5
 
 
 // Declare the input parameters class
@@ -422,6 +423,59 @@ inline NavierStokes2D_pState Viscous_Channel_Flow_ExactSolution_NS::EvaluateSolu
 			    DeltaPressure,
 			    LengthDomain,
 			    HeightDomain);
+}
+
+
+/*! 
+ * \class Laminar_Flat_Plate_ExactSolution_NS
+ * 
+ * \brief Implements the Blasius solution for a laminar flat (adiabatic) plate.
+ *        This is a solution to the boundary-layer equations! (see Schlichting pp. 156)
+ *        
+ */
+class Laminar_Flat_Plate_ExactSolution_NS: public ExactSolutionBasicType_NavierStokes2D{
+public:
+
+  //! Basic Constructor
+  Laminar_Flat_Plate_ExactSolution_NS(void);
+
+  //! Return exact solution
+  NavierStokes2D_pState EvaluateSolutionAt(const double &x, const double &y);
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+  //! Set the reference state, the pressure difference, the channel dimensions and the wall velocity
+  void Set_ParticularSolution_Parameters(const NavierStokes2D_Input_Parameters & IP);
+
+private:
+
+  NavierStokes2D_pState Winf;	//! Reference state that defines density and pressure at inflow
+  double plate_length;	        //! The length of the flat plate
+  
+  // Local variables
+  double eta, f, fp, fpp;
+
+};
+
+// Basic Constructor
+inline Laminar_Flat_Plate_ExactSolution_NS::Laminar_Flat_Plate_ExactSolution_NS(void) {
+  // Name the exact solution
+  ExactSolutionName = "Laminar Flat Plate";	
+}
+
+//! Return exact solution.
+inline NavierStokes2D_pState Laminar_Flat_Plate_ExactSolution_NS::EvaluateSolutionAt(const double &x, const double &y) {
+  return FlatPlate(Winf,
+		   Vector2D(x,y),
+		   plate_length,
+		   eta, f, fp, fpp);
 }
 
 #endif
