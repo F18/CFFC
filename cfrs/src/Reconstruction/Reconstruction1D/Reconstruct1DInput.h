@@ -58,6 +58,8 @@ class Reconstruct1D_Input_Parameters{
   bool geom_weighting;
   char Data_Dependent_Weighting[INPUT_PARAMETER_LENGTH_RECONSTRUCT1D];
   bool data_depend_weighting;
+  char Pseudo_Inverse[INPUT_PARAMETER_LENGTH_RECONSTRUCT1D];
+  bool pseudo_inverse;
   char Use_Residual_DI[INPUT_PARAMETER_LENGTH_RECONSTRUCT1D];
   bool use_residual_DI;
   double CutoffKnobHighOrderReconstruction;
