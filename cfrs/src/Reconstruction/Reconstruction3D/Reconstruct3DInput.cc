@@ -44,6 +44,8 @@ ostream &operator << (ostream &out_file,
       break;
     } /* endswitch */
 
+    out_file << "\n  -> Pseudo Inverse: "
+	     << IP.Pseudo_Inverse;
     out_file << "\n  -> Reconstruction Order: "
 	     << IP.Reconstruction_Order;
     out_file << "\n  -> Input File Name: " 
@@ -239,6 +241,8 @@ void Set_Default_Input_Parameters(Reconstruct3D_Input_Parameters &IP) {
     IP.geom_weighting = OFF;
     strcpy(IP.Data_Dependent_Weighting, "No");
     IP.data_depend_weighting = OFF;
+    strcpy(IP.Pseudo_Inverse, "No");
+    IP.pseudo_inverse = OFF;
 
     strcpy(IP.Limiter_Type, "Barth-Jespersen");
     IP.i_Limiter = LIMITER_BARTH_JESPERSEN;
@@ -779,8 +783,19 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
        else if ((strcmp(IP.Data_Dependent_Weighting, "Yes") == 0) &&
 		(IP.geom_weighting))
 	 IP.data_depend_weighting = ON;
-     
       
+    } else if (strcmp(IP.Next_Control_Parameter, "Pseudo_Inverse") == 0){
+      i_command = 36;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.Pseudo_Inverse, 
+	     IP.Next_Control_Parameter);
+
+      // Add the parse word for the new function //
+       if (strcmp(IP.Pseudo_Inverse, "Yes") == 0)
+	 IP.pseudo_inverse = ON;
+       else if (strcmp(IP.Pseudo_Inverse, "No") == 0)
+	 IP.pseudo_inverse = OFF;
+       
     } else if (strcmp(IP.Next_Control_Parameter, "Output_Format_Type") == 0) {
       i_command = 36;
       Get_Next_Input_Control_Parameter(IP);
@@ -1146,74 +1161,3 @@ int Process_Input_Control_Parameter_File(Reconstruct3D_Input_Parameters
 
     return (error_flag);
 }
-
-
-/* ********** 2D Grid Types ******************************
-
-//   else if (strcmp(IP.Grid_Type, "Square") == 0) {
-//   IP.i_Grid = GRID_SQUARE;
-//   IP.Box_Width = ONE;
-//   IP.Box_Height = ONE;
-//   } else if (strcmp(IP.Grid_Type, "Rectangular_Box") == 0) {
-//   IP.i_Grid = GRID_RECTANGULAR_BOX;
-//   IP.Box_Width = ONE;
-//   IP.Box_Height = ONE;
-//   } else if (strcmp(IP.Grid_Type, "Flat_Plate") == 0) {
-//   IP.i_Grid = GRID_FLAT_PLATE;
-//   IP.Plate_Length = ONE;
-//   } else if (strcmp(IP.Grid_Type, "Pipe") == 0) {
-//   IP.i_Grid = GRID_PIPE;
-//   IP.Pipe_Length = ONE;
-//   IP.Pipe_Radius = HALF;
-//   } else if (strcmp(IP.Grid_Type, "Blunt_Body") == 0) {
-//   IP.i_Grid = GRID_BLUNT_BODY;
-//   IP.Blunt_Body_Radius = ONE;
-//   IP.Blunt_Body_Mach_Number = TWO;
-//   } else if (strcmp(IP.Grid_Type, "Rocket_Motor") == 0) {
-//   IP.i_Grid = GRID_ROCKET_MOTOR;
-//   IP.Grain_Length = 0.835;
-//   IP.Grain_Radius = 0.020;
-//   IP.Grain_To_Throat_Length = 0.05;
-//   IP.Nozzle_Length = 0.150;
-//   IP.Nozzle_Radius_Exit = 0.030;
-//   IP.Nozzle_Radius_Throat = 0.010;
-//   } else if (strcmp(IP.Grid_Type, "Rocket_Cold_Flow") == 0) {
-//   IP.i_Grid = GRID_ROCKET_MOTOR_COLD_FLOW ;
-//   } else if (strcmp(IP.Grid_Type, "Circular_Cylinder") == 0) {
-//   IP.i_Grid = GRID_CIRCULAR_CYLINDER;
-//   IP.Cylinder_Radius = ONE;
-//   } else if (strcmp(IP.Grid_Type, "Ellipse") == 0) {
-//   IP.i_Grid = GRID_ELLIPSE;
-//   IP.Ellipse_Length_X_Axis = TWO;
-//   IP.Ellipse_Length_Y_Axis = HALF;
-//   } else if (strcmp(IP.Grid_Type, "NACA_Aerofoil") == 0) {
-//   IP.i_Grid = GRID_NACA_AEROFOIL;
-//   IP.Chord_Length = ONE;
-//   strcpy(IP.NACA_Aerofoil_Type, "0012");
-//   } else if (strcmp(IP.Grid_Type, "Free_Jet") == 0) {
-//   IP.i_Grid = GRID_FREE_JET;
-//   IP.Orifice_Radius = ONE;
-//   } else if (strcmp(IP.Grid_Type, "Wedge") == 0) {
-//   IP.i_Grid = GRID_WEDGE;
-//   IP.Wedge_Angle = 25.0;
-//   IP.Wedge_Length = HALF;
-//   } else if (strcmp(IP.Grid_Type, "Unsteady_Blunt_Body") == 0) {
-//   IP.i_Grid = GRID_UNSTEADY_BLUNT_BODY;
-//   IP.Blunt_Body_Radius = ONE;
-//   IP.Blunt_Body_Mach_Number = TWO;
-//   } else if (strcmp(IP.Grid_Type,"Ringleb_Flow") == 0) {
-//   IP.i_Grid = GRID_RINGLEB_FLOW;
-//   } else if (strcmp(IP.Grid_Type,"Bump_Channel_Flow") == 0) {
-//   IP.i_Grid = GRID_BUMP_CHANNEL_FLOW;
-//   } else if (strcmp(IP.Grid_Type, "ICEMCFD") == 0) {
-//   IP.i_Grid = GRID_ICEMCFD;
-//   } else if (strcmp(IP.Grid_Type, "Read_From_Definition_File") == 0) {
-//   IP.i_Grid = GRID_READ_FROM_DEFINITION_FILE;
-//   } else if (strcmp(IP.Grid_Type, "Read_From_Data_File") == 0) {
-//   IP.i_Grid = GRID_READ_FROM_GRID_DATA_FILE;
-//   } else {
-//   IP.i_Grid = GRID_SQUARE;
-//   IP.Box_Width = ONE;
-//   IP.Box_Height = ONE;
-//   } 
-   **************** End of 2D Grid Types ************************* */
