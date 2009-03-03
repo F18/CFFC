@@ -1014,7 +1014,7 @@ inline double MHD1D_cState::E(void) {
 }
 
 inline double MHD1D_cState::E(void) const {
-    return (E1 + HALF*B1.sqr() + B0*B1);
+    return (E1 + HALF*B0.sqr() + B0*B1);
 }
 
 /********************************************************

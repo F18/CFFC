@@ -126,25 +126,25 @@ public:
   //! Constructor with the conserved state
   MHD3D_pState(const MHD3D_cState &U);
 
-  //! Constructor with density, velocity, pressure and perturbative magnetic field
+  //! Constructor 2D with density, velocity, pressure and perturbative magnetic field 
   MHD3D_pState(const double &rho, const Vector2D &V_,
 	       const Vector2D &Bm1, const double &pre) : density(rho), velocity(V_), pressure(pre), 
 							 PerturbativeB(Bm1), IntrinsicB(ZERO) { };
 
-  //! Constructor with density, velocity, pressure, perturbative and intrinsic magnetic fields
+  //! Constructor 2D with density, velocity, pressure, perturbative and intrinsic magnetic fields
   MHD3D_pState(const double &rho, const Vector2D &V_,
 	       const Vector2D &Bm1, const Vector2D &Bm0,
 	       const double &pre): density(rho), velocity(V_), pressure(pre),
 				   PerturbativeB(Bm1), IntrinsicB(Bm0) { };
 
-  //! Constructor with all components set and zero intrinsic magnetic field
+  //! Constructor 2D with all components set and zero intrinsic magnetic field
   MHD3D_pState(const double &rho,
 	       const double &vx,  const double &vy,
 	       const double &B1x, const double &B1y,
 	       const double &pre): density(rho), velocity(vx,vy), pressure(pre),
 				   PerturbativeB(B1x,B1y), IntrinsicB(ZERO) { };
 
-  //! Constructor with all components set
+  //! Constructor 2D with all components set
   MHD3D_pState(const double &rho,
 	       const double &vx,  const double &vy,
 	       const double &B1x, const double &B1y,
@@ -164,6 +164,8 @@ public:
   const double& vx(void) const {return velocity.x; }	 //!< Return x-direction velocity (read-only)
   double& vy(void) {return velocity.y; }		 //!< Return y-direction velocity
   const double& vy(void) const {return velocity.y; }	 //!< Return y-direction velocity (read-only)
+  double& vz(void) {return velocity.z; }		 //!< Return z-direction velocity
+  const double& vz(void) const {return velocity.z; }	 //!< Return z-direction velocity (read-only)
 
   double& p(void) {return pressure; }                    //!< Return pressure
   const double& p(void) const {return pressure; }        //!< Return pressure (read-only)
@@ -174,6 +176,8 @@ public:
   const double& B1x(void) const {return PerturbativeB.x;}//!< Return x-direction perturbative magnetic field (read-only)
   double& B1y(void) {return PerturbativeB.y; }		 //!< Return y-direction perturbative magnetic field
   const double& B1y(void) const {return PerturbativeB.y;}//!< Return y-direction perturbative magnetic field (read-only)
+  double& B1z(void) {return PerturbativeB.z; }		 //!< Return z-direction perturbative magnetic field
+  const double& B1z(void) const {return PerturbativeB.z;}//!< Return z-direction perturbative magnetic field (read-only)
 
   Vector3D& B0(void) {return IntrinsicB; }		 //!< Return intrinsic magnetic field
   const Vector3D& B0(void) const {return IntrinsicB; }	 //!< Return intrinsic magnetic field (read-only)
@@ -181,6 +185,8 @@ public:
   const double& B0x(void) const {return IntrinsicB.x;}   //!< Return x-direction intrinsic magnetic field (read-only)
   double& B0y(void) {return IntrinsicB.y; }		 //!< Return y-direction intrinsic magnetic field
   const double& B0y(void) const {return IntrinsicB.y;}   //!< Return y-direction intrinsic magnetic field (read-only)
+  double& B0z(void) {return IntrinsicB.z; }		 //!< Return z-direction intrinsic magnetic field
+  const double& B0z(void) const {return IntrinsicB.z;}   //!< Return z-direction intrinsic magnetic field (read-only)
   //@}
 
   //! Set gas constants.
@@ -245,14 +251,18 @@ public:
     case 3 :
       return velocity.y;
     case 4 :
-      return PerturbativeB.x;
+      return velocity.z;
     case 5 :
-      return PerturbativeB.y;
+      return PerturbativeB.x;
     case 6 :
+      return PerturbativeB.y;
+    case 7 :
+      return PerturbativeB.z;
+    case 8 :
       return pressure;
     default:
       return density;
-    };
+    }
   }
     
   //! Read-only index operator
@@ -266,14 +276,18 @@ public:
     case 3 :
       return velocity.y;
     case 4 :
-      return PerturbativeB.x;
+      return velocity.z;
     case 5 :
-      return PerturbativeB.y;
+      return PerturbativeB.x;
     case 6 :
+      return PerturbativeB.y;
+    case 7 :
+      return PerturbativeB.z;
+    case 8 :
       return pressure;
     default:
       return density;
-    };
+    }
   }
 
 private:
@@ -520,14 +534,14 @@ public:
   //! Constructor with the primitive state
   MHD3D_cState(const MHD3D_pState &W);
 
-  //! Constructor with density, momentum, perturbative magnetic field and total perturbative energy
+  //! Constructor 2D with density, momentum, perturbative magnetic field and total perturbative energy
   MHD3D_cState(const double &rho,
 	       const Vector2D &rhoV,
 	       const Vector2D &Bm1,
 	       const double &Etotal): density(rho), momentum(rhoV),
 				      PerturbativeB(Bm1), IntrinsicB(ZERO), PerturbativeEnergy(Etotal){ };
 
-  //! Constructor with density, momentum, perturbative and intrinsic magnetic fields, total perturbative energy
+  //! Constructor 2D with density, momentum, perturbative and intrinsic magnetic fields, total perturbative energy
   MHD3D_cState(const double &rho,
 	       const Vector2D &rhoV,
 	       const Vector2D &Bm1,
@@ -535,7 +549,7 @@ public:
 	       const double &Etotal): density(rho), momentum(rhoV),
 				      PerturbativeB(Bm1), IntrinsicB(Bm0), PerturbativeEnergy(Etotal){ };
 
-  //! Constructor with all components set and zero intrinsic magnetic field
+  //! Constructor 2D with all components set and zero intrinsic magnetic field
   MHD3D_cState(const double &rho,
 	       const double &rhovx,
 	       const double &rhovy,
@@ -544,7 +558,7 @@ public:
 	       const double &Etotal): density(rho), momentum(rhovx,rhovy), 
 				      PerturbativeB(_B1x_,_B1y_), IntrinsicB(ZERO), PerturbativeEnergy(Etotal){ };
 
-  //! Constructor with all components set
+  //! Constructor 2D with all components set
   MHD3D_cState(const double &rho,
 	       const double &rhovx,
 	       const double &rhovy,
@@ -568,6 +582,8 @@ public:
   const double& dvx(void) const {return momentum.x; }	 //!< Return x-direction momentum (read-only)
   double& dvy(void) {return momentum.y; }		 //!< Return y-direction momentum
   const double& dvy(void) const {return momentum.y; }	 //!< Return y-direction momentum (read-only)
+  double& dvz(void) {return momentum.z; }		 //!< Return z-direction momentum
+  const double& dvz(void) const {return momentum.z; }	 //!< Return z-direction momentum (read-only)
   
   Vector3D& B1(void) {return PerturbativeB; }		 //!< Return perturbative magnetic field
   const Vector3D& B1(void) const {return PerturbativeB;} //!< Return perturbative magnetic field (read-only)
@@ -575,6 +591,8 @@ public:
   const double& B1x(void) const {return PerturbativeB.x;}//!< Return x-direction perturbative magnetic field (read-only)
   double& B1y(void) {return PerturbativeB.y; }		 //!< Return y-direction perturbative magnetic field
   const double& B1y(void) const {return PerturbativeB.y;}//!< Return y-direction perturbative magnetic field (read-only)
+  double& B1z(void) {return PerturbativeB.z; }		 //!< Return z-direction perturbative magnetic field
+  const double& B1z(void) const {return PerturbativeB.z;}//!< Return z-direction perturbative magnetic field (read-only)
 
   Vector3D& B0(void) {return IntrinsicB; }		 //!< Return intrinsic magnetic field
   const Vector3D& B0(void) const {return IntrinsicB; }	 //!< Return intrinsic magnetic field (read-only)
@@ -582,6 +600,8 @@ public:
   const double& B0x(void) const {return IntrinsicB.x;}   //!< Return x-direction intrinsic magnetic field (read-only)
   double& B0y(void) {return IntrinsicB.y; }		 //!< Return y-direction intrinsic magnetic field
   const double& B0y(void) const {return IntrinsicB.y;}   //!< Return y-direction intrinsic magnetic field (read-only)
+  double& B0z(void) {return IntrinsicB.z; }		 //!< Return z-direction intrinsic magnetic field
+  const double& B0z(void) const {return IntrinsicB.z;}   //!< Return z-direction intrinsic magnetic field (read-only)
 
   double& E1(void) {return PerturbativeEnergy; }              //!< Return total perturbative energy
   const double& E1(void) const {return PerturbativeEnergy; }  //!< Return total perturbative energy (read-only)
@@ -626,14 +646,18 @@ public:
     case 3 :
       return momentum.y;
     case 4 :
-      return PerturbativeB.x;
+      return momentum.z;
     case 5 :
-      return PerturbativeB.y;
+      return PerturbativeB.x;
     case 6 :
+      return PerturbativeB.y;
+    case 7 :
+      return PerturbativeB.z;
+    case 8 :
       return PerturbativeEnergy;
     default:
       return density;
-    };
+    }
   }
     
   const double &operator[](int index) const {
@@ -646,14 +670,18 @@ public:
     case 3 :
       return momentum.y;
     case 4 :
-      return PerturbativeB.x;
+      return momentum.z;
     case 5 :
-      return PerturbativeB.y;
+      return PerturbativeB.x;
     case 6 :
+      return PerturbativeB.y;
+    case 7 :
+      return PerturbativeB.z;
+    case 8 :
       return PerturbativeEnergy;
     default:
       return density;
-    };
+    }
   }
 
 
@@ -733,10 +761,18 @@ inline Vector3D MHD3D_cState::v(void) const {
 }
 
 /*!
- * Get flow velocity along a given direction
+ * Get flow velocity along a given direction in 2D.
+ * Third coordinate is considered zero.
  */
 inline double MHD3D_cState::v(const Vector2D &n) const {
   return ((dv()*Vector3D(n))/d());
+}
+
+/*!
+ * Get flow velocity along a given direction in 3D
+ */
+inline double MHD3D_cState::v(const Vector3D &n) const {
+  return ((dv()*n)/d());
 }
 
 /*!
@@ -771,7 +807,7 @@ inline double MHD3D_cState::e(void) const {
  * Get total energy.
  */
 inline double MHD3D_cState::E(void) const {
-  return (E1() + HALF*B1().sqr() + B0()*B1());
+  return (E1() + HALF*B0().sqr() + B0()*B1());
 }
 
 /*!
