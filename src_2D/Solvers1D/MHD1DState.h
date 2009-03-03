@@ -1222,7 +1222,7 @@ inline MHD1D_pState::MHD1D_pState(const MHD1D_cState &U) {
  * MHD1D_pState::U -- Conserved solution state.         *
  ********************************************************/
 inline MHD1D_cState MHD1D_pState::U(void) {
-  return (MHD1D_cState(d, dv(), B1, B0, E()));
+  return (MHD1D_cState(d, dv(), B1, B0, E1()));
 }
 
 inline MHD1D_cState MHD1D_pState::U(void) const {

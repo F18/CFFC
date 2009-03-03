@@ -477,6 +477,313 @@ inline double MHD3D_pState::dv(const Vector3D & n) const {
   return density*(velocity*n);
 }
 
+/*!
+ * Determine eigenvalue(s) for a one-dimensional problem.
+ */
+inline MHD3D_pState MHD3D_pState::lambda(void) const {
+  double c = a(), c2 = a2(), v1, v2, cs, cf;
+  Vector3D ca = Va();
+  v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+  cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+  cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+  return (MHD3D_pState(v().x - cf, v().x - ca.x, v().x - cs, v().x, v().x,
+		       v().x + cs, v().x + ca.x, v().x + cf));
+}
+
+/*!
+ * Associate an index to each eigenvalue for a one-dimensional problem.
+ */
+inline double MHD3D_pState::lambda(int index) const {
+  double c, c2, v1, v2, cs, cf;
+  assert( index >= 1 && index <= NUM_VAR_MHD3D );
+  switch(index) {
+  case 1 :
+    c = a(); c2 = a2();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(Va().x)));
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    return (v().x-cf);
+  case 2 :
+    return (v().x-Va().x);
+  case 3 :
+    c = a(); c2 = a2();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(Va().x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    return (v().x-cs);
+  case 4 :
+    return (v().x);
+  case 5 :
+    return (v().x);
+  case 6 :
+    c = a(); c2 = a2();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(Va().x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    return (v().x+cs);
+  case 7 :
+    return (v().x+Va().x);
+  case 8 :
+    c = a(); c2 = a2();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(Va().x)));
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    return (v().x+cf);
+  default:
+    return (v().x);
+  }
+}
+
+/*!
+ * Primitive right eigenvector corresponding to each eigenvalue.
+ */
+inline MHD3D_pState MHD3D_pState::rp(int index) const {
+  double c, c2, v1, v2, cs, cf, alpha_f, alpha_s, beta_y, beta_z;
+  Vector3D ca;
+  assert( index >= 1 && index <= NUM_VAR_MHD3D );
+  switch(index) {
+  case 1 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_pState(alpha_f*d(), -alpha_f*cf, alpha_s*cs*beta_y*sgn(ca.x),
+			 alpha_s*cs*beta_z*sgn(ca.x), ZERO,
+			 alpha_s*c*beta_y*sqrt(d()), alpha_s*c*beta_z*sqrt(d()),
+			 alpha_f*g*p()));
+  case 2 :
+    ca = Va(); v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_pState(ZERO, ZERO, -beta_z/sqrt(TWO), beta_y/sqrt(TWO), ZERO,
+			 -beta_z*sqrt(d()/TWO), beta_y*sqrt(d()/TWO), ZERO));
+  case 3 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_pState(alpha_s*d(), -alpha_s*cs, -alpha_f*cf*beta_y*sgn(ca.x),
+			 -alpha_f*cf*beta_z*sgn(ca.x), ZERO,
+			 -alpha_f*c*beta_y*sqrt(d()), -alpha_f*c*beta_z*sqrt(d()),
+			 alpha_s*g*p()));
+  case 4 :
+    return (MHD3D_pState(ONE, Vector3D_ZERO, Vector3D_ZERO, ZERO));
+  case 5 :
+    return (MHD3D_pState(ZERO, Vector3D_ZERO, Vector3D_NX, ZERO));
+  case 6 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_pState(alpha_s*d(), alpha_s*cs, alpha_f*cf*beta_y*sgn(ca.x),
+			 alpha_f*cf*beta_z*sgn(ca.x), ZERO,
+			 -alpha_f*c*beta_y*sqrt(d()), -alpha_f*c*beta_z*sqrt(d()),
+			 alpha_s*g*p()));
+  case 7 :
+    ca = Va(); v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_pState(ZERO, ZERO, -beta_z/sqrt(TWO), beta_y/sqrt(TWO), ZERO,
+			 beta_z*sqrt(d()/TWO), -beta_y*sqrt(d()/TWO), ZERO));
+  case 8 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_pState(alpha_f*d(), alpha_f*cf, -alpha_s*cs*beta_y*sgn(ca.x),
+			 -alpha_s*cs*beta_z*sgn(ca.x), ZERO,
+			 alpha_s*c*beta_y*sqrt(d()), alpha_s*c*beta_z*sqrt(d()),
+			 alpha_f*g*p()));
+  default: 
+    return (MHD3D_pState(ONE, Vector3D_ZERO, Vector3D_ZERO, ZERO));
+  }
+}
+
+/*!
+ * Primitive left eigenvector.
+ */
+inline MHD3D_pState MHD3D_pState::lp(int index) const {
+  double c, c2, v1, v2, cs, cf, alpha_f, alpha_s, beta_y, beta_z;
+  Vector3D ca;
+  assert( index >= 1 && index <= NUM_VAR_MHD3D );
+  switch(index) {
+  case 1 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_pState(ZERO, -alpha_f*cf/(TWO*c2),
+			 alpha_s*cs*beta_y*sgn(ca.x)/(TWO*c2),
+			 alpha_s*cs*beta_z*sgn(ca.x)/(TWO*c2), ZERO,
+			 alpha_s*beta_y/(TWO*c*sqrt(d())),
+			 alpha_s*beta_z/(TWO*c*sqrt(d())), alpha_f/(TWO*d()*c2)));
+  case 2 :
+    ca = Va(); v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_pState(ZERO, ZERO, -beta_z/sqrt(TWO), beta_y/sqrt(TWO), ZERO,
+			 -beta_z/sqrt(TWO*d()), beta_y/sqrt(TWO*d()), ZERO));
+  case 3 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_pState(ZERO, -alpha_s*cs/(TWO*c2),
+			 -alpha_f*cf*beta_y*sgn(ca.x)/(TWO*c2),
+			 -alpha_f*cf*beta_z*sgn(ca.x)/(TWO*c2), ZERO,
+			 -alpha_f*beta_y/(TWO*c*sqrt(d())),
+			 -alpha_f*beta_z/(TWO*c*sqrt(d())), alpha_s/(TWO*d()*c2)));
+  case 4 :
+    return (MHD3D_pState(ONE, Vector3D_ZERO, Vector3D_ZERO, -ONE/a2()));
+  case 5 :
+    return (MHD3D_pState(ZERO, Vector3D_ZERO, Vector3D_NX, ZERO));
+  case 6 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_pState(ZERO, alpha_s*cs/(TWO*c2),
+			 alpha_f*cf*beta_y*sgn(ca.x)/(TWO*c2),
+			 alpha_f*cf*beta_z*sgn(ca.x)/(TWO*c2), ZERO,
+			 -alpha_f*beta_y/(TWO*c*sqrt(d())),
+			 -alpha_f*beta_z/(TWO*c*sqrt(d())), alpha_s/(TWO*d()*c2)));
+  case 7 :
+    ca = Va(); v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_pState(ZERO, ZERO, -beta_z/sqrt(TWO), beta_y/sqrt(TWO), ZERO,
+			 beta_z/sqrt(TWO*d()), -beta_y/sqrt(TWO*d()), ZERO));
+  case 8 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_pState(ZERO, alpha_f*cf/(TWO*c2),
+			 -alpha_s*cs*beta_y*sgn(ca.x)/(TWO*c2),
+			 -alpha_s*cs*beta_z*sgn(ca.x)/(TWO*c2), ZERO,
+			 alpha_s*beta_y/(TWO*c*sqrt(d())),
+			 alpha_s*beta_z/(TWO*c*sqrt(d())), alpha_f/(TWO*d()*c2)));
+  default: 
+    return (MHD3D_pState(ONE, Vector3D_ZERO, Vector3D_ZERO, ZERO));
+  }
+}
+
+
+
+
+
 
 
 
@@ -983,14 +1290,352 @@ inline MHD3D_pState::MHD3D_pState(const MHD3D_cState &U){
   pressure = U.p();
 }
 
+/*! Return conserved solution state */
+inline MHD3D_cState MHD3D_pState::U(void) const {
+  return MHD3D_cState(density, dv(), B1(), B0(), E1());
+}
+
 /*! Return the conserved solution state for a given primitive one */
 inline MHD3D_cState U(const MHD3D_pState &W){ return W.U(); }
+
+/*! Solution flux */
+inline MHD3D_cState MHD3D_pState::F(void) const {
+  return (MHD3D_cState(d()*v().x,
+		       d()*v().x*v().x - B1().x*B1().x - (B0().x*B1().x + B1().x*B0().x) + p() + HALF*B1().sqr() + B1()*B0(),
+		       d()*v().x*v().y - B1().x*B1().y - (B0().x*B1().y + B1().x*B0().y),
+		       d()*v().x*v().z - B1().x*B1().z - (B0().x*B1().z + B1().x*B0().z),
+		       v().x*B1().x - B1().x*v().x + v().x*B0().x - B0().x*v().x,
+		       v().x*B1().y - B1().x*v().y + v().x*B0().y - B0().x*v().y,
+		       v().x*B1().z - B1().x*v().z + v().x*B0().z - B0().x*v().z,
+		       v().x*H1() - (B1()*v())*B1().x + (B0()*B1())*v().x - (B1()*v())*B0().x));
+}
     
 /*! Return solution flux for a given primitive state */
 inline MHD3D_cState F(const MHD3D_pState &W){ return W.F(); } 
 
+/*! Conserved right eigenvector. */
+inline MHD3D_cState MHD3D_pState::rc(int index) const {
+  double c, c2, v1, v2, cs, cf,
+    alpha_f, alpha_s, beta_y, beta_z, gamma;
+  Vector3D ca;
+  assert( index >= 1 && index <= NUM_VAR_MHD3D );
+  switch(index) {
+  case 1 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    gamma = alpha_s*(c*sqrt(d())*(beta_y*B1().y+beta_z*B1().z)+
+		     d()*cs*sgn(ca.x)*(v().y*beta_y+v().z*beta_z));
+    return (MHD3D_cState(alpha_f*d(),
+			 alpha_f*d()*(v().x-cf),
+			 d()*(alpha_f*v().y+alpha_s*cs*beta_y*sgn(ca.x)),
+			 d()*(alpha_f*v().z+alpha_s*cs*beta_z*sgn(ca.x)),
+			 ZERO,
+			 alpha_s*c*beta_y*sqrt(d()),
+			 alpha_s*c*beta_z*sqrt(d()),
+			 alpha_f*(HALF*d()*sqr(v())+g*p()*gm1i-d()*v().x*cf)+gamma));
+  case 2 :
+    ca = Va(); v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_cState(ZERO,
+			 ZERO,
+			 -beta_z*d()/sqrt(TWO),
+			 beta_y*d()/sqrt(TWO),
+			 ZERO,
+			 -beta_z*sqrt(d()/TWO),
+			 beta_y*sqrt(d()/TWO),
+			 ((v().z*beta_y-v().y*beta_z)-(B1().y*beta_z-B1().z*beta_y))*sqrt(d()/TWO)));
+  case 3 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    gamma = alpha_f*(c*sqrt(d())*(beta_y*B1().y+beta_z*B1().z)+
+		     d()*cf*sgn(ca.x)*(v().y*beta_y+v().z*beta_z));
+    return (MHD3D_cState(alpha_s*d(),
+			 alpha_s*d()*(v().x-cs),
+			 d()*(alpha_s*v().y-alpha_f*cf*beta_y*sgn(ca.x)),
+			 d()*(alpha_s*v().z-alpha_f*cf*beta_z*sgn(ca.x)),
+			 ZERO,
+			 -alpha_f*c*beta_y*sqrt(d()),
+			 -alpha_f*c*beta_z*sqrt(d()),
+			 alpha_s*(HALF*d()*sqr(v())+g*p()*gm1i-d()*v().x*cs)-gamma));
+  case 4 :
+    return (MHD3D_cState(ONE, v(), Vector3D_ZERO, HALF*sqr(v())));
+  case 5 :
+    return (MHD3D_cState(ZERO, Vector3D_ZERO, Vector3D_NX, B1().x));
+  case 6 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    gamma = alpha_f*(c*sqrt(d())*(beta_y*B1().y+beta_z*B1().z)-
+		     d()*cf*sgn(ca.x)*(v().y*beta_y+v().z*beta_z));
+    return (MHD3D_cState(alpha_s*d(),
+			 alpha_s*d()*(v().x+cs),
+			 d()*(alpha_s*v().y+alpha_f*cf*beta_y*sgn(ca.x)),
+			 d()*(alpha_s*v().z+alpha_f*cf*beta_z*sgn(ca.x)),
+			 ZERO,
+			 -alpha_f*c*beta_y*sqrt(d()),
+			 -alpha_f*c*beta_z*sqrt(d()),
+			 alpha_s*(HALF*d()*sqr(v())+g*p()*gm1i+d()*v().x*cs)-gamma));
+  case 7 :
+    ca = Va(); v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_cState(ZERO,
+			 ZERO,
+			 -beta_z*d()/sqrt(TWO),
+			 beta_y*d()/sqrt(TWO),
+			 ZERO,
+			 beta_z*sqrt(d()/TWO),
+			 -beta_y*sqrt(d()/TWO),
+			 ((v().z*beta_y-v().y*beta_z)+(B1().y*beta_z-B1().z*beta_y))*sqrt(d()/TWO)));
+  case 8 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    gamma = alpha_s*(c*sqrt(d())*(beta_y*B1().y+beta_z*B1().z)-
+		     d()*cs*sgn(ca.x)*(v().y*beta_y+v().z*beta_z));
+    return (MHD3D_cState(alpha_f*d(),
+			 alpha_f*d()*(v().x+cf),
+			 d()*(alpha_f*v().y-alpha_s*cs*beta_y*sgn(ca.x)),
+			 d()*(alpha_f*v().z-alpha_s*cs*beta_z*sgn(ca.x)),
+			 ZERO,
+			 alpha_s*c*beta_y*sqrt(d()),
+			 alpha_s*c*beta_z*sqrt(d()),
+			 alpha_f*(HALF*d()*sqr(v())+g*p()*gm1i+d()*v().x*cf)+gamma));
+  default: 
+    return (MHD3D_cState(ONE, Vector3D_ZERO, Vector3D_ZERO, ZERO));
+  }
+}
+
 /*! Return the conserved right eigenvector */
 inline MHD3D_cState rc(const MHD3D_pState &W, int index){ return W.rc(index); }
+
+/*! Conserved left eigenvector. */
+inline MHD3D_cState MHD3D_pState::lc(int index) const {
+  double c, c2, v1, v2, cs, cf,
+    alpha_f, alpha_s, beta_y, beta_z, gamma;
+  Vector3D ca;
+  assert( index >= 1 && index <= NUM_VAR_MHD3D );
+  switch(index) {
+  case 1 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    gamma = -HALF*alpha_s*cs*sgn(ca.x)*(v().y*beta_y+v().z*beta_z)/(d()*c2);
+    return (MHD3D_cState(HALF*alpha_f*(HALF*gm1*sqr(v())+v().x*cf)/(d()*c2)+gamma,
+			 -HALF*alpha_f*(gm1*v().x+cf)/(d()*c2),
+			 -HALF*(gm1*alpha_f*v().y-alpha_s*cs*beta_y*sgn(ca.x))/(d()*c2),
+			 -HALF*(gm1*alpha_f*v().z-alpha_s*cs*beta_z*sgn(ca.x))/(d()*c2),
+			 -HALF*gm1*alpha_f*B1().x/(d()*c2),
+			 HALF*(alpha_s*c*beta_y*sqrt(d())-gm1*alpha_f*B1().y)/(d()*c2),
+			 HALF*(alpha_s*c*beta_z*sqrt(d())-gm1*alpha_f*B1().z)/(d()*c2),
+			 HALF*gm1*alpha_f/(d()*c2)));
+  case 2 :
+    ca = Va(); v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_cState((v().y*beta_z - v().z*beta_y)/(sqrt(TWO)*d()),
+			 ZERO,
+			 -beta_z/(sqrt(TWO)*d()),
+			 beta_y/(sqrt(TWO)*d()),
+			 ZERO,
+			 -beta_z/sqrt(TWO*d()),
+			 beta_y/sqrt(TWO*d()),
+			 ZERO));
+  case 3 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    gamma = HALF*alpha_f*cf*sgn(ca.x)*(v().y*beta_y+v().z*beta_z)/(d()*c2);
+    return (MHD3D_cState(HALF*alpha_s*(HALF*gm1*sqr(v())+v().x*cs)/(d()*c2)+gamma,
+			 -HALF*alpha_s*(gm1*v().x+cs)/(d()*c2),
+			 -HALF*(gm1*alpha_s*v().y+alpha_f*cf*beta_y*sgn(ca.x))/(d()*c2),
+			 -HALF*(gm1*alpha_s*v().z+alpha_f*cf*beta_z*sgn(ca.x))/(d()*c2),
+			 -HALF*gm1*alpha_s*B1().x/(d()*c2),
+			 -HALF*(alpha_f*c*beta_y*sqrt(d())+gm1*alpha_s*B1().y)/(d()*c2),
+			 -HALF*(alpha_f*c*beta_z*sqrt(d())+gm1*alpha_s*B1().z)/(d()*c2),
+			 HALF*gm1*alpha_s/(d()*c2)));
+  case 4 :
+    c2 = a2();
+    return (MHD3D_cState(ONE-HALF*gm1*sqr(v())/c2,
+			 gm1*v().x/c2,
+			 gm1*v().y/c2,
+			 gm1*v().z/c2,
+			 gm1*B1().x/c2,
+			 gm1*B1().y/c2,
+			 gm1*B1().z/c2,
+			 -gm1/c2));
+  case 5 :
+    return (MHD3D_cState(ZERO, Vector3D_ZERO, Vector3D_NX, ZERO));
+  case 6 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    gamma = -HALF*alpha_f*cf*sgn(ca.x)*(v().y*beta_y+v().z*beta_z)/(d()*c2);
+    return (MHD3D_cState(HALF*alpha_s*(HALF*gm1*sqr(v())-v().x*cs)/(d()*c2)+gamma,
+			 -HALF*alpha_s*(gm1*v().x-cs)/(d()*c2),
+			 -HALF*(gm1*alpha_s*v().y-alpha_f*cf*beta_y*sgn(ca.x))/(d()*c2),
+			 -HALF*(gm1*alpha_s*v().z-alpha_f*cf*beta_z*sgn(ca.x))/(d()*c2),
+			 -HALF*gm1*alpha_s*B1().x/(d()*c2),
+			 -HALF*(alpha_f*c*beta_y*sqrt(d())+gm1*alpha_s*B1().y)/(d()*c2),
+			 -HALF*(alpha_f*c*beta_z*sqrt(d())+gm1*alpha_s*B1().z)/(d()*c2),
+			 HALF*gm1*alpha_s/(d()*c2)));
+  case 7 :
+    ca = Va(); v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    return (MHD3D_cState((v().y*beta_z - v().z*beta_y)/(sqrt(TWO)*d()),
+			 ZERO,
+			 -beta_z/(sqrt(TWO)*d()),
+			 beta_y/(sqrt(TWO)*d()),
+			 ZERO,
+			 beta_z/sqrt(TWO*d()),
+			 -beta_y/sqrt(TWO*d()),
+			 ZERO));
+  case 8 :
+    c = a(); c2 = a2(); ca = Va();
+    v1 = c2 + Va2(); v2 = sqrt(max(ZERO, v1*v1-FOUR*c2*sqr(ca.x)));
+    cs = sqrt(max(ZERO, HALF*(v1-v2))); cs = min(cs, c);
+    cf = sqrt(HALF*(v1+v2)); cf = max(cf, c);
+    v1 = cf*cf-cs*cs; v2 = sqrt(sqr(ca.y) + sqr(ca.z));
+    if (v1 >= TOLER) {
+      alpha_f = sqrt(max(ZERO, c2-cs*cs)/v1); alpha_s = sqrt(max(ZERO, cf*cf-c2)/v1);
+    } else if (ca.x <= c) {
+      alpha_f = ONE; alpha_s = ZERO;
+    } else {
+      alpha_f = ZERO; alpha_s = ONE;
+    } /* endif */
+    if (v2 >= TOLER) {
+      beta_y = ca.y/v2; beta_z = ca.z/v2;
+    } else {
+      beta_y = ONE/sqrt(TWO); beta_z = ONE/sqrt(TWO);
+    } /* endif */
+    gamma = HALF*alpha_s*cs*sgn(ca.x)*(v().y*beta_y+v().z*beta_z)/(d()*c2);
+    return (MHD3D_cState(HALF*alpha_f*(HALF*gm1*sqr(v())-v().x*cf)/(d()*c2)+gamma,
+			 -HALF*alpha_f*(gm1*v().x-cf)/(d()*c2),
+			 -HALF*(gm1*alpha_f*v().y+alpha_s*cs*beta_y*sgn(ca.x))/(d()*c2),
+			 -HALF*(gm1*alpha_f*v().z+alpha_s*cs*beta_z*sgn(ca.x))/(d()*c2),
+			 -HALF*gm1*alpha_f*B1().x/(d()*c2),
+			 HALF*(alpha_s*c*beta_y*sqrt(d())-gm1*alpha_f*B1().y)/(d()*c2),
+			 HALF*(alpha_s*c*beta_z*sqrt(d())-gm1*alpha_f*B1().z)/(d()*c2),
+			 HALF*gm1*alpha_f/(d()*c2)));
+  default: 
+    return (MHD3D_cState(ONE, Vector3D_ZERO, Vector3D_ZERO, ZERO));
+  }
+}
+
 /*! Return the conserved left eigenvector */
 inline MHD3D_cState lc(const MHD3D_pState &W, int index){ return W.lc(index); }
 
