@@ -315,6 +315,46 @@ public:
     }
   }
 
+  //! @name Binary arithmetic operators.
+  //@{
+  MHD3D_pState operator +(const MHD3D_pState &W) const;
+  MHD3D_pState operator -(const MHD3D_pState &W) const;
+  double operator *(const MHD3D_pState &W) const;
+  MHD3D_pState operator *(const double &a) const;
+  friend MHD3D_pState operator *(const double &a, const MHD3D_pState &W){ return W*a; }
+  MHD3D_pState operator /(const double &a) const { return *this * (1.0/a); }
+  MHD3D_pState operator ^(const MHD3D_pState &W) const;
+  //@}
+
+  //! @name Unary arithmetic operators.
+  //@{
+  friend MHD3D_pState operator +(const MHD3D_pState &W);
+  friend MHD3D_pState operator -(const MHD3D_pState &W);
+  //@}
+
+  //! @name Shortcut arithmetic operators.
+  //@{
+  MHD3D_pState &operator +=(const MHD3D_pState &W);
+  MHD3D_pState &operator -=(const MHD3D_pState &W);
+  MHD3D_pState &operator *=(const MHD3D_pState &W);
+  MHD3D_pState &operator *=(const double &a);
+  MHD3D_pState &operator /=(const double &a);
+  //@}
+    
+  //! @name Relational operators.
+  //@{
+  friend bool operator ==(const MHD3D_pState &lhs, const MHD3D_pState &rhs);
+  friend bool operator !=(const MHD3D_pState &lhs, const MHD3D_pState &rhs);
+  friend bool operator >=(const MHD3D_pState &lhs, const MHD3D_pState &rhs);
+  friend bool operator <=(const MHD3D_pState &lhs, const MHD3D_pState &rhs);
+  //@}
+
+  //! @name Input-output operators.
+  //@{
+  friend ostream &operator << (ostream &out_file, const MHD3D_pState &W);
+  friend istream &operator >> (istream &in_file,  MHD3D_pState &W);
+  //@}
+
 private:
 
   //! @name Solution state primitive variables:
@@ -780,19 +820,188 @@ inline MHD3D_pState MHD3D_pState::lp(int index) const {
   }
 }
 
+//! Summation between states (intrinsic field is set to zero)
+inline MHD3D_pState MHD3D_pState::operator +(const MHD3D_pState &W) const {
+  return MHD3D_pState(density  + W.density,
+		      velocity + W.velocity,
+		      PerturbativeB + W.PerturbativeB,
+		      pressure + W.pressure);
+}
 
+//! Subtraction between states (intrinsic field is set to zero)
+inline MHD3D_pState MHD3D_pState::operator -(const MHD3D_pState &W) const {
+  return MHD3D_pState(density  - W.density,
+		      velocity - W.velocity,
+		      PerturbativeB - W.PerturbativeB,
+		      pressure - W.pressure);
+}
 
+//! Inner product operator
+inline double MHD3D_pState::operator *(const MHD3D_pState &W) const {
+  return d()*W.d() + v()*W.v() + B1()*W.B1() + p()*W.p();
+}
 
+//! Multiplication with scalar (intrinsic field is set to zero)
+inline MHD3D_pState MHD3D_pState::operator *(const double &a) const{
+  return MHD3D_pState(a * density,
+		      a * velocity,
+		      a * PerturbativeB,
+		      a * pressure);
+}
 
+//! A useful solution state product operator (intrinsic field is set to zero)
+inline MHD3D_pState MHD3D_pState::operator ^(const MHD3D_pState &W) const{
+  return MHD3D_pState(d() * W.d(),
+		      vx() * W.vx(),
+		      vy() * W.vy(),
+		      vz() * W.vz(),
+		      B1x() * W.B1x(),
+		      B1y() * W.B1y(),
+		      B1z() * W.B1z(),
+		      ZERO, ZERO, ZERO, 
+		      p() * W.p());
+}
 
+//! Unary arithmetic + operator
+inline MHD3D_pState operator +(const MHD3D_pState &W){
+  return W;
+}
 
+//! Unary arithmetic - operator
+inline MHD3D_pState operator -(const MHD3D_pState &W){
+  return MHD3D_pState(-W.d(),   
+		      -W.vx() , -W.vy() , -W.vz() ,
+		      -W.B1x(), -W.B1y(), -W.B1z(),
+		      -W.B0x(), -W.B0y(), -W.B0z(),
+		      -W.p());
+}
 
+//! Shortcut summation
+inline MHD3D_pState & MHD3D_pState::operator +=(const MHD3D_pState &W){
+  density += W.density;
+  velocity += W.velocity;
+  PerturbativeB += W.PerturbativeB;
+  IntrinsicB += W.IntrinsicB;
+  pressure += W.pressure;
+  return *this;
+}
 
+//! Shortcut subtraction
+inline MHD3D_pState & MHD3D_pState::operator -=(const MHD3D_pState &W){
+  density -= W.density;
+  velocity -= W.velocity;
+  PerturbativeB -= W.PerturbativeB;
+  IntrinsicB -= W.IntrinsicB;
+  pressure -= W.pressure;
+  return *this;
+}
 
+//! Shortcut multiplication
+inline MHD3D_pState & MHD3D_pState::operator *=(const MHD3D_pState &W){
+  density *= W.density;
+  velocity.x *= W.velocity.x;
+  velocity.y *= W.velocity.y;
+  velocity.z *= W.velocity.z;
+  PerturbativeB.x *= W.PerturbativeB.x;
+  PerturbativeB.y *= W.PerturbativeB.y;
+  PerturbativeB.z *= W.PerturbativeB.z;
+  IntrinsicB.x *= W.IntrinsicB.x;
+  IntrinsicB.y *= W.IntrinsicB.y;
+  IntrinsicB.z *= W.IntrinsicB.z;
+  pressure *= W.pressure;
+  return *this;
+}
 
+//! Shortcut multiplication with scalar
+inline MHD3D_pState & MHD3D_pState::operator *=(const double &a){
+  density *= a;
+  velocity.x *= a; 
+  velocity.y *= a;
+  velocity.z *= a;
+  PerturbativeB.x *= a;
+  PerturbativeB.y *= a;
+  PerturbativeB.z *= a;
+  IntrinsicB.x *= a;
+  IntrinsicB.y *= a;
+  IntrinsicB.z *= a;
+  pressure *= a;
+  return *this;
+}
 
+//! Shortcut division with scalar
+inline MHD3D_pState & MHD3D_pState::operator /=(const double &a){
+  density /= a;
+  velocity.x /= a; 
+  velocity.y /= a;
+  velocity.z /= a;
+  PerturbativeB.x /= a;
+  PerturbativeB.y /= a;
+  PerturbativeB.z /= a;
+  IntrinsicB.x /= a;
+  IntrinsicB.y /= a;
+  IntrinsicB.z /= a;
+  pressure /= a;
+  return *this;
+}
 
+//! Equal operator 
+inline bool operator ==(const MHD3D_pState &lhs, const MHD3D_pState &rhs) {
+  return (lhs.density == rhs.density && 
+	  lhs.velocity == rhs.velocity && 
+	  lhs.PerturbativeB == rhs.PerturbativeB &&
+	  lhs.IntrinsicB == rhs.IntrinsicB &&
+	  lhs.pressure == rhs.pressure);
+}
 
+//! Not-equal operator
+inline bool operator !=(const MHD3D_pState& lhs, const MHD3D_pState& rhs){
+  return !(lhs == rhs);
+}
+
+//! Greater or equal operator
+inline bool operator >=(const MHD3D_pState& lhs, const MHD3D_pState& rhs){
+  return (lhs.density >= rhs.density && 
+	  lhs.velocity >= rhs.velocity && 
+	  lhs.PerturbativeB >= rhs.PerturbativeB &&
+	  lhs.IntrinsicB >= rhs.IntrinsicB &&
+	  lhs.pressure >= rhs.pressure);
+}
+
+//! Less or equal operator 
+inline bool operator <=(const MHD3D_pState& lhs, const MHD3D_pState& rhs){
+  return (lhs.density <= rhs.density && 
+	  lhs.velocity <= rhs.velocity && 
+	  lhs.PerturbativeB <= rhs.PerturbativeB &&
+	  lhs.IntrinsicB <= rhs.IntrinsicB &&
+	  lhs.pressure <= rhs.pressure);
+}
+
+//! Output operator
+inline ostream &operator << (ostream &out_file, const MHD3D_pState &W) {
+  Vector3D Bt; Bt = W.B();
+  out_file.setf(ios::scientific);
+  out_file << " " << W.d()
+	   << " " << W.vx() << " " << W.vy() << " " << W.vz()
+	   << " " << Bt.x << " " << Bt.y << " " << Bt.z
+           << " " << W.B0x() << " " << W.B0y() << " " << W.B0z() 
+	   << " " << W.p();
+  out_file.unsetf(ios::scientific);
+  return (out_file);
+}
+
+//! Input operator
+inline istream &operator >> (istream &in_file, MHD3D_pState &W) {
+  Vector3D Bt;
+  in_file.setf(ios::skipws);
+  in_file >> W.d() 
+	  >> W.vx() >> W.vy() >> W.vz() 
+	  >> Bt.x >> Bt.y >> Bt.z
+	  >> W.B0x() >> W.B0y() >> W.B0z() 
+	  >> W.p();
+  in_file.unsetf(ios::skipws);
+  W.B1() = Bt - W.B0();
+  return (in_file);
+}
 
 
 
