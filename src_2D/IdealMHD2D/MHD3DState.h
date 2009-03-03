@@ -1279,32 +1279,45 @@ public:
     }
   }
 
+  //! @name Binary arithmetic operators.
+  //@{
+  MHD3D_cState operator +(const MHD3D_cState &U) const;
+  MHD3D_cState operator -(const MHD3D_cState &U) const;
+  double operator *(const MHD3D_cState &U) const;
+  MHD3D_cState operator *(const double &a) const;
+  friend MHD3D_cState operator *(const double &a, const MHD3D_cState &U) { return U*a;}
+  MHD3D_cState operator /(const double &a) const { return *this * (1.0/a); }
+  MHD3D_cState operator ^(const MHD3D_cState &U) const;
+  //@}
 
-#if 0
-  /* Binary arithmetic operators. */
-  friend MHD3D_cState operator +(const MHD3D_cState &U1, const MHD3D_cState &U2);
-  friend MHD3D_cState operator -(const MHD3D_cState &U1, const MHD3D_cState &U2);
-  friend double operator *(const MHD3D_cState &U1, const MHD3D_cState &U2);
-  friend MHD3D_cState operator *(const MHD3D_cState &U, const double &a);
-  friend MHD3D_cState operator *(const double &a, const MHD3D_cState &U);
-  friend MHD3D_cState operator /(const MHD3D_cState &U, const double &a);
-
-  /* Unary arithmetic operators. */
+  //! @name Unary arithmetic operators.
+  //@{
   friend MHD3D_cState operator +(const MHD3D_cState &U);
   friend MHD3D_cState operator -(const MHD3D_cState &U);
+  //@}
 
-  /* Shortcut arithmetic operators. */
-  friend MHD3D_cState &operator +=(MHD3D_cState &U1, const MHD3D_cState &U2);
-  friend MHD3D_cState &operator -=(MHD3D_cState &U1, const MHD3D_cState &U2);
+  //! @name Shortcut arithmetic operators.
+  //@{
+  MHD3D_cState &operator +=(const MHD3D_cState &U);
+  MHD3D_cState &operator -=(const MHD3D_cState &U);
+  MHD3D_cState &operator *=(const MHD3D_cState &U);
+  MHD3D_cState &operator *=(const double &a);
+  MHD3D_cState &operator /=(const double &a);
+  //@}    
+
+  //! @name Relational operators.
+  //@{
+  friend bool operator ==(const MHD3D_cState &lhs, const MHD3D_cState &rhs);
+  friend bool operator !=(const MHD3D_cState &lhs, const MHD3D_cState &rhs);
+  friend bool operator >=(const MHD3D_cState &lhs, const MHD3D_cState &rhs);
+  friend bool operator <=(const MHD3D_cState &lhs, const MHD3D_cState &rhs);
+  //@}
     
-  /* Relational operators. */
-  friend int operator ==(const MHD3D_cState &U1, const MHD3D_cState &U2);
-  friend int operator !=(const MHD3D_cState &U1, const MHD3D_cState &U2);
-    
-  /* Input-output operators. */
+  //! @name Input-output operators.
+  //@{
   friend ostream &operator << (ostream &out_file, const MHD3D_cState &U);
   friend istream &operator >> (istream &in_file,  MHD3D_cState &U);
-#endif
+  //@}
 
 private:
   
@@ -1478,6 +1491,192 @@ inline double MHD3D_cState::Va2(void) const {
 inline double MHD3D_cState::s(void) const {
   return (-gm1i*log(gm1*(E1() - HALF*dv().sqr()/d() - HALF*B1().sqr())/pow(d(), g)));
 }
+
+//! Summation between states (intrinsic field is set to zero)
+inline MHD3D_cState MHD3D_cState::operator +(const MHD3D_cState &U) const {
+  return MHD3D_cState(density  + U.density,
+		      momentum + U.momentum,
+		      PerturbativeB + U.PerturbativeB,
+		      PerturbativeEnergy + U.PerturbativeEnergy);
+}
+
+//! Subtraction between states (intrinsic field is set to zero)
+inline MHD3D_cState MHD3D_cState::operator -(const MHD3D_cState &U) const {
+  return MHD3D_cState(density  - U.density,
+		      momentum - U.momentum,
+		      PerturbativeB - U.PerturbativeB,
+		      PerturbativeEnergy - U.PerturbativeEnergy);
+}
+
+//! Inner product operator
+inline double MHD3D_cState::operator *(const MHD3D_cState &U) const {
+  return d()*U.d() + dv()*U.dv() + B1()*U.B1() + E1()*U.E1();
+}
+
+//! Multiplication with scalar (intrinsic field is set to zero)
+inline MHD3D_cState MHD3D_cState::operator *(const double &a) const{
+  return MHD3D_cState(a * density,
+		      a * momentum,
+		      a * PerturbativeB,
+		      a * PerturbativeEnergy);
+}
+
+//! A useful solution state product operator (intrinsic field is set to zero)
+inline MHD3D_cState MHD3D_cState::operator ^(const MHD3D_cState &U) const{
+  return MHD3D_cState(d() * U.d(),
+		      dvx() * U.dvx(),
+		      dvy() * U.dvy(),
+		      dvz() * U.dvz(),
+		      B1x() * U.B1x(),
+		      B1y() * U.B1y(),
+		      B1z() * U.B1z(),
+		      ZERO, ZERO, ZERO, 
+		      E1() * U.E1());
+}
+
+//! Unary arithmetic + operator
+inline MHD3D_cState operator +(const MHD3D_cState &U){
+  return U;
+}
+
+//! Unary arithmetic - operator
+inline MHD3D_cState operator -(const MHD3D_cState &U){
+  return MHD3D_cState(-U.d(),   
+		      -U.dvx(), -U.dvy(), -U.dvz() ,
+		      -U.B1x(), -U.B1y(), -U.B1z(),
+		      -U.B0x(), -U.B0y(), -U.B0z(),
+		      -U.E1());
+}
+
+//! Shortcut summation
+inline MHD3D_cState & MHD3D_cState::operator +=(const MHD3D_cState &U){
+  density += U.density;
+  momentum += U.momentum;
+  PerturbativeB += U.PerturbativeB;
+  IntrinsicB += U.IntrinsicB;
+  PerturbativeEnergy += U.PerturbativeEnergy;
+  return *this;
+}
+
+//! Shortcut subtraction
+inline MHD3D_cState & MHD3D_cState::operator -=(const MHD3D_cState &U){
+  density -= U.density;
+  momentum -= U.momentum;
+  PerturbativeB -= U.PerturbativeB;
+  IntrinsicB -= U.IntrinsicB;
+  PerturbativeEnergy -= U.PerturbativeEnergy;
+  return *this;
+}
+
+//! Shortcut multiplication
+inline MHD3D_cState & MHD3D_cState::operator *=(const MHD3D_cState &U){
+  density *= U.density;
+  momentum.x *= U.momentum.x;
+  momentum.y *= U.momentum.y;
+  momentum.z *= U.momentum.z;
+  PerturbativeB.x *= U.PerturbativeB.x;
+  PerturbativeB.y *= U.PerturbativeB.y;
+  PerturbativeB.z *= U.PerturbativeB.z;
+  IntrinsicB.x *= U.IntrinsicB.x;
+  IntrinsicB.y *= U.IntrinsicB.y;
+  IntrinsicB.z *= U.IntrinsicB.z;
+  PerturbativeEnergy *= U.PerturbativeEnergy;
+  return *this;
+}
+
+//! Shortcut multiplication with scalar
+inline MHD3D_cState & MHD3D_cState::operator *=(const double &a){
+  density *= a;
+  momentum.x *= a; 
+  momentum.y *= a;
+  momentum.z *= a;
+  PerturbativeB.x *= a;
+  PerturbativeB.y *= a;
+  PerturbativeB.z *= a;
+  IntrinsicB.x *= a;
+  IntrinsicB.y *= a;
+  IntrinsicB.z *= a;
+  PerturbativeEnergy *= a;
+  return *this;
+}
+
+//! Shortcut division with scalar
+inline MHD3D_cState & MHD3D_cState::operator /=(const double &a){
+  density /= a;
+  momentum.x /= a; 
+  momentum.y /= a;
+  momentum.z /= a;
+  PerturbativeB.x /= a;
+  PerturbativeB.y /= a;
+  PerturbativeB.z /= a;
+  IntrinsicB.x /= a;
+  IntrinsicB.y /= a;
+  IntrinsicB.z /= a;
+  PerturbativeEnergy /= a;
+  return *this;
+}
+
+//! Equal operator 
+inline bool operator ==(const MHD3D_cState &lhs, const MHD3D_cState &rhs) {
+  return (lhs.density == rhs.density && 
+	  lhs.momentum == rhs.momentum && 
+	  lhs.PerturbativeB == rhs.PerturbativeB &&
+	  lhs.IntrinsicB == rhs.IntrinsicB &&
+	  lhs.PerturbativeEnergy == rhs.PerturbativeEnergy);
+}
+
+//! Not-equal operator
+inline bool operator !=(const MHD3D_cState& lhs, const MHD3D_cState& rhs){
+  return !(lhs == rhs);
+}
+
+//! Greater or equal operator
+inline bool operator >=(const MHD3D_cState& lhs, const MHD3D_cState& rhs){
+  return (lhs.density >= rhs.density && 
+	  lhs.momentum >= rhs.momentum && 
+	  lhs.PerturbativeB >= rhs.PerturbativeB &&
+	  lhs.IntrinsicB >= rhs.IntrinsicB &&
+	  lhs.PerturbativeEnergy >= rhs.PerturbativeEnergy);
+}
+
+//! Less or equal operator 
+inline bool operator <=(const MHD3D_cState& lhs, const MHD3D_cState& rhs){
+  return (lhs.density <= rhs.density && 
+	  lhs.momentum <= rhs.momentum && 
+	  lhs.PerturbativeB <= rhs.PerturbativeB &&
+	  lhs.IntrinsicB <= rhs.IntrinsicB &&
+	  lhs.PerturbativeEnergy <= rhs.PerturbativeEnergy);
+}
+
+//! Output operator
+inline ostream &operator << (ostream &out_file, const MHD3D_cState &U) {
+  Vector3D Bt; Bt = U.B();
+  out_file.setf(ios::scientific);
+  out_file << " " << U.d() 
+	   << " " << U.dvx() << " " << U.dvy() << " " << U.dvz()
+           << " " << Bt.x << " " << Bt.y << " " << Bt.z
+	   << " " << U.B0x() << " " << U.B0y() << " " << U.B0z()
+	   << " " << U.E1();
+  out_file.unsetf(ios::scientific);
+  return (out_file);
+}
+
+//! Input operator
+inline istream &operator >> (istream &in_file, MHD3D_cState &U) {
+  Vector3D Bt;
+  in_file.setf(ios::skipws);
+  in_file >> U.d() 
+	  >> U.dvx() >> U.dvy() >> U.dvz() 
+	  >> Bt.x >> Bt.y >> Bt.z
+	  >> U.B0x() >> U.B0y() >> U.B0z() 
+	  >> U.E1();
+  in_file.unsetf(ios::skipws);
+  U.B1() = Bt - U.B0();
+  return (in_file);
+}
+
+
+
 
 
 
