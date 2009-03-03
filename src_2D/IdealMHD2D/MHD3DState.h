@@ -131,9 +131,20 @@ public:
 	       const Vector2D &Bm1, const double &pre) : density(rho), velocity(V_), pressure(pre), 
 							 PerturbativeB(Bm1), IntrinsicB(ZERO) { };
 
+  //! Constructor 3D with density, velocity, pressure and perturbative magnetic field 
+  MHD3D_pState(const double &rho, const Vector3D &V_,
+	       const Vector3D &Bm1, const double &pre) : density(rho), velocity(V_), pressure(pre), 
+							 PerturbativeB(Bm1), IntrinsicB(ZERO) { };
+
   //! Constructor 2D with density, velocity, pressure, perturbative and intrinsic magnetic fields
   MHD3D_pState(const double &rho, const Vector2D &V_,
 	       const Vector2D &Bm1, const Vector2D &Bm0,
+	       const double &pre): density(rho), velocity(V_), pressure(pre),
+				   PerturbativeB(Bm1), IntrinsicB(Bm0) { };
+
+  //! Constructor 3D with density, velocity, pressure, perturbative and intrinsic magnetic fields
+  MHD3D_pState(const double &rho, const Vector3D &V_,
+	       const Vector3D &Bm1, const Vector3D &Bm0,
 	       const double &pre): density(rho), velocity(V_), pressure(pre),
 				   PerturbativeB(Bm1), IntrinsicB(Bm0) { };
 
@@ -151,6 +162,20 @@ public:
 	       const double &B0x, const double &B0y,
 	       const double &pre) : density(rho), velocity(vx,vy), pressure(pre),
 				    PerturbativeB(B1x,B1y), IntrinsicB(B0x,B0y){ };
+
+  //! Constructor 3D with all components set
+  MHD3D_pState(const double &rho,
+	       const double &vx,  const double &vy, const double &vz,
+	       const double &B1x, const double &B1y, const double &B1z,
+	       const double &B0x, const double &B0y, const double &B0z,
+	       const double &pre) : density(rho), velocity(vx,vy,vz), pressure(pre),
+				    PerturbativeB(B1x,B1y,B1z), IntrinsicB(B0x,B0y,B0z){ };
+  //@}
+
+  //! @name Useful constant states
+  //@{
+  static const MHD3D_pState MHD3D_W_REF;
+  static const MHD3D_pState MHD3D_W_ZERO;
   //@}
 
   //! @name Field access
@@ -431,8 +456,26 @@ inline double MHD3D_pState::s(void) const {
   return (-gm1i*log(pressure/pow(density, g)));
 }
 
+/*!
+ * Momentum vector
+ */
+inline Vector3D MHD3D_pState::dv(void) const {
+  return density*velocity;
+}
 
+/*!
+ * Momentum for a given plannar direction
+ */
+inline double MHD3D_pState::dv(const Vector2D & n) const {
+  return density*(velocity*Vector3D(n));
+}
 
+/*!
+ * Momentum for a given 3D direction
+ */
+inline double MHD3D_pState::dv(const Vector3D & n) const {
+  return density*(velocity*n);
+}
 
 
 
@@ -516,6 +559,12 @@ public:
   static double   gm1i; //!< 1/(g-1)
   //@}
 
+  //! @name Useful constant states
+  //@{
+  static const MHD3D_cState MHD3D_U_REF;
+  static const MHD3D_cState MHD3D_U_ZERO;
+  //@}
+
   //! @name Creation and copy constructors.
   //@{
   //! Default constructor.
@@ -541,11 +590,26 @@ public:
 	       const double &Etotal): density(rho), momentum(rhoV),
 				      PerturbativeB(Bm1), IntrinsicB(ZERO), PerturbativeEnergy(Etotal){ };
 
+  //! Constructor 3D with density, momentum, perturbative magnetic field and total perturbative energy
+  MHD3D_cState(const double &rho,
+	       const Vector3D &rhoV,
+	       const Vector3D &Bm1,
+	       const double &Etotal): density(rho), momentum(rhoV),
+				      PerturbativeB(Bm1), IntrinsicB(ZERO), PerturbativeEnergy(Etotal){ };
+
   //! Constructor 2D with density, momentum, perturbative and intrinsic magnetic fields, total perturbative energy
   MHD3D_cState(const double &rho,
 	       const Vector2D &rhoV,
 	       const Vector2D &Bm1,
 	       const Vector2D &Bm0,
+	       const double &Etotal): density(rho), momentum(rhoV),
+				      PerturbativeB(Bm1), IntrinsicB(Bm0), PerturbativeEnergy(Etotal){ };
+
+  //! Constructor 3D with density, momentum, perturbative and intrinsic magnetic fields, total perturbative energy
+  MHD3D_cState(const double &rho,
+	       const Vector3D &rhoV,
+	       const Vector3D &Bm1,
+	       const Vector3D &Bm0,
 	       const double &Etotal): density(rho), momentum(rhoV),
 				      PerturbativeB(Bm1), IntrinsicB(Bm0), PerturbativeEnergy(Etotal){ };
 
@@ -568,6 +632,21 @@ public:
 	       const double &_B0y_,
 	       const double &Etotal): density(rho), momentum(rhovx,rhovy),
 				      PerturbativeB(_B1x_,_B1y_), IntrinsicB(_B0x_,_B0y_), PerturbativeEnergy(Etotal){ };
+
+  //! Constructor 3D with all components set
+  MHD3D_cState(const double &rho,
+	       const double &rhovx,
+	       const double &rhovy,
+	       const double &rhovz,
+	       const double &_B1x_,
+	       const double &_B1y_,
+	       const double &_B1z_,
+	       const double &_B0x_,
+	       const double &_B0y_,
+	       const double &_B0z_,
+	       const double &Etotal): density(rho), momentum(rhovx,rhovy,rhovz),
+				      PerturbativeB(_B1x_,_B1y_,_B1z_), IntrinsicB(_B0x_,_B0y_,_B0z_),
+				      PerturbativeEnergy(Etotal){ };
   //@}    
 
 
@@ -724,6 +803,17 @@ private:
 
 };
 
+
+/*!
+ * Constructor with the primitive state
+ */
+inline MHD3D_cState::MHD3D_cState(const MHD3D_pState &W){
+  density = W.d();
+  momentum = W.dv();
+  PerturbativeB = W.B1();
+  IntrinsicB = W.B0();
+  PerturbativeEnergy = W.E1();
+}
 
 /*!
  * Assign monatomic gas constants. 
@@ -883,6 +973,15 @@ inline double MHD3D_cState::s(void) const {
  *                                                                               *
  *********************************************************************************
  ********************************************************************************/
+
+/*! Constructor with the conserved state */
+inline MHD3D_pState::MHD3D_pState(const MHD3D_cState &U){
+  density = U.d();
+  velocity = U.v();
+  PerturbativeB = U.B1();
+  IntrinsicB = U.B0();
+  pressure = U.p();
+}
 
 /*! Return the conserved solution state for a given primitive one */
 inline MHD3D_cState U(const MHD3D_pState &W){ return W.U(); }
