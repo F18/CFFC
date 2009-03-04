@@ -95,8 +95,9 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
     
     // compute the normalized geometric weight
     GeomWeights(cell) /= WeightsSum;
-    // --> RR: The following line simply gets rid of geometric weighting for the time being
-    GeomWeights(cell) = 1.0;
+
+    // --> RR: The following line simply gets rid of any geometric weighting (for testing purposes)
+    // GeomWeights(cell) = 1.0;
 
     // *** SET the matrix A of the linear system (LHS) ***
     /* compute for each derivative the corresponding entry in the matrix of the linear system */
