@@ -315,6 +315,36 @@ public:
     }
   }
 
+  //! @name Flux functions helpers
+  //@{
+  friend MHD3D_pState RoeAverage(const MHD3D_pState &Wl,
+				 const MHD3D_pState &Wr);
+  friend MHD3D_pState WaveSpeedPos(const MHD3D_pState &lambdas_a);
+  friend MHD3D_pState WaveSpeedNeg(const MHD3D_pState &lambdas_a);
+  friend MHD3D_pState WaveSpeedAbs(const MHD3D_pState &lambdas_a);
+  friend MHD3D_pState HartenFixPos(const MHD3D_pState &lambdas_a,
+				   const MHD3D_pState &lambdas_l,
+				   const MHD3D_pState &lambdas_r);
+  friend MHD3D_pState HartenFixNeg(const MHD3D_pState &lambdas_a,
+				   const MHD3D_pState &lambdas_l,
+				   const MHD3D_pState &lambdas_r);
+  friend MHD3D_pState HartenFixAbs(const MHD3D_pState &lambdas_a,
+				   const MHD3D_pState &lambdas_l,
+				   const MHD3D_pState &lambdas_r);
+  //@}
+
+  //! @name Flux functions
+  //@{
+  friend MHD3D_cState FluxRoe(const MHD3D_pState &Wl,
+			      const MHD3D_pState &Wr);
+  friend MHD3D_cState FluxRusanov(const MHD3D_pState &Wl,
+				  const MHD3D_pState &Wr);
+  friend MHD3D_cState FluxHLLE(const MHD3D_pState &Wl,
+			       const MHD3D_pState &Wr);
+  friend MHD3D_cState FluxLinde(const MHD3D_pState &Wl,
+				const MHD3D_pState &Wr);
+  //@}
+
   //! @name Binary arithmetic operators.
   //@{
   MHD3D_pState operator +(const MHD3D_pState &W) const;
@@ -820,6 +850,150 @@ inline MHD3D_pState MHD3D_pState::lp(int index) const {
   }
 }
 
+/*!
+ * This function returns the positive parts of the 
+ * elemental wave speeds or eigenvalues.           
+ */
+inline MHD3D_pState WaveSpeedPos(const MHD3D_pState &lambdas_a){
+
+  return MHD3D_pState(HALF*(lambdas_a[1]+fabs(lambdas_a[1])),
+		      HALF*(lambdas_a[2]+fabs(lambdas_a[2])),
+		      HALF*(lambdas_a[3]+fabs(lambdas_a[3])),
+		      HALF*(lambdas_a[4]+fabs(lambdas_a[4])),
+		      HALF*(lambdas_a[5]+fabs(lambdas_a[5])),
+		      HALF*(lambdas_a[6]+fabs(lambdas_a[6])),
+		      HALF*(lambdas_a[7]+fabs(lambdas_a[7])),
+		      HALF*(lambdas_a[8]+fabs(lambdas_a[8])));
+}
+
+/*!
+ * This function returns the negative parts of the 
+ * elemental wave speeds or eigenvalues.           
+ */
+inline MHD3D_pState WaveSpeedNeg(const MHD3D_pState &lambdas_a){
+
+  return MHD3D_pState(HALF*(lambdas_a[1]-fabs(lambdas_a[1])),
+		      HALF*(lambdas_a[2]-fabs(lambdas_a[2])),
+		      HALF*(lambdas_a[3]-fabs(lambdas_a[3])),
+		      HALF*(lambdas_a[4]-fabs(lambdas_a[4])),
+		      HALF*(lambdas_a[5]-fabs(lambdas_a[5])),
+		      HALF*(lambdas_a[6]-fabs(lambdas_a[6])),
+		      HALF*(lambdas_a[7]-fabs(lambdas_a[7])),
+		      HALF*(lambdas_a[8]-fabs(lambdas_a[8])));
+}
+
+/*!
+ * This function returns the absolute values of the 
+ * elemental wave speeds or eigenvalues.            
+ */
+inline MHD3D_pState WaveSpeedAbs(const MHD3D_pState &lambdas_a){
+
+  return MHD3D_pState(fabs(lambdas_a[1]),
+		      fabs(lambdas_a[2]),
+		      fabs(lambdas_a[3]),
+		      fabs(lambdas_a[4]),
+		      fabs(lambdas_a[5]),
+		      fabs(lambdas_a[6]),
+		      fabs(lambdas_a[7]),
+		      fabs(lambdas_a[8]));
+}
+
+/*!
+ * Harten Entropy Fix \n
+ * This function returns the positive parts of the 
+ * corrected elemental wave speeds or eigenvalues  
+ * according to the entropy fix of Harten (1983).  
+ */
+inline MHD3D_pState HartenFixPos(const MHD3D_pState &lambdas_a,
+				 const MHD3D_pState &lambdas_l,
+				 const MHD3D_pState &lambdas_r){
+
+  return MHD3D_pState(HartenFixPos(lambdas_a[1],
+				   lambdas_l[1],
+				   lambdas_r[1]),
+		      HartenFixPos(lambdas_a[2],
+				   lambdas_l[2],
+				   lambdas_r[2]),
+		      HartenFixPos(lambdas_a[3],
+				   lambdas_l[3],
+				   lambdas_r[3]),
+		      HALF*(lambdas_a[4]+fabs(lambdas_a[4])),
+		      HALF*(lambdas_a[5]+fabs(lambdas_a[5])),
+		      HartenFixPos(lambdas_a[6],
+				   lambdas_l[6],
+				   lambdas_r[6]),
+		      HartenFixPos(lambdas_a[7],
+				   lambdas_l[7],
+				   lambdas_r[7]),
+		      HartenFixPos(lambdas_a[8],
+				   lambdas_l[8],
+				   lambdas_r[8]));
+}
+
+/*!
+ * Harten Entropy Fix \n
+ * This function returns the negative parts of the 
+ * corrected elemental wave speeds or eigenvalues  
+ * according to the entropy fix of Harten (1983).  
+ */
+inline MHD3D_pState HartenFixNeg(const MHD3D_pState &lambdas_a,
+				 const MHD3D_pState &lambdas_l,
+				 const MHD3D_pState &lambdas_r){
+
+  return MHD3D_pState(HartenFixNeg(lambdas_a[1],
+				   lambdas_l[1],
+				   lambdas_r[1]),
+		      HartenFixNeg(lambdas_a[2],
+				   lambdas_l[2],
+				   lambdas_r[2]),
+		      HartenFixNeg(lambdas_a[3],
+				   lambdas_l[3],
+				   lambdas_r[3]),
+		      HALF*(lambdas_a[4]-fabs(lambdas_a[4])),
+		      HALF*(lambdas_a[5]-fabs(lambdas_a[5])),
+		      HartenFixNeg(lambdas_a[6],
+				   lambdas_l[6],
+				   lambdas_r[6]),
+		      HartenFixNeg(lambdas_a[7],
+				   lambdas_l[7],
+				   lambdas_r[7]),
+		      HartenFixNeg(lambdas_a[8],
+				   lambdas_l[8],
+				   lambdas_r[8]));
+}
+
+/*!
+ * Harten Entropy Fix \n
+ * This function returns the absolute values of the 
+ * corrected elemental wave speeds or eigenvalues   
+ * according to the entropy fix of Harten (1983).   
+ */
+inline MHD3D_pState HartenFixAbs(const MHD3D_pState &lambdas_a,
+				 const MHD3D_pState &lambdas_l,
+				 const MHD3D_pState &lambdas_r){
+
+  return MHD3D_pState(HartenFixAbs(lambdas_a[1],
+				   lambdas_l[1],
+				   lambdas_r[1]),
+		      HartenFixAbs(lambdas_a[2],
+				   lambdas_l[2],
+				   lambdas_r[2]),
+		      HartenFixAbs(lambdas_a[3],
+				   lambdas_l[3],
+				   lambdas_r[3]),
+		      fabs(lambdas_a[4]),
+		      fabs(lambdas_a[5]),
+		      HartenFixAbs(lambdas_a[6],
+				   lambdas_l[6],
+				   lambdas_r[6]),
+		      HartenFixAbs(lambdas_a[7],
+				   lambdas_l[7],
+				   lambdas_r[7]),
+		      HartenFixAbs(lambdas_a[8],
+				   lambdas_l[8],
+				   lambdas_r[8]));
+}
+
 //! Summation between states (intrinsic field is set to zero)
 inline MHD3D_pState MHD3D_pState::operator +(const MHD3D_pState &W) const {
   return MHD3D_pState(density  + W.density,
@@ -1278,6 +1452,18 @@ public:
       return density;
     }
   }
+
+  //! @name Flux functions
+  //@{
+  friend MHD3D_cState FluxRoe(const MHD3D_cState &Ul,
+			      const MHD3D_cState &Ur){ return FluxRoe(Ul.W(), Ur.W()); }
+  friend MHD3D_cState FluxRusanov(const MHD3D_cState &Ul,
+				  const MHD3D_cState &Ur){ return FluxRusanov(Ul.W(), Ur.W()); }
+  friend MHD3D_cState FluxHLLE(const MHD3D_cState &Ul,
+			       const MHD3D_cState &Ur){ return FluxHLLE(Ul.W(), Ur.W()); }
+  friend MHD3D_cState FluxLinde(const MHD3D_cState &Ul,
+				const MHD3D_cState &Ur){ return FluxLinde(Ul.W(), Ur.W()); }
+  //@}
 
   //! @name Binary arithmetic operators.
   //@{
