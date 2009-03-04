@@ -17,6 +17,15 @@ static const  int InvestCellK = 0;
 static int FoundIndexCell = 0;
 #endif
 
+/**********************************************************************************************************************
+ ----------------------------------------------------------------------------------------------------------------------
+ ----------------------------------------------------------------------------------------------------------------------
+ *                                                                                                                    *
+ *                                         3D Reconstructions                                                         *
+ *                                                                                                                    *
+ ----------------------------------------------------------------------------------------------------------------------
+ ----------------------------------------------------------------------------------------------------------------------
+ **********************************************************************************************************************/
 
  /***************************************************************************
  * TEMPLATIZED Function: kExact_Reconstruction for 3D                       *
@@ -161,9 +170,10 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
   /* Solve the overdetermined linear system of equations: Two METHODS available */
   /******************************************************************************/
 
-  // METHOD 1: Use the Pseudo Inverse of the LHS matrix
-  // **************************************************
-  if( SolnBlk.UsePseudoInverse() ){
+  if(SolnBlk.UsePseudoInverse() == ON){
+
+    // METHOD 1: Use the Pseudo Inverse of the LHS matrix
+    // **************************************************
     
     // Step 1. Compute the pseudo-inverse and override the LHS term.
     // This operation will change the dimensions of the matrix.
@@ -174,7 +184,6 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
     X = A * All_Delta_U;
 
     // Step 3. Update the coefficients D (derivatives)
-    // ***********************************************
     for (i=1; i<=SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv().LastElem(); ++i){
       for (parameter = 1; parameter <= NumberOfParameters; ++parameter){
 	SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(i).D(parameter) = X(i-1,parameter-1);
