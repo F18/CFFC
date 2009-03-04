@@ -92,6 +92,9 @@ private:
 						the whole computational domain */
   double CharacteristicLength;	/* The characteristic length of the geometry */
   double CutoffKnob;
+  
+  int Use_Pseudo_Inverse;       /* Flag for calculating and using the pseudo inverse of the LHS Matrix in the
+				   kExact_Reconstruction procedure */
 
   CompCellType*** SolnPtr;      /* Solution variable */
 
@@ -148,6 +151,7 @@ private:
   double & GeomCharacteristicLength(void) { return CharacteristicLength; }
   const double & KnobCutoff(void) { return CutoffKnob;}
   const int & NumberOfCellRings(void) const { return SolnPtr[0][0][0].CellRings(); }
+  const int & UsePseudoInverse(void) const {return Use_Pseudo_Inverse;}
 
   /* Operation functions */
   int NumberOfTaylorDerivatives() const {
