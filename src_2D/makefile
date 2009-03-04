@@ -498,7 +498,10 @@ SRC_LEVELSET = $(LEVELSET_DIR)LevelSet2DInput.cc \
 SRC_LEVELSET_EXE = $(LEVELSET_DIR)LevelSet2D.cc
 
 # Ideal MHD2D:
-SRC_IDEALMHD = $(IDEALMHD_DIR)MHD3DState.cc
+SRC_IDEALMHD = $(IDEALMHD_DIR)MHD3DState.cc \
+	       $(IDEALMHD_DIR)MHD2DExactSolutions.cc \
+	       $(IDEALMHD_DIR)ExactSolutions.cc \
+	       $(IDEALMHD_DIR)MHD2DInput.cc
 
 SRC_IDEALMHD_EXE = $(IDEALMHD_DIR)IdealMHD2D.cc
 

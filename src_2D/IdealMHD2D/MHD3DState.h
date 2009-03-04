@@ -109,6 +109,7 @@ public:
   static double      g; //!< Specific heat ratio.
   static double    gm1; //!< g-1
   static double   gm1i; //!< 1/(g-1)
+  static double Mr_min; //!< Reference Mach number used in local preconditioner.
   //@}
 
   //! @name Creation and copy constructors.
@@ -1247,6 +1248,7 @@ public:
   static double      g; //!< Specific heat ratio.
   static double    gm1; //!< g-1
   static double   gm1i; //!< 1/(g-1)
+  static double Mr_min; //!< Reference Mach number used in local preconditioner.
   //@}
 
   //! @name Useful constant states
