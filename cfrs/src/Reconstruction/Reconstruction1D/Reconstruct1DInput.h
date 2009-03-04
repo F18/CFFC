@@ -59,7 +59,7 @@ class Reconstruct1D_Input_Parameters{
   char Data_Dependent_Weighting[INPUT_PARAMETER_LENGTH_RECONSTRUCT1D];
   bool data_depend_weighting;
   char Pseudo_Inverse[INPUT_PARAMETER_LENGTH_RECONSTRUCT1D];
-  bool pseudo_inverse;
+  int  pseudo_inverse;
   char Use_Residual_DI[INPUT_PARAMETER_LENGTH_RECONSTRUCT1D];
   bool use_residual_DI;
   double CutoffKnobHighOrderReconstruction;
@@ -130,6 +130,7 @@ class Reconstruct1D_Input_Parameters{
   const int & Limiter(void) const {return i_Limiter;}
   double & FitTolerance(void) {return CENO_Cutoff;}
   const double & FitTolerance(void) const {return CENO_Cutoff;}
+  const int & UsePseudoInverse(void) const {return pseudo_inverse;}
 
   /* Input-output operators. */
 

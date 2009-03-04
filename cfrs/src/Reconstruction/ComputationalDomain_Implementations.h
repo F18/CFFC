@@ -11,7 +11,7 @@
 // Default Constructor
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
 ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ComputationalDomain()
-  :SolnPtr(NULL), L1Norm(0.0), L2Norm(0.0), LMaxNorm(0.0)
+  :SolnPtr(NULL), L1Norm(0.0), L2Norm(0.0), LMaxNorm(0.0), Use_Pseudo_Inverse(0)
 {
   N_XYZ.reserve(SpaceDimension);
   IndexLow.reserve(SpaceDimension);
@@ -41,6 +41,7 @@ ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ComputationalDoma
   LMaxNorm = rhs.LMaxNorm;
   MaxDeltaSolutionOverDomain = rhs.MaxDeltaSolutionOverDomain;
   CharacteristicLength = rhs.CharacteristicLength;
+  Use_Pseudo_Inverse = rhs.Use_Pseudo_Inverse;
 
   // allocate memory
   allocate();
@@ -86,6 +87,7 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
   LMaxNorm = rhs.LMaxNorm;
   MaxDeltaSolutionOverDomain = rhs.MaxDeltaSolutionOverDomain;
   CharacteristicLength = rhs.CharacteristicLength;
+  Use_Pseudo_Inverse = rhs.Use_Pseudo_Inverse;
 
   // allocate memory
   allocate();
@@ -272,6 +274,8 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   L2Norm = SolutionType(0.0);
   LMaxNorm = SolutionType(0.0);
 
+  // Set the flag for use of pseudo inverse in kExact_Reconstruction
+  Use_Pseudo_Inverse = IP.UsePseudoInverse();
 }
 
 // SetDomain(int,int,int)
@@ -357,6 +361,10 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   L2Norm = SolutionType(0.0);
   LMaxNorm = SolutionType(0.0);
 
+  // Set the flag for use of pseudo inverse in kExact_Reconstruction
+  Use_Pseudo_Inverse = IP.UsePseudoInverse();
+
+
 }
 
 // SetDomain(const Reconstruct2D_Input_Parameters)
@@ -434,6 +442,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   L1Norm = SolutionType(0.0);
   L2Norm = SolutionType(0.0);
   LMaxNorm = SolutionType(0.0);
+
+  // Set the flag for use of pseudo inverse in kExact_Reconstruction
+  Use_Pseudo_Inverse = IP.UsePseudoInverse();
 }
 
 // SetDomain(const Grid3D_Hexa_Block, const Reconstruct3D_Input_Parameters)
@@ -485,7 +496,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   L1Norm = SolutionType(0.0);
   L2Norm = SolutionType(0.0);
   LMaxNorm = SolutionType(0.0);
- 
+
+  // Set the flag for use of pseudo inverse in kExact_Reconstruction
+  Use_Pseudo_Inverse = IP.UsePseudoInverse();
 }
 
 // SetDomain(const Reconstruct3D_Input_Parameters)
@@ -580,6 +593,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   L1Norm = SolutionType(0.0);
   L2Norm = SolutionType(0.0);
   LMaxNorm = SolutionType(0.0);
+
+  // Set the flag for use of pseudo inverse in kExact_Reconstruction
+  Use_Pseudo_Inverse = IP.UsePseudoInverse();
 }
 
 /* Overloaded operators */

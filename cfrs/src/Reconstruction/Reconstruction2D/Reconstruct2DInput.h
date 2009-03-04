@@ -142,6 +142,7 @@ class Reconstruct2D_Input_Parameters{
   const int & Limiter(void) const {return i_Limiter;}
   double & FitTolerance(void) {return CENO_Cutoff;}
   const double & FitTolerance(void) const {return CENO_Cutoff;}
+  const int & UsePseudoInverse(void) const {return pseudo_inverse;}
 
   /* Input-output operators. */
 

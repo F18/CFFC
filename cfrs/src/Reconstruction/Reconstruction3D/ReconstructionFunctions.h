@@ -4,6 +4,7 @@
 /* Include defined header file. */
 #include <vector>
 #include "../../../src_3D/Math/LinearSystems.h"
+#include "../../../src_3D/Math/Matrix.h"
 #include "../../../src_3D/Utilities/Utilities.h"
 #include "include/TypeDefinition.h"
 #include "Reconstruction/ReconstructionHelpers.h"
@@ -35,6 +36,7 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
   int ND(SolnBlk.NumberOfTaylorDerivatives());	/* number of Taylor expansion coefficients */
   DenseMatrix A(StencilSize-1,ND-1);            /* the matrix which the linear system is solved for */
   DenseMatrix All_Delta_U (StencilSize-1,NumberOfParameters); /* matrix for storing U[neighbour]-U[cell] */
+  DenseMatrix X (StencilSize-1,NumberOfParameters); /* matrix for storing the solution to the linear system A*X = All_Delta_U */
   ColumnVector GeomWeights(StencilSize);        /* the column vector of the geometric weights */
   Vector3D* DeltaCellCenters;                   /* array for storing the X-distance and Y-distance between the cell center
 						   of neighbour cells and the one of i,j,k cell */
@@ -84,7 +86,7 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
     
     // compute the normalized geometric weight
     GeomWeights(cell) /= WeightsSum;
-    // RR: --> The following simply gets rid of geometric weighting for the time being
+    // --> RR: The following line simply gets rid of geometric weighting for the time being
     GeomWeights(cell) = 1.0;
 
     // *** SET the matrix A of the linear system (LHS) ***
@@ -136,6 +138,9 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
       A(cell-1,i-1) *= GeomWeights(cell);
 
     } // endfor (i) - Number of Derivatives
+
+    // STOP:   Matrix of the linear system (LHS) built. 
+    // ************************************************
       
     // *** SET the matrix All_Delta_U of the linear system (RHS) ***
     for (parameter = 1; parameter <= NumberOfParameters; ++parameter){
@@ -144,28 +149,59 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
       All_Delta_U(cell-1,parameter-1) *= GeomWeights(cell);
     }
 
-  }//endfor (cell) - Stencil Size
+  } //endfor (cell) - Stencil Size
 
-  //Print_(A);
 
   // STOP:   Matrix A of the linear system (LHS) built. The same matrix is used for all variables (same geometry).
   //         Matrix All_Delta_U of the linear system (RHS) built.
   // **********************************************************************
-  
-  /* Solve the overdetermined linear system of equations using a least-squares procedure*/
-  /**************************************************************************************/
-  Solve_LS_Householder_F77(A, All_Delta_U, krank, NumberOfParameters, StencilSize-1, ND-1);
 
-  // Update the coefficients D (derivatives)
-  //**************************************************
-  for (i=1; i<=SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv().LastElem(); ++i){
-    for (parameter = 1; parameter <= NumberOfParameters; ++parameter){
-      SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(i).D(parameter) = All_Delta_U(i-1,parameter-1);
-       /* this equation makes sure that the mean conservation of each parameter is satisfied inside the reconstructed cell */
-      SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(0).D(parameter) -= 
-        (SolnBlk(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i)*All_Delta_U(i-1,parameter-1));
+  //Print_(A);
+
+  /* Solve the overdetermined linear system of equations: Two METHODS available */
+  /******************************************************************************/
+
+  // METHOD 1: Use the Pseudo Inverse of the LHS matrix
+  // **************************************************
+  if( SolnBlk.UsePseudoInverse() ){
+    
+    // Step 1. Compute the pseudo-inverse and override the LHS term.
+    // This operation will change the dimensions of the matrix.
+    A.pseudo_inverse_override();
+
+    // Step 2. Find the solution of the linear-system for the current parameter
+    // Note the matrix "A" used here is really "A_inverse" via Step 1 above.
+    X = A * All_Delta_U;
+
+    // Step 3. Update the coefficients D (derivatives)
+    // ***********************************************
+    for (i=1; i<=SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv().LastElem(); ++i){
+      for (parameter = 1; parameter <= NumberOfParameters; ++parameter){
+	SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(i).D(parameter) = X(i-1,parameter-1);
+	/* this equation makes sure that the mean conservation of each parameter is satisfied inside the reconstructed cell */
+	SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(0).D(parameter) -= 
+	  (SolnBlk(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i)*X(i-1,parameter-1));
+      }
+    } 
+  } else {
+
+    // METHOD 2: Use a Least-Squares procedure with the original LHS matrix
+    // ********************************************************************
+
+    // Step 1. Find the solution of the linear-system for the current parameter
+    Solve_LS_Householder_F77(A, All_Delta_U, krank, NumberOfParameters, StencilSize-1, ND-1);
+
+    // Step 2. Update the coefficients D (derivatives)
+    for (i=1; i<=SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv().LastElem(); ++i){
+      for (parameter = 1; parameter <= NumberOfParameters; ++parameter){
+	SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(i).D(parameter) = All_Delta_U(i-1,parameter-1);
+	/* this equation makes sure that the mean conservation of each parameter is satisfied inside the reconstructed cell */
+	SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv(0).D(parameter) -= 
+	  (SolnBlk(i_index[0],j_index[0],k_index[0]).CellGeomCoeff(i)*All_Delta_U(i-1,parameter-1));
+      }
     }
-  }
+
+  } // endif UsePseudoInverse()
 
   // Deallocate memory
   delete [] DeltaCellCenters; DeltaCellCenters = NULL;
