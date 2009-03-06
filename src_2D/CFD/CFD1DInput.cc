@@ -482,6 +482,8 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
           IP.i_ICs = IC_RAREFACTION_WAVE;
        } else if (strcmp(IP.ICs_Type, "Brio_Wu") == 0) {
           IP.i_ICs = IC_BRIO_WU;
+       } else if (strcmp(IP.ICs_Type, "Dai_Woodward") == 0) {
+          IP.i_ICs = IC_DAI_WOODWARD;
        } else if (strcmp(IP.ICs_Type, "Riemann") == 0) {
           IP.i_ICs = IC_RIEMANN;
        } else if (strcmp(IP.ICs_Type, "Square_Wave") == 0) {
