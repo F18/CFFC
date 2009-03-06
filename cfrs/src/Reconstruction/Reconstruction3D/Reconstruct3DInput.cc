@@ -800,6 +800,7 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
        else if (strcmp(IP.Pseudo_Inverse, "OFF") == 0)
 	 IP.pseudo_inverse = OFF;
        
+       
     } else if (strcmp(IP.Next_Control_Parameter, "Output_Format_Type") == 0) {
       i_command = 36;
       Get_Next_Input_Control_Parameter(IP);
