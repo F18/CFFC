@@ -102,7 +102,7 @@ namespace tut
       W3(d, Vector2D(vx, vy), Vector2D(B1x,B1y), p),
       W4(d, Vector2D(vx, vy), Vector2D(B1x,B1y), Vector2D(B0x,B0y), p),
       W5(d, vx, vy, B1x, B1y, p),
-      W6(d, vx, vy, B1x, B1y, B0x, B0y, p);
+      W6(d, vx, vy, B1x, B1y, B0x, B0y, p, "2D");
 
     // == Check correct setup
 
@@ -183,6 +183,69 @@ namespace tut
     ensure_equals("All components set constructor intrinsic field", W6.B0(), B0);
     ensure_equals("All components set constructor intrinsic field x", W6.B0x(), B0x);
     ensure_equals("All components set constructor intrinsic field y", W6.B0y(), B0y);
+
+  }
+
+
+  /* Test 2:*/
+  template<>
+  template<>
+  void MHD3D_object::test<2>()
+  {
+
+    set_test_name("Roe and HLLE solver for Dai-Woodward IVP");
+
+    MHD3D_pState Wl, Wr;	// Left and right interface solutions
+    MHD3D_pState W_exact;	/* Exact solution at x/t = 0, determined by an exact
+				   Riemann solver (Ryu & Jones, 1995; M. Torrilhon, 2003) */
+    MHD3D_cState FExact, FRoe, FHLLE;
+
+    // Set Left state
+    Wl = MHD3D_pState(1.08,
+		      1.2, 0.01, 0.5,
+		      0.5641895835477563, 1.0155412503859613, 0.5641895835477563,
+		      ZERO, ZERO, ZERO,
+		      0.95);
+
+    // Set Right state
+    Wr = MHD3D_pState(1,
+		      0, 0, 0,
+		      0.5641895835477563, 1.1283791670955126, 0.5641895835477563,
+		      ZERO, ZERO, ZERO,
+		      1);
+
+    // Set exact solution
+    W_exact = MHD3D_pState(1.4903369980,
+			   0.6058783288, 0.1123507383, 0.5568615213,
+			   0.5641895835, 1.4383158354, 0.7990643530,
+			   ZERO, ZERO, ZERO,
+			   1.6557697598);
+
+    // Set exact flux
+    FExact = MHD3D_cState(9.0296288969704908e-01,
+			  3.3973286046119693e+00, -7.1003426480081577e-01, 5.2001503925375836e-02,
+			  0.0000000000000000e+00, 8.0805727839133357e-01, 1.6996030502986992e-01,
+			  0.0000000000000000e+00, 0.0000000000000000e+00, 0.0000000000000000e+00,
+			  4.1174729436401369e+00);
+
+    // Set Roe flux
+    FRoe = MHD3D_cState(8.8840343980143133e-01,
+			3.5083917212375098e+00, -7.0701164371581227e-01, 1.4962535682394074e-01,
+			0.0000000000000000e+00, 7.4862081866183550e-01, 1.5076583453298822e-01,
+			0.0000000000000000e+00, 0.0000000000000000e+00, 0.0000000000000000e+00,
+			4.0604269556077419e+00);
+
+    // Set HLLE flux
+    FHLLE = MHD3D_cState(9.3125015277644130e-01,
+			 3.6002140639449891e+00, -5.7670381847206553e-01, 5.4751950995068110e-01,
+			 0.0000000000000000e+00, 7.2136671694854060e-01, 2.6426893592634448e-01,
+			 0.0000000000000000e+00, 0.0000000000000000e+00, 0.0000000000000000e+00,
+			 4.1869629297799671e+00);
+
+    // === Check fluxes ===
+    ensure_distance("Exact flux", W_exact.F(), FExact, AcceptedError(FExact));
+    ensure_distance("Roe flux", FluxRoe(Wl,Wr), FRoe, AcceptedError(FRoe));
+    ensure_distance("HLLE flux", FluxHLLE(Wl,Wr), FHLLE, AcceptedError(FHLLE));
 
   }
 

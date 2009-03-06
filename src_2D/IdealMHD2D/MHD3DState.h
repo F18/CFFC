@@ -161,8 +161,15 @@ public:
 	       const double &vx,  const double &vy,
 	       const double &B1x, const double &B1y,
 	       const double &B0x, const double &B0y,
-	       const double &pre) : density(rho), velocity(vx,vy), pressure(pre),
-				    PerturbativeB(B1x,B1y), IntrinsicB(B0x,B0y){ };
+	       const double &pre, const char *) : density(rho), velocity(vx,vy), pressure(pre),
+						  PerturbativeB(B1x,B1y), IntrinsicB(B0x,B0y){ };
+
+  //! Constructor 3D with all components set and zero intrinsic magnetic field
+  MHD3D_pState(const double &rho,
+	       const double &vx,  const double &vy, const double &vz,
+	       const double &B1x, const double &B1y, const double &B1z,
+	       const double &pre) : density(rho), velocity(vx,vy,vz), pressure(pre),
+				    PerturbativeB(B1x,B1y,B1z), IntrinsicB(ZERO,ZERO,ZERO){ };
 
   //! Constructor 3D with all components set
   MHD3D_pState(const double &rho,
@@ -378,6 +385,23 @@ public:
   friend bool operator !=(const MHD3D_pState &lhs, const MHD3D_pState &rhs);
   friend bool operator >=(const MHD3D_pState &lhs, const MHD3D_pState &rhs);
   friend bool operator <=(const MHD3D_pState &lhs, const MHD3D_pState &rhs);
+  //@}
+
+  //! @name Mathematic functions
+  //@{
+  //! Absolute value
+  friend MHD3D_pState fabs(const MHD3D_pState &W){ return MHD3D_pState(fabs(W.d()),fabs(W.v()), 
+								       fabs(W.B1()), fabs(W.B0()), fabs(W.p()) );}
+  //! Maximum value 
+  friend MHD3D_pState max(const MHD3D_pState &Wl,
+			  const MHD3D_pState &Wr){ return MHD3D_pState(max(Wl.d(),Wr.d()) , vmax(Wl.v(),Wr.v()), 
+								       vmax(Wl.B1(), Wr.B1()), vmax(Wl.B0(),Wr.B0()),
+								       max(Wl.p(),Wr.p()) );}
+  //! Minimum value
+  friend MHD3D_pState min(const MHD3D_pState &Wl,
+			  const MHD3D_pState &Wr){ return MHD3D_pState(min(Wl.d(),Wr.d()) , vmin(Wl.v(),Wr.v()), 
+								       vmin(Wl.B1(), Wr.B1()), vmin(Wl.B0(),Wr.B0()),
+								       min(Wl.p(),Wr.p()) );}
   //@}
 
   //! @name Input-output operators.
@@ -1314,7 +1338,7 @@ public:
 	       const double &Etotal): density(rho), momentum(rhovx,rhovy), 
 				      PerturbativeB(_B1x_,_B1y_), IntrinsicB(ZERO), PerturbativeEnergy(Etotal){ };
 
-  //! Constructor 2D with all components set
+  //! Constructor 2D with all components set (Pass "2D" to the char pointer)
   MHD3D_cState(const double &rho,
 	       const double &rhovx,
 	       const double &rhovy,
@@ -1322,8 +1346,22 @@ public:
 	       const double &_B1y_,
 	       const double &_B0x_,
 	       const double &_B0y_,
-	       const double &Etotal): density(rho), momentum(rhovx,rhovy),
-				      PerturbativeB(_B1x_,_B1y_), IntrinsicB(_B0x_,_B0y_), PerturbativeEnergy(Etotal){ };
+	       const double &Etotal,
+	       const char * ): density(rho), momentum(rhovx,rhovy),
+			       PerturbativeB(_B1x_,_B1y_), IntrinsicB(_B0x_,_B0y_),
+			       PerturbativeEnergy(Etotal){ };
+
+  //! Constructor 3D with all components set and zero intrinsic magnetic field
+  MHD3D_cState(const double &rho,
+	       const double &rhovx,
+	       const double &rhovy,
+	       const double &rhovz,
+	       const double &_B1x_,
+	       const double &_B1y_,
+	       const double &_B1z_,
+	       const double &Etotal): density(rho), momentum(rhovx,rhovy,rhovz),
+				      PerturbativeB(_B1x_,_B1y_,_B1z_), IntrinsicB(ZERO,ZERO,ZERO),
+				      PerturbativeEnergy(Etotal){ };
 
   //! Constructor 3D with all components set
   MHD3D_cState(const double &rho,
@@ -1501,6 +1539,23 @@ public:
   friend bool operator <=(const MHD3D_cState &lhs, const MHD3D_cState &rhs);
   //@}
     
+  //! @name Mathematic functions
+  //@{
+  //! Absolute value
+  friend MHD3D_cState fabs(const MHD3D_cState &U){ return MHD3D_cState(fabs(U.d()),  fabs(U.v()), 
+								       fabs(U.B1()), fabs(U.B0()), fabs(U.p()) );}
+  //! Maximum value 
+  friend MHD3D_cState max(const MHD3D_cState &Ul,
+			  const MHD3D_cState &Ur){ return MHD3D_cState(max(Ul.d(),Ur.d()) , vmax(Ul.v(),Ur.v()), 
+								       vmax(Ul.B1(), Ur.B1()), vmax(Ul.B0(),Ur.B0()),
+								       max(Ul.p(),Ur.p()) );}
+  //! Minimum value
+  friend MHD3D_cState min(const MHD3D_cState &Ul,
+			  const MHD3D_cState &Ur){ return MHD3D_cState(min(Ul.d(),Ur.d()) , vmin(Ul.v(),Ur.v()), 
+								       vmin(Ul.B1(), Ur.B1()), vmin(Ul.B0(),Ur.B0()),
+								       min(Ul.p(),Ur.p()) );}
+  //@}
+
   //! @name Input-output operators.
   //@{
   friend ostream &operator << (ostream &out_file, const MHD3D_cState &U);

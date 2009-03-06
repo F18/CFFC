@@ -113,6 +113,10 @@ class Vector3D{
     double abs(void) const;
     friend double abs(const Vector3D &V);
 
+    //@{ @name Vector of absolute values.
+    friend Vector3D fabs(const Vector3D &V){ return Vector3D(fabs(V.x), fabs(V.y), fabs(V.z));}
+    //@}
+
     /* Square of vector. */
     double sqr(void);
     double sqr(void) const;
