@@ -96,7 +96,10 @@ private:
   int Use_Pseudo_Inverse;       /* Flag for calculating and using the pseudo inverse of the LHS Matrix in the
 				   kExact_Reconstruction procedure */
 
+  DenseMatrix*** CENO_LHS;      /* Block-level Container for the LHS Matrix used in the kExact_Reconstruction prcedure */
+
   CompCellType*** SolnPtr;      /* Solution variable */
+
 
  public:
 
@@ -114,6 +117,8 @@ private:
   /* Memory management functions */
   void allocate();
   void deallocate();
+
+  void allocate_CENO_LHS_size();
 
   void SetDomain(const int & NCx, const int & Nghost);
   void SetDomain(const int & NCx, const int & NCy, const int & Nghost);
@@ -182,6 +187,45 @@ private:
 
   void ComputeMultipleCorrelationCoefficient(void);
   void ComputeMultipleCorrelationCoefficient2D(void);
+
+  //! @name Pseudo-inverse of the LHS term in the CENO reconstruction
+  //@{
+  //! Get the pointer to the double array of reconstruction pseudo-inverse matrices.
+  DenseMatrix *** LHS_Inv(void) {return CENO_LHS;}
+  
+  // 2D Accessors
+  // ************
+  //! Get the pseudo-inverse matrix for the reconstruction of cell (ii,jj)
+  DenseMatrix & Cell_LHS_Inv(const int & ii, const int & jj) {return CENO_LHS[0][jj][ii];}
+  //! Get the pseudo-inverse matrix for the reconstruction of cell (ii,jj)
+  const DenseMatrix & Cell_LHS_Inv(const int & ii, const int & jj) const {return CENO_LHS[0][jj][ii];}
+  //! Get the entry (IndexI,IndexJ) in the pseudo-inverse matrix for the reconstruction of cell (ii,jj)
+  double & Cell_LHS_Inv_Value(const int & ii, const int & jj,
+			      const int & IndexI, const int & IndexJ) {return CENO_LHS[0][jj][ii](IndexI,IndexJ);}
+  //! Get the entry (IndexI,IndexJ) in the pseudo-inverse matrix for the reconstruction of cell (ii,jj)
+  const double & Cell_LHS_Inv_Value(const int & ii, const int & jj,
+				    const int & IndexI, const int & IndexJ) const {return CENO_LHS(IndexI,IndexJ);}
+  
+  // 3D Accessors
+  // ************
+  //! Get the pseudo-inverse matrix for the reconstruction of cell (ii,jj,kk)
+  DenseMatrix & Cell_LHS_Inv(const int & ii, const int & jj, const int & kk) {return CENO_LHS[kk][jj][ii];}
+  //! Get the pseudo-inverse matrix for the reconstruction of cell (ii,jj,kk)
+  const DenseMatrix & Cell_LHS_Inv(const int & ii, const int & jj, const int & kk) const {return CENO_LHS[kk][jj][ii];}
+  //! Get the entry (IndexI,IndexJ) in the pseudo-inverse matrix for the reconstruction of cell (ii,jj,kk)
+  double & Cell_LHS_Inv_Value(const int & ii, const int & jj, const int & kk,
+			      const int & IndexI, const int & IndexJ) {return CENO_LHS[kk][jj][ii](IndexI,IndexJ);}
+  //! Get the entry (IndexI,IndexJ) in the pseudo-inverse matrix for the reconstruction of cell (ii,jj,kk)
+  const double & Cell_LHS_Inv_Value(const int & ii, const int & jj, const int & kk,
+				    const int & IndexI, const int & IndexJ) const {return CENO_LHS(IndexI,IndexJ);}
+
+  //! Return true if the pseudo-inverse has been already computed, otherwise false.
+  //bool IsPseudoInversePreComputed(void) const { return _calculated_psinv; }
+  //! Require update of the pseudo-inverse
+  //void MustUpdatePseudoInverse(void) { _calculated_psinv = false; }
+  //! Return true if the pseudo-inverse related containers has been allocated.
+  //bool IsPseudoInverseAllocated(void) const { return _allocated_psinv; }
+  //@}
 
   /* Output functions */
   void DefineHeader(const HeaderData & NameOfThePrintedVariables){ VarNames = NameOfThePrintedVariables; }
