@@ -82,6 +82,7 @@ SRC_COMMON              += $(CFFC_2D_Path)/Utilities/EpsilonTol.cc
 
 # Common from other directories:
 SRC_COMMON              += Reconstruction/CENO_Tolerances.cc
+SRC_COMMON              += Reconstruction/CENO_CFRS_ExecutionMode.cc
 
 
 #--- SRC_COMMON_TESTS ----

@@ -41,11 +41,11 @@ ostream &operator << (ostream &out_file,
 	       << IP.Limiter_Type; 
       out_file << "\n  -> Fit Tolerance: "
 	       << CENO_Tolerances::Fit_Tolerance;
+      out_file << "\n  -> Pseudo Inverse: "
+	       << IP.Pseudo_Inverse;
       break;
     } /* endswitch */
 
-    out_file << "\n  -> Pseudo Inverse: "
-	     << IP.Pseudo_Inverse;
     out_file << "\n  -> Reconstruction Order: "
 	     << IP.Reconstruction_Order;
     out_file << "\n  -> Input File Name: " 
@@ -242,7 +242,6 @@ void Set_Default_Input_Parameters(Reconstruct3D_Input_Parameters &IP) {
     strcpy(IP.Data_Dependent_Weighting, "No");
     IP.data_depend_weighting = OFF;
     strcpy(IP.Pseudo_Inverse, "No");
-    IP.pseudo_inverse = OFF;
 
     strcpy(IP.Limiter_Type, "Barth-Jespersen");
     IP.i_Limiter = LIMITER_BARTH_JESPERSEN;
@@ -332,6 +331,8 @@ void Set_Default_Input_Parameters(Reconstruct3D_Input_Parameters &IP) {
 
     IP.Line_Number = 0;
     IP.Message_Number = 1;
+
+    CENO_CFRS_Execution_Mode::SetDefaults();
 
 }
 
@@ -784,23 +785,6 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
 		(IP.geom_weighting))
 	 IP.data_depend_weighting = ON;
       
-    } else if (strcmp(IP.Next_Control_Parameter, "Pseudo_Inverse") == 0){
-      i_command = 36;
-      Get_Next_Input_Control_Parameter(IP);
-      strcpy(IP.Pseudo_Inverse, 
-	     IP.Next_Control_Parameter);
-
-      // Add the parse word for the new function //
-       if (strcmp(IP.Pseudo_Inverse, "Yes") == 0)
-	 IP.pseudo_inverse = ON;
-       else if (strcmp(IP.Pseudo_Inverse, "No") == 0)
-	 IP.pseudo_inverse = OFF;
-       else if (strcmp(IP.Pseudo_Inverse, "ON") == 0)
-	 IP.pseudo_inverse = ON;
-       else if (strcmp(IP.Pseudo_Inverse, "OFF") == 0)
-	 IP.pseudo_inverse = OFF;
-       
-       
     } else if (strcmp(IP.Next_Control_Parameter, "Output_Format_Type") == 0) {
       i_command = 36;
       Get_Next_Input_Control_Parameter(IP);
@@ -1094,6 +1078,9 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
 
     /* Parse next control parameter with CENO_Tolerances parser */
     CENO_Tolerances::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+    /* Parse next control parameter with CENO_CFRS_Execution_Mode parser */
+    CENO_CFRS_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
 
     
     /* Return the parser command type indicator. */

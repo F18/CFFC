@@ -11,6 +11,7 @@
 #include "../../Grid/Grid3D/Cell3D.h"
 #include "../../TestFunctions/TestFunctions_3D.h"
 #include "../../include/TypeDefinition.h"
+#include "../CENO_CFRS_ExecutionMode.h" // Include high-order CENO execution mode header file
 
 using namespace std;
 
@@ -48,7 +49,6 @@ class Reconstruct3D_Input_Parameters{
   char Data_Dependent_Weighting[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D];
   int  data_depend_weighting;
   char Pseudo_Inverse[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D];
-  int  pseudo_inverse;
 
   // Function file name to be reconstructed and related input parameters:
   char Function_Type[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D];
@@ -151,7 +151,6 @@ class Reconstruct3D_Input_Parameters{
   const int & Limiter(void) const {return i_Limiter;}
   double & FitTolerance(void) {return CENO_Cutoff;}
   const double & FitTolerance(void) const {return CENO_Cutoff;}
-  const int & UsePseudoInverse(void) const {return pseudo_inverse;}
 
   /* Input-output operators. */
 
