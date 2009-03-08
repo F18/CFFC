@@ -410,9 +410,6 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 
   int i,j;
 
-  // Set the flag for use of pseudo inverse in kExact_Reconstruction
-  Use_Pseudo_Inverse = IP.UsePseudoInverse();
-
   // allocate memory
   SetDomain(IP.iCell(), IP.jCell(), IP.Nghost());
 
@@ -471,9 +468,6 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 
   // Read the number of cells in the Xdir and in the Ydir. Read number of ghost cells and the reconstruction order
   In_File >> i >> j >> Nghost >> RecOrder;
-
-  // Set the flag for use of pseudo inverse in kExact_Reconstruction
-  Use_Pseudo_Inverse = IP.UsePseudoInverse();
 
   // allocate memory
   SetDomain(i, j, Nghost);
@@ -548,9 +542,6 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 
   int i,j,k;
 
-  // Set the flag for use of pseudo inverse in kExact_Reconstruction
-  Use_Pseudo_Inverse = IP.UsePseudoInverse();
-
   // allocate memory
   SetDomain(IP.iCell(), IP.jCell(), IP.kCell(), IP.Nghost());
 
@@ -619,9 +610,6 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 
   // Read the number of cells in the Xdir and in the Ydir. Read number of ghost cells and the reconstruction order
   In_File >> i >> j >> k >> Nghost >> RecOrder; // >> pseudo_inverse;
-
-  // Set the flag for use of pseudo inverse in kExact_Reconstruction
-  Use_Pseudo_Inverse = IP.UsePseudoInverse();
 
   // allocate memory
   SetDomain(i, j, k, Nghost);

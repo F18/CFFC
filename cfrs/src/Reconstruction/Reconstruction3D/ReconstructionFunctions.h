@@ -171,7 +171,8 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
   /* Solve the overdetermined linear system of equations: Two METHODS available */
   /******************************************************************************/
 
-  if(SolnBlk.UsePseudoInverse() == ON){
+  //  if(SolnBlk.UsePseudoInverse() == ON){
+  if(CENO_CFRS_Execution_Mode::USE_PSEUDO_INVERSE == ON){
 
     // METHOD 1: Use the Pseudo Inverse of the LHS matrix
     // **************************************************
