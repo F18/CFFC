@@ -11,7 +11,7 @@
 // Default Constructor
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
 ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ComputationalDomain()
-  :SolnPtr(NULL), L1Norm(0.0), L2Norm(0.0), LMaxNorm(0.0), Use_Pseudo_Inverse(0), CENO_LHS(NULL)
+  :SolnPtr(NULL), L1Norm(0.0), L2Norm(0.0), LMaxNorm(0.0), CENO_LHS(NULL)
 {
   N_XYZ.reserve(SpaceDimension);
   IndexLow.reserve(SpaceDimension);
@@ -41,7 +41,6 @@ ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ComputationalDoma
   LMaxNorm = rhs.LMaxNorm;
   MaxDeltaSolutionOverDomain = rhs.MaxDeltaSolutionOverDomain;
   CharacteristicLength = rhs.CharacteristicLength;
-  Use_Pseudo_Inverse = rhs.Use_Pseudo_Inverse;
 
   // allocate memory
   allocate();
@@ -64,23 +63,26 @@ ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ComputationalDoma
     break;
   }
   // copy the elements of the CENO_LHS
-  switch(SpaceDimension){
-  case OneD:
-    // Not implemented/used in OneD case
-    break;
-  case TwoD:
-    for (int i=0; i<N_XYZ[0]; ++i)
-      for (int j=0; j<N_XYZ[1]; ++j)
-	CENO_LHS[0][j][i] = rhs.CENO_LHS[0][j][i];
-    break;
-  case ThreeD:
-    for (int i=0; i<N_XYZ[0]; ++i)
-      for (int j=0; j<N_XYZ[1]; ++j)
-	for (int k=0; k<N_XYZ[2]; ++k)
-	  CENO_LHS[k][j][i] = rhs.CENO_LHS[k][j][i];
-    break;
+  if (CENO_CFRS_Execution_Mode::USE_PSEUDO_INVERSE == ON) {
+    switch(SpaceDimension){
+    case OneD:
+      // Not implemented/used in OneD case
+      break;
+    case TwoD:
+      for (int i=0; i<N_XYZ[0]; ++i)
+	for (int j=0; j<N_XYZ[1]; ++j)
+	  CENO_LHS[0][j][i] = rhs.CENO_LHS[0][j][i];
+      break;
+    case ThreeD:
+      for (int i=0; i<N_XYZ[0]; ++i)
+	for (int j=0; j<N_XYZ[1]; ++j)
+	  for (int k=0; k<N_XYZ[2]; ++k)
+	    CENO_LHS[k][j][i] = rhs.CENO_LHS[k][j][i];
+      break;
+    }
+  } else {
+    CENO_LHS(NULL);
   }
-
 }
 
 // Assignment operator
@@ -103,7 +105,6 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
   LMaxNorm = rhs.LMaxNorm;
   MaxDeltaSolutionOverDomain = rhs.MaxDeltaSolutionOverDomain;
   CharacteristicLength = rhs.CharacteristicLength;
-  Use_Pseudo_Inverse = rhs.Use_Pseudo_Inverse;
 
   // allocate memory
   allocate();
@@ -126,21 +127,25 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
     break;
   }
   // copy the elements of the CENO_LHS
-  switch(SpaceDimension){
-  case OneD:
-    // Not implemented/used for OneD case
-    break;
-  case TwoD:
-    for (int i=0; i<N_XYZ[0]; ++i)
-      for (int j=0; j<N_XYZ[1]; ++j)
-	CENO_LHS[0][j][i] = rhs.CENO_LHS[0][j][i];
-    break;
-  case ThreeD:
-    for (int i=0; i<N_XYZ[0]; ++i)
-      for (int j=0; j<N_XYZ[1]; ++j)
-	for (int k=0; k<N_XYZ[2]; ++k)
-	  CENO_LHS[k][j][i] = rhs.CENO_LHS[k][j][i];
-    break;
+  if (CENO_CFRS_Execution_Mode::USE_PSEUDO_INVERSE == ON) {
+    switch(SpaceDimension){
+    case OneD:
+      // Not implemented/used for OneD case
+      break;
+    case TwoD:
+      for (int i=0; i<N_XYZ[0]; ++i)
+	for (int j=0; j<N_XYZ[1]; ++j)
+	  CENO_LHS[0][j][i] = rhs.CENO_LHS[0][j][i];
+      break;
+    case ThreeD:
+      for (int i=0; i<N_XYZ[0]; ++i)
+	for (int j=0; j<N_XYZ[1]; ++j)
+	  for (int k=0; k<N_XYZ[2]; ++k)
+	    CENO_LHS[k][j][i] = rhs.CENO_LHS[k][j][i];
+      break;
+    }
+  } else {
+    CENO_LHS = NULL;
   }
 
   return *this;
@@ -173,27 +178,30 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::allocate( ) 
   default: 
     std::cout << "In ComputationalDomain<>::allocate() the number of dimensions are not properly defined.\n";
   }
-
-  switch(SpaceDimension){
-  case OneD:
-    // Not implemented/used in OneD case
-    break;
-  case TwoD:
-    CENO_LHS = new DenseMatrix** ;
-    CENO_LHS[0] = new DenseMatrix* [N_XYZ[1]];
-    for (int i=0; i<N_XYZ[1]; ++i)
-      CENO_LHS[0][i] = new DenseMatrix[N_XYZ[0]]( );
-    break;
-  case ThreeD:
-    CENO_LHS = new DenseMatrix** [N_XYZ[2]];
-    for (int i=0; i<N_XYZ[2]; ++i)
-      CENO_LHS[i] = new DenseMatrix* [N_XYZ[1]];
-    for (int i=0; i<N_XYZ[2]; ++i)
-      for (int j=0; j<N_XYZ[1]; ++j)
-	CENO_LHS[i][j] = new DenseMatrix[N_XYZ[0]]( );
-    break;
-  default: 
-    std::cout << "In ComputationalDomain<>::allocate() the number of dimensions are not properly defined.\n";
+  if (CENO_CFRS_Execution_Mode::USE_PSEUDO_INVERSE == ON){
+    switch(SpaceDimension){
+    case OneD:
+      // Not implemented/used in OneD case
+      break;
+    case TwoD:
+      CENO_LHS = new DenseMatrix** ;
+      CENO_LHS[0] = new DenseMatrix* [N_XYZ[1]];
+      for (int i=0; i<N_XYZ[1]; ++i)
+	CENO_LHS[0][i] = new DenseMatrix[N_XYZ[0]]( );
+      break;
+    case ThreeD:
+      CENO_LHS = new DenseMatrix** [N_XYZ[2]];
+      for (int i=0; i<N_XYZ[2]; ++i)
+	CENO_LHS[i] = new DenseMatrix* [N_XYZ[1]];
+      for (int i=0; i<N_XYZ[2]; ++i)
+	for (int j=0; j<N_XYZ[1]; ++j)
+	  CENO_LHS[i][j] = new DenseMatrix[N_XYZ[0]]( );
+      break;
+    default: 
+      std::cout << "In ComputationalDomain<>::allocate() the number of dimensions are not properly defined.\n";
+    }
+  } else {
+    CENO_LHS = NULL;
   }
 
 }
@@ -433,9 +441,8 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       SolnPtr[0][j][i].SetCell(InitCell,SubGridPoints,IP.RecOrder());  
     }
 
-  // RR: Initial implementation will allocate the block level CENO_LHS container regardless 
-  //     of whether or not the pseudo inverse is to be used in the kExact_Reconstruction.
-  //     Later it may be implemented with an if(Use_Pseudo_Inverse == ON) condition
+  // This functions does nothing if the USE_PSEUDO_INVERSE flag is OFF.
+  // Otherwise, it allocates the size of the matrices stored in the CENO_LHS container
   allocate_CENO_LHS_size();
 
   // Set the characteristic length of the geometry
@@ -520,9 +527,8 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
     }
   }
 
-  // RR: Initial implementation will allocate the block level CENO_LHS container regardless 
-  //     of whether or not the pseudo inverse is to be used in the kExact_Reconstruction.
-  //     Later it may be implemented with an if(Use_Pseudo_Inverse == ON) condition
+  // This functions does nothing if the USE_PSEUDO_INVERSE flag is OFF.
+  // Otherwise, it allocates the size of the matrices stored in the CENO_LHS container
   allocate_CENO_LHS_size();
 
   In_File.close();
@@ -575,9 +581,8 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
     } /* end for */
   } /* end for */
 
-  // RR: Initial implementation will allocate the block level CENO_LHS container regardless 
-  //     of whether or not the pseudo inverse is to be used in the kExact_Reconstruction.
-  //     Later it may be implemented with an if(Use_Pseudo_Inverse == ON) condition
+  // This functions does nothing if the USE_PSEUDO_INVERSE flag is OFF.
+  // Otherwise, it allocates the size of the matrices stored in the CENO_LHS container
   allocate_CENO_LHS_size();
 
   // Set the characteristic length of the geometry
@@ -669,7 +674,6 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 	In_File.setf(ios::skipws);
 	In_File >> SolnPtr[k][j][i].CellSolution();
 	
-	
 	SolnPtr[k][j][i].CellDeriv(0) = SolnPtr[k][j][i].CellSolution();
 	SolnPtr[k][j][i].UpdateSubgridSolution();
 
@@ -677,9 +681,8 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
     } /* end for */
   } /* end for */
 
-  // RR: Initial implementation will allocate the block level CENO_LHS container regardless 
-  //     of whether or not the pseudo inverse is to be used in the kExact_Reconstruction.
-  //     Later it may be implemented with an if(Use_Pseudo_Inverse == ON) condition
+  // This functions does nothing if the USE_PSEUDO_INVERSE flag is OFF.
+  // Otherwise, it allocates the size of the matrices stored in the CENO_LHS container
   allocate_CENO_LHS_size();
 
 
@@ -697,6 +700,11 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 // Allocate function
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
 void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::allocate_CENO_LHS_size() {
+
+  // First make sure that we need to store/use the LHS pseudo inverse! If not, return.
+  if (CENO_CFRS_Execution_Mode::USE_PSEUDO_INVERSE == OFF){
+    return;
+  }
   
   int NumOfCellsInOneDirection, StencilSize;
   int i,j,k;
@@ -727,6 +735,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::allocate_CEN
       }
     }
   }
+  break;
   default: 
     ;    std::cout << "In ComputationalDomain<>::allocate_CENO_LHS_size() the number of dimensions are not properly defined.\n";
   }

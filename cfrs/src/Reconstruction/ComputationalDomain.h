@@ -60,9 +60,6 @@ std::ostream& operator<< (std::ostream& os,
  * TEMPLATIZED CLASS: ComputationalDomain                                   *
  *                                                                          *
  * Container for ComputationalCells.                                        *
- * 
- * VARIABLES:                                                               *
- *                                                                       templated to SpaceDimension   *
  ***************************************************************************/
 
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType>
@@ -77,7 +74,7 @@ class ComputationalDomain{
   typedef ComputationalDomain<SpaceDimension,GeometryType,SolutionType> CompDomainType;
 
   static const int NumberOfParameters = CompCellType::NumberOfVariables;
-  
+
 private:
   
   vector<int> N_XYZ;		/* Total number of cells in the X, Y and Z direction */
@@ -93,9 +90,6 @@ private:
   double CharacteristicLength;	/* The characteristic length of the geometry */
   double CutoffKnob;
   
-  int Use_Pseudo_Inverse;       /* Flag for calculating and using the pseudo inverse of the LHS Matrix in the
-				   kExact_Reconstruction procedure */
-
   DenseMatrix*** CENO_LHS;      /* Block-level Container for the LHS Matrix used in the kExact_Reconstruction prcedure */
 
   CompCellType*** SolnPtr;      /* Solution variable */
@@ -156,7 +150,6 @@ private:
   double & GeomCharacteristicLength(void) { return CharacteristicLength; }
   const double & KnobCutoff(void) { return CutoffKnob;}
   const int & NumberOfCellRings(void) const { return SolnPtr[0][0][0].CellRings(); }
-  const int & UsePseudoInverse(void) const {return Use_Pseudo_Inverse;}
 
   /* Operation functions */
   int NumberOfTaylorDerivatives() const {
