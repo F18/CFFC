@@ -279,7 +279,7 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>::SetInitialSolution(Poi
   U_cell = IntegrateOverTheCell(PtrFunc,6,U_cell)/geom.V();
   /* update the first coefficient of the Taylor expansion */
   TD(0,0,0) = U_cell;
-  //TD_FirstOrder(0,0,0) = U_cell; // --> RR: TD_FirstOrder must be implemented
+  //TD_FirstOrder(0,0,0) = U_cell; // --> RR: TD_FirstOrder is not implemented
 }
 
 // template<typename FunctionObject>

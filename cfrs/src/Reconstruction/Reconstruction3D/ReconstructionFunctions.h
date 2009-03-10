@@ -171,7 +171,6 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
   /* Solve the overdetermined linear system of equations: Two METHODS available */
   /******************************************************************************/
 
-  //  if(SolnBlk.UsePseudoInverse() == ON){
   if(CENO_CFRS_Execution_Mode::USE_PSEUDO_INVERSE == ON){
 
     // METHOD 1: Use the Pseudo Inverse of the LHS matrix
@@ -180,13 +179,11 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
     // Ensure that the LHS matrix is formated correctly.
     // Memory shouldn't be allocated here, only the dimensions should be defined properly.
     SolnBlk.Cell_LHS_Inv(i_index[0],j_index[0],k_index[0]).newsize(StencilSize - 1, ND - 1);
-    //GeomWeights(iCell,jCell).resize(StencilSize);
 
-    // Step 1. Compute the pseudo-inverse and override the LHS term.
-    // This operation will change the dimensions of the matrix.
-    //A.pseudo_inverse_override();
+    // Step 1. Compute and store the pseudo-inverse 
+    // This operation will change the dimensions of the matrix and override the LHS term.
+    A.pseudo_inverse_override();
     SolnBlk.Cell_LHS_Inv(i_index[0],j_index[0],k_index[0]) = A;
-    SolnBlk.Cell_LHS_Inv(i_index[0],j_index[0],k_index[0]).pseudo_inverse_override();
 
     // Step 2. Find the solution of the linear-system for the current parameter
     // Note the matrix "A" used here is really "A_inverse" via Step 1 above.
@@ -295,9 +292,6 @@ void FirstOrder_kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i
     // compute the normalized geometric weight
     GeomWeights(cell) /= WeightsSum;
 
-    // RR: --> The following simply gets rid of geometric weighting for the time being
-    GeomWeights(cell) = 1.0;
-    
     // *** SET the matrix A of the linear system (LHS) ***
     A(cell-1,0) = GeomWeights(cell)*DeltaCellCenters[cell].z; // D001 coefficient    
     A(cell-1,1) = GeomWeights(cell)*DeltaCellCenters[cell].y; // D010 coefficient
