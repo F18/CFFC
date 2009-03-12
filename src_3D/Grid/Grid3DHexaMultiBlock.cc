@@ -5160,7 +5160,7 @@ void Grid3D_Hexa_Multi_Block::Output_Gnuplot(ostream &Out_File) {
  *                                                      *
  ********************************************************/
 void Grid3D_Hexa_Multi_Block::Create_Grid(Grid3D_Input_Parameters &Input) {
-    
+
     // Create various multiblock multiblock grid depending on input parameters
     switch(Input.i_Grid) {
         case GRID_CUBE :
@@ -5198,6 +5198,10 @@ void Grid3D_Hexa_Multi_Block::Create_Grid(Grid3D_Input_Parameters &Input) {
             Create_Grid_Cube(Input);
             break;
     } /* endswitch */
+
+//    if (Grid3D_Input_Parameters::USE_HO_CENO_GRID == ON){
+//      std::cout << "\n hello razzle \n";
+//    } 
     
 }
 

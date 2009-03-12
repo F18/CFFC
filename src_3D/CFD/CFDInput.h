@@ -55,6 +55,11 @@ using namespace std;
 #include "../TurbulenceModelling/TurbulenceModellingInput.h"
 #endif // _TURBULENCEMODEL_INPUT_INCLUDED
 
+/* Include grid high order execution mode header file. */
+#ifndef _GRID3D_HO_EXECUTIONMODE_INCLUDED
+#include "../Grid/Grid3DHighOrderExecutionMode.h"
+#endif // _GRID3D_HO_EXECUTIONMODE_INCLUDED
+
 /* Define the class. */
 
 #define	INPUT_PARAMETER_LENGTH    256
@@ -207,7 +212,7 @@ class CFD_Input_Parameters{
   //! Pressure gradient 
   Vector3D Pressure_Gradient;
   //@}
- 
+
   //@{ @name Constructors and desctructors:
   //! Constructor (assign default values).
   CFD_Input_Parameters(void) {
@@ -274,6 +279,8 @@ class CFD_Input_Parameters{
     Mean_Velocity.zero();
     Fresh_Gas_Height = ZERO;
     Pressure_Gradient.zero(); 
+    // Set default values in class Grid3D_HO_Execution_Mode
+    Grid3D_HO_Execution_Mode::SetDefaults();
   }
 
   //! Destructor

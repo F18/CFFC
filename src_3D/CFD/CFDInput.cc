@@ -411,6 +411,9 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_Reconstruction = RECONSTRUCTION_GREEN_GAUSS;
        } else if (strcmp(Reconstruction_Type, "Least_Squares") == 0) {
           i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
+       } else if (strcmp(Reconstruction_Type, "CENO") == 0) {
+          i_Reconstruction = RECONSTRUCTION_CENTRAL_ESSENTIALLY_NON_OSCILLATORY;
+	  Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID = ON;
        } else {
           i_command = INVALID_INPUT_VALUE;
        } /* endif */

@@ -18,7 +18,7 @@ using namespace std;
 
 /* Include required CFFC header files. */
 
-#ifndef _CFD_INCLUDED
+#ifndef _CFD_INCLUDE
 #include "../CFD/CFD.h"
 #endif // _CFD_INCLUDED
 
@@ -33,6 +33,10 @@ using namespace std;
 #ifndef _MPI_INCLUDED
 #include "../MPI/MPI.h"
 #endif // _MPI_INCLUDED
+
+//#ifndef _GRID3D_HO_EXECUTIONMODE_INCLUDED
+//#include "Grid3DHighOrderExecutionMode.h"
+//#endif //_GRID3D_HO_EXECUTIONMODE_INCLUDED
 
 #define GRID_INPUT_PARAMETER_LENGTH 256
 
@@ -114,6 +118,10 @@ class Grid3D_Input_Parameters{
     double Turbulence_Box_Length, Turbulence_Box_Width, Turbulence_Box_Height;
     //@}
 
+    //@{ @name Reconstruction type indicator:
+    char Reconstruction_Type_For_Grid_Info[GRID_INPUT_PARAMETER_LENGTH];
+    //@}
+
     //@{ @name Constructors and desctructors:
     //! Constructor (assign default values)
     Grid3D_Input_Parameters(void){
@@ -159,6 +167,8 @@ class Grid3D_Input_Parameters{
        Turbulence_Box_Height = Box_Height;
        //ICEM Filenames:
        ICEMCFD_FileNames = ICEMCFD_get_filenames();
+       // Set default values in class Grid3D_HO_Execution_Mode
+       // Grid3D_HO_Execution_Mode::SetDefaults();
     }
    
     //! Destructor
@@ -173,6 +183,7 @@ class Grid3D_Input_Parameters{
     //! Check validity of specified input parameters
     int Check_Inputs(void);
     //@}
+
 
     //@{ @name Input-output operators:
     friend ostream &operator << (ostream &out_file,

@@ -10,6 +10,12 @@
 #include "Grid3DInput.h"
 #endif // _GRID3D_INPUT_INCLUDED
 
+/* Include 3D grid high order execution mode header file. */
+
+#ifndef _GRID3D_HO_EXECUTIONMODE_INCLUDED
+#include "Grid3DHighOrderExecutionMode.h"
+#endif // _GRID3D_HO_EXECUTIONMODE_INCLUDED
+
 /* Include 3D hexahedral block grid header file. */
 
 #ifndef _GRID3D_HEXA_BLOCK_INCLUDED
