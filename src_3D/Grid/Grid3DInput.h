@@ -118,6 +118,10 @@ class Grid3D_Input_Parameters{
     double Turbulence_Box_Length, Turbulence_Box_Width, Turbulence_Box_Height;
     //@}
 
+    //@{ @name Reconstruction type indicator:
+    char Reconstruction_Type_For_Grid_Info[GRID_INPUT_PARAMETER_LENGTH];
+    //@}
+
     //@{ @name Constructors and desctructors:
     //! Constructor (assign default values)
     Grid3D_Input_Parameters(void){
@@ -163,6 +167,8 @@ class Grid3D_Input_Parameters{
        Turbulence_Box_Height = Box_Height;
        //ICEM Filenames:
        ICEMCFD_FileNames = ICEMCFD_get_filenames();
+       // Set default values in class Grid3D_HO_Execution_Mode
+       // Grid3D_HO_Execution_Mode::SetDefaults();
     }
    
     //! Destructor
