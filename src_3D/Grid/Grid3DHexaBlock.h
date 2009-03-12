@@ -36,6 +36,11 @@ using namespace std;
 #include "../MPI/MPI.h"
 #endif // _MPI_INCLUDED
 
+/* Include grid high order execution mode header file. */
+#ifndef _GRID3D_HO_EXECUTIONMODE_INCLUDED
+#include "Grid3DHighOrderExecutionMode.h"
+#endif // _GRID3D_HO_EXECUTIONMODE_INCLUDED
+
 /* Include 2D quadrilateral block grid type header file. */
 
 #ifndef _GRID2D_QUAD_BLOCK_INCLUDED
@@ -473,6 +478,22 @@ inline void Grid3D_Hexa_Block::allocate(const int Ni,
       BCtypeN[i] = new int[NCk]; BCtypeS[i] = new int[NCk];
       BCtypeT[i] = new int[NCj]; BCtypeB[i] = new int[NCj];
    } /* endfor */
+
+   // If using CENO Reconstruction (high or low order), we need to allocate some extra info and containers
+   if (Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID == ON){
+
+//     HighestReconstructionOrder = Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER_FOR_GRID_INFO;
+//     SetNumberOfGaussQuadraturePoints();
+//    
+//     // re-allocate memory for the container of geometric moments
+//     for ( i = 0; i <NCi ; ++i ){
+//       for ( j = 0; j <NCj ; ++j ){
+//	 for ( k = 0; k <NCk ; ++k ){
+//	   Cell[i][j][k].SetGeomCoeffContainerSize(HighestReconstructionOrder);       
+//	 }
+//       }    
+//     }
+   }
 
    Allocated = GRID3D_HEXA_BLOCK_USED;
 

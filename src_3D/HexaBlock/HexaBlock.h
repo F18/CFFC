@@ -3299,6 +3299,12 @@ dUdt_Multistage_Explicit(const int i_stage,
       Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
       
       break;
+      // --> RR: The following case MUST BE REMOVED. Used here for developement purposes (grid generation)
+   case RECONSTRUCTION_CENTRAL_ESSENTIALLY_NON_OSCILLATORY :
+      
+      Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
+      
+      break;
    default:
       Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
       break;

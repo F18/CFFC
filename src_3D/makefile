@@ -94,7 +94,9 @@ SRC_GRID = $(GRID_DIR)Cell2D.cc \
            $(GRID_DIR)Grid2DQuadMultiBlock.cc \
            $(GRID_DIR)Grid3DInput.cc \
            $(GRID_DIR)Grid3DHexaBlock.cc \
-           $(GRID_DIR)Grid3DHexaMultiBlock.cc
+           $(GRID_DIR)Grid3DHexaMultiBlock.cc \
+           $(GRID_DIR)Grid3DHighOrderExecutionMode.cc
+
 SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
 	      $(ICEMCFD_DIR)ICEMCFD_ctype.c
 
