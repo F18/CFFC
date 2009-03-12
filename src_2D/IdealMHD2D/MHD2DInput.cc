@@ -2212,6 +2212,8 @@ int Parse_Next_Input_Control_Parameter(MHD2D_Input_Parameters &IP) {
 	  IP.i_ICs = IC_SHOCK_ACOUSTIC_INTERACTION;
        } else if (strcmp(IP.ICs_Type, "Brio_Wu") == 0) {
 	  IP.i_ICs = IC_BRIO_WU;
+       } else if (strcmp(IP.ICs_Type, "Dai_Woodward") == 0) {
+          IP.i_ICs = IC_DAI_WOODWARD;
        } else if (strcmp(IP.ICs_Type,"Exact_Solution") == 0) {
 	 IP.i_ICs = IC_EXACT_SOLUTION;
        } else if (strcmp(IP.ICs_Type,"Uniform_Interior_Exact_Ghost_Cells") == 0) {

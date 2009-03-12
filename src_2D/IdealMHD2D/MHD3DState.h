@@ -28,7 +28,8 @@ using namespace std;
 
 /* Define the classes. */
 
-#define	NUM_VAR_MHD3D    8
+#define	NUM_VAR_MHD3D    8	    // Number of MHD3D variables, excluding the intrinsic magnetic field
+#define NUM_VAR_MHD3D_ALL_VARIABLES 11    // Number of MHD3D variables, including the intrinsic magnetic field 
 
 class MHD3D_cState;
 
@@ -180,6 +181,27 @@ public:
 				    PerturbativeB(B1x,B1y,B1z), IntrinsicB(B0x,B0y,B0z){ };
   //@}
 
+  //@{ @name Useful operators.
+  //! Return the number of variables.
+  static int NumVar(void) { return NUM_VAR_MHD3D; }
+
+  //! Copy operator.
+  void Copy(const MHD3D_pState &W) { *this = W; }
+
+  //! Vacuum operator.
+  void Vacuum(void) { return zero(); }
+
+  //! One operator. Set the solution to ONE.
+  void One(void) { d()=ONE; vx()=ONE; vy()=ONE; vz()=ONE;
+    B1x()=ONE; B1y()=ONE; B1z()=ONE; B0x()=ONE; B0y()=ONE; B0z()=ONE; p()=ONE;}
+
+  //! Check for unphysical state properties.
+  int Unphysical_Properties(void) const {
+    if (d() <= ZERO || p() <= ZERO || E() <= ZERO) return 1;
+    return 0;
+  }
+  //@}
+
   //! @name Useful constant states
   //@{
   static const MHD3D_pState MHD3D_W_REF;
@@ -274,54 +296,13 @@ public:
   //@}
 
   //! Index operator (i.e. assigns an index to each variable)
-  double &operator[](int index) {
-    assert( index >= 1 && index <= NUM_VAR_MHD3D );
-    switch(index) {
-    case 1 :
-      return density;
-    case 2 :
-      return velocity.x;
-    case 3 :
-      return velocity.y;
-    case 4 :
-      return velocity.z;
-    case 5 :
-      return PerturbativeB.x;
-    case 6 :
-      return PerturbativeB.y;
-    case 7 :
-      return PerturbativeB.z;
-    case 8 :
-      return pressure;
-    default:
-      return density;
-    }
-  }
-    
+  double &operator[](int index);
   //! Read-only index operator
-  const double &operator[](int index) const {
-    assert( index >= 1 && index <= NUM_VAR_MHD3D );
-    switch(index) {
-    case 1 :
-      return density;
-    case 2 :
-      return velocity.x;
-    case 3 :
-      return velocity.y;
-    case 4 :
-      return velocity.z;
-    case 5 :
-      return PerturbativeB.x;
-    case 6 :
-      return PerturbativeB.y;
-    case 7 :
-      return PerturbativeB.z;
-    case 8 :
-      return pressure;
-    default:
-      return density;
-    }
-  }
+  const double &operator[](int index) const;
+  //! @brief Index all variables (i.e. assigns indexes to all variable, including intrinsic magnetic field)
+  double &Var(const int &index);
+  //! @brief Index all variables (i.e. assigns indexes to all variable, including intrinsic magnetic field)
+  const double &Var(const int &index) const;
 
   //! @name Flux functions helpers
   //@{
@@ -351,6 +332,37 @@ public:
 			       const MHD3D_pState &Wr);
   friend MHD3D_cState FluxLinde(const MHD3D_pState &Wl,
 				const MHD3D_pState &Wr);
+
+  friend MHD3D_cState FluxRoe_n(const MHD3D_pState &Wl,
+				const MHD3D_pState &Wr,
+				const Vector2D &norm_dir);
+  friend MHD3D_cState FluxHLLE_n(const MHD3D_pState &Wl,
+				 const MHD3D_pState &Wr,
+				 const Vector2D &norm_dir);
+  friend MHD3D_cState FluxLinde_n(const MHD3D_pState &Wl,
+				  const MHD3D_pState &Wr,
+				  const Vector2D &norm_dir);
+  //@}
+
+  //! @name Boundary conditions
+  //@{
+  friend MHD3D_pState BC_Characteristic_Pressure(const MHD3D_pState &Wi,
+						 const MHD3D_pState &Wo,
+						 const Vector2D &norm_dir){
+    throw runtime_error("MHD3D_pState::BC_Characteristic_Pressure() ERROR! This bondary condition hasn't been implemented!");
+    return MHD3D_pState(0);
+  }
+  friend MHD3D_pState BC_Characteristic(const MHD3D_pState &Wi,
+					const MHD3D_pState &Wo,
+					const Vector2D &norm_dir){
+    throw runtime_error("MHD3D_pState::BC_Characteristic() ERROR! This bondary condition hasn't been implemented!");
+    return MHD3D_pState(0);
+  }
+  friend MHD3D_pState Reflect(const MHD3D_pState &W,
+			      const Vector2D &norm_dir){
+    throw runtime_error("MHD3D_pState::Reflect() ERROR! This bondary condition hasn't been implemented!");
+    return MHD3D_pState(0);
+  }
   //@}
 
   //! @name Binary arithmetic operators.
@@ -402,6 +414,10 @@ public:
 			  const MHD3D_pState &Wr){ return MHD3D_pState(min(Wl.d(),Wr.d()) , vmin(Wl.v(),Wr.v()), 
 								       vmin(Wl.B1(), Wr.B1()), vmin(Wl.B0(),Wr.B0()),
 								       min(Wl.p(),Wr.p()) );}
+  //! Set all variables to zero except for the intrinsic magnetic field
+  void zero(void){ d()=0.0; vx()=0.0; vy()=0.0; vz()=0.0; B1x()=0.0; B1y()=0.0; B1z()=0.0; p()=0.0; }
+  //! Set all variables including the intrinsic magnetic field to zero
+  void zero_all(void){ zero(); B0x()=0.0; B0y()=0.0; B0z()=0.0; }
   //@}
 
   //! @name Input-output operators.
@@ -423,7 +439,117 @@ private:
   
 };
 
+//! Index operator (i.e. assigns an index to each variable)
+inline double &MHD3D_pState::operator[](int index) {
+  assert( index >= 1 && index <= NUM_VAR_MHD3D );
+  switch(index) {
+  case 1 :
+    return density;
+  case 2 :
+    return velocity.x;
+  case 3 :
+    return velocity.y;
+  case 4 :
+    return velocity.z;
+  case 5 :
+    return PerturbativeB.x;
+  case 6 :
+    return PerturbativeB.y;
+  case 7 :
+    return PerturbativeB.z;
+  case 8 :
+    return pressure;
+  default:
+    return density;
+  }
+}
+    
+//! Read-only index operator
+inline const double &MHD3D_pState::operator[](int index) const {
+  assert( index >= 1 && index <= NUM_VAR_MHD3D );
+  switch(index) {
+  case 1 :
+    return density;
+  case 2 :
+    return velocity.x;
+  case 3 :
+    return velocity.y;
+  case 4 :
+    return velocity.z;
+  case 5 :
+    return PerturbativeB.x;
+  case 6 :
+    return PerturbativeB.y;
+  case 7 :
+    return PerturbativeB.z;
+  case 8 :
+    return pressure;
+  default:
+    return density;
+  }
+}
 
+//! Index all variables (i.e. assigns indexes to all variable, including intrinsic magnetic field)
+inline double &MHD3D_pState::Var(const int &index){
+  assert( index >= 1 && index <= NUM_VAR_MHD3D_ALL_VARIABLES );
+  switch(index) {
+  case 1 :
+    return density;
+  case 2 :
+    return velocity.x;
+  case 3 :
+    return velocity.y;
+  case 4 :
+    return velocity.z;
+  case 5 :
+    return PerturbativeB.x;
+  case 6 :
+    return PerturbativeB.y;
+  case 7 :
+    return PerturbativeB.z;
+  case 8 :
+    return IntrinsicB.x;
+  case 9 :
+    return IntrinsicB.y;
+  case 10:
+    return IntrinsicB.z;
+  case 11:
+    return pressure;
+  default:
+    return density;
+  }
+}
+
+//! Index all variables (read-only)
+inline const double &MHD3D_pState::Var(const int &index) const{
+  assert( index >= 1 && index <= NUM_VAR_MHD3D_ALL_VARIABLES );
+  switch(index) {
+  case 1 :
+    return density;
+  case 2 :
+    return velocity.x;
+  case 3 :
+    return velocity.y;
+  case 4 :
+    return velocity.z;
+  case 5 :
+    return PerturbativeB.x;
+  case 6 :
+    return PerturbativeB.y;
+  case 7 :
+    return PerturbativeB.z;
+  case 8 :
+    return IntrinsicB.x;
+  case 9 :
+    return IntrinsicB.y;
+  case 10:
+    return IntrinsicB.z;
+  case 11:
+    return pressure;
+  default:
+    return density;
+  }
+}
 
 /*!
  * Assign monatomic gas constants. 
@@ -1416,6 +1542,23 @@ public:
   const double& E1(void) const {return PerturbativeEnergy; }  //!< Return total perturbative energy (read-only)
   //@}
 
+  //@{ @name Useful operators.
+  //! Return the number of variables.
+  int NumVar(void) { return NUM_VAR_MHD3D; }
+
+  //! Copy operator.
+  void Copy(const MHD3D_cState &U) { *this = U; }
+
+  //! Vacuum operator.
+  void Vacuum(void) { return zero(); }
+
+  //! Check for unphysical state properties.
+  int Unphysical_Properties(void) const {
+    if (d() <= ZERO || E() <= ZERO || e() <= ZERO) return 1;
+    return 0;
+  }
+  //@}
+
   //! Set gas constants.
   void setgas(void);
   void setgas(char *string_ptr);
@@ -1445,53 +1588,12 @@ public:
   friend MHD3D_pState W(const MHD3D_cState &U){ return U.W(); } //!< Return the primitive solution state for a given conserved one
     
   //! Index operator (i.e. assigns an index to each variable)
-  double &operator[](int index) {
-    assert( index >= 1 && index <= NUM_VAR_MHD3D );
-    switch(index) {
-    case 1 :
-      return density;
-    case 2 :
-      return momentum.x;
-    case 3 :
-      return momentum.y;
-    case 4 :
-      return momentum.z;
-    case 5 :
-      return PerturbativeB.x;
-    case 6 :
-      return PerturbativeB.y;
-    case 7 :
-      return PerturbativeB.z;
-    case 8 :
-      return PerturbativeEnergy;
-    default:
-      return density;
-    }
-  }
-    
-  const double &operator[](int index) const {
-    assert( index >= 1 && index <= NUM_VAR_MHD3D );
-    switch(index) {
-    case 1 :
-      return density;
-    case 2 :
-      return momentum.x;
-    case 3 :
-      return momentum.y;
-    case 4 :
-      return momentum.z;
-    case 5 :
-      return PerturbativeB.x;
-    case 6 :
-      return PerturbativeB.y;
-    case 7 :
-      return PerturbativeB.z;
-    case 8 :
-      return PerturbativeEnergy;
-    default:
-      return density;
-    }
-  }
+  double &operator[](int index);    
+  const double &operator[](int index) const;
+  //! @brief Index all variables (i.e. assigns indexes to all variable, including intrinsic magnetic field)
+  double &Var(const int &index);
+  //! @brief Index all variables (i.e. assigns indexes to all variable, including intrinsic magnetic field)
+  const double &Var(const int &index) const;
 
   //! @name Flux functions
   //@{
@@ -1554,6 +1656,10 @@ public:
 			  const MHD3D_cState &Ur){ return MHD3D_cState(min(Ul.d(),Ur.d()) , vmin(Ul.v(),Ur.v()), 
 								       vmin(Ul.B1(), Ur.B1()), vmin(Ul.B0(),Ur.B0()),
 								       min(Ul.p(),Ur.p()) );}
+  //! Set all variables to zero except for the intrinsic magnetic field
+  void zero(void){ d()=0.0; dvx()=0.0; dvy()=0.0; dvz()=0.0; B1x()=0.0; B1y()=0.0; B1z()=0.0; E1()=0.0; }
+  //! Set all variables including the intrinsic magnetic field to zero
+  void zero_all(void){ zero(); B0x()=0.0; B0y()=0.0; B0z()=0.0; }
   //@}
 
   //! @name Input-output operators.
@@ -1586,6 +1692,118 @@ inline MHD3D_cState::MHD3D_cState(const MHD3D_pState &W){
   IntrinsicB = W.B0();
   PerturbativeEnergy = W.E1();
 }
+
+//! Index operator (i.e. assigns an index to each variable)
+inline double &MHD3D_cState::operator[](int index) {
+  assert( index >= 1 && index <= NUM_VAR_MHD3D );
+  switch(index) {
+  case 1 :
+    return density;
+  case 2 :
+    return momentum.x;
+  case 3 :
+    return momentum.y;
+  case 4 :
+    return momentum.z;
+  case 5 :
+    return PerturbativeB.x;
+  case 6 :
+    return PerturbativeB.y;
+  case 7 :
+    return PerturbativeB.z;
+  case 8 :
+    return PerturbativeEnergy;
+  default:
+    return density;
+  }
+}
+    
+inline const double &MHD3D_cState::operator[](int index) const {
+  assert( index >= 1 && index <= NUM_VAR_MHD3D );
+  switch(index) {
+  case 1 :
+    return density;
+  case 2 :
+    return momentum.x;
+  case 3 :
+    return momentum.y;
+  case 4 :
+    return momentum.z;
+  case 5 :
+    return PerturbativeB.x;
+  case 6 :
+    return PerturbativeB.y;
+  case 7 :
+    return PerturbativeB.z;
+  case 8 :
+    return PerturbativeEnergy;
+  default:
+    return density;
+  }
+}
+
+//! Index all variables (i.e. assigns indexes to all variable, including intrinsic magnetic field)
+inline double &MHD3D_cState::Var(const int &index) {
+  assert( index >= 1 && index <= NUM_VAR_MHD3D_ALL_VARIABLES);
+  switch(index) {
+  case 1 :
+    return density;
+  case 2 :
+    return momentum.x;
+  case 3 :
+    return momentum.y;
+  case 4 :
+    return momentum.z;
+  case 5 :
+    return PerturbativeB.x;
+  case 6 :
+    return PerturbativeB.y;
+  case 7 :
+    return PerturbativeB.z;
+  case 8 :
+    return IntrinsicB.x;
+  case 9 :
+    return IntrinsicB.y;
+  case 10:
+    return IntrinsicB.z;
+  case 11:
+    return PerturbativeEnergy;
+  default:
+    return density;
+  }
+}
+
+//! Index all variables (i.e. assigns indexes to all variable, including intrinsic magnetic field)
+inline const double &MHD3D_cState::Var(const int &index) const {
+  assert( index >= 1 && index <= NUM_VAR_MHD3D_ALL_VARIABLES);
+  switch(index) {
+  case 1 :
+    return density;
+  case 2 :
+    return momentum.x;
+  case 3 :
+    return momentum.y;
+  case 4 :
+    return momentum.z;
+  case 5 :
+    return PerturbativeB.x;
+  case 6 :
+    return PerturbativeB.y;
+  case 7 :
+    return PerturbativeB.z;
+  case 8 :
+    return IntrinsicB.x;
+  case 9 :
+    return IntrinsicB.y;
+  case 10:
+    return IntrinsicB.z;
+  case 11:
+    return PerturbativeEnergy;
+  default:
+    return density;
+  }
+}
+ 
 
 /*!
  * Assign monatomic gas constants. 
@@ -2290,5 +2508,15 @@ inline MHD3D_cState MHD3D_pState::lc(int index) const {
 /*! Return the conserved left eigenvector */
 inline MHD3D_cState lc(const MHD3D_pState &W, int index){ return W.lc(index); }
 
+
+inline MHD3D_cState FluxRoe_n(const MHD3D_pState &Wl,
+			      const MHD3D_pState &Wr,
+			      const Vector2D &norm_dir){ return MHD3D_cState(0); }
+inline MHD3D_cState FluxHLLE_n(const MHD3D_pState &Wl,
+			       const MHD3D_pState &Wr,
+			       const Vector2D &norm_dir){ return MHD3D_cState(0); }
+inline MHD3D_cState FluxLinde_n(const MHD3D_pState &Wl,
+				const MHD3D_pState &Wr,
+				const Vector2D &norm_dir){ return MHD3D_cState(0); }
 
 #endif  /* _MHD3D_STATE_INCLUDED */
