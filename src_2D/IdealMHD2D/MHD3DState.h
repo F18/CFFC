@@ -344,6 +344,18 @@ public:
 				  const Vector2D &norm_dir);
   //@}
 
+  //! @name Rotation of the reference system. These routines affect only the vector quatities
+  //@{
+  //! Returns rotated primitive state aligned with local x-axis in the norm_dir (in 2D)
+  MHD3D_pState Rotate(const Vector2D &norm_dir) const;				  
+  //! Returns un-rotated primitive state re-aligned with x-axis of global problem (in 2D)
+  MHD3D_pState RotateBack(const Vector2D &norm_dir) const;
+  //! Returns rotated primitive state aligned with local x-axis in the norm_dir (in 3D)
+  MHD3D_pState Rotate(const Vector3D &norm_dir) const;				  
+  //! Returns un-rotated primitive state re-aligned with x-axis of global problem (in 3D)
+  MHD3D_pState RotateBack(const Vector3D &norm_dir) const;
+  //@}
+
   //! @name Boundary conditions
   //@{
   friend MHD3D_pState BC_Characteristic_Pressure(const MHD3D_pState &Wi,
@@ -1143,6 +1155,135 @@ inline MHD3D_pState HartenFixAbs(const MHD3D_pState &lambdas_a,
 		      HartenFixAbs(lambdas_a[8],
 				   lambdas_l[8],
 				   lambdas_r[8]));
+}
+
+/*!
+ * Return rotated primitive state in a two-dimensional plane (i.e. x-y plane) with a positive transformation
+ * (i.e. the angle between the x-axis and the normal vector is measured counterclockwise)
+ */
+inline MHD3D_pState MHD3D_pState::Rotate(const Vector2D &norm_dir) const{
+
+  // Apply the rotation matrix with "cos_angle = norm_dir.x" and "sin_angle = norm_dir.y"
+  // to vector quantities (i.e. velocity and magnetic fields)
+
+  return MHD3D_pState(density,
+		        vx()*norm_dir.x + vy()*norm_dir.y,
+		      - vx()*norm_dir.y + vy()*norm_dir.x,
+		      vz(),
+		        B1x()*norm_dir.x + B1y()*norm_dir.y,
+		      - B1x()*norm_dir.y + B1y()*norm_dir.x,
+		      B1z(),
+		        B0x()*norm_dir.x + B0y()*norm_dir.y,
+		      - B0x()*norm_dir.y + B0y()*norm_dir.x,
+		      B0z(),
+		      pressure);
+
+}
+
+/*!
+ * Return rotated primitive state in a two-dimensional plane (i.e. x-y plane) with a negative transformation
+ * (i.e. backward, the angle between the normal vector and the x-axis is measured clockwise)
+ */
+inline MHD3D_pState MHD3D_pState::RotateBack(const Vector2D &norm_dir) const{
+
+  // Apply the rotation matrix with "cos_angle = norm_dir.x" and "sin_angle = norm_dir.y"
+  // to vector quantities (i.e. velocity and magnetic vectors)
+
+  return MHD3D_pState(density,
+		      vx()*norm_dir.x - vy()*norm_dir.y,      
+		      vx()*norm_dir.y + vy()*norm_dir.x,
+		      vz(),
+		      B1x()*norm_dir.x - B1y()*norm_dir.y,      
+		      B1x()*norm_dir.y + B1y()*norm_dir.x,      
+		      B1z(),
+		      B0x()*norm_dir.x - B0y()*norm_dir.y,
+		      B0x()*norm_dir.y + B0y()*norm_dir.x,
+		      B0z(),
+		      pressure);
+
+}
+
+/*!
+ * Return rotated primitive state in a three-dimensional plane with a positive transformation
+ * (i.e. the Euler angles are measured counterclockwise)
+ */
+inline MHD3D_pState MHD3D_pState::Rotate(const Vector3D &norm_dir) const{
+
+  double cos_psi, sin_psi, cos_phi(ONE), sin_phi(ZERO), cos_theta, sin_theta;
+  double XX_Coeff,  XY_Coeff, YX_Coeff, YY_Coeff;
+
+  if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
+    cos_psi = norm_dir.x/fabs(norm_dir.x);
+    sin_psi = ZERO;
+    cos_theta = ONE;
+    sin_theta = ZERO;
+  } else {
+    cos_psi = norm_dir.x;
+    sin_psi = sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+    cos_theta = norm_dir.y/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+    sin_theta = norm_dir.z/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+  } /* endif */
+
+  // Store the more intensive operations
+  XX_Coeff = (cos_psi*cos_phi-cos_theta*sin_phi*sin_psi);
+  XY_Coeff = (cos_psi*sin_phi+cos_theta*cos_phi*sin_psi);
+
+  YX_Coeff = (-sin_psi*cos_phi-cos_theta*sin_phi*cos_psi);
+  YY_Coeff = (-sin_psi*sin_phi+cos_theta*cos_phi*cos_psi);
+
+  return MHD3D_pState(density,
+		      XX_Coeff*vx() + XY_Coeff*vy() + (sin_psi*sin_theta)*vz(),
+		      YX_Coeff*vx() + YY_Coeff*vy() + (cos_psi*sin_theta)*vz(),
+		      (sin_theta*sin_phi)*vx() + (-sin_theta*cos_phi)*vy() + (cos_theta)*vz(),
+		      XX_Coeff*B1x() + XY_Coeff*B1y() + (sin_psi*sin_theta)*B1z(),
+		      YX_Coeff*B1x() + YY_Coeff*B1y() + (cos_psi*sin_theta)*B1z(),
+		      (sin_theta*sin_phi)*B1x() + (-sin_theta*cos_phi)*B1y() + (cos_theta)*B1z(),
+		      XX_Coeff*B0x() + XY_Coeff*B0y() + (sin_psi*sin_theta)*B0z(),
+		      YX_Coeff*B0x() + YY_Coeff*B0y() + (cos_psi*sin_theta)*B0z(),
+		      (sin_theta*sin_phi)*B0x() + (-sin_theta*cos_phi)*B0y() + (cos_theta)*B0z(),
+		      pressure);
+}
+
+/*!
+ * Return rotated primitive state in a three-dimensional plane with a negative transformation
+ * (i.e. backward, the Euler angles are measured clockwise)
+ */
+inline MHD3D_pState MHD3D_pState::RotateBack(const Vector3D &norm_dir) const{
+
+  double cos_psi, sin_psi, cos_phi(ONE), sin_phi(ZERO), cos_theta, sin_theta;
+  double XX_Coeff,  XY_Coeff, YX_Coeff, YY_Coeff;
+
+  if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
+    cos_psi = norm_dir.x/fabs(norm_dir.x);
+    sin_psi = ZERO;
+    cos_theta = ONE;
+    sin_theta = ZERO;
+  } else {
+    cos_psi = norm_dir.x;
+    sin_psi = sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+    cos_theta = norm_dir.y/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+    sin_theta = norm_dir.z/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+  } /* endif */
+
+  // Store the more intensive operations
+  XX_Coeff = (cos_psi*cos_phi-cos_theta*sin_phi*sin_psi);
+  XY_Coeff = (-sin_psi*cos_phi-cos_theta*sin_phi*cos_psi);
+
+  YX_Coeff = (cos_psi*sin_phi+cos_theta*cos_phi*sin_psi);
+  YY_Coeff = (-sin_psi*sin_phi+cos_theta*cos_phi*cos_psi);
+
+  return MHD3D_pState(density,
+		      XX_Coeff*vx() + XY_Coeff*vy() +  (sin_theta*sin_phi)*vz(),
+		      YX_Coeff*vx() + YY_Coeff*vy() + (-sin_theta*cos_phi)*vz(),
+		      (sin_theta*sin_psi)*vx() + (sin_theta*cos_psi)*vy() + (cos_theta)*vz(),
+		      XX_Coeff*B1x() + XY_Coeff*B1y() +  (sin_theta*sin_phi)*B1z(),
+		      YX_Coeff*B1x() + YY_Coeff*B1y() + (-sin_theta*cos_phi)*B1z(),
+		      (sin_theta*sin_psi)*B1x() + (sin_theta*cos_psi)*B1y() + (cos_theta)*B1z(),
+		      XX_Coeff*B0x() + XY_Coeff*B0y() +  (sin_theta*sin_phi)*B0z(),
+		      YX_Coeff*B0x() + YY_Coeff*B0y() + (-sin_theta*cos_phi)*B0z(),
+		      (sin_theta*sin_psi)*B0x() + (sin_theta*cos_psi)*B0y() + (cos_theta)*B0z(),
+		      pressure);
+
 }
 
 //! Summation between states (intrinsic field is set to zero)
