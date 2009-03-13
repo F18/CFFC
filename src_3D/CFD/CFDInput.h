@@ -131,6 +131,11 @@ class CFD_Input_Parameters{
   double CFL_Number, Time_Max;
   //@}
 
+  //@{ @name Spatial Order of Accuracy type indicator and related input parameters:
+  char Spatial_Accuracy[INPUT_PARAMETER_LENGTH];
+  int Reconstruction_Order;
+  //@}
+
   //@{ @name Reconstruction type indicator and related input parameters:
   char Reconstruction_Type[INPUT_PARAMETER_LENGTH];
   int i_Reconstruction;
@@ -245,6 +250,9 @@ class CFD_Input_Parameters{
     Time_Max = ZERO;
     Residual_Norm = 1;   //density default
     Number_of_Residual_Norms =1;
+    // Spatial Order of Accuracy type indicator and related input parameters:
+    strcpy(Spatial_Accuracy, "2");
+    Reconstruction_Order = 1;
     // Reconstruction type indicator and related input parameters:
     strcpy(Reconstruction_Type, "Least_Squares");
     i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;

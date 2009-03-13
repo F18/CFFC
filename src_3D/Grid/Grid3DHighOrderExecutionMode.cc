@@ -8,7 +8,7 @@
 // None
 
 /* Include CFFC header files */
-//#include "../CFD/CFD.h"
+# include "../CFD/CFD.h"
 #include "Grid3DHighOrderExecutionMode.h"
 
 short Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID = OFF;
