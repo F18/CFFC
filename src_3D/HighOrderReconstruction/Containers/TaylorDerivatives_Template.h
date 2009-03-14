@@ -67,9 +67,12 @@ public:
   void SetPowers(const unsigned p1);	/* set p1 */
   void SetPowers(const unsigned p1, const unsigned p2); /* set p1 and p2 */
   void SetPowers(const unsigned p1, const unsigned p2, const unsigned p3); /* Set p1, p2 and p3*/
+  void SetPowers(const unsigned& p1, const unsigned& p2,const unsigned& p3, const bool); /* Set p1, p2 and p3*/
   void SetPowers(const vector<unsigned> PPP_); /* set the powers */
   void SetValue(const T ValueD_) { ValueD = ValueD_; } /* Set ValueD */
   T & D( ) { return ValueD; } 		/* return ValueD */
+  //  const T & D(const unsigned VarPosition) const { return ValueD[VarPosition]; }
+  //T & D(const unsigned VarPosition){ return ValueD[VarPosition]; }
   const double & D(const unsigned VarPosition) const { return ValueD[VarPosition]; }
   double & D(const unsigned VarPosition){ return ValueD[VarPosition]; }
 

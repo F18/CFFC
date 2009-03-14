@@ -167,8 +167,6 @@ class Grid3D_Input_Parameters{
        Turbulence_Box_Height = Box_Height;
        //ICEM Filenames:
        ICEMCFD_FileNames = ICEMCFD_get_filenames();
-       // Set default values in class Grid3D_HO_Execution_Mode
-       // Grid3D_HO_Execution_Mode::SetDefaults();
     }
    
     //! Destructor
