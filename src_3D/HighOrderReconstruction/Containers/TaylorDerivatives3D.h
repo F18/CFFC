@@ -27,10 +27,10 @@ template<SpaceType ThreeD, class T >
 bool operator!=(const DerivativeObj<ThreeD,T>& left, const DerivativeObj<ThreeD,T>& right);
 
 template<SpaceType ThreeD, class T >
-std::ostream& operator<< (std::ostream& os, const DerivativeObj<ThreeD,T>& Obj);
+std::ostream& operator<< (std::ostream& out_file, const DerivativeObj<ThreeD,T>& Obj);
 
 template<SpaceType ThreeD, class T >
-std::istream& operator>> (std::istream& os, DerivativeObj<ThreeD,T>& Obj);
+std::istream& operator>> (std::istream& in_file, DerivativeObj<ThreeD,T>& Obj);
 
 /*******************************************************
  * CLASS Template: DerivativeObj                    *
@@ -49,7 +49,7 @@ public:
   DerivativeObj(void): Power1(0), Power2(0), Power3(0), ValueD() { };
   DerivativeObj(const double Val): Power1(0), Power2(0), Power3(0), ValueD(Val) { };
   DerivativeObj(const vector<int> & PPP_, const T & ValueD_);
-  DerivativeObj(const int p1_, const int p2_, const int p3_, const T ValueD_): Power1(p1_),Power2(p2_),Power3(p3_),ValueD(ValueD_) { };
+  DerivativeObj(const int p1, const int p2, const int p3, const T ValueD_): Power1(p1),Power2(p2),Power3(p3),ValueD(ValueD_) { };
   // Copy constructor
   DerivativeObj( const DerivativeObj & rhs): Power1(rhs.Power1), Power2(rhs.Power2), Power3(rhs,Power3),ValueD(rhs.ValueD){ };
   ~DerivativeObj(){ };
@@ -86,9 +86,9 @@ public:
 				     const DerivativeObj<ThreeD,T>& right);
   friend bool operator!= <ThreeD,T> (const DerivativeObj<ThreeD,T>& left,
 				     const DerivativeObj<ThreeD,T>& right);
-  friend ostream& operator<< <ThreeD,T> (ostream& os, const DerivativeObj<ThreeD,T>& Obj);
+  friend ostream& operator<< <ThreeD,T> (ostream& out_file, const DerivativeObj<ThreeD,T>& Obj);
   
-  friend istream& operator>> <ThreeD,T> (istream& os, DerivativeObj<ThreeD,T>& Obj);
+  friend istream& operator>> <ThreeD,T> (istream& in_file, DerivativeObj<ThreeD,T>& Obj);
 };
 
 // CLASS DerivativeObj
@@ -131,14 +131,14 @@ inline bool DerivativeObj<ThreeD,T>::IsPowerEqualTo(const int p1, const int p2, 
 
 // Friend functions
 template< class T> inline
-ostream& operator<<(ostream& os, const DerivativeObj<ThreeD,T>& Obj){
+ostream& operator<<(ostream& out_file, const DerivativeObj<ThreeD,T>& Obj){
 
-  os.width(4); os << Obj.P1(); 
-  os.width(4); os << Obj.P2();
-  os.width(4); os << Obj.P3();
-  os.precision(15); os.width(25);
+  out_file.width(4); out_file << Obj.P1(); 
+  out_file.width(4); out_file << Obj.P2();
+  out_file.width(4); out_file << Obj.P3();
+  out_file.precision(15); out_file.width(25);
 
-  return os << Obj.D();
+  return out_file << Obj.D();
 }
 
 template< class T> inline
@@ -150,11 +150,11 @@ void DerivativeObj<ThreeD,T>::Read_Derivative(istream &In_File){
 }
 
 template< class T>
-istream& operator>>(istream& os, DerivativeObj<ThreeD,T>& Obj){
+istream& operator>>(istream& in_file, DerivativeObj<ThreeD,T>& Obj){
 
-  Obj.Read_Derivative(os);
+  Obj.Read_Derivative(in_file);
 
-  return os;
+  return (in_file);
 }
 
 // operator ==
@@ -206,10 +206,10 @@ bool operator<= (const TaylorDerivativesContainer<ThreeD,T>& left,
 		 const double& Value);
 
 template<SpaceType ThreeD, class T>
-ostream & operator<< (ostream & os, const TaylorDerivativesContainer<ThreeD,T>& Obj);
+ostream & operator<< (ostream & out_file, const TaylorDerivativesContainer<ThreeD,T>& Obj);
 
 template<SpaceType ThreeD, class T>
-istream & operator>> (istream & os, TaylorDerivativesContainer<ThreeD,T>& Obj);
+istream & operator>> (istream & in_file, TaylorDerivativesContainer<ThreeD,T>& Obj);
 
 /*******************************************************
  * CLASS Template: TaylorDerivativesContainer_3D    *
@@ -285,14 +285,14 @@ public:
   void Make_Limiter_Copy(const int &Variable){ phi_copy[Variable] = phi[Variable]; }
   
   /* Overloaded Operators */
-  Derivative & operator()(const int & position) {return DContainer[position];}
-  const Derivative & operator()(const int & position) const {return DContainer[position];}
+  Derivative & operator()(const int position) {return DContainer[position];}
+  const Derivative & operator()(const int position) const {return DContainer[position];}
 
   T & operator()(const int p1, const int p2, const int p3);
   const T & operator()(const int p1, const int p2, const int p3) const;
 
   double & Value(const int position, const int parameter) { return DContainer[position].D(parameter); }
-  const double & Value(const int position, const int parameter) const { return DContainer[position].D(parameter) };
+  const double & Value(const int position, const int parameter) const { return DContainer[position].D(parameter); }
 
   /* Friend functions */  
   friend const TaylorDerivativesContainer<ThreeD,T> operator+ <ThreeD,T> (const TaylorDerivativesContainer<ThreeD,T>& left,
@@ -306,9 +306,9 @@ public:
   friend bool operator!= <ThreeD,T> (const TaylorDerivativesContainer<ThreeD,T>& left,
 				     const TaylorDerivativesContainer<ThreeD,T>& right);
   
-  friend ostream & operator<< <ThreeD,T> (ostream & os, const TaylorDerivativesContainer<ThreeD,T>& Obj);
+  friend ostream & operator<< <ThreeD,T> (ostream & out_file, const TaylorDerivativesContainer<ThreeD,T>& Obj);
   
-  friend istream & operator>> <ThreeD,T> (istream & os, TaylorDerivativesContainer<ThreeD,T>& Obj);
+  friend istream & operator>> <ThreeD,T> (istream & in_file, TaylorDerivativesContainer<ThreeD,T>& Obj);
   
 };
 
@@ -329,11 +329,12 @@ TaylorDerivativesContainer<ThreeD,T>::TaylorDerivativesContainer(const int Order
 {
   GenerateContainer(OrderOfRec);
 }
- /* Copy constructor  */
+
+/* Copy constructor  */
 template<class T> inline
 TaylorDerivativesContainer<ThreeD,T>::TaylorDerivativesContainer(const TaylorDerivativesContainer<ThreeD,T> & rhs)
-{
-
+  :DContainer(NULL), ContainerSize(0), OrderOfRec(-1), phi(1.0), phi_copy(1.0) {
+    
   // allocate memory for the new container
   allocate(rhs.size());
   
@@ -351,7 +352,7 @@ TaylorDerivativesContainer<ThreeD,T>::TaylorDerivativesContainer(const TaylorDer
 }
 
 /* Allocate memory for the derivatives */
-template<class T> inline
+template<class T> inline 
 void TaylorDerivativesContainer<ThreeD,T>::allocate(const int NumberOfObjects)
 {
 
@@ -464,13 +465,13 @@ int TaylorDerivativesContainer<ThreeD,T>::IndexOrder(const int p1, const int p2,
   //                                                for p1=3 --> shift_p1 = 15+10+6   = 31
   //                                                for p1=4 --> shift_p1 = 15+10+6+3 = 34
 
-  if (p1+p2+p3 > OrderOfRec) {
-    error_flag = 1; 
-    cout << "\n " << CFFC_Version() 
-	 << "Error in TaylorDerivativesContainer::IndexOrder -> Powers are out of bounds! ie. p1+p2+p3 > OrderOfRec, "
-	 << "flag = " << error_flag << ".\n";
-    return(error_flag);
-  } /* endif */
+//  if (p1+p2+p3 > OrderOfRec) {
+//    error_flag = 1; 
+//    cout << "\n " << CFFC_Version() 
+//	 << "Error in TaylorDerivativesContainer::IndexOrder -> Powers are out of bounds! ie. p1+p2+p3 > OrderOfRec, "
+//	 << "flag = " << error_flag << ".\n";
+//    return(error_flag);
+//  } /* endif */
 
   shift_p1 = 0;
   for (i=1; i<=p1; ++i){
@@ -569,30 +570,30 @@ T TaylorDerivativesContainer<ThreeD,T>::ComputeZGradientFor(const double DeltaX,
 
 // Friend functions
 template<class T> inline
-ostream & operator<< (ostream & os, const TaylorDerivativesContainer<ThreeD,T>& Obj){
+ostream & operator<< (ostream & out_file, const TaylorDerivativesContainer<ThreeD,T>& Obj){
 
-  os.setf(ios::skipws);
-  os.width(4);
-  os << Obj.RecOrder() << endl;
+  out_file.setf(ios::skipws);
+  out_file.width(4);
+  out_file << Obj.RecOrder() << endl;
   for(int i=0; i<=Obj.LastElem(); ++i)
-    os << Obj(i) << endl;
-  os.unsetf(ios::skipws);
-  return os;
+    out_file << Obj(i) << endl;
+  out_file.unsetf(ios::skipws);
+  return (out_file);
 }
 
 template<class T> inline
-istream & operator>> (istream & os, TaylorDerivativesContainer<ThreeD,T>& Obj){
+istream & operator>> (istream & in_file, TaylorDerivativesContainer<ThreeD,T>& Obj){
 
   int ReconstructionOrder;
-  os.setf(ios::skipws);
-  os >> ReconstructionOrder;
+  in_file.setf(ios::skipws);
+  in_file >> ReconstructionOrder;
   /* Adjust the container size */
   Obj.GenerateContainer(ReconstructionOrder);
   for(int i=0; i<=Obj.LastElem(); ++i){
-    os >> Obj(i);
+    in_file >> Obj(i);
   }
-  os.unsetf(ios::skipws);
-  return os;
+  in_file.unsetf(ios::skipws);
+  return (in_file);
 }
 
 // operator + -> summation of the derivatives
@@ -690,7 +691,7 @@ void TaylorDerivativesContainer<ThreeD,double>::ResetFrozenLimiter(void){
 
 // ComputeSolutionFor :-> Compute the solution of the Taylor series expansion for a particular distance (DeltaX,DeltaY,DeltaZ)
 template<> inline
-T TaylorDerivativesContainer<ThreeD,double>::ComputeSolutionFor(const double DeltaX, const double DeltaY, const double DeltaZ){
+double TaylorDerivativesContainer<ThreeD,double>::ComputeSolutionFor(const double DeltaX, const double DeltaY, const double DeltaZ){
 
   // initialize the solution state
   double Solution(0.0);

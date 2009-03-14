@@ -1,19 +1,20 @@
-/* Cell3D.h:  Header file defining 3D cell types. */
+/*!\file Cell3D.h
+  \brief Header file defining 3D high-order cell types. */
 
 #ifndef _CELL3D_INCLUDED
 #define _CELL3D_INCLUDED
 
 /* Include required C++ libraries. */
-
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
 
+/* Using std namespace functions */
 using namespace std;
 
+/* Include CFFC header files */
 /* Include math macro and 3D vector header files. */
-
 #ifndef _MATH_MACROS_INCLUDED
 #include "../Math/Math.h"
 #endif // _MATH_MACROS_INCLUDED
@@ -22,56 +23,85 @@ using namespace std;
 #include "../Math/Vector3D.h"
 #endif //_VECTOR3D_INCLUDED
 
+#ifndef _TAYLORDERIVATIVES_INCLUDED
+#include "../HighOrderReconstruction/TaylorDerivatives.h"
+#endif // _TAYLORDERIVATIVES_3D_INCLUDED
+
 /* Define the basic 3D cell class. */
 
-/*********************************************************
- * Class: Cell3D                                         *
- *                                                       *
- * Member functions                                      *
- *     Xc       -- Return 3D vector containing location  *
- *                 of cell center (centroid).            *
- *     I        -- Return I index for cell.              *
- *     J        -- Return J index for cell.              *
- *     K        -- Return K index for cell.              *
- *     V        -- Return the volume of the cell.        *
- *     setloc   -- Set cell center location (position).  *
- *     setindex -- Set cell (i,j,k) indices.             * 
- *                                                       *
- * Member operators                                      *
- *      C -- a cell                                      *
- *                                                       *
- * C = C;                                                *
- * C == C;                                               *
- * C != C;                                               *
- * cout << C; (output function)                          *
- * cin  >> C; (input function)                           *
- *                                                       *
- *********************************************************/
+/*!
+ * \class Cell3D
+ *
+ * \verbatim
+ * Member functions
+ *     Xc       -- Return 3D vector containing location of the cell
+ *                 center (centroid).
+ *     I        -- Return I index for cell.
+ *     J        -- Return J index for cell.
+ *     K        -- Return K index for cell.
+ *     V        -- Return the volume of the cell.
+ *     setloc   -- Set cell center location (position).
+ *     setindex -- Set cell (i,j,k) indices.
+ *     GeomCoeff-- Volume integrals of geometric moments
+ *
+ * Member operators
+ *      C -- a cell
+ *
+ * C = C;
+ * C == C;
+ * C != C;
+ * cout << C; (output function)
+ * cin  >> C; (input function)
+ * \endverbatim
+ */
 class Cell3D{
   private:
-  public:
+    
+   public:
+
+    //! @name Public data types.
+    //@{
+    //! The type of the container for all geometric moments
+    typedef TaylorDerivativesContainer<ThreeD,double> GeometricMoments;
+    //! The type of an individual geometric moment
+    typedef GeometricMoments::Derivative GeomMoment;
+    //@}
+
+    //! @name Public variables.
+    //@{
     Vector3D           Xc;   // Location of cell center.
     int             I,J,K;   // (i,j,k) indices for cell.
     double              V;   // Cell volume
 	                     // Made public so can access them.
+    //@}
 		      
     /* Creation, copy, and assignment constructors. */
-    Cell3D(void) {
-       Xc.x = ONE; Xc.y = ONE; Xc.z=ONE; I = 0; J =0; K=0; V = ONE;
+    Cell3D(void): _GeomCoeff_(0) {
+      Xc.x = ONE; Xc.y = ONE; Xc.z=ONE; I = 0; J =0; K=0; V = ONE; 
     }
 
-    Cell3D(const Cell3D &Cell) {
-       Xc = Cell.Xc; I = Cell.I; J = Cell.J; K=Cell.K; V = Cell.V;
+    Cell3D(const Cell3D &Cell): _GeomCoeff_(Cell._GeomCoeff_) {
+      Xc = Cell.Xc; I = Cell.I; J = Cell.J; K=Cell.K; V = Cell.V;
     }
 
-    Cell3D(const Vector3D &V) {
-       Xc = V;
+    Cell3D(const Vector3D &V): _GeomCoeff_(0) {
+      Xc = V;
     }
 
-    Cell3D(const double &xx, const double &yy, const double &zz) {
+    Cell3D(const double &xx, const double &yy, const double &zz): _GeomCoeff_(0) {
       Xc.x = xx; Xc.y = yy; Xc.z=zz;
     }
     
+    /*!
+     * Constructor with reconstruction order.
+     * The reconstruction order determines the size of the geometric moments container.
+     * If high-order reconstructions of different orders are used,
+     * the OrderOfReconstruction should be the highest value of them.
+     */
+    Cell3D(const int &OrderOfReconstruction): _GeomCoeff_(OrderOfReconstruction){
+      Xc.x = ONE; Xc.y = ONE; Xc.z=ONE; I = 0; J =0; K=0; V = ONE;
+    };
+
     /* Destructor. */
     // ~Cell2D(void);
     // Use automatically generated destructor.
@@ -86,6 +116,27 @@ class Cell3D{
     void setindex(void);
     void setindex(const Cell3D &Cell);
     void setindex(const int II, const int JJ, const int KK);
+
+    //! @name Field access functions.
+    //@{
+    //! Get access to the array of geometric coefficients
+    const GeometricMoments & GeomCoeff(void) const { return _GeomCoeff_;}
+    //! Get access to the array of geometric coefficients
+    GeometricMoments & GeomCoeff(void) {return _GeomCoeff_;}
+    //! Get access to the value of the geometric coefficient with x-power 'p1' and y-power 'p2'
+    const double & GeomCoeffValue(const int &p1, const int &p2, const int &p3) const {return _GeomCoeff_(p1,p2,p3);}
+    //! Get access to the value of the geometric coefficient with x-power p1 and y-power p2
+    double & GeomCoeffValue(const int &p1, const int &p2, const int &p3) {return _GeomCoeff_(p1,p2,p3);}
+    //! Get access to the value of the geometric coefficient which is stored in the 'position' place
+
+    //--> RR: The compiler does not like the following use of const in the code:
+    const double & GeomCoeffValue(const int &position) const {return _GeomCoeff_(position).D();}
+
+    //! Get access to the value of the geometric coefficient which is stored in the 'position' place
+    double & GeomCoeffValue(const int &position){return _GeomCoeff_(position).D();}
+    //! Get access to the geometric coefficient (i.e. powers and values) which is stored in the 'position' place
+    GeomMoment & GeomCoeff(const int &position){return _GeomCoeff_(position);}
+    //@}
 
     /* Assignment operator. */
     // Cell2D operator = (const Cell2D &Cell);
@@ -102,7 +153,11 @@ class Cell3D{
 				 const Cell3D &Cell);
     friend istream &operator >> (istream &in_file,
 				 Cell3D &Cell);
-    
+ 
+
+private:    
+  //! Area integrals of cell geometric moments with respect to the cell centroid 
+  GeometricMoments _GeomCoeff_;  //    
 };
 
 /******************************************************************
@@ -149,7 +204,7 @@ inline int operator ==(const Cell3D &Cell1,
 
 inline int operator !=(const Cell3D &Cell1,
 		       const Cell3D &Cell2) {
-    return (Cell1.Xc != Cell2.Xc || Cell1.V != Cell2.V);
+  return (Cell1.Xc != Cell2.Xc || Cell1.V != Cell2.V);
 }
 
 /******************************************************************
@@ -161,6 +216,8 @@ inline ostream &operator << (ostream &out_file,
     out_file.setf(ios::scientific);
     out_file << " " << Cell.V;
     out_file.unsetf(ios::scientific);
+    out_file.unsetf(ios::scientific);
+    out_file << " " << Cell.GeomCoeff();
     return (out_file);
 }
 
@@ -173,6 +230,7 @@ inline istream &operator >> (istream &in_file,
     in_file.setf(ios::skipws);
     in_file >> Cell.V;
     in_file.unsetf(ios::skipws);
+    in_file >> Cell.GeomCoeff();
     return (in_file);
 }
 
