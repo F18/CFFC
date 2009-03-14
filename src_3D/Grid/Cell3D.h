@@ -25,7 +25,7 @@ using namespace std;
 
 #ifndef _TAYLORDERIVATIVES_INCLUDED
 #include "../HighOrderReconstruction/TaylorDerivatives.h"
-#endif // _TAYLORDERIVATIVES_3D_INCLUDED
+#endif // _TAYLORDERIVATIVES_INCLUDED
 
 /* Define the basic 3D cell class. */
 
@@ -62,9 +62,11 @@ class Cell3D{
     //! @name Public data types.
     //@{
     //! The type of the container for all geometric moments
-    typedef TaylorDerivativesContainer<ThreeD,double> GeometricMoments;
+    //typedef TaylorDerivativesContainer<ThreeD,double> GeometricMoments;
+    typedef TaylorDerivativesContainer<double> GeometricMoments;
     //! The type of an individual geometric moment
-    typedef GeometricMoments::Derivative GeomMoment;
+    //typedef GeometricMoments::Derivative GeomMoment;
+    typedef TaylorDerivativesContainer<double>::Derivative GeomMoment; 
     //@}
 
     //! @name Public variables.
@@ -128,10 +130,7 @@ class Cell3D{
     //! Get access to the value of the geometric coefficient with x-power p1 and y-power p2
     double & GeomCoeffValue(const int &p1, const int &p2, const int &p3) {return _GeomCoeff_(p1,p2,p3);}
     //! Get access to the value of the geometric coefficient which is stored in the 'position' place
-
-    //--> RR: The compiler does not like the following use of const in the code:
     const double & GeomCoeffValue(const int &position) const {return _GeomCoeff_(position).D();}
-
     //! Get access to the value of the geometric coefficient which is stored in the 'position' place
     double & GeomCoeffValue(const int &position){return _GeomCoeff_(position).D();}
     //! Get access to the geometric coefficient (i.e. powers and values) which is stored in the 'position' place
