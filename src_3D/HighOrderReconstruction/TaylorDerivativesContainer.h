@@ -557,14 +557,6 @@ int TaylorDerivativesContainer<T>::IndexOrder(const int p1, const int p2, const 
   //                                                for p1=3 --> shift_p1 = 15+10+6   = 31
   //                                                for p1=4 --> shift_p1 = 15+10+6+3 = 34
 
-//  if (p1+p2+p3 > OrderOfRec) {
-//    error_flag = 1; 
-//    cout << "\n " << CFFC_Version() 
-//	 << "Error in TaylorDerivativesContainer::IndexOrder -> Powers are out of bounds! ie. p1+p2+p3 > OrderOfRec, "
-//	 << "flag = " << error_flag << ".\n";
-//    return(error_flag);
-//  } /* endif */
-
   shift_p1 = 0;
   for (i=1; i<=p1; ++i){
     n = OrderOfRec-i+2;
