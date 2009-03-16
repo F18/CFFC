@@ -182,13 +182,19 @@ void kExact_Reconstruction (SolutionContainer & SolnBlk, const int *i_index, con
 
     // Step 1. Compute and store the pseudo-inverse 
     // This operation will change the dimensions of the matrix and override the LHS term.
-    A.pseudo_inverse_override();
-    SolnBlk.Cell_LHS_Inv(i_index[0],j_index[0],k_index[0]) = A;
+    SolnBlk.Cell_LHS_Inv(i_index[0],j_index[0],k_index[0]) = A;    
+    SolnBlk.Cell_LHS_Inv(i_index[0],j_index[0],k_index[0]).pseudo_inverse_override();
 
     // Step 2. Find the solution of the linear-system for the current parameter
     // Note the matrix "A" used here is really "A_inverse" via Step 1 above.
-    //X = A * All_Delta_U;
+    // X = A * All_Delta_U;
     X = SolnBlk.Cell_LHS_Inv(i_index[0],j_index[0],k_index[0]) * All_Delta_U;
+    
+//    if (i_index[0] == 5 && j_index[0] == 5 && k_index[0] == 5){
+//      Print_(SolnBlk.Cell_LHS_Inv(i_index[0],j_index[0],k_index[0]));
+//      Print_(X);
+//      Print_(All_Delta_U);
+//    }
 
     // Step 3. Update the coefficients D (derivatives)
     for (i=1; i<=SolnBlk(i_index[0],j_index[0],k_index[0]).CellDeriv().LastElem(); ++i){
