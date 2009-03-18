@@ -1770,7 +1770,7 @@ void Output_Flat_Plate_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 	numberofactivecells++;
       }
       // Determine the norms of the skin friction coefficient.
-      if (X.x >= ZERO && X.x <= plate_length && j == 2 &&
+      if (X.x >= ZERO && X.x <= plate_length && j == SolnBlk.JCl &&
 	  (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
 	   SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL)) {
 	// Get exact skin friction coefficient.
