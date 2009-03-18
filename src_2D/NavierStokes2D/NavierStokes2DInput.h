@@ -348,6 +348,8 @@ public:
   double ReferenceEntropy(void) const { return Wo.s(); } //!< Reference entropy at any given location
   double FreeStreamVelocity(void) const { return abs(Wo.v); } //!< Return the magnitude of the free stream velocity
   double FreeStreamDensity(void) const {return Wo[1]; }  //!< Return the density in the free stream
+  //! @brief Return the required density in the free stream such that to obtain the imposed Reynolds and Mach numbers
+  double CalculateRequiredFreeStreamDensity(const double & ReynoldsNumberCharacteristicLength);
   //@}
 
   //@{ @name Input-output operators:
@@ -396,6 +398,21 @@ inline void NavierStokes2D_Input_Parameters::get_cffc_path(){
      //Set path specified by environment variable
      strcpy(CFFC_Path, getenv(PATHVAR_NAVIERSTOKES2D));
   }
+}
+
+
+/*! 
+ * Return the required density in the free stream such that to obtain 
+ * the imposed Reynolds and Mach numbers.
+ * The reference state Wo is used to provide the gas properties.
+ * All other parameters (i.e. Mach_Number, Temperature and Reynolds_Number) are read from the class
+ * The equation for the speed of sound is for an ideal gas.
+ * 
+ * \param ReynoldsNumberCharacteristicLength the characteristic length for calculating the Reynolds number
+ */
+inline double NavierStokes2D_Input_Parameters::
+CalculateRequiredFreeStreamDensity(const double & ReynoldsNumberCharacteristicLength){
+  return (Reynolds_Number/ReynoldsNumberCharacteristicLength)*Wo.mu()/(sqrt(Wo.g*Wo.R*Temperature)*Mach_Number);
 }
 
 /**********************************************************************

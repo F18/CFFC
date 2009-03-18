@@ -1234,7 +1234,9 @@ clean:
 	rm -f $(ADVECTDIFFUSE_DIR)*.o $(ADVECTDIFFUSE_DIR)*.il $(ADVECTDIFFUSE_DIR)*~ $(ADVECTDIFFUSE_DIR)*.depend $(ADVECTDIFFUSE_DIR)*.bak
 	rm -f $(ADVECTDIFFUSE_DIR)UnitTests/*.o $(ADVECTDIFFUSE_DIR)UnitTests/*.il $(ADVECTDIFFUSE_DIR)UnitTests/*~ $(ADVECTDIFFUSE_DIR)UnitTests/*.bak
 	rm -f $(EULER_2D_DIR)*.o $(EULER_2D_DIR)*.il $(EULER_2D_DIR)*~ $(EULER_2D_DIR)*.depend $(EULER_2D_DIR)*.bak
+	rm -f $(EULER_2D_DIR)UnitTests/*.o $(EULER_2D_DIR)UnitTests/*.il $(EULER_2D_DIR)UnitTests/*~ $(EULER_2D_DIR)UnitTests/*.bak
 	rm -f $(NAVIERSTOKES_DIR)*.o $(NAVIERSTOKES_DIR)*.il $(NAVIERSTOKES_DIR)*~ $(NAVIERSTOKES_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
+	rm -f $(NAVIERSTOKES_DIR)UnitTests/*.o $(NAVIERSTOKES_DIR)UnitTests/*.il $(NAVIERSTOKES_DIR)UnitTests/*~ $(NAVIERSTOKES_DIR)UnitTests/*.bak
 	rm -f $(CHEM_DIR)*.o $(CHEM_DIR)*.il $(CHEM_DIR)*~ $(CHEM_DIR)*.depend $(CHEM_DIR)*.bak
 	rm -f $(FLAME_DIR)*.o $(FLAME_DIR)*.il $(FLAME_DIR)*~ $(FLAME_DIR)*.depend $(FLAME_DIR)*.bak
 	rm -f $(HIGHTEMP_DIR)*.o $(HIGHTEMP_DIR)*.il $(HIGHTEMP_DIR)*~ $(HIGHTEMP_DIR)*.depend $(HIGHTEMP_DIR)*.bak

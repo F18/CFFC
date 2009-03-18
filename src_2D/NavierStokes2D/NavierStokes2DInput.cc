@@ -4566,7 +4566,7 @@ void Initialize_Reference_State(NavierStokes2D_Input_Parameters &IP) {
   // Set the state for the laminar flat-plate boundary layer flow.
   if (IP.i_Grid == GRID_FLAT_PLATE && (IP.FlowType == FLOWTYPE_LAMINAR ||
 				       IP.FlowType == FLOWTYPE_TURBULENT_RANS_K_OMEGA)) {
-    IP.Wo.rho = (IP.Reynolds_Number/IP.Plate_Length)*IP.Wo.mu()/(sqrt(IP.Wo.g*IP.Wo.R*IP.Temperature)*IP.Mach_Number);
+    IP.Wo.rho = IP.CalculateRequiredFreeStreamDensity(IP.Plate_Length);
     IP.Wo.p = IP.Wo.rho*IP.Wo.R*IP.Temperature;
     IP.Wo.v.x = sqrt(IP.Wo.g*IP.Wo.R*IP.Temperature)*IP.Mach_Number;
     IP.Wo.v.y = ZERO;
@@ -4618,6 +4618,16 @@ void Initialize_Reference_State(NavierStokes2D_Input_Parameters &IP) {
     IP.Box_Width = (IP.Reynolds_Number/IP.Wo.rho)*IP.Wo.mu()/(IP.Wo.a()*IP.Mach_Number);
     IP.Wo.v.x = IP.Wo.a()*IP.Mach_Number;
     IP.Wo.v.y = sqrt(IP.Wo.g*IP.Wo.R*TEMPERATURE_STDATM)*IP.Mach_Number2;
+    IP.Uo = U(IP.Wo);
+  }
+
+  // Set the state for the laminar flow over a cylinder.
+  if (IP.i_Grid == GRID_CIRCULAR_CYLINDER && (IP.FlowType == FLOWTYPE_LAMINAR ||
+				              IP.FlowType == FLOWTYPE_TURBULENT_RANS_K_OMEGA)) {
+    IP.Wo.rho = IP.CalculateRequiredFreeStreamDensity(TWO*IP.Cylinder_Radius); //< use interior cylinder diameter
+    IP.Wo.p = IP.Wo.rho*IP.Wo.R*IP.Temperature;
+    IP.Wo.v.x = sqrt(IP.Wo.g*IP.Wo.R*IP.Temperature)*IP.Mach_Number;
+    IP.Wo.v.y = ZERO;
     IP.Uo = U(IP.Wo);
   }
 

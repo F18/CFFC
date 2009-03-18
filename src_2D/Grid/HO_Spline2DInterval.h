@@ -203,13 +203,13 @@ public:
   template<typename FO, class ReturnType>
   ReturnType IntegrateFunctionWithRespectToY(FO FuncObj, ReturnType _dummy_param) const;
 
-  //! @brief Integrate the given function multiplied with the normal along the along the contour of this spline interval.
+  //! @brief Integrate the given function multiplied with the normal along the contour of this spline interval.
   template<typename FO, class ReturnType>
   void IntegrateFunctionProjectionOnNormalDirections(const Spline2D_HO & SupportCurve, FO FuncObj,
 						     ReturnType & ResultXdir, ReturnType & ResultYdir,
 						     double & WettedSurface) const;
 
-  //! @brief Integrate the given function along the along the contour of this spline interval.
+  //! @brief Integrate the given function along the contour of this spline interval.
   template<typename FO, class ReturnType>
   ReturnType IntegrateFunctionAlongInterval(FO FuncObj, ReturnType _dummy_param) const;
   //@}

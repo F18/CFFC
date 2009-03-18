@@ -1412,6 +1412,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_Without_Update(int &_Number_of_B
       Bnd_Spline_North.setBCtype(BC_FIXED);
       if (Flat_Plate_BC_Type != BC_BURNING_SURFACE) {
 	Bnd_Spline_South.setBCtype(Flat_Plate_BC_Type);
+	Bnd_Spline_South.makeSplineSolidBoundary(); // set the flat-plate as solid body
 	Bnd_Spline_East.setBCtype(BC_CONSTANT_EXTRAPOLATION);
       } else {
 	Bnd_Spline_South.setBCtype(BC_WALL_VISCOUS_ISOTHERMAL);
