@@ -25,43 +25,41 @@
 template<> inline
 void Cauchy_BCs<NavierStokes2D_pState>::SetCharacteristicConstraintsBasedOnBCtype(const int & BCtype){
 
+  // Set default constraints
+  // Impose NO relational constraints
+  RelationalConstraints[0] = 0; // rho
+  RelationalConstraints[1] = 0;	// u 
+  RelationalConstraints[2] = 0;	// v 
+  RelationalConstraints[3] = 0;	// p 
+  RelationalConstraints[4] = 0;	// k 
+  RelationalConstraints[5] = 0;	// omega
+  RelationalConstraints[6] = 0;	// ke
+  RelationalConstraints[7] = 0;	// ee
+  RelationalConstraintsFlag = false;
+  // Impose No individual constraints
+  IndividualConstraints[0] = 0; // rho
+  IndividualConstraints[1] = 0;	// u 
+  IndividualConstraints[2] = 0;	// v 
+  IndividualConstraints[3] = 0;	// p 
+  IndividualConstraints[4] = 0;	// k 
+  IndividualConstraints[5] = 0;	// omega
+  IndividualConstraints[6] = 0;	// ke
+  IndividualConstraints[7] = 0;	// ee
+  IndividualConstraintsFlag = false;
+
+
+  // Set particular constraints based on the boundary condition type
   switch(BCtype){
 
   case BC_REFLECTION:		// treat it in the same way as BC_WALL_INVISCID
   case BC_WALL_INVISCID:
     // Impose relational constraint between 'u' and 'v'
-    RelationalConstraints[0] = 0; // rho
     RelationalConstraints[1] = 1; // u
     RelationalConstraints[2] = 1; // v
-    RelationalConstraints[3] = 0; // p
-    RelationalConstraints[4] = 0; // k
-    RelationalConstraints[5] = 0; // omega
-    RelationalConstraints[6] = 0; // ke
-    RelationalConstraints[7] = 0; // ee
     RelationalConstraintsFlag = true;
-    // Impose No individual constraints
-    IndividualConstraints[0] = 0;
-    IndividualConstraints[1] = 0;
-    IndividualConstraints[2] = 0;
-    IndividualConstraints[3] = 0;
-    IndividualConstraints[4] = 0;
-    IndividualConstraints[5] = 0;
-    IndividualConstraints[6] = 0;
-    IndividualConstraints[7] = 0;
-    IndividualConstraintsFlag = false;
     break;
 
   case BC_EXACT_SOLUTION:
-    // Impose NO relational constraints
-    RelationalConstraints[0] = 0;
-    RelationalConstraints[1] = 0;
-    RelationalConstraints[2] = 0;
-    RelationalConstraints[3] = 0;
-    RelationalConstraints[4] = 0;
-    RelationalConstraints[5] = 0;
-    RelationalConstraints[6] = 0;
-    RelationalConstraints[7] = 0;
-    RelationalConstraintsFlag = false;
     // Assume individual constraints for each parameter.
     // (the final implementation might be different depending on the flow conditions)
     IndividualConstraints[0] = 1;
@@ -76,50 +74,75 @@ void Cauchy_BCs<NavierStokes2D_pState>::SetCharacteristicConstraintsBasedOnBCtyp
     break;
 
   case BC_FARFIELD:
-    // Impose NO relational constraints
-    RelationalConstraints[0] = 0;
-    RelationalConstraints[1] = 0;
-    RelationalConstraints[2] = 0;
-    RelationalConstraints[3] = 0;
-    RelationalConstraints[4] = 0;
-    RelationalConstraints[5] = 0;
-    RelationalConstraints[6] = 0;
-    RelationalConstraints[7] = 0;
-    RelationalConstraintsFlag = false;
     // Assume individual constraints for velocity and pressure.
     // (the final implementation might be different depending on the flow conditions)
     IndividualConstraints[0] = 0;
     IndividualConstraints[1] = 1;
     IndividualConstraints[2] = 1;
     IndividualConstraints[3] = 1;
-    IndividualConstraints[4] = 0;
-    IndividualConstraints[5] = 0;
-    IndividualConstraints[6] = 0;
-    IndividualConstraints[7] = 0;
     IndividualConstraintsFlag = true;
     break;
 
+  case BC_CONSTANT_EXTRAPOLATION:
+    // Assume zero gradient for all variables.
+    // (the final implementation might be different depending on the flow conditions)
+    IndividualConstraints[0] = 1;
+    IndividualConstraints[1] = 1;
+    IndividualConstraints[2] = 1;
+    IndividualConstraints[3] = 1;
+    IndividualConstraints[4] = 1;
+    IndividualConstraints[5] = 1;
+    IndividualConstraints[6] = 1;
+    IndividualConstraints[7] = 1;
+    IndividualConstraintsFlag = true;
+    break;
+
+  case BC_DIRICHLET:		// same as BC_FIXED
+    // Assume individual constraints for each parameter.
+    // (the final implementation might be different depending on the flow conditions)
+    IndividualConstraints[0] = 1;
+    IndividualConstraints[1] = 1;
+    IndividualConstraints[2] = 1;
+    IndividualConstraints[3] = 1;
+    IndividualConstraints[4] = 1;
+    IndividualConstraints[5] = 1;
+    IndividualConstraints[6] = 1;
+    IndividualConstraints[7] = 1;
+    IndividualConstraintsFlag = true;
+    break;
+
+  case BC_WALL_VISCOUS_HEATFLUX:
+    // Individual constraints for both velocities (i.e. Dirichlet bc) as well as density and pressure (i.e. Neumann bc)
+    // The current setup is for laminar flows!
+    IndividualConstraints[0] = 1;
+    IndividualConstraints[1] = 1;
+    IndividualConstraints[2] = 1;
+    IndividualConstraints[3] = 1;
+    IndividualConstraintsFlag = true;
+    break;
+
+  case BC_OUTFLOW_SUBSONIC :
+    // Impose individual constraints (i.e. Dirichlet and Neumann) to all variables.
+    // The current setup is for laminar flows!
+    IndividualConstraints[0] = 1;
+    IndividualConstraints[1] = 1;
+    IndividualConstraints[2] = 1;
+    IndividualConstraints[3] = 1;
+    IndividualConstraintsFlag = true;
+
+  case BC_INFLOW_SUBSONIC :
+    // Impose individual constraints (i.e. Dirichlet and Neumann) to all variables.
+    // The current setup is for laminar flows!
+    IndividualConstraints[0] = 1;
+    IndividualConstraints[1] = 1;
+    IndividualConstraints[2] = 1;
+    IndividualConstraints[3] = 1;
+    IndividualConstraintsFlag = true;
+
   default:
-    // Impose NO relational constraints
-    RelationalConstraints[0] = 0;
-    RelationalConstraints[1] = 0;
-    RelationalConstraints[2] = 0;
-    RelationalConstraints[3] = 0;
-    RelationalConstraints[4] = 0;
-    RelationalConstraints[5] = 0;
-    RelationalConstraints[6] = 0;
-    RelationalConstraints[7] = 0;
-    RelationalConstraintsFlag = false;
-    // Impose No individual constraints
-    IndividualConstraints[0] = 0;
-    IndividualConstraints[1] = 0;
-    IndividualConstraints[2] = 0;
-    IndividualConstraints[3] = 0;
-    IndividualConstraints[4] = 0;
-    IndividualConstraints[5] = 0;
-    IndividualConstraints[6] = 0;
-    IndividualConstraints[7] = 0;
-    IndividualConstraintsFlag = false;
+    // Leave the default values unchanged
+    break;
+
   } // endswitch
 
 }

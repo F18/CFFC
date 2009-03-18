@@ -4616,8 +4616,24 @@ void NavierStokes2D_Quad_Block::BCs_HighOrder(void){
 	  BC_WestCell(j).b(Vertex) = Soln_State(1.0);
 	  break;
 
+	case BC_OUTFLOW_SUBSONIC :
+	  // Impose constant extrapolation (i.e. zero derivative in the normal direction)
+	  // with fixed pressure (i.e. Dirichlet bc)
+	  BC_WestCell(j).DirichletBC(Vertex) = WoW[j]; // this value is important only for pressure
+	  BC_WestCell(j).a(Vertex) = Soln_State(0.0);
+	  BC_WestCell(j).a(Vertex)[4] = 1.0; // impose Dirichlet constraint for pressure
+	  BC_WestCell(j).NeumannBC(Vertex) =  Soln_State(0.0); // impose zero gradient to all variables
+	  BC_WestCell(j).b(Vertex) = Soln_State(1.0);	       // impose Neumann constraint to all variables
+	  BC_WestCell(j).b(Vertex)[4] = 0.0; // eliminate Neumann constraint for pressure
+	  break;
+
 	case BC_CONSTANT_EXTRAPOLATION :
-	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_WestCell(j).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_WestCell(j).a(Vertex) = Soln_State(0.0);
+	  BC_WestCell(j).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_WestCell(j).b(Vertex) = Soln_State(1.0);
 	  break;
 
 	case BC_EXACT_SOLUTION :
@@ -4649,7 +4665,37 @@ void NavierStokes2D_Quad_Block::BCs_HighOrder(void){
 	  // Do nothing
 	  break;
 
+	case BC_WALL_VISCOUS_HEATFLUX:
+	  // No-slip condition and no heat flux through the wall
+	  
+	  // Initialize states
+	  BC_WestCell(j).DirichletBC(Vertex) = Soln_State(0.0);
+	  BC_WestCell(j).a(Vertex) = Soln_State(0.0);
+	  BC_WestCell(j).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_WestCell(j).b(Vertex) = Soln_State(0.0);
+
+	  // Set Dirichlet BC with ZERO value for 'u' and 'v' velocities
+	  BC_WestCell(j).a(Vertex)[2] = 1.0;
+	  BC_WestCell(j).a(Vertex)[3] = 1.0;
+	  
+	  // Set Neumann BC with ZERO gradient for 'p' and 'rho' (i.e. no heat flux through the wall)
+	  BC_WestCell(j).b(Vertex)[1] = 1.0;
+	  BC_WestCell(j).b(Vertex)[4] = 1.0;
+	  break;
+
+	case BC_INFLOW_SUBSONIC :
+	  // Impose fixed density and velocity (i.e. Dirichlet bc) 
+	  // and constant extrapolation of pressure (i.e. zero derivative in the normal direction)
+	  BC_WestCell(j).DirichletBC(Vertex) = WoW[j]; // this value is important only for density and velocity
+	  BC_WestCell(j).a(Vertex) = Soln_State(1.0);
+	  BC_WestCell(j).a(Vertex)[4] = 0.0; // eliminate Dirichlet constraint for pressure
+	  BC_WestCell(j).NeumannBC(Vertex) =  Soln_State(0.0); // impose zero gradient
+	  BC_WestCell(j).b(Vertex) = Soln_State(0.0);	       // eliminate Neumann constraint to all variables
+	  BC_WestCell(j).b(Vertex)[4] = 1.0; // impose Neumann constraint to pressure
+	  break;
+	  
 	default:		
+	  Print_(Grid.BCtypeW[j])
 	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");
 	  break;
 	} /* endswitch */
@@ -4712,8 +4758,24 @@ void NavierStokes2D_Quad_Block::BCs_HighOrder(void){
 	  BC_EastCell(j).b(Vertex) = Soln_State(1.0);
 	  break;
 
+	case BC_OUTFLOW_SUBSONIC :
+	  // Impose constant extrapolation (i.e. zero derivative in the normal direction)
+	  // with fixed pressure (i.e. Dirichlet bc)
+	  BC_EastCell(j).DirichletBC(Vertex) = WoE[j]; // this value is important only for pressure
+	  BC_EastCell(j).a(Vertex) = Soln_State(0.0);
+	  BC_EastCell(j).a(Vertex)[4] = 1.0; // impose Dirichlet constraint for pressure
+	  BC_EastCell(j).NeumannBC(Vertex) =  Soln_State(0.0); // impose zero gradient to all variables
+	  BC_EastCell(j).b(Vertex) = Soln_State(1.0);	       // impose Neumann constraint to all variables
+	  BC_EastCell(j).b(Vertex)[4] = 0.0; // eliminate Neumann constraint for pressure
+	  break;
+
 	case BC_CONSTANT_EXTRAPOLATION :
-	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_EastCell(j).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_EastCell(j).a(Vertex) = Soln_State(0.0);
+	  BC_EastCell(j).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_EastCell(j).b(Vertex) = Soln_State(1.0);
 	  break;
 
 	case BC_EXACT_SOLUTION :
@@ -4745,7 +4807,37 @@ void NavierStokes2D_Quad_Block::BCs_HighOrder(void){
 	  // Do nothing
 	  break;
 
+	case BC_WALL_VISCOUS_HEATFLUX:
+	  // No-slip condition and no heat flux through the wall
+	  
+	  // Initialize states
+	  BC_EastCell(j).DirichletBC(Vertex) = Soln_State(0.0);
+	  BC_EastCell(j).a(Vertex) = Soln_State(0.0);
+	  BC_EastCell(j).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_EastCell(j).b(Vertex) = Soln_State(0.0);
+
+	  // Set Dirichlet BC with ZERO value for 'u' and 'v' velocities
+	  BC_EastCell(j).a(Vertex)[2] = 1.0;
+	  BC_EastCell(j).a(Vertex)[3] = 1.0;
+	  
+	  // Set Neumann BC with ZERO gradient for 'p' and 'rho' (i.e. no heat flux through the wall)
+	  BC_EastCell(j).b(Vertex)[1] = 1.0;
+	  BC_EastCell(j).b(Vertex)[4] = 1.0;
+	  break;
+
+	case BC_INFLOW_SUBSONIC :
+	  // Impose fixed density and velocity (i.e. Dirichlet bc) 
+	  // and constant extrapolation of pressure (i.e. zero derivative in the normal direction)
+	  BC_EastCell(j).DirichletBC(Vertex) = WoE[j]; // this value is important only for density and velocity
+	  BC_EastCell(j).a(Vertex) = Soln_State(1.0);
+	  BC_EastCell(j).a(Vertex)[4] = 0.0; // eliminate Dirichlet constraint for pressure
+	  BC_EastCell(j).NeumannBC(Vertex) =  Soln_State(0.0); // impose zero gradient
+	  BC_EastCell(j).b(Vertex) = Soln_State(0.0);	       // eliminate Neumann constraint to all variables
+	  BC_EastCell(j).b(Vertex)[4] = 1.0; // impose Neumann constraint to pressure
+	  break;
+
 	default:	
+	  Print_(Grid.BCtypeE[j])
 	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");	
 	  break;
 	} /* endswitch */
@@ -4814,8 +4906,24 @@ void NavierStokes2D_Quad_Block::BCs_HighOrder(void){
 	  BC_SouthCell(i).b(Vertex) = Soln_State(1.0);
 	  break;
 
+	case BC_OUTFLOW_SUBSONIC :
+	  // Impose constant extrapolation (i.e. zero derivative in the normal direction)
+	  // with fixed pressure (i.e. Dirichlet bc)
+	  BC_SouthCell(i).DirichletBC(Vertex) = WoS[i]; // this value is important only for pressure
+	  BC_SouthCell(i).a(Vertex) = Soln_State(0.0);
+	  BC_SouthCell(i).a(Vertex)[4] = 1.0; // impose Dirichlet constraint for pressure
+	  BC_SouthCell(i).NeumannBC(Vertex) =  Soln_State(0.0); // impose zero gradient to all variables
+	  BC_SouthCell(i).b(Vertex) = Soln_State(1.0);	       // impose Neumann constraint to all variables
+	  BC_SouthCell(i).b(Vertex)[4] = 0.0; // eliminate Neumann constraint for pressure
+	  break;
+
 	case BC_CONSTANT_EXTRAPOLATION :
-	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_SouthCell(i).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_SouthCell(i).a(Vertex) = Soln_State(0.0);
+	  BC_SouthCell(i).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_SouthCell(i).b(Vertex) = Soln_State(1.0);
 	  break;
 	
 	case BC_EXACT_SOLUTION :
@@ -4847,7 +4955,37 @@ void NavierStokes2D_Quad_Block::BCs_HighOrder(void){
 	  // Do nothing
 	  break;
 	
-	default:	
+	case BC_WALL_VISCOUS_HEATFLUX:
+	  // No-slip condition and no heat flux through the wall
+	  
+	  // Initialize states
+	  BC_SouthCell(i).DirichletBC(Vertex) = Soln_State(0.0);
+	  BC_SouthCell(i).a(Vertex) = Soln_State(0.0);
+	  BC_SouthCell(i).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_SouthCell(i).b(Vertex) = Soln_State(0.0);
+
+	  // Set Dirichlet BC with ZERO value for 'u' and 'v' velocities
+	  BC_SouthCell(i).a(Vertex)[2] = 1.0;
+	  BC_SouthCell(i).a(Vertex)[3] = 1.0;
+	  
+	  // Set Neumann BC with ZERO gradient for 'p' and 'rho' (i.e. no heat flux through the wall)
+	  BC_SouthCell(i).b(Vertex)[1] = 1.0;
+	  BC_SouthCell(i).b(Vertex)[4] = 1.0;
+	  break;
+
+	case BC_INFLOW_SUBSONIC :
+	  // Impose fixed density and velocity (i.e. Dirichlet bc) 
+	  // and constant extrapolation of pressure (i.e. zero derivative in the normal direction)
+	  BC_SouthCell(i).DirichletBC(Vertex) = WoS[i]; // this value is important only for density and velocity
+	  BC_SouthCell(i).a(Vertex) = Soln_State(1.0);
+	  BC_SouthCell(i).a(Vertex)[4] = 0.0; // eliminate Dirichlet constraint for pressure
+	  BC_SouthCell(i).NeumannBC(Vertex) =  Soln_State(0.0); // impose zero gradient
+	  BC_SouthCell(i).b(Vertex) = Soln_State(0.0);	       // eliminate Neumann constraint to all variables
+	  BC_SouthCell(i).b(Vertex)[4] = 1.0; // impose Neumann constraint to pressure
+	  break;
+
+	default:
+	  Print_(Grid.BCtypeS[i])
 	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");		
 	  break;
 	} /* endswitch */
@@ -4912,8 +5050,24 @@ void NavierStokes2D_Quad_Block::BCs_HighOrder(void){
 	  BC_NorthCell(i).b(Vertex) = Soln_State(1.0);
 	  break;
 
+	case BC_OUTFLOW_SUBSONIC :
+	  // Impose constant extrapolation (i.e. zero derivative in the normal direction)
+	  // with fixed pressure (i.e. Dirichlet bc)
+	  BC_NorthCell(i).DirichletBC(Vertex) = WoN[i]; // this value is important only for pressure
+	  BC_NorthCell(i).a(Vertex) = Soln_State(0.0);
+	  BC_NorthCell(i).a(Vertex)[4] = 1.0; // impose Dirichlet constraint for pressure
+	  BC_NorthCell(i).NeumannBC(Vertex) =  Soln_State(0.0); // impose zero gradient to all variables
+	  BC_NorthCell(i).b(Vertex) = Soln_State(1.0);	       // impose Neumann constraint to all variables
+	  BC_NorthCell(i).b(Vertex)[4] = 0.0; // eliminate Neumann constraint for pressure
+	  break;
+
 	case BC_CONSTANT_EXTRAPOLATION :
-	  throw runtime_error("BCs_HighOrder() ERROR! Constant extrapolation BC hasn't been implemented yet!");
+	  // Impose zero derivative in the normal direction at the boundary
+	  // Neumann constraint
+	  BC_NorthCell(i).DirichletBC(Vertex) = Soln_State(0.0); // this value doesn't matter
+	  BC_NorthCell(i).a(Vertex) = Soln_State(0.0);
+	  BC_NorthCell(i).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_NorthCell(i).b(Vertex) = Soln_State(1.0);
 	  break;
 
 	case BC_EXACT_SOLUTION :
@@ -4945,7 +5099,37 @@ void NavierStokes2D_Quad_Block::BCs_HighOrder(void){
 	  // Do nothing
 	  break;
 
+	case BC_WALL_VISCOUS_HEATFLUX:
+	  // No-slip condition and no heat flux through the wall
+	  
+	  // Initialize states
+	  BC_NorthCell(i).DirichletBC(Vertex) = Soln_State(0.0);
+	  BC_NorthCell(i).a(Vertex) = Soln_State(0.0);
+	  BC_NorthCell(i).NeumannBC(Vertex) =  Soln_State(0.0);
+	  BC_NorthCell(i).b(Vertex) = Soln_State(0.0);
+
+	  // Set Dirichlet BC with ZERO value for 'u' and 'v' velocities
+	  BC_NorthCell(i).a(Vertex)[2] = 1.0;
+	  BC_NorthCell(i).a(Vertex)[3] = 1.0;
+	  
+	  // Set Neumann BC with ZERO gradient for 'p' and 'rho' (i.e. no heat flux through the wall)
+	  BC_NorthCell(i).b(Vertex)[1] = 1.0;
+	  BC_NorthCell(i).b(Vertex)[4] = 1.0;
+	  break;
+
+	case BC_INFLOW_SUBSONIC :
+	  // Impose fixed density and velocity (i.e. Dirichlet bc) 
+	  // and constant extrapolation of pressure (i.e. zero derivative in the normal direction)
+	  BC_NorthCell(i).DirichletBC(Vertex) = WoN[i]; // this value is important only for density and velocity
+	  BC_NorthCell(i).a(Vertex) = Soln_State(1.0);
+	  BC_NorthCell(i).a(Vertex)[4] = 0.0; // eliminate Dirichlet constraint for pressure
+	  BC_NorthCell(i).NeumannBC(Vertex) =  Soln_State(0.0); // impose zero gradient
+	  BC_NorthCell(i).b(Vertex) = Soln_State(0.0);	       // eliminate Neumann constraint to all variables
+	  BC_NorthCell(i).b(Vertex)[4] = 1.0; // impose Neumann constraint to pressure
+	  break;
+
 	default:	
+	  Print_(Grid.BCtypeN[i])
 	  throw runtime_error("BCs_HighOrder() ERROR! Default BC hasn't been implemented yet!");			
 	  break;
 	} /* endswitch */

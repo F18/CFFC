@@ -75,53 +75,51 @@ Generalized_RelationalConstraints_Equations(NavierStokes2D_Quad_Block & SolnBlk,
   double GenTerm;
 
   
-  if (SolnBlk.Flow_Type == FLOWTYPE_INVISCID){
-    // impose relational constraints for inviscid flow
-
-    switch(BC_Type){
-    case BC_REFLECTION:		// treat it in the same way as BC_WALL_INVISCID
-    case BC_WALL_INVISCID:
-      /* compute for each derivative the corresponding entry in the matrix of the linear system for this type of BCs */
-      for(Point = 0; Point < Constraints_Loc.size(); ++Point){
-
-	// Determine distance between the current GQP and the centroid of cell (iCell,jCell)
-	DistXi = Constraints_Loc[Point].x - XCellCenter(iCell,jCell);
-	DistYi = Constraints_Loc[Point].y - YCellCenter(iCell,jCell);
-
-	// Form the LHS  -- build the row of the matrix A associated with the current Point
-	for (i=0; i<=CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
-	  // build the row of the matrix
-	  P1 = CellTaylorDeriv(iCell,jCell,i).P1();  // identify P1
-	  P2 = CellTaylorDeriv(iCell,jCell,i).P2();  // identify P2
-
-	  /* Initialize PowXC & PowYC */
-	  PowXC = 1.0/DistXi;
-	  PowYC = 1.0/DistYi;
-
-	  /* Update PowXC & PowYC */
-	  for (IndexP1 = 1; IndexP1 <= P1; ++IndexP1){ PowXC *= DistXi; }
-	  for (IndexP2 = 1; IndexP2 <= P2; ++IndexP2){ PowYC *= DistYi; }
-
-	  /* Impose normal velocity to be zero --> V*n =0 */
-	  GenTerm = PowXC*PowYC*DistXi*DistYi;
-
-	  /* set the u-velocity entry */
-	  A(StartRow + Point,StartCol + i) = GenTerm*(Constraints_Normals[Point].x);
-
-	  /* set the v-velocity entry */
-	  A(StartRow + Point,StartCol + NumberOfTaylorDerivatives() + i) = GenTerm*(Constraints_Normals[Point].y);
-	}//endfor (i)
-
-	// Form the RHS  -- build the row of the matrix All_U associated with the current GQP
-	/* For BC_WALL_INVISCID the value gets set to zero */
-	All_U(StartRow + Point,0) = 0.0;
-
-      }//endfor (Point)
+  switch(BC_Type){
     
-      break;
-    } // endswitch
+    // Impose relational constraints for inviscid boundary conditions
+  case BC_REFLECTION:		// treat it in the same way as BC_WALL_INVISCID
+  case BC_WALL_INVISCID:
+    /* compute for each derivative the corresponding entry in the matrix of the linear system for this type of BCs */
+    for(Point = 0; Point < Constraints_Loc.size(); ++Point){
 
-  } // endif (Flow_Type)
+      // Determine distance between the current GQP and the centroid of cell (iCell,jCell)
+      DistXi = Constraints_Loc[Point].x - XCellCenter(iCell,jCell);
+      DistYi = Constraints_Loc[Point].y - YCellCenter(iCell,jCell);
+      
+      // Form the LHS  -- build the row of the matrix A associated with the current Point
+      for (i=0; i<=CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+	// build the row of the matrix
+	P1 = CellTaylorDeriv(iCell,jCell,i).P1();  // identify P1
+	P2 = CellTaylorDeriv(iCell,jCell,i).P2();  // identify P2
+
+	/* Initialize PowXC & PowYC */
+	PowXC = 1.0/DistXi;
+	PowYC = 1.0/DistYi;
+
+	/* Update PowXC & PowYC */
+	for (IndexP1 = 1; IndexP1 <= P1; ++IndexP1){ PowXC *= DistXi; }
+	for (IndexP2 = 1; IndexP2 <= P2; ++IndexP2){ PowYC *= DistYi; }
+
+	/* Impose normal velocity to be zero --> V*n =0 */
+	GenTerm = PowXC*PowYC*DistXi*DistYi;
+
+	/* set the u-velocity entry */
+	A(StartRow + Point,StartCol + i) = GenTerm*(Constraints_Normals[Point].x);
+
+	/* set the v-velocity entry */
+	A(StartRow + Point,StartCol + NumberOfTaylorDerivatives() + i) = GenTerm*(Constraints_Normals[Point].y);
+      }//endfor (i)
+
+      // Form the RHS  -- build the row of the matrix All_U associated with the current GQP
+      /* For BC_WALL_INVISCID the value gets set to zero */
+      All_U(StartRow + Point,0) = 0.0;
+
+    }//endfor (Point)
+    
+    break;
+  } // endswitch
+
 }
 
 

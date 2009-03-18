@@ -1407,7 +1407,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
     Grid_Flat_Plate_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
 				   Input_Parameters.Number_of_Blocks_Jdir,
 				   Input_Parameters.Plate_Length,
-				   Input_Parameters.BC_South,
+				   Input_Parameters.Flat_Plate_BC_Type,
 				   Input_Parameters.i_Mesh_Stretching,
 				   Input_Parameters.Mesh_Stretching_Factor_Idir,
 				   Input_Parameters.Mesh_Stretching_Factor_Jdir,

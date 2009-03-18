@@ -461,6 +461,7 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.Number_of_Blocks_Idir = 1;
   IP.Number_of_Blocks_Jdir = 1;
   IP.Plate_Length = ONE;
+  IP.Flat_Plate_BC_Type = BC_WALL_VISCOUS_HEATFLUX;
   IP.Pipe_Length = ONE;
   IP.Pipe_Radius = HALF;
   IP.Blunt_Body_Radius = ONE;
@@ -930,6 +931,9 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.Plate_Length),
 			1,
 			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Flat_Plate_BC_Type),
+			1,
+			MPI::INT,0);
   MPI::COMM_WORLD.Bcast(&(IP.Pipe_Length),
 			1,
 			MPI::DOUBLE,0);
@@ -1684,6 +1688,9 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP,
   Communicator.Bcast(&(IP.Plate_Length),
 		     1,
 		     MPI::DOUBLE,Source_Rank);
+  Communicator.Bcast(&(IP.Flat_Plate_BC_Type),
+		     1,
+		     MPI::INT,0);
   Communicator.Bcast(&(IP.Pipe_Length),
 		     1,
 		     MPI::DOUBLE,Source_Rank);
@@ -2224,7 +2231,7 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.i_ICs = IC_VISCOUS_PIPE_FLOW;
     } else if (strcmp(IP.ICs_Type,"Flat_Plate") == 0) {
       IP.i_ICs = IC_VISCOUS_FLAT_PLATE;
-      IP.BC_South = BC_WALL_VISCOUS_HEATFLUX;
+      IP.Flat_Plate_BC_Type = BC_WALL_VISCOUS_HEATFLUX;
     } else if (strcmp(IP.ICs_Type,"Stokes_Flow") == 0) {
       IP.i_ICs = IC_VISCOUS_STOKES_FLOW;
     } else if (strcmp(IP.ICs_Type,"Driven_Cavity_Flow") == 0) {
@@ -2289,15 +2296,15 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
 	       strcmp(IP.Grid_Type,"Adiabatic_Flat_Plate") == 0) {
       IP.i_Grid = GRID_FLAT_PLATE;
       IP.Plate_Length = ONE;
-      IP.BC_South = BC_WALL_VISCOUS_HEATFLUX;
+      IP.Flat_Plate_BC_Type = BC_WALL_VISCOUS_HEATFLUX;
     } else if (strcmp(IP.Grid_Type,"Isothermal_Flat_Plate") == 0) {
       IP.i_Grid = GRID_FLAT_PLATE;
       IP.Plate_Length = ONE;
-      IP.BC_South = BC_WALL_VISCOUS_ISOTHERMAL;
+      IP.Flat_Plate_BC_Type = BC_WALL_VISCOUS_ISOTHERMAL;
     } else if (strcmp(IP.Grid_Type,"Burning_Surface_Flat_Plate") == 0) {
       IP.i_Grid = GRID_FLAT_PLATE;
       IP.Plate_Length = ONE;
-      IP.BC_South = BC_BURNING_SURFACE;
+      IP.Flat_Plate_BC_Type = BC_BURNING_SURFACE;
     } else if (strcmp(IP.Grid_Type,"Pipe") == 0) {
       IP.i_Grid = GRID_PIPE;
       IP.Pipe_Length = ONE;
@@ -3819,6 +3826,8 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.BC_North = BC_EXACT_SOLUTION;
     } else if (strcmp(IP.BC_North_Type,"Inviscid_Wall") == 0) {
       IP.BC_North = BC_WALL_INVISCID;
+    } else if (strcmp(IP.BC_North_Type,"Unmodified") == 0) {
+      IP.BC_North = BC_GENERAL;	// This type is used to inform the framework that the North boundary condition WON'T be changed
     } else {
       i_command = INVALID_INPUT_VALUE;
     }
@@ -3882,6 +3891,8 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.BC_South = BC_EXACT_SOLUTION;
     } else if (strcmp(IP.BC_South_Type,"Inviscid_Wall") == 0) {
       IP.BC_South = BC_WALL_INVISCID;
+    } else if (strcmp(IP.BC_South_Type,"Unmodified") == 0) {
+      IP.BC_South = BC_GENERAL;	// This type is used to inform the framework that the South boundary condition WON'T be changed
     } else {
       i_command = INVALID_INPUT_VALUE;
     }
@@ -3945,6 +3956,8 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.BC_East = BC_EXACT_SOLUTION;
     } else if (strcmp(IP.BC_East_Type,"Inviscid_Wall") == 0) {
       IP.BC_East = BC_WALL_INVISCID;
+    } else if (strcmp(IP.BC_East_Type,"Unmodified") == 0) {
+      IP.BC_East = BC_GENERAL;	// This type is used to inform the framework that the East boundary condition WON'T be changed
     } else {
       i_command = INVALID_INPUT_VALUE;
     }
@@ -4008,6 +4021,8 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.BC_West = BC_EXACT_SOLUTION;
     } else if (strcmp(IP.BC_West_Type,"Inviscid_Wall") == 0) {
       IP.BC_West = BC_WALL_INVISCID;
+    } else if (strcmp(IP.BC_West_Type,"Unmodified") == 0) {
+      IP.BC_West = BC_GENERAL;	// This type is used to inform the framework that the West boundary condition WON'T be changed
     } else {
       i_command = INVALID_INPUT_VALUE;
     }

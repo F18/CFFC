@@ -3959,7 +3959,7 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
     }
 
     if (ExtendEast_BndNorthSpline.np != 0){
-      for (i = ICu+1; i>= ICu+Nghost; ++i){
+      for (i = ICu+1; i<= ICu+Nghost; ++i){
 	s_north = getS(Node[i ][JNu].X, ExtendEast_BndNorthSpline);
 	bc_type_left = BCtype(s_north, ExtendEast_BndNorthSpline);
 	s_north = getS(Node[i+1][JNu].X, ExtendEast_BndNorthSpline);
@@ -4014,7 +4014,7 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
     }
 
     if (ExtendEast_BndSouthSpline.np != 0){
-      for (i = ICu+1; i>= ICu+Nghost; ++i){
+      for (i = ICu+1; i<= ICu+Nghost; ++i){
 	s_south = getS(Node[i ][JNl].X, ExtendEast_BndSouthSpline);
 	bc_type_left = BCtype(s_south, ExtendEast_BndSouthSpline);
 	s_south = getS(Node[i+1][JNl].X, ExtendEast_BndSouthSpline);
@@ -4069,7 +4069,7 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
     }
 
     if (ExtendNorth_BndEastSpline.np != 0){
-      for ( j = JCu+1; j >= JCu+Nghost ; ++j) {
+      for ( j = JCu+1; j <= JCu+Nghost ; ++j) {
 	s_east = getS(Node[INu][j  ].X, ExtendNorth_BndEastSpline);
 	bc_type_left = BCtype(s_east, ExtendNorth_BndEastSpline);
 	s_east = getS(Node[INu][j+1].X, ExtendNorth_BndEastSpline);
@@ -4124,7 +4124,7 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
     }
 
     if (ExtendNorth_BndWestSpline.np != 0){
-      for ( j = JCu+1; j >= JCu+Nghost ; ++j) {
+      for ( j = JCu+1; j <= JCu+Nghost ; ++j) {
 	s_west = getS(Node[INl][j  ].X, ExtendNorth_BndWestSpline);
 	bc_type_left = BCtype(s_west, ExtendNorth_BndWestSpline);
 	s_west = getS(Node[INl][j+1].X, ExtendNorth_BndWestSpline);

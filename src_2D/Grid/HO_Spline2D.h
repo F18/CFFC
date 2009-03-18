@@ -457,6 +457,12 @@ inline void Spline2D_HO::allocate(const int &N) {
     sp = new double[N];
     tp = new int[N];
     bc = new int[N];
+
+  } else {
+    // Reset spline attributes
+    type = SPLINE2D_CONSTANT;
+    FluxMethod = SolveRiemannProblem;
+    bodyOwner = 0;
   }
 }
 
@@ -486,6 +492,8 @@ inline void Spline2D_HO::deallocate(void) {
     delete []tp; tp = NULL;
     delete []bc; bc = NULL; 
     np = 0;
+
+    // Reset spline attributes
     type = SPLINE2D_CONSTANT;
     FluxMethod = SolveRiemannProblem;
     bodyOwner = 0;

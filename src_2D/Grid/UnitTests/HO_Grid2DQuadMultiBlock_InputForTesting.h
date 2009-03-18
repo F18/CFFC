@@ -77,7 +77,7 @@ public:
          Inner_Streamline_Number, Outer_Streamline_Number, Isotach_Line,
          Wedge_Angle, Wedge_Length,  
          Annulus_Theta_Start, Annulus_Theta_End;
-  int Smooth_Bump, Nozzle_Type;
+  int Smooth_Bump, Nozzle_Type, Flat_Plate_BC_Type;
   Vector2D VertexSW, VertexSE, VertexNE, VertexNW;
   double X_Scale, X_Rotate;
   Vector2D X_Shift;

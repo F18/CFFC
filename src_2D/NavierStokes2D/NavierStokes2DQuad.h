@@ -1004,6 +1004,7 @@ inline void NavierStokes2D_Quad_Block::allocate_HighOrder_BoundaryConditions(voi
       BC_WestCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j),
 					 Grid.BCtypeW[j]);
     }
+
   } else if (HO_WoW != NULL){
     // deallocate memory
     delete [] HO_WoW; HO_WoW = NULL;

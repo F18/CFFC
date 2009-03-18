@@ -495,7 +495,7 @@ void Grid2D_Quad_MultiBlock_HO::SetUserSpecifiedBCs(const int& BC_North, const i
   for (jBlk = 0; jBlk <= Last_jBlock(); ++jBlk) {
     for ( iBlk = 0; iBlk <= Last_iBlock(); ++iBlk) {
 
-      if (jBlk == Last_jBlock()){
+      if (jBlk == Last_jBlock() && BC_North != BC_GENERAL){ // This is a domain boundary and the BC is required to be changed
 	Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_North);
 	// Set the extension splines
 	if (Grid_ptr[iBlk][jBlk].ExtendWest_BndNorthSpline.np != 0){
@@ -506,7 +506,7 @@ void Grid2D_Quad_MultiBlock_HO::SetUserSpecifiedBCs(const int& BC_North, const i
 	}
       }
 
-      if (jBlk == 0){
+      if (jBlk == 0 && BC_South != BC_GENERAL){ // This is a domain boundary and the BC is required to be changed
 	Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_South);
 	// Set the extension splines
 	if (Grid_ptr[iBlk][jBlk].ExtendWest_BndSouthSpline.np != 0){
@@ -517,7 +517,7 @@ void Grid2D_Quad_MultiBlock_HO::SetUserSpecifiedBCs(const int& BC_North, const i
 	}
       }
 
-      if (iBlk == Last_iBlock()){
+      if (iBlk == Last_iBlock() && BC_East != BC_GENERAL){ // This is a domain boundary and the BC is required to be changed
 	Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_East);
 	// Set the extension splines
 	if (Grid_ptr[iBlk][jBlk].ExtendSouth_BndEastSpline.np != 0){
@@ -528,7 +528,7 @@ void Grid2D_Quad_MultiBlock_HO::SetUserSpecifiedBCs(const int& BC_North, const i
 	}
       }
 
-      if (iBlk == 0){
+      if (iBlk == 0 && BC_West != BC_GENERAL){ // This is a domain boundary and the BC is required to be changed
 	Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_West);
 	// Set the extension splines
 	if (Grid_ptr[iBlk][jBlk].ExtendSouth_BndWestSpline.np != 0){
@@ -542,7 +542,7 @@ void Grid2D_Quad_MultiBlock_HO::SetUserSpecifiedBCs(const int& BC_North, const i
       Grid_ptr[iBlk][jBlk].Set_BCs();
     }
   }
-  
+
 }
 
 /*!
@@ -1480,6 +1480,35 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_Without_Update(int &_Number_of_B
 						       Orthogonal_West);
 
   }
+
+  // ======= Set spline extensions =========
+  
+  // Set the spline extensions for Block 0
+  // == South spline
+  Grid_ptr[0][0].ExtendEast_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  // == North spline
+  Grid_ptr[0][0].ExtendEast_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+
+  // Set the spline extensions for Block 1
+  // == South spline
+  Grid_ptr[1][0].ExtendWest_BndSouthSpline = Grid_ptr[0][0].BndSouthSpline;
+  if (_Number_of_Blocks_Idir_ == 3){
+    Grid_ptr[1][0].ExtendEast_BndSouthSpline = Grid_ptr[2][0].BndSouthSpline;
+  }
+  // == North spline
+  Grid_ptr[1][0].ExtendWest_BndNorthSpline = Grid_ptr[0][0].BndNorthSpline;
+  if (_Number_of_Blocks_Idir_ == 3){
+    Grid_ptr[1][0].ExtendEast_BndNorthSpline = Grid_ptr[2][0].BndNorthSpline;
+  }
+
+  // Set the spline extensions for Block 2 (if it exists)
+  if (_Number_of_Blocks_Idir_ == 3){
+    // == South spline
+    Grid_ptr[2][0].ExtendWest_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+    // == North spline
+    Grid_ptr[2][0].ExtendWest_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+  }
+
 }
 
 
