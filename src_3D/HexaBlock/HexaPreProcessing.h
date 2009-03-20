@@ -21,12 +21,13 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
   /* Create the initial mesh on the primary MPI processor. */
 
   if (CFFC_Primary_MPI_Processor()) {
-    Data.Initial_Mesh.Create_Grid(Solution_Data.Input.Grid_IP);
     //Outputting solution input parameters
     if (!Data.batch_flag) {
       cout << Solution_Data.Input << "\n";
+      cout << "\n Generating the initial mesh.";
       cout.flush(); 
     } /* endif */
+    Data.Initial_Mesh.Create_Grid(Solution_Data.Input.Grid_IP);
   } /* endif */
 
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.

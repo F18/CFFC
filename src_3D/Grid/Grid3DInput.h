@@ -118,10 +118,6 @@ class Grid3D_Input_Parameters{
     double Turbulence_Box_Length, Turbulence_Box_Width, Turbulence_Box_Height;
     //@}
 
-    //@{ @name Reconstruction type indicator:
-    char Reconstruction_Type_For_Grid_Info[GRID_INPUT_PARAMETER_LENGTH];
-    //@}
-
     //@{ @name Constructors and desctructors:
     //! Constructor (assign default values)
     Grid3D_Input_Parameters(void){

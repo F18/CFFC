@@ -27,6 +27,10 @@ using namespace std;
 #include "../HighOrderReconstruction/TaylorDerivativesContainer.h"
 #endif // _TAYLORDERIVATIVES_INCLUDED
 
+#ifndef _NUMERICAL_LIBRARY_INCLUDED
+#include "../Math/NumericalLibrary.h"
+#endif // _NUMERICAL_LIBRARY_INCLUDED
+
 /* Define the basic 3D cell class. */
 
 /*!
@@ -119,6 +123,13 @@ class Cell3D{
     void setindex(const Cell3D &Cell);
     void setindex(const int II, const int JJ, const int KK);
 
+    /******* Required Grid Information for CENO Reconstruction  *************/
+
+    //! Generate the container for the cell's geometric coefficients.
+    void SetGeomCoeffContainerSize(const int OrderOfReconstruction){
+      return _GeomCoeff_.GenerateContainer(OrderOfReconstruction);
+    }
+
     //! @name Field access functions.
     //@{
     //! Get access to the array of geometric coefficients
@@ -136,6 +147,7 @@ class Cell3D{
     //! Get access to the geometric coefficient (i.e. powers and values) which is stored in the 'position' place
     GeomMoment & GeomCoeff(const int &position){return _GeomCoeff_(position);}
     //@}
+
 
     /* Assignment operator. */
     // Cell2D operator = (const Cell2D &Cell);
