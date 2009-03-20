@@ -1,5 +1,8 @@
-/*!\file Grid3DHighOrderExecutionMode.cc
-  \brief Initialize the flags that control the generation of grid level information required by CENO high-order reconstruction. */
+/*! \file    Grid3DHighOrderExecutionMode.cc
+ *  \brief   Initialize the flags that control the generation of grid 
+ *           level information used in the CENO reconstruction.
+ */
+
 
 /* Include required C++ libraries. */
 // None
@@ -12,22 +15,32 @@
 #include "Grid3DHighOrderExecutionMode.h"
 
 short Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID = OFF;
-int Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER_FOR_GRID_INFO = 0;
+int   Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER = 0;
 
-//! Set all flags to default values
-// add all flag default values to this function
+
+//! Routine: SetDefaults
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets the default values of all the flags
+ * 
+ *  \param USE_HO_CENO_GRID
+ *  \param RECONSTRUCTION_ORDER
+ *
+ *///---------------------------------------------------------------------
 void Grid3D_HO_Execution_Mode::SetDefaults(void){
   
   USE_HO_CENO_GRID = OFF;
-  RECONSTRUCTION_ORDER_FOR_GRID_INFO = 0;
+  RECONSTRUCTION_ORDER = 0;
 }
 
-//! Print the current execution mode
-//  at the output stream
-// \param [in] out_file the output stream
+//! Routine: Print_Info
+//  ----------------------------------------------------------------------
+/*! Purpose: Prints the current execution mode to the output stream
+ * 
+ *  \param out_file the output stream
+ *
+ *///--------------------------------------------------------------------- 
 void Grid3D_HO_Execution_Mode::Print_Info(std::ostream & out_file){
 
-  // output execution mode
   if (USE_HO_CENO_GRID == ON){
     out_file << "\n     -> Grid Execution Mode: " << "High Order Grid Information Generated and Stored";
   }

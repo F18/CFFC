@@ -1,4 +1,5 @@
-/* Grid3DHexaBlock.h: Header file defining 3D hexahedral block grid type. */
+/*! \file    Grid3DHexaBlock.h
+ *  \brief   Header file defining 3D hexahedral block grid type. */
 
 #ifndef _GRID3D_HEXA_BLOCK_INCLUDED
 #define _GRID3D_HEXA_BLOCK_INCLUDED
@@ -97,6 +98,7 @@ using namespace std;
  *      Nghost     -- Returns number of ghost cells.    *
  *      Node       -- Return 3D node geometry.          *
  *      Cell       -- Return 3D cell geometry.          *
+ *      NumGQP     -- Number of Gauss Quadrature Points *
  *      Allocated  -- Indicates whether or not the block*
  *                    has been allocated.               *
  *      allocate   -- Allocate memory for structured    *
@@ -152,6 +154,15 @@ using namespace std;
  ********************************************************/
 class Grid3D_Hexa_Block {
   public:
+
+
+    //! @name Defined datatypes
+    //@{
+    typedef Node3D NodeType;
+    typedef Cell3D::GeometricMoments GeometricMoments;
+    typedef GeometricMoments::Derivative  GeomMoment;
+    //@}
+
     int           NNi,INl,INu; // i-direction node counters
     int           NNj,JNl,JNu; // j-direction node counters
     int           NNk,KNl,KNu; // k-direction node counters
@@ -166,6 +177,8 @@ class Grid3D_Hexa_Block {
           **BCtypeE,**BCtypeW, // for north, south, east, & west boundaries
           **BCtypeT,**BCtypeB; // for north, south, east, & west boundaries
     
+    int NumGQP;	//!< Number of Gauss quadrature points required for flux calculation
+
     int Allocated; // Indicates whether or not the grid block has been allocated.
     
     /* Constructors. */
@@ -181,6 +194,7 @@ class Grid3D_Hexa_Block {
        BCtypeN = NULL; BCtypeS = NULL; 
        BCtypeE = NULL; BCtypeW = NULL;
        BCtypeT = NULL; BCtypeB = NULL;
+       NumGQP = 1;
     }
 
     Grid3D_Hexa_Block(const int Ni, 
@@ -428,6 +442,77 @@ class Grid3D_Hexa_Block {
                  const double &Z_min,
                  const double &Z_max);
 
+    /********************* Grid Information required for CENO Reconstruction ***********************/
+
+    //! @name Get cell geometric moments and related information.
+    //@{
+
+    //! Get the current highest reconstruction order (if multiple reconstruction are to be performed - not implemeted yet)
+    const int & MaxRecOrder(void) const { return Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER; }
+
+    //! Get the geometric coefficient array of cell (ii,jj,kk).
+    const GeometricMoments & CellGeomCoeff(const int &ii, const int &jj, const int & kk) const { return Cell[ii][jj][kk].GeomCoeff(); }
+
+    //! Get the value of the geometric coefficient for cell (ii,jj,kk) with x-power 'p1', y-power 'p2', and z-power 'p3'.
+    const double & CellGeomCoeffValue(const int &ii, const int &jj, const int &kk, const int &p1, const int &p2, const int &p3) {
+      return Cell[ii][jj][kk].GeomCoeffValue(p1,p2,p3);
+    }
+
+    //! Get the value of the geometric coefficient for cell (ii,jj,kk) which is stored in the 'position' place 
+    const double & CellGeomCoeffValue(const int &ii, const int &jj, const int &kk, const int &position) const {
+      return Cell[ii][jj][kk].GeomCoeffValue(position);
+    }
+
+    //! Get the value and the powers (p1,p2,p3) of the geometric coefficient for cell (ii,jj,kk) which is stored in the 'position' place
+    GeomMoment & CellGeomCoeff(const int &ii, const int &jj, const int &kk, const int &position) {
+      return Cell[ii][jj][kk].GeomCoeff(position);
+    }
+    //@}
+  
+    //! @name Calculate cell geometric moments and related information.
+    //@{
+    void ComputeGeometricCoefficients(const Cell3D &Cell){ ComputeGeometricCoefficients(Cell.I,Cell.J,Cell.K);}
+    void ComputeGeometricCoefficients(const int &ii, const int &jj, const int &kk);
+    //@}
+
+    //! @name Integrate a Polynomial Over the Cell
+    //@{
+    template<typename FO, class ReturnType>
+    ReturnType IntegratePolynomialOverTheCell(FO FuncObj, const int & digits, const ReturnType & _dummy_param,
+					      const int &ii, const int &jj, const int &kk);
+    //@}
+
+    //! @name Get Gauss quadrature points for each straight cell face
+    //@{
+//    void getGaussQuadPointsFaceN(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+//    void getGaussQuadPointsFaceN(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+//    void addGaussQuadPointsFaceN(const int &ii, const int &jj, std::vector<Vector2D> &GQPoints, const int & NumberOfGQPs) const;
+//  
+//    void getGaussQuadPointsFaceS(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+//    void getGaussQuadPointsFaceS(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+//    void addGaussQuadPointsFaceS(const int &ii, const int &jj, std::vector<Vector2D> &GQPoints, const int & NumberOfGQPs) const;
+//  
+//    void getGaussQuadPointsFaceE(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+//    void getGaussQuadPointsFaceE(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+//    void addGaussQuadPointsFaceE(const int &ii, const int &jj, std::vector<Vector2D> &GQPoints, const int & NumberOfGQPs) const;
+//  
+//    void getGaussQuadPointsFaceW(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+//    void getGaussQuadPointsFaceW(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+//    void addGaussQuadPointsFaceW(const int &ii, const int &jj, std::vector<Vector2D> &GQPoints, const int & NumberOfGQPs) const;
+    //@}
+    
+    //! @name Number of Gauss quadrature points used for flux calculation.
+    //@{
+    //! Copies NumGQP to the passed number.
+    void CopyNumberOfGaussQuadraturePoints(const int & _NumGQP_){ NumGQP = _NumGQP_; }
+    //! Sets NumGQP based on the reconstruction order to obtain the required solution accuracy
+    void SetNumberOfFluxCalculationGaussQuadraturePoints(const int & RecOrder);
+    //! Sets NumGQP based on correlations.
+    void SetNumberOfGaussQuadraturePoints(const int & RecOrder);
+    //! Gets the NumGQP
+    const int & getNumGQP(void) const {return NumGQP; }
+    //@}
+
   private:
     //copy and assignment are not permitted
     Grid3D_Hexa_Block(const Grid3D_Hexa_Block &G);
@@ -479,21 +564,21 @@ inline void Grid3D_Hexa_Block::allocate(const int Ni,
       BCtypeT[i] = new int[NCj]; BCtypeB[i] = new int[NCj];
    } /* endfor */
 
-   // If using CENO Reconstruction (high or low order), we need to allocate some extra info and containers
+   // If using CENO Reconstruction, we need to allocate the following grid information:
+   // ---------------------------------------------------------------------------------
    if (Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID == ON){
 
-//     HighestReconstructionOrder = Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER_FOR_GRID_INFO;
-//     SetNumberOfGaussQuadraturePoints();
-//    
-//     // re-allocate memory for the container of geometric moments
-//     for ( i = 0; i <NCi ; ++i ){
-//       for ( j = 0; j <NCj ; ++j ){
-//	 for ( k = 0; k <NCk ; ++k ){
-//	   Cell[i][j][k].SetGeomCoeffContainerSize(HighestReconstructionOrder);       
-//	 }
-//       }    
-//     }
-   }
+     // Set the Number of Gauss Quadrature Points for the flux evaluation
+     SetNumberOfGaussQuadraturePoints(Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER);
+
+     // re-allocate memory for the container of geometric moments
+     for (int i = 0; i <NCi ; ++i )
+       for (int j = 0; j <NCj ; ++j )
+	 for (int k = 0; k <NCk ; ++k ){
+	   Cell[i][j][k].SetGeomCoeffContainerSize(Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER);     
+	 } /* endfor */
+
+   } /* endif */
 
    Allocated = GRID3D_HEXA_BLOCK_USED;
 
@@ -1286,6 +1371,59 @@ inline double Grid3D_Hexa_Block::AfaceTop(int const ii, int const jj, int const 
   A3 = abs(((xfaceTop(ii,jj,kk)-nodeNETop(ii,jj,kk).X)^(nodeNETop(ii,jj,kk).X-nodeSETop(ii,jj,kk).X)))/2;
   A4 = abs(((xfaceTop(ii,jj,kk)-nodeSETop(ii,jj,kk).X)^(nodeSETop(ii,jj,kk).X-nodeSWTop(ii,jj,kk).X)))/2;
   return A1+A2+A3+A4;   
+}
+
+//! Routine: SetNumberOfFluxCalculationGaussQuadraturePoints
+/*! ----------------------------------------------------------------------
+ *  Purpose: Sets the number of Gauss quadrature points used for 
+ *           flux evaluation based on the desired spatial accuracy, i.e., 
+ *           the reconstruction order.
+ * 
+ *  \param [in] RecOrder the reconstruction order required to obtain
+ *              the targeted solution accuracy
+ *
+ *  \warning Reconstruction Order = 4 (ie. case 4) may require more
+ *           than 4 GQ points.
+ *///---------------------------------------------------------------------
+inline void Grid3D_Hexa_Block::SetNumberOfFluxCalculationGaussQuadraturePoints(const int & RecOrder){
+
+  switch(RecOrder){
+  case 4:
+    NumGQP = 4;	    // This is a temporary solution to return the write number!
+  case 3:
+    NumGQP = 4;
+    break;
+  case 2:
+    NumGQP = 4;
+    break;
+  case 1:
+    NumGQP = 1;
+    break;
+  case 0:
+    NumGQP = 1;
+    break;
+  default:
+    throw runtime_error("Grid3D_Hexa_Block::SetNumberOfFluxCalculationGaussQuadraturePoints() ERROR! Unknown option for the passed reconstruction order");
+  } // endswitch
+}
+
+//! Routine: SetNumberOfGaussQuadraturePoints
+/*! ----------------------------------------------------------------------
+ *  Purpose: Sets the number of Gauss quadrature points used for 
+ *           flux evaluation based on the desired spatial accuracy, i.e., 
+ *           the reconstruction order.
+ * 
+ *  \param [in] RecOrder the reconstruction order required to obtain
+ *              the targeted solution accuracy
+ *
+ *///---------------------------------------------------------------------
+inline void Grid3D_Hexa_Block::SetNumberOfGaussQuadraturePoints(const int &RecOrder){
+
+  try{
+    SetNumberOfFluxCalculationGaussQuadraturePoints(RecOrder);
+  } catch (runtime_error){
+    throw runtime_error("Grid3D_Hexa_Block::SetNumberOfGaussQuadraturePoints() ERROR! Unknown option for the current reconstruction order");
+  }
 }
 
 /********************************************************

@@ -418,7 +418,7 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
       } else {
 	i_command = INVALID_INPUT_VALUE;
       } /* endif */
-      Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER_FOR_GRID_INFO = Reconstruction_Order;
+      Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER = Reconstruction_Order;
     //
     // Reconstruction type indicator and related input parameters:
     //
@@ -1192,22 +1192,21 @@ int CFD_Input_Parameters::Check_Inputs(void) {
     int error_flag = 0;
 
     // CFD Input Parameters:
+    // ---------------------
 
-
- 
-    // Make sure the spatial order of accuracy is in agreement with the limiter type
-    // for the piecewise constant case
+    // Make sure that the spatial order of accuracy is in agreement
+    // with a limiter type of ZERO for the piecewise constant case
     if (i_Limiter == LIMITER_ZERO && Reconstruction_Order == 1){
       Reconstruction_Order = 0;
-      Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER_FOR_GRID_INFO = Reconstruction_Order;
-      cout << "\n CFD::Check_Inputs: Note: Spatial Order of Accuracy has been reduced to first-order due to the Limiter_Type having been set to Zero." << endl;
+      Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER = Reconstruction_Order;
+      cout << "\n CFD::Check_Inputs: Note: Spatial Order of Accuracy has been reduced from second to first-order due to the Limiter_Type having been set to Zero." << endl;
       cout.flush();
     } else if (Reconstruction_Order == 0 && i_Limiter != LIMITER_ZERO){
-      cout << "CFD::Check_Inputs: Limiter_Type must be set to Zero for a Spatial_Order_of_Accuracy = 1." << endl;
+      cout << "CFD::Check_Inputs: Limiter_Type must be set to zero for a Spatial_Order_of_Accuracy = 1." << endl;
       cout.flush();
       return 1;
     } else if (i_Limiter == LIMITER_ZERO && Reconstruction_Order > 1){
-      cout << "CFD::Check_Inputs: Caution! Limiter_Type has been set to Zero which conflicts with the desired Spatial_Order_of_Accracy." <<endl;
+      cout << "CFD::Check_Inputs: Caution! Limiter_Type has been set to zero which conflicts with the desired Spatial_Order_of_Accracy." <<endl;
       cout.flush();
       return 1;
     }/* endif */
@@ -1215,7 +1214,7 @@ int CFD_Input_Parameters::Check_Inputs(void) {
     // Make sure that the reconstruction type for high-order reconstruction is set to CENO
     if (i_Reconstruction != RECONSTRUCTION_CENTRAL_ESSENTIALLY_NON_OSCILLATORY && Reconstruction_Order > 1){
       cout << "CFD::Check_Inputs: Cannot perform high-order reconstruction with the given Reconstruction_Type.\n";
-      cout << "Please use the CENO Reconstruction_Type for high-order reconstruction." << endl;
+      cout << "For high-order reconstruction please use the CENO Reconstruction_Type." << endl;
       cout.flush();
       return 1;
     }

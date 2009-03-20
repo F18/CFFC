@@ -1,5 +1,7 @@
-/*!\file Grid3DHighOrderExecutionMode.h
-  \brief Definition of flags that control the generation of grid level information required by CENO high-order reconstruction. */
+/*! \file    Grid3DHighOrderExecutionMode.h
+ *  \brief   Initialize the flags that control the generation of grid
+ *           level information used in the CENO reconstruction.
+ */
 
 #ifndef _GRID3D_HO_EXECUTIONMODE_INCLUDED
 #define _GRID3D_HO_EXECUTIONMODE_INCLUDED
@@ -11,35 +13,41 @@
 // None
 
 /* Include CFFC header files */
+// None
 
-/*!%
- * Class: Grid3D_HO_Execution_Mode
+//! \class Grid3D_HO_Execution_Mode
+//  -----------------------------------------------------------------------
+/*!  
+ *  Definition of flags that control the generation of grid level
+ *  information used in the CENO reconstruction.
  *
- * @brief Definition of flags that control the generation of grid level information required by CENO high-order reconstruction. 
- *
- */
+ *///----------------------------------------------------------------------
 class Grid3D_HO_Execution_Mode{
-  
+ 
 public:
 
   static void Print_Info(std::ostream & out_file);
-  //  static void Broadcast(void);
+//  static void Broadcast(void);
 
-  // set all flags to default values
+  // Set all flags to default values
   static void SetDefaults(void);
 
-  /*! Generation of grid level information required by CENO reconstruction (high or low order).\n
-      Set automatically in CFD_Input_Parameters based on the input Reconstruction_Type: \n
-      Turned ON if CENO reconstruction is used \n
-      Turn OFF if any other reconstruction type is used (default) \n
-      ---------------------------------------------------------------------------------------- */
+  /*!
+   *  This parameter controls the generation of grid level information
+   *  required by CENO reconstruction.  Flag is set based on the
+   *  Reconstruction_Type parsed in the CFD_Input_Parameters class.  
+   *  - Turned ON if CENO reconstruction is used 
+   *  - Turned OFF if any other reconstruction type is used (default)
+   */
   static short USE_HO_CENO_GRID;
 
-  /*! Static integer variable which equals the recontruction order. \n
-      Used to set container sizes for grid level information required by CENO reocnstruction. \n
-      Default is set to 0 (or piecewise constant).
-      ---------------------------------------------------------------------------------------- */
-  static int RECONSTRUCTION_ORDER_FOR_GRID_INFO;
+  /*!
+   *  This paramter is set equal to the recontruction order (k).  It is used to
+   *  set the container sizes for grid level information required by CENO
+   *  reconstruction.  
+   *  - Default is set to ZERO (ie. piecewise constant).
+   */
+  static int RECONSTRUCTION_ORDER;
 
 
 

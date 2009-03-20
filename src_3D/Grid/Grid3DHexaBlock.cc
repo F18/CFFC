@@ -1,5 +1,6 @@
-/* Grid3DHexaBlock.cc: Defines member functions for 
-                       3D hexahedral grid block class. */
+/*! \file    Grid3DHexaBlock.cc
+ *  \brief   Defines member functions for 3D hexahedral grid block class. */
+
 
 /* Include 3D hexahedral block grid type header file. */
 
@@ -268,6 +269,9 @@ void Grid3D_Hexa_Block::Copy(Grid3D_Hexa_Block &Grid2) {
        } /* endfor */
 
     } /* endif */
+
+    // Copy the number of Gauss quadrature points
+    CopyNumberOfGaussQuadraturePoints(Grid2.getNumGQP());
 
 }
 
@@ -1220,10 +1224,17 @@ void Grid3D_Hexa_Block::Update_Cells(void) {
 	Cell[i][j][k].K = k ;
 	Cell[i][j][k].Xc = centroid(i, j, k);
         Cell[i][j][k].V = volume(Cell[i][j][k]);
+
+	// If using CENO Reconstruction, then we need 
+	// to compute and store the geometric coefficients
+	// -----------------------------------------------
+	if(Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID){
+	  ComputeGeometricCoefficients(i,j,k);
+	} /* endif */
+
       } /* endfor */
     } /* endfor */
   } /* endfor */
-
 }
 
 /*****************************************************************
@@ -1244,7 +1255,15 @@ void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
             Cell[i][j][k].K = k ;
             Cell[i][j][k].Xc = centroid(i, j, k);
             Cell[i][j][k].V = volume(Cell[i][j][k]);
+
+	    // If using CENO Reconstruction, then we need 
+	    // to compute and store the geometric coefficients
+	    // -----------------------------------------------
+	    if(Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID){
+	      ComputeGeometricCoefficients(i,j,k);
+	    } /* endif */
          } /* endif */
+
       } /* endfor */
     } /* endfor */
   } /* endfor */
@@ -1450,10 +1469,6 @@ void Grid3D_Hexa_Block::Extrude(Grid2D_Quad_Block &Grid2D_XYplane,
 
   /* Process the extruded 3D grid. */
 
-  if(Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID){
-    std::cout <<"\nhello from the extrude function! allocate here\n";
-  }
-
   //Update_Exterior_Nodes();
   Update_Exterior_Nodes_Zdir();
   Update_Cells();
@@ -1476,4 +1491,70 @@ void Grid3D_Hexa_Block::Extrude(Grid2D_Quad_Block &Grid2D_XYplane,
 
 }
 
+//! Routine: ComputeGeometricCoefficients
+//  -----------------------------------------------------------------------------
+/*! Purpose: Computes the geometric moments with respect to the cell
+ *           centroid (xCC,yCC,zCC) of cell (ii,jj,kk).
+ *
+ *  \note    The geometric moment is the integral over the cell domain
+ *           (per unit volume) of a polynomial function with the form:
+ *           (x-xCC)^l*(y-yCC)^m*(z-zCC)^n
+ *
+ *  \warning This subroutine is for cartesian grids (no curved boundaries).
+ *
+ *///----------------------------------------------------------------------------
+void Grid3D_Hexa_Block::ComputeGeometricCoefficients(const int &ii, const int &jj, const int &kk){
 
+  int p1,p2,p3;
+  double DummyParam;
+
+  // ----- Define the polynomial function for the cell ----- //
+
+  GeneralizedPolynomialFunctionOfThreeVariables Polynom(0,0,0,
+							centroid(ii,jj,kk).x,
+							centroid(ii,jj,kk).y,
+							centroid(ii,jj,kk).z);
+
+  // ----- Compute The Geometric Coefficients ----- //
+  
+  // Note: When the method of integration is used the moments associated with the
+  // ----  first order are not quite accurate
+
+  for (int i =  Cell[ii][jj][kk].GeomCoeff().FirstElem(); i<=Cell[ii][jj][kk].GeomCoeff().LastElem(); ++i){
+
+    p1 = Cell[ii][jj][kk].GeomCoeff(i).P1();
+    p2 = Cell[ii][jj][kk].GeomCoeff(i).P2();
+    p3 = Cell[ii][jj][kk].GeomCoeff(i).P3();
+
+    Polynom.ChangePowersTo(p1,p2,p3);
+
+    Cell[ii][jj][kk].GeomCoeffValue(i) = IntegratePolynomialOverTheCell(Polynom,14,DummyParam,ii,jj,kk) / volume(ii,jj,kk);
+
+  } /* endfor */
+}
+
+//! Routine: IntegratePolynomialOverTheCell
+//  -----------------------------------------------------------------------------
+/*! Purpose: Performs the integration of a polynomial over the given
+ *           cell (ii,jj,kk) using Adaptive Gaussian Quadrature
+ *  
+ *  \param [in] FuncObj the polynomial to be integrated
+ *  \param [in] digits  the number of digits required for convergence
+ *  \param [in] ii      the i-index of the cell
+ *  \param [in] jj      the j-index of the cell
+ *  \param [in] kk      the k-index of the cell
+ *  
+ *  \return ReturnType  the result of the integration
+ *  
+ *///----------------------------------------------------------------------------
+template<typename FO, class ReturnType>
+ReturnType Grid3D_Hexa_Block::IntegratePolynomialOverTheCell(FO FuncObj,
+							     const int & digits,
+							     const ReturnType & _dummy_param, 
+							     const int &ii, 
+							     const int &jj, 
+							     const int &kk){
+
+  return AdaptiveGaussianQuadrature(FuncObj, nodeSWBot(ii,jj,kk).X.x, nodeSEBot(ii,jj,kk).X.x, nodeSWBot(ii,jj,kk).X.y, nodeNWBot(ii,jj,kk).X.y,
+				    nodeSWBot(ii,jj,kk).X.z, nodeSWTop(ii,jj,kk).X.z, digits,_dummy_param);
+}
