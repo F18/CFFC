@@ -4722,4 +4722,14 @@ void Reinitialize_Reference_State(NavierStokes2D_Input_Parameters &IP) {
     IP.Uo = U(IP.Wo);
   }
 
+  // Set the state for the laminar flow over a cylinder.
+  if (IP.i_Grid == GRID_CIRCULAR_CYLINDER && (IP.FlowType == FLOWTYPE_LAMINAR ||
+				              IP.FlowType == FLOWTYPE_TURBULENT_RANS_K_OMEGA)) {
+    IP.Wo.rho = IP.CalculateRequiredFreeStreamDensity(TWO*IP.Cylinder_Radius); //< use interior cylinder diameter
+    IP.Wo.p = IP.Wo.rho*IP.Wo.R*IP.Temperature;
+    IP.Wo.v.x = sqrt(IP.Wo.g*IP.Wo.R*IP.Temperature)*IP.Mach_Number;
+    IP.Wo.v.y = ZERO;
+    IP.Uo = U(IP.Wo);
+  }
+
 }
