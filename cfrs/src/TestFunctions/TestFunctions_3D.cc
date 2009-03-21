@@ -303,10 +303,10 @@ double Test_Example12_Integral (double x1, double x2, double y1, double y2, doub
   return f;
 }
 
-/********************************************************
- * Function Test_Example13:                             *
- *          f(x,y) = 1/50*exp(-x/10)*exp(-y/5)          *
- *******************************************************/
+/**************************************************************************
+ * Function Test_Example13:                             
+ *          f(x,y) = 0.1*sin(20*x*y) + 0.1*exp(-(x+y)/5) + 0.5*cos(10*z)
+ *************************************************************************/
 
 double Test_Example13 (double x, double y, double z) {
 
