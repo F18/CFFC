@@ -3060,6 +3060,108 @@ namespace tut
   }
 
 
+  /* Test 43:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<43>()
+  {
+    set_test_name("Calculate normal gradient");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(4);
+    int p1,p2;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Set the Taylor derivatives
+    HO.CellTaylorDerivState(3,3,0,0) = 1.0;
+    HO.CellTaylorDerivState(3,3,0,1) = 2.0;
+    HO.CellTaylorDerivState(3,3,0,2) = 3.0;
+    HO.CellTaylorDerivState(3,3,0,3) = 4.0;
+    HO.CellTaylorDerivState(3,3,0,4) = 5.0;
+    HO.CellTaylorDerivState(3,3,1,0) = 1.0;
+    HO.CellTaylorDerivState(3,3,1,1) = 2.0;
+    HO.CellTaylorDerivState(3,3,1,2) = 3.0;
+    HO.CellTaylorDerivState(3,3,1,3) = 4.0;
+    HO.CellTaylorDerivState(3,3,2,0) = 1.0;
+    HO.CellTaylorDerivState(3,3,2,1) = 2.0;
+    HO.CellTaylorDerivState(3,3,2,2) = 3.0;
+    HO.CellTaylorDerivState(3,3,3,0) = 1.0;
+    HO.CellTaylorDerivState(3,3,3,1) = 2.0;
+    HO.CellTaylorDerivState(3,3,4,0) = 1.0;
+
+    // == check solution
+    double Result = 0.59509999999999985;
+    Vector2D Point(-1.2, -1.8);	// This corresponds to DeltaX = 0.1 and DeltaY = -0.5
+
+    ensure_distance("Point value with cell (3,3)",
+		    HO.SolutionAtCoordinates(3,3,Point.x, Point.y), Result, AcceptedError(Result));
+
+    ensure_distance("Point value with cell (3,3)",
+		    HO.SolutionAtCoordinates(3,3,Point.x, Point.y, 1), Result, AcceptedError(Result));
+
+    
+
+    // === check gradients ===
+    double dRdx(0), dRdy(0);
+    double DeltaX(0.1), DeltaY(-0.5);
+
+    // Calculate analytical results
+    for ( p1 = 0; p1 <= RecOrder; ++p1){
+      for ( p2 = 0; p2 <= RecOrder; ++p2){
+	if (p1 + p2 <= RecOrder){
+	  // == compute the x-derivative
+	  dRdx += p1*pow(DeltaX,p1-1)*pow(DeltaY,p2)*HO.CellTaylorDerivState(3,3,p1,p2);
+
+	  // == compute the y-derivative
+	  dRdy += p2*pow(DeltaX,p1)*pow(DeltaY,p2-1)*HO.CellTaylorDerivState(3,3,p1,p2);
+	}
+      }
+    }
+
+    ensure_distance("X-Gradient value with cell (3,3)",
+		    HO.XGradientStateAtLocation(3,3,Point), dRdx, AcceptedError(dRdx));
+
+    ensure_distance("Y-Gradient value with cell (3,3)",
+		    HO.YGradientStateAtLocation(3,3,Point), dRdy, AcceptedError(dRdy,1.0e-13));
+
+
+    // === check gradient in the normal direction
+    Vector2D normal_dir(-0.5, - 0.5*sqrt(3));
+    int parameter(1);
+    double dRdn;
+
+    dRdn = HO.XGradientStateAtLocation(3,3,Point) * normal_dir.x +  HO.YGradientStateAtLocation(3,3,Point) * normal_dir.y;
+
+    ensure_distance("Normal Gradient value with cell (3,3)",
+		    HO.NormalGradientStateAtCoordinates(3,3,Point.x,Point.y,normal_dir),
+		    dRdn, AcceptedError(dRdn));
+    ensure_distance("Normal Gradient value with cell (3,3)",
+		    HO.NormalGradientAtCoordinates(3,3,Point.x,Point.y,normal_dir, parameter),
+		    dRdn, AcceptedError(dRdn));
+    ensure_distance("Normal Gradient value with cell (3,3)",
+		    HO.NormalGradientStateAtLocation(3,3,Point,normal_dir),
+		    dRdn, AcceptedError(dRdn));
+    ensure_distance("Normal Gradient value with cell (3,3)",
+		    HO.NormalGradientAtLocation(3,3,Point,normal_dir, parameter),
+		    dRdn, AcceptedError(dRdn));
+  }
+
+
 }
 
 

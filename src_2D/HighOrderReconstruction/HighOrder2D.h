@@ -369,26 +369,26 @@ public:
   
   //! Evaluate the X-gradient of the interpolant at a given location (X_Coord,Y_Coord) for all solution variables,
   //  using the reconstruction of cell (ii,jj).
-  Soln_State XGradientAtCoordinates(const int & ii, const int & jj,
-				    const double & X_Coord, const double & Y_Coord) const {
+  Soln_State XGradientStateAtCoordinates(const int & ii, const int & jj,
+					 const double & X_Coord, const double & Y_Coord) const {
     return TD[ii][jj].ComputeXGradientFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
   }
   //! Evaluate the X-gradient of the interpolant at a given position vector for all solution variables,
   //  using the reconstruction of cell (ii,jj).
   Soln_State XGradientStateAtLocation(const int & ii, const int & jj, const Vector2D &CalculationPoint) const {
-    return XGradientAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
+    return XGradientStateAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
   }
 
   //! Evaluate the Y-gradient of the interpolant at a given location (X_Coord,Y_Coord) for all solution variables,
   //  using the reconstruction of cell (ii,jj).
-  Soln_State YGradientAtCoordinates(const int & ii, const int & jj,
-				    const double & X_Coord, const double & Y_Coord) const {
+  Soln_State YGradientStateAtCoordinates(const int & ii, const int & jj,
+					 const double & X_Coord, const double & Y_Coord) const {
     return TD[ii][jj].ComputeYGradientFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
   }
   //! Evaluate the Y-gradient of the interpolant at a given position vector for all solution variables,
   //  using the reconstruction of cell (ii,jj).
   Soln_State YGradientStateAtLocation(const int & ii, const int & jj, const Vector2D &CalculationPoint) const {
-    return YGradientAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
+    return YGradientStateAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
   }
 
   //! Evaluate the entropy provided by the interpolant at a given location (X_Coord,Y_Coord),
@@ -403,6 +403,33 @@ public:
   double SolutionPressureAtCoordinates(const int & ii, const int & jj, 
 				      const double & X_Coord, const double & Y_Coord) const {
     return SolutionStateAtCoordinates(ii,jj,X_Coord,Y_Coord).pressure();
+  }
+
+  //! Evaluate the gradient in the normal direction of the interpolant 
+  //  at given position coordinate for all solution variables, using the reconstruction of cell (ii,jj).
+  Soln_State NormalGradientStateAtCoordinates(const int & ii, const int & jj,
+					      const double & X_Coord, const double & Y_Coord,
+					      const Vector2D &norm_dir) const;
+
+  //! Evaluate the gradient in the normal direction of the interpolant 
+  //  at given position coordinates for a specified solution variable (i.e. parameter), using the reconstruction of cell (ii,jj).
+  double NormalGradientAtCoordinates(const int & ii, const int & jj,
+				     const double & X_Coord, const double & Y_Coord,
+				     const Vector2D &norm_dir, const unsigned & parameter) const;
+
+  //! Evaluate the gradient in the normal direction of the interpolant 
+  //  at a given position vector for all solution variables, using the reconstruction of cell (ii,jj).
+  Soln_State NormalGradientStateAtLocation(const int & ii, const int & jj,
+					   const Vector2D &CalculationPoint, const Vector2D &norm_dir) const {
+    return NormalGradientStateAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y,norm_dir);
+  }
+
+  //! Evaluate the gradient in the normal direction of the interpolant 
+  //  at a given position vector for a specified solution variable (i.e. parameter), using the reconstruction of cell (ii,jj).
+  double NormalGradientAtLocation(const int & ii, const int & jj,
+				  const Vector2D &CalculationPoint, const Vector2D &norm_dir,
+				  const unsigned & parameter) const {
+    return NormalGradientAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y,norm_dir,parameter);
   }
   //@}
 
@@ -2629,6 +2656,36 @@ void HighOrder2D<SOLN_STATE>::FlagCellReconstructionsAsNonSmooth(const int &iCel
   for(int parameter = 1; parameter <= NumberOfVariables(); ++parameter){
     CellInadequateFitValue(iCell,jCell,parameter) = ON;
   }//endfor(parameter)  
+}
+
+/*!
+ * Evaluate the gradient in the normal direction.
+ * \param norm_dir Cartesian vector that defines the direction in which the gradient is computed.
+ */
+template<class SOLN_STATE> inline
+SOLN_STATE HighOrder2D<SOLN_STATE>::NormalGradientStateAtCoordinates(const int & ii, const int & jj,
+								     const double &X_Coord, const double &Y_Coord,
+								     const Vector2D &norm_dir) const {
+  return ( norm_dir.x*XGradientStateAtCoordinates(ii,jj,X_Coord,Y_Coord) + 
+	   norm_dir.y*YGradientStateAtCoordinates(ii,jj,X_Coord,Y_Coord) );
+}
+
+/*!
+ * Evaluate the gradient in the normal direction for a specific variable.
+ * \param norm_dir Cartesian vector that defines the direction in which the gradient is computed.
+ * \param parameter variable index.
+ */
+template<class SOLN_STATE> inline
+double HighOrder2D<SOLN_STATE>::NormalGradientAtCoordinates(const int & ii, const int & jj,
+							    const double &X_Coord, const double &Y_Coord,
+							    const Vector2D &norm_dir, const unsigned & parameter) const {
+  
+  return ( norm_dir.x * TD[ii][jj].ComputeXGradientFor(X_Coord - XCellCenter(ii,jj),
+						       Y_Coord - YCellCenter(ii,jj),
+						       parameter) +
+	   norm_dir.y * TD[ii][jj].ComputeYGradientFor(X_Coord - XCellCenter(ii,jj),
+						       Y_Coord - YCellCenter(ii,jj),
+						       parameter) );
 }
 
 //! Integrate over the cell

@@ -193,6 +193,19 @@ void Grid2D_Quad_MultiBlock_HO::Additional_Multi_Block_Grid_Setup(NavierStokes2D
 				     Input_Parameters.Number_of_Ghost_Cells,
 				     HighOrder2D_Input::MaximumReconstructionOrder());
     break;
+  case GRID_FLAT_PLATE :
+    Grid_Flat_Plate_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+				   Input_Parameters.Number_of_Blocks_Jdir,
+				   Input_Parameters.Plate_Length,
+				   Input_Parameters.Flat_Plate_BC_Type,
+				   Input_Parameters.i_Mesh_Stretching,
+				   Input_Parameters.Mesh_Stretching_Factor_Idir,
+				   Input_Parameters.Mesh_Stretching_Factor_Jdir,
+				   Input_Parameters.Number_of_Cells_Idir,
+				   Input_Parameters.Number_of_Cells_Jdir,
+				   Input_Parameters.Number_of_Ghost_Cells,
+				   HighOrder2D_Input::MaximumReconstructionOrder());
+    break;
   default:
     Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
 					Input_Parameters.Number_of_Blocks_Jdir,
