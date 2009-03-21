@@ -439,6 +439,10 @@ int Parse_Next_Input_Control_Parameter(Reconstruct3D_Input_Parameters &IP) {
 	 IP.TestF = Test_Example12;
 	 IP.IntTestF = Test_Example12_Integral;
        }
+       else if (strcmp(IP.Function_Type, "Example13") == 0){
+	 IP.TestF = Test_Example13;
+	 IP.IntTestF = Test_Example13_Integral;
+       }
        // endif
 
     } else if (strcmp(IP.Next_Control_Parameter, "Reconstruction_Order") == 0){
