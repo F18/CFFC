@@ -302,3 +302,23 @@ double Test_Example12_Integral (double x1, double x2, double y1, double y2, doub
   f = -20*cos(10*x2)*sin(10*x2) + 30*cos(10*y2) - 5.0*sin(10*z2) - (-20*cos(10*x1)*sin(10*x1) + 30*cos(10*y1) - 5.0*sin(10*z1));
   return f;
 }
+
+/********************************************************
+ * Function Test_Example13:                             *
+ *          f(x,y) = 1/50*exp(-x/10)*exp(-y/5)          *
+ *******************************************************/
+
+double Test_Example13 (double x, double y, double z) {
+
+  double f;
+  f=z;  	// that's for the compiler !
+  f = 0.1*sin(20*x*y) + 0.1*exp(-(x+y)/5) + 0.5*cos(10*z);
+  return f;
+}
+
+double Test_Example13_Integral (double x1, double x2, double y1, double y2, double z1, double z2) {
+  assert((x1<x2)&&(y1<y2)&&(z1<z2));
+  double f;
+  f = 0.0;
+  return f;
+}
