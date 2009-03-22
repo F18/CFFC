@@ -603,43 +603,25 @@ double AGQf1(const double x){
 
 // ===  Static member variables GaussQuadratureData class ===
 const double GaussQuadratureData::GQ1_Abscissa[1] = {0.5};	//!< Abscissa for 1-point Gaussian
-const double GaussQuadratureData::GQ1_Weight[1] = {1.0};      //!< Weight for 1-point Gaussian
+const double GaussQuadratureData::GQ1_Weight[1] = {1.0};        //!< Weight for 1-point Gaussian
 
-//! Abscissae for 2-point Gaussian (i.e. 0.5*(1 - 1/sqrt(3)), 0.5*(1 + 1/sqrt(3)))
-const double GaussQuadratureData::GQ2_Abscissa[2] = {0.2113248654051871177454256,
+//! Abscissae for 4-point Gaussian over a cell face.
+//! We can use (0.5*(1 - 1/sqrt(3)), 0.5*(1 + 1/sqrt(3))) from all sides as follows:
+/*
+ *             ---------
+ *            |  *   *  |
+ *            |         |
+ *            |  *   *  |
+ *             ---------
+ */
+const double GaussQuadratureData::GQ4_Abscissa[2] = {0.2113248654051871177454256,
 						     0.7886751345948128822545744};
-//! Weights for 2-point Gaussian
-const double GaussQuadratureData::GQ2_Weight[2] = {0.5,
-						   0.5};
 
-//! Abscissae for 3-point Gaussian (i.e. 0.5*(1 - sqrt(3)/sqrt(5)), 0.5*(1-0) , 0.5*(1 + sqrt(3)/sqrt(5)) )
-const double GaussQuadratureData::GQ3_Abscissa[3] = {0.1127016653792583114820736,
-						     0.5 ,
-						     0.8872983346207416885179264};
-//! Weights for 3-point Gaussian (i.e. 0.5*5/9, 0.5*8/9, 0.5*5/9)
-const double GaussQuadratureData::GQ3_Weight[3] = {2.77777777777778e-1,
-						   4.44444444444444e-1,
-						   2.77777777777778e-1};
+//! Weights for 4-point Gaussian over a cell face
+const double GaussQuadratureData::GQ4_Weight[4] = {0.25,
+						   0.25,
+						   0.25,
+						   0.25};
 
-//! Abscissae for 5-point Gaussian (i.e. 0.5*(1 - 0.90617984593866399280),
-//                                       0.5*(1 - 0.53846931010568309104),
-//                                       0.5*(1 - 0),
-//                                       0.5*(1 + 0.53846931010568309104),
-//                                       0.5*(1 + 0.90617984593866399280) )
-const double GaussQuadratureData::GQ5_Abscissa[5] = {4.6910077030668e-2,
-						     2.30765344947158e-1,
-						     0.5,
-						     7.69234655052842e-1,
-						     9.53089922969332e-1};
-//! Weights for 5-point Gaussian (i.e. 0.5*0.23692688505618908751,
-//                                     0.5*0.47862867049936646804,
-//                                     0.5*0.56888888888888888889,
-//                                     0.5*0.47862867049936646804,
-//                                     0.5*0.23692688505618908751)
-const double GaussQuadratureData::GQ5_Weight[5] = {1.18463442528094543755e-1,
-						   2.39314335249683234020e-1,
-						   2.84444444444444444445e-1,
-						   2.39314335249683234020e-1,
-						   1.18463442528094543755e-1};
 
 

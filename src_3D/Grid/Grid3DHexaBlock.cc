@@ -1538,11 +1538,12 @@ void Grid3D_Hexa_Block::ComputeGeometricCoefficients(const int &ii, const int &j
 /*! Purpose: Performs the integration of a polynomial over the given
  *           cell (ii,jj,kk) using Adaptive Gaussian Quadrature
  *  
- *  \param [in] FuncObj the polynomial to be integrated
- *  \param [in] digits  the number of digits required for convergence
- *  \param [in] ii      the i-index of the cell
- *  \param [in] jj      the j-index of the cell
- *  \param [in] kk      the k-index of the cell
+ *  \param [in]  FuncObj       the polynomial to be integrated
+ *  \param [in]  digits        the number of digits required for convergence
+ *  \param [in]  ii            the i-index of the cell
+ *  \param [in]  jj            the j-index of the cell
+ *  \param [in]  kk            the k-index of the cell
+ *  \param [in] _dummy_param   used only to provide the return type
  *  
  *  \return ReturnType  the result of the integration
  *  
@@ -1555,6 +1556,10 @@ ReturnType Grid3D_Hexa_Block::IntegratePolynomialOverTheCell(FO FuncObj,
 							     const int &jj, 
 							     const int &kk){
 
-  return AdaptiveGaussianQuadrature(FuncObj, nodeSWBot(ii,jj,kk).X.x, nodeSEBot(ii,jj,kk).X.x, nodeSWBot(ii,jj,kk).X.y, nodeNWBot(ii,jj,kk).X.y,
-				    nodeSWBot(ii,jj,kk).X.z, nodeSWTop(ii,jj,kk).X.z, digits,_dummy_param);
+  return AdaptiveGaussianQuadrature(FuncObj, 
+				    nodeSWBot(ii,jj,kk).X.x, nodeSEBot(ii,jj,kk).X.x, 
+				    nodeSWBot(ii,jj,kk).X.y, nodeNWBot(ii,jj,kk).X.y,
+				    nodeSWBot(ii,jj,kk).X.z, nodeSWTop(ii,jj,kk).X.z, 
+				    digits,
+				    _dummy_param);
 }
