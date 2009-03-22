@@ -1557,17 +1557,9 @@ public:
   static const double GQ1_Abscissa[1];
   static const double GQ1_Weight[1];
 
-  // Abscissae and weights for 2-point Gaussian method
-  static const double GQ2_Abscissa[2];
-  static const double GQ2_Weight[2];
-
-  // Abscissae and weights for 3-point Gaussian method
-  static const double GQ3_Abscissa[3];
-  static const double GQ3_Weight[3];
-
-  // Abscissae and weights for 5-point Gaussian method
-  static const double GQ5_Abscissa[5];
-  static const double GQ5_Weight[5];  
+  // Abscissae and weights for 4-point Gaussian method
+  static const double GQ4_Abscissa[2];
+  static const double GQ4_Weight[4];
 
   //! Set the weights in the passed array
   static void getGaussQuadWeights(double * GaussQuadWeights, const int & NumberOfGQPs);
@@ -1588,23 +1580,11 @@ inline void GaussQuadratureData::getGaussQuadWeights(double * GaussQuadWeights, 
     GaussQuadWeights[0] = GQ1_Weight[0];
     break;
 
-  case 2:			// Two points
-    GaussQuadWeights[0] = GQ2_Weight[0];
-    GaussQuadWeights[1] = GQ2_Weight[1];
-    break;
-    
-  case 3:			// Three points
-    GaussQuadWeights[0] = GQ3_Weight[0];
-    GaussQuadWeights[1] = GQ3_Weight[1];
-    GaussQuadWeights[2] = GQ3_Weight[2];
-    break;
-
-  case 5:			// Five points
-    GaussQuadWeights[0] = GQ5_Weight[0];
-    GaussQuadWeights[1] = GQ5_Weight[1];
-    GaussQuadWeights[2] = GQ5_Weight[2];
-    GaussQuadWeights[3] = GQ5_Weight[3];
-    GaussQuadWeights[4] = GQ5_Weight[4];
+  case 4:			// Four points
+    GaussQuadWeights[0] = GQ4_Weight[0];
+    GaussQuadWeights[1] = GQ4_Weight[1];
+    GaussQuadWeights[2] = GQ4_Weight[2];
+    GaussQuadWeights[3] = GQ4_Weight[3];
     break;
 
   default:
