@@ -43,6 +43,9 @@ ostream &operator << (ostream &out_file,
 	       << CENO_Tolerances::Fit_Tolerance;
       out_file << "\n  -> Pseudo Inverse: "
 	       << IP.Pseudo_Inverse;
+      out_file << "\n  -> Reduce Order based on Smoothness Indicator: "
+	       << IP.Reduce_Order;
+
       break;
     } /* endswitch */
 
@@ -241,7 +244,9 @@ void Set_Default_Input_Parameters(Reconstruct3D_Input_Parameters &IP) {
     IP.geom_weighting = OFF;
     strcpy(IP.Data_Dependent_Weighting, "No");
     IP.data_depend_weighting = OFF;
+
     strcpy(IP.Pseudo_Inverse, "No");
+    strcpy(IP.Reduce_Order, "Yes");
 
     strcpy(IP.Limiter_Type, "Barth-Jespersen");
     IP.i_Limiter = LIMITER_BARTH_JESPERSEN;

@@ -49,6 +49,8 @@ class Reconstruct3D_Input_Parameters{
   char Data_Dependent_Weighting[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D];
   int  data_depend_weighting;
   char Pseudo_Inverse[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D];
+  
+  char Reduce_Order[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D];
 
   // Function file name to be reconstructed and related input parameters:
   char Function_Type[INPUT_PARAMETER_LENGTH_RECONSTRUCT3D];

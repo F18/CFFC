@@ -229,6 +229,7 @@ void Set_Default_Input_Parameters(Reconstruct2D_Input_Parameters &IP) {
     strcpy(IP.Data_Dependent_Weighting, "No");
     IP.data_depend_weighting = OFF;
     strcpy(IP.Pseudo_Inverse, "No");
+    strcpy(IP.Reduce_Order, "Yes");
  
     strcpy(IP.Limiter_Type, "Barth-Jespersen");
     IP.i_Limiter = LIMITER_BARTH_JESPERSEN;

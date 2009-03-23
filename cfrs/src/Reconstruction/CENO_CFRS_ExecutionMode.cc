@@ -12,12 +12,15 @@
 #include "CENO_CFRS_ExecutionMode.h"
 
 short CENO_CFRS_Execution_Mode::USE_PSEUDO_INVERSE = OFF; // computation memory efficient mode
+short CENO_CFRS_Execution_Mode::REDUCE_ORDER       = ON;  // recontruct to limited piecewise linear based on SI
 //short CENO_CFRS_Execution_Mode::CENO_APPLY_GEOMETRIC_WEIGHTING = ON;
+
 //! Set all flags to default values
 // add all flag default values to this function
 void CENO_CFRS_Execution_Mode::SetDefaults(void){
   
   USE_PSEUDO_INVERSE = OFF; // computation memory efficient mode
+  REDUCE_ORDER       = ON;  // recontruct to limited piecewise linear based on SI
   // CENO_APPLY_GEOMETRIC_WEIGHTING == ON
 }
 
@@ -27,15 +30,17 @@ void CENO_CFRS_Execution_Mode::SetDefaults(void){
 void CENO_CFRS_Execution_Mode::Print_Info(std::ostream & out_file){
 
   // output execution mode
-  if (USE_PSEUDO_INVERSE == ON){
-    out_file << "\n     -> Execution Mode: " << "Speed Efficient: Pseudo Inverse Used";
-  } else {
+  if (USE_PSEUDO_INVERSE == OFF){
     out_file << "\n     -> Execution Mode: " << "Memory Efficient: Pseudo Inverse Not Used";
+    out_file << "\n     -> Least-squares solver";
+  } else {
+    out_file << "\n     -> Execution Mode: " << "Speed Efficient: Pseudo Inverse Used";
   }
 
-  // output subroutine used to solver the least-squares problem
-  if (USE_PSEUDO_INVERSE == OFF){
-    out_file << "\n     -> Least-squares solver";
+  if (REDUCE_ORDER == ON){
+    out_file << "\n     -> Execution Mode: " << "Reduce to Limited Piecewise Linear reconstrcution based on SI.";
+  } else {
+    out_file << "\n     -> Execution Mode: " << "No reduction of order. Keep Unlimited High-Order reconstruction";
   }
 
 //  // output geom weighting type
