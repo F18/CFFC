@@ -2389,14 +2389,16 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructZ
       }
     }//endfor
 
-  /* reduce to limited piecewise linear */
-  for (i=iStart(); i<=iEnd(); ++i)
-    for (j=jStart(); j<=jEnd(); ++j){
-      if(SolnPtr[0][j][i].UnfitReconstructionFlag() == ON ){
-	++TotalModifiedCells;
-	ReconstructToLimitedPiecewiseLinear(i,j,IP.Limiter());
-      }
-    }
+  if (CENO_CFRS_Execution_Mode::REDUCE_ORDER == ON){
+    /* reduce to limited piecewise linear */
+    for (i=iStart(); i<=iEnd(); ++i)
+      for (j=jStart(); j<=jEnd(); ++j){
+	if(SolnPtr[0][j][i].UnfitReconstructionFlag() == ON ){
+	  ++TotalModifiedCells;
+	  ReconstructToLimitedPiecewiseLinear(i,j,IP.Limiter());
+	}/*endif*/
+      }/*endfor*/
+  }/*endif*/
 
   for (i=iStart(); i<=iEnd(); ++i)
     for (j=jStart(); j<=jEnd(); ++j){
@@ -2639,15 +2641,18 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructS
           }//end if
         }//endfor
     //
-    /* reduce to limited piecewise linear */
-    for (i=iStart(); i<=iEnd(); ++i)
-      for (j=jStart(); j<=jEnd(); ++j)
-	for (k=kStart(); k<=kEnd(); ++k){
-	  if(SolnPtr[k][j][i].UnfitReconstructionFlag() == ON ){
-	    ++TotalModifiedCells;
-	    ReconstructToLimitedPiecewiseLinear(i,j,k,IP.Limiter());
-	  }
-	}
+
+    if (CENO_CFRS_Execution_Mode::REDUCE_ORDER == ON){
+      /* reduce to limited piecewise linear */
+      for (i=iStart(); i<=iEnd(); ++i)
+	for (j=jStart(); j<=jEnd(); ++j)
+	  for (k=kStart(); k<=kEnd(); ++k){
+	    if(SolnPtr[k][j][i].UnfitReconstructionFlag() == ON ){
+	      ++TotalModifiedCells;
+	      ReconstructToLimitedPiecewiseLinear(i,j,k,IP.Limiter());
+	    } /*endif*/
+	  }/*endfor*/
+    }/*endif*/
 
     for (i=iStart(); i<=iEnd(); ++i)
       for (j=jStart(); j<=jEnd(); ++j)
@@ -2699,7 +2704,7 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
 													  int kCell, const int Limiter)
 {
 
-//--> RR: Needs to be commented back in later (limiter calcs)
+//--> RR: Limiter Calculation may be commented back in at a later time
 //#ifdef LimiterBasedOnlyOnGaussPoints
 //  int NQuad(8);
 //  double uQuad[8];
