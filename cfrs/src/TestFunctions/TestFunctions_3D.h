@@ -115,7 +115,7 @@ double Test_Example12_Integral (double x1, double x2, double y1, double y2, doub
 
 /*****************************************************************************
  * Function Test_Example13:                                                  *
- *           f(x,y,z) = 0.1*sin(20*x*y) + 0.1*exp(-(x+y)/5) + 0.5*cos(10*z)
+ *          f(x,y,z) = 0.1*sin(10*x*y) + 0.5*cos(5*z) + exp(-(x+y))
  ****************************************************************************/
 
 double Test_Example13 (double x, double y, double z);
