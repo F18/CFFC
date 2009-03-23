@@ -302,7 +302,7 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>::ComputeReconstructionE
 
 
   /* integrate the error for the L1 norm*/
-  ErrorRecL1Norm = IntegrateOverTheCell(ErrorFunction,8, ErrorRecL1Norm);
+  ErrorRecL1Norm = IntegrateOverTheCell(ErrorFunction,4, ErrorRecL1Norm);
 
 
   // Build ErrorFunction object for the L2 norm
@@ -311,20 +311,10 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>::ComputeReconstructionE
 
 
   /* integrate the error for the L2 norm*/
-  ErrorRecL2Norm = IntegrateOverTheCell(SquareErrorFunction,10, ErrorRecL2Norm);
+  ErrorRecL2Norm = IntegrateOverTheCell(SquareErrorFunction,4, ErrorRecL2Norm);
 
-  /* get the maximum error based on the error values at the subgrid points */
-  ErrorRecMaxNorm = SolutionType(0.0);
-  for (int i=0; i<NbSubgridPoints[0]; ++i){
-    for (int j=0; j<NbSubgridPoints[1]; ++j){
-      for(int k=0; k<NbSubgridPoints[2]; ++k){
-        ErrorRecMaxNorm = max(ErrorRecMaxNorm,
-                              ErrorFunction(SubgridSolution(i,j,k).GetNode().x(),
-                                            SubgridSolution(i,j,k).GetNode().y(),
-                                            SubgridSolution(i,j,k).GetNode().x()));
-      }
-    }
-  }
+  /* get the maximum error based on the L1 norm divided by the cell volume */
+  ErrorRecMaxNorm = ErrorRecL1Norm / geom.V();
 
 //  /* integrate the error for the L1 norm */
 //  ErrorRecL1Norm = IntegrateOverTheCell(error_function(FuncObj,
@@ -353,6 +343,19 @@ void ComputationalCell<ThreeD,GeometryType,SolutionType>::ComputeReconstructionE
 //										      SubgridSolution(i,j,k).GetNode().y(),
 //										      SubgridSolution(i,j,k).GetNode().z()));
 //      }
+//  /* get the maximum error based on the error values at the subgrid points */
+//  ErrorRecMaxNorm = SolutionType(0.0);
+//  for (int i=0; i<NbSubgridPoints[0]; ++i){
+//    for (int j=0; j<NbSubgridPoints[1]; ++j){
+//      for(int k=0; k<NbSubgridPoints[2]; ++k){
+//        ErrorRecMaxNorm = max(ErrorRecMaxNorm,
+//                              ErrorFunction(SubgridSolution(i,j,k).GetNode().x(),
+//                                            SubgridSolution(i,j,k).GetNode().y(),
+//                                            SubgridSolution(i,j,k).GetNode().x()));
+//      }
+//    }
+//  }
+
 }
 
 // OutputMeshNodesTecplot()

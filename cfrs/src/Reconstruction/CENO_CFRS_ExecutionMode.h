@@ -35,6 +35,14 @@ public:
       ---------------------------------------------------------------------------------------- */
   static short USE_PSEUDO_INVERSE;
 
+ /*! Reduce the order of reconstruction to limited piecewise linear reconstruction in the cells 
+     flagged as under-resolved or non-smooth by the solution smoothness indicator. \n
+     Turn ON if you want to recompute the reconstruction in the flagged cells using limited 
+     piecewise linear reconstruction. (default) \n
+     Turn OFF if you want to keep the unlimited high-order reconstruction. \n
+   ---------------------------------------------------------------------------------------- */
+  static short REDUCE_ORDER;
+
 
   /*! Turn ON this flag if the geometric weighting is applied. (default) \n
       Turn OFF if the geometric weighting is not applied. \n
@@ -84,6 +92,23 @@ void CENO_CFRS_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Paramete
       CENO_CFRS_Execution_Mode::USE_PSEUDO_INVERSE = ON;
     else if (strcmp(IP.Pseudo_Inverse, "OFF") == 0)
       CENO_CFRS_Execution_Mode::USE_PSEUDO_INVERSE = OFF;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Reduce_Order") == 0){
+    i_command = 37;
+    Get_Next_Input_Control_Parameter(IP);
+    strcpy(IP.Reduce_Order, 
+	   IP.Next_Control_Parameter);
+    
+    // Add the parse word for the new function //
+    if (strcmp(IP.Reduce_Order, "Yes") == 0)
+      CENO_CFRS_Execution_Mode::REDUCE_ORDER = ON;
+    else if (strcmp(IP.Reduce_Order, "No") == 0)
+      CENO_CFRS_Execution_Mode::REDUCE_ORDER = OFF;
+    else if (strcmp(IP.Reduce_Order, "ON") == 0)
+      CENO_CFRS_Execution_Mode::REDUCE_ORDER = ON;
+    else if (strcmp(IP.Reduce_Order, "OFF") == 0)
+      CENO_CFRS_Execution_Mode::REDUCE_ORDER = OFF;
+
   } else {
     i_command = INVALID_INPUT_CODE;
   } // endif
