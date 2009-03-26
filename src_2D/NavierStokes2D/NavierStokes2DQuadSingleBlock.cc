@@ -1024,6 +1024,20 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
     for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
 	SolnBlk.W[i][j] = Wo[0];
+
+// 	       /////////////////////////////////////////////////////////////////////////////////
+// 	       ////////////////////Vortex Experiment Addition////////////////////////////////////
+// 	       ///////////////////////////////////////////////////////////////////////////////////
+// 	       ////////////////////////////////////////////////////////////////////////////////////
+// 	       /////////////////////////////////////////////////////////////////////////////////////
+
+// 	       if(SolnBlk.Grid.Cell[i][j].Xc.y<0
+// 		  && sqrt(sqr(SolnBlk.Grid.Cell[i][j].Xc.x)+sqr(SolnBlk.Grid.Cell[i][j].Xc.y)) 
+//  		     < 3.0*IP.Cylinder_Radius) {
+// 		 SolnBlk.W[i][j].v.x = 0.0;
+// 		 SolnBlk.W[i][j].v.x = 0.0;
+// 	       }
+
 	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
 	  //SolnBlk.W[i][j].k = max(ONE,0.00005*(sqr(SolnBlk.W[i][j].v.x) + sqr(SolnBlk.W[i][j].v.y)));
 	  SolnBlk.W[i][j].k = 0.00005*(sqr(SolnBlk.W[i][j].v.x) + sqr(SolnBlk.W[i][j].v.y));
