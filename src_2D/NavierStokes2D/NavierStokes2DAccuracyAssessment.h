@@ -17,6 +17,79 @@
  *          SPECIALIZATIONS                *
  ******************************************/
 
+/************************************************************************//**
+ * \class _Wall_Shear_Stress_HO_Function_Wrapper_
+ * \brief Adaptor for the solution block member function that calculates 
+ * the wall shear stress with the high-order object.
+ *
+ * This adaptor is design to make the aforementioned member function of a 
+ * structured solution block look like a function only of a given location and the 
+ * normal at that location. \n
+ * This wrapper is useful for integrating the forces due to wall shear stresses.
+ ****************************************************************************/
+class _Wall_Shear_Stress_HO_Function_Wrapper_{
+
+public:
+  
+  /* Constructors */
+  // == 2D ==
+  _Wall_Shear_Stress_HO_Function_Wrapper_(NavierStokes2D_Quad_Block *SolnBlk_Ptr): SolnBlk(SolnBlk_Ptr),
+										   iCell(0), jCell(0){ };
+
+        
+  //! Evaluate the high-order wall shear stress at a given location and the local normal
+  double operator() (const Vector2D & GivenLocation, 
+		     const Vector2D & LocalNormal);
+    
+  //! change cell indexes to new ones
+  void NewIndexes(const int & _iCell_, const int & _jCell_){
+    iCell = _iCell_;
+    jCell = _jCell_;
+  }
+
+private:
+  /*! Private default constructor*/
+  _Wall_Shear_Stress_HO_Function_Wrapper_();
+
+  // Local variables
+  NavierStokes2D_Quad_Block *SolnBlk;	/*!< pointer to the solution block */
+  int iCell, jCell;	                //!< the cell indexes in the structured solution block
+};
+
+/*!
+ * Compute the wall shear stress provided by the high-order object.
+ * The wall shear stress returned by this routine is oriented in 
+ * the direction of the tangent, which is determined based on the LocalNormal.
+ *
+ * \param GivenLocation the location of interest
+ * \param LocalNormal the normal direction at the given location
+ */
+inline double _Wall_Shear_Stress_HO_Function_Wrapper_::operator() (const Vector2D & GivenLocation, 
+								   const Vector2D & LocalNormal){
+  
+  NavierStokes2D_pState Wc;
+  double s;			/* indicates the sign of tau_w with respect to the local tangential vector 
+				   (i.e. 1 if the wall shear stress is in the same direction as the tangent, 
+				   and -1 for the opposite case) */
+  Vector2D Tangent;
+
+  // ==== Step 1. Determine the sign of tau_w based on the tangential projection of the velocity at the cell centroid ====
+  // Determine velocities at centroid
+  Wc = SolnBlk->HighOrderVariable(0).SolutionStateAtLocation(iCell,jCell,SolnBlk->Grid.CellCentroid(iCell,jCell));
+  
+  // Determine tangent vector
+  SolnBlk->Grid.getTangent(Tangent,LocalNormal);
+
+  // Get the sign
+  s = sign(dot(Vector2D(Wc.v.x,Wc.v.y),Tangent));
+  if (s == 0.0){
+    s = 1.0;			// choose positive value
+  }
+
+  // Return the value of the wall shear stress
+  return s * SolnBlk->WallShearStress_HighOrder(iCell,jCell,
+						GivenLocation, LocalNormal);
+}
 
 /*!
  * Compute solution errors relative to the exact solution
@@ -103,6 +176,80 @@ ComputeSolutionErrors(const unsigned int &parameter,
     throw ArgumentNullException("AccuracyAssessment2D::ComputeSolutionErrors() ERROR! There is no exact solution set!");
   }
   
+}
+
+/*!
+ * Calculate the aerodynamic forces in the Cartesian x- and y-directions
+ * due to skin friction using the high-order solution reconstruction.
+ * The solid surfaces are detected based on the information carried by
+ * the spline.
+ * The forces are added to the provided variables.
+ * 
+ * \param Fx the aerodynamic force in x-direction
+ * \param Fy the aerodynamic force in y-direction
+ * \param WettedSurface the size of the surface that shows up during integration
+ * \param Pos the index of the high-order variables
+ */
+template<>
+template<> inline
+void AccuracyAssessment2D<NavierStokes2D_Quad_Block>::
+addWallShearStressAerodynamicForcesHighOrder(vector<double> & Fx, vector<double> & Fy, vector<double> & WettedSurface,
+					     const LiftAndDragCoeffs_Helper<NavierStokes2D_Input_Parameters> & ValidateDomain,
+					     const unsigned short int &Pos){
+
+  // Visit each block boundary
+
+  // === North Bnd
+  if (SolnBlk->Grid.BndNorthSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseWallShearStressAlongBoundarySpline(NORTH,
+							   _Wall_Shear_Stress_HO_Function_Wrapper_(SolnBlk),
+							   Fx[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1],
+							   Fy[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1],
+							   WettedSurface[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1],
+							   ValidateDomain);
+  }
+
+  // === South Bnd
+  if (SolnBlk->Grid.BndSouthSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseWallShearStressAlongBoundarySpline(SOUTH,
+							   _Wall_Shear_Stress_HO_Function_Wrapper_(SolnBlk),
+							   Fx[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1],
+							   Fy[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1],
+							   WettedSurface[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1],
+							   ValidateDomain);
+  }
+
+  // === East Bnd
+  if (SolnBlk->Grid.BndEastSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseWallShearStressAlongBoundarySpline(EAST,
+							   _Wall_Shear_Stress_HO_Function_Wrapper_(SolnBlk),
+							   Fx[SolnBlk->Grid.BndEastSpline.getBodyID() - 1],
+							   Fy[SolnBlk->Grid.BndEastSpline.getBodyID() - 1],
+							   WettedSurface[SolnBlk->Grid.BndEastSpline.getBodyID() - 1],
+							   ValidateDomain);
+  }
+  
+  // === West Bnd
+  if (SolnBlk->Grid.BndWestSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseWallShearStressAlongBoundarySpline(WEST,
+							   _Wall_Shear_Stress_HO_Function_Wrapper_(SolnBlk),
+							   Fx[SolnBlk->Grid.BndWestSpline.getBodyID() - 1],
+							   Fy[SolnBlk->Grid.BndWestSpline.getBodyID() - 1],
+							   WettedSurface[SolnBlk->Grid.BndWestSpline.getBodyID() - 1],
+							   ValidateDomain);
+  }
 }
 
 #endif

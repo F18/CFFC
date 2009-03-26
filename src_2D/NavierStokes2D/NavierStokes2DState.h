@@ -614,6 +614,11 @@ class NavierStokes2D_pState {
 			   const double &ywall,
 			   const double &yplus);
 
+  //! @brief Compute the wall shear stress based on the gradients in the normal direction
+  double WallShearStress(const double & dudn,
+			 const double & dvdn,
+			 const Vector2D & normal_dir) const;
+
   //@{ @name Eigenstructure.
   //! Eigenvalue(s) (x-direction).
   NavierStokes2D_pState lambda_x(void) const;
@@ -2274,6 +2279,22 @@ inline double NavierStokes2D_pState::chi_omega(const NavierStokes2D_pState &dWdx
  **********************************************************************/
 inline double NavierStokes2D_pState::burningrate(void) const {
   return -beta*pow(p,n);
+}
+
+
+/*! 
+ * Compute the wall shear stress based on the gradients in the normal direction.
+ * Determine tau_w, as tau_w = mu * (dV_t/dn), where 'V_t' is the tangential velocity at the wall,
+ * and 'n' is the normal direction.
+ * The '*this' state represents the solution at the point where the wall stress is determined.
+ *
+ * \param dudn the gradient in the normal direction of the Cartesian x-velocity
+ * \param dvdn the gradient in the normal direction of the Cartesian y-velocity
+ */
+inline double NavierStokes2D_pState::WallShearStress(const double & dudn,
+						     const double & dvdn,
+						     const Vector2D & normal_dir) const {
+  return mu() * (normal_dir.y * dudn - normal_dir.x * dvdn);
 }
 
 /**********************************************************************

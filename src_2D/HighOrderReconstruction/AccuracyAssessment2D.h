@@ -16,6 +16,8 @@
 #include "../Utilities/Utilities.h"
 #include "../CFD/CFD.h"
 
+template<typename Input_Parameters_Type>
+class LiftAndDragCoeffs_Helper;
 
 /*!
  * \class AccuracyAssessment2D
@@ -82,6 +84,17 @@ public:
 				     vector<double> & Fy,
 				     vector<double> & WettedSurface,
 				     const unsigned short int &Pos = 0);
+
+  /*! @brief Calculate and add to the provided variables the aerodynamic forces
+    due to skin friction on solid bodies predicted by a high-order reconstruction */
+  template<typename Input_Parameters_Type>
+  void addWallShearStressAerodynamicForcesHighOrder(vector<double> & Fx, 
+						    vector<double> & Fy,
+						    vector<double> & WettedSurface,
+						    const LiftAndDragCoeffs_Helper<Input_Parameters_Type> & ValidateDomain,
+						    const unsigned short int &Pos = 0){
+    throw runtime_error("AccuracyAssessment2D<>::addWallShearStressAerodynamicForcesHighOrder() ERROR! Specialization not implemented!!!");
+  };
 
   /*! @brief Calculate and add to the provided variables the aerodynamic forces on 
     solid bodies predicted by a piecewise linear reconstruction */
@@ -740,5 +753,28 @@ void AccuracyAssessment2D<Quad_Soln_Block>::addAerodynamicForces(vector<double> 
 							      WettedSurface[SolnBlk->Grid.BndWestSpline.getBodyID() - 1]);
   }
 }
+
+
+/*!
+ * Class which provides useful routines to  
+ * the calculation of lift and drag coefficients.
+ */
+template<typename Input_Parameters_Type>
+class LiftAndDragCoeffs_Helper{
+
+public:
+  LiftAndDragCoeffs_Helper(const Input_Parameters_Type & IP_Ptr): IP(&IP_Ptr){ };
+
+  //! @brief This routine tests whether the given location belongs to the integration domain.
+  bool PointInIntegrationDomainTest(const Vector2D& Location) const {
+    throw runtime_error("LiftAndDragCoeffs_Helper::PointInIntegrationDomainTest() ERROR! Specialize this routine!");
+  }
+
+private:
+  //! Private default constructor
+  LiftAndDragCoeffs_Helper(void){};
+
+  const Input_Parameters_Type * IP; //! < pointer to input parameters
+};
 
 #endif

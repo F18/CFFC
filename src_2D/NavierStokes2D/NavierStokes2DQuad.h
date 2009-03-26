@@ -411,6 +411,10 @@ public:
   //! @brief Member function to compute the solution pressure at a particular location
   double SolutionPressureAtCoordinates(const int &ii, const int &jj,
 				       const double &X_Coord, const double &Y_Coord) const;
+  //! @brief Member function to compute the wall shear stress at a particular location
+  double WallShearStress_HighOrder(const int &ii, const int &jj,
+				   const Vector2D &CalculationPoint,
+				   const Vector2D &normal_dir) const;
   //@}
 
   //! @name Member functions to set boundary states
@@ -1927,6 +1931,37 @@ inline double NavierStokes2D_Quad_Block::SolutionPressureAtCoordinates(const int
 
   return W[ii][jj][4] + (phi[ii][jj][4]*(dWdx[ii][jj][4]*(X_Coord - Grid.XCellCentroid(ii,jj)) + 
 					 dWdy[ii][jj][4]*(Y_Coord - Grid.YCellCentroid(ii,jj)) ));
+}
+
+/*!
+ * Compute the wall shear stress at a particular location
+ * based on the high-order piecewise reconstruction of cell (ii,jj).
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param CalculationPoint position vector for the location of interest
+ * \param normal_dir normal vector at the location of interest
+ */
+inline double NavierStokes2D_Quad_Block::WallShearStress_HighOrder(const int &ii, const int &jj,
+								   const Vector2D &CalculationPoint,
+								   const Vector2D &normal_dir) const {
+  // Solution and gradient in the normal direction at the location of interest
+  NavierStokes2D_pState W_P;
+  double dudn_P, dvdn_P;
+
+  // == determine solution at the given location
+  W_P = HO_Ptr[0].SolutionStateAtLocation(ii,jj,CalculationPoint);
+  // == determine normal gradient of x-velocity component 
+  dudn_P = HO_Ptr[0].NormalGradientAtLocation(ii,jj,
+					      CalculationPoint, normal_dir,
+					      2); // < x-velocity component
+  // == determine normal gradient of y-velocity component 
+  dvdn_P = HO_Ptr[0].NormalGradientAtLocation(ii,jj,
+					      CalculationPoint, normal_dir,
+					      3); // < y-velocity component
+
+  // return the value of the wall shear stress (i.e a scalar)
+  return W_P.WallShearStress(dudn_P, dvdn_P, normal_dir);
 }
 
 /*!

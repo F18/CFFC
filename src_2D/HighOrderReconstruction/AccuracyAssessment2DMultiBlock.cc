@@ -56,12 +56,12 @@ double AccuracyAssessment2D_MultiBlock::getLiftCoefficient(void){
     TotalWettedSurface += SolidBodyLength[sb];
   }
   
-  return TotalLift/(FreeStreamDensity*FreeStreamVelocity*FreeStreamVelocity*TotalWettedSurface);
+  return TotalLift/(HALF*FreeStreamDensity*FreeStreamVelocity*FreeStreamVelocity*TotalWettedSurface);
 }
 
 double AccuracyAssessment2D_MultiBlock::getLiftCoefficient(const int & BodyID){
   if (BodyID >= 0 && BodyID < Lift.size()){
-    return Lift[BodyID]/(FreeStreamDensity*FreeStreamVelocity*FreeStreamVelocity*SolidBodyLength[BodyID]); 
+    return Lift[BodyID]/(HALF*FreeStreamDensity*FreeStreamVelocity*FreeStreamVelocity*SolidBodyLength[BodyID]); 
   } else {
     throw runtime_error("AccuracyAssessment2D_MultiBlock::LiftCoefficient(BodyID) ERROR! Index out of range!");
   }
@@ -95,12 +95,12 @@ double AccuracyAssessment2D_MultiBlock::getDragCoefficient(void){
     TotalWettedSurface += SolidBodyLength[sb];
   }
   
-  return TotalDrag/(FreeStreamDensity*FreeStreamVelocity*FreeStreamVelocity*TotalWettedSurface);
+  return TotalDrag/(HALF*FreeStreamDensity*FreeStreamVelocity*FreeStreamVelocity*TotalWettedSurface);
 }
 
 double AccuracyAssessment2D_MultiBlock::getDragCoefficient(const int & BodyID){
   if (BodyID >= 0 && BodyID < Drag.size()){
-    return Drag[BodyID]/(FreeStreamDensity*FreeStreamVelocity*FreeStreamVelocity*SolidBodyLength[BodyID]);
+    return Drag[BodyID]/(HALF*FreeStreamDensity*FreeStreamVelocity*FreeStreamVelocity*SolidBodyLength[BodyID]);
   } else {
     throw runtime_error("AccuracyAssessment2D_MultiBlock::DragCoefficient(BodyID) ERROR! Index out of range!");
   }
@@ -138,6 +138,7 @@ void AccuracyAssessment2D_MultiBlock::PrintAerodynamicsData(ostream & os){
      << " ==================================================================== "
      << endl
      << " Aerodynamics data for the complete configuration:"   << endl
+     << " (Normalize coefficients using HALF*rho*U^2*WettedSurface!!!)"   << endl
      << "   Lift  = "  << setprecision(10) << getLift()  << endl
      << "   Drag  = "  << setprecision(10) << getDrag()  << endl
      << "   Cl  = "  << setprecision(10) << getLiftCoefficient()  << endl

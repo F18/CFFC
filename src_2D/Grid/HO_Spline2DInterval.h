@@ -212,6 +212,12 @@ public:
   //! @brief Integrate the given function along the contour of this spline interval.
   template<typename FO, class ReturnType>
   ReturnType IntegrateFunctionAlongInterval(FO FuncObj, ReturnType _dummy_param) const;
+
+  //! @brief Integrate the wall shear stress along the contour of this spline interval.
+  template<typename FO>
+  void IntegrateWallShearStressContributions(const Spline2D_HO & SupportCurve, 
+					     FO FuncObj,
+					     double & ResultXdir, double & ResultYdir, double & WettedSurface) const;
   //@}
 
   //! @name Set the number of Gauss quadrature points for contour integration
@@ -448,7 +454,7 @@ ReturnType Spline2DInterval_HO::IntegrateFunctionWithRespectToY(FO FuncObj, Retu
 
 /*! 
  * Integrate the given function multiplied with the normal along 
- * the along the contour of this spline interval.
+ * the contour of this spline interval.
  * One usage of this routine is to compute the integral of pressure
  * forces that act on the surface of a solid body.
  * 
@@ -556,5 +562,77 @@ ReturnType Spline2DInterval_HO::IntegrateFunctionAlongInterval(FO FuncObj, Retur
   return Result;
   
 }
+
+/*! 
+ * Integrate the wall shear stress along the contour of this spline interval.
+ * 
+ * \param SupportCurve the spline associated with this interval. 
+ *                     It's required to compute the normals.
+ * \param FuncObj  the wall shear stress function (i.e. the function to be integrated)
+ *                 the value of this function depends on the location and the tangent direction.
+ * \param ResultXdir the result in the X-direction (i.e FuncObj * t_x)
+ * \param ResultYdir the result in the Y-direction (i.e FuncObj * t_y)
+ *
+ * \note The contributions of this interval are ADDED to the result!!!
+ */
+template<typename FO>
+void Spline2DInterval_HO::IntegrateWallShearStressContributions(const Spline2D_HO & SupportCurve, FO FuncObj,
+								double & ResultXdir,
+								double & ResultYdir,
+								double & WettedSurface) const {
+  
+  double FuncVal(0.0), TempX(0.0), TempY(0.0);
+  double const * GQ_Weight(NULL);
+  int GQP, index;
+  Vector2D Normal, Tangent;
+
+  // Set the weights correctly
+  switch(NUMBER_OF_GQP_CONTOURINT){
+  case 3:
+    GQ_Weight = &GaussQuadratureData::GQ3_Weight[0];
+    break;
+    
+  case 5:
+    GQ_Weight = &GaussQuadratureData::GQ5_Weight[0];
+    break;
+  }
+  
+  for (int i=0; i<NumOfSubIntervals(); ++i){
+    // Calculate the contribution of each subinterval
+    
+    for (GQP = 1; GQP <= NUMBER_OF_GQP_CONTOURINT; ++GQP){
+      // Calculate the contribution of each Gauss-quadrature point
+      
+      // Determine the index of the current GQP in the array
+      index = NUMBER_OF_GQP_CONTOURINT*i+GQP;
+
+      // Determine the normal vector
+      Normal = SupportCurve.nSpline(GQPointContourIntegral(index));
+
+      // Determine the tangent vector
+      Tangent.x =  Normal.y;
+      Tangent.y = -Normal.x;
+
+      // Evaluate weighted function at the current GQP
+      FuncVal = GQ_Weight[GQP-1] * FuncObj(GQPointContourIntegral(index),
+					   Normal);
+
+
+      // Update the X projection
+      TempX += FuncVal* Tangent.x;
+
+      // Update the Y projection
+      TempY += FuncVal* Tangent.y;
+    }
+  
+    // Update final result with the contribution of the current subinterval
+    ResultXdir += TempX * IntLength(i+1);
+    ResultYdir += TempY * IntLength(i+1);
+    WettedSurface += IntLength(i+1);
+  }
+
+  GQ_Weight = NULL;
+}
+
 
 #endif /* _HO_SPLINE2DINTERVAL_INCLUDED  */

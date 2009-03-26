@@ -523,6 +523,9 @@ public:
 
   Vector2D nfaceW(const Cell2D_HO &Cell) const;
   Vector2D nfaceW(const int ii, const int jj) const;
+
+  //! Obtain the tangent vector based on the normal vector
+  void getTangent(Vector2D &TangentVec, const Vector2D &NormalVec){ TangentVec.x = NormalVec.y, TangentVec.y = -NormalVec.x; }
   //@}
 
   //! @name Get Gauss quadrature points for each straight cell face
