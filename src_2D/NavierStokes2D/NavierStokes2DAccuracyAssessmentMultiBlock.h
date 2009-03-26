@@ -62,6 +62,7 @@ AssessSolutionAccuracyBasedOnLiftAndDragCoefficients(NavierStokes2D_Quad_Block *
     alpha = TWO*PI*IP.Flow_Angle/360.00; // angle of attack in radians
     double cos_alpha(cos(alpha)), sin_alpha(sin(alpha)); // cosine and sine of the angle of attach
     double Fx, Fy;
+    vector<double> DummySolidBodyLength; DummySolidBodyLength.assign(NumberOfSolidBodies, 0.0);
 
     // Counters
     int nb;
@@ -108,7 +109,7 @@ AssessSolutionAccuracyBasedOnLiftAndDragCoefficients(NavierStokes2D_Quad_Block *
 	    SolnBlk[nb].AssessAccuracy.addAerodynamicForcesHighOrder(Lift,Drag,SolidBodyLength);
 	    // Add skin friction forces
 	    if (SolnBlk[nb].Flow_Type != FLOWTYPE_INVISCID){
-	      SolnBlk[nb].AssessAccuracy.addWallShearStressAerodynamicForcesHighOrder(Lift,Drag,SolidBodyLength,
+	      SolnBlk[nb].AssessAccuracy.addWallShearStressAerodynamicForcesHighOrder(Lift,Drag,DummySolidBodyLength,
 										      PointTest);
 	    }
 	  } else {

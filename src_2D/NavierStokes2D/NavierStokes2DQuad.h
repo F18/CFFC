@@ -505,6 +505,24 @@ public:
   //@{ @name Input-output operators.
   friend ostream &operator << (ostream &out_file, const NavierStokes2D_Quad_Block &Soln);
   friend istream &operator >> (istream &in_file, NavierStokes2D_Quad_Block &Soln);
+
+  void Output_Flat_Plate_Tecplot_HighOrder(const int Block_Number,
+					   const int Output_Title_Soln,
+					   ostream &Out_File_Soln,
+					   const int Output_Title_Skin,
+					   ostream &Out_File_Skin,
+					   const NavierStokes2D_pState &Winf,
+					   const double &plate_length,
+					   double &l1_norm,
+					   double &l2_norm,
+					   double &max_norm,
+					   double &area,
+					   int &numberofactivecells,
+					   double &l1_norm_cf,
+					   double &l2_norm_cf,
+					   double &max_norm_cf,
+					   double &area_cf,
+					   int &numberofactivecells_cf){ };
   //@}
 
   //@{ @name Member functions required for message passing.
