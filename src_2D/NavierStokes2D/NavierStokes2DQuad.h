@@ -522,7 +522,7 @@ public:
 					   double &l2_norm_cf,
 					   double &max_norm_cf,
 					   double &area_cf,
-					   int &numberofactivecells_cf){ };
+					   int &numberofactivecells_cf);
   //@}
 
   //@{ @name Member functions required for message passing.

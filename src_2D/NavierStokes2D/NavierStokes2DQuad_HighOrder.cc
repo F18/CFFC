@@ -1483,6 +1483,110 @@ void NavierStokes2D_Quad_Block::Output_Cells_Tecplot_HighOrder_Debug_Mode(Adapti
   /* Writing of output data files complete. */
 }
 
+
+/*!
+ * This routine outputs the non-dimensionalized computed flat plate 
+ * solution and the corresponding Blasius solution.                 
+ */
+void NavierStokes2D_Quad_Block::Output_Flat_Plate_Tecplot_HighOrder(const int Block_Number,
+								    const int Output_Title_Soln,
+								    ostream &Out_File_Soln,
+								    const int Output_Title_Skin,
+								    ostream &Out_File_Skin,
+								    const NavierStokes2D_pState &Winf,
+								    const double &plate_length,
+								    double &l1_norm,
+								    double &l2_norm,
+								    double &max_norm,
+								    double &area,
+								    int &numberofactivecells,
+								    double &l1_norm_cf,
+								    double &l2_norm_cf,
+								    double &max_norm_cf,
+								    double &area_cf,
+								    int &numberofactivecells_cf){
+
+  int i,j;
+  Vector2D X;
+  double Rex, Cf, Cfe;
+
+  // Output node solution data.  
+  Out_File_Soln << setprecision(14);
+
+  if (Output_Title_Skin) {
+    Out_File_Skin << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Solution, "
+		  << "\"" << "\n"
+		  << "VARIABLES = \"x\" \\ \n"
+		  << "\"Rex\" \\ \n"
+		  << "\"Cf\" \\ \n"
+		  << "\"Cf_e\" \\ \n"
+		  << "\"Cf-Cf_e\" \\ \n";
+  }
+
+  // Determine number of active cells
+  for (j = JCl; j <= JCu; j++) {
+    for (i = ICl; i <= ICu; i++) {
+
+      // Get cell position and solution data.
+      X = Grid.CellCentroid(i,j);
+
+      if (X.x >= ZERO && X.x <= plate_length && j == JCl &&
+	  (Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
+	   Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL)) {
+	numberofactivecells_cf++;
+      }
+
+    }
+  }
+
+  // Determine if the current block has the South boundary part of the flat-plate
+  if (Grid.BndSouthSpline.IsSolidBoundary()) {
+
+    Out_File_Skin << "ZONE T =  \"Block Number = " << Block_Number
+		  << "\" \\ \n"
+		  << "I = " << numberofactivecells_cf << " \\ \n"
+		  << "J = " << 1 << " \\ \n"
+		  << "F = POINT \n";
+
+    for (i = ICl; i <= ICu; i++) {
+
+      // Determine calculation point. Use the mid point of South face
+      X = Grid.xfaceS(i,JCl);
+
+      if ( X.x >= ZERO && X.x <= plate_length &&
+	   (Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
+	    Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL) ) {
+
+	// Get "exact" skin friction coefficient
+	Rex = (Winf.v.x/Winf.nu()) * X.x;
+
+	if (Flow_Type == FLOWTYPE_LAMINAR) {
+	  Cfe = TWO*0.32206/max(sqrt(Rex),NANO);
+	} else if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	  Cfe = 0.37*pow(log(Rex)/log(TEN),-2.584);
+	}
+
+	// Calculate numerical skin friction coefficient
+	Cf  = TWO*WallShearStress_HighOrder(i,JCl,
+					    X,
+					    -Grid.nfaceS(i,JCl))/(Winf.rho*sqr(Winf.v.x));
+
+	// Output solution for the current cell
+	Out_File_Skin.setf(ios::scientific);
+	Out_File_Skin << " " << X.x
+		      << " " << Rex
+		      << " " << Cf
+		      << " " << Cfe
+		      << " " << Cf - Cfe
+		      << endl;
+      }	// endif
+
+    } // endfor
+
+  } // endif  
+
+}
+
 /*!
  * Evaluate the residual for the solution block 
  * using the high-order CENO upwind finite-volume 
