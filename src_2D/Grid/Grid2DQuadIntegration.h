@@ -1248,8 +1248,8 @@ IntegratePiecewiseWallShearStressAlongBoundarySpline(const int & BOUNDARY, FO Fu
 
 	  // Determine the location of the Gauss Quadrature Points
 	  Grid->getGaussQuadPointsFaceN(iCell,Grid->JCu,GaussQuadPoints,NumGQP);
-	  // Determine normal
-	  Normal = Grid->nfaceN(iCell,Grid->JCu);
+	  // Determine normal direction pointing outward from the body
+	  Normal = -Grid->nfaceN(iCell,Grid->JCu);
 	  // Determine the tangent
 	  Grid->getTangent(Tangent,Normal);
 	
@@ -1320,8 +1320,8 @@ IntegratePiecewiseWallShearStressAlongBoundarySpline(const int & BOUNDARY, FO Fu
 
 	  // Determine the location of the Gauss Quadrature Points
 	  Grid->getGaussQuadPointsFaceS(iCell,Grid->JCl,GaussQuadPoints,NumGQP);
-	  // Determine normal
-	  Normal = Grid->nfaceS(iCell,Grid->JCl);
+	  // Determine normal direction pointing outward from the body
+	  Normal = -Grid->nfaceS(iCell,Grid->JCl);
 	  // Determine the tangent
 	  Grid->getTangent(Tangent,Normal);
 	
@@ -1391,8 +1391,8 @@ IntegratePiecewiseWallShearStressAlongBoundarySpline(const int & BOUNDARY, FO Fu
 
 	  // Determine the location of the Gauss Quadrature Points
 	  Grid->getGaussQuadPointsFaceE(Grid->ICu,jCell,GaussQuadPoints,NumGQP);
-	  // Determine normal
-	  Normal = Grid->nfaceE(Grid->ICu,jCell);
+	  // Determine normal direction pointing outward from the body
+	  Normal = -Grid->nfaceE(Grid->ICu,jCell);
 	  // Determine the tangent
 	  Grid->getTangent(Tangent,Normal);
 	
@@ -1462,8 +1462,8 @@ IntegratePiecewiseWallShearStressAlongBoundarySpline(const int & BOUNDARY, FO Fu
 	
 	  // Determine the location of the Gauss Quadrature Points
 	  Grid->getGaussQuadPointsFaceW(Grid->ICl,jCell,GaussQuadPoints,NumGQP);
-	  // Determine normal
-	  Normal = Grid->nfaceW(Grid->ICl,jCell);
+	  // Determine normal direction pointing outward from the body
+	  Normal = -Grid->nfaceW(Grid->ICl,jCell);
 	  // Determine the tangent
 	  Grid->getTangent(Tangent,Normal);
 	

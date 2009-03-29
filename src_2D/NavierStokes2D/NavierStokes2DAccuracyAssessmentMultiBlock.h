@@ -148,6 +148,16 @@ AssessSolutionAccuracyBasedOnLiftAndDragCoefficients(NavierStokes2D_Quad_Block *
       Drag[nb] = Fy[nb]*sin_alpha + Fx[nb]*cos_alpha;
     }
 
+
+    /* ==============================================
+       =            Extra post-processing           =
+       ============================================= */
+    if (IP.i_Grid == GRID_CIRCULAR_CYLINDER){
+      // Use the diameter of the cylinder to calculate the aerodynamic coefficients
+      // Only one body should be present (i.e. the interior cylinder) !!!
+      SolidBodyLength[0] = TWO*IP.Cylinder_Radius;
+    }
+
     return 0;
   }
   catch (const ArgumentNullException & ){

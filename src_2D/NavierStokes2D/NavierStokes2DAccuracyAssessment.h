@@ -67,28 +67,8 @@ private:
 inline double _Wall_Shear_Stress_HO_Function_Wrapper_::operator() (const Vector2D & GivenLocation, 
 								   const Vector2D & LocalNormal){
   
-  NavierStokes2D_pState Wc;
-  double s;			/* indicates the sign of tau_w with respect to the local tangential vector 
-				   (i.e. 1 if the wall shear stress is in the same direction as the tangent, 
-				   and -1 for the opposite case) */
-  Vector2D Tangent;
-
-  // ==== Step 1. Determine the sign of tau_w based on the tangential projection of the velocity at the cell centroid ====
-  // Determine velocities at centroid
-  Wc = SolnBlk->HighOrderVariable(0).SolutionStateAtLocation(iCell,jCell,SolnBlk->Grid.CellCentroid(iCell,jCell));
-  
-  // Determine tangent vector
-  SolnBlk->Grid.getTangent(Tangent,LocalNormal);
-
-  // Get the sign
-  s = sign(dot(Vector2D(Wc.v.x,Wc.v.y),Tangent));
-  if (s == 0.0){
-    s = 1.0;			// choose positive value
-  }
-
-  // Return the value of the wall shear stress
-  return s * SolnBlk->WallShearStress_HighOrder(iCell,jCell,
-						GivenLocation, LocalNormal);
+  return SolnBlk->WallShearStress_HighOrder(iCell,jCell,
+					    GivenLocation, LocalNormal);
 }
 
 /*!

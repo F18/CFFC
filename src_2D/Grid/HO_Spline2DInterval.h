@@ -607,7 +607,7 @@ void Spline2DInterval_HO::IntegrateWallShearStressContributions(const Spline2D_H
       index = NUMBER_OF_GQP_CONTOURINT*i+GQP;
 
       // Determine the normal vector
-      Normal = SupportCurve.nSpline(GQPointContourIntegral(index));
+      Normal = -SupportCurve.nSpline(GQPointContourIntegral(index));
 
       // Determine the tangent vector
       Tangent.x =  Normal.y;
