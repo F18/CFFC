@@ -1508,10 +1508,74 @@ void NavierStokes2D_Quad_Block::Output_Flat_Plate_Tecplot_HighOrder(const int Bl
 
   int i,j;
   Vector2D X;
-  double Rex, Cf, Cfe;
+  double eta, f, fp, fpp, Rex, Cf, Cfe, phiv;
+  NavierStokes2D_pState W, We;
 
   // Output node solution data.  
   Out_File_Soln << setprecision(14);
+
+  if (Output_Title_Soln) {
+    Out_File_Soln << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Solution, "
+		  << "\"" << "\n"
+		  << "VARIABLES = \"x\" \\ \n"
+		  << "\"y\" \\ \n"
+		  << "\"Rex\" \\ \n"
+		  << "\"rho\" \\ \n"
+		  << "\"u\" \\ \n"
+		  << "\"v\" \\ \n"
+		  << "\"p\" \\ \n"
+		  << "\"rho_e\" \\ \n"
+		  << "\"u_e\" \\ \n"
+		  << "\"v_e\" \\ \n"
+		  << "\"p_e\" \\ \n"
+		  << "\"eta\" \\ \n"
+		  << "\"f\" \\ \n"
+		  << "\"fp\" \\ \n"
+		  << "\"fpp\" \\ \n"
+		  << "\"u/Uinf\" \\ \n"
+		  << "\"u_e/Uinf\" \\ \n"
+		  << "\"(u - u_e)/Uinf\" \\ \n"
+		  << "\"phiv\" \\ \n"
+		  << "\"phiv_e\" \\ \n"
+		  << "\"phiv - phiv_e\" \\ \n";
+  }
+  Out_File_Soln << "ZONE T =  \"Block Number = " << Block_Number << "\" \\ \n"
+		<< "I = " << Grid.INu - Grid.INl + 1 << " \\ \n"
+		<< "J = " << Grid.JNu - Grid.JNl + 1 << " \\ \n"
+		<< "F = POINT \n";
+  for (j = Grid.JNl; j <= Grid.JNu; j++) {
+    for (i = Grid.INl; i <= Grid.INu; i++) {
+
+      // Get cell position and solution data.
+      X = Grid.Node[i][j].X;
+      W = HighOrderVariable(0).SolutionStateAtLocation(i,j,X);
+      We = FlatPlate(Winf,X,plate_length,eta,f,fp,fpp);
+      if (X.x > ZERO && X.x < plate_length) phiv = (W.v.y/Winf.v.x)*sqrt(Winf.v.x*X.x/Winf.nu());
+      else phiv = ZERO;
+      // Output data.
+      Out_File_Soln.setf(ios::scientific);
+      Out_File_Soln << " " << X
+		    << " " << (Winf.v.x/Winf.nu()) * X.x
+		    << " " << W.rho 
+		    << W.v
+		    << " " << W.p
+		    << " " << We.rho
+		    << We.v
+		    << " " << We.p
+		    << " " << eta
+		    << " " << f
+		    << " " << fp
+		    << " " << fpp
+		    << " " << W.v.x/Winf.v.x
+		    << " " << We.v.x/Winf.v.x
+		    << " " << (W.v.x - We.v.x)/Winf.v.x
+		    << " " << phiv
+		    << " " << HALF*(eta*fp-f)
+		    << " " << phiv - HALF*(eta*fp-f)
+		    << endl;
+      Out_File_Soln.unsetf(ios::scientific);
+    }
+  }
 
   if (Output_Title_Skin) {
     Out_File_Skin << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Solution, "

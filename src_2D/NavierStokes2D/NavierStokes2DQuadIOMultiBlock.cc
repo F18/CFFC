@@ -1190,10 +1190,8 @@ int Output_Flat_Plate_Tecplot(NavierStokes2D_Quad_Block *Soln_ptr,
   output_file_name_skin_ptr = output_file_name_skin;
   
   // Open the output data files.
-  if (!CENO_Execution_Mode::USE_CENO_ALGORITHM){
-    output_file_soln.open(output_file_name_soln_ptr,ios::out);
-    if (output_file_soln.bad()) return 1;
-  }
+  output_file_soln.open(output_file_name_soln_ptr,ios::out);
+  if (output_file_soln.bad()) return 1;
   output_file_skin.open(output_file_name_skin_ptr,ios::out);
   if (output_file_skin.bad()) return 1;
   
@@ -1229,9 +1227,7 @@ int Output_Flat_Plate_Tecplot(NavierStokes2D_Quad_Block *Soln_ptr,
   }
   
   // Close the output data file.
-  if (!CENO_Execution_Mode::USE_CENO_ALGORITHM){
-    output_file_soln.close();
-  }
+  output_file_soln.close();
   output_file_skin.close();
 
   // Calculate the L1-norm and L2-norm for all blocks.
