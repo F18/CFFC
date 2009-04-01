@@ -363,6 +363,9 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     IP.Isotach_Line = 0.30;
     IP.Wedge_Angle = 25.0;
     IP.Wedge_Length = HALF;
+    IP.Step_Height = 0.0127;
+    IP.Channel_Gap = 0.6; // This is a fudge to work with GRID_FORWARD_FACING_STEP.
+    IP.Top_Wall_Deflection = ZERO;
     IP.Smooth_Bump = OFF;
 
     IP.VertexSW = Vector2D(-0.5,-0.5);
@@ -777,6 +780,15 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Wedge_Length), 
 			  1, 
 			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Step_Height),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Channel_Gap),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Top_Wall_Deflection),
+			  1,
+			  MPI::DOUBLE,0);
     MPI::COMM_WORLD.Bcast(&(IP.Smooth_Bump),
 			  1,
 			  MPI::INT,0);
@@ -1429,6 +1441,15 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Wedge_Length), 
 		       1, 
 		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Step_Height),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Channel_Gap),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Top_Wall_Deflection),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
     Communicator.Bcast(&(IP.Smooth_Bump),
 		       1,
 		       MPI::INT,Source_Rank);
@@ -2118,6 +2139,10 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
        } else if (strcmp(IP.Grid_Type,"Smooth_Bump_Channel_Flow") == 0) {
 	  IP.i_Grid = GRID_BUMP_CHANNEL_FLOW;
 	  IP.Smooth_Bump = ON;
+       } else if (strcmp(IP.Grid_Type,"Backward_Facing_Step") == 0) {
+	 IP.i_Grid = GRID_BACKWARD_FACING_STEP;
+       } else if (strcmp(IP.Grid_Type,"Forward_Facing_Step") == 0) {
+	 IP.i_Grid = GRID_FORWARD_FACING_STEP;
        } else if (strcmp(IP.Grid_Type, "ICEMCFD") == 0) {
           IP.i_Grid = GRID_ICEMCFD;
        } else if (strcmp(IP.Grid_Type, "Read_From_Definition_File") == 0) {
@@ -2402,6 +2427,27 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Step_Height") == 0) {
+      i_command = 38;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Step_Height;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Step_Height <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Channel_Gap") == 0) {
+      i_command = 38;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Channel_Gap;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Channel_Gap <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Top_Wall_Deflection") == 0) {
+      i_command = 39;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Top_Wall_Deflection;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Top_Wall_Deflection < -TWO || IP.Top_Wall_Deflection > TEN) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter,"Chamber_Length") == 0) {
       i_command = 33;

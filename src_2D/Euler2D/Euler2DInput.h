@@ -133,7 +133,8 @@ class Euler2D_Input_Parameters{
          Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
          Inner_Streamline_Number, Outer_Streamline_Number, Isotach_Line,
          Wedge_Angle, Wedge_Length,
-         Annulus_Theta_Start, Annulus_Theta_End;
+         Annulus_Theta_Start, Annulus_Theta_End,
+         Step_Height, Channel_Gap, Top_Wall_Deflection;
   int Smooth_Bump, Nozzle_Type;
   Vector2D VertexSW, VertexSE, VertexNE, VertexNW;
   double X_Scale, X_Rotate;
@@ -634,6 +635,23 @@ inline ostream &operator << (ostream &out_file,
 	  if (IP.Smooth_Bump) out_file << " (smooth bump)";
 	  else out_file << " (non-smooth bump)";
 	}
+	break;
+      case GRID_BACKWARD_FACING_STEP :
+	out_file << "\n  -> Step height: " << IP.Step_Height;
+	out_file << "\n  -> Inflow height: " << IP.Top_Wall_Deflection;
+	out_file << "\n  -> Maximum inflow velocity x-component: " << IP.Wo.v.x;
+	break;
+      case GRID_FORWARD_FACING_STEP :
+	out_file << "\n     -> Height of each block: " << IP.Step_Height << " m.";
+	out_file << "\n     -> Length of each block: " << IP.Channel_Gap << " m.";
+	out_file << "\n     ->   Each block of the forward facing step has the same height";
+	out_file << "\n     ->   and length. Thus the step height is simply the block height.";
+	out_file << "\n     -> West BC are fixed at:";
+	out_file << "\n        -> ";
+	out_file << "p: "   << IP.Wo.p/1000.0 << " kPa, ";
+	out_file << "rho: " << IP.Wo.d        << " kg/m3, ";
+	out_file << "T: "   << IP.Wo.T()      << " K, ";
+	out_file << "u: "   << IP.Wo.v.x      << " m/s.";
 	break;
       case GRID_NASA_ROTOR_37 :
         out_file << "\n  -> Percent Span: " 

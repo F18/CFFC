@@ -137,6 +137,30 @@ void Grid2D_Quad_MultiBlock_HO::Additional_Multi_Block_Grid_Setup(Euler2D_Input_
 					HighOrder2D_Input::MaximumReconstructionOrder());
     }
     break;
+  case GRID_BACKWARD_FACING_STEP :
+    Grid_Backward_Facing_Step_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					     Input_Parameters.Number_of_Blocks_Jdir,
+					     Input_Parameters.Step_Height,
+					     Input_Parameters.Top_Wall_Deflection,
+					     Input_Parameters.Mesh_Stretching_Factor_Idir,
+					     Input_Parameters.Mesh_Stretching_Factor_Jdir,
+					     Input_Parameters.Number_of_Cells_Idir,
+					     Input_Parameters.Number_of_Cells_Jdir,
+					     Input_Parameters.Number_of_Ghost_Cells,
+					     HighOrder2D_Input::MaximumReconstructionOrder());
+    break;
+  case GRID_FORWARD_FACING_STEP :
+    Grid_Forward_Facing_Step_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					    Input_Parameters.Number_of_Blocks_Jdir,
+					    Input_Parameters.Step_Height,
+					    Input_Parameters.Channel_Gap,
+					    Input_Parameters.Mesh_Stretching_Factor_Idir,
+					    Input_Parameters.Mesh_Stretching_Factor_Jdir,
+					    Input_Parameters.Number_of_Cells_Idir,
+					    Input_Parameters.Number_of_Cells_Jdir,
+					    Input_Parameters.Number_of_Ghost_Cells,
+					    HighOrder2D_Input::MaximumReconstructionOrder());
+    break;
   default:
     Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
 					Input_Parameters.Number_of_Blocks_Jdir,
