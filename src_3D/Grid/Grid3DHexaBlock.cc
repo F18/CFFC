@@ -1469,10 +1469,6 @@ void Grid3D_Hexa_Block::Extrude(Grid2D_Quad_Block &Grid2D_XYplane,
 
   /* Process the extruded 3D grid. */
 
-  if(Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID){
-    std::cout <<"\nhello from the extrude function! allocate here\n";
-  }
-
   //Update_Exterior_Nodes();
   Update_Exterior_Nodes_Zdir();
   Update_Cells();

@@ -24,7 +24,8 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
     //Outputting solution input parameters
     if (!Data.batch_flag) {
       cout << Solution_Data.Input << "\n";
-      cout << "\n Generating the initial mesh.";
+      cout << "\n Generating the initial mesh and computing"
+	   << "\n  geometric coefficients (when required).";
       cout.flush(); 
     } /* endif */
     Data.Initial_Mesh.Create_Grid(Solution_Data.Input.Grid_IP);
