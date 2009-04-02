@@ -1,5 +1,5 @@
-/*!\file TaylorDerivatives.h
-  \brief Header file defining the 'TaylorDerivatives' template in 3D. 
+/*!\file TDContainer.h
+  \brief Header file defining the Taylor Derivatives
   Obs: The factorial coefficients are incorporated in the values of the derivatives. */
 
 #ifndef _TAYLORDERIVATIVES_INCLUDED
@@ -25,7 +25,7 @@ using std::pow;
 #include "../Utilities/Utilities.h"
 
 /*****************************************************************************
- * CLASS Template: DerivativeOgj 3D Container Declaration                    *
+ * CLASS Template: DerivativeObj 3D Container Declaration                    *
 *****************************************************************************/
 template<class T>
 class DerivativeObj;

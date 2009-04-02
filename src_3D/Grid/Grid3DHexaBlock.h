@@ -583,7 +583,7 @@ inline void Grid3D_Hexa_Block::allocate(const int Ni,
      // Set the Number of Gauss Quadrature Points for the flux evaluation
      SetNumberOfGaussQuadraturePoints(Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER);
 
-     // re-allocate memory for the container of geometric moments
+     // allocate memory for the container of geometric coefficients
      for (int i = 0; i <NCi ; ++i )
        for (int j = 0; j <NCj ; ++j )
 	 for (int k = 0; k <NCk ; ++k ){
@@ -1470,7 +1470,7 @@ inline void Grid3D_Hexa_Block::SetNumberOfGaussQuadraturePoints(const int &RecOr
 
 //! Routine: getGaussQuadPointsFaceN
 //  ----------------------------------------------------------------------
-/*! Purpose: Get the number of Gauss quadrature points for the North face.
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the North face.
  */
 inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceN(const Cell3D &Cell,
 						       Vector3D * GQPoints,
@@ -1480,7 +1480,7 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceN(const Cell3D &Cell,
 
 //! Routine: getGaussQuadPointsFaceS
 //  ----------------------------------------------------------------------
-/*! Purpose: Get the number of Gauss quadrature points for the South face.
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the South face.
  */
 inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceS(const Cell3D &Cell,
 						       Vector3D * GQPoints,
@@ -1490,7 +1490,7 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceS(const Cell3D &Cell,
 
 //! Routine: getGaussQuadPointsFaceE
 //  ----------------------------------------------------------------------
-/*! Purpose: Get the number of Gauss quadrature points for the East face.
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the East face.
  */
 inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceE(const Cell3D &Cell,
 						       Vector3D * GQPoints,
@@ -1500,7 +1500,7 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceE(const Cell3D &Cell,
 
 //! Routine: getGaussQuadPointsFaceW
 //  ----------------------------------------------------------------------
-/*! Purpose: Get the number of Gauss quadrature points for the West face.
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the West face.
  */
 inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceW(const Cell3D &Cell,
 						       Vector3D * GQPoints,
@@ -1510,7 +1510,7 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceW(const Cell3D &Cell,
 
 //! Routine: getGaussQuadPointsFaceTop
 //  ----------------------------------------------------------------------
-/*! Purpose: Get the number of Gauss quadrature points for the Top face.
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the Top face.
  */
 inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceTop(const Cell3D &Cell,
 							  Vector3D * GQPoints,
@@ -1520,7 +1520,7 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceTop(const Cell3D &Cell,
 
 //! Routine: getGaussQuadPointsFaceBot
 //  ----------------------------------------------------------------------
-/*! Purpose: Get the number of Gauss quadrature points for the Bot face.
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the Bot face.
  */
 inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceBot(const Cell3D &Cell,
 							 Vector3D * GQPoints,
@@ -1530,7 +1530,7 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceBot(const Cell3D &Cell,
 
 //! Routine: getGaussQuadPointsFaceN
 //  ----------------------------------------------------------------------
-/*! Purpose: Get the number of Gauss quadrature points for the North face.
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the North face.
  * 
  * \param ii i-index of the cell
  * \param jj j-index of the cell
@@ -1556,8 +1556,8 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceN(const int &ii, const int 
 
   case 4:
 
-    /* Set initial position of each GQPoint to the bottom-left node of current face
-     * and increment from there to get final GQPoint position 
+    /* Initally, we set the position of all the GQPoints to the bottom-left node of current face
+     * and increment from there to get final GQPoint positions 
      * 
      * Note: numbering of GQPoints is counter-clockwise starting from the bottom-left corner. */
 
@@ -1593,7 +1593,7 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceN(const int &ii, const int 
 
 //! Routine: getGaussQuadPointsFaceS
 //  ----------------------------------------------------------------------
-/*! Purpose: Get the number of Gauss quadrature points for the South face.
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the South face.
  * 
  * \param ii i-index of the cell
  * \param jj j-index of the cell
@@ -1619,8 +1619,8 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceS(const int &ii, const int 
 
   case 4:
 
-    /* Set initial position of each GQPoint to the bottom-left node of current face
-     * and increment from there to get final GQPoint position 
+    /* Initally, we set the position of all the GQPoints to the bottom-left node of current face
+     * and increment from there to get final GQPoint positions 
      * 
      * Note: numbering of GQPoints is counter-clockwise starting from the bottom-left corner. */
 
@@ -1655,7 +1655,7 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceS(const int &ii, const int 
 
 //! Routine: getGaussQuadPointsFaceE
 //  ----------------------------------------------------------------------
-/*! Purpose: Get the number of Gauss quadrature points for the East face.
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the East face.
  * 
  * \param ii i-index of the cell
  * \param jj j-index of the cell
@@ -1681,8 +1681,8 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceE(const int &ii, const int 
 
   case 4:
 
-    /* Set initial position of each GQPoint to the bottom-left node of current face
-     * and increment from there to get final GQPoint position 
+    /* Initally, we set the position of all the GQPoints to the bottom-left node of current face
+     * and increment from there to get final GQPoint positions 
      * 
      * Note: numbering of GQPoints is counter-clockwise starting from the bottom-left corner. */
 
@@ -1717,7 +1717,7 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceE(const int &ii, const int 
 
 //! Routine: getGaussQuadPointsFaceW
 //  ----------------------------------------------------------------------
-/*! Purpose: Get the number of Gauss quadrature points for the West face.
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the West face.
  * 
  * \param ii i-index of the cell
  * \param jj j-index of the cell
@@ -1743,8 +1743,8 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceW(const int &ii, const int 
 
   case 4:
 
-    /* Set initial position of each GQPoint to the bottom-left node of current face
-     * and increment from there to get final GQPoint position 
+    /* Initally, we set the position of all the GQPoints to the bottom-left node of current face
+     * and increment from there to get final GQPoint positions 
      * 
      * Note: numbering of GQPoints is counter-clockwise starting from the bottom-left corner. */
 
@@ -1780,7 +1780,7 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceW(const int &ii, const int 
 
 //! Routine: getGaussQuadPointsFaceTop
 //  ----------------------------------------------------------------------
-/*! Purpose: Get the number of Gauss quadrature points for the Top face.
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the Top face.
  * 
  * \param ii i-index of the cell
  * \param jj j-index of the cell
@@ -1806,8 +1806,8 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceTop(const int &ii, const in
 
   case 4:
 
-    /* Set initial position of each GQPoint to the bottom-left node of current face
-     * and increment from there to get final GQPoint position 
+    /* Initally, we set the position of all the GQPoints to the bottom-left node of current face
+     * and increment from there to get final GQPoint positions 
      * 
      * Note: numbering of GQPoints is counter-clockwise starting from the bottom-left corner. */
 
@@ -1842,7 +1842,7 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceTop(const int &ii, const in
 
 //! Routine: getGaussQuadPointsFaceBot
 //  ----------------------------------------------------------------------
-/*! Purpose: Get the number of Gauss quadrature points for the Bottom face.
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the Bottom face.
  * 
  * \param ii i-index of the cell
  * \param jj j-index of the cell
@@ -1868,8 +1868,8 @@ inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceBot(const int &ii, const in
 
   case 4:
 
-    /* Set initial position of each GQPoint to the bottom-left node of current face
-     * and increment from there to get final GQPoint position 
+    /* Initally, we set the position of all the GQPoints to the bottom-left node of current face
+     * and increment from there to get final GQPoint positions 
      * 
      * Note: numbering of GQPoints is counter-clockwise starting from the bottom-left corner. */
 

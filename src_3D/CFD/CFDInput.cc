@@ -414,7 +414,6 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
 	Reconstruction_Order = 2;
       } else if (strcmp(Spatial_Accuracy, "4") == 0) {
 	Reconstruction_Order = 3;
-	Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID = ON;
       } else {
 	i_command = INVALID_INPUT_VALUE;
       } /* endif */
