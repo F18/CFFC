@@ -38,6 +38,10 @@
 #include "../TurbulenceModelling/TurbulenceModelling.h"
 #endif // TURBULENCE_MODELLING_INCLUDED   
 
+#ifndef _HIGHORDER_INCLUDED
+#include "../HighOrderReconstruction/HighOrder.h"
+#endif // HIGHORDER_INCLUDED
+
 class FlowField_2D;
 
 /* Define the solution block in-use indicators. */

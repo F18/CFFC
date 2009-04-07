@@ -27,7 +27,7 @@ class Grid3D_HO_Execution_Mode{
 public:
 
   static void Print_Info(std::ostream & out_file);
-//  static void Broadcast(void);
+  static void Broadcast(void);
 
   // Set all flags to default values
   static void SetDefaults(void);

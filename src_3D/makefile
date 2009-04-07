@@ -45,6 +45,7 @@ NASADATA_DIR = $(PHYSICS_DIR)NASAData/
 REACTIONS_DIR = Reactions/
 SYSTEM_DIR = System/
 TURBULENCE_DIR = TurbulenceModelling/
+HIGH_ORDER_RECONSTRUCTION_DIR = HighOrderReconstruction/
 
 #
 # Set default f90 module directory
@@ -99,6 +100,11 @@ SRC_GRID = $(GRID_DIR)Cell2D.cc \
 
 SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
 	      $(ICEMCFD_DIR)ICEMCFD_ctype.c
+
+# HighOrderReconstruction:
+SRC_HIGH_ORDER = $(HIGH_ORDER_RECONSTRUCTION_DIR)CENO_Tolerances.cc \
+                 $(HIGH_ORDER_RECONSTRUCTION_DIR)CENO_ExecutionMode.cc \
+                 $(HIGH_ORDER_RECONSTRUCTION_DIR)HighOrderInput.cc
 
 # AMR:
 ifeq ($(MPI_VERSION),NoMPI)
@@ -235,7 +241,7 @@ SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
 # Base and CFFC sources:
 SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_SYSTEM) \
            $(SRC_AMR) $(SRC_GRID) $(SRC_ICEMCFD) \
-           $(SRC_MULTIGRID) $(SRC_NKS)
+           $(SRC_MULTIGRID) $(SRC_NKS) $(SRC_HIGH_ORDER)
 ifeq ($(TUT_TESTING),ON) 
   SRC_BASE += $(SRC_TUT)
 endif
@@ -266,6 +272,9 @@ OBJ_MPI = $(SRC_MPI:.cc=.o)
 OBJ_GRID = $(SRC_GRID:.cc=.o)
 OBJ_ICEMCFD = $(patsubst %.cc,%.o,$(filter %.cc,$(SRC_ICEMCFD)))
 OBJ_ICEMCFD += $(patsubst %.c,%.o,$(filter %.c,$(SRC_ICEMCFD)))
+
+# HighOrder:
+OBJ_HIGH_ORDER = $(SRC_HIGH_ORDER:.cc=.o)
 
 # AMR:
 OBJ_AMR = $(SRC_AMR:.cc=.o)
@@ -328,7 +337,7 @@ OBJ_SYSTEM = $(SRC_SYSTEM:.cc=.o)
 # Base and CFFC objects:
 OBJ_BASE = $(OBJ_MATH) $(OBJ_CFD) $(OBJ_MPI) $(OBJ_SYSTEM) \
            $(OBJ_AMR) $(OBJ_GRID) $(OBJ_ICEMCFD) \
-           $(OBJ_MULTIGRID) $(OBJ_NKS)
+           $(OBJ_MULTIGRID) $(OBJ_NKS) $(OBJ_HIGH_ORDER)
 ifeq ($(TUT_TESTING),ON)
   OBJ_BASE += $(OBJ_TUT)
 endif
@@ -706,6 +715,7 @@ clean:
 	rm -f $(CFD_DIR)*.o $(CFD_DIR)*.il $(CFD_DIR)*~
 	rm -f $(MPI_DIR)*.o $(MPI_DIR)*.il $(MPI_DIR)*~
 	rm -f $(GRID_DIR)*.o $(GRID_DIR)*.il $(GRID_DIR)*~
+	rm -f $(HIGH_ORDER_RECONSTRUCTION_DIR)*.o $(HIGH_ORDER_RECONSTRUCTION_DIR)*.il $(HIGH_ORDER_RECONSTRUCTION_DIR)*~	
 	rm -f $(ICEMCFD_DIR)*.o $(ICEMCFD_DIR)*.il $(ICEMCFD_DIR)*~ $(ICEMCFD_DIR)*.depend $(ICEMCFD_DIR)*.bak
 	rm -f $(AMR_DIR)*.o $(AMR_DIR)*.il $(AMR_DIR)*~
 	rm -f $(EULER_DIR)*.o $(EULER_DIR)*.il $(EULER_DIR)*~ $(EULER_DIR)*.depend $(EULER_DIR)*.bak

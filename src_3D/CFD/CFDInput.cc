@@ -870,6 +870,12 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
                                                                        value_stream);
        } /* endif */
 
+       // High Order
+       if (i_command == INVALID_INPUT_CODE) {
+	 i_command = HighOrder_IP.Parse_Next_Input_Control_Parameter(code,
+								     value_stream);
+       } /* endif */
+       
     } /* endif */
 
     // Check for long input lines that have not been completely read in.
@@ -1175,6 +1181,13 @@ void CFD_Input_Parameters::Broadcast(void) {
 
     // Turbulence modelling
     Turbulence_IP.Broadcast();
+
+    // High Order Grid Execution Mode:
+    // Grid_HO_Execution_Mode.Broadcast(); --> RR: broadcast later
+
+    // CENO Execution Mode:
+    // CENO_Execution_Mode.Broadcast();  --> RR: broadcast later
+
 #endif
 
 }

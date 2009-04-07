@@ -822,7 +822,7 @@ inline Node3D Grid3D_Hexa_Block::nodeSEBot(const Cell3D &Cell) {
  
 inline Node3D Grid3D_Hexa_Block::nodeSEBot(const int ii, const int jj, const int kk) {
   return (Node[ii+1][jj][kk]);
-} 
+}
 
 inline Node3D Grid3D_Hexa_Block::nodeSWBot(const Cell3D &Cell) {
    return (Node[Cell.I][Cell.J][Cell.K]);

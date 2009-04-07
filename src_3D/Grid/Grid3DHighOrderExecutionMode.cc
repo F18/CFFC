@@ -82,63 +82,15 @@ void Grid3D_HO_Execution_Mode::Print_Info(std::ostream & out_file){
  * from the specified processor using the MPI broadcast 
  * routine.
  */
-//void Grid3D_HO_Execution_Mode::Broadcast(void){
-//#ifdef _MPI_VERSION
-//  
-//  MPI::COMM_WORLD.Bcast(&USE_CENO_ALGORITHM,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&USE_PSEUDO_INVERSE,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&CENO_DROP_ORDER,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&CENO_PADDING,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&CENO_APPLY_GEOMETRIC_WEIGHTING,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&CENO_SQUARE_GEOM_WEIGHTING,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&CENO_CONSIDER_WEIGHTS,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&USE_LAPACK_LEAST_SQUARES,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&HIGH_ORDER_MESSAGE_PASSING,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&CENO_VERBOSE,
-// 			1, 
-// 			MPI::SHORT, 0);
-//  MPI::COMM_WORLD.Bcast(&Limiter,
-// 			1, 
-// 			MPI::SHORT, 0);  
-//
-//#endif
-//}
+void Grid3D_HO_Execution_Mode::Broadcast(void){
+#ifdef _MPI_VERSION
+  
+  MPI::COMM_WORLD.Bcast(&USE_HO_CENO_GRID,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&RECONSTRUCTION_ORDER,
+ 			1, 
+ 			MPI::SHORT, 0);
+
+#endif
+}

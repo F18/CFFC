@@ -55,10 +55,14 @@ using namespace std;
 #include "../TurbulenceModelling/TurbulenceModellingInput.h"
 #endif // _TURBULENCEMODEL_INPUT_INCLUDED
 
-/* Include grid high order execution mode header file. */
 #ifndef _GRID3D_HO_EXECUTIONMODE_INCLUDED
 #include "../Grid/Grid3DHighOrderExecutionMode.h"
 #endif // _GRID3D_HO_EXECUTIONMODE_INCLUDED
+
+#ifndef _HIGHORDER_INPUT_INCLUDED
+#include "../HighOrderReconstruction/HighOrderInput.h"
+#endif // _HIGHORDER_INPUT_INCLUDED
+
 
 /* Define the class. */
 
@@ -188,6 +192,10 @@ class CFD_Input_Parameters{
   Turbulence_Modelling_Input_Parameters Turbulence_IP;
   //@}
 
+  //@{ @name High Order related input parameters:
+  HighOrder_Input_Parameters HighOrder_IP;
+  //@}
+
   //@{ @name Initial condition type indicator and related input parameters:
   char ICs_Type[INPUT_PARAMETER_LENGTH];
   int i_ICs;
@@ -289,6 +297,10 @@ class CFD_Input_Parameters{
     Pressure_Gradient.zero(); 
     // Set default values in class Grid3D_HO_Execution_Mode
     Grid3D_HO_Execution_Mode::SetDefaults();
+    // Set default values in class CENO_Execution_Mode
+    CENO_Execution_Mode::SetDefaults();
+    // Set default values in class CENO_Tolerances
+    CENO_Tolerances::SetDefaults();
   }
 
   //! Destructor
