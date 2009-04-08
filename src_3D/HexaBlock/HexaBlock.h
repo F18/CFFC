@@ -42,6 +42,8 @@
 #include "../HighOrderReconstruction/HighOrder.h"
 #endif // HIGHORDER_INCLUDED
 
+// Additional includes at end of file
+
 class FlowField_2D;
 
 /* Define the solution block in-use indicators. */
@@ -295,6 +297,13 @@ class Hexa_Block {
 
    int Update_Solution_Multistage_Explicit(const int i_stage, 
                                            Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+
+
+   /* MEMBER FUNCTIONS REQUIRED FOR HIGH ORDER RECONSTRUCTION. */
+
+   int dUdt_Multistage_Explicit_HighOrder(const int i_stage, 
+					  Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+
 
    /* MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING. */
 
@@ -3229,18 +3238,18 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
     
 }
 
-/********************************************************
- * Routine: dUdt_Multistage_Explicit                    *
- *                                                      *
- * This routine determines the solution residuals for a *
- * given stage of a variety of multi-stage explicit     *
- * time integration schemes for a given solution block. *
- *                                                      *
- ********************************************************/
+/*********************************************************
+ * Routine: dUdt_Multistage_Explicit                     *
+ *                                                       *
+ * This routine determines the solution residuals for a  *
+ * given stage of a variety of multi-stage explicit      *
+ * time integration schemes for a given solution block.  *
+ *                                                       *
+ *********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
 dUdt_Multistage_Explicit(const int i_stage,
-                         Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+			 Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
    int i, j, k,  k_residual;
    double omega; 
@@ -3303,12 +3312,7 @@ dUdt_Multistage_Explicit(const int i_stage,
       Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
       
       break;
-      // --> RR: The following case MUST BE REMOVED. Used here for developement purposes (grid generation)
-   case RECONSTRUCTION_CENTRAL_ESSENTIALLY_NON_OSCILLATORY :
-      
-      Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
-      
-      break;
+
    default:
       Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
       break;
@@ -4484,5 +4488,10 @@ SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdxdz = NULL;
 
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdydz = NULL;
+
+// The following must be included at the end of file.
+#ifndef _HEXABLOCK_HIGHORDER_INCLUDED
+#include "HexaBlockHighOrder.h"
+#endif //_HEXABLOCK_HIGHORDER_INCLUDED
 
 #endif // _HEXA_BLOCK_INCLUDED

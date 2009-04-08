@@ -430,7 +430,7 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        } else if (strcmp(Reconstruction_Type, "Least_Squares") == 0) {
           i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
        } else if (strcmp(Reconstruction_Type, "CENO") == 0) {
-          i_Reconstruction = RECONSTRUCTION_CENTRAL_ESSENTIALLY_NON_OSCILLATORY;
+	  i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
 	  Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID = ON;
        } else {
           i_command = INVALID_INPUT_VALUE;
@@ -1224,7 +1224,7 @@ int CFD_Input_Parameters::Check_Inputs(void) {
     }/* endif */
 
     // Make sure that the reconstruction type for high-order reconstruction is set to CENO
-    if (i_Reconstruction != RECONSTRUCTION_CENTRAL_ESSENTIALLY_NON_OSCILLATORY && Reconstruction_Order > 1){
+    if (i_Reconstruction != RECONSTRUCTION_HIGH_ORDER && Reconstruction_Order > 1){
       cout << "CFD::Check_Inputs: Cannot perform high-order reconstruction with the given Reconstruction_Type.\n";
       cout << "For high-order reconstruction please use the CENO Reconstruction_Type." << endl;
       cout.flush();
