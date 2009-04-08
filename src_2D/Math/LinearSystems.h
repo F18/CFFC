@@ -325,8 +325,8 @@ inline void Solve_LS_Householder_F77(DenseMatrix &A,
   }
   
   /* Call Fortran subroutine */
-  F77NAME(dgelsy)(&NROW, &NCOL, &NRHS, &A(0,0), &NROW,
-		  &B(0,0), &NROW, JPVT, &RCOND, &krank, WORK, &LWORK, &INFO);
+//   F77NAME(dgelsy)(&NROW, &NCOL, &NRHS, &A(0,0), &NROW,
+// 		  &B(0,0), &NROW, JPVT, &RCOND, &krank, WORK, &LWORK, &INFO);
 
   /* Free memory */
   delete [] WORK; WORK = NULL;

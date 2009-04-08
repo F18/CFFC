@@ -681,7 +681,7 @@ namespace tut
     RunRegression = ON;
  
     // Set input file name
-    Open_Input_File("HO_Reconstruction.in");
+    this->Open_Input_File("HO_Reconstruction.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -700,7 +700,8 @@ namespace tut
     
     // Reconstruct solution
     SolnBlk[0].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[0],
-									   IP.Limiter());
+									   IP.Limiter(),
+									   &Euler2D_Quad_Block::CellSolution);
    
     if (RunRegression){
 
@@ -744,7 +745,7 @@ namespace tut
     RunRegression = ON;
  
     // Set input file name
-    Open_Input_File("CircularCylinderGrid.in");
+    this->Open_Input_File("CircularCylinderGrid.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -820,7 +821,7 @@ namespace tut
     RunRegression = ON;
  
     // Set input file name
-    Open_Input_File("CircularCylinderGrid.in");
+    this->Open_Input_File("CircularCylinderGrid.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -985,7 +986,7 @@ namespace tut
     RunRegression = ON;
  
     // Set input file name
-    Open_Input_File("RinglebGrid.in");
+    this->Open_Input_File("RinglebGrid.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1045,7 +1046,7 @@ namespace tut
     RunRegression = ON;
  
     // Set input file name
-    Open_Input_File("RinglebGrid.in");
+    this->Open_Input_File("RinglebGrid.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1337,7 +1338,7 @@ namespace tut
     RunRegression = ON;
  
     // Set input file name
-    Open_Input_File("RinglebGrid.in");
+    this->Open_Input_File("RinglebGrid.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1551,7 +1552,7 @@ namespace tut
     RunRegression = ON;
  
     // Set input file name
-    Open_Input_File("RinglebGrid.in");
+    this->Open_Input_File("RinglebGrid.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1765,7 +1766,7 @@ namespace tut
     RunRegression = ON;
  
     // Set input file name
-    Open_Input_File("HO_Reconstruction_CircularCylinderGrid.in");
+    this->Open_Input_File("HO_Reconstruction_CircularCylinderGrid.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1803,9 +1804,11 @@ namespace tut
 
     // Reconstruct solution on each block
     SolnBlk[0].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[0],
-									   IP.Limiter());
+									   IP.Limiter(),
+									   &Euler2D_Quad_Block::CellSolution);
     SolnBlk[1].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[1],
-									   IP.Limiter());
+									   IP.Limiter(),
+									   &Euler2D_Quad_Block::CellSolution);
 
     if (RunRegression){
 
@@ -1896,7 +1899,7 @@ namespace tut
     RunRegression = ON;
  
     // Set input file name
-    Open_Input_File("HO_Reconstruction_CircularCylinderGrid.in");
+    this->Open_Input_File("HO_Reconstruction_CircularCylinderGrid.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1932,9 +1935,11 @@ namespace tut
 
     // Reconstruct solution on each block
     SolnBlk[0].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[0],
-									   IP.Limiter());
+									   IP.Limiter(),
+									   &Euler2D_Quad_Block::CellSolution);
     SolnBlk[1].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[1],
-									   IP.Limiter());
+									   IP.Limiter(),
+									   &Euler2D_Quad_Block::CellSolution);
 
     if (RunRegression){
 
@@ -2030,7 +2035,7 @@ namespace tut
     RunRegression = ON;
  
     // Set input file name
-    Open_Input_File("HO_Reconstruction_RinglebGrid.in");
+    this->Open_Input_File("HO_Reconstruction_RinglebGrid.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -2072,13 +2077,17 @@ namespace tut
 
     // Reconstruct solution on each block
     SolnBlk[0].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[0],
-									   IP.Limiter());
+									   IP.Limiter(),
+									   &Euler2D_Quad_Block::CellSolution);
     SolnBlk[1].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[1],
-									   IP.Limiter());
+									   IP.Limiter(),
+									   &Euler2D_Quad_Block::CellSolution);
     SolnBlk[2].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[2],
-									   IP.Limiter());
+									   IP.Limiter(),
+									   &Euler2D_Quad_Block::CellSolution);
     SolnBlk[3].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[3],
-									   IP.Limiter());
+									   IP.Limiter(),
+									   &Euler2D_Quad_Block::CellSolution);
 
     if (RunRegression){
 

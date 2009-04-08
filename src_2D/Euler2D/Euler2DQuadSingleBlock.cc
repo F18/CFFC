@@ -5642,7 +5642,7 @@ int Determine_Mach_Stem_Height(Euler2D_Quad_Block &SolnBlk,
     }
   }
   
-  
+  return 0;
 }
 
 /**********************************************************************

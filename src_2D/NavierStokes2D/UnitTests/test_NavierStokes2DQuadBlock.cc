@@ -210,7 +210,7 @@ namespace tut
     RunRegression = OFF;
  
     // Set input file name
-    Open_Input_File("flatplate.in");
+    this->Open_Input_File("flatplate.in");
 
     // Parse the input file
     IP.Verbose() = false;

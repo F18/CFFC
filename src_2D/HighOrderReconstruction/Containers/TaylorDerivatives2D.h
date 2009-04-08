@@ -76,13 +76,13 @@ class DerivativeObj<TwoD,T>{
 
  /* Overloaded operators */
  // Assignment operator
-  DerivativeObj& operator=(const DerivativeObj<TwoD,T>& rhs){
+ DerivativeObj& operator=(const DerivativeObj<TwoD,T>& rhs){
    if(this == &rhs) return *this;
-  Power1 = rhs.Power1;
-  Power2 = rhs.Power2;
-  ValueD = rhs.ValueD;
-  return *this;
-  }
+   Power1 = rhs.Power1;
+   Power2 = rhs.Power2;
+   ValueD = rhs.ValueD;
+   return *this;
+ }
 
  // Friend functions & operators
  friend bool operator== <TwoD,T> (const DerivativeObj<TwoD,T>& left,
@@ -104,16 +104,6 @@ DerivativeObj<TwoD,T>::DerivativeObj(const vector<int> & PPP_, const T & ValueD_
    Power2 = PPP_[1];
    ValueD = ValueD_;
 }
-
-// // Assignment operator
-// template< class T>
-// inline DerivativeObj<TwoD,T> & DerivativeObj<TwoD,T>::operator=(const DerivativeObj<TwoD,T>& rhs){
-//   if(this == &rhs) return *this;
-//   Power1 = rhs.Power1;
-//   Power2 = rhs.Power2;
-//   ValueD = rhs.ValueD;
-//   return *this;
-// }
 
 // SetPowers()
 template< class T>

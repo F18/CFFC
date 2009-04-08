@@ -126,6 +126,8 @@ Grid2D_Quad_MultiBlock_HO& Grid2D_Quad_MultiBlock_HO::operator=(const Grid2D_Qua
       }	// endfor
     } // endfor
   } // endif
+
+  return *this;
 }
 
 
@@ -9199,4 +9201,6 @@ istream &operator >> (istream &In_File, Grid2D_Quad_MultiBlock_HO &G){
       In_File >> G.Grid_ptr[i][j];
     }  /* endfor */
   }  /* endfor */
+
+  return In_File;
 }

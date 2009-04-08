@@ -1715,6 +1715,8 @@ inline Vector3D NASARotor37::lInt(const Vector3D &v1, const Vector3D &v2, const 
     
   }     
 
+  return Vector3D(0);
+
 }
 
 /**********************************************************************

@@ -101,6 +101,7 @@ int Grid2DTesting_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr){
     } /* endif */
   } /* endwhile */
 
+  return 1;
 }
 
 /******************************************************//**

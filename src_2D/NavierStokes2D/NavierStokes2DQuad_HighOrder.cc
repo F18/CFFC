@@ -1716,7 +1716,8 @@ int NavierStokes2D_Quad_Block::dUdt_Residual_HighOrder(const NavierStokes2D_Inpu
      NOTE: This solution reconstruction IS NOT recommended for computing hyperbolic fluxes!
   */
 
-  HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this);
+  HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this,
+								&NavierStokes2D_Quad_Block::CellSolution);
 
 
   // ** Step 1. Compute interior viscous fluxes and any source contributions for cells between (ICl,JCl)-->(ICu,JCu) **
@@ -2998,8 +2999,11 @@ int NavierStokes2D_Quad_Block::dUdt_Residual_HighOrder(const NavierStokes2D_Inpu
      non-smooth by the smoothness indicator analysis. 
      NOTE: This solution reconstruction IS recommended for computing hyperbolic fluxes!
   */
-  HighOrderVariable(Pos).ComputeSmoothnessIndicator(*this);
-  HighOrderVariable(Pos).EnforceMonotonicityToNonSmoothInterpolants(*this, IP.Limiter());
+  HighOrderVariable(Pos).ComputeSmoothnessIndicator(*this,
+						    &NavierStokes2D_Quad_Block::CellSolution);
+  HighOrderVariable(Pos).EnforceMonotonicityToNonSmoothInterpolants(*this, 
+								    IP.Limiter(),
+								    &NavierStokes2D_Quad_Block::CellSolution);
 
   // ** Step 1. Compute interior convective fluxes and any source contributions for cells between (ICl,JCl)-->(ICu,JCu) **
   // **********************************************************************************************************

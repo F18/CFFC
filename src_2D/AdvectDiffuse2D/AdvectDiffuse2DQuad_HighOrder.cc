@@ -1072,7 +1072,8 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
      NOTE: This solution reconstruction IS NOT recommended for computing hyperbolic fluxes!
   */
 
-  HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this);
+  HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this,
+								&AdvectDiffuse2D_Quad_Block::CellSolution);
 
   // ** Step 1. Compute interior diffusive fluxes and any source contributions for cells between (ICl,JCl)-->(ICu,JCu) **
   // ********************************************************************************************************************
@@ -2306,8 +2307,11 @@ int AdvectDiffuse2D_Quad_Block::dUdt_Residual_HighOrder(const AdvectDiffuse2D_In
        non-smooth by the smoothness indicator analysis. 
        NOTE: This solution reconstruction IS recommended for computing hyperbolic fluxes!
     */
-    HighOrderVariable(Pos).ComputeSmoothnessIndicator(*this);
-    HighOrderVariable(Pos).EnforceMonotonicityToNonSmoothInterpolants(*this, IP.Limiter());
+    HighOrderVariable(Pos).ComputeSmoothnessIndicator(*this,
+						      &AdvectDiffuse2D_Quad_Block::CellSolution);
+    HighOrderVariable(Pos).EnforceMonotonicityToNonSmoothInterpolants(*this,
+								      IP.Limiter(),
+								      &AdvectDiffuse2D_Quad_Block::CellSolution);
 
 
     // ** Step 6. Compute interior convective fluxes for cells between (ICl,JCl)-->(ICu,JCu) **
@@ -3846,7 +3850,7 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
       // Calculate U_face based on the interior value (i.e. left unlimited reconstruction)
       U_face = Ul;
       // Set GradU_face to ZERO
-      GradU_face = 0.0;
+      GradU_face = Vector2D(0.0);
       break;
 
     case BC_CONSTANT_EXTRAPOLATION :
@@ -3966,7 +3970,7 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
       // Calculate U_face based on the interior value (i.e. left unlimited reconstruction)
       U_face = Ul;
       // Set GradU_face to ZERO
-      GradU_face = 0.0;
+      GradU_face = Vector2D(0.0);
       break;
 
     case BC_CONSTANT_EXTRAPOLATION :
@@ -4085,7 +4089,7 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
       // Calculate U_face based on the interior value (i.e. left unlimited reconstruction)
       U_face = Ul;
       // Set GradU_face to ZERO
-      GradU_face = 0.0;
+      GradU_face = Vector2D(0.0);
       break;
 
     case BC_CONSTANT_EXTRAPOLATION :
@@ -4204,7 +4208,7 @@ void AdvectDiffuse2D_Quad_Block::ViscousFluxStates_AtBoundaryInterface_HighOrder
       // Calculate U_face based on the interior value (i.e. left unlimited reconstruction)
       U_face = Ul;
       // Set GradU_face to ZERO
-      GradU_face = 0.0;
+      GradU_face = Vector2D(0.0);
       break;
 
     case BC_CONSTANT_EXTRAPOLATION :
@@ -4812,19 +4816,24 @@ Calculate_HighOrder_Discretization_LaplacianOperator(const int &iCell, const int
   /* Perform the unlimited high-order reconstructions for all 5 cells involved in the calculation. */
   HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this,
 								iCell  ,jCell,
-								UseSpecialStencil[iCell][jCell] );
+								UseSpecialStencil[iCell][jCell],
+								&AdvectDiffuse2D_Quad_Block::CellSolution);
   HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this,
 								iCell-1,jCell,
-								UseSpecialStencil[iCell][jCell] );
+								UseSpecialStencil[iCell][jCell],
+								&AdvectDiffuse2D_Quad_Block::CellSolution);
   HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this,
 								iCell+1,jCell,
-								UseSpecialStencil[iCell][jCell] );
+								UseSpecialStencil[iCell][jCell],
+								&AdvectDiffuse2D_Quad_Block::CellSolution);
   HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this,
 								iCell  ,jCell-1,
-								UseSpecialStencil[iCell][jCell] );
+								UseSpecialStencil[iCell][jCell],
+								&AdvectDiffuse2D_Quad_Block::CellSolution);
   HighOrderVariable(Pos).ComputeUnlimitedSolutionReconstruction(*this,
 								iCell  ,jCell+1,
-								UseSpecialStencil[iCell][jCell] );
+								UseSpecialStencil[iCell][jCell],
+								&AdvectDiffuse2D_Quad_Block::CellSolution);
 
   
   // ****** Step 1. Compute contribution from the North face to Laplacian *******

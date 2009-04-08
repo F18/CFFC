@@ -79,12 +79,12 @@ class DerivativeObj<OneD,T>{
 
  /* Overloaded operators */
  // Assignment operator
-  DerivativeObj& operator= (const DerivativeObj<OneD,T>& rhs) {
-  if(this == &rhs) return *this;
-  Power = rhs.Power;
-  ValueD = rhs.ValueD;
-  return *this;
-  }
+ DerivativeObj& operator= (const DerivativeObj<OneD,T>& rhs) {
+   if(this == &rhs) return *this;
+   Power = rhs.Power;
+   ValueD = rhs.ValueD;
+   return *this;
+ }
 
  // Friend functions & operators
  friend bool operator== <OneD,T> (const DerivativeObj<OneD,T>& left,
@@ -97,14 +97,6 @@ class DerivativeObj<OneD,T>{
 };
 
 // CLASS DerivativeObj
-//Assignment operator
-// template< class T>
-// inline DerivativeObj<OneD,T> & DerivativeObj<OneD,T>::operator=(const DerivativeObj<OneD,T>& rhs){
-//   if(this == &rhs) return *this;
-//   Power = rhs.Power;
-//   ValueD = rhs.ValueD;
-//   return *this;
-// };
 
 // SetPowers()
 template< class T>

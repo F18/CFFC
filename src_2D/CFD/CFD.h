@@ -1480,6 +1480,10 @@ inline int Bilinear_Interpolation_Coefficients(double &interpolation_coefficient
     default:
       return(1);
   }
+
+  // Return error if code gets here
+  return(1);
+
 }
 
 template <class T>

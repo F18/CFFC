@@ -164,6 +164,7 @@ int NKS_DTS_Output(SOLN_BLOCK_TYPE *SolnBlk,
 		   const int &Steps,
 		   const double &Physical_Time) {
   cout<<"\n SPECIALIZATION OF NKS_DTS_Output REQUIRED TO USE DTS_Time_Accurate_Plot_Frequency \n";
+  return 1;
 }
 
 

@@ -472,8 +472,7 @@ public:
   void ComputeHighOrderSolutionReconstruction(Soln_Block_Type &SolnBlk,
 					      const int &Limiter,
 					      const Soln_State &
-					      (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const = 
-					      &Soln_Block_Type::CellSolution);
+					      (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const );
   //@} (Block Level Reconstructions)
 
 
@@ -2099,6 +2098,9 @@ int HighOrder2D<SOLN_STATE>::getNghostHighOrder(const int &ReconstructionOrder){
     }
 
   }//endif    
+
+  // If program got to this point, require a very large number such that to generate a stop!!!
+  return 20;
 }
 
 // getMinimumNghost()
@@ -3021,7 +3023,7 @@ void HighOrder2D<SOLN_STATE>::getEnlargedReconstructionStencil(const int &iCell,
  *
  * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
  */
-template<class SOLN_STATE> inline
+template<class SOLN_STATE>
 void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell, const int &jCell,
 							       IndexType & i_index, IndexType & j_index,
 							       const int &rings,
@@ -5069,7 +5071,8 @@ double HighOrder2D<SOLN_STATE>::AMR_Criteria_Based_On_Minimum_Smoothness_Indicat
 
   // Reconstruct the block solution (i.e. high-order, data analysis and monotonicity enforcement).
   ComputeHighOrderSolutionReconstruction(SolnBlk,
-					 CENO_Execution_Mode::Limiter);
+					 CENO_Execution_Mode::Limiter,
+					 &Soln_Block_Type::CellSolution);
 
   /* Initialize the minimum smoothness indicator value for the block. */
   SI_Min = CellSmoothnessIndicatorValue(ICl,JCl,1);

@@ -837,6 +837,8 @@ Grid2D_Quad_Block_HO& Grid2D_Quad_Block_HO::operator=(const Grid2D_Quad_Block_HO
 
   // Mark the current geometry different than the previous one
   New_Global_Geometry_State();
+
+  return *this;
 }
 
 /*!
@@ -8144,7 +8146,7 @@ void Grid2D_Quad_Block_HO::ComputeGeometricCoefficients(const int &ii, const int
   double J1  = a1*b3 - a3*b1;
   double J2  = b2*a3 - a2*b3;
 
-  double DummyParam;
+  double DummyParam(0);
 
   /* Create the polynomial function for the cell */
   GeneralizedPolynomialFunctionOfTwoVariables Polynom(0,0,XCellCentroid(ii,jj),YCellCentroid(ii,jj));

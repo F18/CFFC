@@ -1384,6 +1384,9 @@ inline const double & AdvectDiffuse2D_Quad_Block::CellSolution_LaplacianInfluenc
       return Laplacian_Coeffs[pos];
     }
   } // endfor
+
+  // Added for compiler complain!
+  return Laplacian_Coeffs[0];
 }
 
 /**************************************************************************

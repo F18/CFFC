@@ -521,7 +521,7 @@ namespace tut
     tol = 1.0e-13;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3); //
+    Data_Spline2DInterval_HO::GeometricMoments GeomCoeff(3); //
 
     P1.x = 1.1000;  P1.y = 2.2300;
     P2.x = 10.2390; P2.y = 5.32434;
@@ -558,7 +558,7 @@ namespace tut
     tol = 1.0e-13;
 
     // Initialize variables
-    GeometricMoments LineInt1(3), LineInt2(3), LineIntTotal(3);
+    Data_Spline2DInterval_HO::GeometricMoments LineInt1(3), LineInt2(3), LineIntTotal(3);
     Spline2DInterval_HO SI1, SI2;
 
     double MapleSolution[10];
@@ -647,7 +647,7 @@ namespace tut
     tol = 1.0e-6;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3);
+    Data_Spline2DInterval_HO::GeometricMoments GeomCoeff(3);
 
     Angle1 = 0.0; Angle2 = 18.0;
     Radius = 1.0;
@@ -696,7 +696,7 @@ namespace tut
     tol = 1.0e-6;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3);
+    Data_Spline2DInterval_HO::GeometricMoments GeomCoeff(3);
 
     Angle1 = 0.0; Angle2 = 9.0;
     Radius = 1.0;
@@ -897,7 +897,7 @@ namespace tut
     tol = 1.0e-13;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3); //
+    Data_Spline2DInterval_HO::GeometricMoments GeomCoeff(3); //
 
     P1.x = 1.1000;  P1.y = 2.2300;
     P2.x = 10.2390; P2.y = 5.32434;
@@ -937,7 +937,7 @@ namespace tut
     tol = 1.0e-13;
 
     // Initialize variables
-    GeometricMoments LineInt1(3), LineInt2(3), LineIntTotal(3);
+    Data_Spline2DInterval_HO::GeometricMoments LineInt1(3), LineInt2(3), LineIntTotal(3);
     Spline2DInterval_HO SI1, SI2;
 
     double MapleSolution[10];
@@ -1032,7 +1032,7 @@ namespace tut
     tol = 1.0e-6;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3);
+    Data_Spline2DInterval_HO::GeometricMoments GeomCoeff(3);
 
     Angle1 = 0.0; Angle2 = 18.0;
     Radius = 1.0;
@@ -1084,7 +1084,7 @@ namespace tut
     tol = 1.0e-6;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3);
+    Data_Spline2DInterval_HO::GeometricMoments GeomCoeff(3);
 
     Angle1 = 0.0; Angle2 = 9.0;
     Radius = 1.0;
@@ -1697,7 +1697,7 @@ namespace tut
     tol = 1.0e-6;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3);
+    Data_Spline2DInterval_HO::GeometricMoments GeomCoeff(3);
     Vector2D Shift = Vector2D(-1.0e2, 2.0e5);
 
     Angle1 = 0.0; Angle2 = 9.0;
@@ -1773,7 +1773,7 @@ namespace tut
     // Initialize interval
     SInfo.InitializeInterval(S,S.Xp[0],S.Xp[9],2);
 
-    double Int;
+    double Int(0);
 
     // Analytic result
     AnalyticResult = exp(V1.y)*(exp(V2.y - V1.y) - 1.0);
@@ -1837,7 +1837,7 @@ namespace tut
     // Initialize interval
     SInfo.InitializeInterval(S,S.Xp[0],S.Xp[9],2);
 
-    double Int;
+    double Int(0);
 
     // Analytic result
     AnalyticResult = 31.8092282053127796;

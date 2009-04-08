@@ -923,8 +923,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
     HighOrder2D_MultiBlock::HighOrder_Reconstruction(Local_SolnBlk,
 						     List_of_Local_Solution_Blocks,
 						     Input_Parameters,
-						     0,
-						     &AdvectDiffuse2D_Quad_Block::CellSolution);
+						     0);
   } else {
     // Use low-order reconstruction
     Linear_Reconstruction(Local_SolnBlk, 
