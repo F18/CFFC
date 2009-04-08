@@ -304,6 +304,10 @@ class Hexa_Block {
    int dUdt_Multistage_Explicit_HighOrder(const int i_stage, 
 					  Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
+   int dUdt_Residual_HighOrder(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
+			       const int & k_residual,
+			       const bool & UseTimeStep);
+
 
    /* MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING. */
 
