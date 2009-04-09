@@ -471,6 +471,9 @@ inline char *Date_And_Time() {
 #define FILTER_TYPE_GAUSSIAN                          14
 #define FILTER_TYPE_RESTART                           0
 
+#define FILTER_VARIABLES                              0
+#define FILTER_RESIDUALS                              1
+
 
 
 /**********************************************************************

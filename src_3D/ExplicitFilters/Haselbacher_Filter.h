@@ -69,6 +69,7 @@ public:
             properties->Get_Property(least_squares_filter_weighting_factor,"least_squares_filter_weighting_factor");
             properties->Get_Property(uniform_grid,"uniform_grid");
             properties->Get_Property(target_filter_sharpness,"target_filter_sharpness");
+            properties->Get_Property(filter_strength,"filter_strength");
             properties->Properties_Read();
             cout << endl;
             
@@ -118,6 +119,7 @@ private:
     int uniform_grid;
     double target_filter_sharpness;
     double least_squares_filter_weighting_factor;
+    double filter_strength;
     
     
     /* ------------------- uniform grid ---------------------- */
@@ -614,24 +616,27 @@ template <typename Soln_pState, typename Soln_cState>
 double Haselbacher_Filter<Soln_pState,Soln_cState>::
 Calculate_relaxation_factor(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kmax, RowVector &w) {
     
+    double offset_factor = 1. - filter_strength;
+    
     double G_max = real(G_function(theCell,theNeighbours,kmax,w));
     
     double a,b,m,s,fa,fb,fm,f,w0;
     int counter;
     a=-100, b=100;
-    fa = (a+(ONE-a)*G_max);
-    fb = (b+(ONE-b)*G_max);
+    fa = (a+(ONE-a)*G_max) - offset_factor;
+    fb = (b+(ONE-b)*G_max) - offset_factor;
     f = 100;
     counter = 0;
     while( fabs(f) >= 0.0001 ) {
         m = a + (b-a)/TWO;
-        fm = m+(ONE-m)*G_max;
+        fm = m+(ONE-m)*G_max - offset_factor;
         
         if (fa<ZERO)    s = -ONE;
         else            s = ONE;
         w0 = m + (m-a)*s*fm/sqrt(fm*fm - fa*fb);
         
-        f = (w0+(ONE-w0)*G_max);
+        f = (w0+(ONE-w0)*G_max) - offset_factor;
+        
         
         if (fa*fm < ZERO) { b = m ; fb = fm; } else { a = m ; fa = fm; }; 
         if (fa*f  < ZERO) { b = w0; fb = f ; } else { a = w0; fa = f; }; 

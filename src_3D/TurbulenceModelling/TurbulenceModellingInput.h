@@ -75,6 +75,8 @@ class Turbulence_Modelling_Input_Parameters{
     int filter_solution_before_execution;
     bool uniform_grid;                                           //!< if the grid is uniform, the filter will generate weights only once (VERY FAST).
     bool use_fixed_filter_width;
+    int Filter_Method;
+    double Filter_Strength;
     //@}
     
     //@{ @name Spectrum related input parameters:
@@ -133,6 +135,8 @@ class Turbulence_Modelling_Input_Parameters{
       filter_solution_before_execution = OFF;
       uniform_grid = OFF;
       use_fixed_filter_width = OFF;
+      Filter_Method = FILTER_VARIABLES;
+      Filter_Strength = 0.2;
 
 
       // Reacting LES parameters

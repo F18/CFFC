@@ -134,6 +134,7 @@ public:
         Set_New_Property("uniform_grid",IPs.Turbulence_IP.uniform_grid);
         Set_New_Property("use_fixed_filter_width",IPs.Turbulence_IP.use_fixed_filter_width);
         Set_New_Property("fixed_filter_width",IPs.Turbulence_IP.Filter_Width);
+        Set_New_Property("filter_strength",IPs.Turbulence_IP.Filter_Strength);
 
         
         Set_New_Property("batch_flag",batch_flag);
@@ -641,8 +642,8 @@ void Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillRowVector(RowVector &
         }
         case SOLN_CSTATE_4D: {
             int numvar = Soln_Blk_ptr->NumVar();
-            for (int n=0; n<numvar; n++) {
-                row(n) = (Soln_Blk_ptr->*Soln_cState_4D_ptr)[i][j][k][dUdt_k_residual][n+1];
+            for (int n=0; n<numvar-1; n++) {  // don't filter rho
+                row(n) = (Soln_Blk_ptr->*Soln_cState_4D_ptr)[i][j][k][dUdt_k_residual][n+2];
             }
             break;
         }
@@ -688,8 +689,8 @@ void Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrixRow(DenseMatrix
         }
         case SOLN_CSTATE_4D: {
             int numvar = Soln_Blk_ptr->NumVar();
-            for (int n=0; n<numvar; n++) {
-                matrix(row_index,n) = (Soln_Blk_ptr->*Soln_cState_4D_ptr)[i][j][k][dUdt_k_residual][n+1];
+            for (int n=0; n<numvar-1; n++) { // don't filter rho 
+                matrix(row_index,n) = (Soln_Blk_ptr->*Soln_cState_4D_ptr)[i][j][k][dUdt_k_residual][n+2];
             }
             break;
         }
@@ -725,8 +726,10 @@ void Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrix(DenseMatrix &m
             break;
         case SOLN_PSTATE_3D:
         case SOLN_CSTATE_3D:
+			number_of_variables = Soln_Blk_ptr->NumVar();
+            break;
         case SOLN_CSTATE_4D:
-            number_of_variables = Soln_Blk_ptr->NumVar();
+            number_of_variables = Soln_Blk_ptr->NumVar()-1;
             break;
         case COMMUTATION_ROWVECTOR: {
             int I = theNeighbours.neighbour[0].I;
@@ -772,8 +775,8 @@ void Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::Load_into_Solution_Block(
                                 (Soln_Blk_ptr->*Soln_cState_3D_ptr)[i][j][k][n] = Filtered[i][j][k](n-1);
                             break;
                         case SOLN_CSTATE_4D:
-                            for (int n=1; n<=Soln_Blk_ptr->NumVar(); n++)
-                                (Soln_Blk_ptr->*Soln_cState_4D_ptr)[i][j][k][dUdt_k_residual][n] = Filtered[i][j][k](n-1);
+                            for (int n=2; n<=Soln_Blk_ptr->NumVar(); n++)  // don't fill rho
+                                (Soln_Blk_ptr->*Soln_cState_4D_ptr)[i][j][k][dUdt_k_residual][n] = Filtered[i][j][k](n-2);
                             break;
                     }
                 }

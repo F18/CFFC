@@ -1402,8 +1402,7 @@ Output_Nodes_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
 
 
 /********************************************************
- * Routine: Explicitely_Filter_Initial_Condition        *
- *                                                      *
+ * Routine: Explicitely_Filter_Solution                 *
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
@@ -1413,7 +1412,6 @@ Explicitly_Filter_Solution(Explicit_Filters<typename HEXA_BLOCK::Soln_pState,typ
     int error_flag(0);
     
     Soln_cState *** (Hexa_Block<Soln_pState,Soln_cState>::*U_ptr) = &Hexa_Block<Soln_pState,Soln_cState>::U;
-    double Soln_pState::*p_ptr = p_ptr = &Soln_pState::p; 
     
     Explicit_Filter.filter(U_ptr);
     for (int nBlk = 0; nBlk < Number_of_Soln_Blks; ++nBlk) {
@@ -1428,18 +1426,20 @@ Explicitly_Filter_Solution(Explicit_Filters<typename HEXA_BLOCK::Soln_pState,typ
             }
         }
     }
-    Explicit_Filter.filter(p_ptr);    
-    for (int nBlk = 0; nBlk < Number_of_Soln_Blks; ++nBlk) {
-        if (Block_Used[nBlk]) {
-            for (int k  = Soln_Blks[nBlk].KCl-Soln_Blks[nBlk].Nghost ; k <= Soln_Blks[nBlk].KCu+Soln_Blks[nBlk].Nghost ; ++k ) {
-                for ( int j  = Soln_Blks[nBlk].JCl-Soln_Blks[nBlk].Nghost ; j <= Soln_Blks[nBlk].JCu+Soln_Blks[nBlk].Nghost ; ++j ) {
-                    for ( int i = Soln_Blks[nBlk].ICl-Soln_Blks[nBlk].Nghost ; i <= Soln_Blks[nBlk].ICu+Soln_Blks[nBlk].Nghost ; ++i ) {
-                         Soln_Blks[nBlk].U[i][j][k] =  Soln_Blks[nBlk].W[i][j][k].U();
-                    }	  
-                }
-            }
-        }
-    }            
+    
+//    double Soln_pState::*p_ptr = p_ptr = &Soln_pState::p; 
+//    Explicit_Filter.filter(p_ptr);    
+//    for (int nBlk = 0; nBlk < Number_of_Soln_Blks; ++nBlk) {
+//        if (Block_Used[nBlk]) {
+//            for (int k  = Soln_Blks[nBlk].KCl-Soln_Blks[nBlk].Nghost ; k <= Soln_Blks[nBlk].KCu+Soln_Blks[nBlk].Nghost ; ++k ) {
+//                for ( int j  = Soln_Blks[nBlk].JCl-Soln_Blks[nBlk].Nghost ; j <= Soln_Blks[nBlk].JCu+Soln_Blks[nBlk].Nghost ; ++j ) {
+//                    for ( int i = Soln_Blks[nBlk].ICl-Soln_Blks[nBlk].Nghost ; i <= Soln_Blks[nBlk].ICu+Soln_Blks[nBlk].Nghost ; ++i ) {
+//                         Soln_Blks[nBlk].U[i][j][k] =  Soln_Blks[nBlk].W[i][j][k].U();
+//                    }	  
+//                }
+//            }
+//        }
+//    }            
 
     return (error_flag);    
 }

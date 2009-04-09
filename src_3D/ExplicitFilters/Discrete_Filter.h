@@ -599,9 +599,17 @@ Output_Transfer_Function_gnuplot(string prefix_string, double *k_111, double *G_
     gnuplot_file.open(gnuplot_file_name_ptr, ios::out);
     if (gnuplot_file.fail()) return(1);
     
+	std::string xlabel;
+	
+	if(use_fixed_filter_width) {
+        xlabel = "k";
+    } else {
+        xlabel = "k/kmax";
+    }
+	
     gnuplot_file 
     << "set title \""<< title << "\"\n"
-    << "set xlabel \"k Delta / pi \"\n"
+    << "set xlabel \"" << xlabel << "\"\n"
     << "set ylabel \"G(k)\"\n" 
     << "set grid \n"
     //<< "set logscale xy\n"

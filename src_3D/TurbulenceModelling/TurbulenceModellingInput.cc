@@ -99,6 +99,12 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(uniform_grid),
                           1,
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Filter_Method),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Filter_Strength),
+                          1,
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(spectrum,
                           TURBULENCEMODEL_INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
@@ -240,6 +246,7 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
     i_command = 131;
     value >> FGR;
     use_fixed_filter_width = false;
+	cout << "use_fixed_filter_width = " << use_fixed_filter_width << endl;
     if (FGR < 1)
       i_command = INVALID_INPUT_VALUE;
       
@@ -376,6 +383,24 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
       else if (value_string == "OFF")  uniform_grid = OFF;
       else 
           i_command = INVALID_INPUT_VALUE;
+  } else if (strcmp(code,"Filter_Method") == 0) {
+      i_command = 143;
+      value >> value_string;
+      if      (value_string == "Variables"){
+          Filter_Method = FILTER_VARIABLES;
+          Filter_Strength = 0.2;
+      }
+      else if (value_string == "Residuals") {
+          Filter_Method = FILTER_RESIDUALS;
+          Filter_Strength = 1.0;
+      }
+      else
+          i_command = INVALID_INPUT_VALUE;
+      
+   } else if (strcmp(code,"Filter_Strength") == 0) {
+    i_command = 143;
+    value >> Filter_Strength;
+  
       
     /* ---- Spectrum Parameters ---- */
   } else if (strcmp(code, "Spectrum_Model") == 0) {
