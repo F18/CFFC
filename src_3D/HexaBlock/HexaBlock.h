@@ -102,6 +102,9 @@ class Hexa_Block {
    
    // Only allocate for turbulent flow (depending on flow type indicator)
    Turbulent3DWallData ***WallData;
+
+   // Declare high-order variable required for CENO reconstruction
+   HighOrder<SOLN_pSTATE> HighOrderVariable;
 		      
    int Allocated; // Indicates whether or not the solution block has been allocated.
 
@@ -699,12 +702,14 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate_HighOrder(void){
   bool _pseudo_inverse_allocation_(false);
   int i;
 
+  //ReconstructionOrder = ??;
+
   // Decide whether to allocate the pseudo-inverse
   if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
     _pseudo_inverse_allocation_ = true;
   }
 
-//  HighOrderVariable.InitializeVariable(ReconstructionOrders[i],
+//  HighOrderVariable.InitializeVariable(ReconstructionOrder,
 //				       Grid,
 //				       _pseudo_inverse_allocation_);
 
