@@ -149,9 +149,15 @@ class Hexa_Block {
    /* Allocate memory for structured hexahedrial solution block. */
    void allocate(void);
    void allocate(const int Ni, const int Nj, const int Nk, const int Ng);
- 
+
    /* Deallocate memory for structured hexahedral solution block. */
    void deallocate(void);
+
+   //! Allocate memory for high-order variables
+   void allocate_HighOrder(void);
+
+   //! Deallocate memory for high-order variables
+   void deallocate_HighOrder(void);  
    
    /* Allocate static memory for structured hexahedrial solution block. */
    void allocate_static(void);
@@ -682,6 +688,66 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate(void) {
 
    } /* endif */
 
+}
+
+/*****************************************//**
+ * Allocate memory for high-order variables.
+ ********************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate_HighOrder(void){
+
+  bool _pseudo_inverse_allocation_(false);
+  int i;
+
+  // Decide whether to allocate the pseudo-inverse
+  if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
+    _pseudo_inverse_allocation_ = true;
+  }
+
+//  HighOrderVariable.InitializeVariable(ReconstructionOrders[i],
+//				       Grid,
+//				       _pseudo_inverse_allocation_);
+
+//  // Re-allocate new memory if necessary
+//  if (NumberOfReconstructions != NumberOfHighOrderVariables){
+//
+//    // allocate the high-order array
+//    allocate_HighOrder_Array(NumberOfReconstructions);
+//    
+//    // set the reconstruction order of each high-order object
+//    for (i=0; i<NumberOfHighOrderVariables; ++i){
+//      if (_complete_initialization_){
+//	// initialize the high-order variable completely 
+//	HO_Ptr[i].InitializeVariable(ReconstructionOrders[i],
+//				     Grid,
+//				     _pseudo_inverse_allocation_);
+//      } else {
+//	// initialize the basic high-order variable
+//	HO_Ptr[i].InitializeBasicVariable(ReconstructionOrders[i],
+//					  Grid,
+//					  _pseudo_inverse_allocation_);
+//      }
+//    }
+//
+//  } else {
+//    // check the reconstruction orders
+//    for (i=0; i<ReconstructionOrders.size(); ++i){
+//      if (HighOrderVariable(i).RecOrder() != ReconstructionOrders[i]){
+//	// change the reconstruction order of the high-order object
+//	HO_Ptr[i].SetReconstructionOrder(ReconstructionOrders[i]);
+//      }
+//    } // endfor
+//  }// endif
+
+}
+
+/******************************************//**
+ * Deallocate memory for high-order variables
+ *********************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate_HighOrder(void) {
+  //  delete []HO_Ptr; HO_Ptr = NULL;
+  //  NumberOfHighOrderVariables = 0;
 }
 
 /******************************************************************

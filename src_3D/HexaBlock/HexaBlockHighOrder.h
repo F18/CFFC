@@ -144,6 +144,51 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
 dUdt_Residual_HighOrder(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
 			const int & k_residual,
 			const bool & UseTimeStep) {
-  
+
+   // SET VARIABLES USED IN THE RESIDUAL CALCULATION PROCESS
+
+  int i, j, k, GQPoint, Position, SplineSegment;
+  bool IsNonSmoothHighOrderReconstruction;
+  SOLN_pSTATE Wl, Wr, W_face;
+  SOLN_cSTATE Flux, FaceFlux;
+  int NumGQP(Grid.getNumGQP());	  // Number of Gauss quadrature points per face used to compute the flux integral
+
+  Vector3D *GaussQuadPoints = new Vector3D [NumGQP]; // the GQPs at which a Riemann-like problem is solved
+  double * GaussQuadWeights = new double [NumGQP];   // the Gauss integration weights for each Gauss quadrature
+
+  /* Set the GaussQuadWeights. */
+  GaussQuadratureData::getGaussQuadWeights(GaussQuadWeights, NumGQP);
+
+  /* Evaluate the solution residual 
+     and write it to dUdt[][][][k_residual]. */
+
+  /***************************************************************************************
+   *                 EVALUATE THE HIGH-ORDER SOLUTION RESIDUALS                          *
+   *                                                                                     *
+   * Algorithm Purpose: To evaluate solution residuals for solution blocks               *
+   *                    characterized by a broad range of options.                       *
+   *                                                                                     *
+   * Important options to consider:                                                      *
+   *         --> Geometry treatment: high-order or low-order                             *
+   *         --> Spatial accuracy:   order of accuracy for flux calculation              *
+   *         --> Boundary flux calculation: 'Riemann' problem or reconstruction based    *
+   *                                                                                     *
+   * In order to respond easier to all these parameter variations, the following         *
+   * algorithm is adopted to sweep through the cell interfaces:                          *
+   *         --> Compute all fluxes at interior inter-cellular faces.                    *
+   *         --> Compute fluxes for North, South, East, West, Top, and Bottom            *
+   *             block boundary faces.                                                   *
+   *                                                                                     *
+   ***************************************************************************************/
+
+  /* Evaluate the time rate of change of the solution
+     (i.e., the solution residuals) using a high-order
+     CENO upwind finite-volume scheme. */
+
+  /* Perform the high-order CENO reconstruction within
+     each cell of the computational grid for this stage.
+     NOTE: This solution reconstruction enforces monotonicity if required so!
+  */
+ 
 
 }
