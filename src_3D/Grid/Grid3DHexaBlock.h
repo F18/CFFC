@@ -452,7 +452,7 @@ class Grid3D_Hexa_Block {
 
     //! @name Get cell geometric moments and related information.
     //@{
-
+  
     //! Get the current highest reconstruction order (if multiple reconstruction are to be performed - not implemeted yet)
     const int & MaxRecOrder(void) const { return Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER; }
 
@@ -582,7 +582,6 @@ inline void Grid3D_Hexa_Block::allocate(const int Ni,
 
      // Set the Number of Gauss Quadrature Points for the flux evaluation
      SetNumberOfGaussQuadraturePoints(Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER);
-
      // allocate memory for the container of geometric coefficients
      for (int i = 0; i <NCi ; ++i )
        for (int j = 0; j <NCj ; ++j )
