@@ -20,8 +20,6 @@ public:
         error_flag = Solution_Data.Get_Input_Parameters(Input_File_Name_ptr, batch_flag);  
         if(error_flag) return(error_flag);
 
-        CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-
         CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization. 
 
         error_flag = Initialize_Solution_Blocks(Data,

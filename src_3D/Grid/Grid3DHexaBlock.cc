@@ -1329,7 +1329,7 @@ void Grid3D_Hexa_Block::Update_Cells(void) {
         for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
             for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
                 /* calculate jacobian to 4th order */
-                Cell[i][j][k].Jacobian = jacobian(i,j,k,8);
+                Cell[i][j][k].Jacobian = jacobian(i,j,k,4);
             } /* endfor */
         } /* endfor */
     } /* endfor */
@@ -1366,7 +1366,7 @@ void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
             for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
                 if (k < KCl || k > KCu || j < JCl || j > JCu || i < ICl || i > ICu) {
                     /* calculate jacobian to 4th order */
-                    Cell[i][j][k].Jacobian = jacobian(i,j,k,8);
+                    Cell[i][j][k].Jacobian = jacobian(i,j,k,4);
                 } /* endif */
             } /* endfor */
         } /* endfor */

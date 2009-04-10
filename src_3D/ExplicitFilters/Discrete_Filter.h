@@ -38,22 +38,6 @@ template <typename Soln_pState, typename Soln_cState>
 class Discrete_Filter : public General_Filter<Soln_pState,Soln_cState> {
 public:
     
-   // Discrete_Filter(void) {
-//        FGR = Explicit_Filter_Properties::FGR;
-//        commutation_order = Explicit_Filter_Properties::commutation_order;
-//        number_of_rings = Explicit_Filter_Properties::number_of_rings;
-//        target_filter_sharpness = Explicit_Filter_Properties::target_filter_sharpness;
-//        Filter_Width_strict = Explicit_Filter_Properties::Filter_Width_strict;
-//        LS_constraints = Explicit_Filter_Properties::LS_constraints;
-//        Derivative_constraints =  Explicit_Filter_Properties::Derivative_constraints;
-//        Store_Filter_Weights = !(Explicit_Filter_Properties::Memory_Efficient);
-//        G_cutoff = Explicit_Filter_Properties::G_cutoff;
-//        batch_flag = Explicit_Filter_Properties::batch_flag;
-//        debug_flag = Explicit_Filter_Properties::debug_flag;
-//        theNeighbours.allocate(number_of_rings);
-//        I = Complex(0,1);
-//    }
-    
     Discrete_Filter(Explicit_Filter_Properties &explicit_filter_properties) {
         properties = &explicit_filter_properties;
         theNeighbours.allocate(properties->Get_Property_int("number_of_rings"));
@@ -355,13 +339,6 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter_1D(Grid3D_Hexa_Block 
 template <typename Soln_pState, typename Soln_cState>
 void Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, Neighbours &theNeighbours) {
     Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrix(Neighbouring_Values, theNeighbours);
-//    if (filter_type() == FILTER_TYPE_VASILYEV) {
-//        for (int row=0; row<theNeighbours.number_of_neighbours; row++) {
-//            for (int column=0; column<Neighbouring_Values.get_m(); column++) {
-//                Neighbouring_Values(row,column) /= theNeighbours.neighbour[row].Jacobian;
-//            }
-//        }
-//    }
 }
 
 template <typename Soln_pState, typename Soln_cState>

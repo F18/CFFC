@@ -5,6 +5,8 @@ ICs_Type =
 Radial_Cosine
 Reconstruction_Type =
 Least_Squares
+#Spatial_Order_of_Accuracy =
+#2
 Limiter_Type = 
 One
 Flux_Function_Type =
