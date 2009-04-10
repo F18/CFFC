@@ -23,13 +23,11 @@
  */
 class Neighbours{
 public:
-    Cell3D *neighbour;
-   // Cell3D *theCell;
+    std::vector<Cell3D*> neighbour;
     Grid3D_Hexa_Block *Grid_ptr;
     
     static int max_number_of_neighbours;
     static int number_of_rings;
-    bool Allocated;
     int number_of_neighbours;
     bool theCell_included;
     bool symmetric_stencil;
@@ -41,45 +39,20 @@ public:
     
     Neighbours(Grid3D_Hexa_Block &Grid){
         Grid_ptr = &Grid;
-        Allocated = false;
-        allocate();
         theCell_included = false;
     }
     
     Neighbours(Neighbours &anotherNeighbours){
         Grid_ptr = anotherNeighbours.Grid_ptr;
-        //theCell = anotherNeighbours.theCell;
-        Allocated = false;
         theCell_included = false;
     }
     
     Neighbours(void) {
-        Allocated = false;
         theCell_included = false;
-    }
-    void allocate(void) {
-        allocate(MAX_NUMBER_OF_NEIGHBOURING_RINGS_IN_LES_FILTER);
-    }
-    
-    void allocate(int number_of_rings) {
-        deallocate();
-        neighbour = new Cell3D [int(pow(TWO*number_of_rings+ONE,THREE))];
-        Allocated = true;
     }
       
     void set_grid(Grid3D_Hexa_Block &Grid) {
         Grid_ptr = &Grid;
-    }
-    
-    void deallocate(void) {
-        if (Allocated) {
-            delete[] neighbour;
-        }
-        Allocated = false;
-    }
-    
-    ~Neighbours(void) {
-        deallocate();
     }
     
     void GetNeighbours(Cell3D &theCell, int number_of_rings,int filter_type);
@@ -151,7 +124,7 @@ inline void Neighbours::GetNeighbours(Cell3D &theCell, int number_of_rings,int f
                 for (int j=jmin; j<=jmax; j++) {
                     for (int k=kmin; k<=kmax; k++) {
                         if (theCell != Grid_ptr->Cell[i][j][k]) {
-                            neighbour[number_of_neighbours] = Grid_ptr->Cell[i][j][k];
+                            neighbour.push_back(&(Grid_ptr->Cell[i][j][k]));
                             if (uniform_stencil == true)
                                 uniform_stencil = (uniform_stencil && (vector_abs(Grid_ptr->Cell[i][j][k].dXc.vector_abs() - CellWidth) < Vector3D(PICO,PICO,PICO)) );
                             number_of_neighbours++;
@@ -165,7 +138,7 @@ inline void Neighbours::GetNeighbours(Cell3D &theCell, int number_of_rings,int f
             for (int i=imin; i<=imax; i++) {
                 for (int j=jmin; j<=jmax; j++) {
                     for (int k=kmin; k<=kmax; k++) {   // includes theCell !!!
-                        neighbour[number_of_neighbours] = Grid_ptr->Cell[i][j][k];
+                        neighbour.push_back(&(Grid_ptr->Cell[i][j][k]));
                         if (uniform_stencil == true) {
                             uniform_stencil = (uniform_stencil && (vector_abs(Grid_ptr->Cell[i][j][k].dXc.vector_abs() - CellWidth) < Vector3D(PICO,PICO,PICO)) );
                         }
@@ -211,7 +184,7 @@ inline void Neighbours::GetNeighbours_1D(Cell3D &theCell, int number_of_rings,in
                 for (int j=jmin; j<=jmax; j++) {
                     for (int k=kmin; k<=kmax; k++) {
                         if (theCell != Grid_ptr->Cell[i][j][k]) {
-                            neighbour[number_of_neighbours] = Grid_ptr->Cell[i][j][k];
+                            neighbour.push_back(&(Grid_ptr->Cell[i][j][k]));
                             number_of_neighbours++;
                         }
                     }
@@ -221,7 +194,7 @@ inline void Neighbours::GetNeighbours_1D(Cell3D &theCell, int number_of_rings,in
                 case X_DIRECTION:
                     for (int i=imin; i<=imax; i++) {
                         if (theCell != Grid_ptr->Cell[i][theCell.J][theCell.K]) {
-                            neighbour[number_of_neighbours] = Grid_ptr->Cell[i][theCell.J][theCell.K];
+                            neighbour.push_back(&(Grid_ptr->Cell[i][theCell.J][theCell.K]));
                             number_of_neighbours++;
                         }
                     }
@@ -229,7 +202,7 @@ inline void Neighbours::GetNeighbours_1D(Cell3D &theCell, int number_of_rings,in
                 case Y_DIRECTION:
                     for (int j=jmin; j<=jmax; j++) {
                         if (theCell != Grid_ptr->Cell[theCell.I][j][theCell.K]) {
-                            neighbour[number_of_neighbours] = Grid_ptr->Cell[theCell.I][j][theCell.K];
+                            neighbour.push_back(&(Grid_ptr->Cell[theCell.I][j][theCell.K]));
                             number_of_neighbours++;
                         }
                     }
@@ -237,7 +210,7 @@ inline void Neighbours::GetNeighbours_1D(Cell3D &theCell, int number_of_rings,in
                 case Z_DIRECTION:
                     for (int k=kmin; k<=kmax; k++) { 
                         if (theCell != Grid_ptr->Cell[theCell.I][theCell.J][k]) {
-                            neighbour[number_of_neighbours] = Grid_ptr->Cell[theCell.I][theCell.J][k];
+                            neighbour.push_back(&(Grid_ptr->Cell[theCell.I][theCell.J][k]));
                             number_of_neighbours++;
                         }
                     }
@@ -250,20 +223,20 @@ inline void Neighbours::GetNeighbours_1D(Cell3D &theCell, int number_of_rings,in
             switch (direction){
                 case X_DIRECTION:
                     for (int i=imin; i<=imax; i++) {
-                            neighbour[number_of_neighbours] = Grid_ptr->Cell[i][theCell.J][theCell.K];
+                            neighbour.push_back(&(Grid_ptr->Cell[i][theCell.J][theCell.K]));
                             number_of_neighbours++;
                         
                     }
                     break;
                 case Y_DIRECTION:
                     for (int j=jmin; j<=jmax; j++) {
-                            neighbour[number_of_neighbours] = Grid_ptr->Cell[theCell.I][j][theCell.K];
+                            neighbour.push_back(&(Grid_ptr->Cell[theCell.I][j][theCell.K]));
                             number_of_neighbours++;
                     }
                     break;
                 case Z_DIRECTION:
                     for (int k=kmin; k<=kmax; k++) { 
-                            neighbour[number_of_neighbours] = Grid_ptr->Cell[theCell.I][theCell.J][k];
+                            neighbour.push_back(&(Grid_ptr->Cell[theCell.I][theCell.J][k]));
                             number_of_neighbours++;
                     }
                     break;
@@ -304,7 +277,7 @@ inline void Neighbours::GetNeighbours_1D(Cell3D &theCell, int number_of_rings,in
 
 inline void Neighbours::append_theCell(Cell3D &theCell) {
     if (!theCell_included) {
-        neighbour[number_of_neighbours] = theCell;
+        neighbour.push_back(&theCell);
         number_of_neighbours++;
         theCell_included = true; 
     }

@@ -298,7 +298,7 @@ public:
     static void FillRowVector(RowVector &row, Cell3D &theCell);
     
     static void FillMatrixRow(DenseMatrix &matrix, int row_index, int i, int j, int k);
-    static void FillMatrixRow(DenseMatrix &matrix, int row_index, Cell3D &theCell);
+    static void FillMatrixRow(DenseMatrix &matrix, int row_index, Cell3D* theCell);
     
     static void FillMatrix(DenseMatrix &matrix, Neighbours &theNeighbours);
         
@@ -706,8 +706,8 @@ void Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrixRow(DenseMatrix
     }
 }
 template <typename Soln_pState, typename Soln_cState>
-void Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrixRow(DenseMatrix &matrix, int row_index, Cell3D &theCell) {
-    FillMatrixRow(matrix,row_index,theCell.I,theCell.J,theCell.K);
+void Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrixRow(DenseMatrix &matrix, int row_index, Cell3D *theCell) {
+    FillMatrixRow(matrix,row_index,theCell->I,theCell->J,theCell->K);
 }
 
 template <typename Soln_pState, typename Soln_cState>
@@ -732,9 +732,9 @@ void Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrix(DenseMatrix &m
             number_of_variables = Soln_Blk_ptr->NumVar()-1;
             break;
         case COMMUTATION_ROWVECTOR: {
-            int I = theNeighbours.neighbour[0].I;
-            int J = theNeighbours.neighbour[0].J;
-            int K = theNeighbours.neighbour[0].K;
+            int I = theNeighbours.neighbour[0]->I;
+            int J = theNeighbours.neighbour[0]->J;
+            int K = theNeighbours.neighbour[0]->K;
             number_of_variables = Commutation_RowVector_ptr[I][J][K].size();
         }
     }

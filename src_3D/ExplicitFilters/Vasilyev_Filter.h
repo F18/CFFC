@@ -437,10 +437,9 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
         double denominator = 0;
         int index_l, index_m, index_n;
         for(int i=0; i<number_of_neighbours; i++) {
-            Cell3D aNeighbour = theNeighbours.neighbour[i];
-            index_l = theNeighbours.Ki - (theCell.I - theNeighbours.neighbour[i].I);
-            index_m = theNeighbours.Kj - (theCell.J - theNeighbours.neighbour[i].J);
-            index_n = theNeighbours.Kk - (theCell.K - theNeighbours.neighbour[i].K);
+            index_l = theNeighbours.Ki - (theCell.I - theNeighbours.neighbour[i]->I);
+            index_m = theNeighbours.Kj - (theCell.J - theNeighbours.neighbour[i]->J);
+            index_n = theNeighbours.Kk - (theCell.K - theNeighbours.neighbour[i]->K);
             W(i) = w_i(index_l)*w_j(index_m)*w_k(index_n) ;// / theNeighbours.neighbour[i].Jacobian;
             //denominator += W(i);
         }
@@ -844,27 +843,27 @@ inline Complex Vasilyev_Filter<Soln_pState,Soln_cState>::G0_func(const double &k
     
     for (int i=0; i<theNeigbhours_subset.number_of_neighbours; i++) {
         
-        l = theNeigbhours_subset.neighbour[i].I - theCell.I;
-        m = theNeigbhours_subset.neighbour[i].J - theCell.J;
-        n = theNeigbhours_subset.neighbour[i].K - theCell.K;
+        l = theNeigbhours_subset.neighbour[i]->I - theCell.I;
+        m = theNeigbhours_subset.neighbour[i]->J - theCell.J;
+        n = theNeigbhours_subset.neighbour[i]->K - theCell.K;
         
         
         switch (direction) {
             case X_DIRECTION:
                 if (m==0 && n==0) {
-                    index_l = Ki - (theCell.I - theNeigbhours_subset.neighbour[i].I);
+                    index_l = Ki - (theCell.I - theNeigbhours_subset.neighbour[i]->I);
                     G += w0(index_l)  *  ( exp(-I*k*double(l)) );
                 }
                 break;
             case Y_DIRECTION:
                 if (l==0 && n==0) {
-                    index_m = Kj - (theCell.J - theNeigbhours_subset.neighbour[i].J);
+                    index_m = Kj - (theCell.J - theNeigbhours_subset.neighbour[i]->J);
                     G += w0(index_m)  *  ( exp(-I*k*double(m)) );
                 }
                 break;
             case Z_DIRECTION:
                 if (l==0 && m==0) {
-                    index_n = Kk - (theCell.K - theNeigbhours_subset.neighbour[i].K);
+                    index_n = Kk - (theCell.K - theNeigbhours_subset.neighbour[i]->K);
                     G += w0(index_n)  *  ( exp(-I*k*double(n)) );
                 }
                 break;
@@ -966,9 +965,9 @@ double Vasilyev_Filter<Soln_pState,Soln_cState>::filter_moment(Cell3D &theCell, 
     
     double M(0);
     for(int i=0; i<theNeighbours.number_of_neighbours; i++) {
-        int l = theNeighbours.neighbour[i].I - theCell.I;
-        int m = theNeighbours.neighbour[i].J - theCell.J;
-        int n = theNeighbours.neighbour[i].K - theCell.K;
+        int l = theNeighbours.neighbour[i]->I - theCell.I;
+        int m = theNeighbours.neighbour[i]->J - theCell.J;
+        int n = theNeighbours.neighbour[i]->K - theCell.K;
         M += w(i) * pow(double(l),double(q)) * pow(double(m),double(r)) * pow(double(n),double(s)) ;
     }
     return M;

@@ -185,7 +185,7 @@ double Haselbacher_Filter<Soln_pState,Soln_cState>::filter_moment(Cell3D &theCel
     Vector3D X0(theCell.Xc);
     Vector3D dX;
     for(int n=0; n<theNeighbours.number_of_neighbours; n++) {
-        dX = theNeighbours.neighbour[n].Xc - X0;
+        dX = theNeighbours.neighbour[n]->Xc - X0;
         M += w(n) * pow(dX.x,double(q)) * pow(dX.y,double(r)) * pow(dX.z,double(s)) ;
     }
     return M;
@@ -209,7 +209,7 @@ double Haselbacher_Filter<Soln_pState,Soln_cState>::filter_moment_1D(Cell3D &the
     Vector3D X0(theCell.Xc);
     Vector3D dX;
     for(int n=0; n<theNeighbours.number_of_neighbours; n++) {
-        dX = theNeighbours.neighbour[n].Xc - X0;
+        dX = theNeighbours.neighbour[n]->Xc - X0;
         double wn = w(n);
         M += wn * pow(dX.*dX_member,double(q)) ;
     }
@@ -321,9 +321,9 @@ DenseMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_A(Cell3D &theCel
                         // fill this column
                         coefficient = trinomial_coefficient(n1,n2,n3)/double(fac(k));
                         for (int i=0; i<the_number_of_neighbours; i++) {
-                            dx = theNeighbours.neighbour[i].Xc.x - theCell.Xc.x;
-                            dy = theNeighbours.neighbour[i].Xc.y - theCell.Xc.y;
-                            dz = theNeighbours.neighbour[i].Xc.z - theCell.Xc.z;
+                            dx = theNeighbours.neighbour[i]->Xc.x - theCell.Xc.x;
+                            dy = theNeighbours.neighbour[i]->Xc.y - theCell.Xc.y;
+                            dz = theNeighbours.neighbour[i]->Xc.z - theCell.Xc.z;
                             A(i,j) = coefficient * pow(dx,n1)*pow(dy,n2)*pow(dz,n3);
                             
                         }
@@ -435,9 +435,9 @@ inline DenseMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_A(Cell3D 
                         // fill this column
                         coefficient = trinomial_coefficient(n1,n2,n3)/double(fac(k));
                         for (int i=0; i<the_number_of_neighbours; i++) {
-                            dx = theNeighbours.neighbour[i].Xc.x - theCell.Xc.x;
-                            dy = theNeighbours.neighbour[i].Xc.y - theCell.Xc.y;
-                            dz = theNeighbours.neighbour[i].Xc.z - theCell.Xc.z;
+                            dx = theNeighbours.neighbour[i]->Xc.x - theCell.Xc.x;
+                            dy = theNeighbours.neighbour[i]->Xc.y - theCell.Xc.y;
+                            dz = theNeighbours.neighbour[i]->Xc.z - theCell.Xc.z;
                             A(i,j) = coefficient * pow(dx,n1)*pow(dy,n2)*pow(dz,n3);
                             
                         }
@@ -473,13 +473,13 @@ inline DiagonalMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_W(Cell
             Delta.z = theNeighbours.Delta.z * weight_factors.z;
             
             for (int i=0; i<the_number_of_neighbours; i++) {
-                DR = (theNeighbours.neighbour[i].Xc - theCell.Xc);
+                DR = (theNeighbours.neighbour[i]->Xc - theCell.Xc);
                 W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- (sqr(DR.x/Delta.x)+sqr(DR.y/Delta.y)+sqr(DR.z/Delta.z)) ) ;
             }
         } else {
             Delta = theNeighbours.Delta*weight_factor;
             for (int i=0; i<the_number_of_neighbours; i++) {
-                DR = (theNeighbours.neighbour[i].Xc - theCell.Xc);
+                DR = (theNeighbours.neighbour[i]->Xc - theCell.Xc);
                 W(i) = sqrt(SIX/(PI*Delta.sqr()))*exp(- (sqr(DR.x/Delta.x)+sqr(DR.y/Delta.y)+sqr(DR.z/Delta.z)) ) ;
             }            
         }

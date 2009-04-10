@@ -40,7 +40,6 @@ public:
     
     Discrete_Filter(Explicit_Filter_Properties &explicit_filter_properties) {
         properties = &explicit_filter_properties;
-        theNeighbours.allocate(properties->Get_Property_int("number_of_rings"));
         I = Complex(0,1);
     }
     
@@ -134,7 +133,7 @@ inline Complex Discrete_Filter<Soln_pState,Soln_cState>::G_function(Cell3D &theC
     Vector3D X0(theCell.Xc);
     Vector3D X;
     for(int n=0; n<theNeighbours.number_of_neighbours; n++) {
-        X = theNeighbours.neighbour[n].Xc;
+        X = theNeighbours.neighbour[n]->Xc;
         G += w(n) * exp(-I*(k*(X-X0)));
     }
     return G;
@@ -682,7 +681,7 @@ Complex Discrete_Filter<Soln_pState,Soln_cState>::dG_function(Cell3D &theCell, N
     Vector3D X0(theCell.Xc);
     Vector3D X;
     for(int n=0; n<theNeighbours.number_of_neighbours; n++) {
-        X = theNeighbours.neighbour[n].Xc;
+        X = theNeighbours.neighbour[n]->Xc;
         dG += w(n) * k/abs_k * (X-X0) * exp(-I*(k*(X-X0)));
     }
     return dG;
