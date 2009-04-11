@@ -193,6 +193,9 @@ class Hexa_Block {
    /* Number of solution state variables. */
    int NumVar(void);
 
+  /* Field access to the primitive cell solution */  
+  const Euler2D_pState& CellSolution(const int &ii, const int &jj, const &kk) const { return W[ii][jj][kk]; }
+
    /* Other important member functions. */
 
    void Create_Block(Grid3D_Hexa_Block &Grid2);

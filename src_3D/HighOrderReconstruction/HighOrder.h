@@ -337,7 +337,7 @@ public:
   void InitializeBasicVariable(int ReconstructionOrder, GeometryType & Block,
 			       const bool &_pseudo_inverse_allocation_ = false);
   void SetReconstructionOrder(int ReconstructionOrder);
-  void SetPropertiesHighOrderBlock(void);
+  //  void SetPropertiesHighOrderBlock(void);
   //  void CheckConsistencyOfGeometricSplineProperties(void);
   //@}
 
@@ -482,7 +482,7 @@ public:
   void ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 					      const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
 												       const int &,
-												       const int &,) const = 
+												       const int &) const = 
 					      &Soln_Block_Type::CellSolution);
 
   /*! @brief Compute the pseudo-inverse corresponding to the unlimited high-order solution reconstruction.  */
@@ -531,7 +531,7 @@ public:
 
   /*! @brief Compute the pseudo-inverse corresponding to the unlimited high-order solution reconstruction
     of cell (iCell,jCell,kCell).  */
-  void ComputeCellReconstructionPseudoInverse(const int &iCell, const int &jCell, const int &kCell
+  void ComputeCellReconstructionPseudoInverse(const int &iCell, const int &jCell, const int &kCell,
 					      const IndexType & i_index, const IndexType & j_index, const IndexType & k_index);
   /*! @brief Compute the pseudo-inverse or LHS matrix for cell (iCell,jCell,kCell) which is influenced
     by the presence of constrained boundaries.  */
@@ -597,97 +597,95 @@ public:
 //										    const int & ConstrainedGQPs_South,
 //										    const int & ConstrainedGQPs_East,
 //										    const int & ConstrainedGQPs_North);
-
-//=RR=========================================================================================
-
-  //! @brief Compute the unlimited high-order reconstruction of those parameters that are unconstrained in a cell (iCell,jCell). 
-  template<class Soln_Block_Type>
-  void ComputeUnconstrainedUnlimitedSolutionReconstructionInConstrainedCell(Soln_Block_Type &SolnBlk, 
-									    const Soln_State & 
-									    (Soln_Block_Type::*ReconstructedSoln)(const int &,
-														  const int &) const,
-									    const int &iCell, const int &jCell,
-									    const IndexType & i_index, const IndexType & j_index,
-									    const IndexType & ParameterIndex);
+//
+//  //! @brief Compute the unlimited high-order reconstruction of those parameters that are unconstrained in a cell (iCell,jCell). 
+//  template<class Soln_Block_Type>
+//  void ComputeUnconstrainedUnlimitedSolutionReconstructionInConstrainedCell(Soln_Block_Type &SolnBlk, 
+//									    const Soln_State & 
+//									    (Soln_Block_Type::*ReconstructedSoln)(const int &,
+//														  const int &) const,
+//									    const int &iCell, const int &jCell,
+//									    const IndexType & i_index, const IndexType & j_index,
+//									    const IndexType & ParameterIndex);
 
   //! @brief Set the mean value conservation equations in the assemble matrix
   template<class Soln_Block_Type>
   void Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
 					   const Soln_State & 
 					   (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &,const int &) const,
-					   const int &iCell, const int &jCell,
-					   const IndexType & i_index, const IndexType & j_index,
+					   const int &iCell, const int &jCell, const int &kCell,
+					   const IndexType & i_index, const IndexType & j_index, const IndexType & k_index,
 					   DenseMatrix & A, DenseMatrix & All_U,
 					   const IndexType & ParameterIndex,
 					   const int &RowConstraint,
 					   const int &StartRow, const int &StartCol);
 
   //! @brief Set the mean value conservation equations in the LHS matrix of the k-exact reconstruction procedure
-  void Set_LHS_MeanValueConservation_Equations(const int &iCell, const int &jCell,
-					       const IndexType & i_index, const IndexType & j_index,
+  void Set_LHS_MeanValueConservation_Equations(const int &iCell, const int &jCell, const int &kCell,
+					       const IndexType & i_index, const IndexType & j_index, const IndexType & k_index,
 					       DenseMatrix & A, DoubleArrayType & GeometricWeights);
-
-  //! @brief Set the individual constraint equations in the assemble matrix
-  template<class Soln_Block_Type>
-  void Generalized_IndividualConstraints_Equations(Soln_Block_Type & SolnBlk,
-						   const int &iCell, const int &jCell,
-						   Vector3DArray & Constraints_Loc,
-						   Vector3DArray & Constraints_Normals,
-						   BC_Type_Array & Constraints_BCs,
-						   DenseMatrix & A, DenseMatrix & All_U,
-						   const IndexType & ParameterIndex,
-						   const int &StartRow, const int &StartCol);
-
-  //! @brief Set the relational constraint equations in the assemble matrix
-  template<class Soln_Block_Type>
-  void Generalized_RelationalConstraints_Equations(Soln_Block_Type & SolnBlk,
-						   const int &iCell, const int &jCell,
-						   Vector3DArray & Constraints_Loc,
-						   Vector3DArray & Constraints_Normals,
-						   BC_Type_Array & Constraints_BCs,
-						   const int & BC_Type,
-						   DenseMatrix & A, DenseMatrix & All_U,
-						   const IndexType & ParameterIndex,
-						   const int &StartRow, const int &StartCol);
+  // --> RR: comment out more constraint equations
+//  //! @brief Set the individual constraint equations in the assemble matrix
+//  template<class Soln_Block_Type>
+//  void Generalized_IndividualConstraints_Equations(Soln_Block_Type & SolnBlk,
+//						   const int &iCell, const int &jCell,
+//						   Vector3DArray & Constraints_Loc,
+//						   Vector3DArray & Constraints_Normals,
+//						   BC_Type_Array & Constraints_BCs,
+//						   DenseMatrix & A, DenseMatrix & All_U,
+//						   const IndexType & ParameterIndex,
+//						   const int &StartRow, const int &StartCol);
+//
+//  //! @brief Set the relational constraint equations in the assemble matrix
+//  template<class Soln_Block_Type>
+//  void Generalized_RelationalConstraints_Equations(Soln_Block_Type & SolnBlk,
+//						   const int &iCell, const int &jCell,
+//						   Vector3DArray & Constraints_Loc,
+//						   Vector3DArray & Constraints_Normals,
+//						   BC_Type_Array & Constraints_BCs,
+//						   const int & BC_Type,
+//						   DenseMatrix & A, DenseMatrix & All_U,
+//						   const IndexType & ParameterIndex,
+//						   const int &StartRow, const int &StartCol);
 
   //@} (Cell Level Reconstructions)
 
   //! @name Helper Functions:
   //@{
   /*! @brief Set the central stencil of cells used for reconstruction.  */
-  void SetReconstructionStencil(const int &iCell, const int &jCell,
-				IndexType & i_index, IndexType & j_index) const;
-  void SetSpecialReconstructionStencil(const int &iCell, const int &jCell,
-				       IndexType & i_index, IndexType & j_index) const;
-  void SetConstrainedReconstructionStencil(const int &iCell, const int &jCell,
-					   IndexType & i_index, IndexType & j_index) const;  
-  void SetDeviatedReconstructionStencil(const int &iCell, const int &jCell,
-					IndexType & i_index, IndexType & j_index,
-					const int &rings,
-					bool IsStencilExtended = true) const;
-  void displayDeviatedReconstructionStencil(ostream & out,
-					    const int &iCell, const int &jCell,
-					    const int &rings) const;
-  /*! @brief Set a central stencil of cells with a given extend for a particular cell. */
-  void SetCentralStencil(const int &iCell, const int &jCell,
-			 IndexType & i_index, IndexType & j_index,
-			 const int &rings, int &StencilSize) const;
-  /*! @brief Set a stencil with all cells used for the reconstructions of the cells in the passed index arrays. */
-  void getEnlargedReconstructionStencil(const int &iCell, const int &jCell,
-					IndexType & i_index, IndexType & j_index) const;
-  //! @brief Gather the data on each cell edge for imposing the required constraints
-  template<class Soln_Block_Type>
-  void FetchDataConstraints(Soln_Block_Type & SolnBlk,
-			    const int &iCell, const int &jCell,
-			    int & BC_Type,
-			    const int & parameter,
-			    const int & ConstrainedGQPs_West,  const int * ConstraintBCs_W,
-			    const int & ConstrainedGQPs_South, const int * ConstraintBCs_S,
-			    const int & ConstrainedGQPs_East,  const int * ConstraintBCs_E,
-			    const int & ConstrainedGQPs_North, const int * ConstraintBCs_N,
-			    Vector3DArray & Constraints_Loc,
-			    Vector3DArray & Constraints_Normals,
-			    BC_Type_Array & Constraints_BCs);
+  void SetReconstructionStencil(const int &iCell, const int &jCell, const int & kCell,
+				IndexType & i_index, IndexType & j_index, IndexType & k_index) const;
+//  void SetSpecialReconstructionStencil(const int &iCell, const int &jCell, const int & kCell,
+//				       IndexType & i_index, IndexType & j_index, IndexType & k_index) const;
+//  void SetConstrainedReconstructionStencil(const int &iCell, const int &jCell, const int & kCell,
+//					   IndexType & i_index, IndexType & j_index, IndexType & k_index) const;  
+//  void SetDeviatedReconstructionStencil(const int &iCell, const int &jCell, const int &kCell,
+//					IndexType & i_index, IndexType & j_index, IndexType & k_index,
+//					const int &rings,
+//					bool IsStencilExtended = true) const;
+//  void displayDeviatedReconstructionStencil(ostream & out,
+//					    const int &iCell, const int &jCell, const int &kCell,
+//					    const int &rings) const;
+//  /*! @brief Set a central stencil of cells with a given extend for a particular cell. */
+//  void SetCentralStencil(const int &iCell, const int &jCell, const int & kCell,
+//			 IndexType & i_index, IndexType & j_index, IndexType & k_index,
+//			 const int &rings, int &StencilSize) const;
+//  /*! @brief Set a stencil with all cells used for the reconstructions of the cells in the passed index arrays. */
+//  void getEnlargedReconstructionStencil(const int &iCell, const int &jCell, int & kCell,
+//					IndexType & i_index, IndexType & j_index, IndexType & k_index) const;
+//  //! @brief Gather the data on each cell edge for imposing the required constraints
+//  template<class Soln_Block_Type>
+//  void FetchDataConstraints(Soln_Block_Type & SolnBlk,
+//			    const int &iCell, const int &jCell,
+//			    int & BC_Type,
+//			    const int & parameter,
+//			    const int & ConstrainedGQPs_West,  const int * ConstraintBCs_W,
+//			    const int & ConstrainedGQPs_South, const int * ConstraintBCs_S,
+//			    const int & ConstrainedGQPs_East,  const int * ConstraintBCs_E,
+//			    const int & ConstrainedGQPs_North, const int * ConstraintBCs_N,
+//			    Vector3DArray & Constraints_Loc,
+//			    Vector3DArray & Constraints_Normals,
+//			    BC_Type_Array & Constraints_BCs);
   //@} (Helper Functions)
 
   //! @name CENO Analysis:
@@ -696,39 +694,42 @@ public:
   template<class Soln_Block_Type>
   void ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
 				  const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
+											   const int &,
 											   const int &) const = 
 				  &Soln_Block_Type::CellSolution);
 
-  /*! @brief Compute smoothness data with a central stencil for a given cell (iCell,jCell). */
+  /*! @brief Compute smoothness data with a central stencil for a given cell (iCell,jCell,kCell). */
   template<class Soln_Block_Type>
   void ComputeCellSmoothnessDataWithCentralStencil(Soln_Block_Type &SolnBlk,
 						   const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
+													    const int &,
 													    const int &) const,
-						   const int &iCell, const int &jCell);
-
-  /*! @brief Compute smoothness data with a deviated stencil for a given cell (iCell,jCell). */
-  template<class Soln_Block_Type>
-  void ComputeCellSmoothnessDataWithDeviatedStencil(Soln_Block_Type &SolnBlk,
-						    const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
-													     const int &) const,
-						    const int &iCell, const int &jCell);
-
-  /*! @brief Compute smoothness data for a given cell (iCell,jCell) which is part of a constrained block. */
-  template<class Soln_Block_Type>
-  void ComputeCellSmoothnessDataForConstrainedBlock(Soln_Block_Type &SolnBlk,
-						    const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
-													     const int &) const,
-						    const int &iCell, const int &jCell);
+						   const int &iCell, const int &jCell, const int & kCell);
+  // --> RR: comment out SI for deviated stencil and constrained block
+//  /*! @brief Compute smoothness data with a deviated stencil for a given cell (iCell,jCell). */
+//  template<class Soln_Block_Type>
+//  void ComputeCellSmoothnessDataWithDeviatedStencil(Soln_Block_Type &SolnBlk,
+//						    const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
+//													     const int &) const,
+//						    const int &iCell, const int &jCell);
+//
+//  /*! @brief Compute smoothness data for a given cell (iCell,jCell) which is part of a constrained block. */
+//  template<class Soln_Block_Type>
+//  void ComputeCellSmoothnessDataForConstrainedBlock(Soln_Block_Type &SolnBlk,
+//						    const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
+//													     const int &) const,
+//						    const int &iCell, const int &jCell);
   
-  /*! @brief Compute smoothness indicator for a specific cell (iCell,jCell). */
+  /*! @brief Compute smoothness indicator for a specific cell (iCell,jCell,kCell). */
   template<class Soln_Block_Type>
   void ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
 				  const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
+											   const int &,
 											   const int &) const,
-				  const int &iCell, const int &jCell,
-				  const IndexType & i_index, const IndexType & j_index, const int & StencilSize);
-  //! @brief Check whether any of the high-order interpolants of (iCell,jCell) cell is flagged as non-smooth.
-  const bool IsThereAnyNonSmoothHighOrderReconstruction(const int &iCell, const int &jCell) const;
+				  const int &iCell, const int &jCell, const int & kCell,
+				  const IndexType & i_index, const IndexType & j_index, const IndexType & k_index, const int & StencilSize);
+  //! @brief Check whether any of the high-order interpolants of (iCell,jCell,kCell) cell is flagged as non-smooth.
+  const bool IsThereAnyNonSmoothHighOrderReconstruction(const int &iCell, const int &jCell, const int &kCell) const;
   //@}
 
   //! @name Access to the first-order derivatives from memory pool:
@@ -737,94 +738,101 @@ public:
   const Soln_State & get_dUdx(void) { return dUdx; }
   //! Get dUdy
   const Soln_State & get_dUdy(void) { return dUdy; }
+  //! Get dUdz
+  const Soln_State & get_dUdz(void) { return dUdz; }
   //@}
 
-  //! @name Functions for positivity analysis of elliptic discretization:
-  //@{
-  //! @brief Compute Green-Gauss gradient at inter-cellular face for first parameter
-  template<class Soln_Block_Type>
-  void GreenGauss_FaceGradient_CentroidPathCartesianMesh(Soln_Block_Type &SolnBlk,
-							 const int &iCell, const int &jCell,
-							 const int &Face,
-							 Vector3D & GradU_face,
-							 const Soln_State &
-							 (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &,const int &) const = 
-							 &Soln_Block_Type::CellSolution);
-  //@}
+// --> RR: comment out Functions for positivity analysis of elliptic discretization
+//  //! @name Functions for positivity analysis of elliptic discretization:
+//  //@{
+//  //! @brief Compute Green-Gauss gradient at inter-cellular face for first parameter
+//  template<class Soln_Block_Type>
+//  void GreenGauss_FaceGradient_CentroidPathCartesianMesh(Soln_Block_Type &SolnBlk,
+//							 const int &iCell, const int &jCell,
+//							 const int &Face,
+//							 Vector3D & GradU_face,
+//							 const Soln_State &
+//							 (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &,const int &) const = 
+//							 &Soln_Block_Type::CellSolution);
+//  //@}
 
-  //! @name Error Evaluation:
-  //@{
+// --> RR: comment out error evaluation! 
 
-  //! @name Access to the error data:
-  //@{
-  const double & L1(void) const {return ErrorL1; }       //!< return the L1 error
-  const double & L2(void) const {return ErrorL2; }       //!< return the L2 error
-  const double & LMax(void) const {return ErrorMax; }    //!< return the LMax error
-  const double & BlockArea(void) const {return TotalBlockArea; } //!< return the area of the block used to calculate errors
-  
-  double BlockL1Norm(void) { return ErrorL1/TotalBlockArea; }	      //!< return the L1 error norm for the block
-  double BlockL2Norm(void) { return sqrt(ErrorL2/TotalBlockArea); }   //!< return the L2 error norm for the block
-  double BlockLMaxNorm(void) { return ErrorMax; }                     //!< return the LMax error norm for the block
-  
-  const unsigned int & UsedCells(void) const {return CellsUsed;}  //!< return the number of used cells for error calculation
-  //@}
+//  //! @name Error Evaluation:
+//  //@{
+//
+//  //! @name Access to the error data:
+//  //@{
+//  const double & L1(void) const {return ErrorL1; }       //!< return the L1 error
+//  const double & L2(void) const {return ErrorL2; }       //!< return the L2 error
+//  const double & LMax(void) const {return ErrorMax; }    //!< return the LMax error
+//  const double & BlockArea(void) const {return TotalBlockArea; } //!< return the area of the block used to calculate errors
+//  
+//  double BlockL1Norm(void) { return ErrorL1/TotalBlockArea; }	      //!< return the L1 error norm for the block
+//  double BlockL2Norm(void) { return sqrt(ErrorL2/TotalBlockArea); }   //!< return the L2 error norm for the block
+//  double BlockLMaxNorm(void) { return ErrorMax; }                     //!< return the LMax error norm for the block
+//  
+//  const unsigned int & UsedCells(void) const {return CellsUsed;}  //!< return the number of used cells for error calculation
+//  //@}
+//
+//  //! @name Block Level Error Computation:
+//  //@{
+//  /*! @brief Compute the integral of the solution error function (i.e. L1, L2 and LMax errors) for the whole block */
+//  template<typename Function_Object_Type>
+//  void ComputeSolutionErrors(const Function_Object_Type FuncObj, const unsigned &parameter,
+//			     const int & digits = 8);
+//
+//  /*! @brief Compute the integral of the error of two high-order reconstructions (i.e. L1, L2 and LMax norm) for the whole block */
+//  void ComputeReconstructionsErrors(const HighOrder<Soln_State> & Obj, const unsigned &parameter,
+//				    const int & digits = 8);
+//  //@} (Block Level Errors)
+//
+//  //! @name Cell Level Errors Computation:
+//  //@{
+//  /*! @brief Compute the integral of the solution error function (i.e. L1 norm) for cell (iCell,jCell) */
+//  template<typename Function_Object_Type>
+//  double ComputeSolutionErrorL1(const int &iCell, const int &jCell,
+//				const Function_Object_Type FuncObj, const unsigned &parameter,
+//				const int & digits = 8);
+//
+//  /*! @brief Compute the integral of the solution entropy error function (i.e. L1 norm) for cell (iCell,jCell) */
+//  template<typename Function_Object_Type>
+//  double ComputeSolutionEntropyErrorL1(const int &iCell, const int &jCell,
+//				       const Function_Object_Type FuncObj,
+//				       const int & digits = 8);
+//
+//  /*! @brief Compute the integral of the error of two high-order reconstructions (i.e. L1 norm) for cell (iCell,jCell) */
+//  double ComputeReconstructionsErrorL1(const int &iCell, const int &jCell,
+//				       const HighOrder<Soln_State> & Obj, const unsigned &parameter,
+//				       const int & digits = 8);
+//
+//  /*! @brief Compute the integral of the squared solution error function (i.e. L2 norm) for cell (iCell,jCell) */
+//  template<typename Function_Object_Type>
+//  double ComputeSolutionErrorL2(const int &iCell, const int &jCell,
+//				Function_Object_Type FuncObj, const unsigned &parameter,
+//				const int & digits = 8);
+//
+//  /*! @brief Compute the integral of the squared solution entropy error function (i.e. L2 norm) for cell (iCell,jCell) */
+//  template<typename Function_Object_Type>
+//  double ComputeSolutionEntropyErrorL2(const int &iCell, const int &jCell,
+//				       Function_Object_Type FuncObj,
+//				       const int & digits = 8);
+//
+//  /*! @brief Compute the integral of the squared error of two high-order reconstructions (i.e. L1 norm) for cell (iCell,jCell) */
+//  double ComputeReconstructionsErrorL2(const int &iCell, const int &jCell,
+//				       const HighOrder<Soln_State> & Obj, const unsigned &parameter,
+//				       const int & digits = 8);
+//  //@} (Cell Level Errors)
+//
+//  //@} (Error Evaluation)
 
-  //! @name Block Level Error Computation:
-  //@{
-  /*! @brief Compute the integral of the solution error function (i.e. L1, L2 and LMax errors) for the whole block */
-  template<typename Function_Object_Type>
-  void ComputeSolutionErrors(const Function_Object_Type FuncObj, const unsigned &parameter,
-			     const int & digits = 8);
 
-  /*! @brief Compute the integral of the error of two high-order reconstructions (i.e. L1, L2 and LMax norm) for the whole block */
-  void ComputeReconstructionsErrors(const HighOrder<Soln_State> & Obj, const unsigned &parameter,
-				    const int & digits = 8);
-  //@} (Block Level Errors)
-
-  //! @name Cell Level Errors Computation:
-  //@{
-  /*! @brief Compute the integral of the solution error function (i.e. L1 norm) for cell (iCell,jCell) */
-  template<typename Function_Object_Type>
-  double ComputeSolutionErrorL1(const int &iCell, const int &jCell,
-				const Function_Object_Type FuncObj, const unsigned &parameter,
-				const int & digits = 8);
-
-  /*! @brief Compute the integral of the solution entropy error function (i.e. L1 norm) for cell (iCell,jCell) */
-  template<typename Function_Object_Type>
-  double ComputeSolutionEntropyErrorL1(const int &iCell, const int &jCell,
-				       const Function_Object_Type FuncObj,
-				       const int & digits = 8);
-
-  /*! @brief Compute the integral of the error of two high-order reconstructions (i.e. L1 norm) for cell (iCell,jCell) */
-  double ComputeReconstructionsErrorL1(const int &iCell, const int &jCell,
-				       const HighOrder<Soln_State> & Obj, const unsigned &parameter,
-				       const int & digits = 8);
-
-  /*! @brief Compute the integral of the squared solution error function (i.e. L2 norm) for cell (iCell,jCell) */
-  template<typename Function_Object_Type>
-  double ComputeSolutionErrorL2(const int &iCell, const int &jCell,
-				Function_Object_Type FuncObj, const unsigned &parameter,
-				const int & digits = 8);
-
-  /*! @brief Compute the integral of the squared solution entropy error function (i.e. L2 norm) for cell (iCell,jCell) */
-  template<typename Function_Object_Type>
-  double ComputeSolutionEntropyErrorL2(const int &iCell, const int &jCell,
-				       Function_Object_Type FuncObj,
-				       const int & digits = 8);
-
-  /*! @brief Compute the integral of the squared error of two high-order reconstructions (i.e. L1 norm) for cell (iCell,jCell) */
-  double ComputeReconstructionsErrorL2(const int &iCell, const int &jCell,
-				       const HighOrder<Soln_State> & Obj, const unsigned &parameter,
-				       const int & digits = 8);
-  //@} (Cell Level Errors)
-
-  //@} (Error Evaluation)
-
-  //! @name AMR functions:
-  //@{
-  template<class Soln_Block_Type>
-  double AMR_Criteria_Based_On_Minimum_Smoothness_Indicator(Soln_Block_Type &SolnBlk);
-  //@}
+// --> RR: comment out AMR functions
+//  //! @name AMR functions:
+//  //@{
+//  template<class Soln_Block_Type>
+//  double AMR_Criteria_Based_On_Minimum_Smoothness_Indicator(Soln_Block_Type &SolnBlk);
+//  //@}
 
   //! @name Input/Output functions:
   //@{
@@ -850,23 +858,29 @@ public:
   //@}
 
 protected:
-  
+
 private:
   //! @name Internal indexes:
   //@{
   int Ni;		       //!< Number of high-order objects in i-direction
   int Nj;		       //!< Number of high-order objects in j-direction
+  int Nk;		       //!< Number of high-order objects in k-direction
   int Ng; 		       //!< Number of block ghost cells 
   int ICl,		       //!< Index of first interior cell in i-direction 
     ICu,		       //!< Index of last interior cell in i-direction 
     JCl,		       //!< Index of first interior cell in j-direction 
-    JCu;                       //!< Index of last interior cell in j-direction 
+    JCu,                       //!< Index of last interior cell in j-direction 
+    KCl,		       //!< Index of first interior cell in k-direction 
+    KCu;                       //!< Index of last interior cell in k-direction 
   int OrderOfReconstruction;   //!< The order of reconstruction of the high-order object.
   int Nghost_HO;	       //!< Number of ghost cells in which high-order reconstruction is performed. 
   int StartI,		       //!< Index of the first cell in i-direction in which NO constrained reconstruction is performed. 
     EndI,                      //!< Index of the last cell in i-direction in which NO constrained reconstruction is performed. 
     StartJ,                    //!< Index of the first cell in j-direction in which NO constrained reconstruction is performed. 
-    EndJ;                      //!< Index of the last cell in j-direction in which NO constrained reconstruction is performed. 
+    EndJ,                      //!< Index of the last cell in j-direction in which NO constrained reconstruction is performed. 
+    StartK,                    //!< Index of the first cell in k-direction in which NO constrained reconstruction is performed. 
+    EndK;                      //!< Index of the last cell in k-direction in which NO constrained reconstruction is performed. 
+
   //@}
 
   //! @name Memory allocation flags:
@@ -900,7 +914,7 @@ private:
    *    m - modified reconstruction (i.e. cells that have the modified reconstruction stencil and no constraints)
    *    c - constrained reconstruction (i.e. cells that have the modified reconstruction stencil and constraints)
    */
-  char ***ReconstructionTypeMap;
+  //  char ***ReconstructionTypeMap;
   //@}
 
   //! @name Other internal variables/flags:
@@ -914,9 +928,9 @@ private:
 
   //! @name Correspondent grid trackers:
   //@{
-  unsigned int ObserverInteriorCellGeometryState; //!< Observer to memorise the state of the interior grid.
-  unsigned int ObserverGhostCellGeometryState;	  //!< Observer to memorise the state of the ghost cell layers.
-  unsigned int ObserverCornerGhostCellGeometryState; //!< Observer to memorize the state of the corner ghost cells.
+//  unsigned int ObserverInteriorCellGeometryState; //!< Observer to memorise the state of the interior grid.
+//  unsigned int ObserverGhostCellGeometryState;	  //!< Observer to memorise the state of the ghost cell layers.
+//  unsigned int ObserverCornerGhostCellGeometryState; //!< Observer to memorize the state of the corner ghost cells.
   //@}
 
   //! @name Internal information in conjunction with the geometry:
@@ -941,7 +955,7 @@ private:
 
 
   //! Reset block boundaries information
-  void ResetBlockBoundaries(void);
+  //  void ResetBlockBoundaries(void);
   //@}
 
   //! Get the number of variables in the solution state
@@ -959,31 +973,33 @@ private:
   //! @name Reconstruction memory pools:
   //@{
   // === Helper variables (i.e. memory pools which are overwritten for each cell in the reconstruction process) ===
-  Vector3DArray DeltaCellCenters;    // Storage for distances between centroids.
-  IndexType i_index, j_index;	     // Storage for indexes of cells that are part of the reconstruction stencil.
-  DenseMatrix A;		     // Storage for the LHS matrix of the k-Exact reconstruction.
-  DoubleArrayType GeometricWeights;  // Storage for the geometric weights calculated in the k-Exact reconstruction.
-  DenseMatrix All_Delta_U;	     // Storage for the RHS matrix (i.e. solution dependent) of the k-Exact reconstruction.
-  ColumnVector Delta_U;              // Storage for a particular column of the RHS matrix.
-  ColumnVector X;                    // Storage for the solution to the least-square problem.
+  Vector3DArray DeltaCellCenters;       // Storage for distances between centroids.
+  IndexType i_index, j_index, k_index;	// Storage for indexes of cells that are part of the reconstruction stencil.
+  DenseMatrix A;		        // Storage for the LHS matrix of the k-Exact reconstruction.
+  DoubleArrayType GeometricWeights;     // Storage for the geometric weights calculated in the k-Exact reconstruction.
+  DenseMatrix All_Delta_U;	        // Storage for the RHS matrix (i.e. solution dependent) of the k-Exact reconstruction.
+  ColumnVector Delta_U;                 // Storage for a particular column of the RHS matrix.
+  ColumnVector X;                       // Storage for the solution to the least-square problem.
 
   // === Helper variables for the limited piecewise linear solution reconstruction ===
-  Soln_State U_ave, dUdx, dUdy;
-  int I_Index[8], J_Index[8];
-  double geom_weights[8];
-  Vector3D dX[8];
+  Soln_State U_ave, dUdx, dUdy, dUdz;
+  int I_Index[26], J_Index[26];
+  double geom_weights[26];
+  Vector3D dX[26];
 
   // === Helper variables for constrained reconstruction
   // (i.e. memory pools which are overwritten for each cell in the constrained reconstruction process) ===
-  IndexType i_index_ave, j_index_ave;	/* Storage for indexes of cells that contribute to the reconstruction stencil 
-					   with conservation of average solution values */
+  IndexType i_index_ave, j_index_ave, k_index_ave;  /* Storage for indexes of cells that contribute to the reconstruction stencil 
+						       with conservation of average solution values */
   Vector3DArray Constraints_Loc;	// Storage for the locations where constraints are imposed
   Vector3DArray Constraints_Normals;	// Storage for the normal vectors at the locations where constraints are imposed
-  BC_Type_Array Constraints_BCs;	// Storage for the high-order boundary conditions that are imposed as constraints
+  // --> RR: declaration for Constraints_BCs
+  //  BC_Type_Array Constraints_BCs;	// Storage for the high-order boundary conditions that are imposed as constraints
 
   Vector3DArray Approx_Constraints_Loc;	     // Storage for the locations where approximate constraints are imposed
   Vector3DArray Approx_Constraints_Normals;  // Storage for the normal vectors at the locations where approx. constraints are imposed
-  BC_Type_Array Approx_Constraints_BCs;	     // Storage for the high-order boundary conditions that are imposed as approx. constraints
+  // --> RR: declaration for Approx_Constraints_BCs
+  //  BC_Type_Array Approx_Constraints_BCs;	     // Storage for the high-order boundary conditions that are imposed as approx. constraints
 
   DenseMatrix A_Assembled;	 // Storage for the LHS matrix of the constrained k-Exact reconstruction.
   DenseMatrix All_U_Assembled;   // Storage for the RHS matrix (i.e. solution dependent) of the constrained k-Exact reconstruction.
@@ -1002,20 +1018,25 @@ private:
   //! @name Functions related to the memory pool piecewise linear solution interpolant:
   //@{
   //! Evaluate the linear interpolant at a given location (X_Coord,Y_Coord) 
-  //  for a specified solution variable (i.e. parameter) and a cell (ii,jj)
-  double UnlimitedLinearSolutionAtCoordinates(const int & ii, const int & jj, 
-					      const double & X_Coord, const double & Y_Coord, const unsigned & parameter) const {
-    return U_ave[parameter] + dUdx[parameter]*(X_Coord - XCellCenter(ii,jj)) + dUdy[parameter]*(Y_Coord - YCellCenter(ii,jj));
+  //  for a specified solution variable (i.e. parameter) and a cell (ii,jj,kk)
+  double UnlimitedLinearSolutionAtCoordinates(const int & ii, const int & jj, const int & kk, 
+					      const double & X_Coord, const double & Y_Coord, const double & Z_Coord, 
+					      const unsigned & parameter) const {
+    return U_ave[parameter] + dUdx[parameter]*(X_Coord - XCellCenter(ii,jj,kk)) + dUdy[parameter]*(Y_Coord - YCellCenter(ii,jj,kk)) + dUdz[parameter]*(Z_Coord - ZCellCenter(ii,jj,kk));
   }
   //! Evaluate the linear interpolant at a given position vector for a 
-  // specified solution variable (i.e. parameter) and a cell (ii,jj)
-  double UnlimitedLinearSolutionAtLocation(const int & ii, const int & jj,
+  // specified solution variable (i.e. parameter) and a cell (ii,jj,kk)
+  double UnlimitedLinearSolutionAtLocation(const int & ii, const int & jj, const int & kk, 
 					   const Vector3D &CalculationPoint, const unsigned & parameter) const {
-    return UnlimitedLinearSolutionAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y,parameter);
+    return UnlimitedLinearSolutionAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z,parameter);
   }
   //! Evaluate the limiter
-  double CalculateLimiter(double *uQuad, const int &nQuad,
-			  const double &u0, const double &u0Min, const double &u0Max, const int &Limiter);
+  double HighOrder<SOLN_STATE>::CalculateLimiter(double *uHexa, const int &n,
+						 const int &i, const int &j, const int &k,
+						 const double &u0Min, const double &u0Max, const int &Limiter);
+//  double CalculateLimiter(double *uQuad, const int &nQuad,
+//			  const double &u0, const double &u0Min, const double &u0Max, const int &Limiter);
+
   //@}
 
   //! @name Functions and variables related to calculation of the smoothness indicator
@@ -1040,9 +1061,9 @@ private:
   double GeomWeightSI;
 
   //! @brief Flag (iCell,jCell) cell with non-smooth high-order interpolants.
-  void FlagCellReconstructionsAsNonSmooth(const int &iCell, const int &jCell);
+  void FlagCellReconstructionsAsNonSmooth(const int &iCell, const int &jCell, const int &kCell);
   /*! @brief Check the smoothness condition and flag the non-smooth interpolants for a given cell.*/
-  void AssessInterpolantsSmoothness(const int &iCell, const int &jCell);
+  void AssessInterpolantsSmoothness(const int &iCell, const int &jCell, const int &kCell);
   //@}
 
 };
@@ -1051,27 +1072,26 @@ private:
  * Initialize the HighOrder class static variables  *
  *****************************************************/
 
-
 /****************************************************
  * Implement the HighOrder class member functions *
  ***************************************************/
 //! Default Constructor
 template<class SOLN_STATE> inline
 HighOrder<SOLN_STATE>::HighOrder(void):
-  Ni(0), Nj(0), Ng(0),
-  ICl(0), ICu(0), JCl(0), JCu(0),
+  Ni(0), Nj(0), Nk(0), Ng(0),
+  ICl(0), ICu(0), JCl(0), JCu(0), KCl(0), KCu(0),
   OrderOfReconstruction(-1), Nghost_HO(0),
-  StartI(0), EndI(0), StartJ(0), EndJ(0),
+  StartI(0), EndI(0), StartJ(0), EndJ(0), StartK(0), EndK(0),
   _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
   _freeze_limiter(false),
   TD(NULL), SI(NULL), LimitedCell(NULL), PreviousLimitedCell(NULL),
   rings(0), rings_SI(0), _calculated_psinv(false),
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
-  ReconstructionTypeMap(NULL),
+//  ReconstructionTypeMap(NULL),
   Geom(NULL), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
   _constrained_block_reconstruction(false),
   AdjustmentCoeff(0.0),
-  ObserverInteriorCellGeometryState(0), ObserverGhostCellGeometryState(0), ObserverCornerGhostCellGeometryState(0)
+//  ObserverInteriorCellGeometryState(0), ObserverGhostCellGeometryState(0), ObserverCornerGhostCellGeometryState(0)
 {
   //
 }
@@ -1081,58 +1101,59 @@ template<class SOLN_STATE> inline
 HighOrder<SOLN_STATE>::HighOrder(int ReconstructionOrder,
 				     GeometryType & Block,
 				     const bool &_pseudo_inverse_allocation_):
-  Ni(0), Nj(0), Ng(0),
-  ICl(0), ICu(0), JCl(0), JCu(0),
+  Ni(0), Nj(0), Nk(0),Ng(0),
+  ICl(0), ICu(0), JCl(0), JCu(0), KCl(0), KCu(0),
   OrderOfReconstruction(-1), Nghost_HO(0),
-  StartI(0), EndI(0), StartJ(0), EndJ(0),
+  StartI(0), EndI(0), StartJ(0), EndJ(0), StartK(0), EndK(0),
   _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
   _freeze_limiter(false),
   TD(NULL), SI(NULL), LimitedCell(NULL), PreviousLimitedCell(NULL),
   rings(0), rings_SI(0), _calculated_psinv(false),
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL), 
-  ReconstructionTypeMap(NULL),
+//  ReconstructionTypeMap(NULL),
   Geom(&Block), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
   _constrained_block_reconstruction(false),
-  AdjustmentCoeff(0.0),
-  ObserverInteriorCellGeometryState(Block.getInteriorStateTracker()),
-  ObserverGhostCellGeometryState(Block.getGhostStateTracker()),
-  ObserverCornerGhostCellGeometryState(Block.getCornerGhostStateTracker())
+  AdjustmentCoeff(0.0)
+//  ObserverInteriorCellGeometryState(Block.getInteriorStateTracker()),
+//  ObserverGhostCellGeometryState(Block.getGhostStateTracker()),
+//  ObserverCornerGhostCellGeometryState(Block.getCornerGhostStateTracker())
 {
   // Use the grid to get the number of interior block cells and the number of available ghost cells
   allocate(ICu_Grid()-ICl_Grid()+1,
 	   JCu_Grid()-JCl_Grid()+1,
+	   KCu_Grid()-KCl_Grid()+1,
 	   Nghost_Grid(),
 	   _pseudo_inverse_allocation_,
 	   ReconstructionOrder);
 
   // Set properties of block boundaries (i.e. which boundaries are constrained/unconstrained and which are opaque/transparent)
-  SetPropertiesHighOrderBlock();
+  //  SetPropertiesHighOrderBlock();
 
   // Build the reconstruction type map
-  BuildReconstructionTypeMap();
+  // BuildReconstructionTypeMap();
 
 }
 
 //! Copy constructor 
 template<class SOLN_STATE> inline
 HighOrder<SOLN_STATE>::HighOrder(const HighOrder<SOLN_STATE> & rhs)
-  : Ni(0), Nj(0), Ng(0),
-    ICl(0), ICu(0), JCl(0), JCu(0),
+  : Ni(0), Nj(0), Nk(0), Ng(0),
+    ICl(0), ICu(0), JCl(0), JCu(0), KCl(0), KCu(0),
     OrderOfReconstruction(-1), Nghost_HO(0),
     _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
     _freeze_limiter(false),
     TD(NULL), SI(NULL), LimitedCell(NULL), PreviousLimitedCell(NULL),
     rings(0), rings_SI(0), _calculated_psinv(false),
     CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
-    ReconstructionTypeMap(NULL),
+    //    ReconstructionTypeMap(NULL),
     Geom(rhs.Geom), _si_calculation(rhs._si_calculation),
     AdjustmentCoeff(rhs.AdjustmentCoeff),
-    ObserverInteriorCellGeometryState(rhs.ObserverInteriorCellGeometryState),
-    ObserverGhostCellGeometryState(rhs.ObserverGhostCellGeometryState),
-    ObserverCornerGhostCellGeometryState(rhs.ObserverCornerGhostCellGeometryState)
+//    ObserverInteriorCellGeometryState(rhs.ObserverInteriorCellGeometryState),
+//    ObserverGhostCellGeometryState(rhs.ObserverGhostCellGeometryState),
+//    ObserverCornerGhostCellGeometryState(rhs.ObserverCornerGhostCellGeometryState)
 {
 
-  int i,j;
+  int i,j,k;
 
   // check if the rhs has block memory allocated
   if (rhs._allocated_block){
@@ -1140,6 +1161,7 @@ HighOrder<SOLN_STATE>::HighOrder(const HighOrder<SOLN_STATE> & rhs)
     // allocate memory for the new container
     allocate(rhs.Ni - 2*rhs.Ng,
 	     rhs.Nj - 2*rhs.Ng,
+	     rhs.Nk - 2*rhs.Ng,
 	     rhs.Ng,
 	     rhs._allocated_psinv,
 	     rhs.OrderOfReconstruction);
@@ -1148,18 +1170,20 @@ HighOrder<SOLN_STATE>::HighOrder(const HighOrder<SOLN_STATE> & rhs)
     if (rhs._allocated_cells){
 
       // copy the cell containers
-      for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
-	for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {
-	  TD[i][j] = rhs.TD[i][j];
-	  SI[i][j] = rhs.SI[i][j];
-	  LimitedCell[i][j] = rhs.LimitedCell[i][j];
-	  PreviousLimitedCell[i][j] = rhs.PreviousLimitedCell[i][j];
+      for (k  = KCl-Nghost_HO ; k <= KCu+Nghost_HO ; ++k ) {
+	for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
+	  for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {
+	    TD[i][j][k] = rhs.TD[i][j][k];
+	    SI[i][j][k] = rhs.SI[i][j][k];
+	    LimitedCell[i][j][k] = rhs.LimitedCell[i][j][k];
+	    PreviousLimitedCell[i][j][k] = rhs.PreviousLimitedCell[i][j][k];
 
-	  // copy the pseudo-inverse data
-	  if (rhs._allocated_psinv){
-	    CENO_LHS[i][j] = rhs.CENO_LHS[i][j];
-	    CENO_Geometric_Weights[i][j] = rhs.CENO_Geometric_Weights[i][j];
-	  } // endif (rhs._allocated_psinv)
+	    // copy the pseudo-inverse data
+	    if (rhs._allocated_psinv){
+	      CENO_LHS[i][j][k] = rhs.CENO_LHS[i][j][k];
+	      CENO_Geometric_Weights[i][j][k] = rhs.CENO_Geometric_Weights[i][j][k];
+	    } // endif (rhs._allocated_psinv)
+	  }//endfor
 	}//endfor
       }//endfor
 
@@ -1172,29 +1196,31 @@ HighOrder<SOLN_STATE>::HighOrder(const HighOrder<SOLN_STATE> & rhs)
     EndI = rhs.EndI;
     StartJ = rhs.StartJ;
     EndJ = rhs.EndJ;
+    StartK = rhs.StartK;
+    EndK = rhs.EndK;
 
     // set the type of reconstruction required by the geometry setup
     _constrained_block_reconstruction = rhs._constrained_block_reconstruction;
 
-    // copy properties of block boundaries
-    WestBnd = rhs.WestBnd;
-    S_WestBnd = rhs.S_WestBnd;
-    N_WestBnd = rhs.N_WestBnd;
-
-    EastBnd = rhs.EastBnd;
-    S_EastBnd = rhs.S_EastBnd;
-    N_EastBnd = rhs.N_EastBnd;
-    
-    NorthBnd = rhs.NorthBnd;
-    E_NorthBnd = rhs.E_NorthBnd;
-    W_NorthBnd = rhs.W_NorthBnd;
-
-    SouthBnd = rhs.SouthBnd;
-    E_SouthBnd = rhs.E_SouthBnd;
-    W_SouthBnd = rhs.W_SouthBnd;
+    // copy properties of block boundaries --> RR: copy constructor
+//    WestBnd = rhs.WestBnd;
+//    S_WestBnd = rhs.S_WestBnd;
+//    N_WestBnd = rhs.N_WestBnd;
+//
+//    EastBnd = rhs.EastBnd;
+//    S_EastBnd = rhs.S_EastBnd;
+//    N_EastBnd = rhs.N_EastBnd;
+//    
+//    NorthBnd = rhs.NorthBnd;
+//    E_NorthBnd = rhs.E_NorthBnd;
+//    W_NorthBnd = rhs.W_NorthBnd;
+//
+//    SouthBnd = rhs.SouthBnd;
+//    E_SouthBnd = rhs.E_SouthBnd;
+//    W_SouthBnd = rhs.W_SouthBnd;
 
     // determine the reconstruction type of each cell for a constrained block
-    BuildReconstructionTypeMap();
+    //    BuildReconstructionTypeMap();
     
   }//endif (rhs._allocated_block)
 }
@@ -1203,7 +1229,7 @@ HighOrder<SOLN_STATE>::HighOrder(const HighOrder<SOLN_STATE> & rhs)
 template<class SOLN_STATE> inline
 HighOrder<SOLN_STATE> & HighOrder<SOLN_STATE>::operator=(const HighOrder<SOLN_STATE> & rhs){
 
-  int i,j;
+  int i,j,k;
 
   // Handle self-assignment:
   if (this == & rhs) return *this;
@@ -1214,6 +1240,7 @@ HighOrder<SOLN_STATE> & HighOrder<SOLN_STATE>::operator=(const HighOrder<SOLN_ST
     // allocate memory for the new container
     allocate(rhs.Ni - 2*rhs.Ng,
 	     rhs.Nj - 2*rhs.Ng,
+	     rhs.Nk - 2*rhs.Ng,
 	     rhs.Ng,
 	     rhs._allocated_psinv,
 	     rhs.OrderOfReconstruction);
@@ -1231,18 +1258,20 @@ HighOrder<SOLN_STATE> & HighOrder<SOLN_STATE>::operator=(const HighOrder<SOLN_ST
     if (rhs._allocated_cells){
 
       // copy the cell containers
-      for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
-	for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {
-	  TD[i][j] = rhs.TD[i][j];
-	  SI[i][j] = rhs.SI[i][j];
-	  LimitedCell[i][j] = rhs.LimitedCell[i][j];
-	  PreviousLimitedCell[i][j] = rhs.PreviousLimitedCell[i][j];
+      for (k  = KCl-Nghost_HO ; k <= KCu+Nghost_HO ; ++k ) {
+	for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
+	  for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {
+	    TD[i][j][k] = rhs.TD[i][j][k];
+	    SI[i][j][k] = rhs.SI[i][j][k];
+	    LimitedCell[i][j][k] = rhs.LimitedCell[i][j][k];
+	    PreviousLimitedCell[i][j][k] = rhs.PreviousLimitedCell[i][j][k];
 
-	  // copy the pseudo-inverse data
-	  if (rhs._allocated_psinv){
-	    CENO_LHS[i][j] = rhs.CENO_LHS[i][j];
-	    CENO_Geometric_Weights[i][j] = rhs.CENO_Geometric_Weights[i][j];
-	  } // endif (rhs._allocated_psinv)
+	    // copy the pseudo-inverse data
+	    if (rhs._allocated_psinv){
+	      CENO_LHS[i][j][k] = rhs.CENO_LHS[i][j][k];
+	      CENO_Geometric_Weights[i][j][k] = rhs.CENO_Geometric_Weights[i][j][k];
+	    } // endif (rhs._allocated_psinv)
+	  }//endfor
 	}//endfor
       }//endfor
 
@@ -1255,39 +1284,42 @@ HighOrder<SOLN_STATE> & HighOrder<SOLN_STATE>::operator=(const HighOrder<SOLN_ST
     EndI = rhs.EndI;
     StartJ = rhs.StartJ;
     EndJ = rhs.EndJ;
+    StartK = rhs.StartK;
+    EndK = rhs.EndK;
 
     // set the type of reconstruction required by the geometry setup
     _constrained_block_reconstruction = rhs._constrained_block_reconstruction;
 
-    // copy properties of block boundaries
-    WestBnd = rhs.WestBnd;
-    S_WestBnd = rhs.S_WestBnd;
-    N_WestBnd = rhs.N_WestBnd;
-
-    EastBnd = rhs.EastBnd;
-    S_EastBnd = rhs.S_EastBnd;
-    N_EastBnd = rhs.N_EastBnd;
-    
-    NorthBnd = rhs.NorthBnd;
-    E_NorthBnd = rhs.E_NorthBnd;
-    W_NorthBnd = rhs.W_NorthBnd;
-
-    SouthBnd = rhs.SouthBnd;
-    E_SouthBnd = rhs.E_SouthBnd;
-    W_SouthBnd = rhs.W_SouthBnd;
+    // copy properties of block boundaries --> RR: assignment constructor
+//    WestBnd = rhs.WestBnd;
+//    S_WestBnd = rhs.S_WestBnd;
+//    N_WestBnd = rhs.N_WestBnd;
+//
+//    EastBnd = rhs.EastBnd;
+//    S_EastBnd = rhs.S_EastBnd;
+//    N_EastBnd = rhs.N_EastBnd;
+//    
+//    NorthBnd = rhs.NorthBnd;
+//    E_NorthBnd = rhs.E_NorthBnd;
+//    W_NorthBnd = rhs.W_NorthBnd;
+//
+//    SouthBnd = rhs.SouthBnd;
+//    E_SouthBnd = rhs.E_SouthBnd;
+//    W_SouthBnd = rhs.W_SouthBnd;
 
     // determine the reconstruction type of each cell for a constrained block
-    BuildReconstructionTypeMap();
+    //    BuildReconstructionTypeMap();
 
   }//endif (rhs._allocated_block)
 
   // Set grid observers
-  ObserverInteriorCellGeometryState = rhs.ObserverInteriorCellGeometryState;
-  ObserverGhostCellGeometryState = rhs.ObserverGhostCellGeometryState;
-  ObserverCornerGhostCellGeometryState = rhs.ObserverCornerGhostCellGeometryState;
+//  ObserverInteriorCellGeometryState = rhs.ObserverInteriorCellGeometryState;
+//  ObserverGhostCellGeometryState = rhs.ObserverGhostCellGeometryState;
+//  ObserverCornerGhostCellGeometryState = rhs.ObserverCornerGhostCellGeometryState;
 
   return *this;
 }
+
 
 // allocate()
 /*! Allocate memory for the high-order object.
@@ -1302,15 +1334,16 @@ HighOrder<SOLN_STATE> & HighOrder<SOLN_STATE>::operator=(const HighOrder<SOLN_ST
  */
 template<class SOLN_STATE> inline
 void HighOrder<SOLN_STATE>::allocate(const int &NC_IDir,
-				       const int &NC_JDir,
-				       const int &Nghost,
-				       const bool &_pseudo_inverse_allocation_,
-				       int ReconstructionOrder){
+				     const int &NC_JDir,
+				     const int &NC_KDir,
+				     const int &Nghost,
+				     const bool &_pseudo_inverse_allocation_,
+				     int ReconstructionOrder){
 
-  int i,j;
+  int i,j,k;
 
   // Check conditions
-  if (NC_IDir < 2 || NC_JDir < 2 || Nghost < 1 || ReconstructionOrder < -1){
+  if (NC_IDir < 2 || NC_JDir < 2 || NC_KDir < 2 || Nghost < 1 || ReconstructionOrder < -1){
     throw runtime_error("HighOrder<SOLN_STATE>::allocate() ERROR! Inconsistent dimensions!");
   }
 
@@ -1327,7 +1360,7 @@ void HighOrder<SOLN_STATE>::allocate(const int &NC_IDir,
   } else {
 
     // Check if the new block dimensions are different than the currently allocated ones
-    if ( Ni != (NC_IDir+2*Nghost) || Nj != (NC_JDir+2*Nghost) || Ng != Nghost ||
+    if ( Ni != (NC_IDir+2*Nghost) || Nj != (NC_JDir+2*Nghost) || Nk != (NC_KDir+2*Nghost) || Ng != Nghost ||
 	 _si_calculation != CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS ){
 
       // free the memory if there is memory allocated
@@ -1341,31 +1374,44 @@ void HighOrder<SOLN_STATE>::allocate(const int &NC_IDir,
       };
 
       // allocate new memory 
-      Ni = NC_IDir+2*Nghost; Nj = NC_JDir+2*Nghost;
+      Ni = NC_IDir+2*Nghost; Nj = NC_JDir+2*Nghost; Nk = NC_KDir+2*Nghost;
       Ng = Nghost;
       ICl = Ng; ICu = Ni-Ng-1;
       JCl = Ng; JCu = Nj-Ng-1;
-    
+      KCl = Ng; KCu = Nk-Ng-1;
+
       // Allocate memory at block level
-      TD = new DerivativesContainer* [Ni];
-      SI = new DoubleArrayType* [Ni];
-      LimitedCell = new FlagType* [Ni];
-      PreviousLimitedCell = new FlagType* [Ni];
+      TD = new DerivativesContainer** [Ni];
+      SI = new DoubleArrayType** [Ni];
+      LimitedCell = new FlagType** [Ni];
+      PreviousLimitedCell = new FlagType** [Ni];
       if (_pseudo_inverse_allocation_){
-	CENO_LHS = new DenseMatrix* [Ni];
-	CENO_Geometric_Weights = new DoubleArrayType* [Ni];
+	CENO_LHS = new DenseMatrix** [Ni];
+	CENO_Geometric_Weights = new DoubleArrayType** [Ni];
       }
 
       for (i = 0; i < Ni ; ++i){
-	TD[i] = new DerivativesContainer [Nj];
-	SI[i] = new DoubleArrayType [Nj];
-	LimitedCell[i] = new FlagType [Nj];
-	PreviousLimitedCell[i] = new FlagType [Nj];
+	TD[i] = new DerivativesContainer* [Nj];
+	SI[i] = new DoubleArrayType* [Nj];
+	LimitedCell[i] = new FlagType* [Nj];
+	PreviousLimitedCell[i] = new FlagType* [Nj];
 	if (_pseudo_inverse_allocation_){
-	  CENO_LHS[i] = new DenseMatrix [Nj];
-	  CENO_Geometric_Weights[i] = new DoubleArrayType [Nj];
+	  CENO_LHS[i] = new DenseMatrix* [Nj];
+	  CENO_Geometric_Weights[i] = new DoubleArrayType* [Nj];
 	}
       }// endfor
+      for (i = 0; i < Ni ; ++i){
+	for (j = 0; j < Nj ; ++j){
+	  TD[i][j] = new DerivativesContainer [Nk];
+	  SI[i][j] = new DoubleArrayType [Nk];
+	  LimitedCell[i][j] = new FlagType [Nk];
+	  PreviousLimitedCell[i][j] = new FlagType [Nk];
+	  if (_pseudo_inverse_allocation_){
+	    CENO_LHS[i][j] = new DenseMatrix [Nk];
+	    CENO_Geometric_Weights[i][j] = new DoubleArrayType [Nk];
+	  }
+	}// endfor
+      }//endfor
 
       // Block memory allocated
       _allocated_block = true;
@@ -1397,7 +1443,7 @@ void HighOrder<SOLN_STATE>::allocate(const int &NC_IDir,
 template<class SOLN_STATE> inline
 void HighOrder<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder, const bool &_pseudo_inverse_allocation_){
 
-  int i,j;
+  int i,j,k;
   int StencilSize;
 
   // Set the new reconstruction order
@@ -1413,45 +1459,49 @@ void HighOrder<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder, 
   StencilSize = getStencilSize();
 
   // Allocate memory and initialize containers at cell level.
-  for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
-    for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {    
+  for (k  = KCl-Nghost_HO ; k <= KCu+Nghost_HO ; ++k ) {
+    for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
+      for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {    
 	
-      // Set Taylor derivatives
-      TD[i][j].GenerateContainer(OrderOfReconstruction);
+	// Set Taylor derivatives
+	TD[i][j][k].GenerateContainer(OrderOfReconstruction);
 
-      // Set smoothness indicator and monotonicity flag
-      InitializeMonotonicityVariables(i,j);
+	// Set smoothness indicator and monotonicity flag
+	InitializeMonotonicityVariables(i,j);
 
-      // Allocate pseudo-inverse data
-      // Note: There is no need to initialize these containers here!
-      if (_pseudo_inverse_allocation_){
-	CENO_LHS[i][j].newsize(StencilSize - 1, TD[i][j].size() - 1);
-	CENO_Geometric_Weights[i][j].assign(StencilSize, 0.0);
-      }
+	// Allocate pseudo-inverse data
+	// Note: There is no need to initialize these containers here!
+	if (_pseudo_inverse_allocation_){
+	  CENO_LHS[i][j][k].newsize(StencilSize - 1, TD[i][j][k].size() - 1);
+	  CENO_Geometric_Weights[i][j][k].assign(StencilSize, 0.0);
+	}
 
-    } /* endfor */
+      } /* endfor */
+    }/* endfor */
   }/* endfor */
 
   // Set the reconstruction helper variables
   DeltaCellCenters.assign(StencilSize, Vector3D(0.0)); // This variable is overwritten for each cell
   i_index.assign(StencilSize, 0); // This variable is overwritten for each cell
   j_index.assign(StencilSize, 0); // This variable is overwritten for each cell
+  k_index.assign(StencilSize, 0); // This variable is overwritten for each cell
   A.newsize(StencilSize - 1, NumberOfTaylorDerivatives() - 1);
   GeometricWeights.assign(StencilSize, 0.0);
   All_Delta_U.newsize(StencilSize - 1, NumberOfVariables());
   Delta_U.newsize(StencilSize - 1);
   X.newsize(NumberOfTaylorDerivatives() - 1);
 
+  // --> RR: comment out constrained reconstruction helpers in allocate_CellMemory
   // Set the constrained reconstruction helper variables
-  i_index_ave.reserve(StencilSize);
-  j_index_ave.reserve(StencilSize);
-  Constraints_Loc.reserve(12);
-  Constraints_Normals.reserve(12);
-  Constraints_BCs.reserve(12);
-  Approx_Constraints_Loc.reserve(50);
-  Approx_Constraints_Normals.reserve(50);
-  Approx_Constraints_BCs.reserve(50);
-  X_Assembled.newsize(NumberOfTaylorDerivatives(), NumberOfVariables());
+//  i_index_ave.reserve(StencilSize);
+//  j_index_ave.reserve(StencilSize);
+//  Constraints_Loc.reserve(12);
+//  Constraints_Normals.reserve(12);
+//  Constraints_BCs.reserve(12);
+//  Approx_Constraints_Loc.reserve(50);
+//  Approx_Constraints_Normals.reserve(50);
+//  Approx_Constraints_BCs.reserve(50);
+//  X_Assembled.newsize(NumberOfTaylorDerivatives(), NumberOfVariables());
 
   // Confirm allocation
   _allocated_cells = true;
@@ -1464,31 +1514,32 @@ void HighOrder<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder, 
   _si_calculation = CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS;
 }
 
-/*!
- * Allocate memory for the reconstruction type 
- * of each cell only if the block is flagged as constrained.
- * If the block is not constrained and memory has 
- * been previously allocated to ReconstructionTypeMap variable
- * this will be deallocated.
- *
- * \note Call this routine AFTER the block type has been decided!
- */
-template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::allocate_ReconstructionTypeMap(void){
-
-  if (_allocated_block && IsConstrainedReconstructionRequired()){
-    if (ReconstructionTypeMap == NULL){
-      // Allocate memory
-      ReconstructionTypeMap = new char* [Ni];
-      for (int i = 0; i < Ni ; ++i){
-	ReconstructionTypeMap[i] = new char [Nj];
-      }// endfor
-    }
-  } else {
-    deallocate_ReconstructionTypeMap();
-  }
-  
-}
+// --> RR: comment out  allocate_ReconstructionTypeMap(void)
+///*!
+// * Allocate memory for the reconstruction type 
+// * of each cell only if the block is flagged as constrained.
+// * If the block is not constrained and memory has 
+// * been previously allocated to ReconstructionTypeMap variable
+// * this will be deallocated.
+// *
+// * \note Call this routine AFTER the block type has been decided!
+// */
+//template<class SOLN_STATE> inline
+//void HighOrder<SOLN_STATE>::allocate_ReconstructionTypeMap(void){
+//
+//  if (_allocated_block && IsConstrainedReconstructionRequired()){
+//    if (ReconstructionTypeMap == NULL){
+//      // Allocate memory
+//      ReconstructionTypeMap = new char* [Ni];
+//      for (int i = 0; i < Ni ; ++i){
+//	ReconstructionTypeMap[i] = new char [Nj];
+//      }// endfor
+//    }
+//  } else {
+//    deallocate_ReconstructionTypeMap();
+//  }
+//  
+//}
 
 // deallocate()
 /*!
@@ -1497,9 +1548,23 @@ void HighOrder<SOLN_STATE>::allocate_ReconstructionTypeMap(void){
 template<class SOLN_STATE> inline
 void HighOrder<SOLN_STATE>::deallocate(void){
 
-  int i;
+  int i,j;
 
   if (_allocated_block){
+
+    for ( i = 0; i < Ni ; ++i ) {
+      for ( j = 0; j < Nj ; ++j ) {
+	delete [] TD[i][j]; 
+	delete [] SI[i][j]; 
+	delete [] LimitedCell[i][j]; 
+	delete [] PreviousLimitedCell[i][j];
+
+	if (_allocated_psinv){
+	  delete [] CENO_LHS[i][j];
+	  delete [] CENO_Geometric_Weights[i][j];
+	}
+      }
+    }
 
     for ( i = 0; i < Ni ; ++i ) {
       delete [] TD[i]; TD[i] = NULL;  // deallocate TD
@@ -1512,9 +1577,9 @@ void HighOrder<SOLN_STATE>::deallocate(void){
 	delete [] CENO_Geometric_Weights[i]; CENO_Geometric_Weights[i] = NULL; // deallocate geometric weights
       }
 
-      if (ReconstructionTypeMap != NULL){
-	delete [] ReconstructionTypeMap[i]; ReconstructionTypeMap[i] = NULL; // deallocate ReconstructionTypeMap
-      }
+//      if (ReconstructionTypeMap != NULL){
+//	delete [] ReconstructionTypeMap[i]; ReconstructionTypeMap[i] = NULL; // deallocate ReconstructionTypeMap
+//      }
     }
 
     delete [] TD; TD = NULL;
@@ -1527,30 +1592,31 @@ void HighOrder<SOLN_STATE>::deallocate(void){
       delete [] CENO_Geometric_Weights; CENO_Geometric_Weights = NULL;
     }
 
-    if (ReconstructionTypeMap != NULL){
-      delete [] ReconstructionTypeMap; ReconstructionTypeMap = NULL;
-    }
+//    if (ReconstructionTypeMap != NULL){
+//      delete [] ReconstructionTypeMap; ReconstructionTypeMap = NULL;
+//    }
 
     // Reset all indexes
-    Ni = 0; Nj = 0; Ng = 0;
-    ICl = 0; ICu = 0; JCl = 0; JCu = 0;
+    Ni = 0; Nj = 0; Nk = 0; Ng = 0;
+    ICl = 0; ICu = 0; JCl = 0; JCu = 0; KCl = 0; KCu = 0;
     OrderOfReconstruction = -1;
     Nghost_HO = 0;
     rings = 0;
     rings_SI = 0;
     StartI = 0; EndI = 0;
     StartJ = 0; EndJ = 0;
+    StartK = 0; EndK = 0;
 
     // Separate the high-order object from the associated geometry
     Geom = NULL;
-    // Reset grid observers
-    ObserverInteriorCellGeometryState = 0;
-    ObserverGhostCellGeometryState = 0;
-    ObserverCornerGhostCellGeometryState = 0;
-    _constrained_block_reconstruction = false;
+    // Reset grid observers --> RR: deallocate grid observers
+//    ObserverInteriorCellGeometryState = 0;
+//    ObserverGhostCellGeometryState = 0;
+//    ObserverCornerGhostCellGeometryState = 0;
+//    _constrained_block_reconstruction = false;
 
     // Reset block boundaries
-    ResetBlockBoundaries();
+    //    ResetBlockBoundaries();
 
     // Confirm the deallocation
     _allocated_block = false;
@@ -1574,34 +1640,35 @@ void HighOrder<SOLN_STATE>::deallocate(void){
 template<class SOLN_STATE> inline
 void HighOrder<SOLN_STATE>::deallocate_CellMemory(void){
 
-  int ii, jj;
+  int ii, jj, kk;
 
   if (_allocated_cells){     // check that memory has been allocated
 
-    for (jj  = JCl-Nghost_HO ; jj <= JCu+Nghost_HO ; ++jj ) {
-      for ( ii = ICl-Nghost_HO ; ii <= ICu+Nghost_HO ; ++ii ) {  
+    for (kk  = KCl-Nghost_HO ; kk <= KCu+Nghost_HO ; ++kk ) {
+      for (jj  = JCl-Nghost_HO ; jj <= JCu+Nghost_HO ; ++jj ) {
+	for ( ii = ICl-Nghost_HO ; ii <= ICu+Nghost_HO ; ++ii ) {  
   
-	// deallocate TD
-	TD[ii][jj].free_memory();
+	  // deallocate TD
+	  TD[ii][jj][kk].free_memory();
 
-	// deallocate LimitedCell
-	LimitedCell[ii][jj].clear();
+	  // deallocate LimitedCell
+	  LimitedCell[ii][jj][kk].clear();
 
-	// deallocate PreviousLimitedCell
-	PreviousLimitedCell[ii][jj].clear();
+	  // deallocate PreviousLimitedCell
+	  PreviousLimitedCell[ii][jj][kk].clear();
 	
-	// deallocate SmoothnessIndicator
-	SI[ii][jj].clear();
+	  // deallocate SmoothnessIndicator
+	  SI[ii][jj][kk].clear();
 
-	// deallocate LHS matrix and CENO geometric weights
-	if (_allocated_psinv){
-	  CENO_LHS[ii][jj].newsize(0,0);
-	  CENO_Geometric_Weights[ii][jj].clear();
-	}
+	  // deallocate LHS matrix and CENO geometric weights
+	  if (_allocated_psinv){
+	    CENO_LHS[ii][jj][kk].newsize(0,0);
+	    CENO_Geometric_Weights[ii][jj][kk].clear();
+	  }
 
+	} /* endfor */
       } /* endfor */
-    } /* endfor */
-
+    } /* end for */
     // reset flags 
     _calculated_psinv = false;
 
@@ -1609,24 +1676,26 @@ void HighOrder<SOLN_STATE>::deallocate_CellMemory(void){
     DeltaCellCenters.clear();
     i_index.clear();
     j_index.clear();
+    k_index.clear();
     A.newsize(0,0);
     GeometricWeights.clear();
     All_Delta_U.newsize(0,0);
     Delta_U.newsize(0);
     X.newsize(0);
 
+    // --> RR: deallocate constrained reconstrucrtion helper variables in deallocate_CellMemory
     // Deallocate constrained reconstruction helper variables
-    i_index_ave.clear();
-    j_index_ave.clear();
-    Constraints_Loc.clear();
-    Constraints_Normals.clear();
-    Constraints_BCs.clear();
-    Approx_Constraints_Loc.clear();
-    Approx_Constraints_Normals.clear();
-    Approx_Constraints_BCs.clear();
-    A_Assembled.newsize(0,0);
-    All_U_Assembled.newsize(0,0);
-    X_Assembled.newsize(0,0);
+//    i_index_ave.clear();
+//    j_index_ave.clear();
+//    Constraints_Loc.clear();
+//    Constraints_Normals.clear();
+//    Constraints_BCs.clear();
+//    Approx_Constraints_Loc.clear();
+//    Approx_Constraints_Normals.clear();
+//    Approx_Constraints_BCs.clear();
+//    A_Assembled.newsize(0,0);
+//    All_U_Assembled.newsize(0,0);
+//    X_Assembled.newsize(0,0);
     
 
     // Confirm the deallocation
@@ -1636,53 +1705,58 @@ void HighOrder<SOLN_STATE>::deallocate_CellMemory(void){
     rings_SI = 0;
     StartI = 0; EndI = 0;
     StartJ = 0; EndJ = 0;
+    StartK = 0; EndK = 0;
 
     _allocated_cells = false;
     _allocated_psinv = false;
   }//endif
 }
 
-/*!
- * Deallocate memory allocated to the ReconstructionTypeMap variable.
- */
-template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::deallocate_ReconstructionTypeMap(void){
+// --> RR: comment out deallocation of ReconstructionTypeMap
+///*!
+// * Deallocate memory allocated to the ReconstructionTypeMap variable.
+// */
+//template<class SOLN_STATE> inline
+//void HighOrder<SOLN_STATE>::deallocate_ReconstructionTypeMap(void){
+//
+//  if (ReconstructionTypeMap != NULL){
+//    for (int i = 0; i < Ni ; ++i ) {
+//      delete [] ReconstructionTypeMap[i]; ReconstructionTypeMap[i] = NULL; // deallocate ReconstructionTypeMap
+//    }
+//
+//    delete [] ReconstructionTypeMap; ReconstructionTypeMap = NULL;
+//  }
+//}
 
-  if (ReconstructionTypeMap != NULL){
-    for (int i = 0; i < Ni ; ++i ) {
-      delete [] ReconstructionTypeMap[i]; ReconstructionTypeMap[i] = NULL; // deallocate ReconstructionTypeMap
-    }
+// --> RR: comment out ResetBlockBoundaries(void)
+///*!
+// * Reset information related to block boundaries in the high-order object.
+// */
+//template<class SOLN_STATE> inline
+//void HighOrder<SOLN_STATE>::ResetBlockBoundaries(void){
+//
+//  // West boundaries
+//  WestBnd.Reset();
+//  S_WestBnd.Reset();
+//  N_WestBnd.Reset();
+//
+//  // East boundaries
+//  EastBnd.Reset();
+//  S_EastBnd.Reset();
+//  N_EastBnd.Reset();
+//
+//  // North boundaries
+//  NorthBnd.Reset();
+//  W_NorthBnd.Reset();
+//  E_NorthBnd.Reset();
+//
+//  // South boundaries
+//  SouthBnd.Reset();
+//  W_SouthBnd.Reset();
+//  E_SouthBnd.Reset();
+//}
 
-    delete [] ReconstructionTypeMap; ReconstructionTypeMap = NULL;
-  }
-}
-
-/*!
- * Reset information related to block boundaries in the high-order object.
- */
-template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::ResetBlockBoundaries(void){
-
-  // West boundaries
-  WestBnd.Reset();
-  S_WestBnd.Reset();
-  N_WestBnd.Reset();
-
-  // East boundaries
-  EastBnd.Reset();
-  S_EastBnd.Reset();
-  N_EastBnd.Reset();
-
-  // North boundaries
-  NorthBnd.Reset();
-  W_NorthBnd.Reset();
-  E_NorthBnd.Reset();
-
-  // South boundaries
-  SouthBnd.Reset();
-  W_SouthBnd.Reset();
-  E_SouthBnd.Reset();
-}
+//=RR=========================================================================================
 
 /*!
  * Initialize completely the high-order object.
@@ -1717,10 +1791,10 @@ void HighOrder<SOLN_STATE>::InitializeBasicVariable(int ReconstructionOrder, Geo
   SetGeometryPointer(Block);
 
   // Set properties of block boundaries (i.e. which boundaries are constrained/unconstrained and which are opaque/transparent)
-  SetPropertiesHighOrderBlock();
+  //  SetPropertiesHighOrderBlock();
 
   // Build the reconstruction type map
-  BuildReconstructionTypeMap();
+  //  BuildReconstructionTypeMap();
 
   // Compute the smoothness indicator adjustment coefficient
   /* It adjusts the value of the smoothness indicator based on the degree of the reconstruction */
@@ -1740,167 +1814,168 @@ void HighOrder<SOLN_STATE>::SetReconstructionOrder(int ReconstructionOrder){
 		     _pseudo_inverse_allocation_);
 }
 
-/*! 
- * Set the properties of high-order block boundaries,
- * based on the associated grid.
- * There are three possible boundary types:
- * 1. constrained and opaque
- * 2. unconstrained and opaque
- * 3. unconstrained and transparent
- */
-template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::SetPropertiesHighOrderBlock(void){
-
-  // Ensure that block splines require a valid scenario for constrained reconstruction
-  CheckConsistencyOfGeometricSplineProperties();
-
-  // Set properties of boundaries
-  
-  // === Reset all boundary properties (i.e. all boundaries are set to be unconstrained and transparent)
-  ResetBlockBoundaries();
-  // === Set constrained block to false
-  _constrained_block_reconstruction = false;
-
-  // === North boundary ===
-  if (Geom->IsNorthBoundaryReconstructionConstrained()){
-    // Set North boundary to be constrained
-    NorthBnd.setConstrainedBoundary();
-
-    // Set the North extensions of West and East boundaries to be opaque (see Rule #1)
-    N_WestBnd.setOpaqueBoundary();
-    N_EastBnd.setOpaqueBoundary();
-
-    // Flag block as constrained
-    _constrained_block_reconstruction = true;
-  }
-
-  // === West boundary ===
-  if (Geom->IsWestBoundaryReconstructionConstrained()){
-    // Set West boundary to be constrained
-    WestBnd.setConstrainedBoundary();
-    
-    // Set the West extensions of North and South boundaries to be unconstrained and opaque (see Rule #1)
-    W_NorthBnd.setOpaqueBoundary();
-    W_SouthBnd.setOpaqueBoundary();
-
-    // Flag block as constrained
-    _constrained_block_reconstruction = true;
-  }
-
-  // === South boundary ===
-  if (Geom->IsSouthBoundaryReconstructionConstrained()){
-    // Set South boundary to be constrained
-    SouthBnd.setConstrainedBoundary();
-
-    // Set the South extensions of West and East boundaries to be unconstrained and opaque (see Rule #1)
-    S_WestBnd.setOpaqueBoundary();
-    S_EastBnd.setOpaqueBoundary();
-
-    // Flag block as constrained
-    _constrained_block_reconstruction = true;
-  }
-
-  // === East boundary ===
-  if (Geom->IsEastBoundaryReconstructionConstrained()){
-    // Set East boundary to be constrained
-    EastBnd.setConstrainedBoundary();
-    
-    // Set the East extensions of North and South boundaries to be unconstrained and opaque (see Rule #1)
-    E_NorthBnd.setOpaqueBoundary();
-    E_SouthBnd.setOpaqueBoundary();
-
-    // Flag block as constrained
-    _constrained_block_reconstruction = true;
-  }
-
-  // === North-West corner ===
-  if (Geom->IsNorthExtendWestBoundaryReconstructionConstrained()){
-    // Set North extension of West boundary to be constrained
-    N_WestBnd.setConstrainedBoundary();
-    // Set West extension of North boundary to be opaque (i.e. avoid corner ghost cells)
-    W_NorthBnd.setOpaqueBoundary();
-
-    // Flag block as constrained
-    _constrained_block_reconstruction = true;
-  }
-  if (Geom->IsWestExtendNorthBoundaryReconstructionConstrained()){
-    // Set West extension of North boundary to be constrained
-    W_NorthBnd.setConstrainedBoundary();
-    // Set North extension of West boundary to be opaque (i.e. avoid corner ghost cells)
-    N_WestBnd.setOpaqueBoundary();
-
-    // Flag block as constrained
-    _constrained_block_reconstruction = true;
-  }
-
-
-  // === South-West corner ===
-  if (Geom->IsWestExtendSouthBoundaryReconstructionConstrained()){
-    // Set West extension of South boundary to be constrained
-    W_SouthBnd.setConstrainedBoundary();
-    // Set South extension of West boundary to be opaque (i.e. avoid corner ghost cells)
-    S_WestBnd.setOpaqueBoundary();
-
-    // Flag block as constrained
-    _constrained_block_reconstruction = true;
-  }
-  if (Geom->IsSouthExtendWestBoundaryReconstructionConstrained()){
-    // Set South extension of West boundary to be constrained
-    S_WestBnd.setConstrainedBoundary();
-    // Set West extension of South boundary to be opaque (i.e. avoid corner ghost cells)
-    W_SouthBnd.setOpaqueBoundary();
-
-    // Flag block as constrained
-    _constrained_block_reconstruction = true;
-  }
-
-
-  // === South-East corner ===
-  if (Geom->IsSouthExtendEastBoundaryReconstructionConstrained()){
-    // Set South extension of East boundary to be constrained
-    S_EastBnd.setConstrainedBoundary();
-    // Set East extension of South boundary to be opaque (i.e. avoid corner ghost cells)
-    E_SouthBnd.setOpaqueBoundary();
-
-    // Flag block as constrained
-    _constrained_block_reconstruction = true;
-  }
-  if (Geom->IsEastExtendSouthBoundaryReconstructionConstrained()){
-    // Set East extension of South boundary to be constrained
-    E_SouthBnd.setConstrainedBoundary();
-    // Set South extension of East boundary to be opaque (i.e. avoid corner ghost cells)
-    S_EastBnd.setOpaqueBoundary();
-
-    // Flag block as constrained
-    _constrained_block_reconstruction = true;
-  }
-
-
-  // === North-East corner ===
-  if (Geom->IsEastExtendNorthBoundaryReconstructionConstrained()){
-    // Set East extension of North boundary to be constrained
-    E_NorthBnd.setConstrainedBoundary();
-    // Set North extension of East boundary to be opaque (i.e. avoid corner ghost cells)
-    N_EastBnd.setOpaqueBoundary();
-
-    // Flag block as constrained
-    _constrained_block_reconstruction = true;
-  }
-  if (Geom->IsNorthExtendEastBoundaryReconstructionConstrained()){
-    // Set North extension of East boundary to be constrained
-    N_EastBnd.setConstrainedBoundary();
-    // Set East extension of North boundary to be opaque (i.e. avoid corner ghost cells)
-    E_NorthBnd.setOpaqueBoundary();
-
-    // Flag block as constrained
-    _constrained_block_reconstruction = true;
-  }
-
-  // Set indexes between which solution reconstruction is performed.
-  StartI = ICl - Nghost_HO; EndI = ICu + Nghost_HO;
-  StartJ = JCl - Nghost_HO; EndJ = JCu + Nghost_HO;
-
-}
+// --> RR: SetPropertiesHighOrderBlock(void) for constrained block boundaries
+///*! 
+// * Set the properties of high-order block boundaries,
+// * based on the associated grid.
+// * There are three possible boundary types:
+// * 1. constrained and opaque
+// * 2. unconstrained and opaque
+// * 3. unconstrained and transparent
+// */
+//template<class SOLN_STATE> inline
+//void HighOrder<SOLN_STATE>::SetPropertiesHighOrderBlock(void){
+//
+//  // Ensure that block splines require a valid scenario for constrained reconstruction
+//  CheckConsistencyOfGeometricSplineProperties();
+//
+//  // Set properties of boundaries
+//  
+//  // === Reset all boundary properties (i.e. all boundaries are set to be unconstrained and transparent)
+//  ResetBlockBoundaries();
+//  // === Set constrained block to false
+//  _constrained_block_reconstruction = false;
+//
+//  // === North boundary ===
+//  if (Geom->IsNorthBoundaryReconstructionConstrained()){
+//    // Set North boundary to be constrained
+//    NorthBnd.setConstrainedBoundary();
+//
+//    // Set the North extensions of West and East boundaries to be opaque (see Rule #1)
+//    N_WestBnd.setOpaqueBoundary();
+//    N_EastBnd.setOpaqueBoundary();
+//
+//    // Flag block as constrained
+//    _constrained_block_reconstruction = true;
+//  }
+//
+//  // === West boundary ===
+//  if (Geom->IsWestBoundaryReconstructionConstrained()){
+//    // Set West boundary to be constrained
+//    WestBnd.setConstrainedBoundary();
+//    
+//    // Set the West extensions of North and South boundaries to be unconstrained and opaque (see Rule #1)
+//    W_NorthBnd.setOpaqueBoundary();
+//    W_SouthBnd.setOpaqueBoundary();
+//
+//    // Flag block as constrained
+//    _constrained_block_reconstruction = true;
+//  }
+//
+//  // === South boundary ===
+//  if (Geom->IsSouthBoundaryReconstructionConstrained()){
+//    // Set South boundary to be constrained
+//    SouthBnd.setConstrainedBoundary();
+//
+//    // Set the South extensions of West and East boundaries to be unconstrained and opaque (see Rule #1)
+//    S_WestBnd.setOpaqueBoundary();
+//    S_EastBnd.setOpaqueBoundary();
+//
+//    // Flag block as constrained
+//    _constrained_block_reconstruction = true;
+//  }
+//
+//  // === East boundary ===
+//  if (Geom->IsEastBoundaryReconstructionConstrained()){
+//    // Set East boundary to be constrained
+//    EastBnd.setConstrainedBoundary();
+//    
+//    // Set the East extensions of North and South boundaries to be unconstrained and opaque (see Rule #1)
+//    E_NorthBnd.setOpaqueBoundary();
+//    E_SouthBnd.setOpaqueBoundary();
+//
+//    // Flag block as constrained
+//    _constrained_block_reconstruction = true;
+//  }
+//
+//  // === North-West corner ===
+//  if (Geom->IsNorthExtendWestBoundaryReconstructionConstrained()){
+//    // Set North extension of West boundary to be constrained
+//    N_WestBnd.setConstrainedBoundary();
+//    // Set West extension of North boundary to be opaque (i.e. avoid corner ghost cells)
+//    W_NorthBnd.setOpaqueBoundary();
+//
+//    // Flag block as constrained
+//    _constrained_block_reconstruction = true;
+//  }
+//  if (Geom->IsWestExtendNorthBoundaryReconstructionConstrained()){
+//    // Set West extension of North boundary to be constrained
+//    W_NorthBnd.setConstrainedBoundary();
+//    // Set North extension of West boundary to be opaque (i.e. avoid corner ghost cells)
+//    N_WestBnd.setOpaqueBoundary();
+//
+//    // Flag block as constrained
+//    _constrained_block_reconstruction = true;
+//  }
+//
+//
+//  // === South-West corner ===
+//  if (Geom->IsWestExtendSouthBoundaryReconstructionConstrained()){
+//    // Set West extension of South boundary to be constrained
+//    W_SouthBnd.setConstrainedBoundary();
+//    // Set South extension of West boundary to be opaque (i.e. avoid corner ghost cells)
+//    S_WestBnd.setOpaqueBoundary();
+//
+//    // Flag block as constrained
+//    _constrained_block_reconstruction = true;
+//  }
+//  if (Geom->IsSouthExtendWestBoundaryReconstructionConstrained()){
+//    // Set South extension of West boundary to be constrained
+//    S_WestBnd.setConstrainedBoundary();
+//    // Set West extension of South boundary to be opaque (i.e. avoid corner ghost cells)
+//    W_SouthBnd.setOpaqueBoundary();
+//
+//    // Flag block as constrained
+//    _constrained_block_reconstruction = true;
+//  }
+//
+//
+//  // === South-East corner ===
+//  if (Geom->IsSouthExtendEastBoundaryReconstructionConstrained()){
+//    // Set South extension of East boundary to be constrained
+//    S_EastBnd.setConstrainedBoundary();
+//    // Set East extension of South boundary to be opaque (i.e. avoid corner ghost cells)
+//    E_SouthBnd.setOpaqueBoundary();
+//
+//    // Flag block as constrained
+//    _constrained_block_reconstruction = true;
+//  }
+//  if (Geom->IsEastExtendSouthBoundaryReconstructionConstrained()){
+//    // Set East extension of South boundary to be constrained
+//    E_SouthBnd.setConstrainedBoundary();
+//    // Set South extension of East boundary to be opaque (i.e. avoid corner ghost cells)
+//    S_EastBnd.setOpaqueBoundary();
+//
+//    // Flag block as constrained
+//    _constrained_block_reconstruction = true;
+//  }
+//
+//
+//  // === North-East corner ===
+//  if (Geom->IsEastExtendNorthBoundaryReconstructionConstrained()){
+//    // Set East extension of North boundary to be constrained
+//    E_NorthBnd.setConstrainedBoundary();
+//    // Set North extension of East boundary to be opaque (i.e. avoid corner ghost cells)
+//    N_EastBnd.setOpaqueBoundary();
+//
+//    // Flag block as constrained
+//    _constrained_block_reconstruction = true;
+//  }
+//  if (Geom->IsNorthExtendEastBoundaryReconstructionConstrained()){
+//    // Set North extension of East boundary to be constrained
+//    N_EastBnd.setConstrainedBoundary();
+//    // Set East extension of North boundary to be opaque (i.e. avoid corner ghost cells)
+//    E_NorthBnd.setOpaqueBoundary();
+//
+//    // Flag block as constrained
+//    _constrained_block_reconstruction = true;
+//  }
+//
+//  // Set indexes between which solution reconstruction is performed.
+//  StartI = ICl - Nghost_HO; EndI = ICu + Nghost_HO;
+//  StartJ = JCl - Nghost_HO; EndJ = JCu + Nghost_HO;
+//
+//}
 
 ///*! 
 // * Ensure that the block geometric splines require a realizable
@@ -4684,27 +4759,58 @@ double HighOrder<SOLN_STATE>::ComputeReconstructionsErrorL2(const int &iCell, co
  * of limiting functions. 
  */
 template<class SOLN_STATE> inline
-double HighOrder<SOLN_STATE>::CalculateLimiter(double *uQuad, const int &nQuad,
-						 const double &u0, const double &u0Min,
-						 const double &u0Max, const int &Limiter){
+double HighOrder<SOLN_STATE>::CalculateLimiter(double *uHexa, const int &n,
+					       const int &i, const int &j, const int &k,
+					       const double &u0Min, const double &u0Max, const int &Limiter){
+
   switch(Limiter) {
   case LIMITER_ONE :
-    return ONE;
+    PHI = ONE;
+    break;
   case LIMITER_ZERO :
-    return ZERO;
+    PHI = ZERO;
+    break;
   case LIMITER_BARTH_JESPERSEN :
-    return Limiter_BarthJespersen(uQuad,u0,u0Min,u0Max,nQuad);
+    PHI = Limiter_BarthJespersen(uHexa,  W[i][j][k][n], 
+				 u0Min, u0Max, 6);
+    break;
   case LIMITER_VENKATAKRISHNAN :
-    return Limiter_Venkatakrishnan(uQuad,u0,u0Min,u0Max,nQuad);
-  case LIMITER_VENKATAKRISHNAN_CORRECTED :
-    return Limiter_Venkatakrishnan_Modified(uQuad,u0,u0Min,u0Max,nQuad);
+    PHI = Limiter_Venkatakrishnan(uHexa,  W[i][j][k][n], 
+				  u0Min, u0Max, 6);
+    break;
   case LIMITER_VANLEER :
-    return Limiter_VanLeer(uQuad,u0,u0Min,u0Max,nQuad);
+    PHI = Limiter_VanLeer(uHexa,  W[i][j][k][n], 
+			  u0Min, u0Max, 6);
+    break;
   case LIMITER_VANALBADA :
-    return Limiter_VanAlbada(uQuad,u0,u0Min,u0Max,nQuad);
+    PHI = Limiter_VanAlbada(uHexa,  W[i][j][k][n], 
+			    u0Min, u0Max, 6);
+    break;
   default:
-    return Limiter_BarthJespersen(uQuad,u0,u0Min,u0Max,nQuad);
+    PHI = Limiter_BarthJespersen(uHexa,  W[i][j][k][n], 
+				 u0Min, u0Max, 6);
+    break;
   };
+
+//  switch(Limiter) {
+//  case LIMITER_ONE :
+//    return ONE;
+//  case LIMITER_ZERO :
+//    return ZERO;
+//  case LIMITER_BARTH_JESPERSEN :
+//    return Limiter_BarthJespersen(uQuad,u0,u0Min,u0Max,nQuad);
+//  case LIMITER_VENKATAKRISHNAN :
+//    return Limiter_Venkatakrishnan(uQuad,u0,u0Min,u0Max,nQuad);
+//  case LIMITER_VENKATAKRISHNAN_CORRECTED :
+//    return Limiter_Venkatakrishnan_Modified(uQuad,u0,u0Min,u0Max,nQuad);
+//  case LIMITER_VANLEER :
+//    return Limiter_VanLeer(uQuad,u0,u0Min,u0Max,nQuad);
+//  case LIMITER_VANALBADA :
+//    return Limiter_VanAlbada(uQuad,u0,u0Min,u0Max,nQuad);
+//  default:
+//    return Limiter_BarthJespersen(uQuad,u0,u0Min,u0Max,nQuad);
+//  };
+
 }
 
 /*! 
