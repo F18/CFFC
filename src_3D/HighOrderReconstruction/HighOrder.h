@@ -1467,7 +1467,7 @@ void HighOrder<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder, 
 	TD[i][j][k].GenerateContainer(OrderOfReconstruction);
 
 	// Set smoothness indicator and monotonicity flag
-	InitializeMonotonicityVariables(i,j);
+	InitializeMonotonicityVariables(i,j,k);
 
 	// Allocate pseudo-inverse data
 	// Note: There is no need to initialize these containers here!
@@ -1756,8 +1756,6 @@ void HighOrder<SOLN_STATE>::deallocate_CellMemory(void){
 //  E_SouthBnd.Reset();
 //}
 
-//=RR=========================================================================================
-
 /*!
  * Initialize completely the high-order object.
  */
@@ -1783,6 +1781,7 @@ void HighOrder<SOLN_STATE>::InitializeBasicVariable(int ReconstructionOrder, Geo
   // Allocate (re-allocate) memory for the high-order object.
   allocate(Block.ICu-Block.ICl+1,
 	   Block.JCu-Block.JCl+1,
+	   Block.KCu-Block.KCl+1,
 	   Block.Nghost,
 	   _pseudo_inverse_allocation_,
 	   ReconstructionOrder);
@@ -2021,20 +2020,17 @@ int HighOrder<SOLN_STATE>::getNumberOfRings(int number_of_Taylor_derivatives){
   case 1:   // piecewise constant
     return 0;			// it corresponds to 0 neighbour cells
 
-  case 3:   // piecewise linear
-    return 1; 			// it corresponds to 8 neighbour cells
+  case 4:   // piecewise linear
+    return 1; 			// it corresponds to 26 neighbour cells
 
-  case 6:   // piecewise quadratic
-    return 2;			// it corresponds to 24 neighbour cells
+  case 10:   // piecewise quadratic
+    return 2;			// it corresponds to 124 neighbour cells
 
-  case 10:  // piecewise cubic
-    return 2;			// it corresponds to 24 neighbour cells
+  case 20:  // piecewise cubic
+    return 2;			// it corresponds to 124 neighbour cells
 
-  case 15:  // piecewise quartic
-    return 2;			// it corresponds to 24 neighbour cells
-
-  case 21:  // piecewise quintic
-    return 3;			// it corresponds to 48 neighbour cells
+  case 35:  // piecewise quartic
+    return 2;			// it corresponds to 124 neighbour cells
 
   default:
     return 0;
@@ -2049,7 +2045,7 @@ int HighOrder<SOLN_STATE>::getNumberOfRings(int number_of_Taylor_derivatives){
  */
 template<class SOLN_STATE> inline
 int HighOrder<SOLN_STATE>::getTaylorDerivativesSize(const int &ReconstructionOrder) {
-  return (ReconstructionOrder + 1) * (ReconstructionOrder + 2)/2;
+  return (ReconstructionOrder+1)*(ReconstructionOrder+2)*(ReconstructionOrder+3) / 6;
 }
 
 // getNghostHighOrder()
@@ -2188,7 +2184,7 @@ int HighOrder<SOLN_STATE>::getStencilSize(const int &ReconstructionOrder) {
   // Calculate temp based on the number of rings
   temp = 1 + 2*getNumberOfRings(getTaylorDerivativesSize(ReconstructionOrder));
 
-  return temp*temp;
+  return temp*temp*temp;
 } 
 
 //! Reset the monotonicity data (i.e. flag + limiter)
@@ -2196,14 +2192,15 @@ int HighOrder<SOLN_STATE>::getStencilSize(const int &ReconstructionOrder) {
 template<class SOLN_STATE> inline
 void HighOrder<SOLN_STATE>::ResetMonotonicityData(void){
 
-  int i,j;
+  int i,j,k;
 
-  for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
-    for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i ) {    
-      ResetMonotonicityData(i,j);
+  for (k  = KCl-Nghost_HO ; k <= KCu+Nghost_HO ; ++k ) {
+    for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
+      for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i ) {    
+	ResetMonotonicityData(i,j,k);
+      } /* endfor */
     } /* endfor */
   } /* endfor */
-
 }
 
 /*!
@@ -2211,15 +2208,15 @@ void HighOrder<SOLN_STATE>::ResetMonotonicityData(void){
  * for the specified cell.
  */
 template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::ResetMonotonicityData(const int & ii, const int & jj){
+void HighOrder<SOLN_STATE>::ResetMonotonicityData(const int & ii, const int & jj, const int & kk){
 
   /* Reset the CENO smoothness indicator flag to OFF (i.e. smooth solution) */
-  for (int k = 0; k <= NumberOfVariables() - 1; ++k){
-    LimitedCell[ii][jj][k] = OFF;
+  for (int n = 0; n <= NumberOfVariables() - 1; ++n){
+    LimitedCell[ii][jj][kk][n] = OFF;
   } /* endfor */
   
   // Reset the limiter value (i.e. no limiting)
-  TD[ii][jj].ResetLimiter(); 
+  TD[ii][jj][kk].ResetLimiter();
 }
 
 /*! Reset the backup of monotonicity data (i.e. flag + limiter)
@@ -2229,13 +2226,13 @@ template<class SOLN_STATE> inline
 void HighOrder<SOLN_STATE>::ResetMonotonicityDataBackup(void){
 
   int i,j;
-
-  for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
-    for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i ) {    
-      ResetMonotonicityDataBackup(i,j);
+  for (k  = KCl-Nghost_HO ; k <= KCu+Nghost_HO ; ++k ) {
+    for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
+      for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i ) {    
+	ResetMonotonicityDataBackup(i,j,k);
+      } /* endfor */
     } /* endfor */
   } /* endfor */
-
 }
 
 /*!
@@ -2243,15 +2240,15 @@ void HighOrder<SOLN_STATE>::ResetMonotonicityDataBackup(void){
  * (i.e. flag copy + frozen limiter) for the specified cell.
  */
 template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::ResetMonotonicityDataBackup(const int & ii, const int & jj){
+void HighOrder<SOLN_STATE>::ResetMonotonicityDataBackup(const int & ii, const int & jj, const int & kk){
 
   /* Reset the CENO smoothness indicator flag copy to OFF (i.e. smooth solution) */
-  for (int k = 0; k <= NumberOfVariables() - 1; ++k){
-    PreviousLimitedCell[ii][jj][k] = OFF;
+  for (int n = 0; n <= NumberOfVariables() - 1; ++n){
+    PreviousLimitedCell[ii][jj][kk][n] = OFF;
   } /* endfor */
   
   // Reset the value of the frozen limiter (i.e. no limiting)
-  TD[ii][jj].ResetFrozenLimiter();
+  TD[ii][jj][kk].ResetFrozenLimiter();
 }
 
 /*! 
@@ -2259,12 +2256,12 @@ void HighOrder<SOLN_STATE>::ResetMonotonicityDataBackup(const int & ii, const in
  * used for storing monotonicity information.
  */
 template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::InitializeMonotonicityVariables(const int & ii, const int & jj){
+void HighOrder<SOLN_STATE>::InitializeMonotonicityVariables(const int & ii, const int & jj, const int & kk){
 
   // Allocate memory and initialize containers
-  SI[ii][jj].assign(NumberOfVariables(), 0.0);
-  LimitedCell[ii][jj].assign(NumberOfVariables(), OFF);
-  PreviousLimitedCell[ii][jj].assign(NumberOfVariables(), OFF);
+  SI[ii][jj][kk].assign(NumberOfVariables(), 0.0);
+  LimitedCell[ii][jj][kk].assign(NumberOfVariables(), OFF);
+  PreviousLimitedCell[ii][jj][kk].assign(NumberOfVariables(), OFF);
 
 }
 
@@ -2275,30 +2272,31 @@ void HighOrder<SOLN_STATE>::InitializeMonotonicityVariables(const int & ii, cons
  * as non-smooth.
  */
 template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::AssessInterpolantsSmoothness(const int &iCell, const int &jCell){
+void HighOrder<SOLN_STATE>::AssessInterpolantsSmoothness(const int &iCell, const int &jCell, const int & kCell){
 
-  int parameter;
+  int i,j,k,parameter;
 
   for(parameter=1; parameter<=NumberOfVariables(); ++parameter){
 
-    if( CellSmoothnessIndicatorValue(iCell,jCell,parameter) < CENO_Tolerances::Fit_Tolerance ){
-
-      // Flag the (iCell,jCell) cell with inadequate reconstruction for the current variable
-      CellInadequateFitValue(iCell,jCell,parameter) = ON;
+    if( CellSmoothnessIndicatorValue(iCell,jCell,kCell,parameter) < CENO_Tolerances::Fit_Tolerance ){
 
       if (CENO_Execution_Mode::CENO_PADDING){
-	/* Flag also all cells surrounding the (iCell,jCell) cell with inadequate reconstruction if CENO_Padding is ON */
-	CellInadequateFitValue(iCell-1,jCell-1,parameter) = ON;
-	CellInadequateFitValue(iCell  ,jCell-1,parameter) = ON;
-	CellInadequateFitValue(iCell+1,jCell-1,parameter) = ON;
+	/* Flag all cells in the layer surrounding (and including) the cell (iCell,jCell,kCell) 
+	   with inadequate reconstruction if CENO_Padding is ON */
 
-	CellInadequateFitValue(iCell-1,jCell ,parameter) = ON;
-	CellInadequateFitValue(iCell+1,jCell ,parameter) = ON;
+ 	for (k=kCell-1, k <= kCell+1, ++k){
+	  for (j=jCell-1, j <= jCell+1, ++j){
+	    for (i=iCell-1, i <= iCell+1, ++i){
+	      CellInadequateFitValue(i,j,k,parameter) = ON;
+	    } //endfor
+	  } //endfor
+	} //endfor
 
-	CellInadequateFitValue(iCell-1,jCell+1,parameter) = ON;
-	CellInadequateFitValue(iCell  ,jCell+1,parameter) = ON;
-	CellInadequateFitValue(iCell+1,jCell+1,parameter) = ON;
-      }//endif
+      } else {
+	// Flag only the cell (iCell,jCell,kCell) with inadequate reconstruction for the current variable
+	CellInadequateFitValue(iCell,jCell,kCell,parameter) = ON;
+      }//endif 
+
     }//endif
 
   }//endfor(parameter)
@@ -2323,11 +2321,12 @@ template<class Soln_Block_Type>
 void HighOrder<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
 							 const Soln_State &
 							 (Soln_Block_Type::*ReconstructedSoln)(const int &,
+											       const int &,
 											       const int &) const){
 
   // Set local variables
   int parameter;
-  int i,j;
+  int i,j,k;
   
   // == Check if the reconstruction polynomial is piecewise constant
   if (RecOrder() == 0){
@@ -2337,103 +2336,110 @@ void HighOrder<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
 
   
   // Check whether constrained reconstruction is required anywhere in the block.
-  if ( !_constrained_block_reconstruction ){
+  //  if ( !_constrained_block_reconstruction ){
+  
+  // ===  Compute the smoothness indicator using the central stencil ===
+  
+  // Compute the smoothness indicator for cells inside the domain plus
+  // one ring of ghost cells which are used for the flux calculation at
+  // block boundaries
 
-    // ===  Compute the smoothness indicator using the central stencil ===
-    
-    // Compute the smoothness indicator for cells inside the domain
-    for ( j  = JCl ; j <= JCu ; ++j ) {
-      for ( i = ICl ; i <= ICu ; ++i ) {
+  for ( k  = KCl-1 ; k <= KCu+1 ; ++k ) {
+    for ( j  = JCl-1 ; j <= JCu+1 ; ++j ) {
+      for ( i = ICl-1 ; i <= ICu+1 ; ++i ) {
 	ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
 						    ReconstructedSoln,
-						    i, j);	
+						    i, j, k);
       } /* endfor(i) */
     } /* endfor(j) */
-    
-    // Compute the smoothness indicator for ghost cells involved in flux calculation
-    // == South and North boundaries ==
-    for (i = ICl; i<=ICu; ++i){
-      // == South bnd.
-      ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
-						  ReconstructedSoln,
-						  i, JCl-1);	
-      
-      // == North bnd.
-      ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
-						  ReconstructedSoln,
-						  i, JCu+1);
-    }
+  } /* endfor(k) */
 
-    // == West and East boundaries ==
-    for (j = JCl; j<=JCu; ++j){
-      // == West bnd.
-      ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
-						  ReconstructedSoln,
-						  ICl-1, j);      
+//    // Compute the smoothness indicator for ghost cells involved in flux calculation
+//    // == South and North boundaries ==
+//    for (i = ICl; i<=ICu; ++i){
+//      // == South bnd.
+//      ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
+//						  ReconstructedSoln,
+//						  i, JCl-1);	
+//      
+//      // == North bnd.
+//      ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
+//						  ReconstructedSoln,
+//						  i, JCu+1);
+//    }
+//
+//    // == West and East boundaries ==
+//    for (j = JCl; j<=JCu; ++j){
+//      // == West bnd.
+//      ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
+//						  ReconstructedSoln,
+//						  ICl-1, j);      
+//
+//      // == East bnd.
+//      ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
+//						  ReconstructedSoln,
+//						  ICu+1, j);      
+//    }
 
-      // == East bnd.
-      ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
-						  ReconstructedSoln,
-						  ICu+1, j);      
-    }
 
-  } else {
-
-    // ===  Compute the smoothness indicator using the central and deviated stencils ===
-
-    // Compute the smoothness indicator for cells inside the domain
-    for ( j  = JCl ; j <= JCu ; ++j ) {
-      for ( i = ICl ; i <= ICu ; ++i ) {
-	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
-						     ReconstructedSoln,
-						     i,j);
-      } /* endfor(i) */
-    } /* endfor(j) */    
-
-    // Compute the smoothness indicator for ghost cells involved in flux calculation
-    // === West Bnd. ===
-    if (!IsWestConstrainedReconstructionRequired()){
-      for (j = JCl; j <= JCu; ++j){
-	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
-						     ReconstructedSoln,
-						     ICl-1,j);
-      }
-    }
-
-    // === East Bnd. ===
-    if (!IsEastConstrainedReconstructionRequired()){
-      for (j = JCl; j <= JCu; ++j){
-	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
-						     ReconstructedSoln,
-						     ICu+1,j);
-      }
-    }
-
-    // === North Bnd. ===
-    if (!IsEastConstrainedReconstructionRequired()){
-      for (i = ICl; i <= ICu; ++i){
-	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
-						     ReconstructedSoln,
-						     i,JCu+1);
-      }
-    }
-
-    // === South Bnd. ===
-    if (!IsEastConstrainedReconstructionRequired()){
-      for (i = ICl; i <= ICu; ++i){
-	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
-						     ReconstructedSoln,
-						     i,JCl-1);
-      }
-    }
-
-  } // endif (_constrained_block_reconstruction)
+// --> RR: commment out SI calc for constrained blocks
+//  } else {
+//
+//    // ===  Compute the smoothness indicator using the central and deviated stencils ===
+//
+//    // Compute the smoothness indicator for cells inside the domain
+//    for ( j  = JCl ; j <= JCu ; ++j ) {
+//      for ( i = ICl ; i <= ICu ; ++i ) {
+//	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
+//						     ReconstructedSoln,
+//						     i,j);
+//      } /* endfor(i) */
+//    } /* endfor(j) */    
+//
+//    // Compute the smoothness indicator for ghost cells involved in flux calculation
+//    // === West Bnd. ===
+//    if (!IsWestConstrainedReconstructionRequired()){
+//      for (j = JCl; j <= JCu; ++j){
+//	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
+//						     ReconstructedSoln,
+//						     ICl-1,j);
+//      }
+//    }
+//
+//    // === East Bnd. ===
+//    if (!IsEastConstrainedReconstructionRequired()){
+//      for (j = JCl; j <= JCu; ++j){
+//	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
+//						     ReconstructedSoln,
+//						     ICu+1,j);
+//      }
+//    }
+//
+//    // === North Bnd. ===
+//    if (!IsEastConstrainedReconstructionRequired()){
+//      for (i = ICl; i <= ICu; ++i){
+//	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
+//						     ReconstructedSoln,
+//						     i,JCu+1);
+//      }
+//    }
+//
+//    // === South Bnd. ===
+//    if (!IsEastConstrainedReconstructionRequired()){
+//      for (i = ICl; i <= ICu; ++i){
+//	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
+//						     ReconstructedSoln,
+//						     i,JCl-1);
+//      }
+//    }
+//
+//  } // endif (_constrained_block_reconstruction)
 
 }
 
 /*! 
  * Compute the data related to CENO smoothness indicator
- * for a given cell (iCell,jCell) which is know to have a 
+ * for a given cell (iCell,jCell,kCell) which is know to have a 
  * central stencil.
  *
  * \param [in] SolnBlk The solution block which provides solution data.
@@ -2442,112 +2448,114 @@ void HighOrder<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
 template<class SOLN_STATE>
 template<class Soln_Block_Type> inline
 void HighOrder<SOLN_STATE>::ComputeCellSmoothnessDataWithCentralStencil(Soln_Block_Type &SolnBlk,
-									  const Soln_State & 
-									  (Soln_Block_Type::*ReconstructedSoln)(const int &,
-														const int &) const,
-									  const int &iCell, const int &jCell){
+									const Soln_State & 
+									(Soln_Block_Type::*ReconstructedSoln)(const int &,
+													      const int &,
+													      const int &) const,
+									const int &iCell, const int &jCell, const int &kCell){
 
 
   /* 
    * Set the central supporting stencil.
-   * Write the 'i' and 'j' indexes of the cells that are part of
-   * the smoothness indicator calculation stencil of cell (iCell,jCell).
+   * Write the 'i','j','k' indices of the cells that are part of
+   * the smoothness indicator calculation stencil of cell (iCell,jCell,kCell).
    * Use the number of smoothness indicator rings set in the class to 
    * determine how far the stencil extends.
-   * The indexes are written in the i_index and j_index containers.
+   * The indices are written in the i_index, j_index and k_index containers.
    * Because these containers might be larger than needed, 
    * the StencilSize_SmoothnessIndicator variable is used for storing 
    * the smoothness indicator stencil size.
    *
-   * Note: The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
+   * Note: The first position (i_index[0],j_index[0],k_index[0]) corresponds to (iCell,jCell,kCell).
    */
-  SetCentralStencil(iCell,jCell,
-		    i_index,j_index,
+  SetCentralStencil(iCell,jCell,kCell,
+		    i_index,j_index,k_index,
 		    rings_SI,StencilSize_SmoothnessIndicator);
 	
   // Evaluate the Smoothness Indicator for the current cell for all solution state variables
   ComputeSmoothnessIndicator(SolnBlk, ReconstructedSoln,
-			     iCell, jCell, i_index, j_index, StencilSize_SmoothnessIndicator);
+			     iCell, jCell, kCell, i_index, j_index, k_index, StencilSize_SmoothnessIndicator);
   
   // Check the smoothness condition
-  AssessInterpolantsSmoothness(iCell,jCell);
+  AssessInterpolantsSmoothness(iCell,jCell,kCell);
 
 }
 
-/*! 
- * Compute the data related to CENO smoothness indicator
- * for a given cell (iCell,jCell) which is know to have a 
- * deviated stencil.
- *
- * \param [in] SolnBlk The solution block which provides solution data.
- * \param ReconstructedSoln member function of Soln_Block_Type which returns the average solution.
- */
-template<class SOLN_STATE>
-template<class Soln_Block_Type> inline
-void HighOrder<SOLN_STATE>::ComputeCellSmoothnessDataWithDeviatedStencil(Soln_Block_Type &SolnBlk,
-									   const Soln_State &
-									   (Soln_Block_Type::*ReconstructedSoln)(const int &,
-														 const int &) const,
-									   const int &iCell, const int &jCell){
-  
-  // Set the biased supporting stencil (i.e. deviated from central and not extended)
-  SetDeviatedReconstructionStencil(iCell,jCell,
-				   i_index_ave, j_index_ave,
-				   RingsSI(), false);
-
-  // Evaluate the Smoothness Indicator for the current cell for all solution state variables
-  ComputeSmoothnessIndicator(SolnBlk, ReconstructedSoln,
-			     iCell, jCell, i_index_ave, j_index_ave, i_index_ave.size());
-  
-  // Check the smoothness condition
-  AssessInterpolantsSmoothness(iCell,jCell);
-
-}
-
-/*! 
- * Compute the data related to CENO smoothness indicator
- * for a given cell (iCell,jCell) which is know to be 
- * in a constrained block.
- *
- * The purpose of this function is to provide a compact routine which 
- * picks the proper method for computing smoothness indicator data
- * based on the reconstruction type of the given cell.
- */
-template<class SOLN_STATE>
-template<class Soln_Block_Type> inline
-void HighOrder<SOLN_STATE>::ComputeCellSmoothnessDataForConstrainedBlock(Soln_Block_Type &SolnBlk,
-									   const Soln_State &
-									   (Soln_Block_Type::*ReconstructedSoln)(const int &,
-														 const int &) const,
-									   const int &iCell, const int &jCell){
-  
-  switch (ReconstructionTypeMap[iCell][jCell]){
-  case 'r':		// "Regular reconstruction"
-    // Compute the smoothness indicator using the central stencil
-    ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
-						ReconstructedSoln,
-						iCell, jCell);
-    break;
-
-  case 'm':		// "Modified reconstruction" 
-  case 'c':		// "Constrained reconstruction"
-    // Compute the smoothness indicator using the deviated stencil
-    ComputeCellSmoothnessDataWithDeviatedStencil(SolnBlk,
-						 ReconstructedSoln,
-						 iCell, jCell);
-    break;
-	  
-  case 'n':		// "No reconstruction"
-    // Do nothing
-    break;
-  } //endswitch
-
-}
+// --> RR: comment out SI calc definition for deviated and constrained stencil
+///*! 
+// * Compute the data related to CENO smoothness indicator
+// * for a given cell (iCell,jCell) which is know to have a 
+// * deviated stencil.
+// *
+// * \param [in] SolnBlk The solution block which provides solution data.
+// * \param ReconstructedSoln member function of Soln_Block_Type which returns the average solution.
+// */
+//template<class SOLN_STATE>
+//template<class Soln_Block_Type> inline
+//void HighOrder<SOLN_STATE>::ComputeCellSmoothnessDataWithDeviatedStencil(Soln_Block_Type &SolnBlk,
+//									   const Soln_State &
+//									   (Soln_Block_Type::*ReconstructedSoln)(const int &,
+//														 const int &) const,
+//									   const int &iCell, const int &jCell){
+//  
+//  // Set the biased supporting stencil (i.e. deviated from central and not extended)
+//  SetDeviatedReconstructionStencil(iCell,jCell,
+//				   i_index_ave, j_index_ave,
+//				   RingsSI(), false);
+//
+//  // Evaluate the Smoothness Indicator for the current cell for all solution state variables
+//  ComputeSmoothnessIndicator(SolnBlk, ReconstructedSoln,
+//			     iCell, jCell, i_index_ave, j_index_ave, i_index_ave.size());
+//  
+//  // Check the smoothness condition
+//  AssessInterpolantsSmoothness(iCell,jCell);
+//
+//}
+//
+///*! 
+// * Compute the data related to CENO smoothness indicator
+// * for a given cell (iCell,jCell) which is know to be 
+// * in a constrained block.
+// *
+// * The purpose of this function is to provide a compact routine which 
+// * picks the proper method for computing smoothness indicator data
+// * based on the reconstruction type of the given cell.
+// */
+//template<class SOLN_STATE>
+//template<class Soln_Block_Type> inline
+//void HighOrder<SOLN_STATE>::ComputeCellSmoothnessDataForConstrainedBlock(Soln_Block_Type &SolnBlk,
+//									   const Soln_State &
+//									   (Soln_Block_Type::*ReconstructedSoln)(const int &,
+//														 const int &) const,
+//									   const int &iCell, const int &jCell){
+//  
+//  switch (ReconstructionTypeMap[iCell][jCell]){
+//  case 'r':		// "Regular reconstruction"
+//    // Compute the smoothness indicator using the central stencil
+//    ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
+//						ReconstructedSoln,
+//						iCell, jCell);
+//    break;
+//
+//  case 'm':		// "Modified reconstruction" 
+//  case 'c':		// "Constrained reconstruction"
+//    // Compute the smoothness indicator using the deviated stencil
+//    ComputeCellSmoothnessDataWithDeviatedStencil(SolnBlk,
+//						 ReconstructedSoln,
+//						 iCell, jCell);
+//    break;
+//	  
+//  case 'n':		// "No reconstruction"
+//    // Do nothing
+//    break;
+//  } //endswitch
+//
+//}
 
 /*! 
  * Compute the CENO smoothness indicator which is used to
  * differentiate between smooth and non-smooth solution content
- * for a specific cell (iCell,jCell).
+ * for a specific cell (iCell,jCell,kCell).
  *
  * \param [in] SolnBlk The solution block which provides solution data.
  * \param ReconstructedSoln member function of Soln_Block_Type which returns the average solution.
@@ -2555,19 +2563,20 @@ void HighOrder<SOLN_STATE>::ComputeCellSmoothnessDataForConstrainedBlock(Soln_Bl
 template<class SOLN_STATE>
 template<class Soln_Block_Type>
 void HighOrder<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
-							 const Soln_State &
-							 (Soln_Block_Type::*ReconstructedSoln)(const int &,
-											       const int &) const,
-							 const int &iCell, const int &jCell,
-							 const IndexType & i_index, const IndexType & j_index,
-							 const int & StencilSize){
+						       const Soln_State &
+						       (Soln_Block_Type::*ReconstructedSoln)(const int &,
+											     const int &,
+											     const int &) const,
+						       const int &iCell, const int &jCell, const int &kCell,
+						       const IndexType & i_index, const IndexType & j_index, const IndexType & k_index,
+						       const int & StencilSize){
 
   // SET VARIABLES USED IN THE ANALYSIS PROCESS
   double alpha;
   int parameter, cell;
 
   // Set the mean solution of (iCell,jCell). It's used as a reference.
-  MeanSolution = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
+  MeanSolution = (SolnBlk.*ReconstructedSoln)(iCell,jCell,kCell);
 
   // Initialize the minimum mean solution in absolute value.
   Min_Mean_Solution = fabs(MeanSolution);
@@ -2576,35 +2585,35 @@ void HighOrder<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
     SS_Regression, SS_Residual, Max_SS_Regression, Temp_Regression, Temp_Residual. */
 
   // Initialize SS_Regression and SS_Residual
-  SS_Regression  = CellTaylorDerivState(iCell,jCell,0) - MeanSolution;
+  SS_Regression  = CellTaylorDerivState(iCell,jCell,kCell,0) - MeanSolution;
   SS_Regression *= SS_Regression;      // get the squared value
   Max_SS_Regression = SS_Regression;   // initialize Max_SS_Regression 
-  SS_Residual.Vacuum(); // Note: the residual difference for (iCell,jCell) is zero.
-
+  SS_Residual.Vacuum(); // Note: the residual difference for (iCell,jCell,kCell) is zero.
+  //=RR=========================================================================================
   // Get the normalization state
-  NormalizationState = SolnBlk.getNormalizationState(iCell,jCell);
+  NormalizationState = SolnBlk.getNormalizationState(iCell,jCell,kCell);
 
   /* Compute SS_Regression and SS_Residual for all the variables at once */
   for( cell=1; cell<StencilSize; ++cell){
 
     // Get minimum average solution in absolute value
-    Min_Mean_Solution = min(Min_Mean_Solution , fabs((SolnBlk.*ReconstructedSoln)(i_index[cell],j_index[cell])));
+    Min_Mean_Solution = min(Min_Mean_Solution , fabs((SolnBlk.*ReconstructedSoln)(i_index[cell],j_index[cell],k_index[cell])));
 
-    Temp_Regression  = CellTaylorDerivState(i_index[cell],j_index[cell],0) - MeanSolution;
+    Temp_Regression  = CellTaylorDerivState(i_index[cell],j_index[cell],k_index[0],0) - MeanSolution;
     Temp_Regression *= Temp_Regression;          /* compute Temp_Regression square */
 
     // Get maximum squared solution variation for the current Temp_Regression
     Max_SS_Regression = max(Max_SS_Regression, Temp_Regression);
 
-    Temp_Residual  = ( CellTaylorDerivState(i_index[cell],j_index[cell],0) - 
-		       SolutionStateAtLocation(iCell,jCell,CellCenter(i_index[cell],j_index[cell])) );
+    Temp_Residual  = ( CellTaylorDerivState(i_index[cell],j_index[cell],k_index[cell],0) - 
+		       SolutionStateAtLocation(iCell,jCell,CellCenter(i_index[cell],j_index[cell],k_index[cell])) );
 
     // Update SS_Regression & SS_Residual
     if (CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS){
 
       /* Compute the X and Y component of the distance between
 	 the cell center of the neighbour cell and the reconstructed cell */
-      DeltaCentroids = CellCenter(i_index[cell],j_index[cell]) - CellCenter(iCell,jCell);
+      DeltaCentroids = CellCenter(i_index[cell],j_index[cell],k_index[cell]) - CellCenter(iCell,jCell,kCell);
     
       // Compute the geometric weight based on the centroid distance
       CENO_Geometric_Weighting(GeomWeightSI, DeltaCentroids.abs());
