@@ -104,7 +104,8 @@ SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
 # HighOrderReconstruction:
 SRC_HIGH_ORDER = $(HIGH_ORDER_RECONSTRUCTION_DIR)CENO_Tolerances.cc \
                  $(HIGH_ORDER_RECONSTRUCTION_DIR)CENO_ExecutionMode.cc \
-                 $(HIGH_ORDER_RECONSTRUCTION_DIR)HighOrderInput.cc
+                 $(HIGH_ORDER_RECONSTRUCTION_DIR)HighOrderInput.cc \
+                 $(HIGH_ORDER_RECONSTRUCTION_DIR)ReconstructionHelpers.cc
 
 # AMR:
 ifeq ($(MPI_VERSION),NoMPI)

@@ -18,8 +18,7 @@ using std::vector;
 #include "../Math/NumericalLibrary.h"
 #include "CENO_ExecutionMode.h"
 #include "../Grid/Grid3DHexaBlock.h"
-
-//#include "ReconstructionHelpers.h" --> RR: 
+#include "ReconstructionHelpers.h"
 //#include "Cauchy_BoundaryConditions.h" --> RR:
 //#include "HighOrder_BlockBoundary.h" --> RR:
 
@@ -2278,6 +2277,7 @@ void HighOrder<SOLN_STATE>::AssessInterpolantsSmoothness(const int &iCell, const
 
   for(parameter=1; parameter<=NumberOfVariables(); ++parameter){
 
+    // Compare Smoothness Indicator value against the Fit_Tolerance
     if( CellSmoothnessIndicatorValue(iCell,jCell,kCell,parameter) < CENO_Tolerances::Fit_Tolerance ){
 
       if (CENO_Execution_Mode::CENO_PADDING){
@@ -2571,105 +2571,111 @@ void HighOrder<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
 						       const IndexType & i_index, const IndexType & j_index, const IndexType & k_index,
 						       const int & StencilSize){
 
-  // SET VARIABLES USED IN THE ANALYSIS PROCESS
-  double alpha;
-  int parameter, cell;
 
-  // Set the mean solution of (iCell,jCell). It's used as a reference.
-  MeanSolution = (SolnBlk.*ReconstructedSoln)(iCell,jCell,kCell);
-
-  // Initialize the minimum mean solution in absolute value.
-  Min_Mean_Solution = fabs(MeanSolution);
-
-  /*! NOTE: The following used variables are set as private to the class:
-    SS_Regression, SS_Residual, Max_SS_Regression, Temp_Regression, Temp_Residual. */
-
-  // Initialize SS_Regression and SS_Residual
-  SS_Regression  = CellTaylorDerivState(iCell,jCell,kCell,0) - MeanSolution;
-  SS_Regression *= SS_Regression;      // get the squared value
-  Max_SS_Regression = SS_Regression;   // initialize Max_SS_Regression 
-  SS_Residual.Vacuum(); // Note: the residual difference for (iCell,jCell,kCell) is zero.
-  //=RR=========================================================================================
-  // Get the normalization state
-  NormalizationState = SolnBlk.getNormalizationState(iCell,jCell,kCell);
-
-  /* Compute SS_Regression and SS_Residual for all the variables at once */
-  for( cell=1; cell<StencilSize; ++cell){
-
-    // Get minimum average solution in absolute value
-    Min_Mean_Solution = min(Min_Mean_Solution , fabs((SolnBlk.*ReconstructedSoln)(i_index[cell],j_index[cell],k_index[cell])));
-
-    Temp_Regression  = CellTaylorDerivState(i_index[cell],j_index[cell],k_index[0],0) - MeanSolution;
-    Temp_Regression *= Temp_Regression;          /* compute Temp_Regression square */
-
-    // Get maximum squared solution variation for the current Temp_Regression
-    Max_SS_Regression = max(Max_SS_Regression, Temp_Regression);
-
-    Temp_Residual  = ( CellTaylorDerivState(i_index[cell],j_index[cell],k_index[cell],0) - 
-		       SolutionStateAtLocation(iCell,jCell,CellCenter(i_index[cell],j_index[cell],k_index[cell])) );
-
-    // Update SS_Regression & SS_Residual
-    if (CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS){
-
-      /* Compute the X and Y component of the distance between
-	 the cell center of the neighbour cell and the reconstructed cell */
-      DeltaCentroids = CellCenter(i_index[cell],j_index[cell],k_index[cell]) - CellCenter(iCell,jCell,kCell);
-    
-      // Compute the geometric weight based on the centroid distance
-      CENO_Geometric_Weighting(GeomWeightSI, DeltaCentroids.abs());
-
-      // Update SS_Regression
-      SS_Regression += Temp_Regression * GeomWeightSI;
-      // Update SS_Residual
-      Temp_Residual *= Temp_Residual;       /* compute Temp_Residual square */
-      SS_Residual   += Temp_Residual * GeomWeightSI;
-
-    } else {
-
-      // Update SS_Regression
-      SS_Regression += Temp_Regression;
-
-      // Update SS_Residual
-      Temp_Residual *= Temp_Residual;       /* compute Temp_Residual square */
-      SS_Residual  += Temp_Residual;
-    }//endif
-
-  }//endfor(cell)
-
-  /* Compute the smoothness indicator for each variable */
+  // --> RR: TEMPORARY SI CALCULATION!! comment out the rest
   for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
-
-    /* Decide if the 'alpha' for the current parameter is computed or not.
-       This decision is dictated by the following reasons:
-       --> If there is not at all or very small solution variation within the stencil (i.e. uniform flow)
-           SS_Residual[parameter] is approximately equal to SS_Regression[parameter].
-	   That would trigger 'alpha' to have a very small value and consequently the cell flagged as unfit.
-       --> The user should have the freedom to specify a level of numerical noise under which solution
-           discontinuities are not of interest.
-       To solve both these problems, the maximum squared variation is compared relative to an accepted 
-       level of solution variation.
-       To obtain consistency in setting the tolerated lack of smoothness for large ranges of solution values,
-       a normalization is employed with the reference state provided by the solution state class for the 
-       current parameter.
-    */
-    if ( Max_SS_Regression[parameter]/sqr(NormalizationState[parameter]) > 
-	 CENO_Tolerances::SquareToleranceAroundValue(Min_Mean_Solution[parameter]/NormalizationState[parameter]) ){
-      
-      // Compute 'alpha'
-      alpha = 1.0 - (SS_Residual[parameter]/SS_Regression[parameter]);
-      
-    } else {
-      
-      // There is not enough variation in the solution based on user set tolerance to flag a potential discontinuity.
-      // Assign the perfect fit value to the smoothness indicator
-      alpha = 1.0;
-      
-    } // endif
-
-    /* Compute final value */
-    CellSmoothnessIndicatorValue(iCell,jCell,parameter) = (alpha/(max(CENO_Tolerances::epsilon,1.0 - alpha)))*AdjustmentCoeff;
-
+    CellSmoothnessIndicatorValue(iCell,jCell,kCell,parameter) = 1.0e20;
   } // endfor (parameter)
+
+
+//  // SET VARIABLES USED IN THE ANALYSIS PROCESS
+//  double alpha;
+//  int parameter, cell;
+//
+//  // Set the mean solution of (iCell,jCell). It's used as a reference.
+//  MeanSolution = (SolnBlk.*ReconstructedSoln)(iCell,jCell,kCell);
+//
+//  // Initialize the minimum mean solution in absolute value.
+//  Min_Mean_Solution = fabs(MeanSolution);
+//
+//  /*! NOTE: The following used variables are set as private to the class:
+//    SS_Regression, SS_Residual, Max_SS_Regression, Temp_Regression, Temp_Residual. */
+//
+//  // Initialize SS_Regression and SS_Residual
+//  SS_Regression  = CellTaylorDerivState(iCell,jCell,kCell,0) - MeanSolution;
+//  SS_Regression *= SS_Regression;      // get the squared value
+//  Max_SS_Regression = SS_Regression;   // initialize Max_SS_Regression 
+//  SS_Residual.Vacuum(); // Note: the residual difference for (iCell,jCell,kCell) is zero.
+//  // Get the normalization state
+//  NormalizationState = SolnBlk.getNormalizationState(iCell,jCell,kCell);
+//
+//  /* Compute SS_Regression and SS_Residual for all the variables at once */
+//  for( cell=1; cell<StencilSize; ++cell){
+//
+//    // Get minimum average solution in absolute value
+//    Min_Mean_Solution = min(Min_Mean_Solution , fabs((SolnBlk.*ReconstructedSoln)(i_index[cell],j_index[cell],k_index[cell])));
+//
+//    Temp_Regression  = CellTaylorDerivState(i_index[cell],j_index[cell],k_index[0],0) - MeanSolution;
+//    Temp_Regression *= Temp_Regression;          /* compute Temp_Regression square */
+//
+//    // Get maximum squared solution variation for the current Temp_Regression
+//    Max_SS_Regression = max(Max_SS_Regression, Temp_Regression);
+//
+//    Temp_Residual  = ( CellTaylorDerivState(i_index[cell],j_index[cell],k_index[cell],0) - 
+//		       SolutionStateAtLocation(iCell,jCell,CellCenter(i_index[cell],j_index[cell],k_index[cell])) );
+//
+//    // Update SS_Regression & SS_Residual
+//    if (CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS){
+//
+//      /* Compute the X and Y component of the distance between
+//	 the cell center of the neighbour cell and the reconstructed cell */
+//      DeltaCentroids = CellCenter(i_index[cell],j_index[cell],k_index[cell]) - CellCenter(iCell,jCell,kCell);
+//    
+//      // Compute the geometric weight based on the centroid distance
+//      CENO_Geometric_Weighting(GeomWeightSI, DeltaCentroids.abs());
+//
+//      // Update SS_Regression
+//      SS_Regression += Temp_Regression * GeomWeightSI;
+//      // Update SS_Residual
+//      Temp_Residual *= Temp_Residual;       /* compute Temp_Residual square */
+//      SS_Residual   += Temp_Residual * GeomWeightSI;
+//
+//    } else {
+//
+//      // Update SS_Regression
+//      SS_Regression += Temp_Regression;
+//
+//      // Update SS_Residual
+//      Temp_Residual *= Temp_Residual;       /* compute Temp_Residual square */
+//      SS_Residual  += Temp_Residual;
+//    }//endif
+//
+//  }//endfor(cell)
+//
+//  /* Compute the smoothness indicator for each variable */
+//  for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+//
+//    /* Decide if the 'alpha' for the current parameter is computed or not.
+//       This decision is dictated by the following reasons:
+//       --> If there is not at all or very small solution variation within the stencil (i.e. uniform flow)
+//           SS_Residual[parameter] is approximately equal to SS_Regression[parameter].
+//	   That would trigger 'alpha' to have a very small value and consequently the cell flagged as unfit.
+//       --> The user should have the freedom to specify a level of numerical noise under which solution
+//           discontinuities are not of interest.
+//       To solve both these problems, the maximum squared variation is compared relative to an accepted 
+//       level of solution variation.
+//       To obtain consistency in setting the tolerated lack of smoothness for large ranges of solution values,
+//       a normalization is employed with the reference state provided by the solution state class for the 
+//       current parameter.
+//    */
+//    if ( Max_SS_Regression[parameter]/sqr(NormalizationState[parameter]) > 
+//	 CENO_Tolerances::SquareToleranceAroundValue(Min_Mean_Solution[parameter]/NormalizationState[parameter]) ){
+//      
+//      // Compute 'alpha'
+//      alpha = 1.0 - (SS_Residual[parameter]/SS_Regression[parameter]);
+//      
+//    } else {
+//      
+//      // There is not enough variation in the solution based on user set tolerance to flag a potential discontinuity.
+//      // Assign the perfect fit value to the smoothness indicator
+//      alpha = 1.0;
+//      
+//    } // endif
+//
+//    /* Compute final value */
+//    CellSmoothnessIndicatorValue(iCell,jCell,kCell,parameter) = (alpha/(max(CENO_Tolerances::epsilon,1.0 - alpha)))*AdjustmentCoeff;
+//
+//  } // endfor (parameter)
 
 }
 
@@ -2680,11 +2686,12 @@ void HighOrder<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
  */
 template<class SOLN_STATE> inline
 const bool HighOrder<SOLN_STATE>::IsThereAnyNonSmoothHighOrderReconstruction(const int &iCell,
-									       const int &jCell) const {
+									     const int &jCell,
+									     const int &kCell) const {
 
   // Analyse 'CellInadequateFit' flag for each solution variable.
   for(int parameter = 1; parameter <= NumberOfVariables(); ++parameter){
-    if ( CellInadequateFitValue(iCell,jCell,parameter) ){
+    if ( CellInadequateFitValue(iCell,jCell,kCell,parameter) ){
       return true; 	// found already one interpolant flagged as non-smooth
     }//endif
   }//endfor(parameter)
@@ -2699,9 +2706,9 @@ const bool HighOrder<SOLN_STATE>::IsThereAnyNonSmoothHighOrderReconstruction(con
  * as non-smooth.
  */
 template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::FlagCellReconstructionsAsNonSmooth(const int &iCell, const int &jCell){
+void HighOrder<SOLN_STATE>::FlagCellReconstructionsAsNonSmooth(const int &iCell, const int &jCell, const int &kCell){
   for(int parameter = 1; parameter <= NumberOfVariables(); ++parameter){
-    CellInadequateFitValue(iCell,jCell,parameter) = ON;
+    CellInadequateFitValue(iCell,jCell,kCell,parameter) = ON;
   }//endfor(parameter)  
 }
 
@@ -2738,19 +2745,26 @@ void HighOrder<SOLN_STATE>::FlagCellReconstructionsAsNonSmooth(const int &iCell,
 //! Integrate over the cell
 template<class SOLN_STATE>
 template<typename FO, class ReturnType> inline
-ReturnType HighOrder<SOLN_STATE>::IntegrateOverTheCell(const int &ii, const int &jj,
+ReturnType HighOrder<SOLN_STATE>::IntegrateOverTheCell(const int &ii, const int &jj, const int &kk,
 							 const FO FuncObj,
 							 const int & digits,
 							 ReturnType _dummy_param) const {
-  return Geom->Integration.IntegrateFunctionOverCell(ii,jj, FuncObj, digits, _dummy_param);
+  // --> RR: TEST: AdaptiveGaussianQuadrature needs testing for geometry association
+  return AdaptiveGaussianQuadrature(FuncObj, 
+				    Grid->nodeSWBot(ii,jj,kk).X.x, Grid->nodeSEBot(ii,jj,kk).X.x, 
+				    Grid->nodeSWBot(ii,jj,kk).X.y, Grid->nodeNWBot(ii,jj,kk).X.y,
+				    Grid->nodeSWBot(ii,jj,kk).X.z, Grid->nodeSWTop(ii,jj,kk).X.z, 
+				    digits,
+				    _dummy_param);
 }
 
 /*! 
- * Integrate the reconstruction of cell (ii,jj)
+ * Integrate the reconstruction of cell (ii,jj,kk)
  * over the specified quadrilateral domain.
  *
  * \param ii i-index of the cell
  * \param jj j-index of the cell
+ * \param kk k-index of the cell
  * \param SW the South-West quadrilateral vertex
  * \param SE the South-East quadrilateral vertex
  * \param NE the North-East quadrilateral vertex
@@ -2763,7 +2777,7 @@ IntegrateCellReconstructionOverQuadDomain(const int &ii, const int &jj,
 					  const Node3DType &SW, const Node3DType &NW,
 					  const Node3DType &NE, const Node3DType &SE) const {
 
-  // --> RR: IntegrateCellReconstructionOverQuadDomain needs to be implemented
+  // --> RR: MUST: IntegrateCellReconstructionOverQuadDomain needs to be implemented
 
 //  SOLN_STATE _dummy_result;
 //
@@ -2778,12 +2792,13 @@ IntegrateCellReconstructionOverQuadDomain(const int &ii, const int &jj,
 }
 
 /*! 
- * Write the 'i' and 'j' indexes of the cells that are part of
- * the CENTRAL stencil of cell (iCell,jCell). To decide how far 
+ * Write the 'i','j', and 'k' indices of the cells that are part of
+ * the CENTRAL stencil of cell (iCell,jCell,kCell). To decide how far 
  * this stencil extends the routine uses the passed number of rings.
  *
  * \param [out] i_index The i-index of the cells.
  * \param [out] j_index The j-index of the cells.
+ * \param [out] k_index The k-index of the cells.
  * \param [in]  rings The number of neighbour cell rings around (iCell,jCell) cell.
  * \param [out] StencilSize This variable gets set to the stencil size.
  * This parameter is different than the class variable "rings".
@@ -2791,67 +2806,58 @@ IntegrateCellReconstructionOverQuadDomain(const int &ii, const int &jj,
  * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
  */
 template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::SetCentralStencil(const int &iCell, const int &jCell,
-						IndexType & i_index, IndexType & j_index,
-						const int &rings, int &StencilSize) const{
+void HighOrder<SOLN_STATE>::SetCentralStencil(const int &iCell, const int &jCell, const int &kCell,
+					      IndexType & i_index, IndexType & j_index, IndexType & k_index,
+					      const int &rings, int &StencilSize) const{
 
-  switch(rings){
+  // The first position (i_index[0],j_index[0],k_index[0]) corresponds to (iCell,jCell,kCell)
+  i_index[0]=iCell;
+  j_index[0]=jCell; 
+  k_index[0]=kCell;     
 
-  case 2: // two rings of cells around (iCell,jCell)
+  int Poz = 1;
 
-    /* Second ring */
-    i_index[9] =iCell-2;  j_index[9]=jCell-2;
-    i_index[10]=iCell-1; j_index[10]=jCell-2;
-    i_index[11]=iCell  ; j_index[11]=jCell-2;
-    i_index[12]=iCell+1; j_index[12]=jCell-2;
-    i_index[13]=iCell+2; j_index[13]=jCell-2;
-    i_index[14]=iCell-2; j_index[14]=jCell-1;
-    i_index[15]=iCell+2; j_index[15]=jCell-1;
-    i_index[16]=iCell-2; j_index[16]=jCell;
-    i_index[17]=iCell+2; j_index[17]=jCell;
-    i_index[18]=iCell-2; j_index[18]=jCell+1;
-    i_index[19]=iCell+2; j_index[19]=jCell+1;
-    i_index[20]=iCell-2; j_index[20]=jCell+2;
-    i_index[21]=iCell-1; j_index[21]=jCell+2;
-    i_index[22]=iCell  ; j_index[22]=jCell+2;
-    i_index[23]=iCell+1; j_index[23]=jCell+2;
-    i_index[24]=iCell+2; j_index[24]=jCell+2;
+  /* First layer */
+  for (int k=kCell-1; k<=kCell+1; ++k){
+    for (int j=jCell-1; j<=jCell+1; ++j){
+      for (int i=iCell-1; i<=iCell+1; ++i){
+        if( !(i==iCell && j==jCell && k==kCell) ){
+          i_index[Poz] = i;
+          j_index[Poz] = j;
+          k_index[Poz] = k;
+          ++Poz;      
+        }
+      } /*end for*/
+    } /*end for*/
+  } /*end for*/
 
-  case 1: // one ring of cells around (iCell,jCell)
 
-    i_index[0]=iCell;   j_index[0]=jCell; /* cell (iCell,jCell) */
-    /* First ring */
-    i_index[1]=iCell-1; j_index[1]=jCell-1;
-    i_index[2]=iCell;   j_index[2]=jCell-1;
-    i_index[3]=iCell+1; j_index[3]=jCell-1;
-    i_index[4]=iCell-1; j_index[4]=jCell;
-    i_index[5]=iCell+1; j_index[5]=jCell;
-    i_index[6]=iCell-1; j_index[6]=jCell+1;
-    i_index[7]=iCell;   j_index[7]=jCell+1;
-    i_index[8]=iCell+1; j_index[8]=jCell+1;
+  if (rings == 2){
 
-    if (rings == 2){
-      StencilSize = 25;
-    } else {
-      StencilSize = 9;
-    }
-    break;
+    /* Second layer */
+    for (int k=kCell-2; k<=kCell+2; ++k){
+      for (int j=jCell-2; j<=jCell+2; ++j){
+        for (int i=iCell-2; i<=iCell+2; ++i){
+          // For k = -2 and k = 2 fill in all nine cells
+          if( (k*k) > 1 ){
+            i_index[Poz] = i;
+            j_index[Poz] = j;
+            k_index[Poz] = k;
+            ++Poz;
+          }
+          // For k=-1, 0, or 1: fill in outer cells only,
+          // since inner cells belong to first layer of stencil
+          else if ( (i*i) > 1 || (j*j) > 1 ){
+              i_index[Poz] = i;
+              j_index[Poz] = j;
+              k_index[Poz] = k;
+              ++Poz;
+          }
+        } /*end for*/
+      } /*end for*/
+    } /*end for*/
+  } /*end if*/
 
-  default: // general expression
-    i_index[0] = iCell;
-    j_index[0] = jCell;
-    for (int i=iCell-rings, Poz=1; i<=iCell+rings; ++i){
-      for (int j=jCell-rings; j<=jCell+rings; ++j){
-	if(!((i==iCell)&&(j==jCell)) ){
-	  i_index[Poz] = i;
-	  j_index[Poz] = j;
-	  ++Poz;
-	}
-      }
-      StencilSize = Poz;
-    }
-  }//endswitch
-  
 }
 
 /*! 
@@ -2862,1348 +2868,1351 @@ void HighOrder<SOLN_STATE>::SetCentralStencil(const int &iCell, const int &jCell
  * of curved boundaries.
  * \param [out] i_index The i-index of the cells.
  * \param [out] j_index The j-index of the cells.
+ * \param [out] k_index The k-index of the cells.
  *
- * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
+ * \note The first position (i_index[0],j_index[0],k_index[0]) corresponds to (iCell,jCell,kCell).
  */
 template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const int &jCell,
-						       IndexType & i_index, IndexType & j_index) const{
+void HighOrder<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const int &jCell, const int &kCell,
+						     IndexType & i_index, IndexType & j_index, IndexType & k_index) const{
 
   int _dummy_;
 
   // Call set central stencil
-  SetCentralStencil(iCell,jCell,i_index,j_index,rings,_dummy_);
+  SetCentralStencil(iCell,jCell,kCell,i_index,j_index,k_index,rings,_dummy_);
 }
 
-/*! 
- * Write the 'i' and 'j' indexes of the cells that are part of
- * the reconstruction of cell (iCell,jCell) for special tests.
- * Use the number of rings set in the class to determine how far the stencil extends.
- * This routine doesn't modify the stencil due to existence 
- * of curved boundaries.
- * \param [out] i_index The i-index of the cells.
- * \param [out] j_index The j-index of the cells.
- *
- * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
- */
-template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::SetSpecialReconstructionStencil(const int &iCell, const int &jCell,
-							      IndexType & i_index, IndexType & j_index) const{
-  
-  i_index.clear();
-  j_index.clear();
-
-  i_index.push_back(iCell);   j_index.push_back(jCell); /* cell (iCell,jCell) */
-
-  switch(rings){
-
-  case 2: // two rings of cells around (iCell,jCell)
-
-    /* Second ring */
-    //    i_index.push_back(iCell-2); j_index.push_back(jCell-2);
-    i_index.push_back(iCell-1); j_index.push_back(jCell-2);
-    //    i_index.push_back(iCell  ); j_index.push_back(jCell-2);
-    i_index.push_back(iCell+1); j_index.push_back(jCell-2);
-    //    i_index.push_back(iCell+2); j_index.push_back(jCell-2);
-    i_index.push_back(iCell-2); j_index.push_back(jCell-1);
-    i_index.push_back(iCell+2); j_index.push_back(jCell-1);
-    //    i_index.push_back(iCell-2); j_index.push_back(jCell  );
-    //    i_index.push_back(iCell+2); j_index.push_back(jCell  );
-    i_index.push_back(iCell-2); j_index.push_back(jCell+1);
-    i_index.push_back(iCell+2); j_index.push_back(jCell+1);
-    //    i_index.push_back(iCell-2); j_index.push_back(jCell+2);
-    i_index.push_back(iCell-1); j_index.push_back(jCell+2);
-    //    i_index.push_back(iCell  ); j_index.push_back(jCell+2);
-    i_index.push_back(iCell+1); j_index.push_back(jCell+2);
-    //    i_index.push_back(iCell+2); j_index.push_back(jCell+2);
-
-  case 1: // one ring of cells around (iCell,jCell)
-
-    /* First ring */
-    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
-    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
-    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
-    i_index.push_back(iCell-1); j_index.push_back(jCell  );
-    i_index.push_back(iCell+1); j_index.push_back(jCell  );
-    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
-    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
-    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
-
-    break;
-
-  default: // general expression
-
-    break;
-  }//endswitch  
-}
-
-/*! 
- * Write the 'i' and 'j' indexes of the cells that are part of
- * the reconstruction of the given cell and the cells that have
- * common face with it.
- *
- * \param [in]  iCell The i-index of the given cell
- * \param [in]  jCell The j-index of the given cell
- * \param [out] i_index The i-index of the cells.
- * \param [out] j_index The j-index of the cells.
- *
- */
-template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::getEnlargedReconstructionStencil(const int &iCell, const int &jCell,
-							       IndexType & i_index, IndexType & j_index) const{
-
-  if ( IsConstrainedReconstructionRequired() ) {
-    throw runtime_error("HighOrder<SOLN_STATE>::getEnlargedReconstructionStencil() doesn't support constrained reconstruction!");
-  }
-
-  // Set stencil based on the central one
-
-  // Reset the output index array
-  i_index.clear();
-  j_index.clear();
-
-  switch(rings){
-
-  case 2: 
-
-    i_index.push_back(iCell);   j_index.push_back(jCell); /* cell (iCell,jCell) */
-
-    /* First ring */
-    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
-    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
-    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
-    i_index.push_back(iCell-1); j_index.push_back(jCell  );
-    i_index.push_back(iCell+1); j_index.push_back(jCell  );
-    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
-    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
-    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
-
-    /* Second ring */
-    i_index.push_back(iCell-2); j_index.push_back(jCell-2);
-    i_index.push_back(iCell-1); j_index.push_back(jCell-2);
-    i_index.push_back(iCell  ); j_index.push_back(jCell-2);
-    i_index.push_back(iCell+1); j_index.push_back(jCell-2);
-    i_index.push_back(iCell+2); j_index.push_back(jCell-2);
-    i_index.push_back(iCell-2); j_index.push_back(jCell-1);
-    i_index.push_back(iCell+2); j_index.push_back(jCell-1);
-    i_index.push_back(iCell-2); j_index.push_back(jCell  );
-    i_index.push_back(iCell+2); j_index.push_back(jCell  );
-    i_index.push_back(iCell-2); j_index.push_back(jCell+1);
-    i_index.push_back(iCell+2); j_index.push_back(jCell+1);
-    i_index.push_back(iCell-2); j_index.push_back(jCell+2);
-    i_index.push_back(iCell-1); j_index.push_back(jCell+2);
-    i_index.push_back(iCell  ); j_index.push_back(jCell+2);
-    i_index.push_back(iCell+1); j_index.push_back(jCell+2);
-    i_index.push_back(iCell+2); j_index.push_back(jCell+2);
-
-    /* Third ring incomplete (i.e. skip the corners) */
-    i_index.push_back(iCell-2); j_index.push_back(jCell-3);
-    i_index.push_back(iCell-1); j_index.push_back(jCell-3);
-    i_index.push_back(iCell  ); j_index.push_back(jCell-3);
-    i_index.push_back(iCell+1); j_index.push_back(jCell-3);
-    i_index.push_back(iCell+2); j_index.push_back(jCell-3);
-    i_index.push_back(iCell-3); j_index.push_back(jCell-2);
-    i_index.push_back(iCell+3); j_index.push_back(jCell-2);
-    i_index.push_back(iCell-3); j_index.push_back(jCell-1);
-    i_index.push_back(iCell+3); j_index.push_back(jCell-1);
-    i_index.push_back(iCell-3); j_index.push_back(jCell  );
-    i_index.push_back(iCell+3); j_index.push_back(jCell  );
-    i_index.push_back(iCell-3); j_index.push_back(jCell+1);
-    i_index.push_back(iCell+3); j_index.push_back(jCell+1);
-    i_index.push_back(iCell-3); j_index.push_back(jCell+2);
-    i_index.push_back(iCell+3); j_index.push_back(jCell+2);
-    i_index.push_back(iCell-2); j_index.push_back(jCell+3);
-    i_index.push_back(iCell-1); j_index.push_back(jCell+3);
-    i_index.push_back(iCell  ); j_index.push_back(jCell+3);
-    i_index.push_back(iCell+1); j_index.push_back(jCell+3);
-    i_index.push_back(iCell+2); j_index.push_back(jCell+3);
-
-    break;
-
-  case 1: // one ring of cells around (iCell,jCell)
-
-    i_index.push_back(iCell);   j_index.push_back(jCell); /* cell (iCell,jCell) */
-
-    /* First ring */
-    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
-    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
-    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
-    i_index.push_back(iCell-1); j_index.push_back(jCell  );
-    i_index.push_back(iCell+1); j_index.push_back(jCell  );
-    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
-    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
-    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
-
-    /* Second ring incomplete (i.e. skip the corners) */
-    i_index.push_back(iCell-1); j_index.push_back(jCell-2);
-    i_index.push_back(iCell  ); j_index.push_back(jCell-2);
-    i_index.push_back(iCell+1); j_index.push_back(jCell-2);
-    i_index.push_back(iCell-2); j_index.push_back(jCell-1);
-    i_index.push_back(iCell+2); j_index.push_back(jCell-1);
-    i_index.push_back(iCell-2); j_index.push_back(jCell  );
-    i_index.push_back(iCell+2); j_index.push_back(jCell  );
-    i_index.push_back(iCell-2); j_index.push_back(jCell+1);
-    i_index.push_back(iCell+2); j_index.push_back(jCell+1);
-    i_index.push_back(iCell-1); j_index.push_back(jCell+2);
-    i_index.push_back(iCell  ); j_index.push_back(jCell+2);
-    i_index.push_back(iCell+1); j_index.push_back(jCell+2);
-
-    break;
-
-  default: // general expression
-    throw runtime_error("HighOrder<SOLN_STATE>::getEnlargedReconstructionStencil() doesn't support the current number of rings!");
-  }//endswitch  
-}
-
-/*! 
- * Write the 'i' and 'j' indexes of the cells that are part of
- * the deviated (i.e. different than central) reconstruction stencil of 
- * cell (iCell,jCell).
- * Use the number of rings and the class variables caring information
- * about the opaqueness/transparency of boundaries to determine how far the stencil extends.
- * This routine DOES'T generate a central stencil if the cell gets affected by the presence of special boundaries!!!
- * It is also MORE EXPENSIVE than the regular routine that generates central stencils!!!
- * The stencil is biased to the mesh interior and it might be extended further than a central stencil.
- *
- * \param [out] i_index The i-index of the cells.
- * \param [out] j_index The j-index of the cells.
- * \param [in] IsStencilExtended flag for extending or not the stencil. By default is true.
- *
- * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
- */
-template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell, const int &jCell,
-							       IndexType & i_index, IndexType & j_index,
-							       const int &rings,
-							       bool IsStencilExtended) const{
-
-  // Reset indexes
-  i_index.clear();
-  j_index.clear();
-  
-  // The space around the cell (iCell,jCell) is divided into 8 regions relative to the cell faces (i.e. NW,W,SW,S,SE,E,NE,N).
-  // There are 12 variable indexes which can fully control how the stencil is formed.
-
-  int i,j;
-  int Imin_NW, Jmax_NW;	// North-West region
-  int Imin_W;	        // West region
-  int Imin_SW, Jmin_SW;	// South-West region
-  int Jmin_S;	        // South region
-  int Imax_SE, Jmin_SE;	// South-East region
-  int Imax_E;	        // East region
-  int Imax_NE, Jmax_NE;	// North-East region
-  int Jmax_N;	        // North region
-
-  /* Set indexes as if a central stencil can be set. */
-  Imin_NW = iCell-rings;
-  Jmax_NW = jCell+rings;
-  Imin_W  = iCell-rings;
-  Imin_SW = iCell-rings;
-  Jmin_SW = jCell-rings;
-  Jmin_S  = jCell-rings;
-  Imax_SE = iCell+rings;
-  Jmin_SE = jCell-rings;
-  Imax_E  = iCell+rings;
-  Imax_NE = iCell+rings;
-  Jmax_NE = jCell+rings;
-  Jmax_N  = jCell+rings;
-
-  
-  // Decide whether the stencil is extended or not.
-  // An extended stencil will add cells in the opposite direction of the restricted boundary.
-  // By default the stencil is extended.
-  if ( (CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS == ON &&
-	CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL == OFF) ){
-    
-    IsStencilExtended = false;
-  }
-
-
-  /* ===  Cell to the left of West block boundary === 
-   * Obs: This cell is unrestricted to West.
-   */
-  if ( iCell < ICl ){
-
-    // ==== Cover cells with iCell < ICl ====
-      
-    if ( jCell < JCl){                // Case A
-      // South Bnd influence
-      if (W_SouthBnd.IsReconstructionStencilAffected()){
-	if (iCell == ICl - 1){
-	  Jmax_NW = Jmax_N = JCl-1;     /* limit Jmax */
-
-	  if (IsStencilExtended){
-	    /* extend Jmin */
-	    Jmin_SW -= 1;
-	    Jmin_S  -= 1;
-	    /* ensure valid Jmin */
-	    Jmin_SW = max(Jmin_SW, 0);
-	    Jmin_S  = max(Jmin_S, 0);
-	  }
-	} else {
-	  Jmax_NW = Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
-
-	  if (IsStencilExtended){
-	    /* extend Jmin */
-	    Jmin_SW -= 1;
-	    Jmin_S  -= 1;
-	    Jmin_SE -= 1;
-	    /* ensure valid Jmin */
-	    Jmin_SW = max(Jmin_SW, 0);
-	    Jmin_S  = max(Jmin_S, 0); 
-	    Jmin_SE = max(Jmin_SE, 0);
-	  }
-	}
-      } else if (S_WestBnd.IsReconstructionStencilAffected()){
-	if (jCell == JCl - 1){
-	  Imax_E = Imax_SE = ICl-1;     /* limit Imax */
-
-	  if (IsStencilExtended){
-	    /* extend Imin */
-	    Imin_W  -= 1;
-	    Imin_SW -= 1;
-	    /* ensure valid Imin */
-	    Imin_W  = max(Imin_W, 0);
-	    Imin_SW = max(Imin_SW, 0);
-	  }
-	} else {
-	  Imax_E = Imax_SE = Imax_NE = ICl-1;     /* limit Imax */
-	    
-	  if (IsStencilExtended){
-	    /* extend Imin */
-	    Imin_W  -= 1;
-	    Imin_SW -= 1;
-	    Imin_NW -= 1;
-	    /* ensure valid Imin */
-	    Imin_W  = max(Imin_W, 0);
-	    Imin_SW = max(Imin_SW, 0);
-	    Imin_NW = max(Imin_NW, 0);
-	  }
-	}
-      }
-
-    } else if (jCell < JCl+rings){    // Case B
-      // South Bnd influence
-      if (W_SouthBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
-	Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
-	  
-	if (IsStencilExtended){
-	  /* extend Jmax */
-	  Jmax_NW += 1;
-	  Jmax_N  += 1;
-	  Jmax_NE += 1;
-	}
-      } else if (W_SouthBnd.IsReconstructionStencilAffected()){
-	if (iCell == ICl - 1){
-	  Jmin_SW = Jmin_S = JCl;                 /* limit Jmin */
-	    
-	  if (IsStencilExtended){
-	    /* extend Jmax */
-	    Jmax_NW += 1;
-	    Jmax_N  += 1;
-	  }
-	} else {
-	  Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
-	    
-	  if (IsStencilExtended){
-	    /* extend Jmax */
-	    Jmax_NW += 1;
-	    Jmax_N  += 1;
-	    Jmax_NE += 1;
-	  }
-	}
-      } else if (SouthBnd.IsReconstructionStencilAffected()){
-	if (ICl-1-iCell > jCell - JCl){
-	  Imax_SE = ICl - 1;                       /* limit Imax */
-
-	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
-	} else {
-	  Jmin_SE = JCl;                            /* limit Jmin */
-
-	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */
-	}
-      }
-	
-    } else if (jCell>JCu-rings && jCell <= JCu){	        // Case C (JCu-rings < jCell <= JCu)
-      // North Bnd influence
-      if (W_NorthBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
-	Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
-
-	if (IsStencilExtended){
-	  /* extend Jmin */
-	  Jmin_SW -= 1;
-	  Jmin_S  -= 1;
-	  Jmin_SE -= 1;
-	}
-      } else if (W_NorthBnd.IsReconstructionStencilAffected()){
-	if (iCell == ICl -1){
-	  Jmax_NW = Jmax_N = JCu;                 /* limit Jmax */
-	    
-	  if (IsStencilExtended){
-	    /* extend Jmin */
-	    Jmin_SW -= 1;
-	    Jmin_S  -= 1;
-	  }
-	} else {
-	  Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
-	    
-	  if (IsStencilExtended){
-	    /* extend Jmin */
-	    Jmin_SW -= 1;
-	    Jmin_S  -= 1;
-	    Jmin_SE -= 1; 
-	  } 
-	}
-      } else if (NorthBnd.IsReconstructionStencilAffected()){
-	if (ICl-1-iCell > JCu-jCell){
-	  Imax_NE = ICl - 1;                       /* limit Imax */
-	    
-	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
-	} else {
-	  Jmax_NE = JCu;                            /* limit Jmax */
-
-	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */
-	}
-      }
-
-    } else if (jCell > JCu){	                 // Case D (jCell > JCu)
-      // North Bnd influence
-      if (W_NorthBnd.IsReconstructionStencilAffected()){
-	if (iCell == ICl - 1){
-	  Jmin_SW = Jmin_S = JCu+1;     /* limit Jmin */
-
-	  if (IsStencilExtended){
-	    /* extend Jmax */
-	    Jmax_NW += 1;
-	    Jmax_N  += 1;
-	    /* ensure valid Jmax */
-	    Jmax_NW = min(Jmax_NW, JCu+Ng);
-	    Jmax_N  = min(Jmax_N, JCu+Ng);	    
-	  }
-	} else {
-	  Jmin_SW = Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
-
-	  if (IsStencilExtended){
-	    /* extend Jmax */
-	    Jmax_NW += 1;
-	    Jmax_N  += 1;
-	    Jmax_NE += 1;
-	    /* ensure valid Jmax */
-	    Jmax_NW = min(Jmax_NW, JCu+Ng);
-	    Jmax_N  = min(Jmax_N, JCu+Ng);
-	    Jmax_NE = min(Jmax_NE, JCu+Ng);
-	  }
-	}
-      } else if (N_WestBnd.IsReconstructionStencilAffected()){
-	if (jCell == JCu + 1){
-	  Imax_NE = Imax_E = ICl-1;     /* limit Imax */
-
-	  if (IsStencilExtended){
-	    /* extend Imin */
-	    Imin_NW -= 1;
-	    Imin_W  -= 1;
-	    /* ensure valid Imin */
-	    Imin_NW = max(Imin_NW, 0);
-	    Imin_W  = max(Imin_W, 0);
-	  }
-	} else {
-	  Imax_NE = Imax_E = Imax_SE = ICl-1;     /* limit Imax */
-
-	  if (IsStencilExtended){
-	    /* extend Imin */
-	    Imin_NW -= 1;
-	    Imin_W  -= 1;
-	    Imin_SW -= 1;
-	    /* ensure valid Imin */
-	    Imin_NW = max(Imin_NW, 0);
-	    Imin_W  = max(Imin_W, 0);
-	    Imin_SW = max(Imin_SW, 0);
-	  }
-	}
-      }
-    }	// endif (Case D)
-
-  } else if (iCell < ICl + rings) {
-
-    // ==== Cover cells with (ICl <= iCell < ICl+rings) ====
-
-    if ( jCell < JCl){	         // Case A
-      // West Bnd influence
-      if (S_WestBnd.IsReconstructionStencilAffected() && WestBnd.IsReconstructionStencilAffected()){
-	Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
-
-	if (IsStencilExtended){
-	  /* extend Imax */
-	  Imax_SE += 1;
-	  Imax_E  += 1;
-	  Imax_NE += 1;
-	}
-      } else if (S_WestBnd.IsReconstructionStencilAffected()){
-	if (jCell == JCl -1){
-	  Imin_SW = Imin_W = ICl;     /* limit Imin */
-	    
-	  if (IsStencilExtended){
-	    /* extend Imax */
-	    Imax_SE += 1;
-	    Imax_E  += 1;
-	  }
-	} else {
-	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
-	    
-	  if (IsStencilExtended){
-	    /* extend Imax */
-	    Imax_SE += 1;
-	    Imax_E  += 1;
-	    Imax_NE += 1;  
-	  }  
-	}
-      } else if (WestBnd.IsReconstructionStencilAffected()){
-	if (iCell-ICl > JCl-1-jCell){
-	  Imin_NW = ICl;              /* limit Imin */
-	  
-	  /* DON'T extend Imax due to smoothness indicator calculation reasons */
-	} else {
-	  // South Bnd influence
-	  Jmax_NW = JCl - 1;                     /* limit Jmax */
-	    
-	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */
-	}
-      }
-
-    } else if (jCell < JCl + rings){   // Case B
-      if (WestBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
-	Imin_SW = Imin_W = Imin_NW = ICl;      /* limit Imin */
-	Jmin_SW = Jmin_S = Jmin_SE = JCl;      /* limit Jmin */
-
-	if (IsStencilExtended){
-	  /* extend Imax */
-	  Imax_SE += 1;
-	  Imax_E  += 1;
-	  Imax_NE += 1;
-	  
-	  /* extend Jmax */
-	  Jmax_NW += 1; 
-	  Jmax_N  += 1;
-	  Jmax_NE += 1;
-	}
-      } else if (WestBnd.IsReconstructionStencilAffected() && S_WestBnd.IsReconstructionStencilAffected()){
-	Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
-  
-	if (IsStencilExtended){
-	  /* extend Imax */
-	  Imax_SE += 1;
-	  Imax_E  += 1;
-	  Imax_NE += 1;	
-	}  
-      } else if (SouthBnd.IsReconstructionStencilAffected() && W_SouthBnd.IsReconstructionStencilAffected()){
-	Jmin_SW = Jmin_S = Jmin_SE = JCl;     /* limit Jmin */
-
-	if (IsStencilExtended){
-	  /* extend Jmax */
-	  Jmax_NW += 1;
-	  Jmax_N  += 1;
-	  Jmax_NE += 1;
-	}
-      } else if (WestBnd.IsReconstructionStencilAffected()){
-	if (jCell == JCl){
-	  Imin_W = Imin_NW = ICl;             /* limit Imin */
-
-	  if (IsStencilExtended){
-	    /* extend Imax */
-	    Imax_NE += 1;
-	    Imax_E  += 1;
-	  }
-	} else {
-	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
-	    
-	  if (IsStencilExtended){
-	    /* extend Imax */
-	    Imax_SE += 1;
-	    Imax_E  += 1;
-	    Imax_NE += 1;
-	  } 
-	}
-      } else if (SouthBnd.IsReconstructionStencilAffected()){
-	if (iCell == ICl){
-	  Jmin_S = Jmin_SE = JCl;              /* limit Jmin */
-
-	  if (IsStencilExtended){
-	    /* extend Jmax */
-	    Jmax_N  += 1;
-	    Jmax_NE += 1;
-	  }
-	} else {
-	  Jmin_SW = Jmin_S = Jmin_SE = JCl;              /* limit Jmin */
-
-	  if (IsStencilExtended){
-	    /* extend Jmax */
-	    Jmax_NW += 1;
-	    Jmax_N  += 1;
-	    Jmax_NE += 1;
-	  }
-	}
-      } else if (W_SouthBnd.IsReconstructionStencilAffected()){ // S_WestBnd is also affecting the stencil!
-	if (iCell > jCell){
-	  // Limit to West side
-	  Imin_SW = ICl;
-	  // DON'T extend stencil
-	} else {
-	  // Limit to South side
-	  Jmin_SW = JCl;
-	  // DON'T extend stencil
-	}
-      }
-
-    } else if (jCell <= JCu - rings){  // Case C 
-      // West Bnd influence
-      if (WestBnd.IsReconstructionStencilAffected()){
-	Imin_NW = Imin_W = Imin_SW = ICl;              /* limit Imin */
-
-	if (IsStencilExtended){
-	  /* extend Imax */
-	  Imax_NE += 1;
-	  Imax_E  += 1;
-	  Imax_SE += 1;
-	}
-      }
-
-    } else if (jCell <= JCu){	         // Case D
-      if (WestBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
-	Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
-	Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
-
-	if (IsStencilExtended){
-	  /* extend Imax */
-	  Imax_NE += 1;
-	  Imax_E  += 1;
-	  Imax_SE += 1;
-	  
-	  /* extend Jmin */
-	  Jmin_SW -= 1;
-	  Jmin_S  -= 1;
-	  Jmin_SE -= 1;
-	}
-
-      } else if (WestBnd.IsReconstructionStencilAffected() && N_WestBnd.IsReconstructionStencilAffected()){
-	Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
-
-	if (IsStencilExtended){
-	  /* extend Imax */
-	  Imax_NE += 1;
-	  Imax_E  += 1;
-	  Imax_SE += 1;	
-	}  
-      } else if (NorthBnd.IsReconstructionStencilAffected() && W_NorthBnd.IsReconstructionStencilAffected()){
-	Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
-
-	if (IsStencilExtended){
-	  /* extend Jmin */
-	  Jmin_SW -= 1;
-	  Jmin_S  -= 1;
-	  Jmin_SE -= 1;
-	}
-      } else if (WestBnd.IsReconstructionStencilAffected()){
-	if (jCell == JCu){
-	  Imin_W = Imin_SW = ICl;             /* limit Imin */
-	    
-	  if (IsStencilExtended){
-	    /* extend Imax */
-	    Imax_E  += 1;
-	    Imax_SE += 1;	 
-	  } 	    
-	} else {
-	  Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
-	    
-	  if (IsStencilExtended){
-	    /* extend Imax */
-	    Imax_NE += 1;
-	    Imax_E  += 1;
-	    Imax_SE += 1;	 
-	  } 	    
-	}
-      } else if (NorthBnd.IsReconstructionStencilAffected()){
-	if (iCell == ICl){
-	  Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
-	    
-	  if (IsStencilExtended){
-	    /* extend Jmin */
-	    Jmin_S  -= 1;
-	    Jmin_SE -= 1;	 
-	  }   	    
-	} else {
-	  Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
-	    
-	  if (IsStencilExtended){
-	    /* extend Jmin */
-	    Jmin_SW -= 1;
-	    Jmin_S  -= 1;
-	    Jmin_SE -= 1;	 
-	  }   
-	}
-      } else if (W_NorthBnd.IsReconstructionStencilAffected()){ // N_WestBnd also affects the stencil
-	if (iCell-ICl > JCu-jCell){
-	  // Limit to West side
-	  Imin_NW = ICl;
-	  // DON'T extend stencil
-	} else {
-	  // Limit to North side
-	  Jmax_NW = JCu;
-	  // DON'T extend stencil
-	}
-      }
-
-    } else {			         // Case E (jCell > JCu)
-      // West Bnd influence
-      if (N_WestBnd.IsReconstructionStencilAffected() && WestBnd.IsReconstructionStencilAffected()){
-	Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
-	  
-	if (IsStencilExtended){
-	  /* extend Imax */
-	  Imax_SE += 1;
-	  Imax_E  += 1;
-	  Imax_NE += 1;	
-	}  
-      } else if (N_WestBnd.IsReconstructionStencilAffected()){
-	if (jCell == JCu + 1){
-	  Imin_W = Imin_NW = ICl;     /* limit Imin */
-	    
-	  if (IsStencilExtended){
-	    /* extend Imax */
-	    Imax_E  += 1;
-	    Imax_NE += 1;	 
-	  } 	    
-	} else {
-	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
-
-	  if (IsStencilExtended){	    
-	    /* extend Imax */
-	    Imax_SE += 1;
-	    Imax_E  += 1;
-	    Imax_NE += 1;	 
-	  } 
-	}
-      } else if (WestBnd.IsReconstructionStencilAffected()){
-	if (iCell-ICl > jCell-(JCu+1)){	    
-	  Imin_SW = ICl;                         /* limit Imin */
-
-	  /* DON'T extend Imax due to smoothness indicator calculation reasons */
-	} else {
-	  Jmin_SW = JCu + 1;                     /* limit Jmin */
-
-	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */
-	}
-      }
-    }	// endif (Case E)
-
-  } else if (iCell <= ICu - rings) {
-
-    // ==== Cover cells with (ICl+rings <= iCell <= ICu-rings) ====
-
-    if ( jCell < JCl + rings){         // Case A
-      // South Bnd influence
-      if (SouthBnd.IsReconstructionStencilAffected()){
-	Jmin_SW = Jmin_S = Jmin_SE = JCl;     /* limit Jmin */
-
-	if (IsStencilExtended){
-	  /* extend Jmax */
-	  Jmax_NW += 1;
-	  Jmax_N  += 1;
-	  Jmax_NE += 1;
-	}
-      }
-
-    } else if (jCell > JCu - rings){   // Case B
-      // North Bnd influence
-      if (NorthBnd.IsReconstructionStencilAffected()){
-	Jmax_NW = Jmax_N = Jmax_NE = JCu;     /* limit Jmax */
-
-	if (IsStencilExtended){
-	  /* extend Jmin */
-	  Jmin_SW -= 1;
-	  Jmin_S  -= 1;
-	  Jmin_SE -= 1;	
-	}  
-      }
-    }	// endif (Case B)
-
-  } else if (iCell <= ICu) {
-
-    // ==== Cover cells with (ICu-rings < iCell <= ICu) ====
-
-    if ( jCell < JCl){	         // Case A
-      // East Bnd influence
-      if (S_EastBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
-	Imax_NE = Imax_E = Imax_SE = ICu;     /* limit Imax */
-
-	if (IsStencilExtended){
-	  /* extend Imin */
-	  Imin_NW -= 1;
-	  Imin_W  -= 1;
-	  Imin_SW -= 1;
-	}
-      } else if (S_EastBnd.IsReconstructionStencilAffected()){
-	if (jCell == JCl-1){
-	  Imax_E = Imax_SE = ICu;     /* limit Imax */
-
-	  if (IsStencilExtended){
-	    /* extend Imin */
-	    Imin_W  -= 1;
-	    Imin_SW -= 1;  
-	  } 
-	} else {
-	  Imax_NE = Imax_E = Imax_SE = ICu;     /* limit Imax */
-
-	  if (IsStencilExtended){
-	    /* extend Imin */
-	    Imin_NW -= 1;
-	    Imin_W  -= 1;
-	    Imin_SW -= 1;
-	  }
-	}
-      } else if (EastBnd.IsReconstructionStencilAffected()){
-	if (ICu-iCell > JCl-1-jCell){
-	  Imax_NE = ICu;                         /* limit Imax */
-
-	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
-	} else {
-	  // South Bnd influence
-	  Jmax_NE = JCl - 1;                     /* limit Jmax */
-
-	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */	  
-	}
-      }
-
-    } else if (jCell < JCl + rings){   // Case B
-      if (SouthBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
-	Jmin_SW = Jmin_S = Jmin_SE = JCl;        /* limit Jmin */
-	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
-
-	if (IsStencilExtended){
-	  /* extend Jmax */
-	  Jmax_NW += 1;
-	  Jmax_N  += 1;
-	  Jmax_NE += 1;
-
-	  /* extend Imin */
-	  Imin_NW -= 1;
-	  Imin_W  -= 1;
-	  Imin_SW -= 1;
-	}
-      } else if (EastBnd.IsReconstructionStencilAffected()  && S_EastBnd.IsReconstructionStencilAffected()){
-	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
-
-	if (IsStencilExtended){
-	  /* extend Imin */
-	  Imin_NW -= 1;
-	  Imin_W  -= 1;
-	  Imin_SW -= 1;
-	}
-      } else if (SouthBnd.IsReconstructionStencilAffected() && E_SouthBnd.IsReconstructionStencilAffected()){
-	Jmin_SW = Jmin_S = Jmin_SE = JCl;        /* limit Jmin */
-
-	if (IsStencilExtended){
-	  /* extend Jmax */
-	  Jmax_NW += 1;
-	  Jmax_N  += 1;
-	  Jmax_NE += 1; 
-	}
-      } else if (EastBnd.IsReconstructionStencilAffected()){
-	if (jCell == JCl){
-	  Imax_NE = Imax_E = ICu;              /* limit Imax */
-
-	  if (IsStencilExtended){
-	    /* extend Imin */
-	    Imin_NW -= 1;
-	    Imin_W  -= 1;
-	  }
-	} else {
-	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
-
-	  if (IsStencilExtended){
-	    /* extend Imin */
-	    Imin_NW -= 1;
-	    Imin_W  -= 1;
-	    Imin_SW -= 1;
-	  }
-	}
-      } else if (SouthBnd.IsReconstructionStencilAffected()){
-	if (iCell == ICu){
-	  Jmin_SW = Jmin_S = JCl;     /* limit Jmin */
-
-	  if (IsStencilExtended){
-	    /* extend Jmax */
-	    Jmax_NW += 1;
-	    Jmax_N  += 1;
-	  }
-	} else {
-	  Jmin_SW = Jmin_S = Jmin_SE = JCl;    /* limit Jmin */
-
-	  if (IsStencilExtended){
-	    /* extend Jmax */
-	    Jmax_NW += 1;
-	    Jmax_N  += 1;
-	    Jmax_NE += 1;  
-	  }   
-	}
-      } else if (E_SouthBnd.IsReconstructionStencilAffected()){ // S_EastBnd also affects the stencil
-	if ( (ICu-iCell) > (jCell - JCl) ){
-	  // Limit to East side
-	  Imax_SE = ICu;
-	  // DON'T extend stencil
-	} else {
-	  // Limit to South side 
-	  Jmin_SE = JCl;
-	  // DON'T extend stencil
-	}
-      }
-
-    } else if (jCell <= JCu - rings){  // Case C 
-      if (EastBnd.IsReconstructionStencilAffected()){
-	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
-
-	if (IsStencilExtended){
-	  /* extend Imin */
-	  Imin_NW -= 1;
-	  Imin_W  -= 1;
-	  Imin_SW -= 1;
-	}
-      }
-
-    } else if (jCell <= JCu){	         // Case D
-      if (EastBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
-	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
-	Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
-
-	if (IsStencilExtended){
-	  /* extend Imin */
-	  Imin_NW -= 1;
-	  Imin_W  -= 1;
-	  Imin_SW -= 1;	  
-
-	  /* extend Jmin */
-	  Jmin_SW -= 1;
-	  Jmin_S  -= 1;
-	  Jmin_SE -= 1;
-	}
-
-      } else if (EastBnd.IsReconstructionStencilAffected()  && N_EastBnd.IsReconstructionStencilAffected()){
-	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
-
-	if (IsStencilExtended){
-	  /* extend Imin */
-	  Imin_NW -= 1;
-	  Imin_W  -= 1;
-	  Imin_SW -= 1;
-	}
-      } else if (NorthBnd.IsReconstructionStencilAffected() && E_NorthBnd.IsReconstructionStencilAffected()){
-	Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
-
-	if (IsStencilExtended){
-	  /* extend Jmin */
-	  Jmin_SW -= 1;
-	  Jmin_S  -= 1;
-	  Jmin_SE -= 1;
-	}
-      } else if (EastBnd.IsReconstructionStencilAffected()){
-	if (jCell == JCu){
-	  Imax_E = Imax_SE = ICu;             /* limit Imax */
-
-	  if (IsStencilExtended){
-	    /* extend Imin */
-	    Imin_W  -= 1;
-	    Imin_SW -= 1;
-	  }
-	} else {
-	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
-
-	  if (IsStencilExtended){
-	    /* extend Imin */
-	    Imin_NW -= 1;
-	    Imin_W  -= 1;
-	    Imin_SW -= 1;
-	  }
-	}
-      } else if (NorthBnd.IsReconstructionStencilAffected()){
-	if (iCell == ICu){
-	  Jmax_NW = Jmax_N = JCu;        /* limit Jmax */
-	    
-	  if (IsStencilExtended){
-	    /* extend Jmin */
-	    Jmin_SW -= 1;
-	    Jmin_S  -= 1;
-	  }
-	} else {
-	  Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
-	    
-	  if (IsStencilExtended){
-	    /* extend Jmin */
-	    Jmin_SW -= 1;
-	    Jmin_S  -= 1;
-	    Jmin_SE -= 1;
-	  }
-	}
-      } else if (E_NorthBnd.IsReconstructionStencilAffected()){ // N_EastBnd also affects the stencil
-	if (ICu-iCell > JCu-jCell){
-	  // Limit to East side
-	  Imax_NE = ICu;
-	  // DON'T extend stencil
-	} else {
-	  // Limit to North side
-	  Jmax_NE = JCu;
-	  // DON'T extend stencil
-	}
-      }
-
-    } else {			         // Case E (jCell > JCu)
-      // East Bnd influence
-      if (N_EastBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
-	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
-	  
-	if (IsStencilExtended){
-	  /* extend Imin */
-	  Imin_NW -= 1;
-	  Imin_W  -= 1;
-	  Imin_SW -= 1;	
-	}  
-      } else if (N_EastBnd.IsReconstructionStencilAffected()){
-	if (jCell == JCu + 1){
-	  Imax_NE = Imax_E = ICu;        /* limit Imax */
-	    
-	  if (IsStencilExtended){
-	    /* extend Imin */
-	    Imin_NW -= 1;
-	    Imin_W  -= 1;  
-	  }  
-	} else {
-	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
-	    
-	  if (IsStencilExtended){
-	    /* extend Imin */
-	    Imin_NW -= 1;
-	    Imin_W  -= 1;
-	    Imin_SW -= 1;
-	  }
-	}
-      } else if (EastBnd.IsReconstructionStencilAffected()){
-	if (ICu - iCell > jCell - (JCu+1)) {
-	  Imax_SE = ICu;                         /* limit Imax */
-	    
-	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
-	} else {
-	  // North Bnd influence
-	  Jmin_SE = JCu + 1;                     /* limit Jmin */
-	    
-	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */
-	}
-      }
-    }// endif (Case E)
-
-  } else {
-
-    // ==== Cover cells with (iCell > ICu) ====
-    if ( jCell < JCl){	         // Case A
-      // South Bnd influence
-      if (E_SouthBnd.IsReconstructionStencilAffected()){
-	if (iCell == ICu + 1){
-	  Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
-
-	  if (IsStencilExtended){
-	    /* extend Jmin */
-	    Jmin_S  -= 1;
-	    Jmin_SE -= 1;
-	    /* ensure valid Jmin */
-	    Jmin_S  = max(Jmin_S, 0);
-	    Jmin_SE = max(Jmin_SE, 0);
-	  }
-	} else {
-	  Jmax_NW = Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
-
-	  if (IsStencilExtended){
-	    /* extend Jmin */
-	    Jmin_SW -= 1;
-	    Jmin_S  -= 1;
-	    Jmin_SE -= 1;
-	    /* ensure valid Jmin */
-	    Jmin_SW = max(Jmin_SW, 0);
-	    Jmin_S  = max(Jmin_S, 0);
-	    Jmin_SE = max(Jmin_SE, 0);
-	  }
-	}
-      } else if (S_EastBnd.IsReconstructionStencilAffected()){
-	if (jCell == JCl - 1){
-	  Imin_W = Imin_SW = ICu+1;              /* limit Imin */
-
-	  if (IsStencilExtended){
-	    /* extend Imax */
-	    Imax_E  += 1;
-	    Imax_SE += 1;
-	    /* ensure valid Imax */
-	    Imax_E  = min(Imax_E, ICu+Ng);
-	    Imax_SE = min(Imax_SE, ICu+Ng);	    
-	  }
-	} else {
-	  Imin_NW = Imin_W = Imin_SW = ICu+1;    /* limit Imin */
-
-	  if (IsStencilExtended){
-	    /* extend Imax */
-	    Imax_NE += 1;
-	    Imax_E  += 1;
-	    Imax_SE += 1;
-	    /* ensure valid Imax */
-	    Imax_NE = min(Imax_NE, ICu+Ng);	    
-	    Imax_E  = min(Imax_E, ICu+Ng);
-	    Imax_SE = min(Imax_SE, ICu+Ng);	    
-	  }
-	}
-      }
-
-    } else if (jCell < JCl+rings){     // Case B
-      // South Bnd influence
-      if (E_SouthBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
-	Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
-	  
-	if (IsStencilExtended){
-	  /* extend Jmax */
-	  Jmax_NW += 1;
-	  Jmax_N  += 1;
-	  Jmax_NE += 1;	
-	}  
-      } else if (E_SouthBnd.IsReconstructionStencilAffected()){
-	if (iCell == ICu + 1){
-	  Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
-	    
-	  if (IsStencilExtended){
-	    /* extend Jmax */
-	    Jmax_N  += 1;
-	    Jmax_NE += 1;	 
-	  } 
-	} else {
-	  Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
-	    
-	  if (IsStencilExtended){
-	    /* extend Jmax */
-	    Jmax_NW += 1;
-	    Jmax_N  += 1;
-	    Jmax_NE += 1;	 
-	  } 
-	}
-      } else if (SouthBnd.IsReconstructionStencilAffected()){
-	if (iCell - (ICu+1) > jCell-JCl) {
-	  // East Bnd influence
-	  Imin_SW = ICu + 1;                       /* limit Imin */
-	    
-	  /* DON'T extend Imax due to smoothness indicator calculation reasons */
-	} else {
-	  Jmin_SW = JCl;                            /* limit Jmin */
-	    
-	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */	  
-	}
-      } // endif (Case B)
-
-    } else if (jCell>JCu-rings && jCell <= JCu){	        // Case C (JCu-rings < jCell <= JCu)
-      // North Bnd influence
-      if (E_NorthBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
-	Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
-	  
-	if (IsStencilExtended){
-	  /* extend Jmin */
-	  Jmin_SW -= 1;
-	  Jmin_S  -= 1;
-	  Jmin_SE -= 1;	
-	}  
-      } else if (E_NorthBnd.IsReconstructionStencilAffected()){
-	if (iCell == ICu + 1){
-	  Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
-	    
-	  if (IsStencilExtended){
-	    /* extend Jmin */
-	    Jmin_S  -= 1;
-	    Jmin_SE -= 1;	 
-	  } 
-	} else {
-	  Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
-	    
-	  if (IsStencilExtended){
-	    /* extend Jmin */
-	    Jmin_SW -= 1;
-	    Jmin_S  -= 1;
-	    Jmin_SE -= 1;	 
-	  } 
-	}
-      } else if (NorthBnd.IsReconstructionStencilAffected()){
-	if (iCell - (ICu+1) > JCu - jCell) {
-	  // East Bnd influence
-	  Imin_NW = ICu + 1;                        /* limit Imax */
-	    
-	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
-	} else {
-	  Jmax_NW = JCu;                         /* limit Jmax */
-	    
-	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */ 
-	}
-      } // endif (Case C)
-
-    } else if (jCell > JCu){	                        // Case D (jCell > JCu)
-      // North Bnd influence
-      if (E_NorthBnd.IsReconstructionStencilAffected()){
-	if (iCell == ICu + 1){
-	  Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
-
-	  if (IsStencilExtended){
-	    /* extend Jmax */
-	    Jmax_N  += 1;
-	    Jmax_NE += 1;
-	    /* ensure valid Jmax */
-	    Jmax_N  = min(Jmax_N, JCu+Ng);
-	    Jmax_NE = min(Jmax_NE, JCu+Ng);	    
-	  }
-	} else {
-	  Jmin_SW = Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
-	    
-	  if (IsStencilExtended){
-	    /* extend Jmax */
-	    Jmax_NW += 1;
-	    Jmax_N  += 1;
-	    Jmax_NE += 1;
-	    /* ensure valid Jmax */
-	    Jmax_NW = min(Jmax_NW, JCu+Ng);	    
-	    Jmax_N  = min(Jmax_N, JCu+Ng);
-	    Jmax_NE = min(Jmax_NE, JCu+Ng);	    
-	  }
-	}
-      } else if (N_EastBnd.IsReconstructionStencilAffected()){
-	if (jCell == JCu + 1){
-	  Imin_NW = Imin_W = ICu + 1;   /* limit Imin */
-
-	  if (IsStencilExtended){
-	    /* extend Imax */
-	    Imax_NE += 1;
-	    Imax_E  += 1;
-	    /* ensure valid Imax */
-	    Imax_NE = min(Imax_NE, ICu+Ng);
-	    Imax_E  = min(Imax_E, ICu+Ng);
-	  }
-	} else {
-	  Imin_NW = Imin_W = Imin_SW = ICu + 1;   /* limit Imin */
-
-	  if (IsStencilExtended){
-	    /* extend Imax */
-	    Imax_NE += 1;
-	    Imax_E  += 1;
-	    Imax_SE += 1;
-	    /* ensure valid Imax */
-	    Imax_NE = min(Imax_NE, ICu+Ng);
-	    Imax_E  = min(Imax_E, ICu+Ng);
-	    Imax_SE = min(Imax_SE, ICu+Ng);
-	  }
-	}
-      }
-    }	// endif (Case D)
-
-  } // endif (iCell)
-
-  /* ===== Form stencil ===== */
-  i_index.push_back(iCell);
-  j_index.push_back(jCell);
-
-  // Add cells from NW region
-  for (i=Imin_NW; i<=iCell-1; ++i){
-    for (j=jCell+1; j<=Jmax_NW; ++j){
-      i_index.push_back(i);
-      j_index.push_back(j);
-    }// endif
-  }// endif
-
-  // Add cells from W region
-  for (i=Imin_W; i<=iCell-1; ++i){
-    i_index.push_back(i);
-    j_index.push_back(jCell);
-  }// endif
-
-  // Add cells from SW region
-  for (i=Imin_SW; i<=iCell-1; ++i){
-    for (j=Jmin_SW; j<=jCell-1; ++j){
-      i_index.push_back(i);
-      j_index.push_back(j);
-    }// endif
-  }// endif
-
-  // Add cells from S region
-  for (j=Jmin_S; j<=jCell-1; ++j){
-    i_index.push_back(iCell);
-    j_index.push_back(j);
-  }// endif
-
-  // Add cells from SE region
-  for (i=iCell+1; i<=Imax_SE; ++i){
-    for (j=Jmin_SE; j<=jCell-1; ++j){
-      i_index.push_back(i);
-      j_index.push_back(j);
-    }// endif
-  }// endif
-
-  // Add cells from E region
-  for (i=iCell+1; i<=Imax_E; ++i){
-    i_index.push_back(i);
-    j_index.push_back(jCell);
-  }// endif
-
-  // Add cells from NE region
-  for (i=iCell+1; i<=Imax_NE; ++i){
-    for (j=jCell+1; j<=Jmax_NE; ++j){
-      i_index.push_back(i);
-      j_index.push_back(j);
-    }// endif
-  }// endif
-
-  // Add cells from N region
-  for (j=jCell+1; j<=Jmax_N; ++j){
-    i_index.push_back(iCell);
-    j_index.push_back(j);
-  }// endif
-
-}
-
-template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::displayDeviatedReconstructionStencil(ostream & out,
-								   const int &iCell, const int &jCell,
-								   const int &rings) const{
-
-  // Set local variables
-  int i,j;
-  IndexType i_index, j_index;
-  char** StencilMap;
-
-  // Allocate StencilMap memory
-  StencilMap = new char* [9];
-  for (i = 0; i<9; ++i){
-    StencilMap[i] = new char [9];
-    // Initialize StencilMap to emply character
-    for (j = 0; j<9; ++j){
-      StencilMap[i][j] = ' ';
-    }
-  }
-
-  // Mark the reconstructed cell with the '@' sign
-  StencilMap[4][4] = '@';
-
-  // Determine the deviated stencil for cell (iCell,jCell)
-  SetDeviatedReconstructionStencil(iCell, jCell, i_index, j_index, rings);  
-
-  // Mark the presence of each neighbour cell in the stencil with '*' sign
-  for (i = 1; i<i_index.size(); ++i){
-    StencilMap[4 + (i_index[i] - iCell)][4 + (j_index[i] - jCell)] = '*';
-  }
-
-  // Output StencilMap
-  for (j = 8; j>=0; --j){
-    for (i = 0; i<=8; ++i){
-      out << StencilMap[i][j];
-    }
-    out << endl;
-  }
-
-}
+// --> RR: huge commment out of definitions: SetSpecialReconstructionStencil, getEnlargedRS, SetDeviated, and displayDeviatedRS
+//
+///*! 
+// * Write the 'i' and 'j' indexes of the cells that are part of
+// * the reconstruction of cell (iCell,jCell) for special tests.
+// * Use the number of rings set in the class to determine how far the stencil extends.
+// * This routine doesn't modify the stencil due to existence 
+// * of curved boundaries.
+// * \param [out] i_index The i-index of the cells.
+// * \param [out] j_index The j-index of the cells.
+// *
+// * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
+// */
+//template<class SOLN_STATE> inline
+//void HighOrder<SOLN_STATE>::SetSpecialReconstructionStencil(const int &iCell, const int &jCell,
+//							      IndexType & i_index, IndexType & j_index) const{
+//  
+//  i_index.clear();
+//  j_index.clear();
+//
+//  i_index.push_back(iCell);   j_index.push_back(jCell); /* cell (iCell,jCell) */
+//
+//  switch(rings){
+//
+//  case 2: // two rings of cells around (iCell,jCell)
+//
+//    /* Second ring */
+//    //    i_index.push_back(iCell-2); j_index.push_back(jCell-2);
+//    i_index.push_back(iCell-1); j_index.push_back(jCell-2);
+//    //    i_index.push_back(iCell  ); j_index.push_back(jCell-2);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell-2);
+//    //    i_index.push_back(iCell+2); j_index.push_back(jCell-2);
+//    i_index.push_back(iCell-2); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell+2); j_index.push_back(jCell-1);
+//    //    i_index.push_back(iCell-2); j_index.push_back(jCell  );
+//    //    i_index.push_back(iCell+2); j_index.push_back(jCell  );
+//    i_index.push_back(iCell-2); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell+2); j_index.push_back(jCell+1);
+//    //    i_index.push_back(iCell-2); j_index.push_back(jCell+2);
+//    i_index.push_back(iCell-1); j_index.push_back(jCell+2);
+//    //    i_index.push_back(iCell  ); j_index.push_back(jCell+2);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell+2);
+//    //    i_index.push_back(iCell+2); j_index.push_back(jCell+2);
+//
+//  case 1: // one ring of cells around (iCell,jCell)
+//
+//    /* First ring */
+//    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell-1); j_index.push_back(jCell  );
+//    i_index.push_back(iCell+1); j_index.push_back(jCell  );
+//    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
+//
+//    break;
+//
+//  default: // general expression
+//
+//    break;
+//  }//endswitch  
+//}
+//
+///*! 
+// * Write the 'i' and 'j' indexes of the cells that are part of
+// * the reconstruction of the given cell and the cells that have
+// * common face with it.
+// *
+// * \param [in]  iCell The i-index of the given cell
+// * \param [in]  jCell The j-index of the given cell
+// * \param [out] i_index The i-index of the cells.
+// * \param [out] j_index The j-index of the cells.
+// *
+// */
+//template<class SOLN_STATE> inline
+//void HighOrder<SOLN_STATE>::getEnlargedReconstructionStencil(const int &iCell, const int &jCell,
+//							       IndexType & i_index, IndexType & j_index) const{
+//
+//  if ( IsConstrainedReconstructionRequired() ) {
+//    throw runtime_error("HighOrder<SOLN_STATE>::getEnlargedReconstructionStencil() doesn't support constrained reconstruction!");
+//  }
+//
+//  // Set stencil based on the central one
+//
+//  // Reset the output index array
+//  i_index.clear();
+//  j_index.clear();
+//
+//  switch(rings){
+//
+//  case 2: 
+//
+//    i_index.push_back(iCell);   j_index.push_back(jCell); /* cell (iCell,jCell) */
+//
+//    /* First ring */
+//    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell-1); j_index.push_back(jCell  );
+//    i_index.push_back(iCell+1); j_index.push_back(jCell  );
+//    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
+//
+//    /* Second ring */
+//    i_index.push_back(iCell-2); j_index.push_back(jCell-2);
+//    i_index.push_back(iCell-1); j_index.push_back(jCell-2);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell-2);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell-2);
+//    i_index.push_back(iCell+2); j_index.push_back(jCell-2);
+//    i_index.push_back(iCell-2); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell+2); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell-2); j_index.push_back(jCell  );
+//    i_index.push_back(iCell+2); j_index.push_back(jCell  );
+//    i_index.push_back(iCell-2); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell+2); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell-2); j_index.push_back(jCell+2);
+//    i_index.push_back(iCell-1); j_index.push_back(jCell+2);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell+2);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell+2);
+//    i_index.push_back(iCell+2); j_index.push_back(jCell+2);
+//
+//    /* Third ring incomplete (i.e. skip the corners) */
+//    i_index.push_back(iCell-2); j_index.push_back(jCell-3);
+//    i_index.push_back(iCell-1); j_index.push_back(jCell-3);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell-3);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell-3);
+//    i_index.push_back(iCell+2); j_index.push_back(jCell-3);
+//    i_index.push_back(iCell-3); j_index.push_back(jCell-2);
+//    i_index.push_back(iCell+3); j_index.push_back(jCell-2);
+//    i_index.push_back(iCell-3); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell+3); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell-3); j_index.push_back(jCell  );
+//    i_index.push_back(iCell+3); j_index.push_back(jCell  );
+//    i_index.push_back(iCell-3); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell+3); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell-3); j_index.push_back(jCell+2);
+//    i_index.push_back(iCell+3); j_index.push_back(jCell+2);
+//    i_index.push_back(iCell-2); j_index.push_back(jCell+3);
+//    i_index.push_back(iCell-1); j_index.push_back(jCell+3);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell+3);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell+3);
+//    i_index.push_back(iCell+2); j_index.push_back(jCell+3);
+//
+//    break;
+//
+//  case 1: // one ring of cells around (iCell,jCell)
+//
+//    i_index.push_back(iCell);   j_index.push_back(jCell); /* cell (iCell,jCell) */
+//
+//    /* First ring */
+//    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell-1); j_index.push_back(jCell  );
+//    i_index.push_back(iCell+1); j_index.push_back(jCell  );
+//    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
+//
+//    /* Second ring incomplete (i.e. skip the corners) */
+//    i_index.push_back(iCell-1); j_index.push_back(jCell-2);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell-2);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell-2);
+//    i_index.push_back(iCell-2); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell+2); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell-2); j_index.push_back(jCell  );
+//    i_index.push_back(iCell+2); j_index.push_back(jCell  );
+//    i_index.push_back(iCell-2); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell+2); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell-1); j_index.push_back(jCell+2);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell+2);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell+2);
+//
+//    break;
+//
+//  default: // general expression
+//    throw runtime_error("HighOrder<SOLN_STATE>::getEnlargedReconstructionStencil() doesn't support the current number of rings!");
+//  }//endswitch  
+//}
+//
+///*! 
+// * Write the 'i' and 'j' indexes of the cells that are part of
+// * the deviated (i.e. different than central) reconstruction stencil of 
+// * cell (iCell,jCell).
+// * Use the number of rings and the class variables caring information
+// * about the opaqueness/transparency of boundaries to determine how far the stencil extends.
+// * This routine DOES'T generate a central stencil if the cell gets affected by the presence of special boundaries!!!
+// * It is also MORE EXPENSIVE than the regular routine that generates central stencils!!!
+// * The stencil is biased to the mesh interior and it might be extended further than a central stencil.
+// *
+// * \param [out] i_index The i-index of the cells.
+// * \param [out] j_index The j-index of the cells.
+// * \param [in] IsStencilExtended flag for extending or not the stencil. By default is true.
+// *
+// * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
+// */
+//template<class SOLN_STATE> inline
+//void HighOrder<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell, const int &jCell,
+//							       IndexType & i_index, IndexType & j_index,
+//							       const int &rings,
+//							       bool IsStencilExtended) const{
+//
+//  // Reset indexes
+//  i_index.clear();
+//  j_index.clear();
+//  
+//  // The space around the cell (iCell,jCell) is divided into 8 regions relative to the cell faces (i.e. NW,W,SW,S,SE,E,NE,N).
+//  // There are 12 variable indexes which can fully control how the stencil is formed.
+//
+//  int i,j;
+//  int Imin_NW, Jmax_NW;	// North-West region
+//  int Imin_W;	        // West region
+//  int Imin_SW, Jmin_SW;	// South-West region
+//  int Jmin_S;	        // South region
+//  int Imax_SE, Jmin_SE;	// South-East region
+//  int Imax_E;	        // East region
+//  int Imax_NE, Jmax_NE;	// North-East region
+//  int Jmax_N;	        // North region
+//
+//  /* Set indexes as if a central stencil can be set. */
+//  Imin_NW = iCell-rings;
+//  Jmax_NW = jCell+rings;
+//  Imin_W  = iCell-rings;
+//  Imin_SW = iCell-rings;
+//  Jmin_SW = jCell-rings;
+//  Jmin_S  = jCell-rings;
+//  Imax_SE = iCell+rings;
+//  Jmin_SE = jCell-rings;
+//  Imax_E  = iCell+rings;
+//  Imax_NE = iCell+rings;
+//  Jmax_NE = jCell+rings;
+//  Jmax_N  = jCell+rings;
+//
+//  
+//  // Decide whether the stencil is extended or not.
+//  // An extended stencil will add cells in the opposite direction of the restricted boundary.
+//  // By default the stencil is extended.
+//  if ( (CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS == ON &&
+//	CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL == OFF) ){
+//    
+//    IsStencilExtended = false;
+//  }
+//
+//
+//  /* ===  Cell to the left of West block boundary === 
+//   * Obs: This cell is unrestricted to West.
+//   */
+//  if ( iCell < ICl ){
+//
+//    // ==== Cover cells with iCell < ICl ====
+//      
+//    if ( jCell < JCl){                // Case A
+//      // South Bnd influence
+//      if (W_SouthBnd.IsReconstructionStencilAffected()){
+//	if (iCell == ICl - 1){
+//	  Jmax_NW = Jmax_N = JCl-1;     /* limit Jmax */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Jmin */
+//	    Jmin_SW -= 1;
+//	    Jmin_S  -= 1;
+//	    /* ensure valid Jmin */
+//	    Jmin_SW = max(Jmin_SW, 0);
+//	    Jmin_S  = max(Jmin_S, 0);
+//	  }
+//	} else {
+//	  Jmax_NW = Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Jmin */
+//	    Jmin_SW -= 1;
+//	    Jmin_S  -= 1;
+//	    Jmin_SE -= 1;
+//	    /* ensure valid Jmin */
+//	    Jmin_SW = max(Jmin_SW, 0);
+//	    Jmin_S  = max(Jmin_S, 0); 
+//	    Jmin_SE = max(Jmin_SE, 0);
+//	  }
+//	}
+//      } else if (S_WestBnd.IsReconstructionStencilAffected()){
+//	if (jCell == JCl - 1){
+//	  Imax_E = Imax_SE = ICl-1;     /* limit Imax */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Imin */
+//	    Imin_W  -= 1;
+//	    Imin_SW -= 1;
+//	    /* ensure valid Imin */
+//	    Imin_W  = max(Imin_W, 0);
+//	    Imin_SW = max(Imin_SW, 0);
+//	  }
+//	} else {
+//	  Imax_E = Imax_SE = Imax_NE = ICl-1;     /* limit Imax */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Imin */
+//	    Imin_W  -= 1;
+//	    Imin_SW -= 1;
+//	    Imin_NW -= 1;
+//	    /* ensure valid Imin */
+//	    Imin_W  = max(Imin_W, 0);
+//	    Imin_SW = max(Imin_SW, 0);
+//	    Imin_NW = max(Imin_NW, 0);
+//	  }
+//	}
+//      }
+//
+//    } else if (jCell < JCl+rings){    // Case B
+//      // South Bnd influence
+//      if (W_SouthBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
+//	Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+//	  
+//	if (IsStencilExtended){
+//	  /* extend Jmax */
+//	  Jmax_NW += 1;
+//	  Jmax_N  += 1;
+//	  Jmax_NE += 1;
+//	}
+//      } else if (W_SouthBnd.IsReconstructionStencilAffected()){
+//	if (iCell == ICl - 1){
+//	  Jmin_SW = Jmin_S = JCl;                 /* limit Jmin */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Jmax */
+//	    Jmax_NW += 1;
+//	    Jmax_N  += 1;
+//	  }
+//	} else {
+//	  Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Jmax */
+//	    Jmax_NW += 1;
+//	    Jmax_N  += 1;
+//	    Jmax_NE += 1;
+//	  }
+//	}
+//      } else if (SouthBnd.IsReconstructionStencilAffected()){
+//	if (ICl-1-iCell > jCell - JCl){
+//	  Imax_SE = ICl - 1;                       /* limit Imax */
+//
+//	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+//	} else {
+//	  Jmin_SE = JCl;                            /* limit Jmin */
+//
+//	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */
+//	}
+//      }
+//	
+//    } else if (jCell>JCu-rings && jCell <= JCu){	        // Case C (JCu-rings < jCell <= JCu)
+//      // North Bnd influence
+//      if (W_NorthBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
+//	Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+//
+//	if (IsStencilExtended){
+//	  /* extend Jmin */
+//	  Jmin_SW -= 1;
+//	  Jmin_S  -= 1;
+//	  Jmin_SE -= 1;
+//	}
+//      } else if (W_NorthBnd.IsReconstructionStencilAffected()){
+//	if (iCell == ICl -1){
+//	  Jmax_NW = Jmax_N = JCu;                 /* limit Jmax */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Jmin */
+//	    Jmin_SW -= 1;
+//	    Jmin_S  -= 1;
+//	  }
+//	} else {
+//	  Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Jmin */
+//	    Jmin_SW -= 1;
+//	    Jmin_S  -= 1;
+//	    Jmin_SE -= 1; 
+//	  } 
+//	}
+//      } else if (NorthBnd.IsReconstructionStencilAffected()){
+//	if (ICl-1-iCell > JCu-jCell){
+//	  Imax_NE = ICl - 1;                       /* limit Imax */
+//	    
+//	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+//	} else {
+//	  Jmax_NE = JCu;                            /* limit Jmax */
+//
+//	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */
+//	}
+//      }
+//
+//    } else if (jCell > JCu){	                 // Case D (jCell > JCu)
+//      // North Bnd influence
+//      if (W_NorthBnd.IsReconstructionStencilAffected()){
+//	if (iCell == ICl - 1){
+//	  Jmin_SW = Jmin_S = JCu+1;     /* limit Jmin */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Jmax */
+//	    Jmax_NW += 1;
+//	    Jmax_N  += 1;
+//	    /* ensure valid Jmax */
+//	    Jmax_NW = min(Jmax_NW, JCu+Ng);
+//	    Jmax_N  = min(Jmax_N, JCu+Ng);	    
+//	  }
+//	} else {
+//	  Jmin_SW = Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Jmax */
+//	    Jmax_NW += 1;
+//	    Jmax_N  += 1;
+//	    Jmax_NE += 1;
+//	    /* ensure valid Jmax */
+//	    Jmax_NW = min(Jmax_NW, JCu+Ng);
+//	    Jmax_N  = min(Jmax_N, JCu+Ng);
+//	    Jmax_NE = min(Jmax_NE, JCu+Ng);
+//	  }
+//	}
+//      } else if (N_WestBnd.IsReconstructionStencilAffected()){
+//	if (jCell == JCu + 1){
+//	  Imax_NE = Imax_E = ICl-1;     /* limit Imax */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Imin */
+//	    Imin_NW -= 1;
+//	    Imin_W  -= 1;
+//	    /* ensure valid Imin */
+//	    Imin_NW = max(Imin_NW, 0);
+//	    Imin_W  = max(Imin_W, 0);
+//	  }
+//	} else {
+//	  Imax_NE = Imax_E = Imax_SE = ICl-1;     /* limit Imax */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Imin */
+//	    Imin_NW -= 1;
+//	    Imin_W  -= 1;
+//	    Imin_SW -= 1;
+//	    /* ensure valid Imin */
+//	    Imin_NW = max(Imin_NW, 0);
+//	    Imin_W  = max(Imin_W, 0);
+//	    Imin_SW = max(Imin_SW, 0);
+//	  }
+//	}
+//      }
+//    }	// endif (Case D)
+//
+//  } else if (iCell < ICl + rings) {
+//
+//    // ==== Cover cells with (ICl <= iCell < ICl+rings) ====
+//
+//    if ( jCell < JCl){	         // Case A
+//      // West Bnd influence
+//      if (S_WestBnd.IsReconstructionStencilAffected() && WestBnd.IsReconstructionStencilAffected()){
+//	Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+//
+//	if (IsStencilExtended){
+//	  /* extend Imax */
+//	  Imax_SE += 1;
+//	  Imax_E  += 1;
+//	  Imax_NE += 1;
+//	}
+//      } else if (S_WestBnd.IsReconstructionStencilAffected()){
+//	if (jCell == JCl -1){
+//	  Imin_SW = Imin_W = ICl;     /* limit Imin */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Imax */
+//	    Imax_SE += 1;
+//	    Imax_E  += 1;
+//	  }
+//	} else {
+//	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Imax */
+//	    Imax_SE += 1;
+//	    Imax_E  += 1;
+//	    Imax_NE += 1;  
+//	  }  
+//	}
+//      } else if (WestBnd.IsReconstructionStencilAffected()){
+//	if (iCell-ICl > JCl-1-jCell){
+//	  Imin_NW = ICl;              /* limit Imin */
+//	  
+//	  /* DON'T extend Imax due to smoothness indicator calculation reasons */
+//	} else {
+//	  // South Bnd influence
+//	  Jmax_NW = JCl - 1;                     /* limit Jmax */
+//	    
+//	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */
+//	}
+//      }
+//
+//    } else if (jCell < JCl + rings){   // Case B
+//      if (WestBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
+//	Imin_SW = Imin_W = Imin_NW = ICl;      /* limit Imin */
+//	Jmin_SW = Jmin_S = Jmin_SE = JCl;      /* limit Jmin */
+//
+//	if (IsStencilExtended){
+//	  /* extend Imax */
+//	  Imax_SE += 1;
+//	  Imax_E  += 1;
+//	  Imax_NE += 1;
+//	  
+//	  /* extend Jmax */
+//	  Jmax_NW += 1; 
+//	  Jmax_N  += 1;
+//	  Jmax_NE += 1;
+//	}
+//      } else if (WestBnd.IsReconstructionStencilAffected() && S_WestBnd.IsReconstructionStencilAffected()){
+//	Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+//  
+//	if (IsStencilExtended){
+//	  /* extend Imax */
+//	  Imax_SE += 1;
+//	  Imax_E  += 1;
+//	  Imax_NE += 1;	
+//	}  
+//      } else if (SouthBnd.IsReconstructionStencilAffected() && W_SouthBnd.IsReconstructionStencilAffected()){
+//	Jmin_SW = Jmin_S = Jmin_SE = JCl;     /* limit Jmin */
+//
+//	if (IsStencilExtended){
+//	  /* extend Jmax */
+//	  Jmax_NW += 1;
+//	  Jmax_N  += 1;
+//	  Jmax_NE += 1;
+//	}
+//      } else if (WestBnd.IsReconstructionStencilAffected()){
+//	if (jCell == JCl){
+//	  Imin_W = Imin_NW = ICl;             /* limit Imin */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Imax */
+//	    Imax_NE += 1;
+//	    Imax_E  += 1;
+//	  }
+//	} else {
+//	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Imax */
+//	    Imax_SE += 1;
+//	    Imax_E  += 1;
+//	    Imax_NE += 1;
+//	  } 
+//	}
+//      } else if (SouthBnd.IsReconstructionStencilAffected()){
+//	if (iCell == ICl){
+//	  Jmin_S = Jmin_SE = JCl;              /* limit Jmin */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Jmax */
+//	    Jmax_N  += 1;
+//	    Jmax_NE += 1;
+//	  }
+//	} else {
+//	  Jmin_SW = Jmin_S = Jmin_SE = JCl;              /* limit Jmin */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Jmax */
+//	    Jmax_NW += 1;
+//	    Jmax_N  += 1;
+//	    Jmax_NE += 1;
+//	  }
+//	}
+//      } else if (W_SouthBnd.IsReconstructionStencilAffected()){ // S_WestBnd is also affecting the stencil!
+//	if (iCell > jCell){
+//	  // Limit to West side
+//	  Imin_SW = ICl;
+//	  // DON'T extend stencil
+//	} else {
+//	  // Limit to South side
+//	  Jmin_SW = JCl;
+//	  // DON'T extend stencil
+//	}
+//      }
+//
+//    } else if (jCell <= JCu - rings){  // Case C 
+//      // West Bnd influence
+//      if (WestBnd.IsReconstructionStencilAffected()){
+//	Imin_NW = Imin_W = Imin_SW = ICl;              /* limit Imin */
+//
+//	if (IsStencilExtended){
+//	  /* extend Imax */
+//	  Imax_NE += 1;
+//	  Imax_E  += 1;
+//	  Imax_SE += 1;
+//	}
+//      }
+//
+//    } else if (jCell <= JCu){	         // Case D
+//      if (WestBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
+//	Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
+//	Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+//
+//	if (IsStencilExtended){
+//	  /* extend Imax */
+//	  Imax_NE += 1;
+//	  Imax_E  += 1;
+//	  Imax_SE += 1;
+//	  
+//	  /* extend Jmin */
+//	  Jmin_SW -= 1;
+//	  Jmin_S  -= 1;
+//	  Jmin_SE -= 1;
+//	}
+//
+//      } else if (WestBnd.IsReconstructionStencilAffected() && N_WestBnd.IsReconstructionStencilAffected()){
+//	Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
+//
+//	if (IsStencilExtended){
+//	  /* extend Imax */
+//	  Imax_NE += 1;
+//	  Imax_E  += 1;
+//	  Imax_SE += 1;	
+//	}  
+//      } else if (NorthBnd.IsReconstructionStencilAffected() && W_NorthBnd.IsReconstructionStencilAffected()){
+//	Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+//
+//	if (IsStencilExtended){
+//	  /* extend Jmin */
+//	  Jmin_SW -= 1;
+//	  Jmin_S  -= 1;
+//	  Jmin_SE -= 1;
+//	}
+//      } else if (WestBnd.IsReconstructionStencilAffected()){
+//	if (jCell == JCu){
+//	  Imin_W = Imin_SW = ICl;             /* limit Imin */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Imax */
+//	    Imax_E  += 1;
+//	    Imax_SE += 1;	 
+//	  } 	    
+//	} else {
+//	  Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Imax */
+//	    Imax_NE += 1;
+//	    Imax_E  += 1;
+//	    Imax_SE += 1;	 
+//	  } 	    
+//	}
+//      } else if (NorthBnd.IsReconstructionStencilAffected()){
+//	if (iCell == ICl){
+//	  Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Jmin */
+//	    Jmin_S  -= 1;
+//	    Jmin_SE -= 1;	 
+//	  }   	    
+//	} else {
+//	  Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Jmin */
+//	    Jmin_SW -= 1;
+//	    Jmin_S  -= 1;
+//	    Jmin_SE -= 1;	 
+//	  }   
+//	}
+//      } else if (W_NorthBnd.IsReconstructionStencilAffected()){ // N_WestBnd also affects the stencil
+//	if (iCell-ICl > JCu-jCell){
+//	  // Limit to West side
+//	  Imin_NW = ICl;
+//	  // DON'T extend stencil
+//	} else {
+//	  // Limit to North side
+//	  Jmax_NW = JCu;
+//	  // DON'T extend stencil
+//	}
+//      }
+//
+//    } else {			         // Case E (jCell > JCu)
+//      // West Bnd influence
+//      if (N_WestBnd.IsReconstructionStencilAffected() && WestBnd.IsReconstructionStencilAffected()){
+//	Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+//	  
+//	if (IsStencilExtended){
+//	  /* extend Imax */
+//	  Imax_SE += 1;
+//	  Imax_E  += 1;
+//	  Imax_NE += 1;	
+//	}  
+//      } else if (N_WestBnd.IsReconstructionStencilAffected()){
+//	if (jCell == JCu + 1){
+//	  Imin_W = Imin_NW = ICl;     /* limit Imin */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Imax */
+//	    Imax_E  += 1;
+//	    Imax_NE += 1;	 
+//	  } 	    
+//	} else {
+//	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+//
+//	  if (IsStencilExtended){	    
+//	    /* extend Imax */
+//	    Imax_SE += 1;
+//	    Imax_E  += 1;
+//	    Imax_NE += 1;	 
+//	  } 
+//	}
+//      } else if (WestBnd.IsReconstructionStencilAffected()){
+//	if (iCell-ICl > jCell-(JCu+1)){	    
+//	  Imin_SW = ICl;                         /* limit Imin */
+//
+//	  /* DON'T extend Imax due to smoothness indicator calculation reasons */
+//	} else {
+//	  Jmin_SW = JCu + 1;                     /* limit Jmin */
+//
+//	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */
+//	}
+//      }
+//    }	// endif (Case E)
+//
+//  } else if (iCell <= ICu - rings) {
+//
+//    // ==== Cover cells with (ICl+rings <= iCell <= ICu-rings) ====
+//
+//    if ( jCell < JCl + rings){         // Case A
+//      // South Bnd influence
+//      if (SouthBnd.IsReconstructionStencilAffected()){
+//	Jmin_SW = Jmin_S = Jmin_SE = JCl;     /* limit Jmin */
+//
+//	if (IsStencilExtended){
+//	  /* extend Jmax */
+//	  Jmax_NW += 1;
+//	  Jmax_N  += 1;
+//	  Jmax_NE += 1;
+//	}
+//      }
+//
+//    } else if (jCell > JCu - rings){   // Case B
+//      // North Bnd influence
+//      if (NorthBnd.IsReconstructionStencilAffected()){
+//	Jmax_NW = Jmax_N = Jmax_NE = JCu;     /* limit Jmax */
+//
+//	if (IsStencilExtended){
+//	  /* extend Jmin */
+//	  Jmin_SW -= 1;
+//	  Jmin_S  -= 1;
+//	  Jmin_SE -= 1;	
+//	}  
+//      }
+//    }	// endif (Case B)
+//
+//  } else if (iCell <= ICu) {
+//
+//    // ==== Cover cells with (ICu-rings < iCell <= ICu) ====
+//
+//    if ( jCell < JCl){	         // Case A
+//      // East Bnd influence
+//      if (S_EastBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
+//	Imax_NE = Imax_E = Imax_SE = ICu;     /* limit Imax */
+//
+//	if (IsStencilExtended){
+//	  /* extend Imin */
+//	  Imin_NW -= 1;
+//	  Imin_W  -= 1;
+//	  Imin_SW -= 1;
+//	}
+//      } else if (S_EastBnd.IsReconstructionStencilAffected()){
+//	if (jCell == JCl-1){
+//	  Imax_E = Imax_SE = ICu;     /* limit Imax */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Imin */
+//	    Imin_W  -= 1;
+//	    Imin_SW -= 1;  
+//	  } 
+//	} else {
+//	  Imax_NE = Imax_E = Imax_SE = ICu;     /* limit Imax */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Imin */
+//	    Imin_NW -= 1;
+//	    Imin_W  -= 1;
+//	    Imin_SW -= 1;
+//	  }
+//	}
+//      } else if (EastBnd.IsReconstructionStencilAffected()){
+//	if (ICu-iCell > JCl-1-jCell){
+//	  Imax_NE = ICu;                         /* limit Imax */
+//
+//	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+//	} else {
+//	  // South Bnd influence
+//	  Jmax_NE = JCl - 1;                     /* limit Jmax */
+//
+//	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */	  
+//	}
+//      }
+//
+//    } else if (jCell < JCl + rings){   // Case B
+//      if (SouthBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
+//	Jmin_SW = Jmin_S = Jmin_SE = JCl;        /* limit Jmin */
+//	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+//
+//	if (IsStencilExtended){
+//	  /* extend Jmax */
+//	  Jmax_NW += 1;
+//	  Jmax_N  += 1;
+//	  Jmax_NE += 1;
+//
+//	  /* extend Imin */
+//	  Imin_NW -= 1;
+//	  Imin_W  -= 1;
+//	  Imin_SW -= 1;
+//	}
+//      } else if (EastBnd.IsReconstructionStencilAffected()  && S_EastBnd.IsReconstructionStencilAffected()){
+//	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+//
+//	if (IsStencilExtended){
+//	  /* extend Imin */
+//	  Imin_NW -= 1;
+//	  Imin_W  -= 1;
+//	  Imin_SW -= 1;
+//	}
+//      } else if (SouthBnd.IsReconstructionStencilAffected() && E_SouthBnd.IsReconstructionStencilAffected()){
+//	Jmin_SW = Jmin_S = Jmin_SE = JCl;        /* limit Jmin */
+//
+//	if (IsStencilExtended){
+//	  /* extend Jmax */
+//	  Jmax_NW += 1;
+//	  Jmax_N  += 1;
+//	  Jmax_NE += 1; 
+//	}
+//      } else if (EastBnd.IsReconstructionStencilAffected()){
+//	if (jCell == JCl){
+//	  Imax_NE = Imax_E = ICu;              /* limit Imax */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Imin */
+//	    Imin_NW -= 1;
+//	    Imin_W  -= 1;
+//	  }
+//	} else {
+//	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Imin */
+//	    Imin_NW -= 1;
+//	    Imin_W  -= 1;
+//	    Imin_SW -= 1;
+//	  }
+//	}
+//      } else if (SouthBnd.IsReconstructionStencilAffected()){
+//	if (iCell == ICu){
+//	  Jmin_SW = Jmin_S = JCl;     /* limit Jmin */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Jmax */
+//	    Jmax_NW += 1;
+//	    Jmax_N  += 1;
+//	  }
+//	} else {
+//	  Jmin_SW = Jmin_S = Jmin_SE = JCl;    /* limit Jmin */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Jmax */
+//	    Jmax_NW += 1;
+//	    Jmax_N  += 1;
+//	    Jmax_NE += 1;  
+//	  }   
+//	}
+//      } else if (E_SouthBnd.IsReconstructionStencilAffected()){ // S_EastBnd also affects the stencil
+//	if ( (ICu-iCell) > (jCell - JCl) ){
+//	  // Limit to East side
+//	  Imax_SE = ICu;
+//	  // DON'T extend stencil
+//	} else {
+//	  // Limit to South side 
+//	  Jmin_SE = JCl;
+//	  // DON'T extend stencil
+//	}
+//      }
+//
+//    } else if (jCell <= JCu - rings){  // Case C 
+//      if (EastBnd.IsReconstructionStencilAffected()){
+//	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+//
+//	if (IsStencilExtended){
+//	  /* extend Imin */
+//	  Imin_NW -= 1;
+//	  Imin_W  -= 1;
+//	  Imin_SW -= 1;
+//	}
+//      }
+//
+//    } else if (jCell <= JCu){	         // Case D
+//      if (EastBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
+//	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+//	Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
+//
+//	if (IsStencilExtended){
+//	  /* extend Imin */
+//	  Imin_NW -= 1;
+//	  Imin_W  -= 1;
+//	  Imin_SW -= 1;	  
+//
+//	  /* extend Jmin */
+//	  Jmin_SW -= 1;
+//	  Jmin_S  -= 1;
+//	  Jmin_SE -= 1;
+//	}
+//
+//      } else if (EastBnd.IsReconstructionStencilAffected()  && N_EastBnd.IsReconstructionStencilAffected()){
+//	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+//
+//	if (IsStencilExtended){
+//	  /* extend Imin */
+//	  Imin_NW -= 1;
+//	  Imin_W  -= 1;
+//	  Imin_SW -= 1;
+//	}
+//      } else if (NorthBnd.IsReconstructionStencilAffected() && E_NorthBnd.IsReconstructionStencilAffected()){
+//	Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
+//
+//	if (IsStencilExtended){
+//	  /* extend Jmin */
+//	  Jmin_SW -= 1;
+//	  Jmin_S  -= 1;
+//	  Jmin_SE -= 1;
+//	}
+//      } else if (EastBnd.IsReconstructionStencilAffected()){
+//	if (jCell == JCu){
+//	  Imax_E = Imax_SE = ICu;             /* limit Imax */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Imin */
+//	    Imin_W  -= 1;
+//	    Imin_SW -= 1;
+//	  }
+//	} else {
+//	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Imin */
+//	    Imin_NW -= 1;
+//	    Imin_W  -= 1;
+//	    Imin_SW -= 1;
+//	  }
+//	}
+//      } else if (NorthBnd.IsReconstructionStencilAffected()){
+//	if (iCell == ICu){
+//	  Jmax_NW = Jmax_N = JCu;        /* limit Jmax */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Jmin */
+//	    Jmin_SW -= 1;
+//	    Jmin_S  -= 1;
+//	  }
+//	} else {
+//	  Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Jmin */
+//	    Jmin_SW -= 1;
+//	    Jmin_S  -= 1;
+//	    Jmin_SE -= 1;
+//	  }
+//	}
+//      } else if (E_NorthBnd.IsReconstructionStencilAffected()){ // N_EastBnd also affects the stencil
+//	if (ICu-iCell > JCu-jCell){
+//	  // Limit to East side
+//	  Imax_NE = ICu;
+//	  // DON'T extend stencil
+//	} else {
+//	  // Limit to North side
+//	  Jmax_NE = JCu;
+//	  // DON'T extend stencil
+//	}
+//      }
+//
+//    } else {			         // Case E (jCell > JCu)
+//      // East Bnd influence
+//      if (N_EastBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
+//	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+//	  
+//	if (IsStencilExtended){
+//	  /* extend Imin */
+//	  Imin_NW -= 1;
+//	  Imin_W  -= 1;
+//	  Imin_SW -= 1;	
+//	}  
+//      } else if (N_EastBnd.IsReconstructionStencilAffected()){
+//	if (jCell == JCu + 1){
+//	  Imax_NE = Imax_E = ICu;        /* limit Imax */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Imin */
+//	    Imin_NW -= 1;
+//	    Imin_W  -= 1;  
+//	  }  
+//	} else {
+//	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Imin */
+//	    Imin_NW -= 1;
+//	    Imin_W  -= 1;
+//	    Imin_SW -= 1;
+//	  }
+//	}
+//      } else if (EastBnd.IsReconstructionStencilAffected()){
+//	if (ICu - iCell > jCell - (JCu+1)) {
+//	  Imax_SE = ICu;                         /* limit Imax */
+//	    
+//	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+//	} else {
+//	  // North Bnd influence
+//	  Jmin_SE = JCu + 1;                     /* limit Jmin */
+//	    
+//	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */
+//	}
+//      }
+//    }// endif (Case E)
+//
+//  } else {
+//
+//    // ==== Cover cells with (iCell > ICu) ====
+//    if ( jCell < JCl){	         // Case A
+//      // South Bnd influence
+//      if (E_SouthBnd.IsReconstructionStencilAffected()){
+//	if (iCell == ICu + 1){
+//	  Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Jmin */
+//	    Jmin_S  -= 1;
+//	    Jmin_SE -= 1;
+//	    /* ensure valid Jmin */
+//	    Jmin_S  = max(Jmin_S, 0);
+//	    Jmin_SE = max(Jmin_SE, 0);
+//	  }
+//	} else {
+//	  Jmax_NW = Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Jmin */
+//	    Jmin_SW -= 1;
+//	    Jmin_S  -= 1;
+//	    Jmin_SE -= 1;
+//	    /* ensure valid Jmin */
+//	    Jmin_SW = max(Jmin_SW, 0);
+//	    Jmin_S  = max(Jmin_S, 0);
+//	    Jmin_SE = max(Jmin_SE, 0);
+//	  }
+//	}
+//      } else if (S_EastBnd.IsReconstructionStencilAffected()){
+//	if (jCell == JCl - 1){
+//	  Imin_W = Imin_SW = ICu+1;              /* limit Imin */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Imax */
+//	    Imax_E  += 1;
+//	    Imax_SE += 1;
+//	    /* ensure valid Imax */
+//	    Imax_E  = min(Imax_E, ICu+Ng);
+//	    Imax_SE = min(Imax_SE, ICu+Ng);	    
+//	  }
+//	} else {
+//	  Imin_NW = Imin_W = Imin_SW = ICu+1;    /* limit Imin */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Imax */
+//	    Imax_NE += 1;
+//	    Imax_E  += 1;
+//	    Imax_SE += 1;
+//	    /* ensure valid Imax */
+//	    Imax_NE = min(Imax_NE, ICu+Ng);	    
+//	    Imax_E  = min(Imax_E, ICu+Ng);
+//	    Imax_SE = min(Imax_SE, ICu+Ng);	    
+//	  }
+//	}
+//      }
+//
+//    } else if (jCell < JCl+rings){     // Case B
+//      // South Bnd influence
+//      if (E_SouthBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
+//	Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+//	  
+//	if (IsStencilExtended){
+//	  /* extend Jmax */
+//	  Jmax_NW += 1;
+//	  Jmax_N  += 1;
+//	  Jmax_NE += 1;	
+//	}  
+//      } else if (E_SouthBnd.IsReconstructionStencilAffected()){
+//	if (iCell == ICu + 1){
+//	  Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Jmax */
+//	    Jmax_N  += 1;
+//	    Jmax_NE += 1;	 
+//	  } 
+//	} else {
+//	  Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Jmax */
+//	    Jmax_NW += 1;
+//	    Jmax_N  += 1;
+//	    Jmax_NE += 1;	 
+//	  } 
+//	}
+//      } else if (SouthBnd.IsReconstructionStencilAffected()){
+//	if (iCell - (ICu+1) > jCell-JCl) {
+//	  // East Bnd influence
+//	  Imin_SW = ICu + 1;                       /* limit Imin */
+//	    
+//	  /* DON'T extend Imax due to smoothness indicator calculation reasons */
+//	} else {
+//	  Jmin_SW = JCl;                            /* limit Jmin */
+//	    
+//	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */	  
+//	}
+//      } // endif (Case B)
+//
+//    } else if (jCell>JCu-rings && jCell <= JCu){	        // Case C (JCu-rings < jCell <= JCu)
+//      // North Bnd influence
+//      if (E_NorthBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
+//	Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+//	  
+//	if (IsStencilExtended){
+//	  /* extend Jmin */
+//	  Jmin_SW -= 1;
+//	  Jmin_S  -= 1;
+//	  Jmin_SE -= 1;	
+//	}  
+//      } else if (E_NorthBnd.IsReconstructionStencilAffected()){
+//	if (iCell == ICu + 1){
+//	  Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Jmin */
+//	    Jmin_S  -= 1;
+//	    Jmin_SE -= 1;	 
+//	  } 
+//	} else {
+//	  Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Jmin */
+//	    Jmin_SW -= 1;
+//	    Jmin_S  -= 1;
+//	    Jmin_SE -= 1;	 
+//	  } 
+//	}
+//      } else if (NorthBnd.IsReconstructionStencilAffected()){
+//	if (iCell - (ICu+1) > JCu - jCell) {
+//	  // East Bnd influence
+//	  Imin_NW = ICu + 1;                        /* limit Imax */
+//	    
+//	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+//	} else {
+//	  Jmax_NW = JCu;                         /* limit Jmax */
+//	    
+//	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */ 
+//	}
+//      } // endif (Case C)
+//
+//    } else if (jCell > JCu){	                        // Case D (jCell > JCu)
+//      // North Bnd influence
+//      if (E_NorthBnd.IsReconstructionStencilAffected()){
+//	if (iCell == ICu + 1){
+//	  Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Jmax */
+//	    Jmax_N  += 1;
+//	    Jmax_NE += 1;
+//	    /* ensure valid Jmax */
+//	    Jmax_N  = min(Jmax_N, JCu+Ng);
+//	    Jmax_NE = min(Jmax_NE, JCu+Ng);	    
+//	  }
+//	} else {
+//	  Jmin_SW = Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
+//	    
+//	  if (IsStencilExtended){
+//	    /* extend Jmax */
+//	    Jmax_NW += 1;
+//	    Jmax_N  += 1;
+//	    Jmax_NE += 1;
+//	    /* ensure valid Jmax */
+//	    Jmax_NW = min(Jmax_NW, JCu+Ng);	    
+//	    Jmax_N  = min(Jmax_N, JCu+Ng);
+//	    Jmax_NE = min(Jmax_NE, JCu+Ng);	    
+//	  }
+//	}
+//      } else if (N_EastBnd.IsReconstructionStencilAffected()){
+//	if (jCell == JCu + 1){
+//	  Imin_NW = Imin_W = ICu + 1;   /* limit Imin */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Imax */
+//	    Imax_NE += 1;
+//	    Imax_E  += 1;
+//	    /* ensure valid Imax */
+//	    Imax_NE = min(Imax_NE, ICu+Ng);
+//	    Imax_E  = min(Imax_E, ICu+Ng);
+//	  }
+//	} else {
+//	  Imin_NW = Imin_W = Imin_SW = ICu + 1;   /* limit Imin */
+//
+//	  if (IsStencilExtended){
+//	    /* extend Imax */
+//	    Imax_NE += 1;
+//	    Imax_E  += 1;
+//	    Imax_SE += 1;
+//	    /* ensure valid Imax */
+//	    Imax_NE = min(Imax_NE, ICu+Ng);
+//	    Imax_E  = min(Imax_E, ICu+Ng);
+//	    Imax_SE = min(Imax_SE, ICu+Ng);
+//	  }
+//	}
+//      }
+//    }	// endif (Case D)
+//
+//  } // endif (iCell)
+//
+//  /* ===== Form stencil ===== */
+//  i_index.push_back(iCell);
+//  j_index.push_back(jCell);
+//
+//  // Add cells from NW region
+//  for (i=Imin_NW; i<=iCell-1; ++i){
+//    for (j=jCell+1; j<=Jmax_NW; ++j){
+//      i_index.push_back(i);
+//      j_index.push_back(j);
+//    }// endif
+//  }// endif
+//
+//  // Add cells from W region
+//  for (i=Imin_W; i<=iCell-1; ++i){
+//    i_index.push_back(i);
+//    j_index.push_back(jCell);
+//  }// endif
+//
+//  // Add cells from SW region
+//  for (i=Imin_SW; i<=iCell-1; ++i){
+//    for (j=Jmin_SW; j<=jCell-1; ++j){
+//      i_index.push_back(i);
+//      j_index.push_back(j);
+//    }// endif
+//  }// endif
+//
+//  // Add cells from S region
+//  for (j=Jmin_S; j<=jCell-1; ++j){
+//    i_index.push_back(iCell);
+//    j_index.push_back(j);
+//  }// endif
+//
+//  // Add cells from SE region
+//  for (i=iCell+1; i<=Imax_SE; ++i){
+//    for (j=Jmin_SE; j<=jCell-1; ++j){
+//      i_index.push_back(i);
+//      j_index.push_back(j);
+//    }// endif
+//  }// endif
+//
+//  // Add cells from E region
+//  for (i=iCell+1; i<=Imax_E; ++i){
+//    i_index.push_back(i);
+//    j_index.push_back(jCell);
+//  }// endif
+//
+//  // Add cells from NE region
+//  for (i=iCell+1; i<=Imax_NE; ++i){
+//    for (j=jCell+1; j<=Jmax_NE; ++j){
+//      i_index.push_back(i);
+//      j_index.push_back(j);
+//    }// endif
+//  }// endif
+//
+//  // Add cells from N region
+//  for (j=jCell+1; j<=Jmax_N; ++j){
+//    i_index.push_back(iCell);
+//    j_index.push_back(j);
+//  }// endif
+//
+//}
+//
+//template<class SOLN_STATE> inline
+//void HighOrder<SOLN_STATE>::displayDeviatedReconstructionStencil(ostream & out,
+//								   const int &iCell, const int &jCell,
+//								   const int &rings) const{
+//
+//  // Set local variables
+//  int i,j;
+//  IndexType i_index, j_index;
+//  char** StencilMap;
+//
+//  // Allocate StencilMap memory
+//  StencilMap = new char* [9];
+//  for (i = 0; i<9; ++i){
+//    StencilMap[i] = new char [9];
+//    // Initialize StencilMap to emply character
+//    for (j = 0; j<9; ++j){
+//      StencilMap[i][j] = ' ';
+//    }
+//  }
+//
+//  // Mark the reconstructed cell with the '@' sign
+//  StencilMap[4][4] = '@';
+//
+//  // Determine the deviated stencil for cell (iCell,jCell)
+//  SetDeviatedReconstructionStencil(iCell, jCell, i_index, j_index, rings);  
+//
+//  // Mark the presence of each neighbour cell in the stencil with '*' sign
+//  for (i = 1; i<i_index.size(); ++i){
+//    StencilMap[4 + (i_index[i] - iCell)][4 + (j_index[i] - jCell)] = '*';
+//  }
+//
+//  // Output StencilMap
+//  for (j = 8; j>=0; --j){
+//    for (i = 0; i<=8; ++i){
+//      out << StencilMap[i][j];
+//    }
+//    out << endl;
+//  }
+//
+//}
 
 ///*!
 // * Return the type of reconstruction for a given cell (iCell,jCell).
@@ -4217,551 +4226,554 @@ void HighOrder<SOLN_STATE>::displayDeviatedReconstructionStencil(ostream & out,
 //  }
 //}
 
-/*! 
- * Compute the gradient at an inter-cellular face using the first 
- * solution parameter based on the Green-Gauss reconstruction.
- * The path used to compute the gradient is formed by the centroids 
- * of the first order neighbours.
- * As an example, for EAST face the cells are: 0, S, SE, E, NE, N, 0
- * where 0 is the (iCell,jCell) cell and the orientation of the other 
- * cells is relative to 0 cell. 
- * The last index repeats the first one to show that the path is closed. 
- *
- * \param [in] Face Specify which face the gradient is computed at.
- * \param [out] GradU_face the gradient value is returned here 
- *
- */
-template<class SOLN_STATE>
-template<class Soln_Block_Type> inline
-void HighOrder<SOLN_STATE>::
-GreenGauss_FaceGradient_CentroidPathCartesianMesh(Soln_Block_Type &SolnBlk,
-						  const int &iCell, const int &jCell,
-						  const int &Face,
-						  Vector3D & GradU_face,
-						  const Soln_State &
-						  (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &,const int &) const){
-
-  int StencilSize(7);		// the last entry is to close the path
-
-  int n;
-  int Info;
-  double PolygonArea, Length;
-  Vector3D Centroids[StencilSize], PolygonCentroid;
-  Vector3D normal;
-  IndexType i_index, j_index;
-  double Um;		// average solution along the current integration segment
-
-  i_index.reserve(StencilSize);
-  j_index.reserve(StencilSize);
-
-  // Form the supporting stencil differently for each face
-  switch (Face){
-
-  case NORTH:
-    i_index.push_back(iCell  ); j_index.push_back(jCell  );
-    i_index.push_back(iCell+1); j_index.push_back(jCell  );
-    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
-    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
-    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
-    i_index.push_back(iCell-1); j_index.push_back(jCell  );
-    i_index.push_back(iCell  ); j_index.push_back(jCell  );
-    break;
-
-  case SOUTH:
-    i_index.push_back(iCell  ); j_index.push_back(jCell  );
-    i_index.push_back(iCell-1); j_index.push_back(jCell  );
-    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
-    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
-    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
-    i_index.push_back(iCell+1); j_index.push_back(jCell  );
-    i_index.push_back(iCell  ); j_index.push_back(jCell  );
-    break;
-
-  case WEST:
-    i_index.push_back(iCell  ); j_index.push_back(jCell  );
-    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
-    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
-    i_index.push_back(iCell-1); j_index.push_back(jCell  );
-    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
-    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
-    i_index.push_back(iCell  ); j_index.push_back(jCell  );
-
-    break;
-
-  case EAST:
-    i_index.push_back(iCell  ); j_index.push_back(jCell  );
-    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
-    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
-    i_index.push_back(iCell+1); j_index.push_back(jCell  );
-    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
-    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
-    i_index.push_back(iCell  ); j_index.push_back(jCell  );
-
-    break;
-  }
-
-
-  // Form the array of the centroids
-  for (n = 0; n < i_index.size(); ++n){
-    Centroids[n] = CellCenter(i_index[n], j_index[n]);
-  }
-
-  // Determine the area and centroid of the closed centroid path
-  Info = polyCentroid(Centroids, StencilSize, PolygonCentroid, PolygonArea);
-
-  // Reset gradient
-  GradU_face = Vector3D(0);
-
-  // Calculate average gradient
-  for (n = 1; n < i_index.size(); ++n){
-
-    // Calculate segment length between centroids
-    Length = abs(Centroids[n] - Centroids[n-1]);
-
-    // Calculate normal
-    normal = Vector3D( (Centroids[n].y - Centroids[n-1].y),
-		       -(Centroids[n].x - Centroids[n-1].x ) )/Length;
-
-    // Calculate average solution with the first parameter
-    Um = 0.5*( (SolnBlk.*ReconstructedSoln)(i_index[n  ], j_index[n  ])[1] +
-	       (SolnBlk.*ReconstructedSoln)(i_index[n-1], j_index[n-1])[1] );
-
-    // Add segment contribution
-    GradU_face += normal * Um * Length;
-
-  }
-
-  GradU_face /= PolygonArea;
-
-}
-
-/*! 
- * Compute the integral over the block geometry of the error between the
- * reconstructed polynomial and the function provided as input. 
- *
- * \param [in] FuncObj  The function relative to which the error is evaluated.
- *                      It is assumed that the exact solution can take two arguments
- *                      (x & y position) and returns a double.
- * \param [in] parameter The state variable which is used for computing the errors
- * \param [in] digits  The targeted number of exact digits with which the integral is evaluated
- */
-template<class SOLN_STATE> 
-template<typename Function_Object_Type> inline
-void HighOrder<SOLN_STATE>::ComputeSolutionErrors(const Function_Object_Type FuncObj,
-						    const unsigned &parameter,
-						    const int &digits){
-  
-  int StartI_Int, EndI_Int, StartJ_Int, EndJ_Int; // Integration indexes for cells with straight edges.
-  int i,j;
-  bool _integrate_with_curved_boundaries(false);
-  double ErrorTemp;
-  char Case;
-  
-  /* Algorithm:
-     1. Decide where integration for straight quads can be used.
-        If low boundary representation is used than all quads are straight.
-	If high-order boundary representation is provided, then all cells near boundaries are 
-        considered to be curved, even if they might actually have boundary straight lines.
-     2. Integrate over straight quads.
-     3. Integrate over the curved cells if necessary.
-  */
-
-  /* Possible cases:
-     
-     a. Error based on entropy:  parameter = 0;
-     b. Error based on a particular parameter:  parameter = 1-NumberOfVariables();
-   */
-
-  if (parameter == 0){
-    Case = 'a';
-  } else if (parameter >= 1 && parameter <= NumberOfVariables() ){
-    Case = 'b';
-  }
-
-  // Decide the range of integration
-  if (Geom->IsHighOrderBoundary()){
-    if (CENO_Execution_Mode::IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT){
-      // Check if West spline has more than 2 control points
-      if (Geom->BndWestSpline.np > 2){
-	// Ignore cells near this boundary
-	StartI_Int = ICl + 1;
-      } else {
-	// Include cells near this boundary
-	StartI_Int = ICl;
-      }
-
-      // Check if East spline has more than 2 control points
-      if (Geom->BndEastSpline.np > 2){
-	// Ignore cells near this boundary
-	EndI_Int   = ICu - 1;
-      } else {
-	// Include cells near this boundary
-	EndI_Int   = ICu;
-      }
-
-      // Check if South spline has more than 2 control points
-      if (Geom->BndSouthSpline.np > 2){
-	// Ignore cells near this boundary
-	StartJ_Int = JCl + 1;
-      } else {
-	// Include cells near this boundary
-	StartJ_Int = JCl;
-      }
-
-      // Check if North spline has more than 2 control points
-      if (Geom->BndNorthSpline.np > 2){
-	// Ignore cells near this boundary
-	EndJ_Int   = JCu - 1;
-      } else {
-	// Include cells near this boundary
-	EndJ_Int   = JCu;
-      }
-
-    } else {
-      _integrate_with_curved_boundaries = true;
-      throw runtime_error("HighOrder<SOLN_STATE>::ComputeSolutionErrors() Warning! Integration with curved bnds is not setup!");
-    }
-  } else {
-    StartI_Int = ICl;
-    EndI_Int   = ICu;
-    StartJ_Int = JCl;
-    EndJ_Int   = JCu;
-  }
-
-  // Reset the error values
-  ResetErrors();
-
-  // Sum up the contribution from each straight quad cell
-  for (j = StartJ_Int; j <= EndJ_Int; ++j){
-    for (i = StartI_Int; i <= EndI_Int; ++i, ++CellsUsed){
-
-      switch (Case){
-      case 'a': 
-	ErrorTemp = ComputeSolutionEntropyErrorL1(i,j,
-						  FuncObj,
-						  digits);
-
-	ErrorL2 += ComputeSolutionEntropyErrorL2(i,j,
-						 FuncObj,
-						 digits);
-	break;
-	
-      case 'b':
-	ErrorTemp = ComputeSolutionErrorL1(i,j,
-					   FuncObj,
-					   parameter,
-					   digits);
-
-	ErrorL2 += ComputeSolutionErrorL2(i,j,
-					  FuncObj,
-					  parameter,
-					  digits);
-	break;
-      }
-
-      ErrorL1 += ErrorTemp;
-      ErrorMax = max(ErrorMax, ErrorTemp/Geom->CellArea(i,j));
-
-      TotalBlockArea += Geom->CellArea(i,j);
-    }// endfor
-  }// endfor
-
-  // Sum up the contribution from the cells with curved boundaries
-  if (_integrate_with_curved_boundaries){
-
-    for (j = JCl; j <= JCu; ++j){
-      // not available yet
-
-      // West boundary
-      // (ICl,j)
-
-      // East boundary
-      // (ICu,j)
-
-      CellsUsed += 2;
-    }// endfor
-
-    for (i = ICl+1; i <= ICu-1; ++i){
-      // not available yet
-
-      // South boundary
-      // (i,JCl)
-
-      // North boundary
-      // (i,JCu)
-
-      CellsUsed += 2;
-    }// endfor
-
-  } //endif
-
-}
-
-/*! 
- * Compute the integral over the block geometry of the polynomial
- * reconstructions of two high-order variables over the whole domain. 
- *
- * \param [in] FuncObj  The function relative to which the error is evaluated
- * \param [in] parameter The parameter for which the reconstruction is evaluated
- * \param [in] digits  The targeted number of exact digits with which the integral is evaluated
- */
-template<class SOLN_STATE> inline
-void HighOrder<SOLN_STATE>::ComputeReconstructionsErrors(const HighOrder<Soln_State> & Obj,
-							   const unsigned &parameter,
-							   const int &digits){
-  
-  int StartI_Int, EndI_Int, StartJ_Int, EndJ_Int; // Integration indexes for cells with straight edges.
-  int i,j;
-  bool _integrate_with_curved_boundaries(false);
-  double ErrorTemp;
-  
-  /* Algorithm:
-     1. Decide where integration for straight quads can be used.
-        If low boundary representation is used than all quads are straight.
-	If high-order boundary representation is provided, then all cells near boundaries are 
-        considered to be curved, even if they might actually have boundary straight lines.
-     2. Integrate over straight quads.
-     3. Integrate over the curved cells if necessary.
-  */
-
-  // Decide the range of integration
-  if (Geom->IsHighOrderBoundary()){
-    StartI_Int = ICl + 1;
-    EndI_Int   = ICu - 1;
-    StartJ_Int = JCl + 1;
-    EndJ_Int   = JCu - 1;
-    _integrate_with_curved_boundaries = true;
-    throw runtime_error("HighOrder<SOLN_STATE>::ComputeReconstructionsErrors() Warning! Integration with curved bnds is not setup!");
-  } else {
-    StartI_Int = ICl;
-    EndI_Int   = ICu;
-    StartJ_Int = JCl;
-    EndJ_Int   = JCu;
-  }
-
-  // Reset the error values
-  ResetErrors();
-
-  // Sum up the contribution from each straight quad cell
-  for (j = StartJ_Int; j <= EndJ_Int; ++j){
-    for (i = StartI_Int; i <= EndI_Int; ++i, ++CellsUsed){
-      ErrorTemp = ComputeReconstructionsErrorL1(i,j,
-					       Obj,
-					       parameter,
-					       digits);
- 
-      ErrorL1 += ErrorTemp;
-
-      ErrorL2 += ComputeReconstructionsErrorL2(i,j,
-					       Obj,
-					       parameter,
-					       digits);
-
-      ErrorMax = max(ErrorMax, ErrorTemp/Geom->CellArea(i,j));
-
-      TotalBlockArea += Geom->CellArea(i,j);
-    }// endfor
-  }// endfor
-
-  // Sum up the contribution from the cells with curved boundaries
-  if (_integrate_with_curved_boundaries){
-
-    for (j = JCl; j <= JCu; ++j){
-      // not available yet
-
-      // West boundary
-      // (ICl,j)
-
-      // East boundary
-      // (ICu,j)
-
-      CellsUsed += 2;
-    }// endfor
-
-    for (i = ICl+1; i <= ICu-1; ++i){
-      // not available yet
-
-      // South boundary
-      // (i,JCl)
-
-      // North boundary
-      // (i,JCu)
-
-      CellsUsed += 2;
-    }// endfor
-
-  } //endif
-
-}
-
-/*! 
- * Compute the integral of the error function between what 
- * is considered as exact solution and the reconstructed 
- * polynomial over the domain of cell (iCell,jCell).
- * This result is used in the evaluation of L1 error norm.
- */
-template<class SOLN_STATE>
-template<typename Function_Object_Type> inline
-double HighOrder<SOLN_STATE>::ComputeSolutionErrorL1(const int &iCell, const int &jCell,
-						       const Function_Object_Type FuncObj,
-						       const unsigned &parameter, const int & digits){
-
-  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
-  Vector3D _dummy_Position(0.0); // defined only to provide the type of the position vector where the function is evaluated.
-
-  return IntegrateOverTheCell(iCell,jCell,
-			      error_function(FuncObj,
-					     wrapped_member_function_one_parameter(this,
-										   &ClassType::SolutionAtLocation,
-										   _dummy_Position,
-										   iCell, jCell,
-										   parameter,
-										   _dummy_result),
-					     _dummy_result),
-			      digits, _dummy_result);
-
-}
-
-/*! 
- * Compute the integral of the entropy error function between
- * a reference solution and the reconstructed 
- * polynomial over the domain of cell (iCell,jCell).
- * This result is used in the evaluation of L1 error norm.
- */
-template<class SOLN_STATE>
-template<typename Function_Object_Type> inline
-double HighOrder<SOLN_STATE>::ComputeSolutionEntropyErrorL1(const int &iCell, const int &jCell,
-							      const Function_Object_Type FuncObj,
-							      const int & digits){
-
-  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
-
-  return IntegrateOverTheCell(iCell,jCell,
-			      error_function(FuncObj,
-					     wrapped_soln_block_member_function(this,
-										&ClassType::SolutionEntropyAtCoordinates,
-										iCell, jCell,
-										_dummy_result),
-					     _dummy_result),
-			      digits, _dummy_result);
-
-}
-
-/*! 
- * Compute the integral of the error function between the
- * polynomial reconstructions of two high-order variables
- * over the domain of cell (iCell,jCell).
- *
- * \note This subroutine doesn't check that the domains are the same! It's the caller's responsibility.
- */
-template<class SOLN_STATE> inline
-double HighOrder<SOLN_STATE>::ComputeReconstructionsErrorL1(const int &iCell, const int &jCell,
-							      const HighOrder<Soln_State> & Obj,
-							      const unsigned &parameter,
-							      const int &digits){
-
-  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
-  Vector3D _dummy_Position(0.0); // defined only to provide the type of the position vector where the function is evaluated.
-
-  return IntegrateOverTheCell(iCell,jCell,
-			      error_function(wrapped_member_function_one_parameter(&Obj,
-										   &ClassType::SolutionAtLocation,
-										   _dummy_Position,
-										   iCell, jCell,
-										   parameter,
-										   _dummy_result),
-					     wrapped_member_function_one_parameter(this,
-										   &ClassType::SolutionAtLocation,
-										   _dummy_Position,
-										   iCell, jCell,
-										   parameter,
-										   _dummy_result),
-					     _dummy_result),
-			      digits, _dummy_result);
-}
-
-/*! 
- * Compute the integral of the squared error function between what 
- * is considered as exact solution and the reconstructed 
- * polynomial over the domain of cell (iCell,jCell).
- * This result is used in the evaluation of L2 error norm.
- */
-template<class SOLN_STATE> 
-template<typename Function_Object_Type> inline
-double HighOrder<SOLN_STATE>::ComputeSolutionErrorL2(const int &iCell, const int &jCell,
-						       Function_Object_Type FuncObj,
-						       const unsigned &parameter, const int &digits){
-
-  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
-  Vector3D _dummy_Position(0.0); // defined only to provide the type of the position vector where the function is evaluated.
-  
-  return IntegrateOverTheCell(iCell,jCell,
-			      square_error_function(FuncObj,
-						    wrapped_member_function_one_parameter(this,
-											  &ClassType::SolutionAtLocation,
-											  _dummy_Position,
-											  iCell, jCell,
-											  parameter,
-											  _dummy_result),
-						    _dummy_result),
-			      digits, _dummy_result);
-}
-
-/*! 
- * Compute the integral of the squared entropy error function
- * between a reference solution and the reconstructed
- * polynomial over the domain of cell (iCell,jCell).
- * This result is used in the evaluation of L2 error norm.
- */
-template<class SOLN_STATE> 
-template<typename Function_Object_Type> inline
-double HighOrder<SOLN_STATE>::ComputeSolutionEntropyErrorL2(const int &iCell, const int &jCell,
-							      Function_Object_Type FuncObj,
-							      const int &digits){
-
-  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
-  
-  return IntegrateOverTheCell(iCell,jCell,
-			      square_error_function(FuncObj,
-						    wrapped_soln_block_member_function(this,
-										       &ClassType::SolutionEntropyAtCoordinates,
-										       iCell, jCell,
-										       _dummy_result),
-						    _dummy_result),
-			      digits, _dummy_result);
-}
-
-/*! 
- * Compute the integral of the squared error function between the
- * polynomial reconstructions of two high-order variables
- * over the domain of cell (iCell,jCell).
- *
- * \note This subroutine doesn't check that the domains are the same! It's the caller's responsibility.
- */
-template<class SOLN_STATE> inline
-double HighOrder<SOLN_STATE>::ComputeReconstructionsErrorL2(const int &iCell, const int &jCell,
-							      const HighOrder<Soln_State> & Obj,
-							      const unsigned &parameter, const int &digits){
-
-  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
-  Vector3D _dummy_Position(0.0); // defined only to provide the type of the position vector where the function is evaluated.
-
-  return IntegrateOverTheCell(iCell,jCell,
-			      square_error_function(wrapped_member_function_one_parameter(&Obj,
-											  &ClassType::SolutionAtLocation,
-											  _dummy_Position,
-											  iCell, jCell,
-											  parameter,
-											  _dummy_result),
-						    wrapped_member_function_one_parameter(this,
-											  &ClassType::SolutionAtLocation,
-											  _dummy_Position,
-											  iCell, jCell,
-											  parameter,
-											  _dummy_result),
-						    _dummy_result),
-			      digits, _dummy_result);
-}
+// --> RR: comment out GreenGauss_FaceGradient_CentroidPathCartesianMesh 
+///*! 
+// * Compute the gradient at an inter-cellular face using the first 
+// * solution parameter based on the Green-Gauss reconstruction.
+// * The path used to compute the gradient is formed by the centroids 
+// * of the first order neighbours.
+// * As an example, for EAST face the cells are: 0, S, SE, E, NE, N, 0
+// * where 0 is the (iCell,jCell) cell and the orientation of the other 
+// * cells is relative to 0 cell. 
+// * The last index repeats the first one to show that the path is closed. 
+// *
+// * \param [in] Face Specify which face the gradient is computed at.
+// * \param [out] GradU_face the gradient value is returned here 
+// *
+// */
+//template<class SOLN_STATE>
+//template<class Soln_Block_Type> inline
+//void HighOrder<SOLN_STATE>::
+//GreenGauss_FaceGradient_CentroidPathCartesianMesh(Soln_Block_Type &SolnBlk,
+//						  const int &iCell, const int &jCell,
+//						  const int &Face,
+//						  Vector3D & GradU_face,
+//						  const Soln_State &
+//						  (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &,const int &) const){
+//
+//  int StencilSize(7);		// the last entry is to close the path
+//
+//  int n;
+//  int Info;
+//  double PolygonArea, Length;
+//  Vector3D Centroids[StencilSize], PolygonCentroid;
+//  Vector3D normal;
+//  IndexType i_index, j_index;
+//  double Um;		// average solution along the current integration segment
+//
+//  i_index.reserve(StencilSize);
+//  j_index.reserve(StencilSize);
+//
+//  // Form the supporting stencil differently for each face
+//  switch (Face){
+//
+//  case NORTH:
+//    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+//    i_index.push_back(iCell+1); j_index.push_back(jCell  );
+//    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell-1); j_index.push_back(jCell  );
+//    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+//    break;
+//
+//  case SOUTH:
+//    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+//    i_index.push_back(iCell-1); j_index.push_back(jCell  );
+//    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell  );
+//    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+//    break;
+//
+//  case WEST:
+//    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+//    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell-1); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell-1); j_index.push_back(jCell  );
+//    i_index.push_back(iCell-1); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+//
+//    break;
+//
+//  case EAST:
+//    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+//    i_index.push_back(iCell  ); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell-1);
+//    i_index.push_back(iCell+1); j_index.push_back(jCell  );
+//    i_index.push_back(iCell+1); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell+1);
+//    i_index.push_back(iCell  ); j_index.push_back(jCell  );
+//
+//    break;
+//  }
+//
+//
+//  // Form the array of the centroids
+//  for (n = 0; n < i_index.size(); ++n){
+//    Centroids[n] = CellCenter(i_index[n], j_index[n]);
+//  }
+//
+//  // Determine the area and centroid of the closed centroid path
+//  Info = polyCentroid(Centroids, StencilSize, PolygonCentroid, PolygonArea);
+//
+//  // Reset gradient
+//  GradU_face = Vector3D(0);
+//
+//  // Calculate average gradient
+//  for (n = 1; n < i_index.size(); ++n){
+//
+//    // Calculate segment length between centroids
+//    Length = abs(Centroids[n] - Centroids[n-1]);
+//
+//    // Calculate normal
+//    normal = Vector3D( (Centroids[n].y - Centroids[n-1].y),
+//		       -(Centroids[n].x - Centroids[n-1].x ) )/Length;
+//
+//    // Calculate average solution with the first parameter
+//    Um = 0.5*( (SolnBlk.*ReconstructedSoln)(i_index[n  ], j_index[n  ])[1] +
+//	       (SolnBlk.*ReconstructedSoln)(i_index[n-1], j_index[n-1])[1] );
+//
+//    // Add segment contribution
+//    GradU_face += normal * Um * Length;
+//
+//  }
+//
+//  GradU_face /= PolygonArea;
+//
+//}
+
+// --> RR: huge comment out of error calculations definitions!
+//
+///*! 
+// * Compute the integral over the block geometry of the error between the
+// * reconstructed polynomial and the function provided as input. 
+// *
+// * \param [in] FuncObj  The function relative to which the error is evaluated.
+// *                      It is assumed that the exact solution can take two arguments
+// *                      (x & y position) and returns a double.
+// * \param [in] parameter The state variable which is used for computing the errors
+// * \param [in] digits  The targeted number of exact digits with which the integral is evaluated
+// */
+//template<class SOLN_STATE> 
+//template<typename Function_Object_Type> inline
+//void HighOrder<SOLN_STATE>::ComputeSolutionErrors(const Function_Object_Type FuncObj,
+//						    const unsigned &parameter,
+//						    const int &digits){
+//  
+//  int StartI_Int, EndI_Int, StartJ_Int, EndJ_Int; // Integration indexes for cells with straight edges.
+//  int i,j;
+//  bool _integrate_with_curved_boundaries(false);
+//  double ErrorTemp;
+//  char Case;
+//  
+//  /* Algorithm:
+//     1. Decide where integration for straight quads can be used.
+//        If low boundary representation is used than all quads are straight.
+//	If high-order boundary representation is provided, then all cells near boundaries are 
+//        considered to be curved, even if they might actually have boundary straight lines.
+//     2. Integrate over straight quads.
+//     3. Integrate over the curved cells if necessary.
+//  */
+//
+//  /* Possible cases:
+//     
+//     a. Error based on entropy:  parameter = 0;
+//     b. Error based on a particular parameter:  parameter = 1-NumberOfVariables();
+//   */
+//
+//  if (parameter == 0){
+//    Case = 'a';
+//  } else if (parameter >= 1 && parameter <= NumberOfVariables() ){
+//    Case = 'b';
+//  }
+//
+//  // Decide the range of integration
+//  if (Geom->IsHighOrderBoundary()){
+//    if (CENO_Execution_Mode::IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT){
+//      // Check if West spline has more than 2 control points
+//      if (Geom->BndWestSpline.np > 2){
+//	// Ignore cells near this boundary
+//	StartI_Int = ICl + 1;
+//      } else {
+//	// Include cells near this boundary
+//	StartI_Int = ICl;
+//      }
+//
+//      // Check if East spline has more than 2 control points
+//      if (Geom->BndEastSpline.np > 2){
+//	// Ignore cells near this boundary
+//	EndI_Int   = ICu - 1;
+//      } else {
+//	// Include cells near this boundary
+//	EndI_Int   = ICu;
+//      }
+//
+//      // Check if South spline has more than 2 control points
+//      if (Geom->BndSouthSpline.np > 2){
+//	// Ignore cells near this boundary
+//	StartJ_Int = JCl + 1;
+//      } else {
+//	// Include cells near this boundary
+//	StartJ_Int = JCl;
+//      }
+//
+//      // Check if North spline has more than 2 control points
+//      if (Geom->BndNorthSpline.np > 2){
+//	// Ignore cells near this boundary
+//	EndJ_Int   = JCu - 1;
+//      } else {
+//	// Include cells near this boundary
+//	EndJ_Int   = JCu;
+//      }
+//
+//    } else {
+//      _integrate_with_curved_boundaries = true;
+//      throw runtime_error("HighOrder<SOLN_STATE>::ComputeSolutionErrors() Warning! Integration with curved bnds is not setup!");
+//    }
+//  } else {
+//    StartI_Int = ICl;
+//    EndI_Int   = ICu;
+//    StartJ_Int = JCl;
+//    EndJ_Int   = JCu;
+//  }
+//
+//  // Reset the error values
+//  ResetErrors();
+//
+//  // Sum up the contribution from each straight quad cell
+//  for (j = StartJ_Int; j <= EndJ_Int; ++j){
+//    for (i = StartI_Int; i <= EndI_Int; ++i, ++CellsUsed){
+//
+//      switch (Case){
+//      case 'a': 
+//	ErrorTemp = ComputeSolutionEntropyErrorL1(i,j,
+//						  FuncObj,
+//						  digits);
+//
+//	ErrorL2 += ComputeSolutionEntropyErrorL2(i,j,
+//						 FuncObj,
+//						 digits);
+//	break;
+//	
+//      case 'b':
+//	ErrorTemp = ComputeSolutionErrorL1(i,j,
+//					   FuncObj,
+//					   parameter,
+//					   digits);
+//
+//	ErrorL2 += ComputeSolutionErrorL2(i,j,
+//					  FuncObj,
+//					  parameter,
+//					  digits);
+//	break;
+//      }
+//
+//      ErrorL1 += ErrorTemp;
+//      ErrorMax = max(ErrorMax, ErrorTemp/Geom->CellArea(i,j));
+//
+//      TotalBlockArea += Geom->CellArea(i,j);
+//    }// endfor
+//  }// endfor
+//
+//  // Sum up the contribution from the cells with curved boundaries
+//  if (_integrate_with_curved_boundaries){
+//
+//    for (j = JCl; j <= JCu; ++j){
+//      // not available yet
+//
+//      // West boundary
+//      // (ICl,j)
+//
+//      // East boundary
+//      // (ICu,j)
+//
+//      CellsUsed += 2;
+//    }// endfor
+//
+//    for (i = ICl+1; i <= ICu-1; ++i){
+//      // not available yet
+//
+//      // South boundary
+//      // (i,JCl)
+//
+//      // North boundary
+//      // (i,JCu)
+//
+//      CellsUsed += 2;
+//    }// endfor
+//
+//  } //endif
+//
+//}
+//
+///*! 
+// * Compute the integral over the block geometry of the polynomial
+// * reconstructions of two high-order variables over the whole domain. 
+// *
+// * \param [in] FuncObj  The function relative to which the error is evaluated
+// * \param [in] parameter The parameter for which the reconstruction is evaluated
+// * \param [in] digits  The targeted number of exact digits with which the integral is evaluated
+// */
+//template<class SOLN_STATE> inline
+//void HighOrder<SOLN_STATE>::ComputeReconstructionsErrors(const HighOrder<Soln_State> & Obj,
+//							   const unsigned &parameter,
+//							   const int &digits){
+//  
+//  int StartI_Int, EndI_Int, StartJ_Int, EndJ_Int; // Integration indexes for cells with straight edges.
+//  int i,j;
+//  bool _integrate_with_curved_boundaries(false);
+//  double ErrorTemp;
+//  
+//  /* Algorithm:
+//     1. Decide where integration for straight quads can be used.
+//        If low boundary representation is used than all quads are straight.
+//	If high-order boundary representation is provided, then all cells near boundaries are 
+//        considered to be curved, even if they might actually have boundary straight lines.
+//     2. Integrate over straight quads.
+//     3. Integrate over the curved cells if necessary.
+//  */
+//
+//  // Decide the range of integration
+//  if (Geom->IsHighOrderBoundary()){
+//    StartI_Int = ICl + 1;
+//    EndI_Int   = ICu - 1;
+//    StartJ_Int = JCl + 1;
+//    EndJ_Int   = JCu - 1;
+//    _integrate_with_curved_boundaries = true;
+//    throw runtime_error("HighOrder<SOLN_STATE>::ComputeReconstructionsErrors() Warning! Integration with curved bnds is not setup!");
+//  } else {
+//    StartI_Int = ICl;
+//    EndI_Int   = ICu;
+//    StartJ_Int = JCl;
+//    EndJ_Int   = JCu;
+//  }
+//
+//  // Reset the error values
+//  ResetErrors();
+//
+//  // Sum up the contribution from each straight quad cell
+//  for (j = StartJ_Int; j <= EndJ_Int; ++j){
+//    for (i = StartI_Int; i <= EndI_Int; ++i, ++CellsUsed){
+//      ErrorTemp = ComputeReconstructionsErrorL1(i,j,
+//					       Obj,
+//					       parameter,
+//					       digits);
+// 
+//      ErrorL1 += ErrorTemp;
+//
+//      ErrorL2 += ComputeReconstructionsErrorL2(i,j,
+//					       Obj,
+//					       parameter,
+//					       digits);
+//
+//      ErrorMax = max(ErrorMax, ErrorTemp/Geom->CellArea(i,j));
+//
+//      TotalBlockArea += Geom->CellArea(i,j);
+//    }// endfor
+//  }// endfor
+//
+//  // Sum up the contribution from the cells with curved boundaries
+//  if (_integrate_with_curved_boundaries){
+//
+//    for (j = JCl; j <= JCu; ++j){
+//      // not available yet
+//
+//      // West boundary
+//      // (ICl,j)
+//
+//      // East boundary
+//      // (ICu,j)
+//
+//      CellsUsed += 2;
+//    }// endfor
+//
+//    for (i = ICl+1; i <= ICu-1; ++i){
+//      // not available yet
+//
+//      // South boundary
+//      // (i,JCl)
+//
+//      // North boundary
+//      // (i,JCu)
+//
+//      CellsUsed += 2;
+//    }// endfor
+//
+//  } //endif
+//
+//}
+//
+///*! 
+// * Compute the integral of the error function between what 
+// * is considered as exact solution and the reconstructed 
+// * polynomial over the domain of cell (iCell,jCell).
+// * This result is used in the evaluation of L1 error norm.
+// */
+//template<class SOLN_STATE>
+//template<typename Function_Object_Type> inline
+//double HighOrder<SOLN_STATE>::ComputeSolutionErrorL1(const int &iCell, const int &jCell,
+//						       const Function_Object_Type FuncObj,
+//						       const unsigned &parameter, const int & digits){
+//
+//  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
+//  Vector3D _dummy_Position(0.0); // defined only to provide the type of the position vector where the function is evaluated.
+//
+//  return IntegrateOverTheCell(iCell,jCell,
+//			      error_function(FuncObj,
+//					     wrapped_member_function_one_parameter(this,
+//										   &ClassType::SolutionAtLocation,
+//										   _dummy_Position,
+//										   iCell, jCell,
+//										   parameter,
+//										   _dummy_result),
+//					     _dummy_result),
+//			      digits, _dummy_result);
+//
+//}
+//
+///*! 
+// * Compute the integral of the entropy error function between
+// * a reference solution and the reconstructed 
+// * polynomial over the domain of cell (iCell,jCell).
+// * This result is used in the evaluation of L1 error norm.
+// */
+//template<class SOLN_STATE>
+//template<typename Function_Object_Type> inline
+//double HighOrder<SOLN_STATE>::ComputeSolutionEntropyErrorL1(const int &iCell, const int &jCell,
+//							      const Function_Object_Type FuncObj,
+//							      const int & digits){
+//
+//  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
+//
+//  return IntegrateOverTheCell(iCell,jCell,
+//			      error_function(FuncObj,
+//					     wrapped_soln_block_member_function(this,
+//										&ClassType::SolutionEntropyAtCoordinates,
+//										iCell, jCell,
+//										_dummy_result),
+//					     _dummy_result),
+//			      digits, _dummy_result);
+//
+//}
+//
+///*! 
+// * Compute the integral of the error function between the
+// * polynomial reconstructions of two high-order variables
+// * over the domain of cell (iCell,jCell).
+// *
+// * \note This subroutine doesn't check that the domains are the same! It's the caller's responsibility.
+// */
+//template<class SOLN_STATE> inline
+//double HighOrder<SOLN_STATE>::ComputeReconstructionsErrorL1(const int &iCell, const int &jCell,
+//							      const HighOrder<Soln_State> & Obj,
+//							      const unsigned &parameter,
+//							      const int &digits){
+//
+//  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
+//  Vector3D _dummy_Position(0.0); // defined only to provide the type of the position vector where the function is evaluated.
+//
+//  return IntegrateOverTheCell(iCell,jCell,
+//			      error_function(wrapped_member_function_one_parameter(&Obj,
+//										   &ClassType::SolutionAtLocation,
+//										   _dummy_Position,
+//										   iCell, jCell,
+//										   parameter,
+//										   _dummy_result),
+//					     wrapped_member_function_one_parameter(this,
+//										   &ClassType::SolutionAtLocation,
+//										   _dummy_Position,
+//										   iCell, jCell,
+//										   parameter,
+//										   _dummy_result),
+//					     _dummy_result),
+//			      digits, _dummy_result);
+//}
+//
+///*! 
+// * Compute the integral of the squared error function between what 
+// * is considered as exact solution and the reconstructed 
+// * polynomial over the domain of cell (iCell,jCell).
+// * This result is used in the evaluation of L2 error norm.
+// */
+//template<class SOLN_STATE> 
+//template<typename Function_Object_Type> inline
+//double HighOrder<SOLN_STATE>::ComputeSolutionErrorL2(const int &iCell, const int &jCell,
+//						       Function_Object_Type FuncObj,
+//						       const unsigned &parameter, const int &digits){
+//
+//  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
+//  Vector3D _dummy_Position(0.0); // defined only to provide the type of the position vector where the function is evaluated.
+//  
+//  return IntegrateOverTheCell(iCell,jCell,
+//			      square_error_function(FuncObj,
+//						    wrapped_member_function_one_parameter(this,
+//											  &ClassType::SolutionAtLocation,
+//											  _dummy_Position,
+//											  iCell, jCell,
+//											  parameter,
+//											  _dummy_result),
+//						    _dummy_result),
+//			      digits, _dummy_result);
+//}
+//
+///*! 
+// * Compute the integral of the squared entropy error function
+// * between a reference solution and the reconstructed
+// * polynomial over the domain of cell (iCell,jCell).
+// * This result is used in the evaluation of L2 error norm.
+// */
+//template<class SOLN_STATE> 
+//template<typename Function_Object_Type> inline
+//double HighOrder<SOLN_STATE>::ComputeSolutionEntropyErrorL2(const int &iCell, const int &jCell,
+//							      Function_Object_Type FuncObj,
+//							      const int &digits){
+//
+//  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
+//  
+//  return IntegrateOverTheCell(iCell,jCell,
+//			      square_error_function(FuncObj,
+//						    wrapped_soln_block_member_function(this,
+//										       &ClassType::SolutionEntropyAtCoordinates,
+//										       iCell, jCell,
+//										       _dummy_result),
+//						    _dummy_result),
+//			      digits, _dummy_result);
+//}
+//
+///*! 
+// * Compute the integral of the squared error function between the
+// * polynomial reconstructions of two high-order variables
+// * over the domain of cell (iCell,jCell).
+// *
+// * \note This subroutine doesn't check that the domains are the same! It's the caller's responsibility.
+// */
+//template<class SOLN_STATE> inline
+//double HighOrder<SOLN_STATE>::ComputeReconstructionsErrorL2(const int &iCell, const int &jCell,
+//							      const HighOrder<Soln_State> & Obj,
+//							      const unsigned &parameter, const int &digits){
+//
+//  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
+//  Vector3D _dummy_Position(0.0); // defined only to provide the type of the position vector where the function is evaluated.
+//
+//  return IntegrateOverTheCell(iCell,jCell,
+//			      square_error_function(wrapped_member_function_one_parameter(&Obj,
+//											  &ClassType::SolutionAtLocation,
+//											  _dummy_Position,
+//											  iCell, jCell,
+//											  parameter,
+//											  _dummy_result),
+//						    wrapped_member_function_one_parameter(this,
+//											  &ClassType::SolutionAtLocation,
+//											  _dummy_Position,
+//											  iCell, jCell,
+//											  parameter,
+//											  _dummy_result),
+//						    _dummy_result),
+//			      digits, _dummy_result);
+//}
 
 /*! 
  * Calculate the slope limiter for a variety 
@@ -4839,31 +4851,33 @@ void HighOrder<SOLN_STATE>::Output_Object(ostream & out_file) const {
 
   // Output block indexes
   if (_allocated_block) {
-    out_file << Ni << " " << Nj << " " << Ng <<"\n"
+    out_file << Ni << " " << Nj << " " << Nk << " " << Ng <<"\n"
 	     << OrderOfReconstruction << "\n";
   }
 
   // Output Taylor derivatives
   if (_allocated_cells){
-    for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
-      for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {    
-	out_file.setf(ios::skipws,ios::scientific);
-	out_file << CellTaylorDeriv(i,j);
-	out_file.unsetf(ios::skipws);
-	out_file.unsetf(ios::scientific);
+    for (k  = KCl-Nghost_HO ; k <= KCu+Nghost_HO ; ++k ) {
+      for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
+	for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {    
+	  out_file.setf(ios::skipws,ios::scientific);
+	  out_file << CellTaylorDeriv(i,j,k);
+	  out_file.unsetf(ios::skipws);
+	  out_file.unsetf(ios::scientific);
 
-	// Output cell inadequate fit flag from last reconstruction
-	for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
-	  out_file << " " << Previous_CellInadequateFitValue(i,j,parameter);
-	}
+	  // Output cell inadequate fit flag from last reconstruction
+	  for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+	    out_file << " " << Previous_CellInadequateFitValue(i,j,k,parameter);
+	  }
 
-	out_file << endl;
-      }
-    }
-  }
+	  out_file << endl;
+	} //endfor
+      } //endfor
+    } //endfor
+  } //endif
 }
 
-/*! 
+/*!
  * Read the set up of the current object
  * from the provided input stream.
  */
@@ -4872,8 +4886,8 @@ void HighOrder<SOLN_STATE>::Read_Object(istream & in_file) {
 
   bool _alloc_block_, _alloc_cells_, _alloc_psinv_;
   int _si_calc_;
-  int _Ni_, _Nj_, _Ng_, ReconstructionOrder;
-  int i,j, parameter;
+  int _Ni_, _Nj_, _Nk_, _Ng_, ReconstructionOrder;
+  int i,j,k, parameter;
 
   // Read allocation flags
   in_file.setf(ios::skipws);
@@ -4892,12 +4906,13 @@ void HighOrder<SOLN_STATE>::Read_Object(istream & in_file) {
   // check if the object must be allocated
   if (_alloc_block_){
     // Read the block indexes
-    in_file >> _Ni_  >> _Nj_  >> _Ng_ 
+    in_file >> _Ni_  >> _Nj_  >> _Nk_ >> _Ng_ 
 	    >> ReconstructionOrder;
 
     // Allocate memory for the object
     allocate(_Ni_-2*_Ng_,
 	     _Nj_-2*_Ng_,
+	     _Nk_-2*_Ng_,
 	     _Ng_,
 	     _alloc_psinv_,
 	     ReconstructionOrder);
@@ -4905,23 +4920,24 @@ void HighOrder<SOLN_STATE>::Read_Object(istream & in_file) {
     // check if the cell memory must be allocated
     if (_alloc_cells_){
       // Read the Taylor derivatives
-      for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
-	for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) { 
-	  in_file.setf(ios::skipws);   
-	  in_file >> CellTaylorDeriv(i,j);
-	  in_file.unsetf(ios::skipws);
-
-	  // Read cell inadequate fit flag for the last reconstruction
-	  for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
-	    in_file.setf(ios::skipws);
-	    in_file >> Previous_CellInadequateFitValue(i,j,parameter);
+      for (k  = KCl-Nghost_HO ; k <= KCu+Nghost_HO ; ++k ) {
+	for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
+	  for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) { 
+	    in_file.setf(ios::skipws);   
+	    in_file >> CellTaylorDeriv(i,j,k);
 	    in_file.unsetf(ios::skipws);
-	  }
 
-	  in_file.unsetf(ios::skipws);
-	}
-      }
-      
+	    // Read cell inadequate fit flag for the last reconstruction
+	    for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+	      in_file.setf(ios::skipws);
+	      in_file >> Previous_CellInadequateFitValue(i,j,k,parameter);
+	      in_file.unsetf(ios::skipws);
+	    }
+	    
+	    in_file.unsetf(ios::skipws);
+	  } //endfor
+	} //endfor
+      } //endfor
     } else {
       // Deallocate the cell memory
       deallocate_CellMemory();
@@ -4934,28 +4950,28 @@ void HighOrder<SOLN_STATE>::Read_Object(istream & in_file) {
 
   in_file.unsetf(ios::skipws);
 }
-
-/*! 
- * Output the reconstruction type of each cell
- * to the provided output stream.
- */
-template<class SOLN_STATE>
-void HighOrder<SOLN_STATE>::outputReconstructionTypeMap(ostream & out_file) const{
-
-  int i,j;
-
-  if (ReconstructionTypeMap != NULL){
-    out_file << endl;
-    for (j = Nj-1; j>=0; --j){
-      for (i=0; i<Ni; ++i){
-	out_file << getCellReconstructionType(i,j);
-      }
-      out_file << endl;
-    }
-  } else {
-    out_file << "NULL\n";
-  }
-}
+// --> RR: comment out definition of outputReconstructionTypeMap
+///*! 
+// * Output the reconstruction type of each cell
+// * to the provided output stream.
+// */
+//template<class SOLN_STATE>
+//void HighOrder<SOLN_STATE>::outputReconstructionTypeMap(ostream & out_file) const{
+//
+//  int i,j;
+//
+//  if (ReconstructionTypeMap != NULL){
+//    out_file << endl;
+//    for (j = Nj-1; j>=0; --j){
+//      for (i=0; i<Ni; ++i){
+//	out_file << getCellReconstructionType(i,j);
+//      }
+//      out_file << endl;
+//    }
+//  } else {
+//    out_file << "NULL\n";
+//  }
+//}
 
 /*!
  * Broadcast high-order object to all            
@@ -4972,7 +4988,7 @@ void HighOrder<SOLN_STATE>::Broadcast_HighOrder_Data(GeometryType & Block_Geomet
 
 #ifdef _MPI_VERSION
   
-  int i, j, buffer_size, TD_Bcast, td, var, counter;
+  int i, j, k, buffer_size, TD_Bcast, td, var, counter;
   double *buffer;
 
   // Obs: It is assumed that InitializeBasicVariable() routine
@@ -4982,7 +4998,7 @@ void HighOrder<SOLN_STATE>::Broadcast_HighOrder_Data(GeometryType & Block_Geomet
   TD_Bcast = NumberOfVariables() * (NumberOfTaylorDerivatives() + 1 );
 
   /* Calculate the size of the buffer.*/
-  buffer_size = TD_Bcast*Ni*Nj;
+  buffer_size = TD_Bcast*Ni*Nj*Nk;
   
   buffer = new double[buffer_size];
 
@@ -4990,21 +5006,23 @@ void HighOrder<SOLN_STATE>::Broadcast_HighOrder_Data(GeometryType & Block_Geomet
   if (CFFC_Primary_MPI_Processor()) {
     counter = 0;
     // Pack all the information 
-    for (j  = 0 ; j < Nj ; ++j ) { //< for each jCell
-      for ( i = 0 ; i < Ni ; ++i ) {  //< for each iCell
-	for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
+    for (k  = 0 ; k < Nk ; ++k ) { //< for each kCell
+      for (j  = 0 ; j < Nj ; ++j ) { //< for each jCell
+	for ( i = 0 ; i < Ni ; ++i ) {  //< for each iCell
+	  for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
+	    
+	    // Load the derivatives of the current solution state parameter
+	    for (td = 0; td <= CellTaylorDeriv(i,j,k).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell,kCell)
+	      buffer[counter] = CellTaylorDerivState(i,j,k,td)[var];
+	    } /* endfor(td) */
 
-	  // Load the derivatives of the current solution state parameter
-	  for (td = 0; td <= CellTaylorDeriv(i,j).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell)
-	    buffer[counter] = CellTaylorDerivState(i,j,td)[var];
-	  } /* endfor(td) */
-
-	  // Load the limiter of the current solution state parameter
-	  buffer[counter] = CellTaylorDeriv(i,j).Limiter(var);
-	  ++counter;
-	}/* endfor(var) */
-      } /* endfor(i) */
-    } /* endfor(j) */
+	    // Load the limiter of the current solution state parameter
+	    buffer[counter] = CellTaylorDeriv(i,j,k).Limiter(var);
+	    ++counter;
+	  }/* endfor(var) */
+	} /* endfor(i) */
+      } /* endfor(j) */
+    } /* endfor(k) */
 
   }/* endif(CFFC_Primary_MPI_Processor()) */
 
@@ -5016,22 +5034,24 @@ void HighOrder<SOLN_STATE>::Broadcast_HighOrder_Data(GeometryType & Block_Geomet
   if (!CFFC_Primary_MPI_Processor()) {
     counter = 0;
     // Unpack all the information 
-    for (j  = 0 ; j < Nj; ++j ) { //< for each jCell
-      for ( i = 0; i < Ni; ++i ) {  //< for each iCell
-  	for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
-
-	  // Unload the derivatives of the current solution state parameter
-	  for (td = 0; td <= CellTaylorDeriv(i,j).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell)
-	    CellTaylorDerivState(i,j,td)[var] = buffer[counter];
-	  } /* endfor(td) */
-	  
-	  // Unload the limiter of the current solution state parameter
-	  CellTaylorDeriv(i,j).Limiter(var) = buffer[counter];
-	  ++counter;
-
-	}/* endfor(var) */
-      } /* endfor(i) */
-    } /* endfor(j) */
+    for (k  = 0 ; k < Nk; ++k ) { //< for each kCell
+      for (j  = 0 ; j < Nj; ++j ) { //< for each jCell
+	for ( i = 0; i < Ni; ++i ) {  //< for each iCell
+	  for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
+	    
+	    // Unload the derivatives of the current solution state parameter
+	    for (td = 0; td <= CellTaylorDeriv(i,j,k).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell,kCell)
+	      CellTaylorDerivState(i,j,k,td)[var] = buffer[counter];
+	    } /* endfor(td) */
+	    
+	    // Unload the limiter of the current solution state parameter
+	    CellTaylorDeriv(i,j,k).Limiter(var) = buffer[counter];
+	    ++counter;
+	    
+	  }/* endfor(var) */
+	} /* endfor(i) */
+      } /* endfor(j) */
+    } /* endfor(k) */
   }/* endif(!CFFC_Primary_MPI_Processor()) */
 
 
@@ -5060,7 +5080,7 @@ void HighOrder<SOLN_STATE>::Broadcast_HighOrder_Data(MPI::Intracomm &Communicato
 						       GeometryType & Block_Geometry){
 
   int Source_Rank = 0; 
-  int i, j, buffer_size, TD_Bcast, td, var, counter;
+  int i, j, k, buffer_size, TD_Bcast, td, var, counter;
   double *buffer;
   
   // Obs: It is assumed that InitializeBasicVariable() routine
@@ -5070,7 +5090,7 @@ void HighOrder<SOLN_STATE>::Broadcast_HighOrder_Data(MPI::Intracomm &Communicato
   TD_Bcast = NumberOfVariables() * (NumberOfTaylorDerivatives() + 1 );
 
   /* Calculate the size of the buffer.*/
-  buffer_size = TD_Bcast*Ni*Nj;
+  buffer_size = TD_Bcast*Ni*Nj*Nk;
   
   buffer = new double[buffer_size];
 
@@ -5078,22 +5098,24 @@ void HighOrder<SOLN_STATE>::Broadcast_HighOrder_Data(MPI::Intracomm &Communicato
   if (CFFC_MPI::This_Processor_Number == Source_CPU) {
     counter = 0;
     // Pack all the information 
-    for (j  = 0 ; j < Nj ; ++j ) { //< for each jCell
-      for ( i = 0 ; i < Ni ; ++i ) {  //< for each iCell
-	for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
-
-	  // Load the derivatives of the current solution state parameter
-	  for (td = 0; td <= CellTaylorDeriv(i,j).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell)
-	    buffer[counter] = CellTaylorDerivState(i,j,td)[var];
-	  } /* endfor(td) */
-
-	  // Load the limiter of the current solution state parameter
-	  buffer[counter] = CellTaylorDeriv(i,j).Limiter(var);
-	  ++counter;
-	}/* endfor(var) */
-      } /* endfor(i) */
-    } /* endfor(j) */
-
+    for (k  = 0 ; k < Nk ; ++k ) { //< for each kCell
+      for (j  = 0 ; j < Nj ; ++j ) { //< for each jCell
+	for ( i = 0 ; i < Ni ; ++i ) {  //< for each iCell
+	  for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
+	    
+	    // Load the derivatives of the current solution state parameter
+	    for (td = 0; td <= CellTaylorDeriv(i,j,k).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell,kCell)
+	      buffer[counter] = CellTaylorDerivState(i,j,k,td)[var];
+	    } /* endfor(td) */
+	    
+	    // Load the limiter of the current solution state parameter
+	    buffer[counter] = CellTaylorDeriv(i,j,k).Limiter(var);
+	    ++counter;
+	  }/* endfor(var) */
+	} /* endfor(i) */
+      } /* endfor(j) */
+    } /* endfor(k) */
+    
   }/* endif(CFFC_MPI::This_Processor_Number == Source_CPU) */
 
 
@@ -5104,22 +5126,24 @@ void HighOrder<SOLN_STATE>::Broadcast_HighOrder_Data(MPI::Intracomm &Communicato
   if (CFFC_MPI::This_Processor_Number != Source_CPU) {
     counter = 0;
     // Unpack all the information 
-    for (j  = 0 ; j < Nj; ++j ) { //< for each jCell
-      for ( i = 0; i < Ni; ++i ) {  //< for each iCell
-  	for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
-
-	  // Unload the derivatives of the current solution state parameter
-	  for (td = 0; td <= CellTaylorDeriv(i,j).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell)
-	    CellTaylorDerivState(i,j,td)[var] = buffer[counter];
-	  } /* endfor(td) */
-	  
-	  // Unload the limiter of the current solution state parameter
-	  CellTaylorDeriv(i,j).Limiter(var) = buffer[counter];
-	  ++counter;
-
-	}/* endfor(var) */
-      } /* endfor(i) */
-    } /* endfor(j) */
+    for (k  = 0 ; k < Nk; ++k ) { //< for each kCell 
+      for (j  = 0 ; j < Nj; ++j ) { //< for each jCell 
+	for ( i = 0; i < Ni; ++i ) {  //< for each iCell
+	  for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
+	    
+	    // Unload the derivatives of the current solution state parameter
+	    for (td = 0; td <= CellTaylorDeriv(i,j,k).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell,kCell)
+	      CellTaylorDerivState(i,j,k,td)[var] = buffer[counter];
+	    } /* endfor(td) */
+	    
+	    // Unload the limiter of the current solution state parameter
+	    CellTaylorDeriv(i,j,k).Limiter(var) = buffer[counter];
+	    ++counter;
+	    
+	  }/* endfor(var) */
+	} /* endfor(i) */
+      } /* endfor(j) */
+    } /* endfor(k) */
   }/* endif(CFFC_MPI::This_Processor_Number != Source_CPU) */
 
 
@@ -5129,46 +5153,47 @@ void HighOrder<SOLN_STATE>::Broadcast_HighOrder_Data(MPI::Intracomm &Communicato
   
 }
 #endif
-
-/*!
- * Compute the AMR criteria for the block based on the 
- * minimum smoothness indicator value encountered over the
- * block cells and all solution variables.
- * \todo Add more comments here!
- */
-template<class SOLN_STATE>
-template<class Soln_Block_Type> inline
-double HighOrder<SOLN_STATE>::AMR_Criteria_Based_On_Minimum_Smoothness_Indicator(Soln_Block_Type &SolnBlk){
-
-  if (CENO_Tolerances::Fit_Tolerance <= ZERO){
-    throw runtime_error("HighOrder<SOLN_STATE>::AMR_Criteria_Based_On_Minimum_Smoothness_Indicator() ERROR! Negative/zero CENO tolerance is not allowed for refinement!");
-  }
-
-  int i, j, parameter;
-
-  double SI_Min;		//< minimum smoothness indicator value
-
-  // Reconstruct the block solution (i.e. high-order, data analysis and monotonicity enforcement).
-  ComputeHighOrderSolutionReconstruction(SolnBlk,
-					 CENO_Execution_Mode::Limiter);
-
-  /* Initialize the minimum smoothness indicator value for the block. */
-  SI_Min = CellSmoothnessIndicatorValue(ICl,JCl,1);
-
-  /* Calculate the minimum smoothness indicator value for 
-     all block interior cells and solution variables. */
-  for ( j  = JCl ; j <= JCu ; ++j ) {
-    for ( i = ICl ; i <= ICu ; ++i ) {
-      for(parameter = 1; parameter <= NumberOfVariables(); ++parameter){
-	SI_Min = min(SI_Min, CellSmoothnessIndicatorValue(i,j,parameter));
-      } /* endfor (parameter) */
-    } /* endfor (i) */
-  } /* endfor (j) */
-
-  // Evaluate the block refinement criteria based on the minimum encountered SI.
-  return ( exp( -max(ZERO, SI_Min) / (CENO_Tolerances::AMR_Smoothness_Units * CENO_Tolerances::Fit_Tolerance )) );
-  
-}
+// --> RR: comment out def'n of AMR_Criteria_Based_On_Minimum_Smoothness_Indicator
+//
+///*!
+// * Compute the AMR criteria for the block based on the 
+// * minimum smoothness indicator value encountered over the
+// * block cells and all solution variables.
+// * \todo Add more comments here!
+// */
+//template<class SOLN_STATE>
+//template<class Soln_Block_Type> inline
+//double HighOrder<SOLN_STATE>::AMR_Criteria_Based_On_Minimum_Smoothness_Indicator(Soln_Block_Type &SolnBlk){
+//
+//  if (CENO_Tolerances::Fit_Tolerance <= ZERO){
+//    throw runtime_error("HighOrder<SOLN_STATE>::AMR_Criteria_Based_On_Minimum_Smoothness_Indicator() ERROR! Negative/zero CENO tolerance is not allowed for refinement!");
+//  }
+//
+//  int i, j, parameter;
+//
+//  double SI_Min;		//< minimum smoothness indicator value
+//
+//  // Reconstruct the block solution (i.e. high-order, data analysis and monotonicity enforcement).
+//  ComputeHighOrderSolutionReconstruction(SolnBlk,
+//					 CENO_Execution_Mode::Limiter);
+//
+//  /* Initialize the minimum smoothness indicator value for the block. */
+//  SI_Min = CellSmoothnessIndicatorValue(ICl,JCl,1);
+//
+//  /* Calculate the minimum smoothness indicator value for 
+//     all block interior cells and solution variables. */
+//  for ( j  = JCl ; j <= JCu ; ++j ) {
+//    for ( i = ICl ; i <= ICu ; ++i ) {
+//      for(parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+//	SI_Min = min(SI_Min, CellSmoothnessIndicatorValue(i,j,parameter));
+//      } /* endfor (parameter) */
+//    } /* endfor (i) */
+//  } /* endfor (j) */
+//
+//  // Evaluate the block refinement criteria based on the minimum encountered SI.
+//  return ( exp( -max(ZERO, SI_Min) / (CENO_Tolerances::AMR_Smoothness_Units * CENO_Tolerances::Fit_Tolerance )) );
+//  
+//}
 
 // --> RR: comment out ReconstructionTypeMap for now
 
@@ -5710,31 +5735,31 @@ int HighOrder<double>::NumberOfVariables(void) const {
   return 1;
 }
 
-//! Get the value of Taylor derivative of cell (ii,jj) for the (p1,p2) powers and the specified Variable for type 'double'
+//! Get the value of Taylor derivative of cell (ii,jj,kk) for the (p1,p2,p3) powers and the specified Variable for type 'double'
 template<> inline
-const double & HighOrder<double>::CellTaylorDerivValue(const int & ii, const int & jj,
-							 const int & p1, const int & p2, const int & Variable) const {
-  return TD[ii][jj](p1,p2);
+const double & HighOrder<double>::CellTaylorDerivValue(const int & ii, const int & jj, const int & kk, 
+						       const int & p1, const int & p2, const int & p3, const int & Variable) const {
+  return TD[ii][jj][kk](p1,p2,p3);
 }
 
-//! Get the value of Taylor derivative of cell (ii,jj) for the (p1,p2) powers and the specified Variable for type 'double'
+//! Get the value of Taylor derivative of cell (ii,jj,kk) for the (p1,p2,p3) powers and the specified Variable for type 'double'
 template<> inline
-double & HighOrder<double>::CellTaylorDerivValue(const int & ii, const int & jj,
-						   const int & p1, const int & p2, const int & Variable) {
-  return TD[ii][jj](p1,p2);
+double & HighOrder<double>::CellTaylorDerivValue(const int & ii, const int & jj, const int & kk, 
+						 const int & p1, const int & p2, const int & p3, const int & Variable) {
+  return TD[ii][jj][kk](p1,p2,p3);
 }
 
 template <> inline
-double HighOrder<double>::SolutionAtCoordinates(const int & ii, const int & jj, 
-						  const double & X_Coord, const double & Y_Coord,
-						  const unsigned & parameter) const {
-  return TD[ii][jj].ComputeSolutionFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
+double HighOrder<double>::SolutionAtCoordinates(const int & ii, const int & jj, const int & kk, 
+						const double & X_Coord, const double & Y_Coord, 
+						const double & Z_Coord, const unsigned & parameter) const {
+  return TD[ii][jj][kk].ComputeSolutionFor(X_Coord - XCellCenter(ii,jj,kk), Y_Coord - YCellCenter(ii,jj,kk), Z_Coord - ZCellCenter(ii,jj,kk));
 }
 
 
 /* ------------------------------------------------------------------------------------------- 
  * =============== INCLUDE THE IMPLEMENTATION OF HIGH-ORDER RECONSTRUCTIONS ==================
  * -------------------------------------------------------------------------------------------*/
-#include "HighOrder_Reconstructions.h"
+#include "HighOrderReconstructions.h"
 
 #endif // _HIGHORDER_INCLUDED
