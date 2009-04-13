@@ -109,8 +109,6 @@ SRC_GRID = $(GRID_DIR)Cell1D.cc \
            $(GRID_DIR)Cell2D.cc \
            $(GRID_DIR)Grid2DQuadSingleBlock.cc \
            $(GRID_DIR)Grid2DQuadMultiBlock.cc \
-           $(GRID_DIR)Grid3DHexaSingleBlock.cc \
-           $(GRID_DIR)Grid3DHexaMultiBlock.cc \
 	   $(GRID_DIR)Tecplot_ExecutionMode.cc
 SRC_GRID_HO = $(GRID_DIR)HO_Cell2D.cc \
               $(GRID_DIR)HO_Spline2D.cc \

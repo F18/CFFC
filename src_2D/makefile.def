@@ -569,7 +569,7 @@ ifeq ($(OS),AIX)
     F90 = $(FC)
     CC = xlc
     CXX = xlc++
-    CPPFLAGS = -D_GNU_GCC_3 $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS) -DUNIX_NAMES -D_NO_MPI_VERSION -D_NO_ICEMCFD_VERSION 
+    CPPFLAGS = -D_GNU_GCC_3 $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS) -DUNIX_NAMES -D_NO_MPI_VERSION -D_NO_ICEMCFD_VERSION -D_USE_ESSL_LIB
     FFLAGS =  -O3 -qstrict -qarch=auto -qtune=auto
     F90FLAGS = $(FFLAGS) -fdefault-real-8
     CFLAGS =  -O3 -qstrict -qarch=auto -qtune=auto
@@ -584,7 +584,7 @@ ifeq ($(OS),AIX)
     F90 = mpxlf90
     CC = mpCC_r
     CXX = mpCC_r 
-    CPPFLAGS = -D_GNU_GCC_3 $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS) -DUNIX_NAMES -D_MPI_VERSION -D_NO_ICEMCFD_VERSION -D_MPI_VERSION2  
+    CPPFLAGS = -D_GNU_GCC_3 $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS) -DUNIX_NAMES -D_MPI_VERSION -D_NO_ICEMCFD_VERSION -D_MPI_VERSION2 -D_USE_ESSL_LIB
     FFLAGS = -O3  -qstrict -qarch=auto -qtune=auto
     F90FLAGS = $(FFLAGS) -fdefault-real-8
     CFLAGS = -O3 -qstrict -qarch=auto -qtune=auto
@@ -600,6 +600,10 @@ endif
 # Add TUT flags
 ifeq ($(TUT_TESTING),ON) 
   CPPFLAGS += $(TUT_CPP_FLAGS)
+  # Include proper RTTI compile option for AIX
+  ifeq ($(OS),AIX)
+	CPPFLAGS += -qrtti
+  endif
 else
   CPPFLAGS += -D_NO_TUT_TESTING
 endif
