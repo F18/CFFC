@@ -2174,6 +2174,8 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.i_ICs = IC_CONSTANT;
     } else if (strcmp(IP.ICs_Type,"Uniform") == 0) {
       IP.i_ICs = IC_UNIFORM;
+    } else if (strcmp(IP.ICs_Type,"Uniform_Perturbed") == 0) {
+      IP.i_ICs = IC_UNIFORM_PERTURBED;
     } else if (strcmp(IP.ICs_Type,"Sod") == 0) {
       IP.i_ICs = IC_SOD;
     } else if (strcmp(IP.ICs_Type,"Sod_Xdir") == 0) {

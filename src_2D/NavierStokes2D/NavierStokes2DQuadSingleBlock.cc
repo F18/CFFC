@@ -1025,19 +1025,6 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
       for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
 	SolnBlk.W[i][j] = Wo[0];
 
-// 	       /////////////////////////////////////////////////////////////////////////////////
-// 	       ////////////////////Vortex Experiment Addition////////////////////////////////////
-// 	       ///////////////////////////////////////////////////////////////////////////////////
-// 	       ////////////////////////////////////////////////////////////////////////////////////
-// 	       /////////////////////////////////////////////////////////////////////////////////////
-
-// 	       if(SolnBlk.Grid.Cell[i][j].Xc.y<0
-// 		  && sqrt(sqr(SolnBlk.Grid.Cell[i][j].Xc.x)+sqr(SolnBlk.Grid.Cell[i][j].Xc.y)) 
-//  		     < 3.0*IP.Cylinder_Radius) {
-// 		 SolnBlk.W[i][j].v.x = 0.0;
-// 		 SolnBlk.W[i][j].v.x = 0.0;
-// 	       }
-
 	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
 	  //SolnBlk.W[i][j].k = max(ONE,0.00005*(sqr(SolnBlk.W[i][j].v.x) + sqr(SolnBlk.W[i][j].v.y)));
 	  SolnBlk.W[i][j].k = 0.00005*(sqr(SolnBlk.W[i][j].v.x) + sqr(SolnBlk.W[i][j].v.y));
@@ -1072,6 +1059,33 @@ void ICs(NavierStokes2D_Quad_Block &SolnBlk,
 	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
 	  }
 	}
+      }
+    }
+    break;
+  case IC_UNIFORM_PERTURBED :
+    // Set the solution state to the initial state Wo[0].
+    for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+      for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	SolnBlk.W[i][j] = Wo[0];
+
+	/////////////////////////////////////////////////////////////////////////////////
+	////////////////////Vortex Experiment Addition////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////
+	
+	if(SolnBlk.Grid.Cell[i][j].Xc.y < IP.X_Shift.y 
+	   && sqrt(sqr(SolnBlk.Grid.Cell[i][j].Xc.x-IP.X_Shift.x)+sqr(SolnBlk.Grid.Cell[i][j].Xc.y-IP.X_Shift.y)) 
+	   < 3.0*IP.Cylinder_Radius) {
+	  SolnBlk.W[i][j].v.x = 0.0;
+	  SolnBlk.W[i][j].v.x = 0.0;
+	}
+
+	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	  SolnBlk.W[i][j].k = 0.00005*(sqr(SolnBlk.W[i][j].v.x) + sqr(SolnBlk.W[i][j].v.y));
+	  SolnBlk.W[i][j].omega = SolnBlk.W[i][j].k/0.000001;
+	}
+	SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
       }
     }
     break;

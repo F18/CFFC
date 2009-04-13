@@ -504,6 +504,7 @@ inline char *Date_And_Time() {
 #define IC_ACOUSTIC_WAVE               25
 #define IC_SLOWLY_IMPACTING_XDIR       26
 #define IC_DAI_WOODWARD                27
+#define	IC_UNIFORM_PERTURBED           28
 
 #define IC_SQUARE_WAVE_XDIR            31
 #define IC_SQUARE_WAVE_YDIR            32
