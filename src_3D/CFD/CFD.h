@@ -463,17 +463,6 @@ inline char *Date_And_Time() {
 /* ---------- SFS model ----------- */
 #define SFS_MODEL_SMAGORINSKY                         0
 #define SFS_MODEL_K_EQUATION                          5
-/* --------- filter type -----------*/
-#define FILTER_TYPE_IMPLICIT                          10
-#define FILTER_TYPE_HASELBACHER                       11
-#define FILTER_TYPE_VASILYEV                          12
-#define FILTER_TYPE_TOPHAT                            13
-#define FILTER_TYPE_GAUSSIAN                          14
-#define FILTER_TYPE_RESTART                           0
-
-#define FILTER_VARIABLES                              0
-#define FILTER_RESIDUALS                              1
-
 
 
 /**********************************************************************

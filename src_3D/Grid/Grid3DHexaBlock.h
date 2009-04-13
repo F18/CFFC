@@ -159,16 +159,7 @@ class Grid3D_Hexa_Block {
     int           NCk,KCl,KCu; // k-direction cell counters
     int                Nghost; //number of ghost cells
     Node3D            ***Node; // array of 3D node position vectors
-    Cell3D            ***Cell; // array of 3D cell centre vectors
-    
-    RowVector      ***Filter_Weights;  // Weights used in discrete explicit filtering
-    bool  ***Filter_Weights_Assigned;  // Stores if the filterweights have been allocated
-    bool    Filter_Weights_Allocated;
-    
-    DenseMatrix    ***Derivative_Reconstruction_Weights;  // Weights used in reconstructing derivatives (in LES_Filters.h)
-    bool  ***Derivative_Reconstruction_Weights_Assigned;  // Stores if the Derivative_Reconstruction_Weights have been allocated
-    bool    Derivative_Reconstruction_Weights_Allocated;
-    
+    Cell3D            ***Cell; // array of 3D cell centre vectors    
    
     int   **BCtypeN,**BCtypeS, // boundary condition type specifiers
           **BCtypeE,**BCtypeW, // for north, south, east, & west boundaries
@@ -189,8 +180,7 @@ class Grid3D_Hexa_Block {
        BCtypeN = NULL; BCtypeS = NULL; 
        BCtypeE = NULL; BCtypeW = NULL;
        BCtypeT = NULL; BCtypeB = NULL;
-       Filter_Weights_Allocated = false;
-       Derivative_Reconstruction_Weights_Allocated = false;
+
     }
 
     Grid3D_Hexa_Block(const int Ni, 
@@ -198,8 +188,6 @@ class Grid3D_Hexa_Block {
                       const int Nk, 
                       const int Ng) {
        allocate(Ni, Nj, Nk, Ng);
-       Filter_Weights_Allocated = false;
-       Derivative_Reconstruction_Weights_Allocated = false;
     }
 
     /* Destructor. */
@@ -212,19 +200,7 @@ class Grid3D_Hexa_Block {
     
     /* Deallocate memory for structured hexahedral grid block. */
     void deallocate(void);
-    
-    /* Allocate memory for filter weights used for explicit filtering */
-    void Allocate_Filter_Weights(void);
-    
-    /* Deallocate memory for filter weights used for explicit filtering */
-    void Deallocate_Filter_Weights(void);  
-    
-    /* Allocate memory for derivative reconstruction weights used for explicit filtering */
-    void Allocate_Derivative_Reconstruction_Weights(void);
-    
-    /* Deallocate memory for filter weights used for explicit filtering */
-    void Deallocate_Derivative_Reconstruction_Weights(void);  
-    
+        
     /* Calculate centroid of cell. */
     Vector3D centroid(const Cell3D &Cell);
     Vector3D centroid(const int ii, const int jj, const int kk);
@@ -582,9 +558,6 @@ inline void Grid3D_Hexa_Block::deallocate(void) {
       NCj = 0; JCl = 0; JCu = 0; 
       NCk = 0; KCl = 0; KCu = 0;
       Nghost = 0; 
-
-      Deallocate_Filter_Weights();
-      Deallocate_Derivative_Reconstruction_Weights();
 
       Allocated = GRID3D_HEXA_BLOCK_NOT_USED;
 

@@ -2,6 +2,7 @@
 #ifndef _FILTER_CONTROLLER_INCLUDED
 #define _FILTER_CONTROLLER_INCLUDED
 
+#include "Explicit_Filter_Commands.h"
 #include "Explicit_Filter.h"
 
 template <typename Soln_pState, typename Soln_cState>
@@ -41,20 +42,14 @@ public:
     
     
     void Explicit_Filter_Operations(void){
-        Explicit_Filters<Soln_pState,Soln_cState> explicit_filter;
-        Explicit_Filters<Soln_pState,Soln_cState> explicit_filter_2;
-        explicit_filter.Initialize(Data,Solution_Data);
-        explicit_filter_2.Initialize_Secondary(Data,Solution_Data);
+        
+        Explicit_Filter_Commands::Initialize_Filters(Data,Solution_Data);
+        
         
         //explicit_filter.Set_Filter_Property("debug_flag",ON);
         //explicit_filter_2.Set_Filter_Property("debug_flag",ON);
 
-        explicit_filter.transfer_function(FILTER_MIDDLE_CELL);
-        explicit_filter_2.transfer_function(FILTER_MIDDLE_CELL);
         
-        //explicit_filter.test();
-        
-        //explicit_filter.test();
 
         typedef double (Soln_pState::*member_ptr);
         member_ptr rho_member = &Soln_pState::rho;
@@ -68,8 +63,8 @@ public:
         Soln_cState_3D_ptr_type U_ptr = &Hexa_Block<Soln_pState,Soln_cState>::U; 
         
         //explicit_filter.filter(U_ptr);
-        explicit_filter.filter(rho_member);
-        
+        Explicit_Filter_Commands::Filter(rho_member,Data,Solution_Data);
+
         final_spectrum.Get_Spectrum_With_Reference(rho_member,"density",initial_spectrum);
         //explicit_filter.Calculate_Commutation_Error(rho_member);
         //explicit_filter.Write_to_file();

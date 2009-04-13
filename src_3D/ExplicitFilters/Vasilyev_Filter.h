@@ -161,12 +161,12 @@ public:
 
     void Get_Neighbours(Cell3D &theCell_) {
         theCell = theCell_;
-        theNeighbours.GetNeighbours(theCell, number_of_rings,FILTER_TYPE_VASILYEV);
+        theNeighbours.GetNeighbours(theCell, number_of_rings,Explicit_Filter_Constants::VASILYEV_FILTER);
     }
     
     void Get_Neighbours_1D(Cell3D &theCell_, int direction) {
         theCell = theCell_;
-        theNeighbours.GetNeighbours_1D(theCell, number_of_rings,FILTER_TYPE_VASILYEV,direction);
+        theNeighbours.GetNeighbours_1D(theCell, number_of_rings,Explicit_Filter_Constants::VASILYEV_FILTER,direction);
     }
     
     RowVector Get_Weights(Cell3D &theCell, Neighbours &theNeighbours);
@@ -201,7 +201,7 @@ public:
 
     void filter_tests(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
 
-    int filter_type(void) { return FILTER_TYPE_VASILYEV; }
+    int filter_type(void) { return Explicit_Filter_Constants::VASILYEV_FILTER; }
     string filter_name(void) { return "Vasilyev"; }
 
 };

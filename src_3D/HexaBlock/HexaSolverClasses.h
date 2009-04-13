@@ -1,9 +1,6 @@
 #ifndef _HEXA_SOLVER_CLASSES_INCLUDED
 #define _HEXA_SOLVER_CLASSES_INCLUDED
 
-template <typename Soln_pState, typename Soln_cState>
-class Explicit_Filters;
-
 /*****************************************************************
  * class:  HexaSolver_Data                                       *
  *                                                               *
@@ -84,9 +81,6 @@ class HexaSolver_Solution_Data {
 
   Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>               Input;
   Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  Local_Solution_Blocks; 
-
-    Explicit_Filters<SOLN_pSTATE,SOLN_cSTATE> Explicit_Filter;
-    Explicit_Filters<SOLN_pSTATE,SOLN_cSTATE> Explicit_Secondary_Filter;
 
   // Control Flag 
   int command_flag;

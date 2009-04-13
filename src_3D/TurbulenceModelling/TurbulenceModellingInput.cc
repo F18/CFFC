@@ -196,17 +196,13 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
       value >> value_string;
       strcpy(filter_type, value_string.c_str());
       if (strcmp(filter_type, "Implicit") == 0) {
-          i_filter_type = FILTER_TYPE_IMPLICIT;
+          i_filter_type = Explicit_Filter_Constants::IMPLICIT_FILTER;
       } else if (strcmp(filter_type, "Haselbacher") == 0) {
-          i_filter_type = FILTER_TYPE_HASELBACHER;
+          i_filter_type = Explicit_Filter_Constants::HASELBACHER_FILTER;
       } else if (strcmp(filter_type, "Vasilyev") == 0) {
-          i_filter_type = FILTER_TYPE_VASILYEV;
-      } else if (strcmp(filter_type, "Tophat") == 0) {
-          i_filter_type = FILTER_TYPE_TOPHAT;
-      } else if (strcmp(filter_type, "Gaussian") == 0) {
-          i_filter_type = FILTER_TYPE_GAUSSIAN;
+          i_filter_type = Explicit_Filter_Constants::VASILYEV_FILTER;
       } else if (strcmp(filter_type, "Restart") == 0) {
-          i_filter_type = FILTER_TYPE_RESTART;
+          i_filter_type = Explicit_Filter_Constants::RESTART_FILTER;
       } else {
           i_command = INVALID_INPUT_VALUE;
       } /* endif */
@@ -215,17 +211,13 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
       value >> value_string;
       strcpy(filter_type_secondary, value_string.c_str());
       if (strcmp(filter_type_secondary, "Implicit") == 0) {
-          i_filter_type_secondary = FILTER_TYPE_IMPLICIT;
+          i_filter_type_secondary = Explicit_Filter_Constants::IMPLICIT_FILTER;
       } else if (strcmp(filter_type_secondary, "Haselbacher") == 0) {
-          i_filter_type_secondary = FILTER_TYPE_HASELBACHER;
+          i_filter_type_secondary = Explicit_Filter_Constants::HASELBACHER_FILTER;
       } else if (strcmp(filter_type_secondary, "Vasilyev") == 0) {
-          i_filter_type_secondary = FILTER_TYPE_VASILYEV;
-      } else if (strcmp(filter_type_secondary, "Tophat") == 0) {
-          i_filter_type_secondary = FILTER_TYPE_TOPHAT;
-      } else if (strcmp(filter_type_secondary, "Gaussian") == 0) {
-          i_filter_type_secondary = FILTER_TYPE_GAUSSIAN;
+          i_filter_type_secondary = Explicit_Filter_Constants::VASILYEV_FILTER;
       } else if (strcmp(filter_type_secondary, "Restart") == 0) {
-          i_filter_type_secondary = FILTER_TYPE_RESTART;
+          i_filter_type_secondary = Explicit_Filter_Constants::RESTART_FILTER;
       } else {
           i_command = INVALID_INPUT_VALUE;
       } /* endif */
@@ -387,11 +379,11 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
       i_command = 143;
       value >> value_string;
       if      (value_string == "Variables"){
-          Filter_Method = FILTER_VARIABLES;
+          Filter_Method = Explicit_Filter_Constants::FILTER_VARIABLES;
           Filter_Strength = 0.2;
       }
       else if (value_string == "Residuals") {
-          Filter_Method = FILTER_RESIDUALS;
+          Filter_Method = Explicit_Filter_Constants::FILTER_RESIDUALS;
           Filter_Strength = 1.0;
       }
       else
@@ -535,7 +527,7 @@ void Turbulence_Modelling_Input_Parameters::Output(ostream &out_file) const {
 
     out_file << "\n  LES parameters:";
     out_file << "\n    -> Filter type: " << filter_type;
-    if (i_filter_type == FILTER_TYPE_IMPLICIT){
+    if (i_filter_type == Explicit_Filter_Constants::IMPLICIT_FILTER){
         out_file << "\n       -> Filter Grid Ratio: " << FGR;
     }
     out_file << "\n    -> Sub Filter Scale model: " << SFS_model;

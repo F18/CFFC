@@ -23,11 +23,12 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                 << "\n ==============================="
                 << "\n    Filtering solution first    "
                 << "\n ===============================";
+                cout.flush();
             }
             
-            Solution_Data.Explicit_Secondary_Filter.Initialize_Secondary(Data,Solution_Data);
+            Explicit_Filter_Commands::Initialize_Filters(Data, Solution_Data);
+            Explicit_Filter_Commands::Filter_Solution(Data,Solution_Data,Explicit_Filter_Constants::SECONDARY_FILTER);
             
-            error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Solution(Solution_Data.Explicit_Secondary_Filter);
             if (error_flag) {
                 cout << "\n ERROR: Could not filter solution "
                 << "on processor "
@@ -195,13 +196,12 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             
             
             /* ---------------------- Explicitly filter the initial condition --------------------- */
-            if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_IMPLICIT) {
+            if (Solution_Data.Input.Turbulence_IP.i_filter_type != Explicit_Filter_Constants::IMPLICIT_FILTER) {
                 // Initialize the filter
-                Solution_Data.Explicit_Filter.Initialize(Data,Solution_Data);
+                Explicit_Filter_Commands::Initialize_Filters(Data, Solution_Data);
 
                 // output the filter transfer function
-                if (CFFC_Primary_MPI_Processor())
-                    Solution_Data.Explicit_Filter.transfer_function(FILTER_MIDDLE_CELL);
+                Explicit_Filter_Commands::Transfer_Function(Data,Solution_Data);
             
                 if (Solution_Data.Input.Turbulence_IP.Filter_Initial_Condition) {
                     // filter the initial condition
@@ -211,13 +211,13 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                         cout << "    Explicitly filtering the initial condition   " << endl;
                         cout << " ------------------------------------------------" << endl;        
                     }
-                    error_flag = Solution_Data.Local_Solution_Blocks.Explicitly_Filter_Solution(Solution_Data.Explicit_Filter);
+                    error_flag = Explicit_Filter_Commands::Filter_Solution(Data,Solution_Data,Explicit_Filter_Constants::PRIMARY_FILTER);
                     if (CFFC_Primary_MPI_Processor() && !Data.batch_flag) {
                         cout << "    Finished explicitly filtering the initial condition" << endl;
                     }
-                    // save filter to file so don't have to recompute.
-                    if (Solution_Data.Input.Turbulence_IP.i_filter_type != FILTER_TYPE_RESTART)
-                        error_flag = Solution_Data.Explicit_Filter.Write_to_file();
+//                    // save filter to file so don't have to recompute.
+//                    if (Solution_Data.Input.Turbulence_IP.i_filter_type != Explicit_Filter_Constants::RESTART_FILTER)
+//                        error_flag = Solution_Data.Explicit_Filter.Write_to_file();
                 }
             }
 

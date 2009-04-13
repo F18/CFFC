@@ -18,7 +18,7 @@
 SFS_model_Parameters LES3D_Polytropic_pState::SFS_model = {SFS_MODEL_SMAGORINSKY,
                                                            10000000};
 Filter_Parameters LES3D_Polytropic_pState::filter = {2,
-                                                     FILTER_TYPE_IMPLICIT};
+                                                     Explicit_Filter_Constants::IMPLICIT_FILTER};
 
 void LES3D_Polytropic_pState::Set_LES_parameters(SFS_model_Parameters &SFS_model_,Filter_Parameters &filter_){
     SFS_model = SFS_model_;
@@ -634,7 +634,7 @@ double LES3D_Polytropic_pState::SFS_Kinetic_Energy(const LES3D_Polytropic_pState
 SFS_model_Parameters LES3D_Polytropic_cState::SFS_model = {SFS_MODEL_SMAGORINSKY,
                                                            0.18};
 Filter_Parameters LES3D_Polytropic_cState::filter = {2,
-                                                     FILTER_TYPE_IMPLICIT};
+                                                     Explicit_Filter_Constants::IMPLICIT_FILTER};
 
 void LES3D_Polytropic_cState::Set_LES_parameters(SFS_model_Parameters &SFS_model_, Filter_Parameters &filter_){
     SFS_model = SFS_model_;

@@ -30,6 +30,9 @@
 
 typedef complex<double> Complex;
 
+
+template <typename Soln_pState, typename Soln_cState> class Explicit_Filters;
+
 /**
  * CLASS: Discrete_Filter
  */
@@ -71,14 +74,11 @@ public:
     int use_fixed_filter_width;
     double fixed_filter_width;
 
-    void Allocate_Filter_Weights(Grid3D_Hexa_Block &Grid_Blk);
-    void Reset_Filter_Weights(Grid3D_Hexa_Block &Grid_Blk);
-
     DenseMatrix Neighbouring_Values;
     void Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, Neighbours &theNeighbours);
 
-    RowVector filter(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
-    RowVector filter_1D(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction);
+    RowVector filter(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
+    RowVector filter_1D(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter,Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction);
 
     
     
@@ -118,12 +118,7 @@ public:
     virtual RowVector Get_Weights_1D(Cell3D &theCell, Neighbours &theNeighbours, int direction) = 0;
 
     virtual string filter_name(void) = 0;
-    virtual int filter_type(void) = 0;
-    
-    void Write_to_file(Grid3D_Hexa_Block &Grid_Blk, ofstream &out_file);
-    void Read_from_file(Grid3D_Hexa_Block &Grid_Blk, ifstream &in_file);
-    
-    
+    virtual int filter_type(void) = 0;    
 };
 
 template <typename Soln_pState, typename Soln_cState>
@@ -164,7 +159,8 @@ template <typename Soln_pState, typename Soln_cState>
 void Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
     
     if (!batch_flag) {
-        cout << "\n\n Calculating filter moments at cell ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
+        cout << "\nCalculating filter moments at cell ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
+        cout.flush();
     }
     
     theNeighbours.set_grid(Grid_Blk);
@@ -267,11 +263,11 @@ void Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments_1D(Grid3D_He
 
 
 template <typename Soln_pState, typename Soln_cState>
-RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
+RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
     
-    if (!Grid_Blk.Filter_Weights_Allocated && Store_Filter_Weights) {
-        Allocate_Filter_Weights(Grid_Blk);
-        Grid_Blk.Filter_Weights_Allocated = true;
+    if (!explicit_filter.Filter_Weights_Allocated && Store_Filter_Weights) {
+        explicit_filter.Allocate_Filter_Weights();
+        explicit_filter.Filter_Weights_Allocated = true;
     }
      
      
@@ -284,12 +280,12 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Grid3D_Hexa_Block &Gr
         int I(theCell.I);
         int J(theCell.J);
         int K(theCell.K);
-        if (!Grid_Blk.Filter_Weights_Assigned[I][J][K]) {
-            Grid_Blk.Filter_Weights[I][J][K] = Get_Weights(theCell,theNeighbours);
-            Grid_Blk.Filter_Weights_Assigned[I][J][K] = true;
+        if (!explicit_filter.Filter_Weights_Assigned[I][J][K]) {
+            explicit_filter.Filter_Weights[I][J][K] = Get_Weights(theCell,theNeighbours);
+            explicit_filter.Filter_Weights_Assigned[I][J][K] = true;
         }
         Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
-        return (Grid_Blk.Filter_Weights[I][J][K]*Neighbouring_Values);
+        return (explicit_filter.Filter_Weights[I][J][K]*Neighbouring_Values);
     } else {
         RowVector W = Get_Weights(theCell,theNeighbours);
         Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
@@ -304,11 +300,11 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Grid3D_Hexa_Block &Gr
 
 
 template <typename Soln_pState, typename Soln_cState>
-RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter_1D(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction) {
+RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter_1D(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction) {
     
-    if (!Grid_Blk.Filter_Weights_Allocated && Store_Filter_Weights) {
-        Allocate_Filter_Weights(Grid_Blk);
-        Grid_Blk.Filter_Weights_Allocated = true;
+    if (!explicit_filter.Filter_Weights_Allocated && Store_Filter_Weights) {
+        explicit_filter.Allocate_Filter_Weights();
+        explicit_filter.Filter_Weights_Allocated = true;
     }
     
     
@@ -321,12 +317,12 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter_1D(Grid3D_Hexa_Block 
         int I(theCell.I);
         int J(theCell.J);
         int K(theCell.K);
-        if (!Grid_Blk.Filter_Weights_Assigned[I][J][K]) {
-            Grid_Blk.Filter_Weights[I][J][K] = Get_Weights_1D(theCell,theNeighbours,direction);
-            Grid_Blk.Filter_Weights_Assigned[I][J][K] = true;
+        if (!explicit_filter.Filter_Weights_Assigned[I][J][K]) {
+            explicit_filter.Filter_Weights[I][J][K] = Get_Weights_1D(theCell,theNeighbours,direction);
+            explicit_filter.Filter_Weights_Assigned[I][J][K] = true;
         }
         Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
-        return (Grid_Blk.Filter_Weights[I][J][K]*Neighbouring_Values);
+        return (explicit_filter.Filter_Weights[I][J][K]*Neighbouring_Values);
     } else {
         RowVector W = Get_Weights_1D(theCell,theNeighbours,direction);
         Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
@@ -338,24 +334,6 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter_1D(Grid3D_Hexa_Block 
 template <typename Soln_pState, typename Soln_cState>
 void Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, Neighbours &theNeighbours) {
     Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrix(Neighbouring_Values, theNeighbours);
-}
-
-template <typename Soln_pState, typename Soln_cState>
-void Discrete_Filter<Soln_pState,Soln_cState>::Allocate_Filter_Weights(Grid3D_Hexa_Block &Grid_Blk) {
-    Grid_Blk.Allocate_Filter_Weights();
-}
-
-template <typename Soln_pState, typename Soln_cState>
-void Discrete_Filter<Soln_pState,Soln_cState>::Reset_Filter_Weights(Grid3D_Hexa_Block &Grid_Blk) {
-    if (Grid_Blk.Filter_Weights_Allocated) {
-        for (int i=0; i<Grid_Blk.NCi; i++) {
-            for (int j=0; j<Grid_Blk.NCj; j++) {            
-                for (int k=0; k<Grid_Blk.NCk; k++) {
-                    Grid_Blk.Filter_Weights_Assigned[i][j][k] = false;
-                }
-            }
-        }
-    }
 }
 
 
@@ -376,7 +354,8 @@ void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Blo
     kmax.z = fabs(PI/Delta.z);
     
     if (!batch_flag) {
-        cout << "\n\n Calculating Transfer function at cell ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
+        cout << "\nCalculating Explicit Filter Transfer function at cell ("<<theCell.I<<","<<theCell.J<<","<<theCell.K<<")";
+        cout.flush();
     }
     int N=25;
     std::stringstream prefix;
@@ -860,43 +839,6 @@ template <typename Soln_pState, typename Soln_cState>
 double Discrete_Filter<Soln_pState,Soln_cState>::Filter_Width(Cell3D &theCell, Neighbours &theNeighbours, Vector3D &kdir, RowVector &w, double G_cutoff) {
     Vector3D k_cutoff = Calculate_wavenumber_of_Gvalue(theCell,theNeighbours,kdir,w,G_cutoff);
     return k_cutoff.abs();
-}
-
-template <typename Soln_pState, typename Soln_cState>
-void Discrete_Filter<Soln_pState,Soln_cState>::Write_to_file(Grid3D_Hexa_Block &Grid_Blk, ofstream &out_file) {
-    for (int i=0; i<Grid_Blk.NCi; i++) {
-        for (int j=0; j<Grid_Blk.NCj; j++) {                
-            for (int k=0; k<Grid_Blk.NCk; k++) {
-                out_file << Grid_Blk.Filter_Weights_Assigned[i][j][k] << " ";
-                if (Grid_Blk.Filter_Weights_Assigned[i][j][k]) {
-                    Grid_Blk.Filter_Weights[i][j][k].write(out_file);
-                } else {
-                    out_file << "\n";
-                }
-            }
-        }
-    }
-    out_file << "\n"; // extra line to separate Grid_Blks
-}
-
-template <typename Soln_pState, typename Soln_cState>
-void Discrete_Filter<Soln_pState,Soln_cState>::Read_from_file(Grid3D_Hexa_Block &Grid_Blk, ifstream &in_file) {
-    if (Store_Filter_Weights) {
-        Allocate_Filter_Weights(Grid_Blk);
-        for (int i=0; i<Grid_Blk.NCi; i++) {
-            for (int j=0; j<Grid_Blk.NCj; j++) {                
-                for (int k=0; k<Grid_Blk.NCk; k++) {
-                    in_file.setf(ios::skipws);
-                    in_file >> Grid_Blk.Filter_Weights_Assigned[i][j][k];
-                    in_file.unsetf(ios::skipws);
-                    if (Grid_Blk.Filter_Weights_Assigned[i][j][k]) {
-                        Grid_Blk.Filter_Weights[i][j][k].read(in_file);
-                    }
-                }
-            }
-        }
-        Grid_Blk.Filter_Weights_Allocated = true;
-    }
 }
 
 

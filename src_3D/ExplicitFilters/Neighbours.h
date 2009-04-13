@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef _LES_FILTERS_NEIGHBOURS_NEW_INCLUDED
-#define _LES_FILTERS_NEIGHBOURS_NEW_INCLUDED
+#ifndef _FILTER_NEIGHBOURS_INCLUDED
+#define _FILTER_NEIGHBOURS_INCLUDED
 
 
 #include <cstdlib>     // defines the drand48() function
@@ -114,12 +114,13 @@ inline void Neighbours::GetNeighbours(Cell3D &theCell, int number_of_rings,int f
         symmetric_stencil = false;
     }
     
+    neighbour.resize(0);
     
     uniform_stencil=true;
     Vector3D CellWidth(theCell.dXc.vector_abs());
     
     switch (filter_type) {
-        case FILTER_TYPE_HASELBACHER:
+        case Explicit_Filter_Constants::HASELBACHER_FILTER:
             for (int i=imin; i<=imax; i++) {
                 for (int j=jmin; j<=jmax; j++) {
                     for (int k=kmin; k<=kmax; k++) {
@@ -134,7 +135,7 @@ inline void Neighbours::GetNeighbours(Cell3D &theCell, int number_of_rings,int f
             }
             theCell_included = false;
             break;
-        case FILTER_TYPE_VASILYEV:
+        case Explicit_Filter_Constants::VASILYEV_FILTER:
             for (int i=imin; i<=imax; i++) {
                 for (int j=jmin; j<=jmax; j++) {
                     for (int k=kmin; k<=kmax; k++) {   // includes theCell !!!
@@ -179,7 +180,7 @@ inline void Neighbours::GetNeighbours_1D(Cell3D &theCell, int number_of_rings,in
     
     
     switch (filter_type) {
-        case FILTER_TYPE_HASELBACHER:
+        case Explicit_Filter_Constants::HASELBACHER_FILTER:
             for (int i=imin; i<=imax; i++) {
                 for (int j=jmin; j<=jmax; j++) {
                     for (int k=kmin; k<=kmax; k++) {
@@ -219,7 +220,7 @@ inline void Neighbours::GetNeighbours_1D(Cell3D &theCell, int number_of_rings,in
             }
             theCell_included = false;
             break;
-            case FILTER_TYPE_VASILYEV:
+            case Explicit_Filter_Constants::VASILYEV_FILTER:
             switch (direction){
                 case X_DIRECTION:
                     for (int i=imin; i<=imax; i++) {

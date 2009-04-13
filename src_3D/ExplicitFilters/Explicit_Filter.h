@@ -19,6 +19,7 @@
 //#include "Tophat_Filter.h"
 //#include "Gaussian_Filter.h"
 #include "Finite_Difference.h"
+#include "Explicit_Filter_Constants.h"
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
@@ -34,23 +35,31 @@ public:
     
     General_Filter<Soln_pState,Soln_cState> *filter_ptr;
     
-    int mode;
-    /* Mode 1 : group code integration */
-    HexaSolver_Data *Data_ptr;
-    HexaSolver_Solution_Data<Soln_pState,Soln_cState> *Solution_Data_ptr;
+    Hexa_Block<Soln_pState,Soln_cState> *SolnBlk_ptr;
+    Input_Parameters<Soln_pState,Soln_cState> *Input_ptr;
+    
     
     int initialized;
     
     /* ----- constructor ----- */
     
-    Explicit_Filters(void) { initialized = false; }
+    //tmp hack for debugging
+    Explicit_Filters() : initialized(false) {    }
+    
+    Explicit_Filters(Hexa_Block<Soln_pState,Soln_cState> *SolnBlk) :
+        initialized(false),
+        Filter_Weights_Allocated(false),
+        Derivative_Reconstruction_Weights_Allocated(false),
+        SolnBlk_ptr(SolnBlk) { }
+    
+    /* ----- destructor ----- */
     ~Explicit_Filters() {
         if (initialized)
             delete filter_ptr;
     }
 
-    void Initialize(HexaSolver_Data &Data, HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data);    
-    void Initialize_Secondary(HexaSolver_Data &Data, HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data);    
+    void Initialize(int batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input);    
+    void Initialize_Secondary(int batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input);    
 
     
     void Set_Properties(Input_Parameters<Soln_pState,Soln_cState> &IPs, int batch_flag);
@@ -95,6 +104,18 @@ public:
     void allocate_Truncation_Error(Grid3D_Hexa_Block &Grid_Blk);
     void deallocate_Truncation_Error(Grid3D_Hexa_Block &Grid_Blk);
     
+    RowVector      ***Filter_Weights;  // Weights used in discrete explicit filtering
+    bool  ***Filter_Weights_Assigned;  // Stores if the filterweights have been allocated
+    bool    Filter_Weights_Allocated;
+    void Allocate_Filter_Weights(void);
+    void Deallocate_Filter_Weights(void);
+    
+    DenseMatrix    ***Derivative_Reconstruction_Weights;  // Weights used in reconstructing derivatives (in LES_Filters.h)
+    bool  ***Derivative_Reconstruction_Weights_Assigned;  // Stores if the Derivative_Reconstruction_Weights have been allocated
+    bool    Derivative_Reconstruction_Weights_Allocated;    
+    void Allocate_Derivative_Reconstruction_Weights(void);
+    void Deallocate_Derivative_Reconstruction_Weights(void);
+        
     template <typename Filter_Variable_Type>
     void Calculate_Commutation_Error(Filter_Variable_Type filter_variable);
     int Calculate_Commutation_Error_Blocks(void);
@@ -124,23 +145,17 @@ public:
 
 };
 
-#define FILTER_CORNER_CELL  0
-#define FILTER_FACE_CELL    1
-#define FILTER_EDGE_CELL    2
-#define FILTER_INNER_CELL   3
-#define FILTER_MIDDLE_CELL  4
-
 
 template<typename Soln_pState,typename Soln_cState>
-void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(HexaSolver_Data &Data, HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data) {
+void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(int batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input) {
     if (!initialized) {
-        Data_ptr = &Data;
-        Solution_Data_ptr = &Solution_Data;
-
-        Set_Properties(Solution_Data.Input, Data.batch_flag);
+        
+        Input_ptr = &Input;
+        
+        Set_Properties(Input, batch_flag);
         
         /*if (Solution_Data.Input.i_ICs == IC_RESTART && !properties.restarted)
-            properties.filter_type = FILTER_TYPE_RESTART; */
+            properties.filter_type = Explicit_Filter_Constants::RESTART_FILTER; */
         
         Create_filter();
         initialized = true;
@@ -148,27 +163,27 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(HexaSolver_Data &Data
 }
 
 template<typename Soln_pState,typename Soln_cState>
-void Explicit_Filters<Soln_pState,Soln_cState>::Initialize_Secondary(HexaSolver_Data &Data, HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data) {
+void Explicit_Filters<Soln_pState,Soln_cState>::Initialize_Secondary(int batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input) {
     if (!initialized) {
-        Data_ptr = &Data;
-        Solution_Data_ptr = &Solution_Data;
         
-        Set_Properties(Solution_Data.Input, Data.batch_flag);
+        Input_ptr = &Input;
+
+        Set_Properties(Input, batch_flag);
         
         /*if (Solution_Data.Input.i_ICs == IC_RESTART && !properties.restarted)
-         properties.filter_type = FILTER_TYPE_RESTART; */
+         properties.filter_type = Explicit_Filter_Constants::RESTART_FILTER; */
         
-        properties.Set_Operating_Property("memory_efficient",ON);
+        //properties.Set_Operating_Property("memory_efficient",ON);
         string output_file_name;
         properties.Get_Property(output_file_name,"output_file_name");
         properties.Set_Operating_Property("output_file_name",output_file_name+string("_secondary_filter"));
-        properties.Set_Filter_Property("FGR",Solution_Data.Input.Turbulence_IP.FGR_secondary);
+        properties.Set_Filter_Property("FGR",Input.Turbulence_IP.FGR_secondary);
         if (properties.Get_Property_int("use_fixed_filter_width")) {
-            properties.Set_Filter_Property("fixed_filter_width",Solution_Data.Input.Turbulence_IP.Filter_Width_secondary);
+            properties.Set_Filter_Property("fixed_filter_width",Input.Turbulence_IP.Filter_Width_secondary);
         }
-        properties.Set_Operating_Property("progress_mode",Solution_Data.Input.Progress_Mode);
+        properties.Set_Operating_Property("progress_mode",Input.Progress_Mode);
 
-        properties.Set_Filter_Property("filter_type",Solution_Data.Input.Turbulence_IP.i_filter_type_secondary);
+        properties.Set_Filter_Property("filter_type",Input.Turbulence_IP.i_filter_type_secondary);
         Create_filter();
         initialized = true;
     }
@@ -177,8 +192,8 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize_Secondary(HexaSolver_
 
 
 template<typename Soln_pState,typename Soln_cState>
-void Explicit_Filters<Soln_pState,Soln_cState>::Set_Properties(Input_Parameters<Soln_pState,Soln_cState> &IPs, int batch_flag) {
-    properties.Set_Properties(IPs,batch_flag);
+void Explicit_Filters<Soln_pState,Soln_cState>::Set_Properties(Input_Parameters<Soln_pState,Soln_cState> &Input, int batch_flag) {
+    properties.Set_Properties(Input,batch_flag);
 }
 
 template<typename Soln_pState,typename Soln_cState>
@@ -197,19 +212,13 @@ template <typename Soln_pState, typename Soln_cState>
 void Explicit_Filters<Soln_pState,Soln_cState>::Create_filter(void) {
     int error_flag;
     switch (properties.Get_Property_int("filter_type")) {
-        case FILTER_TYPE_HASELBACHER:
+        case Explicit_Filter_Constants::HASELBACHER_FILTER:
             filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>(properties);
             break;
-        case FILTER_TYPE_VASILYEV:
+        case Explicit_Filter_Constants::VASILYEV_FILTER:
             filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>(properties);
             break;
-        case FILTER_TYPE_TOPHAT:
-            //filter_ptr = new Tophat_Filter<Soln_pState,Soln_cState>;
-            break;
-        case FILTER_TYPE_GAUSSIAN:
-            //filter_ptr = new Gaussian_Filter<Soln_pState,Soln_cState>;
-            break;
-        case FILTER_TYPE_RESTART:
+        case Explicit_Filter_Constants::RESTART_FILTER:
             error_flag = Read_from_file();
             if (error_flag == 1) cerr << "could not read filter_input_file" << endl;
             break;
@@ -227,27 +236,23 @@ void Explicit_Filters<Soln_pState,Soln_cState>::transfer_function(int flag) {
     }
     int Nghost, number_of_rings;
     int NMi, NMj, NMk;
-        for (int nBlk = 0; nBlk <  Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks; ++nBlk ) {
-            if (Solution_Data_ptr->Local_Solution_Blocks.Block_Used[nBlk] == HEXA_BLOCK_USED){
-                Nghost = Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid.Nghost;
-                NMi = Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid.NCi/2;
-                NMj = Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid.NCj/2;
-                NMk = Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid.NCk/2;
-                break;
-            }
-        }
+
+    Nghost = SolnBlk_ptr->Grid.Nghost;
+    NMi    = SolnBlk_ptr->Grid.NCi/2;
+    NMj    = SolnBlk_ptr->Grid.NCj/2;
+    NMk    = SolnBlk_ptr->Grid.NCk/2;
 
     number_of_rings = properties.Get_Property_int("number_of_rings");
     switch (flag) {
-        case FILTER_CORNER_CELL:
+        case Explicit_Filter_Constants::CORNER_CELL:
             transfer_function(Nghost, Nghost, Nghost);      break;
-        case FILTER_FACE_CELL:
+        case Explicit_Filter_Constants::FACE_CELL:
             transfer_function(Nghost, Nghost, number_of_rings);     break;
-        case FILTER_EDGE_CELL:
+        case Explicit_Filter_Constants::EDGE_CELL:
             transfer_function(Nghost, number_of_rings, number_of_rings);    break;
-        case FILTER_INNER_CELL:
+        case Explicit_Filter_Constants::INNER_CELL:
             transfer_function(max(Nghost,number_of_rings), max(Nghost,number_of_rings), max(Nghost,number_of_rings));    break;
-        case FILTER_MIDDLE_CELL:
+        case Explicit_Filter_Constants::MIDDLE_CELL:
             transfer_function(NMi,NMj,NMk);    break;
     }
 }
@@ -258,23 +263,9 @@ void Explicit_Filters<Soln_pState,Soln_cState>::transfer_function(int i, int j, 
         cout << "Explicit_Filters<Soln_pState,Soln_cState> not initialized, can not return transfer_function" << endl;
         return;
     }
-    int NBlk;
-        NBlk = Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks;
 
-    if (!initialized) {
-        cout << "Explicit_Filters<Soln_pState,Soln_cState> not initialized, can not return transfer_function" << endl;
-        return;
-    }
-    cout << "\n Calculating filter transfer function for cell (" << i << "," << j << "," << k << ")."<<endl;
-    for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
-            if (Solution_Data_ptr->Local_Solution_Blocks.Block_Used[nBlk] == HEXA_BLOCK_USED){
-                filter_ptr->transfer_function(Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid,
-                                              Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid.Cell[i][j][k]); 
-            }
-
-        return; // This makes sure it is called only once
-    }
-    
+    filter_ptr->transfer_function(SolnBlk_ptr->Grid,
+                                  SolnBlk_ptr->Grid.Cell[i][j][k]);     
 }
 
 template <typename Soln_pState, typename Soln_cState>
@@ -283,7 +274,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::transfer_function() {
         cout << "Explicit_Filters<Soln_pState,Soln_cState> not initialized, can not return transfer_function" << endl;
         return;
     }
-    transfer_function(FILTER_INNER_CELL);
+    transfer_function(Explicit_Filter_Constants::INNER_CELL);
 }
 
 template <typename Soln_pState, typename Soln_cState>
@@ -295,8 +286,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::filter(Filter_Variable_Type filt
     }
     // Let an adaptor deal with what will be filtered
     adaptor.Set_Adaptor(filter_variable);
-
-        filter_Blocks();
+    filter_Blocks();
 
 }
 
@@ -320,36 +310,27 @@ void Explicit_Filters<Soln_pState,Soln_cState>::filter_Blocks(void) {
         return;
     }
     int progress_mode = properties.Get_Property_int("progress_mode");
-    Hexa_Block<Soln_pState,Soln_cState> *Soln_Blks = Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks;
-    int NBlk = Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks;
     int number_of_cells = 0;
     int number_of_processed_cells = 0;
-    for (int nBlk = 0; nBlk < NBlk; nBlk++ ) {
-        if (Solution_Data_ptr->Local_Solution_Blocks.Block_Used[nBlk] == HEXA_BLOCK_USED){
-            number_of_cells += (Soln_Blks[nBlk].ICu - Soln_Blks[nBlk].ICl + 1)
-            * (Soln_Blks[nBlk].JCu - Soln_Blks[nBlk].JCl + 1)
-            * (Soln_Blks[nBlk].KCu - Soln_Blks[nBlk].KCl + 1);
-        }
-    }
-    
-    for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
-        if (Solution_Data_ptr->Local_Solution_Blocks.Block_Used[nBlk] == HEXA_BLOCK_USED){
-            adaptor.Set_Solution_Block(Soln_Blks[nBlk]); // allows access from filter to solution block
-            allocate_Filtered(Soln_Blks[nBlk].Grid);
-            for(int i=Soln_Blks[nBlk].ICl; i<=Soln_Blks[nBlk].ICu; i++) {
-                for (int j=Soln_Blks[nBlk].JCl; j<=Soln_Blks[nBlk].JCu; j++) {
-                    for (int k=Soln_Blks[nBlk].KCl; k<=Soln_Blks[nBlk].KCu; k++) {
-                        Filtered[i][j][k] = filter_ptr->filter(Soln_Blks[nBlk].Grid,
-                                                               Soln_Blks[nBlk].Grid.Cell[i][j][k]);
-                        number_of_processed_cells++;
-                        ShowProgress(" Filtering  ", number_of_processed_cells, number_of_cells, progress_mode);
-                    }
-                }
+
+    number_of_cells = (SolnBlk_ptr->ICu - SolnBlk_ptr->ICl + 1)
+    * (SolnBlk_ptr->JCu - SolnBlk_ptr->JCl + 1)
+    * (SolnBlk_ptr->KCu - SolnBlk_ptr->KCl + 1);
+
+    adaptor.Set_Solution_Block(*SolnBlk_ptr); // allows access from filter to solution block
+    allocate_Filtered(SolnBlk_ptr->Grid);
+    for(int i=SolnBlk_ptr->ICl; i<=SolnBlk_ptr->ICu; i++) {
+        for (int j=SolnBlk_ptr->JCl; j<=SolnBlk_ptr->JCu; j++) {
+            for (int k=SolnBlk_ptr->KCl; k<=SolnBlk_ptr->KCu; k++) {
+                Filtered[i][j][k] = filter_ptr->filter(*this,SolnBlk_ptr->Grid,
+                                                       SolnBlk_ptr->Grid.Cell[i][j][k]);
+                number_of_processed_cells++;
+                ShowProgress(" Filtering  ", number_of_processed_cells, number_of_cells, progress_mode);
             }
-            adaptor.Load_into_Solution_Block(Filtered);
-            deallocate_Filtered(Soln_Blks[nBlk].Grid);
         }
     }
+    adaptor.Load_into_Solution_Block(Filtered);
+    deallocate_Filtered(SolnBlk_ptr->Grid);
     
     if (progress_mode!=PROGRESS_MODE_SILENT){
         properties.Set_Operating_Property("progress_mode",PROGRESS_MODE_SILENT);
@@ -525,52 +506,45 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Block
     ofstream out_file;
     out_file.open(out_file_name, ios::out);
     if (out_file.bad()) return (1);
+
+    if (!properties.Get_Property_int("batch_flag"))
+        cout << "\n\n Calculating Commutation Error: " << endl;
+
+    /* ----- allocations ----- */
+    allocate_Filtered(SolnBlk_ptr->Grid);
+    allocate_Divergence(SolnBlk_ptr->Grid);
+    allocate_Filtered_Divergence(SolnBlk_ptr->Grid);
+    allocate_Divergenced_Filtered(SolnBlk_ptr->Grid);
+    allocate_Commutation_Error(SolnBlk_ptr->Grid);
+    allocate_Truncation_Error(SolnBlk_ptr->Grid);
     
+    /* ------ calculations -------- */
+    adaptor.Set_Solution_Block(*SolnBlk_ptr);
+    adaptor.Set_Initial_Condition(*Input_ptr);
+    Calculate_Commutation_Error_Block(SolnBlk_ptr->Grid);
+    
+    /* ----- output commutation error ----- */
+    // if first_flag = true --> Make Tecplot header
     bool first_flag = true;
-        /* For every local solution block */
-
-        if (!properties.Get_Property_int("batch_flag"))
-            cout << "\n\n Calculating Commutation Error: " << endl;
-        Hexa_Block<Soln_pState,Soln_cState> *Soln_Blks = Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks;
-        for (int nBlk = 0; nBlk < Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks ; nBlk++ ) {
-            if (Solution_Data_ptr->Local_Solution_Blocks.Block_Used[nBlk] == HEXA_BLOCK_USED) {
-                /* ----- allocations ----- */
-                allocate_Filtered(Soln_Blks[nBlk].Grid);
-                allocate_Divergence(Soln_Blks[nBlk].Grid);
-                allocate_Filtered_Divergence(Soln_Blks[nBlk].Grid);
-                allocate_Divergenced_Filtered(Soln_Blks[nBlk].Grid);
-                allocate_Commutation_Error(Soln_Blks[nBlk].Grid);
-                allocate_Truncation_Error(Soln_Blks[nBlk].Grid);
-                
-                /* ------ calculations -------- */
-                adaptor.Set_Solution_Block(Soln_Blks[nBlk]);
-                adaptor.Set_Initial_Condition(Solution_Data_ptr->Input);
-                Calculate_Commutation_Error_Block(Soln_Blks[nBlk].Grid);
-                
-                /* ----- output commutation error ----- */
-                 Output_Commutation(Soln_Blks[nBlk].Grid,
-                                    Filtered,
-                                    Divergence,
-                                    Filtered_Divergence,
-                                    Divergenced_Filtered,
-                                    Commutation_Error,
-                                    Truncation_Error,
-                                    Data_ptr->Local_Adaptive_Block_List.Block[nBlk].info.gblknum,
-                                    first_flag,
-                                    out_file);
-                 first_flag = false;
-                 
-                
-                /* ----- deallocations ----- */
-                deallocate_Filtered(Soln_Blks[nBlk].Grid);
-                deallocate_Divergence(Soln_Blks[nBlk].Grid);
-                deallocate_Filtered_Divergence(Soln_Blks[nBlk].Grid);
-                deallocate_Divergenced_Filtered(Soln_Blks[nBlk].Grid);
-                deallocate_Commutation_Error(Soln_Blks[nBlk].Grid);
-                deallocate_Truncation_Error(Soln_Blks[nBlk].Grid);
-
-            }         
-        } 
+    int gblknum = 0;
+    Output_Commutation(SolnBlk_ptr->Grid,
+                       Filtered,
+                       Divergence,
+                       Filtered_Divergence,
+                       Divergenced_Filtered,
+                       Commutation_Error,
+                       Truncation_Error,
+                       gblknum,
+                       first_flag,
+                       out_file);
+    
+    /* ----- deallocations ----- */
+    deallocate_Filtered(SolnBlk_ptr->Grid);
+    deallocate_Divergence(SolnBlk_ptr->Grid);
+    deallocate_Filtered_Divergence(SolnBlk_ptr->Grid);
+    deallocate_Divergenced_Filtered(SolnBlk_ptr->Grid);
+    deallocate_Commutation_Error(SolnBlk_ptr->Grid);
+    deallocate_Truncation_Error(SolnBlk_ptr->Grid);
         
     out_file.close();
     return (0);
@@ -596,24 +570,17 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     int number_of_cells_second = 0;
     int number_of_cells_third = 0;
     int number_of_processed_cells = 0;
-    /* For every local solution block */
     
-        Hexa_Block<Soln_pState,Soln_cState> *Soln_Blks = Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks;
-        for (int nBlk = 0; nBlk < Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks; nBlk++ ) {
-            if (Solution_Data_ptr->Local_Solution_Blocks.Block_Used[nBlk] == HEXA_BLOCK_USED) {
-                number_of_cells_first += (Soln_Blks[nBlk].ICu - Soln_Blks[nBlk].ICl + 1)
-                                       * (Soln_Blks[nBlk].JCu - Soln_Blks[nBlk].JCl + 1)
-                                       * (Soln_Blks[nBlk].KCu - Soln_Blks[nBlk].KCl + 1);
-                number_of_cells_second += ((Soln_Blks[nBlk].ICu-number_of_rings) - (Soln_Blks[nBlk].ICl+number_of_rings) + 1)
-                                        * ((Soln_Blks[nBlk].JCu-number_of_rings) - (Soln_Blks[nBlk].JCl+number_of_rings) + 1)
-                                        * ((Soln_Blks[nBlk].KCu-number_of_rings) - (Soln_Blks[nBlk].KCl+number_of_rings) + 1);
-                number_of_cells_third += ((Soln_Blks[nBlk].ICu-number_of_rings_increased) - (Soln_Blks[nBlk].ICl+number_of_rings_increased) + 1)
-                                       * ((Soln_Blks[nBlk].JCu-number_of_rings_increased) - (Soln_Blks[nBlk].JCl+number_of_rings_increased) + 1)
-                                       * ((Soln_Blks[nBlk].KCu-number_of_rings_increased) - (Soln_Blks[nBlk].KCl+number_of_rings_increased) + 1);
+    number_of_cells_first += (SolnBlk_ptr->ICu - SolnBlk_ptr->ICl + 1)
+                           * (SolnBlk_ptr->JCu - SolnBlk_ptr->JCl + 1)
+                           * (SolnBlk_ptr->KCu - SolnBlk_ptr->KCl + 1);
+    number_of_cells_second += ((SolnBlk_ptr->ICu-number_of_rings) - (SolnBlk_ptr->ICl+number_of_rings) + 1)
+                            * ((SolnBlk_ptr->JCu-number_of_rings) - (SolnBlk_ptr->JCl+number_of_rings) + 1)
+                            * ((SolnBlk_ptr->KCu-number_of_rings) - (SolnBlk_ptr->KCl+number_of_rings) + 1);
+    number_of_cells_third += ((SolnBlk_ptr->ICu-number_of_rings_increased) - (SolnBlk_ptr->ICl+number_of_rings_increased) + 1)
+                           * ((SolnBlk_ptr->JCu-number_of_rings_increased) - (SolnBlk_ptr->JCl+number_of_rings_increased) + 1)
+                           * ((SolnBlk_ptr->KCu-number_of_rings_increased) - (SolnBlk_ptr->KCl+number_of_rings_increased) + 1);
                 
-            }
-        }
-    
     int imin,imax,jmin,jmax,kmin,kmax;
     
     /* For every cell */
@@ -663,7 +630,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
                 Divergence[i][j][k] = finite_differencer.Finite_Difference(Grid_Blk,Grid_Blk.Cell[i][j][k], DFDX);
                 number_of_processed_cells++;
                 ShowProgress(" -- Divergence ",number_of_processed_cells,number_of_cells_first,progress_mode);
-                Truncation_Error[i][j][k] = (RowVector(adaptor.Exact_Derivative(Solution_Data_ptr->Input,
+                Truncation_Error[i][j][k] = (RowVector(adaptor.Exact_Derivative(*Input_ptr,
                                                                                 Grid_Blk.Cell[i][j][k].Xc.x,
                                                                                 Grid_Blk.Cell[i][j][k].Xc.y,
                                                                                 Grid_Blk.Cell[i][j][k].Xc.z)
@@ -861,14 +828,17 @@ void Explicit_Filters<Soln_pState,Soln_cState>::reset(void) {
         cout << "Explicit_Filter not initialized, can not reset" << endl;
         return;
     }
+    
 
-        int NBlk;
-        NBlk = Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks;
-        for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
-            if (Solution_Data_ptr->Local_Solution_Blocks.Block_Used[nBlk] == HEXA_BLOCK_USED){
-                filter_ptr->Reset_Filter_Weights(Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid); 
+    if (Filter_Weights_Allocated) {
+        for (int i=0; i<SolnBlk_ptr->NCi; i++) {
+            for (int j=0; j<SolnBlk_ptr->NCj; j++) {            
+                for (int k=0; k<SolnBlk_ptr->NCk; k++) {
+                    Filter_Weights_Assigned[i][j][k] = false;
+                }
             }
         }
+    }
 }
 
 template<typename Soln_pState, typename Soln_cState>
@@ -877,16 +847,9 @@ void Explicit_Filters<Soln_pState,Soln_cState>::test(void) {
         cout << "Explicit_Filter not initialized, can not test" << endl;
         return;
     }
-    
-        int NBlk;
-        NBlk = Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks;
-        for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
-            if (Solution_Data_ptr->Local_Solution_Blocks.Block_Used[nBlk] == HEXA_BLOCK_USED){
-                filter_ptr->filter_tests(Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid,
-                                         Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid.Cell[12][12][12]); 
-            }
-        }
-    
+    filter_ptr->filter_tests(SolnBlk_ptr->Grid,
+                             
+                            SolnBlk_ptr->Grid.Cell[12][12][12]);     
 }
 
 
@@ -919,13 +882,19 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Write_to_file(void){
     
     out_file << filter_ptr->filter_type() << "\n";                    
     
-        int NBlk;
-        NBlk = Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks;
-        for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
-            if (Solution_Data_ptr->Local_Solution_Blocks.Block_Used[nBlk] == HEXA_BLOCK_USED){
-                filter_ptr->Write_to_file(Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid,out_file);
-            }         
-        } 
+    for (int i=0; i<SolnBlk_ptr->NCi; i++) {
+        for (int j=0; j<SolnBlk_ptr->NCj; j++) {                
+            for (int k=0; k<SolnBlk_ptr->NCk; k++) {
+                out_file << Filter_Weights_Assigned[i][j][k] << " ";
+                if (Filter_Weights_Assigned[i][j][k]) {
+                    Filter_Weights[i][j][k].write(out_file);
+                } else {
+                    out_file << "\n";
+                }
+            }
+        }
+    }
+    out_file << "\n"; // extra line to separate Grid_Blks
     
     out_file.close();
     return (0);
@@ -964,13 +933,25 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Read_from_file(void) {
     properties.Set_Operating_Property("filter_type",filter_type);
     Create_filter();
     
-        int NBlk;
-        NBlk = Solution_Data_ptr->Local_Solution_Blocks.Number_of_Soln_Blks;
-        for (int nBlk = 0; nBlk < NBlk; ++nBlk ) {
-            if (Solution_Data_ptr->Local_Solution_Blocks.Block_Used[nBlk] == HEXA_BLOCK_USED){
-                    filter_ptr->Read_from_file(Solution_Data_ptr->Local_Solution_Blocks.Soln_Blks[nBlk].Grid,in_file);
-            }         
-        } 
+    bool Store_Filter_Weights = !properties.Get_Property_int("memory_efficient");
+
+    if (Store_Filter_Weights) {
+        Allocate_Filter_Weights();
+        for (int i=0; i<SolnBlk_ptr->NCi; i++) {
+            for (int j=0; j<SolnBlk_ptr->NCj; j++) {                
+                for (int k=0; k<SolnBlk_ptr->NCk; k++) {
+                    in_file.setf(ios::skipws);
+                    in_file >> Filter_Weights_Assigned[i][j][k];
+                    in_file.unsetf(ios::skipws);
+                    if (Filter_Weights_Assigned[i][j][k]) {
+                        Filter_Weights[i][j][k].read(in_file);
+                    }
+                }
+            }
+        }
+        Filter_Weights_Allocated = true;
+        
+    }
     
     in_file.unsetf(ios::skipws);
     in_file.close();
@@ -1062,7 +1043,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Output_Commutation(Grid3D_Hexa_B
                 Out_File    << " " << adaptor.FilterVariable(i,j,k)(nVar)
                             << " " << filtered[i][j][k](nVar)
                             << " " << divergence[i][j][k](nVar)
-                            << " " << adaptor.Exact_Derivative(Solution_Data_ptr->Input,
+                            << " " << adaptor.Exact_Derivative(*Input_ptr,
                                                                Grid_Blk.Cell[i][j][k].Xc.x,
                                                                Grid_Blk.Cell[i][j][k].Xc.y,
                                                                Grid_Blk.Cell[i][j][k].Xc.z)(nVar)
@@ -1079,7 +1060,79 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Output_Commutation(Grid3D_Hexa_B
     
 }
 
+template<typename Soln_pState, typename Soln_cState>
+void Explicit_Filters<Soln_pState,Soln_cState>::Allocate_Filter_Weights(void) {
+    Deallocate_Filter_Weights();
+    Filter_Weights = new RowVector **[SolnBlk_ptr->NCi];
+    Filter_Weights_Assigned = new bool **[SolnBlk_ptr->NCi];
+    for (int i=0; i<SolnBlk_ptr->NCi; i++) {
+        Filter_Weights[i] = new RowVector *[SolnBlk_ptr->NCj];
+        Filter_Weights_Assigned[i] = new bool *[SolnBlk_ptr->NCj];
+        for (int j=0; j<SolnBlk_ptr->NCj; j++) {
+            Filter_Weights[i][j] = new RowVector [SolnBlk_ptr->NCk];
+            Filter_Weights_Assigned[i][j] = new bool [SolnBlk_ptr->NCk];
+            
+            for (int k=0; k<SolnBlk_ptr->NCk; k++) {
+                Filter_Weights_Assigned[i][j][k] = false;
+            }
+        }
+    }
+    Filter_Weights_Allocated = true;
+}
 
+template<typename Soln_pState, typename Soln_cState>
+void Explicit_Filters<Soln_pState,Soln_cState>::Deallocate_Filter_Weights(void) {
+    if (Filter_Weights_Allocated) {
+        for (int i=0; i<SolnBlk_ptr->NCi; i++) {
+            for (int j=0; j<SolnBlk_ptr->NCj; j++) {
+                delete[] Filter_Weights[i][j];          Filter_Weights[i][j] = NULL;
+                delete[] Filter_Weights_Assigned[i][j]; Filter_Weights_Assigned[i][j] = NULL;
+            }
+            delete[] Filter_Weights[i];             Filter_Weights[i] = NULL;
+            delete[] Filter_Weights_Assigned[i];    Filter_Weights_Assigned[i] = NULL;
+        }
+        delete[] Filter_Weights;            Filter_Weights = NULL;
+        delete[] Filter_Weights_Assigned;   Filter_Weights_Assigned = NULL;
+    }
+    Filter_Weights_Allocated = false;
+}
+
+template<typename Soln_pState, typename Soln_cState>
+void Explicit_Filters<Soln_pState,Soln_cState>::Allocate_Derivative_Reconstruction_Weights(void) {
+    Deallocate_Derivative_Reconstruction_Weights();
+    Derivative_Reconstruction_Weights = new DenseMatrix **[SolnBlk_ptr->NCi];
+    Derivative_Reconstruction_Weights_Assigned = new bool **[SolnBlk_ptr->NCi];
+    for (int i=0; i<SolnBlk_ptr->NCi; i++) {
+        Derivative_Reconstruction_Weights[i] = new DenseMatrix *[SolnBlk_ptr->NCj];
+        Derivative_Reconstruction_Weights_Assigned[i] = new bool *[SolnBlk_ptr->NCj];
+        for (int j=0; j<SolnBlk_ptr->NCj; j++) {
+            Derivative_Reconstruction_Weights[i][j] = new DenseMatrix [SolnBlk_ptr->NCk];
+            Derivative_Reconstruction_Weights_Assigned[i][j] = new bool [SolnBlk_ptr->NCk];
+            
+            for (int k=0; k<SolnBlk_ptr->NCk; k++) {
+                Derivative_Reconstruction_Weights_Assigned[i][j][k] = false;
+            }
+        }
+    }
+    Derivative_Reconstruction_Weights_Allocated = true;
+}
+
+template<typename Soln_pState, typename Soln_cState>
+void Explicit_Filters<Soln_pState,Soln_cState>::Deallocate_Derivative_Reconstruction_Weights(void) {
+    if (Derivative_Reconstruction_Weights_Allocated) {
+        for (int i=0; i<SolnBlk_ptr->NCi; i++) {
+            for (int j=0; j<SolnBlk_ptr->NCj; j++) {
+                delete[] Derivative_Reconstruction_Weights[i][j];          Derivative_Reconstruction_Weights[i][j] = NULL;
+                delete[] Derivative_Reconstruction_Weights_Assigned[i][j]; Derivative_Reconstruction_Weights_Assigned[i][j] = NULL;
+            }
+            delete[] Derivative_Reconstruction_Weights[i];             Derivative_Reconstruction_Weights[i] = NULL;
+            delete[] Derivative_Reconstruction_Weights_Assigned[i];    Derivative_Reconstruction_Weights_Assigned[i] = NULL;
+        }
+        delete[] Derivative_Reconstruction_Weights;            Derivative_Reconstruction_Weights = NULL;
+        delete[] Derivative_Reconstruction_Weights_Assigned;   Derivative_Reconstruction_Weights_Assigned = NULL;
+    }
+    Derivative_Reconstruction_Weights_Allocated = false;
+}
 
 
 

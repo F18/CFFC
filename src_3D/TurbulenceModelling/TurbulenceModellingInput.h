@@ -27,6 +27,10 @@ using namespace std;
 #include "../MPI/MPI.h"
 #endif // _MPI_INCLUDED
 
+#ifndef _EXPLICIT_FILTER_CONSTANTS_INCLUDED
+#include "../ExplicitFilters/Explicit_Filter_Constants.h"
+#endif
+
 #define TURBULENCEMODEL_INPUT_PARAMETER_LENGTH 256
 
 /*!
@@ -106,9 +110,9 @@ class Turbulence_Modelling_Input_Parameters{
       i_SFS_model = SFS_MODEL_SMAGORINSKY;
       smagorinsky_coefficient = 0.18;
       strcpy(filter_type, "Implicit");
-      i_filter_type = FILTER_TYPE_IMPLICIT;
+      i_filter_type = Explicit_Filter_Constants::IMPLICIT_FILTER;
       strcpy(filter_type_secondary, "Implicit");
-      i_filter_type_secondary = FILTER_TYPE_IMPLICIT;
+      i_filter_type_secondary = Explicit_Filter_Constants::IMPLICIT_FILTER;
       FGR = TWO;
       FGR_secondary = TWO;
       Filter_Width = ZERO;
@@ -135,8 +139,8 @@ class Turbulence_Modelling_Input_Parameters{
       filter_solution_before_execution = OFF;
       uniform_grid = OFF;
       use_fixed_filter_width = OFF;
-      Filter_Method = FILTER_VARIABLES;
-      Filter_Strength = 0.2;
+      Filter_Method = Explicit_Filter_Constants::FILTER_RESIDUALS;
+      Filter_Strength = 1.0;
 
 
       // Reacting LES parameters

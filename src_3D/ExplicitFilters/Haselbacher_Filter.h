@@ -103,11 +103,11 @@ public:
     //}
 
     void Get_Neighbours(Cell3D &theCell) {
-        theNeighbours.GetNeighbours(theCell, number_of_rings, FILTER_TYPE_HASELBACHER);
+        theNeighbours.GetNeighbours(theCell, number_of_rings, Explicit_Filter_Constants::HASELBACHER_FILTER);
         theNeighbours.append_theCell(theCell);
     }
     void Get_Neighbours_1D(Cell3D &theCell, int direction) {
-        theNeighbours.GetNeighbours_1D(theCell, number_of_rings, FILTER_TYPE_HASELBACHER, direction);
+        theNeighbours.GetNeighbours_1D(theCell, number_of_rings, Explicit_Filter_Constants::HASELBACHER_FILTER, direction);
         theNeighbours.append_theCell(theCell);
     }
     
@@ -171,7 +171,7 @@ private:
     
     void filter_tests(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
 
-    int filter_type(void) { return FILTER_TYPE_HASELBACHER; }
+    int filter_type(void) { return Explicit_Filter_Constants::HASELBACHER_FILTER; }
     string filter_name(void) { return "Haselbacher"; }
     
     
@@ -1006,7 +1006,7 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
         int number_of_rings = i+1;
         rings[i] = number_of_rings;
         
-        theNeighbours.GetNeighbours(theCell,number_of_rings,FILTER_TYPE_HASELBACHER);
+        theNeighbours.GetNeighbours(theCell,number_of_rings,Explicit_Filter_Constants::HASELBACHER_FILTER);
         
         Vector3D Delta = theNeighbours.Delta;
         Vector3D kmax(PI/Delta.x,PI/Delta.y,PI/Delta.z);
@@ -1171,7 +1171,7 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int number_of_
     }
     
     Neighbours theNeighbours(Grid_Blk);
-    theNeighbours.GetNeighbours(theCell,number_of_rings,FILTER_TYPE_HASELBACHER);
+    theNeighbours.GetNeighbours(theCell,number_of_rings,Explicit_Filter_Constants::HASELBACHER_FILTER);
     
     Vector3D Delta = theNeighbours.Delta;
     Vector3D kmax(PI/Delta.x,PI/Delta.y,PI/Delta.z);
@@ -1313,7 +1313,7 @@ Output_Filter_types(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int number_of_
     double *cost = new double [N_weight_factor];
     
     Neighbours theNeighbours(Grid_Blk);
-    theNeighbours.GetNeighbours(theCell, number_of_rings, FILTER_TYPE_HASELBACHER);
+    theNeighbours.GetNeighbours(theCell, number_of_rings, Explicit_Filter_Constants::HASELBACHER_FILTER);
     
     Vector3D Delta = theNeighbours.Delta;
     Vector3D kmax(PI/Delta.x,PI/Delta.y,PI/Delta.z);

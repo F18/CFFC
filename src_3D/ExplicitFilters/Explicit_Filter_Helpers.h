@@ -145,7 +145,7 @@ public:
         Set_New_Property("output_file_name",std::string(IPs.Output_File_Name_Prefix));
         Set_New_Property("finite_differencing_order",IPs.Turbulence_IP.finite_differencing_order);
         Set_New_Property("restarted",false);
-        if (IPs.Turbulence_IP.i_filter_type!=FILTER_TYPE_RESTART) {
+        if (IPs.Turbulence_IP.i_filter_type!=Explicit_Filter_Constants::RESTART_FILTER) {
             Set_New_Property("progress_mode",IPs.Progress_Mode);
         } else {
             Set_New_Property("progress_mode",PROGRESS_MODE_SILENT);

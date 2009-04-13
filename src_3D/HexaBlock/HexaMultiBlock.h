@@ -180,7 +180,7 @@ class Hexa_Multi_Block {
                                            const int I_Stage);
     
     
-    int Explicitly_Filter_Solution(Explicit_Filters<typename HEXA_BLOCK::Soln_pState, typename HEXA_BLOCK::Soln_cState> &Explicit_Filter);
+    int Explicitly_Filter_Solution();
     
     
 };
@@ -1406,17 +1406,18 @@ Output_Nodes_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::
-Explicitly_Filter_Solution(Explicit_Filters<typename HEXA_BLOCK::Soln_pState,typename HEXA_BLOCK::Soln_cState> &Explicit_Filter) {
+int Hexa_Multi_Block<HEXA_BLOCK>::Explicitly_Filter_Solution() {
     
     int error_flag(0);
     
     Soln_cState *** (Hexa_Block<Soln_pState,Soln_cState>::*U_ptr) = &Hexa_Block<Soln_pState,Soln_cState>::U;
     
-    Explicit_Filter.filter(U_ptr);
     for (int nBlk = 0; nBlk < Number_of_Soln_Blks; ++nBlk) {
         cout.flush();
         if (Block_Used[nBlk]) {
+            
+            Soln_Blks[nBlk].Explicit_Filter.filter(U_ptr);
+            
             for (int k  = Soln_Blks[nBlk].KCl-Soln_Blks[nBlk].Nghost ; k <= Soln_Blks[nBlk].KCu+Soln_Blks[nBlk].Nghost ; ++k ) {
                 for ( int j  = Soln_Blks[nBlk].JCl-Soln_Blks[nBlk].Nghost ; j <= Soln_Blks[nBlk].JCu+Soln_Blks[nBlk].Nghost ; ++j ) {
                     for ( int i = Soln_Blks[nBlk].ICl-Soln_Blks[nBlk].Nghost ; i <= Soln_Blks[nBlk].ICu+Soln_Blks[nBlk].Nghost ; ++i ) {

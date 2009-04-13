@@ -40,6 +40,8 @@
 
 class FlowField_2D;
 
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> class Explicit_Filters;
+
 /* Define the solution block in-use indicators. */
 
 #define	HEXA_BLOCK_USED                            1
@@ -99,12 +101,18 @@ class Hexa_Block {
    
    // Only allocate for turbulent flow (depending on flow type indicator)
    Turbulent3DWallData ***WallData;
+
+   Explicit_Filters<SOLN_pSTATE,SOLN_cSTATE> Explicit_Filter;
+   Explicit_Filters<SOLN_pSTATE,SOLN_cSTATE> Explicit_Secondary_Filter;
 		      
    int Allocated; // Indicates whether or not the solution block has been allocated.
-
+    
    /* Constructors. */
 
-   Hexa_Block(void) {
+   Hexa_Block(void) :
+    Explicit_Filter(this),
+    Explicit_Secondary_Filter(this)
+    {
       NCi=0; ICl=0; ICu=0; NCj=0; JCl=0; JCu=0;
       NCk=0; KCl=0; KCu=0; Nghost=0; 
       Flow_Type = FLOWTYPE_INVISCID; Freeze_Limiter = OFF;
@@ -4761,5 +4769,10 @@ SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdxdz = NULL;
 
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdydz = NULL;
+
+
+#ifndef _EXPLICIT_FILTER_INCLUDED
+#include "../ExplicitFilters/Explicit_Filter.h"
+#endif // _EXPLICIT_FILTER_INCLUDED
 
 #endif // _HEXA_BLOCK_INCLUDED
