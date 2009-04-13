@@ -194,7 +194,7 @@ class Hexa_Block {
    int NumVar(void);
 
   /* Field access to the primitive cell solution */  
-  const Soln_pState& CellSolution(const int &ii, const int &jj, const &kk) const { return W[ii][jj][kk]; }
+  const Soln_pState& CellSolution(const int &ii, const int &jj, const int &kk) const { return W[ii][jj][kk]; }
 
    /* Other important member functions. */
 

@@ -208,7 +208,7 @@ public:
 			      const int & IndexI, const int & IndexJ) {return CENO_LHS[ii][jj](IndexI,IndexJ);}
   //! Get the entry (IndexI,IndexJ) in the pseudo-inverse matrix for the reconstruction of cell (ii,jj)
   const double & Cell_LHS_Inv_Value(const int & ii, const int & jj,
-				    const int & IndexI, const int & IndexJ) const {return CENO_LHS(IndexI,IndexJ);}
+				    const int & IndexI, const int & IndexJ) const {return CENO_LHS[ii][jj](IndexI,IndexJ);}
   //! Return true if the pseudo-inverse has been already computed, otherwise false.
   bool IsPseudoInversePreComputed(void) const { return _calculated_psinv; }
   //! Require update of the pseudo-inverse

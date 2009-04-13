@@ -205,11 +205,15 @@ bool operator!= (const TaylorDerivativesContainer<T>& left,
 
 template< class T>
 const TaylorDerivativesContainer<T> operator+ (const TaylorDerivativesContainer<T>& left,
-						    const TaylorDerivativesContainer<T>& right);
+					       const TaylorDerivativesContainer<T>& right);
 
 template< class T>
 const TaylorDerivativesContainer<T> operator- (const TaylorDerivativesContainer<T>& left,
-						    const TaylorDerivativesContainer<T>& right);
+					       const TaylorDerivativesContainer<T>& right);
+
+//template< class T>
+//const TaylorDerivativesContainer<T> operator^ (const TaylorDerivativesContainer<T>& left,
+//					       const TaylorDerivativesContainer<T>& right);
 
 template< class T>
 bool operator< (const TaylorDerivativesContainer<T>& left,
@@ -708,6 +712,20 @@ const TaylorDerivativesContainer<T> operator-(const TaylorDerivativesContainer<T
   return Temp;
 }
 
+//// operator ^
+//template<class T>inline 
+//const TaylorDerivativesContainer<T> operator ^(const TaylorDerivativesContainer<T> &left, 
+//					       const TaylorDerivativesContainer<T> &right) {
+//
+//  TaylorDerivativesContainer<T> Temp(left.RecOrder());
+//  
+//  for (int i=0; i<=right.LastElem(); ++i){
+//    Temp(i).D() = left(i).D() * right(i).D();
+//  }
+//  
+//  return Temp;
+//}
+
 // operator ==
 template<class T> inline
 bool operator==(const TaylorDerivativesContainer<T>& left,
@@ -730,87 +748,84 @@ inline bool operator!=(const TaylorDerivativesContainer<T>& left,
   return !(left == right);
 }
 
-
 // Specialization for "class T == double"
 
-//template<> inline
-//const double & DerivativeObj<double>::D(const int ) const {
-//  return ValueD;
-//}
-//
-//template<> inline
-//double & DerivativeObj<double>::D(const int ) {
-//  return ValueD;
-//}
-//
-//template<> inline
-//const double & TaylorDerivativesContainer<double>::Limiter(const int ) const {
-//  return phi;
-//}
-//
-//template<> inline
-//double & TaylorDerivativesContainer<double>::Limiter(const int ) {
-//  return phi;
-//}
-//
-//template<> inline
-//const double & TaylorDerivativesContainer<double>::Frozen_Limiter(const int ) const {
-//  return phi_copy;
-//}
-//
-//template<> inline
-//double & TaylorDerivativesContainer<double>::Frozen_Limiter(const int ) {
-//  return phi_copy;
-//}
-//
-//template<> inline
-//void TaylorDerivativesContainer<double>::ResetLimiter(void){
-//  phi = 1.0;
-//}
-//
-//template<> inline
-//void TaylorDerivativesContainer<double>::ResetFrozenLimiter(void){
-//  phi_copy = 1.0;
-//}
-//
-//// ComputeSolutionFor :-> Compute the solution of the Taylor series expansion for a particular distance (DeltaX,DeltaY,DeltaZ)
-//template<> inline
-//double TaylorDerivativesContainer<double>::ComputeSolutionFor(const double DeltaX, const double DeltaY, const double DeltaZ){
-//
-//  // initialize the solution state
-//  double Solution(0.0);
-//
-//  int p1(0),p2(0),p3(0),Position(0);
-//
-//  double DeltaXtoPower(1.0), DeltaYtoPower, DeltaZtoPower;
-//
-// for (p1=0,Position=0; p1<=OrderOfRec; ++p1){
-//    /* Reinitialize DeltaYtoPower */
-//    DeltaYtoPower = 1.0;
-//
-//    for (p2=0; p2<=OrderOfRec-p1; ++p2){
-//      /* Reinitialize DeltaZtoPower */
-//      DeltaZtoPower = 1.0;
-//      
-//      for (p3=0; p3<=OrderOfRec-p1-p2; ++p3, ++Position){
-//
-//	/* Update solution */
-//	 Solution += DeltaXtoPower*DeltaYtoPower*DeltaZtoPower*DContainer[Position].D();
-//	/* Update DeltaZtoPower */
-//	DeltaZtoPower *= DeltaZ;
-//      }
-//
-//      /* Update DeltaYtoPower */
-//      DeltaYtoPower *= DeltaY;
-//    }
-//
-//    /* Update DeltaXtoPower */
-//    DeltaXtoPower *= DeltaX;
-//  }
-//
-// return (phi*Solution) + ((1.0-phi)*DContainer[0].D());
-//}
+template<> inline
+const double & DerivativeObj<double>::D(const int ) const {
+  return ValueD;
+}
 
+template<> inline
+double & DerivativeObj<double>::D(const int ) {
+  return ValueD;
+}
 
+template<> inline
+const double & TaylorDerivativesContainer<double>::Limiter(const int ) const {
+  return phi;
+}
+
+template<> inline
+double & TaylorDerivativesContainer<double>::Limiter(const int ) {
+  return phi;
+}
+
+template<> inline
+const double & TaylorDerivativesContainer<double>::Frozen_Limiter(const int ) const {
+  return phi_copy;
+}
+
+template<> inline
+double & TaylorDerivativesContainer<double>::Frozen_Limiter(const int ) {
+  return phi_copy;
+}
+
+template<> inline
+void TaylorDerivativesContainer<double>::ResetLimiter(void){
+  phi = 1.0;
+}
+
+template<> inline
+void TaylorDerivativesContainer<double>::ResetFrozenLimiter(void){
+  phi_copy = 1.0;
+}
+
+// ComputeSolutionFor :-> Compute the solution of the Taylor series expansion for a particular distance (DeltaX,DeltaY,DeltaZ)
+template<> inline
+double TaylorDerivativesContainer<double>::ComputeSolutionFor(const double DeltaX, const double DeltaY, const double DeltaZ){
+
+  // initialize the solution state
+  double Solution(0.0);
+
+  int p1(0),p2(0),p3(0),Position(0);
+
+  double DeltaXtoPower(1.0), DeltaYtoPower, DeltaZtoPower;
+
+ for (p1=0,Position=0; p1<=OrderOfRec; ++p1){
+    /* Reinitialize DeltaYtoPower */
+    DeltaYtoPower = 1.0;
+
+    for (p2=0; p2<=OrderOfRec-p1; ++p2){
+      /* Reinitialize DeltaZtoPower */
+      DeltaZtoPower = 1.0;
+      
+      for (p3=0; p3<=OrderOfRec-p1-p2; ++p3, ++Position){
+
+	/* Update solution */
+	 Solution += DeltaXtoPower*DeltaYtoPower*DeltaZtoPower*DContainer[Position].D();
+	/* Update DeltaZtoPower */
+	DeltaZtoPower *= DeltaZ;
+      }
+
+      /* Update DeltaYtoPower */
+      DeltaYtoPower *= DeltaY;
+    }
+
+    /* Update DeltaXtoPower */
+    DeltaXtoPower *= DeltaX;
+  }
+
+ return (phi*Solution) + ((1.0-phi)*DContainer[0].D());
+}
 
 #endif

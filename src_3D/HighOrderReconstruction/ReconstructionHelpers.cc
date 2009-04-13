@@ -41,7 +41,7 @@ double GeomCoeffCartesian(int p1, int p2, int p3,
     val2 += pow(coef_y1,p2+1-l)*pow(coef_y2,l-1);
   }
   for (int n=1; n<=p3+1; n++){
-    val2 += pow(coef_z1,p3+n-l)*pow(coef_z2,n-1);
+    val3 += pow(coef_z1,p3+1-n)*pow(coef_z2,n-1);
   }
 
   return val1*val2*val3/((p1+1)*(p2+1)*(p3+1));

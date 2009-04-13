@@ -67,7 +67,7 @@ double GeomCoeffCartesian(int p1, int p2, int p3, double deltaX, double deltaY, 
 /*! Set the stencil for the 3D kExact reconstruction
 ******************************************************************************************/
 void MakeReconstructionStencil(const int & rings, const int & iCell, const int & jCell, const int & kCell,
-			       vector<int> & i_index, vector<int> & j_index, vector<int> & k_index));
+			       vector<int> & i_index, vector<int> & j_index, vector<int> & k_index);
 
 /*! Set the stencil for the 3D kExact reconstruction
 ******************************************************************************************/

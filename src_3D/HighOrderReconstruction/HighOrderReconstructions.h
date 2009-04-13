@@ -1,6 +1,6 @@
-/*!\file HighOrder2D_Reconstructions.h
-  \brief Header file implementing the member functions of HighOrder2D class which reconstruct the solution.
-  \note To use the functions defined in this file include 'HighOrder2D.h'!
+/*!\file HighOrderReconstructions.h
+  \brief Header file implementing the member functions of the HighOrder class which reconstructs the solution.
+  \note To use the functions defined in this file include 'HighOrder.h'!
 */
 
 #ifndef _HIGHORDER_RECONSTRUCTIONS_INCLUDED
@@ -251,6 +251,7 @@ void HighOrder<SOLN_STATE>::EnforceMonotonicityToNonSmoothInterpolants(Soln_Bloc
 									 const int &Limiter,
 									 const Soln_State &
 									 (Soln_Block_Type::*ReconstructedSoln)(const int &,
+													       const int &,
 													       const int &) const){
 //  // --> RR: comment out contents (empty function) of ENFORCE MONOTONICITY (REDUCTION TO PEICEWISE CONSTANT) !!
 // ------------- comment back in when you want to to drop order ---------------//
@@ -650,7 +651,7 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
     int krank;                        //< the final rank of matrix A is returned here
     int IndexSumZ, IndexSumY, IndexSumX, P1, P2, P3;
     double CombP1X, CombP2Y, CombP3Z;
-    double PowDistancsZC,PowDistanceYC, PowDistanceXC;
+    double PowDistanceZC,PowDistanceYC, PowDistanceXC;
     double MaxWeight(0.0);
     double IntSum1(0.0),IntSum2(0.0);
 
@@ -670,7 +671,7 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
     // Step1. Compute the normalized geometric weights
     for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
 
-      /* Compute the X and Y component of the distance between
+      /* Compute the X, Y, and Z component of the distance between
 	 the cell centers of the neighbour and the reconstructed cell */
       DeltaCellCenters[cell] = CellCenter(i_index[cell],j_index[cell],k_index[cell]) - CellCenter(iCell,jCell,kCell);
     
@@ -689,7 +690,7 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 
       // *** SET the matrix A of the linear system (LHS) ***
       /* compute for each derivative the corresponding entry in the matrix of the linear system */
-      for (i=1; i<=CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+      for (i=1; i<=CellTaylorDeriv(iCell,jCell,kCell).LastElem(); ++i){
 	// build the row of the matrix
 	P1 = CellTaylorDeriv(iCell,jCell,kCell,i).P1();  // identify P1
 	P2 = CellTaylorDeriv(iCell,jCell,kCell,i).P2();  // identify P2
@@ -710,10 +711,10 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 	  for (IndexSumY = 0; IndexSumY<=P2; ++IndexSumY){
 	    CombP1X = 1.0;       // the binomial coefficient "nC k" for k=0 is 1
 	    PowDistanceXC = 1.0; // initialize PowDistanceXC
-	    IntSum = 0.0;	     // reset internal sumation variable
+	    IntSum1 = 0.0;	     // reset internal sumation variable
 
 	    for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
-	      IntSum += ( CombP1X*PowDistanceXC*
+	      IntSum1 += ( CombP1X*PowDistanceXC*
 			  Geom->CellGeomCoeffValue(i_index[cell],j_index[cell],k_index[cell],P1-IndexSumX,P2-IndexSumY,P3-IndexSumZ) );
 	      
 	      // update the binomial coefficients
@@ -737,7 +738,7 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 
 	// apply geometric weighting
 	A(cell-1,i-1) *= GeometricWeights[cell];
-      }
+      } //endfor (i)
 
       // *** SET the matrix All_Delta_U of the linear system (RHS) ***
       for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
@@ -780,41 +781,42 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 	} // endfor (parameter)
       }	// endfor (i)
 
-    } else { 
-
-      ColumnVector Rnorm(NumberOfVariables());       //< store the residual norm of the LS problem for each parameter.
-      DenseMatrix Xm(NumberOfTaylorDerivatives()-1, NumberOfVariables()); //< store the solution to the least-square problem
-
-      /* Solve the overdetermined linear system of equations using the internal least-squares procedure */
-      /**************************************************************************************************/
-      Solve_LS_Householder(A,All_Delta_U,Xm,krank,Rnorm);
-
-      // Update the high-order derivatives
-      //***********************************
-      for (i = 1; i <= CellTaylorDeriv(iCell,jCell,kCell).LastElem(); ++i){
-
-	// Identify 'x','y', and 'z' powers of the i-th derivative
-	P1 = CellTaylorDeriv(iCell,jCell,kCell,i).P1();  // identify P1
-	P2 = CellTaylorDeriv(iCell,jCell,kCell,i).P2();  // identify P2
-	P3 = CellTaylorDeriv(iCell,jCell,kCell,i).P3();  // identify P3
-
-	for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
-	  // Set the i-th derivative for the current parameter
-	  CellTaylorDeriv(iCell,jCell,kCell,i).D(parameter) = Xm(i-1,parameter-1);
-    
-	  // This equation ensures the mean conservation of the current parameter inside the reconstructed cell.
-	  CellTaylorDeriv(iCell,jCell,kCell0).D(parameter) -= Geom->CellGeomCoeffValue(iCell,jCell,kCell,P1,P2,P3) * Xm(i-1,parameter-1);
-
-	} // endfor (parameter)
-      } // endfor (i)
-
-    } // endif (CENO_Execution_Mode::USE_LAPACK_LEAST_SQUARES)
+    }
+    // --> RR: Comment out Solve_LS_Householder call in ComputeUnconstrainedUnlimitedSolutionReconstruction
+//else { 
+//
+//  ColumnVector Rnorm(NumberOfVariables());       //< store the residual norm of the LS problem for each parameter.
+//  DenseMatrix Xm(NumberOfTaylorDerivatives()-1, NumberOfVariables()); //< store the solution to the least-square problem
+//
+//  /* Solve the overdetermined linear system of equations using the internal least-squares procedure */
+//  /**************************************************************************************************/
+//  Solve_LS_Householder(A,All_Delta_U,Xm,krank,Rnorm);
+//
+//  // Update the high-order derivatives
+//  //***********************************
+//  for (i = 1; i <= CellTaylorDeriv(iCell,jCell,kCell).LastElem(); ++i){
+//
+//	// Identify 'x','y', and 'z' powers of the i-th derivative
+//	P1 = CellTaylorDeriv(iCell,jCell,kCell,i).P1();  // identify P1
+//	P2 = CellTaylorDeriv(iCell,jCell,kCell,i).P2();  // identify P2
+//	P3 = CellTaylorDeriv(iCell,jCell,kCell,i).P3();  // identify P3
+//
+//	for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+//	  // Set the i-th derivative for the current parameter
+//	  CellTaylorDeriv(iCell,jCell,kCell,i).D(parameter) = Xm(i-1,parameter-1);
+//
+//	  // This equation ensures the mean conservation of the current parameter inside the reconstructed cell.
+//	  CellTaylorDeriv(iCell,jCell,kCell,0).D(parameter) -= Geom->CellGeomCoeffValue(iCell,jCell,kCell,P1,P2,P3) * Xm(i-1,parameter-1);
+//
+//	} // endfor (parameter)
+//  } // endfor (i)
+//
+//} // endif (CENO_Execution_Mode::USE_LAPACK_LEAST_SQUARES)
 
   } // endif (IsPseudoInverseAllocated() && IsPseudoInversePreComputed())
 
 }
 
-    //=RR=========================================================================================
 /*! 
  * Compute the pseudo-inverse of the left-hand-side term in the 
  * unlimited k-exact high-order reconstruction for a specified
@@ -893,11 +895,11 @@ void HighOrder<SOLN_STATE>::ComputeCellReconstructionPseudoInverse(const int &iC
 	for (IndexSumY = 0; IndexSumY<=P2; ++IndexSumY){
 	  CombP1X = 1.0;       // the binomial coefficient "nC k" for k=0 is 1
 	  PowDistanceXC = 1.0; // initialize PowDistanceXC
-	  IntSum = 0.0;	     // reset internal sumation variable
+	  IntSum1 = 0.0;	     // reset internal sumation variable
 	  
 	  for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
-	    IntSum += ( CombP1X*PowDistanceXC*
-			Geom->CellGeomCoeffValue(i_index[cell],j_index[cell],k_index[cell],P1-IndexSumX,P2-IndexSumY,P3-IndexSumZ) );
+	    IntSum1 += ( CombP1X*PowDistanceXC*
+			 Geom->CellGeomCoeffValue(i_index[cell],j_index[cell],k_index[cell],P1-IndexSumX,P2-IndexSumY,P3-IndexSumZ) );
 	    
 	    // update the binomial coefficients
 	    CombP1X = (P1-IndexSumX)*CombP1X/(IndexSumX+1); // the index is still the old one => expression for "nC k+1"
@@ -1020,294 +1022,296 @@ void HighOrder<SOLN_STATE>::ComputeCellReconstructionPseudoInverse(const int &iC
  * this subroutine. 
  */
 template<class SOLN_STATE>
-template<class Soln_Block_Type>
+template<class Soln_Block_Type> 
 void HighOrder<SOLN_STATE>::
 ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
-						    const int &iCell, const int &jCell,
+						    const int &iCell, const int &jCell, const int &kCell,
 						    const int &Limiter,
 						    const Soln_State & 
-						    (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const){
-
-  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
-
-  int n, parameter, n_pts;
-  double MaxWeight(0.0);
-  double DxDx_ave(0), DxDy_ave(0), DyDy_ave(0);
-  Soln_State DU, DUDx_ave(0), DUDy_ave(0);
-  double u0Min, u0Max;
-  double *uQuad(NULL);
-  Vector3D *GQP(NULL);
-  int NumGQP, GQP_North, GQP_South, GQP_East, GQP_West;
-  bool faceNorth, faceSouth, faceEast, faceWest;
-
-  // == Check if the reconstruction polynomial is piecewise constant
-  if (RecOrder() == 0){
-    // There is no need to calculate the reconstruction
-    return;
-  }
-
-  /* Carry out the limited solution reconstruction in
-     each cell of the computational mesh. */
-
-  /* Determine the number of neighbouring cells to
-     be used in the reconstruction procedure.
-     This stencil might be different near boundaries
-     and it is influenced by the boundary conditions. */
-  SolnBlk.SetPiecewiseLinearReconstructionStencil(iCell,jCell,
-						  I_Index,J_Index,
-						  n_pts);
-
-  // Perform reconstruction.
-  if (n_pts > 0) {
-    
-    // Perform piecewise linear reconstruction only if the reconstruction order is greater than 1
-    if (RecOrder() > 1){
-      
-      // Compute distance between centroids and the geometric weights
-      for ( n = 0 ; n < n_pts ; ++n ) {
-	/* Compute the X and Y component of the distance between
-	   the cell centers of the neighbour and the reconstructed cell */
-	dX[n] = Geom->Cell[ I_Index[n] ][ J_Index[n] ].Xc - Geom->Cell[iCell][jCell].Xc;
-
-	/* Compute the geometric weight based on the centroid distance */
-	CENO_Geometric_Weighting(geom_weights[n], dX[n].abs());
-
-	/* Compute the maximum geometric weight (this is used for normalization) */
-	MaxWeight = max(MaxWeight, geom_weights[n]);
-      }
-
-      for ( n = 0 ; n < n_pts ; ++n ) {
-	// compute the normalized geometric weight
-	geom_weights[n] /= MaxWeight;
-
-	// compute the square of the normalized geometric weight
-	geom_weights[n] *= geom_weights[n];
-
-	DU = (SolnBlk.*ReconstructedSoln)( I_Index[n], J_Index[n] ) - (SolnBlk.*ReconstructedSoln)(iCell,jCell);
-	DUDx_ave += DU*(geom_weights[n]*dX[n].x);
-	DUDy_ave += DU*(geom_weights[n]*dX[n].y);
-	DxDx_ave += geom_weights[n]*dX[n].x*dX[n].x;
-	DxDy_ave += geom_weights[n]*dX[n].x*dX[n].y;
-	DyDy_ave += geom_weights[n]*dX[n].y*dX[n].y;
-      } /* endfor */
-    					    
-      DUDx_ave /= double(n_pts);
-      DUDy_ave /= double(n_pts);
-      DxDx_ave /= double(n_pts);
-      DxDy_ave /= double(n_pts);
-      DyDy_ave /= double(n_pts);
-
-      // Calculate the first-order derivatives
-      dUdx = ( (DUDx_ave*DyDy_ave-DUDy_ave*DxDy_ave)/
-	       (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-      dUdy = ( (DUDy_ave*DxDx_ave-DUDx_ave*DxDy_ave)/
-	       (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-
-    }//endif(RecOrder())
+						    (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &,const int &) const){
 
 
-    // Calculate slope limiters or used the frozen ones.
-    if (!SolnBlk.Freeze_Limiter) {
-
-      // Calculate the new slope limiters.
-
-      // Get number of flux calculation points and edge type for each of the 4 cell faces.
-      GQP_North = Geom->NumOfFluxCalculationGaussQuadPoints_North(iCell,jCell,faceNorth);
-      GQP_South = Geom->NumOfFluxCalculationGaussQuadPoints_South(iCell,jCell,faceSouth);
-      GQP_East  = Geom->NumOfFluxCalculationGaussQuadPoints_East(iCell,jCell,faceEast);
-      GQP_West  = Geom->NumOfFluxCalculationGaussQuadPoints_West(iCell,jCell,faceWest);
-
-      // Get total number of points which are used to assess the slope limiter
-      NumGQP = GQP_North + GQP_South + GQP_East + GQP_West;
-
-      // Allocate memory for the location of the points and the solution
-      uQuad = new double [NumGQP];
-      GQP = new Vector3D [NumGQP];
-      
-      // Get North face GQPs
-      n = 0;
-      if (faceNorth){
-
-	if (jCell == JCu){ // this is an interior cell
-	  // used GQPs from BndNorthSplineInfo
-	  Geom->BndNorthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
-	} else { // this is a ghost cell
-	  // used GQPs from BndSouthSplineInfo
-	  Geom->BndSouthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
-	}
-	
-      }	else {
-	// used GQPs from straight edge
-	Geom->getGaussQuadPointsFaceN(iCell,jCell,&GQP[n],GQP_North);
-      }
-      // Update n
-      n += GQP_North;
-      
-      // Get West face GQPs
-      if (faceWest){
-
-	if (iCell == ICl){ // this is an interior cell
-	  // used GQPs from BndWestSplineInfo
-	  Geom->BndWestSplineInfo[jCell].CopyGQPoints(&GQP[n]);
-	} else { // this is a ghost cell
-	  // used GQPs from BndEastSplineInfo
-	  Geom->BndEastSplineInfo[jCell].CopyGQPoints(&GQP[n]);
-	}
-	
-	
-      } else {
-	// used GQPs from straight edge
-	Geom->getGaussQuadPointsFaceW(iCell,jCell,&GQP[n],GQP_West);
-      }
-      // Update n
-      n += GQP_West;
-      
-      // Get South face GQPs
-      if (faceSouth){
-
-	if (jCell == JCl){ // this is an interior cell
-	  // used GQPs from BndSouthSplineInfo
-	  Geom->BndSouthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
-	} else { // this is a ghost cell
-	  // used GQPs from BndNorthSplineInfo
-	  Geom->BndNorthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
-	}
-
-      } else {
-	// used GQPs from straight edge
-	Geom->getGaussQuadPointsFaceS(iCell,jCell,&GQP[n],GQP_South);
-      }
-      // Update n
-      n += GQP_South;
-      
-      // Get East face GQPs
-      if (faceEast){
-
-	if (iCell == ICu){ // this is an interior cell
-	  // used GQPs from BndEastSplineInfo
-	  Geom->BndEastSplineInfo[jCell].CopyGQPoints(&GQP[n]);
-	} else { // this is a ghost cell
-	  // used GQPs from BndWestSplineInfo
-	  Geom->BndWestSplineInfo[jCell].CopyGQPoints(&GQP[n]);
-	}
-
-      } else {
-	// used GQPs from straight edge
-	Geom->getGaussQuadPointsFaceE(iCell,jCell,&GQP[n],GQP_East);
-      }
-    
-      // Calculate the limiter for each solution variable (i.e. parameter)
-      for (parameter = 1; parameter <= NumberOfVariables(); ++parameter) {
-      
-	// Drop the order only for the variables that are flagged as unfit
-	if ( CellInadequateFitValue(iCell,jCell,parameter) ){
-	
-	  if (RecOrder() > 1){
-	    // Zero all derivatives but D00 associated with this parameter.
-	    for (n = 1; n < NumberOfTaylorDerivatives(); ++n){
-	      CellTaylorDerivState(iCell,jCell,n)[parameter] = 0.0;
-	    }
-	  
-	    // Set D00 and U_ave(see memory pool) of the current parameter to the correspondent average solution.
-	    // U_ave is used in UnlimitedLinearSolutionAtLocation() (see below).
-	    U_ave[parameter] = CellTaylorDerivState(iCell,jCell,0)[parameter] = (SolnBlk.*ReconstructedSoln)(iCell,jCell)[parameter];
-	    
-	    // Set D01 and D10 to the values of the first-order derivatives.
-	    CellTaylorDerivValue(iCell,jCell,0,1,parameter) = dUdy[parameter];
-	    CellTaylorDerivValue(iCell,jCell,1,0,parameter) = dUdx[parameter];
-	    
-	  } else {
-	    // Set U_ave of the current parameter
-	    U_ave[parameter] = CellTaylorDerivState(iCell,jCell,0)[parameter];
-	    dUdy[parameter] = CellTaylorDerivState(iCell,jCell,1)[parameter];
-	    dUdx[parameter] = CellTaylorDerivState(iCell,jCell,2)[parameter];
-	  }
-
-	  // Compute the minimum and maximum average solution in the stencil for the current parameter
-	  u0Min = U_ave[parameter];
-	  u0Max = u0Min;
-	  for (n = 0; n < n_pts; ++n) {
-	    u0Min = min(u0Min, (SolnBlk.*ReconstructedSoln)(I_Index[n],J_Index[n])[parameter]);
-	    u0Max = max(u0Max, (SolnBlk.*ReconstructedSoln)(I_Index[n],J_Index[n])[parameter]);
-	  }// endfor(n)
-	  
-	  // Evaluate the solution at all required points
-	  for (n = 0; n < NumGQP; ++n){
-	    uQuad[n] = UnlimitedLinearSolutionAtLocation(iCell,jCell,
-							 GQP[n],
-							 parameter);
-	  }// endfor(n)
-
-	  // Evaluate limiter for the current parameter
-	  CellTaylorDeriv(iCell,jCell).Limiter(parameter) = CalculateLimiter(uQuad,NumGQP,U_ave[parameter],
-									     u0Min,u0Max,Limiter);
-
-	  // Save a copy of the limiter for the current parameter for later usage if limiter freezing is required
-	  CellTaylorDeriv(iCell,jCell).Make_Limiter_Copy(parameter);
-	
-	}// endif
-
-      }//endfor(parameter)
-
-      // Deallocate memory
-      delete [] uQuad; uQuad = NULL;
-      delete [] GQP; GQP = NULL;
-      NumGQP = 0;
-
-    } else {
-      // Set limiters to the frozen ones.
-
-      for (parameter = 1; parameter <= NumberOfVariables(); ++parameter) {
-      
-	// Drop the order only for the variables that are flagged as unfit
-	if ( CellInadequateFitValue(iCell,jCell,parameter) ){
-	
-	  if (RecOrder() > 1){
-	    // Zero all derivatives but D00 associated with this parameter.
-	    for (n = 1; n < NumberOfTaylorDerivatives(); ++n){
-	      CellTaylorDerivState(iCell,jCell,n)[parameter] = 0.0;
-	    }
-	  
-	    // Set D00 and U_ave(see memory pool) of the current parameter to the correspondent average solution.
-	    // U_ave is used in UnlimitedLinearSolutionAtLocation() (see below).
-	    U_ave[parameter] = CellTaylorDerivState(iCell,jCell,0)[parameter] = (SolnBlk.*ReconstructedSoln)(iCell,jCell)[parameter];
-	    
-	    // Set D01 and D10 to the values of the first-order derivatives.
-	    CellTaylorDerivValue(iCell,jCell,0,1,parameter) = dUdy[parameter];
-	    CellTaylorDerivValue(iCell,jCell,1,0,parameter) = dUdx[parameter];
-	    
-	  } else {
-	    // Set U_ave of the current parameter
-	    U_ave[parameter] = CellTaylorDerivState(iCell,jCell,0)[parameter];
-	    dUdy[parameter] = CellTaylorDerivState(iCell,jCell,1)[parameter];
-	    dUdx[parameter] = CellTaylorDerivState(iCell,jCell,2)[parameter];
-	  }
-
-	  // Set limiter for the current parameter to the frozen one
-	  CellTaylorDeriv(iCell,jCell).Limiter(parameter) = CellTaylorDeriv(iCell,jCell).Frozen_Limiter(parameter);
-
-	}// endif
-
-      }//endfor(parameter)      
-
-    } // endif (!SolnBlk.Freeze_Limiter)
-
-  } else {
-    // Use piecewise constant
-
-    // Set D00 to average solution
-    CellTaylorDerivState(iCell,jCell,0) = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
-    // Zero all derivatives
-    for (n = 1; n < NumberOfTaylorDerivatives(); ++n){
-      CellTaylorDerivState(iCell,jCell,n).Vacuum();
-    }
-    // Reset limiter
-    CellTaylorDeriv(iCell,jCell).Limiter().Vacuum();
-    
-  } /* endif */
+  // --> RR: VIP: comment out (empty function) for ComputeLimitedPiecewiseLinearSolutionReconstruction
+//
+//  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+//
+//  int n, parameter, n_pts;
+//  double MaxWeight(0.0);
+//  double DxDx_ave(0), DxDy_ave(0), DyDy_ave(0);
+//  Soln_State DU, DUDx_ave(0), DUDy_ave(0);
+//  double u0Min, u0Max;
+//  double *uQuad(NULL);
+//  Vector3D *GQP(NULL);
+//  int NumGQP, GQP_North, GQP_South, GQP_East, GQP_West;
+//  bool faceNorth, faceSouth, faceEast, faceWest;
+//
+//  // == Check if the reconstruction polynomial is piecewise constant
+//  if (RecOrder() == 0){
+//    // There is no need to calculate the reconstruction
+//    return;
+//  }
+//
+//  /* Carry out the limited solution reconstruction in
+//     each cell of the computational mesh. */
+//
+//  /* Determine the number of neighbouring cells to
+//     be used in the reconstruction procedure.
+//     This stencil might be different near boundaries
+//     and it is influenced by the boundary conditions. */
+//  SolnBlk.SetPiecewiseLinearReconstructionStencil(iCell,jCell,
+//						  I_Index,J_Index,
+//						  n_pts);
+//
+//  // Perform reconstruction.
+//  if (n_pts > 0) {
+//    
+//    // Perform piecewise linear reconstruction only if the reconstruction order is greater than 1
+//    if (RecOrder() > 1){
+//      
+//      // Compute distance between centroids and the geometric weights
+//      for ( n = 0 ; n < n_pts ; ++n ) {
+//	/* Compute the X and Y component of the distance between
+//	   the cell centers of the neighbour and the reconstructed cell */
+//	dX[n] = Geom->Cell[ I_Index[n] ][ J_Index[n] ].Xc - Geom->Cell[iCell][jCell].Xc;
+//
+//	/* Compute the geometric weight based on the centroid distance */
+//	CENO_Geometric_Weighting(geom_weights[n], dX[n].abs());
+//
+//	/* Compute the maximum geometric weight (this is used for normalization) */
+//	MaxWeight = max(MaxWeight, geom_weights[n]);
+//      }
+//
+//      for ( n = 0 ; n < n_pts ; ++n ) {
+//	// compute the normalized geometric weight
+//	geom_weights[n] /= MaxWeight;
+//
+//	// compute the square of the normalized geometric weight
+//	geom_weights[n] *= geom_weights[n];
+//
+//	DU = (SolnBlk.*ReconstructedSoln)( I_Index[n], J_Index[n] ) - (SolnBlk.*ReconstructedSoln)(iCell,jCell);
+//	DUDx_ave += DU*(geom_weights[n]*dX[n].x);
+//	DUDy_ave += DU*(geom_weights[n]*dX[n].y);
+//	DxDx_ave += geom_weights[n]*dX[n].x*dX[n].x;
+//	DxDy_ave += geom_weights[n]*dX[n].x*dX[n].y;
+//	DyDy_ave += geom_weights[n]*dX[n].y*dX[n].y;
+//      } /* endfor */
+//    					    
+//      DUDx_ave /= double(n_pts);
+//      DUDy_ave /= double(n_pts);
+//      DxDx_ave /= double(n_pts);
+//      DxDy_ave /= double(n_pts);
+//      DyDy_ave /= double(n_pts);
+//
+//      // Calculate the first-order derivatives
+//      dUdx = ( (DUDx_ave*DyDy_ave-DUDy_ave*DxDy_ave)/
+//	       (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+//      dUdy = ( (DUDy_ave*DxDx_ave-DUDx_ave*DxDy_ave)/
+//	       (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+//
+//    }//endif(RecOrder())
+//
+//
+//    // Calculate slope limiters or used the frozen ones.
+//    if (!SolnBlk.Freeze_Limiter) {
+//
+//      // Calculate the new slope limiters.
+//
+//      // Get number of flux calculation points and edge type for each of the 4 cell faces.
+//      GQP_North = Geom->NumOfFluxCalculationGaussQuadPoints_North(iCell,jCell,faceNorth);
+//      GQP_South = Geom->NumOfFluxCalculationGaussQuadPoints_South(iCell,jCell,faceSouth);
+//      GQP_East  = Geom->NumOfFluxCalculationGaussQuadPoints_East(iCell,jCell,faceEast);
+//      GQP_West  = Geom->NumOfFluxCalculationGaussQuadPoints_West(iCell,jCell,faceWest);
+//
+//      // Get total number of points which are used to assess the slope limiter
+//      NumGQP = GQP_North + GQP_South + GQP_East + GQP_West;
+//
+//      // Allocate memory for the location of the points and the solution
+//      uQuad = new double [NumGQP];
+//      GQP = new Vector3D [NumGQP];
+//      
+//      // Get North face GQPs
+//      n = 0;
+//      if (faceNorth){
+//
+//	if (jCell == JCu){ // this is an interior cell
+//	  // used GQPs from BndNorthSplineInfo
+//	  Geom->BndNorthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+//	} else { // this is a ghost cell
+//	  // used GQPs from BndSouthSplineInfo
+//	  Geom->BndSouthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+//	}
+//	
+//      }	else {
+//	// used GQPs from straight edge
+//	Geom->getGaussQuadPointsFaceN(iCell,jCell,&GQP[n],GQP_North);
+//      }
+//      // Update n
+//      n += GQP_North;
+//      
+//      // Get West face GQPs
+//      if (faceWest){
+//
+//	if (iCell == ICl){ // this is an interior cell
+//	  // used GQPs from BndWestSplineInfo
+//	  Geom->BndWestSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+//	} else { // this is a ghost cell
+//	  // used GQPs from BndEastSplineInfo
+//	  Geom->BndEastSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+//	}
+//	
+//	
+//      } else {
+//	// used GQPs from straight edge
+//	Geom->getGaussQuadPointsFaceW(iCell,jCell,&GQP[n],GQP_West);
+//      }
+//      // Update n
+//      n += GQP_West;
+//      
+//      // Get South face GQPs
+//      if (faceSouth){
+//
+//	if (jCell == JCl){ // this is an interior cell
+//	  // used GQPs from BndSouthSplineInfo
+//	  Geom->BndSouthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+//	} else { // this is a ghost cell
+//	  // used GQPs from BndNorthSplineInfo
+//	  Geom->BndNorthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+//	}
+//
+//      } else {
+//	// used GQPs from straight edge
+//	Geom->getGaussQuadPointsFaceS(iCell,jCell,&GQP[n],GQP_South);
+//      }
+//      // Update n
+//      n += GQP_South;
+//      
+//      // Get East face GQPs
+//      if (faceEast){
+//
+//	if (iCell == ICu){ // this is an interior cell
+//	  // used GQPs from BndEastSplineInfo
+//	  Geom->BndEastSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+//	} else { // this is a ghost cell
+//	  // used GQPs from BndWestSplineInfo
+//	  Geom->BndWestSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+//	}
+//
+//      } else {
+//	// used GQPs from straight edge
+//	Geom->getGaussQuadPointsFaceE(iCell,jCell,&GQP[n],GQP_East);
+//      }
+//    
+//      // Calculate the limiter for each solution variable (i.e. parameter)
+//      for (parameter = 1; parameter <= NumberOfVariables(); ++parameter) {
+//      
+//	// Drop the order only for the variables that are flagged as unfit
+//	if ( CellInadequateFitValue(iCell,jCell,parameter) ){
+//	
+//	  if (RecOrder() > 1){
+//	    // Zero all derivatives but D00 associated with this parameter.
+//	    for (n = 1; n < NumberOfTaylorDerivatives(); ++n){
+//	      CellTaylorDerivState(iCell,jCell,n)[parameter] = 0.0;
+//	    }
+//	  
+//	    // Set D00 and U_ave(see memory pool) of the current parameter to the correspondent average solution.
+//	    // U_ave is used in UnlimitedLinearSolutionAtLocation() (see below).
+//	    U_ave[parameter] = CellTaylorDerivState(iCell,jCell,0)[parameter] = (SolnBlk.*ReconstructedSoln)(iCell,jCell)[parameter];
+//	    
+//	    // Set D01 and D10 to the values of the first-order derivatives.
+//	    CellTaylorDerivValue(iCell,jCell,0,1,parameter) = dUdy[parameter];
+//	    CellTaylorDerivValue(iCell,jCell,1,0,parameter) = dUdx[parameter];
+//	    
+//	  } else {
+//	    // Set U_ave of the current parameter
+//	    U_ave[parameter] = CellTaylorDerivState(iCell,jCell,0)[parameter];
+//	    dUdy[parameter] = CellTaylorDerivState(iCell,jCell,1)[parameter];
+//	    dUdx[parameter] = CellTaylorDerivState(iCell,jCell,2)[parameter];
+//	  }
+//
+//	  // Compute the minimum and maximum average solution in the stencil for the current parameter
+//	  u0Min = U_ave[parameter];
+//	  u0Max = u0Min;
+//	  for (n = 0; n < n_pts; ++n) {
+//	    u0Min = min(u0Min, (SolnBlk.*ReconstructedSoln)(I_Index[n],J_Index[n])[parameter]);
+//	    u0Max = max(u0Max, (SolnBlk.*ReconstructedSoln)(I_Index[n],J_Index[n])[parameter]);
+//	  }// endfor(n)
+//	  
+//	  // Evaluate the solution at all required points
+//	  for (n = 0; n < NumGQP; ++n){
+//	    uQuad[n] = UnlimitedLinearSolutionAtLocation(iCell,jCell,
+//							 GQP[n],
+//							 parameter);
+//	  }// endfor(n)
+//
+//	  // Evaluate limiter for the current parameter
+//	  CellTaylorDeriv(iCell,jCell).Limiter(parameter) = CalculateLimiter(SolnBlk,uQuad,NumGQP,U_ave[parameter],
+//									     u0Min,u0Max,Limiter);
+//
+//	  // Save a copy of the limiter for the current parameter for later usage if limiter freezing is required
+//	  CellTaylorDeriv(iCell,jCell).Make_Limiter_Copy(parameter);
+//	
+//	}// endif
+//
+//      }//endfor(parameter)
+//
+//      // Deallocate memory
+//      delete [] uQuad; uQuad = NULL;
+//      delete [] GQP; GQP = NULL;
+//      NumGQP = 0;
+//
+//    } else {
+//      // Set limiters to the frozen ones.
+//
+//      for (parameter = 1; parameter <= NumberOfVariables(); ++parameter) {
+//      
+//	// Drop the order only for the variables that are flagged as unfit
+//	if ( CellInadequateFitValue(iCell,jCell,parameter) ){
+//	
+//	  if (RecOrder() > 1){
+//	    // Zero all derivatives but D00 associated with this parameter.
+//	    for (n = 1; n < NumberOfTaylorDerivatives(); ++n){
+//	      CellTaylorDerivState(iCell,jCell,n)[parameter] = 0.0;
+//	    }
+//	  
+//	    // Set D00 and U_ave(see memory pool) of the current parameter to the correspondent average solution.
+//	    // U_ave is used in UnlimitedLinearSolutionAtLocation() (see below).
+//	    U_ave[parameter] = CellTaylorDerivState(iCell,jCell,0)[parameter] = (SolnBlk.*ReconstructedSoln)(iCell,jCell)[parameter];
+//	    
+//	    // Set D01 and D10 to the values of the first-order derivatives.
+//	    CellTaylorDerivValue(iCell,jCell,0,1,parameter) = dUdy[parameter];
+//	    CellTaylorDerivValue(iCell,jCell,1,0,parameter) = dUdx[parameter];
+//	    
+//	  } else {
+//	    // Set U_ave of the current parameter
+//	    U_ave[parameter] = CellTaylorDerivState(iCell,jCell,0)[parameter];
+//	    dUdy[parameter] = CellTaylorDerivState(iCell,jCell,1)[parameter];
+//	    dUdx[parameter] = CellTaylorDerivState(iCell,jCell,2)[parameter];
+//	  }
+//
+//	  // Set limiter for the current parameter to the frozen one
+//	  CellTaylorDeriv(iCell,jCell).Limiter(parameter) = CellTaylorDeriv(iCell,jCell).Frozen_Limiter(parameter);
+//
+//	}// endif
+//
+//      }//endfor(parameter)      
+//
+//    } // endif (!SolnBlk.Freeze_Limiter)
+//
+//  } else {
+//    // Use piecewise constant
+//
+//    // Set D00 to average solution
+//    CellTaylorDerivState(iCell,jCell,0) = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
+//    // Zero all derivatives
+//    for (n = 1; n < NumberOfTaylorDerivatives(); ++n){
+//      CellTaylorDerivState(iCell,jCell,n).Vacuum();
+//    }
+//    // Reset limiter
+//    CellTaylorDeriv(iCell,jCell).Limiter().Vacuum();
+//    
+//  } /* endif */
 
 }
-
 
 /*! 
  * Compute the unlimited k-exact high-order reconstruction
@@ -1325,33 +1329,34 @@ template<class SOLN_STATE>
 template<class Soln_Block_Type> inline
 void HighOrder<SOLN_STATE>::
 ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
-				       const int &iCell, const int &jCell,
+				       const int &iCell, const int &jCell, const int & kCell,
 				       const bool & UseSpecialStencil,
 				       const Soln_State & 
-				       (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const){
+				       (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &,const int &) const){
 
-  IndexType Special_I_Index(i_index.size()), Special_J_Index(j_index.size());
+  IndexType Special_I_Index(i_index.size()), Special_J_Index(j_index.size()), Special_K_Index(k_index.size());
 
-  if ( iCell >= StartI && iCell <= EndI && jCell >= StartJ && jCell <= EndJ ){
+  if ( iCell >= StartI && iCell <= EndI && jCell >= StartJ && jCell <= EndJ && kCell >= StartK && kCell <= EndK){
 
     /***************************************************************************
      *    Perform unconstrained unlimited high-order solution reconstruction   *
      **************************************************************************/
 
-    if (UseSpecialStencil){
+ //   if (UseSpecialStencil){
+ //
+ //     // Set the stencil of points used for reconstruction with the special routine
+ //     SetSpecialReconstructionStencil(iCell, jCell, Special_I_Index, Special_J_Index);
+ //
+ //   } else {
 
-      // Set the stencil of points used for reconstruction with the special routine
-      SetSpecialReconstructionStencil(iCell, jCell, Special_I_Index, Special_J_Index);
+    // Set the stencil of points used for reconstruction with the regular routine
+    SetReconstructionStencil(iCell, jCell, kCell, Special_I_Index, Special_J_Index, Special_K_Index);
 
-    } else {
-
-      // Set the stencil of points used for reconstruction with the regular routine
-      SetReconstructionStencil(iCell, jCell, Special_I_Index, Special_J_Index);
-    }
+//    }
 
     // Compute the reconstruction for the current cell
     ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
-							iCell, jCell, Special_I_Index, Special_J_Index);
+							iCell, jCell, kCell, Special_I_Index, Special_J_Index, Special_K_Index);
     
   } else {
     
@@ -1480,18 +1485,19 @@ ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 //
 //}
 
+
 /*!
  * Generate the LHS and RHS of the least-squares problem associated 
  * with the reconstruction procedure and write the values at the specified
  * locations.
  * This matrix reflects the conservation of mean value in the control       
- * volumes of cells specified by (i_index,j_index).                         
- * The row associated with cell (iCell,jCell) represents a constraint and    
+ * volumes of cells specified by (i_index,j_index,k_index).                         
+ * The row associated with cell (iCell,jCell,kCell) represents a constraint and    
  * therefore it must be satisfied exactly.
  * The rest of the system is approximately solved in the least squares sense.
  *                                                                          
- * \note It is assumed that the (i_index[0],j_index[0]) is equal to          
- *       (iCell,jCell). That is, the first line of A is a constrain!!!            
+ * \note It is assumed that the (i_index[0],j_index[0],k_index[0]) is equal to          
+ *       (iCell,jCell,kCell). That is, the first line of A is a constraint!!!            
  * The constraint is filled in the matrix A at the position (RowConstraint, StartCol).                                     
  * The approximate equations are filled in the matrix starting from (StartRow, StartCol) position. 
  *
@@ -1499,6 +1505,7 @@ ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
  * \param ReconstructedSoln member function of Soln_Block_Type which returns the solution.
  * \param iCell i-index of the reconstructed cell
  * \param jCell j-index of the reconstructed cell
+ * \param kCell k-index of the reconstructed cell
  * \param ParameterIndex related to the indexes of the solution
  * \param A the LHS assemble matrix 
  * \param B the RHS assemble matrix
@@ -1510,9 +1517,9 @@ template<class Soln_Block_Type> inline
 void HighOrder<SOLN_STATE>::
 Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
 				    const Soln_State & 
-				    (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const,
-				    const int &iCell, const int &jCell,
-				    const IndexType & i_index, const IndexType & j_index,
+				    (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &,const int &) const,
+				    const int &iCell, const int &jCell, const int & kCell,
+				    const IndexType & i_index, const IndexType & j_index, const IndexType & k_index,
 				    DenseMatrix & A, DenseMatrix & All_U,
 				    const IndexType & ParameterIndex,
 				    const int &RowConstraint,
@@ -1525,13 +1532,13 @@ Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
   int ParameterIndexSize(ParameterIndex.size());
   ColumnVector GeomWeights(StencilSize);   // The column vector of the geometric weights
   Vector3D *DeltaCellCenters;              /* stores the difference between the cell center of
-					      neighbour cells and the one of (i,j) cell.
+					      neighbour cells and the one of (i,j,k) cell.
 					      The first value is 0!!! */
-  int IndexSumY, IndexSumX, P1, P2;
-  double CombP1X, CombP2Y;
-  double PowDistanceYC, PowDistanceXC;
+  int IndexSumZ,IndexSumY, IndexSumX, P1, P2,P3;
+  double CombP1X, CombP2Y, CombP3Z;
+  double PowDistanceZC, PowDistanceYC, PowDistanceXC;
   int cell, i, parameter;
-  double IntSum(0.0);
+  double IntSum1(0.0), IntSum2(0.0);
 
   // Allocate memory
   DeltaCellCenters = new Vector3D [StencilSize];
@@ -1540,67 +1547,108 @@ Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
   // *********************************************************************
 
   // Step1. Set the constraint equation
-  for (i=0; i <= CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
-    A(RowConstraint,i+StartCol) = Geom->CellGeomCoeffValue(iCell,jCell,i);
+  for (i=0; i <= CellTaylorDeriv(iCell,jCell,kCell).LastElem(); ++i){
+    A(RowConstraint,i+StartCol) = Geom->CellGeomCoeffValue(iCell,jCell,kCell,i);
   }
 
   for (parameter=0; parameter<ParameterIndexSize; ++parameter){
-    All_U(RowConstraint,parameter) = (SolnBlk.*ReconstructedSoln)(iCell,jCell)[ParameterIndex[parameter]];
+    All_U(RowConstraint,parameter) = (SolnBlk.*ReconstructedSoln)(iCell,jCell,kCell)[ParameterIndex[parameter]];
   }
 
   // Step3. Set the approximate equations
   for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
 
-    /* Compute the X and Y component of the distance between
+    /* Compute the X, Y, and Z component of the distance between
        the cell center of the neighbours and the reconstructed cell */
-    DeltaCellCenters[cell] = CellCenter(i_index[cell],j_index[cell]) - CellCenter(iCell,jCell);
+    DeltaCellCenters[cell] = CellCenter(i_index[cell],j_index[cell],k_index[cell]) - CellCenter(iCell,jCell,kCell);
 
     /* Compute the geometric weight based on the centroid distance */
     CENO_Geometric_Weighting(GeomWeights[cell], DeltaCellCenters[cell].abs());
 
     // *** SET the matrix A of the linear system (LHS) ***
     /* compute for each derivative the corresponding entry in the matrix of the linear system */
-    for (i=0; i<=CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+    for (i=0; i<=CellTaylorDeriv(iCell,jCell,kCell).LastElem(); ++i){
       // build the row of the matrix
-      P1 = CellTaylorDeriv(iCell,jCell,i).P1();  // identify P1
-      P2 = CellTaylorDeriv(iCell,jCell,i).P2();  // identify P2
+      P1 = CellTaylorDeriv(iCell,jCell,kCell,i).P1();  // identify P1
+      P2 = CellTaylorDeriv(iCell,jCell,kCell,i).P2();  // identify P2
+      P3 = CellTaylorDeriv(iCell,jCell,kCell,i).P3();  // identify P3
+
       A(cell+StartRow-1,i+StartCol) = 0.0;  // set sumation variable to zero
-      CombP2Y = 1.0;                        // the binomial coefficient "nC k" for k=0 is 1
-      PowDistanceYC = 1.0; 	            // initialize PowDistanceYC
+      CombP3Z = 1.0;        // the binomial coefficient "nC k" for k=0 is 1
+      PowDistanceZC = 1.0;  // initialize PowDistanceZC
 
       // Compute geometric integral over the neighbour's domain
-      for (IndexSumY = 0; IndexSumY<=P2; ++IndexSumY){
-	CombP1X = 1.0;       // the binomial coefficient "nC k" for k=0 is 1
-	PowDistanceXC = 1.0; // initialize PowDistanceXC
-	IntSum = 0.0;	     // reset internal sumation variable
+      for (IndexSumZ = 0; IndexSumZ<=P3; ++IndexSumZ){
+	CombP2Y = 1.0;        // the binomial coefficient "nC k" for k=0 is 1
+	PowDistanceYC = 1.0;  // initialize PowDistanceYC
+	IntSum2 = 0.0;         // reset internal summation variable
 
-	for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
-	  IntSum += ( CombP1X*PowDistanceXC*
-		      Geom->CellGeomCoeffValue(i_index[cell],j_index[cell],P1-IndexSumX,P2-IndexSumY) );
+	for (IndexSumY = 0; IndexSumY<=P2; ++IndexSumY){
+	  CombP1X = 1.0;       // the binomial coefficient "nC k" for k=0 is 1
+	  PowDistanceXC = 1.0; // initialize PowDistanceXC
+	  IntSum1 = 0.0;	     // reset internal sumation variable
+
+	  for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
+	    IntSum1 += ( CombP1X*PowDistanceXC*
+			 Geom->CellGeomCoeffValue(i_index[cell],j_index[cell],k_index[cell],P1-IndexSumX,P2-IndexSumY,P3-IndexSumZ) );
+	      
+	    // update the binomial coefficients
+	    CombP1X = (P1-IndexSumX)*CombP1X/(IndexSumX+1); // the index is still the old one => expression for "nC k+1"
+	    PowDistanceXC *= DeltaCellCenters[cell].x;      // Update PowDistanceXC
+	  }//endfor
 	    
-	  // update the binomial coefficients
-	  CombP1X = (P1-IndexSumX)*CombP1X/(IndexSumX+1);  // The index is still the old one => expression for "nC k+1"
-	  PowDistanceXC *= DeltaCellCenters[cell].x;       // Update PowDistanceXC
-	}//endfor (IndexSumX)
+	  IntSum2 += CombP2Y*PowDistanceYC*IntSum1;
+	  CombP2Y = (P2-IndexSumY)*CombP2Y/(IndexSumY+1); // the index is still the old one => expression for "nC k+1"
+	  PowDistanceYC *= DeltaCellCenters[cell].y;      // Update PowDistanceYC
+	}//endfor
+	
+	A(cell-1,i-1) += CombP3Z*PowDistanceZC*IntSum2;  // update the external sum
+	
+	CombP3Z = (P3-IndexSumZ)*CombP3Z/(IndexSumZ+1); // the index is still the old one => expression for "nC k+1"
+	PowDistanceZC *= DeltaCellCenters[cell].z;      // Update PowDistanceYC
+      }//endfor
 
-	A(cell+StartRow-1,i+StartCol) += CombP2Y*PowDistanceYC*IntSum; // update the external sum
-
-	CombP2Y = (P2-IndexSumY)*CombP2Y/(IndexSumY+1); // the index is still the old one => expression for "nC k+1"
-	PowDistanceYC *= DeltaCellCenters[cell].y;      // Update PowDistanceYC
-      }//endfor (IndexSumY)
+      // subtract the corresponding geometric moment of cell (iCell,jCell) 
+      //A(cell-1,i-1) -= Geom->CellGeomCoeffValue(iCell,jCell,kCell,P1,P2,P3);
 
       // apply geometric weighting
       A(cell+StartRow-1,i+StartCol) *= GeomWeights(cell);
 
-    }//endfor (i)
+    } //endfor (i)
+
+    // --> RR: from 2D implementation: delete later
+//      // Compute geometric integral over the neighbour's domain
+//      for (IndexSumY = 0; IndexSumY<=P2; ++IndexSumY){
+//	CombP1X = 1.0;       // the binomial coefficient "nC k" for k=0 is 1
+//	PowDistanceXC = 1.0; // initialize PowDistanceXC
+//	IntSum = 0.0;	     // reset internal sumation variable
+//
+//	for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
+//	  IntSum += ( CombP1X*PowDistanceXC*
+//		      Geom->CellGeomCoeffValue(i_index[cell],j_index[cell],P1-IndexSumX,P2-IndexSumY) );
+//	    
+//	  // update the binomial coefficients
+//	  CombP1X = (P1-IndexSumX)*CombP1X/(IndexSumX+1);  // The index is still the old one => expression for "nC k+1"
+//	  PowDistanceXC *= DeltaCellCenters[cell].x;       // Update PowDistanceXC
+//	}//endfor (IndexSumX)
+//
+//	A(cell+StartRow-1,i+StartCol) += CombP2Y*PowDistanceYC*IntSum; // update the external sum
+//
+//	CombP2Y = (P2-IndexSumY)*CombP2Y/(IndexSumY+1); // the index is still the old one => expression for "nC k+1"
+//	PowDistanceYC *= DeltaCellCenters[cell].y;      // Update PowDistanceYC
+//      }//endfor (IndexSumY)
+//
+//      // apply geometric weighting
+//      A(cell+StartRow-1,i+StartCol) *= GeomWeights(cell);
+//
+//    }//endfor (i)
       
     // *** SET the matrix All_U of the linear system (RHS) ***
     for (parameter=0; parameter < ParameterIndexSize; ++parameter){
       All_U(cell+StartRow-1,parameter) = ( GeomWeights(cell)*
-					   (SolnBlk.*ReconstructedSoln)(i_index[cell],j_index[cell])[ParameterIndex[parameter]] );
+					   (SolnBlk.*ReconstructedSoln)(i_index[cell],j_index[cell],k_index[cell])[ParameterIndex[parameter]] );
     }
   } //endfor (cell)
-
 
   delete [] DeltaCellCenters;
 
@@ -1610,25 +1658,26 @@ Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
  * Generate the LHS of the least-squares problem associated with the 
  * reconstruction procedure and write the values at the specified locations.
  * This matrix reflects the conservation of mean value in the control
- * volumes of cells specified by (i_index,j_index).
- * The row associated with cell (iCell,jCell) represents a constraint and    
+ * volumes of cells specified by (i_index,j_index,k_index).
+ * The row associated with cell (iCell,jCell,kCell) represents a constraint and    
  * therefore it must be satisfied exactly.
  * The rest of the system is approximately solved in the least squares sense.
  *                                                                          
- * \note It is assumed that the (i_index[0],j_index[0]) is equal to          
- *       (iCell,jCell). That is, the first line of A is a constraint!!!
+ * \note It is assumed that the (i_index[0],j_index[0],k_index[0]) is equal to          
+ *       (iCell,jCell,kCell). That is, the first line of A is a constraint!!!
  * The approximate equations are filled in the rest of the matrix.
  *
  * \param iCell i-index of the reconstructed cell
  * \param jCell j-index of the reconstructed cell
+ * \param kCell k-index of the reconstructed cell
  * \param A the LHS matrix
  * \param CellGeometricWeights the array of geometric weights
  *
  */
 template<class SOLN_STATE> inline
 void HighOrder<SOLN_STATE>::
-Set_LHS_MeanValueConservation_Equations(const int &iCell, const int &jCell,
-					const IndexType & i_index, const IndexType & j_index,
+Set_LHS_MeanValueConservation_Equations(const int &iCell, const int &jCell, const int &kCell,
+					const IndexType & i_index, const IndexType & j_index, const IndexType & k_index,
 					DenseMatrix & A,
 					DoubleArrayType & GeometricWeights){
 
@@ -1639,11 +1688,11 @@ Set_LHS_MeanValueConservation_Equations(const int &iCell, const int &jCell,
   Vector3D *DeltaCellCenters;              /* stores the difference between the cell center of
 					      neighbour cells and the one of (i,j) cell.
 					      The first value is 0!!! */
-  int IndexSumY, IndexSumX, P1, P2;
-  double CombP1X, CombP2Y;
-  double PowDistanceYC, PowDistanceXC;
+  int IndexSumZ, IndexSumY, IndexSumX, P1, P2, P3;
+  double CombP1X, CombP2Y, CombP3Z;
+  double PowDistanceZC, PowDistanceYC, PowDistanceXC;
   int cell, i;
-  double IntSum(0.0);
+  double IntSum1(0.0), IntSum2(0.0);
   double MaxWeight(0.0);
 
   // Allocate memory
@@ -1668,9 +1717,9 @@ Set_LHS_MeanValueConservation_Equations(const int &iCell, const int &jCell,
   // Step1. Compute the normalized geometric weights
   for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
     
-    /* Compute the X and Y component of the distance between
+    /* Compute the X, Y, and Z component of the distance between
        the cell centers of the neighbour and the reconstructed cell */
-    DeltaCellCenters[cell] = CellCenter(i_index[cell],j_index[cell]) - CellCenter(iCell,jCell);
+    DeltaCellCenters[cell] = CellCenter(i_index[cell],j_index[cell],k_index[cell]) - CellCenter(iCell,jCell,kCell);
     
     /* Compute the geometric weight based on the centroid distance */
     CENO_Geometric_Weighting(GeometricWeights[cell], DeltaCellCenters[cell].abs());
@@ -1680,8 +1729,8 @@ Set_LHS_MeanValueConservation_Equations(const int &iCell, const int &jCell,
   }
 
   // Step 2. Set the constraint equation
-  for (i=0; i <= CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
-    A(0,i) = Geom->CellGeomCoeffValue(iCell,jCell,i);
+  for (i=0; i <= CellTaylorDeriv(iCell,jCell,kCell).LastElem(); ++i){
+    A(0,i) = Geom->CellGeomCoeffValue(iCell,jCell,kCell,i);
   }
 
   // Step 3. Set the approximate equations
@@ -1692,39 +1741,78 @@ Set_LHS_MeanValueConservation_Equations(const int &iCell, const int &jCell,
 
     // *** SET the matrix A of the linear system (LHS) ***
     /* compute for each derivative the corresponding entry in the matrix of the linear system */
-    for (i=0; i<=CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+    for (i=0; i<=CellTaylorDeriv(iCell,jCell,kCell).LastElem(); ++i){
       // build the row of the matrix
       P1 = CellTaylorDeriv(iCell,jCell,i).P1();  // identify P1
       P2 = CellTaylorDeriv(iCell,jCell,i).P2();  // identify P2
-      A(cell,i) = 0.0;                      // set sumation variable to zero
-      CombP2Y = 1.0;                        // the binomial coefficient "nC k" for k=0 is 1
-      PowDistanceYC = 1.0; 	            // initialize PowDistanceYC
+      P3 = CellTaylorDeriv(iCell,jCell,kCell,i).P3();  // identify P3
+      
+      A(cell,i) = 0.0;  // set sumation variable to zero
+      CombP3Z = 1.0;        // the binomial coefficient "nC k" for k=0 is 1
+      PowDistanceZC = 1.0;  // initialize PowDistanceZC
 
       // Compute geometric integral over the neighbour's domain
-      for (IndexSumY = 0; IndexSumY<=P2; ++IndexSumY){
-	CombP1X = 1.0;       // the binomial coefficient "nC k" for k=0 is 1
-	PowDistanceXC = 1.0; // initialize PowDistanceXC
-	IntSum = 0.0;	     // reset internal sumation variable
-
-	for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
-	  IntSum += ( CombP1X*PowDistanceXC*
-		      Geom->CellGeomCoeffValue(i_index[cell],j_index[cell],P1-IndexSumX,P2-IndexSumY) );
+      for (IndexSumZ = 0; IndexSumZ<=P3; ++IndexSumZ){
+	CombP2Y = 1.0;        // the binomial coefficient "nC k" for k=0 is 1
+	PowDistanceYC = 1.0;  // initialize PowDistanceYC
+	IntSum2 = 0.0;         // reset internal summation variable
+	
+	for (IndexSumY = 0; IndexSumY<=P2; ++IndexSumY){
+	  CombP1X = 1.0;       // the binomial coefficient "nC k" for k=0 is 1
+	  PowDistanceXC = 1.0; // initialize PowDistanceXC
+	  IntSum1 = 0.0;	     // reset internal sumation variable
+	  
+	  for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
+	    IntSum1 += ( CombP1X*PowDistanceXC*
+			 Geom->CellGeomCoeffValue(i_index[cell],j_index[cell],k_index[cell],P1-IndexSumX,P2-IndexSumY,P3-IndexSumZ) );
 	    
-	  // update the binomial coefficients
-	  CombP1X = (P1-IndexSumX)*CombP1X/(IndexSumX+1);  // The index is still the old one => expression for "nC k+1"
-	  PowDistanceXC *= DeltaCellCenters[cell].x;       // Update PowDistanceXC
-	}//endfor (IndexSumX)
-
-	A(cell,i) += CombP2Y*PowDistanceYC*IntSum; // update the external sum
-
-	CombP2Y = (P2-IndexSumY)*CombP2Y/(IndexSumY+1); // the index is still the old one => expression for "nC k+1"
-	PowDistanceYC *= DeltaCellCenters[cell].y;      // Update PowDistanceYC
-      }//endfor (IndexSumY)
-
+	    // update the binomial coefficients
+	    CombP1X = (P1-IndexSumX)*CombP1X/(IndexSumX+1); // the index is still the old one => expression for "nC k+1"
+	    PowDistanceXC *= DeltaCellCenters[cell].x;      // Update PowDistanceXC
+	  }//endfor
+	  
+	  IntSum2 += CombP2Y*PowDistanceYC*IntSum1;
+	  CombP2Y = (P2-IndexSumY)*CombP2Y/(IndexSumY+1); // the index is still the old one => expression for "nC k+1"
+	  PowDistanceYC *= DeltaCellCenters[cell].y;      // Update PowDistanceYC
+	}//endfor
+	
+	A(cell,i) += CombP3Z*PowDistanceZC*IntSum2;  // update the external sum
+	
+	CombP3Z = (P3-IndexSumZ)*CombP3Z/(IndexSumZ+1); // the index is still the old one => expression for "nC k+1"
+	PowDistanceZC *= DeltaCellCenters[cell].z;      // Update PowDistanceYC
+      }//endfor
+      
       // apply geometric weighting
       A(cell,i) *= GeometricWeights[cell];
+    
+    } //endfor (i)
 
-    }//endfor (i)
+    // --> RR: from 2D implementation: delete later
+//      // Compute geometric integral over the neighbour's domain
+//      for (IndexSumY = 0; IndexSumY<=P2; ++IndexSumY){
+//	CombP1X = 1.0;       // the binomial coefficient "nC k" for k=0 is 1
+//	PowDistanceXC = 1.0; // initialize PowDistanceXC
+//	IntSum = 0.0;	     // reset internal sumation variable
+//
+//	for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
+//	  IntSum += ( CombP1X*PowDistanceXC*
+//		      Geom->CellGeomCoeffValue(i_index[cell],j_index[cell],P1-IndexSumX,P2-IndexSumY) );
+//	    
+//	  // update the binomial coefficients
+//	  CombP1X = (P1-IndexSumX)*CombP1X/(IndexSumX+1);  // The index is still the old one => expression for "nC k+1"
+//	  PowDistanceXC *= DeltaCellCenters[cell].x;       // Update PowDistanceXC
+//	}//endfor (IndexSumX)
+//
+//	A(cell,i) += CombP2Y*PowDistanceYC*IntSum; // update the external sum
+//
+//	CombP2Y = (P2-IndexSumY)*CombP2Y/(IndexSumY+1); // the index is still the old one => expression for "nC k+1"
+//	PowDistanceYC *= DeltaCellCenters[cell].y;      // Update PowDistanceYC
+//      }//endfor (IndexSumY)
+//
+//      // apply geometric weighting
+//      A(cell,i) *= GeometricWeights[cell];
+//
+//    }//endfor (i)
       
   } //endfor (cell)
 
@@ -1732,6 +1820,7 @@ Set_LHS_MeanValueConservation_Equations(const int &iCell, const int &jCell,
   delete [] DeltaCellCenters;
 
 }
+
 // --> RR: huge comment out of def'ns of contrained reconstructions 6 fcns
 //
 ///*!

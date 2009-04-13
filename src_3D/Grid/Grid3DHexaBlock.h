@@ -107,6 +107,12 @@ using namespace std;
  *                    hexahedral grid block.            *
  *      centroid   -- Calculate 3D vector containing    *
  *                    the location of cell center.      *
+ *     Xcentroid   -- Return the x coordinate of        *
+ *                    the location of cell center.      *
+ *     Ycentroid   -- Return the y coordrinat of        *
+ *                    the location of cell center.      *
+ *     Zcentroid   -- Return the z coordinate of ing    *
+ *                    the location of cell center.      *
  *      Volume     -- Calculate the volume for cell.    *
  *      nodeNWBot  -- Return NWBot node for cell.       *
  *      nodeNEBot  -- Return NEBot node for cell.       *
@@ -218,6 +224,9 @@ class Grid3D_Hexa_Block {
     /* Calculate centroid of cell. */
     Vector3D centroid(const Cell3D &Cell);
     Vector3D centroid(const int ii, const int jj, const int kk);
+    double Xcentroid(const int ii, const int jj, const int kk);
+    double Ycentroid(const int ii, const int jj, const int kk);
+    double Zcentroid(const int ii, const int jj, const int kk);
 
     /* Calculate cell volume. */
     double volume(const Cell3D &Cell);
@@ -665,6 +674,18 @@ inline Vector3D Grid3D_Hexa_Block::centroid(const int ii, const int jj, const in
   return ((Node[ii][jj+1][kk].X+Node[ii+1][jj+1][kk].X+Node[ii+1][jj][kk].X+
            Node[ii][jj][kk].X+Node[ii][jj+1][kk+1].X+Node[ii+1][jj+1][kk+1].X+
            Node[ii+1][jj][kk+1].X+Node[ii][jj][kk+1].X)/8);
+}
+
+inline double Grid3D_Hexa_Block::Xcentroid(const int ii, const int jj, const int kk) {
+  return centroid(ii,jj,kk).x;
+}
+
+inline double Grid3D_Hexa_Block::Ycentroid(const int ii, const int jj, const int kk) {
+  return centroid(ii,jj,kk).y;
+}
+
+inline double Grid3D_Hexa_Block::Zcentroid(const int ii, const int jj, const int kk) {
+  return centroid(ii,jj,kk).z;
 }
 
 /*************************************************************************

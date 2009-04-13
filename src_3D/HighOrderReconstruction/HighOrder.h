@@ -78,7 +78,7 @@ public:
   HighOrder(int ReconstructionOrder, GeometryType & Block,
 	      const bool &_pseudo_inverse_allocation_ = false); //!< Advanced constructor
   HighOrder( const HighOrder & rhs); //!< Copy constructor
-  void allocate(const int &NC_IDir, const int &NC_JDir,
+  void allocate(const int &NC_IDir, const int &NC_JDir, const int &NC_KDir,
 		const int &Nghost,
 		const bool &_pseudo_inverse_allocation_,
 		int ReconstructionOrder = -1);
@@ -207,10 +207,10 @@ public:
   const DenseMatrix & Cell_LHS_Inv(const int & ii, const int & jj, const int & kk) const {return CENO_LHS[ii][jj][kk];}
   //! Get the entry (IndexI,IndexJ) in the pseudo-inverse matrix for the reconstruction of cell (ii,jj,kk)
   double & Cell_LHS_Inv_Value(const int & ii, const int & jj, const int & kk,
-			      const int & IndexI, const int & IndexJ, const int & IndexK) {return CENO_LHS[ii][jj][kk](IndexI,IndexJ,IndexK);}
+			      const int & IndexI, const int & IndexJ) {return CENO_LHS[ii][jj][kk](IndexI,IndexJ);}
   //! Get the entry (IndexI,IndexJ) in the pseudo-inverse matrix for the reconstruction of cell (ii,jj,kk)
   const double & Cell_LHS_Inv_Value(const int & ii, const int & jj, const int & kk,
-				    const int & IndexI, const int & IndexJ, const int & IndexK) const {return CENO_LHS(IndexI,IndexJ,IndexK);}
+				    const int & IndexI, const int & IndexJ) const {return CENO_LHS[ii][jj][kk](IndexI,IndexJ);}
   //! Return true if the pseudo-inverse has been already computed, otherwise false.
   bool IsPseudoInversePreComputed(void) const { return _calculated_psinv; }
   //! Require update of the pseudo-inverse
@@ -244,13 +244,13 @@ public:
   //! Get the cell (ii,jj,kk) of the associated block mesh
   const GeometryType & CellGeometry(const int & ii, const int & jj, const int & kk) const {return Geom->Cell[ii][jj][kk];}
   //! Get the centroid of cell (ii,jj,kk) of the associated block mesh
-  const Vector3D & CellCenter(const int & ii, const int & jj, const int & kk) const {return Geom->CellCentroid(ii,jj,kk);}
+  const Vector3D & CellCenter(const int & ii, const int & jj, const int & kk) const {return Geom->centroid(ii,jj,kk);}
   //! Get the X-coordinate of the (ii,jj,kk) cell centroid of the associated block mesh
-  const double & XCellCenter(const int & ii, const int & jj, const int & kk) const {return Geom->XCellCentroid(ii,jj,kk);}
+  const double XCellCenter(const int & ii, const int & jj, const int & kk) const {return Geom->Xcentroid(ii,jj,kk);}
   //! Get the Y-coordinate of the (ii,jj,kk) cell centroid of the associated block mesh
-  const double & YCellCenter(const int & ii, const int & jj, const int & kk) const {return Geom->YCellCentroid(ii,jj,kk);}
+  const double YCellCenter(const int & ii, const int & jj, const int & kk) const {return Geom->Ycentroid(ii,jj,kk);}
   //! Get the Z-coordinate of the (ii,jj,kk) cell centroid of the associated block mesh
-  const double & ZCellCenter(const int & ii, const int & jj, const int & kk) const {return Geom->ZCellCentroid(ii,jj,kk);}
+  const double ZCellCenter(const int & ii, const int & jj, const int & kk) const {return Geom->Zcentroid(ii,jj,kk);}
   //! Set the pointer to the associated geometry
   void SetGeometryPointer(GeometryType & Block){ Geom = &Block;}
   void AssociateGeometry(GeometryType & Block);
@@ -276,6 +276,11 @@ public:
   //! Get j-direction index of last interior cell
   const int & JCu_Grid(void) const {return Geom->JCu; }
   //! Get number of ghost cells for the associated block mesh
+  const int & KCl_Grid(void) const {return Geom->KCl; }
+  //! Get k-direction index of last interior cell
+  const int & KCu_Grid(void) const {return Geom->KCu; }
+  //! Get number of ghost cells for the associated block mesh
+
   const int & Nghost_Grid(void) const {return Geom->Nghost; }
   //@}
 
@@ -326,7 +331,7 @@ public:
   //! Return the number of high-order ghost cells for the current CENO reconstruction block.
   int getNghostHighOrder(void) const { return getNghostHighOrder(OrderOfReconstruction); }
   const int & NghostHO(void) const { return Nghost_HO; }
-  void ResetMonotoncityData(void);
+  void ResetMonotonicityData(void);
   void ResetMonotonicityData(const int & ii, const int & jj, const int & kk);
   void ResetMonotonicityDataBackup(void);
   void ResetMonotonicityDataBackup(const int & ii, const int & jj, const int & kk);
@@ -417,7 +422,7 @@ public:
   //! Evaluate the entropy provided by the interpolant at a given location (X_Coord,Y_Coord,Z_Coord),
   //  using the reconstruction of cell (ii,jj,kk)
   double SolutionEntropyAtCoordinates(const int & ii, const int & jj, const int & kk, 
-				      const double & X_Coord, const double & Y_Coord) const {
+				      const double & X_Coord, const double & Y_Coord, const double & Z_Coord) const {
     return SolutionStateAtCoordinates(ii,jj,kk,X_Coord,Y_Coord,Z_Coord).s();
   }
 
@@ -526,7 +531,7 @@ public:
 							   const Soln_State & 
 							   (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &,const int &) const,
 							   const int &iCell, const int &jCell, const int &kCell,
-							   const IndexType & i_index, const IndexType & j_index);
+							   const IndexType & i_index, const IndexType & j_index, const IndexType & k_index);
 
   /*! @brief Compute the pseudo-inverse corresponding to the unlimited high-order solution reconstruction
     of cell (iCell,jCell,kCell).  */
@@ -665,10 +670,10 @@ public:
 //  void displayDeviatedReconstructionStencil(ostream & out,
 //					    const int &iCell, const int &jCell, const int &kCell,
 //					    const int &rings) const;
-//  /*! @brief Set a central stencil of cells with a given extend for a particular cell. */
-//  void SetCentralStencil(const int &iCell, const int &jCell, const int & kCell,
-//			 IndexType & i_index, IndexType & j_index, IndexType & k_index,
-//			 const int &rings, int &StencilSize) const;
+  /*! @brief Set a central stencil of cells with a given extend for a particular cell. */
+  void SetCentralStencil(const int &iCell, const int &jCell, const int & kCell,
+			 IndexType & i_index, IndexType & j_index, IndexType & k_index,
+			 const int &rings, int &StencilSize) const;
 //  /*! @brief Set a stencil with all cells used for the reconstructions of the cells in the passed index arrays. */
 //  void getEnlargedReconstructionStencil(const int &iCell, const int &jCell, int & kCell,
 //					IndexType & i_index, IndexType & j_index, IndexType & k_index) const;
@@ -1030,9 +1035,10 @@ private:
     return UnlimitedLinearSolutionAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z,parameter);
   }
   //! Evaluate the limiter
-  double HighOrder<SOLN_STATE>::CalculateLimiter(double *uHexa, const int &n,
-						 const int &i, const int &j, const int &k,
-						 const double &u0Min, const double &u0Max, const int &Limiter);
+  template<class Soln_Block_Type>
+  double CalculateLimiter(Soln_Block_Type SolnBlk, double *uHexa, const int &n,
+			  const int &i, const int &j, const int &k,
+			  const double &u0Min, const double &u0Max, const int &Limiter);
 //  double CalculateLimiter(double *uQuad, const int &nQuad,
 //			  const double &u0, const double &u0Min, const double &u0Max, const int &Limiter);
 
@@ -1089,7 +1095,7 @@ HighOrder<SOLN_STATE>::HighOrder(void):
 //  ReconstructionTypeMap(NULL),
   Geom(NULL), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
   _constrained_block_reconstruction(false),
-  AdjustmentCoeff(0.0),
+  AdjustmentCoeff(0.0)
 //  ObserverInteriorCellGeometryState(0), ObserverGhostCellGeometryState(0), ObserverCornerGhostCellGeometryState(0)
 {
   //
@@ -1146,7 +1152,7 @@ HighOrder<SOLN_STATE>::HighOrder(const HighOrder<SOLN_STATE> & rhs)
     CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
     //    ReconstructionTypeMap(NULL),
     Geom(rhs.Geom), _si_calculation(rhs._si_calculation),
-    AdjustmentCoeff(rhs.AdjustmentCoeff),
+    AdjustmentCoeff(rhs.AdjustmentCoeff)
 //    ObserverInteriorCellGeometryState(rhs.ObserverInteriorCellGeometryState),
 //    ObserverGhostCellGeometryState(rhs.ObserverGhostCellGeometryState),
 //    ObserverCornerGhostCellGeometryState(rhs.ObserverCornerGhostCellGeometryState)
@@ -2224,7 +2230,7 @@ void HighOrder<SOLN_STATE>::ResetMonotonicityData(const int & ii, const int & jj
 template<class SOLN_STATE> inline
 void HighOrder<SOLN_STATE>::ResetMonotonicityDataBackup(void){
 
-  int i,j;
+  int i,j,k;
   for (k  = KCl-Nghost_HO ; k <= KCu+Nghost_HO ; ++k ) {
     for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
       for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i ) {    
@@ -2284,9 +2290,9 @@ void HighOrder<SOLN_STATE>::AssessInterpolantsSmoothness(const int &iCell, const
 	/* Flag all cells in the layer surrounding (and including) the cell (iCell,jCell,kCell) 
 	   with inadequate reconstruction if CENO_Padding is ON */
 
- 	for (k=kCell-1, k <= kCell+1, ++k){
-	  for (j=jCell-1, j <= jCell+1, ++j){
-	    for (i=iCell-1, i <= iCell+1, ++i){
+ 	for (k=kCell-1; k <= kCell+1; ++k){
+	  for (j=jCell-1; j <= jCell+1; ++j){
+	    for (i=iCell-1; i <= iCell+1; ++i){
 	      CellInadequateFitValue(i,j,k,parameter) = ON;
 	    } //endfor
 	  } //endfor
@@ -2573,6 +2579,7 @@ void HighOrder<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
 
 
   // --> RR: TEMPORARY SI CALCULATION!! comment out the rest
+  int parameter;
   for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
     CellSmoothnessIndicatorValue(iCell,jCell,kCell,parameter) = 1.0e20;
   } // endfor (parameter)
@@ -2751,9 +2758,9 @@ ReturnType HighOrder<SOLN_STATE>::IntegrateOverTheCell(const int &ii, const int 
 							 ReturnType _dummy_param) const {
   // --> RR: TEST: AdaptiveGaussianQuadrature needs testing for geometry association
   return AdaptiveGaussianQuadrature(FuncObj, 
-				    Grid->nodeSWBot(ii,jj,kk).X.x, Grid->nodeSEBot(ii,jj,kk).X.x, 
-				    Grid->nodeSWBot(ii,jj,kk).X.y, Grid->nodeNWBot(ii,jj,kk).X.y,
-				    Grid->nodeSWBot(ii,jj,kk).X.z, Grid->nodeSWTop(ii,jj,kk).X.z, 
+				    Geom->nodeSWBot(ii,jj,kk).X.x, Geom->nodeSEBot(ii,jj,kk).X.x, 
+				    Geom->nodeSWBot(ii,jj,kk).X.y, Geom->nodeNWBot(ii,jj,kk).X.y,
+				    Geom->nodeSWBot(ii,jj,kk).X.z, Geom->nodeSWTop(ii,jj,kk).X.z, 
 				    digits,
 				    _dummy_param);
 }
@@ -4779,37 +4786,33 @@ void HighOrder<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const int
  * Calculate the slope limiter for a variety 
  * of limiting functions. 
  */
-template<class SOLN_STATE> inline
-double HighOrder<SOLN_STATE>::CalculateLimiter(double *uHexa, const int &n,
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+double HighOrder<SOLN_STATE>::CalculateLimiter(Soln_Block_Type SolnBlk, double *uHexa, const int &n,
 					       const int &i, const int &j, const int &k,
 					       const double &u0Min, const double &u0Max, const int &Limiter){
 
   switch(Limiter) {
   case LIMITER_ONE :
-    PHI = ONE;
+    return ONE;
     break;
   case LIMITER_ZERO :
-    PHI = ZERO;
+    return ZERO;
     break;
   case LIMITER_BARTH_JESPERSEN :
-    PHI = Limiter_BarthJespersen(uHexa,  W[i][j][k][n], 
-				 u0Min, u0Max, 6);
+    return Limiter_BarthJespersen(uHexa, SolnBlk.W[i][j][k][n], u0Min, u0Max, 6);
     break;
   case LIMITER_VENKATAKRISHNAN :
-    PHI = Limiter_Venkatakrishnan(uHexa,  W[i][j][k][n], 
-				  u0Min, u0Max, 6);
+    return Limiter_Venkatakrishnan(uHexa, SolnBlk.W[i][j][k][n], u0Min, u0Max, 6);
     break;
   case LIMITER_VANLEER :
-    PHI = Limiter_VanLeer(uHexa,  W[i][j][k][n], 
-			  u0Min, u0Max, 6);
+    return Limiter_VanLeer(uHexa, SolnBlk.W[i][j][k][n], u0Min, u0Max, 6);
     break;
   case LIMITER_VANALBADA :
-    PHI = Limiter_VanAlbada(uHexa,  W[i][j][k][n], 
-			    u0Min, u0Max, 6);
+    return Limiter_VanAlbada(uHexa, SolnBlk.W[i][j][k][n], u0Min, u0Max, 6);
     break;
   default:
-    PHI = Limiter_BarthJespersen(uHexa,  W[i][j][k][n], 
-				 u0Min, u0Max, 6);
+    return Limiter_BarthJespersen(uHexa, SolnBlk.W[i][j][k][n], u0Min, u0Max, 6);
     break;
   };
 
@@ -4841,7 +4844,7 @@ double HighOrder<SOLN_STATE>::CalculateLimiter(double *uHexa, const int &n,
 template<class SOLN_STATE>
 void HighOrder<SOLN_STATE>::Output_Object(ostream & out_file) const {
 
-  int i,j, parameter;
+  int i,j,k,parameter;
 
   // Output allocation flags
   out_file << _allocated_block << " "
