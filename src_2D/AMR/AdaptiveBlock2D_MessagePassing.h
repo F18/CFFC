@@ -5766,8 +5766,7 @@ int Unload_Receive_Message_Buffers_NoResChange(Quad_Soln_Block *Soln_ptr,
 	     j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
@@ -5850,8 +5849,7 @@ int Unload_Receive_Message_Buffers_NoResChange(Quad_Soln_Block *Soln_ptr,
 	     j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
@@ -5935,8 +5933,7 @@ int Unload_Receive_Message_Buffers_NoResChange(Quad_Soln_Block *Soln_ptr,
 	     j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
              for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
@@ -6019,8 +6016,7 @@ int Unload_Receive_Message_Buffers_NoResChange(Quad_Soln_Block *Soln_ptr,
 	     j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
              for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
@@ -6089,8 +6085,7 @@ int Unload_Receive_Message_Buffers_NoResChange(Quad_Soln_Block *Soln_ptr,
 	     j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
           } /* endif */
@@ -6147,8 +6142,7 @@ int Unload_Receive_Message_Buffers_NoResChange(Quad_Soln_Block *Soln_ptr,
 	     j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
           } /* endif */
@@ -6205,8 +6199,7 @@ int Unload_Receive_Message_Buffers_NoResChange(Quad_Soln_Block *Soln_ptr,
 	     j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
           } /* endif */
@@ -6263,8 +6256,7 @@ int Unload_Receive_Message_Buffers_NoResChange(Quad_Soln_Block *Soln_ptr,
 	     j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
           } /* endif */
@@ -6436,8 +6428,7 @@ int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Quad_Soln_Block *Soln_
                 } /* endif */
                 for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                    for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	              Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	              Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		     Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                    } /* endfor */
                 } /* endfor */
                 if (j_neigh == 0) {
@@ -6582,8 +6573,7 @@ int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Quad_Soln_Block *Soln_
                 } /* endif */
                 for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                    for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	              Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	              Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		     Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                    } /* endfor */
                 } /* endfor */
                 if (j_neigh == 0) {
@@ -6728,8 +6718,7 @@ int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Quad_Soln_Block *Soln_
                 } /* endif */
                 for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                    for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	              Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	              Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		     Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                    } /* endfor */
                 } /* endfor */
                 if (j_neigh == 0) {
@@ -6874,8 +6863,7 @@ int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Quad_Soln_Block *Soln_
                 } /* endif */
                 for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                    for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	              Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	              Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		     Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                    } /* endfor */
                 } /* endfor */
                 if (j_neigh == 0) {
@@ -6950,8 +6938,7 @@ int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Quad_Soln_Block *Soln_
 	     j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
           } /* endif */
@@ -7009,8 +6996,7 @@ int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Quad_Soln_Block *Soln_
 	     j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
           } /* endif */
@@ -7068,8 +7054,7 @@ int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Quad_Soln_Block *Soln_
 	     j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
           } /* endif */
@@ -7127,8 +7112,7 @@ int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Quad_Soln_Block *Soln_
 	     j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
           } /* endif */
@@ -7273,8 +7257,7 @@ int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Quad_Soln_Block *Soln_
              } /* endif */
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
  	     if (Soln_Block_List.Block[i_blk].info.sector == ADAPTIVEBLOCK2D_SECTOR_NW) {
@@ -7391,8 +7374,7 @@ int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Quad_Soln_Block *Soln_
              } /* endif */
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
  	     if (Soln_Block_List.Block[i_blk].info.sector == ADAPTIVEBLOCK2D_SECTOR_SW) {
@@ -7509,8 +7491,7 @@ int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Quad_Soln_Block *Soln_
              } /* endif */
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
  	     if (Soln_Block_List.Block[i_blk].info.sector == ADAPTIVEBLOCK2D_SECTOR_SE) {
@@ -7627,8 +7608,7 @@ int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Quad_Soln_Block *Soln_
              } /* endif */
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
  	     if (Soln_Block_List.Block[i_blk].info.sector == ADAPTIVEBLOCK2D_SECTOR_SW) {
@@ -7701,8 +7681,7 @@ int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Quad_Soln_Block *Soln_
              j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
           } /* endif */
@@ -7760,8 +7739,7 @@ int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Quad_Soln_Block *Soln_
              j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
           } /* endif */
@@ -7819,8 +7797,7 @@ int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Quad_Soln_Block *Soln_
 	     j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
           } /* endif */
@@ -7878,8 +7855,7 @@ int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Quad_Soln_Block *Soln_
              j_inc = 1;
              for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
                 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_ptr[i_blk].Grid.Cell[i][j].Xc = Soln_ptr[i_blk].Grid.centroid(i, j);
-	           Soln_ptr[i_blk].Grid.Cell[i][j].A = Soln_ptr[i_blk].Grid.area(i, j);
+		  Soln_ptr[i_blk].Grid.Update_GhostCellProperties_DuringMessagePassing(i,j);
                 } /* endfor */
              } /* endfor */
           } /* endif */

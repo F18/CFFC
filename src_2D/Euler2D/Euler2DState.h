@@ -1,4 +1,5 @@
-/* Euler2DState.h:  Header file defining 2D Euler Solution State Classes. */
+/*!\file Euler2DState.h
+  \brief Header file defining 2D Euler Solution State Classes. */
 
 #ifndef _EULER2D_STATE_INCLUDED
 #define _EULER2D_STATE_INCLUDED
@@ -13,33 +14,16 @@
 #include <cstdlib>
 #include <cstring>
 
+/* Using std namespace functions */
 using namespace std;
 
-/* Include math macro, CFD, 2D vector, and gas constant header files. */
-
-#ifndef _MATH_MACROS_INCLUDED
-#include "../Math/Math.h"
-#endif // _MATH_MACROS_INCLUDED
-
-#ifndef _CFD_INCLUDED
-#include "../CFD/CFD.h"
-#endif // _CFD_INCLUDED
-
-#ifndef _MATRIX_INCLUDED
-#include "../Math/Matrix.h"
-#endif // _MATRIX_INCLUDED
-
-#ifndef _VECTOR2D_INCLUDED
-#include "../Math/Vector2D.h"
-#endif //_VECTOR2D_INCLUDED
-
-#ifndef _GAS_CONSTANTS_INCLUDED
-#include "../Physics/GasConstants.h"
-#endif // _GAS_CONSTANTS_INCLUDED
-
-#ifndef _SOLID_CONSTANTS_INCLUDED
-#include "../Physics/SolidConstants.h"
-#endif // _SOLID_CONSTANTS_INCLUDED
+/* Include CFFC header files */
+#include "../Math/Math.h"  /* Include math macro header files. */
+#include "../CFD/CFD.h"    /* Include CFD header files. */
+#include "../Math/Matrix.h"  /* Include matrix header files. */
+#include "../Math/Vector2D.h" /* Include vector 2D header files. */
+#include "../Physics/GasConstants.h" /* Include gas constant header files. */
+#include "../Physics/SolidConstants.h" /* Include solid constant header files. */
 
 /* Define the classes. */
 
@@ -188,6 +172,9 @@ public:
     d = rho; v.x = vx; v.y = vy; p = pre;
   }
 
+  //! Value Constructor
+  explicit Euler2D_pState(const double &Val);
+
   /* Destructor. */
   // ~Euler2D_pState(void);
   // Use automatically generated destructor.
@@ -195,7 +182,7 @@ public:
  
   //@{ @name Useful operators.
   //! Return the number of variables.
-  int NumVar(void) { return NUM_VAR_EULER2D; }
+  static int NumVar(void) { return NUM_VAR_EULER2D; }
 
   //! Copy operator.
   void Copy(const Euler2D_pState &W) {
@@ -205,6 +192,11 @@ public:
   //! Vacuum operator.
   void Vacuum(void) {
     d = ZERO; v = Vector2D_ZERO; p = ZERO;
+  }
+
+  //! One operator. Set the solution to ONE.
+  void One(void) { 
+    d = ONE; v.x = ONE; v.y = ONE; p = ONE;
   }
 
   //! Standard atmosphere operator.
@@ -333,6 +325,9 @@ public:
   Euler2D_cState Fn(void) const;
   Euler2D_cState Fn(const Euler2D_pState &W);
   friend Euler2D_cState Fn(const Euler2D_pState &W);
+  //! @brief Calculate flux in the provided normal direction for a given solution state
+  Euler2D_cState Fn(const Vector2D & normal_dir) const;
+  friend Euler2D_cState Fn(const Euler2D_pState &W, const Vector2D & normal_dir);
   void dFndU(DenseMatrix &dFndU);
   void dFndU(DenseMatrix &dFndU) const;
   friend void dFndU(DenseMatrix &dFndU, const Euler2D_pState &W);
@@ -467,6 +462,12 @@ public:
   friend void P_U_WS_inv(DenseMatrix &dWdU, const Euler2D_pState &W);
   //@}
 
+  //! @name Determine flow direction at inter-celular face
+  friend int DetermineFlowDirection(const Euler2D_pState &Wi,
+				    const Euler2D_pState &Wo,
+				    const Vector2D &normal_dir);
+  //@}
+
   /* Assignment operator. */
   // Euler2D_pState operator = (const Euler2D_pState &W);
   // Use automatically generated assignment operator.
@@ -512,17 +513,24 @@ public:
   friend Euler2D_pState operator *(const Euler2D_pState &W, const double &a);
   friend Euler2D_pState operator *(const double &a, const Euler2D_pState &W);
   friend Euler2D_pState operator /(const Euler2D_pState &W, const double &a);
+  friend Euler2D_pState operator /(const Euler2D_pState &W1, const Euler2D_pState &W2);
   friend Euler2D_pState operator ^(const Euler2D_pState &W1, const Euler2D_pState &W2);
+  friend Euler2D_pState max(const Euler2D_pState &W1, const Euler2D_pState &W2 );
+  friend Euler2D_pState min(const Euler2D_pState &W1, const Euler2D_pState &W2 );
   //@}
 
   //@{ @name Unary arithmetic operators.
   friend Euler2D_pState operator +(const Euler2D_pState &W);
   friend Euler2D_pState operator -(const Euler2D_pState &W);
+  friend Euler2D_pState fabs(const Euler2D_pState &W);
+  friend Euler2D_pState sqr(const Euler2D_pState &W);
   //@}
 
   //@{ @name Shortcut arithmetic operators.
   Euler2D_pState &operator +=(const Euler2D_pState &W);
   Euler2D_pState &operator -=(const Euler2D_pState &W);
+  Euler2D_pState &operator /=(const Euler2D_pState &W);
+  Euler2D_pState &operator *=(const Euler2D_pState &W);
   Euler2D_pState &operator *=(const double &a);
   Euler2D_pState &operator /=(const double &a);
   //@}
@@ -530,6 +538,10 @@ public:
   //@{ @name Relational operators.
   friend int operator ==(const Euler2D_pState &W1, const Euler2D_pState &W2);
   friend int operator !=(const Euler2D_pState &W1, const Euler2D_pState &W2);
+  friend bool operator >=(const Euler2D_pState& W1, const Euler2D_pState& W2);
+  friend bool operator <=(const Euler2D_pState& W1, const Euler2D_pState& W2);
+  friend bool operator <(const Euler2D_pState &W1, const Euler2D_pState &W2);
+  friend bool operator >(const Euler2D_pState &W1, const Euler2D_pState &W2);
   //@}
 
   //@{ @name Input-output operators.
@@ -668,6 +680,9 @@ public:
 
   //! Copy constructor.
   Euler2D_cState(const Euler2D_pState &W);
+
+  //! Value Constructor
+  explicit Euler2D_cState(const double &Val);
 
   //! Assignment constructor.
   Euler2D_cState(const double &rho,
@@ -917,6 +932,8 @@ public:
   //@{ @name Unary arithmetic operators.
   friend Euler2D_cState operator +(const Euler2D_cState &U);
   friend Euler2D_cState operator -(const Euler2D_cState &U);
+  friend Euler2D_cState fabs(const Euler2D_cState &U);
+  friend Euler2D_cState sqr(const Euler2D_cState &U);
   //@}
 
   //@{ @name Shortcut arithmetic operators.
@@ -929,6 +946,10 @@ public:
   //@{ @name Relational operators.
   friend int operator ==(const Euler2D_cState &U1, const Euler2D_cState &U2);
   friend int operator !=(const Euler2D_cState &U1, const Euler2D_cState &U2);
+  friend bool operator >=(const Euler2D_cState& U1, const Euler2D_cState& U2);
+  friend bool operator <=(const Euler2D_cState& U1, const Euler2D_cState& U2);
+  friend bool operator <(const Euler2D_cState &U1, const Euler2D_cState &U2);
+  friend bool operator >(const Euler2D_cState &U1, const Euler2D_cState &U2);  
   //@}
 
   //@{ @name Input-output operators.
@@ -937,6 +958,13 @@ public:
   //@}
 
 };
+
+/********************************************
+ * Euler2D_pState Value Constructor.        *
+ *******************************************/
+inline Euler2D_pState::Euler2D_pState(const double &Val):
+  d(Val), v(Val), p(Val){
+}
 
 /********************************************************
  * Euler2D_pState::setgas -- Assign gas constants.      *
@@ -1207,9 +1235,29 @@ inline Euler2D_pState operator /(const Euler2D_pState &W, const double &a) {
   return (Euler2D_pState(W.d/a,W.v/a,W.p/a));
 }
 
+inline Euler2D_pState operator /(const Euler2D_pState &W1, const Euler2D_pState &W2) {
+  return (Euler2D_pState(W1[1]/W2[1], W1[2]/W2[2], W1[3]/W2[3], W1[4]/W2[4]));
+}
+
 // My useful solution state product operator.
 inline Euler2D_pState operator ^(const Euler2D_pState &W1, const Euler2D_pState &W2) {
    return (Euler2D_pState(W1.d*W2.d,W1.v.x*W2.v.x,W1.v.y*W2.v.y,W1.p*W2.p));
+}
+
+/*!
+ * Compute maximum between 2 states. 
+ * Return the state of maximum values.
+ */
+inline Euler2D_pState max(const Euler2D_pState &W1, const Euler2D_pState &W2 ){
+  return Euler2D_pState(max(W1.d,W2.d),max(W1.v.x,W2.v.x),max(W1.v.y,W2.v.y),max(W1.p,W2.p));
+}
+
+/*!
+ * Compute minimum between 2 states. 
+ * Return the state of minimum values.
+ */
+inline Euler2D_pState min(const Euler2D_pState &W1, const Euler2D_pState &W2 ){
+  return Euler2D_pState(min(W1.d,W2.d),min(W1.v.x,W2.v.x),min(W1.v.y,W2.v.y),min(W1.p,W2.p));
 }
 
 /********************************************************
@@ -1223,6 +1271,15 @@ inline Euler2D_pState operator -(const Euler2D_pState &W) {
   return (Euler2D_pState(-W.d,-W.v,-W.p));
 }
 
+inline Euler2D_pState fabs(const Euler2D_pState &W){
+  return Euler2D_pState(fabs(W[1]),fabs(W[2]), fabs(W[3]),fabs(W[4]));
+}
+
+inline Euler2D_pState sqr(const Euler2D_pState &W){
+  return Euler2D_pState(sqr(W.d),sqr(W.v.x),sqr(W.v.y),sqr(W.p));
+}
+
+
 /********************************************************
  * Euler2D_pState -- Shortcut arithmetic operators.     *
  ********************************************************/
@@ -1233,6 +1290,19 @@ inline Euler2D_pState& Euler2D_pState::operator +=(const Euler2D_pState &W) {
 
 inline Euler2D_pState& Euler2D_pState::operator -=(const Euler2D_pState &W) {
   d -= W.d; v.x -= W.v.x; v.y -= W.v.y; p -= W.p;
+  return *this;
+}
+
+inline Euler2D_pState& Euler2D_pState::operator /=(const Euler2D_pState &W){
+  d /= W.d;
+  v.x /= W.v.x;
+  v.y /= W.v.y;
+  p /= W.p;
+  return *this;
+}
+
+inline Euler2D_pState& Euler2D_pState::operator *=(const Euler2D_pState &W) {
+  d *= W.d; v.x *= W.v.x; v.y *= W.v.y; p *= W.p;
   return *this;
 }
 
@@ -1257,6 +1327,22 @@ inline int operator !=(const Euler2D_pState &W1, const Euler2D_pState &W2) {
   return (W1.d != W2.d || W1.v != W2.v || W1.p != W2.p);
 }
 
+inline bool operator <=(const Euler2D_pState &W1, const Euler2D_pState &W2) {
+  return (W1[1]<=W2[1] && W1[2]<=W2[2] && W1[3]<=W2[3] && W1[4]<=W2[4] );
+}
+
+inline bool operator >=(const Euler2D_pState &W1, const Euler2D_pState &W2) {
+  return (W1[1]>=W2[1] && W1[2]>=W2[2] && W1[3]>=W2[3] && W1[4]>=W2[4] );
+}
+
+inline bool operator <(const Euler2D_pState &W1, const Euler2D_pState &W2) {
+  return (W1[1]<W2[1] && W1[2]<W2[2] && W1[3]<W2[3] && W1[4]<W2[4] );
+}
+
+inline bool operator >(const Euler2D_pState &W1, const Euler2D_pState &W2) {
+  return (W1[1]>W2[1] && W1[2]>W2[2] && W1[3]>W2[3] && W1[4]>W2[4] );
+}
+
 /********************************************************
  * Euler2D_pState -- Input-output operators.            *
  ********************************************************/
@@ -1272,6 +1358,13 @@ inline istream &operator >> (istream &in_file, Euler2D_pState &W) {
   in_file >> W.d >> W.v.x >> W.v.y >> W.p;
   in_file.unsetf(ios::skipws);
   return (in_file);
+}
+
+/********************************************
+ * Euler2D_cState Value Constructor.        *
+ *******************************************/
+inline Euler2D_cState::Euler2D_cState(const double &Val):
+  d(Val), dv(Val), E(Val){
 }
 
 /********************************************************
@@ -1567,6 +1660,14 @@ inline Euler2D_cState operator -(const Euler2D_cState &U) {
   return (Euler2D_cState(-U.d,-U.dv,-U.E));
 }
 
+inline Euler2D_cState fabs(const Euler2D_cState &U){
+  return Euler2D_cState(fabs(U.d), fabs(U.dv.x), fabs(U.dv.y), fabs(U.E));
+}
+
+inline Euler2D_cState sqr(const Euler2D_cState &U){
+  return Euler2D_cState(sqr(U.d), sqr(U.dv.x), sqr(U.dv.y), sqr(U.E));
+}
+
 /********************************************************
  * Euler2D_cState -- Shortcut arithmetic operators.     *
  ********************************************************/
@@ -1599,6 +1700,22 @@ inline int operator ==(const Euler2D_cState &U1, const Euler2D_cState &U2) {
 
 inline int operator !=(const Euler2D_cState &U1, const Euler2D_cState &U2) {
   return (U1.d != U2.d || U1.dv != U2.dv || U1.E != U2.E);
+}
+
+inline bool operator <=(const Euler2D_cState &U1, const Euler2D_cState &U2) {
+  return (U1[1]<=U2[1] && U1[2]<=U2[2] && U1[3]<=U2[3] && U1[4]<=U2[4] );
+}
+
+inline bool operator >=(const Euler2D_cState &U1, const Euler2D_cState &U2) {
+  return (U1[1]>=U2[1] && U1[2]>=U2[2] && U1[3]>=U2[3] && U1[4]>=U2[4] );
+}
+
+inline bool operator <(const Euler2D_cState &U1, const Euler2D_cState &U2) {
+  return (U1[1]<U2[1] && U1[2]<U2[2] && U1[3]<U2[3] && U1[4]<U2[4] );
+}
+
+inline bool operator >(const Euler2D_cState &U1, const Euler2D_cState &U2) {
+  return (U1[1]>U2[1] && U1[2]>U2[2] && U1[3]>U2[3] && U1[4]>U2[4] );
 }
 
 /********************************************************
@@ -1883,6 +2000,26 @@ inline Euler2D_cState Fn(const Euler2D_pState &W) {
   return (Euler2D_cState(W.d*W.v.x, W.d*sqr(W.v.x) + W.p,
                          W.d*W.v.x*W.v.y, W.v.x*W.H()));
 }
+
+/*
+ * Calculate the inviscid flux in the normal direction 
+ * using the given solution state.
+ *
+ * \param normal_dir vector defining the normal direction
+ */ 
+inline Euler2D_cState Euler2D_pState::Fn(const Vector2D & normal_dir) const {
+  double V_dot_n(v.x*normal_dir.x + v.y*normal_dir.y);
+  return (Euler2D_cState(d*V_dot_n, 
+			 d*v.x*V_dot_n + p*normal_dir.x,
+			 d*v.y*V_dot_n + p*normal_dir.y,
+			 V_dot_n*H()));
+}
+
+/*
+ * Calculate the inviscid flux in the normal direction 
+ * using the given solution state.
+ */ 
+inline Euler2D_cState Fn(const Euler2D_pState &W, const Vector2D & normal_dir) { return W.Fn(normal_dir); }
 
 inline void Euler2D_pState::dFndU(DenseMatrix &dFndU) {
   dFndU(0,1) += ONE;

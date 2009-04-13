@@ -253,6 +253,7 @@ class Grid2D_Quad_Block{
   //! @name Defined datatypes
   //@{
   typedef Node2D NodeType;
+  typedef Spline2D BndSplineType;
   //@}
   
     int                   NNi, //!< Number of nodes in i-direction (zeta-direction).
@@ -354,7 +355,7 @@ class Grid2D_Quad_Block{
     Vector2D centroidNE_ConvexQuad(const int &ii, const int &jj) const;
     //@}
 
-    //! @name Calculate centroid of cell.
+    //! @name Get cell centroid.
     //@{
     //! Access the centroid of cell (ii,jj)
     const Vector2D & CellCentroid(int ii, int jj) const {return Cell[ii][jj].Xc; }
@@ -362,12 +363,17 @@ class Grid2D_Quad_Block{
     const double & XCellCentroid(int ii, int jj) const {return Cell[ii][jj].Xc.x; }
     //! Access the y-coordinate of the centroid of cell (ii,jj)
     const double & YCellCentroid(int ii, int jj) const {return Cell[ii][jj].Xc.y; }
+    //! Access the area of cell (ii,jj)
+    const double & CellArea(const int &ii, const int &jj) const {return Cell[ii][jj].A; }
     //@}
 
     //@{ @name Calculate cell area.
     double area(const Cell2D &Cell) const;
     double area(const int ii, const int jj) const;
     //@}
+
+    //! @brief Update cell properties during message passing
+    void Update_GhostCellProperties_DuringMessagePassing(const int &ii, const int &jj);
 
     //@{ @name Get cell nodes.
     Node2D nodeNW(const Cell2D &Cell) const;
@@ -1487,6 +1493,25 @@ inline void Grid2D_Quad_Block::set_BCs(const int& FACE, const int& BC){
       exit(1);
       break;
     };
+}
+
+/*! 
+ * Update cell properties of a cell with indexes (ii,jj)
+ * during message passing between blocks.
+ * This function gets used in the unload of message buffers.
+ */
+inline void Grid2D_Quad_Block::Update_GhostCellProperties_DuringMessagePassing(const int &ii,
+									       const int &jj){
+  
+  // Cell nodes in counterclockwise order (SW, SE, NE, NW).
+  Vector2D X[4] = { Node[ii  ][jj  ].X,
+		    Node[ii+1][jj  ].X ,
+		    Node[ii+1][jj+1].X,
+		    Node[ii  ][jj+1].X };
+  
+  // Recalculate centroid and area with the new nodal values
+  quadCentroid(X[0],X[1],X[2],X[3],
+	       Cell[ii][jj].Xc,Cell[ii][jj].A);  
 }
 
 /********************************************************

@@ -1,33 +1,23 @@
-/**********************************************************************
- * NavierStokes2DQuadSolvers.cc: 2D Navier-Stokes equation multi-     *
- *                               block quadrilateral mesh solvers.    *
- **********************************************************************/
+/*!\file NavierStokes2DQuadSolvers.cc:
+  \brief 2D Navier-Stokes equation multi-block quadrilateral mesh solvers. */
 
-// Include 2D Navier-Stokes quadrilateral mesh solution header file.
+/* Include required C++ libraries. */
+// None
 
-#ifndef _NAVIERSTOKES2D_QUAD_INCLUDED
-#include "NavierStokes2DQuad.h"
-#endif // _NAVIERSTOKES2D_QUAD_INCLUDED
+/* Using std namespace functions */
+// None
 
-// Include the multigrid header file.
-
-#ifndef _FASMULTIGRID2D_INCLUDED
-#include "../FASMultigrid2D/FASMultigrid2D.h"
-#endif // _FASMULTIGRID2D_INCLUDED
-
-// Include 2D Navier-Stokes multigrid specializations header file.
-
-#ifndef _NAVIERSTOKES2D_QUAD_MULTIGRID_INCLUDED
-#include "NavierStokes2DQuadMultigrid.h"
-#endif // _NAVIERSTOKES2D_QUAD_MULTIGRID_INCLUDED
+/* Include CFFC header files */
+#include "NavierStokes2DQuad.h"    // Include 2D Navier-Stokes quadrilateral mesh solution header file.
+#include "../FASMultigrid2D/FASMultigrid2D.h" // Include the multigrid header file.
+#include "HO_NavierStokes2DQuadGrid.h" /* Include 2D quadrilateral multiblock grid header file for Navier-Stokes */
+#include "NavierStokes2DQuadMultigrid.h" // Include 2D Navier-Stokes multigrid specializations header file.
 #include "../NewtonKrylovSchwarz2D/NKS2D.h"
 #include "NavierStokes2DQuadNKS.h"
+#include "../CFD/EllipticOperatorAnalysis2D.h"  // Include the elliptic operator analysis header file.
+#include "NavierStokes2DAccuracyAssessmentMultiBlock.h" /* Include 2D accuracy assessment for multi-block level. */
+#include "../HighOrderReconstruction/HighOrder2D_MultiBlock.h" /* Include 2D high-order header file for multi-block level. */
 
-// Include the elliptic operator analysis header file.
-
-#ifndef _ELLIPTIC2D_INCLUDED
-#include "../CFD/EllipticOperatorAnalysis2D.h"
-#endif // _ELLIPTIC2D_INCLUDED
 
 /**********************************************************************
  * Routine: NavierStokes2DQuadSolver                                  *
@@ -46,7 +36,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   NavierStokes2D_Input_Parameters Input_Parameters;
 
   // Multi-block solution-adaptive quadrilateral mesh solution variables.
-  Grid2D_Quad_Block             **MeshBlk;
+  Grid2D_Quad_MultiBlock_HO       MeshBlk;
   QuadTreeBlock_DataStructure     QuadTree;
   AdaptiveBlockResourceList       List_of_Global_Solution_Blocks;
   AdaptiveBlock2D_List            List_of_Local_Solution_Blocks;
@@ -106,6 +96,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   CFFC_Broadcast_MPI(&command_flag,1);
   if (command_flag == TERMINATE_CODE) return 0;
   Broadcast_Input_Parameters(Input_Parameters);
+  Input_Parameters.Verbose(batch_flag);    //< Set Input_Parameters to batch_mode if required
 
   /********************************************************************
    * Create initial mesh and allocate NavierStokes2D solution         *
@@ -120,67 +111,72 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   // Create initial mesh.  Read mesh from grid definition or data  
   // files when specified by input parameters.
 
-  // The primary MPI processor creates the initial mesh.
-  if (CFFC_Primary_MPI_Processor()) {
+  if (Input_Parameters.i_ICs != IC_RESTART && Input_Parameters.i_ICs != IC_GIVEN_STARTUP) {
+    // Generate the mesh only if the current run is NOT a restart!
 
-    if (!batch_flag) 
-      cout << "\n Creating (or reading) initial quadrilateral multi-block mesh.";
+    // The primary MPI processor creates the initial mesh.
+    if (CFFC_Primary_MPI_Processor()) {
+      if (!batch_flag){ 
+	cout << "\n Creating (or reading) initial quadrilateral multi-block mesh.";
+	cout.flush();
+      }
+      error_flag = MeshBlk.Multi_Block_Grid(Input_Parameters);
 
-    MeshBlk = NULL;
-    MeshBlk = Multi_Block_Grid(MeshBlk,Input_Parameters);
-
-    if (MeshBlk == NULL) {
-      error_flag = 1;
-    } else if (Check_Multi_Block_Grid(MeshBlk,
-				      Input_Parameters.Number_of_Blocks_Idir,
-				      Input_Parameters.Number_of_Blocks_Jdir)) {
-      error_flag = 1;
-    } else {
-      error_flag = 0;
+      if (error_flag) {
+	cout << "\n NavierStokes2D ERROR: Unable to create valid NavierStokes2D multi-block mesh.\n";
+	cout.flush();
+      } else {
+	//        if (Input_Parameters.i_Grid == GRID_NASA_ROTOR_37) {
+	//  	if (!batch_flag) cout << "\n Writing geometry and flow field data files for NASA Rotor 37.";
+	//  	Input_Parameters.NASA_Rotor37.outputTP_UpstreamFlowConditions("NASARotor37_UpstreamProfile.dat");
+	//  	Input_Parameters.NASA_Rotor37.outputTP_DownstreamFlowConditions("NASARotor37_DownstreamProfile.dat");
+	//  	Input_Parameters.NASA_Rotor37.outputTP_Geometry("NASARotor37_Geometry.dat");
+	//        } else if (Input_Parameters.i_Grid == GRID_NASA_ROTOR_67) {
+	//  	if (!batch_flag) cout << "\n Writing geometry and flow field data files for NASA Rotor 67.";
+	//  	Input_Parameters.NASA_Rotor67.outputTP_UpstreamFlowConditions("NASARotor67_UpstreamProfile.dat");
+	//  	Input_Parameters.NASA_Rotor67.outputTP_DownstreamFlowConditions("NASARotor67_DownstreamProfile.dat");
+	//  	Input_Parameters.NASA_Rotor67.outputTP_Geometry("NASARotor67_Geometry.dat");
+	//  	Input_Parameters.NASA_Rotor67.outputTP_FlowField2D(Input_Parameters.Rotor_Percent_Span,
+	//  							   "NASARotor67_InterbladeFlow.dat");
+	//        }
+      }
     }
 
-    if (error_flag) {
-      cout << "\n NavierStokes2D ERROR: Unable to create valid NavierStokes2D multi-block mesh.\n";
-      cout.flush();
-    } else {
-//        if (Input_Parameters.i_Grid == GRID_NASA_ROTOR_37) {
-//  	if (!batch_flag) cout << "\n Writing geometry and flow field data files for NASA Rotor 37.";
-//  	Input_Parameters.NASA_Rotor37.outputTP_UpstreamFlowConditions("NASARotor37_UpstreamProfile.dat");
-//  	Input_Parameters.NASA_Rotor37.outputTP_DownstreamFlowConditions("NASARotor37_DownstreamProfile.dat");
-//  	Input_Parameters.NASA_Rotor37.outputTP_Geometry("NASARotor37_Geometry.dat");
-//        } else if (Input_Parameters.i_Grid == GRID_NASA_ROTOR_67) {
-//  	if (!batch_flag) cout << "\n Writing geometry and flow field data files for NASA Rotor 67.";
-//  	Input_Parameters.NASA_Rotor67.outputTP_UpstreamFlowConditions("NASARotor67_UpstreamProfile.dat");
-//  	Input_Parameters.NASA_Rotor67.outputTP_DownstreamFlowConditions("NASARotor67_DownstreamProfile.dat");
-//  	Input_Parameters.NASA_Rotor67.outputTP_Geometry("NASARotor67_Geometry.dat");
-//  	Input_Parameters.NASA_Rotor67.outputTP_FlowField2D(Input_Parameters.Rotor_Percent_Span,
-//  							   "NASARotor67_InterbladeFlow.dat");
-//        }
-    }
+    // Synchronize processors.
+    CFFC_Barrier_MPI();
+
+    // Broadcast the mesh to other MPI processors.
+    CFFC_Broadcast_MPI(&error_flag,1);
+    if (error_flag) return error_flag;
+    MeshBlk.Broadcast_Multi_Block_Grid();
+
+    /* Set the number of blocks in I-dir and J-dir in Input_Parameters based
+       on what resulted after the mesh has been created. */
+    Input_Parameters.Number_of_Blocks_Idir = MeshBlk.Blocks_Idir();
+    Input_Parameters.Number_of_Blocks_Jdir = MeshBlk.Blocks_Jdir();
+
+
+    // Create (allocate) multi-block quadtree data structure, create
+    // (allocate) array of local 2D NavierStokes equation solution blocks, 
+    // assign and create (allocate) 2D NavierStokes equation solution blocks
+    // corresponding to the initial mesh.
+    if (!batch_flag) cout << "\n Creating multi-block quadtree data structure and assigning"
+			  << "\n NavierStokes2D solution blocks corresponding to initial mesh.";
+    Local_SolnBlk = CreateInitialSolutionBlocks(MeshBlk.Grid_ptr,
+						Local_SolnBlk,
+						Input_Parameters,
+						QuadTree,
+						List_of_Global_Solution_Blocks,
+						List_of_Local_Solution_Blocks);
+
+    /* Create (allocate) the high-order variables in each of the
+       local 2D Euler solution blocks */
+    HighOrder2D_MultiBlock::Create_Initial_HighOrder_Variables(Local_SolnBlk,
+							       List_of_Local_Solution_Blocks);
   } else {
-    MeshBlk = NULL;
+    // Allocate the minimum information related to the solution blocks. (i.e. use the default constructors)
+    Local_SolnBlk = Allocate(Local_SolnBlk,Input_Parameters);
   }
-
-  // Synchronize processors.
-  CFFC_Barrier_MPI();
-
-  // Broadcast the mesh to other MPI processors.
-  CFFC_Broadcast_MPI(&error_flag,1);
-  if (error_flag) return error_flag;
-  MeshBlk = Broadcast_Multi_Block_Grid(MeshBlk,Input_Parameters);
-
-  // Create (allocate) multi-block quadtree data structure, create
-  // (allocate) array of local 2D NavierStokes equation solution blocks, 
-  // assign and create (allocate) 2D NavierStokes equation solution blocks
-  // corresponding to the initial mesh.
-  if (!batch_flag) cout << "\n Creating multi-block quadtree data structure and assigning"
-                        << "\n NavierStokes2D solution blocks corresponding to initial mesh.";
-  Local_SolnBlk = CreateInitialSolutionBlocks(MeshBlk,
-					      Local_SolnBlk,
-					      Input_Parameters,
-					      QuadTree,
-					      List_of_Global_Solution_Blocks,
-					      List_of_Local_Solution_Blocks);
   if (Local_SolnBlk == NULL) return 1;
 
 #ifdef _NS_PARALLEL_DEBUG_
@@ -189,6 +185,25 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   if (error_flag) return error_flag;
 #endif
 
+  if (Input_Parameters.i_ICs != IC_RESTART && Input_Parameters.i_ICs != IC_GIVEN_STARTUP) {
+    /* Output multi-block solution-adaptive quadrilateral mesh statistics. */
+
+    if (!batch_flag) {
+      cout << "\n\n Multi-block solution-adaptive quadrilateral mesh statistics: "; 
+      cout << "\n  -> Number of Root Blocks i-direction: "
+	   << QuadTree.NRi;
+      cout << "\n  -> Number of Root Blocks j-direction: " 
+	   << QuadTree.NRj;
+      cout << "\n  -> Total Number of Used Blocks: " 
+	   << QuadTree.countUsedBlocks();
+      cout << "\n  -> Total Number of Computational Cells: " 
+	   << QuadTree.countUsedCells();
+      cout << "\n  -> Refinement Efficiency: " 
+	   << QuadTree.efficiencyRefinement() << "\n";
+      cout.flush();
+    } /* endif */
+  }
+ 
   /********************************************************************
    * Initialize NavierStokes2D solution variables.                    *
    ********************************************************************/
@@ -203,9 +218,21 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   NKS_total_cpu_time.zero();
 
   // Initialize the conserved and primitive state solution variables.
-  if (!batch_flag) cout << "\n Prescribing NavierStokes2D initial data.";
-  if (Input_Parameters.i_ICs == IC_RESTART) {
-    if (!batch_flag) cout << "\n Reading NavierStokes2D solution from restart data files.";
+  if (Input_Parameters.i_ICs == IC_RESTART  || Input_Parameters.i_ICs == IC_GIVEN_STARTUP) {
+    if (!batch_flag){ cout << "\n Reading NavierStokes2D solution from restart data files."; cout.flush(); }
+
+    //Check that restart files are probably not corrupt.
+    if (CFFC_Primary_MPI_Processor()) {
+      if(System::Restart_In_Progress()) {
+	cout << "\n  Restart-in-progress flag detected, assuming data is corrupt."
+	     << "\n  Uncompressing backups.";
+	System::Uncompress_Restart();
+	System::Remove_Restart_Flag();
+	cout << "\n  Backup successfully uncompressed; reading.";
+      }
+    }
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+
     // Read the quadtree restart file.
     error_flag = Read_QuadTree(QuadTree,
 			       List_of_Global_Solution_Blocks,
@@ -234,9 +261,28 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       cout << endl << " NavierStokes2D ERROR: Unable to open NavierStokes2D restart "
 	   << "input data file(s) on processor "
 	   << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+      cout.flush();
     }
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
+
+    // Ensure that grid and solution can be used with the new scheme parameters
+    if (Input_Parameters.i_ICs == IC_GIVEN_STARTUP){
+      
+      // Adjust the grid properties based on the new input parameters
+      Grid2D_Quad_MultiBlock_HO::Adjust_Grid_To_New_InputParameters(Local_SolnBlk,
+								    List_of_Local_Solution_Blocks, 
+								    Input_Parameters,
+								    HighOrder2D_Input::MaximumReconstructionOrder());
+
+      /* Create (allocate) the high-order variables in each of the
+	 local 2D Navier-Stokes solution blocks, if necessary. */
+      HighOrder2D_MultiBlock::Create_Initial_HighOrder_Variables(Local_SolnBlk,
+								 List_of_Local_Solution_Blocks);
+
+      //!\todo Set BCs values if possible.
+    }
+
     // Determine the distance to the nearest wall distance.
     error_flag = Determine_Wall_Distance(Local_SolnBlk,
 					 QuadTree,
@@ -264,8 +310,8 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     Broadcast_Input_Parameters(Input_Parameters);
 
   } else {
-
     // Apply initial conditions.
+    if (!batch_flag){ cout << "\n Prescribing NavierStokes2D initial data."; cout.flush(); }
     ICs(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
 
   }
@@ -287,6 +333,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     cout << "\n NavierStokes2D ERROR: Message passing error during NavierStokes2D "
 	 << "solution intialization on processor "
 	 << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+    cout.flush();
   }
   error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return error_flag;
@@ -295,10 +342,10 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
   BCs(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
 
   // Perform uniform, boundary, and initial mesh refinement.
-  if (Input_Parameters.i_ICs != IC_RESTART) {
+  if (Input_Parameters.i_ICs != IC_RESTART && Input_Parameters.i_ICs != IC_GIVEN_STARTUP) {
 
     // Perform uniform mesh refinement.
-    if (!batch_flag) cout << "\n Performing NavierStokes2D uniform mesh refinement.";
+    if (!batch_flag){ cout << "\n Performing NavierStokes2D uniform mesh refinement."; cout.flush(); }
     error_flag = Uniform_Adaptive_Mesh_Refinement(Local_SolnBlk,
 						  Input_Parameters,
 						  QuadTree,
@@ -307,12 +354,13 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     if (error_flag) {
       cout << "\n NavierStokes2D ERROR: Uniform AMR error on processor "
 	   << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+      cout.flush();
     }
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
 
     // Perform boundary mesh refinement.
-    if (!batch_flag) cout << "\n Performing NavierStokes2D boundary mesh refinement.";
+    if (!batch_flag){ cout << "\n Performing NavierStokes2D boundary mesh refinement."; cout.flush(); }
     error_flag = Boundary_Adaptive_Mesh_Refinement(Local_SolnBlk,
 						   Input_Parameters,
 						   QuadTree,
@@ -321,6 +369,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     if (error_flag) {
       cout << "\n NavierStokes2D ERROR: Boundary AMR error on processor "
 	   << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+      cout.flush();
     }
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
@@ -349,6 +398,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     if (error_flag) {
       cout << "\n NavierStokes2D ERROR: Initial AMR error on processor "
 	   << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+      cout.flush();
     }
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
@@ -482,6 +532,14 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
   // MPI barrier to ensure processor synchronization.
   CFFC_Barrier_MPI();
+
+  // Set the same number of maximum solid body objects on all CPUs
+  Spline2D_HO::Broadcast_Maximum_Number_Of_SolidBodies();
+
+  // Reset accuracy assessment
+  AccuracyAssessment2D_MultiBlock::ResetForNewCalculation(Local_SolnBlk,
+							  List_of_Local_Solution_Blocks);
+
   time(&start_explicit);
   start_number_of_time_steps = number_of_time_steps;
 
@@ -603,6 +661,29 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	      (number_of_time_steps/Input_Parameters.AMR_Frequency) == 0 ) {
 	    if (!batch_flag) cout << "\n\n Refining Grid.  Performing adaptive mesh refinement at n = "
 				  << number_of_time_steps << ".";
+	    
+	    /* Update ghostcell information and prescribe boundary conditions to ensure
+	       that the solution is consistent on each block. */
+    
+	    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+
+	    error_flag = Send_All_Messages(Local_SolnBlk, 
+					   List_of_Local_Solution_Blocks,
+					   NUM_VAR_NAVIERSTOKES2D,
+					   OFF);
+	    if (error_flag) {
+	      cout << "\n NavierStokes2D ERROR: NavierStokes2D message passing error on processor "
+		   << List_of_Local_Solution_Blocks.ThisCPU
+		   << ".\n";
+	      cout.flush();
+	    } /* endif */
+	    error_flag = CFFC_OR_MPI(error_flag);
+	    if (error_flag) return (error_flag);
+	      
+	    BCs(Local_SolnBlk, 
+		List_of_Local_Solution_Blocks,
+		Input_Parameters);
+
 	    Evaluate_Limiters(Local_SolnBlk,List_of_Local_Solution_Blocks);
 	    error_flag = Adaptive_Mesh_Refinement(Local_SolnBlk,
 						  Input_Parameters,
@@ -624,6 +705,9 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 					    Time);
 	      return error_flag;
 	    }
+	    // Set the same number of maximum solid body objects on all CPUs after AMR
+	    Spline2D_HO::Broadcast_Maximum_Number_Of_SolidBodies();
+
 	    if (!batch_flag) {
 	      cout << "\n New multi-block solution-adaptive quadrilateral mesh statistics: ";
 	      cout << "\n  -> Number of Root Blocks i-direction: "
@@ -722,9 +806,26 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	if (!first_step &&
 	    number_of_time_steps-Input_Parameters.Restart_Solution_Save_Frequency*
 	    (number_of_time_steps/Input_Parameters.Restart_Solution_Save_Frequency) == 0) {
-	  if (!batch_flag) 
+	  
+	  //  Save and delete old restart files in compressed archive (just in case)
+	  if (CFFC_Primary_MPI_Processor()) {
+	    cout << "\n  Creating compressed archive of (and deleting) old restarts.";
+	    System::Compress_Restart();
+	    cout << "\n  Writing new restart files.";
+	    cout.flush();
+	  }
+	  CFFC_Barrier_MPI(); // MPI barrier so that other processors do
+	                      // not start over writing restarts
+	  
+	  if (CFFC_Primary_MPI_Processor()) {
+	    System::Set_Restart_Flag();  //Set flag to indicate a restart is being saved
+	  }
+	  
+	  if (!batch_flag) {
 	    cout << "\n\n  Saving NavierStokes2D solution to restart data file(s) after"
 		 << " n = " << number_of_time_steps << " steps (iterations).";
+	    cout.flush();
+	  }
 	  // Write the quadtree restart file.
 	  error_flag = Write_QuadTree(QuadTree,Input_Parameters);
 	  if (error_flag) {
@@ -752,7 +853,12 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	  }
 	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
-	  if (!batch_flag) cout << endl;
+	  if (!batch_flag) { cout << endl; cout.flush(); }
+
+	  if (CFFC_Primary_MPI_Processor()) {
+	    System::Remove_Restart_Flag();  //Remove flag to indicate the restart is finished
+	  }
+
 	}
 
 	// Output progress information for the calculation.
@@ -805,6 +911,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	  if (error_flag) {
 	    cout << "\n NavierStokes2D ERROR: NavierStokes2D message passing error on processor "
 		 << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+	    cout.flush();
 	  }
 	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
@@ -821,6 +928,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	  if (error_flag) {
 	    cout << "\n NavierStokes2D ERROR: NavierStokes2D solution error on processor "
 		 << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+	    cout.flush();
 	  }
 	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
@@ -832,6 +940,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	  if (error_flag) {
 	    cout << "\n NavierStokes2D ERROR: NavierStokes2D flux correction message passing error on processor "
 		 << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+	    cout.flush();
 	  }
 	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
@@ -858,6 +967,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	  if (error_flag) {
 	    cout << "\n NavierStokes2D ERROR: NavierStokes2D solution update error on processor "
 		 << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+	    cout.flush();
 	  }
 	  error_flag = CFFC_OR_MPI(error_flag);
 	  if (error_flag) return error_flag;
@@ -906,6 +1016,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     if (error_flag) {
       cout << "\n NavierStokes2D ERROR: NavierStokes2D message passing error on processor "
 	   << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+      cout.flush();
     }
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return error_flag;
@@ -920,8 +1031,9 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
   time(&end_explicit);
 
-  // Start APPLY Newton_Krylov_Schwarz
-
+  /*************************************************************************************************************************/
+  /************************ APPLY Newton_Krylov_Schwarz ********************************************************************/
+  /*************************************************************************************************************************/\
   time(&start_NKS); 
 
   if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
@@ -1055,6 +1167,44 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     cout.precision(tmpp);
   } 
 
+  /*************************************************************************************************************************/
+  /*************************************************************************************************************************/
+  /*************************************************************************************************************************/
+
+
+  /***************************************************************
+   * Perform solution reconstruction with the final average      *
+   * states in order to use the true piecewise representation    *
+   * of the solution for post-processing steps, such as solution *
+   * plotting or accuracy assessment.                            *
+   **************************************************************/
+  if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+    std::cout << "\n\n ---------------------------------------\n"
+	      << " Reconstruct final solution.\n";
+  }
+
+  if ( Input_Parameters.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+    // Use high-order reconstruction
+    HighOrder2D_MultiBlock::HighOrder_Reconstruction(Local_SolnBlk,
+						     List_of_Local_Solution_Blocks,
+						     Input_Parameters,
+						     0,
+						     &NavierStokes2D_Quad_Block::CellSolution);
+  } else {
+    // Use low-order reconstruction
+    Linear_Reconstruction(Local_SolnBlk, 
+			  List_of_Local_Solution_Blocks,
+			  Input_Parameters);
+  } // endif
+  
+  if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+    std::cout << " Solution reconstruction done.\n" << " ---------------------------------------\n";
+  }
+  
+  /*************************************************************************************************************************/
+  /*************************************************************************************************************************/
+
+
   /********************************************************************
    * Solution calculations complete.  Write 2D Navier-Stokes solution *
    * to output and restart files as required, reset solution          *
@@ -1078,6 +1228,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	     << -line_number << " of input data file.\n";
 	return 1;
       }
+      Input_Parameters.doInternalSetupAndConsistencyChecks(error_flag);
       Reinitialize_Reference_State(Input_Parameters);
     }
     // MPI barrier to ensure processor synchronization.
@@ -1108,11 +1259,13 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       List_of_Local_Solution_Blocks.deallocate();
       List_of_Global_Solution_Blocks.deallocate();
       QuadTree.deallocate();
-      MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk,
-					    Input_Parameters.Number_of_Blocks_Idir,
-					    Input_Parameters.Number_of_Blocks_Jdir);
+      Spline2D_HO::ResetCounter(); //< reset the counter for the number of track solid bodies.
       // Output input parameters for new caluculation.
-      if (!batch_flag) cout << "\n\n Starting a new calculation." << Input_Parameters << "\n";
+      if (!batch_flag) {
+	cout << "\n\n Starting a new calculation." 
+	     << Input_Parameters << "\n";
+	cout.flush();
+      } /* endif */
       // Execute new calculation.
       goto execute_new_calculation;
 
@@ -1134,11 +1287,8 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       List_of_Local_Solution_Blocks.deallocate();
       List_of_Global_Solution_Blocks.deallocate();
       QuadTree.deallocate();
-      MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk,
-					    Input_Parameters.Number_of_Blocks_Idir,
-					    Input_Parameters.Number_of_Blocks_Jdir);
       // Close input data file.
-      if (!batch_flag) cout << "\n\n Closing NavierStokes2D input data file.";
+      if (!batch_flag) { cout << "\n\n Closing NavierStokes2D input data file."; cout.flush(); }
       if (CFFC_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);
 
 #ifdef _NS_PARALLEL_DEBUG_
@@ -1152,9 +1302,12 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       // Reset maximum time step counter.
         Input_Parameters.Maximum_Number_of_Time_Steps += 
         number_of_time_steps - start_number_of_time_steps;
-      // Output input parameters for continuing calculation.
-      if (!batch_flag) cout << "\n\n Continuing existing calculation."
-			    << Input_Parameters << "\n";
+	// Output input parameters for continuing calculation.
+	if (!batch_flag){ 
+	  cout << "\n\n Continuing existing calculation."
+	       << Input_Parameters << "\n";
+	  cout.flush();
+	}
       // Deallocate multigrid if necessary.
       if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
 	  Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
@@ -1168,7 +1321,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
     } else if (command_flag == REFINE_GRID_CODE) {
       // Refine mesh using block based adaptive mesh refinement algorithm.
-      if (!batch_flag) cout << "\n Refining Grid.  Performing adaptive mesh refinement.";
+      if (!batch_flag){ cout << "\n Refining Grid.  Performing adaptive mesh refinement."; cout.flush(); }
       Evaluate_Limiters(Local_SolnBlk,List_of_Local_Solution_Blocks);
       error_flag = Adaptive_Mesh_Refinement(Local_SolnBlk,
 					    Input_Parameters,
@@ -1179,6 +1332,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	cout << "\n NavierStokes2D ERROR: NavierStokes2D AMR error on processor "
 	     << List_of_Local_Solution_Blocks.ThisCPU
 	     << ".  Error number = " << error_flag << "." << endl;
+	cout.flush();
       }
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) {
@@ -1189,6 +1343,8 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 				      Time);
 	return error_flag;
       }
+      // Set the same number of maximum solid body objects on all CPUs after AMR
+      Spline2D_HO::Broadcast_Maximum_Number_Of_SolidBodies();
 
       // Output multi-block solution-adaptive quadrilateral mesh statistics.
       if (!batch_flag) {
@@ -1265,15 +1421,15 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
         output_multigrid = false;
       }
-      if (!batch_flag) cout << "\n Writing NavierStokes2D solution to output data file(s).";
+      if (!batch_flag){ cout << "\n Writing NavierStokes2D solution to output data file(s)."; cout.flush(); }
       if (output_multigrid) {
         error_flag = MGSolver.Output_Multigrid(number_of_time_steps, Time);
       } else {
         error_flag = Output_Tecplot(Local_SolnBlk,
-            List_of_Local_Solution_Blocks,
-            Input_Parameters,
-            number_of_time_steps,
-            Time);
+				    List_of_Local_Solution_Blocks,
+				    Input_Parameters,
+				    number_of_time_steps,
+				    Time);
       }
       if (error_flag) {
         cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D output data file(s) "
@@ -1294,15 +1450,15 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
         output_multigrid = false;
       }
-      if (!batch_flag) cout << "\n Writing cell-centered NavierStokes2D solution to output data file(s).";
+      if (!batch_flag){ cout << "\n Writing cell-centered NavierStokes2D solution to output data file(s)."; cout.flush();}
       if (output_multigrid) {
         error_flag = MGSolver.Output_Multigrid_Cells(number_of_time_steps, Time);
       } else {
         error_flag = Output_Cells_Tecplot(Local_SolnBlk,
-            List_of_Local_Solution_Blocks,
-            Input_Parameters,
-            number_of_time_steps,
-            Time);
+					  List_of_Local_Solution_Blocks,
+					  Input_Parameters,
+					  number_of_time_steps,
+					  Time);
       }
       if (error_flag) {
         cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D cell output data file(s) "
@@ -1370,7 +1526,22 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
     } else if (command_flag == WRITE_RESTART_CODE) {
       // Write restart files.
-      if (!batch_flag) cout << "\n Writing NavierStokes2D solution to restart data file(s).";
+
+      //  Save and delete old restart files in compressed archive (just in case)
+      if (CFFC_Primary_MPI_Processor()) {
+	cout << "\n  Creating compressed archive of (and deleting) old restarts.";
+	System::Compress_Restart();
+	cout << "\n  Writing new restart files.";
+	cout.flush();
+      }
+      CFFC_Barrier_MPI(); // MPI barrier so that other processors do
+                          // not start over writing restarts
+
+      if (CFFC_Primary_MPI_Processor()) {
+	System::Set_Restart_Flag();  //Set flag to indicate a restart is being saved
+      }
+
+      if (!batch_flag){ cout << "\n Writing NavierStokes2D solution to restart data file(s)."; cout.flush(); }
       // Write the quadtree restart file.
       error_flag = Write_QuadTree(QuadTree,Input_Parameters);
       if (error_flag) {
@@ -1378,6 +1549,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	     << "on processor "
 	     << List_of_Local_Solution_Blocks.ThisCPU
 	     << "." << endl;
+	cout.flush();
       }
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
@@ -1393,15 +1565,19 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 	     << "on processor "
 	     << List_of_Local_Solution_Blocks.ThisCPU
 	     << "." << endl;
+	cout.flush();
       }
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return error_flag;
+      if (CFFC_Primary_MPI_Processor()) {
+	System::Remove_Restart_Flag();  //Remove flag to indicate the restart is finished
+      }
 
     } else if (command_flag == WRITE_OUTPUT_GRID_CODE) {
       // Output multi-block solution-adaptive mesh data file.
       if (CFFC_Primary_MPI_Processor()) {
-	if (!batch_flag) cout << "\n Writing NavierStokes2D multi-block mesh to grid data output file.";
-	error_flag = Output_Tecplot(MeshBlk,Input_Parameters);
+	if (!batch_flag){ cout << "\n Writing NavierStokes2D multi-block mesh to grid data output file."; cout.flush(); }
+	error_flag = MeshBlk.Output_Tecplot_Using_IP(Input_Parameters);
 	if (error_flag) {
 	  cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D mesh data output file.\n";
 	  cout.flush();
@@ -1413,10 +1589,9 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     } else if (command_flag == WRITE_GRID_DEFINITION_CODE) {
       // Write multi-block solution-adaptive mesh definition files.
       if (CFFC_Primary_MPI_Processor()) {
-	if (!batch_flag) cout << "\n Writing NavierStokes2D multi-block mesh to grid definition files.";
-	error_flag = Write_Multi_Block_Grid_Definition(MeshBlk,
-						       Input_Parameters);
-	error_flag = Write_Multi_Block_Grid(MeshBlk,Input_Parameters);
+	if (!batch_flag){ cout << "\n Writing NavierStokes2D multi-block mesh to grid definition files."; cout.flush(); }
+	error_flag = MeshBlk.Write_Multi_Block_Grid_Definition_Using_IP(Input_Parameters);
+	error_flag = MeshBlk.Write_Multi_Block_Grid_Using_IP(Input_Parameters);
 	if (error_flag) {
 	  cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D multi-block mesh definition files.\n";
 	  cout.flush();
@@ -1428,8 +1603,8 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     } else if (command_flag == WRITE_OUTPUT_GRID_NODES_CODE) {
       // Output multi-block solution-adaptive mesh node data file.
       if (CFFC_Primary_MPI_Processor()) {
-	if (!batch_flag) cout << "\n Writing NavierStokes2D multi-block mesh to node data output file.";
-	error_flag = Output_Nodes_Tecplot(MeshBlk,Input_Parameters);
+	if (!batch_flag){ cout << "\n Writing NavierStokes2D multi-block mesh to node data output file."; cout.flush(); }
+	error_flag = MeshBlk.Output_Nodes_Tecplot_Using_IP(Input_Parameters);
 	if (error_flag) {
 	  cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D mesh node data output file.\n";
 	  cout.flush();
@@ -1441,8 +1616,8 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     } else if (command_flag == WRITE_OUTPUT_GRID_CELLS_CODE) {
       // Output multi-block solution-adaptive mesh cell data file.
       if (CFFC_Primary_MPI_Processor()) {
-	if (!batch_flag) cout << "\n Writing NavierStokes2D multi-block mesh to cell data output file.";
-	error_flag = Output_Cells_Tecplot(MeshBlk,Input_Parameters);
+	if (!batch_flag){ cout << "\n Writing NavierStokes2D multi-block mesh to cell data output file."; cout.flush();}
+	error_flag = MeshBlk.Output_Cells_Tecplot_Using_IP(Input_Parameters);
 	if (error_flag) {
 	  cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D mesh cell data output file.\n";
 	  cout.flush();
@@ -1619,6 +1794,76 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       }
       CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;
+
+    } else if (command_flag == WRITE_ERROR_NORMS_TO_SCREEN) {
+      if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	cout << "\n\n ---------------------------------------\n" 
+	     << " Writing error norms to screen ...\n";
+	cout.flush();
+      }
+
+      error_flag = AccuracyAssessment2D_MultiBlock::PrintErrorNorms(Local_SolnBlk, 
+								    List_of_Local_Solution_Blocks, 
+								    Input_Parameters,
+								    std::cout);
+       
+      if (CFFC_Primary_MPI_Processor() && error_flag) {
+	cout << "\n NavierStokes2D ERROR: Unable to write NavierStokes2D error norms data.\n"; cout.flush();
+      } // endif
+
+      CFFC_Broadcast_MPI(&error_flag, 1);
+      if (error_flag) return (error_flag);
+
+      if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	cout << "\n ---------------------------------------\n";       
+	cout.flush();
+      }
+
+    } else if (command_flag == WRITE_ERROR_NORMS_TO_FILE) {
+      if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	cout << "\n\n ---------------------------------------\n" 
+	     << " Writing error norms to output file ...\n";
+	cout.flush();
+      }
+
+      error_flag = AccuracyAssessment2D_MultiBlock::WriteErrorNormsToOutputFile(Local_SolnBlk, 
+										List_of_Local_Solution_Blocks, 
+										Input_Parameters);
+
+      if (CFFC_Primary_MPI_Processor() && error_flag) {
+	cout << "\n NavierStokes2D ERROR: Unable to write NavierStokes2D error norms data.\n"; cout.flush();
+      } // endif
+
+      CFFC_Broadcast_MPI(&error_flag, 1);
+      if (error_flag) return (error_flag);
+
+      if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	cout << "\n ---------------------------------------\n";       
+	cout.flush();
+      }
+
+    } else if (command_flag == APPEND_ERROR_NORMS_TO_FILE) {
+      if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	cout << "\n\n ---------------------------------------\n" 
+	     << " Appending error norms to output file ...\n";
+	cout.flush();
+      }
+
+      error_flag = AccuracyAssessment2D_MultiBlock::AppendErrorNormsToOutputFile(Local_SolnBlk, 
+										 List_of_Local_Solution_Blocks, 
+										 Input_Parameters);
+
+      if (CFFC_Primary_MPI_Processor() && error_flag) {
+	cout << "\n NavierStokes2D ERROR: Unable to write NavierStokes2D error norms data.\n"; cout.flush();
+      } // endif
+
+      CFFC_Broadcast_MPI(&error_flag, 1);
+      if (error_flag) return (error_flag);
+
+      if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	cout << "\n ---------------------------------------\n";       
+	cout.flush();
+      }
 
     } else if (command_flag == INVALID_INPUT_CODE ||
 	       command_flag == INVALID_INPUT_VALUE) {

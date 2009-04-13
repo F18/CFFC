@@ -647,7 +647,7 @@ int Grid2DTesting_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
     } else if (strcmp(Grid_Type, "Flat_Plate") == 0) {
       i_Grid = GRID_FLAT_PLATE;
       Plate_Length = ONE;
-      BC_South = BC_DIRICHLET;
+      Flat_Plate_BC_Type = BC_DIRICHLET;
     } else if (strcmp(Grid_Type, "Pipe") == 0) {
       i_Grid = GRID_PIPE;
       Pipe_Length = ONE;

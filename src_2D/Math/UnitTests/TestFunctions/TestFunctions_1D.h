@@ -209,6 +209,13 @@ double Test_Example18 (double x);
 
 double Test_Example18_Integral (double x1, double x2);
 
+
+/**********************************************************
+ * Function Test_Example19:                               *
+ *          f(x) =  exp(-2.0*(x+5.0)) - log(x+1.0)*sin(x) *
+ *********************************************************/
+double Test_Example19 (const double & x);
+
 #endif // _TESTFUNCTIONS_INCLUDED
 
   

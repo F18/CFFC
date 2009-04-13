@@ -204,6 +204,26 @@ void ICs(MHD1D_UniformMesh *Soln,
             Soln[i].U = U(Soln[i].W);
         } /* endfor */
         break;
+      case IC_DAI_WOODWARD :
+        Wl = MHD1D_pState(1.08,
+			  1.2, 0.01, 0.5,
+			  0.5641895835477563, 1.0155412503859613, 0.5641895835477563,
+			  ZERO, ZERO, ZERO,
+			  0.95);
+        Wr = MHD1D_pState(1,
+			  0, 0, 0,
+			  0.5641895835477563, 1.1283791670955126, 0.5641895835477563,
+			  ZERO, ZERO, ZERO,
+			  1);
+        for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {
+	    if (Soln[i].X.x <= ZERO) {
+               Soln[i].W = Wl;
+            } else {
+               Soln[i].W = Wr;	     
+            } /* end if */
+            Soln[i].U = U(Soln[i].W);
+        } /* endfor */
+        break;	
       default:
         Wl = MHD1D_W_REF;
         for ( i = 0 ; i <= Number_of_Cells+1 ; ++i ) {

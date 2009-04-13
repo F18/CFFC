@@ -302,7 +302,6 @@ template<class T> inline
 void TaylorDerivativesContainer<TwoD,T>::GenerateContainer(const unsigned OrderOfReconstruction)
 {
 
-  // NumberOfDerivatives = (OrderOfReconstruction+1)*(OrderOfReconstruction+2)/2
   int NumberOfDerivatives = (OrderOfReconstruction+1)*(OrderOfReconstruction+2)/2;
 
   /* free the memory if there is memory allocated to the pointer */

@@ -1154,7 +1154,7 @@ inline ReturnType Gauss5PointQuadrature(FunctionType func, double StartX, double
 
 /**
  * \fn ReturnType AdaptiveGaussianQuadrature(FunctionType func, double StartX, double EndX,
- * double StartY, double EndY, int digits, const ReturnType & dummy)
+ * double StartY, double EndY, double StartZ, double EndZ, int digits, const ReturnType & dummy)
  * \brief Numerically evaluate integrals of THREE-variable functions over a cuboid (3D).
  *
  * This integration uses an adaptive Lobatto rule in each of the three directions, X, Y and Z.
@@ -1658,6 +1658,43 @@ class GeneralizedPolynomialFunctionOfTwoVariables{
     }
 };
 
+
+/**
+ * Generalized polynomial function of THREE-variables                                      
+ * is a class of functions which have the form (x-xi)^n * (y-yi)^m * (z-zi)^l                      
+ ****************************************************************************/
+class GeneralizedPolynomialFunctionOfThreeVariables{
+ private:
+  double xi, yi,zi;
+  int l,m,n;
+ public:
+  GeneralizedPolynomialFunctionOfThreeVariables(const int _l_, const int _m_, const int _n_,
+                                                const double _xi_, const double _yi_, const double _zi_)
+    : xi(_xi_), yi(_yi_), zi(_zi_), l(_l_), m(_m_), n(_n_){
+  };
+
+  void ChangePowersTo(const int _l_, const int _m_, const int _n_){
+      l = _l_;
+      m = _m_;
+      n = _n_;
+  }
+
+  double operator()(const double x, const double y, const double z){
+    return std::pow((x-xi),l)*std::pow((y-yi),m)*std::pow((z-zi),n);
+  }
+
+    friend ostream& operator << (ostream& os, const GeneralizedPolynomialFunctionOfThreeVariables & Var){
+      os << endl;
+      os << "xi=" << Var.xi << endl
+	 << "yi=" << Var.yi << endl
+         << "zi=" << Var.zi << endl
+	 << "power l=" << Var.l << endl
+	 << "power m=" << Var.m << endl
+	 << "power n=" << Var.n << endl;
+      return os;
+    }
+};
+
 // ZeroLineIntegration()
 double ZeroLineIntegration(const double & N1x, const double & N1y,
 			   const double & N2x, const double & N2y);
@@ -1762,17 +1799,9 @@ public:
   static const double GQ1_Abscissa[1];
   static const double GQ1_Weight[1];
 
-  // Abscissae and weights for 2-point Gaussian method
-  static const double GQ2_Abscissa[2];
-  static const double GQ2_Weight[2];
-
-  // Abscissae and weights for 3-point Gaussian method
-  static const double GQ3_Abscissa[3];
-  static const double GQ3_Weight[3];
-
-  // Abscissae and weights for 5-point Gaussian method
-  static const double GQ5_Abscissa[5];
-  static const double GQ5_Weight[5];  
+  // Abscissae and weights for 4-point Gaussian method
+  static const double GQ4_Abscissa[2];
+  static const double GQ4_Weight[4];
 
   //! Set the weights in the passed array
   static void getGaussQuadWeights(double * GaussQuadWeights, const int & NumberOfGQPs);
@@ -1793,23 +1822,11 @@ inline void GaussQuadratureData::getGaussQuadWeights(double * GaussQuadWeights, 
     GaussQuadWeights[0] = GQ1_Weight[0];
     break;
 
-  case 2:			// Two points
-    GaussQuadWeights[0] = GQ2_Weight[0];
-    GaussQuadWeights[1] = GQ2_Weight[1];
-    break;
-    
-  case 3:			// Three points
-    GaussQuadWeights[0] = GQ3_Weight[0];
-    GaussQuadWeights[1] = GQ3_Weight[1];
-    GaussQuadWeights[2] = GQ3_Weight[2];
-    break;
-
-  case 5:			// Five points
-    GaussQuadWeights[0] = GQ5_Weight[0];
-    GaussQuadWeights[1] = GQ5_Weight[1];
-    GaussQuadWeights[2] = GQ5_Weight[2];
-    GaussQuadWeights[3] = GQ5_Weight[3];
-    GaussQuadWeights[4] = GQ5_Weight[4];
+  case 4:			// Four points
+    GaussQuadWeights[0] = GQ4_Weight[0];
+    GaussQuadWeights[1] = GQ4_Weight[1];
+    GaussQuadWeights[2] = GQ4_Weight[2];
+    GaussQuadWeights[3] = GQ4_Weight[3];
     break;
 
   default:

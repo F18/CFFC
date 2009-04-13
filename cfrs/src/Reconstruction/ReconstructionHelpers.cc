@@ -480,3 +480,124 @@ int InverseOrder2D(const int & ReconstructionOrder, const int & ComputedDerivati
 
   return FinalOrder;
 }
+
+/**********************************************************
+ * Routine: MakeReconstructionStencil                     *
+ * (int,int,int,vector<int>,vector<int>,vector<int>)      *
+ *                                                        *
+ * This subroutine sets the stencil for the 3D kExact     *
+ * reconstruction                                         * 
+ *********************************************************/
+
+void MakeReconstructionStencil(const int & rings, const int & iCell, const int & jCell, const int & kCell,
+			       vector<int> & i_index, vector<int> & j_index, vector<int> & k_index){
+
+  // Obs. The first position (i_index[0],j_index[0],k_index[0]) corresponds to (iCell,jCell,kCell)
+  i_index[0]=iCell;
+  j_index[0]=jCell; 
+  k_index[0]=kCell;     
+
+  int Poz = 1;
+
+  /* First layer */
+  for (int k=kCell-1; k<=kCell+1; ++k){
+    for (int j=jCell-1; j<=jCell+1; ++j){
+      for (int i=iCell-1; i<=iCell+1; ++i){
+        if( !(i==iCell && j==jCell && k==kCell) ){
+          i_index[Poz] = i;
+          j_index[Poz] = j;
+          k_index[Poz] = k;
+          ++Poz;      
+        }
+      } /*end for*/
+    } /*end for*/
+  } /*end for*/
+
+
+  if (rings == 2){
+
+    /* Second layer */
+    for (int k=kCell-2; k<=kCell+2; ++k){
+      for (int j=jCell-2; j<=jCell+2; ++j){
+        for (int i=iCell-2; i<=iCell+2; ++i){
+          // For k = -2 and k = 2 fill in all nine cells
+          if( (k*k) > 1 ){
+            i_index[Poz] = i;
+            j_index[Poz] = j;
+            k_index[Poz] = k;
+            ++Poz;
+          }
+          // For k=-1, 0, or 1: fill in outer cells only,
+          // since inner cells belong to first layer of stencil
+          else if ( (i*i) > 1 || (j*j) > 1 ){
+              i_index[Poz] = i;
+              j_index[Poz] = j;
+              k_index[Poz] = k;
+              ++Poz;
+          }
+        } /*end for*/
+      } /*end for*/
+    } /*end for*/
+  } /*end if*/
+
+}
+
+/**********************************************************
+ * Routine: MakeReconstructionStencil                     *
+ * (int,int,int,int *, int *, int *)                      *
+ *                                                        *
+ * This subroutine sets the stencil for the 3D kExact     *
+ * reconstruction                                         * 
+ *********************************************************/
+void MakeReconstructionStencil(const int & rings, const int & iCell, const int & jCell, const int & kCell,
+			       int *i_index, int *j_index, int *k_index){
+
+  // Obs. The first position (i_index[0],j_index[0],k_index[0]) corresponds to (iCell,jCell,kCell)
+  i_index[0]=iCell;
+  j_index[0]=jCell; 
+  k_index[0]=kCell;     
+
+  int Poz = 1;
+
+  /* First layer */
+  for (int k=kCell-1; k<=kCell+1; ++k){
+    for (int j=jCell-1; j<=jCell+1; ++j){
+      for (int i=iCell-1; i<=iCell+1; ++i){
+        if( !(i==iCell && j==jCell && k==kCell) ){
+          i_index[Poz] = i;
+          j_index[Poz] = j;
+          k_index[Poz] = k;
+          ++Poz;      
+        }
+      } /*end for*/
+    } /*end for*/
+  } /*end for*/
+
+
+  if (rings == 2){
+
+    /* Second layer */
+    for (int k=kCell-2; k<=kCell+2; ++k){
+      for (int j=jCell-2; j<=jCell+2; ++j){
+        for (int i=iCell-2; i<=iCell+2; ++i){
+          // For cells on level k = -2 and level k = 2 fill in all nine cells
+          if( (k-kCell)*(k-kCell) > 1 ){
+            i_index[Poz] = i;
+            j_index[Poz] = j;
+            k_index[Poz] = k;
+            ++Poz;
+          }
+          // For cells on level k=-1, 0, or 1: fill in outer-ring (16) cells only,
+          // since inner cells belong to the first layer of stencil
+          else if ( (i-iCell)*(i-iCell) > 1 || (j-jCell)*(j-jCell) > 1 ){
+              i_index[Poz] = i;
+              j_index[Poz] = j;
+              k_index[Poz] = k;
+              ++Poz;
+          }
+        } /*end for*/
+      } /*end for*/
+    } /*end for*/
+  } /*end if*/
+
+}

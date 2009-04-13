@@ -53,17 +53,49 @@ using namespace std;
 /* Define possible positions for a cell
    in the 2D quadrilateral block. */
 
-#define INTERIOR_CELL                   0
-/* Corner Boundary Cells (i.e. bounded to the specified directions by 2 splines) */
-#define NORTH_WEST_SPLINE               1
-#define NORTH_EAST_SPLINE               2
-#define SOUTH_WEST_SPLINE               3
-#define SOUTH_EAST_SPLINE               4
-/* Boundary Cells (i.e. bounded to the specified direction by 1 spline) */
-#define SOUTH_SPLINE                    5
-#define NORTH_SPLINE                    6
-#define EAST_SPLINE                     7
-#define WEST_SPLINE                     8
+#define INTERIOR_CELL                               0
+/* Boundary Cells (i.e. cells flanked by ONE spline in the specified direction) */
+#define SOUTH_SPLINE                                1
+#define NORTH_SPLINE                                2
+#define EAST_SPLINE                                 3
+#define WEST_SPLINE                                 4
+/* Extension Boundary Cells (i.e. cells flanked by ONE extension spline in the specified direction)
+   RIGHT or LEFT indicates whether the spline is present on the left or right side of the cell,
+   relative to the position of the other nodes. */
+#define EXTEND_W_NORTH_RIGHT_SPLINE                 5
+#define EXTEND_E_NORTH_RIGHT_SPLINE                 6
+#define EXTEND_W_NORTH_LEFT_SPLINE                  7
+#define EXTEND_E_NORTH_LEFT_SPLINE                  8
+#define EXTEND_W_SOUTH_RIGHT_SPLINE                 9
+#define EXTEND_E_SOUTH_RIGHT_SPLINE                 10
+#define EXTEND_W_SOUTH_LEFT_SPLINE                  11
+#define EXTEND_E_SOUTH_LEFT_SPLINE                  12
+#define EXTEND_N_EAST_RIGHT_SPLINE                  13
+#define EXTEND_S_EAST_RIGHT_SPLINE                  14
+#define EXTEND_N_EAST_LEFT_SPLINE                   15
+#define EXTEND_S_EAST_LEFT_SPLINE                   16
+#define EXTEND_N_WEST_RIGHT_SPLINE                  17
+#define EXTEND_S_WEST_RIGHT_SPLINE                  18
+#define EXTEND_N_WEST_LEFT_SPLINE                   19
+#define EXTEND_S_WEST_LEFT_SPLINE                   20
+
+/* Corner Boundary Cells (i.e. cells flanked in the specified directions by TWO splines) */
+#define CORNER_NORTH_WEST_SPLINES                   21
+#define CORNER_NORTH_EAST_SPLINES                   22
+#define CORNER_SOUTH_WEST_SPLINES                   23
+#define CORNER_SOUTH_EAST_SPLINES                   24
+#define CORNER_NORTH_EXTEND_N_WEST_SPLINES          25
+#define CORNER_EXTEND_N_WEST_EXTEND_W_NORTH_SPLINES 26
+#define CORNER_EXTEND_W_NORTH_WEST_SPLINES          27
+#define CORNER_WEST_EXTEND_W_SOUTH_SPLINES          28
+#define CORNER_EXTEND_W_SOUTH_EXTEND_S_WEST_SPLINES 29
+#define CORNER_EXTEND_S_WEST_SOUTH_SPLINES          30
+#define CORNER_SOUTH_EXTEND_S_EAST_SPLINES          31
+#define CORNER_EXTEND_S_EAST_EXTEND_E_SOUTH_SPLINES 32
+#define CORNER_EXTEND_E_SOUTH_EAST_SPLINES          33
+#define CORNER_EAST_EXTEND_E_NORTH_SPLINES          34
+#define CORNER_EXTEND_E_NORTH_EXTEND_N_EAST_SPLINES 35
+#define CORNER_EXTEND_N_EAST_NORTH_SPLINES          36
 
 
 /* Define the high-order quadrilateral 2D grid block class. */
@@ -236,6 +268,8 @@ public:
   typedef Node2D_HO NodeType;
   typedef Cell2D_HO::GeometricMoments GeometricMoments;
   typedef GeometricMoments::Derivative  GeomMoment;
+  typedef Spline2D_HO BndSplineType;
+  typedef Spline2DInterval_HO BndSplineIntervalType;
   //@}
   
   //! @name Mesh indexes
@@ -276,10 +310,29 @@ public:
                 BndEastSpline,  //!< East boundary 2D spline.
                 BndWestSpline;  //!< West boundary 2D spline.
 
+  Spline2D_HO   ExtendWest_BndNorthSpline, //!< Extension of North boundary spline to west
+                ExtendEast_BndNorthSpline, //!< Extension of North boundary spline to east
+                ExtendWest_BndSouthSpline, //!< Extension of South boundary spline to west
+                ExtendEast_BndSouthSpline, //!< Extension of South boundary spline to east
+                ExtendNorth_BndEastSpline, //!< Extension of East boundary spline to north
+                ExtendSouth_BndEastSpline, //!< Extension of East boundary spline to south
+                ExtendNorth_BndWestSpline, //!< Extension of West boundary spline to north
+                ExtendSouth_BndWestSpline; //!< Extension of West boundary spline to south
+                
   Spline2DInterval_HO *BndNorthSplineInfo, //!< North boundary 2D spline info.
                       *BndSouthSplineInfo, //!< South boundary 2D spline info.
                       *BndEastSplineInfo,  //!< East boundary 2D spline info.
                       *BndWestSplineInfo;  //!< West boundary 2D spline info.
+
+  Spline2DInterval_HO   *ExtendWest_BndNorthSplineInfo, //!< Info for extension of North boundary spline to west
+                        *ExtendEast_BndNorthSplineInfo, //!< Info for extension of North boundary spline to east
+                        *ExtendWest_BndSouthSplineInfo, //!< Info for extension of South boundary spline to west
+                        *ExtendEast_BndSouthSplineInfo, //!< Info for extension of South boundary spline to east
+                        *ExtendNorth_BndEastSplineInfo, //!< Info for extension of East boundary spline to north
+                        *ExtendSouth_BndEastSplineInfo, //!< Info for extension of East boundary spline to south
+                        *ExtendNorth_BndWestSplineInfo, //!< Info for extension of West boundary spline to north
+                        *ExtendSouth_BndWestSplineInfo; //!< Info for extension of West boundary spline to south
+
 
   double                SminN,  //!< Minimum value of north face pathlength.
                         SmaxN,  //!< Maximum value of north face pathlength.
@@ -345,6 +398,27 @@ public:
   void deallocate_BndEastSplineInfo(void){ delete [] BndEastSplineInfo; BndEastSplineInfo = NULL; }
   //! Deallocate memory for North spline info
   void deallocate_BndWestSplineInfo(void){ delete [] BndWestSplineInfo; BndWestSplineInfo = NULL; }
+
+  //! Deallocate memory for the info of North spline extension to West
+  void deallocate_ExtendWest_BndNorthSplineInfo(void){
+    delete [] ExtendWest_BndNorthSplineInfo; ExtendWest_BndNorthSplineInfo = NULL; }
+  void deallocate_ExtendEast_BndNorthSplineInfo(void){
+    delete [] ExtendEast_BndNorthSplineInfo; ExtendEast_BndNorthSplineInfo = NULL; }
+  void deallocate_ExtendWest_BndSouthSplineInfo(void){
+    delete [] ExtendWest_BndSouthSplineInfo; ExtendWest_BndSouthSplineInfo = NULL; }
+  void deallocate_ExtendEast_BndSouthSplineInfo(void){
+    delete [] ExtendEast_BndSouthSplineInfo; ExtendEast_BndSouthSplineInfo = NULL; }
+  void deallocate_ExtendNorth_BndEastSplineInfo(void){
+    delete [] ExtendNorth_BndEastSplineInfo; ExtendNorth_BndEastSplineInfo = NULL; }
+  void deallocate_ExtendSouth_BndEastSplineInfo(void){
+    delete [] ExtendSouth_BndEastSplineInfo; ExtendSouth_BndEastSplineInfo = NULL; }
+  void deallocate_ExtendNorth_BndWestSplineInfo(void){
+    delete [] ExtendNorth_BndWestSplineInfo; ExtendNorth_BndWestSplineInfo = NULL; }
+  void deallocate_ExtendSouth_BndWestSplineInfo(void){
+    delete [] ExtendSouth_BndWestSplineInfo; ExtendSouth_BndWestSplineInfo = NULL; }
+
+  //! Remove the extension splines
+  void RemoveExtensionSplines(void);
   //@}
 
   //! @name Calculate cell centroid.
@@ -449,6 +523,9 @@ public:
 
   Vector2D nfaceW(const Cell2D_HO &Cell) const;
   Vector2D nfaceW(const int ii, const int jj) const;
+
+  //! Obtain the tangent vector based on the normal vector
+  void getTangent(Vector2D &TangentVec, const Vector2D &NormalVec){ TangentVec.x = NormalVec.y, TangentVec.y = -NormalVec.x; }
   //@}
 
   //! @name Get Gauss quadrature points for each straight cell face
@@ -673,6 +750,8 @@ public:
   
   //! @name Smooth quad grid
   //@{
+  static void setGridSmoothing(void){ Smooth_Quad_Block_Flag = ON; }
+  static void setNoGridSmoothing(void) { Smooth_Quad_Block_Flag = OFF; }
   void Smooth_Quad_Block(const int Number_of_Iterations);
   friend void Smooth_Quad_Block(Grid2D_Quad_Block_HO &Grid,
 				const int Number_of_Iterations){
@@ -713,7 +792,7 @@ public:
   //! Confirm that the update of interior cells has been done and reset the flag accordingly
   void Confirm_Interior_Mesh_Update(void){ InteriorMeshUpdate = OFF; }
   //! Confirm that the update of ghost cells has been done and reset the flag accordingly
-  void Confirm_Ghost_Cells_Update(void){ GhostCellsUpdate = OFF; }
+  void Confirm_Ghost_Cells_Update(void){ GhostCellsUpdate = OFF; CornerGhostCellsUpdate = OFF;}
   //! Confirm that the update of corner ghost cells has been done and reset the flag accordingly
   void Confirm_Corner_Ghost_Cells_Update(void){ CornerGhostCellsUpdate = OFF; }
   //! Confirm that the update of ALL cells has been done and reset the flags accordingly
@@ -726,6 +805,7 @@ public:
   friend void Update_Corner_Ghost_Nodes(Grid2D_Quad_Block_HO &Grid){ return Grid.Update_Corner_Ghost_Nodes(); }
   
   void Update_Cell(const int & iCell, const int & jCell);
+  void Update_GhostCellProperties_DuringMessagePassing(const int &iCell, const int &jCell);
 
   void Update_Cells(void);
   friend void Update_Cells(Grid2D_Quad_Block_HO &Grid){ return Grid.Update_Cells(); }
@@ -736,12 +816,18 @@ public:
   void Update_Corner_Ghost_Cells(void);
   void Update_SplineInfos(void);
 
+  void Update_Grid_Properties(const int &HighestRecOrder);
+
   int Check_Quad_Block(void);
   int Check_Quad_Block_Completely(void);
 
   const int & Value_InteriorMeshUpdate_Flag(void) const { return InteriorMeshUpdate; }
   const int & Value_GhostCellsUpdate_Flag(void) const { return GhostCellsUpdate; }
   const int & Value_CornerGhostCellsUpdate_Flag(void) const { return CornerGhostCellsUpdate; }
+
+  const unsigned int & getInteriorStateTracker(void) const { return InteriorCellGeometryStateTracker; }
+  const unsigned int & getGhostStateTracker(void) const { return GhostCellGeometryStateTracker; }
+  const unsigned int & getCornerGhostStateTracker(void) const { return CornerGhostCellGeometryStateTracker; }
   //@}
   
   //!@name Input/Output functions
@@ -902,9 +988,9 @@ public:
   //! Set the boundary representation designated switch to the default value (i.e. low-order representation)
   static void setDefaultBoundaryRepresentation(void){ HighOrderBoundaryRepresentation = OFF; }
   //! Return true if geometric boundary representation is high-order otherwise return false.
-  bool IsHighOrderBoundary(void) const { return HighOrderBoundaryRepresentation == ON? true:false; }
+  static bool IsHighOrderBoundary(void) { return HighOrderBoundaryRepresentation == ON? true:false; }
   //! Get the value of the HighOrderBoundaryRepresentation variable.
-  int getHighOrderBoundaryValue(void) const {return HighOrderBoundaryRepresentation; }
+  static int getHighOrderBoundaryValue(void) {return HighOrderBoundaryRepresentation; }
   //! Set the designated switch to require the use of Gauss quadratures for evaluating curvilinear path integrals.
   static void setContourIntegrationBasedOnGaussQuadratures(void) {
     Gauss_Quad_Curvilinear_Integration = ON; Mixed_Curvilinear_Integration = OFF;
@@ -917,6 +1003,19 @@ public:
   static void setMixedContourIntegration(void) {
     Gauss_Quad_Curvilinear_Integration = ON; Mixed_Curvilinear_Integration = ON;
   }
+  //! Set Monte Carlo integration for cells with curved edges
+  static void setMonteCarloIntegrationON(void){ Monte_Carlo_Integration_Allowed = ON; }
+  //! Turn off Monte Carlo integration for cells with curved edges
+  static void setMonteCarloIntegrationOFF(void){ Monte_Carlo_Integration_Allowed = OFF; }
+  //! Set polygonal adaptive quadrature integration for cells with curved edges
+  static void setPolygonalAdaptiveQuadratureIntegrationON(void){  Polygonal_Adaptive_Quadrature_Integration_Allowed = ON; }
+  //! Turn off polygonal adaptive quadrature integration for cells with curved edges
+  static void setPolygonalAdaptiveQuadratureIntegrationOFF(void){ Polygonal_Adaptive_Quadrature_Integration_Allowed = OFF; }
+  //! Turn ON flag for non-reflected ghost cells
+  static void setNonReflectedGhostCellsNearSouthSolidBoundary(void) { Mesh_Requiring_NonReflected_South_Ghost_Cells = ON;}
+  //! Turn OFF flag for non-reflected ghost cells
+  static void setReflectedGhostCellsNearSouthSolidBoundary(void) { Mesh_Requiring_NonReflected_South_Ghost_Cells = OFF;}
+
   //! Check if the West boundary has constrained reconstruction (i.e. it is curved and set to reconstruction based flux)
   bool IsWestBoundaryReconstructionConstrained(void) const;
   //! Check if the East boundary has constrained reconstruction (i.e. it is curved and set to reconstruction based flux)
@@ -925,12 +1024,82 @@ public:
   bool IsSouthBoundaryReconstructionConstrained(void) const;
   //! Check if the North boundary has constrained reconstruction (i.e. it is curved and set to reconstruction based flux)
   bool IsNorthBoundaryReconstructionConstrained(void) const;
+
+  //! Check if the North extension of West boundary has constrained reconstruction (i.e. same conditions as for the West boundary)
+  bool IsNorthExtendWestBoundaryReconstructionConstrained(void) const;
+  //! Check if the South extension of West boundary has constrained reconstruction (i.e. same conditions as for the West boundary)
+  bool IsSouthExtendWestBoundaryReconstructionConstrained(void) const;
+  //! Check if the North extension of East boundary has constrained reconstruction (i.e. same conditions as for the East boundary)
+  bool IsNorthExtendEastBoundaryReconstructionConstrained(void) const;
+  //! Check if the South extension of East boundary has constrained reconstruction (i.e. same conditions as for the East boundary)
+  bool IsSouthExtendEastBoundaryReconstructionConstrained(void) const;
+  //! Check if the East extension of South boundary has constrained reconstruction (i.e. same conditions as for the South boundary)
+  bool IsEastExtendSouthBoundaryReconstructionConstrained(void) const;
+  //! Check if the West extension of South boundary has constrained reconstruction (i.e. same conditions as for the South boundary)
+  bool IsWestExtendSouthBoundaryReconstructionConstrained(void) const;
+  //! Check if the East extension of North boundary has constrained reconstruction (i.e. same conditions as for the North boundary)
+  bool IsEastExtendNorthBoundaryReconstructionConstrained(void) const;
+  //! Check if the West extension of North boundary has constrained reconstruction (i.e. same conditions as for the North boundary)
+  bool IsWestExtendNorthBoundaryReconstructionConstrained(void) const;
+
+  
+  //! Check if any block boundary is a solid body
+  bool IsThereAnySolidBoundary(void) const;
+
+  //! Check if the West boundary is curved (i.e. has control points and is not an interior boundary based on the BCs)
+  bool IsWestBoundaryCurved(void) const;
+  //! Check if the East boundary is curved (i.e. has control points and is not an interior boundary based on the BCs)
+  bool IsEastBoundaryCurved(void) const;
+  //! Check if the South boundary is curved (i.e. has control points and is not an interior boundary based on the BCs)
+  bool IsSouthBoundaryCurved(void) const;
+  //! Check if the North boundary is curved (i.e. has control points and is not an interior boundary based on the BCs)
+  bool IsNorthBoundaryCurved(void) const;
+
+  //! Check if the North extension of the West boundary is curved (i.e. same conditions as for the West boundary)
+  bool IsNorthExtendWestBoundaryCurved(void) const;
+  //! Check if the South extension of the West boundary is curved (i.e. same conditions as for the West boundary)
+  bool IsSouthExtendWestBoundaryCurved(void) const;
+  //! Check if the North extension of the East boundary is curved (i.e. same conditions as for the East boundary)
+  bool IsNorthExtendEastBoundaryCurved(void) const;
+  //! Check if the South extension of the East boundary is curved (i.e. same conditions as for the East boundary)
+  bool IsSouthExtendEastBoundaryCurved(void) const;
+  //! Check if the East extension of the South boundary is curved (i.e. same conditions as for the South boundary)
+  bool IsEastExtendSouthBoundaryCurved(void) const;
+  //! Check if the West extension of the South boundary is curved (i.e. same conditions as for the South boundary)
+  bool IsWestExtendSouthBoundaryCurved(void) const;
+  //! Check if the East extension of the North boundary is curved (i.e. same conditions as for the North boundary)
+  bool IsEastExtendNorthBoundaryCurved(void) const;
+  //! Check if the West extension of the North boundary is curved (i.e. same conditions as for the North boundary)
+  bool IsWestExtendNorthBoundaryCurved(void) const;
   //@}
 
   //! Set the designated switch to require computation of geometric properties with extra care for numerical errors
   static void setTreatMeshWithExtraCareForNumericalError(void) { Minimize_Error_Calculation_Of_Geometric_Properties = ON; }
   //! Set the designated switch to require the regular computation of geometric properties.
   static void setNoSpecialTreatmentForNumericalError(void) { Minimize_Error_Calculation_Of_Geometric_Properties = OFF; }
+
+  //! Set the designated switch to accept geometric inaccuracies near curved boundaries if necessary to obtain a result
+  static void setTolerateInaccurateIntegrationNearCurvedBoundaries(void) {
+    Tolerate_Inaccurate_Integration_Near_Curved_Boundaries = ON;
+  }
+  //! Set the designated switch to be intolerant to geometric inaccuracies near curved boundaries
+  static void setNoGeometricInaccuraciesForIntegrationNearCurvedBoundaries(void){
+    Tolerate_Inaccurate_Integration_Near_Curved_Boundaries = OFF;
+  }
+  //! Check if geometric inaccuracies for integration along curved boundaries are tolerated
+  bool IsIntegrationAlongCurvedBoundariesToleratedToGeometricInaccuracies(void) const{
+    return Tolerate_Inaccurate_Integration_Near_Curved_Boundaries == ON? true:false;
+  }
+
+  //! Check if Monte Carlo integration in cells with curved boundaries is allowed
+  bool IsMonteCarloIntegrationAllowed(void) const { 
+    return Monte_Carlo_Integration_Allowed == ON? true:false;
+  }
+
+  //! Check if adaptive polygonal integration in cells with curved boundaries is allowed
+  bool IsPolygonalAdaptiveQuadraturesAllowed(void) const {
+    return Polygonal_Adaptive_Quadrature_Integration_Allowed == ON? true:false;
+  }
 
   //! Output only the cell data
   void Output_Cells_Data(const int &block_number, ostream &out_file);
@@ -942,6 +1111,9 @@ public:
   friend ostream &operator << (ostream &out_file, const Grid2D_Quad_Block_HO &G);
   friend istream &operator >> (istream &in_file, Grid2D_Quad_Block_HO &G);
   //@}
+
+  //! Parameter to set the minimum levels of refinement during the polygonal adaptive quadrature integration
+  static short Polygonal_Adaptive_Quadrature_Integration_Minimum_Levels;
 
 private:
   Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G);     //! Private copy constructor.
@@ -961,6 +1133,21 @@ private:
   //! Switch for error minimization in calculating the cell geometric properties.
   static int Minimize_Error_Calculation_Of_Geometric_Properties;
 
+  //! Switch for treatment of integrals along curved boundaries, in case they cannot be performed accurately along the real geometry.
+  static int Tolerate_Inaccurate_Integration_Near_Curved_Boundaries;
+
+  //! Switch for Monte Carlo integration in curved boundaries (i.e. turn it OFF or ON). 
+  static int Monte_Carlo_Integration_Allowed;
+
+  /*! Switch for polygonal adaptive quadrature integration in curved boundaries (i.e. turn it OFF or ON).
+   *  It has higher priority than Monte_Carlo_Integration_Allowed */
+  static int Polygonal_Adaptive_Quadrature_Integration_Allowed;
+
+  /*! Switch to force non-reflection of ghost cells regardless of the boundary conditions
+   *  in order to generate a valid mesh (i.e. not crossed quadrilaterals in ghost cells).
+   */
+  static int Mesh_Requiring_NonReflected_South_Ghost_Cells;
+
   //! Highest order of reconstruction that might occur in calculations with the current grid.
   int HighestReconstructionOrder;
 
@@ -968,12 +1155,28 @@ private:
   //@{
   //! Controls the update of the geometric properties of the interior cells.
   int InteriorMeshUpdate;
-  //! Controls the update of the geometric properties of all the ghost cells.
+  //! Controls the update of the geometric properties of all ghost cells.
   int GhostCellsUpdate;    
   //! Controls the update of the geometric properties of the corner ghost cells.
   int CornerGhostCellsUpdate; 
   //! Reset to NO update all the mesh update flags.
   void Reset_Mesh_Update_Flags(void){ InteriorMeshUpdate = OFF; GhostCellsUpdate = OFF; CornerGhostCellsUpdate = OFF;}
+
+  //! State tracker for the geometry of interior cells (i.e. indentifies uniquely the state of the interior cell geometry)
+  unsigned int InteriorCellGeometryStateTracker;
+  //! State tracker for the geometry of all ghost cells (i.e. indentifies uniquely the state of the ghost cell geometry)
+  unsigned int GhostCellGeometryStateTracker;
+  //! State tracker for the geometry of corner ghost cells (i.e. indentifies uniquely the state of the corner ghost cell geometry)
+  unsigned int CornerGhostCellGeometryStateTracker;
+
+  //! @brief Set trackers to identify a new state everywhere (i.e. interior and ghost cells)
+  void New_Global_Geometry_State(void);
+  //! @brief Set tracker to identify a new interior state
+  void New_Interior_Geometry_State(void);
+  //! @brief Set tracker to identify a new state for the ghost cells
+  void New_Ghost_Geometry_State(void);
+  //! @brief Set tracker to identify a new state for the corner ghost cells
+  void New_Corner_Geometry_State(void);
   //@}
 
   /*!
@@ -993,6 +1196,29 @@ private:
 						   Vector2D &NE, Vector2D &NW,
 						   Vector2D &Centroid);
   //@}
+
+  //! Update the interval infos associated to extension splines
+  void Update_ExtensionSplineInfos(void);
+
+  //! Update ghost cells in the proximity of curved extension splines
+  void Update_GhostCells_Near_CurvedExtensionSplines(const bool &CurvedNorthBnd,
+						     const bool &CurvedSouthBnd,
+						     const bool &CurvedEastBnd,
+						     const bool &CurvedWestBnd,
+						     const bool &Curved_Extend_N_WestBnd,
+						     const bool &Curved_Extend_S_WestBnd,
+						     const bool &Curved_Extend_N_EastBnd,
+						     const bool &Curved_Extend_S_EastBnd,
+						     const bool &Curved_Extend_E_SouthBnd,
+						     const bool &Curved_Extend_W_SouthBnd,
+						     const bool &Curved_Extend_E_NorthBnd,
+						     const bool &Curved_Extend_W_NorthBnd);
+
+  int NumOfConstrainedGaussQuadPoints_GenericBoundary(const BndSplineType & BndSpline,
+						      const BndSplineIntervalType * BndSplineInfo,
+						      const int &CellIndex, 
+						      const int &CellIndex_Shift = 0);
+
 };
 
 /*!
@@ -1006,8 +1232,16 @@ inline Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void)
     Node(NULL), Cell(NULL),
     BCtypeN(NULL), BCtypeS(NULL), BCtypeE(NULL), BCtypeW(NULL),
     BndNorthSpline(), BndSouthSpline(), BndEastSpline(), BndWestSpline(),
+    ExtendWest_BndNorthSpline(), ExtendEast_BndNorthSpline(),
+    ExtendWest_BndSouthSpline(), ExtendEast_BndSouthSpline(),
+    ExtendNorth_BndEastSpline(), ExtendSouth_BndEastSpline(),
+    ExtendNorth_BndWestSpline(), ExtendSouth_BndWestSpline(),
     BndNorthSplineInfo(NULL), BndSouthSplineInfo(NULL),
     BndEastSplineInfo(NULL), BndWestSplineInfo(NULL),
+    ExtendWest_BndNorthSplineInfo(NULL), ExtendEast_BndNorthSplineInfo(NULL),
+    ExtendWest_BndSouthSplineInfo(NULL), ExtendEast_BndSouthSplineInfo(NULL),
+    ExtendNorth_BndEastSplineInfo(NULL), ExtendSouth_BndEastSplineInfo(NULL),
+    ExtendNorth_BndWestSplineInfo(NULL), ExtendSouth_BndWestSplineInfo(NULL),
     SminN(ZERO), SmaxN(ZERO), SminS(ZERO), SmaxS(ZERO), 
     SminE(ZERO), SmaxE(ZERO), SminW(ZERO), SmaxW(ZERO),
     StretchI(0), StretchJ(0), BetaI(ONE), TauI(ONE),
@@ -1015,6 +1249,8 @@ inline Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void)
     OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1),
     // Initialize mesh update flags to OFF (i.e. no update scheduled)
     InteriorMeshUpdate(OFF), GhostCellsUpdate(OFF), CornerGhostCellsUpdate(OFF),
+    // Initialize state trackers
+    InteriorCellGeometryStateTracker(0), GhostCellGeometryStateTracker(0), CornerGhostCellGeometryStateTracker(0),
     NumGQP(0)
 {
   // 
@@ -1041,6 +1277,41 @@ inline void Grid2D_Quad_Block_HO::deallocateBndSplineInfo(void) {
   delete []BndSouthSplineInfo; BndSouthSplineInfo = NULL;
   delete []BndEastSplineInfo;  BndEastSplineInfo = NULL;
   delete []BndWestSplineInfo;  BndWestSplineInfo = NULL;
+
+  delete []ExtendWest_BndNorthSplineInfo; ExtendWest_BndNorthSplineInfo = NULL; 
+  delete []ExtendEast_BndNorthSplineInfo; ExtendEast_BndNorthSplineInfo = NULL;
+  delete []ExtendWest_BndSouthSplineInfo; ExtendWest_BndSouthSplineInfo = NULL; 
+  delete []ExtendEast_BndSouthSplineInfo; ExtendEast_BndSouthSplineInfo = NULL;
+  delete []ExtendNorth_BndEastSplineInfo; ExtendNorth_BndEastSplineInfo = NULL;
+  delete []ExtendSouth_BndEastSplineInfo; ExtendSouth_BndEastSplineInfo = NULL;
+  delete []ExtendNorth_BndWestSplineInfo; ExtendNorth_BndWestSplineInfo = NULL;
+  delete []ExtendSouth_BndWestSplineInfo; ExtendSouth_BndWestSplineInfo = NULL;
+}
+
+/*!
+ * Remove all extension splines and associated Infos.
+ */
+inline void Grid2D_Quad_Block_HO::RemoveExtensionSplines(void){
+  
+  // Deallocate extension splines
+  ExtendWest_BndNorthSpline.deallocate();
+  ExtendEast_BndNorthSpline.deallocate();
+  ExtendWest_BndSouthSpline.deallocate();
+  ExtendEast_BndSouthSpline.deallocate();
+  ExtendNorth_BndEastSpline.deallocate();
+  ExtendSouth_BndEastSpline.deallocate();
+  ExtendNorth_BndWestSpline.deallocate();
+  ExtendSouth_BndWestSpline.deallocate();
+
+  // Deallocate associated infos
+  delete []ExtendWest_BndNorthSplineInfo; ExtendWest_BndNorthSplineInfo = NULL; 
+  delete []ExtendEast_BndNorthSplineInfo; ExtendEast_BndNorthSplineInfo = NULL;
+  delete []ExtendWest_BndSouthSplineInfo; ExtendWest_BndSouthSplineInfo = NULL; 
+  delete []ExtendEast_BndSouthSplineInfo; ExtendEast_BndSouthSplineInfo = NULL;
+  delete []ExtendNorth_BndEastSplineInfo; ExtendNorth_BndEastSplineInfo = NULL;
+  delete []ExtendSouth_BndEastSplineInfo; ExtendSouth_BndEastSplineInfo = NULL;
+  delete []ExtendNorth_BndWestSplineInfo; ExtendNorth_BndWestSplineInfo = NULL;
+  delete []ExtendSouth_BndWestSplineInfo; ExtendSouth_BndWestSplineInfo = NULL;  
 }
 
 /*!
@@ -1055,13 +1326,13 @@ inline void Grid2D_Quad_Block_HO::TranslateVertexesIntoLocalCoordinateSystem(Vec
   // Check if translation to local coordinate system is required
   if (Minimize_Error_Calculation_Of_Geometric_Properties){
     // save the current node locations 
-   _SW_ = SW;
-   _SE_ = SE;
-   _NE_ = NE;
-   _NW_ = NW;
-
+    _SW_ = SW;
+    _SE_ = SE;
+    _NE_ = NE;
+    _NW_ = NW;
+    
     // translate the vertexes into a local reference system with the origin in SW.
-    SW = 0.0;
+    SW = Vector2D(0.0);
     SE -= _SW_;
     NE -= _SW_;
     NW -= _SW_;
@@ -2297,6 +2568,22 @@ inline void Grid2D_Quad_Block_HO::Update_Cell(const int & iCell, const int & jCe
 }
 
 /*!
+ * This function gets used during message passing.
+ * It doesn't actually update the geometric information
+ * of the cell with indexes (iCell,jCell).
+ * Instead it schedules for update all ghost cells.
+ * That's because of the complexity to update ghost 
+ * cell near curved boundaries.
+ *
+ * \param iCell dummy i-index of the cell
+ * \param jCell dummy j-index of the cell
+ */
+inline void Grid2D_Quad_Block_HO::Update_GhostCellProperties_DuringMessagePassing(const int &iCell,
+										  const int &jCell){
+  Schedule_Ghost_Cells_Update();
+}
+
+/*!
  * Positive shift operator.
  */
 inline void Grid2D_Quad_Block_HO::operator +(const Vector2D &V) {
@@ -2312,6 +2599,16 @@ inline void Grid2D_Quad_Block_HO::operator +(const Vector2D &V) {
   if (BndSouthSpline.np != 0 ) BndSouthSpline.Translate_Spline(V);
   if (BndEastSpline.np != 0 ) BndEastSpline.Translate_Spline(V);
   if (BndWestSpline.np != 0 ) BndWestSpline.Translate_Spline(V);
+
+  if (ExtendWest_BndNorthSpline.np != 0) ExtendWest_BndNorthSpline.Translate_Spline(V);
+  if (ExtendEast_BndNorthSpline.np != 0) ExtendEast_BndNorthSpline.Translate_Spline(V);
+  if (ExtendWest_BndSouthSpline.np != 0) ExtendWest_BndSouthSpline.Translate_Spline(V);
+  if (ExtendEast_BndSouthSpline.np != 0) ExtendEast_BndSouthSpline.Translate_Spline(V);
+  if (ExtendNorth_BndEastSpline.np != 0) ExtendNorth_BndEastSpline.Translate_Spline(V);
+  if (ExtendSouth_BndEastSpline.np != 0) ExtendSouth_BndEastSpline.Translate_Spline(V);
+  if (ExtendNorth_BndWestSpline.np != 0) ExtendNorth_BndWestSpline.Translate_Spline(V);
+  if (ExtendSouth_BndWestSpline.np != 0) ExtendSouth_BndWestSpline.Translate_Spline(V);
+
 
   /* Require update of the whole mesh */
   Schedule_Interior_Mesh_Update();
@@ -2341,6 +2638,16 @@ inline void Grid2D_Quad_Block_HO::operator *(const double &a) {
   if (BndSouthSpline.np != 0 ) BndSouthSpline.Scale_Spline(a);
   if (BndEastSpline.np != 0 ) BndEastSpline.Scale_Spline(a);
   if (BndWestSpline.np != 0 ) BndWestSpline.Scale_Spline(a);
+
+  if (ExtendWest_BndNorthSpline.np != 0) ExtendWest_BndNorthSpline.Scale_Spline(a);
+  if (ExtendEast_BndNorthSpline.np != 0) ExtendEast_BndNorthSpline.Scale_Spline(a);
+  if (ExtendWest_BndSouthSpline.np != 0) ExtendWest_BndSouthSpline.Scale_Spline(a);
+  if (ExtendEast_BndSouthSpline.np != 0) ExtendEast_BndSouthSpline.Scale_Spline(a);
+  if (ExtendNorth_BndEastSpline.np != 0) ExtendNorth_BndEastSpline.Scale_Spline(a);
+  if (ExtendSouth_BndEastSpline.np != 0) ExtendSouth_BndEastSpline.Scale_Spline(a);
+  if (ExtendNorth_BndWestSpline.np != 0) ExtendNorth_BndWestSpline.Scale_Spline(a);
+  if (ExtendSouth_BndWestSpline.np != 0) ExtendSouth_BndWestSpline.Scale_Spline(a);
+
 
   SminN *= a;
   SmaxN *= a;
@@ -2383,24 +2690,40 @@ inline void Grid2D_Quad_Block_HO::operator ^(const double &a) {
   if (BndEastSpline.np != 0 ) BndEastSpline.Rotate_Spline(a);
   if (BndWestSpline.np != 0 ) BndWestSpline.Rotate_Spline(a);
 
+  if (ExtendWest_BndNorthSpline.np != 0) ExtendWest_BndNorthSpline.Rotate_Spline(a);
+  if (ExtendEast_BndNorthSpline.np != 0) ExtendEast_BndNorthSpline.Rotate_Spline(a);
+  if (ExtendWest_BndSouthSpline.np != 0) ExtendWest_BndSouthSpline.Rotate_Spline(a);
+  if (ExtendEast_BndSouthSpline.np != 0) ExtendEast_BndSouthSpline.Rotate_Spline(a);
+  if (ExtendNorth_BndEastSpline.np != 0) ExtendNorth_BndEastSpline.Rotate_Spline(a);
+  if (ExtendSouth_BndEastSpline.np != 0) ExtendSouth_BndEastSpline.Rotate_Spline(a);
+  if (ExtendNorth_BndWestSpline.np != 0) ExtendNorth_BndWestSpline.Rotate_Spline(a);
+  if (ExtendSouth_BndWestSpline.np != 0) ExtendSouth_BndWestSpline.Rotate_Spline(a);
+
   /* Require update of the whole mesh */
   Schedule_Interior_Mesh_Update();
   Schedule_Ghost_Cells_Update();
 }
 
 /*!
- * Return the number of Gauss quadrature points on the North
- * cell face which have boundary conditions enforced by constraints.
+ * Return the number of Gauss quadrature points at which 
+ * the boundary conditions are enforced as constraints
+ * for a CellIndex cell, a given boundary spline and 
+ * the associate spline interval.
+ *
+ * \param CellIndex_Shift the difference between the CellIndex of the cell and
+ *                        the corresponding position in BndSplineInfo variable.
  */
-inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_North(const int &ii, const int &jj){
-  if (jj != JCu || ii < ICl || ii > ICu || BndNorthSpline.getFluxCalcMethod() == SolveRiemannProblem ){
-    /* cell is not on the interior North boundary
-       OR
-       the North boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
+inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_GenericBoundary(const BndSplineType & BndSpline,
+										 const BndSplineIntervalType * BndSplineInfo,
+										 const int &CellIndex,
+										 const int &CellIndex_Shift){
+
+  if (BndSpline.getFluxCalcMethod() == SolveRiemannProblem){
+    /* The boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
     return 0;
-  } else if (BndNorthSplineInfo != NULL){
+  } else if (BndSplineInfo != NULL){
     /* use high-order boundary info */
-    return BndNorthSplineInfo[ii].NumGQPoints();
+    return BndSplineInfo[CellIndex-CellIndex_Shift].NumGQPoints();
   } else {
     /* return the number of points based on the order of accuracy
        (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux" ) */
@@ -2409,22 +2732,58 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_North(const int
 }
 
 /*!
+ * Return the number of Gauss quadrature points on the North
+ * cell face which have boundary conditions enforced by constraints.
+ */
+inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_North(const int &ii, const int &jj){
+  if (jj == JCu){
+    if (ii < ICl){
+      // This cell is bounded by ExtendWest_BndNorthSpline to North
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendWest_BndNorthSpline,
+      							     ExtendWest_BndNorthSplineInfo,
+      							     ii);
+    } else if (ii <= ICu){
+      // This cell is bounded by BndNorthSpline to North
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(BndNorthSpline,
+							     BndNorthSplineInfo,
+							     ii);      
+    } else {
+      // This cell is bounded by ExtendEast_BndNorthSpline to North
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendEast_BndNorthSpline,
+							     ExtendEast_BndNorthSplineInfo,
+							     ii, ICu+1);
+    }
+  } else {
+    /* This cell is not on the interior side of North block boundaries */
+    return 0;
+  }
+}
+
+/*!
  * Return the number of Gauss quadrature points on the South
  * cell face which have boundary conditions enforced by constraints.
  */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_South(const int &ii, const int &jj){
-  if (jj != JCl || ii < ICl || ii > ICu || BndSouthSpline.getFluxCalcMethod() == SolveRiemannProblem ){
-    /* cell is not on the interior South boundary
-       OR
-       the South boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
-    return 0;
-  } else if (BndSouthSplineInfo != NULL){
-    /* use high-order boundary info */
-    return BndSouthSplineInfo[ii].NumGQPoints();
+  if (jj == JCl){
+    if (ii < ICl){
+      // This cell is bounded by ExtendWest_BndSouthSpline to South
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendWest_BndSouthSpline,
+							     ExtendWest_BndSouthSplineInfo,
+							     ii);
+    } else if (ii <= ICu){
+      // This cell is bounded by BndSouthSpline to South
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(BndSouthSpline,
+							     BndSouthSplineInfo,
+							     ii);      
+    } else {
+      // This cell is bounded by ExtendEast_BndSouthSpline to South
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendEast_BndSouthSpline,
+							     ExtendEast_BndSouthSplineInfo,
+							     ii, ICu+1);
+    }
   } else {
-    /* return the number of points based on the order of accuracy
-       (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux") */
-    return NumGQP;
+    /* This cell is not on the interior side of South block boundaries */
+    return 0;
   }
 }
 
@@ -2433,18 +2792,26 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_South(const int
  * cell face which have boundary conditions enforced by constraints.
  */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_East(const int &ii, const int &jj){
-  if (ii != ICu || jj < JCl || jj > JCu || BndEastSpline.getFluxCalcMethod() == SolveRiemannProblem ){
-    /* cell is not on the interior East boundary
-       OR
-       the East boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
-    return 0;
-  } else if (BndEastSplineInfo != NULL){
-    /* use high-order boundary info */
-    return BndEastSplineInfo[jj].NumGQPoints();
+  if (ii == ICu){
+    if (jj < JCl){
+      // This cell is bounded by ExtendSouth_BndEastSpline to East
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendSouth_BndEastSpline,
+							     ExtendSouth_BndEastSplineInfo,
+							     jj);
+    } else if (jj <= JCu){
+      // This cell is bounded by BndEastSpline to East
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(BndEastSpline,
+							     BndEastSplineInfo,
+							     jj);
+    } else {
+      // This cell is bounded by ExtendNorth_BndEastSpline to East
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendNorth_BndEastSpline,
+							     ExtendNorth_BndEastSplineInfo,
+							     jj, JCu+1);
+    }
   } else {
-    /* return the number of points based on the order of accuracy
-       (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux") */
-    return NumGQP;
+    /* This cell is not on the interior side of East block boundaries */
+    return 0;
   }
 }
 
@@ -2453,18 +2820,26 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_East(const int 
  * cell face which have boundary conditions enforced by constraints.
  */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_West(const int &ii, const int &jj){
-  if (ii != ICl || jj < JCl || jj > JCu || BndWestSpline.getFluxCalcMethod() == SolveRiemannProblem ){
-    /* cell is not on the interior West boundary
-       OR
-       the West boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
-    return 0;
-  } else if (BndWestSplineInfo != NULL){
-    /* use high-order boundary info */
-    return BndWestSplineInfo[jj].NumGQPoints();
+  if (ii == ICl){
+    if (jj < JCl){
+      // This cell is bounded by ExtendSouth_BndWestSpline to West
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendSouth_BndWestSpline,
+							     ExtendSouth_BndWestSplineInfo,
+							     jj);
+    } else if (jj <= JCu){
+      // This cell is bounded by BndWestSpline to West
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(BndWestSpline,
+							     BndWestSplineInfo,
+							     jj);
+    } else {
+      // This cell is bounded by ExtendNorth_BndWestSpline to West
+      return NumOfConstrainedGaussQuadPoints_GenericBoundary(ExtendNorth_BndWestSpline,
+							     ExtendNorth_BndWestSplineInfo,
+							     jj, JCu+1);
+    }
   } else {
-    /* return the number of points based on the order of accuracy
-       (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux") */
-    return NumGQP;
+    /* This cell is not on the interior side of West block boundaries */
+    return 0;
   }
 }
 
@@ -2919,6 +3294,9 @@ inline bool Grid2D_Quad_Block_HO::CheckExistenceOfCurvedBoundaries(void){
   
   // Check for necessity to compute high-order boundary representation
   if ( HighOrderBoundaryRepresentation == OFF ){
+    // Update spline interval information (i.e. ensure that no spline interval exits)
+    deallocateBndSplineInfo();
+
     // No curved boundary calculation needed
     return false;
   }
@@ -2942,12 +3320,71 @@ inline bool Grid2D_Quad_Block_HO::CheckExistenceOfCurvedBoundaries(void){
        BndWestSplineInfo != NULL){
     delete [] BndWestSplineInfo; BndWestSplineInfo = NULL;
   }
+
+  // Update spline extension interval information
+  if ( (ExtendWest_BndNorthSpline.Xp == NULL || 
+	ExtendWest_BndNorthSpline.bc[0] == BC_NONE || ExtendWest_BndNorthSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendWest_BndNorthSplineInfo != NULL){
+    delete [] ExtendWest_BndNorthSplineInfo; ExtendWest_BndNorthSplineInfo = NULL;
+  }
+  if ( (ExtendEast_BndNorthSpline.Xp == NULL || 
+	ExtendEast_BndNorthSpline.bc[0] == BC_NONE || ExtendEast_BndNorthSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendEast_BndNorthSplineInfo != NULL){
+    delete [] ExtendEast_BndNorthSplineInfo; ExtendEast_BndNorthSplineInfo = NULL;
+  }
+  if ( (ExtendWest_BndSouthSpline.Xp == NULL || 
+	ExtendWest_BndSouthSpline.bc[0] == BC_NONE || ExtendWest_BndSouthSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendWest_BndSouthSplineInfo != NULL){
+    delete [] ExtendWest_BndSouthSplineInfo; ExtendWest_BndSouthSplineInfo = NULL;
+  }
+  if ( (ExtendEast_BndSouthSpline.Xp == NULL || 
+	ExtendEast_BndSouthSpline.bc[0] == BC_NONE || ExtendEast_BndSouthSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendEast_BndSouthSplineInfo != NULL){
+    delete [] ExtendEast_BndSouthSplineInfo; ExtendEast_BndSouthSplineInfo = NULL;
+  }
+  if ( (ExtendNorth_BndEastSpline.Xp == NULL || 
+	ExtendNorth_BndEastSpline.bc[0] == BC_NONE || ExtendNorth_BndEastSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendNorth_BndEastSplineInfo != NULL){
+    delete [] ExtendNorth_BndEastSplineInfo; ExtendNorth_BndEastSplineInfo = NULL;
+  }
+  if ( (ExtendSouth_BndEastSpline.Xp == NULL || 
+	ExtendSouth_BndEastSpline.bc[0] == BC_NONE || ExtendSouth_BndEastSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendSouth_BndEastSplineInfo != NULL){
+    delete [] ExtendSouth_BndEastSplineInfo; ExtendSouth_BndEastSplineInfo = NULL;
+  }
+  if ( (ExtendNorth_BndWestSpline.Xp == NULL || 
+	ExtendNorth_BndWestSpline.bc[0] == BC_NONE || ExtendNorth_BndWestSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendNorth_BndWestSplineInfo != NULL){
+    delete [] ExtendNorth_BndWestSplineInfo; ExtendNorth_BndWestSplineInfo = NULL;
+  }
+  if ( (ExtendSouth_BndWestSpline.Xp == NULL || 
+	ExtendSouth_BndWestSpline.bc[0] == BC_NONE || ExtendSouth_BndWestSpline.bc[0] == BC_PERIODIC ) &&
+       ExtendSouth_BndWestSplineInfo != NULL){
+    delete [] ExtendSouth_BndWestSplineInfo; ExtendSouth_BndWestSplineInfo = NULL;
+  }
+
   
   // Check for nonexistence of curved block boundaries.
   if ( (BndNorthSpline.Xp == NULL || BndNorthSpline.bc[0] == BC_NONE || BndNorthSpline.bc[0] == BC_PERIODIC) &&
        (BndSouthSpline.Xp == NULL || BndSouthSpline.bc[0] == BC_NONE || BndSouthSpline.bc[0] == BC_PERIODIC) &&
        (BndEastSpline.Xp == NULL  || BndEastSpline.bc[0] == BC_NONE || BndEastSpline.bc[0] == BC_PERIODIC) && 
-       (BndWestSpline.Xp == NULL  || BndWestSpline.bc[0] == BC_NONE || BndWestSpline.bc[0] == BC_PERIODIC) ){   
+       (BndWestSpline.Xp == NULL  || BndWestSpline.bc[0] == BC_NONE || BndWestSpline.bc[0] == BC_PERIODIC) &&
+       (ExtendWest_BndNorthSpline.Xp == NULL || 
+	ExtendWest_BndNorthSpline.bc[0] == BC_NONE || ExtendWest_BndNorthSpline.bc[0] == BC_PERIODIC) &&
+       (ExtendEast_BndNorthSpline.Xp == NULL || 
+	ExtendEast_BndNorthSpline.bc[0] == BC_NONE || ExtendEast_BndNorthSpline.bc[0] == BC_PERIODIC) && 
+       (ExtendWest_BndSouthSpline.Xp == NULL || 
+	ExtendWest_BndSouthSpline.bc[0] == BC_NONE || ExtendWest_BndSouthSpline.bc[0] == BC_PERIODIC) &&
+       (ExtendEast_BndSouthSpline.Xp == NULL || 
+	ExtendEast_BndSouthSpline.bc[0] == BC_NONE || ExtendEast_BndSouthSpline.bc[0] == BC_PERIODIC) && 
+       (ExtendNorth_BndEastSpline.Xp == NULL || 
+	ExtendNorth_BndEastSpline.bc[0] == BC_NONE || ExtendNorth_BndEastSpline.bc[0] == BC_PERIODIC) && 
+       (ExtendSouth_BndEastSpline.Xp == NULL || 
+	ExtendSouth_BndEastSpline.bc[0] == BC_NONE || ExtendSouth_BndEastSpline.bc[0] == BC_PERIODIC) && 
+       (ExtendNorth_BndWestSpline.Xp == NULL || 
+	ExtendNorth_BndWestSpline.bc[0] == BC_NONE || ExtendNorth_BndWestSpline.bc[0] == BC_PERIODIC) && 
+       (ExtendSouth_BndWestSpline.Xp == NULL || 
+	ExtendSouth_BndWestSpline.bc[0] == BC_NONE || ExtendSouth_BndWestSpline.bc[0] == BC_PERIODIC) ){
     // No curved boundaries are present.
     return false;
   }
@@ -2958,56 +3395,227 @@ inline bool Grid2D_Quad_Block_HO::CheckExistenceOfCurvedBoundaries(void){
 
 /*!
  * Check West boundary reconstruction type.
- * Return true is the reconstruction is done
- * with boundary constrains, otherwise return false.
+ * Return true if the boundary is curved and the reconstruction
+ * along the boundary is constrained to fulfill the boundary conditions,
+ * otherwise return false.
  */
 inline bool Grid2D_Quad_Block_HO::IsWestBoundaryReconstructionConstrained(void) const{
-  if ( (BndWestSpline.Xp == NULL) || (BndWestSpline.getFluxCalcMethod() == SolveRiemannProblem) ){
-    return false;
-  } else {
-    return true;
-  }
+  return (IsWestBoundaryCurved() && BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux)? true : false;
 }
   
-/*!
- * Check East boundary reconstruction type.
- * Return true is the reconstruction is done
- * with boundary constrains, otherwise return false.
- */
+/*! Check East boundary reconstruction type. */
 inline bool Grid2D_Quad_Block_HO::IsEastBoundaryReconstructionConstrained(void) const{
-  if ( (BndEastSpline.Xp == NULL) || (BndEastSpline.getFluxCalcMethod() == SolveRiemannProblem) ){
-    return false;
-  } else {
-    return true;
-  }
+  return (IsEastBoundaryCurved() && BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux)? true : false;
 }
 
-/*!
- * Check South boundary reconstruction type.
- * Return true is the reconstruction is done
- * with boundary constrains, otherwise return false.
- */
+/*! Check South boundary reconstruction type. */
 inline bool Grid2D_Quad_Block_HO::IsSouthBoundaryReconstructionConstrained(void) const{
-  if ( (BndSouthSpline.Xp == NULL) || (BndSouthSpline.getFluxCalcMethod() == SolveRiemannProblem) ){
-    return false;
-  } else {
-    return true;
-  }
+  return (IsSouthBoundaryCurved() && BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)? true : false;
+}
+
+/*! Check North boundary reconstruction type. */
+inline bool Grid2D_Quad_Block_HO::IsNorthBoundaryReconstructionConstrained(void) const{
+  return (IsNorthBoundaryCurved() && BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux)? true : false;
+}
+
+/*! Check reconstruction type of North extension of West boundary. */
+inline bool Grid2D_Quad_Block_HO::IsNorthExtendWestBoundaryReconstructionConstrained(void) const{
+  return (IsNorthExtendWestBoundaryCurved() && ExtendNorth_BndWestSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
+}
+
+/*! Check reconstruction type of South extension of West boundary. */
+inline bool Grid2D_Quad_Block_HO::IsSouthExtendWestBoundaryReconstructionConstrained(void) const{
+  return (IsSouthExtendWestBoundaryCurved() && ExtendSouth_BndWestSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
+}
+
+/*! Check reconstruction type of North extension of East boundary. */
+inline bool Grid2D_Quad_Block_HO::IsNorthExtendEastBoundaryReconstructionConstrained(void) const{
+  return (IsNorthExtendEastBoundaryCurved() && ExtendNorth_BndEastSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
+}
+
+/*! Check reconstruction type of South extension of East boundary. */
+inline bool Grid2D_Quad_Block_HO::IsSouthExtendEastBoundaryReconstructionConstrained(void) const{
+  return (IsSouthExtendEastBoundaryCurved() && ExtendSouth_BndEastSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
+}
+
+/*! Check reconstruction type of East extension of South boundary. */
+inline bool Grid2D_Quad_Block_HO::IsEastExtendSouthBoundaryReconstructionConstrained(void) const{
+  return (IsEastExtendSouthBoundaryCurved() && ExtendEast_BndSouthSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
+}
+
+/*! Check reconstruction type of West extension of South boundary. */
+inline bool Grid2D_Quad_Block_HO::IsWestExtendSouthBoundaryReconstructionConstrained(void) const{
+  return (IsWestExtendSouthBoundaryCurved() && ExtendWest_BndSouthSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
+}
+
+/*! Check reconstruction type of East extension of North boundary. */
+inline bool Grid2D_Quad_Block_HO::IsEastExtendNorthBoundaryReconstructionConstrained(void) const{
+  return (IsEastExtendNorthBoundaryCurved() && ExtendEast_BndNorthSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
+}
+
+/*! Check reconstruction type of West extension of North boundary. */
+inline bool Grid2D_Quad_Block_HO::IsWestExtendNorthBoundaryReconstructionConstrained(void) const{
+  return (IsWestExtendNorthBoundaryCurved() && ExtendWest_BndNorthSpline.getFluxCalcMethod()==ReconstructionBasedFlux)?true:false;
 }
 
 /*!
- * Check North boundary reconstruction type.
- * Return true is the reconstruction is done
- * with boundary constrains, otherwise return false.
+ * Check if any of the block boundaries is 
+ * a solid body one.
+ * Return true if at least one boundary is solid,
+ * otherwise return false.
  */
-inline bool Grid2D_Quad_Block_HO::IsNorthBoundaryReconstructionConstrained(void) const{
-  if ( (BndNorthSpline.Xp == NULL) || (BndNorthSpline.getFluxCalcMethod() == SolveRiemannProblem) ){
-    return false;
-  } else {
+inline bool Grid2D_Quad_Block_HO::IsThereAnySolidBoundary(void) const{
+  return ( BndNorthSpline.IsSolidBoundary() || BndSouthSpline.IsSolidBoundary() ||
+	   BndEastSpline.IsSolidBoundary()  || BndWestSpline.IsSolidBoundary() );
+}
+
+/*!
+ * Check West boundary spline type (i.e. curved or straight).
+ * Return true if the spline has control points
+ * and is not an interior boundary based on the BCs 
+ * (e.g. BC_NONE).
+ */
+inline bool Grid2D_Quad_Block_HO::IsWestBoundaryCurved(void) const{
+  if (BndWestSpline.Xp != NULL && 
+      BndWestSpline.bc[0] != BC_NONE && BndWestSpline.bc[0] != BC_PERIODIC){
     return true;
+  } else {
+    return false;
   }
 }
 
+inline bool Grid2D_Quad_Block_HO::IsEastBoundaryCurved(void) const{
+  if (BndEastSpline.Xp != NULL && 
+      BndEastSpline.bc[0] != BC_NONE && BndEastSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsSouthBoundaryCurved(void) const{
+  if (BndSouthSpline.Xp != NULL && 
+      BndSouthSpline.bc[0] != BC_NONE && BndSouthSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+ 
+inline bool Grid2D_Quad_Block_HO::IsNorthBoundaryCurved(void) const{
+  if (BndNorthSpline.Xp != NULL && 
+      BndNorthSpline.bc[0] != BC_NONE && BndNorthSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsNorthExtendWestBoundaryCurved(void) const{
+  if (ExtendNorth_BndWestSpline.Xp != NULL && 
+      ExtendNorth_BndWestSpline.bc[0] != BC_NONE && ExtendNorth_BndWestSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsSouthExtendWestBoundaryCurved(void) const{
+  if (ExtendSouth_BndWestSpline.Xp != NULL && 
+      ExtendSouth_BndWestSpline.bc[0] != BC_NONE && ExtendSouth_BndWestSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsNorthExtendEastBoundaryCurved(void) const{
+  if (ExtendNorth_BndEastSpline.Xp != NULL && 
+      ExtendNorth_BndEastSpline.bc[0] != BC_NONE && ExtendNorth_BndEastSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsSouthExtendEastBoundaryCurved(void) const{
+  if (ExtendSouth_BndEastSpline.Xp != NULL && 
+      ExtendSouth_BndEastSpline.bc[0] != BC_NONE && ExtendSouth_BndEastSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsEastExtendSouthBoundaryCurved(void) const{
+  if (ExtendEast_BndSouthSpline.Xp != NULL && 
+      ExtendEast_BndSouthSpline.bc[0] != BC_NONE && ExtendEast_BndSouthSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsWestExtendSouthBoundaryCurved(void) const{
+  if (ExtendWest_BndSouthSpline.Xp != NULL && 
+      ExtendWest_BndSouthSpline.bc[0] != BC_NONE && ExtendWest_BndSouthSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsEastExtendNorthBoundaryCurved(void) const{
+  if (ExtendEast_BndNorthSpline.Xp != NULL && 
+      ExtendEast_BndNorthSpline.bc[0] != BC_NONE && ExtendEast_BndNorthSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Grid2D_Quad_Block_HO::IsWestExtendNorthBoundaryCurved(void) const{
+  if (ExtendWest_BndNorthSpline.Xp != NULL && 
+      ExtendWest_BndNorthSpline.bc[0] != BC_NONE && ExtendWest_BndNorthSpline.bc[0] != BC_PERIODIC){
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
+/*!
+ * Set all the state trackers to a new state.
+ */
+inline void Grid2D_Quad_Block_HO::New_Global_Geometry_State(void){
+
+  // Increment all trackers
+  ++InteriorCellGeometryStateTracker;
+  ++GhostCellGeometryStateTracker;
+  ++CornerGhostCellGeometryStateTracker;
+}
+
+/*!
+ * Set interior geometry state tracker to a new state.
+ */
+inline void Grid2D_Quad_Block_HO::New_Interior_Geometry_State(void){
+  ++InteriorCellGeometryStateTracker;
+}
+
+/*!
+ * Set ghost cell geometry state tracker to a new state.
+ */
+inline void Grid2D_Quad_Block_HO::New_Ghost_Geometry_State(void){
+  ++GhostCellGeometryStateTracker;
+}
+
+
+/*!
+ * Set corner ghost cell geometry state tracker to a new state.
+ */
+inline void Grid2D_Quad_Block_HO::New_Corner_Geometry_State(void){
+  ++CornerGhostCellGeometryStateTracker;
+}
 
 
 /* ---------------------------------------------------------------------------------------------- 

@@ -1,13 +1,270 @@
-/**********************************************************************
- * NavierStokes2DInput.cc: Subroutines for the 2D Navier-Stokes input *
- *                         class.                                     *
- **********************************************************************/
+/*!\file NavierStokes2DInput.cc
+  \brief Subroutines for the 2D Navier-Stokes Input Class. */
 
-// Include 2D NavierStokes input parameter header file.
+/* Include required C++ libraries. */
+// None
 
-#ifndef _NAVIERSTOKES2D_INPUT_INCLUDED
-#include "NavierStokes2DInput.h"
-#endif // _NAVIERSTOKES2D_INPUT_INCLUDED
+/* Using std namespace functions */
+// None
+
+/* Include CFFC header files */
+#include "NavierStokes2DInput.h"   // Include 2D NavierStokes input parameter header file.
+#include "NavierStokes2DQuad.h"    /* Include NavierStokes2D_Quad_Block header file. */
+#include "../Grid/HO_Grid2DQuad_ExecutionMode.h" // Include high-order 2D grid execution mode header file
+#include "../Grid/Tecplot_ExecutionMode.h" // Include Tecplot execution mode header file
+
+/*********************************************************
+ * NavierStokes2D_Input_Parameters -- Member functions.  *
+ ********************************************************/
+
+/*!
+ * Decide whether to output or not the boundary reference state for a particular boundary condition.
+ * To get output for a particular BCtype, just add it to the list.
+ */
+bool NavierStokes2D_Input_Parameters::OutputBoundaryReferenceState(const int & BCtype) const{
+  if (BCtype == BC_DIRICHLET ||
+      BCtype == BC_NEUMANN ||
+      BCtype == BC_FARFIELD){
+    // Get output
+    return true;
+  } else {
+    // No output
+    return false;
+  }
+}
+
+/*!
+ * Output the stretching type.
+ */
+void NavierStokes2D_Input_Parameters::OutputStretchingType(ostream &out_file, const int & StretchingType) const {
+  switch (StretchingType){
+  case STRETCHING_FCN_LINEAR:
+    out_file << "Linear";
+    break;
+  case STRETCHING_FCN_MIN_CLUSTERING:
+    out_file << "Min Clustering";
+    break;
+  case STRETCHING_FCN_MAX_CLUSTERING:
+    out_file << "Max Clustering";
+    break;
+  case STRETCHING_FCN_MINMAX_CLUSTERING:
+    out_file << "Min-Max Clustering";
+    break;
+  case STRETCHING_FCN_MIDPT_CLUSTERING:
+    out_file << "Mid Point Clustering";
+    break;
+  case STRETCHING_FCN_COSINE:
+    out_file << "Cosine Clustering";
+    break;
+  case STRETCHING_FCN_SINE:
+    out_file << "Sine Clustering";
+    break;
+  }
+}
+
+/******************************************************//**
+ * Parse the input file
+ ********************************************************/
+int NavierStokes2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr){
+
+  ostringstream msg;
+  int command_flag, error_flag;
+
+  /* Assign initial value for error indicator flag. */
+  error_flag = 0;
+
+  strcpy(Input_File_Name, Input_File_Name_ptr);
+  Open_Input_File(*this);
+  if (Input_File.fail()) {
+    msg << "NavierStokes2D_Input_Parameters::Parse_Input_File() ERROR: Unable to open "
+	<<string(Input_File_Name_ptr) 
+	<< " input data file.";
+    if (Verbose()) {
+      cerr << msg.str() << endl;
+    }
+    throw runtime_error(msg.str());
+  } /* endif */
+
+  if (Verbose()) {
+    cout << "\n Reading input data file `"
+	 << Input_File_Name << "'." << endl;
+    cout.flush();
+  }
+  while (1) {
+    Get_Next_Input_Control_Parameter();
+    command_flag = Parse_Next_Input_Control_Parameter(*this);
+    if (command_flag == EXECUTE_CODE) {
+      break;
+      
+    } else if (command_flag == TERMINATE_CODE) {
+      break;
+      
+    } else if (command_flag == INVALID_INPUT_CODE ||
+	       command_flag == INVALID_INPUT_VALUE) {
+      Line_Number = -Line_Number;
+      
+      msg << "NavierStokes2D_Input_Parameters::Parse_Input_File() ERROR: Error reading data at line # " 
+	  << -Line_Number
+	  << " of input data file.";
+      if (Verbose()){
+	cerr << msg.str() << endl;
+      }
+      
+      throw runtime_error(msg.str());
+    } /* endif */
+  } /* endwhile */
+
+  // Set static variables and initialize reference state.
+  Initialize_Reference_State(*this);
+
+  /* Perform consistency checks and internal parameter setup */
+  doInternalSetupAndConsistencyChecks(error_flag);
+
+  /* Initial processing of input control parameters complete.  
+     Return the error indicator flag. */
+  return (error_flag);
+
+}
+
+/******************************************************//**
+ * Get the next input control parameter from the input file.                                                
+ ********************************************************/
+void NavierStokes2D_Input_Parameters::Get_Next_Input_Control_Parameter(void){
+
+  int i, index, LineSize, IndexFirstChar(0);
+  char buffer[256], ControlParameter[256];
+
+  // Initialize ControlParameter and Next_Control_Parameter to end of string
+  ControlParameter[0] = '\0';
+  strcpy(Next_Control_Parameter, ControlParameter);
+
+  // While the input stream is 'good' for reading and the end of file is not attained
+  while ( Input_File.good() && !Input_File.getline(buffer, sizeof(buffer)).eof() ){
+
+    // Process the line 
+    Line_Number = Line_Number + 1;
+    LineSize = Input_File.gcount(); // Get the size of the line. Last character is "\0"!
+
+    // Determine the index of the first character different than 'space' and 'tab'
+    for (i=0; i<LineSize; ++i){
+      if (buffer[i] != ' ' && buffer[i] != '\t'){
+	IndexFirstChar = i;
+	break;
+      }
+    }
+
+    /* Parse the line if the first character different than 'space' 
+       is also different than '#' or end of string ('\0').
+       Otherwise skip the line because it is either a comment or an empty line. */
+    if ( buffer[IndexFirstChar] != '#' && buffer[IndexFirstChar] != '\0'){
+
+      // Get the ControlParameter
+      for(i=IndexFirstChar, index=0;  i<LineSize;  ++i, ++index){
+	if (buffer[i] == ' ' || buffer[i] == '=' || buffer[i] == '\t'){
+	  ControlParameter[index] = '\0';
+	  break;
+	} else {
+	  ControlParameter[index] = buffer[i];
+	}
+      }
+
+      // Set the Next_Control_Parameter
+      strcpy(Next_Control_Parameter, ControlParameter);
+      break;
+    }
+
+  }//endwhile
+}
+
+/******************************************************//**
+ * Perform setup of internal and related external parameters.
+ * Do also check and validation of input parameters.
+ ********************************************************/
+void NavierStokes2D_Input_Parameters::doInternalSetupAndConsistencyChecks(int & error_flag){
+
+  /* Perform consistency checks on input parameters for multigrid */
+  if (!error_flag &&
+      i_Time_Integration == TIME_STEPPING_MULTIGRID) {
+    error_flag = Check_Input_Parameters<NavierStokes2D_Input_Parameters>(*this);
+    if (error_flag) {
+      cout << "\n NavierStokes2D ERROR: Input Parameters consistency check failure\n";
+    }
+  }
+
+  // Perform consitency checks on the refinement criteria.
+  Number_of_Refinement_Criteria = 0;
+  if (Refinement_Criteria_Gradient_Density) Number_of_Refinement_Criteria++;
+  if (Refinement_Criteria_Divergence_Velocity) Number_of_Refinement_Criteria++;
+  if (Refinement_Criteria_Curl_Velocity) Number_of_Refinement_Criteria++;
+  if (Refinement_Criteria_Gradient_Turbulence_Kinetic_Energy) Number_of_Refinement_Criteria++;
+  if (Number_of_Refinement_Criteria < 1 || Number_of_Refinement_Criteria > 4){
+    error_flag = 1011;
+  }
+
+  // Perform consitency checks on the time marching parameters.
+  if (Time_Accurate == 1 && Local_Time_Stepping != GLOBAL_TIME_STEPPING){
+    Local_Time_Stepping = GLOBAL_TIME_STEPPING;
+  }
+
+  // Enforce NO mesh stretching is required
+  if (!i_Mesh_Stretching){
+    // Mesh stretching is not ON
+    Mesh_Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
+    Mesh_Stretching_Type_Jdir = STRETCHING_FCN_LINEAR;
+    Mesh_Stretching_Factor_Idir = 1.0;
+    Mesh_Stretching_Factor_Jdir = 1.0;
+  }
+
+  if ( FlagPressureDefined == 2){
+    // Pressure gradient has been defined.
+    // Calculate the pressure change using information from the geometry.
+    switch(i_Grid){
+    case GRID_CARTESIAN_UNIFORM:
+    case GRID_RECTANGULAR_BOX:
+    case GRID_SQUARE:      
+      dp = dpdx * Box_Width;
+      break;
+    case GRID_PIPE:
+      dp = dpdx * Pipe_Length;
+      break;
+    default :
+      throw runtime_error("NavierStokes2D_Input_Parameters::doInternalSetupAndConsistencyChecks() ERROR! The pressure gradient has been defined but there is no rule on how to compute the pressure change for the current mesh. \n Please define the rule!");
+    } // endswitch
+  }
+
+  // Set the reference pressures for the Fixed_Pressure BC on opposite faces.
+  if (BCs_Specified){
+    if (BC_North == BC_FIXED_PRESSURE && BC_South == BC_FIXED_PRESSURE){
+      // Use Wo to set the reference pressure value for the South boundary
+      Ref_State_BC_South.p = Wo.p;
+
+      // Use dp and Wo to set the reference pressure value for the North boundary
+      Ref_State_BC_North.p = Wo.p - dp;
+    }
+
+    if (BC_East == BC_FIXED_PRESSURE && BC_West == BC_FIXED_PRESSURE){
+      // Use Wo to set the reference pressure value for the East boundary
+      Ref_State_BC_East.p = Wo.p;
+
+      // Use dp and Wo to set the reference pressure value for the West boundary
+      Ref_State_BC_West.p = Wo.p - dp;
+    }
+  }
+
+
+  // Perform update of the internal variables of the exact solution
+  ExactSoln->Set_ParticularSolution_Parameters(*this);
+
+  // Perform update of the internal variables of the high-order input parameters
+  HighOrder2D_Input::Set_Final_Parameters(*this);
+
+  // Set reference state in the NavierStokes2D_Quad_Block class
+  NavierStokes2D_Quad_Block::Set_Normalization_Reference_State(RefW);
+  
+  // Set limiter in CENO class
+  CENO_Execution_Mode::Limiter = i_Limiter;
+
+}
 
 /**********************************************************************
  * NavierStokes2D_Input_Parameters -- External subroutines.           *
@@ -82,6 +339,10 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   string_ptr = "Least_Squares";
   strcpy(IP.Reconstruction_Type,string_ptr);
   IP.i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
+  IP.Space_Accuracy = 1;
+  IP.IncludeHighOrderBoundariesRepresentation = OFF;
+  IP.i_ReconstructionMethod = RECONSTRUCTION_LEAST_SQUARES;
+  CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF;
 
   // Limiter type:
   string_ptr = "Barth_Jespersen";
@@ -104,6 +365,7 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   string_ptr = "Uniform";
   strcpy(IP.ICs_Type,string_ptr);
   IP.i_ICs = IC_UNIFORM;
+  IP.Exact_Integration_Digits = 9;
 
   // Flow-type switch:
   string_ptr = "Inviscid";
@@ -171,6 +433,8 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.Wo.v.y = IP.Mach_Number*IP.Wo.a()*sin_angle;
   IP.Reynolds_Number = ZERO;
   IP.dp = ZERO;
+  IP.dpdx = ZERO;
+  IP.FlagPressureDefined = OFF;
   IP.Re_lid = 100.0;
   IP.Wave_Position = Vector2D_ZERO;
   IP.Wave_Width = ZERO;
@@ -197,12 +461,16 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.Number_of_Blocks_Idir = 1;
   IP.Number_of_Blocks_Jdir = 1;
   IP.Plate_Length = ONE;
+  IP.Flat_Plate_BC_Type = BC_WALL_VISCOUS_HEATFLUX;
   IP.Pipe_Length = ONE;
   IP.Pipe_Radius = HALF;
   IP.Blunt_Body_Radius = ONE;
   IP.Blunt_Body_Mach_Number = TWO;
   IP.Chamber_Length = 0.835;
   IP.Chamber_Radius = 0.020;
+  IP.Cylinder_Radius2 = 32.00;
+  IP.Annulus_Theta_Start = 0.0;
+  IP.Annulus_Theta_End = 90.0;
   IP.Chamber_To_Throat_Length = 0.05;
   IP.Nozzle_Length = 0.150;
   IP.Nozzle_Radius_Exit = 0.030;
@@ -222,14 +490,28 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.Step_Height = 0.0127;
   IP.Top_Wall_Deflection = ZERO;
   IP.Smooth_Bump = OFF;
+
+  IP.VertexSW = Vector2D(-0.5,-0.5);
+  IP.VertexSE = Vector2D( 0.5,-0.5);
+  IP.VertexNE = Vector2D( 0.5, 0.5);
+  IP.VertexNW = Vector2D(-0.5, 0.5);
+
   IP.X_Shift = Vector2D_ZERO;
   IP.X_Scale = ONE;
   IP.X_Rotate = ZERO;
+
+  IP.IterationsOfInteriorNodesDisturbances = 0;     /* Number of iterations of disturbing the mesh 
+						       (create an unsmooth interior mesh) */
+  IP.Num_Of_Spline_Control_Points = 361; /* Number of control points on the 2D spline (used for some grids) */
 
   // Boundary conditions:
   string_ptr = "OFF";
   strcpy(IP.Boundary_Conditions_Specified,string_ptr);
   IP.BCs_Specified = OFF;
+  IP.BC_North_Ref_State_Specified = OFF;
+  IP.BC_South_Ref_State_Specified = OFF;
+  IP.BC_East_Ref_State_Specified = OFF;
+  IP.BC_West_Ref_State_Specified = OFF;
   string_ptr = "None";
   strcpy(IP.BC_North_Type,string_ptr);
   strcpy(IP.BC_South_Type,string_ptr);
@@ -239,7 +521,11 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.BC_South = BC_NONE;
   IP.BC_East  = BC_NONE;
   IP.BC_West  = BC_NONE;
-
+  IP.Ref_State_BC_North = NavierStokes2D_pState(0.0);
+  IP.Ref_State_BC_South = NavierStokes2D_pState(0.0);
+  IP.Ref_State_BC_East = NavierStokes2D_pState(0.0);
+  IP.Ref_State_BC_West = NavierStokes2D_pState(0.0);
+  
   // Mesh stretching factor:
   IP.i_Mesh_Stretching = OFF;
   IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
@@ -286,7 +572,7 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.Morton = 0;
   IP.Morton_Reordering_Frequency = 0;
 
-  // Smooth quad block indicator:
+  // Smooth quad block flag is always ON (The grid will take care of the right value):
   IP.i_Smooth_Quad_Block = ON;
 
   IP.Solver_Type = EXPLICIT;
@@ -320,6 +606,11 @@ void Set_Default_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
   IP.Number_of_Blocks_Per_Processor = 10;
 
+  // Accuracy assessment parameters:
+  AccuracyAssessment_Execution_Mode::SetDefaults();
+
+  // High-order parameters:
+  HighOrder2D_Input::SetDefaults();
 }
 
 /**********************************************************************
@@ -410,6 +701,15 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.i_Reconstruction),
 			1,
 			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.i_ReconstructionMethod), 
+			1, 
+			MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.Space_Accuracy), 
+			1, 
+			MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.IncludeHighOrderBoundariesRepresentation), 
+			1, 
+			MPI::INT, 0);
   // Limiters:
   MPI::COMM_WORLD.Bcast(IP.Limiter_Type,
 			INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
@@ -567,6 +867,36 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
 			  1,
 			  MPI::DOUBLE,0);
   }
+
+  // Reference state RefW
+  MPI::COMM_WORLD.Bcast(&(IP.RefW.rho), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.RefW.v.x), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.RefW.v.y), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.RefW.p), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.RefW.k), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.RefW.omega), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.RefW.ke), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.RefW.ee), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.Exact_Integration_Digits), 
+			1, 
+			MPI::DOUBLE, 0);
+
   // Grid variables:
   MPI::COMM_WORLD.Bcast(IP.Grid_Type,
 			INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
@@ -601,6 +931,9 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.Plate_Length),
 			1,
 			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Flat_Plate_BC_Type),
+			1,
+			MPI::INT,0);
   MPI::COMM_WORLD.Bcast(&(IP.Pipe_Length),
 			1,
 			MPI::DOUBLE,0);
@@ -640,6 +973,15 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.Cylinder_Radius),
 			1,
 			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Cylinder_Radius2), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.Annulus_Theta_Start), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.Annulus_Theta_End), 
+			1, 
+			MPI::DOUBLE, 0);
   MPI::COMM_WORLD.Bcast(&(IP.Ellipse_Length_X_Axis),
 			1,
 			MPI::DOUBLE,0);
@@ -676,6 +1018,30 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.Smooth_Bump),
 			1,
 			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.VertexSW.x), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.VertexSW.y), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.VertexSE.x), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.VertexSE.y), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.VertexNW.x), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.VertexNW.y), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.VertexNE.x), 
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(IP.VertexNE.y), 
+			1, 
+			MPI::DOUBLE, 0);
   MPI::COMM_WORLD.Bcast(&(IP.X_Shift.x),
 			1,
 			MPI::DOUBLE,0);
@@ -719,6 +1085,115 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.BC_West),
 			1,
 			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.BC_North_Ref_State_Specified),
+			1,
+			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.BC_South_Ref_State_Specified),
+			1,
+			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.BC_East_Ref_State_Specified),
+			1,
+			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.BC_West_Ref_State_Specified),
+			1,
+			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_North.rho),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_North.v.x),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_North.v.y),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_North.p),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_North.k),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_North.omega),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_North.ke),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_North.ee),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_South.rho),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_South.v.x),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_South.v.y),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_South.p),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_South.k),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_South.omega),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_South.ke),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_South.ee),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_East.rho),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_East.v.x),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_East.v.y),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_East.p),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_East.k),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_East.omega),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_East.ke),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_East.ee),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_West.rho),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_West.v.x),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_West.v.y),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_West.p),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_West.k),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_West.omega),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_West.ke),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_West.ee),
+			1,
+			MPI::DOUBLE,0);
+
   // NASA rotors:
   MPI::COMM_WORLD.Bcast(IP.NASA_Rotor37_Data_Directory,
 			INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
@@ -895,6 +1370,37 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP) {
 
   // Reinitialize the reference state.
   Reinitialize_Reference_State(IP);
+
+  // Accuracy assessment parameters:
+  AccuracyAssessment_Execution_Mode::Broadcast();
+
+  // CENO_Execution_Mode variables
+  CENO_Execution_Mode::Broadcast();
+    
+  // CENO_Tolerances variables
+  CENO_Tolerances::Broadcast();
+
+  // Exact solution variables
+  IP.ExactSoln->Broadcast();
+
+  // HO_Grid2D_Execution_Mode variables
+  HO_Grid2D_Execution_Mode::Broadcast();
+
+  // Tecplot_Execution_Mode variables
+  Tecplot_Execution_Mode::Broadcast();
+
+  // HighOrder2D_Input variables
+  HighOrder2D_Input::Broadcast();    
+
+  // Update all dependent variables
+  if (!CFFC_Primary_MPI_Processor()) {
+
+    // Set reference state in the NavierStokes2D_Quad_Block class
+    NavierStokes2D_Quad_Block::Set_Normalization_Reference_State(IP.RefW);
+  }
+
+  // NumericalLibrary_Execution_Mode variables
+  NumericalLibrary_Execution_Mode::Broadcast();
 
 #endif
 
@@ -1147,6 +1653,7 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP,
 		       1,
 		       MPI::DOUBLE,Source_Rank);
   }
+
   // Grid variables:
   Communicator.Bcast(IP.Grid_Type,
 		     INPUT_PARAMETER_LENGTH_NAVIERSTOKES2D,
@@ -1181,6 +1688,9 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP,
   Communicator.Bcast(&(IP.Plate_Length),
 		     1,
 		     MPI::DOUBLE,Source_Rank);
+  Communicator.Bcast(&(IP.Flat_Plate_BC_Type),
+		     1,
+		     MPI::INT,0);
   Communicator.Bcast(&(IP.Pipe_Length),
 		     1,
 		     MPI::DOUBLE,Source_Rank);
@@ -1488,22 +1998,7 @@ void Broadcast_Input_Parameters(NavierStokes2D_Input_Parameters &IP,
  **********************************************************************/
 void Get_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
 
-  int i;
-  char buffer[256];
-
-  IP.Line_Number = IP.Line_Number + 1;
-  IP.Input_File.getline(buffer,sizeof(buffer));
-  i = 0;
-  if (buffer[0] != '#') {
-    while (1) {
-      if (buffer[i] == ' ' || buffer[i] == '=') break;
-      i = i + 1;
-      if (i > strlen(buffer)) break;
-    }
-    buffer[i] = '\0';
-  }
-  strcpy(IP.Next_Control_Parameter,buffer);
-
+  return IP.Get_Next_Input_Control_Parameter();
 }
 
 /**********************************************************************
@@ -1560,16 +2055,29 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     strcpy(IP.Reconstruction_Type,IP.Next_Control_Parameter);
     if (strcmp(IP.Reconstruction_Type,"Green_Gauss") == 0) {
       IP.i_Reconstruction = RECONSTRUCTION_GREEN_GAUSS;
+      IP.i_ReconstructionMethod = RECONSTRUCTION_GREEN_GAUSS;
+      CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF;
     } else if (strcmp(IP.Reconstruction_Type,"Least_Squares") == 0 ||
 	       strcmp(IP.Reconstruction_Type,"Linear_Least_Squares") == 0) {
       IP.i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
+      IP.i_ReconstructionMethod = RECONSTRUCTION_LEAST_SQUARES;
+      CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF;
     } else if (strcmp(IP.Reconstruction_Type,"Diamond_Path") == 0) {
       IP.i_Reconstruction = RECONSTRUCTION_DIAMOND_PATH;
+      IP.i_ReconstructionMethod = RECONSTRUCTION_DIAMOND_PATH;
+      CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF;
     } else if (strcmp(IP.Reconstruction_Type,"Quadratic_Least_Squares") == 0) {
       IP.i_Reconstruction = RECONSTRUCTION_QUADRATIC_LEAST_SQUARES;
+      IP.i_ReconstructionMethod = RECONSTRUCTION_QUADRATIC_LEAST_SQUARES;
+      CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF;      
+    } else if (strcmp(IP.Reconstruction_Type, "CENO") == 0) {
+      IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+      IP.i_ReconstructionMethod = RECONSTRUCTION_CENO;
+      CENO_Execution_Mode::USE_CENO_ALGORITHM = ON;
     } else {
+      std::cout << "\n ==> Unknown reconstruction method!";
       i_command = INVALID_INPUT_VALUE;
-    }
+    } /* endif */
 
   } else if (strcmp(IP.Next_Control_Parameter,"Limiter_Type") == 0) {
     i_command = 3;
@@ -1587,9 +2095,12 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.i_Limiter = LIMITER_BARTH_JESPERSEN;
     } else if (strcmp(IP.Limiter_Type,"Venkatakrishnan") == 0) {
       IP.i_Limiter = LIMITER_VENKATAKRISHNAN;
+    } else if (strcmp(IP.Limiter_Type, "Venkatakrishnan_Modified") == 0) {
+      IP.i_Limiter = LIMITER_VENKATAKRISHNAN_CORRECTED;
     } else {
+      std::cout << "\n ==> Unknown limiter type!";
       i_command = INVALID_INPUT_VALUE;
-    }
+    } /* endif */
 
   } else if (strcmp(IP.Next_Control_Parameter,"Freeze_Limiter") == 0) {
     i_command = 3;
@@ -1637,6 +2148,7 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Flux_Function_Type,"VanLeer_MB") == 0) {
       IP.i_Flux_Function = FLUX_FUNCTION_VANLEER_MB;
     } else {
+      std::cout << "\n ==> Unknown flux function type!";
       i_command = INVALID_INPUT_VALUE;
     }
 
@@ -1719,7 +2231,7 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.i_ICs = IC_VISCOUS_PIPE_FLOW;
     } else if (strcmp(IP.ICs_Type,"Flat_Plate") == 0) {
       IP.i_ICs = IC_VISCOUS_FLAT_PLATE;
-      IP.BC_South = BC_WALL_VISCOUS_HEATFLUX;
+      IP.Flat_Plate_BC_Type = BC_WALL_VISCOUS_HEATFLUX;
     } else if (strcmp(IP.ICs_Type,"Stokes_Flow") == 0) {
       IP.i_ICs = IC_VISCOUS_STOKES_FLOW;
     } else if (strcmp(IP.ICs_Type,"Driven_Cavity_Flow") == 0) {
@@ -1740,12 +2252,26 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.i_ICs = IC_RINGLEB_FLOW;
     } else if (strcmp(IP.ICs_Type,"Electrostatic_Channel") == 0) {
       IP.i_ICs = IC_ELECTROSTATIC_CHANNEL;
+    } else if (strcmp(IP.ICs_Type,"Exact_Solution") == 0) {
+      IP.i_ICs = IC_EXACT_SOLUTION;
+    } else if (strcmp(IP.ICs_Type,"Uniform_Interior_Exact_Ghost_Cells") == 0) {
+      IP.i_ICs = IC_INTERIOR_UNIFORM_GHOSTCELLS_EXACT;
     } else if (strcmp(IP.ICs_Type,"Restart") == 0) {
       IP.i_ICs = IC_RESTART;
+    } else if (strcmp(IP.ICs_Type, "Given_StartUp") == 0) {
+      IP.i_ICs = IC_GIVEN_STARTUP;
     } else {
+      std::cout << "\n ==> Unknown initial condition!";
       i_command = INVALID_INPUT_VALUE;
     }
 
+  } else if (strcmp(IP.Next_Control_Parameter, "Exact_Integration_Digits") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Exact_Integration_Digits;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if (IP.Exact_Integration_Digits < 0) i_command = INVALID_INPUT_VALUE;
+    
   } else if (strcmp(IP.Next_Control_Parameter,"Grid_Type") == 0) {
     i_command = 6;
     Get_Next_Input_Control_Parameter(IP);
@@ -1762,19 +2288,23 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.i_Grid = GRID_RECTANGULAR_BOX;
       IP.Box_Width = ONE;
       IP.Box_Height = ONE;
+    } else if (strcmp(IP.Grid_Type, "Deformed_Box") == 0) {
+      IP.i_Grid = GRID_DEFORMED_BOX;
+    } else if (strcmp(IP.Grid_Type, "Periodic_Box") == 0) {
+      IP.i_Grid = GRID_PERIODIC_BOX;
     } else if (strcmp(IP.Grid_Type,"Flat_Plate") == 0 ||
 	       strcmp(IP.Grid_Type,"Adiabatic_Flat_Plate") == 0) {
       IP.i_Grid = GRID_FLAT_PLATE;
       IP.Plate_Length = ONE;
-      IP.BC_South = BC_WALL_VISCOUS_HEATFLUX;
+      IP.Flat_Plate_BC_Type = BC_WALL_VISCOUS_HEATFLUX;
     } else if (strcmp(IP.Grid_Type,"Isothermal_Flat_Plate") == 0) {
       IP.i_Grid = GRID_FLAT_PLATE;
       IP.Plate_Length = ONE;
-      IP.BC_South = BC_WALL_VISCOUS_ISOTHERMAL;
+      IP.Flat_Plate_BC_Type = BC_WALL_VISCOUS_ISOTHERMAL;
     } else if (strcmp(IP.Grid_Type,"Burning_Surface_Flat_Plate") == 0) {
       IP.i_Grid = GRID_FLAT_PLATE;
       IP.Plate_Length = ONE;
-      IP.BC_South = BC_BURNING_SURFACE;
+      IP.Flat_Plate_BC_Type = BC_BURNING_SURFACE;
     } else if (strcmp(IP.Grid_Type,"Pipe") == 0) {
       IP.i_Grid = GRID_PIPE;
       IP.Pipe_Length = ONE;
@@ -1813,6 +2343,7 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Grid_Type,"Circular_Cylinder") == 0) {
       IP.i_Grid = GRID_CIRCULAR_CYLINDER;
       IP.Cylinder_Radius = ONE;
+      IP.Cylinder_Radius2 = 32.00;
       IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
       IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
       IP.Mesh_Stretching_Factor_Idir = 1.025;
@@ -1825,6 +2356,11 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.i_Grid = GRID_NACA_AEROFOIL;
       IP.Chord_Length = ONE;
       strcpy(IP.NACA_Aerofoil_Type,"0012");
+    } else if (strcmp(IP.Grid_Type, "NACA_Aerofoil_Ogrid") == 0) {
+      IP.i_Grid = GRID_NACA_AEROFOIL_OGRID;
+      IP.Chord_Length = ONE;
+      IP.Cylinder_Radius2 = 32.0;
+      strcpy(IP.NACA_Aerofoil_Type, "0012");
     } else if (strcmp(IP.Grid_Type,"Free_Jet") == 0) {
       IP.i_Grid = GRID_FREE_JET;
       IP.Orifice_Radius = ONE;
@@ -1837,6 +2373,11 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.i_Grid = GRID_JET_FLOW;
     } else if (strcmp(IP.Grid_Type,"Ringleb_Flow") == 0) {
       IP.i_Grid = GRID_RINGLEB_FLOW;
+      IP.Inner_Streamline_Number = 0.80;
+      IP.Outer_Streamline_Number = 0.40;
+      IP.Isotach_Line = 0.30;
+    } else if (strcmp(IP.Grid_Type,"Ringleb_Flow_Straight_Inflow_Boundary") == 0) {
+      IP.i_Grid = GRID_RINGLEB_FLOW_STRAIGHT_INFLOW_BOUNDARY;
       IP.Inner_Streamline_Number = 0.80;
       IP.Outer_Streamline_Number = 0.40;
       IP.Isotach_Line = 0.30;
@@ -1853,8 +2394,6 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.i_Grid = GRID_NASA_ROTOR_67;
       IP.Rotor_Flow_Type = PEAK_FLOW;
       IP.Rotor_Percent_Span = 50.00;
-    } else if (strcmp(IP.Grid_Type,"Ringleb_Flow") == 0) {
-      IP.i_Grid = GRID_RINGLEB_FLOW;
     } else if (strcmp(IP.Grid_Type,"Unsteady_Blunt_Body") == 0) {
       IP.i_Grid = GRID_UNSTEADY_BLUNT_BODY;
       IP.Blunt_Body_Radius = ONE;
@@ -1885,6 +2424,7 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Grid_Type,"Read_From_Data_File") == 0) {
       IP.i_Grid = GRID_READ_FROM_GRID_DATA_FILE;
     } else {
+      std::cout << "\n ==> Unknown grid type!";
       i_command = INVALID_INPUT_VALUE;
     }
 
@@ -1957,7 +2497,11 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     IP.Input_File >> IP.Time_Accurate;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Time_Accurate != 0 && IP.Time_Accurate != 1) IP.Time_Accurate = 0;
-    if (IP.Time_Accurate) IP.Local_Time_Stepping = GLOBAL_TIME_STEPPING;
+    if (IP.Time_Accurate) {
+      IP.Local_Time_Stepping = GLOBAL_TIME_STEPPING;
+    } else {
+      IP.Local_Time_Stepping = SCALAR_LOCAL_TIME_STEPPING;
+    } /* endif */
 
   } else if (strcmp(IP.Next_Control_Parameter,"Local_Time_Stepping") == 0) {
     i_command = 15;
@@ -2050,6 +2594,26 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Cylinder_Radius <= ZERO) i_command = INVALID_INPUT_VALUE;
 
+  } else if (strcmp(IP.Next_Control_Parameter, "Cylinder_Radius2") == 0) {
+    i_command = 26;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Cylinder_Radius2;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if (IP.Cylinder_Radius2 <= ZERO) i_command = INVALID_INPUT_VALUE;
+    if (IP.Cylinder_Radius2 <= IP.Cylinder_Radius) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Annulus_Start_Angle") == 0) {
+    i_command = 26;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Annulus_Theta_Start;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+      
+  } else if (strcmp(IP.Next_Control_Parameter, "Annulus_End_Angle") == 0) {
+    i_command = 26;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Annulus_Theta_End;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    
   } else if (strcmp(IP.Next_Control_Parameter,"Ellipse_Length_X_Axis") == 0) {
     i_command = 27;
     IP.Line_Number = IP.Line_Number + 1;
@@ -2208,6 +2772,34 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     IP.Input_File >> IP.Grain_Radius;
     IP.Input_File.getline(buffer,sizeof(buffer));
 
+  } else if (strcmp(IP.Next_Control_Parameter, "VertexSW") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.VertexSW;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "VertexSE") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.VertexSE;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "VertexNE") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.VertexNE;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "VertexNW") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.VertexNW;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
   } else if (strcmp(IP.Next_Control_Parameter,"Gas_Type") == 0) {
     i_command = 38;
     Get_Next_Input_Control_Parameter(IP);
@@ -2218,7 +2810,8 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
 	strcmp(IP.Gas_Type,"N2") != 0 &&
 	strcmp(IP.Gas_Type,"O2") != 0 &&
 	strcmp(IP.Gas_Type,"AIR-viscous") != 0 &&
-	strcmp(IP.Gas_Type,"AP_HTPB") != 0) {
+	strcmp(IP.Gas_Type,"AP_HTPB") != 0 &&
+	strcmp(IP.Gas_Type,"AIR-constant") ) {
       i_command = INVALID_INPUT_VALUE;
     }
 
@@ -2264,10 +2857,18 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Reynolds_Number < ZERO) i_command = INVALID_INPUT_VALUE;
 
-  } else if (strcmp(IP.Next_Control_Parameter,"Pressure_Gradient") == 0) {
+  } else if (strcmp(IP.Next_Control_Parameter,"Pressure_Change") == 0) {
     i_command = 44;
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.dp;
+    IP.FlagPressureDefined = 1;	// indicates that pressure change has been defined
+    IP.Input_File.getline(buffer,sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Gradient_Pressure") == 0) {
+    i_command = 44;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.dpdx;
+    IP.FlagPressureDefined = 2;	// indicates that pressure gradient has been defined
     IP.Input_File.getline(buffer,sizeof(buffer));
 
   } else if (strcmp(IP.Next_Control_Parameter,"Re_lid") == 0) {
@@ -2713,17 +3314,20 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Mesh_Stretching_Factor_Jdir < ONE) i_command = INVALID_INPUT_VALUE;
 
-  } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Quad_Block") == 0) {
-    i_command = 106;
-    Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
-      IP.i_Smooth_Quad_Block = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
-      IP.i_Smooth_Quad_Block = OFF;
-    } else {
-      i_command = INVALID_INPUT_VALUE;
-    }
-
+  } else if (strcmp(IP.Next_Control_Parameter,"Iteration_Disturb_Mesh") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.IterationsOfInteriorNodesDisturbances;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if (IP.IterationsOfInteriorNodesDisturbances < 0 ) i_command = INVALID_INPUT_VALUE;
+    
+  } else if (strcmp(IP.Next_Control_Parameter,"Number_Spline_Points") == 0) {
+    i_command = 101;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Num_Of_Spline_Control_Points;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if (IP.Num_Of_Spline_Control_Points <= TWO) i_command = INVALID_INPUT_VALUE;
+      
     ////////////////////////////////////////////////////////////////////
     // TURBULENCE PARAMETERS                                          //
     ////////////////////////////////////////////////////////////////////
@@ -3208,10 +3812,35 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.BC_North = BC_NONE;
     } else if (strcmp(IP.BC_North_Type,"Ringleb") == 0) {
       IP.BC_North = BC_RINGLEB_FLOW;
+    } else if (strcmp(IP.BC_North_Type,"Dirichlet") == 0) {
+      IP.BC_North = BC_DIRICHLET;
+    } else if (strcmp(IP.BC_North_Type,"Neumann") == 0) {
+      IP.BC_North = BC_NEUMANN;
+    } else if (strcmp(IP.BC_North_Type,"Robin") == 0) {
+      IP.BC_North = BC_ROBIN;
+    } else if (strcmp(IP.BC_North_Type,"Farfield") == 0) {
+      IP.BC_North = BC_FARFIELD;
+    } else if (strcmp(IP.BC_North_Type,"Frozen") == 0) {
+      IP.BC_North = BC_FROZEN;
+    } else if (strcmp(IP.BC_North_Type,"Exact_Solution") == 0) {
+      IP.BC_North = BC_EXACT_SOLUTION;
+    } else if (strcmp(IP.BC_North_Type,"Inviscid_Wall") == 0) {
+      IP.BC_North = BC_WALL_INVISCID;
+    } else if (strcmp(IP.BC_North_Type,"Unmodified") == 0) {
+      IP.BC_North = BC_GENERAL;	// This type is used to inform the framework that the North boundary condition WON'T be changed
     } else {
       i_command = INVALID_INPUT_VALUE;
     }
 
+  } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_North") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Ref_State_BC_North;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    // North reference state has been specified
+    IP.BC_North_Ref_State_Specified = ON;
+    
   } else if (strcmp(IP.Next_Control_Parameter,"BC_South") == 0) {
     i_command = 502;
     Get_Next_Input_Control_Parameter(IP);
@@ -3248,10 +3877,35 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.BC_South = BC_NONE;
     } else if (strcmp(IP.BC_South_Type,"Ringleb") == 0) {
       IP.BC_South = BC_RINGLEB_FLOW;
+    } else if (strcmp(IP.BC_South_Type,"Dirichlet") == 0) {
+      IP.BC_South = BC_DIRICHLET;
+    } else if (strcmp(IP.BC_South_Type,"Neumann") == 0) {
+      IP.BC_South = BC_NEUMANN;
+    } else if (strcmp(IP.BC_South_Type,"Robin") == 0) {
+      IP.BC_South = BC_ROBIN;
+    } else if (strcmp(IP.BC_South_Type,"Farfield") == 0) {
+      IP.BC_South = BC_FARFIELD;
+    } else if (strcmp(IP.BC_South_Type,"Frozen") == 0) {
+      IP.BC_South = BC_FROZEN;
+    } else if (strcmp(IP.BC_South_Type,"Exact_Solution") == 0) {
+      IP.BC_South = BC_EXACT_SOLUTION;
+    } else if (strcmp(IP.BC_South_Type,"Inviscid_Wall") == 0) {
+      IP.BC_South = BC_WALL_INVISCID;
+    } else if (strcmp(IP.BC_South_Type,"Unmodified") == 0) {
+      IP.BC_South = BC_GENERAL;	// This type is used to inform the framework that the South boundary condition WON'T be changed
     } else {
       i_command = INVALID_INPUT_VALUE;
     }
 
+  } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_South") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Ref_State_BC_South;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    // South reference state has been specified
+    IP.BC_South_Ref_State_Specified = ON;
+    
   } else if (strcmp(IP.Next_Control_Parameter,"BC_East") == 0) {
     i_command = 503;
     Get_Next_Input_Control_Parameter(IP);
@@ -3288,9 +3942,34 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.BC_East = BC_NONE;
     } else if (strcmp(IP.BC_East_Type,"Ringleb") == 0) {
       IP.BC_East = BC_RINGLEB_FLOW;
+    } else if (strcmp(IP.BC_East_Type,"Dirichlet") == 0) {
+      IP.BC_East = BC_DIRICHLET;
+    } else if (strcmp(IP.BC_East_Type,"Neumann") == 0) {
+      IP.BC_East = BC_NEUMANN;
+    } else if (strcmp(IP.BC_East_Type,"Robin") == 0) {
+      IP.BC_East = BC_ROBIN;
+    } else if (strcmp(IP.BC_East_Type,"Farfield") == 0) {
+      IP.BC_East = BC_FARFIELD;
+    } else if (strcmp(IP.BC_East_Type,"Frozen") == 0) {
+      IP.BC_East = BC_FROZEN;
+    } else if (strcmp(IP.BC_East_Type,"Exact_Solution") == 0) {
+      IP.BC_East = BC_EXACT_SOLUTION;
+    } else if (strcmp(IP.BC_East_Type,"Inviscid_Wall") == 0) {
+      IP.BC_East = BC_WALL_INVISCID;
+    } else if (strcmp(IP.BC_East_Type,"Unmodified") == 0) {
+      IP.BC_East = BC_GENERAL;	// This type is used to inform the framework that the East boundary condition WON'T be changed
     } else {
       i_command = INVALID_INPUT_VALUE;
     }
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_East") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Ref_State_BC_East;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    // East reference state has been specified
+    IP.BC_East_Ref_State_Specified = ON;
 
   } else if (strcmp(IP.Next_Control_Parameter,"BC_West") == 0) {
     i_command = 504;
@@ -3328,9 +4007,52 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
       IP.BC_West = BC_NONE;
     } else if (strcmp(IP.BC_West_Type,"Ringleb") == 0) {
       IP.BC_West = BC_RINGLEB_FLOW;
+    } else if (strcmp(IP.BC_West_Type,"Dirichlet") == 0) {
+      IP.BC_West = BC_DIRICHLET;
+    } else if (strcmp(IP.BC_West_Type,"Neumann") == 0) {
+      IP.BC_West = BC_NEUMANN;
+    } else if (strcmp(IP.BC_West_Type,"Robin") == 0) {
+      IP.BC_West = BC_ROBIN;
+    } else if (strcmp(IP.BC_West_Type,"Farfield") == 0) {
+      IP.BC_West = BC_FARFIELD;
+    } else if (strcmp(IP.BC_West_Type,"Frozen") == 0) {
+      IP.BC_West = BC_FROZEN;
+    } else if (strcmp(IP.BC_West_Type,"Exact_Solution") == 0) {
+      IP.BC_West = BC_EXACT_SOLUTION;
+    } else if (strcmp(IP.BC_West_Type,"Inviscid_Wall") == 0) {
+      IP.BC_West = BC_WALL_INVISCID;
+    } else if (strcmp(IP.BC_West_Type,"Unmodified") == 0) {
+      IP.BC_West = BC_GENERAL;	// This type is used to inform the framework that the West boundary condition WON'T be changed
     } else {
       i_command = INVALID_INPUT_VALUE;
     }
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_West") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Ref_State_BC_West;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    // West reference state has been specified
+    IP.BC_West_Ref_State_Specified = ON;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_Normalization") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.RefW;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+      
+  } else if (strcmp(IP.Next_Control_Parameter, "Space_Accuracy") == 0) {
+    i_command = 210;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Space_Accuracy;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if (IP.Space_Accuracy <= 0 && IP.Space_Accuracy >= 5){
+      IP.Space_Accuracy = 1;
+      cout << "\n Space Accuracy should be between 1 and 5 \n"
+	   << "Space Accuracy set to 1" << endl;
+    }/* endif */
 
     ////////////////////////////////////////////////////////////////////
     // INTERFACE PARAMETERS                                           //
@@ -3634,6 +4356,15 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
     IP.Number_of_Bounding_Box_Mesh_Refinements = 1;
     i_command = BOUNDING_BOX_REFINE_GRID_CODE;
 
+  } else if (strcmp(IP.Next_Control_Parameter,"Print_Accuracy") == 0) {
+    i_command = WRITE_ERROR_NORMS_TO_SCREEN;
+    
+  } else if (strcmp(IP.Next_Control_Parameter,"Write_Accuracy_To_File") == 0) {
+    i_command = WRITE_ERROR_NORMS_TO_FILE;
+    
+  } else if (strcmp(IP.Next_Control_Parameter,"Append_Accuracy_To_File") == 0) {
+    i_command = APPEND_ERROR_NORMS_TO_FILE;
+    
   } else if (IP.Next_Control_Parameter[0] == '#') {
     i_command = COMMENT_CODE;
 
@@ -3642,12 +4373,43 @@ int Parse_Next_Input_Control_Parameter(NavierStokes2D_Input_Parameters &IP) {
 
   }
 
+  /* Parse next control parameter with ExactSoln parser */
+  IP.ExactSoln->Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with AccuracyAssessment_Execution_Mode parser */
+  AccuracyAssessment_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with CENO_Execution_Mode parser */
+  CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
+  
+  /* Parse next control parameter with CENO_Tolerances parser */
+  CENO_Tolerances::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with HO_Grid2D_Execution_Mode parser */
+  HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with Tecplot_Execution_Mode parser */
+  Tecplot_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with HighOrder2D_Input parser */
+  HighOrder2D_Input::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with NumericalLibrary_Execution_Mode parser */
+  NumericalLibrary_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
+
   if (i_command == INVALID_INPUT_CODE) {
+    // that is, we have an input line which:
+    //  - is not a comment (that's COMMENT_CODE), and,
+    //  - is not a valid code with an invalid value (that's INVALID_INPUT_VALUE), 
+    // and so is an unknown option. Maybe it's an NKS option:
     strcpy(buffer, IP.Next_Control_Parameter);
     Get_Next_Input_Control_Parameter(IP);
     i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, 
                                                              IP.Next_Control_Parameter);
 
+    // If it's still unknown then ignore it. 
+    // This could be a bad idea if it was an unknown command 
+    // as opposed to an unknown code.
 //     if (i_command == INVALID_INPUT_CODE) {
 //       cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
 //       cout << "ignoring unknown input code:\n";
@@ -3677,6 +4439,9 @@ int Process_Input_Control_Parameter_File(NavierStokes2D_Input_Parameters &IP,
                                          int &Command_Flag) {
 
   int error_flag, line_number;
+
+  /* Assign initial value for error indicator flag. */
+  error_flag = 0;
 
   // Assign default values to the input parameters.
   Set_Default_Input_Parameters(IP);
@@ -3716,25 +4481,11 @@ int Process_Input_Control_Parameter_File(NavierStokes2D_Input_Parameters &IP,
   // Set static variables and initialize reference state.
   Initialize_Reference_State(IP);
 
-  // Perform consistency checks on the input parameters.
-  if (IP.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
-    error_flag = Check_Input_Parameters<NavierStokes2D_Input_Parameters>(IP);
-    if (error_flag) {
-      cout << "\n NavierStokes2D ERROR: Input Parameters consistency check failure\n";
-      return error_flag;
-    }
-  }
-
-  // Perform consitency checks on the refinement criteria.
-  IP.Number_of_Refinement_Criteria = 0;
-  if (IP.Refinement_Criteria_Gradient_Density) IP.Number_of_Refinement_Criteria++;
-  if (IP.Refinement_Criteria_Divergence_Velocity) IP.Number_of_Refinement_Criteria++;
-  if (IP.Refinement_Criteria_Curl_Velocity) IP.Number_of_Refinement_Criteria++;
-  if (IP.Refinement_Criteria_Gradient_Turbulence_Kinetic_Energy) IP.Number_of_Refinement_Criteria++;
-  if (IP.Number_of_Refinement_Criteria < 1 || IP.Number_of_Refinement_Criteria > 4) return 1011;
+  /* Perform consistency checks and internal parameter setup */
+  IP.doInternalSetupAndConsistencyChecks(error_flag);
 
   // Initial processing of input control parameters complete.  
-  return 0;
+  return error_flag;
 
 }
 
@@ -3815,7 +4566,7 @@ void Initialize_Reference_State(NavierStokes2D_Input_Parameters &IP) {
   // Set the state for the laminar flat-plate boundary layer flow.
   if (IP.i_Grid == GRID_FLAT_PLATE && (IP.FlowType == FLOWTYPE_LAMINAR ||
 				       IP.FlowType == FLOWTYPE_TURBULENT_RANS_K_OMEGA)) {
-    IP.Wo.rho = (IP.Reynolds_Number/IP.Plate_Length)*IP.Wo.mu()/(sqrt(IP.Wo.g*IP.Wo.R*IP.Temperature)*IP.Mach_Number);
+    IP.Wo.rho = IP.CalculateRequiredFreeStreamDensity(IP.Plate_Length);
     IP.Wo.p = IP.Wo.rho*IP.Wo.R*IP.Temperature;
     IP.Wo.v.x = sqrt(IP.Wo.g*IP.Wo.R*IP.Temperature)*IP.Mach_Number;
     IP.Wo.v.y = ZERO;
@@ -3867,6 +4618,16 @@ void Initialize_Reference_State(NavierStokes2D_Input_Parameters &IP) {
     IP.Box_Width = (IP.Reynolds_Number/IP.Wo.rho)*IP.Wo.mu()/(IP.Wo.a()*IP.Mach_Number);
     IP.Wo.v.x = IP.Wo.a()*IP.Mach_Number;
     IP.Wo.v.y = sqrt(IP.Wo.g*IP.Wo.R*TEMPERATURE_STDATM)*IP.Mach_Number2;
+    IP.Uo = U(IP.Wo);
+  }
+
+  // Set the state for the laminar flow over a cylinder.
+  if (IP.i_Grid == GRID_CIRCULAR_CYLINDER && (IP.FlowType == FLOWTYPE_LAMINAR ||
+				              IP.FlowType == FLOWTYPE_TURBULENT_RANS_K_OMEGA)) {
+    IP.Wo.rho = IP.CalculateRequiredFreeStreamDensity(TWO*IP.Cylinder_Radius); //< use interior cylinder diameter
+    IP.Wo.p = IP.Wo.rho*IP.Wo.R*IP.Temperature;
+    IP.Wo.v.x = sqrt(IP.Wo.g*IP.Wo.R*IP.Temperature)*IP.Mach_Number;
+    IP.Wo.v.y = ZERO;
     IP.Uo = U(IP.Wo);
   }
 
@@ -3958,6 +4719,16 @@ void Reinitialize_Reference_State(NavierStokes2D_Input_Parameters &IP) {
     IP.Box_Width = (IP.Reynolds_Number/IP.Wo.rho)*IP.Wo.mu()/(IP.Wo.a()*IP.Mach_Number);
     IP.Wo.v.x = IP.Wo.a()*IP.Mach_Number;
     IP.Wo.v.y = sqrt(IP.Wo.g*IP.Wo.R*TEMPERATURE_STDATM)*IP.Mach_Number2;
+    IP.Uo = U(IP.Wo);
+  }
+
+  // Set the state for the laminar flow over a cylinder.
+  if (IP.i_Grid == GRID_CIRCULAR_CYLINDER && (IP.FlowType == FLOWTYPE_LAMINAR ||
+				              IP.FlowType == FLOWTYPE_TURBULENT_RANS_K_OMEGA)) {
+    IP.Wo.rho = IP.CalculateRequiredFreeStreamDensity(TWO*IP.Cylinder_Radius); //< use interior cylinder diameter
+    IP.Wo.p = IP.Wo.rho*IP.Wo.R*IP.Temperature;
+    IP.Wo.v.x = sqrt(IP.Wo.g*IP.Wo.R*IP.Temperature)*IP.Mach_Number;
+    IP.Wo.v.y = ZERO;
     IP.Uo = U(IP.Wo);
   }
 

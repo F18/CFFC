@@ -38,6 +38,12 @@
 #include "../TurbulenceModelling/TurbulenceModelling.h"
 #endif // TURBULENCE_MODELLING_INCLUDED   
 
+#ifndef _HIGHORDER_INCLUDED
+#include "../HighOrderReconstruction/HighOrder.h"
+#endif // HIGHORDER_INCLUDED
+
+// Additional includes at end of file
+
 class FlowField_2D;
 
 template <typename SOLN_pSTATE, typename SOLN_cSTATE> class Explicit_Filters;
@@ -104,9 +110,12 @@ class Hexa_Block {
 
    Explicit_Filters<SOLN_pSTATE,SOLN_cSTATE> Explicit_Filter;
    Explicit_Filters<SOLN_pSTATE,SOLN_cSTATE> Explicit_Secondary_Filter;
+
+   // Declare high-order variable required for CENO reconstruction
+   HighOrder<SOLN_pSTATE> HighOrderVariable;
 		      
    int Allocated; // Indicates whether or not the solution block has been allocated.
-    
+
    /* Constructors. */
 
    Hexa_Block(void) :
@@ -160,9 +169,15 @@ class Hexa_Block {
    /* Allocate memory for structured hexahedrial solution block. */
    void allocate(void);
    void allocate(const int Ni, const int Nj, const int Nk, const int Ng);
- 
+
    /* Deallocate memory for structured hexahedral solution block. */
    void deallocate(void);
+
+   //! Allocate memory for high-order variables
+   void allocate_HighOrder(void);
+
+   //! Deallocate memory for high-order variables
+   void deallocate_HighOrder(void);  
    
    /* Allocate static memory for structured hexahedrial solution block. */
    void allocate_static(void);
@@ -194,6 +209,9 @@ class Hexa_Block {
    
    /* Number of solution state variables. */
    int NumVar(void);
+
+  /* Field access to the primitive cell solution */  
+  const Soln_pState& CellSolution(const int &ii, const int &jj, const int &kk) const { return W[ii][jj][kk]; }
 
    /* Other important member functions. */
 
@@ -310,6 +328,17 @@ class Hexa_Block {
 
    int Update_Solution_Multistage_Explicit(const int i_stage, 
                                            Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+
+
+   /* MEMBER FUNCTIONS REQUIRED FOR HIGH ORDER RECONSTRUCTION. */
+
+   int dUdt_Multistage_Explicit_HighOrder(const int i_stage, 
+					  Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+
+   int dUdt_Residual_HighOrder(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
+			       const int & k_residual,
+			       const bool & UseTimeStep);
+
 
    /* MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING. */
 
@@ -709,6 +738,68 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate(void) {
 
 }
 
+/*****************************************//**
+ * Allocate memory for high-order variables.
+ ********************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate_HighOrder(void){
+
+  bool _pseudo_inverse_allocation_(false);
+  int i;
+
+  //ReconstructionOrder = ??;
+
+  // Decide whether to allocate the pseudo-inverse
+  if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
+    _pseudo_inverse_allocation_ = true;
+  }
+
+//  HighOrderVariable.InitializeVariable(ReconstructionOrder,
+//				       Grid,
+//				       _pseudo_inverse_allocation_);
+
+//  // Re-allocate new memory if necessary
+//  if (NumberOfReconstructions != NumberOfHighOrderVariables){
+//
+//    // allocate the high-order array
+//    allocate_HighOrder_Array(NumberOfReconstructions);
+//    
+//    // set the reconstruction order of each high-order object
+//    for (i=0; i<NumberOfHighOrderVariables; ++i){
+//      if (_complete_initialization_){
+//	// initialize the high-order variable completely 
+//	HO_Ptr[i].InitializeVariable(ReconstructionOrders[i],
+//				     Grid,
+//				     _pseudo_inverse_allocation_);
+//      } else {
+//	// initialize the basic high-order variable
+//	HO_Ptr[i].InitializeBasicVariable(ReconstructionOrders[i],
+//					  Grid,
+//					  _pseudo_inverse_allocation_);
+//      }
+//    }
+//
+//  } else {
+//    // check the reconstruction orders
+//    for (i=0; i<ReconstructionOrders.size(); ++i){
+//      if (HighOrderVariable(i).RecOrder() != ReconstructionOrders[i]){
+//	// change the reconstruction order of the high-order object
+//	HO_Ptr[i].SetReconstructionOrder(ReconstructionOrders[i]);
+//      }
+//    } // endfor
+//  }// endif
+
+}
+
+/******************************************//**
+ * Deallocate memory for high-order variables
+ *********************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate_HighOrder(void) {
+  //  delete []HO_Ptr; HO_Ptr = NULL;
+  //  NumberOfHighOrderVariables = 0;
+}
+
 /******************************************************************
  * Hexa_Block::allocate_static -- Allocate static memory.         *
  ******************************************************************/
@@ -851,12 +942,12 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Copy(Hexa_Block<SOLN_pSTATE, SOLN_cST
                dt[i][j][k] = Block2.dt[i][j][k];
 
 	       if (_Allocated) {
-		// _d2Wdx2[i][j][k] = Block2._d2Wdx2[i][j][k];
-		// _d2Wdy2[i][j][k] = Block2._d2Wdy2[i][j][k];
-		// _d2Wdz2[i][j][k] = Block2._d2Wdz2[i][j][k];
-		// _d2Wdxdy[i][j][k] = Block2._d2Wdxdy[i][j][k];
-		// _d2Wdxdz[i][j][k] = Block2._d2Wdxdz[i][j][k];
-		// _d2Wdydz[i][j][k] = Block2._d2Wdydz[i][j][k];
+		 _d2Wdx2[i][j][k] = Block2._d2Wdx2[i][j][k];
+		 _d2Wdy2[i][j][k] = Block2._d2Wdy2[i][j][k];
+		 _d2Wdz2[i][j][k] = Block2._d2Wdz2[i][j][k];
+		 _d2Wdxdy[i][j][k] = Block2._d2Wdxdy[i][j][k];
+		 _d2Wdxdz[i][j][k] = Block2._d2Wdxdz[i][j][k];
+		 _d2Wdydz[i][j][k] = Block2._d2Wdydz[i][j][k];
 	       } 
 
             } /* endfor */
@@ -896,7 +987,9 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Copy(Hexa_Block<SOLN_pSTATE, SOLN_cST
             } /* endfor */
          } /* endfor */
       } /* endif */
-   }
+
+   } /* endif */
+
 }
 
 /********************************************************
@@ -955,7 +1048,6 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Copy_static(Hexa_Block<SOLN_pSTATE, S
    } /* endif */
 
 }
-
 
 /********************************************************
  * Routine: Broadcast                                   *
@@ -1168,7 +1260,7 @@ Output_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
    /* Ensure boundary conditions are updated before
       evaluating solution at the nodes. */
    
- //  BCs(IPs);
+   BCs(IPs);
    
    /* Output nodal solution data. */
    
@@ -2403,8 +2495,6 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
 }
 
-
-
 /********************************************************
  * Routine: BCs_dUdt                                    *
  *                                                      *
@@ -3431,18 +3521,18 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
     
 }
 
-/********************************************************
- * Routine: dUdt_Multistage_Explicit                    *
- *                                                      *
- * This routine determines the solution residuals for a *
- * given stage of a variety of multi-stage explicit     *
- * time integration schemes for a given solution block. *
- *                                                      *
- ********************************************************/
+/*********************************************************
+ * Routine: dUdt_Multistage_Explicit                     *
+ *                                                       *
+ * This routine determines the solution residuals for a  *
+ * given stage of a variety of multi-stage explicit      *
+ * time integration schemes for a given solution block.  *
+ *                                                       *
+ *********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
 dUdt_Multistage_Explicit(const int i_stage,
-                         Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+			 Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
    int i, j, k,  k_residual;
    double omega; 
@@ -3505,6 +3595,7 @@ dUdt_Multistage_Explicit(const int i_stage,
       Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
       
       break;
+
    default:
       Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
       break;
@@ -4769,6 +4860,11 @@ SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdxdz = NULL;
 
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdydz = NULL;
+
+// The following must be included at the end of file.
+#ifndef _HEXABLOCK_HIGHORDER_INCLUDED
+#include "HexaBlockHighOrder.h"
+#endif //_HEXABLOCK_HIGHORDER_INCLUDED
 
 
 #ifndef _EXPLICIT_FILTER_INCLUDED

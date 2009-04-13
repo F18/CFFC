@@ -5,6 +5,7 @@
 #ifndef _EULER2D_STATE_INCLUDED
 #include "Euler2DState.h"
 #endif // _EULER2D_STATE_INCLUDED
+#include "../Utilities/Utilities.h"
 
 /*************************************************************
  * Euler2D_pState -- Create storage and assign gas constants.*
@@ -1922,6 +1923,93 @@ Euler2D_pState HartenFixAbs(const Euler2D_pState &lambdas_a,
                                       lambdas_l[4],
                                       lambdas_r[4])));
 }
+
+/*!
+ * Given two states and the unit normal vector in the direction 
+ * of interest, this routine determines the direction in which 
+ * the flow moves relative to the normal vector 
+ * (i.e. in the same or opposite direction).
+ * The method is described by Gottlieb and Groth in JCP (1988).
+ *
+ * \param Wi the interior (i.e. left) state at the interface
+ * \param Wo the exterior (i.e. right) state at the interface
+ * \param normal_dir the normal direction at the location of interest
+ *
+ * \return The direction in which the flow moves relative to the normal direction.
+ *         +1 means in the normal direction, -1 means in the opposite normal direction.
+ * \note Left and Right are decided based on the occurrence order along the normal direction
+ */
+int DetermineFlowDirection(const Euler2D_pState &Wi,
+			   const Euler2D_pState &Wo,
+			   const Vector2D &normal_dir){
+
+  double P_l, P_r;		//< pressures acting on an artificial stationary boundary
+  double Mach_l, Mach_r;	//< Mach numbers for left and right states
+  double Vel_l, Vel_r;		//< velocity in the normal direction of the left (i.e. interior) and right (i.e. exterior) states
+  double gp1;		        //< gamma plus 1
+  double Vel_tilde;
+  double a_l, a_r;		//< speed of sound for left and right states
+
+
+  // Determine the velocities in the normal direction.
+  // These are going to influence the direction of the flow relative to the normal direction
+  Vel_l =   Wi.v.x*normal_dir.x + Wi.v.y*normal_dir.y; //< velocity in the normal direction
+  Vel_r =   Wo.v.x*normal_dir.x + Wo.v.y*normal_dir.y; //< velocity in the normal direction
+
+  // Determine P_l (left) acting on the artificial stationary boundary
+  a_l = Wi.a();
+  Mach_l = Vel_l/a_l;
+  gp1 = Wi.g+1.0;
+
+  if ( Vel_l >= 0.0){
+    // A shock will be reflected from the left side of the stationary boundary (i.e. use shock jump to determine P_l)
+    P_l = Wi.p * (1.0 + Wi.g*gp1*0.25*Mach_l*Mach_l + Wi.g*Mach_l*sqrt(1.0 + gp1*gp1*0.0625*Mach_l*Mach_l) );
+  } else {
+    // A rarefaction wave will be reflected from the left side of the stationary boundary
+    Vel_tilde = Vel_l + 2*Wi.gm1i*a_l;
+
+    if (Vel_tilde > 0.0){
+      P_l = Wi.p * std::pow(1.0 + 0.5*Wi.gm1*Mach_l, 2*Wi.g*Wi.gm1i);
+    } else {
+      // vacuum occurs
+      P_l = 0.0;
+    }
+  }
+
+  // Determine Po (right)
+  a_r = Wo.a();
+  Mach_r = Vel_r/a_r;
+  gp1 = Wo.g+1.0;
+
+  if (Vel_r < 0){
+    // A shock will be reflected from the right side of the stationary boundary (i.e. use shock jump to determine P_r)
+    P_r = Wo.p * (1.0 + Wo.g*gp1*0.25*Mach_r*Mach_r - Wo.g*Mach_r*sqrt(1.0 + gp1*gp1*0.0625*Mach_r*Mach_r) );
+  } else {
+    // A rarefaction wave will be reflected from the right side of the stationary boundary
+    Vel_tilde = Vel_r - 2*Wo.gm1i*a_r;
+
+    if (Vel_tilde < 0){
+      P_r = Wo.p * std::pow(1.0 - 0.5*Wo.gm1*Mach_r, 2*Wo.g*Wo.gm1i);
+    } else {
+      // vacuum occurs
+      P_r = 0.0;
+    }
+  }
+  
+  if (P_l > P_r){
+    // Left (interior) pressure is higher than Right (exterior) pressure. 
+    // Flow moves in the normal direction
+
+    return 1;
+
+  } else {
+    // Left (interior) pressure is lower than Right (exterior) pressure. 
+    // Flow moves in the opposite direction to the normal
+
+    return -1;
+  }
+}
+
 
 /*********************************************************
  * Routine: FluxGodunov (Godunov's flux function,        *

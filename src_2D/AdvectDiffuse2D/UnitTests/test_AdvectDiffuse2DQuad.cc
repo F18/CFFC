@@ -11,7 +11,7 @@
 #include "TestData.h"
 #include "../AdvectDiffuse2DQuad.h"
 #include "../Grid/HO_Grid2DQuadMultiBlock.h" /* Include 2D quadrilateral multiblock grid header file */
-#include "../../HighOrderReconstruction/AccuracyAssessment2DMultiBlock.h"
+#include "../AdvectDiffuse2DAccuracyAssessmentMultiBlock.h"
 #include "../../HighOrderReconstruction/HighOrder2D_MultiBlock.h" /* Include 2D high-order header file for multi-block level. */
 
 namespace tut
@@ -192,7 +192,7 @@ namespace tut
 											 IntResult),
 								 IP.Exact_Integration_Digits,
 								 IntResult)/_SolnBlk_.Grid.Cell[i][j].A;
-	  _SolnBlk_.dUdt[i][j][k_residual] = IntResult;
+	  _SolnBlk_.dUdt[i][j][k_residual] = AdvectDiffuse2D_State(IntResult);
 	} /* endfor */
       } /* endfor */
     } else {

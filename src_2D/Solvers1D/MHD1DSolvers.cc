@@ -139,6 +139,11 @@ int MHD1DSolver(char *Input_File_Name_ptr,
           "BRIOWU", 
           Input_Parameters.i_ICs, 
           Input_Parameters.Number_of_Cells);
+  } else if (Input_Parameters.i_ICs == IC_DAI_WOODWARD) {
+      ICs(Soln_ptr, 
+          "MONATOMIC", 
+          Input_Parameters.i_ICs, 
+          Input_Parameters.Number_of_Cells);
   } else {
       ICs(Soln_ptr, 
           "MONATOMIC", 

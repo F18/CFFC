@@ -155,6 +155,9 @@ namespace tut
     ensure_equals("INu", Grid.INu, 12);
     ensure_equals("JNl", Grid.JNl, 2);
     ensure_equals("JNu", Grid.JNu, 17);
+    ensure_equals("Interior Tracker", Grid.getInteriorStateTracker(), 0);
+    ensure_equals("Ghost Tracker", Grid.getGhostStateTracker(), 0);
+    ensure_equals("Corner Ghost Tracker", Grid.getCornerGhostStateTracker(), 0);
   }
 
   /* Test 2:*/
@@ -192,6 +195,10 @@ namespace tut
     ensure_equals("INu", Grid_Copy.INu, 12);
     ensure_equals("JNl", Grid_Copy.JNl, 2);
     ensure_equals("JNu", Grid_Copy.JNu, 17);
+    ensure_equals("Interior Tracker", Grid_Copy.getInteriorStateTracker(), 1);
+    ensure_equals("Ghost Tracker", Grid_Copy.getGhostStateTracker(), 1);
+    ensure_equals("Corner Ghost Tracker", Grid_Copy.getCornerGhostStateTracker(), 1);
+
     
     ensure_equals("SminN",Grid_Copy.SminN, 10);
     ensure_equals("SmaxN",Grid_Copy.SmaxN, 9);

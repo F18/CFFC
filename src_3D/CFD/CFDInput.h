@@ -55,6 +55,15 @@ using namespace std;
 #include "../TurbulenceModelling/TurbulenceModellingInput.h"
 #endif // _TURBULENCEMODEL_INPUT_INCLUDED
 
+#ifndef _GRID3D_HO_EXECUTIONMODE_INCLUDED
+#include "../Grid/Grid3DHighOrderExecutionMode.h"
+#endif // _GRID3D_HO_EXECUTIONMODE_INCLUDED
+
+#ifndef _HIGHORDER_INPUT_INCLUDED
+#include "../HighOrderReconstruction/HighOrderInput.h"
+#endif // _HIGHORDER_INPUT_INCLUDED
+
+
 /* Define the class. */
 
 #define	INPUT_PARAMETER_LENGTH    256
@@ -130,6 +139,11 @@ class CFD_Input_Parameters{
   int Output_CFL_Limit;
   //@}
 
+  //@{ @name Spatial Order of Accuracy type indicator and related input parameters:
+  char Spatial_Accuracy[INPUT_PARAMETER_LENGTH];
+  int Reconstruction_Order;
+  //@}
+
   //@{ @name Reconstruction type indicator and related input parameters:
   char Reconstruction_Type[INPUT_PARAMETER_LENGTH];
   int i_Reconstruction;
@@ -182,6 +196,10 @@ class CFD_Input_Parameters{
   Turbulence_Modelling_Input_Parameters Turbulence_IP;
   //@}
 
+  //@{ @name High Order related input parameters:
+  HighOrder_Input_Parameters HighOrder_IP;
+  //@}
+
   //@{ @name Initial condition type indicator and related input parameters:
   char ICs_Type[INPUT_PARAMETER_LENGTH];
   int i_ICs;
@@ -211,7 +229,7 @@ class CFD_Input_Parameters{
   //! Pressure gradient 
   Vector3D Pressure_Gradient;
   //@}
- 
+
   //@{ @name Constructors and desctructors:
   //! Constructor (assign default values).
   CFD_Input_Parameters(void) {
@@ -247,6 +265,9 @@ class CFD_Input_Parameters{
     Time_Max = ZERO;
     Residual_Norm = 1;   //density default
     Number_of_Residual_Norms =1;
+    // Spatial Order of Accuracy type indicator and related input parameters:
+    strcpy(Spatial_Accuracy, "2");
+    Reconstruction_Order = 1;
     // Reconstruction type indicator and related input parameters:
     strcpy(Reconstruction_Type, "Least_Squares");
     i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
@@ -281,6 +302,12 @@ class CFD_Input_Parameters{
     Mean_Velocity.zero();
     Fresh_Gas_Height = ZERO;
     Pressure_Gradient.zero(); 
+    // Set default values in class Grid3D_HO_Execution_Mode
+    Grid3D_HO_Execution_Mode::SetDefaults();
+    // Set default values in class CENO_Execution_Mode
+    CENO_Execution_Mode::SetDefaults();
+    // Set default values in class CENO_Tolerances
+    CENO_Tolerances::SetDefaults();
   }
 
   //! Destructor

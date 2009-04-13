@@ -1412,12 +1412,12 @@ Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP,
       Direction = X_DIRECTION;
       
       // Name the exact solution
-      ExactSolutionName = "Modulated sinusoidal wave, w(x,y) = A*cos(B*x)*sin(C*PI*x), x between [Min X,Max X]";
+      ExactSolutionName = "Modulated sinusoidal wave, w(x,y) = A*cos(PI*x)*sin(C*PI*x), x between [Min X,Max X]";
     } else if ( strcmp(IP.Next_Control_Parameter, "Y-direction") == 0 ) {
       Direction = Y_DIRECTION;
 
       // Name the exact solution
-      ExactSolutionName = "Modulated sinusoidal wave, w(x,y) = A*cos(B*y)*sin(C*PI*y), y between [Min Y,Min Y]";
+      ExactSolutionName = "Modulated sinusoidal wave, w(x,y) = A*cos(PI*y)*sin(C*PI*y), y between [Min Y,Min Y]";
     } else {
       i_command = INVALID_INPUT_VALUE;
       return;
@@ -1442,12 +1442,6 @@ Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP,
     IP.Input_File >> A;
     IP.Input_File.getline(buffer, sizeof(buffer));
 
-  } else if (strcmp(IP.Next_Control_Parameter, "B_Coeff") == 0) {
-    i_command = 0;
-    ++IP.Line_Number;
-    IP.Input_File >> B;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-
   } else if (strcmp(IP.Next_Control_Parameter, "C_Coeff") == 0) {
     i_command = 0;
     ++IP.Line_Number;
@@ -1468,7 +1462,6 @@ void ModulatedSinusoidalVariation_ExactSolution::
 Print_Info(std::ostream & out_file){
   
   out_file << "\n     -> A : " << A
-	   << "\n     -> B : " << B
 	   << "\n     -> C : " << C;
   
 
@@ -1506,9 +1499,6 @@ Broadcast(void){
 			MPI::DOUBLE, 0);
 
   MPI::COMM_WORLD.Bcast(&A,
-			1, 
-			MPI::DOUBLE, 0);
-  MPI::COMM_WORLD.Bcast(&B,
 			1, 
 			MPI::DOUBLE, 0);
   MPI::COMM_WORLD.Bcast(&C,

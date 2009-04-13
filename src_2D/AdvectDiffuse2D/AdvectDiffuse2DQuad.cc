@@ -69,9 +69,12 @@ AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(void):
 
   // Get access to the AdvectDiffuse2D_InflowField object
   Inflow = &AdvectDiffuse2D_InflowField::getInstance();
+
+  // Reserve memory for one refinement criteria
+  refinement_criteria.reserve(1);
 }
 
-/****************************************\\**
+/****************************************//**
  * Private copy constructor. (shallow copy)
  *****************************************/
 AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(const AdvectDiffuse2D_Quad_Block &Soln):
@@ -114,11 +117,6 @@ AdvectDiffuse2D_Quad_Block & AdvectDiffuse2D_Quad_Block::operator =(const Advect
     allocate(Soln.NCi-2*Soln.Nghost,
 	     Soln.NCj-2*Soln.Nghost,
 	     Soln.Nghost);
-
-    /* Set the same number of high-order objects
-       as that of the rhs block. */
-    allocate_HighOrder_Array(Soln.NumberOfHighOrderVariables);
-
   } else {
     deallocate();
   }
@@ -154,40 +152,11 @@ AdvectDiffuse2D_Quad_Block & AdvectDiffuse2D_Quad_Block::operator =(const Advect
       UoS[i] = Soln.UoS[i];
       UoN[i] = Soln.UoN[i];
     }/* endfor */
-
-    // allocate memory for high-order boundary conditions.
-    allocate_HighOrder_BoundaryConditions();
-
-    for (j  = JCl ; j <= JCu ; ++j ) {
-      // Copy West high-order BCs
-      if (HO_UoW != NULL){
-	HO_UoW[j] = Soln.HO_UoW[j];
-      }
-
-      // Copy East high-order BCs
-      if (HO_UoE != NULL){
-	HO_UoE[j] = Soln.HO_UoE[j];
-      }
-    }
-
-    for ( i = ICl ; i <= ICu ; ++i ) {
-      // Copy South high-order BCs
-      if (HO_UoS != NULL){
-	HO_UoS[i] = Soln.HO_UoS[i];
-      }
-      
-      // Copy North high-order BCs
-      if (HO_UoN != NULL){
-	HO_UoN[i] = Soln.HO_UoN[i];
-      }
-    }
-    
-    // Copy the high-order objects
-    for (k = 1; k <= NumberOfHighOrderVariables; ++k){
-      HighOrderVariable(k-1) = Soln.HighOrderVariable(k-1);
-    }/* endfor */
     
   }/* endif */
+
+  // Copy high-order objects
+  copy_HighOrder_Objects(Soln);
 
   // Copy boundary reference states
   Ref_State_BC_North = Soln.Ref_State_BC_North;
@@ -266,7 +235,8 @@ void AdvectDiffuse2D_Quad_Block::allocate(const int &Ni, const int &Nj, const in
  *       reconstructions more memory efficient.
  ********************************************/
 void AdvectDiffuse2D_Quad_Block::allocate_HighOrder(const int & NumberOfReconstructions,
-						    const vector<int> & ReconstructionOrders){
+						    const vector<int> & ReconstructionOrders,
+						    const bool _complete_initialization_){
 
   bool _pseudo_inverse_allocation_(false);
   int i;
@@ -284,9 +254,17 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder(const int & NumberOfReconstr
     
     // set the reconstruction order of each high-order object
     for (i=0; i<NumberOfHighOrderVariables; ++i){
-      HO_Ptr[i].InitializeVariable(ReconstructionOrders[i],
-				   Grid,
-				   _pseudo_inverse_allocation_);
+      if (_complete_initialization_){
+	// initialize the high-order variable completely 
+	HO_Ptr[i].InitializeVariable(ReconstructionOrders[i],
+				     Grid,
+				     _pseudo_inverse_allocation_);
+      } else {
+	// initialize the basic high-order variable
+	HO_Ptr[i].InitializeBasicVariable(ReconstructionOrders[i],
+					  Grid,
+					  _pseudo_inverse_allocation_);
+      }
     }
 
   } else {
@@ -311,7 +289,9 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
   int i,j;
 
   // allocate North BCs
-  if ( Grid.IsNorthBoundaryReconstructionConstrained() ){
+  if ( Grid.IsWestExtendNorthBoundaryReconstructionConstrained() ||  
+       Grid.IsNorthBoundaryReconstructionConstrained() || 
+       Grid.IsEastExtendNorthBoundaryReconstructionConstrained() ){
 
     if (HO_UoN != NULL){
       // deallocate memory
@@ -321,9 +301,10 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
     // allocate new memory
     HO_UoN = new BC_Type[NCi];
 
-    // allocate BC memory for each flux calculation point
-    for (i=ICl; i<=ICu; ++i){
-      BC_NorthCell(i).allocate(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu));
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (i=0; i<NCi; ++i){
+      BC_NorthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu),
+					  Grid.BCtypeN[i]);
     }
 
   } else if ( HO_UoN != NULL){
@@ -332,7 +313,9 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
   }
 
   // allocate South BCs
-  if ( Grid.IsSouthBoundaryReconstructionConstrained() ){
+  if ( Grid.IsWestExtendSouthBoundaryReconstructionConstrained() ||
+       Grid.IsSouthBoundaryReconstructionConstrained() || 
+       Grid.IsEastExtendSouthBoundaryReconstructionConstrained() ){
 
     if (HO_UoS != NULL){
       // deallocate memory
@@ -342,9 +325,10 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
     // allocate new memory    
     HO_UoS = new BC_Type[NCi];
     
-    // allocate BC memory for each flux calculation point
-    for (i=ICl; i<=ICu; ++i){
-      BC_SouthCell(i).allocate(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl));
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (i=0; i<NCi; ++i){
+      BC_SouthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl),
+					  Grid.BCtypeS[i]);
     }    
   } else if (HO_UoS != NULL){
     // deallocate memory
@@ -352,7 +336,9 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
   }
 
   // allocate East BCs
-  if ( Grid.IsEastBoundaryReconstructionConstrained() ){
+  if ( Grid.IsSouthExtendEastBoundaryReconstructionConstrained() ||
+       Grid.IsEastBoundaryReconstructionConstrained() ||
+       Grid.IsNorthExtendEastBoundaryReconstructionConstrained() ){
 
     if (HO_UoE != NULL){
       // deallocate memory
@@ -362,9 +348,10 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
     // allocate new memory    
     HO_UoE = new BC_Type[NCj];
 
-    // allocate BC memory for each flux calculation point
-    for (j=JCl; j<=JCu; ++j){
-      BC_EastCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j));
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (j=0; j<NCj; ++j){
+      BC_EastCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j),
+					 Grid.BCtypeE[j]);
     }
   } else if (HO_UoE != NULL){
     // deallocate memory
@@ -372,7 +359,9 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
   }
 
   // allocate West BCs
-  if ( Grid.IsWestBoundaryReconstructionConstrained() ){
+  if ( Grid.IsSouthExtendWestBoundaryReconstructionConstrained() ||
+       Grid.IsWestBoundaryReconstructionConstrained() || 
+       Grid.IsNorthExtendWestBoundaryReconstructionConstrained() ){
 
     if (HO_UoW != NULL){
       // deallocate memory
@@ -382,9 +371,10 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
     // allocate new memory    
     HO_UoW = new BC_Type[NCj];
 
-    // allocate BC memory for each flux calculation point
-    for (j=JCl; j<=JCu; ++j){
-      BC_WestCell(j).allocate(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j));
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (j=0; j<NCj; ++j){
+      BC_WestCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j),
+					 Grid.BCtypeW[j]);
     }
   } else if (HO_UoW != NULL){
     // deallocate memory
@@ -1736,7 +1726,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the inflow field to set up the reference states for this boundary type
       if (Inflow->IsInflowFieldSet()){
 	PointOfInterest = Grid.xfaceW(ICl,j);
-	UoW[j] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoW[j] = AdvectDiffuse2D_State(Inflow->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -1761,7 +1751,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the exact solution to set up the reference states for this boundary type
       if (ExactSoln->IsExactSolutionSet()){
 	PointOfInterest = Grid.xfaceW(ICl,j);
-	UoW[j] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoW[j] = AdvectDiffuse2D_State(ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -1780,7 +1770,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the inflow field to set up the reference states for this boundary type
       if (Inflow->IsInflowFieldSet()){
 	PointOfInterest = Grid.xfaceE(ICu,j);
-	UoE[j] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoE[j] = AdvectDiffuse2D_State(Inflow->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -1805,7 +1795,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the exact solution to set up the reference states for this boundary type
       if (ExactSoln->IsExactSolutionSet()){
 	PointOfInterest = Grid.xfaceE(ICu,j);
-	UoE[j] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoE[j] = AdvectDiffuse2D_State(ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -1827,7 +1817,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the inflow field to set up the reference states for this boundary type
       if (Inflow->IsInflowFieldSet()){
 	PointOfInterest = Grid.xfaceS(i,JCl);
-	UoS[i] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoS[i] = AdvectDiffuse2D_State(Inflow->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -1852,7 +1842,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the exact solution to set up the reference states for this boundary type
       if (ExactSoln->IsExactSolutionSet()){
 	PointOfInterest = Grid.xfaceS(i,JCl);
-	UoS[i] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoS[i] = AdvectDiffuse2D_State(ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -1871,7 +1861,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the inflow field to set up the reference states for this boundary type
       if (Inflow->IsInflowFieldSet()){
 	PointOfInterest = Grid.xfaceN(i,JCu);
-	UoN[i] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoN[i] = AdvectDiffuse2D_State(Inflow->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no inflow field set for the Inflow BC.");
       }
@@ -1896,7 +1886,7 @@ void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
       // Use the exact solution to set up the reference states for this boundary type
       if (ExactSoln->IsExactSolutionSet()){
 	PointOfInterest = Grid.xfaceN(i,JCu);
-	UoN[i] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+	UoN[i] = AdvectDiffuse2D_State(ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y));
       } else {
 	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no exact solution set for the Exact_Solution BC.");
       }
@@ -2480,7 +2470,7 @@ istream &operator >> (istream &in_file,
     for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
       in_file >> SolnBlk.U[i][j];
       for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D-1 ; ++k ) {
-	SolnBlk.dUdt[i][j][k] = ZERO;
+	SolnBlk.dUdt[i][j][k] = AdvectDiffuse2D_State(ZERO);
       } /* endfor */
       SolnBlk.dUdx[i][j].Vacuum();
       SolnBlk.dUdy[i][j].Vacuum();
@@ -3848,7 +3838,7 @@ void AdvectDiffuse2D_Quad_Block::Output_Cells_Tecplot_Debug_Mode(AdaptiveBlock2D
       output_file << " " << Grid.Cell[i][j].Xc << U[i][j]
 		  << " " << U[i][j].V(Node.x,Node.y)
 		  << " " << U[i][j].k(Node.x,Node.y,U[i][j][1])
-		  << " " << source(Node.x,Node.y,U[i][j][1]);
+		  << " " << source(Node.x,Node.y,U[i][j]);
       if (ExactSoln->IsExactSolutionSet()){
 	output_file << " " << ExactSoln->Solution(Node.x,Node.y);
       }

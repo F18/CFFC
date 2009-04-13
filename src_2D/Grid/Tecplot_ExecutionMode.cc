@@ -13,6 +13,7 @@
 
 short Tecplot_Execution_Mode::OUTPUT_LEVEL = Detailed; // Set a detail level of output
 short Tecplot_Execution_Mode::OUTPUT_ACCURACY = SinglePrec; // Set to write the output data in single precision
+short Tecplot_Execution_Mode::SOLUTION_REPRESENTATION = SmearedOut; // Set to output the interpolated solution
 
 //! Set all flags to default values
 // add all flag default values to this function
@@ -20,6 +21,7 @@ void Tecplot_Execution_Mode::SetDefaults(void){
 
   OUTPUT_LEVEL = Detailed; // Set a detail level of output
   OUTPUT_ACCURACY = SinglePrec; // Set to write the output data in single precision
+  SOLUTION_REPRESENTATION = SmearedOut; // Set to output the interpolated solution
 }
 
 //! Print the current execution mode
@@ -43,6 +45,12 @@ void Tecplot_Execution_Mode::Print_Info(std::ostream & out_file){
   } else {
     out_file << "\n     -> Tecplot Precision: " << "Double";
   }
+
+  if (SOLUTION_REPRESENTATION == SmearedOut){
+    out_file << "\n     -> Tecplot Nodal Solution Representation: " << "Interpolated (i.e. smeared out)";
+  } else {
+    out_file << "\n     -> Tecplot Nodal Solution Representation: " << "Discontinuous (i.e. more realistic)";
+  }
 }
 
 /*!
@@ -58,6 +66,9 @@ void Tecplot_Execution_Mode::Broadcast(void){
  			1, 
  			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&OUTPUT_ACCURACY,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&SOLUTION_REPRESENTATION,
  			1, 
  			MPI::SHORT, 0);
 

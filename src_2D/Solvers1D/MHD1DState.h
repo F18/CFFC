@@ -1014,7 +1014,7 @@ inline double MHD1D_cState::E(void) {
 }
 
 inline double MHD1D_cState::E(void) const {
-    return (E1 + HALF*B1.sqr() + B0*B1);
+    return (E1 + HALF*B0.sqr() + B0*B1);
 }
 
 /********************************************************
@@ -1222,7 +1222,7 @@ inline MHD1D_pState::MHD1D_pState(const MHD1D_cState &U) {
  * MHD1D_pState::U -- Conserved solution state.         *
  ********************************************************/
 inline MHD1D_cState MHD1D_pState::U(void) {
-  return (MHD1D_cState(d, dv(), B1, B0, E()));
+  return (MHD1D_cState(d, dv(), B1, B0, E1()));
 }
 
 inline MHD1D_cState MHD1D_pState::U(void) const {

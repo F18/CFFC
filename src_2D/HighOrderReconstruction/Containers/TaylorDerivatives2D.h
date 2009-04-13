@@ -259,6 +259,12 @@ class TaylorDerivativesContainer<TwoD,T>{
   // ComputeYGradientFor( )
   T ComputeYGradientFor(const double DeltaX, const double DeltaY);
 
+  //! Compute X-gradient for a specific solution variable
+  double ComputeXGradientFor(const double & DeltaX, const double & DeltaY, const unsigned & parameter) const;
+
+  //! Compute Y-gradient for a specific solution variable
+  double ComputeYGradientFor(const double & DeltaX, const double & DeltaY, const unsigned & parameter) const;
+
   // Reset limiter --> set limiter to ONE for all parameters
   void ResetLimiter(void){ phi.One();}
   void ResetFrozenLimiter(void){ phi_copy.One(); }
@@ -277,11 +283,6 @@ class TaylorDerivativesContainer<TwoD,T>{
 
 
   /* Overloaded Operators */
-  Derivative & operator()(const int & position, const bool,
-			  const bool, const bool) {return DContainer[position];}
-  const Derivative & operator()(const int & position, const bool,
-				const bool, const bool) const {return DContainer[position];}
-
   Derivative & operator()(const int position) {return DContainer[position];}
   const Derivative & operator()(const int position) const {return DContainer[position];}
 
@@ -567,12 +568,12 @@ T TaylorDerivativesContainer<TwoD,T>::ComputeXGradientFor(const double DeltaX, c
     break;
 
   case 0:
-    return 0.0;
+    return T(0.0);
     break;
 
   default:
     /* Orders higher than FOUR */
-    return 0.0;			/* TO DO LATER! */
+    return T(0.0);			/* TO DO LATER! */
 
   }
 }
@@ -613,6 +614,99 @@ T TaylorDerivativesContainer<TwoD,T>::ComputeYGradientFor(const double DeltaX, c
     break;
 
   case 0:
+    return T(0.0);
+    break;
+
+  default:
+    /* Orders higher than FOUR */
+    return T(0.0);			/* TO DO LATER! */
+  }
+}
+
+// ComputeXGradientFor( ) :-> Compute the gradient in X direction of
+// the Taylor series expansion for a particular distance (DeltaX,DeltaY) and a specific solution variable
+template<class T> inline
+double TaylorDerivativesContainer<TwoD,T>::ComputeXGradientFor(const double &DeltaX, const double &DeltaY,
+							       const unsigned & parameter) const {
+
+  double DeltaXSquare, DeltaYSquare;
+
+  switch(OrderOfRec){
+  case 4:			/* Fourth Order Reconstruction */
+    DeltaXSquare = DeltaX*DeltaX;
+    DeltaYSquare = DeltaY*DeltaY;
+
+    return ( DContainer[5].D(parameter) + DeltaY*DContainer[6].D(parameter)
+	     + DeltaYSquare*DContainer[7].D(parameter) + DeltaY*DeltaYSquare*DContainer[8].D(parameter) 
+	     + 2.0*DeltaX*DContainer[9].D(parameter) + 2.0*DeltaX*DeltaY*DContainer[10].D(parameter) 
+	     + 2.0*DeltaX*DeltaYSquare*DContainer[11].D(parameter) + 3.0*DeltaXSquare*DContainer[12].D(parameter)
+	     + 3.0*DeltaXSquare*DeltaY*DContainer[13].D(parameter) + 4.0*DeltaXSquare*DeltaX*DContainer[14].D(parameter) );
+    break;
+
+  case 3: 			/* Third Order Reconstruction */
+    return ( DContainer[4].D(parameter) + DeltaY*DContainer[5].D(parameter)
+	     + DeltaY*DeltaY*DContainer[6].D(parameter) + 2.0*DeltaX*DContainer[7].D(parameter) 
+	     + 2.0*DeltaX*DeltaY*DContainer[8].D(parameter) + 3.0*DeltaX*DeltaX*DContainer[9].D(parameter) );
+    break;
+
+  case 2:			/* Second Order Reconstruction */
+    
+    return ( DContainer[3].D(parameter) + DeltaY*DContainer[4].D(parameter) + 2.0*DeltaX*DContainer[5].D(parameter) );
+    break;
+
+  case 1:			/* First Order Reconstruction */
+
+    return ( DContainer[2].D(parameter) );
+    break;
+
+  case 0:
+    return 0.0;
+    break;
+
+  default:
+    /* Orders higher than FOUR */
+    return 0.0;			/* TO DO LATER! */
+
+  }
+}
+
+// ComputeYGradientFor( ) :-> Compute the gradient in Y direction of
+// the Taylor series expansion for a particular distance (DeltaX,DeltaY) and a specific solution variable
+template<class T> inline
+double TaylorDerivativesContainer<TwoD,T>::ComputeYGradientFor(const double &DeltaX, const double &DeltaY,
+							       const unsigned & parameter) const {
+
+  double DeltaXSquare, DeltaYSquare;
+
+  switch(OrderOfRec){
+  case 4:			/* Fourth Order Reconstruction */
+    DeltaXSquare = DeltaX*DeltaX;
+    DeltaYSquare = DeltaY*DeltaY;
+
+    return ( DContainer[1].D(parameter) + 2.0*DeltaY*DContainer[2].D(parameter)
+	     + 3.0*DeltaYSquare*DContainer[3].D(parameter) + 4.0*DeltaYSquare*DeltaY*DContainer[4].D(parameter)
+	     + DeltaX*DContainer[6].D(parameter) + 2.0*DeltaX*DeltaY*DContainer[7].D(parameter) 
+	     + 3.0*DeltaX*DeltaYSquare*DContainer[8].D(parameter) + DeltaXSquare*DContainer[10].D(parameter) 
+	     + 2.0*DeltaXSquare*DeltaY*DContainer[11].D(parameter) + DeltaX*DeltaXSquare*DContainer[13].D(parameter) );
+    break;
+
+  case 3: 			/* Third Order Reconstruction */
+    return ( DContainer[1].D(parameter) + 2.0*DeltaY*DContainer[2].D(parameter)
+	     + 3.0*DeltaY*DeltaY*DContainer[3].D(parameter) + DeltaX*DContainer[5].D(parameter)
+	     + 2.0*DeltaX*DeltaY*DContainer[6].D(parameter) + DeltaX*DeltaX*DContainer[8].D(parameter) );
+    break;
+
+  case 2:			/* Second Order Reconstruction */
+    
+    return ( DContainer[1].D(parameter) + 2.0*DeltaY*DContainer[2].D(parameter) + DeltaX*DContainer[4].D(parameter) );
+    break;
+
+  case 1:			/* First Order Reconstruction */
+
+    return ( DContainer[1].D(parameter) );
+    break;
+
+  case 0:
     return 0.0;
     break;
 
@@ -622,6 +716,7 @@ T TaylorDerivativesContainer<TwoD,T>::ComputeYGradientFor(const double DeltaX, c
   }
 }
 
+
 // Friend functions
 template<class T> inline
 ostream & operator<< (ostream & os, const TaylorDerivativesContainer<TwoD,T>& Obj){
@@ -630,7 +725,7 @@ ostream & operator<< (ostream & os, const TaylorDerivativesContainer<TwoD,T>& Ob
   os.width(4);
   os << Obj.RecOrder() << endl;
   for(int i=0; i<=Obj.LastElem(); ++i)
-    os << Obj(i,true,true,true) << endl;
+    os << Obj(i) << endl;
   os.unsetf(ios::skipws);
   return os;
 }
@@ -644,7 +739,7 @@ istream & operator>> (istream & os, TaylorDerivativesContainer<TwoD,T>& Obj){
   /* Adjust the container size */
   Obj.GenerateContainer(ReconstructionOrder);
   for(int i=0; i<=Obj.LastElem(); ++i){
-    os >> Obj(i,true,true,true);
+    os >> Obj(i);
   }
   os.unsetf(ios::skipws);
   return os;
@@ -658,7 +753,7 @@ const TaylorDerivativesContainer<TwoD,T> operator+(const TaylorDerivativesContai
   TaylorDerivativesContainer<TwoD,T> Temp(left.RecOrder());
   
   for (int i=0; i<=right.LastElem(); ++i){
-    Temp(i,true,true,true).D() = left(i,true,true,true).D() + right(i,true,true,true).D();
+    Temp(i).D() = left(i).D() + right(i).D();
   }
   
   return Temp;
@@ -672,7 +767,7 @@ const TaylorDerivativesContainer<TwoD,T> operator-(const TaylorDerivativesContai
   TaylorDerivativesContainer<TwoD,T> Temp(left.RecOrder());
   
   for (int i=0; i<=right.LastElem(); ++i){
-    Temp(i,true,true,true).D() = left(i,true,true,true).D() - right(i,true,true,true).D();
+    Temp(i).D() = left(i).D() - right(i).D();
   }
   
   return Temp;
@@ -687,7 +782,7 @@ bool operator==(const TaylorDerivativesContainer<TwoD,T>& left,
   if (left.size() != right.size() )
     return !answer;
   for (int i=0; i<=right.LastElem(); ++i){
-    answer = answer && ( left(i,true,true,true) == right(i,true,true,true) );
+    answer = answer && ( left(i) == right(i) );
   }
   return answer;
 }

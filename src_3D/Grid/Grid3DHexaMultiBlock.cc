@@ -408,7 +408,7 @@ void Grid3D_Hexa_Multi_Block_List::Output_Gnuplot(ostream &Out_File) {
  *                                                      *
  ********************************************************/
 void Grid3D_Hexa_Multi_Block_List::Create_Grid(Grid3D_Input_Parameters &Input) {
-    
+
     // Create various multiblock multiblock grid depending on input parameters
     switch(Input.i_Grid) {
         case GRID_CUBE :
@@ -5385,7 +5385,7 @@ void Grid3D_Hexa_Multi_Block::Output_Gnuplot(ostream &Out_File) {
  *                                                      *
  ********************************************************/
 void Grid3D_Hexa_Multi_Block::Create_Grid(Grid3D_Input_Parameters &Input) {
-    
+
     // Create various multiblock multiblock grid depending on input parameters
     switch(Input.i_Grid) {
         case GRID_CUBE :
@@ -5423,7 +5423,7 @@ void Grid3D_Hexa_Multi_Block::Create_Grid(Grid3D_Input_Parameters &Input) {
             Create_Grid_Cube(Input);
             break;
     } /* endswitch */
-    
+
 }
 
 /********************************************************

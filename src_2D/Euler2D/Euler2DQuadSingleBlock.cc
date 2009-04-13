@@ -1,12 +1,16 @@
-/* Euler2DQuadSingleBlock.cc:  Single-Block Versions of Subroutines for 2D Euler 
-                               Multi-Block Quadrilateral Mesh 
-                               Solution Classes. */
+/*!\file Euler2DQuadSingleBlock.cc
+  \brief Single-Block Versions of Subroutines for 2D Euler Multi-Block Quadrilateral Mesh Solution Classes. */
 
-/* Include 2D Euler quadrilateral mesh solution header file. */
+/* Include required C++ libraries. */
+// None
 
-#ifndef _EULER2D_QUAD_INCLUDED
-#include "Euler2DQuad.h"
-#endif // _EULER2D_QUAD_INCLUDED
+/* Using std namespace functions */
+// None
+
+/* Include CFFC header files */
+#include "Euler2DQuad.h" /* Include 2D Euler quadrilateral mesh solution header file. */
+#include "Euler2D_ICs.h" /* Include 2D Euler analytically defined initial conditions header file. */
+
 
 /**************************************************************************
  * Euler2D_Quad_Block -- Single Block External Subroutines.               *
@@ -57,6 +61,10 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk) {
     int i, j, ni, nj, ng, nr, block_allocated, buffer_size;
     double *buffer;
 
+    // High-order related variables
+    int NumberOfHighOrderVariables;
+    vector<int> ReconstructionOrders;
+
     /* Broadcast the number of cells in each direction. */
 
     if (CFFC_Primary_MPI_Processor()) {
@@ -69,13 +77,29 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk) {
       } else {
 	 block_allocated = 0;
       } /* endif */ 
-    } /* endif */
 
+      // High-order variables and their reconstruction order
+      NumberOfHighOrderVariables = SolnBlk.NumberOfHighOrderObjects();
+      for (i = 0; i < NumberOfHighOrderVariables; ++i){
+	ReconstructionOrders.push_back(SolnBlk.HighOrderVariable(i).RecOrder());
+      }
+    } /* endif */
+    
     MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&ng, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&nr,1,MPI::INT,0);
     MPI::COMM_WORLD.Bcast(&block_allocated, 1, MPI::INT, 0);
+
+    // Broadcast the number of high-order variables and their reconstruction order
+    MPI::COMM_WORLD.Bcast(&NumberOfHighOrderVariables, 1, MPI::INT, 0);
+    if (!CFFC_Primary_MPI_Processor()) {
+      // reserve memory for the reconstruction orders
+      ReconstructionOrders.reserve(NumberOfHighOrderVariables);
+    }
+    for (i = 0; i < NumberOfHighOrderVariables; ++i){
+      MPI::COMM_WORLD.Bcast(&ReconstructionOrders[i], 1, MPI::INT, 0);
+    }
 
     /* On non-primary MPI processors, allocate (re-allocate) 
        memory for the quadrilateral solution block as necessary. */
@@ -96,6 +120,17 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk) {
     /* Broadcast the grid. */
 
     Broadcast_Quad_Block(SolnBlk.Grid);
+
+    /* Allocate memory for high-order variables
+       on non-primary MPI processors. */
+    if (!CFFC_Primary_MPI_Processor()) {
+      // allocate memory for high-order variables AFTER grid broadcast!
+      SolnBlk.allocate_HighOrder(NumberOfHighOrderVariables,
+				 ReconstructionOrders,
+				 false); //< only the basics (e.g. no pseudo-inverse calculation)
+      // allocate memory for high-order boundary conditions if necessary
+      SolnBlk.allocate_HighOrder_BoundaryConditions();
+    }
 
     /* Broadcast the solution state variables. */
 
@@ -216,6 +251,12 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk) {
 
        delete []buffer; 
        buffer = NULL;
+
+       /* Broadcast the high-order variables. */
+       for (i = 0; i < NumberOfHighOrderVariables; ++i){
+	 SolnBlk.HighOrderVariable(i).Broadcast_HighOrder_Data(SolnBlk.Grid);
+       }
+
     } /* endif */
 #endif
 
@@ -239,6 +280,10 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk,
     int i, j, ni, nj, ng, nr, block_allocated, buffer_size;
     double *buffer;
 
+    // High-order related variables
+    int NumberOfHighOrderVariables;
+    vector<int> ReconstructionOrders;
+
     /* Broadcast the number of cells in each direction. */
 
     if (CFFC_MPI::This_Processor_Number == Source_CPU) {
@@ -251,6 +296,12 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk,
       } else {
 	 block_allocated = 0;
       } /* endif */
+
+      // High-order variables and their reconstruction order
+      NumberOfHighOrderVariables = SolnBlk.NumberOfHighOrderObjects();
+      for (i = 0; i < NumberOfHighOrderVariables; ++i){
+	ReconstructionOrders.push_back(SolnBlk.HighOrderVariable(i).RecOrder());
+      }
     } /* endif */
 
     Communicator.Bcast(&ni, 1, MPI::INT, Source_Rank);
@@ -258,6 +309,16 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk,
     Communicator.Bcast(&ng, 1, MPI::INT, Source_Rank);
     Communicator.Bcast(&nr,1,MPI::INT,Source_Rank);
     Communicator.Bcast(&block_allocated, 1, MPI::INT, Source_Rank);
+
+    // Broadcast the number of high-order variables and their reconstruction order
+    Communicator.Bcast(&NumberOfHighOrderVariables, 1, MPI::INT, Source_Rank);
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+      // reserve memory for the reconstruction orders
+      ReconstructionOrders.reserve(NumberOfHighOrderVariables);
+    }
+    for (i = 0; i < NumberOfHighOrderVariables; ++i){
+      Communicator.Bcast(&ReconstructionOrders[i], 1, MPI::INT, Source_Rank);
+    }
 
     /* On non-source MPI processors, allocate (re-allocate) 
        memory for the quadrilateral solution block as necessary. */
@@ -278,6 +339,17 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk,
     /* Broadcast the grid. */
 
     Broadcast_Quad_Block(SolnBlk.Grid, Communicator, Source_CPU);
+
+    /* Allocate memory for high-order variables
+       on non-source MPI processors. */
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+      // allocate memory for high-order variables AFTER grid broadcast!
+      SolnBlk.allocate_HighOrder(NumberOfHighOrderVariables,
+				 ReconstructionOrders,
+				 false); //< only the basics (e.g. no pseudo-inverse calculation)
+      // allocate memory for high-order boundary conditions if necessary
+      SolnBlk.allocate_HighOrder_BoundaryConditions();
+    }
 
     /* Broadcast the solution state variables. */
 
@@ -398,6 +470,14 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk,
 
        delete []buffer; 
        buffer = NULL;
+
+       /* Broadcast the high-order variables. */
+       for (i = 0; i < NumberOfHighOrderVariables; ++i){
+	 SolnBlk.HighOrderVariable(i).Broadcast_HighOrder_Data(Communicator,
+							       Source_CPU,
+							       SolnBlk.Grid);
+       }
+
     } /* endif */
 
 }
@@ -412,69 +492,18 @@ void Broadcast_Solution_Block(Euler2D_Quad_Block &SolnBlk,
  ********************************************************/
 void Copy_Solution_Block(Euler2D_Quad_Block &SolnBlk1,
                          Euler2D_Quad_Block &SolnBlk2) {
-
-    int i, j, k;
-
-    /* Allocate (re-allocate) memory for the solution
-       of the quadrilateral solution block SolnBlk1 as necessary. */
-
-    if (SolnBlk1.NCi != SolnBlk2.NCi || 
-	SolnBlk1.NCj != SolnBlk2.NCj || 
-	SolnBlk1.Nghost != SolnBlk2.Nghost) {
-       if (SolnBlk1.U != NULL) SolnBlk1.deallocate();
-       if (SolnBlk2.U != NULL) SolnBlk1.allocate(SolnBlk2.NCi-2*SolnBlk2.Nghost,
-                                                 SolnBlk2.NCj-2*SolnBlk2.Nghost,
-						 SolnBlk2.Nghost);
-    } /* endif */
-
-    /* Set the axisymmetric/planar flow indicator. */
-
-    SolnBlk1.Axisymmetric = SolnBlk2.Axisymmetric;
-
-    /* Copy the grid of the second solution block
-       to the first solution block. */
-
-    Copy_Quad_Block(SolnBlk1.Grid, SolnBlk2.Grid);
-
-    /* Copy the solution information from SolnBlk2 to SolnBlk1. */
-
-    if (SolnBlk2.U != NULL) {
-       for ( j  = SolnBlk1.JCl-SolnBlk1.Nghost ; j <= SolnBlk1.JCu+SolnBlk1.Nghost ; ++j ) {
-          for ( i = SolnBlk1.ICl-SolnBlk1.Nghost ; i <= SolnBlk1.ICu+SolnBlk1.Nghost ; ++i ) {
-             SolnBlk1.U[i][j] = SolnBlk2.U[i][j];
-             SolnBlk1.W[i][j] = SolnBlk2.W[i][j];
-             for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_EULER2D-1 ; ++k ) {
-	        SolnBlk1.dUdt[i][j][k] = SolnBlk2.dUdt[i][j][k];
-             } /* endfor */
-	     SolnBlk1.dWdx[i][j] = SolnBlk2.dWdx[i][j];
-	     SolnBlk1.dWdy[i][j] = SolnBlk2.dWdy[i][j];
-	     SolnBlk1.phi[i][j] = SolnBlk2.phi[i][j];
-	     SolnBlk1.Uo[i][j] = SolnBlk2.Uo[i][j];
-	     SolnBlk1.dt[i][j] = SolnBlk2.dt[i][j];
-          } /* endfor */
-       } /* endfor */
-
-       for (j  = SolnBlk1.JCl-SolnBlk1.Nghost ; j <= SolnBlk1.JCu+SolnBlk1.Nghost ; ++j ) {
-	   SolnBlk1.WoW[j] = SolnBlk2.WoW[j];
-           SolnBlk1.WoE[j] = SolnBlk2.WoE[j];
-       } /* endfor */
-
-       for ( i = SolnBlk1.ICl-SolnBlk1.Nghost ; i <= SolnBlk1.ICu+SolnBlk1.Nghost ; ++i ) {
-           SolnBlk1.WoS[i] = SolnBlk2.WoS[i];
-           SolnBlk1.WoN[i] = SolnBlk2.WoN[i];
-       } /* endfor */
-    } /* endif */
-
+  SolnBlk1.makeCopy(SolnBlk2);
 }
 
-/********************************************************
- * Routine: Prolong_Solution_Block                      *
- *                                                      *
- * Prolongs the solution information of one of the      *
- * specified sectors of the original quadrilateral      *
- * solution block SolnBlk_Original to the refined       *
- * solution block SolnBlk_Fine.                         *
- *                                                      *
+/******************************************************//**
+ * Routine: Prolong_Solution_Block                     
+ *                                                     
+ * Prolongs the solution information of one of the     
+ * specified sectors of the original quadrilateral     
+ * solution block SolnBlk_Original to the refined      
+ * solution block SolnBlk_Fine.                        
+ *                                                     
+ * \note Add high-order prolongation! Add mechanism to prolong high-order BCs!
  ********************************************************/
 int Prolong_Solution_Block(Euler2D_Quad_Block &SolnBlk_Fine,
 			   Euler2D_Quad_Block &SolnBlk_Original,
@@ -483,6 +512,10 @@ int Prolong_Solution_Block(Euler2D_Quad_Block &SolnBlk_Fine,
     int i, j, i_min, i_max, j_min, j_max, mesh_refinement_permitted;
     double area_total_fine;
     Vector2D dX;
+
+    // High-order related variables
+    int SolnBlk_Original_NumberOfHighOrderVariables(SolnBlk_Original.NumberOfHighOrderObjects());
+    vector<int> SolnBlk_Original_ReconstructionOrders; 
 
     /* Allocate (re-allocate) memory for the solution
        of the refined quadrilateral solution block as necessary. */
@@ -509,6 +542,16 @@ int Prolong_Solution_Block(Euler2D_Quad_Block &SolnBlk_Fine,
                       SolnBlk_Original.Grid,
                       Sector);
        } /* endif */
+
+       // Allocate high-order objects if necessary
+       for (i = 0; i < SolnBlk_Original_NumberOfHighOrderVariables; ++i){
+	 SolnBlk_Original_ReconstructionOrders.push_back(SolnBlk_Original.HighOrderVariable(i).RecOrder());
+       }
+       SolnBlk_Fine.allocate_HighOrder(SolnBlk_Original_NumberOfHighOrderVariables,
+				       SolnBlk_Original_ReconstructionOrders);
+       // allocate memory for high-order boundary conditions if necessary
+       SolnBlk_Fine.allocate_HighOrder_BoundaryConditions();
+       
     } /* endif */
 
     if (mesh_refinement_permitted) {
@@ -555,15 +598,15 @@ int Prolong_Solution_Block(Euler2D_Quad_Block &SolnBlk_Fine,
 
        for ( j  = j_min; j <= j_max ; ++j ) {
 	   for ( i = i_min ; i <= i_max ; ++i ) {
-               area_total_fine = SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl  ]
-                                                       [2*(j-j_min)+SolnBlk_Fine.JCl  ].A+
-                                 SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl+1]
-                                                       [2*(j-j_min)+SolnBlk_Fine.JCl  ].A+
-                                 SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl  ]
-                                                       [2*(j-j_min)+SolnBlk_Fine.JCl+1].A+
-                                 SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl+1]
-                                                       [2*(j-j_min)+SolnBlk_Fine.JCl+1].A;
-
+               // area_total_fine = SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl  ]
+               //                                         [2*(j-j_min)+SolnBlk_Fine.JCl  ].A+
+               //                   SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl+1]
+               //                                         [2*(j-j_min)+SolnBlk_Fine.JCl  ].A+
+               //                   SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl  ]
+               //                                         [2*(j-j_min)+SolnBlk_Fine.JCl+1].A+
+               //                   SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl+1]
+               //                                         [2*(j-j_min)+SolnBlk_Fine.JCl+1].A;
+	     
      	       SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl  ]
                               [2*(j-j_min)+SolnBlk_Fine.JCl  ] 
                    = SolnBlk_Original.U[i][j];
@@ -680,6 +723,12 @@ int Prolong_Solution_Block(Euler2D_Quad_Block &SolnBlk_Fine,
               = SolnBlk_Original.WoN[i];
        } /* endfor */
 
+       // Set the reference values for the boundary states to the ones from the Original solution block
+       SolnBlk_Fine.Set_Reference_Values_For_Boundary_States(SolnBlk_Original.Ref_State_BC_North,
+							     SolnBlk_Original.Ref_State_BC_South,
+							     SolnBlk_Original.Ref_State_BC_East,
+							     SolnBlk_Original.Ref_State_BC_West);
+
     } /* endif */
 
     // Prolongation of solution block was successful.
@@ -702,6 +751,10 @@ int Restrict_Solution_Block(Euler2D_Quad_Block &SolnBlk_Coarse,
 			    Euler2D_Quad_Block &SolnBlk_Original_NE) {
 
     int i, j, i_coarse, j_coarse, mesh_coarsening_permitted;
+
+    // High-order related variables
+    int SolnBlk_Original_NumberOfHighOrderVariables(SolnBlk_Original_SW.NumberOfHighOrderObjects());
+    vector<int> SolnBlk_Original_ReconstructionOrders; 
  
     /* Allocate memory for the cells and nodes for the 
        coarsened quadrilateral mesh block. */
@@ -744,6 +797,16 @@ int Restrict_Solution_Block(Euler2D_Quad_Block &SolnBlk_Coarse,
                        SolnBlk_Original_NW.Grid,
                        SolnBlk_Original_NE.Grid);
        } /* endif */
+
+       // Allocate high-order objects if necessary
+       for (i = 0; i < SolnBlk_Original_NumberOfHighOrderVariables; ++i){
+	 SolnBlk_Original_ReconstructionOrders.push_back(SolnBlk_Original_SW.HighOrderVariable(i).RecOrder());
+       }
+       SolnBlk_Coarse.allocate_HighOrder(SolnBlk_Original_NumberOfHighOrderVariables,
+					 SolnBlk_Original_ReconstructionOrders);
+       // allocate memory for high-order boundary conditions if necessary
+       SolnBlk_Coarse.allocate_HighOrder_BoundaryConditions();
+
     } /* endif */
 
     if (mesh_coarsening_permitted) {
@@ -927,6 +990,12 @@ int Restrict_Solution_Block(Euler2D_Quad_Block &SolnBlk_Coarse,
           } /* endif */
       } /* endfor */
 
+    // Set the reference values for the boundary states
+    // This approach might not always give the proper reference values.
+    SolnBlk_Coarse.Set_Reference_Values_For_Boundary_States(SolnBlk_Original_NW.Ref_State_BC_North,
+							    SolnBlk_Original_SE.Ref_State_BC_South,
+							    SolnBlk_Original_NE.Ref_State_BC_East,
+							    SolnBlk_Original_SW.Ref_State_BC_West);
    } /* endif */
 
    // Restriction of solution block was successful.
@@ -951,8 +1020,14 @@ void Output_Tecplot(Euler2D_Quad_Block &SolnBlk,
                     const int Output_Title,
 	            ostream &Out_File) {
 
-    int i, j;
-    Euler2D_pState W_node;
+  int i, j, nRow, nLoop;
+  Euler2D_pState W_node;
+  Vector2D Node;
+
+
+  if (Tecplot_Execution_Mode::IsSmoothNodalSolnOutputRequired()){
+
+    // Output the interpolated nodal solution
 
     /* Ensure boundary conditions are updated before
        evaluating solution at the nodes. */
@@ -963,45 +1038,175 @@ void Output_Tecplot(Euler2D_Quad_Block &SolnBlk,
 
     Out_File << setprecision(14);
     if (Output_Title) {
-       Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Euler Solution, "
-                << "Time Step/Iteration Level = " << Number_of_Time_Steps
-                << ", Time = " << Time
-                << "\"" << "\n"
-	        << "VARIABLES = \"x\" \\ \n"
-                << "\"y\" \\ \n"
-                << "\"rho\" \\ \n"
-                << "\"u\" \\ \n"
-                << "\"v\" \\ \n"
-                << "\"p\" \\ \n"
-                << "\"T\" \n"
-                << "\"M\" \n"
-                << "\"H\" \n"
-                << "\"s\" \n"
-                << "ZONE T =  \"Block Number = " << Block_Number
-                << "\" \\ \n"
-                << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
-                << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
-                << "F = POINT \n";
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Euler Solution, "
+	       << "Time Step/Iteration Level = " << Number_of_Time_Steps
+	       << ", Time = " << Time
+	       << "\"" << "\n"
+	       << "VARIABLES = \"x\" \\ \n"
+	       << "\"y\" \\ \n"
+	       << "\"rho\" \\ \n"
+	       << "\"u\" \\ \n"
+	       << "\"v\" \\ \n"
+	       << "\"p\" \\ \n"
+	       << "\"T\" \n"
+	       << "\"M\" \n"
+	       << "\"H\" \n"
+	       << "\"s\" \n"
+	       << "ZONE T =  \"Block Number = " << Block_Number
+	       << "\" \\ \n"
+	       << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
+	       << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
+	       << "F = POINT \n";
     } else {
-       Out_File << "ZONE T =  \"Block Number = " << Block_Number
-                << "\" \\ \n"
-                << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
-                << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
-                << "F = POINT \n";
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	       << "\" \\ \n"
+	       << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
+	       << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
+	       << "F = POINT \n";
     } /* endif */
 
     for ( j  = SolnBlk.Grid.JNl ; j <= SolnBlk.Grid.JNu ; ++j ) {
-       for ( i = SolnBlk.Grid.INl ; i <= SolnBlk.Grid.INu ; ++i ) {
-	   W_node = SolnBlk.Wn(i, j);
-           Out_File << " "  << SolnBlk.Grid.Node[i][j].X << W_node;
-           Out_File.setf(ios::scientific);
-           Out_File << " " << W_node.T() << " " << W_node.v.abs()/W_node.a() 
-                    << " " << W_node.H() << " " << W_node.s() << "\n";
-           Out_File.unsetf(ios::scientific);
-       } /* endfor */
+      for ( i = SolnBlk.Grid.INl ; i <= SolnBlk.Grid.INu ; ++i ) {
+	W_node = SolnBlk.Wn(i, j);
+	Out_File << " "  << SolnBlk.Grid.Node[i][j].X << W_node;
+	Out_File.setf(ios::scientific);
+	Out_File << " " << W_node.T() << " " << W_node.v.abs()/W_node.a() 
+		 << " " << W_node.H() << " " << W_node.s() << "\n";
+	Out_File.unsetf(ios::scientific);
+      } /* endfor */
     } /* endfor */
     Out_File << setprecision(6);
     
+  } else {
+
+    // Output the discontinuous nodal solution
+
+    /* Output node solution data. */
+
+    Out_File << setprecision(14);
+    if (Output_Title) {
+      Out_File << "TITLE = \"" << CFFC_Name() << ": 2D Euler Solution, "
+	       << "Time Step/Iteration Level = " << Number_of_Time_Steps
+	       << ", Time = " << Time
+	       << "\"" << "\n"
+	       << "VARIABLES = \"x\" \\ \n"
+	       << "\"y\" \\ \n"
+	       << "\"rho\" \\ \n"
+	       << "\"u\" \\ \n"
+	       << "\"v\" \\ \n"
+	       << "\"p\" \\ \n";
+	
+      // Add more variables for the Detailed format
+      if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+	Out_File << "\"T\" \n"
+		 << "\"M\" \n"
+		 << "\"H\" \n"
+		 << "\"s\" \n";
+      }
+
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	       << "\" \\ \n"
+	       << "I = " << (SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 1)*3 << " \\ \n"
+	       << "J = " << (SolnBlk.Grid.JCu - SolnBlk.Grid.JCl + 1)*3 << " \\ \n"
+	       << "F = POINT \n";
+    } else {
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	       << "\" \\ \n"
+	       << "I = " << (SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 1)*3 << " \\ \n"
+	       << "J = " << (SolnBlk.Grid.JCu - SolnBlk.Grid.JCl + 1)*3 << " \\ \n"
+	       << "F = POINT \n";
+    } /* endif */
+
+    // Set the accuracy properly
+    if (Tecplot_Execution_Mode::IsDoublePrecision()){
+      Out_File << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE ";
+
+      // Detail format
+      if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){
+	Out_File << "DOUBLE DOUBLE DOUBLE DOUBLE ";
+      }
+
+      // Close line
+      Out_File << " ) \n";
+    } // endif (DoublePrecision)
+
+    // Output data
+    for ( j  = SolnBlk.Grid.JCl ; j <= SolnBlk.Grid.JCu ; ++j ) { // for every j cell
+      for ( nRow = 1; nRow <= 3; ++nRow){ // for 3 rows of nodes
+	for ( i = SolnBlk.Grid.ICl ; i <= SolnBlk.Grid.ICu ; ++i ) { // for every i cell  
+	  for (nLoop = 1; nLoop <= 3; ++nLoop){	// for every node
+	    // Get the node location
+	    switch(nRow){
+	    case 1: // output the 1st row of nodes (i.e. NodeSW(i,j), xfaceS(i,j), NodeSE(i,j))
+	      switch(nLoop){
+	      case 1:		// output NodeSW(i,j)
+		Node = SolnBlk.Grid.nodeSW(i,j).X;
+		break;
+	      case 2:		// output xfaceS(i,j)
+		Node = SolnBlk.Grid.xfaceS(i,j);
+		break;
+	      case 3:		// output NodeSE(i,j)
+		Node = SolnBlk.Grid.nodeSE(i,j).X;
+		break;
+	      }
+	      break;
+
+	    case 2: // output the 2nd row of nodes (i.e. xfaceW(i,j), Grid.CellCentroid(i,j), xfaceE(i,j))
+	      switch(nLoop){
+	      case 1:		// output xfaceW(i,j)
+		Node = SolnBlk.Grid.xfaceW(i,j);
+		break;
+	      case 2:		// output Grid.CellCentroid(i,j)
+		Node = SolnBlk.Grid.CellCentroid(i,j);
+		break;
+	      case 3:		// output xfaceE(i,j) 
+		Node = SolnBlk.Grid.xfaceE(i,j);
+		break;
+	      }
+	      break;
+
+	    case 3: // output the 3rd row of nodes (i.e. NodeNW(i,j), xfaceN(i,j), NodeNE(i,j))
+	      switch(nLoop){
+	      case 1:		// output NodeNW(i,j)
+		Node = SolnBlk.Grid.nodeNW(i,j).X;
+		break;
+	      case 2:		// output xfaceN(i,j)
+		Node = SolnBlk.Grid.xfaceN(i,j);
+		break;
+	      case 3:		// output NodeNE(i,j)
+		Node = SolnBlk.Grid.nodeNE(i,j).X;
+		break;
+	      }
+	      break;
+	    } // endswitch
+
+	    // Output Brief format
+	    W_node = SolnBlk.PiecewiseLinearSolutionAtLocation(i,j,Node);
+	    Out_File << " "  << Node 
+		     << " "  << W_node;
+
+	    // Add more variables for the Detailed format
+	    if (Tecplot_Execution_Mode::IsDetailedOutputRequired()){ 
+	      Out_File.setf(ios::scientific);
+	      Out_File << " " << W_node.T() 
+		       << " " << W_node.v.abs()/W_node.a() 
+		       << " " << W_node.H() 
+		       << " " << W_node.s();
+	      Out_File.unsetf(ios::scientific);
+	    }
+
+	    // Close line
+	    Out_File << "\n";
+	    Out_File.unsetf(ios::scientific);
+
+	  }
+	} /* endfor */
+      }
+    } /* endfor */
+    Out_File << setprecision(6);  
+
+  } // endif (Tecplot_Execution_Mode::IsSmoothNodalSolnOutputRequired())
+
 }
 
 /********************************************************
@@ -1486,7 +1691,7 @@ void ICs(Euler2D_Quad_Block &SolnBlk,
          Euler2D_pState *Wo) {
 
     int i, j, k;
-    Euler2D_pState Wl, Wr;
+    Euler2D_pState Wl, Wr, Wm;
 
     /* Assign the initial data for the IVP of interest. */
 
@@ -1798,6 +2003,36 @@ void ICs(Euler2D_Quad_Block &SolnBlk,
 	    } /* endfor */
 	} /* endfor */
 	break;
+      case IC_WEDGE_FLOW :
+	Wl.d = FOUR*DENSITY_STDATM;   Wr.d = DENSITY_STDATM;
+	Wl.v = Vector2D_ZERO;         Wr.v = Vector2D_ZERO;
+	Wl.p = FOUR*PRESSURE_STDATM;  Wr.p = PRESSURE_STDATM;
+        for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+            for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	       if (SolnBlk.Grid.centroid(i,j).x <= -0.75) {
+		  SolnBlk.W[i][j] = Wl;
+	       } else {
+		  SolnBlk.W[i][j] = Wr;	     
+	       } /* end if */
+	       SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	    } /* endfor */
+	} /* endfor */
+	break;
+      case IC_UNSTEADY_BLUNT_BODY :
+	Wl.d = FOUR*DENSITY_STDATM;   Wr.d = DENSITY_STDATM;
+	Wl.v = Vector2D_ZERO;         Wr.v = Vector2D_ZERO;
+	Wl.p = FOUR*PRESSURE_STDATM;  Wr.p = PRESSURE_STDATM;
+        for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+            for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	       if (SolnBlk.Grid.centroid(i,j).x <= -FIVE) {
+		  SolnBlk.W[i][j] = Wl;
+	       } else {
+		  SolnBlk.W[i][j] = Wr;	     
+	       } /* end if */
+	       SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	    } /* endfor */
+	} /* endfor */
+	break;
       case IC_RINGLEB_FLOW :
         for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
             for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
@@ -1811,6 +2046,262 @@ void ICs(Euler2D_Quad_Block &SolnBlk,
             } /* endfor */
         } /* endfor */
 	break;
+      case IC_BLAST_WAVE_INTERACTION:
+	// defined in the domain '0' to '1'
+	Wl = Euler2D_pState(ONE, ZERO, ZERO, 1.0e03);
+	Wm = Euler2D_pState(ONE, ZERO, ZERO, 1.0e-02);
+	Wr = Euler2D_pState(ONE, ZERO, ZERO, 1.0e02);
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    if (SolnBlk.Grid.Cell[i][j].Xc.x <= 0.1) {
+	      SolnBlk.W[i][j] = Wl;
+	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= 0.9){
+	      SolnBlk.W[i][j] = Wm;
+	    } else {
+	      SolnBlk.W[i][j] = Wr;	
+	    } /* end if */
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  } /* endfor */
+	} /* endfor */
+	break;
+      case IC_SHOCK_ACOUSTIC_INTERACTION:
+	double density;
+	Wl = Euler2D_pState(3.857143, 2.629369, ZERO, 10.333333);
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    if (SolnBlk.Grid.Cell[i][j].Xc.x <= -4.0) {
+	      SolnBlk.W[i][j] = Wl;
+	    } else {
+	      density = 1 + 0.2*sin(5*SolnBlk.Grid.Cell[i][j].Xc.x);
+	      Wr = Euler2D_pState(density, ZERO, ZERO, ONE);
+	      SolnBlk.W[i][j] = Wr;	
+	    } /* end if */
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  } /* endfor */
+	} /* endfor */
+	break;
+      case IC_PERIODIC_SINX_WAVE :
+	Wl.v.x = 100.0;
+	Wl.v.y = 0.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      SinVariationInXDir,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_PERIODIC_SINY_WAVE :
+	Wl.v.x = 0.0;
+	Wl.v.y = 100.0;
+	Wl.p = PRESSURE_STDATM;
+        for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      SinVariationInYDir,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+      break;
+      case IC_ABGRALL_FUNCTION :
+	Wl.v.x = 0.0;
+	Wl.v.y = 0.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      Abgrall_2D_Function,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_SIN_EXP_X_WAVE :
+	Wl.v.x = 0.0;
+	Wl.v.y = 0.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      SinExponentialVariationInXDir,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_SIN_EXP_Y_WAVE :
+	Wl.v.x = 0.0;
+	Wl.v.y = 0.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      SinExponentialVariationInYDir,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_SIN_EXP_ROTATED_WAVE :
+	Wl.v.x = 0.0;
+	Wl.v.y = 0.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      SinExponentialVariationRotated,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_COSINE_HILL:
+	Wl.v.x = 100.0;
+	Wl.v.y = 50.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      CosineHill,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_HYPER_TANGENT:
+	Wl.v.x = Wo[0].v.x;
+	Wl.v.y = Wo[0].v.y;
+	Wl.p = Wo[0].p;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      Translated_Solutions::HyperTangentIC,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_PERIODIC_SINX_MULTIWAVE :
+	Wl.v.x = 100.0;
+	Wl.v.y = 0.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      MultipleSinVariationInXDir,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_PERIODIC_SINY_MULTIWAVE :
+	Wl.v.x = 0.0;
+	Wl.v.y = 100.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      MultipleSinVariationInYDir,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_PERIODIC_COMPLEX_MULTIWAVE :
+	Wl.v.x = 250.0;
+	Wl.v.y = 0.0;
+	Wl.p = PRESSURE_STDATM;
+	for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+	  for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+	    Wl.d = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								      Complex_2D_Waves,
+								      IP.Exact_Integration_Digits,Wl.d)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.W[i][j] = Wl;
+	    SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	  }
+	}
+	break;
+      case IC_EXACT_SOLUTION :
+	// Set the solution state by calculating the cell average values with integration of the exact solution
+	// Use the ExactSoln pointer to access the exact solution
+	if (IP.ExactSoln->IsExactSolutionSet()) {
+	  for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	    for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	      // Compute the exact average value for each solution parameter.
+	      for ( k = 1; k <= SolnBlk.NumVar(); ++k){
+		SolnBlk.W[i][j][k] = 
+		  SolnBlk.Grid.Integration.
+		  IntegrateFunctionOverCell(i,j,
+					    wrapped_member_function_one_parameter(IP.ExactSoln,
+										  &Euler2D_ExactSolutions::SolutionForParameter,
+										  k,
+										  Wl[k]),
+					    wrapped_member_function_one_parameter(IP.ExactSoln,
+										  &Euler2D_ExactSolutions::
+										  XDependencyIntegrated_SolutionForParameter,
+										  k,
+										  Wl[k]),
+					    IP.Exact_Integration_Digits,Wl[k])/SolnBlk.Grid.Cell[i][j].A;
+	      }
+	      SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	    } /* endfor */
+	  } /* endfor */
+	} else {
+	  // There is no exact solution set for this problem
+	  throw runtime_error("ICs() ERROR! No exact solution has been set!");
+	}
+	break;
+      case IC_INTERIOR_UNIFORM_GHOSTCELLS_EXACT :
+	if (IP.ExactSoln->IsExactSolutionSet()) {
+	  for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	    for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	      if (i<SolnBlk.ICl || i>SolnBlk.ICu || j<SolnBlk.JCl || j>SolnBlk.JCu) {
+		// Set the solution state of the ghost cells to average values calculated with
+		// integration of the exact solution
+		// Compute the exact average value for each solution parameter.
+		for ( k = 1; k <= SolnBlk.NumVar(); ++k){
+		  SolnBlk.W[i][j][k] = 
+		    SolnBlk.Grid.Integration.
+		    IntegrateFunctionOverCell(i,j,
+					      wrapped_member_function_one_parameter(IP.ExactSoln,
+										    &Euler2D_ExactSolutions::SolutionForParameter,
+										    k,
+										    Wl[k]),
+					      wrapped_member_function_one_parameter(IP.ExactSoln,
+										    &Euler2D_ExactSolutions::
+										    XDependencyIntegrated_SolutionForParameter,
+										    k,
+										    Wl[k]),
+					      IP.Exact_Integration_Digits,Wl[k])/SolnBlk.Grid.Cell[i][j].A;
+		}
+		SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	      } else {
+		// Set the solution state of the interior cells to the initial state Uo[0].
+		SolnBlk.W[i][j] = Wo[0];
+		SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	      }
+	    } /* endfor */
+	  } /* endfor */
+	  
+	} else {
+	  // There is no exact solution set for this problem
+	  throw runtime_error("ICs() ERROR! No exact solution has been set!");
+	}
+	break;
+
       default:
         // Set the solution state to the initial state Wo[0].
         for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
@@ -1852,482 +2343,667 @@ void ICs(Euler2D_Quad_Block &SolnBlk,
 
 }
 
-/********************************************************
- * Routine: BCs                                         *
- *                                                      *
- * Apply boundary conditions at boundaries of the       *
- * specified quadrilateral solution block.              *
- *                                                      *
+/******************************************************//**
+ * Routine: BCs                                         
+ *                                                      
+ * Apply boundary conditions at boundaries of the       
+ * specified quadrilateral solution block.              
+ *                                                      
+ * \note Implement Ringleb BC properly!
  ********************************************************/
 void BCs(Euler2D_Quad_Block &SolnBlk,
 	 Euler2D_Input_Parameters &IP) {
 
-    int i, j;
-    Vector2D dX;
-    Euler2D_pState dW, W;
+  int i, j;
+  int ghost;
+  Vector2D dX;
+  Euler2D_pState dW, W;
 
-    for ( j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      // Prescribe West boundary conditions.
-      if ( (j >= SolnBlk.JCl && j <= SolnBlk.JCu) ||
-           (j < SolnBlk.JCl && 
-            (SolnBlk.Grid.BCtypeS[SolnBlk.ICl-1] == BC_NONE ||
-             SolnBlk.Grid.BCtypeS[SolnBlk.ICl-1] == BC_PERIODIC ||
-             SolnBlk.Grid.BCtypeS[SolnBlk.ICl-1] == BC_CONSTANT_EXTRAPOLATION ||
-             SolnBlk.Grid.BCtypeS[SolnBlk.ICl-1] == BC_LINEAR_EXTRAPOLATION ||
-             SolnBlk.Grid.BCtypeS[SolnBlk.ICl-1] == BC_CHARACTERISTIC ||
-             SolnBlk.Grid.BCtypeS[SolnBlk.ICl-1] == BC_RINGLEB_FLOW) ) ||
-           (j > SolnBlk.JCu && 
-            (SolnBlk.Grid.BCtypeN[SolnBlk.ICl-1] == BC_NONE ||
-             SolnBlk.Grid.BCtypeN[SolnBlk.ICl-1] == BC_PERIODIC ||
-             SolnBlk.Grid.BCtypeN[SolnBlk.ICl-1] == BC_CONSTANT_EXTRAPOLATION ||
-             SolnBlk.Grid.BCtypeN[SolnBlk.ICl-1] == BC_LINEAR_EXTRAPOLATION ||
-             SolnBlk.Grid.BCtypeN[SolnBlk.ICl-1] == BC_CHARACTERISTIC ||
-	     SolnBlk.Grid.BCtypeN[SolnBlk.ICl-1] == BC_RINGLEB_FLOW) ) ) {
+  for ( j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+    // Prescribe West boundary conditions.
+    if ( (j >= SolnBlk.JCl && j <= SolnBlk.JCu) ||                                  // <-- affects W boundary cells
+	 (j < SolnBlk.JCl && (SolnBlk.Grid.BCtypeS[SolnBlk.ICl-1] == BC_NONE ) ) || // <-- affects SW corner cells
+	 (j > SolnBlk.JCu && (SolnBlk.Grid.BCtypeN[SolnBlk.ICl-1] == BC_NONE ) ) )  // <-- affects NW corner cells
+      {
         switch(SolnBlk.Grid.BCtypeW[j]) {
-          case BC_NONE :
-            break;
-          case BC_FIXED :
-            SolnBlk.W[SolnBlk.ICl-1][j] = SolnBlk.WoW[j];
-            SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
-            SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.WoW[j];
-            SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
-            break;
-          case BC_CONSTANT_EXTRAPOLATION :
-            SolnBlk.W[SolnBlk.ICl-1][j] = SolnBlk.W[SolnBlk.ICl][j];
-            SolnBlk.U[SolnBlk.ICl-1][j] = SolnBlk.U[SolnBlk.ICl][j];
-            SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.W[SolnBlk.ICl][j];
-            SolnBlk.U[SolnBlk.ICl-2][j] = SolnBlk.U[SolnBlk.ICl][j];
-            break;
-          case BC_LINEAR_EXTRAPOLATION :
-            Linear_Reconstruction_LeastSquares_2(SolnBlk, 
-                                                 SolnBlk.ICl, j, 
-                                                 LIMITER_BARTH_JESPERSEN);
-            dX = SolnBlk.Grid.Cell[SolnBlk.ICl-1][j].Xc -
-                 SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc;
-            SolnBlk.W[SolnBlk.ICl-1][j] = SolnBlk.W[SolnBlk.ICl][j] + 
-               (SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dWdx[SolnBlk.ICl][j])*dX.x +
-               (SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dWdy[SolnBlk.ICl][j])*dX.y;
-            SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
-            dX = SolnBlk.Grid.Cell[SolnBlk.ICl-2][j].Xc -
-                 SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc;
-            SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.W[SolnBlk.ICl][j] + 
-               (SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dWdx[SolnBlk.ICl][j])*dX.x +
-               (SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dWdy[SolnBlk.ICl][j])*dX.y;
-            SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
-            break;
-          case BC_REFLECTION :
-            SolnBlk.W[SolnBlk.ICl-1][j] = Reflect(SolnBlk.W[SolnBlk.ICl][j],
-						  SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
-            SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
-            SolnBlk.W[SolnBlk.ICl-2][j] = Reflect(SolnBlk.W[SolnBlk.ICl+1][j],
-						  SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
-            SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
-            break;
+	case BC_NONE :
+	  break;
+	case BC_FIXED :
+	  for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.W[SolnBlk.ICl-ghost][j] = SolnBlk.WoW[j]; 
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = U(SolnBlk.W[SolnBlk.ICl-ghost][j]);
+	  }
+	  break;
+	case BC_CONSTANT_EXTRAPOLATION :
+	  for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.W[SolnBlk.ICl-ghost][j] = SolnBlk.W[SolnBlk.ICl][j];
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.U[SolnBlk.ICl][j];
+	  }
+	  break;
+	case BC_LINEAR_EXTRAPOLATION :
+	  Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+					       SolnBlk.ICl, j, 
+					       LIMITER_BARTH_JESPERSEN);
+	  for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.W[SolnBlk.ICl-ghost][j] = SolnBlk.PiecewiseLinearSolutionAtLocation(SolnBlk.ICl,j,
+											SolnBlk.Grid.Cell[SolnBlk.ICl-ghost][j].Xc);
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = U(SolnBlk.W[SolnBlk.ICl-ghost][j]);
+	  }	      
+	  break;
+	case BC_REFLECTION :
+	  for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.W[SolnBlk.ICl-ghost][j] = Reflect(SolnBlk.W[SolnBlk.ICl + ghost-1][j],
+						      SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = U(SolnBlk.W[SolnBlk.ICl-ghost][j]);
+	  }
+	  break;
+	case BC_BURNING_SURFACE :
+	  Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+					       SolnBlk.ICl, j, 
+					       LIMITER_BARTH_JESPERSEN);
+	  dW = SolnBlk.PiecewiseLinearSolutionAtLocation(SolnBlk.ICl, j,
+							 SolnBlk.Grid.Cell[SolnBlk.ICl-1][j].Xc);
+	  SolnBlk.W[SolnBlk.ICl-1][j] = BurningSurface(dW,
+						       SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+	  SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
+	  for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.W[SolnBlk.ICl-ghost][j] = SolnBlk.W[SolnBlk.ICu-1][j];
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.U[SolnBlk.ICu-1][j];
+	  }
+	  break;
+	case BC_MASS_INJECTION :  
+	  // Invalid for arbitrary number of ghost cells
+	  SolnBlk.W[SolnBlk.ICl-1][j] = MassInjection(SolnBlk.W[SolnBlk.ICl][j],SolnBlk.Grid.nfaceW(SolnBlk.ICl,j),ON);
+	  SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
+	  SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.W[SolnBlk.ICl-1][j];
+	  SolnBlk.U[SolnBlk.ICl-2][j] = SolnBlk.U[SolnBlk.ICl-1][j]; 
+	  break;
+	case BC_PERIODIC :
+	  for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.W[SolnBlk.ICl-ghost][j] = SolnBlk.W[SolnBlk.ICu-ghost+1][j];
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.U[SolnBlk.ICu-ghost+1][j];
+	  }
+	  break;
+	case BC_CHARACTERISTIC :
+	  SolnBlk.W[SolnBlk.ICl-1][j] = 
+	    BC_Characteristic_Pressure(SolnBlk.W[SolnBlk.ICl][j],
+				       SolnBlk.WoW[j], 
+				       SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+	  SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
+	  for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.W[SolnBlk.ICl-ghost][j] = SolnBlk.W[SolnBlk.ICl-1][j];
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.U[SolnBlk.ICl-1][j];
+	  }
+	  break;
+	case BC_RINGLEB_FLOW :
+	  // Not properly implemented yet!
+
+	  // 	    RinglebFlowFunctionType RinglebFlowFunction = RinglebFlow;
+	    
+	  // 	    for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){ 
+	  // 	      //  SolnBlk.W[SolnBlk.ICl-ghost][j] = RinglebFlow(SolnBlk.Grid.Cell[SolnBlk.ICl-ghost][j].Xc);
+	    
+	  // 	      SolnBlk.W[SolnBlk.ICl-ghost][j]=(SolnBlk.IntegrateOverTheCell(SolnBlk.ICl-ghost,j,
+	  // 									    RinglebFlowFunction,8,
+	  // 									    SolnBlk.W[SolnBlk.ICl-ghost][j])/
+	  // 					       SolnBlk.Grid.area(SolnBlk.ICl-ghost,j));
+	  // 	      // 	      SolnBlk.W[SolnBlk.ICl-ghost][j] = Reflect(SolnBlk.W[SolnBlk.ICl+ghost-1][j],
+	  // 	      // 							SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+	  // 	      SolnBlk.U[SolnBlk.ICl-ghost][j] = U(SolnBlk.W[SolnBlk.ICl-ghost][j]);
+	  // 	    }
+
+	  //             SolnBlk.W[SolnBlk.ICl-1][j] = RinglebFlow(SolnBlk.W[SolnBlk.ICl-1][j],
+	  // 						      SolnBlk.Grid.Cell[SolnBlk.ICl-1][j].Xc);
+	  //             SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
+	  //             SolnBlk.W[SolnBlk.ICl-2][j] = RinglebFlow(SolnBlk.W[SolnBlk.ICl-2][j],
+	  // 						      SolnBlk.Grid.Cell[SolnBlk.ICl-2][j].Xc);
+	  //             SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
+	    
+	  SolnBlk.W[SolnBlk.ICl-1][j] = Reflect(SolnBlk.W[SolnBlk.ICl][j],
+						SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+	  SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
+	  SolnBlk.W[SolnBlk.ICl-2][j] = Reflect(SolnBlk.W[SolnBlk.ICl+1][j],
+						SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+	  SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
+	  break;
+	case BC_EXACT_SOLUTION:
+	  // Leave the ghost cell values unchanged.
+	  break;
+	case BC_FROZEN :
+	  // Equivalent to BC_NONE in the sense that it leaves 
+	  // the ghost cell values unchanged and 
+	  // uses the ghost cell reconstruction to 
+	  // compute the inter-cellular state.
+	  break;
+	case BC_CHARACTERISTIC_VELOCITY:
+	  SolnBlk.W[SolnBlk.ICl-1][j] = BC_Characteristic(SolnBlk.W[SolnBlk.ICl][j],
+							  SolnBlk.WoW[j], 
+							  SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+	  SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
+	  for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.W[SolnBlk.ICl-ghost][j] = SolnBlk.W[SolnBlk.ICl-1][j];
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.U[SolnBlk.ICl-1][j];
+	  }
+	  break;
+	case BC_WALL_INVISCID:
+	  // Implement inviscid wall boundary condition 
+	  // (i.e. no mass flow through the wall)
+
+	  Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+					       SolnBlk.ICl, j, 
+					       LIMITER_BARTH_JESPERSEN);
+
+	  for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    // Implement reflection of velocities
+	    SolnBlk.W[SolnBlk.ICl-ghost][j] = Reflect(SolnBlk.W[SolnBlk.ICl + ghost-1][j],
+						      SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+	    // Implement pressure and density based on linear extrapolation
+	    W = SolnBlk.PiecewiseLinearSolutionAtLocation(SolnBlk.ICl,j,
+							  SolnBlk.Grid.Cell[SolnBlk.ICl-ghost][j].Xc);
+	    SolnBlk.W[SolnBlk.ICl-ghost][j].p = W.p;
+	    SolnBlk.W[SolnBlk.ICl-ghost][j].d = W.d;
+	    // Calculate the conserved variables
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = U(SolnBlk.W[SolnBlk.ICl-ghost][j]);
+	  }
+	  break;	  
+
+	default:
+	  // Impose constant extrapolation
+	  for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.W[SolnBlk.ICl-ghost][j] = SolnBlk.W[SolnBlk.ICl][j];
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.U[SolnBlk.ICl][j];
+	  }
+	  break;
+        } /* endswitch */
+      } /* endif */
+    
+    // Prescribe East boundary conditions.
+    if ( (j >= SolnBlk.JCl && j <= SolnBlk.JCu) ||                                   // <-- affects E boundary cells
+	 (j < SolnBlk.JCl && (SolnBlk.Grid.BCtypeS[SolnBlk.ICu+1] == BC_NONE ) ) ||  // <-- affects SE corner cells
+	 (j > SolnBlk.JCu && (SolnBlk.Grid.BCtypeN[SolnBlk.ICu+1] == BC_NONE ) ) )   // <-- affects NE corner cells
+      {
+	switch(SolnBlk.Grid.BCtypeE[j]) 
+	  {
+	  case BC_NONE :
+	    break;
+	  case BC_FIXED :
+	    for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.W[SolnBlk.ICu+ghost][j] = SolnBlk.WoE[j];
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = U(SolnBlk.W[SolnBlk.ICu+ghost][j]);
+	    }
+	    break;
+	  case BC_CONSTANT_EXTRAPOLATION :
+	    for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.W[SolnBlk.ICu+ghost][j] = SolnBlk.W[SolnBlk.ICu][j];
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.U[SolnBlk.ICu][j];
+	    }
+	    break;
+	  case BC_LINEAR_EXTRAPOLATION :
+	    Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+						 SolnBlk.ICu, j, 
+						 LIMITER_BARTH_JESPERSEN);
+	    for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.W[SolnBlk.ICu+ghost][j] = SolnBlk.PiecewiseLinearSolutionAtLocation(SolnBlk.ICu, j,
+											  SolnBlk.Grid.Cell[SolnBlk.ICu+ghost][j].Xc);
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = U(SolnBlk.W[SolnBlk.ICu+ghost][j]);
+	    }    
+	    break;
+	  case BC_REFLECTION :
+	    for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.W[SolnBlk.ICu+ghost][j] = Reflect(SolnBlk.W[SolnBlk.ICu-ghost+1][j],
+							SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = U(SolnBlk.W[SolnBlk.ICu+ghost][j]);
+	    }       
+	    break;
 	  case BC_BURNING_SURFACE :
 	    Linear_Reconstruction_LeastSquares_2(SolnBlk, 
-	  	  		                 SolnBlk.ICl, j, 
-	  			                 LIMITER_BARTH_JESPERSEN);
-	    dX = SolnBlk.Grid.Cell[SolnBlk.ICl-1][j].Xc -
-	         SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc;
-	    dW = SolnBlk.W[SolnBlk.ICl][j] + 
-	         (SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dWdx[SolnBlk.ICl][j])*dX.x +
-	         (SolnBlk.phi[SolnBlk.ICl][j]^SolnBlk.dWdy[SolnBlk.ICl][j])*dX.y;
-	    SolnBlk.W[SolnBlk.ICl-1][j] = BurningSurface(dW,
-		  				         SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
-	    SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
-	    SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.W[SolnBlk.ICl-1][j];
-	    SolnBlk.U[SolnBlk.ICl-2][j] = SolnBlk.U[SolnBlk.ICl-1][j];
-	    break;
-      case BC_MASS_INJECTION :
-	SolnBlk.W[SolnBlk.ICl-1][j] = MassInjection(SolnBlk.W[SolnBlk.ICl][j],SolnBlk.Grid.nfaceW(SolnBlk.ICl,j),ON);
-	SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
-	SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.W[SolnBlk.ICl-1][j];
-	SolnBlk.U[SolnBlk.ICl-2][j] = SolnBlk.U[SolnBlk.ICl-1][j];
-	break;
-          case BC_PERIODIC :
-            SolnBlk.W[SolnBlk.ICl-1][j] = SolnBlk.W[SolnBlk.ICu-1][j];
-            SolnBlk.U[SolnBlk.ICl-1][j] = SolnBlk.U[SolnBlk.ICu-1][j];
-            SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.W[SolnBlk.ICu-2][j];
-            SolnBlk.U[SolnBlk.ICl-2][j] = SolnBlk.U[SolnBlk.ICu-2][j];
-            break;
-          case BC_CHARACTERISTIC :
-            SolnBlk.W[SolnBlk.ICl-1][j] = 
-               BC_Characteristic_Pressure(SolnBlk.W[SolnBlk.ICl][j],
-                                          SolnBlk.WoW[j], 
-                                          SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
-            SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
-            SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.W[SolnBlk.ICl-1][j];
-            SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
-            break;
-          case BC_RINGLEB_FLOW :
-//             SolnBlk.W[SolnBlk.ICl-1][j] = RinglebFlow(SolnBlk.W[SolnBlk.ICl-1][j],SolnBlk.Grid.Cell[SolnBlk.ICl-1][j].Xc);
-//             SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
-//             SolnBlk.W[SolnBlk.ICl-2][j] = RinglebFlow(SolnBlk.W[SolnBlk.ICl-2][j],SolnBlk.Grid.Cell[SolnBlk.ICl-2][j].Xc);
-//             SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
-            SolnBlk.W[SolnBlk.ICl-1][j] = Reflect(SolnBlk.W[SolnBlk.ICl][j],
-						  SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
-            SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
-            SolnBlk.W[SolnBlk.ICl-2][j] = Reflect(SolnBlk.W[SolnBlk.ICl+1][j],
-						  SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
-            SolnBlk.U[SolnBlk.ICl-2][j] = U(SolnBlk.W[SolnBlk.ICl-2][j]);
-            break;
-          default:
-            SolnBlk.W[SolnBlk.ICl-1][j] = SolnBlk.W[SolnBlk.ICl][j];
-            SolnBlk.U[SolnBlk.ICl-1][j] = SolnBlk.U[SolnBlk.ICl][j];
-            SolnBlk.W[SolnBlk.ICl-2][j] = SolnBlk.W[SolnBlk.ICl][j];
-            SolnBlk.U[SolnBlk.ICl-2][j] = SolnBlk.U[SolnBlk.ICl][j];
-            break;
-        } /* endswitch */
-      } /* endif */
-
-      // Prescribe East boundary conditions.
-      if ( (j >= SolnBlk.JCl && j <= SolnBlk.JCu) ||
-           (j < SolnBlk.JCl && 
-            (SolnBlk.Grid.BCtypeS[SolnBlk.ICu+1] == BC_NONE ||
-             SolnBlk.Grid.BCtypeS[SolnBlk.ICu+1] == BC_PERIODIC ||
-             SolnBlk.Grid.BCtypeS[SolnBlk.ICu+1] == BC_CONSTANT_EXTRAPOLATION ||
-             SolnBlk.Grid.BCtypeS[SolnBlk.ICu+1] == BC_LINEAR_EXTRAPOLATION ||
-             SolnBlk.Grid.BCtypeS[SolnBlk.ICu+1] == BC_CHARACTERISTIC ||
-             SolnBlk.Grid.BCtypeS[SolnBlk.ICu+1] == BC_RINGLEB_FLOW) ) ||
-           (j > SolnBlk.JCu && 
-            (SolnBlk.Grid.BCtypeN[SolnBlk.ICu+1] == BC_NONE ||
-             SolnBlk.Grid.BCtypeN[SolnBlk.ICu+1] == BC_PERIODIC ||
-             SolnBlk.Grid.BCtypeN[SolnBlk.ICu+1] == BC_CONSTANT_EXTRAPOLATION ||
-             SolnBlk.Grid.BCtypeN[SolnBlk.ICu+1] == BC_LINEAR_EXTRAPOLATION ||
-             SolnBlk.Grid.BCtypeN[SolnBlk.ICu+1] == BC_CHARACTERISTIC ||
-             SolnBlk.Grid.BCtypeN[SolnBlk.ICu+1] == BC_RINGLEB_FLOW) ) ) {
-        switch(SolnBlk.Grid.BCtypeE[j]) {
-          case BC_NONE :
-            break;
-          case BC_FIXED :
-            SolnBlk.W[SolnBlk.ICu+1][j] = SolnBlk.WoE[j];
-            SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
-            SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.WoE[j];
-            SolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
-            break;
-          case BC_CONSTANT_EXTRAPOLATION :
-            SolnBlk.W[SolnBlk.ICu+1][j] = SolnBlk.W[SolnBlk.ICu][j];
-            SolnBlk.U[SolnBlk.ICu+1][j] = SolnBlk.U[SolnBlk.ICu][j];
-            SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.W[SolnBlk.ICu][j];
-            SolnBlk.U[SolnBlk.ICu+2][j] = SolnBlk.U[SolnBlk.ICu][j];
-            break;
-          case BC_LINEAR_EXTRAPOLATION :
-            Linear_Reconstruction_LeastSquares_2(SolnBlk, 
-                                                 SolnBlk.ICu, j, 
-                                                 LIMITER_BARTH_JESPERSEN);
-            dX = SolnBlk.Grid.Cell[SolnBlk.ICu+1][j].Xc -
-                 SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc;
-            SolnBlk.W[SolnBlk.ICu+1][j] = SolnBlk.W[SolnBlk.ICu][j] + 
-               (SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dWdx[SolnBlk.ICu][j])*dX.x +
-               (SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dWdy[SolnBlk.ICu][j])*dX.y;
-            SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
-            dX = SolnBlk.Grid.Cell[SolnBlk.ICu+2][j].Xc -
-                 SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc;
-            SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.W[SolnBlk.ICu][j] + 
-               (SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dWdx[SolnBlk.ICu][j])*dX.x +
-               (SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dWdy[SolnBlk.ICu][j])*dX.y;
-            SolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
-            break;
-          case BC_REFLECTION :
-            SolnBlk.W[SolnBlk.ICu+1][j] = Reflect(SolnBlk.W[SolnBlk.ICu][j],
-                                          SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
-            SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
-            SolnBlk.W[SolnBlk.ICu+2][j] = Reflect(SolnBlk.W[SolnBlk.ICu-1][j],
-                                          SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
-            SolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
-            break;
- 	  case BC_BURNING_SURFACE :
-	    Linear_Reconstruction_LeastSquares_2(SolnBlk, 
-		  			         SolnBlk.ICu, j, 
-					         LIMITER_BARTH_JESPERSEN);
-	    dX = SolnBlk.Grid.Cell[SolnBlk.ICu+1][j].Xc -
-	         SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc;
-	    dW = SolnBlk.W[SolnBlk.ICu][j] + 
-	         (SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dWdx[SolnBlk.ICu][j])*dX.x +
-	         (SolnBlk.phi[SolnBlk.ICu][j]^SolnBlk.dWdy[SolnBlk.ICu][j])*dX.y;
+						 SolnBlk.ICu, j, 
+						 LIMITER_BARTH_JESPERSEN);
+	    dW = SolnBlk.PiecewiseLinearSolutionAtLocation(SolnBlk.ICu, j,
+							   SolnBlk.Grid.Cell[SolnBlk.ICu+1][j].Xc);
 	    SolnBlk.W[SolnBlk.ICu+1][j] = BurningSurface(dW,
-		 			 	         SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
+							 SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
 	    SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
-	    SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.W[SolnBlk.ICu+1][j];
-	    SolnBlk.U[SolnBlk.ICu+2][j] = SolnBlk.U[SolnBlk.ICu+1][j];
+	    for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.W[SolnBlk.ICl+ghost][j] = SolnBlk.W[SolnBlk.ICu+1][j];
+	      SolnBlk.U[SolnBlk.ICl+ghost][j] = SolnBlk.U[SolnBlk.ICu+1][j];
+	    }
 	    break;
-      case BC_MASS_INJECTION :
-	SolnBlk.W[SolnBlk.ICu+1][j] = MassInjection(SolnBlk.W[SolnBlk.ICu][j],SolnBlk.Grid.nfaceE(SolnBlk.ICu,j),ON);
-	SolnBlk.U[SolnBlk.ICu+1][j] = SolnBlk.U[SolnBlk.ICl+1][j];
-	SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.W[SolnBlk.ICl+2][j];
-	SolnBlk.U[SolnBlk.ICu+2][j] = SolnBlk.U[SolnBlk.ICl+2][j];
-	break;
-          case BC_PERIODIC :
-            SolnBlk.W[SolnBlk.ICu+1][j] = SolnBlk.W[SolnBlk.ICl+1][j];
-            SolnBlk.U[SolnBlk.ICu+1][j] = SolnBlk.U[SolnBlk.ICl+1][j];
-            SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.W[SolnBlk.ICl+2][j];
-            SolnBlk.U[SolnBlk.ICu+2][j] = SolnBlk.U[SolnBlk.ICl+2][j];
-            break;
-          case BC_CHARACTERISTIC :
-            SolnBlk.W[SolnBlk.ICu+1][j] = 
-               BC_Characteristic_Pressure(SolnBlk.W[SolnBlk.ICu][j],
-                                          SolnBlk.WoE[j],
-                                          SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
-            SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
-            SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.W[SolnBlk.ICu+1][j];
-            SolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
-            break;
-          case BC_RINGLEB_FLOW :
-//             SolnBlk.W[SolnBlk.ICu+1][j] = RinglebFlow(SolnBlk.W[SolnBlk.ICu+1][j],SolnBlk.Grid.Cell[SolnBlk.ICu+1][j].Xc);
-//             SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
-//             SolnBlk.W[SolnBlk.ICu+2][j] = RinglebFlow(SolnBlk.W[SolnBlk.ICu+2][j],SolnBlk.Grid.Cell[SolnBlk.ICu+2][j].Xc);
-//             SolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
-            SolnBlk.W[SolnBlk.ICu+1][j] = Reflect(SolnBlk.W[SolnBlk.ICu][j],
-                                          SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
-            SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
-            SolnBlk.W[SolnBlk.ICu+2][j] = Reflect(SolnBlk.W[SolnBlk.ICu-1][j],
-                                          SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
-            SolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
-            break;
-          default:
-            SolnBlk.W[SolnBlk.ICu+1][j] = SolnBlk.W[SolnBlk.ICu][j];
-            SolnBlk.U[SolnBlk.ICu+1][j] = SolnBlk.U[SolnBlk.ICu][j];
-            SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.W[SolnBlk.ICu][j];
-            SolnBlk.U[SolnBlk.ICu+2][j] = SolnBlk.U[SolnBlk.ICu][j];
-            break;
-        } /* endswitch */
-      } /* endif */
-    } /* endfor */
+	  case BC_MASS_INJECTION :
+	    // Invalid for arbitrary number of ghost cells
+	    SolnBlk.W[SolnBlk.ICu+1][j] = MassInjection(SolnBlk.W[SolnBlk.ICu][j],SolnBlk.Grid.nfaceE(SolnBlk.ICu,j),ON);
+	    SolnBlk.U[SolnBlk.ICu+1][j] = SolnBlk.U[SolnBlk.ICl+1][j];
+	    SolnBlk.W[SolnBlk.ICu+2][j] = SolnBlk.W[SolnBlk.ICl+2][j];
+	    SolnBlk.U[SolnBlk.ICu+2][j] = SolnBlk.U[SolnBlk.ICl+2][j];
+	    break;
+	  case BC_PERIODIC :
+	    for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.W[SolnBlk.ICu+ghost][j] = SolnBlk.W[SolnBlk.ICl+ghost-1][j];
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.U[SolnBlk.ICl+ghost-1][j];
+	    }
+	    break;
+	  case BC_CHARACTERISTIC :
+	    SolnBlk.W[SolnBlk.ICu+1][j] = 
+	      BC_Characteristic_Pressure(SolnBlk.W[SolnBlk.ICu][j],
+					 SolnBlk.WoE[j],
+					 SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
+	    SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
+	    
+	    for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.W[SolnBlk.ICu+ghost][j] = SolnBlk.W[SolnBlk.ICu+1][j];
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.U[SolnBlk.ICu+1][j];
+	    }
+	    break;
+	  case BC_RINGLEB_FLOW :
+	    // Not properly implemented yet!
+	    
+	    // 	    RinglebFlowFunctionType RinglebFlowFunction = RinglebFlow;
+	    // 	    for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    // 	      //             SolnBlk.W[SolnBlk.ICu+ghost][j] = RinglebFlow(SolnBlk.Grid.Cell[SolnBlk.ICu+ghost][j].Xc);
+	    
+	    // 	      SolnBlk.W[SolnBlk.ICu+ghost][j] = (SolnBlk.IntegrateOverTheCell(SolnBlk.ICu+ghost,j,
+	    // 									     RinglebFlowFunction,8,
+	    // 									     SolnBlk.W[SolnBlk.ICu+ghost][j])/
+	    // 						 SolnBlk.Grid.area(SolnBlk.ICu+ghost,j));
+	    
+	    // 	      // 	      SolnBlk.W[SolnBlk.ICu+ghost][j] = Reflect(SolnBlk.W[SolnBlk.ICu-ghost+1][j],
+	    // 	      // 						    SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
+	    // 	      SolnBlk.U[SolnBlk.ICu+ghost][j] = U(SolnBlk.W[SolnBlk.ICu+ghost][j]);
+	    // 	    }
+	  
 
-    for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-        // Prescribe South boundary conditions.
-        switch(SolnBlk.Grid.BCtypeS[i]) {
-          case BC_NONE :
-            break;
-          case BC_FIXED :
-            SolnBlk.W[i][SolnBlk.JCl-1] = SolnBlk.WoS[i];
-            SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
-            SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.WoS[i];
-            SolnBlk.U[i][SolnBlk.JCl-2] = U(SolnBlk.W[i][SolnBlk.JCl-2]);
-            break;
-          case BC_CONSTANT_EXTRAPOLATION :
-            SolnBlk.W[i][SolnBlk.JCl-1] = SolnBlk.W[i][SolnBlk.JCl];
-            SolnBlk.U[i][SolnBlk.JCl-1] = SolnBlk.U[i][SolnBlk.JCl];
-            SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCl];
-            SolnBlk.U[i][SolnBlk.JCl-2] = SolnBlk.U[i][SolnBlk.JCl];
-            break;
-          case BC_LINEAR_EXTRAPOLATION :
-            Linear_Reconstruction_LeastSquares_2(SolnBlk, 
-                                                 i, SolnBlk.JCl, 
-                                                 LIMITER_BARTH_JESPERSEN);
-            dX = SolnBlk.Grid.Cell[i][SolnBlk.JCl-1].Xc -
-                 SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc;
-            SolnBlk.W[i][SolnBlk.JCl-1] = SolnBlk.W[i][SolnBlk.JCl] + 
-               (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdx[i][SolnBlk.JCl])*dX.x +
-               (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdy[i][SolnBlk.JCl])*dX.y;
-            SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
-            dX = SolnBlk.Grid.Cell[i][SolnBlk.JCl-2].Xc -
-                 SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc;
-            SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCl] + 
-               (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdx[i][SolnBlk.JCl])*dX.x +
-               (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdy[i][SolnBlk.JCl])*dX.y;
-            SolnBlk.U[i][SolnBlk.JCl-2] = U(SolnBlk.W[i][SolnBlk.JCl-2]);
-            break;
-          case BC_REFLECTION :
-            SolnBlk.W[i][SolnBlk.JCl-1] = Reflect(SolnBlk.W[i][SolnBlk.JCl],
-                                          SolnBlk.Grid.nfaceS(i, SolnBlk.JCl));
-            SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
-            SolnBlk.W[i][SolnBlk.JCl-2] = Reflect(SolnBlk.W[i][SolnBlk.JCl+1],
-                                          SolnBlk.Grid.nfaceS(i, SolnBlk.JCl));
-            SolnBlk.U[i][SolnBlk.JCl-2] = U(SolnBlk.W[i][SolnBlk.JCl-2]);
-            break;
- 	  case BC_BURNING_SURFACE :
-	    Linear_Reconstruction_LeastSquares_2(SolnBlk, 
-		  			         i, SolnBlk.JCl, 
-					         LIMITER_BARTH_JESPERSEN);
-	    dX = SolnBlk.Grid.Cell[i][SolnBlk.JCl-1].Xc -
-	         SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc;
-	    dW = SolnBlk.W[i][SolnBlk.JCl] + 
-	         (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdx[i][SolnBlk.JCl])*dX.x +
-	         (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdy[i][SolnBlk.JCl])*dX.y;
-	    SolnBlk.W[i][SolnBlk.JCl-1] = BurningSurface(dW,
-		  				         SolnBlk.Grid.nfaceS(i, SolnBlk.JCl));
-	    SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
-	    SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCl-1];
-	    SolnBlk.U[i][SolnBlk.JCl-2] = SolnBlk.U[i][SolnBlk.JCl-1];
+	    //  SolnBlk.W[SolnBlk.ICu+1][j] = RinglebFlow(SolnBlk.W[SolnBlk.ICu+1][j],SolnBlk.Grid.Cell[SolnBlk.ICu+1][j].Xc);
+	    //  SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
+	    //  SolnBlk.W[SolnBlk.ICu+2][j] = RinglebFlow(SolnBlk.W[SolnBlk.ICu+2][j],SolnBlk.Grid.Cell[SolnBlk.ICu+2][j].Xc);
+	    //  SolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
+	    SolnBlk.W[SolnBlk.ICu+1][j] = Reflect(SolnBlk.W[SolnBlk.ICu][j],
+						  SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
+	    SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
+	    SolnBlk.W[SolnBlk.ICu+2][j] = Reflect(SolnBlk.W[SolnBlk.ICu-1][j],
+						  SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
+	    SolnBlk.U[SolnBlk.ICu+2][j] = U(SolnBlk.W[SolnBlk.ICu+2][j]);
 	    break;
+
+	  case BC_EXACT_SOLUTION:
+	    break;
+	  case BC_FROZEN :
+	    // Equivalent to BC_NONE in the sense that it leaves 
+	    // the ghost cell values unchanged and 
+	    // uses the ghost cell reconstruction to 
+	    // compute the inter-cellular state.
+	    break;
+	  case BC_CHARACTERISTIC_VELOCITY:
+	    SolnBlk.W[SolnBlk.ICu+1][j] = BC_Characteristic(SolnBlk.W[SolnBlk.ICu][j],
+							    SolnBlk.WoE[j],
+							    SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
+	    SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
+	    
+	    for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.W[SolnBlk.ICu+ghost][j] = SolnBlk.W[SolnBlk.ICu+1][j];
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.U[SolnBlk.ICu+1][j];
+	    }
+	    break;
+	  case BC_WALL_INVISCID:
+	    // Implement inviscid wall boundary condition 
+	    // (i.e. no mass flow through the wall)
+
+	    Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+						 SolnBlk.ICu, j, 
+						 LIMITER_BARTH_JESPERSEN);
+
+	    for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      // Implement reflection of velocities
+	      SolnBlk.W[SolnBlk.ICu+ghost][j] = Reflect(SolnBlk.W[SolnBlk.ICu - ghost+1][j],
+							SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
+	      // Implement pressure and density based on linear extrapolation
+	      W = SolnBlk.PiecewiseLinearSolutionAtLocation(SolnBlk.ICu,j,
+							    SolnBlk.Grid.Cell[SolnBlk.ICu+ghost][j].Xc);
+	      SolnBlk.W[SolnBlk.ICu+ghost][j].p = W.p;
+	      SolnBlk.W[SolnBlk.ICu+ghost][j].d = W.d;
+	      // Calculate the conserved variables
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = U(SolnBlk.W[SolnBlk.ICu+ghost][j]);
+	    }
+	    break;	  
+
+	  default:
+	    for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.W[SolnBlk.ICu+ghost][j] = SolnBlk.W[SolnBlk.ICu][j];
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.U[SolnBlk.ICu][j];
+	    }
+	    break;
+	  } /* endswitch */
+      } /* endif */
+  } /* endfor */
+
+  for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+    // Use the South and North BCs for the corner ghost cells
+
+    // Prescribe South boundary conditions.
+    switch(SolnBlk.Grid.BCtypeS[i]) {
+    case BC_NONE :
+      break;
+    case BC_FIXED :
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCl-ghost] = SolnBlk.WoS[i];
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = U(SolnBlk.W[i][SolnBlk.JCl-ghost]);
+      }
+      break;
+    case BC_CONSTANT_EXTRAPOLATION :
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCl-ghost] = SolnBlk.W[i][SolnBlk.JCl];
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCl];
+      }
+      break;
+    case BC_LINEAR_EXTRAPOLATION :
+      Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+					   i, SolnBlk.JCl, 
+					   LIMITER_BARTH_JESPERSEN);
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCl-ghost] = SolnBlk.PiecewiseLinearSolutionAtLocation(i,SolnBlk.JCl,
+										    SolnBlk.Grid.Cell[i][SolnBlk.JCl-ghost].Xc);
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = U(SolnBlk.W[i][SolnBlk.JCl-ghost]);
+      }
+      break;
+    case BC_REFLECTION :
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCl-ghost] = Reflect(SolnBlk.W[i][SolnBlk.JCl + ghost-1],
+						  SolnBlk.Grid.nfaceS(i, SolnBlk.JCl));
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = U(SolnBlk.W[i][SolnBlk.JCl-ghost]);    
+      }
+      break;
+    case BC_BURNING_SURFACE :
+      Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+					   i, SolnBlk.JCl, 
+					   LIMITER_BARTH_JESPERSEN);
+      dW = SolnBlk.PiecewiseLinearSolutionAtLocation(i,SolnBlk.JCl,
+						     SolnBlk.Grid.Cell[i][SolnBlk.JCl-1].Xc);
+      SolnBlk.W[i][SolnBlk.JCl-1] = BurningSurface(dW, SolnBlk.Grid.nfaceS(i, SolnBlk.JCl));
+      SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
+      for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCl-ghost] = SolnBlk.W[i][SolnBlk.JCl-1];
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCl-1];
+      }
+      break;
     case BC_MASS_INJECTION :
+      // Invalid for arbitrary number of ghost cells
       SolnBlk.W[i][SolnBlk.JCl-1] = MassInjection(SolnBlk.W[i][SolnBlk.JCl],SolnBlk.Grid.nfaceS(i,SolnBlk.JCl),ON);
       SolnBlk.U[i][SolnBlk.JCl-1] = SolnBlk.U[i][SolnBlk.JCu-1];
       SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCu-2];
       SolnBlk.U[i][SolnBlk.JCl-2] = SolnBlk.U[i][SolnBlk.JCu-2];
       break;
-          case BC_PERIODIC :
-            SolnBlk.W[i][SolnBlk.JCl-1] = SolnBlk.W[i][SolnBlk.JCu-1];
-            SolnBlk.U[i][SolnBlk.JCl-1] = SolnBlk.U[i][SolnBlk.JCu-1];
-            SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCu-2];
-            SolnBlk.U[i][SolnBlk.JCl-2] = SolnBlk.U[i][SolnBlk.JCu-2];
-            break;
-          case BC_CHARACTERISTIC :
-            SolnBlk.W[i][SolnBlk.JCl-1] = 
-               BC_Characteristic_Pressure(SolnBlk.W[i][SolnBlk.JCl],
-                                          SolnBlk.WoS[i],
-                                          SolnBlk.Grid.nfaceS(i, SolnBlk.JCl));
-            SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
-            SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCl-1];
-            SolnBlk.U[i][SolnBlk.JCl-2] = U(SolnBlk.W[i][SolnBlk.JCl-2]);
-            break;
-          case BC_RINGLEB_FLOW :
-            SolnBlk.W[i][SolnBlk.JCl-1] = RinglebFlow(SolnBlk.W[i][SolnBlk.JCl-1],SolnBlk.Grid.Cell[i][SolnBlk.JCl-1].Xc);
-            SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
-            SolnBlk.W[i][SolnBlk.JCl-2] = RinglebFlow(SolnBlk.W[i][SolnBlk.JCl-2],SolnBlk.Grid.Cell[i][SolnBlk.JCl-2].Xc);
-            SolnBlk.U[i][SolnBlk.JCl-2] = U(SolnBlk.W[i][SolnBlk.JCl-2]);
-//
-//             SolnBlk.W[i][SolnBlk.JCl-1] = SolnBlk.W[i][SolnBlk.JCl];
-//             SolnBlk.U[i][SolnBlk.JCl-1] = SolnBlk.U[i][SolnBlk.JCl];
-//             SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCl];
-//             SolnBlk.U[i][SolnBlk.JCl-2] = SolnBlk.U[i][SolnBlk.JCl];
-//
-//             Linear_Reconstruction_LeastSquares_2(SolnBlk, 
-//                                                  i, SolnBlk.JCl, 
-//                                                  LIMITER_BARTH_JESPERSEN);
-//             dX = SolnBlk.Grid.Cell[i][SolnBlk.JCl-1].Xc -
-//                  SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc;
-//             SolnBlk.W[i][SolnBlk.JCl-1] = SolnBlk.W[i][SolnBlk.JCl] + 
-//                (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdx[i][SolnBlk.JCl])*dX.x +
-//                (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdy[i][SolnBlk.JCl])*dX.y;
-//             SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
-//             dX = SolnBlk.Grid.Cell[i][SolnBlk.JCl-2].Xc -
-//                  SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc;
-//             SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCl] + 
-//                (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdx[i][SolnBlk.JCl])*dX.x +
-//                (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdy[i][SolnBlk.JCl])*dX.y;
-//             SolnBlk.U[i][SolnBlk.JCl-2] = U(SolnBlk.W[i][SolnBlk.JCl-2]);
-            break;
-          default:
-            SolnBlk.W[i][SolnBlk.JCl-1] = SolnBlk.W[i][SolnBlk.JCl];
-            SolnBlk.U[i][SolnBlk.JCl-1] = SolnBlk.U[i][SolnBlk.JCl];
-            SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCl];
-            SolnBlk.U[i][SolnBlk.JCl-2] = SolnBlk.U[i][SolnBlk.JCl];
-            break;
-        } /* endswitch */
+    case BC_PERIODIC :
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCl-ghost] = SolnBlk.W[i][SolnBlk.JCu-ghost+1];
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCu-ghost+1];
+      }
+      break;
+    case BC_CHARACTERISTIC :
+      SolnBlk.W[i][SolnBlk.JCl-1] = BC_Characteristic_Pressure(SolnBlk.W[i][SolnBlk.JCl],
+							       SolnBlk.WoS[i],
+							       SolnBlk.Grid.nfaceS(i, SolnBlk.JCl));
+      SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]); 
+      for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCl-ghost] = SolnBlk.W[i][SolnBlk.JCl-1];
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCl-1];
+      }
+      break;
+    case BC_RINGLEB_FLOW :
+      // Not properly implemented yet!
 
-        // Prescribe North boundary conditions.
-        switch(SolnBlk.Grid.BCtypeN[i]) {
-          case BC_NONE :
-            break;
-          case BC_FIXED :
-            SolnBlk.W[i][SolnBlk.JCu+1] = SolnBlk.WoN[i];
-            SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
-            SolnBlk.W[i][SolnBlk.JCu+2] = SolnBlk.WoN[i];
-            SolnBlk.U[i][SolnBlk.JCu+2] = U(SolnBlk.W[i][SolnBlk.JCu+2]);
-            break;
-          case BC_CONSTANT_EXTRAPOLATION :
-            SolnBlk.W[i][SolnBlk.JCu+1] = SolnBlk.W[i][SolnBlk.JCu];
-            SolnBlk.U[i][SolnBlk.JCu+1] = SolnBlk.U[i][SolnBlk.JCu];
-            SolnBlk.W[i][SolnBlk.JCu+2] = SolnBlk.W[i][SolnBlk.JCu];
-            SolnBlk.U[i][SolnBlk.JCu+2] = SolnBlk.U[i][SolnBlk.JCu];
-            break;
-          case BC_LINEAR_EXTRAPOLATION :
-            Linear_Reconstruction_LeastSquares_2(SolnBlk, 
-                                                 i, SolnBlk.JCu, 
-                                                 LIMITER_BARTH_JESPERSEN);
-            dX = SolnBlk.Grid.Cell[i][SolnBlk.JCu+1].Xc -
-                 SolnBlk.Grid.Cell[i][SolnBlk.JCu].Xc;
-            SolnBlk.W[i][SolnBlk.JCu+1] = SolnBlk.W[i][SolnBlk.JCu] + 
-               (SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dWdx[i][SolnBlk.JCu])*dX.x +
-               (SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dWdy[i][SolnBlk.JCu])*dX.y;
-            SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
-            dX = SolnBlk.Grid.Cell[i][SolnBlk.JCu+2].Xc -
-                 SolnBlk.Grid.Cell[i][SolnBlk.JCu].Xc;
-            SolnBlk.W[i][SolnBlk.JCu+2] = SolnBlk.W[i][SolnBlk.JCu] + 
-               (SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dWdx[i][SolnBlk.JCu])*dX.x +
-               (SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dWdy[i][SolnBlk.JCu])*dX.y;
-            SolnBlk.U[i][SolnBlk.JCu+2] = U(SolnBlk.W[i][SolnBlk.JCu+2]);
-            break;
-          case BC_REFLECTION :
-            SolnBlk.W[i][SolnBlk.JCu+1] = Reflect(SolnBlk.W[i][SolnBlk.JCu],
-                                          SolnBlk.Grid.nfaceN(i, SolnBlk.JCu));
-            SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
-            SolnBlk.W[i][SolnBlk.JCu+2] = Reflect(SolnBlk.W[i][SolnBlk.JCu-1],
-                                          SolnBlk.Grid.nfaceN(i, SolnBlk.JCu));
-            SolnBlk.U[i][SolnBlk.JCu+2] = U(SolnBlk.W[i][SolnBlk.JCu+2]);
-            break;
-	  case BC_BURNING_SURFACE :
-	    Linear_Reconstruction_LeastSquares_2(SolnBlk, 
-		  			         i, SolnBlk.JCu, 
-					         LIMITER_BARTH_JESPERSEN);
-	    dX = SolnBlk.Grid.Cell[i][SolnBlk.JCu+1].Xc -
-	         SolnBlk.Grid.Cell[i][SolnBlk.JCu].Xc;
-	    dW = SolnBlk.W[i][SolnBlk.JCu] + 
-	         (SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dWdx[i][SolnBlk.JCu])*dX.x +
-	         (SolnBlk.phi[i][SolnBlk.JCu]^SolnBlk.dWdy[i][SolnBlk.JCu])*dX.y;
-	    SolnBlk.W[i][SolnBlk.JCu+1] = BurningSurface(dW,
-						         SolnBlk.Grid.nfaceN(i, SolnBlk.JCu));
-	    SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
-	    SolnBlk.W[i][SolnBlk.JCu+2] = SolnBlk.W[i][SolnBlk.JCu+1];
-	    SolnBlk.U[i][SolnBlk.JCu+2] = SolnBlk.U[i][SolnBlk.JCu+1];
-            break;
+      // 	    RinglebFlowFunctionType RinglebFlowFunction = RinglebFlow;
+      // 	    for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+      // 	      //  SolnBlk.W[i][SolnBlk.JCl-ghost] = RinglebFlow(SolnBlk.Grid.Cell[i][SolnBlk.JCl-ghost].Xc);
+      
+      // 	      SolnBlk.W[i][SolnBlk.JCl-ghost] = (SolnBlk.IntegrateOverTheCell(i,SolnBlk.JCl-ghost,
+      // 									     RinglebFlowFunction,8,
+      // 									     SolnBlk.W[i][SolnBlk.JCl-ghost])/
+      // 						 SolnBlk.Grid.area(i,SolnBlk.JCl-ghost));
+      // 	      SolnBlk.U[i][SolnBlk.JCl-ghost] = U(SolnBlk.W[i][SolnBlk.JCl-ghost]);
+      // 	    }
+
+      SolnBlk.W[i][SolnBlk.JCl-1] = RinglebFlow(SolnBlk.W[i][SolnBlk.JCl-1],SolnBlk.Grid.Cell[i][SolnBlk.JCl-1].Xc);
+      SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
+      SolnBlk.W[i][SolnBlk.JCl-2] = RinglebFlow(SolnBlk.W[i][SolnBlk.JCl-2],SolnBlk.Grid.Cell[i][SolnBlk.JCl-2].Xc);
+      SolnBlk.U[i][SolnBlk.JCl-2] = U(SolnBlk.W[i][SolnBlk.JCl-2]);
+      //
+      //             SolnBlk.W[i][SolnBlk.JCl-1] = SolnBlk.W[i][SolnBlk.JCl];
+      //             SolnBlk.U[i][SolnBlk.JCl-1] = SolnBlk.U[i][SolnBlk.JCl];
+      //             SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCl];
+      //             SolnBlk.U[i][SolnBlk.JCl-2] = SolnBlk.U[i][SolnBlk.JCl];
+      //
+      //             Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+      //                                                  i, SolnBlk.JCl, 
+      //                                                  LIMITER_BARTH_JESPERSEN);
+      //             dX = SolnBlk.Grid.Cell[i][SolnBlk.JCl-1].Xc -
+      //                  SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc;
+      //             SolnBlk.W[i][SolnBlk.JCl-1] = SolnBlk.W[i][SolnBlk.JCl] + 
+      //                (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdx[i][SolnBlk.JCl])*dX.x +
+      //                (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdy[i][SolnBlk.JCl])*dX.y;
+      //             SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
+      //             dX = SolnBlk.Grid.Cell[i][SolnBlk.JCl-2].Xc -
+      //                  SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc;
+      //             SolnBlk.W[i][SolnBlk.JCl-2] = SolnBlk.W[i][SolnBlk.JCl] + 
+      //                (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdx[i][SolnBlk.JCl])*dX.x +
+      //                (SolnBlk.phi[i][SolnBlk.JCl]^SolnBlk.dWdy[i][SolnBlk.JCl])*dX.y;
+      //             SolnBlk.U[i][SolnBlk.JCl-2] = U(SolnBlk.W[i][SolnBlk.JCl-2]);
+      break;
+    case BC_EXACT_SOLUTION:
+      break;
+    case BC_FROZEN :
+      // Equivalent to BC_NONE in the sense that it leaves 
+      // the ghost cell values unchanged and 
+      // uses the ghost cell reconstruction to 
+      // compute the inter-cellular state.
+      break;
+    case BC_CHARACTERISTIC_VELOCITY:
+      SolnBlk.W[i][SolnBlk.JCl-1] = BC_Characteristic(SolnBlk.W[i][SolnBlk.JCl],
+						      SolnBlk.WoS[i],
+						      SolnBlk.Grid.nfaceS(i, SolnBlk.JCl));
+      SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]); 
+      for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCl-ghost] = SolnBlk.W[i][SolnBlk.JCl-1];
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCl-1];
+      }
+      break;
+    case BC_WALL_INVISCID:
+      // Implement inviscid wall boundary condition 
+      // (i.e. no mass flow through the wall)
+      
+      Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+					   i, SolnBlk.JCl, 
+					   LIMITER_BARTH_JESPERSEN);
+      
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	// Implement reflection of velocities
+	SolnBlk.W[i][SolnBlk.JCl-ghost] = Reflect(SolnBlk.W[i][SolnBlk.JCl + ghost-1],
+						  SolnBlk.Grid.nfaceS(i, SolnBlk.JCl));
+	// Implement pressure and density based on linear extrapolation
+	W = SolnBlk.PiecewiseLinearSolutionAtLocation(i,SolnBlk.JCl,
+						      SolnBlk.Grid.Cell[i][SolnBlk.JCl-ghost].Xc);
+	SolnBlk.W[i][SolnBlk.JCl-ghost].p = W.p;
+	SolnBlk.W[i][SolnBlk.JCl-ghost].d = W.d;
+	// Calculate the conserved variables
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = U(SolnBlk.W[i][SolnBlk.JCl-ghost]);
+      }
+      break;	  
+
+    default:
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCl-ghost] = SolnBlk.W[i][SolnBlk.JCl];
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCl];
+      }
+      break;
+    } /* endswitch */
+
+    // Prescribe North boundary conditions.
+    switch(SolnBlk.Grid.BCtypeN[i]) {
+    case BC_NONE :
+      break;
+    case BC_FIXED :
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCu+ghost] = SolnBlk.WoN[i];
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = U(SolnBlk.W[i][SolnBlk.JCu+ghost]);
+      }
+      break;
+    case BC_CONSTANT_EXTRAPOLATION :
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCu+ghost] = SolnBlk.W[i][SolnBlk.JCu];
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCu];
+      }
+      break;
+    case BC_LINEAR_EXTRAPOLATION :
+      Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+					   i, SolnBlk.JCu, 
+					   LIMITER_BARTH_JESPERSEN);
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCu+ghost] = SolnBlk.PiecewiseLinearSolutionAtLocation(i,SolnBlk.JCu,
+										    SolnBlk.Grid.Cell[i][SolnBlk.JCu+ghost].Xc);
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = U(SolnBlk.W[i][SolnBlk.JCu+ghost]);
+      }
+      break;
+    case BC_REFLECTION :
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCu+ghost] = Reflect(SolnBlk.W[i][SolnBlk.JCu-ghost+1],
+						  SolnBlk.Grid.nfaceN(i, SolnBlk.JCu));
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = U(SolnBlk.W[i][SolnBlk.JCu+ghost]);
+      }
+      break;
+    case BC_BURNING_SURFACE :
+      Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+					   i, SolnBlk.JCu, 
+					   LIMITER_BARTH_JESPERSEN);
+      dW = SolnBlk.PiecewiseLinearSolutionAtLocation(i, SolnBlk.JCu,
+						     SolnBlk.Grid.Cell[i][SolnBlk.JCu+1].Xc);
+      SolnBlk.W[i][SolnBlk.JCu+1] = BurningSurface(dW, SolnBlk.Grid.nfaceN(i, SolnBlk.JCu));
+      SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
+      for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCu+ghost] = SolnBlk.W[i][SolnBlk.JCu+1];
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCu+1];
+      }
+      break;
     case BC_MASS_INJECTION :
+      // Invalid for arbitrary number of ghost cells
       SolnBlk.W[i][SolnBlk.JCu+1] = MassInjection(SolnBlk.W[i][SolnBlk.JCu],SolnBlk.Grid.nfaceN(i,SolnBlk.JCu),ON);
       SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
       SolnBlk.W[i][SolnBlk.JCu+2] = SolnBlk.W[i][SolnBlk.JCu+1];
       SolnBlk.U[i][SolnBlk.JCu+2] = SolnBlk.U[i][SolnBlk.JCu+1];
       break;
-          case BC_PERIODIC :
-            SolnBlk.W[i][SolnBlk.JCu+1] = SolnBlk.W[i][SolnBlk.JCl+1];
-            SolnBlk.U[i][SolnBlk.JCu+1] = SolnBlk.U[i][SolnBlk.JCl+1];
-            SolnBlk.W[i][SolnBlk.JCu+2] = SolnBlk.W[i][SolnBlk.JCl+2];
-            SolnBlk.U[i][SolnBlk.JCu+2] = SolnBlk.U[i][SolnBlk.JCl+2];
-            break;
-          case BC_CHARACTERISTIC :
-            SolnBlk.W[i][SolnBlk.JCu+1] = 
-               BC_Characteristic_Pressure(SolnBlk.W[i][SolnBlk.JCu],
-                                          SolnBlk.WoN[i],
-                                          SolnBlk.Grid.nfaceN(i, SolnBlk.JCu));
-            SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
-            SolnBlk.W[i][SolnBlk.JCu+2] = SolnBlk.W[i][SolnBlk.JCu+1];
-            SolnBlk.U[i][SolnBlk.JCu+2] = U(SolnBlk.W[i][SolnBlk.JCu+2]);
-            break;
-          case BC_RINGLEB_FLOW :
-            SolnBlk.W[i][SolnBlk.JCu+1] = RinglebFlow(SolnBlk.W[i][SolnBlk.JCu+1],SolnBlk.Grid.Cell[i][SolnBlk.JCu+1].Xc);
-            SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
-            SolnBlk.W[i][SolnBlk.JCu+2] = RinglebFlow(SolnBlk.W[i][SolnBlk.JCu+2],SolnBlk.Grid.Cell[i][SolnBlk.JCu+2].Xc);
-            SolnBlk.U[i][SolnBlk.JCu+2] = U(SolnBlk.W[i][SolnBlk.JCu+2]);
-            break;
-          default:
-            SolnBlk.W[i][SolnBlk.JCu+1] = SolnBlk.W[i][SolnBlk.JCu];
-            SolnBlk.U[i][SolnBlk.JCu+1] = SolnBlk.U[i][SolnBlk.JCu];
-            SolnBlk.W[i][SolnBlk.JCu+2] = SolnBlk.W[i][SolnBlk.JCu];
-            SolnBlk.U[i][SolnBlk.JCu+2] = SolnBlk.U[i][SolnBlk.JCu];
-            break;
-        } /* endswitch */
-    } /* endfor */
+    case BC_PERIODIC :
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCu+ghost] = SolnBlk.W[i][SolnBlk.JCl+ghost-1];
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCl+ghost-1];
+      }
+      break;
+    case BC_CHARACTERISTIC :
+      SolnBlk.W[i][SolnBlk.JCu+1] = BC_Characteristic_Pressure(SolnBlk.W[i][SolnBlk.JCu],
+							       SolnBlk.WoN[i],
+							       SolnBlk.Grid.nfaceN(i, SolnBlk.JCu));
+      SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
+      for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCu+ghost] = SolnBlk.W[i][SolnBlk.JCu+1];
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCu+1];
+      }
+      break;
+    case BC_RINGLEB_FLOW :
+      // Not properly implemented yet!
 
-    /* BC fix for corner points with burning surfaces on either side. */
+      // 	    RinglebFlowFunctionType RinglebFlowFunction = RinglebFlow;
+      // 	    for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+      // 	      //	      SolnBlk.W[i][SolnBlk.JCu+ghost] = RinglebFlow(SolnBlk.Grid.Cell[i][SolnBlk.JCu+ghost].Xc);
+      // 	      SolnBlk.W[i][SolnBlk.JCu+ghost] = (SolnBlk.IntegrateOverTheCell(i,SolnBlk.JCu+ghost,
+      // 									      RinglebFlowFunction,8,
+      // 									      SolnBlk.W[i][SolnBlk.JCu+ghost])/
+      // 						 SolnBlk.Grid.area(i,SolnBlk.JCu+ghost));
+      // 	      SolnBlk.U[i][SolnBlk.JCu+ghost] = U(SolnBlk.W[i][SolnBlk.JCu+ghost]);
+      // 	    }
 
-    if (SolnBlk.Grid.BCtypeW[SolnBlk.JCl] == BC_BURNING_SURFACE &&
-        SolnBlk.Grid.BCtypeS[SolnBlk.ICl] == BC_BURNING_SURFACE) {
-       SolnBlk.W[SolnBlk.ICl-1][SolnBlk.JCl-1] = HALF*(SolnBlk.W[SolnBlk.ICl-1][SolnBlk.JCl]+
-                                                       SolnBlk.W[SolnBlk.ICl][SolnBlk.JCl-1]);
-       SolnBlk.U[SolnBlk.ICl-1][SolnBlk.JCl-1] = U(SolnBlk.W[SolnBlk.ICl-1][SolnBlk.JCl-1]);
-    } /* endif */
+      SolnBlk.W[i][SolnBlk.JCu+1] = RinglebFlow(SolnBlk.W[i][SolnBlk.JCu+1],SolnBlk.Grid.Cell[i][SolnBlk.JCu+1].Xc);
+      SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
+      SolnBlk.W[i][SolnBlk.JCu+2] = RinglebFlow(SolnBlk.W[i][SolnBlk.JCu+2],SolnBlk.Grid.Cell[i][SolnBlk.JCu+2].Xc);
+      SolnBlk.U[i][SolnBlk.JCu+2] = U(SolnBlk.W[i][SolnBlk.JCu+2]);
+      break;
+    case BC_EXACT_SOLUTION:
+      break;
+    case BC_FROZEN :
+      // Equivalent to BC_NONE in the sense that it leaves 
+      // the ghost cell values unchanged and 
+      // uses the ghost cell reconstruction to 
+      // compute the inter-cellular state.
+      break;
+    case BC_CHARACTERISTIC_VELOCITY:
+      SolnBlk.W[i][SolnBlk.JCu+1] = BC_Characteristic(SolnBlk.W[i][SolnBlk.JCu],
+						      SolnBlk.WoN[i],
+						      SolnBlk.Grid.nfaceN(i, SolnBlk.JCu));
+      SolnBlk.U[i][SolnBlk.JCu+1] = U(SolnBlk.W[i][SolnBlk.JCu+1]);
+      for(ghost = 2; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCu+ghost] = SolnBlk.W[i][SolnBlk.JCu+1];
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCu+1];
+      }
+      break;
+    case BC_WALL_INVISCID:
+      // Implement inviscid wall boundary condition 
+      // (i.e. no mass flow through the wall)
+      
+      Linear_Reconstruction_LeastSquares_2(SolnBlk, 
+					   i, SolnBlk.JCu, 
+					   LIMITER_BARTH_JESPERSEN);
+      
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	// Implement reflection of velocities
+	SolnBlk.W[i][SolnBlk.JCu+ghost] = Reflect(SolnBlk.W[i][SolnBlk.JCu-ghost+1],
+						  SolnBlk.Grid.nfaceN(i, SolnBlk.JCu));
+	// Implement pressure and density based on linear extrapolation
+	W = SolnBlk.PiecewiseLinearSolutionAtLocation(i,SolnBlk.JCu,
+						      SolnBlk.Grid.Cell[i][SolnBlk.JCu+ghost].Xc);
+	SolnBlk.W[i][SolnBlk.JCu+ghost].p = W.p;
+	SolnBlk.W[i][SolnBlk.JCu+ghost].d = W.d;
+	// Calculate the conserved variables
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = U(SolnBlk.W[i][SolnBlk.JCu+ghost]);
+      }
+      break;	  
 
-    if (SolnBlk.Grid.BCtypeW[SolnBlk.JCu] == BC_BURNING_SURFACE &&
-        SolnBlk.Grid.BCtypeN[SolnBlk.ICl] == BC_BURNING_SURFACE) {
-       SolnBlk.W[SolnBlk.ICl-1][SolnBlk.JCu+1] = HALF*(SolnBlk.W[SolnBlk.ICl-1][SolnBlk.JCu]+
-                                                       SolnBlk.W[SolnBlk.ICl][SolnBlk.JCu+1]);
-       SolnBlk.U[SolnBlk.ICl-1][SolnBlk.JCu+1] = U(SolnBlk.W[SolnBlk.ICl-1][SolnBlk.JCu+1]);
-    } /* endif */
+    default:
+      for(ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.W[i][SolnBlk.JCu+ghost] = SolnBlk.W[i][SolnBlk.JCu];
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCu];
+      }
+      break;
+    } /* endswitch */
+  } /* endfor */
 
-    if (SolnBlk.Grid.BCtypeE[SolnBlk.JCl] == BC_BURNING_SURFACE &&
-        SolnBlk.Grid.BCtypeS[SolnBlk.ICu] == BC_BURNING_SURFACE) {
-       SolnBlk.W[SolnBlk.ICu+1][SolnBlk.JCl-1] = HALF*(SolnBlk.W[SolnBlk.ICu+1][SolnBlk.JCl]+
-                                                       SolnBlk.W[SolnBlk.ICu][SolnBlk.JCl-1]);
-       SolnBlk.U[SolnBlk.ICu+1][SolnBlk.JCl-1] = U(SolnBlk.W[SolnBlk.ICu+1][SolnBlk.JCl-1]);
-    } /* endif */
+  /* BC fix for corner points with burning surfaces on either side. */
 
-    if (SolnBlk.Grid.BCtypeE[SolnBlk.JCu] == BC_BURNING_SURFACE &&
-        SolnBlk.Grid.BCtypeN[SolnBlk.ICu] == BC_BURNING_SURFACE) {
-       SolnBlk.W[SolnBlk.ICu+1][SolnBlk.JCu+1] = HALF*(SolnBlk.W[SolnBlk.ICu+1][SolnBlk.JCu]+
-                                                       SolnBlk.W[SolnBlk.ICu][SolnBlk.JCu+1]);
-       SolnBlk.U[SolnBlk.ICu+1][SolnBlk.JCu+1] = U(SolnBlk.W[SolnBlk.ICu+1][SolnBlk.JCu+1]);
-    } /* endif */
+  if (SolnBlk.Grid.BCtypeW[SolnBlk.JCl] == BC_BURNING_SURFACE &&
+      SolnBlk.Grid.BCtypeS[SolnBlk.ICl] == BC_BURNING_SURFACE) {
+    SolnBlk.W[SolnBlk.ICl-1][SolnBlk.JCl-1] = HALF*(SolnBlk.W[SolnBlk.ICl-1][SolnBlk.JCl]+
+						    SolnBlk.W[SolnBlk.ICl][SolnBlk.JCl-1]);
+    SolnBlk.U[SolnBlk.ICl-1][SolnBlk.JCl-1] = U(SolnBlk.W[SolnBlk.ICl-1][SolnBlk.JCl-1]);
+  } /* endif */
+
+  if (SolnBlk.Grid.BCtypeW[SolnBlk.JCu] == BC_BURNING_SURFACE &&
+      SolnBlk.Grid.BCtypeN[SolnBlk.ICl] == BC_BURNING_SURFACE) {
+    SolnBlk.W[SolnBlk.ICl-1][SolnBlk.JCu+1] = HALF*(SolnBlk.W[SolnBlk.ICl-1][SolnBlk.JCu]+
+						    SolnBlk.W[SolnBlk.ICl][SolnBlk.JCu+1]);
+    SolnBlk.U[SolnBlk.ICl-1][SolnBlk.JCu+1] = U(SolnBlk.W[SolnBlk.ICl-1][SolnBlk.JCu+1]);
+  } /* endif */
+
+  if (SolnBlk.Grid.BCtypeE[SolnBlk.JCl] == BC_BURNING_SURFACE &&
+      SolnBlk.Grid.BCtypeS[SolnBlk.ICu] == BC_BURNING_SURFACE) {
+    SolnBlk.W[SolnBlk.ICu+1][SolnBlk.JCl-1] = HALF*(SolnBlk.W[SolnBlk.ICu+1][SolnBlk.JCl]+
+						    SolnBlk.W[SolnBlk.ICu][SolnBlk.JCl-1]);
+    SolnBlk.U[SolnBlk.ICu+1][SolnBlk.JCl-1] = U(SolnBlk.W[SolnBlk.ICu+1][SolnBlk.JCl-1]);
+  } /* endif */
+
+  if (SolnBlk.Grid.BCtypeE[SolnBlk.JCu] == BC_BURNING_SURFACE &&
+      SolnBlk.Grid.BCtypeN[SolnBlk.ICu] == BC_BURNING_SURFACE) {
+    SolnBlk.W[SolnBlk.ICu+1][SolnBlk.JCu+1] = HALF*(SolnBlk.W[SolnBlk.ICu+1][SolnBlk.JCu]+
+						    SolnBlk.W[SolnBlk.ICu][SolnBlk.JCu+1]);
+    SolnBlk.U[SolnBlk.ICu+1][SolnBlk.JCu+1] = U(SolnBlk.W[SolnBlk.ICu+1][SolnBlk.JCu+1]);
+  } /* endif */
+
+
+  // Impose high-order boundary conditions
+  SolnBlk.BCs_HighOrder();
 
 }
 
@@ -3805,6 +4481,34 @@ void Linear_Reconstruction_LeastSquares(Euler2D_Quad_Block &SolnBlk,
 
 }
 
+/******************************************************//**
+ * Routine: Linear_Reconstruction
+ *                                                      
+ * Performs the reconstruction of a limited piecewise   
+ * linear solution state within each cell of the        
+ * computational mesh of the specified quadrilateral    
+ * solution block.
+ ********************************************************/
+void Linear_Reconstruction(Euler2D_Quad_Block &SolnBlk,
+			   const int &Reconstruction_Type,
+			   const int &Limiter) {
+
+  switch(Reconstruction_Type) {
+  case RECONSTRUCTION_GREEN_GAUSS :
+    Linear_Reconstruction_GreenGauss(SolnBlk,
+				     Limiter);    
+    break;
+  case RECONSTRUCTION_LEAST_SQUARES :
+    Linear_Reconstruction_LeastSquares(SolnBlk,
+				       Limiter);
+    break;
+  default:
+    Linear_Reconstruction_LeastSquares(SolnBlk,
+				       Limiter);
+    break;
+  } /* endswitch */
+}
+
 /********************************************************
  * Routine: Residual_Smoothing                          *
  *                                                      *
@@ -3870,6 +4574,15 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
 				   Euler2D_Input_Parameters &IP,
                                    int &number_refinement_criteria,
                                    Euler2D_Quad_Block &SolnBlk) {
+
+
+    // Calculate refinement criteria based on smoothness indicator
+    if (CENO_Execution_Mode::USE_CENO_ALGORITHM && 
+	CENO_Execution_Mode::USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA) {
+      return SolnBlk.Calculate_Refinement_Criteria_HighOrder(refinement_criteria,
+							     IP,
+							     number_refinement_criteria);
+    }
 
     int i, j;
 
@@ -4061,17 +4774,25 @@ void Fix_Refined_Block_Boundaries(Euler2D_Quad_Block &SolnBlk,
        } /* endfor */
     } /* endif */
 
-    /* Reset the boundary condition types at the block boundaries. */
+    // Update geometric information only if modifications occurred
+    if (Fix_North_Boundary || Fix_South_Boundary || 
+	Fix_East_Boundary || Fix_West_Boundary ){
 
-    Set_BCs(SolnBlk.Grid);
+      /* Require update of the interior cells geometric properties. */
+      SolnBlk.Grid.Schedule_Interior_Mesh_Update();
 
-    /* Recompute the exterior nodes for the block quadrilateral mesh. */
+      /* Reset the boundary condition types at the block boundaries. */
 
-    Update_Exterior_Nodes(SolnBlk.Grid);
+      Set_BCs(SolnBlk.Grid);
 
-    /* Recompute the cells for the block quadrilateral mesh. */
+      /* Recompute the exterior nodes for the block quadrilateral mesh. */
 
-    Update_Cells(SolnBlk.Grid);
+      Update_Exterior_Nodes(SolnBlk.Grid);
+
+      /* Recompute the cells for the block quadrilateral mesh. */
+
+      Update_Cells(SolnBlk.Grid);
+    }
 
 }
 
@@ -4087,6 +4808,7 @@ void Unfix_Refined_Block_Boundaries(Euler2D_Quad_Block &SolnBlk) {
 
     int i, j;
     double sp_l, sp_r, sp_m, ds_ratio, dl, dr;
+    bool ModifiedGrid(false);
  
     /* Return the nodes at the north boundary
        to their original positions. */
@@ -4110,6 +4832,7 @@ void Unfix_Refined_Block_Boundaries(Euler2D_Quad_Block &SolnBlk) {
              SolnBlk.Grid.area(i, SolnBlk.JCu))*SolnBlk.U[i][SolnBlk.JCu];
 	  SolnBlk.W[i][SolnBlk.JCu] = W(SolnBlk.U[i][SolnBlk.JCu]);
        } /* endfor */
+       ModifiedGrid = true;
     } /* endif */
 
     /* Return the nodes at the south boundary
@@ -4134,6 +4857,7 @@ void Unfix_Refined_Block_Boundaries(Euler2D_Quad_Block &SolnBlk) {
              SolnBlk.Grid.area(i, SolnBlk.JCl))*SolnBlk.U[i][SolnBlk.JCl];
 	  SolnBlk.W[i][SolnBlk.JCl] = W(SolnBlk.U[i][SolnBlk.JCl]);
        } /* endfor */
+       ModifiedGrid = true;
     } /* endif */
 
     /* Return the nodes at the east boundary
@@ -4158,6 +4882,7 @@ void Unfix_Refined_Block_Boundaries(Euler2D_Quad_Block &SolnBlk) {
              SolnBlk.Grid.area(SolnBlk.ICu, j))*SolnBlk.U[SolnBlk.ICu][j];
 	  SolnBlk.W[SolnBlk.ICu][j] = W(SolnBlk.U[SolnBlk.ICu][j]);
        } /* endfor */
+       ModifiedGrid = true;
     } /* endif */
 
     /* Return the nodes at the west boundary
@@ -4182,19 +4907,23 @@ void Unfix_Refined_Block_Boundaries(Euler2D_Quad_Block &SolnBlk) {
              SolnBlk.Grid.area(SolnBlk.ICl, j))*SolnBlk.U[SolnBlk.ICl][j];
 	  SolnBlk.W[SolnBlk.ICl][j] = W(SolnBlk.U[SolnBlk.ICl][j]);
        } /* endfor */
+       ModifiedGrid = true;
     } /* endif */
 
-    /* Reset the boundary condition types at the block boundaries. */
- 
-    Set_BCs(SolnBlk.Grid);
+    if (ModifiedGrid){
 
-    /* Recompute the exterior nodes for the block quadrilateral mesh. */
+      /* Require update of the interior cells geometric properties. */
+      SolnBlk.Grid.Schedule_Interior_Mesh_Update();
+      
+      /* Reset the boundary condition types at the block boundaries. */
+      Set_BCs(SolnBlk.Grid);
 
-    Update_Exterior_Nodes(SolnBlk.Grid);
+      /* Recompute the exterior nodes for the block quadrilateral mesh. */
+      Update_Exterior_Nodes(SolnBlk.Grid);
 
-    /* Recompute the cells for the block quadrilateral mesh. */
-
-    Update_Cells(SolnBlk.Grid);
+      /* Recompute the cells for the block quadrilateral mesh. */
+      Update_Cells(SolnBlk.Grid);
+    }
 
 }
 
@@ -4366,308 +5095,13 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(Euler2D_Quad_Block &Sol
 int dUdt_Residual_Evaluation(Euler2D_Quad_Block &SolnBlk,
 			     Euler2D_Input_Parameters &Input_Parameters) {
 
-    int i, j;
-    Vector2D dX;
-    Euler2D_pState Wl, Wr;
-    Euler2D_cState Flux;
-
-    /* Perform the linear reconstruction within each cell
-       of the computational grid for this stage. */
-    
-    switch(Input_Parameters.i_Reconstruction) {
-    case RECONSTRUCTION_GREEN_GAUSS :
-      Linear_Reconstruction_GreenGauss(SolnBlk,
-                                       Input_Parameters.i_Limiter);    
-      break;
-    case RECONSTRUCTION_LEAST_SQUARES :
-      Linear_Reconstruction_LeastSquares(SolnBlk,
-					 Input_Parameters.i_Limiter);
-      break;
-    default:
-      Linear_Reconstruction_LeastSquares(SolnBlk,
-                                         Input_Parameters.i_Limiter);
-      break;
-    } /* endswitch */
-
-    /* Evaluate the time rate of change of the solution
-       (i.e., the solution residuals) using a second-order
-       limited upwind scheme with a variety of flux functions. */
-    
-    // Add i-direction (zeta-direction) fluxes.
-    for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu+1 ; ++j ) {
-      SolnBlk.dUdt[SolnBlk.ICl-1][j][0] = Euler2D_U_VACUUM;
-          
-      for ( i = SolnBlk.ICl-1 ; i <= SolnBlk.ICu ; ++i ) {
-
-	SolnBlk.dUdt[i+1][j][0] = Euler2D_U_VACUUM;
-    
-	if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
-    
-	  /* Evaluate the cell interface i-direction fluxes. */
-	  
-	  if (i == SolnBlk.ICl-1 && 
-	      (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-	       SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-	       SolnBlk.Grid.BCtypeW[j] == BC_BURNING_SURFACE ||
-	       SolnBlk.Grid.BCtypeW[j] == BC_MASS_INJECTION ||
-	       SolnBlk.Grid.BCtypeW[j] == BC_RINGLEB_FLOW)) {
-	    dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
-	    Wr = SolnBlk.W[i+1][j] + 
-	      (SolnBlk.phi[i+1][j]^SolnBlk.dWdx[i+1][j])*dX.x +
-	      (SolnBlk.phi[i+1][j]^SolnBlk.dWdy[i+1][j])*dX.y;
-	    if (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION) {
-	      Wl = Reflect(Wr, SolnBlk.Grid.nfaceW(i+1, j));
-	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_BURNING_SURFACE) {
-	      Wl = BurningSurface(Wr, SolnBlk.Grid.nfaceW(i+1, j));
-	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_MASS_INJECTION) {
-	      Wl = MassInjection(Wr,SolnBlk.Grid.nfaceW(i+1,j),OFF);
-	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC) {
-	      Wl = BC_Characteristic_Pressure(Wr, 
-					      SolnBlk.WoW[j], 
-					      SolnBlk.Grid.nfaceW(i+1, j));
-	    } else if (SolnBlk.Grid.BCtypeW[j] == BC_RINGLEB_FLOW) {
-	      Wl = RinglebFlow(Wl,SolnBlk.Grid.xfaceW(i+1,j));
-	      //Wl = Reflect(Wr, SolnBlk.Grid.nfaceW(i+1, j));
-	    } /* endif */
-	  } else if (i == SolnBlk.ICu && 
-		     (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-		      SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-		      SolnBlk.Grid.BCtypeE[j] == BC_BURNING_SURFACE ||
-		      SolnBlk.Grid.BCtypeE[j] == BC_MASS_INJECTION ||
-                      SolnBlk.Grid.BCtypeE[j] == BC_RINGLEB_FLOW)) {
-	    dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	    Wl = SolnBlk.W[i][j] + 
-	      (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
-	      (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
-	    if (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION) {
-	      Wr = Reflect(Wl, SolnBlk.Grid.nfaceE(i, j));
-	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_BURNING_SURFACE) {
-	      Wr = BurningSurface(Wl, SolnBlk.Grid.nfaceE(i, j));
-	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_MASS_INJECTION) {
-	      Wr = MassInjection(Wl,SolnBlk.Grid.nfaceE(i,j),OFF);
-	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC) {
-	      Wr = BC_Characteristic_Pressure(Wl, 
-					      SolnBlk.WoE[j], 
-					      SolnBlk.Grid.nfaceE(i, j));
-	    } else if (SolnBlk.Grid.BCtypeE[j] == BC_RINGLEB_FLOW) {
-	      Wr = RinglebFlow(Wr,SolnBlk.Grid.xfaceE(i,j));
-	      //Wr = Reflect(Wl, SolnBlk.Grid.nfaceE(i, j));
-	    } /* endif */
-	  } else {            
-	    dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	    Wl = SolnBlk.W[i][j] + 
-	      (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
-	      (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
-	    dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
-	    Wr = SolnBlk.W[i+1][j] + 
-	      (SolnBlk.phi[i+1][j]^SolnBlk.dWdx[i+1][j])*dX.x +
-	      (SolnBlk.phi[i+1][j]^SolnBlk.dWdy[i+1][j])*dX.y;
-	  } /* endif */
-
-	  switch(Input_Parameters.i_Flux_Function) {
-	  case FLUX_FUNCTION_GODUNOV :
-	    Flux = FluxGodunov_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-	    break;
-	  case FLUX_FUNCTION_ROE :
-            Flux = FluxRoe_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-	    break;
-	  case FLUX_FUNCTION_RUSANOV :
-	    Flux = FluxRusanov_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-	    break;
-	  case FLUX_FUNCTION_HLLE :
-            Flux = FluxHLLE_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-	    break;
-	  case FLUX_FUNCTION_LINDE :
-	    Flux = FluxLinde_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-	    break;
-	  case FLUX_FUNCTION_HLLC :
-	    Flux = FluxHLLC_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-	    break;
-	  case FLUX_FUNCTION_VANLEER :
-	    Flux = FluxVanLeer_n(Wl, Wr, SolnBlk.Grid.nfaceE(i,j));
-	    break;
-	  case FLUX_FUNCTION_AUSM :
-	    Flux = FluxAUSM_n(Wl, Wr, SolnBlk.Grid.nfaceE(i,j));
-	    break;
-	  case FLUX_FUNCTION_AUSMplus :
-	    Flux = FluxAUSMplus_n(Wl, Wr, SolnBlk.Grid.nfaceE(i,j));
-	    break;
-	  case FLUX_FUNCTION_ROE_PRECON_WS :
-            Flux = FluxRoe_n_Precon_WS(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-	    break;
-	  case FLUX_FUNCTION_HLLE_PRECON_WS :
-            Flux = FluxHLLE_n_Precon_WS(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-	    break;
-	  default:
-	    Flux = FluxRoe_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-	    break;
-	  } /* endswitch */
-
-	  /* Evaluate cell-averaged solution changes. */
-	  
-	  SolnBlk.dUdt[i][j][0] -= 
-	    Flux*SolnBlk.Grid.lfaceE(i, j)/
-	    SolnBlk.Grid.Cell[i][j].A;
-	  SolnBlk.dUdt[i+1][j][0] += 
-	    Flux*SolnBlk.Grid.lfaceW(i+1, j)/
-	    SolnBlk.Grid.Cell[i+1][j].A;
-
-	  /* Include axisymmetric source terms as required. */
-
-	  if (SolnBlk.Axisymmetric) {
-	    SolnBlk.dUdt[i][j][0] += 
-	      S(SolnBlk.W[i][j], SolnBlk.Grid.Cell[i][j].Xc);
-	  } /* endif */
-
-	  /* Save west and east face boundary flux. */
-	  
-	  if (i == SolnBlk.ICl-1) {
-	    SolnBlk.FluxW[j] = -Flux*SolnBlk.Grid.lfaceW(i+1, j);
-	  } else if (i == SolnBlk.ICu) {
-	    SolnBlk.FluxE[j] = Flux*SolnBlk.Grid.lfaceE(i, j);
-	  } /* endif */ 
-
-	} /* endif */
-      } /* endfor */
-      
-      if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
-	SolnBlk.dUdt[SolnBlk.ICl-1][j][0] = Euler2D_U_VACUUM;
-	SolnBlk.dUdt[SolnBlk.ICu+1][j][0] = Euler2D_U_VACUUM;
-      } /* endif */
-    } /* endfor */
-    
-    // Add j-direction (eta-direction) fluxes.
-    for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu ; ++j ) {
-	
-	/* Evaluate the cell interface j-direction fluxes. */
-	
-	if (j == SolnBlk.JCl-1 && 
-	    (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-	     SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-	     SolnBlk.Grid.BCtypeS[i] == BC_BURNING_SURFACE ||
-	     SolnBlk.Grid.BCtypeS[i] == BC_MASS_INJECTION ||
-             SolnBlk.Grid.BCtypeS[i] == BC_RINGLEB_FLOW)) {
-	  dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
-	  Wr = SolnBlk.W[i][j+1] +
-	    (SolnBlk.phi[i][j+1]^SolnBlk.dWdx[i][j+1])*dX.x +
-	    (SolnBlk.phi[i][j+1]^SolnBlk.dWdy[i][j+1])*dX.y;
-	  if (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION) {
-	    Wl = Reflect(Wr, SolnBlk.Grid.nfaceS(i, j+1));
-	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_BURNING_SURFACE) {
-	    Wl = BurningSurface(Wr, SolnBlk.Grid.nfaceS(i, j+1));
-	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_MASS_INJECTION) {
-	    Wl = MassInjection(Wr,SolnBlk.Grid.nfaceS(i,j+1),OFF);
-	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC) {
-	    Wl = BC_Characteristic_Pressure(Wr, 
-					    SolnBlk.WoS[i], 
-					    SolnBlk.Grid.nfaceS(i, j+1));
-          } else if (SolnBlk.Grid.BCtypeS[i] == BC_RINGLEB_FLOW) {
-	    //Wl = RinglebFlow(Wl,SolnBlk.Grid.xfaceS(i,j+1));
-            Wl = BC_Characteristic_Pressure(Wr,
-                                            RinglebFlow(Wr,SolnBlk.Grid.xfaceS(i,j+1)), 
-                                            SolnBlk.Grid.nfaceS(i, j+1));
-	  } /* endif */
-	} else if (j == SolnBlk.JCu && 
-		   (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-		    SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-		    SolnBlk.Grid.BCtypeN[i] == BC_BURNING_SURFACE ||
-		    SolnBlk.Grid.BCtypeN[i] == BC_RINGLEB_FLOW)) {
-	  dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	  Wl = SolnBlk.W[i][j] + 
-	    (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
-	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
-	  if (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION) {
-	    Wr = Reflect(Wl, SolnBlk.Grid.nfaceN(i, j));
-	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_BURNING_SURFACE) {
-	    Wr = BurningSurface(Wl, SolnBlk.Grid.nfaceN(i, j));
-	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_MASS_INJECTION) {
-	    Wr = MassInjection(Wr,SolnBlk.Grid.nfaceN(i,j),OFF);
-	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC) {
-	    Wr = BC_Characteristic_Pressure(Wl, 
-					    SolnBlk.WoN[i], 
-					    SolnBlk.Grid.nfaceN(i, j));
-	  } else if (SolnBlk.Grid.BCtypeN[i] == BC_RINGLEB_FLOW) {
-	    //Wr = RinglebFlow(Wr,SolnBlk.Grid.xfaceN(i,j));
-	    Wr = BC_Characteristic_Pressure(Wl, 
-					    RinglebFlow(Wr,SolnBlk.Grid.xfaceN(i,j)), 
-					    SolnBlk.Grid.nfaceN(i, j));
-	  } /* endif */
-	} else {
-	  dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	  Wl = SolnBlk.W[i][j] + 
-	    (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
-	    (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
-	  dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
-	  Wr = SolnBlk.W[i][j+1] +
-	    (SolnBlk.phi[i][j+1]^SolnBlk.dWdx[i][j+1])*dX.x +
-	    (SolnBlk.phi[i][j+1]^SolnBlk.dWdy[i][j+1])*dX.y;
-	} /* endif */
-	
-	switch(Input_Parameters.i_Flux_Function) {
-	case FLUX_FUNCTION_GODUNOV :
-	  Flux = FluxGodunov_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	  break;
-	case FLUX_FUNCTION_ROE :
-          Flux = FluxRoe_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	  break;
-	case FLUX_FUNCTION_RUSANOV :
-	  Flux = FluxRusanov_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	  break;
-	case FLUX_FUNCTION_HLLE :
-          Flux = FluxHLLE_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	  break;
-	case FLUX_FUNCTION_LINDE :
-	  Flux = FluxLinde_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	  break;
-	case FLUX_FUNCTION_HLLC :
-	  Flux = FluxHLLC_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	  break;
-	case FLUX_FUNCTION_VANLEER :
-	  Flux = FluxVanLeer_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	  break;
-	case FLUX_FUNCTION_AUSM :
-	  Flux = FluxAUSM_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	  break;
-	case FLUX_FUNCTION_AUSMplus :
-	  Flux = FluxAUSMplus_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	  break;
-	case FLUX_FUNCTION_ROE_PRECON_WS :
-          Flux = FluxRoe_n_Precon_WS(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	  break;
-	case FLUX_FUNCTION_HLLE_PRECON_WS :
-          Flux = FluxHLLE_n_Precon_WS(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	  break;
-	default:
-	  Flux = FluxRoe_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	  break;
-	} /* endswitch */
-	
-          /* Evaluate cell-averaged solution changes. */
-	
-	SolnBlk.dUdt[i][j][0] -= 
-	  Flux*SolnBlk.Grid.lfaceN(i, j)/
-	  SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.dUdt[i][j+1][0] += 
-	  Flux*SolnBlk.Grid.lfaceS(i, j+1)/
-	  SolnBlk.Grid.Cell[i][j+1].A;
-
-	/* Save south and north face boundary flux. */
-	
-	if (j == SolnBlk.JCl-1) {
-	  SolnBlk.FluxS[i] = -Flux*SolnBlk.Grid.lfaceS(i, j+1);
-	} else if (j == SolnBlk.JCu) {
-	  SolnBlk.FluxN[i] = Flux*SolnBlk.Grid.lfaceN(i, j);
-	} /* endif */
-	
-      } /* endfor */
-      
-      SolnBlk.dUdt[i][SolnBlk.JCl-1][0] = Euler2D_U_VACUUM;
-      SolnBlk.dUdt[i][SolnBlk.JCu+1][0] = Euler2D_U_VACUUM;
-    } /* endfor */
-    
-    /* Residual successfully evaluated. */
-    return 0;
+  if (Input_Parameters.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+    // calculate the high-order residual
+    return SolnBlk.dUdt_Residual_Evaluation_HighOrder(Input_Parameters);
+  } else {
+    // calculate the 2nd-order residual
+    return SolnBlk.dUdt_Residual_Evaluation(Input_Parameters);
+  }
 
 }
 
@@ -4683,386 +5117,13 @@ int dUdt_Multistage_Explicit(Euler2D_Quad_Block &SolnBlk,
                              const int i_stage,
                              Euler2D_Input_Parameters &Input_Parameters) {
 
-    int i, j, k_residual;
-    double omega;
-    Vector2D dX;
-    Euler2D_pState Wl, Wr;
-    Euler2D_cState Flux;
-
-    /* Evaluate the solution residual for stage 
-       i_stage of an N stage scheme. */
-
-    /* Evaluate the time step fraction and residual storage location for the stage. */
-    
-    switch(Input_Parameters.i_Time_Integration) {
-      case TIME_STEPPING_EXPLICIT_EULER :
-        omega = Runge_Kutta(i_stage, Input_Parameters.N_Stage);
-        k_residual = 0;
-        break;
-      case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-        omega = Runge_Kutta(i_stage, Input_Parameters.N_Stage);
-        k_residual = 0;
-        break;
-      case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-        omega = Runge_Kutta(i_stage, Input_Parameters.N_Stage);
-        k_residual = 0;
-	if (Input_Parameters.N_Stage == 4) {
-	   if (i_stage == 4) {
-	      k_residual = 0;
-           } else {
-	      k_residual = i_stage - 1;
-           } /* endif */
-        } /* endif */
-        break;
-      case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-        omega = MultiStage_Optimally_Smoothing(i_stage, 
-                                               Input_Parameters.N_Stage,
-                                               Input_Parameters.i_Limiter);
-        k_residual = 0;
-        break;
-      default:
-        omega = Runge_Kutta(i_stage, Input_Parameters.N_Stage);
-        k_residual = 0;
-        break;
-    } /* endswitch */
-    
-    /* Perform the linear reconstruction within each cell
-       of the computational grid for this stage. */
-    
-    switch(Input_Parameters.i_Reconstruction) {
-    case RECONSTRUCTION_GREEN_GAUSS :
-      Linear_Reconstruction_GreenGauss(SolnBlk,
-                                       Input_Parameters.i_Limiter);    
-      break;
-    case RECONSTRUCTION_LEAST_SQUARES :
-      Linear_Reconstruction_LeastSquares(SolnBlk,
-					 Input_Parameters.i_Limiter);
-      break;
-    default:
-      Linear_Reconstruction_LeastSquares(SolnBlk,
-                                         Input_Parameters.i_Limiter);
-      break;
-    } /* endswitch */
-
-    /* Evaluate the time rate of change of the solution
-       (i.e., the solution residuals) using a second-order
-       limited upwind scheme with a variety of flux functions. */
-    
-    // Add i-direction (zeta-direction) fluxes.
-    for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu+1 ; ++j ) {
-       if ( i_stage == 1 ) {
-          SolnBlk.Uo[SolnBlk.ICl-1][j] = SolnBlk.U[SolnBlk.ICl-1][j];
-          SolnBlk.dUdt[SolnBlk.ICl-1][j][k_residual] = Euler2D_U_VACUUM;
-       } else {
-          SolnBlk.dUdt[SolnBlk.ICl-1][j][k_residual] = Euler2D_U_VACUUM;
-       } /* endif */
-    
-       for ( i = SolnBlk.ICl-1 ; i <= SolnBlk.ICu ; ++i ) {
-          if ( i_stage == 1 ) {
-              SolnBlk.Uo[i+1][j] = SolnBlk.U[i+1][j];
-              SolnBlk.dUdt[i+1][j][k_residual] = Euler2D_U_VACUUM;
-          } else if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
-              switch(Input_Parameters.i_Time_Integration) {
-                case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-                  //SolnBlk.dUdt[i+1][j][k_residual] = 
-                  //   SolnBlk.dUdt[i+1][j][k_residual];
-                  break;
-                case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-                  if (Input_Parameters.N_Stage == 2) {
-		     //SolnBlk.dUdt[i+1][j][k_residual] = 
-		     //   SolnBlk.dUdt[i+1][j][k_residual];
-                  } else if (Input_Parameters.N_Stage == 4 && i_stage == 4) {
-                     SolnBlk.dUdt[i+1][j][k_residual] = 
-                        SolnBlk.dUdt[i+1][j][0] + 
-                        TWO*SolnBlk.dUdt[i+1][j][1] +
-                        TWO*SolnBlk.dUdt[i+1][j][2];
-                  } else {
-                     SolnBlk.dUdt[i+1][j][k_residual] = Euler2D_U_VACUUM;
-                  } /* endif */
-                  break;
-                case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-                  SolnBlk.dUdt[i+1][j][k_residual] = Euler2D_U_VACUUM;
-                  break;
-                default:
-                  SolnBlk.dUdt[i+1][j][k_residual] = Euler2D_U_VACUUM;
-                  break;
-              } /* endswitch */
-          } /* endif */
-    
-          if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
-    
-             /* Evaluate the cell interface i-direction fluxes. */
-    
-	     if (i == SolnBlk.ICl-1 && 
-                 (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-                  SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-                  SolnBlk.Grid.BCtypeW[j] == BC_BURNING_SURFACE ||
-		  SolnBlk.Grid.BCtypeW[j] == BC_MASS_INJECTION ||
-	          SolnBlk.Grid.BCtypeW[j] == BC_RINGLEB_FLOW)) {
-	       dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
-	       Wr = SolnBlk.W[i+1][j] + 
-		 (SolnBlk.phi[i+1][j]^SolnBlk.dWdx[i+1][j])*dX.x +
-		 (SolnBlk.phi[i+1][j]^SolnBlk.dWdy[i+1][j])*dX.y;
-	       if (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION) {
-                 Wl = Reflect(Wr, SolnBlk.Grid.nfaceW(i+1, j));
-	       } else if (SolnBlk.Grid.BCtypeW[j] == BC_BURNING_SURFACE) {
-		 Wl = BurningSurface(Wr, SolnBlk.Grid.nfaceW(i+1, j));
-	       } else if (SolnBlk.Grid.BCtypeW[j] == BC_MASS_INJECTION) {
-		 Wl = MassInjection(Wr,SolnBlk.Grid.nfaceW(i+1,j),OFF);
-	       } else if (SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC) {
-		 Wl = BC_Characteristic_Pressure(Wr, 
-						 SolnBlk.WoW[j], 
-						 SolnBlk.Grid.nfaceW(i+1, j));
-               } else if (SolnBlk.Grid.BCtypeW[j] == BC_RINGLEB_FLOW) {
-                 Wl = RinglebFlow(Wl,SolnBlk.Grid.xfaceW(i+1,j));
-                 //Wl = Reflect(Wr, SolnBlk.Grid.nfaceW(i+1, j));
-               } /* endif */
-             } else if (i == SolnBlk.ICu && 
-                        (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-                         SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-			 SolnBlk.Grid.BCtypeE[j] == BC_BURNING_SURFACE ||
-			 SolnBlk.Grid.BCtypeE[j] == BC_MASS_INJECTION ||
-                         SolnBlk.Grid.BCtypeE[j] == BC_RINGLEB_FLOW)) {
-	       dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	       Wl = SolnBlk.W[i][j] + 
-		 (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
-		 (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
-	       if (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION) {
-		 Wr = Reflect(Wl, SolnBlk.Grid.nfaceE(i, j));
-	       } else if (SolnBlk.Grid.BCtypeE[j] == BC_BURNING_SURFACE) {
-		 Wr = BurningSurface(Wl, SolnBlk.Grid.nfaceE(i, j));
-	       } else if (SolnBlk.Grid.BCtypeE[j] == BC_MASS_INJECTION) {
-		 Wr = MassInjection(Wl,SolnBlk.Grid.nfaceE(i,j),OFF);
-               } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC) {
-                 Wr = BC_Characteristic_Pressure(Wl, 
-                                                 SolnBlk.WoE[j], 
-                                                 SolnBlk.Grid.nfaceE(i, j));
-               } else if (SolnBlk.Grid.BCtypeE[j] == BC_RINGLEB_FLOW) {
-	         Wr = RinglebFlow(Wr,SolnBlk.Grid.xfaceE(i,j));
-		 //Wr = Reflect(Wl, SolnBlk.Grid.nfaceE(i, j));
-               } /* endif */
-             } else {            
-  	        dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-                Wl = SolnBlk.W[i][j] + 
-                     (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
-	             (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
-	        dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
-                Wr = SolnBlk.W[i+1][j] + 
-  	             (SolnBlk.phi[i+1][j]^SolnBlk.dWdx[i+1][j])*dX.x +
-	             (SolnBlk.phi[i+1][j]^SolnBlk.dWdy[i+1][j])*dX.y;
-  	     } /* endif */
-
-             switch(Input_Parameters.i_Flux_Function) {
-               case FLUX_FUNCTION_GODUNOV :
-                 Flux = FluxGodunov_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-                 break;
-               case FLUX_FUNCTION_ROE :
-                 Flux = FluxRoe_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-                 break;
-               case FLUX_FUNCTION_RUSANOV :
-                 Flux = FluxRusanov_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-                 break;
-               case FLUX_FUNCTION_HLLE :
-                 Flux = FluxHLLE_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-                 break;
-               case FLUX_FUNCTION_LINDE :
-                 Flux = FluxLinde_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-                 break;
-               case FLUX_FUNCTION_HLLC :
-                 Flux = FluxHLLC_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-                 break;
-	       case FLUX_FUNCTION_VANLEER :
-		 Flux = FluxVanLeer_n(Wl, Wr, SolnBlk.Grid.nfaceE(i,j));
-		 break;
-	       case FLUX_FUNCTION_AUSM :
-		 Flux = FluxAUSM_n(Wl, Wr, SolnBlk.Grid.nfaceE(i,j));
-		 break;
-	       case FLUX_FUNCTION_AUSMplus :
-		 Flux = FluxAUSMplus_n(Wl, Wr, SolnBlk.Grid.nfaceE(i,j));
-		 break;
-               case FLUX_FUNCTION_ROE_PRECON_WS :
-                 Flux = FluxRoe_n_Precon_WS(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-                 break;
-               case FLUX_FUNCTION_HLLE_PRECON_WS :
-                 Flux = FluxHLLE_n_Precon_WS(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-                 break;
-               default:
-                 Flux = FluxRoe_n(Wl, Wr, SolnBlk.Grid.nfaceE(i, j));
-                 break;
-             } /* endswitch */
-    
-             /* Evaluate cell-averaged solution changes. */
-    
-             SolnBlk.dUdt[i][j][k_residual] -= 
-                (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*
-                Flux*SolnBlk.Grid.lfaceE(i, j)/
-                SolnBlk.Grid.Cell[i][j].A;
-             SolnBlk.dUdt[i+1][j][k_residual] += 
-                (Input_Parameters.CFL_Number*SolnBlk.dt[i+1][j])*
-                Flux*SolnBlk.Grid.lfaceW(i+1, j)/
-                SolnBlk.Grid.Cell[i+1][j].A;
-
-             /* Include axisymmetric source terms as required. */
-
-	     if (SolnBlk.Axisymmetric) {
-               SolnBlk.dUdt[i][j][k_residual] += 
-                  (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*
-	          S(SolnBlk.W[i][j], SolnBlk.Grid.Cell[i][j].Xc);
-             } /* endif */
-
-             /* Save west and east face boundary flux. */
-
-             if (i == SolnBlk.ICl-1) {
-                SolnBlk.FluxW[j] = -Flux*SolnBlk.Grid.lfaceW(i+1, j);
-             } else if (i == SolnBlk.ICu) {
-                SolnBlk.FluxE[j] = Flux*SolnBlk.Grid.lfaceE(i, j);
-             } /* endif */ 
-
-          } /* endif */
-       } /* endfor */
-    
-       if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
-          SolnBlk.dUdt[SolnBlk.ICl-1][j][k_residual] = Euler2D_U_VACUUM;
-          SolnBlk.dUdt[SolnBlk.ICu+1][j][k_residual] = Euler2D_U_VACUUM;
-       } /* endif */
-    } /* endfor */
-    
-    // Add j-direction (eta-direction) fluxes.
-    for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-       for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu ; ++j ) {
-    
-          /* Evaluate the cell interface j-direction fluxes. */
-         
-	  if (j == SolnBlk.JCl-1 && 
-              (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-               SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-               SolnBlk.Grid.BCtypeS[i] == BC_BURNING_SURFACE ||
-	       SolnBlk.Grid.BCtypeS[i] == BC_MASS_INJECTION ||
-               SolnBlk.Grid.BCtypeS[i] == BC_RINGLEB_FLOW)) {
-	     dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
-	     Wr = SolnBlk.W[i][j+1] +
-	          (SolnBlk.phi[i][j+1]^SolnBlk.dWdx[i][j+1])*dX.x +
-	          (SolnBlk.phi[i][j+1]^SolnBlk.dWdy[i][j+1])*dX.y;
-             if (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION) {
-               Wl = Reflect(Wr, SolnBlk.Grid.nfaceS(i, j+1));
-	     } else if (SolnBlk.Grid.BCtypeS[i] == BC_BURNING_SURFACE) {
-               Wl = BurningSurface(Wr, SolnBlk.Grid.nfaceS(i, j+1));
-	     } else if (SolnBlk.Grid.BCtypeS[i] == BC_MASS_INJECTION) {
-	       Wl = MassInjection(Wr,SolnBlk.Grid.nfaceS(i,j+1),OFF);
-             } else if (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC) {
-               Wl = BC_Characteristic_Pressure(Wr, 
-                                               SolnBlk.WoS[i], 
-                                               SolnBlk.Grid.nfaceS(i, j+1));
-             } else if (SolnBlk.Grid.BCtypeS[i] == BC_RINGLEB_FLOW) {
-	       //Wl = RinglebFlow(SolnBlk.Grid.xfaceS(i,j+1));
-               Wl = BC_Characteristic_Pressure(Wr,
-                                               RinglebFlow(Wl,SolnBlk.Grid.xfaceS(i,j+1)), 
-                                               SolnBlk.Grid.nfaceS(i, j+1));
-             } /* endif */
-          } else if (j == SolnBlk.JCu && 
-                     (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-                      SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-                      SolnBlk.Grid.BCtypeN[i] == BC_BURNING_SURFACE ||
-		      SolnBlk.Grid.BCtypeN[i] == BC_MASS_INJECTION ||
-		      SolnBlk.Grid.BCtypeN[i] == BC_RINGLEB_FLOW)) {
-	    dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	    Wl = SolnBlk.W[i][j] + 
-	      (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
-	      (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
-	    if (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION) {
-	      Wr = Reflect(Wl, SolnBlk.Grid.nfaceN(i, j));
-	    } else if (SolnBlk.Grid.BCtypeN[i] == BC_BURNING_SURFACE) {
-	      Wr = BurningSurface(Wl, SolnBlk.Grid.nfaceN(i, j));
-	    } else if (SolnBlk.Grid.BCtypeN[i] == BC_MASS_INJECTION) {
-	      Wr = MassInjection(Wl,SolnBlk.Grid.nfaceN(i,j),OFF);
-	    } else if (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC) {
-	      Wr = BC_Characteristic_Pressure(Wl, 
-					      SolnBlk.WoN[i], 
-					      SolnBlk.Grid.nfaceN(i, j));
-            } else if (SolnBlk.Grid.BCtypeN[i] == BC_RINGLEB_FLOW) {
-	      //Wr = RinglebFlow(SolnBlk.Grid.xfaceN(i,j));
-	      Wr = BC_Characteristic_Pressure(Wl, 
-					      RinglebFlow(Wr,SolnBlk.Grid.xfaceN(i,j)), 
-					      SolnBlk.Grid.nfaceN(i, j));
-	    } /* endif */
-          } else {
-  	     dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-             Wl = SolnBlk.W[i][j] + 
-                  (SolnBlk.phi[i][j]^SolnBlk.dWdx[i][j])*dX.x +
-	          (SolnBlk.phi[i][j]^SolnBlk.dWdy[i][j])*dX.y;
-	     dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
-             Wr = SolnBlk.W[i][j+1] +
-                  (SolnBlk.phi[i][j+1]^SolnBlk.dWdx[i][j+1])*dX.x +
-                  (SolnBlk.phi[i][j+1]^SolnBlk.dWdy[i][j+1])*dX.y;
-          } /* endif */
-
-          switch(Input_Parameters.i_Flux_Function) {
-            case FLUX_FUNCTION_GODUNOV :
-              Flux = FluxGodunov_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-              break;
-            case FLUX_FUNCTION_ROE :
-              Flux = FluxRoe_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-              break;
-            case FLUX_FUNCTION_RUSANOV :
-              Flux = FluxRusanov_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-              break;
-            case FLUX_FUNCTION_HLLE :
-              Flux = FluxHLLE_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-              break;
-            case FLUX_FUNCTION_LINDE :
-              Flux = FluxLinde_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-              break;
-            case FLUX_FUNCTION_HLLC :
-              Flux = FluxHLLC_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-              break;
-	    case FLUX_FUNCTION_VANLEER :
-	      Flux = FluxVanLeer_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	      break;
-	    case FLUX_FUNCTION_AUSM :
-	      Flux = FluxAUSM_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	      break;
-	    case FLUX_FUNCTION_AUSMplus :
-	      Flux = FluxAUSMplus_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-	      break;
-            case FLUX_FUNCTION_ROE_PRECON_WS :
-              Flux = FluxRoe_n_Precon_WS(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-              break;
-            case FLUX_FUNCTION_HLLE_PRECON_WS :
-              Flux = FluxHLLE_n_Precon_WS(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-              break;
-            default:
-              Flux = FluxRoe_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j));
-              break;
-	  } /* endswitch */
-    
-          /* Evaluate cell-averaged solution changes. */
-    
-          SolnBlk.dUdt[i][j][k_residual] -= 
-             (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*
-             Flux*SolnBlk.Grid.lfaceN(i, j)/
-             SolnBlk.Grid.Cell[i][j].A;
-          SolnBlk.dUdt[i][j+1][k_residual] += 
-             (Input_Parameters.CFL_Number*SolnBlk.dt[i][j+1])*
-             Flux*SolnBlk.Grid.lfaceS(i, j+1)/
-             SolnBlk.Grid.Cell[i][j+1].A;
-
-          /* Save south and north face boundary flux. */
-
-          if (j == SolnBlk.JCl-1) {
-             SolnBlk.FluxS[i] = -Flux*SolnBlk.Grid.lfaceS(i, j+1);
-          } else if (j == SolnBlk.JCu) {
-             SolnBlk.FluxN[i] = Flux*SolnBlk.Grid.lfaceN(i, j);
-          } /* endif */
-
-       } /* endfor */
-    
-       SolnBlk.dUdt[i][SolnBlk.JCl-1][k_residual] = Euler2D_U_VACUUM;
-       SolnBlk.dUdt[i][SolnBlk.JCu+1][k_residual] = Euler2D_U_VACUUM;
-    } /* endfor */
-    
-    /* Residual for the stage successfully calculated. */
-
-    return (0);
+  if (Input_Parameters.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+    // calculate the high-order residual
+    return SolnBlk.dUdt_Multistage_Explicit_HighOrder(i_stage,Input_Parameters);
+  } else {
+    // calculate the 2nd-order residual
+    return SolnBlk.dUdt_Multistage_Explicit(i_stage,Input_Parameters);
+  }
     
 }
 

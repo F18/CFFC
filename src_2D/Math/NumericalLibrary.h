@@ -7,20 +7,25 @@
 /* Include required C++ libraries. */
 #include <limits>
 #include <iostream>
+#include <cmath>
 
 /* Using std namespace functions */
 using std::numeric_limits;
 using std::cout;
 using std::endl;
 using std::ostream;
+using std::fabs;
+using std::pow;
+using std::sqrt;
+
 
 /* Include CFFC header files */
 #include "../Utilities/TypeDefinition.h"
 #include "../Utilities/Utilities.h"
 #include "Math.h"
+#include "../System/System_Linux.h"
+#include "NumericalLibrary_ExecutionMode.h"
 
-
-#define MaxAllowedFunctionEvaluation 8000000 /* maximum allowed function evaluations for the adaptive integration */
 
 /*******************************************************************
  *                                                                 *
@@ -363,6 +368,23 @@ public:
     return (Obj->*Ptr)(iCell,
 		       val1);
   }
+
+  // change index (iCell)
+  void NewIndexes(const int & _iCell_){
+    iCell = _iCell_;
+  }
+  // change indexes (iCell,jCell)
+  void NewIndexes(const int & _iCell_, const int & _jCell_){
+    iCell = _iCell_;
+    jCell = _jCell_;
+  }
+  // change indexes (iCell,jCell,kCell)
+  void NewIndexes(const int & _iCell_, const int & _jCell_, const int & _kCell_){
+    iCell = _iCell_;
+    jCell = _jCell_;
+    kCell = _kCell_;
+  }
+
     
 private:
   /*! Private default constructor*/
@@ -596,7 +618,7 @@ inline ReturnType qgauss5(FunctionType func, double a, double b, const ReturnTyp
 // Lucian Ivan, 31/09/2005
 template <class FunctionType, class ReturnType>
 inline ReturnType adaptlobstp(FunctionType func, double a, double b, const ReturnType & fa, const ReturnType & fb, 
-			      const ReturnType & is, int &FunctionEvaluations, int & WriteMessage)
+			      const ReturnType & is, int Level, int &FunctionEvaluations, int & WriteMessage)
   throw(TooShortInterval,MaximumIterationsExceeded){
 
   const ReturnType eps(numeric_limits<double>::epsilon());
@@ -622,26 +644,45 @@ inline ReturnType adaptlobstp(FunctionType func, double a, double b, const Retur
   i2=(h/6.0)*(fa+fb+5.0*(y2+y4));
   i1=(h/1470.0)*(77.0*(fa+fb)+432.0*(y1+y5)+625.0*(y2+y4)+672.0*y3);
 
-  if ( (is+(i1-i2)==is) || (mll<=a) || (b<=mrr) || (FunctionEvaluations>MaxAllowedFunctionEvaluation) || (fabs(i1-i2)<=eps) ){
+  if ( (is+(i1-i2)==is) || (mll<=a) || (b<=mrr) || 
+       (FunctionEvaluations > NumericalLibrary_Execution_Mode::Max_Function_Evaluations) || (fabs(i1-i2)<=eps) ){
     if ( ( (m <= a) || (b<=m) ) && (WriteMessage == 0)){
-      cerr << "\nWarning Integration Subroutine: Interval contains no more machine number.\n"
-       	   << "Required tolerance may not be met.\n";
-      WriteMessage = 1;
+      if (NumericalLibrary_Execution_Mode::Output_Error_Messages){
+	cerr << "\nWarning Integration Subroutine: Interval contains no more machine number.\n"
+	     << "Required tolerance may not be met.\n";
+	WriteMessage = 1;
+      }
+      return i1;
     }
-    if ((FunctionEvaluations>MaxAllowedFunctionEvaluation) && (WriteMessage == 0)){
-      cerr << "\nWarning Integration Subroutine: Maximum function count exceeded (" << MaxAllowedFunctionEvaluation
-	   << "); singularity likely.\n"
-	   << "Required tolerance may not be met.\n";
-      WriteMessage = 1;
+    if ((FunctionEvaluations > NumericalLibrary_Execution_Mode::Max_Function_Evaluations) && (WriteMessage == 0)){
+      if (NumericalLibrary_Execution_Mode::Output_Error_Messages){
+	cerr << "\nWarning Integration Subroutine: Maximum function count exceeded (" 
+	     << NumericalLibrary_Execution_Mode::Max_Function_Evaluations
+	     << "); singularity likely.\n"
+	     << "Required tolerance may not be met.\n";
+	WriteMessage = 1;
+      }
+      return i1;
     }
+    if (Level < NumericalLibrary_Execution_Mode::Adaptive_Integration_Minimum_Refinement_Levels){
+      // The minimum user specified levels of adaptation has not been obtained
+      // Keep refining
+      return (adaptlobstp(func,a,mll,fa,y1,is,Level+1,FunctionEvaluations,WriteMessage)+
+	      adaptlobstp(func,mll,ml,y1,y2,is,Level+1,FunctionEvaluations,WriteMessage)+
+	      adaptlobstp(func,ml,m,y2,y3,is,Level+1,FunctionEvaluations,WriteMessage)+
+	      adaptlobstp(func,m,mr,y3,y4,is,Level+1,FunctionEvaluations,WriteMessage)+
+	      adaptlobstp(func,mr,mrr,y4,y5,is,Level+1,FunctionEvaluations,WriteMessage)+
+	      adaptlobstp(func,mrr,b,y5,fb,is,Level+1,FunctionEvaluations,WriteMessage));
+    }
+    // None of the previous conditions applied. Return the result.
     return i1;
   } else {
-    return (adaptlobstp(func,a,mll,fa,y1,is,FunctionEvaluations,WriteMessage)+
-	    adaptlobstp(func,mll,ml,y1,y2,is,FunctionEvaluations,WriteMessage)+
-	    adaptlobstp(func,ml,m,y2,y3,is,FunctionEvaluations,WriteMessage)+
-	    adaptlobstp(func,m,mr,y3,y4,is,FunctionEvaluations,WriteMessage)+
-	    adaptlobstp(func,mr,mrr,y4,y5,is,FunctionEvaluations,WriteMessage)+
-	    adaptlobstp(func,mrr,b,y5,fb,is,FunctionEvaluations,WriteMessage));
+    return (adaptlobstp(func,a,mll,fa,y1,is,Level+1,FunctionEvaluations,WriteMessage)+
+	    adaptlobstp(func,mll,ml,y1,y2,is,Level+1,FunctionEvaluations,WriteMessage)+
+	    adaptlobstp(func,ml,m,y2,y3,is,Level+1,FunctionEvaluations,WriteMessage)+
+	    adaptlobstp(func,m,mr,y3,y4,is,Level+1,FunctionEvaluations,WriteMessage)+
+	    adaptlobstp(func,mr,mrr,y4,y5,is,Level+1,FunctionEvaluations,WriteMessage)+
+	    adaptlobstp(func,mrr,b,y5,fb,is,Level+1,FunctionEvaluations,WriteMessage));
   }
 }
 
@@ -754,7 +795,7 @@ inline ReturnType GaussLobattoAdaptiveQuadrature(FunctionType func, double Start
 
   FunctionEvaluations = 13;
 
-  return IntSign*adaptlobstp(func,a,b,y1,y13,is,FunctionEvaluations,WriteMessage);
+  return IntSign*adaptlobstp(func,a,b,y1,y13,is,0,FunctionEvaluations,WriteMessage);
 }
 
 /**
@@ -1463,6 +1504,15 @@ double PolynomLineIntegration2(const double & N1x, const double & N1y,
 			       const double & xCC, const double & yCC,
 			       const int &OrderX, const int &OrderY);
 
+// PolynomLineIntegration2() for Node input
+template <class Node>
+inline double PolynomLineIntegration2(const Node& StartNode, const Node& EndNode,
+				      const double & xCC, const double & yCC,
+				      const int &OrderX, const int &OrderY){
+  return PolynomLineIntegration2(StartNode.x(), StartNode.y(), EndNode.x(), EndNode.y(),
+				 xCC, yCC, OrderX, OrderY);
+}
+
 /***********************************************************************//**
  * Compute the integral \f$ I = \int (x - xc)^{(OrderX+1)} * (y - yc)^OrderY dy \f$
  * along a segment line in a local coordinate system (LCS).
@@ -1576,6 +1626,275 @@ inline void GaussQuadratureData::getGaussQuadWeights(double * GaussQuadWeights, 
   } // endswitch
 
 }
+
+
+//#include "System_routines.h"
+
+/*******************************************************************************
+ *
+ * Routine: ridder
+ * 
+ * Copyright (C) 2007-2008 S. Guzik
+ * 
+ * Purpose
+ * =======
+ *
+ *   Finds a root using Ridder's method.  This routine uses a pointer to a
+ *   function to describe the equation.
+ *
+ * I/O
+ * ===
+ *
+ *   f                  - (I) function pointer - returns function result
+ *   bracketL           - (I) initial left bracket
+ *   bracketR           - (I) initial right bracket
+ *   maxIt              - (I) maximum number of iterations
+ *   precision          - (I) precision of the root
+ *   root               - (O) the root
+ *   return             - >0 - success - iteration count
+ *                        =0 - failure - maximum iterations reached or root
+ *                                       not bracketed
+ *
+ ******************************************************************************/
+
+template<typename T>
+int ridder(T (*f)(T), const T bracketL, const T bracketR, const int maxIt,
+           const int precision, T& root)
+
+{
+
+
+  /*==============================================================================
+   * Declarations
+   *============================================================================*/
+  
+  //----- Parameter Variables -----//
+  
+  const T toler = pow(10., -precision);
+  // Tolerance for given precision
+  
+  //----- Local Variables -----//
+
+  T a;                                 // Value at left ofinterval
+  T b;                                 // Value at right of interval
+  T m;                                 // Middle approximation
+  T p;                                 // Ridder's smoothed approximation
+  T p0;                                // Previous approximation
+  T fa;                                // Function evaluated at a
+  T fb;                                // Function evaluated at b
+  T fm;                                // Function evaluated at m
+  T fp;                                // Function evaluated at p
+
+  /*==============================================================================
+   * End of Declarations
+   *============================================================================*/
+
+
+  //--First results from bracket
+
+  a = bracketL;
+  fa = f(a);
+  if ( fa == 0. ) {
+    root = a;
+    return 1;
+  }
+  b = bracketR;
+  fb = f(b);
+  if ( fb == 0. ) {
+    root = b;
+    return 1;
+  }
+
+  //--Confirm root bracketed
+
+  p0 = 2.*b - a;
+
+  //--Begin iterating
+
+  int iter = 0;
+  while ( iter != maxIt ) {
+    ++iter;
+    m = a + 0.5*(b - a);  // Middle approximation
+    fm = f(m);
+    if ( fm == 0. ) {     // Lucky solution
+      root = m;
+      return iter;
+    }
+    p = m + (m - a)*System::Copysign(1., fa)*fm/sqrt(fm*fm - fa*fb);
+    // Check for sufficient precision in result
+      if ( fabs(p - p0) < (fabs(p) + toler)*toler ) {
+         root = p;
+         return iter;
+      }
+      fp = f(p);
+      if ( fp == 0. ) {  // Lucky solution
+         root = p;
+         return iter;
+      }
+      p0 = p;
+      if ( fa*fm < 0. ) {
+         if ( fa*fp < 0. ) {  // New interval from a to p
+            b = p;
+            fb = fp;
+         }
+         else {               // New interfal from p to m
+            a = p;
+            fa = fp;
+            b = m;
+            fb = fm;
+         }
+      }
+      else {
+	if ( fp*fb < 0. ) {  // New interval from p to b
+	  a = p;
+	  fa = fp;
+	}
+	else {               // New interval from m to p
+	  a = m;
+	  fa = fm;
+	  b = p;
+	  fb = fp;
+	}
+      }
+  }
+  root = p;
+  return 0;  // Error - max iterations reached
+   
+}
+
+
+/*******************************************************************************
+ *
+ * Routine: ridder
+ *
+ * Copyright (C) 2007-2008 S. Guzik
+ *
+ * Purpose
+ * =======
+ *
+ *   Finds a root using Ridder's method - this routine uses a functor to
+ *   describe the equation.
+ *
+ * I/O
+ * ===
+ *
+ *   f                  - (I) function object - operator() evaluates
+ *   bracketL           - (I) initial left bracket
+ *   bracketR           - (I) initial right bracket
+ *   maxIt              - (I) maximum number of iterations
+ *   precision          - (I) precision of the root
+ *   root               - (O) the root
+ *   return             - >0 - success - iteration count
+ *                        =0 - failure - maximum iterations reached or root not
+ *                                       bracketed
+ *
+ ******************************************************************************/
+
+template<typename T, typename F>
+int ridder(F& f, const T bracketL, const T bracketR, const int maxIt,
+           const int precision, T& root)
+  
+{
+  
+
+  /*==============================================================================
+   * Declarations
+   *============================================================================*/
+  
+  //----- Parameter Variables -----//
+
+  const T toler = pow(10., -precision);
+  // Tolerance for given precision
+
+  //----- Local Variables -----//
+
+  T a;                                 // Value at left ofinterval
+  T b;                                 // Value at right of interval
+  T m;                                 // Middle approximation
+  T p;                                 // Ridder's smoothed approximation
+  T p0;                                // Previous approximation
+  T fa;                                // Function evaluated at a
+  T fb;                                // Function evaluated at b
+  T fm;                                // Function evaluated at m
+  T fp;                                // Function evaluated at p
+
+  /*==============================================================================
+   * End of Declarations
+   *============================================================================*/
+
+
+  //--First results from bracket
+
+  a = bracketL;
+  fa = f(a);
+  if ( fa == 0. ) {
+    root = a;
+    return 1;
+  }
+  b = bracketR;
+  fb = f(b);
+  if ( fb == 0. ) {
+    root = b;
+    return 1;
+  }
+
+  //--Confirm root bracketed
+
+  p0 = 2.*b - a;
+
+  //--Begin iterating
+
+  int iter = 0;
+  while ( iter != maxIt ) {
+    ++iter;
+    m = a + 0.5*(b - a);  // Middle approximation
+    fm = f(m);
+    if ( fm == 0. ) {     // Lucky solution
+      root = m;
+      return iter;
+    }
+    p = m + (m - a)*System::Copysign(1., fa)*fm/sqrt(fm*fm - fa*fb);
+    // Check for sufficient precision in result
+    if ( fabs(p - p0) < (fabs(p) + toler)*toler ) {
+      root = p;
+      return iter;
+    }
+    fp = f(p);
+    if ( fp == 0. ) {  // Lucky solution
+      root = p;
+      return iter;
+    }
+    p0 = p;
+    if ( fa*fm < 0. ) {
+      if ( fa*fp < 0. ) {  // New interval from a to p
+	b = p;
+	fb = fp;
+      }
+      else {               // New interfal from p to m
+	a = p;
+	fa = fp;
+	b = m;
+	fb = fm;
+      }
+    }
+    else {
+      if ( fp*fb < 0. ) {  // New interval from p to b
+	a = p;
+	fa = fp;
+      }
+      else {               // New interval from m to p
+	a = m;
+	fa = fm;
+	b = p;
+	fb = fp;
+      }
+    }
+  }
+  root = p;
+  return 0;  // Error - max iterations reached
+
+}
+
 
 /**************** Function Prototypes ********************/
 

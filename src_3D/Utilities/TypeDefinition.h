@@ -26,8 +26,11 @@ typedef enum {OneD=1, TwoD=2, ThreeD=3}  SpaceType;
 /* Type of polynomials */
 typedef enum {CONSTANT = 0, LINEAR = 1, QUADRATIC = 2, CUBIC = 3, QUARTIC = 4, QUINTIC = 5}  PolynomOrder;
 
-/* Index type --> vector for storing the indeces of the cells that are part of the stencil  */
+/* Index type --> vector for storing the indexes of the cells that are part of the stencil  */
 typedef vector<int> IndexType;
+
+/* Short Index type --> vector for storing the indexes of type 'short int' */
+typedef vector<short int> ShortIndexType;
 
 // NumberOfVariables inside the solution class traits;
 template<class T>

@@ -1,5 +1,5 @@
-/* AdvectDiffuse2DInput.cc:  Subroutines for 
-                             2D Advection Diffusion Equation Input Classes. */
+/*!\file AdvectDiffuse2DInput.cc
+  \brief Subroutines for 2D Advection Diffusion Equation Input Classes. */
 
 /* Include required C++ libraries. */
 // None
@@ -63,7 +63,10 @@ bool AdvectDiffuse2D_Input_Parameters::OutputBoundaryReferenceState(const int & 
 int AdvectDiffuse2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr){
 
   ostringstream msg;
-  int command_flag;
+  int command_flag, error_flag;
+
+  /* Assign initial value for error indicator flag. */
+  error_flag = 0;
 
   strcpy(Input_File_Name, Input_File_Name_ptr);
   Open_Input_File(*this);
@@ -89,7 +92,7 @@ int AdvectDiffuse2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr
       break;
       
     } else if (command_flag == TERMINATE_CODE) {
-      return (0);
+      break;
       
     } else if (command_flag == INVALID_INPUT_CODE ||
 	       command_flag == INVALID_INPUT_VALUE) {
@@ -106,26 +109,12 @@ int AdvectDiffuse2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr
     } /* endif */
   } /* endwhile */
 
-  // Perform update of the internal variables of the exact solution
-  ExactSoln->Set_ParticularSolution_Parameters();
+  /* Perform consistency checks and internal parameter setup */
+  doInternalSetupAndConsistencyChecks(error_flag);
 
-  // Perform update of the internal variables of the inflow field
-  Inflow->Set_InflowField_Parameters();
-
-  // Perform update of the internal variables of the high-order input parameters
-  HighOrder2D_Input::Set_Final_Parameters(*this);
-
-  // Set reference state in the AdvectDiffuse2D_Quad_Block class
-  AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(RefU);
-
-  // Set flag for including/excluding source term in the model equation
-  AdvectDiffuse2D_Quad_Block::Include_Source_Term = Include_Source_Term;
-
-  // Set flag for including/excluding advection term in the model equation
-  AdvectDiffuse2D_Quad_Block::Include_Advection_Term = Include_Advection_Term;
-
-  // Set flag for including/excluding diffusion term in the model equation
-  AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = Include_Diffusion_Term;
+  /* Initial processing of input control parameters complete.  
+     Return the error indicator flag. */
+  return (error_flag);
 
 }
 
@@ -178,6 +167,72 @@ void AdvectDiffuse2D_Input_Parameters::Get_Next_Input_Control_Parameter(void){
     }
 
   }//endwhile
+}
+
+/******************************************************//**
+ * Perform setup of internal and related external parameters.
+ * Do also check and validation of input parameters.
+ ********************************************************/
+void AdvectDiffuse2D_Input_Parameters::doInternalSetupAndConsistencyChecks(int & error_flag){
+
+  /* Perform consistency checks on Input_Parameters */
+  if (!error_flag &&
+      i_Time_Integration == TIME_STEPPING_MULTIGRID) {
+    error_flag = Check_Input_Parameters<AdvectDiffuse2D_Input_Parameters>(*this);
+    if (error_flag) {
+      cout << "\n AdvectDiffuse2D ERROR: Input Parameters consistency check failure\n";
+    }
+  }
+
+  // Perform consitency checks on the time marching parameters.
+  if (Time_Accurate == 1 && Local_Time_Stepping != GLOBAL_TIME_STEPPING){
+    Local_Time_Stepping = GLOBAL_TIME_STEPPING;
+  }
+
+  // Perform update of the internal variables of the exact solution
+  ExactSoln->Set_ParticularSolution_Parameters();
+
+  // Perform update of the internal variables of the inflow field
+  Inflow->Set_InflowField_Parameters();
+
+  // Perform update of the internal variables of the high-order input parameters
+  HighOrder2D_Input::Set_Final_Parameters(*this);
+
+  // Set reference states
+  // Uo state
+  Uo = AdvectDiffuse2D_State(ONE);
+  // U1 state
+  U1 = Uo;
+  U1.u = ZERO;
+  
+  // U2 state
+  U2 = Uo;
+  U2.u = -ONE;
+
+  // Enforce NO mesh stretching is required
+  if (!i_Mesh_Stretching){
+    // Mesh stretching is not ON
+    Mesh_Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
+    Mesh_Stretching_Type_Jdir = STRETCHING_FCN_LINEAR;
+    Mesh_Stretching_Factor_Idir = 1.0;
+    Mesh_Stretching_Factor_Jdir = 1.0;
+  }
+
+  // Set reference state in the AdvectDiffuse2D_Quad_Block class
+  AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(RefU);
+
+  // Set flag for including/excluding source term in the model equation
+  AdvectDiffuse2D_Quad_Block::Include_Source_Term = Include_Source_Term;
+
+  // Set flag for including/excluding advection term in the model equation
+  AdvectDiffuse2D_Quad_Block::Include_Advection_Term = Include_Advection_Term;
+  
+  // Set flag for including/excluding diffusion term in the model equation
+  AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = Include_Diffusion_Term;
+  
+  // Set limiter in CENO class
+  CENO_Execution_Mode::Limiter = i_Limiter;
+
 }
 
 /***************************************************************
@@ -441,6 +496,25 @@ ostream &operator << (ostream &out_file,
         out_file << "\n     -> Orifice Radius: " 
                  << IP.Orifice_Radius;
         break;
+      case GRID_RINGLEB_FLOW :
+	out_file << "\n  -> Inner streamline number: " << IP.Inner_Streamline_Number;
+	out_file << "\n  -> Outer streamline number: " << IP.Outer_Streamline_Number;
+	out_file << "\n  -> Isotach line: " << IP.Isotach_Line;
+	break;
+      case GRID_WEDGE :
+        out_file << "\n  -> Wedge Angle (degrees): " << IP.Wedge_Angle;
+	out_file << "\n  -> Wedge Length (m): " << IP.Wedge_Length;
+	break;
+      case GRID_UNSTEADY_BLUNT_BODY :
+	out_file << "\n  -> Cylinder Radius (m): " 
+		 << IP.Blunt_Body_Radius;
+        break;
+      case GRID_BUMP_CHANNEL_FLOW :
+	if (strcmp(IP.Grid_Type,"Bump_Channel_Flow") == 0) {
+	  if (IP.Smooth_Bump) out_file << " (smooth bump)";
+	  else out_file << " (non-smooth bump)";
+	}
+	break;
       case GRID_ICEMCFD :
         break;
       case GRID_READ_FROM_DEFINITION_FILE :
@@ -520,6 +594,15 @@ ostream &operator << (ostream &out_file,
       // output information related to Tecplot output
       Tecplot_Execution_Mode::Print_Info(out_file);
     }
+
+    // ==== Accuracy assessment 
+    out_file << "\n  -> Accuracy Assessment: ";
+    // output information related to assessment of accuracy
+    AccuracyAssessment_Execution_Mode::Print_Info(out_file);
+
+    // output information related to the numerical integration parameters
+    NumericalLibrary_Execution_Mode::Print_Info(out_file);
+
     out_file << "\n  -> Restart Solution Save Frequency: "
              << IP.Restart_Solution_Save_Frequency
              << " steps (iterations)"; 
@@ -677,6 +760,13 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Ellipse_Length_Y_Axis = HALF;
     IP.Chord_Length = ONE;
     IP.Orifice_Radius = ONE;
+    IP.Inner_Streamline_Number = 0.80;
+    IP.Outer_Streamline_Number = 0.40;
+    IP.Isotach_Line = 0.30;
+    IP.Wedge_Angle = 25.0;
+    IP.Wedge_Length = HALF;
+    IP.Smooth_Bump = OFF;
+
     IP.VertexSW = Vector2D(-0.5,-0.5);
     IP.VertexSE = Vector2D( 0.5,-0.5);
     IP.VertexNE = Vector2D( 0.5, 0.5);
@@ -712,10 +802,10 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.BC_South = BC_NONE;
     IP.BC_East  = BC_NONE;
     IP.BC_West  = BC_NONE;
-    IP.Ref_State_BC_North = 0.0;
-    IP.Ref_State_BC_South = 0.0;
-    IP.Ref_State_BC_East = 0.0;
-    IP.Ref_State_BC_West = 0.0;
+    IP.Ref_State_BC_North = AdvectDiffuse2D_State(0.0);
+    IP.Ref_State_BC_South = AdvectDiffuse2D_State(0.0);
+    IP.Ref_State_BC_East = AdvectDiffuse2D_State(0.0);
+    IP.Ref_State_BC_West = AdvectDiffuse2D_State(0.0);
 
     // AMR:
     IP.AMR = 0;
@@ -755,9 +845,7 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Number_of_Blocks_Per_Processor = 10;
 
     // Accuracy assessment parameters:
-    IP.Accuracy_Assessment_Mode = ACCURACY_ASSESSMENT_BASED_ON_EXACT_SOLUTION;
-    IP.Accuracy_Assessment_Exact_Digits = 10;
-    IP.Accuracy_Assessment_Parameter = 1;
+    AccuracyAssessment_Execution_Mode::SetDefaults();
 
     // High-order parameters:
     HighOrder2D_Input::SetDefaults();
@@ -974,6 +1062,24 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Orifice_Radius), 
                           1, 
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Inner_Streamline_Number),
+			  1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Outer_Streamline_Number),
+			  1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Isotach_Line),
+			  1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Wedge_Angle), 
+			  1, 
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Wedge_Length), 
+			  1, 
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Smooth_Bump),
+			  1,
+			  MPI::INT,0);
     MPI::COMM_WORLD.Bcast(&(IP.VertexSW.x), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -1182,15 +1288,7 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
                           MPI::DOUBLE, 0);
 
     // Accuracy assessment parameters:
-    MPI::COMM_WORLD.Bcast(&(IP.Accuracy_Assessment_Mode), 
-			  1, 
-			  MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Accuracy_Assessment_Exact_Digits), 
-			  1, 
-			  MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Accuracy_Assessment_Parameter), 
-			  1, 
-			  MPI::INT, 0);
+    AccuracyAssessment_Execution_Mode::Broadcast();
 
     // CENO_Execution_Mode variables
     CENO_Execution_Mode::Broadcast();
@@ -1237,6 +1335,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
       // Set flag for including/excluding diffusion term in the model equation
       AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = IP.Include_Diffusion_Term;
     }
+
+    // NumericalLibrary_Execution_Mode variables
+    NumericalLibrary_Execution_Mode::Broadcast();
 
 #endif
 
@@ -1457,6 +1558,7 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Orifice_Radius), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+
     Communicator.Bcast(&(IP.VertexSW.x), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -1481,6 +1583,24 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.VertexNW.y), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Inner_Streamline_Number),
+		       1,
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Outer_Streamline_Number),
+		       1,
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Isotach_Line),
+		       1,
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Wedge_Angle), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Wedge_Length), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Smooth_Bump),
+		       1,
+		       MPI::INT,Source_Rank);
     Communicator.Bcast(&(IP.X_Shift.x), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -1662,16 +1782,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Freeze_Limiter_Residual_Level), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
-    // Accuracy assessment parameters:
-    Communicator.Bcast(&(IP.Accuracy_Assessment_Mode), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Accuracy_Assessment_Exact_Digits), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Accuracy_Assessment_Parameter), 
-                       1, 
-                       MPI::INT, Source_Rank);
 }
 #endif
 
@@ -2131,6 +2241,52 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Input_File >> IP.Orifice_Radius;
     IP.Input_File.getline(buffer, sizeof(buffer));
     if (IP.Orifice_Radius <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Inner_Streamline_Number") == 0) {
+    i_command = 31;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Inner_Streamline_Number;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (IP.Inner_Streamline_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Outer_Streamline_Number") == 0) {
+    i_command = 31;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Outer_Streamline_Number;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (IP.Outer_Streamline_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Isotach_Line") == 0) {
+    i_command = 31;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Isotach_Line;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (IP.Isotach_Line <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Wedge_Angle") == 0) {
+    i_command = 31;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Wedge_Angle;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if (IP.Wedge_Angle <= ZERO) i_command = INVALID_INPUT_VALUE;
+    
+  } else if (strcmp(IP.Next_Control_Parameter, "Wedge_Length") == 0) {
+    i_command = 31;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Wedge_Length;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if (IP.Wedge_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
+    
+  } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Bump") == 0) {
+    i_command = 32;
+    Get_Next_Input_Control_Parameter(IP);
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+      IP.Smooth_Bump = ON;
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+      IP.Smooth_Bump = OFF;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
 
   } else if (strcmp(IP.Next_Control_Parameter,"Chamber_Length") == 0) {
     i_command = 31;
@@ -2874,13 +3030,6 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 	   << "Space Accuracy set to 1" << endl;
     }/* endif */
 
-  } else if (strcmp(IP.Next_Control_Parameter, "Accuracy_Assessment_Exact_Digits") == 0) {
-    i_command = 0;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.Accuracy_Assessment_Exact_Digits;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    if (IP.Accuracy_Assessment_Exact_Digits < 0) i_command = INVALID_INPUT_VALUE;
-
   } else if (strcmp(IP.Next_Control_Parameter, "Execute") == 0) {
     i_command = EXECUTE_CODE;
 
@@ -2932,9 +3081,8 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
   } else {
     i_command = INVALID_INPUT_CODE;
 
-  } /* endif */
+  }/* endif */
 
-  
 
   /* Parse next control parameter with VelocityFields parser */
   VelocityFields::Parse_Next_Input_Control_Parameter(IP,i_command);
@@ -2951,6 +3099,9 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
   /* Parse next control parameter with Inflow parser */
   IP.Inflow->Parse_Next_Input_Control_Parameter(IP,i_command);
 
+  /* Parse next control parameter with AccuracyAssessment_Execution_Mode parser */
+  AccuracyAssessment_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
+
   /* Parse next control parameter with CENO_Execution_Mode parser */
   CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
   
@@ -2965,6 +3116,9 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 
   /* Parse next control parameter with HighOrder2D_Input parser */
   HighOrder2D_Input::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with NumericalLibrary_Execution_Mode parser */
+  NumericalLibrary_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   if (i_command == INVALID_INPUT_CODE){
     // that is, we have an input line which:
@@ -3029,7 +3183,7 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
        if (Command_Flag == EXECUTE_CODE) {
           break;
        } else if (Command_Flag == TERMINATE_CODE) {
-	 return(0);
+	  break;
        } else if (Command_Flag == INVALID_INPUT_CODE ||
                   Command_Flag == INVALID_INPUT_VALUE) {
           line_number = -line_number;
@@ -3040,50 +3194,8 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
        } /* endif */
     } /* endwhile */
 
-    /* Perform consistency checks on Input_Parameters */
-
-    if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
-      error_flag = Check_Input_Parameters<AdvectDiffuse2D_Input_Parameters>(Input_Parameters);
-      if (error_flag) {
-	cout << "\n AdvectDiffuse2D ERROR: Input Parameters consistency check failure\n";
-	return (error_flag);
-      }
-    }
-
-    // Perform update of the internal variables of the exact solution
-    Input_Parameters.ExactSoln->Set_ParticularSolution_Parameters();
-
-    // Perform update of the internal variables of the inflow field
-    Input_Parameters.Inflow->Set_InflowField_Parameters();
-
-    // Perform update of the internal variables of the high-order input parameters
-    HighOrder2D_Input::Set_Final_Parameters(Input_Parameters);
-
-    // Set reference states
-    // Uo state
-    Input_Parameters.Uo = AdvectDiffuse2D_State(ONE);
-    // U1 state
-    Input_Parameters.U1 = Input_Parameters.Uo;
-    Input_Parameters.U1.u = ZERO;
-
-    // U2 state
-    Input_Parameters.U2 = Input_Parameters.Uo;
-    Input_Parameters.U2.u = -ONE;
-
-    // Set reference state in the AdvectDiffuse2D_Quad_Block class
-    AdvectDiffuse2D_Quad_Block::Set_Normalization_Reference_State(Input_Parameters.RefU);
-
-    // Set flag for including/excluding source term in the model equation
-    AdvectDiffuse2D_Quad_Block::Include_Source_Term = Input_Parameters.Include_Source_Term;
-
-    // Set flag for including/excluding advection term in the model equation
-    AdvectDiffuse2D_Quad_Block::Include_Advection_Term = Input_Parameters.Include_Advection_Term;
-    
-    // Set flag for including/excluding diffusion term in the model equation
-    AdvectDiffuse2D_Quad_Block::Include_Diffusion_Term = Input_Parameters.Include_Diffusion_Term;
-
-    // Set limiter in CENO class
-    CENO_Execution_Mode::Limiter = Input_Parameters.i_Limiter;
+    /* Perform consistency checks and internal parameter setup */
+    Input_Parameters.doInternalSetupAndConsistencyChecks(error_flag);
 
     /* Initial processing of input control parameters complete.  
        Return the error indicator flag. */

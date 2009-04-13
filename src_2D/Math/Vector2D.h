@@ -80,8 +80,8 @@ class Vector2D{
        x = ZERO; y = ZERO;
     }
   
-    //! Constructor with single value
-    Vector2D(const double &V) {
+    //! Value constructor
+    explicit Vector2D(const double &V) {
        x = V; y = V;
     }
   

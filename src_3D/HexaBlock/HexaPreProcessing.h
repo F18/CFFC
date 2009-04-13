@@ -2,6 +2,11 @@
 #ifndef _HEXA_PRE_PROCESSING_INCLUDED
 #define _HEXA_PRE_PROCESSING_INCLUDED
 
+
+#ifndef _HIGHORDER_MULTIBLOCK_INCLUDED
+#include "../HighOrderReconstruction/HighOrderMultiBlock.h"
+#endif
+
 /********************************************************
  * Routine: Initialize_Solution_Blocks                  *
  *                                                      *
@@ -21,12 +26,14 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
   /* Create the initial mesh on the primary MPI processor. */
 
   if (CFFC_Primary_MPI_Processor()) {
-    Data.Initial_Mesh.Create_Grid(Solution_Data.Input.Grid_IP);
     //Outputting solution input parameters
     if (!Data.batch_flag) {
       cout << Solution_Data.Input << "\n";
+      cout << "\n Generating the initial mesh and computing"
+	   << "\n  geometric coefficients (if required).";
       cout.flush(); 
     } /* endif */
+    Data.Initial_Mesh.Create_Grid(Solution_Data.Input.Grid_IP);
   } /* endif */
 
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
@@ -55,6 +62,15 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
 							                Data.Octree,
 							                Data.Global_Adaptive_Block_List,
 							                Data.Local_Adaptive_Block_List);
+  error_flag = CFFC_OR_MPI(error_flag);
+  if (error_flag) return (error_flag);
+
+  /* Create (allocate) the high-order variables in each of the
+     local 3D solution blocks */
+  
+  error_flag = HighOrder_MultiBlock::Create_Initial_HighOrder_Variables(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+  									Data.Local_Adaptive_Block_List);
+
   error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return (error_flag);
 

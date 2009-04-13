@@ -105,6 +105,8 @@ namespace tut
     ensure("a", BCs.a() == NULL);
     ensure("b", BCs.b() == NULL);
     ensure_equals("NumLoc", BCs.NumOfPoints(), 0);
+    ensure_equals("Individual Constraints", BCs.IndividualConstraintsVector().size(), 0);
+    ensure_equals("Relational Constraints", BCs.RelationalConstraintsVector().size(), 0);
   }
 
   /* Test 2:*/
@@ -124,6 +126,10 @@ namespace tut
     ensure("a", BCs.a() != NULL);
     ensure("b", BCs.b() != NULL);
     ensure_equals("NumLoc", BCs.NumOfPoints(), 5);
+    ensure_equals("Individual Constraints", BCs.IndividualConstraintsVector().size(), 1);
+    ensure_equals("Individual Constraints value", BCs.NumberOfIndividualConstraints(1), 0);
+    ensure_equals("Relational Constraints", BCs.RelationalConstraintsVector().size(), 1);
+    ensure_equals("Relational Constraints value", BCs.NumberOfRelationalConstraints(1), 0);
   }
 
   /* Test 3:*/
@@ -143,6 +149,10 @@ namespace tut
     ensure("a", BCs.a() != NULL);
     ensure("b", BCs.b() != NULL);
     ensure_equals("NumLoc", BCs.NumOfPoints(), 5);
+    ensure_equals("Individual Constraints", BCs.IndividualConstraintsVector().size(), 1);
+    ensure_equals("Individual Constraints value", BCs.NumberOfIndividualConstraints(1), 0);
+    ensure_equals("Relational Constraints", BCs.RelationalConstraintsVector().size(), 1);
+    ensure_equals("Relational Constraints value", BCs.NumberOfRelationalConstraints(1), 0);
 
     // call allocate()
     BCs.allocate(15);
@@ -157,6 +167,8 @@ namespace tut
     ensure("a", BCs.a() == NULL);
     ensure("b", BCs.b() == NULL);
     ensure_equals("NumLoc", BCs.NumOfPoints(), 0);
+    ensure_equals("Individual Constraints", BCs.IndividualConstraintsVector().size(), 0);
+    ensure_equals("Relational Constraints", BCs.RelationalConstraintsVector().size(), 0);
   }
 
   /* Test 4:*/
@@ -225,6 +237,18 @@ namespace tut
       ensure_equals("b", BCs_Copy.b(n), BCs.b(n) );
     }
 
+    ensure_equals("Individual Constraints",
+		  BCs_Copy.IndividualConstraintsVector().size(),
+		  BCs.IndividualConstraintsVector().size());
+    ensure_equals("Individual Constraints value",
+		  BCs_Copy.NumberOfIndividualConstraints(1),
+		  BCs.NumberOfIndividualConstraints(1));
+    ensure_equals("Relational Constraints",
+		  BCs_Copy.RelationalConstraintsVector().size(),
+		  BCs.RelationalConstraintsVector().size());
+    ensure_equals("Relational Constraints value",
+		  BCs_Copy.NumberOfRelationalConstraints(1),
+		  BCs.NumberOfRelationalConstraints(1));
   }
 
   /* Test 7:*/
@@ -252,6 +276,18 @@ namespace tut
       ensure_equals("b", BCs_Copy.b(n), BCs.b(n) );
     }
 
+    ensure_equals("Individual Constraints",
+		  BCs_Copy.IndividualConstraintsVector().size(),
+		  BCs.IndividualConstraintsVector().size());
+    ensure_equals("Individual Constraints value",
+		  BCs_Copy.NumberOfIndividualConstraints(1),
+		  BCs.NumberOfIndividualConstraints(1));
+    ensure_equals("Relational Constraints",
+		  BCs_Copy.RelationalConstraintsVector().size(),
+		  BCs.RelationalConstraintsVector().size());
+    ensure_equals("Relational Constraints value",
+		  BCs_Copy.NumberOfRelationalConstraints(1),
+		  BCs.NumberOfRelationalConstraints(1));
   }
 
 

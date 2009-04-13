@@ -108,11 +108,11 @@ public:
   //! Get access to the value of the geometric coefficient with x-power p1 and y-power p2
   double & GeomCoeffValue(const int &p1, const int &p2) {return _GeomCoeff_(p1,p2);}
   //! Get access to the value of the geometric coefficient which is store in the 'position' place
-  const double & GeomCoeffValue(const int &position) const {return _GeomCoeff_(position,true,true,true).D();}
+  const double & GeomCoeffValue(const int &position) const {return _GeomCoeff_(position).D();}
   //! Get access to the value of the geometric coefficient which is store in the 'position' place
-  double & GeomCoeffValue(const int &position){return _GeomCoeff_(position,true,true,true).D();}
+  double & GeomCoeffValue(const int &position){return _GeomCoeff_(position).D();}
   //! Get access to the geometric coefficient (i.e. powers and values) which is store in the 'position' place
-  GeomMoment & GeomCoeff(const int &position){return _GeomCoeff_(position,true,true,true);}
+  GeomMoment & GeomCoeff(const int &position){return _GeomCoeff_(position);}
   //@}
 
   //! Output invariant properties to cell translation and rotation.

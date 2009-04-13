@@ -1,64 +1,32 @@
-/**********************************************************************
- * NavierStokes2DQuad.h: Header file defining 2D Navier-Stokes        *
- *                       quadrilateral mesh solution classes.         *
- **********************************************************************/
+/*! NavierStokes2DQuad.h: Header file defining 2D Navier-Stokes
+                          quadrilateral mesh solution classes. */
 
 #ifndef _NAVIERSTOKES2D_QUAD_INCLUDED
 #define _NAVIERSTOKES2D_QUAD_INCLUDED
 
-// Include 2D Navier-Stokes state header file.
+/* Include required C++ libraries. */
+// None
 
-#ifndef _NAVIERSTOKES2D_STATE_INCLUDED
-#include "NavierStokes2DState.h"
-#endif // _NAVIERSTOKES2D_STATE_INCLUDED
+/* Using std namespace functions */
+// None
 
-// Include 2D Navier-Stokes input header file.
-
-#ifndef _NAVIERSTOKES2D_INPUT_INCLUDED
-#include "NavierStokes2DInput.h"
-#endif // _NAVIERSTOKES2D_INPUT_INCLUDED
-
-// Include the 2D cell header file.
-
-#ifndef _CELL2D_INCLUDED
-#include "../Grid/Cell2D.h"
-#endif // _CELL2D_INCLUDED
-
-// Include the 2D quadrilateral multiblock grid header file.
-
-#ifndef _GRID2D_QUAD_BLOCK_INCLUDED
-#include "../Grid/Grid2DQuad.h"
-#endif // _GRID2D_QUAD_BLOCK_INCLUDED
-
-// Include the quadtree header file.
-
-#ifndef _QUADTREE_INCLUDED
-#include "../AMR/QuadTree.h"
-#endif // _QUADTREE_INCLUDED
-
-// Include the AMR header file.
-
-#ifndef _AMR_INCLUDED
-#include "../AMR/AMR.h"
-#endif // _AMR_INCLUDED
-
-// Include the linear systems header file.
-
-#ifndef _LINEARSYSTEMS_INCLUDED
-#include "../Math/LinearSystems.h"
-#endif // _LINEARSYSTEMS_INCLUDED
-
-// Include ICEMCFD input header file.
-
-#ifndef _ICEMCFD_INCLUDED
-#include "../ICEM/ICEMCFD.h"
-#endif // _ICEMCFD_INCLUDED
-
-// Include the turbulent wall data header file.
-
-#ifndef _TURBULENT2D_WALLDATA_INCLUDED
-#include "../Turbulent2D/Turbulent2DWallData.h"
-#endif // _TURBULENT2D_WALLDATA_INCLUDED
+/* Include CFFC header files */
+#include "NavierStokes2DState.h"     // Include 2D Navier-Stokes state header file.
+#include "NavierStokes2DInput.h"     // Include 2D Navier-Stokes input header file.
+#include "../Grid/Cell2D.h"          // Include the 2D cell header file.
+#include "../Grid/Grid2DQuad.h"      // Include the 2D quadrilateral multiblock grid header file.
+#include "../Grid/HO_Grid2DQuad.h"   /* Include 2D quadrilateral block grid header file */
+#include "../AMR/QuadTree.h"         // Include the quadtree header file.
+#include "../AMR/AMR.h"              // Include the AMR header file.
+#include "../Math/LinearSystems.h"   // Include the linear systems header file.
+#include "../ICEM/ICEMCFD.h"         // Include ICEMCFD input header file.
+#include "../Turbulent2D/Turbulent2DWallData.h" // Include the turbulent wall data header file.
+#include "../System/System_Linux.h"    /* Include System Linux header file. */
+#include "../HighOrderReconstruction/AccuracyAssessment2D.h" /* Include 2D accuracy assessment header file. */
+#include "../HighOrderReconstruction/HighOrder2D.h" /* Include 2D high-order template class header file. */
+#include "NavierStokes2D_Cauchy_BCs.h"      /* Include 2D high-order boundary conditions header file,
+					       including NavierStokes2D specializations. */
+#include "NavierStokes2DExactSolutions.h"   /* Include 2D Navier-Stokes exact solutions header file */
 
 // Define the structures and classes.
 
@@ -190,8 +158,19 @@
  * \endverbatim
  */
 class NavierStokes2D_Quad_Block{
-private:
 public:
+
+  //! @name Defined public types:
+  //@{
+  typedef NavierStokes2D_ExactSolutions Exact_Solution_Type;
+  typedef AccuracyAssessment2D<NavierStokes2D_Quad_Block> Accuracy_Assessment_Type;
+  typedef NavierStokes2D_pState Soln_State;
+  typedef HighOrder2D<Soln_State> HighOrderType; //!< high-order variable data type. Use primitive variables for reconstruction.
+  typedef Cauchy_BCs<Soln_State> BC_Type;
+  typedef std::vector<double> DoubleArrayType;
+  typedef Grid2D_Quad_Block_HO GridType;
+  //@}
+
   //@{ @name Solution state arrays:
   NavierStokes2D_pState     **W; //!< Primitive solution state.
   NavierStokes2D_cState     **U; //!< Conserved solution state.
@@ -205,7 +184,7 @@ public:
                             JCl, //!< First j-direction non-ghost cell counter.
                             JCu; //!< Final j-direction non-ghost cell counter.
   int                    Nghost; //!< Number of ghost cells.
-  Grid2D_Quad_Block        Grid; //!< 2D quadrilateral grid geometry.
+  GridType                 Grid; //!< 2D quadrilateral grid geometry.
   //@}
 
   //@{ @name Residual and time-stepping arrays:
@@ -251,11 +230,15 @@ public:
   int                Variable_Prandtl; //!< Variable Prandtl number indicator. 
   //@}
 
-  //@{ @name Boundary condtion reference states:
+  //@{ @name Boundary condition reference states:
   NavierStokes2D_pState    *WoN, //!< Boundary condition reference states for north boundary.
                            *WoS, //!< Boundary condition reference states for south boundary.
                            *WoE, //!< Boundary condition reference states for east boundary.
                            *WoW; //!< Boundary condition reference states for west boundary.
+  //! Reference values for north and south boundary conditon reference states
+  NavierStokes2D_pState Ref_State_BC_North, Ref_State_BC_South; 
+  //! Reference values for east and west boundary conditon reference states
+  NavierStokes2D_pState Ref_State_BC_East, Ref_State_BC_West;
   //@}
 
   //@{ @name Turbulence wall data arrays:
@@ -267,83 +250,48 @@ public:
   double                  Twall; //!< Specified wall temperature.
   //@}
 
-  //@{ @name Creation, copy, and assignment constructors.
-  //! Creation constructor.
-  NavierStokes2D_Quad_Block(void) {
-    // Problem flags:
-    Axisymmetric   = OFF;
-    Compressibility_Effect = OFF;
-    Transition_Model = OFF;
-    Flow_Type      = FLOWTYPE_INVISCID;
-    Freeze_Limiter = OFF;
-    Variable_Prandtl = OFF;
-    Vwall = Vector2D_ZERO;
-    Twall = ZERO;
-    // Grid size and variables:
-    NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
-    // Solution variables:
-    W = NULL; U = NULL;
-    dt = NULL; dUdt = NULL; Uo = NULL;
-    dWdx = NULL; dWdy = NULL; phi = NULL;
-    d_dWdx_dW = NULL; d_dWdy_dW = NULL;
-    face_grad_arrays_allocated = false;
-    dWdx_faceN = NULL; dWdy_faceN = NULL;
-    dWdx_faceE = NULL; dWdy_faceE = NULL;
-    FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
-    WoN = NULL; WoS = NULL; WoE = NULL; WoW = NULL;
-    // Turbulent wall data:
-    Wall = NULL;
-  }
-
-  //! Copy constructor.
-  NavierStokes2D_Quad_Block(const NavierStokes2D_Quad_Block &Soln) {
-    // Problem flags:
-    Axisymmetric   = Soln.Axisymmetric;
-    Compressibility_Effect = Soln.Compressibility_Effect;
-    Transition_Model = Soln.Transition_Model;
-    Flow_Type      = Soln.Flow_Type;
-    Freeze_Limiter = Soln.Freeze_Limiter;
-    Variable_Prandtl = Soln.Variable_Prandtl;
-    Vwall = Soln.Vwall;
-    Twall = Soln.Twall;
-    // Grid size and variables:
-    NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu;
-    NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu;
-    Nghost = Soln.Nghost;
-    Grid  = Soln.Grid;
-    // Solution variables:
-    W = Soln.W; U = Soln.U;
-    dt = Soln.dt; dUdt = Soln.dUdt; Uo = Soln.Uo;
-    dWdx = Soln.dWdx; dWdy = Soln.dWdy; phi = Soln.phi;
-    d_dWdx_dW = Soln.d_dWdx_dW; d_dWdy_dW = Soln.d_dWdy_dW;
-    face_grad_arrays_allocated = Soln.face_grad_arrays_allocated;
-    dWdx_faceN = Soln.dWdx_faceN; dWdy_faceN = Soln.dWdy_faceN;
-    dWdx_faceE = Soln.dWdx_faceE; dWdy_faceE = Soln.dWdy_faceE;
-    FluxN = Soln.FluxN; FluxS = Soln.FluxS; 
-    FluxE = Soln.FluxE; FluxW = Soln.FluxW;
-    WoN   = Soln.WoN;   WoS   = Soln.WoS;
-    WoE   = Soln.WoE;   WoW   = Soln.WoW;
-    // Turbulent wall data:
-    Wall = Soln.Wall;
-  }
-
-  // Destructor.
-  // ~NavierStokes2D_Quad_Block(void);
-  // Use automatically generated destructor.
+  //! @name Accuracy assessment data:
+  //@{
+  static Exact_Solution_Type *ExactSoln;          //!< Pointer to the exact solution
+  static Exact_Solution_Type *ExactSolution(void){ return ExactSoln;} //!< Return the exact solution pointer
+  Accuracy_Assessment_Type AssessAccuracy;   //!< Variable to provide access to accuracy assessment subroutines
   //@}
 
-  // Assignment operator.
-  // NavierStokes2D_Quad_Block operator = (const NavierStokes2D_Quad_Block &Soln);
-  // Use automatically generated assignment operator.
+  //@{ @name Creation, copy, and assignment constructors.
+  //! Creation constructor.
+  NavierStokes2D_Quad_Block(void);
+
+  // Destructor.
+  ~NavierStokes2D_Quad_Block(void){ deallocate(); }
+  //@}
 
   //@{ @name Allocate and deallocate functions.
   //! Allocate memory for structured quadrilateral solution block.
   void allocate(const int Ni, const int Nj, const int Ng);
   //! Allocate the face gradient arrays. These arrays are only necessary for the implicit (NKS) code.
   void allocate_face_grad_arrays(void);
+
+  //! Allocate memory for high-order variables
+  void allocate_HighOrder(const int & NumberOfReconstructions,
+			  const vector<int> & ReconstructionOrders,
+			  const bool _complete_initialization_ = true);
+
+  //! Allocate memory for high-order boundary conditions
+  void allocate_HighOrder_BoundaryConditions(void);
+
   //! Deallocate memory for structured quadrilateral solution block.
   void deallocate(void);
+  //! Deallocate high-order variable memory for structured quadrilateral solution block.
+  void deallocate_HighOrder(void);
+  //! Deallocate high-order boundary conditions memory.
+  void deallocate_HighOrder_BoundaryConditions(void);
   //@}
+
+  //! Make an identical copy of SolnBlk
+  void makeCopy(const NavierStokes2D_Quad_Block &SolnBlk){ *this = SolnBlk; }
+  //! @brief Make a copy of the high-order objects
+  void copy_HighOrder_Objects(const NavierStokes2D_Quad_Block &SolnBlk);
+
 
   //@{ @name Bilinear interplation (Zingg & Yarrow).
   //! Return primitive solution state at specified node.
@@ -383,19 +331,204 @@ public:
   NavierStokes2D_cState UwSW(const int ii, const int jj); //!< Return conserved solution state at cell SW node.
   //@}
 
+  //! @name Field access
+  //@{
+  const NavierStokes2D_pState& CellSolution(const int &ii, const int &jj) const { return W[ii][jj]; }
+
+  //! @name High-order variables
+  //@{
+  //! Return the array of high-order variable of the current block
+  const HighOrderType * HighOrderVariables(void) const { return HO_Ptr; }
+  //! Return the high-order variable in the "Pos" position of the current block
+  HighOrderType & HighOrderVariable(const unsigned short int & Pos) { return HO_Ptr[Pos]; }
+  const HighOrderType & HighOrderVariable(const unsigned short int & Pos) const { return HO_Ptr[Pos]; }
+  //! Return the number of high-order variables
+  const unsigned short int & NumberOfHighOrderObjects(void) const { return NumberOfHighOrderVariables; }
+  //@}
+
+  //! @name High-order boundary conditions (used mostly for constrained reconstruction)
+  //@{
+  const BC_Type * BC_NorthCell(void) { return HO_WoN;}
+  BC_Type & BC_NorthCell(const int &iCell){ return HO_WoN[iCell]; }
+  const BC_Type & BC_NorthCell(const int &iCell) const { return HO_WoN[iCell]; }
+  const BC_Type * BC_SouthCell(void) { return HO_WoS;}
+  BC_Type & BC_SouthCell(const int &iCell){ return HO_WoS[iCell]; }
+  const BC_Type & BC_SouthCell(const int &iCell) const { return HO_WoS[iCell]; }
+  const BC_Type * BC_EastCell(void) { return HO_WoE;}
+  BC_Type & BC_EastCell(const int &jCell){ return HO_WoE[jCell]; }
+  const BC_Type & BC_EastCell(const int &jCell) const { return HO_WoE[jCell]; }
+  const BC_Type * BC_WestCell(void) { return HO_WoW;}
+  BC_Type & BC_WestCell(const int &jCell){ return HO_WoW[jCell]; }
+  const BC_Type & BC_WestCell(const int &jCell) const { return HO_WoW[jCell]; }
+
+  void BCs_HighOrder(void);
+  //@}
+
+  //@} //end(Field access)
+
+  //! @name Normalization related functions:
+  //@{
+  //! Get normalization state
+  const NavierStokes2D_pState getNormalizationState(const int &ii, const int &jj) const { return RefW; }
+  //! Set the normalization state which is used in the smoothness indicator computation.
+  static void Set_Normalization_Reference_State(const NavierStokes2D_pState & State){ 
+    RefW = NavierStokes2D_pState(State.rho, State.a(), State.a(), State.p, State.k, State.omega, State.ke, State.ee); 
+  }
+  //@}
+
   //@{ @name Member functions for limiter freezing.
   void evaluate_limiters(void); //!< Set flags for limiter evaluation.
   void freeze_limiters(void);   //!< Set flags for limiter freezing.
   //@}
 
+  //! @name Member functions to compute the piecewise linear solution at a particular location
+  //@{
+  void SetPiecewiseLinearReconstructionStencil(const int &i, const int &j,
+					       int i_index[], int j_index[],
+					       int & n_ptr);
+  NavierStokes2D_pState PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+							const double &DeltaXToCentroid,
+							const double &DeltaYToCentroid) const;
+  double PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+					 const double &DeltaXToCentroid,
+					 const double &DeltaYToCentroid,
+					 const unsigned int &parameter) const;
+  NavierStokes2D_pState PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+							  const Vector2D &CalculationPoint) const;
+  double PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+					   const Vector2D &CalculationPoint,
+					   const unsigned int &parameter) const;
+
+  NavierStokes2D_pState UnlimitedPiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+							  const double &DeltaXToCentroid,
+							  const double &DeltaYToCentroid) const;
+  NavierStokes2D_pState UnlimitedPiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+							    const Vector2D &CalculationPoint) const;
+  //! @brief Member function to compute the solution entropy at a particular location
+  double SolutionEntropyAtLocation(const int &ii, const int &jj,
+				   const Vector2D &CalculationPoint,
+				   const unsigned int &parameter = 0) const;
+  //! @brief Member function to compute the solution pressure at a particular location
+  double SolutionPressureAtCoordinates(const int &ii, const int &jj,
+				       const double &X_Coord, const double &Y_Coord) const;
+  //! @brief Member function to compute the wall shear stress at a particular location
+  double WallShearStress_HighOrder(const int &ii, const int &jj,
+				   const Vector2D &CalculationPoint,
+				   const Vector2D &normal_dir) const;
+  //@}
+
+  //! @name Member functions to set boundary states
+  //@{
+  //! Set reference values for boundary reference states
+  void Set_Reference_Values_For_Boundary_States(const NavierStokes2D_pState & Ref_North,
+						const NavierStokes2D_pState & Ref_South,
+						const NavierStokes2D_pState & Ref_East,
+						const NavierStokes2D_pState & Ref_West);
+  //! Set boundary reference states
+  void Set_Boundary_Reference_States(const bool &SetNorth,
+				     const bool &SetSouth,
+				     const bool &SetEast,
+				     const bool &SetWest);
+  //! Set boundary reference states to default
+  void Set_Default_Boundary_Reference_States(void);
+  //! Set boundary reference states based on user's input data
+  void Set_Boundary_Reference_States_Based_On_Input(const NavierStokes2D_Input_Parameters &IP);
+  //! @brief Set physical boundary condition constraints based on the current flow state and the BC_Type
+  void EnsurePhysicalBCsConstraints(const int & BOUNDARY, const int & BndCellIndex);
+  //@}
+
+  //! @name Residual evaluation functions:
+  //@{
+  int dUdt_Residual_Evaluation(NavierStokes2D_Input_Parameters &IP);
+  int dUdt_Residual_HighOrder(const NavierStokes2D_Input_Parameters &IP,
+			      const int & k_residual,
+			      const bool & UseTimeStep,
+			      const unsigned short int Pos = 0);
+  int dUdt_Residual_Evaluation_HighOrder(const NavierStokes2D_Input_Parameters &IP,
+					 const unsigned short int Pos = 0);
+  int dUdt_Multistage_Explicit(const int &i_stage,
+			       NavierStokes2D_Input_Parameters &IP);
+  int dUdt_Multistage_Explicit_HighOrder(const int &i_stage,
+					 const NavierStokes2D_Input_Parameters &IP,
+					 const unsigned short int Pos = 0);
+  //@}
+
+  //! @name Variables/functions for AMR:
+  //@{
+  //! Return the array of refinement criteria
+  DoubleArrayType & Refinement_Criteria(void) { return refinement_criteria; }
+  //! Return the array of refinement criteria as constant
+  const DoubleArrayType & Refinement_Criteria(void) const { return refinement_criteria; }
+  //! Return a particular refinement criterion in the refinement criteria array
+  double & Refinement_Criterion(const int & index) {return refinement_criteria[index]; }
+  //! Return a particular refinement criterion in the refinement criteria array as constant
+  const double & Refinement_Criterion(const int & index) const {return refinement_criteria[index]; }
+  //! Return number of refinement criteria
+  int Number_Of_Refinement_Criteria(void) const { return refinement_criteria.size(); }
+  void Calculate_Refinement_Criteria_HighOrder(double *refinement_criteria,
+					       NavierStokes2D_Input_Parameters &IP,
+					       int &number_refinement_criteria);
+  //@}
+
+  //! @name Functions for flux calculation:
+  //@{
+  //! @brief Calculate Riemann flux
+  NavierStokes2D_cState RiemannFlux_n(const int & Flux_Function,
+				      const NavierStokes2D_pState &Wl,
+				      const NavierStokes2D_pState &Wr,
+				      const Vector2D &normal_dir) const;
+  //! @brief Check the validity of the state
+  void Validate_Primitive_SolnState(NavierStokes2D_pState & W,
+				    const int &iCell,
+				    const int &jCell,
+				    const std::string &Ref,
+				    const int &IndexHO) const;
+  void InviscidFluxStates_AtBoundaryInterface_HighOrder(const int &BOUNDARY,
+							const int &ii, const int &jj,
+							NavierStokes2D_pState &Wl,
+							NavierStokes2D_pState &Wr,
+							const Vector2D &CalculationPoint,
+							const Vector2D &NormalDirection,
+							const unsigned short int Pos = 0) const;
+  void ViscousFluxStates_AtBoundaryInterface_HighOrder(const int &BOUNDARY,
+						       const int &ii, const int &jj,
+						       const NavierStokes2D_pState &Wl, const NavierStokes2D_pState &Wr,
+						       NavierStokes2D_pState &W_face,
+						       const NavierStokes2D_pState &dWdxL, const NavierStokes2D_pState &dWdyL,
+						       const NavierStokes2D_pState &dWdxR, const NavierStokes2D_pState &dWdyR,
+						       NavierStokes2D_pState &dWdx_face,
+						       NavierStokes2D_pState &dWdy_face,
+						       const Vector2D &CalculationPoint,
+						       const Vector2D &NormalDirection);
+  //@}
+
   //@{ @name Input-output operators.
   friend ostream &operator << (ostream &out_file, const NavierStokes2D_Quad_Block &Soln);
   friend istream &operator >> (istream &in_file, NavierStokes2D_Quad_Block &Soln);
+
+  void Output_Flat_Plate_Tecplot_HighOrder(const int Block_Number,
+					   const int Output_Title_Soln,
+					   ostream &Out_File_Soln,
+					   const int Output_Title_Skin,
+					   ostream &Out_File_Skin,
+					   const NavierStokes2D_pState &Winf,
+					   const double &plate_length,
+					   double &l1_norm,
+					   double &l2_norm,
+					   double &max_norm,
+					   double &area,
+					   int &numberofactivecells,
+					   double &l1_norm_cf,
+					   double &l2_norm_cf,
+					   double &max_norm_cf,
+					   double &area_cf,
+					   int &numberofactivecells_cf);
   //@}
 
   //@{ @name Member functions required for message passing.
   //! Number of solution state variables.
   int NumVar(void);
+
   //! Load send message passing buffer.
   int LoadSendBuffer(double *buffer,
 		     int &buffer_count,
@@ -506,52 +639,225 @@ public:
   }
 #endif
 
+  //! @name Member functions used for plotting.
+  //@{
+  void Output_Nodes_Tecplot_HighOrder(const NavierStokes2D_Input_Parameters &IP,
+				      const int &Number_of_Time_Steps,
+				      const double &Time,
+				      const int &Block_Number,
+				      const int &Output_Title,
+				      ostream &Out_File,
+				      const int & StartI_CellIndex,
+				      const int & EndI_CellIndex,
+				      const int & StartJ_CellIndex,
+				      const int & EndJ_CellIndex,
+				      const int &IndexHO = 0);
+
+  void Output_Tecplot_HighOrder(const NavierStokes2D_Input_Parameters &IP,
+				const int &Number_of_Time_Steps,
+				const double &Time,
+				const int &Block_Number,
+				const int &Output_Title,
+				ostream &Out_File,
+				const int &IndexHO = 0);
+
+  void Output_Tecplot_HighOrder_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
+					   const NavierStokes2D_Input_Parameters &IP,
+					   const int &Block_Number,
+					   const int &IndexHO = 0);
+
+  void Output_Nodes_Tecplot_HighOrder(const NavierStokes2D_Input_Parameters &IP,
+				      const int &Number_of_Time_Steps,
+				      const double &Time,
+				      const int &Block_Number,
+				      const int &Output_Title,
+				      ostream &Out_File,
+				      const int &IndexHO = 0);
+
+  void Output_Nodes_Tecplot_HighOrder_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
+						 const NavierStokes2D_Input_Parameters &IP,
+						 const int &Block_Number,
+						 const int &IndexHO = 0);
+
+  void Output_Cells_Tecplot_HighOrder(const int &Number_of_Time_Steps,
+				      const double &Time,
+				      const int &Block_Number,
+				      const int &Output_Title,
+				      ostream &Out_File,
+				      const int &IndexHO = 0);
+
+  void Output_Cells_Tecplot_HighOrder_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
+						 const NavierStokes2D_Input_Parameters &P,
+						 const int &Block_Number,
+						 const int &IndexHO = 0);
+  //@}
+
+private:
+  NavierStokes2D_Quad_Block(const NavierStokes2D_Quad_Block &Soln); //!< Private copy constructor.
+  NavierStokes2D_Quad_Block & operator = (const NavierStokes2D_Quad_Block &Soln);   //!< Private assignment operator.
+  
+  static NavierStokes2D_pState RefW;	//!< reference state for normalizing the solution
+
+  //! @name High-order variables and member functions
+  //@{
+  HighOrderType* HO_Ptr;  //!< pointer to an array of high-order variables
+  unsigned short int NumberOfHighOrderVariables; //!< counter for the total number of high-order variables
+
+  //! Allocate high-order variables array.
+  void allocate_HighOrder_Array(const int & NumberOfReconstructions);
+  //@}
+
+  //! @name High-order boundary conditions (used mostly for constrained reconstruction)
+  //@{
+  BC_Type  *HO_WoN, 		//!< High-order boundary condition reference states for North boundary
+    *HO_WoS,            	//!< High-order boundary condition reference states for South boundary
+    *HO_WoE,			//!< High-order boundary condition reference states for East boundary
+    *HO_WoW;            	//!< High-order boundary condition reference states for West boundary
+  //@}
+
+  //! @name Variables/functions for AMR:
+  //@{
+  DoubleArrayType refinement_criteria;
+  //@}
 };
+
+//! Default constructor.
+inline NavierStokes2D_Quad_Block::NavierStokes2D_Quad_Block(void):
+  AssessAccuracy(this),
+  Ref_State_BC_North(0.0), Ref_State_BC_South(0.0),
+  Ref_State_BC_East(0.0), Ref_State_BC_West(0.0),
+  HO_Ptr(NULL), NumberOfHighOrderVariables(0)
+{
+  // Problem flags:
+  Axisymmetric   = OFF;
+  Compressibility_Effect = OFF;
+  Transition_Model = OFF;
+  Flow_Type      = FLOWTYPE_INVISCID;
+  Freeze_Limiter = OFF;
+  Variable_Prandtl = OFF;
+  Vwall = Vector2D_ZERO;
+  Twall = ZERO;
+  // Grid size and variables:
+  NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+  // Solution variables:
+  W = NULL; U = NULL;
+  dt = NULL; dUdt = NULL; Uo = NULL;
+  dWdx = NULL; dWdy = NULL; phi = NULL;
+  d_dWdx_dW = NULL; d_dWdy_dW = NULL;
+  face_grad_arrays_allocated = false;
+  dWdx_faceN = NULL; dWdy_faceN = NULL;
+  dWdx_faceE = NULL; dWdy_faceE = NULL;
+  FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
+  WoN = NULL; WoS = NULL; WoE = NULL; WoW = NULL;
+  HO_WoN = NULL; HO_WoS = NULL; HO_WoE = NULL; HO_WoW = NULL;
+  // Turbulent wall data:
+  Wall = NULL;
+
+  // Get access to the NavierStokes2D_ExactSolutions object
+  ExactSoln = &NavierStokes2D_ExactSolutions::getInstance();
+
+}
+
+//! Private copy constructor. (shallow copy)
+inline NavierStokes2D_Quad_Block::NavierStokes2D_Quad_Block(const NavierStokes2D_Quad_Block &Soln):
+  AssessAccuracy(this), HO_Ptr(NULL)
+{
+  // Problem flags:
+  Axisymmetric   = Soln.Axisymmetric;
+  Compressibility_Effect = Soln.Compressibility_Effect;
+  Transition_Model = Soln.Transition_Model;
+  Flow_Type      = Soln.Flow_Type;
+  Freeze_Limiter = Soln.Freeze_Limiter;
+  Variable_Prandtl = Soln.Variable_Prandtl;
+  Vwall = Soln.Vwall;
+  Twall = Soln.Twall;
+  // Grid size and variables:
+  NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu;
+  NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu;
+  Nghost = Soln.Nghost;
+  Grid  = Soln.Grid;
+  // Solution variables:
+  W = Soln.W; U = Soln.U;
+  dt = Soln.dt; dUdt = Soln.dUdt; Uo = Soln.Uo;
+  dWdx = Soln.dWdx; dWdy = Soln.dWdy; phi = Soln.phi;
+  d_dWdx_dW = Soln.d_dWdx_dW; d_dWdy_dW = Soln.d_dWdy_dW;
+  face_grad_arrays_allocated = Soln.face_grad_arrays_allocated;
+  dWdx_faceN = Soln.dWdx_faceN; dWdy_faceN = Soln.dWdy_faceN;
+  dWdx_faceE = Soln.dWdx_faceE; dWdy_faceE = Soln.dWdy_faceE;
+  FluxN = Soln.FluxN; FluxS = Soln.FluxS; 
+  FluxE = Soln.FluxE; FluxW = Soln.FluxW;
+  WoN   = Soln.WoN;   WoS   = Soln.WoS;
+  WoE   = Soln.WoE;   WoW   = Soln.WoW;
+  HO_WoN = Soln.HO_WoN; HO_WoS = Soln.HO_WoS; HO_WoE = Soln.HO_WoE; HO_WoW = Soln.HO_WoW;
+  // Turbulent wall data:
+  Wall = Soln.Wall;
+
+  Ref_State_BC_North = Soln.Ref_State_BC_North;
+  Ref_State_BC_South = Soln.Ref_State_BC_South;
+  Ref_State_BC_East = Soln.Ref_State_BC_East;
+  Ref_State_BC_West = Soln.Ref_State_BC_West;
+
+  HO_Ptr = Soln.HO_Ptr;
+  NumberOfHighOrderVariables = Soln.NumberOfHighOrderVariables;
+}
+
 
 /**********************************************************************
  * NavierStokes2D_Quad_Block::allocate -- Allocate memory.            *
  **********************************************************************/
 inline void NavierStokes2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng) {
+  int i,j,k,m;
   assert(Ni > 1 && Nj > 1 && Ng > 1);
-  Grid.allocate(Ni,Nj,Ng);
-  NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; 
-  NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
-  W = new NavierStokes2D_pState*[NCi]; U = new NavierStokes2D_cState*[NCi];
-  dt = new double*[NCi]; dUdt = new NavierStokes2D_cState**[NCi];
-  dWdx = new NavierStokes2D_pState*[NCi]; dWdy = new NavierStokes2D_pState*[NCi];
-  phi = new NavierStokes2D_pState*[NCi]; 
-  d_dWdx_dW = new double **[NCi];
-  d_dWdy_dW = new double **[NCi];
-  Uo = new NavierStokes2D_cState*[NCi];
-  Wall = new Turbulent2DWallData*[NCi];
-  for (int i = 0; i < NCi; i++) {
-    W[i] = new NavierStokes2D_pState[NCj]; U[i] = new NavierStokes2D_cState[NCj];
-    dt[i] = new double[NCj]; dUdt[i] = new NavierStokes2D_cState*[NCj];
-    d_dWdx_dW[i] = new double  *[NCj];
-    d_dWdy_dW[i] = new double  *[NCj];
-    for (int j = 0; j < NCj; j++){
-      dUdt[i][j] = new NavierStokes2D_cState[NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D];
-      d_dWdx_dW[i][j] = new double [5];
-      d_dWdy_dW[i][j] = new double [5];
-    }
-    dWdx[i] = new NavierStokes2D_pState[NCj]; dWdy[i] = new NavierStokes2D_pState[NCj];
-    phi[i] = new NavierStokes2D_pState[NCj]; Uo[i] = new NavierStokes2D_cState[NCj];
-    Wall[i] = new Turbulent2DWallData[NCj];
-  }
-  WoN = new NavierStokes2D_pState[NCi]; WoS = new NavierStokes2D_pState[NCi];
-  WoE = new NavierStokes2D_pState[NCj]; WoW = new NavierStokes2D_pState[NCj];
-  FluxN = new NavierStokes2D_cState[NCi]; FluxS = new NavierStokes2D_cState[NCi];
-  FluxE = new NavierStokes2D_cState[NCj]; FluxW = new NavierStokes2D_cState[NCj];
-  // Set the solution residuals, gradients, limiters, and other values to zero.
-  for (int j = JCl-Nghost; j <= JCu+Nghost; j++) {
-    for (int i = ICl-Nghost; i <= ICu+Nghost; i++) {
-      for (int k = 0; k < NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D; k++)
-	dUdt[i][j][k].Vacuum();
-      dWdx[i][j].Vacuum(); dWdy[i][j].Vacuum();
-      phi[i][j].Vacuum(); Uo[i][j].Vacuum();
-      dt[i][j] = ZERO;
-    }
-  }
+
+  // Check to see if the current block dimensions differ from the required ones.
+  if ( (Nghost != Ng) || (NCi != Ni+2*Ng) || (NCj != Nj+2*Ng) ){ 
+    
+    // free the memory if there is memory allocated
+    deallocate();
+
+    // allocate new memory
+    Grid.allocate(Ni,Nj,Ng);
+    NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; 
+    NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
+    W = new NavierStokes2D_pState*[NCi]; U = new NavierStokes2D_cState*[NCi];
+    dt = new double*[NCi]; dUdt = new NavierStokes2D_cState**[NCi];
+    dWdx = new NavierStokes2D_pState*[NCi]; dWdy = new NavierStokes2D_pState*[NCi];
+    phi = new NavierStokes2D_pState*[NCi]; 
+    d_dWdx_dW = new double **[NCi];
+    d_dWdy_dW = new double **[NCi];
+    Uo = new NavierStokes2D_cState*[NCi];
+    Wall = new Turbulent2DWallData*[NCi];
+    for (i = 0; i < NCi; i++) {
+      W[i] = new NavierStokes2D_pState[NCj]; U[i] = new NavierStokes2D_cState[NCj];
+      dt[i] = new double[NCj]; dUdt[i] = new NavierStokes2D_cState*[NCj];
+      d_dWdx_dW[i] = new double  *[NCj];
+      d_dWdy_dW[i] = new double  *[NCj];
+      for ( j = 0; j < NCj; j++){
+	dUdt[i][j] = new NavierStokes2D_cState[NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D];
+	d_dWdx_dW[i][j] = new double [5];
+	d_dWdy_dW[i][j] = new double [5];
+      }
+      dWdx[i] = new NavierStokes2D_pState[NCj]; dWdy[i] = new NavierStokes2D_pState[NCj];
+      phi[i] = new NavierStokes2D_pState[NCj]; Uo[i] = new NavierStokes2D_cState[NCj];
+      Wall[i] = new Turbulent2DWallData[NCj];
+    } /* endfor */
+    WoN = new NavierStokes2D_pState[NCi]; WoS = new NavierStokes2D_pState[NCi];
+    WoE = new NavierStokes2D_pState[NCj]; WoW = new NavierStokes2D_pState[NCj];
+    FluxN = new NavierStokes2D_cState[NCi]; FluxS = new NavierStokes2D_cState[NCi];
+    FluxE = new NavierStokes2D_cState[NCj]; FluxW = new NavierStokes2D_cState[NCj];
+    // Set the solution residuals, gradients, limiters, and other values to zero.
+    for ( j = JCl-Nghost; j <= JCu+Nghost; j++) {
+      for ( i = ICl-Nghost; i <= ICu+Nghost; i++) {
+	for ( k = 0; k < NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D; k++){
+	  dUdt[i][j][k].Vacuum();
+	} /* endfor */
+	dWdx[i][j].Vacuum(); dWdy[i][j].Vacuum();
+	phi[i][j].Vacuum(); Uo[i][j].Vacuum();
+	dt[i][j] = ZERO;
+      } /* endfor */
+    } /* endfor */
+
+  }/* endif */
 }
 
 inline void NavierStokes2D_Quad_Block::allocate_face_grad_arrays(void) {
@@ -575,48 +881,235 @@ inline void NavierStokes2D_Quad_Block::allocate_face_grad_arrays(void) {
   face_grad_arrays_allocated = true;
 }
 
+/*****************************************//**
+ * Allocate memory for high-order variables.
+ ********************************************/
+inline void NavierStokes2D_Quad_Block::allocate_HighOrder(const int & NumberOfReconstructions,
+							  const vector<int> & ReconstructionOrders,
+							  const bool _complete_initialization_){
+
+  bool _pseudo_inverse_allocation_(false);
+  int i;
+
+  // Decide whether to allocate the pseudo-inverse
+  if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
+    _pseudo_inverse_allocation_ = true;
+  }
+
+  // Re-allocate new memory if necessary
+  if (NumberOfReconstructions != NumberOfHighOrderVariables){
+
+    // allocate the high-order array
+    allocate_HighOrder_Array(NumberOfReconstructions);
+    
+    // set the reconstruction order of each high-order object
+    for (i=0; i<NumberOfHighOrderVariables; ++i){
+      if (_complete_initialization_){
+	// initialize the high-order variable completely 
+	HO_Ptr[i].InitializeVariable(ReconstructionOrders[i],
+				     Grid,
+				     _pseudo_inverse_allocation_);
+      } else {
+	// initialize the basic high-order variable
+	HO_Ptr[i].InitializeBasicVariable(ReconstructionOrders[i],
+					  Grid,
+					  _pseudo_inverse_allocation_);
+      }
+    }
+
+  } else {
+    // check the reconstruction orders
+    for (i=0; i<ReconstructionOrders.size(); ++i){
+      if (HighOrderVariable(i).RecOrder() != ReconstructionOrders[i]){
+	// change the reconstruction order of the high-order object
+	HO_Ptr[i].SetReconstructionOrder(ReconstructionOrders[i]);
+      }
+    } // endfor
+  }// endif
+}
+
+/***************************************************//**
+ * Allocate memory for high-order boundary conditions
+ * if the corresponding boundary reconstruction is 
+ * constrained.
+ * Assume that Grid and block indexes have been setup!
+ *******************************************************/
+inline void NavierStokes2D_Quad_Block::allocate_HighOrder_BoundaryConditions(void){
+  
+  int i,j;
+  
+  // allocate North BCs
+  if ( Grid.IsWestExtendNorthBoundaryReconstructionConstrained() ||  
+       Grid.IsNorthBoundaryReconstructionConstrained() || 
+       Grid.IsEastExtendNorthBoundaryReconstructionConstrained() ){
+    
+    if (HO_WoN != NULL){
+      // deallocate memory
+      delete [] HO_WoN; HO_WoN = NULL;
+    }
+
+    // allocate new memory
+    HO_WoN = new BC_Type[NCi];
+
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (i=0; i<NCi; ++i){
+      BC_NorthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu),
+					  Grid.BCtypeN[i]);
+    }
+
+  } else if ( HO_WoN != NULL){
+    // deallocate memory
+    delete [] HO_WoN; HO_WoN = NULL;
+  }
+
+  // allocate South BCs
+  if ( Grid.IsWestExtendSouthBoundaryReconstructionConstrained() ||
+       Grid.IsSouthBoundaryReconstructionConstrained() || 
+       Grid.IsEastExtendSouthBoundaryReconstructionConstrained() ){
+
+    if (HO_WoS != NULL){
+      // deallocate memory
+      delete [] HO_WoS; HO_WoS = NULL;
+    }
+
+    // allocate new memory    
+    HO_WoS = new BC_Type[NCi];
+
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (i=0; i<NCi; ++i){
+      BC_SouthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl),
+					  Grid.BCtypeS[i]);
+    }    
+  } else if (HO_WoS != NULL){
+    // deallocate memory
+    delete [] HO_WoS; HO_WoS = NULL;
+  }
+
+  // allocate East BCs
+  if ( Grid.IsSouthExtendEastBoundaryReconstructionConstrained() ||
+       Grid.IsEastBoundaryReconstructionConstrained() ||
+       Grid.IsNorthExtendEastBoundaryReconstructionConstrained() ){
+
+    if (HO_WoE != NULL){
+      // deallocate memory
+      delete [] HO_WoE; HO_WoE = NULL;
+    }
+
+    // allocate new memory    
+    HO_WoE = new BC_Type[NCj];
+
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (j=0; j<NCj; ++j){
+      BC_EastCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j),
+					 Grid.BCtypeE[j]);
+    }
+  } else if (HO_WoE != NULL){
+    // deallocate memory
+    delete [] HO_WoE; HO_WoE = NULL;
+  }
+
+  // allocate West BCs
+  if ( Grid.IsSouthExtendWestBoundaryReconstructionConstrained() ||
+       Grid.IsWestBoundaryReconstructionConstrained() || 
+       Grid.IsNorthExtendWestBoundaryReconstructionConstrained() ){
+
+    if (HO_WoW != NULL){
+      // deallocate memory
+      delete [] HO_WoW; HO_WoW = NULL;
+    }
+
+    // allocate new memory    
+    HO_WoW = new BC_Type[NCj];
+
+    // allocate BC memory for each constrained Gauss quadrature point
+    for (j=0; j<NCj; ++j){
+      BC_WestCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j),
+					 Grid.BCtypeW[j]);
+    }
+
+  } else if (HO_WoW != NULL){
+    // deallocate memory
+    delete [] HO_WoW; HO_WoW = NULL;
+  }
+
+}
+
+
 /**********************************************************************
  * NavierStokes2D_Quad_Block::deallocate -- Deallocate memory.        *
  **********************************************************************/
 inline void NavierStokes2D_Quad_Block::deallocate(void) {
-  Grid.deallocate();
-  for (int i = 0; i < NCi; i++) {
-    delete []W[i]; W[i] = NULL; delete []U[i]; U[i] = NULL;
-    delete []dt[i]; dt[i] = NULL; 
-    for (int j = 0; j < NCj; j++) { 
-      delete []dUdt[i][j]; dUdt[i][j] = NULL; 
-      delete []d_dWdx_dW[i][j]; d_dWdx_dW[i][j] = NULL;
-      delete []d_dWdy_dW[i][j]; d_dWdy_dW[i][j] = NULL;
-    }
-    delete []dUdt[i]; dUdt[i] = NULL;
-    delete []dWdx[i]; dWdx[i] = NULL; delete []dWdy[i]; dWdy[i] = NULL;
-    delete []d_dWdx_dW[i]; d_dWdx_dW[i] = NULL;
-    delete []d_dWdy_dW[i]; d_dWdy_dW[i] = NULL;
-    delete []phi[i];  phi[i]  = NULL; delete []Uo[i]; Uo[i] = NULL;
-    delete []Wall[i]; Wall[i] = NULL; 
-  }
-  delete []W; W = NULL; delete []U; U = NULL;
-  delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
-  delete []dWdx; dWdx = NULL; delete []dWdy; dWdy = NULL; 
-  delete []d_dWdx_dW; d_dWdx_dW = NULL;
-  delete []d_dWdy_dW; d_dWdy_dW = NULL;
-  delete []phi; phi = NULL; delete []Uo; Uo = NULL;
-  delete []Wall; Wall = NULL;
-  delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
-  delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
-  delete []WoN; WoN = NULL; delete []WoS; WoS = NULL;
-  delete []WoE; WoE = NULL; delete []WoW; WoW = NULL;
-  if (face_grad_arrays_allocated) {
-    for (int i = 0; i < NCi; i++) {
-      delete []dWdx_faceN[i]; delete []dWdy_faceN[i]; 
-      delete []dWdx_faceE[i]; delete []dWdy_faceE[i]; 
-    }
-    delete []dWdx_faceN; delete []dWdy_faceN; 
-    delete []dWdx_faceE; delete []dWdy_faceE; 
+  if (U != NULL){
+    /* free the memory if there is memory allocated */
+    int i,j;
+    Grid.deallocate();
+    for (i = 0; i < NCi; i++) {
+      delete []W[i]; W[i] = NULL; delete []U[i]; U[i] = NULL;
+      delete []dt[i]; dt[i] = NULL; 
+      for (j = 0; j < NCj; j++) { 
+	delete []dUdt[i][j]; dUdt[i][j] = NULL; 
+	delete []d_dWdx_dW[i][j]; d_dWdx_dW[i][j] = NULL;
+	delete []d_dWdy_dW[i][j]; d_dWdy_dW[i][j] = NULL;
+      }
+      delete []dUdt[i]; dUdt[i] = NULL;
+      delete []dWdx[i]; dWdx[i] = NULL; delete []dWdy[i]; dWdy[i] = NULL;
+      delete []d_dWdx_dW[i]; d_dWdx_dW[i] = NULL;
+      delete []d_dWdy_dW[i]; d_dWdy_dW[i] = NULL;
+      delete []phi[i];  phi[i]  = NULL; delete []Uo[i]; Uo[i] = NULL;
+      delete []Wall[i]; Wall[i] = NULL; 
+    } /* endfor */
+    delete []W; W = NULL; delete []U; U = NULL;
+    delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
+    delete []dWdx; dWdx = NULL; delete []dWdy; dWdy = NULL; 
+    delete []d_dWdx_dW; d_dWdx_dW = NULL;
+    delete []d_dWdy_dW; d_dWdy_dW = NULL;
+    delete []phi; phi = NULL; delete []Uo; Uo = NULL;
+    delete []Wall; Wall = NULL;
+    delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
+    delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
+    delete []WoN; WoN = NULL; delete []WoS; WoS = NULL;
+    delete []WoE; WoE = NULL; delete []WoW; WoW = NULL;
+    if (face_grad_arrays_allocated) {
+      for (i = 0; i < NCi; i++) {
+	delete []dWdx_faceN[i]; delete []dWdy_faceN[i]; 
+	delete []dWdx_faceE[i]; delete []dWdy_faceE[i]; 
+      }
+      delete []dWdx_faceN; delete []dWdy_faceN; 
+      delete []dWdx_faceE; delete []dWdy_faceE; 
 
-    face_grad_arrays_allocated = false;
+      face_grad_arrays_allocated = false;
+    }
+    NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+
+    deallocate_HighOrder();
+    deallocate_HighOrder_BoundaryConditions();   
+  } // endif
+}
+
+/******************************************//**
+ * Deallocate memory for high-order variables
+ *********************************************/
+inline void NavierStokes2D_Quad_Block::deallocate_HighOrder(void) {
+  delete []HO_Ptr; HO_Ptr = NULL;
+  NumberOfHighOrderVariables = 0;
+}
+
+/****************************************************//**
+ * Deallocate memory for high-order boundary conditions
+ *******************************************************/
+inline void NavierStokes2D_Quad_Block::deallocate_HighOrder_BoundaryConditions(void) {
+  if (HO_WoN != NULL){
+    delete [] HO_WoN; HO_WoN = NULL;
   }
-  NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+  if (HO_WoS != NULL){
+    delete [] HO_WoS; HO_WoS = NULL;
+  }
+  if (HO_WoE != NULL){
+    delete [] HO_WoE; HO_WoE = NULL;
+  }
+  if (HO_WoW != NULL){
+    delete [] HO_WoW; HO_WoW = NULL;
+  }
 }
 
 /**********************************************************************
@@ -935,6 +1428,266 @@ inline void NavierStokes2D_Quad_Block::freeze_limiters(void) {
   Freeze_Limiter = ON; 
 }
 
+/*!
+ * Determine the number of neighbouring cells to
+ * be used in the piecewise linear reconstruction
+ * procedure and set the cell indexes in the 
+ * provided containers.
+ *
+ * \param [in] i the i-index of the reconstructed cell
+ * \param [in] j the j-index of the reconstructed cell
+ * \param [out] i_index the "i" indexes of the neighbouring cells that form the stencil
+ * \param [out] j_index the "j" indexes of the neighbouring cells that form the stencil
+ * \param [out] n_ptr the number of neighbouring cells that form the stencil.
+ * This number is typically 8, but it can vary for different boundary conditions.
+ */
+inline void NavierStokes2D_Quad_Block::SetPiecewiseLinearReconstructionStencil(const int &i, const int &j,
+									       int i_index[], int j_index[],
+									       int &n_pts){
+
+  if (i <= ICl-Nghost || i >= ICu+Nghost || j <= JCl-Nghost || j >= JCu+Nghost) {
+    n_pts = 0;
+  } else if ((i == ICl-1) && (Grid.BCtypeW[j] != BC_NONE)) {
+    if (j == JCl-1 || j == JCu+1) {
+      n_pts = 0;
+    } else if (Grid.BCtypeW[j] == BC_PERIODIC ||
+	       Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
+	       Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
+	       Grid.BCtypeW[j] == BC_INFLOW_SUBSONIC ||
+	       Grid.BCtypeW[j] == BC_OUTFLOW_SUBSONIC ||
+	       Grid.BCtypeW[j] == BC_FIXED_PRESSURE ||
+	       Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
+	       Grid.BCtypeW[j] == BC_NEUMANN ||
+	       Grid.BCtypeW[j] == BC_ROBIN) {
+      if (j == JCl) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i+1; j_index[1] = j  ;
+	i_index[2] = i-1; j_index[2] = j+1;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } else if (j == JCu) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+      } else {
+	n_pts = 8;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+	i_index[5] = i-1; j_index[5] = j+1;
+	i_index[6] = i  ; j_index[6] = j+1;
+	i_index[7] = i+1; j_index[7] = j+1;
+      } /* endif */
+    } else {
+      if (j == JCl) {
+	n_pts = 3;
+	i_index[0] = i+1; j_index[0] = j  ;
+	i_index[1] = i  ; j_index[1] = j+1;
+	i_index[2] = i+1; j_index[2] = j+1;
+      } else if (j == JCu) {
+	n_pts = 3;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+      } else {
+	n_pts = 5;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } /* endif */
+    } /* endif */           
+  } else if ((i == ICu+1) && (Grid.BCtypeE[j] != BC_NONE)) {
+    if (j == JCl-1 || j == JCu+1) {
+      n_pts = 0;
+    } else if (Grid.BCtypeE[j] == BC_PERIODIC ||
+	       Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
+	       Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
+	       Grid.BCtypeE[j] == BC_INFLOW_SUBSONIC ||
+	       Grid.BCtypeE[j] == BC_OUTFLOW_SUBSONIC ||
+	       Grid.BCtypeE[j] == BC_FIXED_PRESSURE ||
+	       Grid.BCtypeE[j] == BC_CHARACTERISTIC ||	       
+	       Grid.BCtypeE[j] == BC_NEUMANN ||
+	       Grid.BCtypeE[j] == BC_ROBIN) {
+      if (j == JCl) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i+1; j_index[1] = j  ;
+	i_index[2] = i-1; j_index[2] = j+1;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } else if (j == JCu) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+      } else {
+	n_pts = 8;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+	i_index[5] = i-1; j_index[5] = j+1;
+	i_index[6] = i  ; j_index[6] = j+1;
+	i_index[7] = i+1; j_index[7] = j+1;
+      } /* endif */
+    } else {
+      if (j == JCl) {
+	n_pts = 3;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i-1; j_index[1] = j+1;
+	i_index[2] = i  ; j_index[2] = j+1;
+      } else if (j == JCu) {
+	n_pts = 3;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+      } else {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+	i_index[3] = i-1; j_index[3] = j+1;
+	i_index[4] = i  ; j_index[4] = j+1;
+      } /* endif */
+    } /* endif */
+  } else if ((j == JCl-1) && (Grid.BCtypeS[i] != BC_NONE)) {
+    if (i == ICl-1 || i == ICu+1) {
+      n_pts = 0;
+    } else if (Grid.BCtypeS[i] == BC_PERIODIC ||
+	       Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
+	       Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
+	       Grid.BCtypeS[i] == BC_INFLOW_SUBSONIC ||
+	       Grid.BCtypeS[i] == BC_OUTFLOW_SUBSONIC ||
+	       Grid.BCtypeS[i] == BC_FIXED_PRESSURE ||
+	       Grid.BCtypeS[i] == BC_CHARACTERISTIC ||	       
+	       Grid.BCtypeS[i] == BC_NEUMANN ||
+	       Grid.BCtypeS[i] == BC_ROBIN) {
+      if (i == ICl) {
+	n_pts = 5;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } else if (i == ICu) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+	i_index[3] = i-1; j_index[3] = j+1;
+	i_index[4] = i  ; j_index[4] = j+1;
+      } else {
+	n_pts = 8;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+	i_index[5] = i-1; j_index[5] = j+1;
+	i_index[6] = i  ; j_index[6] = j+1;
+	i_index[7] = i+1; j_index[7] = j+1;
+      } /* endif */
+    } else {
+      if (i == ICl) {
+	n_pts = 3;
+	i_index[0] = i+1; j_index[0] = j  ;
+	i_index[1] = i  ; j_index[1] = j+1;
+	i_index[2] = i+1; j_index[2] = j+1;
+      } else if (i == ICu) {
+	n_pts = 3;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i-1; j_index[1] = j+1;
+	i_index[2] = i  ; j_index[2] = j+1;
+      } else {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j  ;
+	i_index[1] = i+1; j_index[1] = j  ;
+	i_index[2] = i-1; j_index[2] = j+1;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } /* endif */
+    } /* endif */
+  } else if ((j == JCu+1) && (Grid.BCtypeN[i] != BC_NONE)) {
+    if (i == ICl-1 || i == ICu+1) {
+      n_pts = 0;
+    } else if (Grid.BCtypeN[i] == BC_PERIODIC ||
+	       Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
+	       Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
+	       Grid.BCtypeN[i] == BC_INFLOW_SUBSONIC ||
+	       Grid.BCtypeN[i] == BC_OUTFLOW_SUBSONIC ||
+	       Grid.BCtypeN[i] == BC_FIXED_PRESSURE ||
+	       Grid.BCtypeN[i] == BC_CHARACTERISTIC ||	       
+	       Grid.BCtypeN[i] == BC_NEUMANN ||
+	       Grid.BCtypeN[i] == BC_ROBIN) {
+      if (i == ICl) {
+	n_pts = 5;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+	i_index[3] = i  ; j_index[3] = j+1;
+	i_index[4] = i+1; j_index[4] = j+1;
+      } else if (i == ICu) {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+	i_index[3] = i-1; j_index[3] = j+1;
+	i_index[4] = i  ; j_index[4] = j+1;
+      } else {
+	n_pts = 8;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+	i_index[5] = i-1; j_index[5] = j+1;
+	i_index[6] = i  ; j_index[6] = j+1;
+	i_index[7] = i+1; j_index[7] = j+1;
+      } /* endif */
+    } else {
+      if (i == ICl) {
+	n_pts = 3;
+	i_index[0] = i  ; j_index[0] = j-1;
+	i_index[1] = i+1; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j  ;
+      } else if (i == ICu) {
+	n_pts = 3;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i-1; j_index[2] = j  ;
+      } else {
+	n_pts = 5;
+	i_index[0] = i-1; j_index[0] = j-1;
+	i_index[1] = i  ; j_index[1] = j-1;
+	i_index[2] = i+1; j_index[2] = j-1;
+	i_index[3] = i-1; j_index[3] = j  ;
+	i_index[4] = i+1; j_index[4] = j  ;
+      } /* endif */
+    } /* endif */
+  } else {
+    n_pts = 8;
+    i_index[0] = i-1; j_index[0] = j-1;
+    i_index[1] = i  ; j_index[1] = j-1;
+    i_index[2] = i+1; j_index[2] = j-1;
+    i_index[3] = i-1; j_index[3] = j  ;
+    i_index[4] = i+1; j_index[4] = j  ;
+    i_index[5] = i-1; j_index[5] = j+1;
+    i_index[6] = i  ; j_index[6] = j+1;
+    i_index[7] = i+1; j_index[7] = j+1;
+  } /* endif */
+}
+
 /**********************************************************************
  * NavierStokes2D_Quad_Block -- Input-output operators.               *
  **********************************************************************/
@@ -966,13 +1719,21 @@ inline ostream &operator << (ostream &out_file,
     out_file << SolnBlk.WoS[i] << endl;
     out_file << SolnBlk.WoN[i] << endl;
   }
+
+  // Output the high-order variables
+  out_file << SolnBlk.NumberOfHighOrderVariables << "\n";
+  for (int k = 1; k <= SolnBlk.NumberOfHighOrderVariables; ++k){
+    out_file << SolnBlk.HighOrderVariable(k-1);
+  }/* endfor */
+
   return out_file;
 }
 
 inline istream &operator >> (istream &in_file,
 			     NavierStokes2D_Quad_Block &SolnBlk) {
-  int ni, il, iu, nj, jl, ju, ng;
-  Grid2D_Quad_Block New_Grid;
+  int i,j,k;
+  int ni, il, iu, nj, jl, ju, ng, n_HO;
+  Grid2D_Quad_Block_HO New_Grid;
   in_file >> New_Grid;
   in_file.setf(ios::skipws);
   in_file >> ni >> il >> iu;
@@ -995,12 +1756,16 @@ inline istream &operator >> (istream &in_file,
     if (SolnBlk.U != NULL) SolnBlk.deallocate();
     SolnBlk.allocate(ni-2*ng,nj-2*ng,ng);
   }
-  Copy_Quad_Block(SolnBlk.Grid,New_Grid); New_Grid.deallocate();
-  for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
-    for (int i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
+
+  // Copy the temporary mesh into the grid of the current solution block
+  SolnBlk.Grid = New_Grid;
+
+  // Read the solution & Initialize some data structures
+  for (j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
+    for (i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; i++) {
       in_file >> SolnBlk.U[i][j];
       SolnBlk.W[i][j] = SolnBlk.U[i][j].W();
-      for (int k = 0; k < NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D; k++) {
+      for (k = 0; k < NUMBER_OF_RESIDUAL_VECTORS_NAVIERSTOKES2D; k++) {
 	SolnBlk.dUdt[i][j][k].Vacuum();
       }
       SolnBlk.dWdx[i][j].Vacuum();
@@ -1026,15 +1791,25 @@ inline istream &operator >> (istream &in_file,
     in_file >> SolnBlk.WoS[i];
     in_file >> SolnBlk.WoN[i];
   }
+
+  // Allocate memory for the high-order boundary conditions (the values don't need to be read)
+  SolnBlk.allocate_HighOrder_BoundaryConditions();
+
   in_file.setf(ios::skipws);
+
+  // Read the high-order variables
+  in_file >> n_HO;
+  SolnBlk.allocate_HighOrder_Array(n_HO);
+
+  for (int k = 1; k <= SolnBlk.NumberOfHighOrderVariables; ++k){
+    // Read the current variable
+    in_file >> SolnBlk.HighOrderVariable(k-1);
+    // Associate this variable to the current grid
+    SolnBlk.HighOrderVariable(k-1).AssociateGeometry(SolnBlk.Grid);
+  }/* endfor */
+
   return in_file;
 }
-
-/**********************************************************************
- *                                                                    *
- * MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING.                     *
- *                                                                    *
- **********************************************************************/
 
 /**********************************************************************
  * NavierStokes2D_Quad_Block::NumVar -- Returns number of state       *
@@ -1043,6 +1818,321 @@ inline istream &operator >> (istream &in_file,
 inline int NavierStokes2D_Quad_Block::NumVar(void) {
   return NUM_VAR_NAVIERSTOKES2D;
 }
+
+/*!
+ * Compute the solution provided by the piecewise linear reconstruction
+ * at a location relative to the cell centroid.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param DeltaXToCentroid the X-delta between the point of interest and the centroid
+ * \param DeltaYToCentroid the Y-delta between the point of interest and the centroid
+ */
+inline NavierStokes2D_pState NavierStokes2D_Quad_Block::PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+											const double &DeltaXToCentroid,
+											const double &DeltaYToCentroid) const{
+  return W[ii][jj] + (phi[ii][jj]^(dWdx[ii][jj]*DeltaXToCentroid + dWdy[ii][jj]*DeltaYToCentroid) );
+}
+
+/*!
+ * Compute the solution provided by the piecewise linear reconstruction
+ * for a particular state parameter at a location relative to the cell centroid.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param DeltaXToCentroid the X-delta between the point of interest and the centroid
+ * \param DeltaYToCentroid the Y-delta between the point of interest and the centroid
+ * \param parameter the parameter for which the solution is computed
+ */
+inline double NavierStokes2D_Quad_Block::PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+									 const double &DeltaXToCentroid,
+									 const double &DeltaYToCentroid,
+									 const unsigned int &parameter) const{
+  return W[ii][jj][parameter] + (phi[ii][jj][parameter]*(dWdx[ii][jj][parameter]*DeltaXToCentroid + 
+							 dWdy[ii][jj][parameter]*DeltaYToCentroid) );
+}
+
+/*!
+ * Compute the solution provided by the piecewise linear reconstruction
+ * at a particular location.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param CalculationPoint the Cartesian coordinates of the point of interest
+ */
+inline NavierStokes2D_pState 
+NavierStokes2D_Quad_Block::PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+							     const Vector2D &CalculationPoint) const{
+  // calculate the distance between the point of interest and the centroid of the cell
+  Vector2D dX(CalculationPoint - Grid.Cell[ii][jj].Xc);	
+  return PiecewiseLinearSolutionForDelta(ii,jj,dX.x,dX.y);
+}
+
+/*!
+ * Compute the solution provided by the piecewise linear reconstruction
+ * for a particular state parameter at a particular location.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param CalculationPoint the Cartesian coordinates of the point of interest
+ * \param parameter the parameter for which the solution is computed
+ */
+inline double NavierStokes2D_Quad_Block::PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+									   const Vector2D &CalculationPoint,
+									   const unsigned int &parameter) const{
+  // calculate the distance between the point of interest and the centroid of the cell
+  Vector2D dX(CalculationPoint - Grid.Cell[ii][jj].Xc);	  
+  return PiecewiseLinearSolutionForDelta(ii,jj,dX.x,dX.y,parameter);
+}
+
+/*!
+ * Compute the solution provided by the UNLIMITED (i.e. no limiter!) piecewise 
+ * linear reconstruction at a location relative to the cell centroid.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param DeltaXToCentroid the X-delta between the point of interest and the centroid
+ * \param DeltaYToCentroid the Y-delta between the point of interest and the centroid
+ */
+inline NavierStokes2D_pState 
+NavierStokes2D_Quad_Block::UnlimitedPiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+								    const double &DeltaXToCentroid,
+								    const double &DeltaYToCentroid) const{
+
+  return W[ii][jj] + dWdx[ii][jj]*DeltaXToCentroid + dWdy[ii][jj]*DeltaYToCentroid;
+}
+
+/*!
+ * Compute the solution provided by the UNLIMITED (i.e. no limiter!) piecewise 
+ * linear reconstruction at a particular location.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param CalculationPoint the Cartesian coordinates of the point of interest
+ */
+inline NavierStokes2D_pState 
+NavierStokes2D_Quad_Block::UnlimitedPiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+								      const Vector2D &CalculationPoint) const{
+
+  // calculate the distance between the point of interest and the centroid of the cell
+  Vector2D dX(CalculationPoint - Grid.Cell[ii][jj].Xc);	
+  return UnlimitedPiecewiseLinearSolutionForDelta(ii,jj,dX.x,dX.y);
+}
+
+/*!
+ * Compute the solution entropy at a particular location 
+ * based on the piecewise linear reconstruction.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param CalculationPoint the Cartesian coordinates of the point of interest
+ * \param parameter only used for compatibility with other frameworks, otherwise useless
+ */
+inline double NavierStokes2D_Quad_Block::SolutionEntropyAtLocation(const int &ii, const int &jj,
+								   const Vector2D &CalculationPoint,
+								   const unsigned int &parameter) const{
+  
+  return PiecewiseLinearSolutionAtLocation(ii,jj,CalculationPoint).s();
+}
+
+/*!
+ * Compute the solution pressure at a particular location 
+ * based on the piecewise linear reconstruction of cell (ii,jj).
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param X_Coord the x-coordinate of the point of interest
+ * \param Y_Coord the y-coordinate of the point of interest
+ */
+inline double NavierStokes2D_Quad_Block::SolutionPressureAtCoordinates(const int &ii, const int &jj,
+								       const double &X_Coord, const double &Y_Coord) const{
+
+  return W[ii][jj][4] + (phi[ii][jj][4]*(dWdx[ii][jj][4]*(X_Coord - Grid.XCellCentroid(ii,jj)) + 
+					 dWdy[ii][jj][4]*(Y_Coord - Grid.YCellCentroid(ii,jj)) ));
+}
+
+/*!
+ * Compute the wall shear stress at a particular location
+ * based on the high-order piecewise reconstruction of cell (ii,jj).
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param CalculationPoint position vector for the location of interest
+ * \param normal_dir normal vector at the location of interest
+ */
+inline double NavierStokes2D_Quad_Block::WallShearStress_HighOrder(const int &ii, const int &jj,
+								   const Vector2D &CalculationPoint,
+								   const Vector2D &normal_dir) const {
+  // Solution and gradient in the normal direction at the location of interest
+  NavierStokes2D_pState W_P;
+  double dudn_P, dvdn_P;
+
+  // == determine solution at the given location
+  W_P = HO_Ptr[0].SolutionStateAtLocation(ii,jj,CalculationPoint);
+  // == determine normal gradient of x-velocity component 
+  dudn_P = HO_Ptr[0].NormalGradientAtLocation(ii,jj,
+					      CalculationPoint, normal_dir,
+					      2); // < x-velocity component
+  // == determine normal gradient of y-velocity component 
+  dvdn_P = HO_Ptr[0].NormalGradientAtLocation(ii,jj,
+					      CalculationPoint, normal_dir,
+					      3); // < y-velocity component
+
+  // return the value of the wall shear stress (i.e a scalar)
+  return W_P.WallShearStress(dudn_P, dvdn_P, normal_dir);
+}
+
+/*!
+ * Allocate the high-order array.
+ */
+inline void NavierStokes2D_Quad_Block::allocate_HighOrder_Array(const int & NumberOfReconstructions){
+
+  if (NumberOfReconstructions != NumberOfHighOrderVariables){
+    
+    // deallocate memory
+    deallocate_HighOrder();
+    
+    // allocate new memory for high-order objects
+    HO_Ptr = new HighOrderType [NumberOfReconstructions];
+    
+    // check for successful memory allocation
+    if (HO_Ptr != NULL){
+      NumberOfHighOrderVariables = NumberOfReconstructions;
+    }
+  }
+}
+
+/*!
+ * Copy the high-order objects from the SolnBlk.
+ */
+inline void NavierStokes2D_Quad_Block::copy_HighOrder_Objects(const NavierStokes2D_Quad_Block &SolnBlk){
+
+  int i, j, k;
+
+  if (SolnBlk.U != NULL){
+
+    /* Set the same number of high-order objects
+       as that of the rhs block. */
+    allocate_HighOrder_Array(SolnBlk.NumberOfHighOrderVariables);
+    
+    // Copy the high-order objects
+    for (k = 1; k <= NumberOfHighOrderVariables; ++k){
+      HighOrderVariable(k-1) = SolnBlk.HighOrderVariable(k-1);
+    }/* endfor */
+
+    // Copy the high-order boundary conditions.
+
+    // === North BCs
+    if (SolnBlk.HO_WoN != NULL){
+
+      if (HO_WoN != NULL){
+	// deallocate memory
+	delete [] HO_WoN; HO_WoN = NULL;
+      }
+
+      // allocate new memory based on the number of the current grid
+      HO_WoN = new BC_Type[NCi];
+
+      for (i=0; i<NCi; ++i){
+	// allocate BC memory for each constrained Gauss quadrature point
+	BC_NorthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu),
+					    Grid.BCtypeN[i]);
+
+	// Copy North high-order BCs
+	HO_WoN[i] = SolnBlk.HO_WoN[i];
+      }
+      
+    } else if ( HO_WoN != NULL){
+      // deallocate memory
+      delete [] HO_WoN; HO_WoN = NULL;
+    }
+
+
+    // === South BCs
+    if (SolnBlk.HO_WoS != NULL){
+
+      if (HO_WoS != NULL){
+	// deallocate memory
+	delete [] HO_WoS; HO_WoS = NULL;
+      }
+
+      // allocate new memory    
+      HO_WoS = new BC_Type[NCi];
+
+      for (i=0; i<NCi; ++i){
+	// allocate BC memory for each constrained Gauss quadrature point
+	BC_SouthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl),
+					    Grid.BCtypeS[i]);
+	
+	// Copy South high-order BCs
+	HO_WoS[i] = SolnBlk.HO_WoS[i];
+      }
+
+    } else if (HO_WoS != NULL){
+      // deallocate memory
+      delete [] HO_WoS; HO_WoS = NULL;
+    }
+
+
+    // === East BCs
+    if (SolnBlk.HO_WoE != NULL){
+
+      if (HO_WoE != NULL){
+	// deallocate memory
+	delete [] HO_WoE; HO_WoE = NULL;
+      }
+
+      // allocate new memory    
+      HO_WoE = new BC_Type[NCj];
+
+      for (j=0; j<NCj; ++j){
+	// allocate BC memory for each constrained Gauss quadrature point
+	BC_EastCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j),
+					   Grid.BCtypeE[j]);
+
+	// Copy East high-order BCs
+	HO_WoE[j] = SolnBlk.HO_WoE[j];
+      }
+    } else if (HO_WoE != NULL){
+      // deallocate memory
+      delete [] HO_WoE; HO_WoE = NULL;
+    }
+
+    // === West BCs
+    if (SolnBlk.HO_WoW != NULL){
+
+      if (HO_WoW != NULL){
+	// deallocate memory
+	delete [] HO_WoW; HO_WoW = NULL;
+      }
+
+      // allocate new memory    
+      HO_WoW = new BC_Type[NCj];
+      
+      for (j=0; j<NCj; ++j){
+	// allocate BC memory for each constrained Gauss quadrature point
+	BC_WestCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j),
+					   Grid.BCtypeW[j]);
+	
+	// Copy West high-order BCs
+	HO_WoW[j] = SolnBlk.HO_WoW[j];
+      }
+
+    } else if (HO_WoW != NULL){
+      // deallocate memory
+      delete [] HO_WoW; HO_WoW = NULL;
+    }
+    
+  } // endif
+  
+}
+
+
+/**********************************************************************
+ *                                                                    *
+ * MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING.                     *
+ *                                                                    *
+ **********************************************************************/
 
 /**********************************************************************
  * NavierStokes2D_Quad_Block::LoadSendBuffer -- Loads send message    *
@@ -2106,6 +3196,115 @@ inline int NavierStokes2D_Quad_Block::UnloadReceiveBuffer_Flux_F2C(double *buffe
   return 0;
 }
 
+/*!
+ * Return the upwind inviscid flux in the normal direction 
+ * based on the left and right interface states for 
+ * a variety of flux functions.
+ *
+ * \param Flux_Function index to specify the requested flux function
+ * \param Wl left interface state
+ * \param Wr right interface state
+ * \param normal_dir vector to define the normal direction
+ */
+inline NavierStokes2D_cState NavierStokes2D_Quad_Block::RiemannFlux_n(const int & Flux_Function,
+								      const NavierStokes2D_pState &Wl,
+								      const NavierStokes2D_pState &Wr,
+								      const Vector2D &normal_dir) const{
+
+  switch(Flux_Function) {
+  case FLUX_FUNCTION_GODUNOV :
+    return FluxGodunov_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_ROE :
+    return FluxRoe_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_RUSANOV :
+    return FluxRusanov_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_HLLE :
+    return FluxHLLE_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_HLLL :
+    return FluxHLLL_n(Wl,Wr, normal_dir);
+  case FLUX_FUNCTION_HLLC :
+    return FluxHLLC_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_VANLEER :
+    return FluxVanLeer_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_AUSM :
+    return FluxAUSM_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_AUSMplus :
+    return FluxAUSMplus_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_GODUNOV_WRS :
+    return FluxGodunov_Wrs_n(Wl,Wr, normal_dir);
+  default:
+    return FluxRoe_n(Wl, Wr, normal_dir);
+  } /* endswitch */
+
+}
+
+/*!
+ * Check that the primitive state is physical.
+ *
+ * \param W checked solution state
+ * \param iCell i-index of the cell which the solution state belongs to 
+ * \param iCell j-index of the cell which the solution state belongs to 
+ * \param Ref reference string. Used in the output error message
+ */
+inline void NavierStokes2D_Quad_Block::Validate_Primitive_SolnState(NavierStokes2D_pState & W,
+								    const int &iCell,
+								    const int &jCell,
+								    const std::string &Ref,
+								    const int &IndexHO) const{
+  
+  int Param_Index;
+  std::ostringstream error_msg;
+
+  // Check if negative density or pressure occur
+  if ( W.Unphysical_Properties() ) {
+
+    if (CENO_Execution_Mode::FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE){
+
+      if (CENO_Execution_Mode::CENO_VERBOSE){ 
+	// output a brief error message
+	std::cout << "\n " << CFFC_Name() 
+		  << " NavierStokes2D ERROR: Unphysical primitive variable at the "
+		  << Ref
+		  << " interface of (" << iCell << "," << jCell << ") cell: "
+		  << "\n W = " << W << "\n"; 
+      }
+
+      // try using the Piecewise Constant (PWC) solution instead
+      W = CellSolution(iCell,jCell);
+
+    } else {
+
+      // throw a runtime error with an error message
+      error_msg << "\n " << CFFC_Name() 
+		<< " NavierStokes2D ERROR: Unphysical primitive variable at the "
+		<< Ref
+		<< " interface of (" << iCell << "," << jCell << ") cell: "
+		<< "\n W = " << W; 
+      
+      error_msg << "\n Cell Centroid: "
+		<< Grid.Cell[iCell][jCell].Xc;
+
+      error_msg << "\n High-order reconstruction data: "
+		<< "\n Derivatives: \n"
+		<< HighOrderVariable(IndexHO).CellTaylorDeriv(iCell,jCell)
+		<< "\n Limiter: \n"
+		<< HighOrderVariable(IndexHO).CellTaylorDeriv(iCell,jCell).Limiter();
+	      
+      for (Param_Index = 1; Param_Index <= 4; ++Param_Index){
+	error_msg << "\n  Variable=" << Param_Index
+		  << ", SI=" << HighOrderVariable(IndexHO).CellSmoothnessIndicatorValue(iCell,jCell,Param_Index)
+		  << ", Flagged=" <<  HighOrderVariable(IndexHO).CellInadequateFitValue(iCell,jCell,Param_Index);
+      }
+      error_msg << "\n";
+
+      throw runtime_error(error_msg.str());
+
+    } // endif (FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE)
+
+  } // endif
+
+}
+
 /**********************************************************************
  * NavierStokes2D_Quad_Block -- Single Block External Subroutines.    *
  **********************************************************************/
@@ -2177,6 +3376,10 @@ extern void Linear_Reconstruction_LeastSquares_2(NavierStokes2D_Quad_Block &Soln
 extern void Linear_Reconstruction_LeastSquares(NavierStokes2D_Quad_Block &SolnBlk,
 					       const int Limiter);
 
+extern void Linear_Reconstruction(NavierStokes2D_Quad_Block &SolnBlk,
+				  const int & Reconstruction_Type,
+				  const int & Limiter);
+
 extern void Residual_Smoothing(NavierStokes2D_Quad_Block &SolnBlk,
                                const int k_residual,
 			       double &epsilon,
@@ -2230,7 +3433,7 @@ extern NavierStokes2D_Quad_Block* Allocate(NavierStokes2D_Quad_Block *Soln_ptr,
 extern NavierStokes2D_Quad_Block* Deallocate(NavierStokes2D_Quad_Block *Soln_ptr,
 					     NavierStokes2D_Input_Parameters &Input_Parameters);
 
-extern NavierStokes2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block **InitMeshBlk,
+extern NavierStokes2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block_HO **InitMeshBlk,
 							      NavierStokes2D_Quad_Block *Soln_ptr,
 							      NavierStokes2D_Input_Parameters &Input_Parameters,
 							      QuadTreeBlock_DataStructure &QuadTree,
@@ -2240,6 +3443,10 @@ extern NavierStokes2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block 
 extern void ICs(NavierStokes2D_Quad_Block *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,
                 NavierStokes2D_Input_Parameters &Input_Parameters);
+
+extern void Linear_Reconstruction(NavierStokes2D_Quad_Block *Soln_ptr,
+				  AdaptiveBlock2D_List &Soln_Block_List,
+				  NavierStokes2D_Input_Parameters &Input_Parameters);
 
 extern void BCs(NavierStokes2D_Quad_Block *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,
@@ -2648,5 +3855,13 @@ extern int Turbulence_BCs(NavierStokes2D_Quad_Block *Soln_ptr,
 
 extern int NavierStokes2DQuadSolver(char *Input_File_Name_ptr,
 				    int batch_flag);
+
+/*
+ * Include specializations CFFC header files.
+ * Must be included at the end of the file!!!
+ */
+#include "NavierStokes2DAccuracyAssessment.h" /* Include 2D accuracy assessment header 
+						 file with specializations for Navier-Stokes solution. */
+#include "NavierStokes2DHighOrder.h"   /* Include 2D high-order header file with specializations for Navier-Stokes solution. */
 
 #endif // _NAVIERSTOKES2D_QUAD_INCLUDED

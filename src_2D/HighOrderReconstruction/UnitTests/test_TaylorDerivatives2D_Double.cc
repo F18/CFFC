@@ -68,7 +68,7 @@ namespace tut
 
   void Data_TaylorDerivatives2D::InitContainer(TD_Type & Obj){
     for (int i = 0; i<=Obj.LastElem(); ++i){
-      Obj(i,true,true,true).D() = Initialization(i);
+      Obj(i).D() = Initialization(i);
     }
   }
 
@@ -82,7 +82,7 @@ namespace tut
       strcpy(msg,basic);
       sprintf (number, "%d", i);
       strcat(msg,number);
-      ensure_equals(msg,left(i,true,true,true).D(), right(i,true,true,true).D());
+      ensure_equals(msg,left(i).D(), right(i).D());
     }
   }
 
@@ -472,7 +472,7 @@ namespace tut
       // Get analytic result
       Result = 0.0;
       for (int i = 0; i<=TD.LastElem(); ++i){
-	Result += Initialization(i) * pow(DeltaX,TD(i,true,true,true).P1()) * pow(DeltaY,TD(i,true,true,true).P2());
+	Result += Initialization(i) * pow(DeltaX,TD(i).P1()) * pow(DeltaY,TD(i).P2());
       }
 
       // check
@@ -511,7 +511,7 @@ namespace tut
       // Get analytic result
       Result = 0.0;
       for (int i = TD.FirstElem()+1; i<=TD.LastElem(); ++i){
-	Result += Initialization(i) * pow(DeltaX,TD(i,true,true,true).P1()) * pow(DeltaY,TD(i,true,true,true).P2());
+	Result += Initialization(i) * pow(DeltaX,TD(i).P1()) * pow(DeltaY,TD(i).P2());
       }
       Result = Initialization(0) + Limiter*Result;
 
@@ -548,8 +548,8 @@ namespace tut
       // Get analytic result
       Result = 0.0;
       for (int i = 0; i<=TD.LastElem(); ++i){
-	Result += ( Initialization(i) * TD(i,true,true,true).P1()*pow(DeltaX,TD(i,true,true,true).P1()-1.0) *
-		    pow(DeltaY,TD(i,true,true,true).P2()) );
+	Result += ( Initialization(i) * TD(i).P1()*pow(DeltaX,TD(i).P1()-1.0) *
+		    pow(DeltaY,TD(i).P2()) );
       }
 
       // check
@@ -585,8 +585,8 @@ namespace tut
       // Get analytic result
       Result = 0.0;
       for (int i = 0; i<=TD.LastElem(); ++i){
-	Result += ( Initialization(i) * TD(i,true,true,true).P2()*pow(DeltaX,TD(i,true,true,true).P1()) *
-		    pow(DeltaY,TD(i,true,true,true).P2() - 1.0) );
+	Result += ( Initialization(i) * TD(i).P2()*pow(DeltaX,TD(i).P1()) *
+		    pow(DeltaY,TD(i).P2() - 1.0) );
       }
 
       // check

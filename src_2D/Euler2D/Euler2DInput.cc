@@ -1,20 +1,223 @@
-/* Euler2DInput.cc:  Subroutines for 2D Euler Input Classes. */
+/*!\file Euler2DInput.cc
+  \brief Subroutines for 2D Euler Input Classes. */
 
-/* Include 2D Euler input parameter header file. */
+/* Include required C++ libraries. */
+// None
 
-#ifndef _EULER2D_INPUT_INCLUDED
-#include "Euler2DInput.h"
-#endif // _EULER2D_INPUT_INCLUDED
+/* Using std namespace functions */
+// None
+
+/* Include CFFC header files */
+#include "Euler2DInput.h" /* Include 2D Euler input parameter header file. */
+#include "Euler2DQuad.h"  /* Include Euler2D_Quad_Block header file. */
+#include "../Grid/HO_Grid2DQuad_ExecutionMode.h" // Include high-order 2D grid execution mode header file
+#include "../Grid/Tecplot_ExecutionMode.h" // Include Tecplot execution mode header file
+
+/*****************************************************
+ * Euler2D_Input_Parameters -- Member functions.     *
+ ****************************************************/
+
+/*!
+ * Decide whether to output or not the boundary reference state for a particular boundary condition.
+ * To get output for a particular BCtype, just add it to the list.
+ */
+bool Euler2D_Input_Parameters::OutputBoundaryReferenceState(const int & BCtype) const{
+  if (BCtype == BC_DIRICHLET ||
+      BCtype == BC_NEUMANN ||
+      BCtype == BC_FARFIELD){
+    // Get output
+    return true;
+  } else {
+    // No output
+    return false;
+  }
+}
+
+/******************************************************//**
+ * Parse the input file
+ ********************************************************/
+int Euler2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr){
+
+  ostringstream msg;
+  int command_flag, error_flag;
+
+  /* Assign initial value for error indicator flag. */
+  error_flag = 0;
+
+  strcpy(Input_File_Name, Input_File_Name_ptr);
+  Open_Input_File(*this);
+  if (Input_File.fail()) {
+    msg << "Euler2D_Input_Parameters::Parse_Input_File() ERROR: Unable to open "
+	<<string(Input_File_Name_ptr) 
+	<< " input data file.";
+    if (Verbose()) {
+      cerr << msg.str() << endl;
+    }
+    throw runtime_error(msg.str());
+  } /* endif */
+
+  if (Verbose()) {
+    cout << "\n Reading input data file `"
+	 << Input_File_Name << "'." << endl;
+    cout.flush();
+  }
+  while (1) {
+    Get_Next_Input_Control_Parameter();
+    command_flag = Parse_Next_Input_Control_Parameter(*this);
+    if (command_flag == EXECUTE_CODE) {
+      break;
+      
+    } else if (command_flag == TERMINATE_CODE) {
+      break;
+      
+    } else if (command_flag == INVALID_INPUT_CODE ||
+	       command_flag == INVALID_INPUT_VALUE) {
+      Line_Number = -Line_Number;
+      
+      msg << "Euler2D_Input_Parameters::Parse_Input_File() ERROR: Error reading data at line # " 
+	  << -Line_Number
+	  << " of input data file.";
+      if (Verbose()){
+	cerr << msg.str() << endl;
+      }
+      
+      throw runtime_error(msg.str());
+    } /* endif */
+  } /* endwhile */
+
+  /* Perform consistency checks and internal parameter setup */
+  doInternalSetupAndConsistencyChecks(error_flag);
+
+  /* Initial processing of input control parameters complete.  
+     Return the error indicator flag. */
+  return (error_flag);
+
+}
+
+/******************************************************//**
+ * Get the next input control parameter from the input file.                                                
+ ********************************************************/
+void Euler2D_Input_Parameters::Get_Next_Input_Control_Parameter(void){
+
+  int i, index, LineSize, IndexFirstChar(0);
+  char buffer[256], ControlParameter[256];
+
+  // Initialize ControlParameter and Next_Control_Parameter to end of string
+  ControlParameter[0] = '\0';
+  strcpy(Next_Control_Parameter, ControlParameter);
+
+  // While the input stream is 'good' for reading and the end of file is not attained
+  while ( Input_File.good() && !Input_File.getline(buffer, sizeof(buffer)).eof() ){
+
+    // Process the line 
+    Line_Number = Line_Number + 1;
+    LineSize = Input_File.gcount(); // Get the size of the line. Last character is "\0"!
+
+    // Determine the index of the first character different than 'space' and 'tab'
+    for (i=0; i<LineSize; ++i){
+      if (buffer[i] != ' ' && buffer[i] != '\t'){
+	IndexFirstChar = i;
+	break;
+      }
+    }
+
+    /* Parse the line if the first character different than 'space' 
+       is also different than '#' or end of string ('\0').
+       Otherwise skip the line because it is either a comment or an empty line. */
+    if ( buffer[IndexFirstChar] != '#' && buffer[IndexFirstChar] != '\0'){
+
+      // Get the ControlParameter
+      for(i=IndexFirstChar, index=0;  i<LineSize;  ++i, ++index){
+	if (buffer[i] == ' ' || buffer[i] == '=' || buffer[i] == '\t'){
+	  ControlParameter[index] = '\0';
+	  break;
+	} else {
+	  ControlParameter[index] = buffer[i];
+	}
+      }
+
+      // Set the Next_Control_Parameter
+      strcpy(Next_Control_Parameter, ControlParameter);
+      break;
+    }
+
+  }//endwhile
+}
+
+/******************************************************//**
+ * Perform setup of internal and related external parameters.
+ * Do also check and validation of input parameters.
+ ********************************************************/
+void Euler2D_Input_Parameters::doInternalSetupAndConsistencyChecks(int & error_flag){
+
+  /* Perform consistency checks on input parameters for multigrid */
+  if (!error_flag &&
+      i_Time_Integration == TIME_STEPPING_MULTIGRID) {
+    error_flag = Check_Input_Parameters<Euler2D_Input_Parameters>(*this);
+    if (error_flag) {
+      cout << "\n Euler2D ERROR: Input Parameters consistency check failure\n";
+    }
+  }
+
+  // Perform consitency checks on the refinement criteria.
+  Number_of_Refinement_Criteria = 0;
+  if (Refinement_Criteria_Gradient_Density) Number_of_Refinement_Criteria++;
+  if (Refinement_Criteria_Divergence_Velocity) Number_of_Refinement_Criteria++;
+  if (Refinement_Criteria_Curl_Velocity) Number_of_Refinement_Criteria++;
+
+  // Perform consitency checks on the time marching parameters.
+  if (Time_Accurate == 1 && Local_Time_Stepping != GLOBAL_TIME_STEPPING){
+    Local_Time_Stepping = GLOBAL_TIME_STEPPING;
+  }
+
+  // Set Wo state based on the final input parameters
+  Wo = Euler2D_pState(Pressure/(Wo.R*Temperature), 
+		      ZERO, 
+		      ZERO, 
+		      Pressure);
+  Wo.v.x = Mach_Number*Wo.a()*cos(TWO*PI*
+				  Flow_Angle/360.00);
+  Wo.v.y = Mach_Number*Wo.a()*sin(TWO*PI*
+				  Flow_Angle/360.00);
+    
+  Uo.setgas(Gas_Type);
+  Uo = U(Wo);
+  
+  Wo.Mr_min = Mr_Min_Factor*Mach_Number;
+  Uo.Mr_min = Mr_Min_Factor*Mach_Number;
+  
+  // Enforce NO mesh stretching is required
+  if (!i_Mesh_Stretching){
+    // Mesh stretching is not ON
+    Mesh_Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
+    Mesh_Stretching_Type_Jdir = STRETCHING_FCN_LINEAR;
+    Mesh_Stretching_Factor_Idir = 1.0;
+    Mesh_Stretching_Factor_Jdir = 1.0;
+  }
+
+  // Perform update of the internal variables of the exact solution
+  ExactSoln->Set_ParticularSolution_Parameters(*this);
+
+  // Perform update of the internal variables of the high-order input parameters
+  HighOrder2D_Input::Set_Final_Parameters(*this);
+
+  // Set reference state in the Euler2D_Quad_Block class
+  Euler2D_Quad_Block::Set_Normalization_Reference_State(RefU);
+  
+  // Set limiter in CENO class
+  CENO_Execution_Mode::Limiter = i_Limiter;
+
+}
 
 /*************************************************************
  * Euler2D_Input_Parameters -- External subroutines.         *
  *************************************************************/
 
-/********************************************************
- * Routine: Open_Input_File                             *
- *                                                      *
- * Opens the appropriate input data file.               *
- *                                                      *
+/******************************************************//**
+ * Routine: Open_Input_File                             
+ *                                                      
+ * Opens the appropriate input data file.               
+ *                                                      
  ********************************************************/
 void Open_Input_File(Euler2D_Input_Parameters &IP) {
 
@@ -26,11 +229,11 @@ void Open_Input_File(Euler2D_Input_Parameters &IP) {
 
 }
 
-/********************************************************
- * Routine: Close_Input_File                            *
- *                                                      *
- * Closes the appropriate input data file.              *
- *                                                      *
+/******************************************************//**
+ * Routine: Close_Input_File                            
+ *                                                      
+ * Closes the appropriate input data file.              
+ *                                                      
  ********************************************************/
 void Close_Input_File(Euler2D_Input_Parameters &IP) {
 
@@ -39,11 +242,11 @@ void Close_Input_File(Euler2D_Input_Parameters &IP) {
 
 }
 
-/********************************************************
- * Routine: Set_Default_Input_Parameters                *
- *                                                      *
- * Assigns default values to the input parameters.      *
- *                                                      *
+/******************************************************//**
+ * Routine: Set_Default_Input_Parameters               
+ *                                                     
+ * Assigns default values to the input parameters.     
+ *                                                     
  ********************************************************/
 void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
 
@@ -73,21 +276,30 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     IP.Residual_Smoothing_Epsilon = ZERO;
     IP.Residual_Smoothing_Gauss_Seidel_Iterations = 2;
 
+    // Reconstruction type:
     string_ptr = "Least_Squares";
     strcpy(IP.Reconstruction_Type, string_ptr);
     IP.i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
+    IP.Space_Accuracy = 1;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_ReconstructionMethod = RECONSTRUCTION_LEAST_SQUARES;
+    CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF;
 
+    // Limiter type:
     string_ptr = "Barth_Jespersen";
     strcpy(IP.Limiter_Type, string_ptr);
     IP.i_Limiter = LIMITER_BARTH_JESPERSEN;
 
+    // Flux function:
     string_ptr = "HLLE";
     strcpy(IP.Flux_Function_Type, string_ptr);
     IP.i_Flux_Function = FLUX_FUNCTION_HLLE;
 
+    // Initial conditions:
     string_ptr = "Uniform";
     strcpy(IP.ICs_Type, string_ptr);
     IP.i_ICs = IC_UNIFORM;
+    IP.Exact_Integration_Digits = 9;
 
     string_ptr = "AIR";
     strcpy(IP.Gas_Type, string_ptr);
@@ -108,10 +320,12 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     IP.Wave_Position = Vector2D_ZERO;
     IP.Wave_Width = ZERO;
 
+    // Geometry switch:
     string_ptr = "Planar";
     strcpy(IP.Flow_Geometry_Type, string_ptr);
     IP.Axisymmetric = 0;
 
+    // Grid parameters:
     string_ptr = "Square";
     strcpy(IP.Grid_Type, string_ptr);
     IP.i_Grid = GRID_SQUARE;
@@ -138,6 +352,8 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     IP.Grain_Radius = 0.0;
     IP.Cylinder_Radius = ONE;
     IP.Cylinder_Radius2 = 32.00;
+    IP.Annulus_Theta_Start = 0.0;
+    IP.Annulus_Theta_End = 90.0;
     IP.Ellipse_Length_X_Axis = TWO;
     IP.Ellipse_Length_Y_Axis = HALF;
     IP.Chord_Length = ONE;
@@ -147,11 +363,22 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     IP.Isotach_Line = 0.30;
     IP.Wedge_Angle = 25.0;
     IP.Wedge_Length = HALF;
+    IP.Step_Height = 0.0127;
+    IP.Channel_Gap = 0.6; // This is a fudge to work with GRID_FORWARD_FACING_STEP.
+    IP.Top_Wall_Deflection = ZERO;
     IP.Smooth_Bump = OFF;
 
+    IP.VertexSW = Vector2D(-0.5,-0.5);
+    IP.VertexSE = Vector2D( 0.5,-0.5);
+    IP.VertexNE = Vector2D( 0.5, 0.5);
+    IP.VertexNW = Vector2D(-0.5, 0.5);
     IP.X_Shift = Vector2D_ZERO;
     IP.X_Scale = ONE;
     IP.X_Rotate = ZERO;
+
+    IP.IterationsOfInteriorNodesDisturbances = 0;     /* Number of iterations of disturbing the mesh 
+							 (create an unsmooth interior mesh) */
+    IP.Num_Of_Spline_Control_Points = 361; /* Number of control points on the 2D spline (used for some grids) */
 
     // Mesh stretching factor:
     IP.i_Mesh_Stretching = OFF;
@@ -173,6 +400,10 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     IP.BC_South = BC_NONE;
     IP.BC_East  = BC_NONE;
     IP.BC_West  = BC_NONE;
+    IP.Ref_State_BC_North = Euler2D_pState(0.0);
+    IP.Ref_State_BC_South = Euler2D_pState(0.0);
+    IP.Ref_State_BC_East = Euler2D_pState(0.0);
+    IP.Ref_State_BC_West = Euler2D_pState(0.0);
 
     // NASA rotor input variables:
     strcpy(IP.NASA_Rotor37_Data_Directory, IP.CFFC_Path);
@@ -210,12 +441,13 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     IP.Morton = 0;
     IP.Morton_Reordering_Frequency = 1000;
 
-    // Smooth quad block flag:
+    // Smooth quad block flag is always ON (The grid will take care of the right value):
     IP.i_Smooth_Quad_Block = ON;
 
     // Embedded boundary parameters:
     IP.Reset_Interface_Motion_Type = OFF;
 
+    // Default output file names and parameters:
     string_ptr = "outputfile.dat";
     strcpy(IP.Output_File_Name, string_ptr);
 
@@ -238,6 +470,7 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     // Default output progress frequency:
     IP.Output_Progress_Frequency = 50;
 
+    // Input_file parameters:
     string_ptr = " ";
     strcpy(IP.Next_Control_Parameter, string_ptr);
 
@@ -252,15 +485,20 @@ void Set_Default_Input_Parameters(Euler2D_Input_Parameters &IP) {
     // Limiter_switch
     IP.Freeze_Limiter_Residual_Level = 1e-4;
 
+    // Accuracy assessment parameters:
+    AccuracyAssessment_Execution_Mode::SetDefaults();
+
+    // High-order parameters:
+    HighOrder2D_Input::SetDefaults();
 }
 
-/********************************************************
- * Routine: Broadcast_Input_Parameters                  *
- *                                                      *
- * Broadcast the input parameters variables to all      *
- * processors involved in the calculation from the      *
- * primary processor using the MPI broadcast routine.   *
- *                                                      *
+/******************************************************//**
+ * Routine: Broadcast_Input_Parameters                  
+ *                                                      
+ * Broadcast the input parameters variables to all      
+ * processors involved in the calculation from the      
+ * primary processor using the MPI broadcast routine.   
+ *                                                      
  ********************************************************/
 void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
 
@@ -322,6 +560,15 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.i_Reconstruction), 
                           1, 
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.i_ReconstructionMethod), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Space_Accuracy), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.IncludeHighOrderBoundariesRepresentation), 
+                          1, 
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.Limiter_Type, 
                           INPUT_PARAMETER_LENGTH_EULER2D, 
                           MPI::CHAR, 0);
@@ -377,6 +624,8 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
        IP.Wo.Mr_min = IP.Mr_Min_Factor*IP.Mach_Number;
        IP.Uo.Mr_min = IP.Mr_Min_Factor*IP.Mach_Number;
     } /* endif */
+
+    // Reference states
     MPI::COMM_WORLD.Bcast(&(IP.W1.d), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -401,6 +650,22 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.W2.p), 
                           1, 
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.RefU.d), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.RefU.v.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.RefU.v.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.RefU.p), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Exact_Integration_Digits), 
+                          1, 
+                          MPI::DOUBLE, 0);
+
     MPI::COMM_WORLD.Bcast(IP.Flow_Geometry_Type, 
                           INPUT_PARAMETER_LENGTH_EULER2D, 
                           MPI::CHAR, 0);
@@ -426,7 +691,7 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Idir), 
-                          1, 
+                         1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Jdir), 
                           1, 
@@ -482,6 +747,12 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Cylinder_Radius2), 
                           1, 
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Annulus_Theta_Start), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Annulus_Theta_End), 
+                          1, 
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Ellipse_Length_X_Axis), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -509,9 +780,42 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Wedge_Length), 
 			  1, 
 			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Step_Height),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Channel_Gap),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Top_Wall_Deflection),
+			  1,
+			  MPI::DOUBLE,0);
     MPI::COMM_WORLD.Bcast(&(IP.Smooth_Bump),
 			  1,
 			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSW.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSW.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSE.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSE.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNW.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNW.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNE.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNE.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.X_Shift.x), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -555,6 +859,55 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.BC_West),
 			  1,
 			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_North.d),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_North.v.x),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_North.v.y),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_North.p),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_South.d),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_South.v.x),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_South.v.y),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_South.p),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_East.d),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_East.v.x),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_East.v.y),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_East.p),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_West.d),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_West.v.x),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_West.v.y),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_West.p),
+			  1,
+			  MPI::DOUBLE,0);
+
     // NASA rotors:
     MPI::COMM_WORLD.Bcast(IP.NASA_Rotor37_Data_Directory, 
                           INPUT_PARAMETER_LENGTH_EULER2D, 
@@ -568,6 +921,8 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Rotor_Percent_Span), 
                           1, 
                           MPI::DOUBLE, 0);
+
+    // ICEM:
     if (!CFFC_Primary_MPI_Processor()) {
        IP.ICEMCFD_FileNames = new char*[3];
        for (i = 0; i < 3; i++) {
@@ -665,6 +1020,11 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.i_Smooth_Quad_Block),
 			  1,
 			  MPI::INT,0);
+
+    MPI::COMM_WORLD.Bcast(&(IP.IterationsOfInteriorNodesDisturbances),
+			  1,
+			  MPI::INT,0);
+
     // Interface input parameters:
     IP.Interface_IP.Broadcast_Input_Parameters();
     MPI::COMM_WORLD.Bcast(&(IP.Reset_Interface_Motion_Type),
@@ -730,19 +1090,50 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
 
+    // Accuracy assessment parameters:
+    AccuracyAssessment_Execution_Mode::Broadcast();
+
+    // CENO_Execution_Mode variables
+    CENO_Execution_Mode::Broadcast();
+    
+    // CENO_Tolerances variables
+    CENO_Tolerances::Broadcast();
+
+    // Exact solution variables
+    IP.ExactSoln->Broadcast();
+
+    // HO_Grid2D_Execution_Mode variables
+    HO_Grid2D_Execution_Mode::Broadcast();
+
+    // Tecplot_Execution_Mode variables
+    Tecplot_Execution_Mode::Broadcast();
+
+    // HighOrder2D_Input variables
+    HighOrder2D_Input::Broadcast();    
+
+    // Update all dependent variables
+    if (!CFFC_Primary_MPI_Processor()) {
+
+      // Set reference state in the Euler2D_Quad_Block class
+      Euler2D_Quad_Block::Set_Normalization_Reference_State(IP.RefU);
+    }
+
+    // NumericalLibrary_Execution_Mode variables
+    NumericalLibrary_Execution_Mode::Broadcast();
+
 #endif
 
 }
 
 #ifdef _MPI_VERSION
-/********************************************************
- * Routine: Broadcast_Input_Parameters                  *
- *                                                      *
- * Broadcast the input parameters variables to all      *
- * processors associated with the specified communicator*
- * from the specified processor using the MPI broadcast *
- *routine.                                              *
- *                                                      *
+/******************************************************//**
+ * Routine: Broadcast_Input_Parameters                  
+ *                                                      
+ * Broadcast the input parameters variables to all      
+ * processors associated with the specified communicator
+ * from the specified processor using the MPI broadcast 
+ *routine.                                              
+ *                                                      
  ********************************************************/
 void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
                                 MPI::Intracomm &Communicator, 
@@ -806,6 +1197,15 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.i_Reconstruction), 
                        1, 
                        MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.i_ReconstructionMethod), 
+		       1, 
+		       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Space_Accuracy), 
+		       1, 
+		       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.IncludeHighOrderBoundariesRepresentation), 
+		       1, 
+		       MPI::INT, Source_Rank);
     Communicator.Bcast(IP.Limiter_Type, 
                        INPUT_PARAMETER_LENGTH_EULER2D, 
                        MPI::CHAR, Source_Rank);
@@ -861,6 +1261,8 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
        IP.Wo.Mr_min = IP.Mr_Min_Factor*IP.Mach_Number;
        IP.Uo.Mr_min = IP.Mr_Min_Factor*IP.Mach_Number;
     } /* endif */
+
+    // Reference state
     Communicator.Bcast(&(IP.W1.d), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -885,6 +1287,22 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.W2.p), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.RefU.d), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.RefU.v.x), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.RefU.v.y), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.RefU.p), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Exact_Integration_Digits), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+
     Communicator.Bcast(IP.Flow_Geometry_Type, 
                        INPUT_PARAMETER_LENGTH_EULER2D, 
                        MPI::CHAR, Source_Rank);
@@ -966,6 +1384,12 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Cylinder_Radius2), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Annulus_Theta_Start), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Annulus_Theta_End), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Ellipse_Length_X_Axis), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -976,6 +1400,30 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
                        1, 
                        MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Orifice_Radius), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSW.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSW.y), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSE.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSE.y), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNE.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNE.y), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNW.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNW.y), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Inner_Streamline_Number),
@@ -993,6 +1441,15 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Wedge_Length), 
 		       1, 
 		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Step_Height),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Channel_Gap),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Top_Wall_Deflection),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
     Communicator.Bcast(&(IP.Smooth_Bump),
 		       1,
 		       MPI::INT,Source_Rank);
@@ -1039,6 +1496,56 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.BC_West),
 		       1,
 		       MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_North.d),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_North.v.x),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_North.v.y),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_North.p),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_South.d),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_South.v.x),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_South.v.y),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_South.p),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_East.d),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_East.v.x),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_East.v.y),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_East.p),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_West.d),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_West.v.x),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_West.v.y),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_West.p),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+
+
     // NASA rotors:
     Communicator.Bcast(IP.NASA_Rotor37_Data_Directory, 
                        INPUT_PARAMETER_LENGTH_EULER2D, 
@@ -1149,6 +1656,11 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.i_Smooth_Quad_Block),
 		       1,
 		       MPI::INT,Source_Rank);
+
+    Communicator.Bcast(&(IP.IterationsOfInteriorNodesDisturbances),
+		       1,
+		       MPI::INT,Source_Rank);
+
     // Interface input parameters:
     IP.Interface_IP.Broadcast_Input_Parameters(Communicator,
 					       Source_CPU);
@@ -1216,58 +1728,33 @@ void Broadcast_Input_Parameters(Euler2D_Input_Parameters &IP,
                        1, 
                        MPI::DOUBLE, Source_Rank);
 
+    // Update all dependent variables
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {    
+      // Set reference state in the Euler2D_Quad_Block class
+      Euler2D_Quad_Block::Set_Normalization_Reference_State(IP.RefU);
+    }
+
 }
 #endif
 
-/********************************************************
- * Routine: Get_Next_Input_Control_Parameter            *
- *                                                      *
- * Get the next input control parameter from the input  *
- * file.                                                *
- *                                                      *
+/******************************************************//**
+ * Routine: Get_Next_Input_Control_Parameter            
+ *                                                      
+ * Get the next input control parameter from the input  
+ * file.                                                
+ *                                                      
  ********************************************************/
 void Get_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 
-    int i;
-    char buffer[256];
-
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-
-	if (IP.Input_File.gcount() == sizeof(buffer)-1) {
-		// if getline does not find a delimiter before size-1
-		// characters then it sets the ifstream state to not
-		// good. I never knew.
-		IP.Input_File.clear(); 
-
-		IP.Input_File.ignore(10000, '\n');
-		if (buffer[0] != '#') {
-			cout << "\n***\n\nWarning: input file line " << IP.Line_Number;
-			cout << ": Line is more than " << sizeof(buffer) << " characters long. ";
-			cout << "Ignoring rest of line.";
-			cout << "\n\n***\n";
-		}
-	}
-
-    i = 0;
-    if (buffer[0] != '#') {
-       while (1) {
-          if (buffer[i] == ' ' || buffer[i] == '=' ) break;
-          i = i + 1;
-          if (i > strlen(buffer) ) break;
-       } /* endwhile */
-       buffer[i] = '\0';
-    } /* endif */
-    strcpy(IP.Next_Control_Parameter, buffer);
-
+  return IP.Get_Next_Input_Control_Parameter();
 }
 
-/********************************************************
- * Routine: Parse_Next_Input_Control_Parameter          *
- *                                                      *
- * Parses and executes the next input control parameter *
- * from the input file.                                 *
- *                                                      *
+/******************************************************//**
+ * Routine: Parse_Next_Input_Control_Parameter          
+ *                                                      
+ * Parses and executes the next input control parameter 
+ * from the input file.                                 
+ *                                                      
  ********************************************************/
 int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 
@@ -1310,7 +1797,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	  IP.i_Time_Integration = TIME_STEPPING_DUAL_TIME_STEPPING;
 	  IP.Multigrid_IP.i_Dual_Time_Stepping = ON;
        } else {
-	  i_command = INVALID_INPUT_VALUE;
+	 std::cout << "\n ==> Unknown time marching scheme!";
+	 i_command = INVALID_INPUT_VALUE;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Reconstruction_Type") == 0) {
@@ -1320,10 +1808,19 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
               IP.Next_Control_Parameter);
        if (strcmp(IP.Reconstruction_Type, "Green_Gauss") == 0) {
           IP.i_Reconstruction = RECONSTRUCTION_GREEN_GAUSS;
+	  IP.i_ReconstructionMethod = RECONSTRUCTION_GREEN_GAUSS;
+	  CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF;
        } else if (strcmp(IP.Reconstruction_Type, "Least_Squares") == 0) {
           IP.i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
+	  IP.i_ReconstructionMethod = RECONSTRUCTION_LEAST_SQUARES;
+	  CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF;
+       } else if (strcmp(IP.Reconstruction_Type, "CENO") == 0) {
+	 IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+	 IP.i_ReconstructionMethod = RECONSTRUCTION_CENO;
+	 CENO_Execution_Mode::USE_CENO_ALGORITHM = ON;
        } else {
-	  i_command = INVALID_INPUT_VALUE;
+	 std::cout << "\n ==> Unknown reconstruction method!";
+	 i_command = INVALID_INPUT_VALUE;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Limiter_Type") == 0) {
@@ -1343,8 +1840,11 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
           IP.i_Limiter = LIMITER_BARTH_JESPERSEN;
        } else if (strcmp(IP.Limiter_Type, "Venkatakrishnan") == 0) {
           IP.i_Limiter = LIMITER_VENKATAKRISHNAN;
+       } else if (strcmp(IP.Limiter_Type, "Venkatakrishnan_Modified") == 0) {
+	 IP.i_Limiter = LIMITER_VENKATAKRISHNAN_CORRECTED;
        } else {
-	  i_command = INVALID_INPUT_VALUE;
+	 std::cout << "\n ==> Unknown limiter type!";
+	 i_command = INVALID_INPUT_VALUE;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Flux_Function_Type") == 0) {
@@ -1383,6 +1883,7 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
        } else if (strcmp(IP.Flux_Function_Type, "VanLeer_MB") == 0) {
 	  IP.i_Flux_Function = FLUX_FUNCTION_VANLEER_MB;
        } else {
+	 std::cout << "\n ==> Unknown flux function type!";
 	  i_command = INVALID_INPUT_VALUE;
        } /* endif */
 
@@ -1443,11 +1944,55 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	  IP.i_ICs = IC_CYLINDRICAL_EXPLOSION;
        } else if (strcmp(IP.ICs_Type,"Cylindrical_Implosion") == 0) {
           IP.i_ICs = IC_CYLINDRICAL_IMPLOSION;
+       } else if (strcmp(IP.ICs_Type, "Wedge_Flow") == 0) {
+	  IP.i_ICs = IC_WEDGE_FLOW;
+       } else if (strcmp(IP.ICs_Type, "Unsteady_Blunt_Body") == 0) {
+          IP.i_ICs = IC_UNSTEADY_BLUNT_BODY;
+       } else if (strcmp(IP.ICs_Type,"Sin_X") == 0) {
+          IP.i_ICs = IC_PERIODIC_SINX_WAVE;
+       } else if (strcmp(IP.ICs_Type,"Sin_Y") == 0) {
+          IP.i_ICs = IC_PERIODIC_SINY_WAVE;
+       } else if (strcmp(IP.ICs_Type,"Multiple_Sin_X") == 0) {
+          IP.i_ICs = IC_PERIODIC_SINX_MULTIWAVE;
+       } else if (strcmp(IP.ICs_Type,"Multiple_Sin_Y") == 0) {
+          IP.i_ICs = IC_PERIODIC_SINY_MULTIWAVE;
+       } else if (strcmp(IP.ICs_Type,"Complex_Waves") == 0) {
+          IP.i_ICs = IC_PERIODIC_COMPLEX_MULTIWAVE;
+       } else if (strcmp(IP.ICs_Type,"2D_Abgrall") == 0) {
+          IP.i_ICs = IC_ABGRALL_FUNCTION;
+       } else if (strcmp(IP.ICs_Type,"SinExp_X") == 0) {
+          IP.i_ICs = IC_SIN_EXP_X_WAVE;
+       } else if (strcmp(IP.ICs_Type,"SinExp_Y") == 0) {
+          IP.i_ICs = IC_SIN_EXP_Y_WAVE;
+       } else if (strcmp(IP.ICs_Type,"SinExp_Rotated") == 0) {
+          IP.i_ICs = IC_SIN_EXP_ROTATED_WAVE;
+       } else if (strcmp(IP.ICs_Type,"Cosine_Hill") == 0) {
+          IP.i_ICs = IC_COSINE_HILL;
+       } else if (strcmp(IP.ICs_Type,"Hyper_Tangent") == 0) {
+          IP.i_ICs = IC_HYPER_TANGENT;
+       } else if (strcmp(IP.ICs_Type, "Blast_Wave_IVP") == 0) {
+	  IP.i_ICs = IC_BLAST_WAVE_INTERACTION;
+       } else if (strcmp(IP.ICs_Type, "Acoustic_Shock_IVP") == 0) {
+	  IP.i_ICs = IC_SHOCK_ACOUSTIC_INTERACTION;
+       } else if (strcmp(IP.ICs_Type,"Exact_Solution") == 0) {
+	 IP.i_ICs = IC_EXACT_SOLUTION;
+       } else if (strcmp(IP.ICs_Type,"Uniform_Interior_Exact_Ghost_Cells") == 0) {
+	 IP.i_ICs = IC_INTERIOR_UNIFORM_GHOSTCELLS_EXACT;
        } else if (strcmp(IP.ICs_Type, "Restart") == 0) {
-          IP.i_ICs = IC_RESTART;
+	 IP.i_ICs = IC_RESTART;
+       } else if (strcmp(IP.ICs_Type, "Given_StartUp") == 0) {
+	 IP.i_ICs = IC_GIVEN_STARTUP;
        } else {
-          IP.i_ICs = IC_UNIFORM;
+	 std::cout << "\n ==> Unknown initial condition!";
+	 i_command = INVALID_INPUT_VALUE;
        } /* endif */
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Exact_Integration_Digits") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Exact_Integration_Digits;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Exact_Integration_Digits < 0) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Grid_Type") == 0) {
        i_command = 6;
@@ -1466,6 +2011,10 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
           IP.i_Grid = GRID_RECTANGULAR_BOX;
           IP.Box_Width = ONE;
           IP.Box_Height = ONE;
+       } else if (strcmp(IP.Grid_Type, "Deformed_Box") == 0) {
+	 IP.i_Grid = GRID_DEFORMED_BOX;
+       } else if (strcmp(IP.Grid_Type, "Periodic_Box") == 0) {
+	 IP.i_Grid = GRID_PERIODIC_BOX;
        } else if (strcmp(IP.Grid_Type, "Flat_Plate") == 0) {
           IP.i_Grid = GRID_FLAT_PLATE;
           IP.Plate_Length = ONE;
@@ -1513,7 +2062,6 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	  IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
 	  IP.Mesh_Stretching_Factor_Idir = 1.025;
 	  IP.Mesh_Stretching_Factor_Jdir = 1.001;
-	  IP.BC_South = BC_REFLECTION;
        } else if (strcmp(IP.Grid_Type, "Ellipse") == 0) {
           IP.i_Grid = GRID_ELLIPSE;
           IP.Ellipse_Length_X_Axis = TWO;
@@ -1521,6 +2069,11 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
        } else if (strcmp(IP.Grid_Type, "NACA_Aerofoil") == 0) {
           IP.i_Grid = GRID_NACA_AEROFOIL;
           IP.Chord_Length = ONE;
+          strcpy(IP.NACA_Aerofoil_Type, "0012");
+       } else if (strcmp(IP.Grid_Type, "NACA_Aerofoil_Ogrid") == 0) {
+          IP.i_Grid = GRID_NACA_AEROFOIL_OGRID;
+          IP.Chord_Length = ONE;
+	  IP.Cylinder_Radius2 = 32.0;
           strcpy(IP.NACA_Aerofoil_Type, "0012");
        } else if (strcmp(IP.Grid_Type, "Free_Jet") == 0) {
           IP.i_Grid = GRID_FREE_JET;
@@ -1573,6 +2126,11 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	  IP.Inner_Streamline_Number = 0.80;
 	  IP.Outer_Streamline_Number = 0.40;
 	  IP.Isotach_Line = 0.30;
+       } else if (strcmp(IP.Grid_Type,"Ringleb_Flow_Straight_Inflow_Boundary") == 0) {
+          IP.i_Grid = GRID_RINGLEB_FLOW_STRAIGHT_INFLOW_BOUNDARY;
+	  IP.Inner_Streamline_Number = 0.80;
+	  IP.Outer_Streamline_Number = 0.40;
+	  IP.Isotach_Line = 0.30;
        } else if (strcmp(IP.Grid_Type,"Bump_Channel_Flow") == 0) {
           IP.i_Grid = GRID_BUMP_CHANNEL_FLOW;
        } else if (strcmp(IP.Grid_Type,"Non_Smooth_Bump_Channel_Flow") == 0) {
@@ -1581,6 +2139,10 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
        } else if (strcmp(IP.Grid_Type,"Smooth_Bump_Channel_Flow") == 0) {
 	  IP.i_Grid = GRID_BUMP_CHANNEL_FLOW;
 	  IP.Smooth_Bump = ON;
+       } else if (strcmp(IP.Grid_Type,"Backward_Facing_Step") == 0) {
+	 IP.i_Grid = GRID_BACKWARD_FACING_STEP;
+       } else if (strcmp(IP.Grid_Type,"Forward_Facing_Step") == 0) {
+	 IP.i_Grid = GRID_FORWARD_FACING_STEP;
        } else if (strcmp(IP.Grid_Type, "ICEMCFD") == 0) {
           IP.i_Grid = GRID_ICEMCFD;
        } else if (strcmp(IP.Grid_Type, "Read_From_Definition_File") == 0) {
@@ -1588,9 +2150,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
        } else if (strcmp(IP.Grid_Type, "Read_From_Data_File") == 0) {
           IP.i_Grid = GRID_READ_FROM_GRID_DATA_FILE;
        } else {
-          IP.i_Grid = GRID_SQUARE;
-          IP.Box_Width = ONE;
-          IP.Box_Height = ONE;
+	 std::cout << "\n ==> Unknown grid type!";
+	 i_command = INVALID_INPUT_VALUE;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Output_File_Name") == 0) {
@@ -1673,6 +2234,8 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
            IP.Time_Accurate != 1) IP.Time_Accurate = 0;
        if (IP.Time_Accurate) {
           IP.Local_Time_Stepping = GLOBAL_TIME_STEPPING;
+       } else {
+	 IP.Local_Time_Stepping = SCALAR_LOCAL_TIME_STEPPING;
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Local_Time_Stepping") == 0) {
@@ -1683,7 +2246,7 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
        if (IP.Local_Time_Stepping != GLOBAL_TIME_STEPPING &&
            IP.Local_Time_Stepping != SCALAR_LOCAL_TIME_STEPPING &&
 	   IP.Local_Time_Stepping != MATRIX_LOCAL_TIME_STEPPING &&
-           IP.Local_Time_Stepping != LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER) 
+           IP.Local_Time_Stepping != LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER)
          IP.Local_Time_Stepping = SCALAR_LOCAL_TIME_STEPPING;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Maximum_Number_of_Time_Steps") == 0) {
@@ -1771,6 +2334,18 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
        if (IP.Cylinder_Radius2 <= ZERO) i_command = INVALID_INPUT_VALUE;
        if (IP.Cylinder_Radius2 <= IP.Cylinder_Radius) i_command = INVALID_INPUT_VALUE;
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Annulus_Start_Angle") == 0) {
+      i_command = 26;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Annulus_Theta_Start;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      
+    } else if (strcmp(IP.Next_Control_Parameter, "Annulus_End_Angle") == 0) {
+      i_command = 26;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Annulus_Theta_End;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      
     } else if (strcmp(IP.Next_Control_Parameter, "Ellipse_Length_X_Axis") == 0) {
        i_command = 27;
        IP.Line_Number = IP.Line_Number + 1;
@@ -1853,6 +2428,27 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	i_command = INVALID_INPUT_VALUE;
       }
 
+    } else if (strcmp(IP.Next_Control_Parameter,"Step_Height") == 0) {
+      i_command = 38;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Step_Height;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Step_Height <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Channel_Gap") == 0) {
+      i_command = 38;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Channel_Gap;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Channel_Gap <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Top_Wall_Deflection") == 0) {
+      i_command = 39;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Top_Wall_Deflection;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Top_Wall_Deflection < -TWO || IP.Top_Wall_Deflection > TEN) i_command = INVALID_INPUT_VALUE;
+
     } else if (strcmp(IP.Next_Control_Parameter,"Chamber_Length") == 0) {
       i_command = 33;
       IP.Line_Number = IP.Line_Number + 1;
@@ -1915,6 +2511,34 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Grain_Radius;
       IP.Input_File.getline(buffer,sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "VertexSW") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.VertexSW;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "VertexSE") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.VertexSE;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "VertexNE") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.VertexNE;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "VertexNW") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.VertexNW;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer, sizeof(buffer));
 
     } else if (strcmp(IP.Next_Control_Parameter, "Gas_Type") == 0) {
        i_command = 41;
@@ -2422,16 +3046,19 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
       IP.Input_File.getline(buffer,sizeof(buffer));
       if (IP.Mesh_Stretching_Factor_Jdir < ONE) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(IP.Next_Control_Parameter,"Smooth_Quad_Block") == 0) {
-      i_command = 106;
-      Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
-	IP.i_Smooth_Quad_Block = ON;
-      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
-	IP.i_Smooth_Quad_Block = OFF;
-      } else {
-	i_command = INVALID_INPUT_VALUE;
-      }
+    } else if (strcmp(IP.Next_Control_Parameter,"Iteration_Disturb_Mesh") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.IterationsOfInteriorNodesDisturbances;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.IterationsOfInteriorNodesDisturbances < 0 ) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Number_Spline_Points") == 0) {
+      i_command = 101;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Num_Of_Spline_Control_Points;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Num_Of_Spline_Control_Points <= TWO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Morton") == 0) {
       i_command = 107;
@@ -2728,13 +3355,36 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	IP.BC_North = BC_LINEAR_EXTRAPOLATION;
       } else if (strcmp(IP.BC_North_Type,"Characteristic") == 0) {
 	IP.BC_North = BC_CHARACTERISTIC;
+      } else if (strcmp(IP.BC_North_Type,"Characteristic_Velocity") == 0) {
+	IP.BC_North = BC_CHARACTERISTIC_VELOCITY;
       } else if (strcmp(IP.BC_North_Type,"None") == 0) {
 	IP.BC_North = BC_NONE;
       } else if (strcmp(IP.BC_North_Type,"Ringleb") == 0) {
 	IP.BC_North = BC_RINGLEB_FLOW;
+      } else if (strcmp(IP.BC_North_Type,"Dirichlet") == 0) {
+	IP.BC_North = BC_DIRICHLET;
+      } else if (strcmp(IP.BC_North_Type,"Neumann") == 0) {
+	IP.BC_North = BC_NEUMANN;
+      } else if (strcmp(IP.BC_North_Type,"Robin") == 0) {
+	IP.BC_North = BC_ROBIN;
+      } else if (strcmp(IP.BC_North_Type,"Farfield") == 0) {
+	IP.BC_North = BC_FARFIELD;
+      } else if (strcmp(IP.BC_North_Type,"Frozen") == 0) {
+	IP.BC_North = BC_FROZEN;
+      } else if (strcmp(IP.BC_North_Type,"Exact_Solution") == 0) {
+	IP.BC_North = BC_EXACT_SOLUTION;
+      } else if (strcmp(IP.BC_North_Type,"Inviscid_Wall") == 0) {
+	IP.BC_North = BC_WALL_INVISCID;
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_North") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Ref_State_BC_North;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer, sizeof(buffer));
 
     } else if (strcmp(IP.Next_Control_Parameter,"BC_South") == 0) {
       i_command = 502;
@@ -2760,14 +3410,37 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	IP.BC_South = BC_LINEAR_EXTRAPOLATION;
       } else if (strcmp(IP.BC_South_Type,"Characteristic") == 0) {
 	IP.BC_South = BC_CHARACTERISTIC;
+      } else if (strcmp(IP.BC_South_Type,"Characteristic_Velocity") == 0) {
+	IP.BC_South = BC_CHARACTERISTIC_VELOCITY;
       } else if (strcmp(IP.BC_South_Type,"None") == 0) {
 	IP.BC_South = BC_NONE;
       } else if (strcmp(IP.BC_South_Type,"Ringleb") == 0) {
 	IP.BC_South = BC_RINGLEB_FLOW;
+      } else if (strcmp(IP.BC_South_Type,"Dirichlet") == 0) {
+	IP.BC_South = BC_DIRICHLET;
+      } else if (strcmp(IP.BC_South_Type,"Neumann") == 0) {
+	IP.BC_South = BC_NEUMANN;
+      } else if (strcmp(IP.BC_South_Type,"Robin") == 0) {
+	IP.BC_South = BC_ROBIN;
+      } else if (strcmp(IP.BC_South_Type,"Farfield") == 0) {
+	IP.BC_South = BC_FARFIELD;
+      } else if (strcmp(IP.BC_South_Type,"Frozen") == 0) {
+	IP.BC_South = BC_FROZEN;
+      } else if (strcmp(IP.BC_South_Type,"Exact_Solution") == 0) {
+	IP.BC_South = BC_EXACT_SOLUTION;
+      } else if (strcmp(IP.BC_South_Type,"Inviscid_Wall") == 0) {
+	IP.BC_South = BC_WALL_INVISCID;
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_South") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Ref_State_BC_South;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      
     } else if (strcmp(IP.Next_Control_Parameter,"BC_East") == 0) {
       i_command = 503;
       Get_Next_Input_Control_Parameter(IP);
@@ -2792,13 +3465,36 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	IP.BC_East = BC_LINEAR_EXTRAPOLATION;
       } else if (strcmp(IP.BC_East_Type,"Characteristic") == 0) {
 	IP.BC_East = BC_CHARACTERISTIC;
+      } else if (strcmp(IP.BC_East_Type,"Characteristic_Velocity") == 0) {
+	IP.BC_East = BC_CHARACTERISTIC_VELOCITY;
       } else if (strcmp(IP.BC_East_Type,"None") == 0) {
 	IP.BC_East = BC_NONE;
       } else if (strcmp(IP.BC_East_Type,"Ringleb") == 0) {
 	IP.BC_East = BC_RINGLEB_FLOW;
+      } else if (strcmp(IP.BC_East_Type,"Dirichlet") == 0) {
+	IP.BC_East = BC_DIRICHLET;
+      } else if (strcmp(IP.BC_East_Type,"Neumann") == 0) {
+	IP.BC_East = BC_NEUMANN;
+      } else if (strcmp(IP.BC_East_Type,"Robin") == 0) {
+	IP.BC_East = BC_ROBIN;
+      } else if (strcmp(IP.BC_East_Type,"Farfield") == 0) {
+	IP.BC_East = BC_FARFIELD;
+      } else if (strcmp(IP.BC_East_Type,"Frozen") == 0) {
+	IP.BC_East = BC_FROZEN;
+      } else if (strcmp(IP.BC_East_Type,"Exact_Solution") == 0) {
+	IP.BC_East = BC_EXACT_SOLUTION;
+      } else if (strcmp(IP.BC_East_Type,"Inviscid_Wall") == 0) {
+	IP.BC_East = BC_WALL_INVISCID;
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_East") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Ref_State_BC_East;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer, sizeof(buffer));
 
     } else if (strcmp(IP.Next_Control_Parameter,"BC_West") == 0) {
       i_command = 504;
@@ -2824,13 +3520,54 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 	IP.BC_West = BC_LINEAR_EXTRAPOLATION;
       } else if (strcmp(IP.BC_West_Type,"Characteristic") == 0) {
 	IP.BC_West = BC_CHARACTERISTIC;
+      } else if (strcmp(IP.BC_West_Type,"Characteristic_Velocity") == 0) {
+	IP.BC_West = BC_CHARACTERISTIC_VELOCITY;
       } else if (strcmp(IP.BC_West_Type,"None") == 0) {
 	IP.BC_West = BC_NONE;
       } else if (strcmp(IP.BC_West_Type,"Ringleb") == 0) {
 	IP.BC_West = BC_RINGLEB_FLOW;
+      } else if (strcmp(IP.BC_West_Type,"Dirichlet") == 0) {
+	IP.BC_West = BC_DIRICHLET;
+      } else if (strcmp(IP.BC_West_Type,"Neumann") == 0) {
+	IP.BC_West = BC_NEUMANN;
+      } else if (strcmp(IP.BC_West_Type,"Robin") == 0) {
+	IP.BC_West = BC_ROBIN;
+      } else if (strcmp(IP.BC_West_Type,"Farfield") == 0) {
+	IP.BC_West = BC_FARFIELD;
+      } else if (strcmp(IP.BC_West_Type,"Frozen") == 0) {
+	IP.BC_West = BC_FROZEN;
+      } else if (strcmp(IP.BC_West_Type,"Exact_Solution") == 0) {
+	IP.BC_West = BC_EXACT_SOLUTION;
+      } else if (strcmp(IP.BC_West_Type,"Inviscid_Wall") == 0) {
+	IP.BC_West = BC_WALL_INVISCID;
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_West") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Ref_State_BC_West;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_Normalization") == 0) {
+      i_command = 0;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.RefU;
+      IP.Input_File.setf(ios::skipws);
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      
+    } else if (strcmp(IP.Next_Control_Parameter, "Space_Accuracy") == 0) {
+      i_command = 210;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Space_Accuracy;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Space_Accuracy <= 0 && IP.Space_Accuracy >= 7){
+	IP.Space_Accuracy = 1;
+	cout << "\n Space Accuracy should be between 1 and 6 \n"
+	     << "Space Accuracy set to 1" << endl;
+      }/* endif */
 
     ////////////////////////////////////////////////////////////////////
     // INTERFACE PARAMETERS                                           //
@@ -3104,6 +3841,15 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Output_Wedge_Solution_Distribution") == 0) {
        i_command = WRITE_OUTPUT_WEDGE_SOLUTION_DISTRIBUTION_CODE;
 
+    } else if (strcmp(IP.Next_Control_Parameter,"Print_Accuracy") == 0) {
+      i_command = WRITE_ERROR_NORMS_TO_SCREEN;
+      
+    } else if (strcmp(IP.Next_Control_Parameter,"Write_Accuracy_To_File") == 0) {
+      i_command = WRITE_ERROR_NORMS_TO_FILE;
+      
+    } else if (strcmp(IP.Next_Control_Parameter,"Append_Accuracy_To_File") == 0) {
+      i_command = APPEND_ERROR_NORMS_TO_FILE;
+
     } else if (IP.Next_Control_Parameter[0] == '#') {
        i_command = COMMENT_CODE;
 
@@ -3111,6 +3857,31 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
        i_command = INVALID_INPUT_CODE;
 
     } /* endif */
+
+
+    /* Parse next control parameter with ExactSoln parser */
+    IP.ExactSoln->Parse_Next_Input_Control_Parameter(IP,i_command);
+
+    /* Parse next control parameter with AccuracyAssessment_Execution_Mode parser */
+    AccuracyAssessment_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+    /* Parse next control parameter with CENO_Execution_Mode parser */
+    CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
+  
+    /* Parse next control parameter with CENO_Tolerances parser */
+    CENO_Tolerances::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+    /* Parse next control parameter with HO_Grid2D_Execution_Mode parser */
+    HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+    /* Parse next control parameter with Tecplot_Execution_Mode parser */
+    Tecplot_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+    /* Parse next control parameter with HighOrder2D_Input parser */
+    HighOrder2D_Input::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+    /* Parse next control parameter with NumericalLibrary_Execution_Mode parser */
+    NumericalLibrary_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
 
     if (i_command == INVALID_INPUT_CODE) {
        // that is, we have an input line which:
@@ -3137,16 +3908,19 @@ int Parse_Next_Input_Control_Parameter(Euler2D_Input_Parameters &IP) {
 
     if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }
 
+
+    /* Return the parser command type indicator. */
+
     return (i_command);
 
 }
 
-/********************************************************
- * Routine: Process_Input_Control_Parameter_File        *
- *                                                      *
- * Reads, parses, and executes the list of input        *
- * control parameters from the standard input file.     *
- *                                                      *
+/******************************************************//**
+ * Routine: Process_Input_Control_Parameter_File        
+ *                                                      
+ * Reads, parses, and executes the list of input        
+ * control parameters from the standard input file.     
+ *                                                      
  ********************************************************/
 int Process_Input_Control_Parameter_File(Euler2D_Input_Parameters &Input_Parameters,
                                          char *Input_File_Name_ptr,
@@ -3197,22 +3971,8 @@ int Process_Input_Control_Parameter_File(Euler2D_Input_Parameters &Input_Paramet
        } /* endif */
     } /* endwhile */
 
-    /* Perform consistency checks on Input_Parameters */
-
-    if (!error_flag &&
-	Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
-      error_flag = Check_Input_Parameters<Euler2D_Input_Parameters>(Input_Parameters);
-      if (error_flag) {
-	cout << "\n Euler2D ERROR: Input Parameters consistency check failure\n";
-	return (error_flag);
-      }
-    }
-
-    // Perform consitency checks on the refinement criteria.
-    Input_Parameters.Number_of_Refinement_Criteria = 0;
-    if (Input_Parameters.Refinement_Criteria_Gradient_Density) Input_Parameters.Number_of_Refinement_Criteria++;
-    if (Input_Parameters.Refinement_Criteria_Divergence_Velocity) Input_Parameters.Number_of_Refinement_Criteria++;
-    if (Input_Parameters.Refinement_Criteria_Curl_Velocity) Input_Parameters.Number_of_Refinement_Criteria++;
+    /* Perform consistency checks and internal parameter setup */
+    Input_Parameters.doInternalSetupAndConsistencyChecks(error_flag);
 
     /* Initial processing of input control parameters complete.  
        Return the error indicator flag. */

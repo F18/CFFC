@@ -14,7 +14,10 @@
 #include "../Math/Vector2D.h"
 #include "../Utilities/TypeDefinition.h"
 #include "../Utilities/Utilities.h"
+#include "../CFD/CFD.h"
 
+template<typename Input_Parameters_Type>
+class LiftAndDragCoeffs_Helper;
 
 /*!
  * \class AccuracyAssessment2D
@@ -30,13 +33,10 @@ public:
   AccuracyAssessment2D(Quad_Soln_Block * AssociatedSolnBlock);
 
   //! Destructor
-  ~AccuracyAssessment2D(void){ };
+  ~AccuracyAssessment2D(void){ SolnBlk = NULL; }
  
   //! Re-associate solution block pointer
   void AssociateSolutionBlock(Quad_Soln_Block * AssociatedSolnBlock){ SolnBlk = AssociatedSolnBlock; }
-
-  //! Access to the solution block
-  Quad_Soln_Block *getGrid(void) const { return SolnBlk; }
 
   template<typename Input_Parameters_Type>
   void PrintErrorNorms(const Input_Parameters_Type & IP,
@@ -65,6 +65,43 @@ public:
 									  const unsigned int &) const =
 			     &Quad_Soln_Block::PiecewiseLinearSolutionAtLocation);
 
+  template<typename Input_Parameters_Type>
+  void ComputeSolutionEntropyErrorsHighOrder(const unsigned int &accuracy_digits,
+					     const Input_Parameters_Type & IP,
+					     const unsigned short int &Pos = 0) throw(ArgumentNullException);
+
+  template<typename Input_Parameters_Type>
+  void ComputeSolutionEntropyErrors(const unsigned int &accuracy_digits,
+				    const Input_Parameters_Type & IP,
+				    double (Quad_Soln_Block::*ComputeSolutionEntropyAt)(const int &, const int &,
+											const Vector2D &,
+											const unsigned int &) const =
+				    &Quad_Soln_Block::SolutionEntropyAtLocation) throw(ArgumentNullException);
+
+  /*! @brief Calculate and add to the provided variables the aerodynamic forces
+    on solid bodies predicted by a high-order reconstruction */
+  void addAerodynamicForcesHighOrder(vector<double> & Fx, 
+				     vector<double> & Fy,
+				     vector<double> & WettedSurface,
+				     const unsigned short int &Pos = 0);
+
+  /*! @brief Calculate and add to the provided variables the aerodynamic forces
+    due to skin friction on solid bodies predicted by a high-order reconstruction */
+  template<typename Input_Parameters_Type>
+  void addWallShearStressAerodynamicForcesHighOrder(vector<double> & Fx, 
+						    vector<double> & Fy,
+						    vector<double> & WettedSurface,
+						    const LiftAndDragCoeffs_Helper<Input_Parameters_Type> & ValidateDomain,
+						    const unsigned short int &Pos = 0){
+    throw runtime_error("AccuracyAssessment2D<>::addWallShearStressAerodynamicForcesHighOrder() ERROR! Specialization not implemented!!!");
+  };
+
+  /*! @brief Calculate and add to the provided variables the aerodynamic forces on 
+    solid bodies predicted by a piecewise linear reconstruction */
+  void addAerodynamicForces(vector<double> & Fx, 
+			    vector<double> & Fy,
+			    vector<double> & WettedSurface);
+
   //! @name Access to the error data:
   //@{
   double & L1(void) {return LNorms[0]; }     //!< return the L1 component of the error-norm vector
@@ -81,6 +118,9 @@ public:
   double BlockLMaxNorm(void) { return LNorms[2]; } //!< return the LMax error norm for the block
 
   const unsigned int & UsedCells(void) const {return CellsUsed;}  //!< return the number of used cells for error calculation
+  
+  //! Return the reference entropy for any given location
+  double & ReferenceEntropy(const double &x, const double &y) { return RefEntropy; }
   //@}
 
   //! Prepare object for a new calculation
@@ -101,6 +141,8 @@ private:
   unsigned int digits;		//!< the number of accurate digits with which the errors are evaluated
 
   unsigned int CellsUsed;	//!< the number of cells used for accuracy assessment
+
+  double RefEntropy;	        //!< the reference entropy used for error calculation
 
   // Operating functions
   /*! @brief Compute errors for L1 norm calculation using the ComputeSolutionAt solution block member function */
@@ -195,9 +237,7 @@ void AccuracyAssessment2D<Quad_Soln_Block>::OutputErrorNormsTecplot(const Input_
  *
  * \param parameter the state variable which is used for computing the errors
  * \accuracy_digits the number of exact digits with which the error is sought
- * \param AccessToHighOrderVars Quad_Soln_Block member function which returns the 
- *                              array of high-order objects in the block.
- * \param Pos  The specific high-order object which is used to compute the error.
+ * \param Pos the specific high-order object which is used to compute the error.
  * \throw ArgumentNullException when the exact solution pointer is NULL
  */
 template<typename Quad_Soln_Block> inline
@@ -339,6 +379,116 @@ ComputeSolutionErrors(Function_Object_Type FuncObj,
 
 }
 
+/*!
+ * Compute solution entropy error relative to the provided reference state
+ * for a high-order solution.
+ *
+ * \param accuracy_digits the number of accurate digits targeted by the integration routine
+ * \param IP input parameters which provides the entropy reference state
+ * \param Pos the specific high-order object which is used to compute the error.
+ * \throw ArgumentNullException when the exact solution pointer is NULL
+ */
+template<typename Quad_Soln_Block>
+template<typename Input_Parameters_Type> inline
+void AccuracyAssessment2D<Quad_Soln_Block>::
+ComputeSolutionEntropyErrorsHighOrder(const unsigned int &accuracy_digits,
+				      const Input_Parameters_Type & IP,
+				      const unsigned short int &Pos)
+  throw(ArgumentNullException)
+{
+
+  // Set the required number of accurate digits and the reference entropy
+  digits = accuracy_digits;
+  RefEntropy = IP.ReferenceEntropy();
+
+  // Set the type of the returned value
+  double _dummy_param(0.0);
+
+  // Compute the errors
+  SolnBlk->HighOrderVariable(Pos).ComputeSolutionErrors(wrapped_member_function(this,
+										&AccuracyAssessment2D<Quad_Soln_Block>::
+										ReferenceEntropy,
+										_dummy_param),
+							0, //< indicates that error is calculated based on Entropy
+							accuracy_digits);
+    
+  // Write the final information in the designated variables
+  L1() = SolnBlk->HighOrderVariable(Pos).L1();
+  L2() = SolnBlk->HighOrderVariable(Pos).L2();
+  LMax() = SolnBlk->HighOrderVariable(Pos).LMax();
+  TotalBlockArea = SolnBlk->HighOrderVariable(Pos).BlockArea();
+  CellsUsed = SolnBlk->HighOrderVariable(Pos).UsedCells();
+
+}
+
+/*!
+ * Compute solution entropy error relative to the provided reference state.
+ * It is assumed that the piecewise solution representation
+ * in the computational cells has been already calculated and
+ * that the edges of the cells near boundaries are straight lines.
+ *
+ * \param accuracy_digits the number of accurate digits targeted by the integration routine
+ * \param IP input parameters which provides the entropy reference state
+ * \param ComputeSolutionEntropyAt Quad_Soln_Block member function which returns the solution entropy
+ *                                 at a given location (PointOfInterest) using the reconstruction of cell (i,j).
+ */
+template<typename Quad_Soln_Block>
+template<typename Input_Parameters_Type>
+void AccuracyAssessment2D<Quad_Soln_Block>::
+ComputeSolutionEntropyErrors(const unsigned int &accuracy_digits,
+			     const Input_Parameters_Type & IP,
+			     double (Quad_Soln_Block::*ComputeSolutionEntropyAt)(const int &, const int &,
+										 const Vector2D &,
+										 const unsigned int &) const)
+  throw(ArgumentNullException){
+
+  // Set the required number of accurate digits and the reference entropy
+  digits = accuracy_digits;
+  RefEntropy = IP.ReferenceEntropy();
+
+  double CellError(0.0); // individual cell error for L1 and LMax norms
+  int i,j;
+  int StartI(SolnBlk->ICl),  EndI(SolnBlk->ICu),  StartJ(SolnBlk->JCl),  EndJ(SolnBlk->JCu);
+
+  // reset errors values
+  L1() = ZERO; L2() = ZERO; LMax() = ZERO;
+  TotalBlockArea = ZERO;
+
+  // Update CellsUsed
+  CellsUsed = (EndI - StartI + 1)*(EndJ - StartJ + 1);
+
+
+  // Assess the accuracy
+  for (j = StartJ; j <= EndJ; ++j) {
+    for (i = StartI; i <= EndI; ++i) {
+
+      // Calculate the error in cell i,j for the given parameter and reconstruction
+      CellError = ComputeSolutionErrorL1(i,j,
+					 wrapped_member_function(this,
+								 &AccuracyAssessment2D<Quad_Soln_Block>::ReferenceEntropy,
+								 CellError),
+					 ComputeSolutionEntropyAt);
+
+      // Add current cell error contribution to L1 error norm
+      L1() += CellError;
+
+      // Add current cell error contribution to L2 error norm
+      L2() += ComputeSolutionErrorL2(i,j,
+				     wrapped_member_function(this,
+							     &AccuracyAssessment2D<Quad_Soln_Block>::ReferenceEntropy,
+							     CellError),
+				     ComputeSolutionEntropyAt);
+
+      // Compute block LMax Norm
+      LMax() = max(LMax(),CellError/SolnBlk->Grid.Cell[i][j].A);
+
+      // Compute the total area of the block
+      TotalBlockArea += SolnBlk->Grid.Cell[i][j].A;
+
+    }
+  }
+}
+
 
 /*!
  * Compute the solution error used for calculation of L1 and LMax norms
@@ -421,6 +571,210 @@ ComputeSolutionErrorL2(const int &iCell, const int &jCell,
 						 digits,_dummy_param) );
 }
 
+/*!
+ * Calculate the aerodynamic forces in the Cartesian x- and y-directions
+ * using the high-order solution reconstruction.
+ * The solid surfaces are detected based on the information carried by
+ * the spline.
+ * The forces are added to the provided variables.
+ * Aerodynamic forces are obtained by integrating the product of between 
+ * the pressure distrubtion and the local normal direction along the 
+ * contour of interest.
+ * 
+ * \param Fx the aerodynamic force in x-direction
+ * \param Fy the aerodynamic force in y-direction
+ * \param WettedSurface the size of the surface that shows up during integration
+ * \param Pos the index of the high-order variables
+ */
+template<typename Quad_Soln_Block>
+void AccuracyAssessment2D<Quad_Soln_Block>::
+addAerodynamicForcesHighOrder(vector<double> & Fx, vector<double> & Fy, vector<double> & WettedSurface,
+			      const unsigned short int &Pos){
+  
+  double _dummy_param;
 
+  // Define high-order data type
+  typedef typename Quad_Soln_Block::HighOrderType HighOrderType;
+
+  // Visit each block boundary
+
+  // === North Bnd
+  if (SolnBlk->Grid.BndNorthSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(NORTH,
+							      wrapped_soln_block_member_function(&SolnBlk->HighOrderVariable(Pos),
+												 &HighOrderType::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1]);
+  }
+
+  // === South Bnd
+  if (SolnBlk->Grid.BndSouthSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(SOUTH,
+							      wrapped_soln_block_member_function(&SolnBlk->HighOrderVariable(Pos),
+												 &HighOrderType::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1]);
+  }
+
+  // === East Bnd
+  if (SolnBlk->Grid.BndEastSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(EAST,
+							      wrapped_soln_block_member_function(&SolnBlk->HighOrderVariable(Pos),
+												 &HighOrderType::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndEastSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndEastSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndEastSpline.getBodyID() - 1]);
+  }
+  
+  // === West Bnd
+  if (SolnBlk->Grid.BndWestSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(WEST,
+							      wrapped_soln_block_member_function(&SolnBlk->HighOrderVariable(Pos),
+												 &HighOrderType::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndWestSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndWestSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndWestSpline.getBodyID() - 1]);
+  }
+}
+
+
+/*!
+ * Calculate the aerodynamic forces in the Cartesian x- and y-directions
+ * using the piecewise linear solution reconstruction.
+ * 
+ * \param Fx the aerodynamic force in x-direction
+ * \param Fy the aerodynamic force in y-direction
+ * \param WettedSurface the size of the surface that shows up during integration
+ */
+template<typename Quad_Soln_Block>
+void AccuracyAssessment2D<Quad_Soln_Block>::addAerodynamicForces(vector<double> & Fx, 
+								 vector<double> & Fy,
+								 vector<double> & WettedSurface){
+
+  double _dummy_param;
+
+  // Visit each block boundary
+
+  // === North Bnd
+  if (SolnBlk->Grid.BndNorthSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(NORTH,
+							      wrapped_soln_block_member_function(SolnBlk,
+												 &Quad_Soln_Block::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndNorthSpline.getBodyID() - 1]);
+  }
+
+  // === South Bnd
+  if (SolnBlk->Grid.BndSouthSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(SOUTH,
+							      wrapped_soln_block_member_function(SolnBlk,
+												 &Quad_Soln_Block::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndSouthSpline.getBodyID() - 1]);
+  }
+
+  // === East Bnd
+  if (SolnBlk->Grid.BndEastSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(EAST,
+							      wrapped_soln_block_member_function(SolnBlk,
+												 &Quad_Soln_Block::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndEastSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndEastSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndEastSpline.getBodyID() - 1]);
+  }
+  
+  // === West Bnd
+  if (SolnBlk->Grid.BndWestSpline.IsSolidBoundary()){
+    // Pass dummy cell indexes (0,0) to the wrapper.
+    // They will be changed correctly by the integration routine!!!
+
+    SolnBlk->Grid.Integration.
+      IntegratePiecewiseFunctionProjectionAlongBoundarySpline(WEST,
+							      wrapped_soln_block_member_function(SolnBlk,
+												 &Quad_Soln_Block::
+												 SolutionPressureAtCoordinates,
+												 0, 0, 
+												 _dummy_param),
+							      Fx[SolnBlk->Grid.BndWestSpline.getBodyID() - 1],
+							      Fy[SolnBlk->Grid.BndWestSpline.getBodyID() - 1],
+							      WettedSurface[SolnBlk->Grid.BndWestSpline.getBodyID() - 1]);
+  }
+}
+
+
+/*!
+ * Class which provides useful routines to  
+ * the calculation of lift and drag coefficients.
+ */
+template<typename Input_Parameters_Type>
+class LiftAndDragCoeffs_Helper{
+
+public:
+  LiftAndDragCoeffs_Helper(const Input_Parameters_Type & IP_Ptr): IP(&IP_Ptr){ };
+
+  //! @brief This routine tests whether the given location belongs to the integration domain.
+  bool PointInIntegrationDomainTest(const Vector2D& Location) const {
+    throw runtime_error("LiftAndDragCoeffs_Helper::PointInIntegrationDomainTest() ERROR! Specialize this routine!");
+  }
+
+private:
+  //! Private default constructor
+  LiftAndDragCoeffs_Helper(void){};
+
+  const Input_Parameters_Type * IP; //! < pointer to input parameters
+};
 
 #endif

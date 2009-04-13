@@ -22,7 +22,8 @@
 #include "../System/System_Linux.h"    /* Include System Linux header file. */
 #include "../HighOrderReconstruction/AccuracyAssessment2D.h" /* Include 2D accuracy assessment header file. */
 #include "../HighOrderReconstruction/HighOrder2D.h" /* Include 2D high-order template class header file. */
-#include "../HighOrderReconstruction/Cauchy_BoundaryConditions.h" /* Include 2D high-order boundary conditions header file. */
+#include "AdvectDiffuse2D_Cauchy_BCs.h" /* Include 2D high-order boundary conditions header file,
+					   including AdvectDiffuse2D specializations. */
 
 /* Define the structures and classes. */
 
@@ -132,6 +133,7 @@ public:
   typedef HighOrder2D<AdvectDiffuse2D_State> HighOrderType; //!< high-order variable data type
   typedef AdvectDiffuse2D_State Soln_State;
   typedef Cauchy_BCs<Soln_State> BC_Type;
+  typedef std::vector<double> DoubleArrayType;
   //@}
 
 
@@ -190,7 +192,7 @@ public:
   static int    Include_Diffusion_Term; //!< Flag for including/excluding the diffusion term in the model equation.
   //@}
 
-  //! @name Boundary condtion reference states:
+  //! @name Boundary condition reference states:
   //@{
   AdvectDiffuse2D_State   *UoN, //!< Boundary condition reference states for north boundary.
                           *UoS, //!< Boundary condition reference states for south boundary.
@@ -230,7 +232,8 @@ public:
 
   //! Allocate memory for high-order variables
   void allocate_HighOrder(const int & NumberOfReconstructions,
-			  const vector<int> & ReconstructionOrders);
+			  const vector<int> & ReconstructionOrders,
+			  const bool _complete_initialization_ = true);
 
   //! Allocate memory for high-order boundary conditions
   void allocate_HighOrder_BoundaryConditions(void);
@@ -253,6 +256,9 @@ public:
 
   //! Make an identical copy of SolnBlk
   void makeCopy(const AdvectDiffuse2D_Quad_Block &SolnBlk){ *this = SolnBlk; }
+
+  //! @brief Make a copy of the high-order objects
+  void copy_HighOrder_Objects(const AdvectDiffuse2D_Quad_Block &SolnBlk);
 
   //! @name Bilinear interplation (Zingg & Yarrow).
   //@{
@@ -430,6 +436,8 @@ public:
   void Set_Default_Boundary_Reference_States(void);
   //! Set boundary reference states based on user's input data
   void Set_Boundary_Reference_States_Based_On_Input(const AdvectDiffuse2D_Input_Parameters &IP);
+  //! @brief Set physical boundary condition constraints based on the current flow state and the BC_Type
+  void EnsurePhysicalBCsConstraints(const int & BOUNDARY, const int & BndCellIndex);
   //@}
 
   //! @name Residual evaluation functions:
@@ -478,6 +486,16 @@ public:
 
   //! @name Functions for AMR:
   //@{
+  //! Return the array of refinement criteria
+  DoubleArrayType & Refinement_Criteria(void) { return refinement_criteria; }
+  //! Return the array of refinement criteria as constant
+  const DoubleArrayType & Refinement_Criteria(void) const { return refinement_criteria; }
+  //! Return a particular refinement criterion in the refinement criteria array
+  double & Refinement_Criterion(const int & index) {return refinement_criteria[index]; }
+  //! Return a particular refinement criterion in the refinement criteria array as constant
+  const double & Refinement_Criterion(const int & index) const {return refinement_criteria[index]; }
+  //! Return number of refinement criteria
+  int Number_Of_Refinement_Criteria(void) const { return refinement_criteria.size(); }
   void Calculate_Refinement_Criteria_HighOrder(double *refinement_criteria,
 					       AdvectDiffuse2D_Input_Parameters &IP,
 					       int &number_refinement_criteria);
@@ -651,7 +669,7 @@ private:
   //! @name Variables for estimating positivity of elliptic term discretization:
   //@{
   IndexType i_index, j_index;	     //!< Storage for indexes of cells that influence the discretization of the Laplace operator.
-  std::vector<double>  Laplacian_Coeffs; /*!< The coefficient for each cell in the stencil that
+  DoubleArrayType  Laplacian_Coeffs; /*!< The coefficient for each cell in the stencil that
 					   appears in the discretization of the Laplace operator. */
   double **Positivity_Coeffs;	//!< Storage for the coefficients which measure scheme positivity for the elliptic term discretization
   double MaxNonPositivity, MinNonPositivity; //!< Storage for the maximum and minimum non-positivity values over the whole block
@@ -665,6 +683,11 @@ private:
     *HO_UoS,            	//!< High-order boundary condition reference states for South boundary
     *HO_UoE,			//!< High-order boundary condition reference states for East boundary
     *HO_UoW;            	//!< High-order boundary condition reference states for West boundary
+  //@}
+
+  //! @name Variables/functions for AMR:
+  //@{
+  DoubleArrayType refinement_criteria;
   //@}
 };
 
@@ -985,6 +1008,129 @@ inline void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_Array(const int & Num
       NumberOfHighOrderVariables = NumberOfReconstructions;
     }
   }
+}
+
+/*!
+ * Copy the high-order objects from the SolnBlk.
+ */
+inline void AdvectDiffuse2D_Quad_Block::copy_HighOrder_Objects(const AdvectDiffuse2D_Quad_Block &SolnBlk){
+
+  int i, j, k;
+
+  if (SolnBlk.U != NULL){
+
+    /* Set the same number of high-order objects
+       as that of the rhs block. */
+    allocate_HighOrder_Array(SolnBlk.NumberOfHighOrderVariables);
+    
+    // Copy the high-order objects
+    for (k = 1; k <= NumberOfHighOrderVariables; ++k){
+      HighOrderVariable(k-1) = SolnBlk.HighOrderVariable(k-1);
+    }/* endfor */
+
+    // Copy the high-order boundary conditions.
+
+    // === North BCs
+    if (SolnBlk.HO_UoN != NULL){
+
+      if (HO_UoN != NULL){
+	// deallocate memory
+	delete [] HO_UoN; HO_UoN = NULL;
+      }
+
+      // allocate new memory based on the number of the current grid
+      HO_UoN = new BC_Type[NCi];
+
+      for (i=0; i<NCi; ++i){
+	// allocate BC memory for each constrained Gauss quadrature point
+	BC_NorthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_North(i,JCu),
+					    Grid.BCtypeN[i]);
+
+	// Copy North high-order BCs
+	HO_UoN[i] = SolnBlk.HO_UoN[i];
+      }
+      
+    } else if ( HO_UoN != NULL){
+      // deallocate memory
+      delete [] HO_UoN; HO_UoN = NULL;
+    }
+
+
+    // === South BCs
+    if (SolnBlk.HO_UoS != NULL){
+
+      if (HO_UoS != NULL){
+	// deallocate memory
+	delete [] HO_UoS; HO_UoS = NULL;
+      }
+
+      // allocate new memory    
+      HO_UoS = new BC_Type[NCi];
+
+      for (i=0; i<NCi; ++i){
+	// allocate BC memory for each constrained Gauss quadrature point
+	BC_SouthCell(i).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_South(i,JCl),
+					    Grid.BCtypeS[i]);
+	// Copy South high-order BCs
+	HO_UoS[i] = SolnBlk.HO_UoS[i];
+      }
+
+    } else if (HO_UoS != NULL){
+      // deallocate memory
+      delete [] HO_UoS; HO_UoS = NULL;
+    }
+
+
+    // === East BCs
+    if (SolnBlk.HO_UoE != NULL){
+
+      if (HO_UoE != NULL){
+	// deallocate memory
+	delete [] HO_UoE; HO_UoE = NULL;
+      }
+
+      // allocate new memory    
+      HO_UoE = new BC_Type[NCj];
+
+      for (j=0; j<NCj; ++j){
+	// allocate BC memory for each constrained Gauss quadrature point
+	BC_EastCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_East(ICu,j),
+					   Grid.BCtypeE[j]);
+	// Copy East high-order BCs
+	HO_UoE[j] = SolnBlk.HO_UoE[j];
+      }
+
+    } else if (HO_UoE != NULL){
+      // deallocate memory
+      delete [] HO_UoE; HO_UoE = NULL;
+    }
+
+    // === West BCs
+    if (SolnBlk.HO_UoW != NULL){
+
+      if (HO_UoW != NULL){
+	// deallocate memory
+	delete [] HO_UoW; HO_UoW = NULL;
+      }
+
+      // allocate new memory    
+      HO_UoW = new BC_Type[NCj];
+
+      for (j=0; j<NCj; ++j){
+	// allocate BC memory for each constrained Gauss quadrature point
+	BC_WestCell(j).InitializeCauchyBCs(Grid.NumOfConstrainedGaussQuadPoints_West(ICl,j),
+					   Grid.BCtypeW[j]);
+	// Copy West high-order BCs
+	HO_UoW[j] = SolnBlk.HO_UoW[j];
+      }
+
+    } else if (HO_UoW != NULL){
+      // deallocate memory
+      delete [] HO_UoW; HO_UoW = NULL;
+    }
+    
+  } // endif
+  
 }
 
 /*!
@@ -1542,5 +1688,12 @@ extern int Output_Cells_Tecplot(Grid2D_Quad_Block **Grid_ptr,
 
 extern int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 				     int batch_flag);
+
+/*
+ * Include specializations CFFC header files.
+ * Must be included at the end of the file!!!
+ */
+#include "AdvectDiffuse2DAccuracyAssessment.h" /* Include 2D accuracy assessment header 
+						  file with specializations for advection-diffusion solution. */
 
 #endif /* _ADVECTDIFFUSE2D_QUAD_INCLUDED  */

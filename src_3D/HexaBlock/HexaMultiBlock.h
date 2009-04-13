@@ -958,8 +958,17 @@ dUdt_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
 
    for (int nblk = 0; nblk<Number_of_Soln_Blks; ++nblk) {
       if (Block_Used[nblk]) {
-         error_flag =  Soln_Blks[nblk].dUdt_Multistage_Explicit(I_Stage, Input);
-         if (error_flag) return (error_flag);
+
+	if (Input.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER) {
+	  // calculate the high-order residual
+	  error_flag =  Soln_Blks[nblk].dUdt_Multistage_Explicit_HighOrder(I_Stage, Input);
+	} else {
+	  // calculate the 2nd-order residual
+	  error_flag =  Soln_Blks[nblk].dUdt_Multistage_Explicit(I_Stage, Input);
+	} /* endif */
+
+	if (error_flag) return (error_flag);
+
       } /* endif */
    }  /* endfor */
    

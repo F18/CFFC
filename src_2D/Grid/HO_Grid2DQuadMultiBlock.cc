@@ -12,6 +12,9 @@
 #include "../Grid/NASARotor37.h"       /* Include NASA rotor 37 header files. */
 #include "../Grid/NASARotor67.h"       /* Include NASA rotor 67 header files. */
 
+// ===== Static variables =====
+int Grid2D_Quad_MultiBlock_HO::GridsThatRequireSynchronizationPriorToGhostCellsUpdate[2] = {GRID_CIRCULAR_CYLINDER,
+											    GRID_NACA_AEROFOIL_OGRID };
 
 // ===== Member functions =====
 
@@ -482,6 +485,67 @@ void Grid2D_Quad_MultiBlock_HO::Disturb_Interior_Nodes(const int &Number_of_Iter
 }
 
 /*!
+ * Setup the required boundary conditions for all boundary domain blocks.
+ */
+void Grid2D_Quad_MultiBlock_HO::SetUserSpecifiedBCs(const int& BC_North, const int& BC_South,
+						    const int& BC_East, const int & BC_West){
+
+  int iBlk, jBlk;
+
+  for (jBlk = 0; jBlk <= Last_jBlock(); ++jBlk) {
+    for ( iBlk = 0; iBlk <= Last_iBlock(); ++iBlk) {
+
+      if (jBlk == Last_jBlock() && BC_North != BC_GENERAL){ // This is a domain boundary and the BC is required to be changed
+	Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_North);
+	// Set the extension splines
+	if (Grid_ptr[iBlk][jBlk].ExtendWest_BndNorthSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendWest_BndNorthSpline.setBCtype(BC_North);
+	}
+	if (Grid_ptr[iBlk][jBlk].ExtendEast_BndNorthSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendEast_BndNorthSpline.setBCtype(BC_North);
+	}
+      }
+
+      if (jBlk == 0 && BC_South != BC_GENERAL){ // This is a domain boundary and the BC is required to be changed
+	Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_South);
+	// Set the extension splines
+	if (Grid_ptr[iBlk][jBlk].ExtendWest_BndSouthSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendWest_BndSouthSpline.setBCtype(BC_South);
+	}
+	if (Grid_ptr[iBlk][jBlk].ExtendEast_BndSouthSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendEast_BndSouthSpline.setBCtype(BC_South);
+	}
+      }
+
+      if (iBlk == Last_iBlock() && BC_East != BC_GENERAL){ // This is a domain boundary and the BC is required to be changed
+	Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_East);
+	// Set the extension splines
+	if (Grid_ptr[iBlk][jBlk].ExtendSouth_BndEastSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendSouth_BndEastSpline.setBCtype(BC_East);
+	}
+	if (Grid_ptr[iBlk][jBlk].ExtendNorth_BndEastSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendNorth_BndEastSpline.setBCtype(BC_East);
+	}
+      }
+
+      if (iBlk == 0 && BC_West != BC_GENERAL){ // This is a domain boundary and the BC is required to be changed
+	Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_West);
+	// Set the extension splines
+	if (Grid_ptr[iBlk][jBlk].ExtendSouth_BndWestSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendSouth_BndWestSpline.setBCtype(BC_West);
+	}
+	if (Grid_ptr[iBlk][jBlk].ExtendNorth_BndWestSpline.np != 0){
+	  Grid_ptr[iBlk][jBlk].ExtendNorth_BndWestSpline.setBCtype(BC_West);
+	}
+      }
+
+      Grid_ptr[iBlk][jBlk].Set_BCs();
+    }
+  }
+
+}
+
+/*!
  * Setup the required flux calculation method based on the flags set in 
  * HO_Grid2D_Execution_Mode class for each 2D quadrilateral block of the multi-block grids.
  */
@@ -498,6 +562,27 @@ void Grid2D_Quad_MultiBlock_HO::SetFluxCalculationMethod(void){
 	if ( HO_Grid2D_Execution_Mode::NORTH_RECONSTRUCTION_BASED_FLUX && 
 	     Grid_ptr[iBlock][jBlock].BndNorthSpline.bc[0] != BC_NONE ){
 	  Grid_ptr[iBlock][jBlock].BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+
+	  // Set the extension splines
+
+	  // === Set extension for iBlock == 0 and loop over flux calculation method (e.g. cylinder grid with constrained bnds)
+	  if (iBlock == 0 && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendWest_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension for iBlock == Last_iBlock() and loop over flux calculation method
+	  if (iBlock == Last_iBlock() && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendEast_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension in the block to the left ===
+	  if (iBlock - 1 >= 0){
+	    Grid_ptr[iBlock-1][jBlock].ExtendEast_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+	  // === Set extension in the block to the right ===
+	  if (iBlock + 1 <= Last_iBlock()){
+	    Grid_ptr[iBlock+1][jBlock].ExtendWest_BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
 	} else {
 	  Grid_ptr[iBlock][jBlock].BndNorthSpline.setFluxCalcMethod(SolveRiemannProblem);
 	}
@@ -506,6 +591,27 @@ void Grid2D_Quad_MultiBlock_HO::SetFluxCalculationMethod(void){
 	if( HO_Grid2D_Execution_Mode::SOUTH_RECONSTRUCTION_BASED_FLUX && 
 	    Grid_ptr[iBlock][jBlock].BndSouthSpline.bc[0] != BC_NONE ){
 	  Grid_ptr[iBlock][jBlock].BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+
+	  // Set the extension splines
+
+	  // === Set extension for iBlock == 0 and loop over flux calculation method 
+	  if (iBlock == 0 && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendWest_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension for iBlock == Last_iBlock() and loop over flux calculation method
+	  if (iBlock == Last_iBlock() && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendEast_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension in the block to the left ===
+	  if (iBlock - 1 >= 0){
+	    Grid_ptr[iBlock-1][jBlock].ExtendEast_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+	  // === Set extension in the block to the right ===
+	  if (iBlock + 1 <= Last_iBlock()){
+	    Grid_ptr[iBlock+1][jBlock].ExtendWest_BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
 	} else {
 	  Grid_ptr[iBlock][jBlock].BndSouthSpline.setFluxCalcMethod(SolveRiemannProblem);
 	}
@@ -514,6 +620,27 @@ void Grid2D_Quad_MultiBlock_HO::SetFluxCalculationMethod(void){
 	if( HO_Grid2D_Execution_Mode::EAST_RECONSTRUCTION_BASED_FLUX && 
 	    Grid_ptr[iBlock][jBlock].BndEastSpline.bc[0] != BC_NONE){
 	  Grid_ptr[iBlock][jBlock].BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+
+	  // Set the extension splines
+
+	  // === Set extension for jBlock == 0 and loop over flux calculation method 
+	  if (jBlock == 0 && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendSouth_BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension for jBlock == Last_jBlock() and loop over flux calculation method
+	  if (jBlock == Last_jBlock() && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendNorth_BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension in the block to the left ===
+	  if (jBlock - 1 >= 0){
+	    Grid_ptr[iBlock][jBlock-1].ExtendNorth_BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+	  // === Set extension in the block to the right ===
+	  if (jBlock + 1 <= Last_jBlock()){
+	    Grid_ptr[iBlock][jBlock+1].ExtendSouth_BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
 	} else {
 	  Grid_ptr[iBlock][jBlock].BndEastSpline.setFluxCalcMethod(SolveRiemannProblem);
 	}
@@ -522,6 +649,27 @@ void Grid2D_Quad_MultiBlock_HO::SetFluxCalculationMethod(void){
 	if( HO_Grid2D_Execution_Mode::WEST_RECONSTRUCTION_BASED_FLUX && 
 	    Grid_ptr[iBlock][jBlock].BndWestSpline.bc[0] != BC_NONE){
 	  Grid_ptr[iBlock][jBlock].BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+
+	  // Set the extension splines
+
+	  // === Set extension for jBlock == 0 and loop over flux calculation method 
+	  if (jBlock == 0 && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendSouth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension for jBlock == Last_jBlock() and loop over flux calculation method
+	  if (jBlock == Last_jBlock() && HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES){
+	    Grid_ptr[iBlock][jBlock].ExtendNorth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+
+	  // === Set extension in the block to the left ===
+	  if (jBlock - 1 >= 0){
+	    Grid_ptr[iBlock][jBlock-1].ExtendNorth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
+	  // === Set extension in the block to the right ===
+	  if (jBlock + 1 <= Last_jBlock()){
+	    Grid_ptr[iBlock][jBlock+1].ExtendSouth_BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+	  }
 	} else {
 	  Grid_ptr[iBlock][jBlock].BndWestSpline.setFluxCalcMethod(SolveRiemannProblem);
 	}
@@ -558,6 +706,22 @@ void Grid2D_Quad_MultiBlock_HO::Update_All_Cells(void){
     for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
       if (Grid_ptr[i][j].Node != NULL) {
 	Grid_ptr[i][j].Update_Cells();
+      } /* endif */
+    }  /* endfor */
+  }  /* endfor */  
+}
+
+/*!
+ * Set the ghost cells update flag to require update of the 
+ * geometric properties of these cells in all mesh blocks.
+ */
+void Grid2D_Quad_MultiBlock_HO::Schedule_Ghost_Cells_Update(void){
+  int i, j;
+  
+  for ( j = 0 ; j <= Last_jBlock() ; ++j ) {
+    for ( i = 0; i <= Last_iBlock() ; ++i ) {
+      if (Grid_ptr[i][j].Node != NULL) {
+	Grid_ptr[i][j].Schedule_Ghost_Cells_Update();
       } /* endif */
     }  /* endfor */
   }  /* endfor */  
@@ -1248,6 +1412,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_Without_Update(int &_Number_of_B
       Bnd_Spline_North.setBCtype(BC_FIXED);
       if (Flat_Plate_BC_Type != BC_BURNING_SURFACE) {
 	Bnd_Spline_South.setBCtype(Flat_Plate_BC_Type);
+	Bnd_Spline_South.makeSplineSolidBoundary(); // set the flat-plate as solid body
 	Bnd_Spline_East.setBCtype(BC_CONSTANT_EXTRAPOLATION);
       } else {
 	Bnd_Spline_South.setBCtype(BC_WALL_VISCOUS_ISOTHERMAL);
@@ -1316,6 +1481,35 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_Without_Update(int &_Number_of_B
 						       Orthogonal_West);
 
   }
+
+  // ======= Set spline extensions =========
+  
+  // Set the spline extensions for Block 0
+  // == South spline
+  Grid_ptr[0][0].ExtendEast_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  // == North spline
+  Grid_ptr[0][0].ExtendEast_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+
+  // Set the spline extensions for Block 1
+  // == South spline
+  Grid_ptr[1][0].ExtendWest_BndSouthSpline = Grid_ptr[0][0].BndSouthSpline;
+  if (_Number_of_Blocks_Idir_ == 3){
+    Grid_ptr[1][0].ExtendEast_BndSouthSpline = Grid_ptr[2][0].BndSouthSpline;
+  }
+  // == North spline
+  Grid_ptr[1][0].ExtendWest_BndNorthSpline = Grid_ptr[0][0].BndNorthSpline;
+  if (_Number_of_Blocks_Idir_ == 3){
+    Grid_ptr[1][0].ExtendEast_BndNorthSpline = Grid_ptr[2][0].BndNorthSpline;
+  }
+
+  // Set the spline extensions for Block 2 (if it exists)
+  if (_Number_of_Blocks_Idir_ == 3){
+    // == South spline
+    Grid_ptr[2][0].ExtendWest_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+    // == North spline
+    Grid_ptr[2][0].ExtendWest_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+  }
+
 }
 
 
@@ -3292,18 +3486,18 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder_Without_Update(int &_Numb
 								      const int Number_of_Ghost_Cells,
 								      const int Highest_Order_of_Reconstruction) {
   
-  Grid_Circular_Cylinder(_Number_of_Blocks_Idir_,
-			 _Number_of_Blocks_Jdir_,
-			 Radius,
-			 32.00*Radius,
-			 Stretching_Type_Idir,
-			 Stretching_Type_Jdir,
-			 Stretching_Factor_Idir,
-			 Stretching_Factor_Jdir,
-			 Number_of_Cells_Idir,
-			 Number_of_Cells_Jdir,
-			 Number_of_Ghost_Cells,
-			 Highest_Order_of_Reconstruction);
+  Grid_Circular_Cylinder_Without_Update(_Number_of_Blocks_Idir_,
+					_Number_of_Blocks_Jdir_,
+					Radius,
+					32.00*Radius,
+					Stretching_Type_Idir,
+					Stretching_Type_Jdir,
+					Stretching_Factor_Idir,
+					Stretching_Factor_Jdir,
+					Number_of_Cells_Idir,
+					Number_of_Cells_Jdir,
+					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction);
   
 }
 
@@ -3386,11 +3580,13 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder_Without_Update(int &_Numb
     if (iBlk == 0) {
       Bnd_Spline_North.setBCtype(BC_FIXED);
       Bnd_Spline_South.setBCtype(BC_REFLECTION);
+      Bnd_Spline_South.makeSplineSolidBoundary(); // create first solid body
       Bnd_Spline_East.setBCtype(BC_NONE);
       Bnd_Spline_West.setBCtype(BC_NONE);
-    } else {
+    } else {      
       Bnd_Spline_North.setBCtype(BC_FIXED);
       Bnd_Spline_South.setBCtype(BC_REFLECTION);
+      Bnd_Spline_South.makeSplineSolidBoundary(1); // make this spline part of the first solid body
       Bnd_Spline_East.setBCtype(BC_NONE);
       Bnd_Spline_West.setBCtype(BC_NONE);
     } /* endif */
@@ -3447,6 +3643,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder_Without_Update(int &_Numb
 						       Orthogonal_West);
 
   } /* endfor */
+
+  // Ensure that constrained boundaries are looped over
+  HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = ON;
+
+  // Set the spline extensions for Block 0
+  // == South spline
+  Grid_ptr[0][0].ExtendWest_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  Grid_ptr[0][0].ExtendEast_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  // == North spline
+  Grid_ptr[0][0].ExtendWest_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+  Grid_ptr[0][0].ExtendEast_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+
+  // Set the spline extensions for Block 1
+  // == South spline
+  Grid_ptr[1][0].ExtendWest_BndSouthSpline = Grid_ptr[0][0].BndSouthSpline;
+  Grid_ptr[1][0].ExtendEast_BndSouthSpline = Grid_ptr[0][0].BndSouthSpline;
+  // == North spline
+  Grid_ptr[1][0].ExtendWest_BndNorthSpline = Grid_ptr[0][0].BndNorthSpline;
+  Grid_ptr[1][0].ExtendEast_BndNorthSpline = Grid_ptr[0][0].BndNorthSpline;  
 
 }
 
@@ -3859,11 +4074,13 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil_Without_Update(int &_Number_o
     } else if (iBlk == 1) {
       Bnd_Spline_North.setBCtype(BC_FIXED);
       Bnd_Spline_South.setBCtype(BC_WALL_VISCOUS_HEATFLUX);//BC_REFLECTION);
+      Bnd_Spline_South.makeSplineSolidBoundary(); // create first solid body      
       Bnd_Spline_East.setBCtype(BC_NONE);
       Bnd_Spline_West.setBCtype(BC_NONE);
     } else if (iBlk == 2) {
       Bnd_Spline_North.setBCtype(BC_FIXED);
       Bnd_Spline_South.setBCtype(BC_WALL_VISCOUS_HEATFLUX);//BC_REFLECTION);
+      Bnd_Spline_South.makeSplineSolidBoundary(1); // make this spline part of the first solid body
       Bnd_Spline_East.setBCtype(BC_NONE);
       Bnd_Spline_West.setBCtype(BC_NONE);
     } else {
@@ -3993,6 +4210,178 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil_Without_Update(int &_Number_o
 
 }
 
+/*!
+ * Generates a O-type grid consisting of two           
+ * quadrilateral grid blocks for predicting flow past   
+ * NACA 4-digit and 5-digit aerofoils.                  
+ *                                                      
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil_Ogrid_Without_Update(int &_Number_of_Blocks_Idir_,
+									int &_Number_of_Blocks_Jdir_,
+									char *NACA_Aerofoil_Type_ptr,
+									const double &Chord_Length,
+									const double &Outer_Radius,
+									const int &Stretching_Type_Idir,
+									const int &Stretching_Type_Jdir,
+									const double &Stretching_Factor_Idir,
+									const double &Stretching_Factor_Jdir,
+									const int Number_of_Cells_Idir,
+									const int Number_of_Cells_Jdir,
+									const int Number_of_Ghost_Cells,
+									const int Highest_Order_of_Reconstruction){
+
+  int iBlk, n_cells_i, n_cells_j,
+    Stretch_I, Stretch_J,
+    Orthogonal_North, Orthogonal_South,
+    Orthogonal_East, Orthogonal_West;
+  double Beta_I, Tau_I, Beta_J, Tau_J;
+  Vector2D x1, x2;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
+
+  /* Allocate memory for grid blocks.  There are two grid
+     blocks for this mesh. */
+
+  _Number_of_Blocks_Idir_ = 2;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
+
+  /* Create the mesh for each block representing
+     the complete grid. */
+
+  for ( iBlk = 0; iBlk <= Number_of_Blocks_Idir-1; ++iBlk ) {
+
+    /* Create the splines defining the north, south,
+       east, and west boundaries of the grid. */
+
+    if (iBlk == 0) {
+      x1 = Vector2D(ZERO,ZERO);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Outer_Radius,
+						  360.00,
+						  180.00,
+						  361);
+      Bnd_Spline_South.Create_Spline_NACA_Aerofoil(NACA_Aerofoil_Type_ptr,
+						   Chord_Length,
+						   -1,
+						   501);
+      x1 = Vector2D(Chord_Length, ZERO);
+      x2 = Vector2D(Outer_Radius, ZERO);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
+      x1 = Vector2D(ZERO, ZERO);
+      x2 = Vector2D(-Outer_Radius, ZERO);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
+    } else {
+      x1 = Vector2D(ZERO,ZERO);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Outer_Radius,
+						  180.00,
+						  ZERO,
+						  361);
+      Bnd_Spline_South.Create_Spline_NACA_Aerofoil(NACA_Aerofoil_Type_ptr,
+						   Chord_Length,
+						   1,
+						   501);
+      x1 = Vector2D(ZERO, ZERO);
+      x2 = Vector2D(-Outer_Radius, ZERO);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
+      x1 = Vector2D(Chord_Length, ZERO);
+      x2 = Vector2D(Outer_Radius, ZERO);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
+    } /* endif */
+
+    /* Set the boundary condition types for each of the
+       boundary splines. */
+
+    if (iBlk == 0) {
+      Bnd_Spline_North.setBCtype(BC_FIXED);
+      Bnd_Spline_South.setBCtype(BC_REFLECTION);
+      Bnd_Spline_South.makeSplineSolidBoundary(); // create first solid body
+      Bnd_Spline_East.setBCtype(BC_NONE);
+      Bnd_Spline_West.setBCtype(BC_NONE);
+    } else {
+      Bnd_Spline_North.setBCtype(BC_FIXED);
+      Bnd_Spline_South.setBCtype(BC_REFLECTION);
+      Bnd_Spline_South.makeSplineSolidBoundary(1); // make this spline part of the first solid body
+      Bnd_Spline_East.setBCtype(BC_NONE);
+      Bnd_Spline_West.setBCtype(BC_NONE);
+    } /* endif */
+
+    /* Determine the number of cells for this block. */
+
+    n_cells_i = Number_of_Cells_Idir/2;
+    n_cells_j = Number_of_Cells_Jdir;
+
+    /* Assign values to the stretching function parameters
+       and boundary grid line orthogonality parameters. */
+
+    if (iBlk == 0) {
+      Stretch_I = Stretching_Type_Idir;
+      Beta_I = Stretching_Factor_Idir;
+      Tau_I = ZERO;
+      Stretch_J = Stretching_Type_Jdir;
+      Beta_J = Stretching_Factor_Jdir;
+      Tau_J = ZERO;
+    } else {
+      Stretch_I = Stretching_Type_Idir;
+      Beta_I = Stretching_Factor_Idir;
+      Tau_I = ZERO;
+      Stretch_J = Stretching_Type_Jdir;
+      Beta_J = Stretching_Factor_Jdir;
+      Tau_J = ZERO;
+    } /* endif */
+
+    Orthogonal_North = 0;
+    Orthogonal_South = 0;
+    Orthogonal_East = 0;
+    Orthogonal_West = 0;
+
+    /* Create the 2D quadrilateral grid block. */
+
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       n_cells_i,
+						       n_cells_j,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I, 
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
+
+  } /* endfor */
+
+  // Ensure that constrained boundaries are looped over
+  HO_Grid2D_Execution_Mode::LOOPOVER_FLUX_CALCULATION_METHOD_AT_BOUNDARIES = ON;
+
+  // Set the spline extensions for Block 0
+  // == South spline
+  Grid_ptr[0][0].ExtendWest_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  Grid_ptr[0][0].ExtendEast_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  // == North spline
+  Grid_ptr[0][0].ExtendWest_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+  Grid_ptr[0][0].ExtendEast_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+
+  // Set the spline extensions for Block 1
+  // == South spline
+  Grid_ptr[1][0].ExtendWest_BndSouthSpline = Grid_ptr[0][0].BndSouthSpline;
+  Grid_ptr[1][0].ExtendEast_BndSouthSpline = Grid_ptr[0][0].BndSouthSpline;
+  // == North spline
+  Grid_ptr[1][0].ExtendWest_BndNorthSpline = Grid_ptr[0][0].BndNorthSpline;
+  Grid_ptr[1][0].ExtendEast_BndNorthSpline = Grid_ptr[0][0].BndNorthSpline;
+
+}
 
 /*!
  * Generates a multi-block grid for predicting free-jet 
@@ -4614,6 +5003,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Unsteady_Blunt_Body_Without_Update(int &_Nu
   
 }
 
+
+void Grid2D_Quad_MultiBlock_HO::Determine_Coordinates_Ringleb_Flow(const double & Streamline, const double & Isotachline,
+								   double & xLoc, double & yLoc){
+  
+  const double g(1.40);
+  double c, J, rho;
+
+  const double Isotachline2(Isotachline*Isotachline);
+  const double Streamline2(Streamline*Streamline);
+
+  c = sqrt(ONE - ((g-ONE)/TWO)*Isotachline2);
+  rho = pow(c,TWO/(g-ONE));
+  J = ONE/c + ONE/(THREE*pow(c,THREE)) + ONE/(FIVE*pow(c,FIVE)) - HALF*log((ONE+c)/(ONE-c));
+
+  xLoc = (HALF/rho)*(TWO/(Streamline2) - ONE/(Isotachline2)) - HALF*J;
+  yLoc = (ONE/(Streamline*rho*Isotachline))*sqrt(ONE - (Isotachline2)/(Streamline2));
+  
+}
+
 /*!
  * Generates a uniform 2D mesh for Ringleb's flow.                    
  *                                                                    
@@ -4648,96 +5056,103 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow_Without_Update(int &_Number_of
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
   Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
     Bnd_Spline_East, Bnd_Spline_West;
-  double **rho;
-  double delta_q;
-  double delta_k;
-  double k_init, q_init, q_final;
-  double **q, **k, qo, ko, c, J;
-  double g = 1.40;
-  Vector2D norm_dir, X_norm, X_tan;
-  
+
+  double k, k1, k2;
+  double q, q1, q2;
+  double delk, delq;
+  int i,j;
+
+
   // Allocate memory for grid block.
   _Number_of_Blocks_Idir_ = 1;
   _Number_of_Blocks_Jdir_ = 1;
   allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
-
   // Create the mesh for each block representing the complete grid.
-  nk = 32;
-  nq = 50;
-  k = new double*[nk];
-  q = new double*[nk];
-  rho = new double*[nk];
-  for (int i = 0; i < nk; i++) {
-    k[i] = new double[nq];
-    q[i] = new double[nq];
-    rho[i] = new double[nq];
-    for (int j = 0; j < nq; j++) {
-      k[i][j] = ZERO;
-      q[i][j] = ZERO;
-      rho[i][j] = ZERO;
-    }
-  }
+  
+  // Set number of points in each direction
+  nk = min(32, 15*Number_of_Cells_Idir); // 3 points for each cell
+  nq = min(50, 15*Number_of_Cells_Jdir); // 3 points for each cell
 
-  delta_k = (Inner_Streamline_Number-Outer_Streamline_Number)/double(nk-1);
-  k_init = Outer_Streamline_Number;
-  q_init = Isotach_Line;
-  for (int i = 0; i < nk; i++){
-    ko = k_init + double(i)*delta_k;
-    q_final = ko; // condition y = 0
-    delta_q = (q_final - q_init)/double(nq-1);
-    for (int j = 0; j < nq; j++) {
-      if (j == nq-1) qo = q_final;
-      else qo = q_init + double(j)*delta_q;
-      k[i][j] = ko;
-      q[i][j] = qo;
-    }
-  }
+  // West streamline
+  k  = Inner_Streamline_Number;
+  q1 = Inner_Streamline_Number;
+  q2 = Isotach_Line;
+  delq = q2 - q1;
 
-  Bnd_Spline_North.allocate(nk); Bnd_Spline_North.settype(SPLINE2D_QUINTIC);
-  Bnd_Spline_South.allocate(nk); Bnd_Spline_South.settype(SPLINE2D_QUINTIC);
-  Bnd_Spline_East.allocate(nq);	 Bnd_Spline_East.settype(SPLINE2D_QUINTIC);
+  // Allocate memory
   Bnd_Spline_West.allocate(nq);	 Bnd_Spline_West.settype(SPLINE2D_QUINTIC);
 
-  for (int i = 0; i < nk; i++) {
-    for (int j = 0; j < nq; j++){
+  for (j = 0; j < nq; ++j ){
+    // Determine isotach line
+    q = q1 + delq*pow((0.5 - cos((j*PI)/(nq - 1))/2.0),1.3);
+    
+    // Determine (xLoc,yLoc) of the control point
+    Determine_Coordinates_Ringleb_Flow(k,q,
+				       Bnd_Spline_West.Xp[j].x,
+				       Bnd_Spline_West.Xp[j].y);
+    if (j == 0 || j == nq-1) {
+      Bnd_Spline_West.tp[j] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      Bnd_Spline_West.tp[j] = SPLINE2D_POINT_NORMAL;
+    }
 
-      c = sqrt(ONE - ((g-ONE)/TWO)*q[i][j]*q[i][j]);
-      rho[i][j] = pow(c,TWO/(g-ONE));
-      J = ONE/c + ONE/(THREE*pow(c,THREE)) + ONE/(FIVE*pow(c,FIVE)) - HALF*log((ONE+c)/(ONE-c));
-      // NORTH spline.
-      if (j == 0) {
-	Bnd_Spline_North.Xp[nk-1-i].x = (HALF/rho[i][j])*(TWO/(k[i][j]*k[i][j]) - ONE/(q[i][j]*q[i][j])) - HALF*J;
-	Bnd_Spline_North.Xp[nk-1-i].y = (ONE/(k[i][j]*rho[i][j]*q[i][j]))*sqrt(ONE - (q[i][j]*q[i][j])/(k[i][j]*k[i][j]));
-	Bnd_Spline_North.bc[nk-1-i] = BC_RINGLEB_FLOW;
-	if (i == 0 || i == nk-1) Bnd_Spline_North.tp[nk-1-i] = SPLINE2D_POINT_SHARP_CORNER;
-	else Bnd_Spline_North.tp[nk-1-i] = SPLINE2D_POINT_NORMAL;
-      }
-      // SOUTH spline.
-      if (j == nq-1) {
-	Bnd_Spline_South.Xp[nk-1-i].x = (HALF/rho[i][j])*(TWO/(k[i][j]*k[i][j]) - ONE/(q[i][j]*q[i][j])) - HALF*J;
-	Bnd_Spline_South.Xp[nk-1-i].y = ZERO;
-	Bnd_Spline_South.bc[nk-1-i] = BC_RINGLEB_FLOW;
-	if (i == 0 || i == nk-1) Bnd_Spline_South.tp[nk-1-i] = SPLINE2D_POINT_SHARP_CORNER;
-	else Bnd_Spline_South.tp[nk-1-i] = SPLINE2D_POINT_NORMAL;
-      }
-      // EAST spline.
-      if (i == 0) {
-	Bnd_Spline_East.Xp[nq-1-j].x = (HALF/rho[i][j])*(TWO/(k[i][j]*k[i][j]) - ONE/(q[i][j]*q[i][j])) - HALF*J;
-	Bnd_Spline_East.Xp[nq-1-j].y = (ONE/(k[i][j]*rho[i][j]*q[i][j]))*sqrt(ONE - (q[i][j]*q[i][j])/(k[i][j]*k[i][j]));
-	Bnd_Spline_East.bc[nq-1-j] = BC_RINGLEB_FLOW;//BC_REFLECTION;
-	if (j == 0 || j == nq-1) Bnd_Spline_East.tp[nq-1-j] = SPLINE2D_POINT_SHARP_CORNER;
-	else Bnd_Spline_East.tp[nq-1-j] = SPLINE2D_POINT_NORMAL;
-      }
-      // WEST spline.
-      if (i == nk-1) {
-	Bnd_Spline_West.Xp[nq-1-j].x = (HALF/rho[i][j])*(TWO/(k[i][j]*k[i][j]) - ONE/(q[i][j]*q[i][j])) - HALF*J;
-	Bnd_Spline_West.Xp[nq-1-j].y = (ONE/(k[i][j]*rho[i][j]*q[i][j]))*sqrt(ONE - (q[i][j]*q[i][j])/(k[i][j]*k[i][j]));
-	Bnd_Spline_West.bc[nq-1-j] = BC_RINGLEB_FLOW;//BC_REFLECTION;
-	if (j == 0 || j == nq-1) Bnd_Spline_West.tp[nq-1-j] = SPLINE2D_POINT_SHARP_CORNER;
-	else Bnd_Spline_West.tp[nq-1-j] = SPLINE2D_POINT_NORMAL;
-      }
+  }
 
+  // East streamline
+  k  = Outer_Streamline_Number;
+  q1 = Outer_Streamline_Number; 
+  q2 = Isotach_Line;
+  delq = q2 - q1;
+  
+  // Allocate memory
+  Bnd_Spline_East.allocate(nq);	 Bnd_Spline_East.settype(SPLINE2D_QUINTIC);
+
+  for (j = 0; j < nq; ++j ){
+    // Determine isotach line
+    q = q1 + delq*pow((0.5 - cos((j*PI)/(nq - 1))/2.0),1.3);
+
+    // Determine (xLoc,yLoc) of the control point
+    Determine_Coordinates_Ringleb_Flow(k,q,
+				       Bnd_Spline_East.Xp[j].x,
+				       Bnd_Spline_East.Xp[j].y);
+
+    if (j == 0 || j == nq-1) {
+      Bnd_Spline_East.tp[j] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      Bnd_Spline_East.tp[j] = SPLINE2D_POINT_NORMAL;
+    }
+  }
+
+
+  // South isotach 
+  // Line between the end-points of West and East streamline.
+  Bnd_Spline_South.Create_Spline_Line(Bnd_Spline_West.Xp[0],
+				      Bnd_Spline_East.Xp[0],
+				      2);
+
+  // North isotach
+  q  = Isotach_Line;
+  k1 = Outer_Streamline_Number; 
+  k2 = Inner_Streamline_Number; 
+  delk = k2 - k1;
+
+  // Allocate memory
+  Bnd_Spline_North.allocate(nk); Bnd_Spline_North.settype(SPLINE2D_QUINTIC);
+  
+  for (i = 0; i < nk; ++i ){
+    // Determine streamline
+    k = k1 + delk*(1. + sin((i/(nk - 1.) - 1.)*PI/2));
+
+    // Determine (xLoc,yLoc) of the control point
+    Determine_Coordinates_Ringleb_Flow(k,q,
+				       Bnd_Spline_North.Xp[nk-1-i].x,
+				       Bnd_Spline_North.Xp[nk-1-i].y);
+   
+    if (i == 0 || i == nk-1) {
+      Bnd_Spline_North.tp[nk-1-i] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      Bnd_Spline_North.tp[nk-1-i] = SPLINE2D_POINT_NORMAL;
     }
   }
 
@@ -4750,8 +5165,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow_Without_Update(int &_Number_of
   // splines.
   Bnd_Spline_North.setBCtype(BC_RINGLEB_FLOW);
   Bnd_Spline_South.setBCtype(BC_RINGLEB_FLOW);
-  Bnd_Spline_East.setBCtype(BC_REFLECTION);
-  Bnd_Spline_West.setBCtype(BC_REFLECTION);
   Bnd_Spline_East.setBCtype(BC_RINGLEB_FLOW);
   Bnd_Spline_West.setBCtype(BC_RINGLEB_FLOW);
 
@@ -4791,15 +5204,165 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow_Without_Update(int &_Number_of
 
   Grid_ptr[0][0].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
 
-  // Deallocate memory for point, kq, and rho.
-  for (int i = 0; i < nk; i++) {
-    delete []k[i];   k[i]   = NULL;
-    delete []q[i];   q[i]   = NULL;
-    delete []rho[i]; rho[i] = NULL;
+}
+
+/*!
+ * Generates a uniform 2D mesh with a straight 
+ * inflow boundary for Ringleb's flow.
+ *                                                                    
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
+ */
+void Grid2D_Quad_MultiBlock_HO::
+Grid_Ringleb_Flow_Straight_Inflow_Boundary_Without_Update(int &_Number_of_Blocks_Idir_,
+							  int &_Number_of_Blocks_Jdir_,
+							  const double &Inner_Streamline_Number,
+							  const double &Outer_Streamline_Number,
+							  const double &Isotach_Line,
+							  const int Number_of_Cells_Idir,
+							  const int Number_of_Cells_Jdir,
+							  const int Number_of_Ghost_Cells,
+							  const int Highest_Order_of_Reconstruction) {
+  
+  assert(Inner_Streamline_Number > Outer_Streamline_Number);
+  assert(Inner_Streamline_Number < 5.0/3.0);
+  assert(Outer_Streamline_Number > Isotach_Line); 
+
+  int nk, nq,
+    Stretch_I, Stretch_J,
+    Orthogonal_North, Orthogonal_South,
+    Orthogonal_East, Orthogonal_West;
+  double Beta_I, Tau_I, Beta_J, Tau_J;
+  Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+    Bnd_Spline_East, Bnd_Spline_West;
+
+  double k, k1, k2;
+  double q, q1, q2;
+  double delk, delq;
+  int i,j;
+
+
+  // Allocate memory for grid block.
+  _Number_of_Blocks_Idir_ = 1;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
+
+  // Create the mesh for each block representing the complete grid.
+  
+  // Set number of points in each direction
+  nq = min(50, 15*Number_of_Cells_Jdir); // 3 points for each cell
+
+  // West streamline
+  k  = Inner_Streamline_Number;
+  q1 = Inner_Streamline_Number;
+  q2 = Isotach_Line;
+  delq = q2 - q1;
+
+  // Allocate memory
+  Bnd_Spline_West.allocate(nq);	 Bnd_Spline_West.settype(SPLINE2D_QUINTIC);
+
+  for (j = 0; j < nq; ++j ){
+    // Determine isotach line
+    q = q1 + delq*pow((0.5 - cos((j*PI)/(nq - 1))/2.0),1.3);
+    
+    // Determine (xLoc,yLoc) of the control point
+    Determine_Coordinates_Ringleb_Flow(k,q,
+				       Bnd_Spline_West.Xp[j].x,
+				       Bnd_Spline_West.Xp[j].y);
+    if (j == 0 || j == nq-1) {
+      Bnd_Spline_West.tp[j] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      Bnd_Spline_West.tp[j] = SPLINE2D_POINT_NORMAL;
+    }
+
   }
-  delete []k;   k   = NULL;
-  delete []q;   q   = NULL;
-  delete []rho; rho = NULL;
+
+  // East streamline
+  k  = Outer_Streamline_Number;
+  q1 = Outer_Streamline_Number; 
+  q2 = Isotach_Line;
+  delq = q2 - q1;
+  
+  // Allocate memory
+  Bnd_Spline_East.allocate(nq);	 Bnd_Spline_East.settype(SPLINE2D_QUINTIC);
+
+  for (j = 0; j < nq; ++j ){
+    // Determine isotach line
+    q = q1 + delq*pow((0.5 - cos((j*PI)/(nq - 1))/2.0),1.3);
+
+    // Determine (xLoc,yLoc) of the control point
+    Determine_Coordinates_Ringleb_Flow(k,q,
+				       Bnd_Spline_East.Xp[j].x,
+				       Bnd_Spline_East.Xp[j].y);
+
+    if (j == 0 || j == nq-1) {
+      Bnd_Spline_East.tp[j] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      Bnd_Spline_East.tp[j] = SPLINE2D_POINT_NORMAL;
+    }
+  }
+
+
+  // South isotach 
+  // Line between the end-points of West and East streamline.
+  Bnd_Spline_South.Create_Spline_Line(Bnd_Spline_West.Xp[0],
+				      Bnd_Spline_East.Xp[0],
+				      2);
+
+  // North boundary (This is not an isotach line!!!)
+  // Line between the end-points of West and East streamline.
+  Bnd_Spline_North.Create_Spline_Line(Bnd_Spline_West.Xp[nq-1],
+				      Bnd_Spline_East.Xp[nq-1],
+				      2);
+
+  Bnd_Spline_North.pathlength();
+  Bnd_Spline_South.pathlength();
+  Bnd_Spline_East.pathlength();
+  Bnd_Spline_West.pathlength();
+
+  // Set the boundary condition types for each of the boundary 
+  // splines.
+  Bnd_Spline_North.setBCtype(BC_RINGLEB_FLOW);
+  Bnd_Spline_South.setBCtype(BC_RINGLEB_FLOW);
+  Bnd_Spline_East.setBCtype(BC_RINGLEB_FLOW);
+  Bnd_Spline_West.setBCtype(BC_RINGLEB_FLOW);
+
+  // Assign values to the stretching function parameters and
+  // boundary grid line orthogonality parameters.
+  Stretch_I = STRETCHING_FCN_LINEAR;
+  Beta_I = ZERO; 
+  Tau_I = ZERO;
+  Stretch_J = STRETCHING_FCN_LINEAR;
+  Beta_J = ONE;
+  Tau_J = THREE;
+  Orthogonal_North = 1;
+  Orthogonal_South = 1;
+  Orthogonal_East = 1;
+  Orthogonal_West = 1;
+
+  // Create the 2D quadrilateral grid block representing the mesh.
+  Grid_ptr[0][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						  Bnd_Spline_South,
+						  Bnd_Spline_East,
+						  Bnd_Spline_West,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction,
+						  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
+						  Stretch_I,
+						  Beta_I,
+						  Tau_I,
+						  Stretch_J,
+						  Beta_J,
+						  Tau_J,
+						  Orthogonal_North,
+						  Orthogonal_South,
+						  Orthogonal_East,
+						  Orthogonal_West);
+
+  Grid_ptr[0][0].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
 
 }
 
@@ -5038,6 +5601,12 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Bump_Channel_Flow_Without_Update(int &_Numb
       
     }
   }
+
+  // Set the spline extensions for Block (0,0)
+  Grid_ptr[0][0].ExtendEast_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  
+  // Set the spline extensions for Block (2,0)
+  Grid_ptr[2][0].ExtendWest_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
 
 }
 
@@ -7814,6 +8383,23 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder_Without_Update(
 						       Orthogonal_West);
 	
   } /* endfor */
+
+  // Set the spline extensions for Block 0
+  // == South spline
+  Grid_ptr[0][0].ExtendWest_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  Grid_ptr[0][0].ExtendEast_BndSouthSpline = Grid_ptr[1][0].BndSouthSpline;
+  // == North spline
+  Grid_ptr[0][0].ExtendWest_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+  Grid_ptr[0][0].ExtendEast_BndNorthSpline = Grid_ptr[1][0].BndNorthSpline;
+
+  // Set the spline extensions for Block 1
+  // == South spline
+  Grid_ptr[1][0].ExtendWest_BndSouthSpline = Grid_ptr[0][0].BndSouthSpline;
+  Grid_ptr[1][0].ExtendEast_BndSouthSpline = Grid_ptr[0][0].BndSouthSpline;
+  // == North spline
+  Grid_ptr[1][0].ExtendWest_BndNorthSpline = Grid_ptr[0][0].BndNorthSpline;
+  Grid_ptr[1][0].ExtendEast_BndNorthSpline = Grid_ptr[0][0].BndNorthSpline;  
+
 }
 
 /*!

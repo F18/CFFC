@@ -20,6 +20,7 @@ using std::vector;
 #include "../Grid/HO_Grid2DQuad.h"
 #include "ReconstructionHelpers.h"
 #include "Cauchy_BoundaryConditions.h"
+#include "HighOrder2D_BlockBoundary.h"
 
 /*********************************
  * Declare the HighOrder2D class *
@@ -87,6 +88,7 @@ public:
   ~HighOrder2D(void){ deallocate(); }
   void deallocate_CellMemory(void);
   void deallocate(void);
+  void deallocate_ReconstructionTypeMap(void);
   //@} 
 
   HighOrder2D<Soln_State> & operator=(const HighOrder2D<Soln_State> & rhs); //!< Assignment operator
@@ -193,54 +195,6 @@ public:
 					const int & VarPosition){ return SI[ii][jj][VarPosition-1];}
   //@}
 
-  //! @name Indexes of cells between which the smoothness indicator is computed with central stencil
-  //@{
-  const int & StartIdir_SI(void) const { return StartI_SI; }
-  const int & EndIdir_SI(void) const { return EndI_SI; }
-  const int & StartJdir_SI(void) const { return StartJ_SI; }
-  const int & EndJdir_SI(void) const { return EndJ_SI; }
-  //@}
-
-  //! @name Indexes of cells between which the limited piecewise linear (LPWL) reconstruction is potentially applied.
-  //@{
-  const int & StartIdir_LPWL(void) const { return StartI_LPWL; }
-  const int & EndIdir_LPWL(void) const { return EndI_LPWL; }
-  const int & StartJdir_LPWL(void) const { return StartJ_LPWL; }
-  const int & EndJdir_LPWL(void) const { return EndJ_LPWL; }
-  //@}
-
-  //! @name Indexes of cells between which constrained reconstruction is calculated if West BC is imposed by constraints.
-  //@{
-  const int & StartIdir_ConstrWest(void) const { return StartI_ConstrWest; }
-  const int & EndIdir_ConstrWest(void) const { return EndI_ConstrWest; }
-  const int & StartJdir_ConstrWest(void) const { return StartJ_ConstrWest; }
-  const int & EndJdir_ConstrWest(void) const { return EndJ_ConstrWest; }
-  //@}
-
-  //! @name Indexes of cells between which constrained reconstruction is calculated if East BC is imposed by constraints.
-  //@{
-  const int & StartIdir_ConstrEast(void) const { return StartI_ConstrEast; }
-  const int & EndIdir_ConstrEast(void) const { return EndI_ConstrEast; }
-  const int & StartJdir_ConstrEast(void) const { return StartJ_ConstrEast; }
-  const int & EndJdir_ConstrEast(void) const { return EndJ_ConstrEast; }
-  //@}
-
-  //! @name Indexes of cells between which constrained reconstruction is calculated if North BC is imposed by constraints.
-  //@{
-  const int & StartIdir_ConstrNorth(void) const { return StartI_ConstrNorth; }
-  const int & EndIdir_ConstrNorth(void) const { return EndI_ConstrNorth; }
-  const int & StartJdir_ConstrNorth(void) const { return StartJ_ConstrNorth; }
-  const int & EndJdir_ConstrNorth(void) const { return EndJ_ConstrNorth; }
-  //@}
-
-  //! @name Indexes of cells between which constrained reconstruction is calculated if South BC is imposed by constraints.
-  //@{
-  const int & StartIdir_ConstrSouth(void) const { return StartI_ConstrSouth; }
-  const int & EndIdir_ConstrSouth(void) const { return EndI_ConstrSouth; }
-  const int & StartJdir_ConstrSouth(void) const { return StartJ_ConstrSouth; }
-  const int & EndJdir_ConstrSouth(void) const { return EndJ_ConstrSouth; }
-  //@}
-
   //! @name Pseudo-inverse of the LHS term in the CENO reconstruction
   //@{
   //! Get the pointer to the double array of reconstruction pseudo-inverse matrices.
@@ -254,7 +208,7 @@ public:
 			      const int & IndexI, const int & IndexJ) {return CENO_LHS[ii][jj](IndexI,IndexJ);}
   //! Get the entry (IndexI,IndexJ) in the pseudo-inverse matrix for the reconstruction of cell (ii,jj)
   const double & Cell_LHS_Inv_Value(const int & ii, const int & jj,
-				    const int & IndexI, const int & IndexJ) const {return CENO_LHS(IndexI,IndexJ);}
+				    const int & IndexI, const int & IndexJ) const {return CENO_LHS[ii][jj](IndexI,IndexJ);}
   //! Return true if the pseudo-inverse has been already computed, otherwise false.
   bool IsPseudoInversePreComputed(void) const { return _calculated_psinv; }
   //! Require update of the pseudo-inverse
@@ -299,13 +253,13 @@ public:
   //! Return true if constrained reconstruction is used anywhere in the block, otherwise return false
   const bool & IsConstrainedReconstructionRequired(void) const { return _constrained_block_reconstruction; }
   //! Return true if constrained reconstruction is used in the proximity of West block boundary, otherwise return false
-  const bool & IsWestConstrainedReconstructionRequired(void) const { return _constrained_WEST_reconstruction; }
+  const bool IsWestConstrainedReconstructionRequired(void) const { return WestBnd.IsReconstructionConstrained(); }
   //! Return true if constrained reconstruction is used in the proximity of East block boundary, otherwise return false
-  const bool & IsEastConstrainedReconstructionRequired(void) const { return _constrained_EAST_reconstruction; }
+  const bool IsEastConstrainedReconstructionRequired(void) const { return EastBnd.IsReconstructionConstrained(); }
   //! Return true if constrained reconstruction is used in the proximity of North block boundary, otherwise return false
-  const bool & IsNorthConstrainedReconstructionRequired(void) const { return _constrained_NORTH_reconstruction; }
+  const bool IsNorthConstrainedReconstructionRequired(void) const { return NorthBnd.IsReconstructionConstrained(); }
   //! Return true if constrained reconstruction is used in the proximity of South block boundary, otherwise return false
-  const bool & IsSouthConstrainedReconstructionRequired(void) const { return _constrained_SOUTH_reconstruction; }
+  const bool IsSouthConstrainedReconstructionRequired(void) const { return SouthBnd.IsReconstructionConstrained(); }
   //! Get i-direction index of first interior cell
   const int & ICl_Grid(void) const {return Geom->ICl; }
   //! Get i-direction index of last interior cell
@@ -316,6 +270,38 @@ public:
   const int & JCu_Grid(void) const {return Geom->JCu; }
   //! Get number of ghost cells for the associated block mesh
   const int & Nghost_Grid(void) const {return Geom->Nghost; }
+  //@}
+
+  //! @name Block boundary information
+  //@{
+  //! Get information for West boundary
+  HighOrder2D_BlockBoundary & getWestBnd(void) { return WestBnd; }
+  const HighOrder2D_BlockBoundary & getWestBnd(void) const { return WestBnd; }
+  HighOrder2D_BlockBoundary & get_South_WestBnd(void) { return S_WestBnd; }
+  const HighOrder2D_BlockBoundary & get_South_WestBnd(void) const { return S_WestBnd; }
+  HighOrder2D_BlockBoundary & get_North_WestBnd(void) { return N_WestBnd; }
+  const HighOrder2D_BlockBoundary & get_North_WestBnd(void) const { return N_WestBnd; }
+
+  HighOrder2D_BlockBoundary & getEastBnd(void) { return EastBnd; }
+  const HighOrder2D_BlockBoundary & getEastBnd(void) const { return EastBnd; }
+  HighOrder2D_BlockBoundary & get_South_EastBnd(void) { return S_EastBnd; }
+  const HighOrder2D_BlockBoundary & get_South_EastBnd(void) const { return S_EastBnd; }
+  HighOrder2D_BlockBoundary & get_North_EastBnd(void) { return N_EastBnd; }
+  const HighOrder2D_BlockBoundary & get_North_EastBnd(void) const { return N_EastBnd; }
+
+  HighOrder2D_BlockBoundary & getNorthBnd(void) { return NorthBnd; }
+  const HighOrder2D_BlockBoundary & getNorthBnd(void) const { return NorthBnd; }
+  HighOrder2D_BlockBoundary & get_East_NorthBnd(void) { return E_NorthBnd; }
+  const HighOrder2D_BlockBoundary & get_East_NorthBnd(void) const { return E_NorthBnd; }
+  HighOrder2D_BlockBoundary & get_West_NorthBnd(void) { return W_NorthBnd; }
+  const HighOrder2D_BlockBoundary & get_West_NorthBnd(void) const { return W_NorthBnd; }
+
+  HighOrder2D_BlockBoundary & getSouthBnd(void) { return SouthBnd; }
+  const HighOrder2D_BlockBoundary & getSouthBnd(void) const { return SouthBnd; }
+  HighOrder2D_BlockBoundary & get_East_SouthBnd(void) { return E_SouthBnd; }
+  const HighOrder2D_BlockBoundary & get_East_SouthBnd(void) const { return E_SouthBnd; }
+  HighOrder2D_BlockBoundary & get_West_SouthBnd(void) { return W_SouthBnd; }
+  const HighOrder2D_BlockBoundary & get_West_SouthBnd(void) const { return W_SouthBnd; }
   //@}
 
   //! @name Initialize container functions.
@@ -340,8 +326,11 @@ public:
   void InitializeMonotonicityVariables(const int & ii, const int & jj);
   void InitializeVariable(int ReconstructionOrder, GeometryType & Block,
 			  const bool &_pseudo_inverse_allocation_ = false);
+  void InitializeBasicVariable(int ReconstructionOrder, GeometryType & Block,
+			       const bool &_pseudo_inverse_allocation_ = false);
   void SetReconstructionOrder(int ReconstructionOrder);
-
+  void SetPropertiesHighOrderBlock(void);
+  void CheckConsistencyOfGeometricSplineProperties(void);
   //@}
 
   //! @name Evaluate the polynomial interpolant.
@@ -380,26 +369,67 @@ public:
   
   //! Evaluate the X-gradient of the interpolant at a given location (X_Coord,Y_Coord) for all solution variables,
   //  using the reconstruction of cell (ii,jj).
-  Soln_State XGradientAtCoordinates(const int & ii, const int & jj,
-				    const double & X_Coord, const double & Y_Coord) const {
+  Soln_State XGradientStateAtCoordinates(const int & ii, const int & jj,
+					 const double & X_Coord, const double & Y_Coord) const {
     return TD[ii][jj].ComputeXGradientFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
   }
   //! Evaluate the X-gradient of the interpolant at a given position vector for all solution variables,
   //  using the reconstruction of cell (ii,jj).
   Soln_State XGradientStateAtLocation(const int & ii, const int & jj, const Vector2D &CalculationPoint) const {
-    return XGradientAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
+    return XGradientStateAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
   }
 
   //! Evaluate the Y-gradient of the interpolant at a given location (X_Coord,Y_Coord) for all solution variables,
   //  using the reconstruction of cell (ii,jj).
-  Soln_State YGradientAtCoordinates(const int & ii, const int & jj,
-				    const double & X_Coord, const double & Y_Coord) const {
+  Soln_State YGradientStateAtCoordinates(const int & ii, const int & jj,
+					 const double & X_Coord, const double & Y_Coord) const {
     return TD[ii][jj].ComputeYGradientFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
   }
   //! Evaluate the Y-gradient of the interpolant at a given position vector for all solution variables,
   //  using the reconstruction of cell (ii,jj).
   Soln_State YGradientStateAtLocation(const int & ii, const int & jj, const Vector2D &CalculationPoint) const {
-    return YGradientAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
+    return YGradientStateAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
+  }
+
+  //! Evaluate the entropy provided by the interpolant at a given location (X_Coord,Y_Coord),
+  //  using the reconstruction of cell (ii,jj)
+  double SolutionEntropyAtCoordinates(const int & ii, const int & jj, 
+				      const double & X_Coord, const double & Y_Coord) const {
+    return SolutionStateAtCoordinates(ii,jj,X_Coord,Y_Coord).s();
+  }
+
+  //! Evaluate the pressure provided by the interpolant at a given location (X_Coord,Y_Coord),
+  //  using the reconstruction of cell (ii,jj)
+  double SolutionPressureAtCoordinates(const int & ii, const int & jj, 
+				      const double & X_Coord, const double & Y_Coord) const {
+    return SolutionStateAtCoordinates(ii,jj,X_Coord,Y_Coord).pressure();
+  }
+
+  //! Evaluate the gradient in the normal direction of the interpolant 
+  //  at given position coordinate for all solution variables, using the reconstruction of cell (ii,jj).
+  Soln_State NormalGradientStateAtCoordinates(const int & ii, const int & jj,
+					      const double & X_Coord, const double & Y_Coord,
+					      const Vector2D &norm_dir) const;
+
+  //! Evaluate the gradient in the normal direction of the interpolant 
+  //  at given position coordinates for a specified solution variable (i.e. parameter), using the reconstruction of cell (ii,jj).
+  double NormalGradientAtCoordinates(const int & ii, const int & jj,
+				     const double & X_Coord, const double & Y_Coord,
+				     const Vector2D &norm_dir, const unsigned & parameter) const;
+
+  //! Evaluate the gradient in the normal direction of the interpolant 
+  //  at a given position vector for all solution variables, using the reconstruction of cell (ii,jj).
+  Soln_State NormalGradientStateAtLocation(const int & ii, const int & jj,
+					   const Vector2D &CalculationPoint, const Vector2D &norm_dir) const {
+    return NormalGradientStateAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y,norm_dir);
+  }
+
+  //! Evaluate the gradient in the normal direction of the interpolant 
+  //  at a given position vector for a specified solution variable (i.e. parameter), using the reconstruction of cell (ii,jj).
+  double NormalGradientAtLocation(const int & ii, const int & jj,
+				  const Vector2D &CalculationPoint, const Vector2D &norm_dir,
+				  const unsigned & parameter) const {
+    return NormalGradientAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y,norm_dir,parameter);
   }
   //@}
 
@@ -449,6 +479,10 @@ public:
 
   //! @name Cell Level Reconstructions:
   //@{
+  //! @brief Return the type of reconstruction for a given cell (iCell,jCell)
+  char getCellReconstructionType(const int& iCell, const int& jCell) const;
+  char** const getReconstructionTypeMap(void) const {return ReconstructionTypeMap; }
+
   //! @brief Compute the unlimited high-order solution reconstruction of cell (iCell,jCell). 
   template<class Soln_Block_Type>
   void ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
@@ -470,6 +504,9 @@ public:
     of cell (iCell,jCell).  */
   void ComputeCellReconstructionPseudoInverse(const int &iCell, const int &jCell,
 					      const IndexType & i_index, const IndexType & j_index);
+  /*! @brief Compute the pseudo-inverse or LHS matrix for cell (iCell,jCell) which is influenced
+    by the presence of constrained boundaries.  */
+  void ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries(const int& iCell, const int& jCell);
 
   //! @brief Compute the piecewise linear solution reconstruction of cell (iCell,jCell). 
   template<class Soln_Block_Type>
@@ -488,6 +525,57 @@ public:
 							 const int &iCell, const int &jCell,
 							 const IndexType & i_index, const IndexType & j_index);
 
+  //! @brief Compute the individually constrained unlimited high-order solution reconstruction of cell (iCell,jCell).
+  template<class Soln_Block_Type>
+  void ComputeIndividuallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
+								     const Soln_State & 
+								     (Soln_Block_Type::*ReconstructedSoln)(const int &,
+													   const int &) const,
+								     const int &iCell, const int &jCell,
+								     const IndexType & i_index, const IndexType & j_index,
+								     const int & ConstrainedGQPs_West,
+								     const int & ConstrainedGQPs_South,
+								     const int & ConstrainedGQPs_East,
+								     const int & ConstrainedGQPs_North);
+
+  //! @brief Compute the relationally constrained unlimited high-order solution reconstruction of cell (iCell,jCell).
+  template<class Soln_Block_Type>
+  void ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
+								     const Soln_State & 
+								     (Soln_Block_Type::*ReconstructedSoln)(const int &,
+													   const int &) const,
+								     const int &iCell, const int &jCell,
+								     const IndexType & i_index, const IndexType & j_index,
+								     const int & ConstrainedGQPs_West,
+								     const int & ConstrainedGQPs_South,
+								     const int & ConstrainedGQPs_East,
+								     const int & ConstrainedGQPs_North);
+
+  //! @brief Compute the relationally and individually constrained unlimited high-order solution reconstruction of cell (iCell,jCell).
+  template<class Soln_Block_Type>
+  void ComputeRelationallyAndIndividuallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
+										    const Soln_State & 
+										    (Soln_Block_Type::
+										     *ReconstructedSoln)(const int &,
+													 const int &) const,
+										    const int &iCell, const int &jCell,
+										    const IndexType & i_index,
+										    const IndexType & j_index,
+										    const int & ConstrainedGQPs_West,
+										    const int & ConstrainedGQPs_South,
+										    const int & ConstrainedGQPs_East,
+										    const int & ConstrainedGQPs_North);
+
+  //! @brief Compute the unlimited high-order reconstruction of those parameters that are unconstrained in a cell (iCell,jCell). 
+  template<class Soln_Block_Type>
+  void ComputeUnconstrainedUnlimitedSolutionReconstructionInConstrainedCell(Soln_Block_Type &SolnBlk, 
+									    const Soln_State & 
+									    (Soln_Block_Type::*ReconstructedSoln)(const int &,
+														  const int &) const,
+									    const int &iCell, const int &jCell,
+									    const IndexType & i_index, const IndexType & j_index,
+									    const IndexType & ParameterIndex);
+
   //! @brief Set the mean value conservation equations in the assemble matrix
   template<class Soln_Block_Type>
   void Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
@@ -500,6 +588,11 @@ public:
 					   const int &RowConstraint,
 					   const int &StartRow, const int &StartCol);
 
+  //! @brief Set the mean value conservation equations in the LHS matrix of the k-exact reconstruction procedure
+  void Set_LHS_MeanValueConservation_Equations(const int &iCell, const int &jCell,
+					       const IndexType & i_index, const IndexType & j_index,
+					       DenseMatrix & A, DoubleArrayType & GeometricWeights);
+
   //! @brief Set the individual constraint equations in the assemble matrix
   template<class Soln_Block_Type>
   void Generalized_IndividualConstraints_Equations(Soln_Block_Type & SolnBlk,
@@ -511,14 +604,22 @@ public:
 						   const IndexType & ParameterIndex,
 						   const int &StartRow, const int &StartCol);
 
+  //! @brief Set the relational constraint equations in the assemble matrix
+  template<class Soln_Block_Type>
+  void Generalized_RelationalConstraints_Equations(Soln_Block_Type & SolnBlk,
+						   const int &iCell, const int &jCell,
+						   Vector2DArray & Constraints_Loc,
+						   Vector2DArray & Constraints_Normals,
+						   BC_Type_Array & Constraints_BCs,
+						   const int & BC_Type,
+						   DenseMatrix & A, DenseMatrix & All_U,
+						   const IndexType & ParameterIndex,
+						   const int &StartRow, const int &StartCol);
+
   //@} (Cell Level Reconstructions)
 
   //! @name Helper Functions:
   //@{
-  /*! @brief Set the range of cells with straight edges in which reconstruction is performed.  */
-  void SetRangeOfQuadCellsWithoutConstrainedReconstruction(void);
-  /*! @brief Set the range of cells in which constrained reconstruction is performed.  */
-  void SetRangeOfQuadCellsWithConstrainedReconstruction(void);
   /*! @brief Set the central stencil of cells used for reconstruction.  */
   void SetReconstructionStencil(const int &iCell, const int &jCell,
 				IndexType & i_index, IndexType & j_index) const;
@@ -526,6 +627,13 @@ public:
 				       IndexType & i_index, IndexType & j_index) const;
   void SetConstrainedReconstructionStencil(const int &iCell, const int &jCell,
 					   IndexType & i_index, IndexType & j_index) const;  
+  void SetDeviatedReconstructionStencil(const int &iCell, const int &jCell,
+					IndexType & i_index, IndexType & j_index,
+					const int &rings,
+					bool IsStencilExtended = true) const;
+  void displayDeviatedReconstructionStencil(ostream & out,
+					    const int &iCell, const int &jCell,
+					    const int &rings) const;
   /*! @brief Set a central stencil of cells with a given extend for a particular cell. */
   void SetCentralStencil(const int &iCell, const int &jCell,
 			 IndexType & i_index, IndexType & j_index,
@@ -533,6 +641,19 @@ public:
   /*! @brief Set a stencil with all cells used for the reconstructions of the cells in the passed index arrays. */
   void getEnlargedReconstructionStencil(const int &iCell, const int &jCell,
 					IndexType & i_index, IndexType & j_index) const;
+  //! @brief Gather the data on each cell edge for imposing the required constraints
+  template<class Soln_Block_Type>
+  void FetchDataConstraints(Soln_Block_Type & SolnBlk,
+			    const int &iCell, const int &jCell,
+			    int & BC_Type,
+			    const int & parameter,
+			    const int & ConstrainedGQPs_West,  const int * ConstraintBCs_W,
+			    const int & ConstrainedGQPs_South, const int * ConstraintBCs_S,
+			    const int & ConstrainedGQPs_East,  const int * ConstraintBCs_E,
+			    const int & ConstrainedGQPs_North, const int * ConstraintBCs_N,
+			    Vector2DArray & Constraints_Loc,
+			    Vector2DArray & Constraints_Normals,
+			    BC_Type_Array & Constraints_BCs);
   //@} (Helper Functions)
 
   //! @name CENO Analysis:
@@ -544,6 +665,27 @@ public:
 											   const int &) const = 
 				  &Soln_Block_Type::CellSolution);
 
+  /*! @brief Compute smoothness data with a central stencil for a given cell (iCell,jCell). */
+  template<class Soln_Block_Type>
+  void ComputeCellSmoothnessDataWithCentralStencil(Soln_Block_Type &SolnBlk,
+						   const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
+													    const int &) const,
+						   const int &iCell, const int &jCell);
+
+  /*! @brief Compute smoothness data with a deviated stencil for a given cell (iCell,jCell). */
+  template<class Soln_Block_Type>
+  void ComputeCellSmoothnessDataWithDeviatedStencil(Soln_Block_Type &SolnBlk,
+						    const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
+													     const int &) const,
+						    const int &iCell, const int &jCell);
+
+  /*! @brief Compute smoothness data for a given cell (iCell,jCell) which is part of a constrained block. */
+  template<class Soln_Block_Type>
+  void ComputeCellSmoothnessDataForConstrainedBlock(Soln_Block_Type &SolnBlk,
+						    const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
+													     const int &) const,
+						    const int &iCell, const int &jCell);
+  
   /*! @brief Compute smoothness indicator for a specific cell (iCell,jCell). */
   template<class Soln_Block_Type>
   void ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
@@ -613,6 +755,12 @@ public:
 				const Function_Object_Type FuncObj, const unsigned &parameter,
 				const int & digits = 8);
 
+  /*! @brief Compute the integral of the solution entropy error function (i.e. L1 norm) for cell (iCell,jCell) */
+  template<typename Function_Object_Type>
+  double ComputeSolutionEntropyErrorL1(const int &iCell, const int &jCell,
+				       const Function_Object_Type FuncObj,
+				       const int & digits = 8);
+
   /*! @brief Compute the integral of the error of two high-order reconstructions (i.e. L1 norm) for cell (iCell,jCell) */
   double ComputeReconstructionsErrorL1(const int &iCell, const int &jCell,
 				       const HighOrder2D<Soln_State> & Obj, const unsigned &parameter,
@@ -623,6 +771,12 @@ public:
   double ComputeSolutionErrorL2(const int &iCell, const int &jCell,
 				Function_Object_Type FuncObj, const unsigned &parameter,
 				const int & digits = 8);
+
+  /*! @brief Compute the integral of the squared solution entropy error function (i.e. L2 norm) for cell (iCell,jCell) */
+  template<typename Function_Object_Type>
+  double ComputeSolutionEntropyErrorL2(const int &iCell, const int &jCell,
+				       Function_Object_Type FuncObj,
+				       const int & digits = 8);
 
   /*! @brief Compute the integral of the squared error of two high-order reconstructions (i.e. L1 norm) for cell (iCell,jCell) */
   double ComputeReconstructionsErrorL2(const int &iCell, const int &jCell,
@@ -642,6 +796,7 @@ public:
   //@{
   void Output_Object(ostream & out_file) const;
   void Read_Object(istream & in_file);
+  void outputReconstructionTypeMap(ostream & out_file) const;
   //@}
 
   //! @name Broadcast functions (MPI):
@@ -678,38 +833,6 @@ private:
     EndI,                      //!< Index of the last cell in i-direction in which NO constrained reconstruction is performed. 
     StartJ,                    //!< Index of the first cell in j-direction in which NO constrained reconstruction is performed. 
     EndJ;                      //!< Index of the last cell in j-direction in which NO constrained reconstruction is performed. 
-  int StartI_SI,               //!< Index of the first cell in i-direction in which SI is computed with centered stencil
-    EndI_SI,                   //!< Index of the last cell in i-direction in which SI is computed with centered stencil
-    StartJ_SI,                 //!< Index of the first cell in j-direction in which SI is computed with centered stencil
-    EndJ_SI;                   //!< Index of the last cell in j-direction in which SI is computed with centered stencil
-  int StartI_LPWL,             //!< Index of the first cell in i-direction which is checked for non-smooth interpolant
-    EndI_LPWL,                 //!< Index of the last cell in i-direction which is checked for non-smooth interpolant
-    StartJ_LPWL,               //!< Index of the first cell in j-direction which is checked for non-smooth interpolant
-    EndJ_LPWL;                 //!< Index of the last cell in j-direction which is checked for non-smooth interpolant
-  int StartI_ConstrWest,       //!< Index of the first cell in i-direction which is influenced by a constrained West boundary 
-    EndI_ConstrWest,           //!< Index of the last cell in i-direction which is influenced by a constrained West boundary
-    StartJ_ConstrWest,         //!< Index of the first cell in j-direction which is influenced by a constrained West boundary
-    EndJ_ConstrWest;           //!< Index of the last cell in j-direction which is influenced by a constrained West boundary
-  int StartI_ConstrEast,       //!< Index of the first cell in i-direction which is influenced by a constrained East boundary 
-    EndI_ConstrEast,           //!< Index of the last cell in i-direction which is influenced by a constrained East boundary
-    StartJ_ConstrEast,         //!< Index of the first cell in j-direction which is influenced by a constrained East boundary
-    EndJ_ConstrEast;           //!< Index of the last cell in j-direction which is influenced by a constrained East boundary
-  int StartI_ConstrNorth,      //!< Index of the first cell in i-direction which is influenced by a constrained North boundary 
-    EndI_ConstrNorth,          //!< Index of the last cell in i-direction which is influenced by a constrained North boundary
-    StartJ_ConstrNorth,        //!< Index of the first cell in j-direction which is influenced by a constrained North boundary
-    EndJ_ConstrNorth;          //!< Index of the last cell in j-direction which is influenced by a constrained North boundary
-  int StartI_ConstrSouth,      //!< Index of the first cell in i-direction which is influenced by a constrained South boundary 
-    EndI_ConstrSouth,          //!< Index of the last cell in i-direction which is influenced by a constrained South boundary
-    StartJ_ConstrSouth,        //!< Index of the first cell in j-direction which is influenced by a constrained South boundary
-    EndJ_ConstrSouth;          //!< Index of the last cell in j-direction which is influenced by a constrained South boundary
-  int StartJ_SI_ConstrWest,    //!< Index of the first cell in j-direction influenced by a constrained West boundary for SI calc.
-    EndJ_SI_ConstrWest;        //!< Index of the last cell in j-direction influenced by a constrained West boundary for SI calc.
-  int StartJ_SI_ConstrEast,    //!< Index of the first cell in j-direction influenced by a constrained East boundary for SI calc.
-    EndJ_SI_ConstrEast;        //!< Index of the last cell in j-direction influenced by a constrained East boundary for SI calc.
-  int StartI_SI_ConstrNorth,   //!< Index of the first cell in i-direction influenced by a constrained North boundary for SI calc.
-    EndI_SI_ConstrNorth;       //!< Index of the last cell in i-direction influenced by a constrained North boundary for SI calc.
-  int StartI_SI_ConstrSouth,   //!< Index of the first cell in i-direction influenced by a constrained South boundary for SI calc.
-    EndI_SI_ConstrSouth;       //!< Index of the last cell in i-direction influenced by a constrained South boundary for SI calc.
   //@}
 
   //! @name Memory allocation flags:
@@ -734,6 +857,16 @@ private:
 
   DenseMatrix **CENO_LHS;      //!< Storage for the pseudo-inverse of the LHS term in the CENO reconstruction.
   DoubleArrayType **CENO_Geometric_Weights;   //!< Storage for the geometric weights used in CENO reconstruction.
+  /*!
+   * Storage for the reconstruction type of cells that are part of a block that is flagged as constrained.
+   * For unconstrained blocks this variable is NULL!
+   * Possible types: 
+   *    n - no reconstruction (i.e. cells for which no reconstruction is carried out)
+   *    r - regular reconstruction (i.e. cells that use the central stencil for reconstruction)
+   *    m - modified reconstruction (i.e. cells that have the modified reconstruction stencil and no constraints)
+   *    c - constrained reconstruction (i.e. cells that have the modified reconstruction stencil and constraints)
+   */
+  char **ReconstructionTypeMap;
   //@}
 
   //! @name Other internal variables/flags:
@@ -745,15 +878,32 @@ private:
 				* same value as CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS. */
   //@}
 
+  //! @name Correspondent grid trackers:
+  //@{
+  unsigned int ObserverInteriorCellGeometryState; //!< Observer to memorise the state of the interior grid.
+  unsigned int ObserverGhostCellGeometryState;	  //!< Observer to memorise the state of the ghost cell layers.
+  unsigned int ObserverCornerGhostCellGeometryState; //!< Observer to memorize the state of the corner ghost cells.
+  //@}
+
   //! @name Internal information in conjunction with the geometry:
   //@{
   GeometryType* Geom;          //!< Pointer to the associated geometry which is a 2D mesh block
   bool _constrained_block_reconstruction; /*!< Flag to indicate whether constrained reconstruction is carried out for
 					   * this block on any of the block boundaries. */
-  bool _constrained_WEST_reconstruction; //!< Flag for the WEST boundary to show if constrained rec. is required.
-  bool _constrained_EAST_reconstruction; //!< Flag for the EAST boundary to show if constrained rec. is required.
-  bool _constrained_NORTH_reconstruction; //!< Flag for the NORTH boundary to show if constrained rec. is required.
-  bool _constrained_SOUTH_reconstruction; //!< Flag for the SOUTH boundary to show if constrained rec. is required.
+  HighOrder2D_BlockBoundary WestBnd,	  //!< Storage for information related to the West high-order block boundary
+    S_WestBnd,                  //!< Storage for information related to the South extension of West high-order block boundary
+    N_WestBnd,                  //!< Storage for information related to the North extension of West high-order block boundary
+    EastBnd,			//!< Storage for information related to the East high-order block boundary
+    S_EastBnd,			//!< Storage for information related to the South extension of East high-order block boundary
+    N_EastBnd,			//!< Storage for information related to the North extension of East high-order block boundary
+    NorthBnd,                   //!< Storage for information related to the North high-order block boundary
+    W_NorthBnd,                 //!< Storage for information related to the West extension of North high-order block boundary
+    E_NorthBnd,                 //!< Storage for information related to the East extension of North high-order block boundary
+    SouthBnd,                   //!< Storage for information related to the South high-order block boundary
+    W_SouthBnd,                 //!< Storage for information related to the West extension of South high-order block boundary
+    E_SouthBnd;                 //!< Storage for information related to the East extension of South high-order block boundary
+  //! Reset block boundaries information
+  void ResetBlockBoundaries(void);
   //@}
 
   //! Get the number of variables in the solution state
@@ -761,6 +911,10 @@ private:
 
   //! Allocate memory at the cell level based on the order of reconstruction
   void allocate_CellMemory(const int &ReconstructionOrder, const bool &_pseudo_inverse_allocation_);
+  //! Allocate memory for the reconstruction type map
+  void allocate_ReconstructionTypeMap(void);
+  //! @brief Build reconstruction type map
+  void BuildReconstructionTypeMap(void);
 
   //! @name Reconstruction memory pools:
   //@{
@@ -835,20 +989,18 @@ private:
     the reconstructions of the stencil cells evaluated at their centroids. */
   Soln_State SS_Residual;
   //! Intermediate variables.
-  Soln_State Max_SS_Regression, Temp_Regression, Temp_Residual;
+  Soln_State Max_SS_Regression, Temp_Regression, Temp_Residual, Min_Mean_Solution;
   //! Normalization state characteristic to each solution state and cell
   Soln_State NormalizationState;
+  //! Coefficient used to compute the smoothness indicator. It is based on the degrees of freedom (i.e. number of derivatives) and the size of the reconstruction stencil
+  double AdjustmentCoeff;
   //! Local variable
   Vector2D DeltaCentroids;
   //! Local variable
   double GeomWeightSI;
 
-  /*! @brief Set the central stencil of cells used to compute the smoothness indicator.  */
-  void SetSmoothnessIndicatorStencil(const int &iCell, const int &jCell);
   //! @brief Flag (iCell,jCell) cell with non-smooth high-order interpolants.
   void FlagCellReconstructionsAsNonSmooth(const int &iCell, const int &jCell);
-  /*! @brief Set the stencil of cells used to compute the smoothness indicator for a cell affected by constrained boundaries.*/
-  void SetSmoothnessIndicatorStencilForConstrainedReconstruction(const int &iCell, const int &jCell);
   /*! @brief Check the smoothness condition and flag the non-smooth interpolants for a given cell.*/
   void AssessInterpolantsSmoothness(const int &iCell, const int &jCell);
   //@}
@@ -870,25 +1022,16 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(void):
   ICl(0), ICu(0), JCl(0), JCu(0),
   OrderOfReconstruction(-1), Nghost_HO(0),
   StartI(0), EndI(0), StartJ(0), EndJ(0),
-  StartI_SI(0), EndI_SI(0), StartJ_SI(0), EndJ_SI(0),
-  StartI_LPWL(0), EndI_LPWL(0), StartJ_LPWL(0), EndJ_LPWL(0),
-  StartI_ConstrWest(0), EndI_ConstrWest(0), StartJ_ConstrWest(0), EndJ_ConstrWest(0),
-  StartI_ConstrNorth(0), EndI_ConstrNorth(0), StartJ_ConstrNorth(0), EndJ_ConstrNorth(0),
-  StartI_ConstrSouth(0), EndI_ConstrSouth(0), StartJ_ConstrSouth(0), EndJ_ConstrSouth(0),
-  StartI_ConstrEast(0), EndI_ConstrEast(0), StartJ_ConstrEast(0), EndJ_ConstrEast(0),
-  StartJ_SI_ConstrWest(0),  EndJ_SI_ConstrWest(0),
-  StartI_SI_ConstrNorth(0), EndI_SI_ConstrNorth(0),
-  StartI_SI_ConstrSouth(0), EndI_SI_ConstrSouth(0),
-  StartJ_SI_ConstrEast(0),  EndJ_SI_ConstrEast(0),
   _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
   _freeze_limiter(false),
   TD(NULL), SI(NULL), LimitedCell(NULL), PreviousLimitedCell(NULL),
   rings(0), rings_SI(0), _calculated_psinv(false),
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
+  ReconstructionTypeMap(NULL),
   Geom(NULL), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
   _constrained_block_reconstruction(false),
-  _constrained_WEST_reconstruction(false) , _constrained_EAST_reconstruction(false),
-  _constrained_NORTH_reconstruction(false), _constrained_SOUTH_reconstruction(false)
+  AdjustmentCoeff(0.0),
+  ObserverInteriorCellGeometryState(0), ObserverGhostCellGeometryState(0), ObserverCornerGhostCellGeometryState(0)
 {
   //
 }
@@ -902,25 +1045,18 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder,
   ICl(0), ICu(0), JCl(0), JCu(0),
   OrderOfReconstruction(-1), Nghost_HO(0),
   StartI(0), EndI(0), StartJ(0), EndJ(0),
-  StartI_SI(0), EndI_SI(0), StartJ_SI(0), EndJ_SI(0),
-  StartI_LPWL(0), EndI_LPWL(0), StartJ_LPWL(0), EndJ_LPWL(0),
-  StartI_ConstrWest(0), EndI_ConstrWest(0), StartJ_ConstrWest(0), EndJ_ConstrWest(0),
-  StartI_ConstrNorth(0), EndI_ConstrNorth(0), StartJ_ConstrNorth(0), EndJ_ConstrNorth(0),
-  StartI_ConstrSouth(0), EndI_ConstrSouth(0), StartJ_ConstrSouth(0), EndJ_ConstrSouth(0),
-  StartI_ConstrEast(0), EndI_ConstrEast(0), StartJ_ConstrEast(0), EndJ_ConstrEast(0),
-  StartJ_SI_ConstrWest(0),  EndJ_SI_ConstrWest(0),
-  StartI_SI_ConstrNorth(0), EndI_SI_ConstrNorth(0),
-  StartI_SI_ConstrSouth(0), EndI_SI_ConstrSouth(0),
-  StartJ_SI_ConstrEast(0),  EndJ_SI_ConstrEast(0),
   _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
   _freeze_limiter(false),
   TD(NULL), SI(NULL), LimitedCell(NULL), PreviousLimitedCell(NULL),
   rings(0), rings_SI(0), _calculated_psinv(false),
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL), 
+  ReconstructionTypeMap(NULL),
   Geom(&Block), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
   _constrained_block_reconstruction(false),
-  _constrained_WEST_reconstruction(false) , _constrained_EAST_reconstruction(false),
-  _constrained_NORTH_reconstruction(false), _constrained_SOUTH_reconstruction(false)
+  AdjustmentCoeff(0.0),
+  ObserverInteriorCellGeometryState(Block.getInteriorStateTracker()),
+  ObserverGhostCellGeometryState(Block.getGhostStateTracker()),
+  ObserverCornerGhostCellGeometryState(Block.getCornerGhostStateTracker())
 {
   // Use the grid to get the number of interior block cells and the number of available ghost cells
   allocate(ICu_Grid()-ICl_Grid()+1,
@@ -929,11 +1065,12 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder,
 	   _pseudo_inverse_allocation_,
 	   ReconstructionOrder);
 
-  // Determine the range of cells in which NO constrained reconstruction is performed
-  SetRangeOfQuadCellsWithoutConstrainedReconstruction();
+  // Set properties of block boundaries (i.e. which boundaries are constrained/unconstrained and which are opaque/transparent)
+  SetPropertiesHighOrderBlock();
 
-  // Determine the range of cells in which !constrained! reconstruction is performed
-  SetRangeOfQuadCellsWithConstrainedReconstruction();
+  // Build the reconstruction type map
+  BuildReconstructionTypeMap();
+
 }
 
 //! Copy constructor 
@@ -947,7 +1084,12 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
     TD(NULL), SI(NULL), LimitedCell(NULL), PreviousLimitedCell(NULL),
     rings(0), rings_SI(0), _calculated_psinv(false),
     CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
-    Geom(rhs.Geom), _si_calculation(rhs._si_calculation)
+    ReconstructionTypeMap(NULL),
+    Geom(rhs.Geom), _si_calculation(rhs._si_calculation),
+    AdjustmentCoeff(rhs.AdjustmentCoeff),
+    ObserverInteriorCellGeometryState(rhs.ObserverInteriorCellGeometryState),
+    ObserverGhostCellGeometryState(rhs.ObserverGhostCellGeometryState),
+    ObserverCornerGhostCellGeometryState(rhs.ObserverCornerGhostCellGeometryState)
 {
 
   int i,j;
@@ -991,65 +1133,29 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
     StartJ = rhs.StartJ;
     EndJ = rhs.EndJ;
 
-    // set range of cells with central stencil smoothness indicator calculation
-    StartI_SI = rhs.StartI_SI;
-    EndI_SI = rhs.EndI_SI;
-    StartJ_SI = rhs.StartJ_SI;
-    EndJ_SI = rhs.EndJ_SI;
-
-    // set range of cells checked for non-smooth interpolant
-    StartI_LPWL = rhs.StartI_LPWL;
-    EndI_LPWL = rhs.EndI_LPWL;
-    StartJ_LPWL = rhs.StartJ_LPWL;
-    EndJ_LPWL = rhs.EndJ_LPWL;
-
-    // set range of cells which have constrained reconstruction if the West boundary condition is enforced with constraints
-    StartI_ConstrWest = rhs.StartI_ConstrWest;
-    EndI_ConstrWest = rhs.EndI_ConstrWest;
-    StartJ_ConstrWest = rhs.StartJ_ConstrWest;
-    EndJ_ConstrWest = rhs.EndJ_ConstrWest;
-
-    // set range of cells which have constrained reconstruction if the East boundary condition is enforced with constraints
-    StartI_ConstrEast = rhs.StartI_ConstrEast;
-    EndI_ConstrEast = rhs.EndI_ConstrEast;
-    StartJ_ConstrEast = rhs.StartJ_ConstrEast;
-    EndJ_ConstrEast = rhs.EndJ_ConstrEast;
-
-    // set range of cells which have constrained reconstruction if the North boundary condition is enforced with constraints
-    StartI_ConstrNorth = rhs.StartI_ConstrNorth;
-    EndI_ConstrNorth = rhs.EndI_ConstrNorth;
-    StartJ_ConstrNorth = rhs.StartJ_ConstrNorth;
-    EndJ_ConstrNorth = rhs.EndJ_ConstrNorth;
-
-    // set range of cells which have constrained reconstruction if the South boundary condition is enforced with constraints
-    StartI_ConstrSouth = rhs.StartI_ConstrSouth;
-    EndI_ConstrSouth = rhs.EndI_ConstrSouth;
-    StartJ_ConstrSouth = rhs.StartJ_ConstrSouth;
-    EndJ_ConstrSouth = rhs.EndJ_ConstrSouth;
-
-    // set range of cells which have SI calculation modified if the West boundary condition is enforced with constraints
-    StartJ_SI_ConstrWest = rhs.StartJ_SI_ConstrWest;
-    EndJ_SI_ConstrWest = rhs.EndJ_SI_ConstrWest;
-
-    // set range of cells which have SI calculation modified if the East boundary condition is enforced with constraints
-    StartJ_SI_ConstrEast = rhs.StartJ_SI_ConstrEast;
-    EndJ_SI_ConstrEast = rhs.EndJ_SI_ConstrEast;
-
-    // set range of cells which have SI calculation modified if the North boundary condition is enforced with constraints
-    StartI_SI_ConstrNorth = rhs.StartI_SI_ConstrNorth;
-    EndI_SI_ConstrNorth = rhs.EndI_SI_ConstrNorth;
-
-    // set range of cells which have SI calculation modified if the South boundary condition is enforced with constraints
-    StartI_SI_ConstrSouth = rhs.StartI_SI_ConstrSouth;
-    EndI_SI_ConstrSouth = rhs.EndI_SI_ConstrSouth;
-
     // set the type of reconstruction required by the geometry setup
     _constrained_block_reconstruction = rhs._constrained_block_reconstruction;
-    _constrained_WEST_reconstruction = rhs._constrained_WEST_reconstruction;
-    _constrained_EAST_reconstruction = rhs._constrained_EAST_reconstruction;
-    _constrained_NORTH_reconstruction = rhs._constrained_NORTH_reconstruction;
-    _constrained_SOUTH_reconstruction = rhs._constrained_SOUTH_reconstruction;
 
+    // copy properties of block boundaries
+    WestBnd = rhs.WestBnd;
+    S_WestBnd = rhs.S_WestBnd;
+    N_WestBnd = rhs.N_WestBnd;
+
+    EastBnd = rhs.EastBnd;
+    S_EastBnd = rhs.S_EastBnd;
+    N_EastBnd = rhs.N_EastBnd;
+    
+    NorthBnd = rhs.NorthBnd;
+    E_NorthBnd = rhs.E_NorthBnd;
+    W_NorthBnd = rhs.W_NorthBnd;
+
+    SouthBnd = rhs.SouthBnd;
+    E_SouthBnd = rhs.E_SouthBnd;
+    W_SouthBnd = rhs.W_SouthBnd;
+
+    // determine the reconstruction type of each cell for a constrained block
+    BuildReconstructionTypeMap();
+    
   }//endif (rhs._allocated_block)
 }
 
@@ -1077,6 +1183,9 @@ HighOrder2D<SOLN_STATE> & HighOrder2D<SOLN_STATE>::operator=(const HighOrder2D<S
       deallocate();
       throw runtime_error("HighOrder2D<SOLN_STATE>::operator=() ERROR! The object cannot be assigned due to incompatibilities between the CENO_Execution_Mode class settings and the object settings");
     }
+
+    // set the smoothness indicator adjustment coefficient
+    AdjustmentCoeff = rhs.AdjustmentCoeff;
     
     // check if the rhs has cell memory allocated
     if (rhs._allocated_cells){
@@ -1101,7 +1210,41 @@ HighOrder2D<SOLN_STATE> & HighOrder2D<SOLN_STATE>::operator=(const HighOrder2D<S
       deallocate_CellMemory();
     } //endif (rhs._allocated_cells)
 
+    // set range of cells without constrained reconstruction
+    StartI = rhs.StartI;
+    EndI = rhs.EndI;
+    StartJ = rhs.StartJ;
+    EndJ = rhs.EndJ;
+
+    // set the type of reconstruction required by the geometry setup
+    _constrained_block_reconstruction = rhs._constrained_block_reconstruction;
+
+    // copy properties of block boundaries
+    WestBnd = rhs.WestBnd;
+    S_WestBnd = rhs.S_WestBnd;
+    N_WestBnd = rhs.N_WestBnd;
+
+    EastBnd = rhs.EastBnd;
+    S_EastBnd = rhs.S_EastBnd;
+    N_EastBnd = rhs.N_EastBnd;
+    
+    NorthBnd = rhs.NorthBnd;
+    E_NorthBnd = rhs.E_NorthBnd;
+    W_NorthBnd = rhs.W_NorthBnd;
+
+    SouthBnd = rhs.SouthBnd;
+    E_SouthBnd = rhs.E_SouthBnd;
+    W_SouthBnd = rhs.W_SouthBnd;
+
+    // determine the reconstruction type of each cell for a constrained block
+    BuildReconstructionTypeMap();
+
   }//endif (rhs._allocated_block)
+
+  // Set grid observers
+  ObserverInteriorCellGeometryState = rhs.ObserverInteriorCellGeometryState;
+  ObserverGhostCellGeometryState = rhs.ObserverGhostCellGeometryState;
+  ObserverCornerGhostCellGeometryState = rhs.ObserverCornerGhostCellGeometryState;
 
   return *this;
 }
@@ -1196,7 +1339,7 @@ void HighOrder2D<SOLN_STATE>::allocate(const int &NC_IDir,
       // re-allocate only the cell memory
       allocate_CellMemory(ReconstructionOrder,
 			  _pseudo_inverse_allocation_);
- 
+
     } else {
       // Reset the backup of the monotonicity data
       ResetMonotonicityDataBackup();
@@ -1250,7 +1393,7 @@ void HighOrder2D<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder
   }/* endfor */
 
   // Set the reconstruction helper variables
-  DeltaCellCenters.assign(StencilSize, 0.0); // This variable is overwritten for each cell
+  DeltaCellCenters.assign(StencilSize, Vector2D(0.0)); // This variable is overwritten for each cell
   i_index.assign(StencilSize, 0); // This variable is overwritten for each cell
   j_index.assign(StencilSize, 0); // This variable is overwritten for each cell
   A.newsize(StencilSize - 1, NumberOfTaylorDerivatives() - 1);
@@ -1281,6 +1424,32 @@ void HighOrder2D<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder
   _si_calculation = CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS;
 }
 
+/*!
+ * Allocate memory for the reconstruction type 
+ * of each cell only if the block is flagged as constrained.
+ * If the block is not constrained and memory has 
+ * been previously allocated to ReconstructionTypeMap variable
+ * this will be deallocated.
+ *
+ * \note Call this routine AFTER the block type has been decided!
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::allocate_ReconstructionTypeMap(void){
+
+  if (_allocated_block && IsConstrainedReconstructionRequired()){
+    if (ReconstructionTypeMap == NULL){
+      // Allocate memory
+      ReconstructionTypeMap = new char* [Ni];
+      for (int i = 0; i < Ni ; ++i){
+	ReconstructionTypeMap[i] = new char [Nj];
+      }// endfor
+    }
+  } else {
+    deallocate_ReconstructionTypeMap();
+  }
+  
+}
+
 // deallocate()
 /*!
  * Deallocate all allocated memory.
@@ -1302,6 +1471,10 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
 	delete [] CENO_LHS[i]; CENO_LHS[i] = NULL; // deallocate pseudo-inverse
 	delete [] CENO_Geometric_Weights[i]; CENO_Geometric_Weights[i] = NULL; // deallocate geometric weights
       }
+
+      if (ReconstructionTypeMap != NULL){
+	delete [] ReconstructionTypeMap[i]; ReconstructionTypeMap[i] = NULL; // deallocate ReconstructionTypeMap
+      }
     }
 
     delete [] TD; TD = NULL;
@@ -1314,6 +1487,10 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
       delete [] CENO_Geometric_Weights; CENO_Geometric_Weights = NULL;
     }
 
+    if (ReconstructionTypeMap != NULL){
+      delete [] ReconstructionTypeMap; ReconstructionTypeMap = NULL;
+    }
+
     // Reset all indexes
     Ni = 0; Nj = 0; Ng = 0;
     ICl = 0; ICu = 0; JCl = 0; JCu = 0;
@@ -1323,30 +1500,17 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
     rings_SI = 0;
     StartI = 0; EndI = 0;
     StartJ = 0; EndJ = 0;
-    StartI_SI = 0; EndI_SI = 0;
-    StartJ_SI = 0; EndJ_SI = 0;
-    StartI_LPWL = 0; EndI_LPWL = 0;
-    StartJ_LPWL = 0; EndJ_LPWL = 0;
-    StartI_ConstrWest = 0; EndI_ConstrWest = 0;
-    StartJ_ConstrWest = 0; EndJ_ConstrWest = 0;
-    StartI_ConstrEast = 0; EndI_ConstrEast = 0;
-    StartJ_ConstrEast = 0; EndJ_ConstrEast = 0;
-    StartI_ConstrNorth = 0; EndI_ConstrNorth = 0;
-    StartJ_ConstrNorth = 0; EndJ_ConstrNorth = 0;
-    StartI_ConstrSouth = 0; EndI_ConstrSouth = 0;
-    StartJ_ConstrSouth = 0; EndJ_ConstrSouth = 0;
-    StartJ_SI_ConstrWest = 0;  EndJ_SI_ConstrWest = 0;
-    StartJ_SI_ConstrEast = 0;  EndJ_SI_ConstrEast = 0;
-    StartI_SI_ConstrNorth = 0; EndI_SI_ConstrNorth = 0;
-    StartI_SI_ConstrSouth = 0; EndI_SI_ConstrSouth = 0;
 
     // Separate the high-order object from the associated geometry
     Geom = NULL;
+    // Reset grid observers
+    ObserverInteriorCellGeometryState = 0;
+    ObserverGhostCellGeometryState = 0;
+    ObserverCornerGhostCellGeometryState = 0;
     _constrained_block_reconstruction = false;
-    _constrained_WEST_reconstruction  = false;
-    _constrained_EAST_reconstruction  = false;
-    _constrained_NORTH_reconstruction = false;
-    _constrained_SOUTH_reconstruction = false;
+
+    // Reset block boundaries
+    ResetBlockBoundaries();
 
     // Confirm the deallocation
     _allocated_block = false;
@@ -1356,6 +1520,7 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
 
     // Set other flags
     _freeze_limiter = false;
+
   }
 }
 
@@ -1431,32 +1596,75 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
     rings_SI = 0;
     StartI = 0; EndI = 0;
     StartJ = 0; EndJ = 0;
-    StartI_SI = 0; EndI_SI = 0;
-    StartJ_SI = 0; EndJ_SI = 0;
-    StartI_LPWL = 0; EndI_LPWL = 0;
-    StartJ_LPWL = 0; EndJ_LPWL = 0;
-    StartI_ConstrWest = 0; EndI_ConstrWest = 0;
-    StartJ_ConstrWest = 0; EndJ_ConstrWest = 0;
-    StartI_ConstrEast = 0; EndI_ConstrEast = 0;
-    StartJ_ConstrEast = 0; EndJ_ConstrEast = 0;
-    StartI_ConstrNorth = 0; EndI_ConstrNorth = 0;
-    StartJ_ConstrNorth = 0; EndJ_ConstrNorth = 0;
-    StartI_ConstrSouth = 0; EndI_ConstrSouth = 0;
-    StartJ_ConstrSouth = 0; EndJ_ConstrSouth = 0;
-    StartJ_SI_ConstrWest = 0;  EndJ_SI_ConstrWest = 0;
-    StartJ_SI_ConstrEast = 0;  EndJ_SI_ConstrEast = 0;
-    StartI_SI_ConstrNorth = 0; EndI_SI_ConstrNorth = 0;
-    StartI_SI_ConstrSouth = 0; EndI_SI_ConstrSouth = 0;
 
     _allocated_cells = false;
     _allocated_psinv = false;
   }//endif
 }
 
-//! Initialize the high-order object
+/*!
+ * Deallocate memory allocated to the ReconstructionTypeMap variable.
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::deallocate_ReconstructionTypeMap(void){
+
+  if (ReconstructionTypeMap != NULL){
+    for (int i = 0; i < Ni ; ++i ) {
+      delete [] ReconstructionTypeMap[i]; ReconstructionTypeMap[i] = NULL; // deallocate ReconstructionTypeMap
+    }
+
+    delete [] ReconstructionTypeMap; ReconstructionTypeMap = NULL;
+  }
+}
+
+/*!
+ * Reset information related to block boundaries in the high-order object.
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::ResetBlockBoundaries(void){
+
+  // West boundaries
+  WestBnd.Reset();
+  S_WestBnd.Reset();
+  N_WestBnd.Reset();
+
+  // East boundaries
+  EastBnd.Reset();
+  S_EastBnd.Reset();
+  N_EastBnd.Reset();
+
+  // North boundaries
+  NorthBnd.Reset();
+  W_NorthBnd.Reset();
+  E_NorthBnd.Reset();
+
+  // South boundaries
+  SouthBnd.Reset();
+  W_SouthBnd.Reset();
+  E_SouthBnd.Reset();
+}
+
+/*!
+ * Initialize completely the high-order object.
+ */
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, GeometryType & Block,
 						 const bool &_pseudo_inverse_allocation_){
+
+  // Initialize the basic functionality of the high-order object
+  InitializeBasicVariable(ReconstructionOrder, Block, _pseudo_inverse_allocation_);
+
+  // Compute the pseudo-inverse if required
+  ComputeReconstructionPseudoInverse();
+}
+
+/*! 
+ * Initialize the basic functionality of the high-order object 
+ * (i.e. memory allocation, indexes etc.).
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::InitializeBasicVariable(int ReconstructionOrder, GeometryType & Block,
+						      const bool &_pseudo_inverse_allocation_){
 
   // Allocate (re-allocate) memory for the high-order object.
   allocate(Block.ICu-Block.ICl+1,
@@ -1468,14 +1676,15 @@ void HighOrder2D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, Geomet
   // Associate geometry
   SetGeometryPointer(Block);
 
-  // Determine the range of cells in which NO constrained reconstruction is performed
-  SetRangeOfQuadCellsWithoutConstrainedReconstruction();
+  // Set properties of block boundaries (i.e. which boundaries are constrained/unconstrained and which are opaque/transparent)
+  SetPropertiesHighOrderBlock();
 
-  // Determine the range of cells in which !constrained! reconstruction is performed
-  SetRangeOfQuadCellsWithConstrainedReconstruction();
+  // Build the reconstruction type map
+  BuildReconstructionTypeMap();
 
-  // Compute the pseudo-inverse if required
-  ComputeReconstructionPseudoInverse();
+  // Compute the smoothness indicator adjustment coefficient
+  /* It adjusts the value of the smoothness indicator based on the degree of the reconstruction */
+  AdjustmentCoeff = (getStencilSize() - NumberOfTaylorDerivatives() )/( NumberOfTaylorDerivatives() - 1.0);
 }
 
 //! Reset the reconstruction order.
@@ -1489,6 +1698,265 @@ void HighOrder2D<SOLN_STATE>::SetReconstructionOrder(int ReconstructionOrder){
   InitializeVariable(ReconstructionOrder,
 		     *Geom,
 		     _pseudo_inverse_allocation_);
+}
+
+/*! 
+ * Set the properties of high-order block boundaries,
+ * based on the associated grid.
+ * There are three possible boundary types:
+ * 1. constrained and opaque
+ * 2. unconstrained and opaque
+ * 3. unconstrained and transparent
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::SetPropertiesHighOrderBlock(void){
+
+  // Ensure that block splines require a valid scenario for constrained reconstruction
+  CheckConsistencyOfGeometricSplineProperties();
+
+  // Set properties of boundaries
+  
+  // === Reset all boundary properties (i.e. all boundaries are set to be unconstrained and transparent)
+  ResetBlockBoundaries();
+  // === Set constrained block to false
+  _constrained_block_reconstruction = false;
+
+  // === North boundary ===
+  if (Geom->IsNorthBoundaryReconstructionConstrained()){
+    // Set North boundary to be constrained
+    NorthBnd.setConstrainedBoundary();
+
+    // Set the North extensions of West and East boundaries to be opaque (see Rule #1)
+    N_WestBnd.setOpaqueBoundary();
+    N_EastBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+  // === West boundary ===
+  if (Geom->IsWestBoundaryReconstructionConstrained()){
+    // Set West boundary to be constrained
+    WestBnd.setConstrainedBoundary();
+    
+    // Set the West extensions of North and South boundaries to be unconstrained and opaque (see Rule #1)
+    W_NorthBnd.setOpaqueBoundary();
+    W_SouthBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+  // === South boundary ===
+  if (Geom->IsSouthBoundaryReconstructionConstrained()){
+    // Set South boundary to be constrained
+    SouthBnd.setConstrainedBoundary();
+
+    // Set the South extensions of West and East boundaries to be unconstrained and opaque (see Rule #1)
+    S_WestBnd.setOpaqueBoundary();
+    S_EastBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+  // === East boundary ===
+  if (Geom->IsEastBoundaryReconstructionConstrained()){
+    // Set East boundary to be constrained
+    EastBnd.setConstrainedBoundary();
+    
+    // Set the East extensions of North and South boundaries to be unconstrained and opaque (see Rule #1)
+    E_NorthBnd.setOpaqueBoundary();
+    E_SouthBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+  // === North-West corner ===
+  if (Geom->IsNorthExtendWestBoundaryReconstructionConstrained()){
+    // Set North extension of West boundary to be constrained
+    N_WestBnd.setConstrainedBoundary();
+    // Set West extension of North boundary to be opaque (i.e. avoid corner ghost cells)
+    W_NorthBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+  if (Geom->IsWestExtendNorthBoundaryReconstructionConstrained()){
+    // Set West extension of North boundary to be constrained
+    W_NorthBnd.setConstrainedBoundary();
+    // Set North extension of West boundary to be opaque (i.e. avoid corner ghost cells)
+    N_WestBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+
+  // === South-West corner ===
+  if (Geom->IsWestExtendSouthBoundaryReconstructionConstrained()){
+    // Set West extension of South boundary to be constrained
+    W_SouthBnd.setConstrainedBoundary();
+    // Set South extension of West boundary to be opaque (i.e. avoid corner ghost cells)
+    S_WestBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+  if (Geom->IsSouthExtendWestBoundaryReconstructionConstrained()){
+    // Set South extension of West boundary to be constrained
+    S_WestBnd.setConstrainedBoundary();
+    // Set West extension of South boundary to be opaque (i.e. avoid corner ghost cells)
+    W_SouthBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+
+  // === South-East corner ===
+  if (Geom->IsSouthExtendEastBoundaryReconstructionConstrained()){
+    // Set South extension of East boundary to be constrained
+    S_EastBnd.setConstrainedBoundary();
+    // Set East extension of South boundary to be opaque (i.e. avoid corner ghost cells)
+    E_SouthBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+  if (Geom->IsEastExtendSouthBoundaryReconstructionConstrained()){
+    // Set East extension of South boundary to be constrained
+    E_SouthBnd.setConstrainedBoundary();
+    // Set South extension of East boundary to be opaque (i.e. avoid corner ghost cells)
+    S_EastBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+
+  // === North-East corner ===
+  if (Geom->IsEastExtendNorthBoundaryReconstructionConstrained()){
+    // Set East extension of North boundary to be constrained
+    E_NorthBnd.setConstrainedBoundary();
+    // Set North extension of East boundary to be opaque (i.e. avoid corner ghost cells)
+    N_EastBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+  if (Geom->IsNorthExtendEastBoundaryReconstructionConstrained()){
+    // Set North extension of East boundary to be constrained
+    N_EastBnd.setConstrainedBoundary();
+    // Set East extension of North boundary to be opaque (i.e. avoid corner ghost cells)
+    E_NorthBnd.setOpaqueBoundary();
+
+    // Flag block as constrained
+    _constrained_block_reconstruction = true;
+  }
+
+  // Set indexes between which solution reconstruction is performed.
+  StartI = ICl - Nghost_HO; EndI = ICu + Nghost_HO;
+  StartJ = JCl - Nghost_HO; EndJ = JCu + Nghost_HO;
+
+}
+
+/*! 
+ * Ensure that the block geometric splines require a realizable
+ * constrained reconstruction scenario (i.e. some rules are fulfilled).
+ * 
+ * Rule 1. If one main spline is constrained, then the extensions of the main splines
+ *         perpendincular on it and which have contact with it, cannot be constrained.
+ *         (e.g. North spline constrained, then ExtendNorth_WestSpline and 
+ *               ExtendNorth_EastSpline cannot be constrained.)
+ * Rule 2. If both main splines that meet in a corner are constrained,
+ *         then the extension splines at that corner cannot be constrained. 
+ * Rule 3. If one extension spline is constrained, the other extension spline in the corner
+ *         and its correspondent main spline cannot be constrained 
+ *         (e.g. ExtendEast_SouthSpline constrained, then ExtendSouth_EastSpline and EastSpline
+ *          cannot be constrained)
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties(void){
+
+  // === Check main North boundary ===
+  if (Geom->IsNorthBoundaryReconstructionConstrained()){
+    // === Check Rule 1 ===
+    if (Geom->IsNorthExtendWestBoundaryReconstructionConstrained() ||
+	Geom->IsNorthExtendEastBoundaryReconstructionConstrained() ){
+      throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #1 violated for the constrained North boundary");
+    }
+
+    // === Check Rule 2 for NW corner ===
+    if (Geom->IsWestBoundaryReconstructionConstrained() && 
+	(Geom->IsWestExtendNorthBoundaryReconstructionConstrained() || Geom->IsNorthExtendWestBoundaryReconstructionConstrained()) ){
+      throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #2 violated for the North-West corner");
+    }
+
+    // === Check Rule 2 for NE corner ===
+    if (Geom->IsEastBoundaryReconstructionConstrained() && 
+	(Geom->IsEastExtendNorthBoundaryReconstructionConstrained() || Geom->IsNorthExtendEastBoundaryReconstructionConstrained()) ){
+      throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #2 violated for the North-East corner");
+    }
+  }
+
+  // === Check main South boundary ===
+  if (Geom->IsSouthBoundaryReconstructionConstrained()){
+    // === Check Rule 1 ===
+    if (Geom->IsSouthExtendWestBoundaryReconstructionConstrained() ||
+	Geom->IsSouthExtendEastBoundaryReconstructionConstrained() ){
+      throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #1 violated for the constrained South boundary");
+    }
+
+    // === Check Rule 2 for SW corner ===
+    if (Geom->IsWestBoundaryReconstructionConstrained() && 
+	(Geom->IsWestExtendSouthBoundaryReconstructionConstrained() || Geom->IsSouthExtendWestBoundaryReconstructionConstrained()) ){
+      throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #2 violated for the South-West corner");
+    }
+
+    // === Check Rule 2 for SE corner ===
+    if (Geom->IsEastBoundaryReconstructionConstrained() && 
+	(Geom->IsEastExtendSouthBoundaryReconstructionConstrained() || Geom->IsSouthExtendEastBoundaryReconstructionConstrained()) ){
+      throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #2 violated for the South-East corner");
+    }
+  }
+
+  // === Check Rule 1 for main East boundary (Obs: Rule #2 has been already checked) ===
+  if (Geom->IsEastBoundaryReconstructionConstrained() && (Geom->IsEastExtendNorthBoundaryReconstructionConstrained() || 
+							  Geom->IsEastExtendSouthBoundaryReconstructionConstrained()) ){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #1 violated for the constrained East boundary");
+  }
+
+  // === Check Rule 1 for main West boundary (Obs: Rule #2 has been already checked) ===
+  if (Geom->IsWestBoundaryReconstructionConstrained() && (Geom->IsWestExtendNorthBoundaryReconstructionConstrained() || 
+							  Geom->IsWestExtendSouthBoundaryReconstructionConstrained()) ){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #1 violated for the constrained West boundary");
+  }
+
+  // === Check Rule 3 for North-West corner (Obs: It's enough to check only the two extensions) ===
+  if (Geom->IsWestExtendNorthBoundaryReconstructionConstrained() && 
+      Geom->IsNorthExtendWestBoundaryReconstructionConstrained() ){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #3 violated for the North-West corner");
+  }
+
+  // === Check Rule 3 for North-East corner (Obs: It's enough to check only the two extensions) ===
+  if (Geom->IsEastExtendNorthBoundaryReconstructionConstrained() && 
+      Geom->IsNorthExtendEastBoundaryReconstructionConstrained() ){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #3 violated for the North-East corner");
+  }
+
+  // === Check Rule 3 for South-West corner (Obs: It's enough to check only the two extensions) ===
+  if (Geom->IsWestExtendSouthBoundaryReconstructionConstrained() && 
+      Geom->IsSouthExtendWestBoundaryReconstructionConstrained() ){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #3 violated for the South-West corner");
+  }
+
+  // === Check Rule 3 for South-East corner (Obs: It's enough to check only the two extensions) ===
+  if (Geom->IsEastExtendSouthBoundaryReconstructionConstrained() && 
+      Geom->IsSouthExtendEastBoundaryReconstructionConstrained() ){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::CheckConsistencyOfGeometricSplineProperties() ERROR! Consistency rule #3 violated for the South-East corner");
+  }
 }
 
 // AssociateGeometry()
@@ -1829,109 +2297,212 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
     return;
   }
 
-  // Compute the smoothness indicator for cells that use the central stencil
-  for ( j  = StartJ_SI ; j <= EndJ_SI ; ++j ) {
-    for ( i = StartI_SI ; i <= EndI_SI ; ++i ) {
-
-      // Set the supporting stencil
-      SetSmoothnessIndicatorStencil(i,j);
-
-      // Evaluate the Smoothness Indicator for the current cell for all solution state variables
-      ComputeSmoothnessIndicator(SolnBlk, ReconstructedSoln,
-				 i, j, i_index, j_index, StencilSize_SmoothnessIndicator);
-
-      // Check the smoothness condition
-      AssessInterpolantsSmoothness(i,j);
- 
-    } /* endfor(i) */
-  } /* endfor(j) */
-
-  // Check whether smoothness indicator calculation with modified stencil is required anywhere in the block.
+  
+  // Check whether constrained reconstruction is required anywhere in the block.
   if ( !_constrained_block_reconstruction ){
-    // No need to perform any calculation with modified stencil
-    return;
-  }
 
-
-  /***************************************************************************
-   *    Perform smoothness indicator calculation with modified stencil       *
-   **************************************************************************/
-
-  // === Check WEST boundary
-  if (_constrained_WEST_reconstruction){
-    for ( j  = StartJ_SI_ConstrWest ; j <= EndJ_SI_ConstrWest ; ++j ) {
-      for ( i = ICl ; i < StartI_SI ; ++i ) {
-
-	// Set the supporting stencil
-	SetSmoothnessIndicatorStencilForConstrainedReconstruction(i,j);
-
-	// Evaluate the Smoothness Indicator for the current cell for all solution state variables
-	ComputeSmoothnessIndicator(SolnBlk, ReconstructedSoln,
-				   i, j, i_index_ave, j_index_ave, i_index_ave.size());
-
-	// Check the smoothness condition
-	AssessInterpolantsSmoothness(i,j);
- 
+    // ===  Compute the smoothness indicator using the central stencil ===
+    
+    // Compute the smoothness indicator for cells inside the domain
+    for ( j  = JCl ; j <= JCu ; ++j ) {
+      for ( i = ICl ; i <= ICu ; ++i ) {
+	ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
+						    ReconstructedSoln,
+						    i, j);	
       } /* endfor(i) */
     } /* endfor(j) */
-  } // endfor (_constrained_WEST_reconstruction)
+    
+    // Compute the smoothness indicator for ghost cells involved in flux calculation
+    // == South and North boundaries ==
+    for (i = ICl; i<=ICu; ++i){
+      // == South bnd.
+      ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
+						  ReconstructedSoln,
+						  i, JCl-1);	
+      
+      // == North bnd.
+      ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
+						  ReconstructedSoln,
+						  i, JCu+1);
+    }
 
-  // === Check EAST boundary
-  if (_constrained_EAST_reconstruction){
-    for ( j  = StartJ_SI_ConstrEast ; j <= EndJ_SI_ConstrEast ; ++j ) {
-      for ( i = EndI_SI + 1 ; i <= ICu ; ++i ) {
+    // == West and East boundaries ==
+    for (j = JCl; j<=JCu; ++j){
+      // == West bnd.
+      ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
+						  ReconstructedSoln,
+						  ICl-1, j);      
 
-	// Set the supporting stencil
-	SetSmoothnessIndicatorStencilForConstrainedReconstruction(i,j);
+      // == East bnd.
+      ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
+						  ReconstructedSoln,
+						  ICu+1, j);      
+    }
 
-	// Evaluate the Smoothness Indicator for the current cell for all solution state variables
-	ComputeSmoothnessIndicator(SolnBlk, ReconstructedSoln,
-				   i, j, i_index_ave, j_index_ave, i_index_ave.size());
+  } else {
 
-	// Check the smoothness condition
-	AssessInterpolantsSmoothness(i,j);
- 
+    // ===  Compute the smoothness indicator using the central and deviated stencils ===
+
+    // Compute the smoothness indicator for cells inside the domain
+    for ( j  = JCl ; j <= JCu ; ++j ) {
+      for ( i = ICl ; i <= ICu ; ++i ) {
+	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
+						     ReconstructedSoln,
+						     i,j);
       } /* endfor(i) */
-    } /* endfor(j) */
-  } // endfor (_constrained_EAST_reconstruction)
+    } /* endfor(j) */    
 
-  // === Check NORTH boundary
-  if (_constrained_NORTH_reconstruction){
-    for ( j  = EndJ_SI + 1 ; j <= JCu ; ++j ) {
-      for ( i = StartI_SI_ConstrNorth ; i <= EndI_SI_ConstrNorth ; ++i ) {
+    // Compute the smoothness indicator for ghost cells involved in flux calculation
+    // === West Bnd. ===
+    if (!IsWestConstrainedReconstructionRequired()){
+      for (j = JCl; j <= JCu; ++j){
+	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
+						     ReconstructedSoln,
+						     ICl-1,j);
+      }
+    }
 
-	// Set the supporting stencil
-	SetSmoothnessIndicatorStencilForConstrainedReconstruction(i,j);
+    // === East Bnd. ===
+    if (!IsEastConstrainedReconstructionRequired()){
+      for (j = JCl; j <= JCu; ++j){
+	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
+						     ReconstructedSoln,
+						     ICu+1,j);
+      }
+    }
 
-	// Evaluate the Smoothness Indicator for the current cell for all solution state variables
-	ComputeSmoothnessIndicator(SolnBlk, ReconstructedSoln,
-				   i, j, i_index_ave, j_index_ave, i_index_ave.size());
+    // === North Bnd. ===
+    if (!IsEastConstrainedReconstructionRequired()){
+      for (i = ICl; i <= ICu; ++i){
+	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
+						     ReconstructedSoln,
+						     i,JCu+1);
+      }
+    }
 
-	// Check the smoothness condition
-	AssessInterpolantsSmoothness(i,j);
- 
-      } /* endfor(i) */
-    } /* endfor(j) */
-  } // endfor (_constrained_NORTH_reconstruction)
+    // === South Bnd. ===
+    if (!IsEastConstrainedReconstructionRequired()){
+      for (i = ICl; i <= ICu; ++i){
+	ComputeCellSmoothnessDataForConstrainedBlock(SolnBlk,
+						     ReconstructedSoln,
+						     i,JCl-1);
+      }
+    }
 
-  // === Check SOUTH boundary
-  if (_constrained_SOUTH_reconstruction){
-    for ( j  = JCl ; j < StartJ_SI ; ++j ) {
-      for ( i = StartI_SI_ConstrSouth ; i <= EndI_SI_ConstrSouth ; ++i ) {
+  } // endif (_constrained_block_reconstruction)
 
-	// Set the supporting stencil
-	SetSmoothnessIndicatorStencilForConstrainedReconstruction(i,j);
+}
 
-	// Evaluate the Smoothness Indicator for the current cell for all solution state variables
-	ComputeSmoothnessIndicator(SolnBlk, ReconstructedSoln,
-				   i, j, i_index_ave, j_index_ave, i_index_ave.size());
+/*! 
+ * Compute the data related to CENO smoothness indicator
+ * for a given cell (iCell,jCell) which is know to have a 
+ * central stencil.
+ *
+ * \param [in] SolnBlk The solution block which provides solution data.
+ * \param ReconstructedSoln member function of Soln_Block_Type which returns the average solution.
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::ComputeCellSmoothnessDataWithCentralStencil(Soln_Block_Type &SolnBlk,
+									  const Soln_State & 
+									  (Soln_Block_Type::*ReconstructedSoln)(const int &,
+														const int &) const,
+									  const int &iCell, const int &jCell){
 
-	// Check the smoothness condition
-	AssessInterpolantsSmoothness(i,j);
- 
-      } /* endfor(i) */
-    } /* endfor(j) */
-  } // endfor (_constrained_SOUTH_reconstruction)
+
+  /* 
+   * Set the central supporting stencil.
+   * Write the 'i' and 'j' indexes of the cells that are part of
+   * the smoothness indicator calculation stencil of cell (iCell,jCell).
+   * Use the number of smoothness indicator rings set in the class to 
+   * determine how far the stencil extends.
+   * The indexes are written in the i_index and j_index containers.
+   * Because these containers might be larger than needed, 
+   * the StencilSize_SmoothnessIndicator variable is used for storing 
+   * the smoothness indicator stencil size.
+   *
+   * Note: The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
+   */
+  SetCentralStencil(iCell,jCell,
+		    i_index,j_index,
+		    rings_SI,StencilSize_SmoothnessIndicator);
+	
+  // Evaluate the Smoothness Indicator for the current cell for all solution state variables
+  ComputeSmoothnessIndicator(SolnBlk, ReconstructedSoln,
+			     iCell, jCell, i_index, j_index, StencilSize_SmoothnessIndicator);
+  
+  // Check the smoothness condition
+  AssessInterpolantsSmoothness(iCell,jCell);
+
+}
+
+/*! 
+ * Compute the data related to CENO smoothness indicator
+ * for a given cell (iCell,jCell) which is know to have a 
+ * deviated stencil.
+ *
+ * \param [in] SolnBlk The solution block which provides solution data.
+ * \param ReconstructedSoln member function of Soln_Block_Type which returns the average solution.
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::ComputeCellSmoothnessDataWithDeviatedStencil(Soln_Block_Type &SolnBlk,
+									   const Soln_State &
+									   (Soln_Block_Type::*ReconstructedSoln)(const int &,
+														 const int &) const,
+									   const int &iCell, const int &jCell){
+  
+  // Set the biased supporting stencil (i.e. deviated from central and not extended)
+  SetDeviatedReconstructionStencil(iCell,jCell,
+				   i_index_ave, j_index_ave,
+				   RingsSI(), false);
+
+  // Evaluate the Smoothness Indicator for the current cell for all solution state variables
+  ComputeSmoothnessIndicator(SolnBlk, ReconstructedSoln,
+			     iCell, jCell, i_index_ave, j_index_ave, i_index_ave.size());
+  
+  // Check the smoothness condition
+  AssessInterpolantsSmoothness(iCell,jCell);
+
+}
+
+/*! 
+ * Compute the data related to CENO smoothness indicator
+ * for a given cell (iCell,jCell) which is know to be 
+ * in a constrained block.
+ *
+ * The purpose of this function is to provide a compact routine which 
+ * picks the proper method for computing smoothness indicator data
+ * based on the reconstruction type of the given cell.
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::ComputeCellSmoothnessDataForConstrainedBlock(Soln_Block_Type &SolnBlk,
+									   const Soln_State &
+									   (Soln_Block_Type::*ReconstructedSoln)(const int &,
+														 const int &) const,
+									   const int &iCell, const int &jCell){
+  
+  switch (ReconstructionTypeMap[iCell][jCell]){
+  case 'r':		// "Regular reconstruction"
+    // Compute the smoothness indicator using the central stencil
+    ComputeCellSmoothnessDataWithCentralStencil(SolnBlk,
+						ReconstructedSoln,
+						iCell, jCell);
+    break;
+
+  case 'm':		// "Modified reconstruction" 
+  case 'c':		// "Constrained reconstruction"
+    // Compute the smoothness indicator using the deviated stencil
+    ComputeCellSmoothnessDataWithDeviatedStencil(SolnBlk,
+						 ReconstructedSoln,
+						 iCell, jCell);
+    break;
+	  
+  case 'n':		// "No reconstruction"
+    // Do nothing
+    break;
+  } //endswitch
 
 }
 
@@ -1959,13 +2530,9 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
 
   // Set the mean solution of (iCell,jCell). It's used as a reference.
   MeanSolution = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
-  
-  /* Adjustment coefficient.
-     It adjust the value of the smoothness indicator based on the overlapping degree of the reconstruction */
-  double AdjustmentCoeff( (StencilSize - NumberOfTaylorDerivatives() )/( NumberOfTaylorDerivatives() - 1.0) );
-  if (AdjustmentCoeff < 0 || _si_calculation){
-    AdjustmentCoeff = 1.0;
-  }
+
+  // Initialize the minimum mean solution in absolute value.
+  Min_Mean_Solution = fabs(MeanSolution);
 
   /*! NOTE: The following used variables are set as private to the class:
     SS_Regression, SS_Residual, Max_SS_Regression, Temp_Regression, Temp_Residual. */
@@ -1981,6 +2548,9 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
 
   /* Compute SS_Regression and SS_Residual for all the variables at once */
   for( cell=1; cell<StencilSize; ++cell){
+
+    // Get minimum average solution in absolute value
+    Min_Mean_Solution = min(Min_Mean_Solution , fabs((SolnBlk.*ReconstructedSoln)(i_index[cell],j_index[cell])));
 
     Temp_Regression  = CellTaylorDerivState(i_index[cell],j_index[cell],0) - MeanSolution;
     Temp_Regression *= Temp_Regression;          /* compute Temp_Regression square */
@@ -2004,14 +2574,17 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
       // Update SS_Regression
       SS_Regression += Temp_Regression * GeomWeightSI;
       // Update SS_Residual
-      SS_Residual   += Temp_Residual * Temp_Residual * GeomWeightSI;
+      Temp_Residual *= Temp_Residual;       /* compute Temp_Residual square */
+      SS_Residual   += Temp_Residual * GeomWeightSI;
 
     } else {
 
       // Update SS_Regression
       SS_Regression += Temp_Regression;
+
       // Update SS_Residual
-      SS_Residual  += Temp_Residual * Temp_Residual;
+      Temp_Residual *= Temp_Residual;       /* compute Temp_Residual square */
+      SS_Residual  += Temp_Residual;
     }//endif
 
   }//endfor(cell)
@@ -2033,7 +2606,7 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBl
        current parameter.
     */
     if ( Max_SS_Regression[parameter]/sqr(NormalizationState[parameter]) > 
-	 CENO_Tolerances::SquareToleranceAroundValue(MeanSolution[parameter]/NormalizationState[parameter]) ){
+	 CENO_Tolerances::SquareToleranceAroundValue(Min_Mean_Solution[parameter]/NormalizationState[parameter]) ){
       
       // Compute 'alpha'
       alpha = 1.0 - (SS_Residual[parameter]/SS_Regression[parameter]);
@@ -2085,6 +2658,36 @@ void HighOrder2D<SOLN_STATE>::FlagCellReconstructionsAsNonSmooth(const int &iCel
   }//endfor(parameter)  
 }
 
+/*!
+ * Evaluate the gradient in the normal direction.
+ * \param norm_dir Cartesian vector that defines the direction in which the gradient is computed.
+ */
+template<class SOLN_STATE> inline
+SOLN_STATE HighOrder2D<SOLN_STATE>::NormalGradientStateAtCoordinates(const int & ii, const int & jj,
+								     const double &X_Coord, const double &Y_Coord,
+								     const Vector2D &norm_dir) const {
+  return ( norm_dir.x*XGradientStateAtCoordinates(ii,jj,X_Coord,Y_Coord) + 
+	   norm_dir.y*YGradientStateAtCoordinates(ii,jj,X_Coord,Y_Coord) );
+}
+
+/*!
+ * Evaluate the gradient in the normal direction for a specific variable.
+ * \param norm_dir Cartesian vector that defines the direction in which the gradient is computed.
+ * \param parameter variable index.
+ */
+template<class SOLN_STATE> inline
+double HighOrder2D<SOLN_STATE>::NormalGradientAtCoordinates(const int & ii, const int & jj,
+							    const double &X_Coord, const double &Y_Coord,
+							    const Vector2D &norm_dir, const unsigned & parameter) const {
+  
+  return ( norm_dir.x * TD[ii][jj].ComputeXGradientFor(X_Coord - XCellCenter(ii,jj),
+						       Y_Coord - YCellCenter(ii,jj),
+						       parameter) +
+	   norm_dir.y * TD[ii][jj].ComputeYGradientFor(X_Coord - XCellCenter(ii,jj),
+						       Y_Coord - YCellCenter(ii,jj),
+						       parameter) );
+}
+
 //! Integrate over the cell
 template<class SOLN_STATE>
 template<typename FO, class ReturnType> inline
@@ -2122,244 +2725,6 @@ IntegrateCellReconstructionOverQuadDomain(const int &ii, const int &jj,
 										_dummy_result),
 					     SW, NW, NE, SE,
 					     _dummy_result) );
-}
-
-/*! 
- * Set the first and last indexes in 'I' and 'J' directions
- * which correspond to cells for which NO high-order constrained 
- * reconstruction is performed.
- * This type of reconstruction is typically required in the proximity
- * of curved boundary.
- * Flag also the boundaries for which constrained reconstruction
- * is required.
- *
- * \note The associated grid is used to determine this information!
- */
-template<class SOLN_STATE> inline
-void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstruction(void) {
-  
-  // Initialize indexes as if no constrained reconstruction would exist.
-  StartI = ICl - Nghost_HO; EndI = ICu + Nghost_HO;
-  StartJ = JCl - Nghost_HO; EndJ = JCu + Nghost_HO;
-
-  /* Initialize indexes for calculation of smoothness indicator
-     (i.e. cells used for flux calculation) as if no constrained reconstruction would exit. */
-  StartI_SI = ICl - 1; EndI_SI = ICu + 1;
-  StartJ_SI = JCl - 1; EndJ_SI = JCu + 1;
-
-  /* Initialize indexes between which the interpolants are checked for non-smoothness
-     (i.e. cells used for flux calculation) as if no constrained reconstruction would exit. */
-  StartI_LPWL = ICl - 1; EndI_LPWL = ICu + 1;
-  StartJ_LPWL = JCl - 1; EndJ_LPWL = JCu + 1;
-
-  // Reset affected flags
-  _constrained_block_reconstruction = false;
-  _constrained_WEST_reconstruction  = false; 
-  _constrained_EAST_reconstruction  = false; 
-  _constrained_NORTH_reconstruction = false; 
-  _constrained_SOUTH_reconstruction = false; 
-  
-  /* Check for existence of constrained reconstruction
-     at boundaries and modify the affected indexes accordingly. */
-  // Check West boundary
-  if (Geom->IsWestBoundaryReconstructionConstrained()) {
-    // Set StartI
-    StartI = ICl + rings;
-    // Flag the boundary accordingly
-    _constrained_WEST_reconstruction = true;
-    // Set StartI_SI
-    StartI_SI += 1 + rings_SI;
-    // Set StartI_LPWL
-    StartI_LPWL += 1;
-  } 
-  // Check East boundary
-  if (Geom->IsEastBoundaryReconstructionConstrained()){
-    // Set EndI
-    EndI = ICu - rings;
-    // Flag the boundary accordingly
-    _constrained_EAST_reconstruction = true;    
-    // Set EndI_SI
-    EndI_SI -= 1 + rings_SI;
-    // Set EndI_LPWL
-    EndI_LPWL -= 1;
-  } 
-  // Check South boundary
-  if (Geom->IsSouthBoundaryReconstructionConstrained()){
-    // Set StartJ
-    StartJ = JCl + rings;
-    // Flag the boundary accordingly
-    _constrained_SOUTH_reconstruction = true;
-    // Set StartJ_SI
-    StartJ_SI += 1 + rings_SI;
-    // Set StartJ_LPWL
-    StartJ_LPWL += 1;
-  } 
-  // Check North boundary
-  if (Geom->IsNorthBoundaryReconstructionConstrained()){
-    // Set EndJ
-    EndJ = JCu - rings;
-    // Flag the boundary accordingly
-    _constrained_NORTH_reconstruction = true;    
-    // Set EndJ_SI
-    EndJ_SI -= 1 + rings_SI;
-    // Set EndJ_LPWL
-    EndJ_LPWL -= 1;
-  }
-
-  // Flag the block accordingly
-  if (_constrained_WEST_reconstruction  || _constrained_EAST_reconstruction || 
-      _constrained_SOUTH_reconstruction || _constrained_NORTH_reconstruction ){
-    _constrained_block_reconstruction = true;
-  }
-}
-
-/*! 
- * Set the indexes in 'I' and 'J' directions which keep 
- * track of how the constrained reconstructions should be performed.
- *
- * \note This routine should be called after SetRangeOfQuadCellsWithoutConstrainedReconstruction()
- */
-template<class SOLN_STATE> inline
-void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithConstrainedReconstruction(void) {
-  
-  /* Check for existence of constrained reconstruction
-     at boundaries and modify the affected indexes accordingly. */
-  // Check West boundary
-  if (_constrained_WEST_reconstruction){
-    
-    StartI_ConstrWest = ICl;
-    EndI_ConstrWest   = StartI - 1;
-
-    StartJ_ConstrWest = StartJ;
-    EndJ_ConstrWest   = EndJ;
-
-    // SI calculation
-    StartJ_SI_ConstrWest = StartJ_SI;
-    EndJ_SI_ConstrWest   = EndJ_SI;
-  } else {
-
-    StartI_ConstrWest = 0;
-    EndI_ConstrWest   = 0;
-    StartJ_ConstrWest = 0;
-    EndJ_ConstrWest   = 0;
-
-    // SI calculation
-    StartJ_SI_ConstrWest = 0;
-    EndJ_SI_ConstrWest   = 0;    
-  }
-
-  // Check East boundary
-  if (_constrained_EAST_reconstruction){
-    
-    StartI_ConstrEast = EndI+1;
-    EndI_ConstrEast   = ICu;
-
-    StartJ_ConstrEast = StartJ;
-    EndJ_ConstrEast   = EndJ;
-
-    // SI calculation
-    StartJ_SI_ConstrEast = StartJ_SI;
-    EndJ_SI_ConstrEast   = EndJ_SI;
-  } else {
-
-    StartI_ConstrEast = 0;
-    EndI_ConstrEast   = 0;
-    StartJ_ConstrEast = 0;
-    EndJ_ConstrEast   = 0;
-
-    // SI calculation
-    StartJ_SI_ConstrEast = 0;
-    EndJ_SI_ConstrEast   = 0;
-  }
-
-  // Check South boundary
-  if (_constrained_SOUTH_reconstruction){
-
-    StartJ_ConstrSouth = JCl;
-    EndJ_ConstrSouth   = StartJ - 1;    
-
-    // check West
-    if (_constrained_WEST_reconstruction){
-      StartI_ConstrSouth = ICl;
-
-      // SI calculation
-      StartI_SI_ConstrSouth = ICl;
-    } else {
-      StartI_ConstrSouth = StartI;
-
-      // SI calculation
-      StartI_SI_ConstrSouth = StartI_SI;
-    }
-
-    // check East
-    if (_constrained_EAST_reconstruction){
-      EndI_ConstrSouth   = ICu;
-
-      // SI calculation
-      EndI_SI_ConstrSouth = ICu;  
-    } else {
-      EndI_ConstrSouth   = EndI;
-
-      // SI calculation
-      EndI_SI_ConstrSouth = EndI_SI;
-    }
-
-  } else {
-
-    StartI_ConstrSouth = 0;
-    EndI_ConstrSouth   = 0;
-    StartJ_ConstrSouth = 0;
-    EndJ_ConstrSouth   = 0;
-
-    // SI calculation
-    StartI_SI_ConstrSouth = 0;
-    EndI_SI_ConstrSouth   = 0;
-  }
-
-  // Check North boundary
-  if (_constrained_NORTH_reconstruction){
-
-    StartJ_ConstrNorth = EndJ + 1;
-    EndJ_ConstrNorth   = JCu;
-
-    // check West
-    if (_constrained_WEST_reconstruction){
-      StartI_ConstrNorth = ICl;
-
-      // SI calculation
-      StartI_SI_ConstrNorth = ICl;
-    } else {
-      StartI_ConstrNorth = StartI;
-
-      // SI calculation
-      StartI_SI_ConstrNorth = StartI_SI;
-    }
-
-    // check East
-    if (_constrained_EAST_reconstruction){
-      EndI_ConstrNorth   = ICu;
-
-      // SI calculation
-      EndI_SI_ConstrNorth = ICu;
-    } else {
-      EndI_ConstrNorth   = EndI;
-
-      // SI calculation
-      EndI_SI_ConstrNorth = EndI_SI;
-    }
-
-  } else {
-
-    StartI_ConstrNorth = 0;
-    EndI_ConstrNorth   = 0;
-    StartJ_ConstrNorth = 0;
-    EndJ_ConstrNorth   = 0;
-
-    // SI calculation
-    StartI_SI_ConstrNorth = 0;
-    EndI_SI_ConstrNorth   = 0;
-  }
-
 }
 
 /*! 
@@ -2642,232 +3007,1165 @@ void HighOrder2D<SOLN_STATE>::getEnlargedReconstructionStencil(const int &iCell,
 
 /*! 
  * Write the 'i' and 'j' indexes of the cells that are part of
- * the constrained reconstruction of cell (iCell,jCell).
+ * the deviated (i.e. different than central) reconstruction stencil of 
+ * cell (iCell,jCell).
  * Use the number of rings and the class variables caring information
- * about constrained boundaries to determine how far the stencil extends.
- * This routine DOES'T generate a central stencil!
- * The stencil is biased to the mesh interior but it doesn't extend
- * further than a central stencil.
+ * about the opaqueness/transparency of boundaries to determine how far the stencil extends.
+ * This routine DOES'T generate a central stencil if the cell gets affected by the presence of special boundaries!!!
+ * It is also MORE EXPENSIVE than the regular routine that generates central stencils!!!
+ * The stencil is biased to the mesh interior and it might be extended further than a central stencil.
  *
  * \param [out] i_index The i-index of the cells.
  * \param [out] j_index The j-index of the cells.
+ * \param [in] IsStencilExtended flag for extending or not the stencil. By default is true.
  *
  * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
  */
 template<class SOLN_STATE> inline
-void HighOrder2D<SOLN_STATE>::SetConstrainedReconstructionStencil(const int &iCell, const int &jCell,
-								  IndexType & i_index, IndexType & j_index) const{
+void HighOrder2D<SOLN_STATE>::SetDeviatedReconstructionStencil(const int &iCell, const int &jCell,
+							       IndexType & i_index, IndexType & j_index,
+							       const int &rings,
+							       bool IsStencilExtended) const{
 
   // Reset indexes
   i_index.clear();
   j_index.clear();
   
-  int i,j, Imin, Imax, Jmin, Jmax;
+  // The space around the cell (iCell,jCell) is divided into 8 regions relative to the cell faces (i.e. NW,W,SW,S,SE,E,NE,N).
+  // There are 12 variable indexes which can fully control how the stencil is formed.
 
-  /* Set Imin, Imax, Jmin, Jmax for a central stencil. */
-  Imin = iCell-rings; Imax = iCell+rings;
-  Jmin = jCell-rings; Jmax = jCell+rings;
+  int i,j;
+  int Imin_NW, Jmax_NW;	// North-West region
+  int Imin_W;	        // West region
+  int Imin_SW, Jmin_SW;	// South-West region
+  int Jmin_S;	        // South region
+  int Imax_SE, Jmin_SE;	// South-East region
+  int Imax_E;	        // East region
+  int Imax_NE, Jmax_NE;	// North-East region
+  int Jmax_N;	        // North region
 
-  if (CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS == ON &&
-      CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL == OFF) {
+  /* Set indexes as if a central stencil can be set. */
+  Imin_NW = iCell-rings;
+  Jmax_NW = jCell+rings;
+  Imin_W  = iCell-rings;
+  Imin_SW = iCell-rings;
+  Jmin_SW = jCell-rings;
+  Jmin_S  = jCell-rings;
+  Imax_SE = iCell+rings;
+  Jmin_SE = jCell-rings;
+  Imax_E  = iCell+rings;
+  Imax_NE = iCell+rings;
+  Jmax_NE = jCell+rings;
+  Jmax_N  = jCell+rings;
 
-    // Additional equations come from approximate constraints.
+  
+  // Decide whether the stencil is extended or not.
+  // An extended stencil will add cells in the opposite direction of the restricted boundary.
+  // By default the stencil is extended.
+  if ( (CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS == ON &&
+	CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL == OFF) ){
     
-    // Check WEST boundary
-    if (_constrained_WEST_reconstruction && Imin < ICl){
-      Imin = ICl;		/* limit Imin */
-    } 
-    
-    // Check EAST boundary
-    if (_constrained_EAST_reconstruction && Imax > ICu){
-      Imax = ICu;		/* limit Imax */
-    } 
-    
-    // Check NORTH boundary
-    if (_constrained_NORTH_reconstruction && Jmax > JCu){
-      Jmax = JCu;		/* limit Jmax */
-    } 
-    
-    // Check SOUTH boundary
-    if (_constrained_SOUTH_reconstruction && Jmin < JCl){
-      Jmin = JCl;		/* limit Jmin */
-    }
+    IsStencilExtended = false;
+  }
+
+
+  /* ===  Cell to the left of West block boundary === 
+   * Obs: This cell is unrestricted to West.
+   */
+  if ( iCell < ICl ){
+
+    // ==== Cover cells with iCell < ICl ====
+      
+    if ( jCell < JCl){                // Case A
+      // South Bnd influence
+      if (W_SouthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICl - 1){
+	  Jmax_NW = Jmax_N = JCl-1;     /* limit Jmax */
+
+	  if (IsStencilExtended){
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	    /* ensure valid Jmin */
+	    Jmin_SW = max(Jmin_SW, 0);
+	    Jmin_S  = max(Jmin_S, 0);
+	  }
+	} else {
+	  Jmax_NW = Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
+
+	  if (IsStencilExtended){
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;
+	    /* ensure valid Jmin */
+	    Jmin_SW = max(Jmin_SW, 0);
+	    Jmin_S  = max(Jmin_S, 0); 
+	    Jmin_SE = max(Jmin_SE, 0);
+	  }
+	}
+      } else if (S_WestBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCl - 1){
+	  Imax_E = Imax_SE = ICl-1;     /* limit Imax */
+
+	  if (IsStencilExtended){
+	    /* extend Imin */
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;
+	    /* ensure valid Imin */
+	    Imin_W  = max(Imin_W, 0);
+	    Imin_SW = max(Imin_SW, 0);
+	  }
+	} else {
+	  Imax_E = Imax_SE = Imax_NE = ICl-1;     /* limit Imax */
+	    
+	  if (IsStencilExtended){
+	    /* extend Imin */
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;
+	    Imin_NW -= 1;
+	    /* ensure valid Imin */
+	    Imin_W  = max(Imin_W, 0);
+	    Imin_SW = max(Imin_SW, 0);
+	    Imin_NW = max(Imin_NW, 0);
+	  }
+	}
+      }
+
+    } else if (jCell < JCl+rings){    // Case B
+      // South Bnd influence
+      if (W_SouthBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
+	Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+	  
+	if (IsStencilExtended){
+	  /* extend Jmax */
+	  Jmax_NW += 1;
+	  Jmax_N  += 1;
+	  Jmax_NE += 1;
+	}
+      } else if (W_SouthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICl - 1){
+	  Jmin_SW = Jmin_S = JCl;                 /* limit Jmin */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	  }
+	} else {
+	  Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;
+	  }
+	}
+      } else if (SouthBnd.IsReconstructionStencilAffected()){
+	if (ICl-1-iCell > jCell - JCl){
+	  Imax_SE = ICl - 1;                       /* limit Imax */
+
+	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	} else {
+	  Jmin_SE = JCl;                            /* limit Jmin */
+
+	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */
+	}
+      }
+	
+    } else if (jCell>JCu-rings && jCell <= JCu){	        // Case C (JCu-rings < jCell <= JCu)
+      // North Bnd influence
+      if (W_NorthBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
+	Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+
+	if (IsStencilExtended){
+	  /* extend Jmin */
+	  Jmin_SW -= 1;
+	  Jmin_S  -= 1;
+	  Jmin_SE -= 1;
+	}
+      } else if (W_NorthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICl -1){
+	  Jmax_NW = Jmax_N = JCu;                 /* limit Jmax */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	  }
+	} else {
+	  Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1; 
+	  } 
+	}
+      } else if (NorthBnd.IsReconstructionStencilAffected()){
+	if (ICl-1-iCell > JCu-jCell){
+	  Imax_NE = ICl - 1;                       /* limit Imax */
+	    
+	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	} else {
+	  Jmax_NE = JCu;                            /* limit Jmax */
+
+	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */
+	}
+      }
+
+    } else if (jCell > JCu){	                 // Case D (jCell > JCu)
+      // North Bnd influence
+      if (W_NorthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICl - 1){
+	  Jmin_SW = Jmin_S = JCu+1;     /* limit Jmin */
+
+	  if (IsStencilExtended){
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	    /* ensure valid Jmax */
+	    Jmax_NW = min(Jmax_NW, JCu+Ng);
+	    Jmax_N  = min(Jmax_N, JCu+Ng);	    
+	  }
+	} else {
+	  Jmin_SW = Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
+
+	  if (IsStencilExtended){
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;
+	    /* ensure valid Jmax */
+	    Jmax_NW = min(Jmax_NW, JCu+Ng);
+	    Jmax_N  = min(Jmax_N, JCu+Ng);
+	    Jmax_NE = min(Jmax_NE, JCu+Ng);
+	  }
+	}
+      } else if (N_WestBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCu + 1){
+	  Imax_NE = Imax_E = ICl-1;     /* limit Imax */
+
+	  if (IsStencilExtended){
+	    /* extend Imin */
+	    Imin_NW -= 1;
+	    Imin_W  -= 1;
+	    /* ensure valid Imin */
+	    Imin_NW = max(Imin_NW, 0);
+	    Imin_W  = max(Imin_W, 0);
+	  }
+	} else {
+	  Imax_NE = Imax_E = Imax_SE = ICl-1;     /* limit Imax */
+
+	  if (IsStencilExtended){
+	    /* extend Imin */
+	    Imin_NW -= 1;
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;
+	    /* ensure valid Imin */
+	    Imin_NW = max(Imin_NW, 0);
+	    Imin_W  = max(Imin_W, 0);
+	    Imin_SW = max(Imin_SW, 0);
+	  }
+	}
+      }
+    }	// endif (Case D)
+
+  } else if (iCell < ICl + rings) {
+
+    // ==== Cover cells with (ICl <= iCell < ICl+rings) ====
+
+    if ( jCell < JCl){	         // Case A
+      // West Bnd influence
+      if (S_WestBnd.IsReconstructionStencilAffected() && WestBnd.IsReconstructionStencilAffected()){
+	Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+
+	if (IsStencilExtended){
+	  /* extend Imax */
+	  Imax_SE += 1;
+	  Imax_E  += 1;
+	  Imax_NE += 1;
+	}
+      } else if (S_WestBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCl -1){
+	  Imin_SW = Imin_W = ICl;     /* limit Imin */
+	    
+	  if (IsStencilExtended){
+	    /* extend Imax */
+	    Imax_SE += 1;
+	    Imax_E  += 1;
+	  }
+	} else {
+	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+	    
+	  if (IsStencilExtended){
+	    /* extend Imax */
+	    Imax_SE += 1;
+	    Imax_E  += 1;
+	    Imax_NE += 1;  
+	  }  
+	}
+      } else if (WestBnd.IsReconstructionStencilAffected()){
+	if (iCell-ICl > JCl-1-jCell){
+	  Imin_NW = ICl;              /* limit Imin */
+	  
+	  /* DON'T extend Imax due to smoothness indicator calculation reasons */
+	} else {
+	  // South Bnd influence
+	  Jmax_NW = JCl - 1;                     /* limit Jmax */
+	    
+	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */
+	}
+      }
+
+    } else if (jCell < JCl + rings){   // Case B
+      if (WestBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
+	Imin_SW = Imin_W = Imin_NW = ICl;      /* limit Imin */
+	Jmin_SW = Jmin_S = Jmin_SE = JCl;      /* limit Jmin */
+
+	if (IsStencilExtended){
+	  /* extend Imax */
+	  Imax_SE += 1;
+	  Imax_E  += 1;
+	  Imax_NE += 1;
+	  
+	  /* extend Jmax */
+	  Jmax_NW += 1; 
+	  Jmax_N  += 1;
+	  Jmax_NE += 1;
+	}
+      } else if (WestBnd.IsReconstructionStencilAffected() && S_WestBnd.IsReconstructionStencilAffected()){
+	Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+  
+	if (IsStencilExtended){
+	  /* extend Imax */
+	  Imax_SE += 1;
+	  Imax_E  += 1;
+	  Imax_NE += 1;	
+	}  
+      } else if (SouthBnd.IsReconstructionStencilAffected() && W_SouthBnd.IsReconstructionStencilAffected()){
+	Jmin_SW = Jmin_S = Jmin_SE = JCl;     /* limit Jmin */
+
+	if (IsStencilExtended){
+	  /* extend Jmax */
+	  Jmax_NW += 1;
+	  Jmax_N  += 1;
+	  Jmax_NE += 1;
+	}
+      } else if (WestBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCl){
+	  Imin_W = Imin_NW = ICl;             /* limit Imin */
+
+	  if (IsStencilExtended){
+	    /* extend Imax */
+	    Imax_NE += 1;
+	    Imax_E  += 1;
+	  }
+	} else {
+	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+	    
+	  if (IsStencilExtended){
+	    /* extend Imax */
+	    Imax_SE += 1;
+	    Imax_E  += 1;
+	    Imax_NE += 1;
+	  } 
+	}
+      } else if (SouthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICl){
+	  Jmin_S = Jmin_SE = JCl;              /* limit Jmin */
+
+	  if (IsStencilExtended){
+	    /* extend Jmax */
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;
+	  }
+	} else {
+	  Jmin_SW = Jmin_S = Jmin_SE = JCl;              /* limit Jmin */
+
+	  if (IsStencilExtended){
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;
+	  }
+	}
+      } else if (W_SouthBnd.IsReconstructionStencilAffected()){ // S_WestBnd is also affecting the stencil!
+	if (iCell > jCell){
+	  // Limit to West side
+	  Imin_SW = ICl;
+	  // DON'T extend stencil
+	} else {
+	  // Limit to South side
+	  Jmin_SW = JCl;
+	  // DON'T extend stencil
+	}
+      }
+
+    } else if (jCell <= JCu - rings){  // Case C 
+      // West Bnd influence
+      if (WestBnd.IsReconstructionStencilAffected()){
+	Imin_NW = Imin_W = Imin_SW = ICl;              /* limit Imin */
+
+	if (IsStencilExtended){
+	  /* extend Imax */
+	  Imax_NE += 1;
+	  Imax_E  += 1;
+	  Imax_SE += 1;
+	}
+      }
+
+    } else if (jCell <= JCu){	         // Case D
+      if (WestBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
+	Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
+	Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+
+	if (IsStencilExtended){
+	  /* extend Imax */
+	  Imax_NE += 1;
+	  Imax_E  += 1;
+	  Imax_SE += 1;
+	  
+	  /* extend Jmin */
+	  Jmin_SW -= 1;
+	  Jmin_S  -= 1;
+	  Jmin_SE -= 1;
+	}
+
+      } else if (WestBnd.IsReconstructionStencilAffected() && N_WestBnd.IsReconstructionStencilAffected()){
+	Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
+
+	if (IsStencilExtended){
+	  /* extend Imax */
+	  Imax_NE += 1;
+	  Imax_E  += 1;
+	  Imax_SE += 1;	
+	}  
+      } else if (NorthBnd.IsReconstructionStencilAffected() && W_NorthBnd.IsReconstructionStencilAffected()){
+	Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+
+	if (IsStencilExtended){
+	  /* extend Jmin */
+	  Jmin_SW -= 1;
+	  Jmin_S  -= 1;
+	  Jmin_SE -= 1;
+	}
+      } else if (WestBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCu){
+	  Imin_W = Imin_SW = ICl;             /* limit Imin */
+	    
+	  if (IsStencilExtended){
+	    /* extend Imax */
+	    Imax_E  += 1;
+	    Imax_SE += 1;	 
+	  } 	    
+	} else {
+	  Imin_NW = Imin_W = Imin_SW = ICl;             /* limit Imin */
+	    
+	  if (IsStencilExtended){
+	    /* extend Imax */
+	    Imax_NE += 1;
+	    Imax_E  += 1;
+	    Imax_SE += 1;	 
+	  } 	    
+	}
+      } else if (NorthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICl){
+	  Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmin */
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;	 
+	  }   	    
+	} else {
+	  Jmax_NW = Jmax_N = Jmax_NE = JCu;             /* limit Jmax */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;	 
+	  }   
+	}
+      } else if (W_NorthBnd.IsReconstructionStencilAffected()){ // N_WestBnd also affects the stencil
+	if (iCell-ICl > JCu-jCell){
+	  // Limit to West side
+	  Imin_NW = ICl;
+	  // DON'T extend stencil
+	} else {
+	  // Limit to North side
+	  Jmax_NW = JCu;
+	  // DON'T extend stencil
+	}
+      }
+
+    } else {			         // Case E (jCell > JCu)
+      // West Bnd influence
+      if (N_WestBnd.IsReconstructionStencilAffected() && WestBnd.IsReconstructionStencilAffected()){
+	Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+	  
+	if (IsStencilExtended){
+	  /* extend Imax */
+	  Imax_SE += 1;
+	  Imax_E  += 1;
+	  Imax_NE += 1;	
+	}  
+      } else if (N_WestBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCu + 1){
+	  Imin_W = Imin_NW = ICl;     /* limit Imin */
+	    
+	  if (IsStencilExtended){
+	    /* extend Imax */
+	    Imax_E  += 1;
+	    Imax_NE += 1;	 
+	  } 	    
+	} else {
+	  Imin_SW = Imin_W = Imin_NW = ICl;     /* limit Imin */
+
+	  if (IsStencilExtended){	    
+	    /* extend Imax */
+	    Imax_SE += 1;
+	    Imax_E  += 1;
+	    Imax_NE += 1;	 
+	  } 
+	}
+      } else if (WestBnd.IsReconstructionStencilAffected()){
+	if (iCell-ICl > jCell-(JCu+1)){	    
+	  Imin_SW = ICl;                         /* limit Imin */
+
+	  /* DON'T extend Imax due to smoothness indicator calculation reasons */
+	} else {
+	  Jmin_SW = JCu + 1;                     /* limit Jmin */
+
+	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */
+	}
+      }
+    }	// endif (Case E)
+
+  } else if (iCell <= ICu - rings) {
+
+    // ==== Cover cells with (ICl+rings <= iCell <= ICu-rings) ====
+
+    if ( jCell < JCl + rings){         // Case A
+      // South Bnd influence
+      if (SouthBnd.IsReconstructionStencilAffected()){
+	Jmin_SW = Jmin_S = Jmin_SE = JCl;     /* limit Jmin */
+
+	if (IsStencilExtended){
+	  /* extend Jmax */
+	  Jmax_NW += 1;
+	  Jmax_N  += 1;
+	  Jmax_NE += 1;
+	}
+      }
+
+    } else if (jCell > JCu - rings){   // Case B
+      // North Bnd influence
+      if (NorthBnd.IsReconstructionStencilAffected()){
+	Jmax_NW = Jmax_N = Jmax_NE = JCu;     /* limit Jmax */
+
+	if (IsStencilExtended){
+	  /* extend Jmin */
+	  Jmin_SW -= 1;
+	  Jmin_S  -= 1;
+	  Jmin_SE -= 1;	
+	}  
+      }
+    }	// endif (Case B)
+
+  } else if (iCell <= ICu) {
+
+    // ==== Cover cells with (ICu-rings < iCell <= ICu) ====
+
+    if ( jCell < JCl){	         // Case A
+      // East Bnd influence
+      if (S_EastBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
+	Imax_NE = Imax_E = Imax_SE = ICu;     /* limit Imax */
+
+	if (IsStencilExtended){
+	  /* extend Imin */
+	  Imin_NW -= 1;
+	  Imin_W  -= 1;
+	  Imin_SW -= 1;
+	}
+      } else if (S_EastBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCl-1){
+	  Imax_E = Imax_SE = ICu;     /* limit Imax */
+
+	  if (IsStencilExtended){
+	    /* extend Imin */
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;  
+	  } 
+	} else {
+	  Imax_NE = Imax_E = Imax_SE = ICu;     /* limit Imax */
+
+	  if (IsStencilExtended){
+	    /* extend Imin */
+	    Imin_NW -= 1;
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;
+	  }
+	}
+      } else if (EastBnd.IsReconstructionStencilAffected()){
+	if (ICu-iCell > JCl-1-jCell){
+	  Imax_NE = ICu;                         /* limit Imax */
+
+	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	} else {
+	  // South Bnd influence
+	  Jmax_NE = JCl - 1;                     /* limit Jmax */
+
+	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */	  
+	}
+      }
+
+    } else if (jCell < JCl + rings){   // Case B
+      if (SouthBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
+	Jmin_SW = Jmin_S = Jmin_SE = JCl;        /* limit Jmin */
+	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+
+	if (IsStencilExtended){
+	  /* extend Jmax */
+	  Jmax_NW += 1;
+	  Jmax_N  += 1;
+	  Jmax_NE += 1;
+
+	  /* extend Imin */
+	  Imin_NW -= 1;
+	  Imin_W  -= 1;
+	  Imin_SW -= 1;
+	}
+      } else if (EastBnd.IsReconstructionStencilAffected()  && S_EastBnd.IsReconstructionStencilAffected()){
+	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+
+	if (IsStencilExtended){
+	  /* extend Imin */
+	  Imin_NW -= 1;
+	  Imin_W  -= 1;
+	  Imin_SW -= 1;
+	}
+      } else if (SouthBnd.IsReconstructionStencilAffected() && E_SouthBnd.IsReconstructionStencilAffected()){
+	Jmin_SW = Jmin_S = Jmin_SE = JCl;        /* limit Jmin */
+
+	if (IsStencilExtended){
+	  /* extend Jmax */
+	  Jmax_NW += 1;
+	  Jmax_N  += 1;
+	  Jmax_NE += 1; 
+	}
+      } else if (EastBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCl){
+	  Imax_NE = Imax_E = ICu;              /* limit Imax */
+
+	  if (IsStencilExtended){
+	    /* extend Imin */
+	    Imin_NW -= 1;
+	    Imin_W  -= 1;
+	  }
+	} else {
+	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+
+	  if (IsStencilExtended){
+	    /* extend Imin */
+	    Imin_NW -= 1;
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;
+	  }
+	}
+      } else if (SouthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICu){
+	  Jmin_SW = Jmin_S = JCl;     /* limit Jmin */
+
+	  if (IsStencilExtended){
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	  }
+	} else {
+	  Jmin_SW = Jmin_S = Jmin_SE = JCl;    /* limit Jmin */
+
+	  if (IsStencilExtended){
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;  
+	  }   
+	}
+      } else if (E_SouthBnd.IsReconstructionStencilAffected()){ // S_EastBnd also affects the stencil
+	if ( (ICu-iCell) > (jCell - JCl) ){
+	  // Limit to East side
+	  Imax_SE = ICu;
+	  // DON'T extend stencil
+	} else {
+	  // Limit to South side 
+	  Jmin_SE = JCl;
+	  // DON'T extend stencil
+	}
+      }
+
+    } else if (jCell <= JCu - rings){  // Case C 
+      if (EastBnd.IsReconstructionStencilAffected()){
+	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+
+	if (IsStencilExtended){
+	  /* extend Imin */
+	  Imin_NW -= 1;
+	  Imin_W  -= 1;
+	  Imin_SW -= 1;
+	}
+      }
+
+    } else if (jCell <= JCu){	         // Case D
+      if (EastBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
+	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+	Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
+
+	if (IsStencilExtended){
+	  /* extend Imin */
+	  Imin_NW -= 1;
+	  Imin_W  -= 1;
+	  Imin_SW -= 1;	  
+
+	  /* extend Jmin */
+	  Jmin_SW -= 1;
+	  Jmin_S  -= 1;
+	  Jmin_SE -= 1;
+	}
+
+      } else if (EastBnd.IsReconstructionStencilAffected()  && N_EastBnd.IsReconstructionStencilAffected()){
+	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+
+	if (IsStencilExtended){
+	  /* extend Imin */
+	  Imin_NW -= 1;
+	  Imin_W  -= 1;
+	  Imin_SW -= 1;
+	}
+      } else if (NorthBnd.IsReconstructionStencilAffected() && E_NorthBnd.IsReconstructionStencilAffected()){
+	Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
+
+	if (IsStencilExtended){
+	  /* extend Jmin */
+	  Jmin_SW -= 1;
+	  Jmin_S  -= 1;
+	  Jmin_SE -= 1;
+	}
+      } else if (EastBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCu){
+	  Imax_E = Imax_SE = ICu;             /* limit Imax */
+
+	  if (IsStencilExtended){
+	    /* extend Imin */
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;
+	  }
+	} else {
+	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+
+	  if (IsStencilExtended){
+	    /* extend Imin */
+	    Imin_NW -= 1;
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;
+	  }
+	}
+      } else if (NorthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICu){
+	  Jmax_NW = Jmax_N = JCu;        /* limit Jmax */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	  }
+	} else {
+	  Jmax_NW = Jmax_N = Jmax_NE = JCu;        /* limit Jmax */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;
+	  }
+	}
+      } else if (E_NorthBnd.IsReconstructionStencilAffected()){ // N_EastBnd also affects the stencil
+	if (ICu-iCell > JCu-jCell){
+	  // Limit to East side
+	  Imax_NE = ICu;
+	  // DON'T extend stencil
+	} else {
+	  // Limit to North side
+	  Jmax_NE = JCu;
+	  // DON'T extend stencil
+	}
+      }
+
+    } else {			         // Case E (jCell > JCu)
+      // East Bnd influence
+      if (N_EastBnd.IsReconstructionStencilAffected() && EastBnd.IsReconstructionStencilAffected()){
+	Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+	  
+	if (IsStencilExtended){
+	  /* extend Imin */
+	  Imin_NW -= 1;
+	  Imin_W  -= 1;
+	  Imin_SW -= 1;	
+	}  
+      } else if (N_EastBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCu + 1){
+	  Imax_NE = Imax_E = ICu;        /* limit Imax */
+	    
+	  if (IsStencilExtended){
+	    /* extend Imin */
+	    Imin_NW -= 1;
+	    Imin_W  -= 1;  
+	  }  
+	} else {
+	  Imax_NE = Imax_E = Imax_SE = ICu;        /* limit Imax */
+	    
+	  if (IsStencilExtended){
+	    /* extend Imin */
+	    Imin_NW -= 1;
+	    Imin_W  -= 1;
+	    Imin_SW -= 1;
+	  }
+	}
+      } else if (EastBnd.IsReconstructionStencilAffected()){
+	if (ICu - iCell > jCell - (JCu+1)) {
+	  Imax_SE = ICu;                         /* limit Imax */
+	    
+	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	} else {
+	  // North Bnd influence
+	  Jmin_SE = JCu + 1;                     /* limit Jmin */
+	    
+	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */
+	}
+      }
+    }// endif (Case E)
 
   } else {
 
-    // Additional equations come from extending the stencil in the opposite direction of the constrained boundary
+    // ==== Cover cells with (iCell > ICu) ====
+    if ( jCell < JCl){	         // Case A
+      // South Bnd influence
+      if (E_SouthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICu + 1){
+	  Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
 
-    // Check WEST boundary
-    if (_constrained_WEST_reconstruction && Imin < ICl){
-      Imin = ICl;		/* limit Imin */
-      
-      Imax += 1;		/* extend Imax */
-    } 
-    
-    // Check EAST boundary
-    if (_constrained_EAST_reconstruction && Imax > ICu){
-      Imax = ICu;		/* limit Imax */
+	  if (IsStencilExtended){
+	    /* extend Jmin */
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;
+	    /* ensure valid Jmin */
+	    Jmin_S  = max(Jmin_S, 0);
+	    Jmin_SE = max(Jmin_SE, 0);
+	  }
+	} else {
+	  Jmax_NW = Jmax_N = Jmax_NE = JCl-1;     /* limit Jmax */
 
-      Imin -= 1;                /* extend Imin */
-    } 
-    
-    // Check NORTH boundary
-    if (_constrained_NORTH_reconstruction && Jmax > JCu){
-      Jmax = JCu;		/* limit Jmax */
+	  if (IsStencilExtended){
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;
+	    /* ensure valid Jmin */
+	    Jmin_SW = max(Jmin_SW, 0);
+	    Jmin_S  = max(Jmin_S, 0);
+	    Jmin_SE = max(Jmin_SE, 0);
+	  }
+	}
+      } else if (S_EastBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCl - 1){
+	  Imin_W = Imin_SW = ICu+1;              /* limit Imin */
 
-      Jmin -= 1;                /* extend Jmin */
-    } 
-    
-    // Check SOUTH boundary
-    if (_constrained_SOUTH_reconstruction && Jmin < JCl){
-      Jmin = JCl;		/* limit Jmin */
+	  if (IsStencilExtended){
+	    /* extend Imax */
+	    Imax_E  += 1;
+	    Imax_SE += 1;
+	    /* ensure valid Imax */
+	    Imax_E  = min(Imax_E, ICu+Ng);
+	    Imax_SE = min(Imax_SE, ICu+Ng);	    
+	  }
+	} else {
+	  Imin_NW = Imin_W = Imin_SW = ICu+1;    /* limit Imin */
 
-      Jmax += 1;                /* extend Jmax */
-    }
+	  if (IsStencilExtended){
+	    /* extend Imax */
+	    Imax_NE += 1;
+	    Imax_E  += 1;
+	    Imax_SE += 1;
+	    /* ensure valid Imax */
+	    Imax_NE = min(Imax_NE, ICu+Ng);	    
+	    Imax_E  = min(Imax_E, ICu+Ng);
+	    Imax_SE = min(Imax_SE, ICu+Ng);	    
+	  }
+	}
+      }
 
-  } // endif
+    } else if (jCell < JCl+rings){     // Case B
+      // South Bnd influence
+      if (E_SouthBnd.IsReconstructionStencilAffected() && SouthBnd.IsReconstructionStencilAffected()){
+	Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+	  
+	if (IsStencilExtended){
+	  /* extend Jmax */
+	  Jmax_NW += 1;
+	  Jmax_N  += 1;
+	  Jmax_NE += 1;	
+	}  
+      } else if (E_SouthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICu + 1){
+	  Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmax */
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;	 
+	  } 
+	} else {
+	  Jmin_SW = Jmin_S = Jmin_SE = JCl;         /* limit Jmin */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;	 
+	  } 
+	}
+      } else if (SouthBnd.IsReconstructionStencilAffected()){
+	if (iCell - (ICu+1) > jCell-JCl) {
+	  // East Bnd influence
+	  Imin_SW = ICu + 1;                       /* limit Imin */
+	    
+	  /* DON'T extend Imax due to smoothness indicator calculation reasons */
+	} else {
+	  Jmin_SW = JCl;                            /* limit Jmin */
+	    
+	  /* DON'T extend Jmax due to smoothness indicator calculation reasons */	  
+	}
+      } // endif (Case B)
 
+    } else if (jCell>JCu-rings && jCell <= JCu){	        // Case C (JCu-rings < jCell <= JCu)
+      // North Bnd influence
+      if (E_NorthBnd.IsReconstructionStencilAffected() && NorthBnd.IsReconstructionStencilAffected()){
+	Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+	  
+	if (IsStencilExtended){
+	  /* extend Jmin */
+	  Jmin_SW -= 1;
+	  Jmin_S  -= 1;
+	  Jmin_SE -= 1;	
+	}  
+      } else if (E_NorthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICu + 1){
+	  Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmin */
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;	 
+	  } 
+	} else {
+	  Jmax_NW = Jmax_N = Jmax_NE = JCu;         /* limit Jmax */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmin */
+	    Jmin_SW -= 1;
+	    Jmin_S  -= 1;
+	    Jmin_SE -= 1;	 
+	  } 
+	}
+      } else if (NorthBnd.IsReconstructionStencilAffected()){
+	if (iCell - (ICu+1) > JCu - jCell) {
+	  // East Bnd influence
+	  Imin_NW = ICu + 1;                        /* limit Imax */
+	    
+	  /* DON'T extend Imin due to smoothness indicator calculation reasons */
+	} else {
+	  Jmax_NW = JCu;                         /* limit Jmax */
+	    
+	  /* DON'T extend Jmin due to smoothness indicator calculation reasons */ 
+	}
+      } // endif (Case C)
 
-  /* Form stencil */
+    } else if (jCell > JCu){	                        // Case D (jCell > JCu)
+      // North Bnd influence
+      if (E_NorthBnd.IsReconstructionStencilAffected()){
+	if (iCell == ICu + 1){
+	  Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
+
+	  if (IsStencilExtended){
+	    /* extend Jmax */
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;
+	    /* ensure valid Jmax */
+	    Jmax_N  = min(Jmax_N, JCu+Ng);
+	    Jmax_NE = min(Jmax_NE, JCu+Ng);	    
+	  }
+	} else {
+	  Jmin_SW = Jmin_S = Jmin_SE = JCu+1;     /* limit Jmin */
+	    
+	  if (IsStencilExtended){
+	    /* extend Jmax */
+	    Jmax_NW += 1;
+	    Jmax_N  += 1;
+	    Jmax_NE += 1;
+	    /* ensure valid Jmax */
+	    Jmax_NW = min(Jmax_NW, JCu+Ng);	    
+	    Jmax_N  = min(Jmax_N, JCu+Ng);
+	    Jmax_NE = min(Jmax_NE, JCu+Ng);	    
+	  }
+	}
+      } else if (N_EastBnd.IsReconstructionStencilAffected()){
+	if (jCell == JCu + 1){
+	  Imin_NW = Imin_W = ICu + 1;   /* limit Imin */
+
+	  if (IsStencilExtended){
+	    /* extend Imax */
+	    Imax_NE += 1;
+	    Imax_E  += 1;
+	    /* ensure valid Imax */
+	    Imax_NE = min(Imax_NE, ICu+Ng);
+	    Imax_E  = min(Imax_E, ICu+Ng);
+	  }
+	} else {
+	  Imin_NW = Imin_W = Imin_SW = ICu + 1;   /* limit Imin */
+
+	  if (IsStencilExtended){
+	    /* extend Imax */
+	    Imax_NE += 1;
+	    Imax_E  += 1;
+	    Imax_SE += 1;
+	    /* ensure valid Imax */
+	    Imax_NE = min(Imax_NE, ICu+Ng);
+	    Imax_E  = min(Imax_E, ICu+Ng);
+	    Imax_SE = min(Imax_SE, ICu+Ng);
+	  }
+	}
+      }
+    }	// endif (Case D)
+
+  } // endif (iCell)
+
+  /* ===== Form stencil ===== */
   i_index.push_back(iCell);
   j_index.push_back(jCell);
 
-  for (i=Imin; i<=Imax; ++i){
-    for (j=Jmin; j<=Jmax; ++j){
+  // Add cells from NW region
+  for (i=Imin_NW; i<=iCell-1; ++i){
+    for (j=jCell+1; j<=Jmax_NW; ++j){
+      i_index.push_back(i);
+      j_index.push_back(j);
+    }// endif
+  }// endif
 
-      if (  i!=iCell || j!=jCell ){
-	i_index.push_back(i);
-	j_index.push_back(j);
-      }//endif
+  // Add cells from W region
+  for (i=Imin_W; i<=iCell-1; ++i){
+    i_index.push_back(i);
+    j_index.push_back(jCell);
+  }// endif
 
-    }// endfor
-  }// endfor
+  // Add cells from SW region
+  for (i=Imin_SW; i<=iCell-1; ++i){
+    for (j=Jmin_SW; j<=jCell-1; ++j){
+      i_index.push_back(i);
+      j_index.push_back(j);
+    }// endif
+  }// endif
+
+  // Add cells from S region
+  for (j=Jmin_S; j<=jCell-1; ++j){
+    i_index.push_back(iCell);
+    j_index.push_back(j);
+  }// endif
+
+  // Add cells from SE region
+  for (i=iCell+1; i<=Imax_SE; ++i){
+    for (j=Jmin_SE; j<=jCell-1; ++j){
+      i_index.push_back(i);
+      j_index.push_back(j);
+    }// endif
+  }// endif
+
+  // Add cells from E region
+  for (i=iCell+1; i<=Imax_E; ++i){
+    i_index.push_back(i);
+    j_index.push_back(jCell);
+  }// endif
+
+  // Add cells from NE region
+  for (i=iCell+1; i<=Imax_NE; ++i){
+    for (j=jCell+1; j<=Jmax_NE; ++j){
+      i_index.push_back(i);
+      j_index.push_back(j);
+    }// endif
+  }// endif
+
+  // Add cells from N region
+  for (j=jCell+1; j<=Jmax_N; ++j){
+    i_index.push_back(iCell);
+    j_index.push_back(j);
+  }// endif
 
 }
 
-/*! 
- * Write the 'i' and 'j' indexes of the cells that are part of
- * the smoothness indicator calculation stencil of cell (iCell,jCell).
- * Use the number of rings smoothness indicator set in the class to 
- * determine how far the stencil extends.
- * This routine doesn't modify the stencil due to existence 
- * of curved boundaries.
- * The indexes are written in the i_index and j_index containers.
- * Because these containers might be larger than needed, 
- * the StencilSize_SmoothnessIndicator variable is used for storing 
- * the smoothness indicator stencil size.
- *
- * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
- */
 template<class SOLN_STATE> inline
-void HighOrder2D<SOLN_STATE>::SetSmoothnessIndicatorStencil(const int &iCell, const int &jCell){
+void HighOrder2D<SOLN_STATE>::displayDeviatedReconstructionStencil(ostream & out,
+								   const int &iCell, const int &jCell,
+								   const int &rings) const{
 
-  // Call set central stencil
-  SetCentralStencil(iCell,jCell,i_index,j_index,rings_SI,StencilSize_SmoothnessIndicator);
-}
+  // Set local variables
+  int i,j;
+  IndexType i_index, j_index;
+  char** StencilMap;
 
-/*! 
- * Write the 'i' and 'j' indexes of the cells that are part of
- * the smoothness indicator calculation stencil of cell (iCell,jCell),
- * which is affected by the presence of a constrained boundary condition.
- * Use the number of rings smoothness indicator set in the class to 
- * determine how far the stencil extends.
- * The indexes are written in the i_index_ave and j_index_ave containers.
- *
- * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
- */
-template<class SOLN_STATE> inline
-void HighOrder2D<SOLN_STATE>::SetSmoothnessIndicatorStencilForConstrainedReconstruction(const int &iCell,
-											const int &jCell){
-
-  // Reset indexes
-  i_index_ave.clear();
-  j_index_ave.clear();
-  
-  int i,j, Imin, Imax, Jmin, Jmax;
-
-  /* Set Imin, Imax, Jmin, Jmax for a central stencil with the number of rings dictated by rings_SI. */
-  Imin = iCell-rings_SI; Imax = iCell+rings_SI;
-  Jmin = jCell-rings_SI; Jmax = jCell+rings_SI;
-
-  if (CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL == OFF || 
-      CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS ) {
-
-    // Don't enlarge the stencil, only cut off the ghost cells associated with constrained boundaries.
-    
-    // Check WEST boundary
-    if (_constrained_WEST_reconstruction && Imin < ICl){
-      Imin = ICl;		/* limit Imin */
-    } 
-    
-    // Check EAST boundary
-    if (_constrained_EAST_reconstruction && Imax > ICu){
-      Imax = ICu;		/* limit Imax */
-    } 
-    
-    // Check NORTH boundary
-    if (_constrained_NORTH_reconstruction && Jmax > JCu){
-      Jmax = JCu;		/* limit Jmax */
-    } 
-    
-    // Check SOUTH boundary
-    if (_constrained_SOUTH_reconstruction && Jmin < JCl){
-      Jmin = JCl;		/* limit Jmin */
+  // Allocate StencilMap memory
+  StencilMap = new char* [9];
+  for (i = 0; i<9; ++i){
+    StencilMap[i] = new char [9];
+    // Initialize StencilMap to emply character
+    for (j = 0; j<9; ++j){
+      StencilMap[i][j] = ' ';
     }
+  }
 
+  // Mark the reconstructed cell with the '@' sign
+  StencilMap[4][4] = '@';
+
+  // Determine the deviated stencil for cell (iCell,jCell)
+  SetDeviatedReconstructionStencil(iCell, jCell, i_index, j_index, rings);  
+
+  // Mark the presence of each neighbour cell in the stencil with '*' sign
+  for (i = 1; i<i_index.size(); ++i){
+    StencilMap[4 + (i_index[i] - iCell)][4 + (j_index[i] - jCell)] = '*';
+  }
+
+  // Output StencilMap
+  for (j = 8; j>=0; --j){
+    for (i = 0; i<=8; ++i){
+      out << StencilMap[i][j];
+    }
+    out << endl;
+  }
+
+}
+
+/*!
+ * Return the type of reconstruction for a given cell (iCell,jCell).
+ */
+template<class SOLN_STATE> inline
+char HighOrder2D<SOLN_STATE>::getCellReconstructionType(const int& iCell, const int& jCell) const {
+  if (ReconstructionTypeMap != NULL){
+    return ReconstructionTypeMap[iCell][jCell];
   } else {
-
-    // Enlarge the stencil in the opposite direction of the constrained boundary,
-    // to be consistent with the one used for the constrained reconstruction
-
-    // Check WEST boundary
-    if (_constrained_WEST_reconstruction && Imin < ICl){
-      Imin = ICl;		/* limit Imin */
-      
-      Imax += 1;		/* extend Imax */
-    } 
-    
-    // Check EAST boundary
-    if (_constrained_EAST_reconstruction && Imax > ICu){
-      Imax = ICu;		/* limit Imax */
-
-      Imin -= 1;                /* extend Imin */
-    } 
-    
-    // Check NORTH boundary
-    if (_constrained_NORTH_reconstruction && Jmax > JCu){
-      Jmax = JCu;		/* limit Jmax */
-
-      Jmin -= 1;                /* extend Jmin */
-    } 
-    
-    // Check SOUTH boundary
-    if (_constrained_SOUTH_reconstruction && Jmin < JCl){
-      Jmin = JCl;		/* limit Jmin */
-
-      Jmax += 1;                /* extend Jmax */
-    }
-
-  } // endif
-
-
-  /* Form stencil */
-  i_index_ave.push_back(iCell);
-  j_index_ave.push_back(jCell);
-
-  for (i=Imin; i<=Imax; ++i){
-    for (j=Jmin; j<=Jmax; ++j){
-
-      if (  i!=iCell || j!=jCell ){
-	i_index_ave.push_back(i);
-	j_index_ave.push_back(j);
-      }//endif
-
-    }// endfor
-  }// endfor
-
+    return 'n';
+  }
 }
-
 
 /*! 
  * Compute the gradient at an inter-cellular face using the first 
@@ -3007,6 +4305,7 @@ void HighOrder2D<SOLN_STATE>::ComputeSolutionErrors(const Function_Object_Type F
   int i,j;
   bool _integrate_with_curved_boundaries(false);
   double ErrorTemp;
+  char Case;
   
   /* Algorithm:
      1. Decide where integration for straight quads can be used.
@@ -3016,6 +4315,18 @@ void HighOrder2D<SOLN_STATE>::ComputeSolutionErrors(const Function_Object_Type F
      2. Integrate over straight quads.
      3. Integrate over the curved cells if necessary.
   */
+
+  /* Possible cases:
+     
+     a. Error based on entropy:  parameter = 0;
+     b. Error based on a particular parameter:  parameter = 1-NumberOfVariables();
+   */
+
+  if (parameter == 0){
+    Case = 'a';
+  } else if (parameter >= 1 && parameter <= NumberOfVariables() ){
+    Case = 'b';
+  }
 
   // Decide the range of integration
   if (Geom->IsHighOrderBoundary()){
@@ -3073,18 +4384,32 @@ void HighOrder2D<SOLN_STATE>::ComputeSolutionErrors(const Function_Object_Type F
   // Sum up the contribution from each straight quad cell
   for (j = StartJ_Int; j <= EndJ_Int; ++j){
     for (i = StartI_Int; i <= EndI_Int; ++i, ++CellsUsed){
-      ErrorTemp = ComputeSolutionErrorL1(i,j,
-					 FuncObj,
-					 parameter,
-					 digits);
- 
+
+      switch (Case){
+      case 'a': 
+	ErrorTemp = ComputeSolutionEntropyErrorL1(i,j,
+						  FuncObj,
+						  digits);
+
+	ErrorL2 += ComputeSolutionEntropyErrorL2(i,j,
+						 FuncObj,
+						 digits);
+	break;
+	
+      case 'b':
+	ErrorTemp = ComputeSolutionErrorL1(i,j,
+					   FuncObj,
+					   parameter,
+					   digits);
+
+	ErrorL2 += ComputeSolutionErrorL2(i,j,
+					  FuncObj,
+					  parameter,
+					  digits);
+	break;
+      }
+
       ErrorL1 += ErrorTemp;
-
-      ErrorL2 += ComputeSolutionErrorL2(i,j,
-					FuncObj,
-					parameter,
-					digits);
-
       ErrorMax = max(ErrorMax, ErrorTemp/Geom->CellArea(i,j));
 
       TotalBlockArea += Geom->CellArea(i,j);
@@ -3248,6 +4573,31 @@ double HighOrder2D<SOLN_STATE>::ComputeSolutionErrorL1(const int &iCell, const i
 }
 
 /*! 
+ * Compute the integral of the entropy error function between
+ * a reference solution and the reconstructed 
+ * polynomial over the domain of cell (iCell,jCell).
+ * This result is used in the evaluation of L1 error norm.
+ */
+template<class SOLN_STATE>
+template<typename Function_Object_Type> inline
+double HighOrder2D<SOLN_STATE>::ComputeSolutionEntropyErrorL1(const int &iCell, const int &jCell,
+							      const Function_Object_Type FuncObj,
+							      const int & digits){
+
+  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
+
+  return IntegrateOverTheCell(iCell,jCell,
+			      error_function(FuncObj,
+					     wrapped_soln_block_member_function(this,
+										&ClassType::SolutionEntropyAtCoordinates,
+										iCell, jCell,
+										_dummy_result),
+					     _dummy_result),
+			      digits, _dummy_result);
+
+}
+
+/*! 
  * Compute the integral of the error function between the
  * polynomial reconstructions of two high-order variables
  * over the domain of cell (iCell,jCell).
@@ -3303,6 +4653,30 @@ double HighOrder2D<SOLN_STATE>::ComputeSolutionErrorL2(const int &iCell, const i
 											  iCell, jCell,
 											  parameter,
 											  _dummy_result),
+						    _dummy_result),
+			      digits, _dummy_result);
+}
+
+/*! 
+ * Compute the integral of the squared entropy error function
+ * between a reference solution and the reconstructed
+ * polynomial over the domain of cell (iCell,jCell).
+ * This result is used in the evaluation of L2 error norm.
+ */
+template<class SOLN_STATE> 
+template<typename Function_Object_Type> inline
+double HighOrder2D<SOLN_STATE>::ComputeSolutionEntropyErrorL2(const int &iCell, const int &jCell,
+							      Function_Object_Type FuncObj,
+							      const int &digits){
+
+  double _dummy_result(0.0);	 // defined only to provide the return type of the integration
+  
+  return IntegrateOverTheCell(iCell,jCell,
+			      square_error_function(FuncObj,
+						    wrapped_soln_block_member_function(this,
+										       &ClassType::SolutionEntropyAtCoordinates,
+										       iCell, jCell,
+										       _dummy_result),
 						    _dummy_result),
 			      digits, _dummy_result);
 }
@@ -3480,20 +4854,109 @@ void HighOrder2D<SOLN_STATE>::Read_Object(istream & in_file) {
   in_file.unsetf(ios::skipws);
 }
 
+/*! 
+ * Output the reconstruction type of each cell
+ * to the provided output stream.
+ */
+template<class SOLN_STATE>
+void HighOrder2D<SOLN_STATE>::outputReconstructionTypeMap(ostream & out_file) const{
+
+  int i,j;
+
+  if (ReconstructionTypeMap != NULL){
+    out_file << endl;
+    for (j = Nj-1; j>=0; --j){
+      for (i=0; i<Ni; ++i){
+	out_file << getCellReconstructionType(i,j);
+      }
+      out_file << endl;
+    }
+  } else {
+    out_file << "NULL\n";
+  }
+}
+
 /*!
  * Broadcast high-order object to all            
  * processors involved in the calculation from the      
  * primary processor using the MPI broadcast routine.
  * 
- * \param Block_Geometry the grid block to which the
- *                   high-order object is associated.
+ * \param Block_Geometry the grid block associated to the high-order object
  *
- * \todo Implement this subroutine!
+ * \note In the current implementation, only the container
+ *       of TaylorDerivatives needs to be broadcast.
  */
 template<class SOLN_STATE>
 void HighOrder2D<SOLN_STATE>::Broadcast_HighOrder_Data(GeometryType & Block_Geometry){
 
 #ifdef _MPI_VERSION
+  
+  int i, j, buffer_size, TD_Bcast, td, var, counter;
+  double *buffer;
+
+  // Obs: It is assumed that InitializeBasicVariable() routine
+  //      has been already run on each CPU.
+
+  /* Calculate how many derivatives must be broadcast, including the limiter value for each parameter */
+  TD_Bcast = NumberOfVariables() * (NumberOfTaylorDerivatives() + 1 );
+
+  /* Calculate the size of the buffer.*/
+  buffer_size = TD_Bcast*Ni*Nj;
+  
+  buffer = new double[buffer_size];
+
+  // Load the buffer on the primary CPU
+  if (CFFC_Primary_MPI_Processor()) {
+    counter = 0;
+    // Pack all the information 
+    for (j  = 0 ; j < Nj ; ++j ) { //< for each jCell
+      for ( i = 0 ; i < Ni ; ++i ) {  //< for each iCell
+	for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
+
+	  // Load the derivatives of the current solution state parameter
+	  for (td = 0; td <= CellTaylorDeriv(i,j).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell)
+	    buffer[counter] = CellTaylorDerivState(i,j,td)[var];
+	  } /* endfor(td) */
+
+	  // Load the limiter of the current solution state parameter
+	  buffer[counter] = CellTaylorDeriv(i,j).Limiter(var);
+	  ++counter;
+	}/* endfor(var) */
+      } /* endfor(i) */
+    } /* endfor(j) */
+
+  }/* endif(CFFC_Primary_MPI_Processor()) */
+
+
+  // Broadcast buffer
+  MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
+
+  // Unload the buffer on the receiver CPUs and set the variables
+  if (!CFFC_Primary_MPI_Processor()) {
+    counter = 0;
+    // Unpack all the information 
+    for (j  = 0 ; j < Nj; ++j ) { //< for each jCell
+      for ( i = 0; i < Ni; ++i ) {  //< for each iCell
+  	for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
+
+	  // Unload the derivatives of the current solution state parameter
+	  for (td = 0; td <= CellTaylorDeriv(i,j).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell)
+	    CellTaylorDerivState(i,j,td)[var] = buffer[counter];
+	  } /* endfor(td) */
+	  
+	  // Unload the limiter of the current solution state parameter
+	  CellTaylorDeriv(i,j).Limiter(var) = buffer[counter];
+	  ++counter;
+
+	}/* endfor(var) */
+      } /* endfor(i) */
+    } /* endfor(j) */
+  }/* endif(!CFFC_Primary_MPI_Processor()) */
+
+
+  // Deallocate memory
+  delete []buffer;
+  buffer = NULL;
 
 #endif
 
@@ -3509,14 +4972,79 @@ void HighOrder2D<SOLN_STATE>::Broadcast_HighOrder_Data(GeometryType & Block_Geom
  * \param Source_CPU the CPU used as source for the broadcast
  * \param Block_Geometry the grid block to which the
  *                   high-order object is associated. 
- *
- * \todo Implement this subroutine!
  */
 template<class SOLN_STATE>
 void HighOrder2D<SOLN_STATE>::Broadcast_HighOrder_Data(MPI::Intracomm &Communicator, 
 						       const int &Source_CPU,
 						       GeometryType & Block_Geometry){
+
+  int Source_Rank = 0; 
+  int i, j, buffer_size, TD_Bcast, td, var, counter;
+  double *buffer;
   
+  // Obs: It is assumed that InitializeBasicVariable() routine
+  //      has been already run on each involved CPU.
+
+  /* Calculate how many derivatives must be broadcast, including the limiter value for each parameter */
+  TD_Bcast = NumberOfVariables() * (NumberOfTaylorDerivatives() + 1 );
+
+  /* Calculate the size of the buffer.*/
+  buffer_size = TD_Bcast*Ni*Nj;
+  
+  buffer = new double[buffer_size];
+
+  // Load the buffer on the source CPU
+  if (CFFC_MPI::This_Processor_Number == Source_CPU) {
+    counter = 0;
+    // Pack all the information 
+    for (j  = 0 ; j < Nj ; ++j ) { //< for each jCell
+      for ( i = 0 ; i < Ni ; ++i ) {  //< for each iCell
+	for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
+
+	  // Load the derivatives of the current solution state parameter
+	  for (td = 0; td <= CellTaylorDeriv(i,j).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell)
+	    buffer[counter] = CellTaylorDerivState(i,j,td)[var];
+	  } /* endfor(td) */
+
+	  // Load the limiter of the current solution state parameter
+	  buffer[counter] = CellTaylorDeriv(i,j).Limiter(var);
+	  ++counter;
+	}/* endfor(var) */
+      } /* endfor(i) */
+    } /* endfor(j) */
+
+  }/* endif(CFFC_MPI::This_Processor_Number == Source_CPU) */
+
+
+  // Broadcast buffer
+  Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
+
+  // Unload the buffer on the receiver CPUs and set the variables
+  if (CFFC_MPI::This_Processor_Number != Source_CPU) {
+    counter = 0;
+    // Unpack all the information 
+    for (j  = 0 ; j < Nj; ++j ) { //< for each jCell
+      for ( i = 0; i < Ni; ++i ) {  //< for each iCell
+  	for (var = 1; var <= NumberOfVariables(); ++var){ //< for each state parameter
+
+	  // Unload the derivatives of the current solution state parameter
+	  for (td = 0; td <= CellTaylorDeriv(i,j).LastElem(); ++td, ++counter){ //< for each Taylor derivative of (iCell,jCell)
+	    CellTaylorDerivState(i,j,td)[var] = buffer[counter];
+	  } /* endfor(td) */
+	  
+	  // Unload the limiter of the current solution state parameter
+	  CellTaylorDeriv(i,j).Limiter(var) = buffer[counter];
+	  ++counter;
+
+	}/* endfor(var) */
+      } /* endfor(i) */
+    } /* endfor(j) */
+  }/* endif(CFFC_MPI::This_Processor_Number != Source_CPU) */
+
+
+  // Deallocate memory
+  delete []buffer;
+  buffer = NULL;  
   
 }
 #endif
@@ -3559,6 +5087,517 @@ double HighOrder2D<SOLN_STATE>::AMR_Criteria_Based_On_Minimum_Smoothness_Indicat
   // Evaluate the block refinement criteria based on the minimum encountered SI.
   return ( exp( -max(ZERO, SI_Min) / (CENO_Tolerances::AMR_Smoothness_Units * CENO_Tolerances::Fit_Tolerance )) );
   
+}
+
+/*!
+ * Build the map of reconstruction types,
+ * which means to identify the type of reconstruction
+ * of each cell in a constrained block.
+ * This routine assumes that the block type has been 
+ * already identified and the properties of the 
+ * high-order block boundaries have been already setup.
+ */
+template<class SOLN_STATE>
+void HighOrder2D<SOLN_STATE>::BuildReconstructionTypeMap(void){
+
+  int i,j;
+
+  // Allocate memory for the ReconstructionTypeMap variable
+  allocate_ReconstructionTypeMap();
+
+  if (IsConstrainedReconstructionRequired()){
+
+    // Set the NO reconstruction
+    for (j = 0; j < Nj; ++j){
+      for (i = 0; i < ICl-Nghost_HO; ++i){
+	ReconstructionTypeMap[i][j] = 'n';
+      }
+
+      for (i = ICu+Nghost_HO+1; i < Ni; ++i){
+	ReconstructionTypeMap[i][j] = 'n';
+      }
+    }
+
+    for (i = ICl-Nghost_HO; i <= ICu+Nghost_HO; ++i){
+      for (j = 0; j < JCl-Nghost_HO; ++j){
+	ReconstructionTypeMap[i][j] = 'n';
+      }
+
+      for (j = JCu+Nghost_HO+1; j < Nj; ++j){
+	ReconstructionTypeMap[i][j] = 'n';
+      }
+    }
+
+    // Set regular reconstruction where central reconstruction normally occurs in the absence of constrained boundaries
+    for (i = ICl-Nghost_HO; i <= ICu+Nghost_HO; ++i){
+      for (j = JCl-Nghost_HO; j <= JCu+Nghost_HO; ++j){
+	ReconstructionTypeMap[i][j] = 'r';
+      }
+    }
+
+    // ==== North Boundary ====
+    if (NorthBnd.IsReconstructionConstrained()){
+      for (i = ICl; i <= ICu; ++i){
+	// Set the NO reconstruction cells
+	for (j = JCu+1; j<=JCu+Nghost_HO; ++j){
+	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells
+	ReconstructionTypeMap[i][JCu] = 'c';
+      
+	// Set the unconstrained cells with modified stencil
+	for (j = JCu-1; j>JCu-rings; --j){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+    }
+
+    // ==== South Boundary ====
+    if (SouthBnd.IsReconstructionConstrained()){
+      for (i = ICl; i <= ICu; ++i){
+	// Set the NO reconstruction cells
+	for (j = JCl-Nghost_HO; j<JCl; ++j){
+	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells
+	ReconstructionTypeMap[i][JCl] = 'c';
+      
+	// Set the unconstrained cells with modified stencil
+	for (j = JCl+1; j<JCl+rings; ++j){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+    }
+
+    // ==== West Boundary ====
+    if (WestBnd.IsReconstructionConstrained()){
+      for (j = JCl; j<=JCu; ++j){
+	// Set the NO reconstruction cells
+	for (i=ICl-Nghost_HO; i<ICl; ++i){
+	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells 
+	ReconstructionTypeMap[ICl][j] = 'c';
+      
+	// Set the unconstrained cells with modified stencil
+	for (i=ICl+1; i<ICl+rings; ++i){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+
+      // Check the North and South boundaries
+      if (NorthBnd.IsReconstructionConstrained()){
+	// Fix the cells
+	for (i=ICl+1; i<ICl+rings; ++i){
+	  ReconstructionTypeMap[i][JCu] = 'c';
+	}
+      }
+
+      if (SouthBnd.IsReconstructionConstrained()){
+	// Fix the cells
+	for (i=ICl+1; i<ICl+rings; ++i){
+	  ReconstructionTypeMap[i][JCl] = 'c';
+	}
+      }
+    }
+
+    // ==== East Boundary ====
+    if (EastBnd.IsReconstructionConstrained()){
+      for (j = JCl; j<=JCu; ++j){
+	// Set the NO reconstruction cells
+	for (i=ICu+1; i<=ICu+Nghost_HO; ++i){
+	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells 
+	ReconstructionTypeMap[ICu][j] = 'c';
+      
+	// Set the unconstrained cells with modified stencil
+	for (i=ICu-1; i>ICu-rings; --i){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+
+      // Check the North and South boundaries
+      if (NorthBnd.IsReconstructionConstrained()){
+	// Fix the cells
+	for (i=ICu-1; i>ICu-rings; --i){
+	  ReconstructionTypeMap[i][JCu] = 'c';
+	}
+      }
+
+      if (SouthBnd.IsReconstructionConstrained()){
+	// Fix the cells
+	for (i=ICu-1; i>ICu-rings; --i){
+	  ReconstructionTypeMap[i][JCl] = 'c';
+	}
+      }
+    }
+
+    // ==== Corner North-West ====
+    if (N_WestBnd.IsReconstructionConstrained()){
+      for (j = JCu+1; j<= JCu+Nghost_HO; ++j){
+	// Set the NO reconstruction cells
+	for (i=ICl-Nghost_HO; i<=ICl-1; ++i){
+ 	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells
+	ReconstructionTypeMap[ICl][j] = 'c';
+
+	// Set the unconstrained cells with modified stencil
+	for (i = ICl+1; i<ICl+rings; ++i){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+
+      if (!WestBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICl-Nghost_HO; i<ICl+rings; ++i){
+	  for (j = JCu; j > JCu-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else if (N_WestBnd.IsReconstructionStencilAffected()){
+
+      if (W_NorthBnd.IsReconstructionConstrained()){
+
+	for (i = ICl-Nghost_HO; i<ICl; ++i){
+	  // Set the NO reconstruction cells
+	  for (j = JCu+1; j<=JCu+Nghost_HO; ++j){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+
+	  // Set the constrained cells
+	  ReconstructionTypeMap[i][JCu] = 'c';
+
+	  // Set the unconstrained cells with modified stencil
+	  for (j = JCu-1; j>JCu-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+
+	if (!NorthBnd.IsReconstructionStencilAffected()){
+	  // Set the cells with modified stencil
+	  for (i = ICl; i<ICl+rings; ++i){
+	    for (j = JCu+Nghost_HO; j > JCu-rings; --j){
+	      ReconstructionTypeMap[i][j] = 'm';
+	    }
+	  }
+	} 
+
+      } else if (W_NorthBnd.IsReconstructionStencilAffected()) {
+	// Both extensions affect the stencil. 
+	// Set the corner ghost cells to NO reconstruction
+	for (j = JCu+1; j<= JCu+Nghost_HO; ++j){
+	  for (i=ICl-Nghost_HO; i<=ICl-1; ++i){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+	}
+
+      } else {
+	// W_NorthBnd is transparent
+	
+	// Set the cells with modified stencil
+	for (i = ICl-1; i>=ICl-rings; --i){
+	  for (j = JCu+Nghost_HO; j > JCu-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else {
+      // N_WestBnd is transparent
+
+      if (W_NorthBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICl-Nghost_HO; i<ICl+rings; ++i){
+	  for (j = JCu+1; j<=JCu+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } // endif (N_WestBnd)
+
+
+    // ==== Corner South-West ====
+    if (S_WestBnd.IsReconstructionConstrained()){
+      for (j = JCl-1; j>=JCl-Nghost_HO; --j){
+	// Set the NO reconstruction cells
+	for (i=ICl-Nghost_HO; i<ICl; ++i){
+ 	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells
+	ReconstructionTypeMap[ICl][j] = 'c';
+
+	// Set the unconstrained cells with modified stencil
+	for (i = ICl+1; i<ICl+rings; ++i){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+
+      if (!WestBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICl-Nghost_HO; i<ICl+rings; ++i){
+	  for (j = JCl; j < JCl+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else if (S_WestBnd.IsReconstructionStencilAffected()){
+
+      if (W_SouthBnd.IsReconstructionConstrained()){
+	
+	for (i = ICl-Nghost_HO; i<ICl; ++i){
+	  // Set the NO reconstruction cells
+	  for (j = JCl-1; j>=JCl-Nghost_HO; --j){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+
+	  // Set the constrained cells
+	  ReconstructionTypeMap[i][JCl] = 'c';
+
+	  // Set the unconstrained cells with modified stencil
+	  for (j = JCl+1; j<JCl+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+
+	if (!SouthBnd.IsReconstructionStencilAffected()){
+	  // Set the cells with modified stencil
+	  for (i = ICl; i<ICl+rings; ++i){
+	    for (j = JCl-Nghost_HO; j < JCl+rings; ++j){
+	      ReconstructionTypeMap[i][j] = 'm';
+	    }
+	  }
+	}
+
+      } else if (W_SouthBnd.IsReconstructionStencilAffected()) {
+	// Both extensions affect the stencil. 
+	// Set the corner ghost cells to NO reconstruction
+	for (j = JCl-Nghost_HO; j<= JCl-1; ++j){
+	  for (i=ICl-Nghost_HO; i<=ICl-1; ++i){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+	}
+
+      } else {
+	// W_SouthBnd is transparent
+	
+	// Set the cells with modified stencil
+	for (i = ICl-1; i>=ICl-rings; --i){
+	  for (j = JCl-Nghost_HO; j < JCl+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else {
+      // S_WestBnd is transparent
+
+      if (W_SouthBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICl-Nghost_HO; i<ICl+rings; ++i){
+	  for (j = JCl-1; j>=JCl-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+      
+    } // endif (S_WestBnd)
+
+
+    // ==== Corner South-East ====
+    if (S_EastBnd.IsReconstructionConstrained()){
+
+      for (j = JCl-1; j>=JCl-Nghost_HO; --j){
+	// Set the NO reconstruction cells
+	for (i=ICu+1; i<=ICu+Nghost_HO; ++i){
+ 	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells
+	ReconstructionTypeMap[ICu][j] = 'c';
+
+	// Set the unconstrained cells with modified stencil
+	for (i = ICu-1; i>ICu-rings; --i){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+
+      if (!EastBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICu+Nghost_HO; i>ICu-rings; --i){
+	  for (j = JCl; j < JCl+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else if (S_EastBnd.IsReconstructionStencilAffected()){
+      
+      if (E_SouthBnd.IsReconstructionConstrained()){
+	
+	for (i = ICu+1; i<=ICu+Nghost_HO; ++i){
+	  // Set the NO reconstruction cells
+	  for (j = JCl-1; j>=JCl-Nghost_HO; --j){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+
+	  // Set the constrained cells
+	  ReconstructionTypeMap[i][JCl] = 'c';
+
+	  // Set the unconstrained cells with modified stencil
+	  for (j = JCl+1; j<JCl+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+
+	if (!SouthBnd.IsReconstructionStencilAffected()){
+	  // Set the cells with modified stencil
+	  for (i = ICu; i>ICu-rings; --i){
+	    for (j = JCl-Nghost_HO; j < JCl+rings; ++j){
+	      ReconstructionTypeMap[i][j] = 'm';
+	    }
+	  }
+	}
+
+      } else if (E_SouthBnd.IsReconstructionStencilAffected()) {
+	// Both extensions affect the stencil. 
+	// Set the corner ghost cells to NO reconstruction
+	for (j = JCl-Nghost_HO; j<= JCl-1; ++j){
+	  for (i=ICu+1; i<=ICu+Nghost_HO; ++i){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+	}
+
+      } else {
+	// E_SouthBnd is transparent
+	
+	// Set the cells with modified stencil
+	for (i = ICu+1; i<=ICu+rings; ++i){
+	  for (j = JCl-Nghost_HO; j < JCl+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else {
+      // S_EastBnd is transparent
+
+      if (E_SouthBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICu+Nghost_HO; i>ICu-rings; --i){
+	  for (j = JCl-1; j>=JCl-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } // endif (S_EastBnd)
+
+
+    // ==== Corner North-East ====
+    if (N_EastBnd.IsReconstructionConstrained()){
+
+      for (j = JCu+1; j<= JCu+Nghost_HO; ++j){
+	// Set the NO reconstruction cells
+	for (i=ICu+1; i<=ICu+Nghost_HO; ++i){
+ 	  ReconstructionTypeMap[i][j] = 'n';
+	}
+
+	// Set the constrained cells
+	ReconstructionTypeMap[ICu][j] = 'c';
+
+	// Set the unconstrained cells with modified stencil
+	for (i = ICu-1; i>ICu-rings; --i){
+	  ReconstructionTypeMap[i][j] = 'm';
+	}
+      }
+
+      if (!EastBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICu+Nghost_HO; i>ICu-rings; --i){
+	  for (j = JCu; j > JCu-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else if (N_EastBnd.IsReconstructionStencilAffected()){
+
+      if (E_NorthBnd.IsReconstructionConstrained()){
+
+	for (i = ICu+1; i<=ICu+Nghost_HO; ++i){
+	  // Set the NO reconstruction cells
+	  for (j = JCu+1; j<=JCu+Nghost_HO; ++j){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+
+	  // Set the constrained cells
+	  ReconstructionTypeMap[i][JCu] = 'c';
+
+	  // Set the unconstrained cells with modified stencil
+	  for (j = JCu-1; j>JCu-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+
+	if (!NorthBnd.IsReconstructionStencilAffected()){
+	  // Set the cells with modified stencil
+	  for (i = ICu; i>ICu-rings; --i){
+	    for (j = JCu+Nghost_HO; j > JCu-rings; --j){
+	      ReconstructionTypeMap[i][j] = 'm';
+	    }
+	  }
+	}
+
+      } else if (E_NorthBnd.IsReconstructionStencilAffected()) {
+	// Both extensions affect the stencil. 
+	// Set the corner ghost cells to NO reconstruction
+	for (j = JCu+1; j<= JCu+Nghost_HO; ++j){
+	  for (i=ICu+1; i<=ICu+Nghost_HO; ++i){
+	    ReconstructionTypeMap[i][j] = 'n';
+	  }
+	}
+
+      } else {
+	// E_NorthBnd is transparent
+	
+	// Set the cells with modified stencil
+	for (i = ICu+1; i<=ICu+rings; ++i){
+	  for (j = JCu+Nghost_HO; j > JCu-rings; --j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } else {
+      // N_EastBnd is transparent
+
+      if (E_NorthBnd.IsReconstructionStencilAffected()){
+	// Set the cells with modified stencil
+	for (i = ICu+Nghost_HO; i>ICu-rings; --i){
+	  for (j = JCu+1; j<=JCu+rings; ++j){
+	    ReconstructionTypeMap[i][j] = 'm';
+	  }
+	}
+      }
+
+    } // endif (N_EastBnd)
+
+  } else {
+    // The block doesn't have ReconstructionTypeMap variable allocated
+    return;
+  }
 }
 
 // Friend functions

@@ -12,17 +12,21 @@
 
 
 // ===== Member variables =====
+int Spline2D_HO::CounterSolidBodies = 0; // initialize counter
 
 // ===== Member functions =====
 
 /*!
  * Concatenation operator.
+ *
+ * \note The properties of the new spline are inherited from the spline to the left of the '+' sign. (i.e. first one)
  */
 const Spline2D_HO Spline2D_HO::operator + (const Spline2D_HO &S) const{
   int i, npts; Spline2D_HO Sc;
   npts = np + S.np - 1;
   Sc.allocate(npts); Sc.settype(type);
   Sc.setFluxCalcMethod(getFluxCalcMethod());
+  Sc.bodyOwner = bodyOwner;
   for ( i = 0; i <= np-1; ++i ) {
     Sc.Xp[i] = Xp[i];
     Sc.tp[i] = tp[i];
@@ -264,6 +268,97 @@ const Vector2D Spline2D_HO::Spline(const double &s) const {
   }/* endswitch */
 
   return Vector2D(0);
+}
+
+/*!
+ * Generate a discretization of the spline with line segments.
+ * The length of the spline segment is used as a measurement 
+ * to obtain a sufficiently accurate representation of the spline.
+ *
+ * \param StartPoint the first point defining the spline segment
+ * \param EndPoint the second point defining the spline segment
+ * \param [out] DiscretizationVertexes the list to which the coordinates of the line segments are added
+ *              Both StartPoint and EndPoint are added to the list.
+ */
+void Spline2D_HO::GenerateLineSegmentDiscretization(const Vector2D &StartPoint,
+						    const Vector2D &EndPoint,
+						    LinkedList<Vector2D> &DiscretizationVertexes) const {
+
+  static const int MaxDivisions(1000);
+  static const int DivisionFactor(4);
+  int Divisions(1);
+  double *Length(NULL), *PathLength(NULL);
+
+  // Determine the pathlength coordinate of the StartPoint and the EndPoint
+  double S1(getS(StartPoint)),
+         S2(getS(EndPoint));
+
+  double DeltaS(S2 - S1),
+         DeltaS_Temp, RelativeError(1.0);
+
+  int i, GQP_Iter;
+  int subinterval_found(0);
+  Vector2D InterP1, InterP2;
+  double SplineSegmentLength;
+
+  // Initialize the interval length to the distance between the StartPoint and EndPoint
+  SplineSegmentLength = abs(EndPoint - StartPoint);
+
+  /* Based on the necessary number of divisions that are required 
+     to obtained an imposed relative error for the length estimation,
+     generate a discrete correspondence between the pathlength 
+     (i.e. along the pathlength coordinate) and the spline interval
+     length (i.e. along the true geometric spline contour). */
+  while( (RelativeError > EpsilonTol::epsilon_relative) && (Divisions <= MaxDivisions) ){
+
+    // Update number of divisions
+    Divisions *= DivisionFactor;
+    // Update DeltaS_Temp
+    DeltaS_Temp = DeltaS/Divisions;
+    // Check if DeltaS_Temp is different than machine epsilon
+    if ( DeltaS + DeltaS_Temp == DeltaS){
+      break;
+    }
+
+    // Deallocate previously allocated memory if necessary
+    delete [] Length; Length = NULL;
+    delete [] PathLength; PathLength = NULL;
+
+    // Allocate memory for the discrete correspondence
+    Length = new double [Divisions+1];
+    PathLength = new double [Divisions+1];
+
+    // Initialize the first correspondence
+    PathLength[0] = S1;
+    Length[0] = 0.0;
+
+    // Reset temporary variables
+    InterP1 = StartPoint;
+
+    // Compute with the current DeltaS_Temp
+    for (i=1; i<=Divisions; ++i){
+      PathLength[i] = S1 + i*DeltaS_Temp;                 // get the pathlength
+      InterP2 = Spline(PathLength[i]);                    // get the corresponding point on the SupportCurve
+      Length[i] = Length[i-1] + abs(InterP2 - InterP1);   // get the distance to the previous point and
+                                                          // add it to the previous length
+      InterP1 = InterP2;	                          // set the new value for InterP1
+    }
+    
+    // Compute Relative Error
+    RelativeError = ( fabs(Length[Divisions] - SplineSegmentLength)/
+		      (1.0 + fabs(SplineSegmentLength)) );
+
+    // Update SubIntervalLength with the more accurate calculation
+    SplineSegmentLength = Length[Divisions];
+  }
+
+  // Add the vertexes to the DiscretizationVertexes list
+  DiscretizationVertexes.add(StartPoint);
+  for (i = 1; i<=Divisions-1; ++i){
+    DiscretizationVertexes.add(Spline(PathLength[i]));
+  }
+  DiscretizationVertexes.add(EndPoint);
+
 }
 
 
@@ -1158,6 +1253,13 @@ void Spline2D_HO::Broadcast_Spline(void) {
 
     MPI::COMM_WORLD.Bcast(&(FluxMethod), 1, MPI::INT, 0);
 
+    /* Broadcast the maximum number of solid bodies. */
+    MPI::COMM_WORLD.Bcast(&CounterSolidBodies, 1, MPI::INT, 0);
+
+    /* Broadcast the ID of the current spline. */
+    MPI::COMM_WORLD.Bcast(&bodyOwner, 1, MPI::INT, 0);
+
+
     /* Broadcast the the spline coordinates, pathlength, 
        point type, and boundary condition information. */
 
@@ -1248,6 +1350,13 @@ void Spline2D_HO::Broadcast_Spline(MPI::Intracomm &Communicator,
 
     Communicator.Bcast(&(FluxMethod), 1, MPI::INT, Source_Rank);
 
+    /* Broadcast the maximum number of solid bodies. */
+    Communicator.Bcast(&CounterSolidBodies, 1, MPI::INT, Source_Rank);
+
+    /* Broadcast the ID of the current spline. */
+    Communicator.Bcast(&bodyOwner, 1, MPI::INT, Source_Rank);
+
+
     /* Broadcast the the spline coordinates, pathlength, 
        point type, and boundary condition information. */
 
@@ -1296,6 +1405,17 @@ void Spline2D_HO::Broadcast_Spline(MPI::Intracomm &Communicator,
 
 }
 #endif
+
+
+/*!
+ * Ensure that all processors involved in the calculation
+ * have correctly setup the maximum number of solid bodies.
+ */
+void Spline2D_HO::Broadcast_Maximum_Number_Of_SolidBodies(void){
+#ifdef _MPI_VERSION  
+  CounterSolidBodies = CFFC_Maximum_MPI(CounterSolidBodies);
+#endif
+}
 
 /*!
  * Apply a mirror reflection about the y=0 axis and

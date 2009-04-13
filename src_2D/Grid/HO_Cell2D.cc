@@ -10,4 +10,4 @@
  ********************************************************************/
 Vector2D Cell2D_Cartesian_HO::dx = Vector2D_ZERO;
 
-Cell2D_Cartesian_HO Cell2D_Cartesian_HO::Cell2D_Cartesian_HO_ONE(ONE);
+Cell2D_Cartesian_HO Cell2D_Cartesian_HO::Cell2D_Cartesian_HO_ONE(Vector2D(ONE));

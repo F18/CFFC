@@ -121,7 +121,8 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
   if (!CFFC_Primary_MPI_Processor()) {
     // allocate memory for high-order variables AFTER grid broadcast!
     SolnBlk.allocate_HighOrder(NumberOfHighOrderVariables,
-			       ReconstructionOrders);
+			       ReconstructionOrders,
+			       false); //< only the basics (e.g. no pseudo-inverse calculation)
     // allocate memory for high-order boundary conditions if necessary
     SolnBlk.allocate_HighOrder_BoundaryConditions();
   }
@@ -305,7 +306,8 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
   if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
     // allocate memory for high-order variables AFTER grid broadcast!
     SolnBlk.allocate_HighOrder(NumberOfHighOrderVariables,
-			       ReconstructionOrders);
+			       ReconstructionOrders,
+			       false); //< only the basics (e.g. no pseudo-inverse calculation)
     // allocate memory for high-order boundary conditions if necessary
     SolnBlk.allocate_HighOrder_BoundaryConditions();
   }
@@ -525,8 +527,6 @@ int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Fine,
     } /* endswitch */
 
     int iCell, jCell;		// indexes for the first fine cell
-    double area_total_fine;	// total area of the fine cells
-    double Fine_A1, Fine_A2, Fine_A3, Fine_A4; // areas for each individual fine cell
 
     for ( j  = j_min; j <= j_max; ++j ) {
       for ( i = i_min; i <= i_max; ++i ) {
@@ -535,26 +535,18 @@ int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Fine,
 	iCell = 2*(i-i_min)+SolnBlk_Fine.ICl;
 	jCell = 2*(j-j_min)+SolnBlk_Fine.JCl;
 
-	// Compute each individual fine cell area
-	Fine_A1 = SolnBlk_Fine.Grid.Cell[iCell  ][jCell  ].A; // Fine Cell I
-	Fine_A2 = SolnBlk_Fine.Grid.Cell[iCell+1][jCell  ].A; // Fine Cell II
-	Fine_A3 = SolnBlk_Fine.Grid.Cell[iCell  ][jCell+1].A; // Fine Cell III
-	Fine_A4 = SolnBlk_Fine.Grid.Cell[iCell+1][jCell+1].A; // Fine Cell IV
-	
-	// Compute the total area
-	area_total_fine = Fine_A1 + Fine_A2 + Fine_A3 + Fine_A4;
-
+	// Use direct injection
 	// Update fine cell I
-	SolnBlk_Fine.U[iCell  ][jCell  ] = (Fine_A1/area_total_fine)*SolnBlk_Original.U[i][j];
+	SolnBlk_Fine.U[iCell  ][jCell  ] = SolnBlk_Original.U[i][j];
 
 	// Update fine cell II
-	SolnBlk_Fine.U[iCell+1][jCell  ] = (Fine_A2/area_total_fine)*SolnBlk_Original.U[i][j];
+	SolnBlk_Fine.U[iCell+1][jCell  ] = SolnBlk_Original.U[i][j];
 
 	// Update fine cell III
-	SolnBlk_Fine.U[iCell  ][jCell+1] = (Fine_A3/area_total_fine)*SolnBlk_Original.U[i][j];
+	SolnBlk_Fine.U[iCell  ][jCell+1] = SolnBlk_Original.U[i][j];
 
 	// Update fine cell IV
-	SolnBlk_Fine.U[iCell+1][jCell+1] = (Fine_A4/area_total_fine)*SolnBlk_Original.U[i][j];
+	SolnBlk_Fine.U[iCell+1][jCell+1] = SolnBlk_Original.U[i][j];
       } /* endfor */
     } /* endfor */
 
@@ -986,7 +978,7 @@ void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
       Out_File << " " << SolnBlk.Grid.Cell[i][j].Xc << SolnBlk.U[i][j]
 	       << " " << SolnBlk.U[i][j].V(Node.x,Node.y)
 	       << " " << SolnBlk.U[i][j].k(Node.x,Node.y,SolnBlk.U[i][j][1])
-	       << " " << source(Node.x,Node.y,SolnBlk.U[i][j][1]);
+	       << " " << source(Node.x,Node.y,SolnBlk.U[i][j]);
       if (SolnBlk.ExactSoln->IsExactSolutionSet()){
 	Out_File << " " << SolnBlk.ExactSoln->Solution(Node.x,Node.y);
       }
@@ -2193,20 +2185,20 @@ void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block &SolnBlk,
       n_west = SolnBlk.Grid.nfaceW(i, j);
 
       u_face = HALF*(u_nw+u_ne)*l_north; 
-      SolnBlk.dUdx[i][j] = u_face*n_north.x;
-      SolnBlk.dUdy[i][j] = u_face*n_north.y;
+      SolnBlk.dUdx[i][j] = AdvectDiffuse2D_State(u_face*n_north.x);
+      SolnBlk.dUdy[i][j] = AdvectDiffuse2D_State(u_face*n_north.y);
 
       u_face = HALF*(u_sw+u_se)*l_south; 
-      SolnBlk.dUdx[i][j] += u_face*n_south.x;
-      SolnBlk.dUdy[i][j] += u_face*n_south.y;
+      SolnBlk.dUdx[i][j] += AdvectDiffuse2D_State(u_face*n_south.x);
+      SolnBlk.dUdy[i][j] += AdvectDiffuse2D_State(u_face*n_south.y);
 
       u_face = HALF*(u_ne+u_se)*l_east; 
-      SolnBlk.dUdx[i][j] += u_face*n_east.x;
-      SolnBlk.dUdy[i][j] += u_face*n_east.y;
+      SolnBlk.dUdx[i][j] += AdvectDiffuse2D_State(u_face*n_east.x);
+      SolnBlk.dUdy[i][j] += AdvectDiffuse2D_State(u_face*n_east.y);
 
       u_face = HALF*(u_nw+u_sw)*l_west; 
-      SolnBlk.dUdx[i][j] += u_face*n_west.x;
-      SolnBlk.dUdy[i][j] += u_face*n_west.y;
+      SolnBlk.dUdx[i][j] += AdvectDiffuse2D_State(u_face*n_west.x);
+      SolnBlk.dUdy[i][j] += AdvectDiffuse2D_State(u_face*n_west.y);
 
       SolnBlk.dUdx[i][j] = SolnBlk.dUdx[i][j]/
 	SolnBlk.Grid.Cell[i][j].A;
@@ -2434,7 +2426,7 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	break;
       } /* endswitch */
     
-      SolnBlk.phi[i][j] = phi;
+      SolnBlk.phi[i][j] = AdvectDiffuse2D_State(phi);
     } /* endif */
   } else {
     SolnBlk.dUdx[i][j].Vacuum();
@@ -2574,6 +2566,9 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
 
   number_refinement_criteria = 1;
 
+  /* Allocate memory for the refinement criteria */
+  SolnBlk.Refinement_Criteria().reserve(number_refinement_criteria);
+
   /* Initialize the refinement criteria for the block. */
 
   grad_u_criteria_max = ZERO;
@@ -2602,9 +2597,11 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
     } /* endfor */
   } /* endfor */
 
-    /* Return the refinement criteria. */
-
+  /* Return the refinement criteria. */
   refinement_criteria[0] = grad_u_criteria_max;
+
+  /* Store the refinement_criteria values in the solution block designated variable */
+  SolnBlk.Refinement_Criterion(0) = refinement_criteria[0];
 
 }
 
@@ -2707,14 +2704,22 @@ void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk,
     } /* endfor */
   } /* endif */
 
-  /* Reset the boundary condition types at the block boundaries. */
-  Set_BCs(SolnBlk.Grid);
+  // Update geometric information only if modifications occurred
+  if (Fix_North_Boundary || Fix_South_Boundary || 
+      Fix_East_Boundary || Fix_West_Boundary ){
 
-  /* Recompute the exterior nodes for the block quadrilateral mesh. */
-  Update_Exterior_Nodes(SolnBlk.Grid);
+    /* Require update of the interior cells geometric properties. */
+    SolnBlk.Grid.Schedule_Interior_Mesh_Update();
 
-  /* Recompute the cells for the block quadrilateral mesh. */
-  Update_Cells(SolnBlk.Grid);
+    /* Reset the boundary condition types at the block boundaries. */
+    Set_BCs(SolnBlk.Grid);
+
+    /* Recompute the exterior nodes for the block quadrilateral mesh. */
+    Update_Exterior_Nodes(SolnBlk.Grid);
+
+    /* Recompute the cells for the block quadrilateral mesh. */
+    Update_Cells(SolnBlk.Grid);
+  }
 
 }
 
@@ -2730,6 +2735,7 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
 
   int i, j;
   double sp_l, sp_r, sp_m, ds_ratio, dl, dr;
+  bool ModifiedGrid(false);
  
   /* Return the nodes at the north boundary
      to their original positions. */
@@ -2752,6 +2758,7 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
       SolnBlk.U[i][SolnBlk.JCu] = (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A/
 				   SolnBlk.Grid.area(i, SolnBlk.JCu))*SolnBlk.U[i][SolnBlk.JCu];
     } /* endfor */
+    ModifiedGrid = true;
   } /* endif */
 
     /* Return the nodes at the south boundary
@@ -2775,6 +2782,7 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
       SolnBlk.U[i][SolnBlk.JCl] = (SolnBlk.Grid.Cell[i][SolnBlk.JCl].A/
 				   SolnBlk.Grid.area(i, SolnBlk.JCl))*SolnBlk.U[i][SolnBlk.JCl];
     } /* endfor */
+    ModifiedGrid = true;
   } /* endif */
 
     /* Return the nodes at the east boundary
@@ -2798,6 +2806,7 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
       SolnBlk.U[SolnBlk.ICu][j] = (SolnBlk.Grid.Cell[SolnBlk.ICu][j].A/
 				   SolnBlk.Grid.area(SolnBlk.ICu, j))*SolnBlk.U[SolnBlk.ICu][j];
     } /* endfor */
+    ModifiedGrid = true;
   } /* endif */
 
     /* Return the nodes at the west boundary
@@ -2821,16 +2830,23 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
       SolnBlk.U[SolnBlk.ICl][j] = (SolnBlk.Grid.Cell[SolnBlk.ICl][j].A/
 				   SolnBlk.Grid.area(SolnBlk.ICl, j))*SolnBlk.U[SolnBlk.ICl][j];
     } /* endfor */
+    ModifiedGrid = true;
   } /* endif */
 
-  /* Reset the boundary condition types at the block boundaries. */
-  Set_BCs(SolnBlk.Grid);
+  if (ModifiedGrid){
 
-  /* Recompute the exterior nodes for the block quadrilateral mesh. */
-  Update_Exterior_Nodes(SolnBlk.Grid);
+    /* Require update of the interior cells geometric properties. */
+    SolnBlk.Grid.Schedule_Interior_Mesh_Update();
 
-  /* Recompute the cells for the block quadrilateral mesh. */
-  Update_Cells(SolnBlk.Grid);
+    /* Reset the boundary condition types at the block boundaries. */
+    Set_BCs(SolnBlk.Grid);
+    
+    /* Recompute the exterior nodes for the block quadrilateral mesh. */
+    Update_Exterior_Nodes(SolnBlk.Grid);
+
+    /* Recompute the cells for the block quadrilateral mesh. */
+    Update_Cells(SolnBlk.Grid);
+  }
 
 }
 

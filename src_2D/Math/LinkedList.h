@@ -111,6 +111,7 @@ template<class LL_Data> class LL_Node {
  *      put           -- Overwrite the data in the specified element.
  *      get           -- Return the data from the last element.
  *      remove        -- Delete an element.
+ *      removeLast    -- Delete the last element of the list
  *      swap          -- Swap data between specified elements.
  *      reverse_order -- Reverse the order of the linked list.
  *      shift_order   -- Shift the the linked list 'm' positions.
@@ -159,6 +160,9 @@ template<class LL_Data> class LinkedList : public LL_Node<LL_Data> {
 
   //! Delete an element.
   void remove(LL_Node<LL_Data> *LL);
+
+  //! Delete the last element of the list.
+  void removeLast(void);
 
   //! Swap data between specified elements.
   void swap(const int n1, const int n2);
@@ -352,6 +356,31 @@ template<class LL_Data> void LinkedList<LL_Data>::remove(LL_Node<LL_Data> *LL) {
     }
   }
   delete LL; np--;
+}
+
+/**********************************************************************
+ * LinkedList::removeLast -- Delete the last element of the list      *
+ **********************************************************************/
+template<class LL_Data> inline 
+void LinkedList<LL_Data>::removeLast(void) {
+  if (end != NULL){
+    // There is at least one node in the list
+    if (end == start){
+      // There is only one node in the list
+      // The list becomes empty after removal.
+      delete end;
+      end = NULL;
+      start = NULL;
+    } else {
+      // Point end to the last but one Node
+      end = end->prior;
+      // Remove the previously last Node
+      delete end->next;
+      end->next = NULL;
+    }
+    // Update number of nodes
+    np--;
+  }
 }
 
 /**********************************************************************

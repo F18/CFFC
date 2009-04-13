@@ -62,11 +62,9 @@ void Output_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 		    const int Output_Title,
 		    ostream &Out_File) {
 
+  int i, j, nRow, nLoop;
   NavierStokes2D_pState W_node;
-
-  // Ensure boundary conditions are updated before evaluating
-  // solution at the nodes.
-  BCs(SolnBlk,IP);
+  Vector2D Node;
 
   // Output node solution data.  
   Out_File << setprecision(14);
@@ -102,43 +100,147 @@ void Output_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
     Out_File << "\"Rex\" \\ \n";
   }
 
-  Out_File << "ZONE T =  \"Block Number = " << Block_Number
-	   << "\" \\ \n"
-	   << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
-	   << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
-	   << "F = POINT \\ \n";
+  if (Tecplot_Execution_Mode::IsSmoothNodalSolnOutputRequired()){
 
-  for (int j = SolnBlk.Grid.JNl; j <= SolnBlk.Grid.JNu; j++) {
-    for (int i = SolnBlk.Grid.INl; i <= SolnBlk.Grid.INu; i++) {
-      Out_File.setf(ios::scientific);
-      Out_File << " " << SolnBlk.Grid.Node[i][j].X;
-      W_node = SolnBlk.Wn(i,j);
-      Out_File << " " << W_node.rho 
-	       << W_node.v
-	       << " " << W_node.p
-	       << " " << W_node.T()
-	       << " " << W_node.v.abs()/W_node.a() 
-	       << " " << W_node.H()
-	       << " " << W_node.s();
-      if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-	Out_File << " " << W_node.k
-		 << " " << W_node.omega
-		 << " " << W_node.epsilon()
-		 << " " << W_node.ell()
-		 << " " << W_node.pmodified()
-		 << " " << W_node.PrT(SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus)
-		 << " " << SolnBlk.Wall[i][j].yplus;
-	if (SolnBlk.Variable_Prandtl == ON) {
-	  Out_File << " " << W_node.ke
-		   << " " << W_node.ee;
+    // Output the interpolated nodal solution
+
+    // Ensure boundary conditions are updated before evaluating
+    // solution at the nodes.
+    BCs(SolnBlk,IP);
+
+    Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	     << "\" \\ \n"
+	     << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
+	     << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
+	     << "F = POINT \\ \n";
+
+    for ( j = SolnBlk.Grid.JNl; j <= SolnBlk.Grid.JNu; j++) {
+      for ( i = SolnBlk.Grid.INl; i <= SolnBlk.Grid.INu; i++) {
+	Out_File.setf(ios::scientific);
+	Out_File << " " << SolnBlk.Grid.Node[i][j].X;
+	W_node = SolnBlk.Wn(i,j);
+	Out_File << " " << W_node.rho 
+		 << " " << W_node.v
+		 << " " << W_node.p
+		 << " " << W_node.T()
+		 << " " << W_node.v.abs()/W_node.a() 
+		 << " " << W_node.H()
+		 << " " << W_node.s();
+	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	  Out_File << " " << W_node.k
+		   << " " << W_node.omega
+		   << " " << W_node.epsilon()
+		   << " " << W_node.ell()
+		   << " " << W_node.pmodified()
+		   << " " << W_node.PrT(SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus)
+		   << " " << SolnBlk.Wall[i][j].yplus;
+	  if (SolnBlk.Variable_Prandtl == ON) {
+	    Out_File << " " << W_node.ke
+		     << " " << W_node.ee;
+	  }
 	}
+	Out_File << " " << IP.Wo.v.x/IP.Wo.nu()*SolnBlk.Grid.Node[i][j].X.x;
+	Out_File << endl;
       }
-      Out_File << " " << IP.Wo.v.x/IP.Wo.nu()*SolnBlk.Grid.Node[i][j].X.x;
-      Out_File << endl;
     }
-  }
 
-  Out_File << setprecision(6);
+    Out_File << setprecision(6);
+
+  } else {
+    
+    // Output the discontinuous nodal solution
+
+    /* Output node solution data. */
+   
+    Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	     << "\" \\ \n"
+	     << "I = " << (SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 1)*3 << " \\ \n"
+	     << "J = " << (SolnBlk.Grid.JCu - SolnBlk.Grid.JCl + 1)*3 << " \\ \n"
+	     << "F = POINT \\ \n";
+
+    // Output data
+    for ( j  = SolnBlk.Grid.JCl ; j <= SolnBlk.Grid.JCu ; ++j ) { // for every j cell
+      for ( nRow = 1; nRow <= 3; ++nRow){ // for 3 rows of nodes
+	for ( i = SolnBlk.Grid.ICl ; i <= SolnBlk.Grid.ICu ; ++i ) { // for every i cell  
+	  for (nLoop = 1; nLoop <= 3; ++nLoop){	// for every node
+	    // Get the node location
+	    switch(nRow){
+	    case 1: // output the 1st row of nodes (i.e. NodeSW(i,j), xfaceS(i,j), NodeSE(i,j))
+	      switch(nLoop){
+	      case 1:		// output NodeSW(i,j)
+		Node = SolnBlk.Grid.nodeSW(i,j).X;
+		break;
+	      case 2:		// output xfaceS(i,j)
+		Node = SolnBlk.Grid.xfaceS(i,j);
+		break;
+	      case 3:		// output NodeSE(i,j)
+		Node = SolnBlk.Grid.nodeSE(i,j).X;
+		break;
+	      }
+	      break;
+
+	    case 2: // output the 2nd row of nodes (i.e. xfaceW(i,j), Grid.CellCentroid(i,j), xfaceE(i,j))
+	      switch(nLoop){
+	      case 1:		// output xfaceW(i,j)
+		Node = SolnBlk.Grid.xfaceW(i,j);
+		break;
+	      case 2:		// output Grid.CellCentroid(i,j)
+		Node = SolnBlk.Grid.CellCentroid(i,j);
+		break;
+	      case 3:		// output xfaceE(i,j) 
+		Node = SolnBlk.Grid.xfaceE(i,j);
+		break;
+	      }
+	      break;
+
+	    case 3: // output the 3rd row of nodes (i.e. NodeNW(i,j), xfaceN(i,j), NodeNE(i,j))
+	      switch(nLoop){
+	      case 1:		// output NodeNW(i,j)
+		Node = SolnBlk.Grid.nodeNW(i,j).X;
+		break;
+	      case 2:		// output xfaceN(i,j)
+		Node = SolnBlk.Grid.xfaceN(i,j);
+		break;
+	      case 3:		// output NodeNE(i,j)
+		Node = SolnBlk.Grid.nodeNE(i,j).X;
+		break;
+	      }
+	      break;
+	    } // endswitch
+    
+	    // Output Brief format
+	    W_node = SolnBlk.PiecewiseLinearSolutionAtLocation(i,j,Node);
+	    Out_File << " " << Node;
+	    Out_File << " " << W_node.rho 
+		     << " " << W_node.v
+		     << " " << W_node.p
+		     << " " << W_node.T()
+		     << " " << W_node.v.abs()/W_node.a() 
+		     << " " << W_node.H()
+		     << " " << W_node.s();
+	    if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	      Out_File << " " << W_node.k
+		       << " " << W_node.omega
+		       << " " << W_node.epsilon()
+		       << " " << W_node.ell()
+		       << " " << W_node.pmodified()
+		       << " " << W_node.PrT(SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus)
+		       << " " << SolnBlk.Wall[i][j].yplus;
+	      if (SolnBlk.Variable_Prandtl == ON) {
+		Out_File << " " << W_node.ke
+			 << " " << W_node.ee;
+	      }
+	    }
+	    Out_File << " " << IP.Wo.v.x/IP.Wo.nu()*Node.x;
+	    Out_File << endl;
+
+	  }
+	} /* endfor */
+      }
+    } /* endfor */
+    Out_File << setprecision(6);  
+
+  } // endif (Tecplot_Execution_Mode::IsSmoothNodalSolnOutputRequired())
 
 }
 
@@ -269,10 +371,16 @@ void Output_Cells_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
 		   << " " << SolnBlk.W[i][j].ee
 		   << " " << SolnBlk.W[i][j].deriv2(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j])
                    << " " << SolnBlk.W[i][j].f_lambda(SolnBlk.Wall[i][j].ywall)
-		   << " " << SolnBlk.W[i][j].productionE1(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus)
+		   << " " << SolnBlk.W[i][j].productionE1(SolnBlk.dWdx[i][j],
+							  SolnBlk.dWdy[i][j],
+							  SolnBlk.Wall[i][j].ywall,
+							  SolnBlk.Wall[i][j].yplus)
 		   << " " << SolnBlk.W[i][j].D1()
 		   << " " << SolnBlk.W[i][j].D2()
-		   << " " << SolnBlk.W[i][j].diff(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],SolnBlk.Wall[i][j].ywall,SolnBlk.Wall[i][j].yplus);
+		   << " " << SolnBlk.W[i][j].diff(SolnBlk.dWdx[i][j],
+						  SolnBlk.dWdy[i][j],
+						  SolnBlk.Wall[i][j].ywall,
+						  SolnBlk.Wall[i][j].yplus);
 	}
       }
       if (SolnBlk.Flow_Type) {
@@ -1581,167 +1689,185 @@ void Output_Flat_Plate_Tecplot(NavierStokes2D_Quad_Block &SolnBlk,
   Vector2D X;
   double eta, f, fp, fpp, Rex, Cf, Cf2, Cfe, phiv;
 
-  Linear_Reconstruction_LeastSquares(SolnBlk,LIMITER_ONE);
+  if (CENO_Execution_Mode::USE_CENO_ALGORITHM){
+    // Use the high-order output
+    SolnBlk.Output_Flat_Plate_Tecplot_HighOrder(Block_Number,
+						Output_Title_Soln,
+						Out_File_Soln,
+						Output_Title_Skin,
+						Out_File_Skin,
+						Winf,
+						plate_length,
+						l1_norm, l2_norm, max_norm,
+						area,
+						numberofactivecells,
+						l1_norm_cf, l2_norm_cf, max_norm_cf,
+						area_cf,
+						numberofactivecells_cf);
+  } else {
 
-  // Output node solution data.  
-  Out_File_Soln << setprecision(14);
-  if (Output_Title_Soln) {
-    Out_File_Soln << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Solution, "
-		  << "\"" << "\n"
-		  << "VARIABLES = \"x\" \\ \n"
-		  << "\"y\" \\ \n"
-		  << "\"rho\" \\ \n"
-		  << "\"u\" \\ \n"
-		  << "\"v\" \\ \n"
-		  << "\"p\" \\ \n"
-		  << "\"rho_e\" \\ \n"
-		  << "\"u_e\" \\ \n"
-		  << "\"v_e\" \\ \n"
-		  << "\"p_e\" \\ \n"
-		  << "\"eta\" \\ \n"
-		  << "\"f\" \\ \n"
-		  << "\"fp\" \\ \n"
-		  << "\"fpp\" \\ \n"
-		  << "\"u/Uinf\" \\ \n"
-		  << "\"u_e/Uinf\" \\ \n"
-		  << "\"(u - u_e)/Uinf\" \\ \n"
-		  << "\"phiv\" \\ \n"
-		  << "\"phiv_e\" \\ \n"
-		  << "\"phiv - phiv_e\" \\ \n";
-  }
-  Out_File_Soln << "ZONE T =  \"Block Number = " << Block_Number << "\" \\ \n"
-		<< "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
-		<< "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
-		<< "F = POINT \n";
-  for (int j = SolnBlk.Grid.JNl; j <= SolnBlk.Grid.JNu; j++) {
-    for (int i = SolnBlk.Grid.INl; i <= SolnBlk.Grid.INu; i++) {
-      // Get cell position and solution data.
-      X = SolnBlk.Grid.Node[i][j].X;
-      W = SolnBlk.Wn(i,j);
-      We = FlatPlate(Winf,X,plate_length,eta,f,fp,fpp);
-      if (X.x > ZERO && X.x < plate_length) phiv = (W.v.y/Winf.v.x)*sqrt(Winf.v.x*X.x/Winf.nu());
-      else phiv = ZERO;
-      // Output data.
-      Out_File_Soln.setf(ios::scientific);
-      Out_File_Soln << " " << X
-		    << " " << W.rho 
-		    << W.v
-		    << " " << W.p
-		    << " " << We.rho
-		    << We.v
-		    << " " << We.p
-  		    << " " << eta
-  		    << " " << f
-  		    << " " << fp
-  		    << " " << fpp
-  		    << " " << W.v.x/Winf.v.x
-  		    << " " << We.v.x/Winf.v.x
-  		    << " " << (W.v.x - We.v.x)/Winf.v.x
-  		    << " " << phiv
-  		    << " " << HALF*(eta*fp-f)
-  		    << " " << phiv - HALF*(eta*fp-f)
-		    << endl;
-      Out_File_Soln.unsetf(ios::scientific);
+    Linear_Reconstruction_LeastSquares(SolnBlk,LIMITER_ONE);
+
+    // Output node solution data.  
+    Out_File_Soln << setprecision(14);
+    if (Output_Title_Soln) {
+      Out_File_Soln << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Solution, "
+		    << "\"" << "\n"
+		    << "VARIABLES = \"x\" \\ \n"
+		    << "\"y\" \\ \n"
+		    << "\"rho\" \\ \n"
+		    << "\"u\" \\ \n"
+		    << "\"v\" \\ \n"
+		    << "\"p\" \\ \n"
+		    << "\"rho_e\" \\ \n"
+		    << "\"u_e\" \\ \n"
+		    << "\"v_e\" \\ \n"
+		    << "\"p_e\" \\ \n"
+		    << "\"eta\" \\ \n"
+		    << "\"f\" \\ \n"
+		    << "\"fp\" \\ \n"
+		    << "\"fpp\" \\ \n"
+		    << "\"u/Uinf\" \\ \n"
+		    << "\"u_e/Uinf\" \\ \n"
+		    << "\"(u - u_e)/Uinf\" \\ \n"
+		    << "\"phiv\" \\ \n"
+		    << "\"phiv_e\" \\ \n"
+		    << "\"phiv - phiv_e\" \\ \n";
     }
-  }
-
-  // Calculate the norms of the u-velocity component and the skin
-  // friction coefficient.
-  for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-      // Get cell position and solution data.
-      X = SolnBlk.Grid.Cell[i][j].Xc;
-      W = SolnBlk.W[i][j];
-      // Determine the norms of the u-velocity component.
-      if (X.x >= ZERO && X.x <= plate_length) {
-	We = FlatPlate(Winf,X,plate_length,eta,f,fp,fpp);
-	l1_norm += fabs(W.v.x - We.v.x)*SolnBlk.Grid.Cell[i][j].A;
-	l2_norm += sqr(W.v.x - We.v.x)*SolnBlk.Grid.Cell[i][j].A;
-	max_norm = max(max_norm,fabs(W.v.x - We.v.x));
-	area += SolnBlk.Grid.Cell[i][j].A;
-	numberofactivecells++;
-      }
-      // Determine the norms of the skin friction coefficient.
-      if (X.x >= ZERO && X.x <= plate_length && j == 2 &&
-	  (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL)) {
-	// Get exact skin friction coefficient.
-	Rex = (Winf.v.x/Winf.nu())*X.x;
-	if (SolnBlk.Flow_Type == FLOWTYPE_LAMINAR) {
-	  Cfe = TWO*0.32206/max(sqrt(Rex),NANO);
-	} else if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-	  Cfe = 0.37*pow(log(Rex),-2.584);
-	}
-	// Get computed skin friction coefficient.
-	Cf  = TWO*WallShearStress(W,X,
-				  SolnBlk.Grid.nodeSW(i,j).X,
-				  SolnBlk.Grid.nodeSE(i,j).X,
-				  -SolnBlk.Grid.nfaceS(i,j))/(Winf.rho*Winf.v.x*Winf.v.x);
-	// Calculate error norms.
-	l1_norm_cf += fabs(Cf - Cfe)*SolnBlk.Grid.Cell[i][j].A;
-	l2_norm_cf += sqr(Cf - Cfe)*SolnBlk.Grid.Cell[i][j].A;
-	max_norm_cf = max(max_norm_cf,fabs(Cf - Cfe));
-	area_cf += SolnBlk.Grid.Cell[i][j].A;
-	numberofactivecells_cf++;
-	if (!skin_friction_flag) skin_friction_flag = ON;
-      } else {
-	Cf  = ZERO;
-	Cfe = ZERO;
-      }
-    }
-  }
-
-  if (Output_Title_Skin) {
-    Out_File_Skin << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Solution, "
-		  << "\"" << "\n"
-		  << "VARIABLES = \"x\" \\ \n"
-		  << "\"Rex\" \\ \n"
-		  << "\"Cf\" \\ \n"
-		  << "\"Cf2\" \\ \n"
-		  << "\"Cf_e\" \\ \n"
-		  << "\"Cf-Cf_e\" \\ \n"
-		  << "\"Cf2-Cf_e\" \\ \n";
-  }
-  if (skin_friction_flag) {
-    Out_File_Skin << "ZONE T =  \"Block Number = " << Block_Number
-		  << "\" \\ \n"
-		  << "I = " << numberofactivecells_cf << " \\ \n"
-		  << "J = " << 1 << " \\ \n"
+    Out_File_Soln << "ZONE T =  \"Block Number = " << Block_Number << "\" \\ \n"
+		  << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
+		  << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
 		  << "F = POINT \n";
-    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-      if (SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc.x >= ZERO &&
-	  SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc.x <= plate_length &&
-	  (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL)) {
-	Rex = (Winf.v.x/Winf.nu())*SolnBlk.Grid.xfaceS(i,SolnBlk.JCl).x;
-	if (SolnBlk.Flow_Type == FLOWTYPE_LAMINAR) {
-	  Cfe = TWO*0.32206/max(sqrt(Rex),NANO);
-	} else if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-	  Cfe = 0.37*pow(log(Rex)/log(TEN),-2.584);
-	}
-	Cf  = TWO*WallShearStress(SolnBlk.W[i][SolnBlk.JCl],
-				  SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc,
-				  SolnBlk.Grid.nodeSW(i,SolnBlk.JCl).X,
-				  SolnBlk.Grid.nodeSE(i,SolnBlk.JCl).X,
-				  -SolnBlk.Grid.nfaceS(i,SolnBlk.JCl))/(Winf.rho*sqr(Winf.v.x));
-	Cf2 = TWO*WallShearStress2(SolnBlk.Grid.xfaceS(i,SolnBlk.JCl),
-				   SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc,
-				   SolnBlk.W[i][SolnBlk.JCl],
-				   SolnBlk.dWdx[i][SolnBlk.JCl],
-				   SolnBlk.dWdy[i][SolnBlk.JCl],
-				   -SolnBlk.Grid.nfaceS(i,SolnBlk.JCl))/(Winf.rho*sqr(Winf.v.x));
-	if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
-	  Cf2 = TWO*SolnBlk.Wall[i][SolnBlk.JCl].tauw/(Winf.rho*sqr(Winf.v.x));
-	}
-	Out_File_Skin.setf(ios::scientific);
-	Out_File_Skin << " " << SolnBlk.Grid.xfaceS(i,SolnBlk.JCl).x
-		      << " " << Rex
-		      << " " << Cf
-		      << " " << Cf2
-		      << " " << Cfe
-		      << " " << Cf - Cfe
-		      << " " << Cf2 - Cfe
+    for (int j = SolnBlk.Grid.JNl; j <= SolnBlk.Grid.JNu; j++) {
+      for (int i = SolnBlk.Grid.INl; i <= SolnBlk.Grid.INu; i++) {
+	// Get cell position and solution data.
+	X = SolnBlk.Grid.Node[i][j].X;
+	W = SolnBlk.Wn(i,j);
+	We = FlatPlate(Winf,X,plate_length,eta,f,fp,fpp);
+	if (X.x > ZERO && X.x < plate_length) phiv = (W.v.y/Winf.v.x)*sqrt(Winf.v.x*X.x/Winf.nu());
+	else phiv = ZERO;
+	// Output data.
+	Out_File_Soln.setf(ios::scientific);
+	Out_File_Soln << " " << X
+		      << " " << W.rho 
+		      << W.v
+		      << " " << W.p
+		      << " " << We.rho
+		      << We.v
+		      << " " << We.p
+		      << " " << eta
+		      << " " << f
+		      << " " << fp
+		      << " " << fpp
+		      << " " << W.v.x/Winf.v.x
+		      << " " << We.v.x/Winf.v.x
+		      << " " << (W.v.x - We.v.x)/Winf.v.x
+		      << " " << phiv
+		      << " " << HALF*(eta*fp-f)
+		      << " " << phiv - HALF*(eta*fp-f)
 		      << endl;
+	Out_File_Soln.unsetf(ios::scientific);
+      }
+    }
+
+    // Calculate the norms of the u-velocity component and the skin
+    // friction coefficient.
+    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+	// Get cell position and solution data.
+	X = SolnBlk.Grid.Cell[i][j].Xc;
+	W = SolnBlk.W[i][j];
+	// Determine the norms of the u-velocity component.
+	if (X.x >= ZERO && X.x <= plate_length) {
+	  We = FlatPlate(Winf,X,plate_length,eta,f,fp,fpp);
+	  l1_norm += fabs(W.v.x - We.v.x)*SolnBlk.Grid.Cell[i][j].A;
+	  l2_norm += sqr(W.v.x - We.v.x)*SolnBlk.Grid.Cell[i][j].A;
+	  max_norm = max(max_norm,fabs(W.v.x - We.v.x));
+	  area += SolnBlk.Grid.Cell[i][j].A;
+	  numberofactivecells++;
+	}
+	// Determine the norms of the skin friction coefficient.
+	if (X.x >= ZERO && X.x <= plate_length && j == SolnBlk.JCl &&
+	    (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
+	     SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL)) {
+	  // Get exact skin friction coefficient.
+	  Rex = (Winf.v.x/Winf.nu())*X.x;
+	  if (SolnBlk.Flow_Type == FLOWTYPE_LAMINAR) {
+	    Cfe = TWO*0.32206/max(sqrt(Rex),NANO);
+	  } else if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	    Cfe = 0.37*pow(log(Rex),-2.584);
+	  }
+	  // Get computed skin friction coefficient.
+	  Cf  = TWO*WallShearStress(W,X,
+				    SolnBlk.Grid.nodeSW(i,j).X,
+				    SolnBlk.Grid.nodeSE(i,j).X,
+				    -SolnBlk.Grid.nfaceS(i,j))/(Winf.rho*Winf.v.x*Winf.v.x);
+	  // Calculate error norms.
+	  l1_norm_cf += fabs(Cf - Cfe)*SolnBlk.Grid.Cell[i][j].A;
+	  l2_norm_cf += sqr(Cf - Cfe)*SolnBlk.Grid.Cell[i][j].A;
+	  max_norm_cf = max(max_norm_cf,fabs(Cf - Cfe));
+	  area_cf += SolnBlk.Grid.Cell[i][j].A;
+	  numberofactivecells_cf++;
+	  if (!skin_friction_flag) skin_friction_flag = ON;
+	} else {
+	  Cf  = ZERO;
+	  Cfe = ZERO;
+	}
+      }
+    }
+
+    if (Output_Title_Skin) {
+      Out_File_Skin << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Solution, "
+		    << "\"" << "\n"
+		    << "VARIABLES = \"x\" \\ \n"
+		    << "\"Rex\" \\ \n"
+		    << "\"Cf\" \\ \n"
+		    << "\"Cf2\" \\ \n"
+		    << "\"Cf_e\" \\ \n"
+		    << "\"Cf-Cf_e\" \\ \n"
+		    << "\"Cf2-Cf_e\" \\ \n";
+    }
+    if (skin_friction_flag) {
+      Out_File_Skin << "ZONE T =  \"Block Number = " << Block_Number
+		    << "\" \\ \n"
+		    << "I = " << numberofactivecells_cf << " \\ \n"
+		    << "J = " << 1 << " \\ \n"
+		    << "F = POINT \n";
+      for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+	if (SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc.x >= ZERO &&
+	    SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc.x <= plate_length &&
+	    (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
+	     SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL)) {
+	  Rex = (Winf.v.x/Winf.nu())*SolnBlk.Grid.xfaceS(i,SolnBlk.JCl).x;
+	  if (SolnBlk.Flow_Type == FLOWTYPE_LAMINAR) {
+	    Cfe = TWO*0.32206/max(sqrt(Rex),NANO);
+	  } else if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	    Cfe = 0.37*pow(log(Rex)/log(TEN),-2.584);
+	  }
+	  Cf  = TWO*WallShearStress(SolnBlk.W[i][SolnBlk.JCl],
+				    SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc,
+				    SolnBlk.Grid.nodeSW(i,SolnBlk.JCl).X,
+				    SolnBlk.Grid.nodeSE(i,SolnBlk.JCl).X,
+				    -SolnBlk.Grid.nfaceS(i,SolnBlk.JCl))/(Winf.rho*sqr(Winf.v.x));
+	  Cf2 = TWO*WallShearStress2(SolnBlk.Grid.xfaceS(i,SolnBlk.JCl),
+				     SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc,
+				     SolnBlk.W[i][SolnBlk.JCl],
+				     SolnBlk.dWdx[i][SolnBlk.JCl],
+				     SolnBlk.dWdy[i][SolnBlk.JCl],
+				     -SolnBlk.Grid.nfaceS(i,SolnBlk.JCl))/(Winf.rho*sqr(Winf.v.x));
+	  if (SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
+	    Cf2 = TWO*SolnBlk.Wall[i][SolnBlk.JCl].tauw/(Winf.rho*sqr(Winf.v.x));
+	  }
+	  Out_File_Skin.setf(ios::scientific);
+	  Out_File_Skin << " " << SolnBlk.Grid.xfaceS(i,SolnBlk.JCl).x
+			<< " " << Rex
+			<< " " << Cf
+			<< " " << Cf2
+			<< " " << Cfe
+			<< " " << Cf - Cfe
+			<< " " << Cf2 - Cfe
+			<< endl;
+	}
       }
     }
   }

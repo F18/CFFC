@@ -188,6 +188,9 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
   int i_command = INVALID_INPUT_CODE;
   string value_string;
 
+  /* Parse next control parameter with Grid3D_HO_Execution_Mode parser */
+  //Grid3D_HO_Execution_Mode::Parse_Next_Input_Control_Parameter(*this, i_command, code, value);
+
   if (strcmp(code, "Grid_Type") == 0) {
      i_command = 3001;
      value >> value_string;
@@ -558,7 +561,6 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
 
   } else {
      i_command = INVALID_INPUT_CODE;
-
   } /* endif */
 
   return i_command;

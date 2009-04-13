@@ -4,7 +4,7 @@
 #include "SourceRevisionData.h"
 
 char* SourceCode::CodeName="CFRS: Computational Framework for Reconstruction Studies";
-char* SourceCode::CompilationTime="14 Sep 2007, 16:32";
-char* SourceCode::LastChanged_Author="Lucian Ivan";
-char* SourceCode::LastCommitted_Hash="c4911caa340113e09670f005e70e160964a31624";
-char* SourceCode::LastChanged_Date="14 Sep 2007, 11:26";
+char* SourceCode::CompilationTime="23 Mar 2009, 16:16";
+char* SourceCode::LastChanged_Author="Ramy Rashad";
+char* SourceCode::LastCommitted_Hash="42fda7c3067c9576117158f38a059b7ee12b05ff";
+char* SourceCode::LastChanged_Date="21 Mar 2009, 17:39";
