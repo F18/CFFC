@@ -218,11 +218,19 @@ public:
     int NumVar(void) const {
         return NUM_VAR_EULER3D;
     }
+    static int NumofVariables(void) {
+        return NUM_VAR_EULER3D;
+    }
 
     //! Copy operator.
     /*! Set this primitive state to a given primitive state */
     void Copy(const Euler3D_Polytropic_pState &W) {
         rho = W.rho;   v = W.v;   p = W.p;
+    }
+
+    //! One operator. Set the solution to ONE.
+    void One(void) { 
+        rho = ONE; v.x = ONE; v.y = ONE; v.z = ONE; p = ONE;
     }
 
     //! Vacuum operator.

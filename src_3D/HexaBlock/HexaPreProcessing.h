@@ -69,7 +69,8 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
      local 3D solution blocks */
   
   error_flag = HighOrder_MultiBlock::Create_Initial_HighOrder_Variables(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-  									Data.Local_Adaptive_Block_List);
+  									Data.Local_Adaptive_Block_List,
+									Solution_Data.Input.Reconstruction_Order);
 
   error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return (error_flag);

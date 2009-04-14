@@ -157,7 +157,7 @@ class Hexa_Block {
    void deallocate(void);
 
    //! Allocate memory for high-order variables
-   void allocate_HighOrder(void);
+   void allocate_HighOrder(const int ReconstructionOrder);
 
    //! Deallocate memory for high-order variables
    void deallocate_HighOrder(void);  
@@ -700,7 +700,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate(void) {
  * Allocate memory for high-order variables.
  ********************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate_HighOrder(void){
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate_HighOrder(const int ReconstructionOrder){
 
   bool _pseudo_inverse_allocation_(false);
   int i;
@@ -712,10 +712,10 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate_HighOrder(void){
     _pseudo_inverse_allocation_ = true;
   }
 
-//  HighOrderVariable.InitializeVariable(ReconstructionOrder,
-//				       Grid,
-//				       _pseudo_inverse_allocation_);
-
+  HighOrderVariable.InitializeVariable(ReconstructionOrder,
+				       Grid,
+				       _pseudo_inverse_allocation_);
+// --> RR: comment out multiple reconstruction order allocations in allocate_HighOrder
 //  // Re-allocate new memory if necessary
 //  if (NumberOfReconstructions != NumberOfHighOrderVariables){
 //

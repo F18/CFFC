@@ -33,7 +33,8 @@ public:
   //! Create initial high-order variables
   template<typename HEXA_BLOCK>
   static int Create_Initial_HighOrder_Variables(HEXA_BLOCK *Solution_Block,
-						AdaptiveBlock3D_List &LocalSolnBlockList){
+						AdaptiveBlock3D_List &LocalSolnBlockList,
+						const int ReconstructionOrder){
 
     int i;
 
@@ -42,7 +43,7 @@ public:
     for (i = 0 ; i <= LocalSolnBlockList.Nblk-1 ; ++i ) {
       if (LocalSolnBlockList.Block[i].used == ADAPTIVEBLOCK3D_USED) {
 	// allocate high-order objects
-	Solution_Block[i].allocate_HighOrder();
+	Solution_Block[i].allocate_HighOrder(ReconstructionOrder);
 	// allocate high-order boundary conditions
 	// Solution_Block[i].allocate_HighOrder_BoundaryConditions(); //RR: allocate_HighOrder_Boundary_Conditions()
      

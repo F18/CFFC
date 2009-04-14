@@ -244,7 +244,7 @@ public:
   //! Get the cell (ii,jj,kk) of the associated block mesh
   const GeometryType & CellGeometry(const int & ii, const int & jj, const int & kk) const {return Geom->Cell[ii][jj][kk];}
   //! Get the centroid of cell (ii,jj,kk) of the associated block mesh
-  const Vector3D & CellCenter(const int & ii, const int & jj, const int & kk) const {return Geom->centroid(ii,jj,kk);}
+  const Vector3D CellCenter(const int & ii, const int & jj, const int & kk) const {return Geom->centroid(ii,jj,kk);}
   //! Get the X-coordinate of the (ii,jj,kk) cell centroid of the associated block mesh
   const double XCellCenter(const int & ii, const int & jj, const int & kk) const {return Geom->Xcentroid(ii,jj,kk);}
   //! Get the Y-coordinate of the (ii,jj,kk) cell centroid of the associated block mesh
@@ -963,7 +963,8 @@ private:
   //@}
 
   //! Get the number of variables in the solution state
-  int NumberOfVariables(void) const {return Soln_State::NumVar(); }
+  //  int NumberOfVariables(void) const {return Soln_State::NumVar(); }
+  int NumberOfVariables(void) const {return Soln_State::NumofVariables(); }
 
   //! Allocate memory at the cell level based on the order of reconstruction
   void allocate_CellMemory(const int &ReconstructionOrder, const bool &_pseudo_inverse_allocation_);
@@ -1486,7 +1487,7 @@ void HighOrder<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder, 
   }/* endfor */
 
   // Set the reconstruction helper variables
-  DeltaCellCenters.assign(StencilSize, Vector3D(0.0)); // This variable is overwritten for each cell
+  DeltaCellCenters.assign(StencilSize, Vector3D(Vector3D_ZERO)); // This variable is overwritten for each cell
   i_index.assign(StencilSize, 0); // This variable is overwritten for each cell
   j_index.assign(StencilSize, 0); // This variable is overwritten for each cell
   k_index.assign(StencilSize, 0); // This variable is overwritten for each cell
