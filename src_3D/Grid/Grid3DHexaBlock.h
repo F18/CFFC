@@ -224,6 +224,8 @@ class Grid3D_Hexa_Block {
     /* Calculate centroid of cell. */
     Vector3D centroid(const Cell3D &Cell);
     Vector3D centroid(const int ii, const int jj, const int kk);
+
+  //    Vector3D & cellcentroid(const int ii, const int jj, const int kk);
     double Xcentroid(const int ii, const int jj, const int kk);
     double Ycentroid(const int ii, const int jj, const int kk);
     double Zcentroid(const int ii, const int jj, const int kk);
@@ -611,6 +613,21 @@ inline void Grid3D_Hexa_Block::deallocate(void) {
 
    if (Allocated) {
 
+      // If using CENO Reconstruction, we need to deallocate the following grid information:
+      // -----------------------------------------------------------------------------------
+      if (Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID == ON){
+        
+        // re-set the Number of Gauss Quadrature Points for the flux evaluation
+        NumGQP = 1; 
+        // deallocate memory for the container of geometric coefficients
+        for (int i = 0; i <NCi ; ++i )
+      	 for (int j = 0; j <NCj ; ++j )
+      	   for (int k = 0; k <NCk ; ++k ){
+      	     Cell[i][j][k].FreeMemoryGeomCoeffContainer();
+      	   } /* endfor */
+        
+      } /* endif */
+
       assert(NNi >= 1 && NNj >= 1 && NNk >= 1);
       for (int i = 0; i <= NNi-1 ; ++i ) {
          for ( int j = 0 ; j <= NNj-1 ; ++j) {
@@ -632,6 +649,7 @@ inline void Grid3D_Hexa_Block::deallocate(void) {
          delete []BCtypeW[j]; BCtypeW[j] = NULL;
          delete []BCtypeE[j]; BCtypeE[j] = NULL;
       } /* endfor */
+
       delete []BCtypeW; BCtypeW = NULL;
       delete []BCtypeE; BCtypeE = NULL;
   
@@ -645,7 +663,7 @@ inline void Grid3D_Hexa_Block::deallocate(void) {
       delete []BCtypeN; BCtypeN = NULL; delete []BCtypeS; BCtypeS = NULL; 
       delete []BCtypeE; BCtypeE = NULL; delete []BCtypeW; BCtypeW = NULL;
       delete []BCtypeT; BCtypeT = NULL; delete []BCtypeB; BCtypeB = NULL;
-  
+
       NNi = 0; INl = 0; INu = 0; 
       NNj = 0; JNl = 0; JNu = 0; 
       NNk = 0; KNl = 0; KNu = 0; 
@@ -671,6 +689,9 @@ inline Vector3D Grid3D_Hexa_Block::centroid(const Cell3D &Cell) {
 }
 
 inline Vector3D Grid3D_Hexa_Block::centroid(const int ii, const int jj, const int kk) {
+  if (ii < 0 ) {
+    std::cout << "\n\n\n ii is less than ZERO!\n\n\n" << std::cout.flush();
+  }
   return ((Node[ii][jj+1][kk].X+Node[ii+1][jj+1][kk].X+Node[ii+1][jj][kk].X+
            Node[ii][jj][kk].X+Node[ii][jj+1][kk+1].X+Node[ii+1][jj+1][kk+1].X+
            Node[ii+1][jj][kk+1].X+Node[ii][jj][kk+1].X)/8);

@@ -341,7 +341,7 @@ public:
   void InitializeBasicVariable(int ReconstructionOrder, GeometryType & Block,
 			       const bool &_pseudo_inverse_allocation_ = false);
   void SetReconstructionOrder(int ReconstructionOrder);
-  //  void SetPropertiesHighOrderBlock(void);
+  void SetPropertiesHighOrderBlock(void);
   //  void CheckConsistencyOfGeometricSplineProperties(void);
   //@}
 
@@ -1133,7 +1133,7 @@ HighOrder<SOLN_STATE>::HighOrder(int ReconstructionOrder,
 	   ReconstructionOrder);
 
   // Set properties of block boundaries (i.e. which boundaries are constrained/unconstrained and which are opaque/transparent)
-  //  SetPropertiesHighOrderBlock();
+  SetPropertiesHighOrderBlock();
 
   // Build the reconstruction type map
   // BuildReconstructionTypeMap();
@@ -1560,14 +1560,14 @@ void HighOrder<SOLN_STATE>::deallocate(void){
 
     for ( i = 0; i < Ni ; ++i ) {
       for ( j = 0; j < Nj ; ++j ) {
-	delete [] TD[i][j]; 
-	delete [] SI[i][j]; 
-	delete [] LimitedCell[i][j]; 
-	delete [] PreviousLimitedCell[i][j];
+	delete [] TD[i][j]; TD[i][j]=NULL;
+	delete [] SI[i][j]; SI[i][j]=NULL;
+	delete [] LimitedCell[i][j]; LimitedCell[i][j]=NULL;
+	delete [] PreviousLimitedCell[i][j]; PreviousLimitedCell[i][j]=NULL;
 
 	if (_allocated_psinv){
-	  delete [] CENO_LHS[i][j];
-	  delete [] CENO_Geometric_Weights[i][j];
+	  delete [] CENO_LHS[i][j]; CENO_LHS[i][j]=NULL;
+	  delete [] CENO_Geometric_Weights[i][j]; CENO_Geometric_Weights[i][j]=NULL;
 	}
       }
     }
@@ -1796,7 +1796,7 @@ void HighOrder<SOLN_STATE>::InitializeBasicVariable(int ReconstructionOrder, Geo
   SetGeometryPointer(Block);
 
   // Set properties of block boundaries (i.e. which boundaries are constrained/unconstrained and which are opaque/transparent)
-  //  SetPropertiesHighOrderBlock();
+  SetPropertiesHighOrderBlock();
 
   // Build the reconstruction type map
   //  BuildReconstructionTypeMap();
@@ -1819,18 +1819,19 @@ void HighOrder<SOLN_STATE>::SetReconstructionOrder(int ReconstructionOrder){
 		     _pseudo_inverse_allocation_);
 }
 
+/*! 
+ * Set the properties of high-order block boundaries,
+ * based on the associated grid.
+ * There are three possible boundary types:
+ * 1. constrained and opaque
+ * 2. unconstrained and opaque
+ * 3. unconstrained and transparent
+ */
+template<class SOLN_STATE> inline
+void HighOrder<SOLN_STATE>::SetPropertiesHighOrderBlock(void){
+
 // --> RR: SetPropertiesHighOrderBlock(void) for constrained block boundaries
-///*! 
-// * Set the properties of high-order block boundaries,
-// * based on the associated grid.
-// * There are three possible boundary types:
-// * 1. constrained and opaque
-// * 2. unconstrained and opaque
-// * 3. unconstrained and transparent
-// */
-//template<class SOLN_STATE> inline
-//void HighOrder<SOLN_STATE>::SetPropertiesHighOrderBlock(void){
-//
+
 //  // Ensure that block splines require a valid scenario for constrained reconstruction
 //  CheckConsistencyOfGeometricSplineProperties();
 //
@@ -1976,11 +1977,13 @@ void HighOrder<SOLN_STATE>::SetReconstructionOrder(int ReconstructionOrder){
 //    _constrained_block_reconstruction = true;
 //  }
 //
-//  // Set indexes between which solution reconstruction is performed.
-//  StartI = ICl - Nghost_HO; EndI = ICu + Nghost_HO;
-//  StartJ = JCl - Nghost_HO; EndJ = JCu + Nghost_HO;
-//
-//}
+
+// Set indexes between which solution reconstruction is performed.
+  StartI = ICl - Nghost_HO; EndI = ICu + Nghost_HO;
+  StartJ = JCl - Nghost_HO; EndJ = JCu + Nghost_HO;
+  StartK = KCl - Nghost_HO; EndK = KCu + Nghost_HO;
+
+}
 
 ///*! 
 // * Ensure that the block geometric splines require a realizable

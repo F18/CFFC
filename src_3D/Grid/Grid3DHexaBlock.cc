@@ -1528,7 +1528,8 @@ void Grid3D_Hexa_Block::ComputeGeometricCoefficients(const int &ii, const int &j
 
     Polynom.ChangePowersTo(p1,p2,p3);
 
-    Cell[ii][jj][kk].GeomCoeffValue(i) = IntegratePolynomialOverTheCell(Polynom,14,DummyParam,ii,jj,kk) / volume(ii,jj,kk);
+    //Cell[ii][jj][kk].GeomCoeffValue(i) = IntegratePolynomialOverTheCell(Polynom,14,DummyParam,ii,jj,kk) / volume(ii,jj,kk);
+    Cell[ii][jj][kk].GeomCoeffValue(i) = IntegratePolynomialOverTheCell(Polynom,1,DummyParam,ii,jj,kk) / volume(ii,jj,kk);
 
   } /* endfor */
 }
