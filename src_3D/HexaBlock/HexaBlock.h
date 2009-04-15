@@ -482,7 +482,12 @@ class Hexa_Block {
 				    const int k_min,
 				    const int k_max,
 				    const int k_inc);
-   
+
+   SOLN_cSTATE RiemannFlux_n(const int & Flux_Function,
+			     const SOLN_pSTATE &Wl,
+			     const SOLN_pSTATE &Wr,
+			     const Vector3D &normal_dir) const;
+    
   private:
    //copy and assignment are not permitted ...
    Hexa_Block(const Hexa_Block &Soln);
@@ -4529,6 +4534,52 @@ UnloadReceiveBuffer_Flux_F2C(double *buffer,
 
    cout << "\nError: UnloadReceiveBuffer_Flux_F2C() is not written for Hexa"; cout.flush();
    return (2);
+
+}
+
+/*!
+ * Return the upwind flux in the normal direction 
+ * based on the left and right interface states for 
+ * a variety of flux functions.
+ *
+ * \param Flux_Function index to specify the requested flux function
+ * \param Wl left interface state
+ * \param Wr right interface state
+ * \param normal_dir vector to define the normal direction
+ */
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+SOLN_cSTATE Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+RiemannFlux_n(const int & Flux_Function,
+	      const SOLN_pSTATE &Wl,
+	      const SOLN_pSTATE &Wr,
+	      const Vector3D &normal_dir) const{
+
+  switch(Flux_Function) {
+//  case FLUX_FUNCTION_GODUNOV :
+//    return SOLN_pSTATE::FluxGodunov_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_ROE :
+    return SOLN_pSTATE::FluxRoe_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_RUSANOV :
+//    return SOLN_pSTATE::FluxRusanov_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_HLLE :
+    return SOLN_pSTATE::FluxHLLE_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_LINDE :
+//    return SOLN_pSTATE::FluxLinde_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_HLLC :
+//    return SOLN_pSTATE::FluxHLLC_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_VANLEER :
+//    return SOLN_pSTATE::FluxVanLeer_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_AUSM :
+//    return SOLN_pSTATE::FluxAUSM_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_AUSMplus :
+//    return SOLN_pSTATE::FluxAUSMplus_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_ROE_PRECON_WS :
+//    return SOLN_pSTATE::FluxRoe_n_Precon_WS(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_HLLE_PRECON_WS :
+//    return SOLN_pSTATE::FluxHLLE_n_Precon_WS(Wl, Wr, normal_dir);
+  default:
+    return SOLN_pSTATE::FluxRoe_n(Wl, Wr, normal_dir);
+  } /* endswitch */
 
 }
 
