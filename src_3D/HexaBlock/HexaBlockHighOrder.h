@@ -8,9 +8,7 @@
 // None
 
 /* Include CFFC header files */
-#ifndef _HEXA_BLOCK_INCLUDED
 #include "HexaBlock.h"
-#endif //_HEXA_BLOCK_INCLUDED
 
 
 //! Routine: dUdt_Multistage_Explicit_HighOrder
@@ -191,6 +189,9 @@ dUdt_Residual_HighOrder(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
   */
  
 
+  HighOrderVariable.ComputeHighOrderSolutionReconstruction(*this, 
+							   IPs.i_Limiter,
+							   &Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::CellSolution);
 
 
 

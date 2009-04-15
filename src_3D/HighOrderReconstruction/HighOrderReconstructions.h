@@ -13,6 +13,7 @@
 // None
 
 /* Include CFFC header files */
+#include "../Math/LinearSystems.h"
 // None
 
 

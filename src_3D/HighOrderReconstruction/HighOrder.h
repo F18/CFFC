@@ -1632,6 +1632,8 @@ void HighOrder<SOLN_STATE>::deallocate(void){
 
     // Set other flags
     _freeze_limiter = false;
+    // --> RR: deallocate_CellMemory() added to deallocate (??).
+    deallocate_CellMemory();
 
   }
 }
@@ -2826,7 +2828,7 @@ void HighOrder<SOLN_STATE>::SetCentralStencil(const int &iCell, const int &jCell
   j_index[0]=jCell; 
   k_index[0]=kCell;     
 
-  int Poz = 1;
+  int Poz = 1; // position 0 has been set to (iCell,jCell,kCell)
 
   /* First layer */
   for (int k=kCell-1; k<=kCell+1; ++k){
@@ -2842,29 +2844,29 @@ void HighOrder<SOLN_STATE>::SetCentralStencil(const int &iCell, const int &jCell
     } /*end for*/
   } /*end for*/
 
-
   if (rings == 2){
 
     /* Second layer */
     for (int k=kCell-2; k<=kCell+2; ++k){
       for (int j=jCell-2; j<=jCell+2; ++j){
         for (int i=iCell-2; i<=iCell+2; ++i){
-          // For k = -2 and k = 2 fill in all nine cells
-          if( (k*k) > 1 ){
+          // For (k-kCell) = -2 and (k-kCell) = 2 fill in all nine cells
+          if( ((k-kCell)*(k-kCell)) > 1 ){
             i_index[Poz] = i;
             j_index[Poz] = j;
             k_index[Poz] = k;
             ++Poz;
           }
-          // For k=-1, 0, or 1: fill in outer cells only,
+          // For (k-kCell)=-1, 0, or 1: fill in outer cells only,
           // since inner cells belong to first layer of stencil
-          else if ( (i*i) > 1 || (j*j) > 1 ){
+          else if ( ((i-iCell)*(i-iCell)) > 1 || ((j-jCell)*(j-jCell)) > 1 ){
               i_index[Poz] = i;
               j_index[Poz] = j;
               k_index[Poz] = k;
               ++Poz;
           }
-        } /*end for*/
+
+	} /*end for*/
       } /*end for*/
     } /*end for*/
   } /*end if*/
@@ -2887,7 +2889,7 @@ template<class SOLN_STATE> inline
 void HighOrder<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const int &jCell, const int &kCell,
 						     IndexType & i_index, IndexType & j_index, IndexType & k_index) const{
 
-  int _dummy_;
+  int _dummy_ = 0.0;
 
   // Call set central stencil
   SetCentralStencil(iCell,jCell,kCell,i_index,j_index,k_index,rings,_dummy_);
