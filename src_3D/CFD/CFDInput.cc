@@ -650,6 +650,8 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_TURBULENT_BOX;
        } else if (strcmp(ICs_Type, "Restart") == 0) {
           i_ICs = IC_RESTART;
+       } else if (strcmp(ICs_Type,"Sin_X") == 0) {
+      	  i_ICs = IC_SINE_WAVE_XDIR;
        } else {
           i_command = INVALID_INPUT_VALUE;
        } /* endif */

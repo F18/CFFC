@@ -488,6 +488,9 @@ class Hexa_Block {
 			     const SOLN_pSTATE &Wr,
 			     const Vector3D &normal_dir) const;
     
+
+   double SinVariationInXDir(const double x, const double y, const double z);
+
   private:
    //copy and assignment are not permitted ...
    Hexa_Block(const Hexa_Block &Soln);
@@ -1645,8 +1648,25 @@ ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             } /* endfor */
          } /* endfor */
          break;
-      
+
+   case IC_SINE_WAVE_XDIR :
+//    Wl.v.x = 100.0;
+//    Wl.v.y = 0.0;
+//    Wl.v.z = 0.0;
+//    Wl.p = PRESSURE_STDATM;
+//    for (int k = KCl-Nghost ; k<= KCu+Nghost; ++k) {
+//      for (int j = JCl-Nghost ; j<= JCu+Nghost; ++j) {
+//	 for (int i = ICl-Nghost ; i<= ICu+Nghost; ++i) {
+//	   //Wl.d = Grid.IntegrateFunctionOverCell(i,j,k,SinVariationInXDir,8,Wl.d) / Grid.Cell[i][j][k].V;
+//	   Wl.d = std::sin(pi);
+//	   W[i][j][k] = Wl;
+//	   U[i][j][k] = W[i][j][k].U();
+//	 }/* endfor */
+//      }/* endfor */
+//    }/* endfor */
+     break;
    } /* endswitch */
+
 
    /* Set default values for the boundary conditions
       reference states. */
@@ -4580,7 +4600,16 @@ RiemannFlux_n(const int & Flux_Function,
   default:
     return SOLN_pSTATE::FluxRoe_n(Wl, Wr, normal_dir);
   } /* endswitch */
+}
 
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+SinVariationInXDir(const double x, const double y, const double z){
+  if (x<-100 || x>100){
+    return 2.0;
+  } else {
+    return 2.0 + std::sin((ConvertDomainToMinusOneOne(-100,100,x)+1)*PI);
+  }
 }
 
 /***************************************************************************************

@@ -118,11 +118,11 @@ dUdt_Multistage_Explicit_HighOrder(const int i_stage,
 
   // ** Step 2. Compute high-order spatial residual for the current time step fraction **
   // ************************************************************************************
-  dUdt_Residual_HighOrder(IPs, k_residual, true);
+  return dUdt_Residual_HighOrder(IPs, k_residual, true);
 
   // Temporarily return the original Euler3D peicewise linear function:
   // ------------------------------------------------------------------
-  return dUdt_Multistage_Explicit(i_stage, IPs);
+  //  return dUdt_Multistage_Explicit(i_stage, IPs);
 
 }
 
@@ -195,9 +195,9 @@ dUdt_Residual_HighOrder(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
   //         in the range of (ICl,JCl,KCl)-->(ICu,JCu,KCu)
   // ------------------------------------------------------------------------------
 
-  for ( k = KCl ; k <= KCu ; ++k ){
-    for ( j = JCl ; j <= JCu ; ++j ){
-      for ( i = ICl ; i <= ICu ; ++i ) {
+  for ( k = KCl-1 ; k <= KCu ; ++k ){
+    for ( j = JCl-1 ; j <= JCu ; ++j ){
+      for ( i = ICl-1 ; i <= ICu ; ++i ) {
 
 	/* Evaluate the cell interface i-direction fluxes.
 	   --> ( i.e. East Flux for cell (i,j,k) & West Flux for cell (i+1,j,k) ) */
