@@ -68,7 +68,7 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
   /* Create (allocate) the high-order variables in each of the
      local 3D solution blocks */
   
-  error_flag = HighOrder_MultiBlock::Create_Initial_HighOrder_Variables(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+  error_flag = HighOrder_Multi_Block::Create_Initial_HighOrder_Variables(Solution_Data.Local_Solution_Blocks.Soln_Blks,
   									Data.Local_Adaptive_Block_List,
 									Solution_Data.Input.Reconstruction_Order);
 

@@ -142,7 +142,7 @@ dUdt_Residual_HighOrder(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
 			const int & k_residual,
 			const bool & UseTimeStep) {
 
-   // SET VARIABLES USED IN THE RESIDUAL CALCULATION PROCESS
+  // SET VARIABLES USED IN THE RESIDUAL CALCULATION PROCESS
 
   int i, j, k, GQPoint, Position;
   bool IsNonSmoothHighOrderReconstruction;

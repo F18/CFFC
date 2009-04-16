@@ -168,6 +168,7 @@ class Hexa_Multi_Block {
    int Update_Solution_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                                             typename HEXA_BLOCK::Soln_cState> &Input, 
                                            const int I_Stage);
+
 };
 
 /********************************************************

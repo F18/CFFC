@@ -1650,20 +1650,22 @@ ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
          break;
 
    case IC_SINE_WAVE_XDIR :
-//    Wl.v.x = 100.0;
-//    Wl.v.y = 0.0;
-//    Wl.v.z = 0.0;
-//    Wl.p = PRESSURE_STDATM;
-//    for (int k = KCl-Nghost ; k<= KCu+Nghost; ++k) {
-//      for (int j = JCl-Nghost ; j<= JCu+Nghost; ++j) {
-//	 for (int i = ICl-Nghost ; i<= ICu+Nghost; ++i) {
-//	   //Wl.d = Grid.IntegrateFunctionOverCell(i,j,k,SinVariationInXDir,8,Wl.d) / Grid.Cell[i][j][k].V;
-//	   Wl.d = std::sin(pi);
-//	   W[i][j][k] = Wl;
-//	   U[i][j][k] = W[i][j][k].U();
-//	 }/* endfor */
-//      }/* endfor */
-//    }/* endfor */
+    Wl.v.x = 100.0;
+    Wl.v.y = 0.0;
+    Wl.v.z = 0.0;
+    Wl.p = PRESSURE_STDATM;
+    for (int k = KCl-Nghost ; k<= KCu+Nghost; ++k) {
+      for (int j = JCl-Nghost ; j<= JCu+Nghost; ++j) {
+	 for (int i = ICl-Nghost ; i<= ICu+Nghost; ++i) {
+	   //Wl.d = Grid.IntegrateFunctionOverCell(i,j,k,SinVariationInXDir,8,Wl.d) / Grid.Cell[i][j][k].V;
+	   //Wl.rho = 2.0 + 20.0*std::sin((ConvertDomainToMinusOneOne(-100,100,Grid.Cell[i][j][k].Xc.x)+1)*PI);
+	   Wl.rho = 2.0 + std::sin(Grid.Cell[i][j][k].Xc.x*PI);
+	   std::cout << "\n Wl.rho["<< i <<"]["<< j <<"]["<< k <<"] = " << Wl.rho << endl;
+	   W[i][j][k] = Wl;
+	   U[i][j][k] = W[i][j][k].U();
+	 }/* endfor */
+      }/* endfor */
+    }/* endfor */
      break;
    } /* endswitch */
 
