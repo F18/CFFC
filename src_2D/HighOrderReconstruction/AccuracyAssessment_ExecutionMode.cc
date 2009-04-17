@@ -15,6 +15,7 @@ short AccuracyAssessment_Execution_Mode::Accuracy_Assessment_Method = Based_On_E
 												  with the exact solution */
 unsigned int AccuracyAssessment_Execution_Mode::Accuracy_Assessment_Exact_Digits = 10;
 unsigned int AccuracyAssessment_Execution_Mode::Accuracy_Assessment_Parameter = 1; // Use the first parameter (e.g. density)
+unsigned int AccuracyAssessment_Execution_Mode::Accuracy_Assessment_Frequency = 0; // Don't do periodic assessment
 
 
 //! Set all flags to default values
@@ -25,6 +26,7 @@ void AccuracyAssessment_Execution_Mode::SetDefaults(void){
 							   with the exact solution */
   Accuracy_Assessment_Exact_Digits = 10;
   Accuracy_Assessment_Parameter = 1; // Use the first parameter (e.g. density)
+  Accuracy_Assessment_Frequency = 0; // Don't do periodic assessment
 
 }
 
@@ -53,6 +55,12 @@ void AccuracyAssessment_Execution_Mode::Print_Info(std::ostream & out_file){
   if ( Accuracy_Assessment_Method == Based_On_Exact_Solution){
     out_file << "\n     -> Accuracy Assessment Parameter: " << Accuracy_Assessment_Parameter;
   }
+
+  // output assessment frequency
+  if ( Accuracy_Assessment_Frequency != 0){
+    out_file << "\n     -> Periodic Accuracy Assessment Every: " << Accuracy_Assessment_Frequency << " steps";
+  }
+  
 }
 
 /*!
