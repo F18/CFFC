@@ -379,43 +379,41 @@ public:
     return SolutionAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z);
   }
  
- // --> RR: comment out GradientStateAtCoordinates
- 
-//  //! Evaluate the X-gradient of the interpolant at a given location (X_Coord,Y_Coord,Z_Coord) for all solution variables,
-//  //  using the reconstruction of cell (ii,jj,kk).
-//  Soln_State XGradientStateAtCoordinates(const int & ii, const int & jj, const int & kk,
-//					 const double & X_Coord, const double & Y_Coord, const double & Z_Coord) const {
-//    return TD[ii][jj][kk].ComputeXGradientFor(X_Coord - XCellCenter(ii,jj,kk), Y_Coord - YCellCenter(ii,jj,kk), Z_Coord - ZCellCenter(ii,jj,kk));
-//  }
-//  //! Evaluate the X-gradient of the interpolant at a given position vector for all solution variables,
-//  //  using the reconstruction of cell (ii,jj,kk).
-//  Soln_State XGradientStateAtLocation(const int & ii, const int & jj, const int & kk, const Vector3D &CalculationPoint) const {
-//    return XGradientStateAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z);
-//  }
-//
-//  //! Evaluate the Y-gradient of the interpolant at a given location (X_Coord,Y_Coord,Z_Coord) for all solution variables,
-//  //  using the reconstruction of cell (ii,jj,kk).
-//  Soln_State YGradientStateAtCoordinates(const int & ii, const int & jj, const int & kk,
-//					 const double & X_Coord, const double & Y_Coord, const double & Z_Coord) const {
-//    return TD[ii][jj][kk].ComputeYGradientFor(X_Coord - XCellCenter(ii,jj,kk), Y_Coord - YCellCenter(ii,jj,kk), Z_Coord - ZCellCenter(ii,jj,kk));
-//  }
-//  //! Evaluate the Y-gradient of the interpolant at a given position vector for all solution variables,
-//  //  using the reconstruction of cell (ii,jj,kk).
-//  Soln_State YGradientStateAtLocation(const int & ii, const int & jj, const int & kk, const Vector3D &CalculationPoint) const {
-//    return YGradientStateAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z);
-//  }
-//
-//  //! Evaluate the Z-gradient of the interpolant at a given location (X_Coord,Y_Coord,Z_Coord) for all solution variables,
-//  //  using the reconstruction of cell (ii,jj,kk).
-//  Soln_State ZGradientStateAtCoordinates(const int & ii, const int & jj, const int & kk,
-//					 const double & X_Coord, const double & Y_Coord, const double & Z_Coord) const {
-//    return TD[ii][jj][kk].ComputeZGradientFor(X_Coord - XCellCenter(ii,jj,kk), Y_Coord - YCellCenter(ii,jj,kk), Z_Coord - ZCellCenter(ii,jj,kk));
-//  }
-//  //! Evaluate the Y-gradient of the interpolant at a given position vector for all solution variables,
-//  //  using the reconstruction of cell (ii,jj,kk).
-//  Soln_State ZGradientStateAtLocation(const int & ii, const int & jj, const int & kk, const Vector3D &CalculationPoint) const {
-//    return ZGradientStateAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z);
-//  }
+  //! Evaluate the X-gradient of the interpolant at a given location (X_Coord,Y_Coord,Z_Coord) for all solution variables,
+  //  using the reconstruction of cell (ii,jj,kk).
+  Soln_State XGradientStateAtCoordinates(const int & ii, const int & jj, const int & kk,
+					 const double & X_Coord, const double & Y_Coord, const double & Z_Coord) const {
+    return TD[ii][jj][kk].ComputeXGradientFor(X_Coord - XCellCenter(ii,jj,kk), Y_Coord - YCellCenter(ii,jj,kk), Z_Coord - ZCellCenter(ii,jj,kk));
+  }
+  //! Evaluate the X-gradient of the interpolant at a given position vector for all solution variables,
+  //  using the reconstruction of cell (ii,jj,kk).
+  Soln_State XGradientStateAtLocation(const int & ii, const int & jj, const int & kk, const Vector3D &CalculationPoint) const {
+    return XGradientStateAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z);
+  }
+
+  //! Evaluate the Y-gradient of the interpolant at a given location (X_Coord,Y_Coord,Z_Coord) for all solution variables,
+  //  using the reconstruction of cell (ii,jj,kk).
+  Soln_State YGradientStateAtCoordinates(const int & ii, const int & jj, const int & kk,
+					 const double & X_Coord, const double & Y_Coord, const double & Z_Coord) const {
+    return TD[ii][jj][kk].ComputeYGradientFor(X_Coord - XCellCenter(ii,jj,kk), Y_Coord - YCellCenter(ii,jj,kk), Z_Coord - ZCellCenter(ii,jj,kk));
+  }
+  //! Evaluate the Y-gradient of the interpolant at a given position vector for all solution variables,
+  //  using the reconstruction of cell (ii,jj,kk).
+  Soln_State YGradientStateAtLocation(const int & ii, const int & jj, const int & kk, const Vector3D &CalculationPoint) const {
+    return YGradientStateAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z);
+  }
+
+  //! Evaluate the Z-gradient of the interpolant at a given location (X_Coord,Y_Coord,Z_Coord) for all solution variables,
+  //  using the reconstruction of cell (ii,jj,kk).
+  Soln_State ZGradientStateAtCoordinates(const int & ii, const int & jj, const int & kk,
+					 const double & X_Coord, const double & Y_Coord, const double & Z_Coord) const {
+    return TD[ii][jj][kk].ComputeZGradientFor(X_Coord - XCellCenter(ii,jj,kk), Y_Coord - YCellCenter(ii,jj,kk), Z_Coord - ZCellCenter(ii,jj,kk));
+  }
+  //! Evaluate the Z-gradient of the interpolant at a given position vector for all solution variables,
+  //  using the reconstruction of cell (ii,jj,kk).
+  Soln_State ZGradientStateAtLocation(const int & ii, const int & jj, const int & kk, const Vector3D &CalculationPoint) const {
+    return ZGradientStateAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z);
+  }
 
 
 

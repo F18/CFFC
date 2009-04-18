@@ -1,4 +1,3 @@
-
 #ifndef _HEXA_SOLVER_INCLUDED
 #define _HEXA_SOLVER_INCLUDED
 
@@ -172,7 +171,7 @@ int HexaSolver(char *Input_File_Name_ptr, int batch_flag) {
      **************************************************************/
 
     if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
-      std::cout << "\n\n ---------------------------------------\n"
+      std::cout << "\n\n---------------------------------------\n"
 		<< " Reconstruct final solution.\n";
     }
 
