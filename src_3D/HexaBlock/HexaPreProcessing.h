@@ -29,8 +29,7 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
     //Outputting solution input parameters
     if (!Data.batch_flag) {
       cout << Solution_Data.Input << "\n";
-      cout << "\n Generating the initial mesh and computing"
-	   << "\n  geometric coefficients (if required).";
+      cout << "\n Generating the initial mesh.";
       cout.flush(); 
     } /* endif */
     Data.Initial_Mesh.Create_Grid(Solution_Data.Input.Grid_IP);
@@ -50,8 +49,9 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
   /* Create (allocate) list of hexahedral solution blocks on each processor. */
 
   if (!Data.batch_flag) {
-    cout << "\n Creating multi-block octree data structure and assigning"
-	 << "\n  solution blocks corresponding to initial mesh.";
+    cout << "\n Creating multi-block octree data structure, assigning"
+      << "\n  solution blocks corresponding to initial mesh, and computing"
+      << "\n  geometric coefficients (if required)";
     cout.flush();
   } /* endif */
   

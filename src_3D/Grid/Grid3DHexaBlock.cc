@@ -1227,13 +1227,6 @@ void Grid3D_Hexa_Block::Update_Cells(void) {
 	Cell[i][j][k].Xc = centroid(i, j, k);
     Cell[i][j][k].V = volume(Cell[i][j][k]);
 
-	// If using CENO Reconstruction, then we need 
-	// to compute and store the geometric coefficients
-	// -----------------------------------------------
-	if(Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID){
-	  ComputeGeometricCoefficients(i,j,k);
-	} /* endif */
-
       } /* endfor */
     } /* endfor */
   } /* endfor */
@@ -1245,8 +1238,32 @@ void Grid3D_Hexa_Block::Update_Cells(void) {
                 Cell[i][j][k].Jacobian = jacobian(i,j,k,4);
             } /* endfor */
         } /* endfor */
-    } /* endfor */
+    } /* endfor */    
+}
 
+/*****************************************************************
+ * Routine: Update Cells HighOrder                               *
+ *                                                               *
+ * Updates the cell information for the hexahedral mesh block.   *
+ *                                                               *
+ *****************************************************************/
+void Grid3D_Hexa_Block::Update_Cells_HighOrder(void) {
+    
+    Update_Cells();
+    
+    // If using CENO Reconstruction, then we need 
+    // to compute and store the geometric coefficients
+    // -----------------------------------------------
+    if(Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID){
+
+        for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+            for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+                for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
+                    ComputeGeometricCoefficients(i,j,k);
+                } /* endfor */
+            } /* endfor */
+        } /* endfor */
+    }
 }
 
 /*****************************************************************
@@ -1267,15 +1284,6 @@ void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
             Cell[i][j][k].K = k ;
             Cell[i][j][k].Xc = centroid(i, j, k);
             Cell[i][j][k].V = volume(Cell[i][j][k]);
-             /* calculate jacobian to 4th order */
-            Cell[i][j][k].Jacobian = jacobian(i,j,k,4);
-
-	    // If using CENO Reconstruction, then we need 
-	    // to compute and store the geometric coefficients
-	    // -----------------------------------------------
-	    if(Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID){
-	      ComputeGeometricCoefficients(i,j,k);
-	    } /* endif */
          } /* endif */
 
       } /* endfor */
@@ -1293,6 +1301,33 @@ void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
         } /* endfor */
     } /* endfor */
 
+}
+
+
+/*****************************************************************
+ * Routine: Update Ghost Cells HighOrder                         *
+ *                                                               *
+ * Updates the ghost cells information of the hexahedral mesh    *
+ * block.                                                        *
+ *                                                               *
+ *****************************************************************/
+void Grid3D_Hexa_Block::Update_Ghost_Cells_HighOrder(void) {
+    
+    Update_Ghost_Cells();
+    // If using CENO Reconstruction, then we need 
+    // to compute and store the geometric coefficients
+    // -----------------------------------------------
+    if(Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID){
+        for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+            for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+                for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
+                    if (k < KCl || k > KCu || j < JCl || j > JCu || i < ICl || i > ICu) {
+                        ComputeGeometricCoefficients(i,j,k);
+                    } /* endif */
+                } /* endfor */
+            } /* endfor */
+        } /* endfor */
+    } /* endif */
 }
 
 /********************************************************

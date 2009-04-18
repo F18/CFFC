@@ -1103,7 +1103,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Grid_Exterior_Nodes(void) {
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Grid_Cells(void) {
 
-   Grid.Update_Cells();
+   Grid.Update_Cells_HighOrder();
 
 }
 
@@ -1117,7 +1117,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Grid_Cells(void) {
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Grid_Ghost_Cells(void) {
 
-   Grid.Update_Ghost_Cells();
+   Grid.Update_Ghost_Cells_HighOrder();
 
 }
 
