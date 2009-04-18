@@ -45,6 +45,7 @@ public:
         
         Explicit_Filter_Commands::Initialize_Filters(Data,Solution_Data);
         
+        Explicit_Filter_Commands::Transfer_Function(Data,Solution_Data);
         
         //explicit_filter.Set_Filter_Property("debug_flag",ON);
         //explicit_filter_2.Set_Filter_Property("debug_flag",ON);
@@ -63,7 +64,7 @@ public:
         Soln_cState_3D_ptr_type U_ptr = &Hexa_Block<Soln_pState,Soln_cState>::U; 
         
         //explicit_filter.filter(U_ptr);
-        Explicit_Filter_Commands::Filter(rho_member,Data,Solution_Data);
+//        Explicit_Filter_Commands::Filter(rho_member,Data,Solution_Data);
 
         final_spectrum.Get_Spectrum_With_Reference(rho_member,"density",initial_spectrum);
         //explicit_filter.Calculate_Commutation_Error(rho_member);

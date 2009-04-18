@@ -141,6 +141,11 @@ private:
     DenseMatrix Matrix_A(Cell3D &theCell, Neighbours &theNeighbours, int &commutation_order);
     DiagonalMatrix Matrix_W(Cell3D &theCell, Neighbours &theNeighbours);
     DiagonalMatrix Matrix_W(Cell3D &theCell, Neighbours &theNeighbours, double weight_factor);
+    
+    DenseMatrix ComputeCellReconstructionPseudoInverse(Cell3D &theCell, Neighbours &theNeighbours);
+    RowVector ComputeCellWeights(Cell3D &theCell, Neighbours &theNeighbours, DenseMatrix &Cell_LHS_Inv);
+    Vector3D Geometric_Weighting_Config();
+    double Geometric_Weighting(Vector3D &DeltaCellCenters, Vector3D &Delta);        
 
     RowVector Get_Weights(Cell3D &theCell, Neighbours &theNeighbours);
     RowVector Get_Weights_1D(Cell3D &theCell, Neighbours &theNeighbours,int direction);
@@ -240,19 +245,31 @@ inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
         exit(1);
     }
     
-    // The system matrix used in Least Squares
-    DenseMatrix A = Matrix_A(theCell,theNeighbours);
-
-    // The weights matrix used in Weighted Least Squares
-    DiagonalMatrix W = Matrix_W(theCell, theNeighbours, weight_factor);
+    RowVector w(theNeighbours.number_of_neighbours);
     
-
-    //                              -1
-    // (W A) x = W b  -->  x = (W A)   W  b  -->  x = Z b
-    //
-    DenseMatrix Z = (W*A).pseudo_inverse()*W;
-    RowVector w = Z[0];
+    const bool old_way = false;
+    const bool new_way = true;
     
+    bool way = new_way;
+    
+    if (way == old_way) {
+        // The system matrix used in Least Squares
+        DenseMatrix A = Matrix_A(theCell,theNeighbours);
+        
+        // The weights matrix used in Weighted Least Squares
+        DiagonalMatrix W = Matrix_W(theCell, theNeighbours, weight_factor);
+        
+        //                              -1
+        // (W A) x = W b  -->  x = (W A)   W  b  -->  x = Z b
+        //
+        DenseMatrix Z = (W*A).pseudo_inverse()*W;
+        
+        // weights are first row of pseudo_inverse
+        w = Z[0];
+    } else {
+        DenseMatrix Cell_LHS_Inv = ComputeCellReconstructionPseudoInverse(theCell,theNeighbours);
+        w = ComputeCellWeights(theCell, theNeighbours, Cell_LHS_Inv);
+    }
     
     // Add weight to centre cell, to scale transfer function
     Vector3D kmax;
@@ -452,6 +469,227 @@ inline DenseMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::Matrix_A(Cell3D 
     return A;    
 }
 
+
+
+/*! 
+ * Compute the pseudo-inverse of the left-hand-side term in the 
+ * unlimited k-exact high-order reconstruction for a specified
+ * computational cell based on the information provided by the
+ * associated grid.
+ */
+template <typename Soln_pState, typename Soln_cState>
+inline DenseMatrix Haselbacher_Filter<Soln_pState,Soln_cState>::ComputeCellReconstructionPseudoInverse(Cell3D &theCell,
+                                                                                                Neighbours &theNeighbours){
+    
+    // Copied and modified from HighOrderReconstructions.h
+    
+    // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+    
+    int StencilSize(theNeighbours.number_of_neighbours);
+    int IndexSumZ, IndexSumY, IndexSumX, P1, P2, P3;
+    double CombP1X, CombP2Y, CombP3Z;
+    double  PowDistanceZC, PowDistanceYC, PowDistanceXC;
+    int cell, i;
+    double MaxWeight(0.0);
+    double IntSum1(0.0), IntSum2(0.0);
+    DenseMatrix Cell_LHS_Inv;
+    std::vector<double> GeomWeights;
+    std::vector<Vector3D> DeltaCellCenters;
+    Vector3D Delta;
+    TaylorDerivativesContainer<Soln_pState> CellTaylorDeriv(commutation_order);
+    
+    // Ensure that the LHS matrix is formated correctly.
+    // Memory shouldn't be allocated here, only the dimensions should be defined properly.
+    Cell_LHS_Inv.newsize(StencilSize, CellTaylorDeriv.size());
+    GeomWeights.resize(StencilSize);
+    DeltaCellCenters.resize(StencilSize);
+    
+    
+    // START:   Set the LHS of the linear system
+    // ***************************************************
+    
+    // ==== Set the geometric weight associated with the reconstructed cell
+    GeomWeights[0] = 1;
+    
+    Delta = Geometric_Weighting_Config();
+    
+    // Step1. Compute the normalized geometric weights
+    for (cell=0; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
+        
+        /* Compute the X, Y, and Z components of the distance between
+         the cell centers of the neighbour and the reconstructed cell */
+        DeltaCellCenters[cell] = theNeighbours.neighbour[cell]->Xc - theCell.Xc;
+        
+        /* Compute the geometric weight based on the centroid distance */
+        GeomWeights[cell] = Geometric_Weighting(DeltaCellCenters[cell], Delta);
+        
+        /* Compute the maximum geometric weight (this is used for normalization) */
+        MaxWeight = max(MaxWeight, GeomWeights[cell]);
+    }
+    
+    // Step2. Set the approximate equations
+    for (cell=0 ; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
+        
+        // compute the normalized geometric weight
+        GeomWeights[cell] /= MaxWeight;
+        
+        Cell_LHS_Inv(cell,0) = 1.0;
+        Cell_LHS_Inv(cell,0) *= GeomWeights[cell];
+        
+        // *** SET the matrix of the linear system (LHS) ***
+        /* compute for each derivative the corresponding entry in the matrix of the linear system */
+        for (i=1; i<=CellTaylorDeriv.LastElem(); ++i){
+            // build the row of the matrix
+            P1 = CellTaylorDeriv(i).P1();  // identify P1
+            P2 = CellTaylorDeriv(i).P2();  // identify P2
+            P3 = CellTaylorDeriv(i).P3();  // identify P3
+            
+            //----------------------------------------------
+            Cell_LHS_Inv(cell,i) = 0.0;  // set sumation variable to zero
+            CombP3Z = 1.0;        // the binomial coefficient "nC k" for k=0 is 1
+            PowDistanceZC = 1.0;  // initialize PowDistanceZC
+            
+            // Compute geometric integral over the neighbour's domain
+            for (IndexSumZ = 0; IndexSumZ<=P3; ++IndexSumZ){
+                CombP2Y = 1.0;        // the binomial coefficient "nC k" for k=0 is 1
+                PowDistanceYC = 1.0;  // initialize PowDistanceYC
+                IntSum2 = 0.0;         // reset internal summation variable
+                
+                for (IndexSumY = 0; IndexSumY<=P2; ++IndexSumY){
+                    CombP1X = 1.0;       // the binomial coefficient "nC k" for k=0 is 1
+                    PowDistanceXC = 1.0; // initialize PowDistanceXC
+                    IntSum1 = 0.0;	     // reset internal sumation variable
+                    
+                    for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
+                        IntSum1 += ( CombP1X*PowDistanceXC*
+                                    theNeighbours.neighbour[cell]->GeomCoeffValue(P1-IndexSumX,P2-IndexSumY,P3-IndexSumZ) );
+                        
+                        // update the binomial coefficients
+                        CombP1X = (P1-IndexSumX)*CombP1X/(IndexSumX+1); // the index is still the old one => expression for "nC k+1"
+                        PowDistanceXC *= DeltaCellCenters[cell].x;      // Update PowDistanceXC
+                    }//endfor
+                    
+                    IntSum2 += CombP2Y*PowDistanceYC*IntSum1;
+                    CombP2Y = (P2-IndexSumY)*CombP2Y/(IndexSumY+1); // the index is still the old one => expression for "nC k+1"
+                    PowDistanceYC *= DeltaCellCenters[cell].y;      // Update PowDistanceYC
+                }//endfor
+                
+                Cell_LHS_Inv(cell,i) += CombP3Z*PowDistanceZC*IntSum2;  // update the external sum
+                
+                CombP3Z = (P3-IndexSumZ)*CombP3Z/(IndexSumZ+1); // the index is still the old one => expression for "nC k+1"
+                PowDistanceZC *= DeltaCellCenters[cell].z;      // Update PowDistanceYC
+            }//endfor
+            
+            // Don't!!!! subtract the corresponding geometric moment of cell (iCell,jCell) 
+            //Cell_LHS_Inv(cell,i) -= theCell.GeomCoeffValue(P1,P2,P3);
+            
+            // apply geometric weighting
+            Cell_LHS_Inv(cell,i) *= GeomWeights[cell];
+            
+        } // endfor (i)
+    }//endfor (cell)
+    
+    // STOP:   Matrix of the linear system (LHS) built. 
+    //         For kExact_Reconstruction away from some special curved boundaries 
+    //         the same matrix is used for all variables (same geometry) and  
+    //         at every time step as long as the mesh is the same.
+    // **********************************************************************
+        
+//    cout << "Cell_LHS = \n" << Cell_LHS_Inv << endl;
+
+    // Compute the pseudo-inverse and override the LHS term.
+    // This operation will change the dimensions of the matrix.
+    Cell_LHS_Inv.pseudo_inverse_override();
+//    cout << "Cell_LHS_Inv = \n" << Cell_LHS_Inv << endl;
+
+    for (cell=0; cell<StencilSize; ++cell) {
+        for (i=0; i<=CellTaylorDeriv.LastElem(); ++i) {
+            Cell_LHS_Inv(i,cell) *= GeomWeights[cell];
+        }
+    }
+    return Cell_LHS_Inv;
+}
+
+/*! 
+ * Compute the pseudo-inverse of the left-hand-side term in the 
+ * unlimited k-exact high-order reconstruction for a specified
+ * computational cell based on the information provided by the
+ * associated grid.
+ */
+template <typename Soln_pState, typename Soln_cState>
+inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::ComputeCellWeights(Cell3D &theCell, Neighbours &theNeighbours, DenseMatrix &Cell_LHS_Inv){
+    
+    // Copied and modified from HighOrderReconstructions.h
+    
+    // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+    
+    int cell, i, P1, P2, P3;
+    int StencilSize(theNeighbours.number_of_neighbours);
+    RowVector Cell_Weights(StencilSize);
+    TaylorDerivativesContainer<Soln_pState> CellTaylorDeriv(commutation_order);
+      
+    for (cell=0 ; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
+        
+        Cell_Weights[cell] = 0.0;
+        Cell_Weights[cell] += Cell_LHS_Inv(0,cell);
+        
+        /* compute for each derivative the corresponding correction */
+        for (i=1; i<=CellTaylorDeriv.LastElem(); ++i){
+            // Get P1 P2 P3
+            P1 = CellTaylorDeriv(i).P1();  // identify P1
+            P2 = CellTaylorDeriv(i).P2();  // identify P2
+            P3 = CellTaylorDeriv(i).P3();  // identify P3
+
+            // correction
+            Cell_Weights[cell] += theCell.GeomCoeffValue(P1,P2,P3) * Cell_LHS_Inv(i,cell);
+        } // endfor (i)
+    }//endfor (cell)
+    
+    return Cell_Weights;
+}
+
+template <typename Soln_pState, typename Soln_cState>
+Vector3D Haselbacher_Filter<Soln_pState,Soln_cState>::Geometric_Weighting_Config() {
+    Vector3D Delta(ZERO,ZERO,ZERO);
+    if (weighting==ON) {
+        if (use_fixed_filter_width) {
+            
+            Vector3D weight_factors(Get_Weight_Factor_from_FGR(fixed_filter_width/theNeighbours.Delta.x),
+                                    Get_Weight_Factor_from_FGR(fixed_filter_width/theNeighbours.Delta.y),
+                                    Get_Weight_Factor_from_FGR(fixed_filter_width/theNeighbours.Delta.z));
+            Delta.x = theNeighbours.Delta.x * weight_factors.x;
+            Delta.y = theNeighbours.Delta.y * weight_factors.y;
+            Delta.z = theNeighbours.Delta.z * weight_factors.z;
+        } else {
+            Delta = theNeighbours.Delta*weight_factor;
+        }
+    }
+    return Delta;
+}
+
+
+template <typename Soln_pState, typename Soln_cState>
+double Haselbacher_Filter<Soln_pState,Soln_cState>::Geometric_Weighting(Vector3D &DeltaCellCenters, Vector3D &Delta) {
+    double w;
+    if (weighting==ON) {
+        if (use_fixed_filter_width) {
+            
+            Vector3D weight_factors(Get_Weight_Factor_from_FGR(fixed_filter_width/theNeighbours.Delta.x),
+                                    Get_Weight_Factor_from_FGR(fixed_filter_width/theNeighbours.Delta.y),
+                                    Get_Weight_Factor_from_FGR(fixed_filter_width/theNeighbours.Delta.z));
+            Delta.x = theNeighbours.Delta.x * weight_factors.x;
+            Delta.y = theNeighbours.Delta.y * weight_factors.y;
+            Delta.z = theNeighbours.Delta.z * weight_factors.z;
+            
+            w = sqrt(SIX/(PI*Delta.sqr()))*exp(- (sqr(DeltaCellCenters.x/Delta.x)+sqr(DeltaCellCenters.y/Delta.y)+sqr(DeltaCellCenters.z/Delta.z)) ) ;
+        } else {
+            w = sqrt(SIX/(PI*Delta.sqr()))*exp(- (sqr(DeltaCellCenters.x/Delta.x)+sqr(DeltaCellCenters.y/Delta.y)+sqr(DeltaCellCenters.z/Delta.z)) ) ;
+        }
+    } else {
+        w=ONE;
+    }
+    return w;
+}
 
 
 template <typename Soln_pState, typename Soln_cState>

@@ -4,9 +4,10 @@
 ICs_Type = 
 Radial_Cosine
 Reconstruction_Type =
-Least_Squares
-#Spatial_Order_of_Accuracy =
-#2
+# Least_Squares
+CENO
+Spatial_Order_of_Accuracy =
+4
 Limiter_Type = 
 One
 Flux_Function_Type =
@@ -16,8 +17,8 @@ Pressure =
 #Flow_Type =
 #Turbulent-LES
 Progress_Mode =
-#Terminal
-File
+Terminal
+# File
 ##############################
 #       LES parameters       #
 ##############################
@@ -35,14 +36,14 @@ Haselbacher
 #Restart
 Filter_Type_secondary =
 Haselbacher
-#Filter_Grid_Ratio =
+# Filter_Grid_Ratio =
 #2.0
 Filter_Width =
 0.3926
 #Filter_Grid_Ratio_secondary =
 #4.0
-Filter_Width_secondary =
-0.25
+#Filter_Width_secondary =
+#0.25
 Target_Filter_Sharpness = 
 3
 Filter_Initial_Condition =
@@ -50,15 +51,15 @@ OFF
 Derivative_constraints=
 1
 Commutation_Order =
-2
+4
 Finite_Differencing_Order =
 3
 Number_of_Rings = 
-2
+4
 Filter_Width_strict =
 ON
 Filter_Memory_Efficient =
-ON
+OFF
 Relaxation_Factor =
 ON
 Least_Squares_Filter_Weighting = 
@@ -86,10 +87,10 @@ OFF
 Grid_Type =
 Periodic_Box
 Number_of_Ghost_Cells = 
-2
+4
 Number_of_Cells_Idir =
 32
-Number_of_Cells_Jdir
+Number_of_Cells_Jdir =
 32
 Number_of_Cells_Kdir
 32
@@ -119,6 +120,7 @@ Box_Length =
 #16
 Mesh_Stretching =
 ON
+# OFF
 Stretching_Factor_Idir = 
 1.2
 Stretching_Factor_Jdir = 
@@ -135,8 +137,8 @@ Disturb_Interior_Nodes =
 OFF 
 #10
 Mesh_Smoothing =
-#0
-10000
+0
+# 10000
 ###################################
 #   Time stepping parameters      #
 ###################################
