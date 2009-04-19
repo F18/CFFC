@@ -17,6 +17,9 @@
 #include <iomanip>
 #include <stdexcept>
 #include <iostream>
+#include <string> 
+#include <sstream>
+
 
 /* Using std namespace functions */
 using std::cout;
@@ -84,5 +87,40 @@ inline void assure(std::ofstream& out,
     exit(1);
   }
 }
+
+/// Converts to std::string
+/// Don't use this to convert to a char, use c_str for that.
+/// Typical use is to convert to numbers.
+/// @param str string to convert from
+/// @return converter type
+template <class T>
+static std::string to_str (T v)
+{
+    std::ostringstream oss;
+    oss << v;
+    return oss.str();
+}
+
+/// Converts from std::string
+/// Don't use this to convert to a char, use c_str for that.
+/// Typical use is to convert to numbers.
+/// @param str string to convert from
+/// @return converter type
+template <class T>
+static T from_str (const std::string& str)
+{
+    T v;
+    if (str.length() > 0)
+    {
+        std::istringstream iss(str.c_str());
+        iss >> v;
+    }
+    else
+    {
+        // pretty much everything has an empty constuctor
+        v = T();
+    }
+    return v;
+  }
 
 #endif // _UTILITIES_INCLUDED

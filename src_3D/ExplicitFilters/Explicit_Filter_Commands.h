@@ -20,6 +20,10 @@
 /* ------------------------------------------------------------------------------------------------------------------------------ */
 /**
  * CLASS : Explicit_Filter_Commands
+ * This class contains some shortcut commands for explicit filtering.
+ * These commands are therefore no interface, but a guideline to how to use
+ * explicit filters.
+ * More commands can be added
  */
 
 class Explicit_Filter_Commands {

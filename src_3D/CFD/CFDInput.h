@@ -63,6 +63,9 @@ using namespace std;
 #include "../HighOrderReconstruction/HighOrderInput.h"
 #endif // _HIGHORDER_INPUT_INCLUDED
 
+#ifndef _EXPLICIT_FILTERS_INPUT_INCLUDED
+#include "../ExplicitFilters/Explicit_Filters_Input.h"
+#endif // _EXPLICIT_FILTERS_INPUT_INCLUDED
 
 /* Define the class. */
 
@@ -198,6 +201,10 @@ class CFD_Input_Parameters{
 
   //@{ @name High Order related input parameters:
   HighOrder_Input_Parameters HighOrder_IP;
+  //@}
+    
+  //@{ @name High Order related input parameters:
+  Explicit_Filters_Input_Parameters ExplicitFilters_IP;
   //@}
 
   //@{ @name Initial condition type indicator and related input parameters:

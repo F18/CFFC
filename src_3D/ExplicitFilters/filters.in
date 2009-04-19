@@ -4,10 +4,10 @@
 ICs_Type = 
 Radial_Cosine
 Reconstruction_Type =
-# Least_Squares
-CENO
+Least_Squares
+# CENO
 Spatial_Order_of_Accuracy =
-4
+2
 Limiter_Type = 
 One
 Flux_Function_Type =

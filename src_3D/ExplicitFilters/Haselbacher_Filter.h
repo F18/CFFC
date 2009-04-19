@@ -250,6 +250,8 @@ inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     const bool old_way = false;
     const bool new_way = true;
     
+    
+    // todo: check for high order (CENO)
     bool way = new_way;
     
     if (way == old_way) {

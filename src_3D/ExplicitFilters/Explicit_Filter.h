@@ -58,6 +58,7 @@ public:
             delete filter_ptr;
     }
 
+    void Initialize(Explicit_Filter_Constants::Filter_Number& filter_number, int batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input);
     void Initialize(int batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input);    
     void Initialize_Secondary(int batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input);    
 
@@ -145,6 +146,12 @@ public:
 
 };
 
+
+template<typename Soln_pState,typename Soln_cState>
+void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(Explicit_Filter_Constants::Filter_Number& filter_number, int batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input) {
+
+// todo    
+}
 
 template<typename Soln_pState,typename Soln_cState>
 void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(int batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input) {

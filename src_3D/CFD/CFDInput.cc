@@ -905,6 +905,11 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
 	 i_command = HighOrder_IP.Parse_Next_Input_Control_Parameter(code,
 								     value_stream);
        } /* endif */
+        
+        // Explicit Filters
+        if (i_command == INVALID_INPUT_CODE) {
+            i_command = ExplicitFilters_IP.Parse_Next_Input_Control_Parameter(code, value_stream);
+        }
        
     } /* endif */
 
