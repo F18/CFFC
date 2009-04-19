@@ -57,6 +57,7 @@ labels.pl
 # misc
 tags
 .DS_Store
+*.xcodeproj
 
 # 1D executables
 solvers1D
@@ -95,6 +96,7 @@ fans3Dthermallyperfect
 les3Dpolytropic
 les3Dfsd
 les3Dtf
+filters
 
 # unit testing directories
 journal.tut

@@ -218,9 +218,10 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
     } else if (strcmp(code, "Output_File_Name") == 0) {
        i_command = 10;
        value_stream >> value_string;
-       strcpy(Output_File_Name, value_string.c_str());
+       strcpy(Output_File_Name_Prefix, value_string.c_str());
+       strcpy(Output_File_Name, Output_File_Name_Prefix);
        strcat(Output_File_Name, ".dat");
-       strcpy(Restart_File_Name, value_string.c_str());
+       strcpy(Restart_File_Name, Output_File_Name_Prefix);
        strcat(Restart_File_Name, ".soln");
       
     } else if (strcmp(code, "Restart_File_Name") == 0) {
@@ -252,6 +253,21 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        } else {
           i_command = INVALID_INPUT_VALUE;
        } /* endif */
+        
+    } else if (strcmp(code, "Progress_Mode") == 0) {
+        i_command = 12;
+        value_stream >> value_string;
+        if (strcmp(value_string.c_str(), "Silent") == 0) {
+            Progress_Mode = PROGRESS_MODE_SILENT;
+        } else if (strcmp(value_string.c_str(), "Message") == 0) {
+            Progress_Mode = PROGRESS_MODE_MESSAGE;
+        } else if (strcmp(value_string.c_str(), "File") == 0) {
+            Progress_Mode = PROGRESS_MODE_FILE;
+        } else if (strcmp(value_string.c_str(), "Terminal") == 0) {
+            Progress_Mode = PROGRESS_MODE_TERMINAL;
+        } else {
+            i_command = INVALID_INPUT_VALUE;
+        } /* endif */
 
     } else if (strcmp(code, "Restart_Solution_Save_Frequency") == 0) {
        i_command = 13;
@@ -383,6 +399,18 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        i_command = 45;
        value_stream >> CFL_Number;
        if (CFL_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
+        
+    } else if (strcmp(code, "Output_CFL_Limit") == 0) {
+        i_command = 45;
+        value_stream >> value_string;
+        if (value_string == "ON") {
+            Output_CFL_Limit = ON;
+        } else if (value_string == "OFF") {
+            Output_CFL_Limit = OFF;
+        } else {
+            i_command = INVALID_INPUT_VALUE;
+        } /* endif */
+        
 
     }  else if (strcmp(code, "Time_Max") == 0) {
        i_command = 46;
@@ -648,6 +676,8 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_TURBULENT_BUNSEN_BOX;
        }else if (strcmp(ICs_Type, "Turbulent_Box") == 0) {
           i_ICs = IC_TURBULENT_BOX;
+       }else if (strcmp(ICs_Type, "Radial_Cosine") == 0) {
+           i_ICs = IC_RADIAL_COSINE;
        } else if (strcmp(ICs_Type, "Restart") == 0) {
           i_ICs = IC_RESTART;
        } else if (strcmp(ICs_Type,"Sin_X") == 0) {
@@ -990,6 +1020,9 @@ void CFD_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(Output_File_Name,
                           INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(Output_File_Name_Prefix,
+                          INPUT_PARAMETER_LENGTH,
+                          MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(Restart_File_Name,
                           INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
@@ -1003,6 +1036,9 @@ void CFD_Input_Parameters::Broadcast(void) {
                           1,
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Time_Accurate_Output_Frequency),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Progress_Mode),
                           1,
                           MPI::INT, 0);
 
@@ -1044,6 +1080,9 @@ void CFD_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(CFL_Number),
                            1,
                            MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Output_CFL_Limit),
+                          1,
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Time_Max),
                           1,
                           MPI::DOUBLE, 0);

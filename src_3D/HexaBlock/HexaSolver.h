@@ -19,6 +19,10 @@
 #include  "HexaSolverClasses.h"
 #endif  //_HEXA_SOLVER_CLASSES_INCLUDED
 
+#ifndef _EXPLICIT_FILTER_COMMANDS_INCLUDED
+#include "../ExplicitFilters/Explicit_Filter_Commands.h"
+#endif
+
 #ifndef _HEXA_PRE_PROCESSING_INCLUDED
 #include "HexaPreProcessing.h"
 #endif //_HEXA_PRE_PROCESSING_INCLUDED
@@ -34,6 +38,7 @@
 #ifndef _NKS_INCLUDED
 #include "../NewtonKrylovSchwarz/NKS.h"
 #endif //_NKS_INCLUDED
+
 
 /********************************************************
  * Routine: HexaSolver                                  *

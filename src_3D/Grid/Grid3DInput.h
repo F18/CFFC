@@ -82,10 +82,12 @@ class Grid3D_Input_Parameters{
     //@}
 
     //@{ @name Mesh stretching parameters:
+    int Mesh_Stretching;
     int Stretching_Type_Idir, Stretching_Type_Jdir, 
         Stretching_Type_Kdir; 
     double Stretching_Factor_Idir, Stretching_Factor_Jdir, 
            Stretching_Factor_Kdir;
+    int Mesh_Smoothing;
     //@}
 
     //@{ @name Mesh shifting, scaling and rotation parameters:
@@ -93,6 +95,10 @@ class Grid3D_Input_Parameters{
     double X_Scale, X_Rotate;
     //@}
 
+    //@{ @name Mesh distortion:
+    int Disturb_Interior_Nodes;
+    //@}
+    
     //@{ @name Flat Plate mesh parameters:
     double Plate_Length;
     //@}
@@ -136,15 +142,18 @@ class Grid3D_Input_Parameters{
        strcpy(Grid_Type,"Cube");
        i_Grid = GRID_CUBE; 
        strcpy(Grid_File_Name,"gridfile.grid");
+       Mesh_Stretching = OFF;
        Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
        Stretching_Type_Jdir = STRETCHING_FCN_LINEAR; 
        Stretching_Type_Kdir = STRETCHING_FCN_LINEAR;
        Stretching_Factor_Idir = 1.10;
        Stretching_Factor_Jdir = 1.10;
        Stretching_Factor_Kdir = 1.10;
+       Mesh_Smoothing = OFF;
        X_Shift = Vector3D_ZERO;
        X_Scale = ONE;
        X_Rotate = ZERO;
+       Disturb_Interior_Nodes = OFF;
        // Pipe parameters:
        Pipe_Length = ONE; Pipe_Radius = 0.1234;
        // Flat plate parameters:

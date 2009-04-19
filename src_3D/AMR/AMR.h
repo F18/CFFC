@@ -653,7 +653,9 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
    AdaptiveBlock3D_List::Allocate_Message_Buffers(Local_Adaptive_Block_List,
                                                   number_of_solution_variables);
  
-   Local_Solution_Blocks.Update_Grid_Cells();
+    Local_Solution_Blocks.Update_Grid_Cells();
+    Local_Solution_Blocks.Update_Grid_Ghost_Cells();
+
    /* Solution block allocation and assignment complete.
       Return pointer to local solution blocks. */
 

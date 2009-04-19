@@ -2289,11 +2289,11 @@ void Smooth_Quad_Block(Grid2D_Quad_Block &Grid,
 
     /* Re-compute the exterior nodes for the quadrilateral mesh block. */
 
-    Update_Exterior_Nodes(Grid);
+    //Update_Exterior_Nodes(Grid);
 
     /* Re-compute the cell values for the quadrilateral mesh block. */
 
-    Update_Cells(Grid);
+    //Update_Cells(Grid);
 
     /* Delete (deallocate) the Poisson equation solution variables. */
 

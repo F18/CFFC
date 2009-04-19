@@ -672,6 +672,31 @@ double Conditional_Average_viscosity(HEXA_BLOCK *Solution_Block,
   return vis;
 }
 
+
+// Maximum volume in the domain
+template<typename HEXA_BLOCK>
+double Max_Cell_Volume(HEXA_BLOCK *Solution_Block,
+                       AdaptiveBlock3D_List &LocalSolnBlockList) {
+    
+    double max_volume(0.0), cell_volume;
+    
+    for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
+        if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
+            for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
+                for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
+                    for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
+                        cell_volume = Solution_Block[p].Grid.Cell[i][j][k].V;
+                        if ( cell_volume > max_volume ) max_volume = cell_volume;
+                    }
+                }
+            }
+        }
+    }
+    
+    max_volume = CFFC_Maximum_MPI(max_volume);
+    return max_volume;
+}
+
 // Maximum and minimum cell volumes in the domain
 template<typename HEXA_BLOCK>
 void Max_and_Min_Cell_Volumes(HEXA_BLOCK *Solution_Block,

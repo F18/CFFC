@@ -29,6 +29,10 @@ using namespace std;
 #include "../Math/Vector3D.h"
 #endif //_VECTOR3D_INCLUDED
 
+#ifndef _MATRIX_INCLUDED
+#include "../Math/Matrix.h"
+#endif //_MATRIX_INCLUDED
+
 #ifndef _CELL3D_INCLUDED
 #include "Cell3D.h"
 #endif // _CELL3D_INCLUDED
@@ -224,15 +228,25 @@ class Grid3D_Hexa_Block {
     /* Calculate centroid of cell. */
     Vector3D centroid(const Cell3D &Cell);
     Vector3D centroid(const int ii, const int jj, const int kk);
-
-  //    Vector3D & cellcentroid(const int ii, const int jj, const int kk);
     double Xcentroid(const int ii, const int jj, const int kk);
     double Ycentroid(const int ii, const int jj, const int kk);
     double Zcentroid(const int ii, const int jj, const int kk);
 
+    /* Calculate Jacobian (Determinant) */
+    double jacobian(const Cell3D &Cell, int order);
+    double jacobian(const int ii, const int jj, const int kk, int order);
+    double Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
+    double Central_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
+    double Forward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
+    double Backward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
+    void Jacobian_Matrix(DenseMatrix &J, const int i, const int j, const int k, int order);
+    
     /* Calculate cell volume. */
     double volume(const Cell3D &Cell);
     double volume(const int ii, const int jj, const int kk);
+    
+    /* Calculate smallest dx, dy, dz */
+    Vector3D Delta_minimum(void);
 
     /* Calculate vectors from a cell center pointing to its east neigbour cell center
        pointing to its north neigbour cell center, and pointing to its top neighbour 
@@ -432,6 +446,10 @@ class Grid3D_Hexa_Block {
 
     void Update_Ghost_Cells(void);
     
+    void Update_Cells_HighOrder(void);
+    
+    void Update_Ghost_Cells_HighOrder(void);
+    
     void Set_BCs_Xdir(const int BCtype_east_boundary,
                       const int BCtype_west_boundary);
 
@@ -453,12 +471,26 @@ class Grid3D_Hexa_Block {
                 const double &Angle2);
 
     void Extrude(Grid2D_Quad_Block &Grid2D_XYplane, 
+                 const int Nk,
+                 const int Stretching_Flag,
+                 const int i_Stretching_Kdir,
+                 const double &Stretching_Kdir,
+                 const double &Z_min,
+                 const double &Z_max);
+    
+    void Extrude(Grid2D_Quad_Block &Grid2D_XYplane, 
 		 const int Nk,
                  const int i_Stretching_Kdir,
 		 const double &Stretching_Kdir,
                  const double &Z_min,
                  const double &Z_max);
 
+    void Disturb_Interior_Nodes(const int Number_of_Iterations);
+    double MinimumNodeFaceDistance(const int i, const int j, const int k);
+    double DistanceFromPointToFace(const Node3D &Point, const Node3D &node1, const Node3D &node2, const Node3D &node3, const Node3D &node4);
+    double DistanceFromPointToFace(const Node3D &Point, const Vector3D &Xp, const Vector3D &n);
+
+    
     /********************* Grid Information required for CENO Reconstruction ***********************/
 
     //! @name Get cell geometric moments and related information.
@@ -649,7 +681,6 @@ inline void Grid3D_Hexa_Block::deallocate(void) {
          delete []BCtypeW[j]; BCtypeW[j] = NULL;
          delete []BCtypeE[j]; BCtypeE[j] = NULL;
       } /* endfor */
-
       delete []BCtypeW; BCtypeW = NULL;
       delete []BCtypeE; BCtypeE = NULL;
   
@@ -663,7 +694,7 @@ inline void Grid3D_Hexa_Block::deallocate(void) {
       delete []BCtypeN; BCtypeN = NULL; delete []BCtypeS; BCtypeS = NULL; 
       delete []BCtypeE; BCtypeE = NULL; delete []BCtypeW; BCtypeW = NULL;
       delete []BCtypeT; BCtypeT = NULL; delete []BCtypeB; BCtypeB = NULL;
-
+  
       NNi = 0; INl = 0; INu = 0; 
       NNj = 0; JNl = 0; JNu = 0; 
       NNk = 0; KNl = 0; KNu = 0; 
@@ -689,9 +720,6 @@ inline Vector3D Grid3D_Hexa_Block::centroid(const Cell3D &Cell) {
 }
 
 inline Vector3D Grid3D_Hexa_Block::centroid(const int ii, const int jj, const int kk) {
-  if (ii < 0 ) {
-    std::cout << "\n\n\n ii is less than ZERO!\n\n\n" << std::cout.flush();
-  }
   return ((Node[ii][jj+1][kk].X+Node[ii+1][jj+1][kk].X+Node[ii+1][jj][kk].X+
            Node[ii][jj][kk].X+Node[ii][jj+1][kk+1].X+Node[ii+1][jj+1][kk+1].X+
            Node[ii+1][jj][kk+1].X+Node[ii][jj][kk+1].X)/8);

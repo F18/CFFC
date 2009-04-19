@@ -9,6 +9,9 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 				    HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
   
+  Explicit_Filter_Commands::Initialize_Filters(Data,Solution_Data);
+
+
   int error_flag(0);
    
   double dTime;
@@ -161,6 +164,32 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
       } /* endif */
       /**************************************************/   
 
+        
+    /*************************** SOLUTION FILTERING *****************************/            
+    /* Periodically filter the solution to eliminate build-up of high frequency */
+    if (Solution_Data.Input.Turbulence_IP.i_filter_type != Explicit_Filter_Constants::IMPLICIT_FILTER &&
+        Solution_Data.Input.Turbulence_IP.solution_filtering_frequency != OFF) {
+                        
+        if (!first_step && 
+            Data.number_of_explicit_time_steps-Solution_Data.Input.Turbulence_IP.solution_filtering_frequency*
+            (Data.number_of_explicit_time_steps/Solution_Data.Input.Turbulence_IP.solution_filtering_frequency) == 0 ) {
+            if (!Data.batch_flag) {
+                cout << "o";   // This symbol will notify a solution filtering operation
+                cout.flush();
+            } /* endif */
+            
+            error_flag = Explicit_Filter_Commands::Filter_Solution(Data,Solution_Data,Explicit_Filter_Constants::SECONDARY_FILTER);
+            if (error_flag) {
+                cout << "\n ERROR: Could not filter solution "
+                << "on processor "
+                << CFFC_MPI::This_Processor_Number
+                << ".\n";
+                cout.flush();
+            } /* endif */
+        }
+    }
+        
+        
       /*********** BLOCK SOLUTION UPDATE *************************
        * Update solution for next time step using a multistage   *
        * time stepping scheme.                                   *
@@ -215,7 +244,12 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	// 6. Smooth the solution residual using implicit residual smoothing. */
 
 	/*******************************************************************/
-	// 7. Update solution for stage.
+    // 7. Explicit filtering of the solution residual.      
+
+    Explicit_Filter_Commands::Filter_Residual(i_stage,Data,Solution_Data);
+
+    /*******************************************************************/
+	// 8. Update solution for stage.
 	error_flag = 
            Solution_Data.Local_Solution_Blocks.Update_Solution_Multistage_Explicit(Solution_Data.Input, 
                                                                                            i_stage);
@@ -228,9 +262,27 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return (error_flag);
                     
+          
+    /*******************************************************************/
+    // 9. Filter Solution in case of Filtering the variables instead of Residuals        
+    if (Solution_Data.Input.Turbulence_IP.i_filter_type != Explicit_Filter_Constants::IMPLICIT_FILTER) {
+        if (Solution_Data.Input.Turbulence_IP.Filter_Method == Explicit_Filter_Constants::FILTER_VARIABLES) {
+            error_flag = Explicit_Filter_Commands::Filter_Solution(Data,Solution_Data,Explicit_Filter_Constants::PRIMARY_FILTER);
+            if (error_flag) {
+                cout << "\n ERROR: Could not filter solution "
+                << "on processor "
+                << CFFC_MPI::This_Processor_Number
+                << ".\n";
+                cout.flush();
+            } /* endif */
+        }
+    }
+        
+          
       }  // END Multistage for loop
       /************************************************************************/
 
+        
       /******************* UPDATE TIMER & COUNTER *****************************
        *    Update time and time step counter.                                *
        ************************************************************************/
@@ -249,8 +301,14 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
        
     } // END WHILE(1) LOOP 
       
-    if (!Data.batch_flag) cout << "\n\n Explicit time-marching computations complete on " 
-                               << Date_And_Time() << "."; cout.flush();
+      if (!Data.batch_flag) {
+          cout 
+          << "\n\n Explicit time-marching computations complete on " 
+          << Date_And_Time() << " after"
+          << " n = " << Data.number_of_explicit_time_steps 
+          << " steps (iterations).";
+          cout.flush();   
+      }
     
   } // END ( Time or Steps) IF
 

@@ -10,7 +10,6 @@
   
  ---------------------------------------------------------------------------*/
 
-#ifdef _GNUPLOT
 #ifndef _GNUPLOT_INCLUDED
 #define _GNUPLOT_INCLUDED
 
@@ -71,22 +70,37 @@ public:
     void gnuplot_resetplot(void);
     void gnuplot_plot1d_var1(double *d,
                              int n_point,
-                             char *title) ;
+                             const char *title) ;
     void gnuplot_plot1d_var2(dpoint *d,
                              int n_points,
-                             char *title) ;
+                             const char *title) ;
     void gnuplot_plot1d_var2(double *x,
                              double *y,
                              int n_points,
-                             char *title);
+                             const char *title);
+    void gnuplot_plot1d_var2(dpoint *d,
+                             int n_points,
+                             string title) ;
+    void gnuplot_plot1d_var2(double *x,
+                             double *y,
+                             int n_points,
+                             string title);
     void gnuplot_plot_slope(double a,
                             double b,
-                            char *title) ;
+                            const char *title) ;
     void gnuplot_plot_equation(char *equation,
-                               char *title) ;
+                               const char *title) ;
     void gnuplot_set_xlabel(char *label);
     void gnuplot_set_ylabel(char *label);
     void gnuplot_set_title(char *title);
+    void gnuplot_set_title(string title);
+    
+    template <typename functiontype>
+    void gnuplot_plot1d_function(functiontype function, 
+                                 double xmin, 
+                                 double xmax, 
+                                 int N, 
+                                 const char *title);
 
 
 };
@@ -246,7 +260,7 @@ inline char * Gnuplot_Control::gnuplot_get_program_path(char * pname)
 
 inline int Gnuplot_Control::gnuplot_init ( void )
 {
-    if (check_X_display(1)) return NULL ;
+    if (check_X_display(1)) return 1 ;
     
 //	if (gnuplot_get_program_path("gnuplot")==NULL) {
 //        fprintf(stderr, "cannot find gnuplot in your PATH");
@@ -457,6 +471,14 @@ inline void Gnuplot_Control::gnuplot_set_title(char * title)
     gnuplot_cmd(cmd) ;
     return ;
 }
+inline void Gnuplot_Control::gnuplot_set_title(string title)
+{
+    char    cmd[GP_CMD_SIZE] ;
+    
+    (void)sprintf(cmd, "set title \"%s\"", title.c_str()) ;
+    gnuplot_cmd(cmd) ;
+    return ;
+}
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -522,7 +544,7 @@ inline void Gnuplot_Control::gnuplot_resetplot(void)
 inline void Gnuplot_Control::gnuplot_plot1d_var1(
                                           double          *   d,
                                           int                 n_point,
-                                          char            *   title
+                                          const char      *   title
 )
 {
     int         i ;
@@ -614,9 +636,19 @@ inline void Gnuplot_Control::gnuplot_plot1d_var1(
 /*--------------------------------------------------------------------------*/
 
 inline void Gnuplot_Control::gnuplot_plot1d_var2(
+                                                 dpoint          *   d,
+                                                 int                 n_points,
+                                                 string              title
+)
+{
+    gnuplot_plot1d_var2(d,n_points,title.c_str());
+}
+
+
+inline void Gnuplot_Control::gnuplot_plot1d_var2(
                                           dpoint          *   d,
                                           int                 n_points,
-                                          char            *   title
+                                          const char      *   title
 )
 {
     int         i ;
@@ -681,7 +713,17 @@ inline void Gnuplot_Control::gnuplot_plot1d_var2(
                                                  double          *   x,
                                                  double          *   y,
                                                  int                 n_points,
-                                                 char            *   title
+                                                 string              title
+)
+{
+    gnuplot_plot1d_var2(x,y,n_points,title.c_str());
+}
+
+inline void Gnuplot_Control::gnuplot_plot1d_var2(
+                                                 double          *   x,
+                                                 double          *   y,
+                                                 int                 n_points,
+                                                 const char      *   title
 )
 {
     int         i ;
@@ -742,7 +784,72 @@ inline void Gnuplot_Control::gnuplot_plot1d_var2(
 }
 
 
-
+template <typename functiontype>
+inline void Gnuplot_Control::gnuplot_plot1d_function(functiontype function, double xmin, double xmax, int N, const char *title){
+    int         i ;
+    FILE    *   tmp ;
+    char    *   name ;
+    char        cmd[GP_CMD_SIZE] ;
+    char        line[GP_CMD_SIZE] ;
+    
+    /* can we open one more temporary file? */
+    if (ntmp == GP_MAX_TMP_FILES - 1) {
+        fprintf(stderr,
+                "maximum # of temporary files reached (%d): cannot open more",
+                GP_MAX_TMP_FILES) ;
+        return ;
+    }
+    
+    /* Open temporary file for output   */
+    if ((name = tmpnam(NULL)) == (char*)NULL) {
+        fprintf(stderr,"cannot create temporary file: exiting plot") ;
+        return ;
+    }
+    if ((tmp = fopen(name, "w")) == NULL) {
+        fprintf(stderr,"cannot create temporary file: exiting plot") ;
+        return ;
+    }
+    
+    /* Store file name in array for future deletion */
+    (void)strcpy(to_delete[ntmp], name) ;
+    ntmp ++ ;
+    
+    /* Write data to this file  */
+    double *x = new double [N];
+    double *y = new double [N];
+    for (int i=0; i<N; i++) {
+        x[i] = xmin + i*(xmax-xmin)/(N-1.0);
+        y[i] = function(x[i]);
+    }
+    
+    
+    for (i=0 ; i<N ; i++) {
+        (void)fprintf(tmp, "%g %g\n", x[i], y[i]) ;
+    }
+    (void)fflush(tmp) ;
+    (void)fclose(tmp) ;
+    
+    
+    /* Command to be sent to gnuplot    */
+    if (nplots > 0) {
+        (void)strcpy(cmd, "replot") ;
+    } else {
+        (void)strcpy(cmd, "plot") ;
+    }
+    
+    if (title == NULL) {
+        (void)sprintf(line, "%s \"%s\" with %s", cmd, name, pstyle) ;
+    } else {
+        (void)sprintf(line, "%s \"%s\" title \"%s\" with %s", cmd, name,
+                      title, pstyle) ;
+    }
+    
+    /* send command to gnuplot  */
+    gnuplot_cmd(line) ;
+    nplots++ ;
+    
+    return ;
+}
 
 
 /*-------------------------------------------------------------------------*/
@@ -782,7 +889,7 @@ inline void Gnuplot_Control::gnuplot_plot1d_var2(
 inline void Gnuplot_Control::gnuplot_plot_slope(
                                          double              a,
                                          double              b,
-                                         char            *   title
+                                         const char      *   title
 )
 {
     char    stitle[GP_TITLE_SIZE] ;
@@ -808,7 +915,7 @@ inline void Gnuplot_Control::gnuplot_plot_slope(
 
 
 
-inline void Gnuplot_Control::gnuplot_plot_equation (char *equation, char *title )
+inline void Gnuplot_Control::gnuplot_plot_equation (char *equation, const char *title )
 /*-------------------------------------------------------------------------*/
 /**
  @name		gnuplot_plot_equation
@@ -873,4 +980,3 @@ inline void Gnuplot_Control::gnuplot_plot_equation (char *equation, char *title 
 
 
 #endif // _GNUPLOT_INCLUDED
-#endif // _GNUPLOT

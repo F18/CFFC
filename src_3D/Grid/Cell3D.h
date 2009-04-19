@@ -78,16 +78,18 @@ class Cell3D{
     Vector3D           Xc;   // Location of cell center.
     int             I,J,K;   // (i,j,k) indices for cell.
     double              V;   // Cell volume
+    double       Jacobian;   // Determinant of Jacobian
+    Vector3D          dXc;
 	                     // Made public so can access them.
     //@}
 		      
     /* Creation, copy, and assignment constructors. */
     Cell3D(void): _GeomCoeff_(0) {
-      Xc.x = ONE; Xc.y = ONE; Xc.z=ONE; I = 0; J =0; K=0; V = ONE; 
+       Xc.x = ONE; Xc.y = ONE; Xc.z=ONE; I = 0; J =0; K=0; V = ONE; Jacobian=ONE;
     }
 
-    Cell3D(const Cell3D &Cell): _GeomCoeff_(Cell._GeomCoeff_) {
-      Xc = Cell.Xc; I = Cell.I; J = Cell.J; K=Cell.K; V = Cell.V;
+    Cell3D(const Cell3D &Cell): _GeomCoeff_(Cell._GeomCoeff_)  {
+       Xc = Cell.Xc; I = Cell.I; J = Cell.J; K=Cell.K; V = Cell.V; Jacobian = Cell.Jacobian;
     }
 
     Cell3D(const Vector3D &V): _GeomCoeff_(0) {

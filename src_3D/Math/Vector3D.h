@@ -99,6 +99,11 @@ class Vector3D{
     double abs(void) const;
     friend double abs(const Vector3D &V);
 
+    /* Vector of absolute values. */
+    Vector3D vector_abs(void);
+    Vector3D vector_abs(void) const;
+    friend Vector3D vector_abs(const Vector3D &V);
+    
     /* Square of vector. */
     double sqr(void);
     double sqr(void) const;
@@ -214,6 +219,21 @@ inline double Vector3D::abs(void) const {
 
 inline double abs(const Vector3D &V) {
     return (sqrt(V.x*V.x+V.y*V.y+V.z*V.z));  
+}
+
+/********************************************************
+ * Vector3D::abs -- Absolute value of a vector.         *
+ ********************************************************/
+inline Vector3D Vector3D::vector_abs(void) {
+    return (Vector3D(fabs(x),fabs(y),fabs(z)));
+}
+
+inline Vector3D Vector3D::vector_abs(void) const {
+    return (Vector3D(fabs(x),fabs(y),fabs(z)));
+}
+
+inline Vector3D vector_abs(const Vector3D &V) {
+    return (Vector3D(fabs(V.x),fabs(V.y),fabs(V.z)));  
 }
 
 /********************************************************

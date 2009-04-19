@@ -27,6 +27,10 @@ using namespace std;
 #include "../MPI/MPI.h"
 #endif // _MPI_INCLUDED
 
+#ifndef _EXPLICIT_FILTER_CONSTANTS_INCLUDED
+#include "../ExplicitFilters/Explicit_Filter_Constants.h"
+#endif
+
 #define TURBULENCEMODEL_INPUT_PARAMETER_LENGTH 256
 
 /*!
@@ -51,10 +55,32 @@ class Turbulence_Modelling_Input_Parameters{
     char SFS_model[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];     //!< Sub-filter-scale model , default = Smagorinsky + Yoshizawa
     int i_SFS_model;                                            //!< Sub-filter-scale model , default = Smagorinsky + Yoshizawa
     double smagorinsky_coefficient;                             //!< SFS smagorinsky coefficient
+    int Filter_Initial_Condition;                               //!< Flag defines to filter the initial condition
     char filter_type[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];   //!< Filter type : default = implicit filtering
     int i_filter_type;                                          //!< Filter type : default = implicit filtering
+    char filter_type_secondary[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];   //!< Filter type : default = implicit filtering
+    int i_filter_type_secondary;                                          //!< Filter type : default = implicit filtering
     double FGR;                                                 //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
+    double FGR_secondary;                                       //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
     double Filter_Width;                                        //!< Constant filter width
+    double Filter_Width_secondary;                              //!< Constant filter width
+    int commutation_order;                                      //!< Commutation order of explicit filter
+    int finite_differencing_order;                              //!< Finite differencing order in commutation error calculations
+    int number_of_rings;                                        //!< Number of rings used in the explicit filter
+    double Target_Filter_Sharpness;                             //!< Sharpness of target filter in case of Least squares constraint (vasilyev)
+    bool Filter_Width_strict;                                   //!< This will strictly set the FGR and won't allow Least squares to approximate : default = false
+    bool LS_constraints;                                        //!< This will turn on or off Least squares constraints for Vasilyev's filter : default = true
+    int Derivative_constraints;                                 //!< Determines the number of derivative constraints for Vasilyev's filter : default = true
+    bool Filter_Memory_Efficient;                               //!< Determines whether to store filter weights or not (not storing slows down tremendously)
+    double relaxation_factor;                                   //!< This coefficient is used in the least-squares reconstruction filter and should be left "DEFAULT".
+    int least_squares_filter_weighting;                         //!< This coefficient controls if a weighted least-squares is used in Haselbacher filter.
+    double least_squares_filter_weighting_factor;               //!< This coefficient controls if a weighted least-squares is used in Haselbacher filter.
+    int solution_filtering_frequency;                           //!< The solution is filtered each time after this number of timesteps has passed.
+    int filter_solution_before_execution;
+    bool uniform_grid;                                           //!< if the grid is uniform, the filter will generate weights only once (VERY FAST).
+    bool use_fixed_filter_width;
+    int Filter_Method;
+    double Filter_Strength;
     //@}
     
     //@{ @name Spectrum related input parameters:
@@ -82,18 +108,39 @@ class Turbulence_Modelling_Input_Parameters{
       // LES parameters
       strcpy(SFS_model, "Smagorinsky");
       i_SFS_model = SFS_MODEL_SMAGORINSKY;
-      strcpy(filter_type, "Implicit");
       smagorinsky_coefficient = 0.18;
-      i_filter_type = FILTER_TYPE_IMPLICIT;
+      strcpy(filter_type, "Implicit");
+      i_filter_type = Explicit_Filter_Constants::IMPLICIT_FILTER;
+      strcpy(filter_type_secondary, "Implicit");
+      i_filter_type_secondary = Explicit_Filter_Constants::IMPLICIT_FILTER;
       FGR = TWO;
+      FGR_secondary = TWO;
       Filter_Width = ZERO;
-    
+      Filter_Width_secondary = ZERO;
+      commutation_order = 2;
+      finite_differencing_order = commutation_order+2;
+      number_of_rings = 2;
+      relaxation_factor = DEFAULT;
+      least_squares_filter_weighting_factor = DEFAULT;
+      least_squares_filter_weighting = ON;
+      Target_Filter_Sharpness = -1;
+      Filter_Initial_Condition = ON;
+      Filter_Width_strict = OFF;
+      LS_constraints = ON;
+      Derivative_constraints = DEFAULT; // this lets an algorithm put the number
+      Filter_Memory_Efficient = OFF;
+      solution_filtering_frequency = OFF;
       // Spectrum parameters
       strcpy(spectrum,"Pope");
       i_spectrum = SPECTRUM_POPE;
       LLR = 6;
       TKE = 150.0;
       rescale_spectrum = OFF;
+      filter_solution_before_execution = OFF;
+      uniform_grid = OFF;
+      use_fixed_filter_width = OFF;
+      Filter_Method = Explicit_Filter_Constants::FILTER_RESIDUALS;
+      Filter_Strength = 1.0;
 
 
       // Reacting LES parameters

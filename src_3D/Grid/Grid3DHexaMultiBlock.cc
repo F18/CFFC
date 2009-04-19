@@ -206,6 +206,7 @@ void Grid3D_Hexa_Multi_Block_List::Copy(Grid3D_Hexa_Multi_Block_List &Grid2) {
             Allocate(Grid2.NBlk_Idir, Grid2.NBlk_Jdir, Grid2.NBlk_Kdir);
         } /* endif */
         
+        IsAuxiliary = Grid2.IsAuxiliary;
         /* Copy each grid block. */
         
         for (int  i = 0 ; i < NBlk ; ++i ) {
@@ -243,6 +244,8 @@ void Grid3D_Hexa_Multi_Block_List::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&nk, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&grid_allocated, 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&IsAuxiliary, 1, MPI::INT, 0);
+
     
     /* On non-primary MPI processors, allocate (re-allocate) 
      memory for the grid blocks as necessary. */
@@ -470,6 +473,10 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid(Grid3D_Input_Parameters &Input) {
             break;
     } /* endswitch */
     
+    if (Input.Disturb_Interior_Nodes != 0 && !IsAuxiliary) {
+        Disturb_Interior_Nodes(Input.Disturb_Interior_Nodes);
+    }
+    
 }
 
 /********************************************************
@@ -496,7 +503,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Cube(Grid3D_Input_Parameters &Inp
                                               Input.NBlk_Jdir,
                                               Input.Box_Width,
                                               Input.Box_Height,
-                                              ON,
+                                              Input.Mesh_Stretching,
                                               Input.Stretching_Type_Idir,
                                               Input.Stretching_Type_Jdir,
                                               Input.Stretching_Factor_Idir,
@@ -504,6 +511,16 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Cube(Grid3D_Input_Parameters &Inp
                                               Input.NCells_Idir,
                                               Input.NCells_Jdir,
                                               Input.Nghost);
+    
+    if (Input.Mesh_Smoothing!=OFF){
+        /* This will make the mesh curved in case of mesh stretching */
+        for (int iBlk=0; iBlk<Input.NBlk_Idir; iBlk++) {
+            for (int jBlk=0; jBlk<Input.NBlk_Jdir; jBlk++) {
+                Smooth_Quad_Block(Grid2D_Box_XYplane[iBlk][jBlk],
+                                  Input.Mesh_Smoothing);
+            }
+        }
+    }
     
     /* Create the mesh for each block representing
      the complete grid. */
@@ -519,6 +536,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Cube(Grid3D_Input_Parameters &Inp
                 
                 Grid_Blks[count_blocks].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
                                                 Input.NCells_Kdir,
+                                                Input.Mesh_Stretching,
                                                 Input.Stretching_Type_Kdir,
                                                 Input.Stretching_Factor_Kdir,
                                                 -HALF*Input.Box_Length+
@@ -563,6 +581,105 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Cube(Grid3D_Input_Parameters &Inp
     
 }
 
+
+/********************************************************
+ * Routine: Create_Grid_Single_Block_Periodic_Box       *
+ *                                                      *
+ * Generates a 3D Cartesian multiblock mesh for a cube. *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block_List::Create_Grid_Single_Block_Periodic_Box(Grid3D_Input_Parameters &Input) {
+    
+    int count_blocks;
+    int BC_top, BC_bottom;
+    Grid2D_Quad_Block **Grid2D_Box_XYplane;
+    
+    /* Allocate required memory. */
+    
+    assert(Input.NBlk_Idir==1 && Input.NBlk_Jdir==1 && Input.NBlk_Kdir==1);
+    
+    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+    
+    /* Creat 2D cross-section grids from which the 3D grid
+     will be extruded. */
+    
+    Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
+                                              Input.NBlk_Idir, 
+                                              Input.NBlk_Jdir,
+                                              Input.Box_Width,
+                                              Input.Box_Height,
+                                              Input.Mesh_Stretching,
+                                              Input.Stretching_Type_Idir,
+                                              Input.Stretching_Type_Jdir,
+                                              Input.Stretching_Factor_Idir,
+                                              Input.Stretching_Factor_Jdir,
+                                              Input.NCells_Idir,
+                                              Input.NCells_Jdir,
+                                              Input.Nghost);
+    
+    if (Input.Mesh_Smoothing!=OFF){
+        /* This will make the mesh curved in case of mesh stretching */
+        for (int iBlk=0; iBlk<Input.NBlk_Idir; iBlk++) {
+            for (int jBlk=0; jBlk<Input.NBlk_Jdir; jBlk++) {
+                Smooth_Quad_Block(Grid2D_Box_XYplane[iBlk][jBlk],
+                                  Input.Mesh_Smoothing);
+            }
+        }
+    }
+    
+    /* Create the mesh for each block representing
+     the complete grid. */
+    
+    count_blocks = 0;
+    
+    for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+        for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+            for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+                
+                /* Extrude each of the grid blocks from the
+                 appropriate 2D grid in XY-plane. */
+                
+                Grid_Blks[count_blocks].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
+                                                Input.NCells_Kdir,
+                                                Input.Mesh_Stretching,
+                                                Input.Stretching_Type_Kdir,
+                                                Input.Stretching_Factor_Kdir,
+                                                -HALF*Input.Box_Length+
+                                                (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
+                                                -HALF*Input.Box_Length+
+                                                (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
+                
+                /* Set all boundary conditions to periodic */
+                
+                Grid_Blks[count_blocks].Set_BCs(BC_PERIODIC, 
+                                                BC_PERIODIC, 
+                                                BC_PERIODIC, 
+                                                BC_PERIODIC, 
+                                                BC_PERIODIC, 
+                                                BC_PERIODIC);
+                                
+                /* Update block counter. */
+                
+                count_blocks ++;
+                
+            } /* endfor */
+        } /* endfor */
+    } /* endfor */
+    
+    /* Deallocate 2D grid. */
+    
+    Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
+                                                     Input.NBlk_Idir, 
+                                                     Input.NBlk_Jdir);
+    
+    
+    /* Call the function Find_Neighbours to obtain the neighbour block information
+     and assign values to data members in the grid block connectivity data structure. */
+    
+    Find_Neighbours(Input);
+    
+}
+
 /********************************************************
  * Routine: Create_Grid_Periodic_Box                    *
  *                                                      *
@@ -571,6 +688,12 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Cube(Grid3D_Input_Parameters &Inp
  *                                                      *
  ********************************************************/
 void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Parameters &Input) {
+    
+    /* No block connectivity needed in case of 1 single block --> No Message Passing for ghost cells */
+    if (Input.NBlk_Idir==1 && Input.NBlk_Jdir==1 && Input.NBlk_Kdir==1 && Input.i_Grid!=GRID_PERIODIC_BOX_WITH_INFLOW) {
+        return Create_Grid_Single_Block_Periodic_Box(Input);
+    }
+
     
     int nBlk;
     int opposite_nBlk, opposite_iBlk, opposite_jBlk, opposite_kBlk;
@@ -590,7 +713,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Paramet
                                            Input.NBlk_Jdir,
                                            Input.Box_Width,
                                            Input.Box_Height,
-                                           ON,
+                                           Input.Mesh_Stretching,
                                            Input.Stretching_Type_Idir,
                                            Input.Stretching_Type_Jdir,
                                            Input.Stretching_Factor_Idir,
@@ -598,6 +721,16 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Paramet
                                            Input.NCells_Idir,
                                            Input.NCells_Jdir,
                                            Input.Nghost);
+    
+    if (Input.Mesh_Smoothing!=OFF){
+        /* This will make the mesh curved in case of mesh stretching */
+        for (int iBlk=0; iBlk<Input.NBlk_Idir; iBlk++) {
+            for (int jBlk=0; jBlk<Input.NBlk_Jdir; jBlk++) {
+                Smooth_Quad_Block(Grid2D_Box_XYplane[iBlk][jBlk],
+                                  Input.Mesh_Smoothing);
+            }
+        }
+    }
     
     /* Create the mesh for each block representing
      the complete grid. */
@@ -617,7 +750,8 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Paramet
                 
                 Grid_Blks[nBlk].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
                                         Input.NCells_Kdir,
-                                        Input.Stretching_Type_Kdir,
+                                        Input.Mesh_Stretching,
+                                        Input.Stretching_Type_Kdir, 
                                         Input.Stretching_Factor_Kdir,
                                         -HALF*Input.Box_Length+
                                         (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
@@ -1333,6 +1467,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Paramet
  **************************************************************/
 void Grid3D_Hexa_Multi_Block_List::Create_Grid_Turbulence_Box(Grid3D_Input_Parameters &Input) {
     
+    IsAuxiliary = true;
     int count_blocks;
     int BC_east, BC_west, BC_north, BC_south, BC_top, BC_bottom;
     Grid2D_Quad_Block **Grid2D_Box_XYplane;
@@ -1360,7 +1495,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Turbulence_Box(Grid3D_Input_Param
                                               Input.NBlk_Jdir,
                                               Input.Turbulence_Box_Width,
                                               Input.Turbulence_Box_Height,
-                                              ON,
+                                              OFF,  // no mesh stretching!
                                               Input.Stretching_Type_Idir,
                                               Input.Stretching_Type_Jdir,
                                               Input.Stretching_Factor_Idir,
@@ -1457,6 +1592,81 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Turbulence_Box(Grid3D_Input_Param
     Input.NBlk_Kdir = NBlk_Kdir;
     
 }
+
+
+void Grid3D_Hexa_Multi_Block_List::Create_Uniform_Initial_Grid(Grid3D_Input_Parameters &Input, Grid3D_Hexa_Multi_Block_List &Initial_Mesh) {
+    /*
+     * Now only deals with a carthesian box-like configuration, 
+     * for use in creating an initial turbulence field on a non-uniform grid
+     *
+     */
+    
+    IsAuxiliary = true;
+    
+    /* ----------------------- save old values --------------------------- */
+    int NBlk_Idir = Input.NBlk_Idir;
+    int NBlk_Jdir = Input.NBlk_Jdir;
+    int NBlk_Kdir = Input.NBlk_Kdir;
+    
+    int NCells_Idir = Input.NCells_Idir;
+    int NCells_Jdir = Input.NCells_Jdir;
+    int NCells_Kdir = Input.NCells_Kdir;
+    
+    int Mesh_Stretching = Input.Mesh_Stretching;
+
+    
+    /* --------------------- Generage new Input values -------------------- */
+    // Set dimensions same as Initial_Mesh
+    Input.Turbulence_Box_Width  = Input.Box_Width;
+    Input.Turbulence_Box_Height  = Input.Box_Height;
+    Input.Turbulence_Box_Length = Input.Box_Length;
+    
+    // Use only one block since the turbulence will be generated on one processor anyway
+    Input.NBlk_Idir = 1;
+    Input.NBlk_Jdir = 1;
+    Input.NBlk_Kdir = 1;
+    
+    // Turn off Mesh stretching
+    Input.Mesh_Stretching = OFF;
+    
+    // Find smallest spacing
+    Vector3D Delta_min = Initial_Mesh.Delta_minimum();
+    cout << "Delta_min = " << Delta_min << endl;
+    
+    // Set number of cells in each direction
+    Input.NCells_Turbulence_Idir = int(ceil(Input.Turbulence_Box_Width/Delta_min.x/2.)*2);
+    Input.NCells_Turbulence_Jdir = int(ceil(Input.Turbulence_Box_Height/Delta_min.y/2.)*2);
+    Input.NCells_Turbulence_Kdir = int(ceil(Input.Turbulence_Box_Length/Delta_min.z/2.)*2);
+
+    Input.NCells_Idir = Input.NCells_Turbulence_Idir;
+    Input.NCells_Jdir = Input.NCells_Turbulence_Jdir;
+    Input.NCells_Kdir = Input.NCells_Turbulence_Kdir;
+
+    cout << endl;
+    cout << "Auxiliary Mesh dimensions: " << endl;
+    cout << "NCells_Turbulence_Idir = " << Input.NCells_Turbulence_Idir << endl;
+    cout << "NCells_Turbulence_Jdir = " << Input.NCells_Turbulence_Jdir << endl;
+    cout << "NCells_Turbulence_Kdir = " << Input.NCells_Turbulence_Kdir << endl;
+
+    /* ------------------------- Create the new grid ------------------------- */
+    // Create the uniform grid with same dimensions as original and smallest spacing
+    Create_Grid(Input);
+    
+    
+    
+    
+    /* --------------------------- restore old values -------------------------- */
+    Input.NBlk_Idir = NBlk_Idir;
+    Input.NBlk_Jdir = NBlk_Jdir;
+    Input.NBlk_Kdir = NBlk_Kdir;
+    
+    Input.NCells_Idir = NCells_Idir;
+    Input.NCells_Jdir = NCells_Jdir;
+    Input.NCells_Kdir = NCells_Kdir;
+
+    Input.Mesh_Stretching = Mesh_Stretching;
+}
+
 
 /********************************************************
  * Routine: Create_Grid_Bunsen_Inflow                   *
@@ -3295,7 +3505,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Flat_Plate(Grid3D_Input_Parameter
                                                  Input.Plate_Length,
                                                  Input.Box_Height,
                                                  BC_ADIABATIC_WALL,
-                                                 OFF,
+                                                 ON,
                                                  Input.Stretching_Factor_Idir,
                                                  Input.Stretching_Factor_Jdir,
                                                  Input.NCells_Idir,
@@ -4845,6 +5055,21 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
     
 }
 
+void Grid3D_Hexa_Multi_Block_List::Update_Cells(void) {
+    for (int n=0; n<NBlk; n++) {
+        Grid_Blks[n].Update_Cells();
+    }
+}
+
+void Grid3D_Hexa_Multi_Block_List::Disturb_Interior_Nodes(const int Number_of_Iterations) {
+    srand48(1); // make sure every generation will be the same
+    for (int n=0; n<NBlk; n++) {
+        Grid_Blks[n].Disturb_Interior_Nodes(Number_of_Iterations);
+    }
+    Update_Cells();
+}
+
+
 
 /********************************************************
  * Routine: Allocate                                    *
@@ -6100,4 +6325,19 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_ICEMCFD(Grid3D_Input_Parameters &Input
     assert(NBlk_Idir >= 1 && NBlk_Jdir >= 1 && NBlk_Kdir >= 1); 
     Allocated = 1;
     
-}         
+}   
+
+
+Vector3D Grid3D_Hexa_Multi_Block_List::Delta_minimum(void) {
+    double dx(1e10), dy(1e10), dz(1e10);
+    Vector3D Delta;
+    for (int  i = 0 ; i < NBlk ; ++i ) {
+        if (Grid_Blks[i].Allocated) {
+            Delta = Grid_Blks[i].Delta_minimum();
+            if (Delta.x < dx)   dx = Delta.x;
+            if (Delta.y < dy)   dy = Delta.y;
+            if (Delta.z < dz)   dz = Delta.z;
+        }  
+    }
+    return Vector3D(dx,dy,dz);
+}

@@ -17,6 +17,9 @@
 #include "../AMR/AdaptiveBlock3D.h"
 #endif //_ADAPTIVEBLOCK3D_INCLUDED
 
+template<typename Soln_pState, typename Soln_cState>
+class Explicit_Filters;
+
 // A local list of solution blocks on a given processor.
 template<class HEXA_BLOCK> 
 class Hexa_Multi_Block {
@@ -25,11 +28,14 @@ class Hexa_Multi_Block {
   protected:
 
   public:
+   typedef typename HEXA_BLOCK::Soln_pState  Soln_pState;
+   typedef typename HEXA_BLOCK::Soln_cState  Soln_cState; 
+    
    HEXA_BLOCK *Soln_Blks;          // Array of hexahedral solution blocks.
    int Number_of_Soln_Blks;        // Number or size of array of hexahedral solution blocks. 
    int *Block_Used;                // Solution block usage indicator.
    int Allocated;                  // Indicates if the solution blocks have been allocated or not.
-
+    
    /* Creation constructors. */
    Hexa_Multi_Block(void) {
       Number_of_Soln_Blks = 0; Allocated = 0;
@@ -151,6 +157,10 @@ class Hexa_Multi_Block {
 
    void BCs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                              typename HEXA_BLOCK::Soln_cState> &Input);
+    
+    void BCs_dUdt(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                   typename HEXA_BLOCK::Soln_cState> &Input,
+                  int residual_index);
 
    double CFL(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                typename HEXA_BLOCK::Soln_cState> &Input);
@@ -165,10 +175,14 @@ class Hexa_Multi_Block {
                                 typename HEXA_BLOCK::Soln_cState> &Input,
                                 const int I_Stage);
 
-   int Update_Solution_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                            typename HEXA_BLOCK::Soln_cState> &Input, 
+   int Update_Solution_Multistage_Explicit(Input_Parameters<Soln_pState, 
+                                                            Soln_cState> &Input, 
                                            const int I_Stage);
-
+    
+    
+    int Explicitly_Filter_Solution();
+    
+    
 };
 
 /********************************************************
@@ -206,14 +220,14 @@ template<class HEXA_BLOCK>
 void Hexa_Multi_Block<HEXA_BLOCK>::Deallocate(void) {
 
    if (Number_of_Soln_Blks >= 1 && Allocated) {
-      delete []Soln_Blks; delete []Block_Used;
-      Soln_Blks = NULL; Block_Used = NULL;
+      delete []Soln_Blks; 
+      delete []Block_Used;
+      Soln_Blks = NULL; 
+      Block_Used = NULL;
 
       Number_of_Soln_Blks = 0;
-
-      Allocated = 0;
    } /* endif */
-
+    Allocated = 0;
 }
 
 /********************************************************
@@ -777,6 +791,29 @@ void Hexa_Multi_Block<HEXA_BLOCK>::BCs(Input_Parameters<typename HEXA_BLOCK::Sol
 }
 
 /********************************************************
+ * Routine: BCs_dUdt                                    *
+ *                                                      *
+ * Apply boundary conditions at boundaries of a 1D      *
+ * array of 3D hexahedral multi-block solution          *
+ * blocks.                                              *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::BCs_dUdt(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                                             typename HEXA_BLOCK::Soln_cState> &Input,
+                                            int residual_index) {
+    
+    /* Prescribe boundary data for each solution block. */
+    
+    for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+        if (Block_Used[nblk]) {
+            Soln_Blks[nblk].BCs_dUdt(Input,residual_index);
+        } /* endif */
+    }  /* endfor */
+    
+}
+
+/********************************************************
  * Routine: CFL                                         *
  *                                                      *
  * Determines the allowable global and local time steps *
@@ -789,10 +826,9 @@ void Hexa_Multi_Block<HEXA_BLOCK>::BCs(Input_Parameters<typename HEXA_BLOCK::Sol
 template<class HEXA_BLOCK>
 double Hexa_Multi_Block<HEXA_BLOCK>::CFL(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                                           typename HEXA_BLOCK::Soln_cState> &Input) {
-  
-   double dtMin;
-
-   dtMin = MILLION;
+    int Global_CFL_Limit;
+   double dtMin(MILLION);
+    double dt_acoustic(MILLION), dt_viscous(MILLION);
   
    /* Determine the allowable time step for each solution block. */
    /* Prescribe boundary data for each solution block. */
@@ -800,11 +836,31 @@ double Hexa_Multi_Block<HEXA_BLOCK>::CFL(Input_Parameters<typename HEXA_BLOCK::S
    for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) { 
       if (Block_Used[nblk]) {
          dtMin = min(dtMin, Soln_Blks[nblk].CFL(Input));
+          dt_acoustic = min(dt_acoustic,Soln_Blks[nblk].dt_acoustic);
+          dt_viscous = min(dt_viscous,Soln_Blks[nblk].dt_viscous);
       } /* endif */
    }  /* endfor */
    
+    dt_acoustic = CFFC_Minimum_MPI(dt_acoustic);
+    dt_viscous = CFFC_Minimum_MPI(dt_viscous);
+    
+    if (dt_viscous < dt_acoustic){
+        Global_CFL_Limit = CFL_LIMIT_VISCOUS;
+    } else {
+        Global_CFL_Limit = CFL_LIMIT_ACOUSTIC;
+    }
+    
+    if (CFFC_Primary_MPI_Processor() && Input.Output_CFL_Limit==ON){
+        if (Global_CFL_Limit == CFL_LIMIT_ACOUSTIC) {
+            cout << "a"; cout.flush();
+        }
+        if (Global_CFL_Limit == CFL_LIMIT_VISCOUS) {
+            cout << "v"; cout.flush();
+        }
+    }
+    
+    
    /* Return the global time step. */
-   
    return (dtMin);
     
 }
@@ -1351,6 +1407,51 @@ Output_Nodes_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
 
     return(0);
 
+}
+
+
+/********************************************************
+ * Routine: Explicitely_Filter_Solution                 *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+int Hexa_Multi_Block<HEXA_BLOCK>::Explicitly_Filter_Solution() {
+    
+    int error_flag(0);
+    
+    Soln_cState *** (Hexa_Block<Soln_pState,Soln_cState>::*U_ptr) = &Hexa_Block<Soln_pState,Soln_cState>::U;
+    
+    for (int nBlk = 0; nBlk < Number_of_Soln_Blks; ++nBlk) {
+        cout.flush();
+        if (Block_Used[nBlk]) {
+            
+            Soln_Blks[nBlk].Explicit_Filter.filter(U_ptr);
+            
+            for (int k  = Soln_Blks[nBlk].KCl-Soln_Blks[nBlk].Nghost ; k <= Soln_Blks[nBlk].KCu+Soln_Blks[nBlk].Nghost ; ++k ) {
+                for ( int j  = Soln_Blks[nBlk].JCl-Soln_Blks[nBlk].Nghost ; j <= Soln_Blks[nBlk].JCu+Soln_Blks[nBlk].Nghost ; ++j ) {
+                    for ( int i = Soln_Blks[nBlk].ICl-Soln_Blks[nBlk].Nghost ; i <= Soln_Blks[nBlk].ICu+Soln_Blks[nBlk].Nghost ; ++i ) {
+                         Soln_Blks[nBlk].W[i][j][k] =  Soln_Blks[nBlk].U[i][j][k].W();
+                    }	  
+                }
+            }
+        }
+    }
+    
+//    double Soln_pState::*p_ptr = p_ptr = &Soln_pState::p; 
+//    Explicit_Filter.filter(p_ptr);    
+//    for (int nBlk = 0; nBlk < Number_of_Soln_Blks; ++nBlk) {
+//        if (Block_Used[nBlk]) {
+//            for (int k  = Soln_Blks[nBlk].KCl-Soln_Blks[nBlk].Nghost ; k <= Soln_Blks[nBlk].KCu+Soln_Blks[nBlk].Nghost ; ++k ) {
+//                for ( int j  = Soln_Blks[nBlk].JCl-Soln_Blks[nBlk].Nghost ; j <= Soln_Blks[nBlk].JCu+Soln_Blks[nBlk].Nghost ; ++j ) {
+//                    for ( int i = Soln_Blks[nBlk].ICl-Soln_Blks[nBlk].Nghost ; i <= Soln_Blks[nBlk].ICu+Soln_Blks[nBlk].Nghost ; ++i ) {
+//                         Soln_Blks[nBlk].U[i][j][k] =  Soln_Blks[nBlk].W[i][j][k].U();
+//                    }	  
+//                }
+//            }
+//        }
+//    }            
+
+    return (error_flag);    
 }
 
 #endif // _HEXA_MULTIBLOCK_INCLUDED

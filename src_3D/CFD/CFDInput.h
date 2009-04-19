@@ -99,6 +99,7 @@ class CFD_Input_Parameters{
   //@{ @name Output parameters:
   //! Output file name
   char Output_File_Name[INPUT_PARAMETER_LENGTH];
+  char Output_File_Name_Prefix[INPUT_PARAMETER_LENGTH];
   //! Restart file name
   char Restart_File_Name[INPUT_PARAMETER_LENGTH];
   //! Output format type indicator
@@ -110,6 +111,8 @@ class CFD_Input_Parameters{
   int Output_Progress_Frequency;
   //! Frequency of outputting solution for time accurate calculations
   int Time_Accurate_Output_Frequency;
+  //! Determines how progress is indicated (Only use PROGRESS_MODE_TERMINAL in case output on terminal)
+  int Progress_Mode;
   //@}
 
   //@{ @name Debugging parameters:
@@ -133,6 +136,12 @@ class CFD_Input_Parameters{
   int Residual_Norm;
   int Number_of_Residual_Norms;
   double CFL_Number, Time_Max;
+  int Output_CFL_Limit;
+  //@}
+
+  //@{ @name Spatial Order of Accuracy type indicator and related input parameters:
+  char Spatial_Accuracy[INPUT_PARAMETER_LENGTH];
+  int Reconstruction_Order;
   //@}
 
   //@{ @name Spatial Order of Accuracy type indicator and related input parameters:
@@ -236,11 +245,13 @@ class CFD_Input_Parameters{
     strcpy(Next_Control_Parameter, " ");
     // Output parameters:
     strcpy(Output_File_Name, "outputfile.dat");
+    strcpy(Output_File_Name, "outputfile");
     strcpy(Restart_File_Name, "restartfile.soln");
     strcpy(Output_Format_Type, "Tecplot");
     i_Output_Format = IO_TECPLOT;
     Restart_Solution_Save_Frequency = 1000;
     Time_Accurate_Output_Frequency = 0;
+    Progress_Mode = PROGRESS_MODE_MESSAGE;
     // Debugging parameters:
     Debug_Level = 0;  //default no debug information
     // Flow type indicator and related input parameters:
@@ -255,6 +266,7 @@ class CFD_Input_Parameters{
     Maximum_Number_of_Time_Steps = 100;
     N_Stage = 1;
     CFL_Number = HALF;
+    Output_CFL_Limit = OFF;
     Time_Max = ZERO;
     Residual_Norm = 1;   //density default
     Number_of_Residual_Norms =1;
