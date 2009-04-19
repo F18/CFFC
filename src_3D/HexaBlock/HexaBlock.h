@@ -4650,8 +4650,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdydz = NULL;
 
 // The following must be included at the end of file.
-#ifndef _HEXABLOCK_HIGHORDER_INCLUDED
 #include "HexaBlockHighOrder.h"
-#endif //_HEXABLOCK_HIGHORDER_INCLUDED
 
 #endif // _HEXA_BLOCK_INCLUDED

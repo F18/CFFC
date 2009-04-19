@@ -1,6 +1,9 @@
 /*! \file HexaBlockHighOrder.h
   @brief High-order Subroutines for 3D Euler Equations on Hexahedral Grids */
 
+#ifndef _HEXABLOCK_HIGHORDER_INCLUDED
+#define _HEXABLOCK_HIGHORDER_INCLUDED
+
 /* Include required C++ libraries. */
 // None
 
@@ -321,3 +324,5 @@ dUdt_Residual_HighOrder(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
   return (0);
   
 }
+
+#endif

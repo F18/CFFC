@@ -601,11 +601,11 @@ T TaylorDerivativesContainer<T>::ComputeSolutionFor(const double DeltaX, const d
   // initialize the solution state
   T Solution(0.0);
 
-  int p1(0),p2(0),p3(0),Position(0);
+  int p1,p2,p3,Position(0);
 
   double DeltaXtoPower(1.0), DeltaYtoPower, DeltaZtoPower;
 
- for (p1=0,Position=0; p1<=OrderOfRec; ++p1){
+  for (p1=0,Position=0; p1<=OrderOfRec; ++p1){
     /* Reinitialize DeltaYtoPower */
     DeltaYtoPower = 1.0;
 
@@ -636,8 +636,44 @@ T TaylorDerivativesContainer<T>::ComputeSolutionFor(const double DeltaX, const d
 // the Taylor series expansion for a particular distance (DeltaX,DeltaY,DeltaZ)
 template<class T> inline
 T TaylorDerivativesContainer<T>::ComputeXGradientFor(const double DeltaX, const double DeltaY, const double DeltaZ){
-  // RR: Not yet implemented
-  return T(0.0);
+  // initialize the solution state
+  T Gradient(0.0);
+  
+  int p1m1,p2,p3,Position(0);
+  
+  double DeltaXtoPower(1.0), DeltaYtoPower, DeltaZtoPower;
+
+  Gradient = DContainer[1].D();
+
+  for (p1m1=0; p1m1<=OrderOfRec-1; ++p1m1){
+    /* Reinitialize DeltaYtoPower */
+    DeltaYtoPower = DeltaY;
+    
+    for (p2=1; p2<=OrderOfRec-(p1m1+1); ++p2){
+      /* Reinitialize DeltaZtoPower */
+      DeltaZtoPower = DeltaZ;
+      
+      for (p3=1; p3<=OrderOfRec-(p1m1+1)-p2; ++p3, ++Position){
+
+	/* Update solution */
+	Gradient += (p1m1+1)*DeltaXtoPower*DeltaYtoPower*DeltaZtoPower*DContainer[Position].D();
+
+	Print_3(p1m1,p2,p3);
+	Print_3(DeltaXtoPower,DeltaYtoPower,DeltaZtoPower);
+	Print_(Gradient);
+	/* Update DeltaZtoPower */
+	DeltaZtoPower *= DeltaZ;
+
+      }
+
+      /* Update DeltaYtoPower */
+      DeltaYtoPower *= DeltaY;
+    }
+
+    /* Update DeltaXtoPower */
+    DeltaXtoPower *= DeltaX;
+  }
+  return Gradient;
 }
 
 // ComputeYGradientFor( ) :-> Compute the gradient in Y direction of
