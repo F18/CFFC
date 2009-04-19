@@ -636,60 +636,137 @@ T TaylorDerivativesContainer<T>::ComputeSolutionFor(const double DeltaX, const d
 // the Taylor series expansion for a particular distance (DeltaX,DeltaY,DeltaZ)
 template<class T> inline
 T TaylorDerivativesContainer<T>::ComputeXGradientFor(const double DeltaX, const double DeltaY, const double DeltaZ){
-  // initialize the solution state
-  T Gradient(0.0);
   
-  int p1m1,p2,p3,Position(0);
-  
-  double DeltaXtoPower(1.0), DeltaYtoPower, DeltaZtoPower;
+  // Initialize the gradient state
+  T XGradient(0.0);
 
-  Gradient = DContainer[1].D();
+  int    p1,p2,p3;
+  double DeltaXtoPower,DeltaYtoPower,DeltaZtoPower;
 
-  for (p1m1=0; p1m1<=OrderOfRec-1; ++p1m1){
-    /* Reinitialize DeltaYtoPower */
-    DeltaYtoPower = DeltaY;
-    
-    for (p2=1; p2<=OrderOfRec-(p1m1+1); ++p2){
-      /* Reinitialize DeltaZtoPower */
-      DeltaZtoPower = DeltaZ;
-      
-      for (p3=1; p3<=OrderOfRec-(p1m1+1)-p2; ++p3, ++Position){
+  // Calculate the gradient for the case where p1=0:
+  p1 = 0;
+  DeltaYtoPower = 1.0;
+  for (p2=0; p2<=OrderOfRec-p1; ++p2){
+    DeltaZtoPower = 1.0;
+    for (p3=0; p3<=OrderOfRec-p1-p2; ++p3){
+      /* Update Gradient */
+      XGradient += DeltaYtoPower*DeltaZtoPower*DContainer[IndexOrder(p1,p2,p3)].D();
+      /* Update DeltaZtoPower */
+      DeltaZtoPower *= DeltaZ;
+    }
+    /* Update DeltaYtoPower */
+    DeltaYtoPower *= DeltaY;
+  }
 
-	/* Update solution */
-	Gradient += (p1m1+1)*DeltaXtoPower*DeltaYtoPower*DeltaZtoPower*DContainer[Position].D();
-
-	Print_3(p1m1,p2,p3);
-	Print_3(DeltaXtoPower,DeltaYtoPower,DeltaZtoPower);
-	Print_(Gradient);
+  // Calculate and add the remaining gradient terms:
+  for (p1=1; p1<=OrderOfRec; ++p1){
+    DeltaYtoPower = 1.0;
+    for (p2=0; p2<=OrderOfRec-p1; ++p2){
+      DeltaZtoPower = 1.0;
+      for (p3=0; p3<=OrderOfRec-p1-p2; ++p3){
+	/* Update Gradient */
+	XGradient += p1*std::pow(DeltaX,p1-1)*DeltaYtoPower*DeltaZtoPower*DContainer[IndexOrder(p1,p2,p3)].D();
 	/* Update DeltaZtoPower */
 	DeltaZtoPower *= DeltaZ;
-
       }
-
       /* Update DeltaYtoPower */
       DeltaYtoPower *= DeltaY;
     }
-
-    /* Update DeltaXtoPower */
-    DeltaXtoPower *= DeltaX;
   }
-  return Gradient;
+
+  return XGradient;
+
 }
 
 // ComputeYGradientFor( ) :-> Compute the gradient in Y direction of
 // the Taylor series expansion for a particular distance (DeltaX,DeltaY,DeltaZ)
 template<class T> inline
 T TaylorDerivativesContainer<T>::ComputeYGradientFor(const double DeltaX, const double DeltaY, const double DeltaZ){
-  // RR: Not yet implemented
-  return T(0.0);
+  
+  // Initialize the gradient state
+  T YGradient(0.0);
+
+  int    p1,p2,p3;
+  double DeltaXtoPower,DeltaYtoPower,DeltaZtoPower;
+
+  // Calculate the gradient for the case where p1=0:
+  p2 = 0;
+  DeltaXtoPower = 1.0;
+  for (p1=0; p1<=OrderOfRec; ++p1){
+    DeltaZtoPower = 1.0;
+    for (p3=0; p3<=OrderOfRec-p1-p2; ++p3){
+      /* Update Gradient */
+      YGradient += DeltaYtoPower*DeltaZtoPower*DContainer[IndexOrder(p1,p2,p3)].D();
+      /* Update DeltaZtoPower */
+      DeltaZtoPower *= DeltaZ;
+    }
+    /* Update DeltaXtoPower */
+    DeltaXtoPower *= DeltaX;
+  }
+
+  // Calculate and add the remaining gradient terms:
+  DeltaXtoPower = 1.0;
+  for (p1=0; p1<=OrderOfRec; ++p1){
+    for (p2=1; p2<=OrderOfRec-p1; ++p2){
+      DeltaZtoPower = 1.0;
+      for (p3=0; p3<=OrderOfRec-p1-p2; ++p3){
+	/* Update Gradient */
+	YGradient += p2*DeltaXtoPower*std::pow(DeltaY,p2-1)*DeltaZtoPower*DContainer[IndexOrder(p1,p2,p3)].D();
+	/* Update DeltaZtoPower */
+	DeltaZtoPower *= DeltaZ;
+      }
+    }
+    /* Update DeltaXtoPower */
+    DeltaXtoPower *= DeltaX;
+  }
+
+  return YGradient;
+
 }
 
 // ComputeZGradientFor( ) :-> Compute the gradient in ZX direction of
 // the Taylor series expansion for a particular distance (DeltaX,DeltaY,DeltaZ)
 template<class T> inline
 T TaylorDerivativesContainer<T>::ComputeZGradientFor(const double DeltaX, const double DeltaY, const double DeltaZ){
-  // RR: Not yet implemented
-  return T(0.0);
+  // Initialize the gradient state
+  T ZGradient(0.0);
+
+  int    p1,p2,p3;
+  double DeltaXtoPower,DeltaYtoPower,DeltaZtoPower;
+
+  // Calculate the gradient for the case where p1=0:
+  p3 = 0;
+  DeltaXtoPower = 1.0;
+  for (p1=0; p1<=OrderOfRec; ++p1){
+    DeltaYtoPower = 1.0;
+    for (p2=0; p2<=OrderOfRec-p1; ++p2){
+      /* Update Gradient */
+      ZGradient += DeltaXtoPower*DeltaYtoPower*DContainer[IndexOrder(p1,p2,p3)].D();
+      /* Update DeltaYtoPower */
+      DeltaYtoPower *= DeltaY;
+    }
+    /* Update DeltaXtoPower */
+    DeltaXtoPower *= DeltaX;
+  }
+
+  // Calculate and add the remaining gradient terms:
+  DeltaXtoPower = 1.0;
+  for (p1=0; p1<=OrderOfRec; ++p1){
+    DeltaYtoPower = 1.0;
+    for (p2=0; p2<=OrderOfRec-p1; ++p2){
+      for (p3=1; p3<=OrderOfRec-p1-p2; ++p3){
+	/* Update Gradient */
+	ZGradient += p3*DeltaXtoPower*DeltaYtoPower*std::pow(DeltaZ,p3-1)*DContainer[IndexOrder(p1,p2,p3)].D();
+      }
+      /* Update DeltaYtoPower */
+      DeltaYtoPower *= DeltaY;
+    }
+    /* Update DeltaXtoPower */
+    DeltaXtoPower *= DeltaX;
+  }
+
+  return ZGradient;
+
 }
 
 // Friend functions

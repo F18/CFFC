@@ -144,11 +144,6 @@ class CFD_Input_Parameters{
   int Reconstruction_Order;
   //@}
 
-  //@{ @name Spatial Order of Accuracy type indicator and related input parameters:
-  char Spatial_Accuracy[INPUT_PARAMETER_LENGTH];
-  int Reconstruction_Order;
-  //@}
-
   //@{ @name Reconstruction type indicator and related input parameters:
   char Reconstruction_Type[INPUT_PARAMETER_LENGTH];
   int i_Reconstruction;

@@ -234,7 +234,7 @@ dUdt_Residual_HighOrder(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
 
 	} //endfor (GQPoint)
 
-	  /* Evaluate cell-averaged solution changes. */
+	/* Evaluate cell-averaged solution changes. */
 	
 	dUdt[i  ][j][k][k_residual] -= (IPs.CFL_Number* dt[i  ][j][k])*Flux* Grid.AfaceE(i  , j, k)/Grid.Cell[i  ][j][k].V;
 	dUdt[i+1][j][k][k_residual] += (IPs.CFL_Number* dt[i+1][j][k])*Flux* Grid.AfaceW(i+1, j, k)/Grid.Cell[i+1][j][k].V;
