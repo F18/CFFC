@@ -515,7 +515,7 @@ void Explicit_Filters_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(Filter_Method), 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Finite_Differencing_Order), 1, MPI::INT, 0);
 
-    for (int filter_number = PRIMARY_FILTER, filter_number <= SECONDARY_FILTER, filter_number++) {
+    for (int filter_number = PRIMARY_FILTER; filter_number <= SECONDARY_FILTER; filter_number++) {
         MPI::COMM_WORLD.Bcast(&(Filter_Type[filter_number]), 1, MPI::INT, 0);
         MPI::COMM_WORLD.Bcast(&(FGR[filter_number]), 1, MPI::DOUBLE, 0);
         MPI::COMM_WORLD.Bcast(&(Filter_Width[filter_number]), 1, MPI::DOUBLE, 0);

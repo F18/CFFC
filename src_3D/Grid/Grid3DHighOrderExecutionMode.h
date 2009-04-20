@@ -13,7 +13,9 @@
 // None
 
 /* Include CFFC header files */
-// None
+#ifndef _MPI_INCLUDED
+#include "../MPI/MPI.h"
+#endif
 
 //! \class Grid3D_HO_Execution_Mode
 //  -----------------------------------------------------------------------
