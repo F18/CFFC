@@ -176,7 +176,7 @@ class Hexa_Block {
    void deallocate(void);
 
    //! Allocate memory for high-order variables
-   void allocate_HighOrder(void);
+   void allocate_HighOrder(const int ReconstructionOrder);
 
    //! Deallocate memory for high-order variables
    void deallocate_HighOrder(void);  
@@ -526,7 +526,15 @@ class Hexa_Block {
 				    const int k_min,
 				    const int k_max,
 				    const int k_inc);
-   
+
+   SOLN_cSTATE RiemannFlux_n(const int & Flux_Function,
+			     const SOLN_pSTATE &Wl,
+			     const SOLN_pSTATE &Wr,
+			     const Vector3D &normal_dir) const;
+    
+
+   double SinVariationInXDir(const double x, const double y, const double z);
+
   private:
    //copy and assignment are not permitted ...
    Hexa_Block(const Hexa_Block &Soln);
@@ -744,22 +752,20 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate(void) {
  * Allocate memory for high-order variables.
  ********************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate_HighOrder(void){
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate_HighOrder(const int ReconstructionOrder){
 
   bool _pseudo_inverse_allocation_(false);
   int i;
-
-  //ReconstructionOrder = ??;
 
   // Decide whether to allocate the pseudo-inverse
   if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
     _pseudo_inverse_allocation_ = true;
   }
 
-//  HighOrderVariable.InitializeVariable(ReconstructionOrder,
-//				       Grid,
-//				       _pseudo_inverse_allocation_);
-
+  HighOrderVariable.InitializeVariable(ReconstructionOrder,
+				       Grid,
+				       _pseudo_inverse_allocation_);
+// --> RR: comment out multiple reconstruction order allocations in allocate_HighOrder
 //  // Re-allocate new memory if necessary
 //  if (NumberOfReconstructions != NumberOfHighOrderVariables){
 //
@@ -1701,7 +1707,25 @@ ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             } /* endfor */
          } /* endfor */
          break;
-      
+
+   case IC_SINE_WAVE_XDIR :
+    Wl.v.x = 100.0;
+    Wl.v.y = 0.0;
+    Wl.v.z = 0.0;
+    Wl.p = PRESSURE_STDATM;
+    for (int k = KCl-Nghost ; k<= KCu+Nghost; ++k) {
+      for (int j = JCl-Nghost ; j<= JCu+Nghost; ++j) {
+	 for (int i = ICl-Nghost ; i<= ICu+Nghost; ++i) {
+	   //Wl.d = Grid.IntegrateFunctionOverCell(i,j,k,SinVariationInXDir,8,Wl.d) / Grid.Cell[i][j][k].V;
+	   //Wl.rho = 2.0 + 20.0*std::sin((ConvertDomainToMinusOneOne(-100,100,Grid.Cell[i][j][k].Xc.x)+1)*PI);
+	   Wl.rho = 2.0 + std::sin(Grid.Cell[i][j][k].Xc.x*PI);
+	   std::cout << "\n Wl.rho["<< i <<"]["<< j <<"]["<< k <<"] = " << Wl.rho << endl;
+	   W[i][j][k] = Wl;
+	   U[i][j][k] = W[i][j][k].U();
+	 }/* endfor */
+      }/* endfor */
+    }/* endfor */
+     break;
    } /* endswitch */
 
    /* Set default values for the boundary conditions
@@ -4826,6 +4850,61 @@ UnloadReceiveBuffer_Flux_F2C(double *buffer,
    cout << "\nError: UnloadReceiveBuffer_Flux_F2C() is not written for Hexa"; cout.flush();
    return (2);
 
+}
+
+/*!
+ * Return the upwind flux in the normal direction 
+ * based on the left and right interface states for 
+ * a variety of flux functions.
+ *
+ * \param Flux_Function index to specify the requested flux function
+ * \param Wl left interface state
+ * \param Wr right interface state
+ * \param normal_dir vector to define the normal direction
+ */
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+SOLN_cSTATE Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+RiemannFlux_n(const int & Flux_Function,
+	      const SOLN_pSTATE &Wl,
+	      const SOLN_pSTATE &Wr,
+	      const Vector3D &normal_dir) const{
+
+  switch(Flux_Function) {
+//  case FLUX_FUNCTION_GODUNOV :
+//    return SOLN_pSTATE::FluxGodunov_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_ROE :
+    return SOLN_pSTATE::FluxRoe_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_RUSANOV :
+//    return SOLN_pSTATE::FluxRusanov_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_HLLE :
+    return SOLN_pSTATE::FluxHLLE_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_LINDE :
+//    return SOLN_pSTATE::FluxLinde_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_HLLC :
+//    return SOLN_pSTATE::FluxHLLC_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_VANLEER :
+//    return SOLN_pSTATE::FluxVanLeer_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_AUSM :
+//    return SOLN_pSTATE::FluxAUSM_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_AUSMplus :
+//    return SOLN_pSTATE::FluxAUSMplus_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_ROE_PRECON_WS :
+//    return SOLN_pSTATE::FluxRoe_n_Precon_WS(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_HLLE_PRECON_WS :
+//    return SOLN_pSTATE::FluxHLLE_n_Precon_WS(Wl, Wr, normal_dir);
+  default:
+    return SOLN_pSTATE::FluxRoe_n(Wl, Wr, normal_dir);
+  } /* endswitch */
+}
+
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+SinVariationInXDir(const double x, const double y, const double z){
+  if (x<-100 || x>100){
+    return 2.0;
+  } else {
+    return 2.0 + std::sin((ConvertDomainToMinusOneOne(-100,100,x)+1)*PI);
+  }
 }
 
 /***************************************************************************************

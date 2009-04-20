@@ -13,6 +13,7 @@
 // None
 
 /* Include CFFC header files */
+#include "../Math/LinearSystems.h"
 // None
 
 
@@ -75,6 +76,7 @@ void HighOrder<SOLN_STATE>::ComputeUnlimitedSolutionReconstruction(Soln_Block_Ty
 	// Compute the reconstruction for the current cell
 	ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
 							    i, j, k, i_index, j_index, k_index);
+
       } /* endfor */
     } /* endfor */
   }/* endfor */

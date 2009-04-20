@@ -1256,13 +1256,30 @@ void Grid3D_Hexa_Block::Update_Cells_HighOrder(void) {
     // -----------------------------------------------
     if(Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID){
 
-        for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
-            for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
-                for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
-                    ComputeGeometricCoefficients(i,j,k);
-                } /* endfor */
-            } /* endfor */
+
+      if(Grid3D_HO_Execution_Mode::UNIFORM_GRID){
+	// Compute geometric coefficients for one cell only
+	ComputeGeometricCoefficients(0,0,0);
+	// Copy the same geometric coefficients to all remaining cells
+	for(int k = KCl; k <=KCu ; ++k){ 
+	  for(int j = JCl ; j <= JCu; ++j) {
+	    for (int i = ICl; i <= ICu; ++i) {
+	      Cell[i][j][k].GeomCoeff() = Cell[0][0][0].GeomCoeff();
+	    } /* endfor */
+	  } /* endfor */
+        } /* endfor */	
+
+
+      } else{
+
+        for(int k = KCl; k <=KCu ; ++k){ 
+	  for(int j = JCl ; j <= JCu; ++j) {
+	    for (int i = ICl ; i <= ICu; ++i) {
+	      ComputeGeometricCoefficients(i,j,k);
+	    } /* endfor */
+	  } /* endfor */
         } /* endfor */
+      } /* end if */
     }
 }
 
@@ -1314,19 +1331,39 @@ void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
 void Grid3D_Hexa_Block::Update_Ghost_Cells_HighOrder(void) {
     
     Update_Ghost_Cells();
-    // If using CENO Reconstruction, then we need 
-    // to compute and store the geometric coefficients
-    // -----------------------------------------------
-    if(Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID){
-        for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
-            for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
-                for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
-                    if (k < KCl || k > KCu || j < JCl || j > JCu || i < ICl || i > ICu) {
-                        ComputeGeometricCoefficients(i,j,k);
-                    } /* endif */
-                } /* endfor */
-            } /* endfor */
-        } /* endfor */
+
+    if(Grid3D_HO_Execution_Mode::UNIFORM_GRID){
+      // Compute geometric coefficients for one cell only
+      ComputeGeometricCoefficients(0,0,0);
+      // Copy the same geometric coefficients to all remaining cells
+      for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+	for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+	  for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
+	    if (k < KCl || k > KCu || j < JCl || j > JCu || i < ICl || i > ICu) {
+	      Cell[i][j][k].GeomCoeff() = Cell[0][0][0].GeomCoeff();
+	    } /* endif */
+	  } /* endfor */
+	} /* endfor */
+      } /* endfor */	
+
+
+      } else{
+
+      // If using CENO Reconstruction, then we need 
+      // to compute and store the geometric coefficients
+      // -----------------------------------------------
+      if(Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID){
+	for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+	  for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+	    for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
+	      if (k < KCl || k > KCu || j < JCl || j > JCu || i < ICl || i > ICu) {
+		ComputeGeometricCoefficients(i,j,k);
+	      } /* endif */
+	    } /* endfor */
+	  } /* endfor */
+	} /* endfor */
+      } /* endif */
+
     } /* endif */
 }
 

@@ -181,7 +181,7 @@ class Grid3D_Hexa_Block {
     int           NCk,KCl,KCu; // k-direction cell counters
     int                Nghost; //number of ghost cells
     Node3D            ***Node; // array of 3D node position vectors
-    Cell3D            ***Cell; // array of 3D cell centre vectors    
+    Cell3D            ***Cell; // array of 3D cell centre vectors
    
     int   **BCtypeN,**BCtypeS, // boundary condition type specifiers
           **BCtypeE,**BCtypeW, // for north, south, east, & west boundaries
@@ -204,7 +204,6 @@ class Grid3D_Hexa_Block {
        BCtypeN = NULL; BCtypeS = NULL; 
        BCtypeE = NULL; BCtypeW = NULL;
        BCtypeT = NULL; BCtypeB = NULL;
-
        NumGQP = 1;
     }
 
@@ -225,7 +224,7 @@ class Grid3D_Hexa_Block {
     
     /* Deallocate memory for structured hexahedral grid block. */
     void deallocate(void);
-        
+    
     /* Calculate centroid of cell. */
     Vector3D centroid(const Cell3D &Cell);
     Vector3D centroid(const int ii, const int jj, const int kk);
@@ -645,6 +644,21 @@ inline void Grid3D_Hexa_Block::allocate(const int Ni,
 inline void Grid3D_Hexa_Block::deallocate(void) {
 
    if (Allocated) {
+
+      // If using CENO Reconstruction, we need to deallocate the following grid information:
+      // -----------------------------------------------------------------------------------
+      if (Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID == ON){
+        
+        // re-set the Number of Gauss Quadrature Points for the flux evaluation
+        NumGQP = 1; 
+        // deallocate memory for the container of geometric coefficients
+        for (int i = 0; i <NCi ; ++i )
+      	 for (int j = 0; j <NCj ; ++j )
+      	   for (int k = 0; k <NCk ; ++k ){
+      	     Cell[i][j][k].FreeMemoryGeomCoeffContainer();
+      	   } /* endfor */
+        
+      } /* endif */
 
       assert(NNi >= 1 && NNj >= 1 && NNk >= 1);
       for (int i = 0; i <= NNi-1 ; ++i ) {

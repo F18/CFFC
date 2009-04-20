@@ -208,6 +208,33 @@ NavierStokes3D_Polytropic_cState  NavierStokes3D_Polytropic_pState::FluxViscous_
     }
 }
 
+// n-direction viscous flux and heat flux used in the evaluation of the 
+// high order fluxes at the Gauss Quadrature Points
+NavierStokes3D_Polytropic_cState  NavierStokes3D_Polytropic_pState::
+FluxViscous_HighOrder_n(NavierStokes3D_Polytropic_pState &W_face,
+			const NavierStokes3D_Polytropic_pState &dWdx_face,
+			const NavierStokes3D_Polytropic_pState &dWdy_face,
+			const NavierStokes3D_Polytropic_pState &dWdz_face,
+			const Vector3D &norm){
+  
+  // Evaluate viscous flux
+  if (fabs(norm.y) < TOLER && fabs(norm.z) < TOLER) {
+    return (W_face.Fvx(dWdx_face, dWdy_face, dWdz_face)*norm.x);
+    
+  } else if (fabs(norm.x) < TOLER && fabs(norm.z) < TOLER) {
+    return (W_face.Fvy(dWdx_face, dWdy_face, dWdz_face)*norm.y);
+    
+  } else if (fabs(norm.x) < TOLER && fabs(norm.y) < TOLER) {
+    return (W_face.Fvz(dWdx_face, dWdy_face, dWdz_face)*norm.z);
+    
+  } else {
+    return (W_face.Fvx(dWdx_face, dWdy_face, dWdz_face)*norm.x +
+	    W_face.Fvy(dWdx_face, dWdy_face, dWdz_face)*norm.y +
+	    W_face.Fvz(dWdx_face, dWdy_face, dWdz_face)*norm.z);
+  }
+}
+
+
 /*
  * Navier-Stokes related functions
  * -------------------------------

@@ -51,6 +51,8 @@ public:
    */
   static int RECONSTRUCTION_ORDER;
 
+  static int UNIFORM_GRID;
+
 
 
 protected:

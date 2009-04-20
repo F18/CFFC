@@ -244,7 +244,7 @@ public:
   //! Get the cell (ii,jj,kk) of the associated block mesh
   const GeometryType & CellGeometry(const int & ii, const int & jj, const int & kk) const {return Geom->Cell[ii][jj][kk];}
   //! Get the centroid of cell (ii,jj,kk) of the associated block mesh
-  const Vector3D & CellCenter(const int & ii, const int & jj, const int & kk) const {return Geom->centroid(ii,jj,kk);}
+  const Vector3D CellCenter(const int & ii, const int & jj, const int & kk) const {return Geom->centroid(ii,jj,kk);}
   //! Get the X-coordinate of the (ii,jj,kk) cell centroid of the associated block mesh
   const double XCellCenter(const int & ii, const int & jj, const int & kk) const {return Geom->Xcentroid(ii,jj,kk);}
   //! Get the Y-coordinate of the (ii,jj,kk) cell centroid of the associated block mesh
@@ -341,7 +341,7 @@ public:
   void InitializeBasicVariable(int ReconstructionOrder, GeometryType & Block,
 			       const bool &_pseudo_inverse_allocation_ = false);
   void SetReconstructionOrder(int ReconstructionOrder);
-  //  void SetPropertiesHighOrderBlock(void);
+  void SetPropertiesHighOrderBlock(void);
   //  void CheckConsistencyOfGeometricSplineProperties(void);
   //@}
 
@@ -379,43 +379,41 @@ public:
     return SolutionAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z);
   }
  
- // --> RR: comment out GradientStateAtCoordinates
- 
-//  //! Evaluate the X-gradient of the interpolant at a given location (X_Coord,Y_Coord,Z_Coord) for all solution variables,
-//  //  using the reconstruction of cell (ii,jj,kk).
-//  Soln_State XGradientStateAtCoordinates(const int & ii, const int & jj, const int & kk,
-//					 const double & X_Coord, const double & Y_Coord, const double & Z_Coord) const {
-//    return TD[ii][jj][kk].ComputeXGradientFor(X_Coord - XCellCenter(ii,jj,kk), Y_Coord - YCellCenter(ii,jj,kk), Z_Coord - ZCellCenter(ii,jj,kk));
-//  }
-//  //! Evaluate the X-gradient of the interpolant at a given position vector for all solution variables,
-//  //  using the reconstruction of cell (ii,jj,kk).
-//  Soln_State XGradientStateAtLocation(const int & ii, const int & jj, const int & kk, const Vector3D &CalculationPoint) const {
-//    return XGradientStateAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z);
-//  }
-//
-//  //! Evaluate the Y-gradient of the interpolant at a given location (X_Coord,Y_Coord,Z_Coord) for all solution variables,
-//  //  using the reconstruction of cell (ii,jj,kk).
-//  Soln_State YGradientStateAtCoordinates(const int & ii, const int & jj, const int & kk,
-//					 const double & X_Coord, const double & Y_Coord, const double & Z_Coord) const {
-//    return TD[ii][jj][kk].ComputeYGradientFor(X_Coord - XCellCenter(ii,jj,kk), Y_Coord - YCellCenter(ii,jj,kk), Z_Coord - ZCellCenter(ii,jj,kk));
-//  }
-//  //! Evaluate the Y-gradient of the interpolant at a given position vector for all solution variables,
-//  //  using the reconstruction of cell (ii,jj,kk).
-//  Soln_State YGradientStateAtLocation(const int & ii, const int & jj, const int & kk, const Vector3D &CalculationPoint) const {
-//    return YGradientStateAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z);
-//  }
-//
-//  //! Evaluate the Z-gradient of the interpolant at a given location (X_Coord,Y_Coord,Z_Coord) for all solution variables,
-//  //  using the reconstruction of cell (ii,jj,kk).
-//  Soln_State ZGradientStateAtCoordinates(const int & ii, const int & jj, const int & kk,
-//					 const double & X_Coord, const double & Y_Coord, const double & Z_Coord) const {
-//    return TD[ii][jj][kk].ComputeZGradientFor(X_Coord - XCellCenter(ii,jj,kk), Y_Coord - YCellCenter(ii,jj,kk), Z_Coord - ZCellCenter(ii,jj,kk));
-//  }
-//  //! Evaluate the Y-gradient of the interpolant at a given position vector for all solution variables,
-//  //  using the reconstruction of cell (ii,jj,kk).
-//  Soln_State ZGradientStateAtLocation(const int & ii, const int & jj, const int & kk, const Vector3D &CalculationPoint) const {
-//    return ZGradientStateAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z);
-//  }
+  //! Evaluate the X-gradient of the interpolant at a given location (X_Coord,Y_Coord,Z_Coord) for all solution variables,
+  //  using the reconstruction of cell (ii,jj,kk).
+  Soln_State XGradientStateAtCoordinates(const int & ii, const int & jj, const int & kk,
+					 const double & X_Coord, const double & Y_Coord, const double & Z_Coord) const {
+    return TD[ii][jj][kk].ComputeXGradientFor(X_Coord - XCellCenter(ii,jj,kk), Y_Coord - YCellCenter(ii,jj,kk), Z_Coord - ZCellCenter(ii,jj,kk));
+  }
+  //! Evaluate the X-gradient of the interpolant at a given position vector for all solution variables,
+  //  using the reconstruction of cell (ii,jj,kk).
+  Soln_State XGradientStateAtLocation(const int & ii, const int & jj, const int & kk, const Vector3D &CalculationPoint) const {
+    return XGradientStateAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z);
+  }
+
+  //! Evaluate the Y-gradient of the interpolant at a given location (X_Coord,Y_Coord,Z_Coord) for all solution variables,
+  //  using the reconstruction of cell (ii,jj,kk).
+  Soln_State YGradientStateAtCoordinates(const int & ii, const int & jj, const int & kk,
+					 const double & X_Coord, const double & Y_Coord, const double & Z_Coord) const {
+    return TD[ii][jj][kk].ComputeYGradientFor(X_Coord - XCellCenter(ii,jj,kk), Y_Coord - YCellCenter(ii,jj,kk), Z_Coord - ZCellCenter(ii,jj,kk));
+  }
+  //! Evaluate the Y-gradient of the interpolant at a given position vector for all solution variables,
+  //  using the reconstruction of cell (ii,jj,kk).
+  Soln_State YGradientStateAtLocation(const int & ii, const int & jj, const int & kk, const Vector3D &CalculationPoint) const {
+    return YGradientStateAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z);
+  }
+
+  //! Evaluate the Z-gradient of the interpolant at a given location (X_Coord,Y_Coord,Z_Coord) for all solution variables,
+  //  using the reconstruction of cell (ii,jj,kk).
+  Soln_State ZGradientStateAtCoordinates(const int & ii, const int & jj, const int & kk,
+					 const double & X_Coord, const double & Y_Coord, const double & Z_Coord) const {
+    return TD[ii][jj][kk].ComputeZGradientFor(X_Coord - XCellCenter(ii,jj,kk), Y_Coord - YCellCenter(ii,jj,kk), Z_Coord - ZCellCenter(ii,jj,kk));
+  }
+  //! Evaluate the Z-gradient of the interpolant at a given position vector for all solution variables,
+  //  using the reconstruction of cell (ii,jj,kk).
+  Soln_State ZGradientStateAtLocation(const int & ii, const int & jj, const int & kk, const Vector3D &CalculationPoint) const {
+    return ZGradientStateAtCoordinates(ii,jj,kk,CalculationPoint.x,CalculationPoint.y,CalculationPoint.z);
+  }
 
 
 
@@ -963,7 +961,8 @@ private:
   //@}
 
   //! Get the number of variables in the solution state
-  int NumberOfVariables(void) const {return Soln_State::NumVar(); }
+  //  int NumberOfVariables(void) const {return Soln_State::NumVar(); }
+  int NumberOfVariables(void) const {return Soln_State::NumofVariables(); }
 
   //! Allocate memory at the cell level based on the order of reconstruction
   void allocate_CellMemory(const int &ReconstructionOrder, const bool &_pseudo_inverse_allocation_);
@@ -1132,7 +1131,7 @@ HighOrder<SOLN_STATE>::HighOrder(int ReconstructionOrder,
 	   ReconstructionOrder);
 
   // Set properties of block boundaries (i.e. which boundaries are constrained/unconstrained and which are opaque/transparent)
-  //  SetPropertiesHighOrderBlock();
+  SetPropertiesHighOrderBlock();
 
   // Build the reconstruction type map
   // BuildReconstructionTypeMap();
@@ -1486,7 +1485,7 @@ void HighOrder<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder, 
   }/* endfor */
 
   // Set the reconstruction helper variables
-  DeltaCellCenters.assign(StencilSize, Vector3D(0.0)); // This variable is overwritten for each cell
+  DeltaCellCenters.assign(StencilSize, Vector3D(Vector3D_ZERO)); // This variable is overwritten for each cell
   i_index.assign(StencilSize, 0); // This variable is overwritten for each cell
   j_index.assign(StencilSize, 0); // This variable is overwritten for each cell
   k_index.assign(StencilSize, 0); // This variable is overwritten for each cell
@@ -1559,14 +1558,14 @@ void HighOrder<SOLN_STATE>::deallocate(void){
 
     for ( i = 0; i < Ni ; ++i ) {
       for ( j = 0; j < Nj ; ++j ) {
-	delete [] TD[i][j]; 
-	delete [] SI[i][j]; 
-	delete [] LimitedCell[i][j]; 
-	delete [] PreviousLimitedCell[i][j];
+	delete [] TD[i][j]; TD[i][j]=NULL;
+	delete [] SI[i][j]; SI[i][j]=NULL;
+	delete [] LimitedCell[i][j]; LimitedCell[i][j]=NULL;
+	delete [] PreviousLimitedCell[i][j]; PreviousLimitedCell[i][j]=NULL;
 
 	if (_allocated_psinv){
-	  delete [] CENO_LHS[i][j];
-	  delete [] CENO_Geometric_Weights[i][j];
+	  delete [] CENO_LHS[i][j]; CENO_LHS[i][j]=NULL;
+	  delete [] CENO_Geometric_Weights[i][j]; CENO_Geometric_Weights[i][j]=NULL;
 	}
       }
     }
@@ -1631,6 +1630,8 @@ void HighOrder<SOLN_STATE>::deallocate(void){
 
     // Set other flags
     _freeze_limiter = false;
+    // --> RR: deallocate_CellMemory() added to deallocate (??).
+    deallocate_CellMemory();
 
   }
 }
@@ -1795,7 +1796,7 @@ void HighOrder<SOLN_STATE>::InitializeBasicVariable(int ReconstructionOrder, Geo
   SetGeometryPointer(Block);
 
   // Set properties of block boundaries (i.e. which boundaries are constrained/unconstrained and which are opaque/transparent)
-  //  SetPropertiesHighOrderBlock();
+  SetPropertiesHighOrderBlock();
 
   // Build the reconstruction type map
   //  BuildReconstructionTypeMap();
@@ -1818,18 +1819,19 @@ void HighOrder<SOLN_STATE>::SetReconstructionOrder(int ReconstructionOrder){
 		     _pseudo_inverse_allocation_);
 }
 
+/*! 
+ * Set the properties of high-order block boundaries,
+ * based on the associated grid.
+ * There are three possible boundary types:
+ * 1. constrained and opaque
+ * 2. unconstrained and opaque
+ * 3. unconstrained and transparent
+ */
+template<class SOLN_STATE> inline
+void HighOrder<SOLN_STATE>::SetPropertiesHighOrderBlock(void){
+
 // --> RR: SetPropertiesHighOrderBlock(void) for constrained block boundaries
-///*! 
-// * Set the properties of high-order block boundaries,
-// * based on the associated grid.
-// * There are three possible boundary types:
-// * 1. constrained and opaque
-// * 2. unconstrained and opaque
-// * 3. unconstrained and transparent
-// */
-//template<class SOLN_STATE> inline
-//void HighOrder<SOLN_STATE>::SetPropertiesHighOrderBlock(void){
-//
+
 //  // Ensure that block splines require a valid scenario for constrained reconstruction
 //  CheckConsistencyOfGeometricSplineProperties();
 //
@@ -1975,11 +1977,13 @@ void HighOrder<SOLN_STATE>::SetReconstructionOrder(int ReconstructionOrder){
 //    _constrained_block_reconstruction = true;
 //  }
 //
-//  // Set indexes between which solution reconstruction is performed.
-//  StartI = ICl - Nghost_HO; EndI = ICu + Nghost_HO;
-//  StartJ = JCl - Nghost_HO; EndJ = JCu + Nghost_HO;
-//
-//}
+
+// Set indexes between which solution reconstruction is performed.
+  StartI = ICl - Nghost_HO; EndI = ICu + Nghost_HO;
+  StartJ = JCl - Nghost_HO; EndJ = JCu + Nghost_HO;
+  StartK = KCl - Nghost_HO; EndK = KCu + Nghost_HO;
+
+}
 
 ///*! 
 // * Ensure that the block geometric splines require a realizable
@@ -2822,7 +2826,7 @@ void HighOrder<SOLN_STATE>::SetCentralStencil(const int &iCell, const int &jCell
   j_index[0]=jCell; 
   k_index[0]=kCell;     
 
-  int Poz = 1;
+  int Poz = 1; // position 0 has been set to (iCell,jCell,kCell)
 
   /* First layer */
   for (int k=kCell-1; k<=kCell+1; ++k){
@@ -2838,29 +2842,29 @@ void HighOrder<SOLN_STATE>::SetCentralStencil(const int &iCell, const int &jCell
     } /*end for*/
   } /*end for*/
 
-
   if (rings == 2){
 
     /* Second layer */
     for (int k=kCell-2; k<=kCell+2; ++k){
       for (int j=jCell-2; j<=jCell+2; ++j){
         for (int i=iCell-2; i<=iCell+2; ++i){
-          // For k = -2 and k = 2 fill in all nine cells
-          if( (k*k) > 1 ){
+          // For (k-kCell) = -2 and (k-kCell) = 2 fill in all nine cells
+          if( ((k-kCell)*(k-kCell)) > 1 ){
             i_index[Poz] = i;
             j_index[Poz] = j;
             k_index[Poz] = k;
             ++Poz;
           }
-          // For k=-1, 0, or 1: fill in outer cells only,
+          // For (k-kCell)=-1, 0, or 1: fill in outer cells only,
           // since inner cells belong to first layer of stencil
-          else if ( (i*i) > 1 || (j*j) > 1 ){
+          else if ( ((i-iCell)*(i-iCell)) > 1 || ((j-jCell)*(j-jCell)) > 1 ){
               i_index[Poz] = i;
               j_index[Poz] = j;
               k_index[Poz] = k;
               ++Poz;
           }
-        } /*end for*/
+
+	} /*end for*/
       } /*end for*/
     } /*end for*/
   } /*end if*/
@@ -2883,7 +2887,7 @@ template<class SOLN_STATE> inline
 void HighOrder<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const int &jCell, const int &kCell,
 						     IndexType & i_index, IndexType & j_index, IndexType & k_index) const{
 
-  int _dummy_;
+  int _dummy_ = 0.0;
 
   // Call set central stencil
   SetCentralStencil(iCell,jCell,kCell,i_index,j_index,k_index,rings,_dummy_);

@@ -132,6 +132,11 @@ class Cell3D{
       return _GeomCoeff_.GenerateContainer(OrderOfReconstruction);
     }
 
+    //! Generate the container for the cell's geometric coefficients.
+    void FreeMemoryGeomCoeffContainer(){
+      return _GeomCoeff_.free_memory();
+    }
+
     //! @name Field access functions.
     //@{
     //! Get access to the array of geometric coefficients
@@ -170,7 +175,7 @@ class Cell3D{
 
 private:    
   //! Area integrals of cell geometric moments with respect to the cell centroid 
-  GeometricMoments _GeomCoeff_;  //    
+  GeometricMoments _GeomCoeff_;
 };
 
 /******************************************************************
