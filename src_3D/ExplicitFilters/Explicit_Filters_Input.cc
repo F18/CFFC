@@ -506,84 +506,33 @@ void Explicit_Filters_Input_Parameters::Output(ostream &out_file) const {
  ************************************************************************************/
 void Explicit_Filters_Input_Parameters::Broadcast(void) {
     
-    // todo!!!! fix for new format
 #ifdef _MPI_VERSION
     
-    MPI::COMM_WORLD.Bcast(filter_type,
-                          EXPLICIT_FILTERSL_INPUT_PARAMETER_LENGTH,
-                          MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(i_filter_type),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(filter_type_secondary,
-                          EXPLICIT_FILTERSL_INPUT_PARAMETER_LENGTH,
-                          MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(i_filter_type_secondary),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(FGR),
-                          1,
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(FGR_secondary),
-                          1,
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Filter_Width),
-                          1,
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Filter_Width_secondary),
-                          1,
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(commutation_order),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(finite_differencing_order),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(number_of_rings),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Filter_Initial_Condition),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(use_fixed_filter_width),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Target_Filter_Sharpness),
-                          1,
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Filter_Width_strict),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(LS_constraints),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Derivative_constraints),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Filter_Memory_Efficient),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(relaxation_factor),
-                          1,
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(least_squares_filter_weighting),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(least_squares_filter_weighting_factor),
-                          1,
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(solution_filtering_frequency),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(filter_solution_before_execution),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Filter_Method),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(Filter_Strength),
-                          1,
-                          MPI::DOUBLE, 0);    
+    MPI::COMM_WORLD.Bcast(&(Filter_Initial_Condition), 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Solution_Filtering_Frequency), 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Filter_Solution_Before_Execution), 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Commutation_Order), 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Filter_Method), 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Finite_Differencing_Order), 1, MPI::INT, 0);
+
+    for (int filter_number = PRIMARY_FILTER, filter_number <= SECONDARY_FILTER, filter_number++) {
+        MPI::COMM_WORLD.Bcast(&(Filter_Type[filter_number]), 1, MPI::INT, 0);
+        MPI::COMM_WORLD.Bcast(&(FGR[filter_number]), 1, MPI::DOUBLE, 0);
+        MPI::COMM_WORLD.Bcast(&(Filter_Width[filter_number]), 1, MPI::DOUBLE, 0);
+        MPI::COMM_WORLD.Bcast(&(Number_Of_Rings[filter_number]), 1, MPI::INT, 0);
+        MPI::COMM_WORLD.Bcast(&(Filter_Memory_Efficient[filter_number]), 1, MPI::INT, 0);
+        MPI::COMM_WORLD.Bcast(&(Filter_Relative[filter_number]), 1, MPI::INT, 0);
+        MPI::COMM_WORLD.Bcast(&(Filter_Strength[filter_number]), 1, MPI::DOUBLE, 0);
+        MPI::COMM_WORLD.Bcast(&(Relaxation_Factor[filter_number]), 1, MPI::DOUBLE, 0);
+        MPI::COMM_WORLD.Bcast(&(Least_Squares_Filter_Weighting_Factor[filter_number]), 1, MPI::DOUBLE, 0);
+        MPI::COMM_WORLD.Bcast(&(Least_Squares_Filter_Weighting[filter_number]), 1, MPI::INT, 0);
+        MPI::COMM_WORLD.Bcast(&(Target_Filter_Sharpness[filter_number]), 1, MPI::DOUBLE, 0);
+        MPI::COMM_WORLD.Bcast(&(Filter_Width_Strict[filter_number]), 1, MPI::INT, 0);
+        MPI::COMM_WORLD.Bcast(&(LS_Constraints[filter_number]), 1, MPI::INT, 0);
+        MPI::COMM_WORLD.Bcast(&(Derivative_Constraints[filter_number]), 1, MPI::INT, 0);        
+    }
+    
+
 #endif
     
 }
