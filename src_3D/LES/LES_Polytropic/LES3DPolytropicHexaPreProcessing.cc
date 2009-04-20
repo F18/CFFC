@@ -38,9 +38,6 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             } /* endif */
         }
         
-        cout << "\n done filtering" << endl;
-        
-        
         if (Solution_Data.Input.i_Flow_Type==FLOWTYPE_TURBULENT_LES) {
             
             /* -------------------- ICs Specializations to generate reconstruction --------------------- */

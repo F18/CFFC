@@ -67,7 +67,6 @@ public:
             properties->Get_Property("relaxation_factor",relaxation_factor);
             properties->Get_Property("least_squares_filter_weighting",weighting);
             properties->Get_Property("least_squares_filter_weighting_factor",least_squares_filter_weighting_factor);
-            properties->Get_Property("uniform_grid",uniform_grid);
             properties->Get_Property("target_filter_sharpness",target_filter_sharpness);
             properties->Get_Property("filter_strength",filter_strength);
             properties->Get_Property("high_order",reconstruction_type);
@@ -117,7 +116,6 @@ private:
     double relaxation_factor;
     int weighting;
     double weight_factor;
-    int uniform_grid;
     double target_filter_sharpness;
     double least_squares_filter_weighting_factor;
     double filter_strength;

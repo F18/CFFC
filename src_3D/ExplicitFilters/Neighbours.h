@@ -282,8 +282,11 @@ inline void Neighbours::append_theCell(Cell3D &theCell) {
 }
 
 inline void Neighbours::delete_theCell(void) {
-    if (theCell_included)   number_of_neighbours--;
-    theCell_included = false;
+    if (theCell_included){
+        neighbour.pop_back();
+        number_of_neighbours--;
+        theCell_included = false;
+    }   
 }
 
 

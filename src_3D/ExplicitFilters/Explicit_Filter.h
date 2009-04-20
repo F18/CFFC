@@ -99,6 +99,7 @@ public:
     void Allocate_Filter_Weights(void);
     void Deallocate_Filter_Weights(void);
     
+    std::vector<Cell3D*> ***Filter_Stencil;
     DenseMatrix    ***Derivative_Reconstruction_Weights;  // Weights used in reconstructing derivatives (in LES_Filters.h)
     bool  ***Derivative_Reconstruction_Weights_Assigned;  // Stores if the Derivative_Reconstruction_Weights have been allocated
     bool    Derivative_Reconstruction_Weights_Allocated;    
@@ -1022,12 +1023,15 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Output_Commutation(Grid3D_Hexa_B
 template<typename Soln_pState, typename Soln_cState>
 void Explicit_Filters<Soln_pState,Soln_cState>::Allocate_Filter_Weights(void) {
     Deallocate_Filter_Weights();
+    Filter_Stencil = new std::vector<Cell3D*> **[SolnBlk_ptr->NCi];
     Filter_Weights = new RowVector **[SolnBlk_ptr->NCi];
     Filter_Weights_Assigned = new bool **[SolnBlk_ptr->NCi];
     for (int i=0; i<SolnBlk_ptr->NCi; i++) {
+        Filter_Stencil[i] = new std::vector<Cell3D*> *[SolnBlk_ptr->NCj];
         Filter_Weights[i] = new RowVector *[SolnBlk_ptr->NCj];
         Filter_Weights_Assigned[i] = new bool *[SolnBlk_ptr->NCj];
         for (int j=0; j<SolnBlk_ptr->NCj; j++) {
+            Filter_Stencil[i][j] = new std::vector<Cell3D*> [SolnBlk_ptr->NCk];
             Filter_Weights[i][j] = new RowVector [SolnBlk_ptr->NCk];
             Filter_Weights_Assigned[i][j] = new bool [SolnBlk_ptr->NCk];
             
@@ -1044,12 +1048,15 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Deallocate_Filter_Weights(void) 
     if (Filter_Weights_Allocated) {
         for (int i=0; i<SolnBlk_ptr->NCi; i++) {
             for (int j=0; j<SolnBlk_ptr->NCj; j++) {
+                delete[] Filter_Stencil[i][j];          Filter_Stencil[i][j] = NULL;
                 delete[] Filter_Weights[i][j];          Filter_Weights[i][j] = NULL;
                 delete[] Filter_Weights_Assigned[i][j]; Filter_Weights_Assigned[i][j] = NULL;
             }
+            delete[] Filter_Stencil[i];             Filter_Stencil[i] = NULL;
             delete[] Filter_Weights[i];             Filter_Weights[i] = NULL;
             delete[] Filter_Weights_Assigned[i];    Filter_Weights_Assigned[i] = NULL;
         }
+        delete[] Filter_Stencil;            Filter_Stencil = NULL;
         delete[] Filter_Weights;            Filter_Weights = NULL;
         delete[] Filter_Weights_Assigned;   Filter_Weights_Assigned = NULL;
     }

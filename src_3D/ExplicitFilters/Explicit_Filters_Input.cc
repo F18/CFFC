@@ -46,7 +46,6 @@ Explicit_Filters_Input_Parameters::Explicit_Filters_Input_Parameters() :
     Commutation_Order = 2;
     Filter_Method = FILTER_RESIDUALS;
     Finite_Differencing_Order = Commutation_Order + 1;
-    Uniform_Grid = OFF;
     
     // ============================================================== //
     // Type Independent Input
@@ -179,15 +178,6 @@ int Explicit_Filters_Input_Parameters::Parse_Next_Input_Control_Parameter(char *
         i_command = 131;
         value >> Finite_Differencing_Order;
         if (Finite_Differencing_Order < 1)
-            i_command = INVALID_INPUT_VALUE;
-    }
-
-    else if (strcmp(code, "ExplicitFilter.Uniform_Grid") == 0) {
-        i_command = 143;
-        value >> value_string;
-        if      (value_string == "ON")   Uniform_Grid = ON;
-        else if (value_string == "OFF")  Uniform_Grid = OFF;
-        else 
             i_command = INVALID_INPUT_VALUE;
     }
     
@@ -586,9 +576,6 @@ void Explicit_Filters_Input_Parameters::Broadcast(void) {
                           1,
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(filter_solution_before_execution),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(uniform_grid),
                           1,
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Filter_Method),

@@ -72,6 +72,7 @@ public:
 
     DenseMatrix Neighbouring_Values;
     void Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, Neighbours &theNeighbours);
+    void Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, std::vector<Cell3D*> &stencil);
 
     RowVector filter(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
     RowVector filter_1D(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter,Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction);
@@ -263,13 +264,7 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Explicit_Filters<Soln
     
     if (!explicit_filter.Filter_Weights_Allocated && Store_Filter_Weights) {
         explicit_filter.Allocate_Filter_Weights();
-        explicit_filter.Filter_Weights_Allocated = true;
     }
-     
-     
-     theNeighbours.set_grid(Grid_Blk);
-     Get_Neighbours(theCell);
-     
      
 
     if (Store_Filter_Weights) {
@@ -277,20 +272,19 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Explicit_Filters<Soln
         int J(theCell.J);
         int K(theCell.K);
         if (!explicit_filter.Filter_Weights_Assigned[I][J][K]) {
+            theNeighbours.set_grid(Grid_Blk);
+            Get_Neighbours(theCell);
             explicit_filter.Filter_Weights[I][J][K] = Get_Weights(theCell,theNeighbours);
+            explicit_filter.Filter_Stencil[I][J][K] = theNeighbours.neighbour;
             explicit_filter.Filter_Weights_Assigned[I][J][K] = true;
         }
-        Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
+        Set_Neighbouring_Values(Neighbouring_Values,explicit_filter.Filter_Stencil[I][J][K]);
         return (explicit_filter.Filter_Weights[I][J][K]*Neighbouring_Values);
     } else {
         RowVector W = Get_Weights(theCell,theNeighbours);
         Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
         return (W*Neighbouring_Values);
     }
-    
-
-
-    
     
 }
 
@@ -330,6 +324,11 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter_1D(Explicit_Filters<S
 template <typename Soln_pState, typename Soln_cState>
 void Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, Neighbours &theNeighbours) {
     Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrix(Neighbouring_Values, theNeighbours);
+}
+
+template <typename Soln_pState, typename Soln_cState>
+void Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, std::vector<Cell3D*> &stencil) {
+    Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrix(Neighbouring_Values, stencil);
 }
 
 

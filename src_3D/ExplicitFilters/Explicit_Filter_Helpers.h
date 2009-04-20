@@ -69,7 +69,6 @@ public:
         Set_Property("Filter_Number",filter_number);
         Set_Property("G_cutoff",exp(-sqr(PI)/(4.*6.)));
         Set_Property("commutation_order",IPs.ExplicitFilters_IP.Commutation_Order);
-        Set_Property("uniform_grid",IPs.ExplicitFilters_IP.Uniform_Grid);
         Set_Property("FGR",IPs.ExplicitFilters_IP.FGR[filter_number]);
         Set_Property("number_of_rings",IPs.ExplicitFilters_IP.Number_Of_Rings[filter_number]);
         Set_Property("filter_type",IPs.ExplicitFilters_IP.Filter_Type[filter_number]);
@@ -203,6 +202,7 @@ public:
     static void FillMatrixRow(DenseMatrix &matrix, int row_index, Cell3D* theCell);
     
     static void FillMatrix(DenseMatrix &matrix, Neighbours &theNeighbours);
+    static void FillMatrix(DenseMatrix &matrix, std::vector<Cell3D*> &stencil);
         
     /* -------------------- Replacement ------------------------ */
     void Load_into_Solution_Block(RowVector ***Filtered);
@@ -650,7 +650,46 @@ void Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrix(DenseMatrix &m
     for (int i=0; i<number_of_neighbours; i++){
         FillMatrixRow(matrix, i, theNeighbours.neighbour[i]);
     }
+}
+
+template <typename Soln_pState, typename Soln_cState>
+void Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrix(DenseMatrix &matrix, std::vector<Cell3D*> &stencil) {
+    Asserts();
     
+    // the dimensions of the matrix
+    int number_of_neighbours = stencil.size();
+    int number_of_variables;
+    switch (adaptor_type) {
+        case SOLN_PSTATE_DOUBLE :
+        case SOLN_CSTATE_DOUBLE :
+        case FILTER_STATE_DOUBLE :
+        case FILTER_DOUBLE :
+            number_of_variables = 1;
+            break;
+        case SOLN_PSTATE_3D:
+        case SOLN_CSTATE_3D:
+			number_of_variables = Soln_Blk_ptr->NumVar();
+            break;
+        case SOLN_CSTATE_4D:
+            number_of_variables = Soln_Blk_ptr->NumVar()-1;
+            break;
+        case COMMUTATION_ROWVECTOR: {
+            int I = stencil[0]->I;
+            int J = stencil[0]->J;
+            int K = stencil[0]->K;
+            number_of_variables = Commutation_RowVector_ptr[I][J][K].size();
+        }
+    }
+    
+    // Set dimensions of the matrix
+    if (matrix.get_n()!=number_of_neighbours || matrix.get_m()!=number_of_variables) {
+        matrix.newsize(number_of_neighbours,number_of_variables);
+    }
+    
+    // Fill the matrix
+    for (int i=0; i<number_of_neighbours; i++){
+        FillMatrixRow(matrix, i, stencil[i]);
+    }
 }
 
 /* ---------------- Replace unfiltered variables with filtered variables --------------- */

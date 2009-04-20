@@ -69,7 +69,6 @@ public:
     int Commutation_Order;              //!< Commutation order of explicit filter
     int Filter_Method;                  //!< Chooses either to filter residuals or solutions
     int Finite_Differencing_Order;      //!< Finite differencing order in commutation error calculations
-    bool Uniform_Grid;                  //!< If the grid is uniform, the filter will generate weights only once (VERY FAST).
 
     // type independent
     std::vector<int>    Filter_Type;                 //!< Filter type : default = implicit filtering
