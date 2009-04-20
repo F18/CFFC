@@ -3,7 +3,10 @@
 #define _FILTER_CONTROLLER_INCLUDED
 
 #include "Explicit_Filter_Commands.h"
-#include "Explicit_Filter.h"
+
+#ifndef _SPECTRAL_ANALYSIS_INCLUDED
+#include "../TurbulenceModelling/SpectralAnalysis.h"
+#endif // _SPECTRAL_ANALYSIS_INCLUDED
 
 template <typename Soln_pState, typename Soln_cState>
 class Filter_Controller {

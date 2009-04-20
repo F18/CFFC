@@ -17,7 +17,7 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
      *                RESTART                 *
      * ---------------------------------------*/
     if (Solution_Data.Input.i_ICs == IC_RESTART) {
-        if(Solution_Data.Input.Turbulence_IP.filter_solution_before_execution == ON) {
+        if(Solution_Data.Input.ExplicitFilters_IP.Filter_Solution_Before_Execution) {
             if(!Data.batch_flag){
                 cout 
                 << "\n ==============================="
@@ -196,14 +196,14 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             
             
             /* ---------------------- Explicitly filter the initial condition --------------------- */
-            if (Solution_Data.Input.Turbulence_IP.i_filter_type != Explicit_Filter_Constants::IMPLICIT_FILTER) {
+            if (Solution_Data.Input.ExplicitFilters_IP.Filter_Type[Explicit_Filter_Constants::PRIMARY_FILTER] != Explicit_Filter_Constants::IMPLICIT_FILTER) {
                 // Initialize the filter
                 Explicit_Filter_Commands::Initialize_Filters(Data, Solution_Data);
 
                 // output the filter transfer function
                 Explicit_Filter_Commands::Transfer_Function(Data,Solution_Data);
             
-                if (Solution_Data.Input.Turbulence_IP.Filter_Initial_Condition) {
+                if (Solution_Data.Input.ExplicitFilters_IP.Filter_Initial_Condition) {
                     // filter the initial condition
                     if (CFFC_Primary_MPI_Processor() && !Data.batch_flag) {
                         cout << endl;

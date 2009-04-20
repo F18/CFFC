@@ -301,13 +301,13 @@ int Explicit_Filters_Input_Parameters::Parse_Next_Input_Control_Parameter(char *
             i_command = INVALID_INPUT_VALUE;
         }    }
     
-    else if (strcmp(code, "ExplicitFilter[1].Number_of_Rings") == 0) {
+    else if (strcmp(code, "ExplicitFilter[1].Number_Of_Rings") == 0) {
         i_command = 131;
         value >> Number_Of_Rings[PRIMARY_FILTER];
         if (Number_Of_Rings[PRIMARY_FILTER] < 1)
             i_command = INVALID_INPUT_VALUE;
     }
-    else if (strcmp(code, "ExplicitFilter[2].Number_of_Rings") == 0) {
+    else if (strcmp(code, "ExplicitFilter[2].Number_Of_Rings") == 0) {
         i_command = 131;
         value >> Number_Of_Rings[SECONDARY_FILTER];
         if (Number_Of_Rings[SECONDARY_FILTER] < 1)
@@ -336,7 +336,7 @@ int Explicit_Filters_Input_Parameters::Parse_Next_Input_Control_Parameter(char *
         value >> Target_Filter_Sharpness[SECONDARY_FILTER];
     }
     
-    else if (strcmp(code, "ExplicitFilter[1].Vasilyev.Filter_Width_strict") == 0) {
+    else if (strcmp(code, "ExplicitFilter[1].Vasilyev.Filter_Width_Strict") == 0) {
         i_command = 132;
         value >> value_string;
         if (strcmp(value_string.c_str(), "ON") == 0) {
@@ -347,7 +347,7 @@ int Explicit_Filters_Input_Parameters::Parse_Next_Input_Control_Parameter(char *
             i_command = INVALID_INPUT_VALUE;
         }
     } 
-    else if (strcmp(code, "ExplicitFilter[2].Vasilyev.Filter_Width_strict") == 0) {
+    else if (strcmp(code, "ExplicitFilter[2].Vasilyev.Filter_Width_Strict") == 0) {
         i_command = 132;
         value >> value_string;
         if (strcmp(value_string.c_str(), "ON") == 0) {
@@ -359,7 +359,7 @@ int Explicit_Filters_Input_Parameters::Parse_Next_Input_Control_Parameter(char *
         }
     } 
     
-    else if (strcmp(code, "ExplicitFilter[1].Vasilyev.LS_constraints") == 0) {
+    else if (strcmp(code, "ExplicitFilter[1].Vasilyev.LS_Constraints") == 0) {
         i_command = 132;
         value >> value_string;
         if (strcmp(value_string.c_str(), "ON") == 0) {
@@ -370,7 +370,7 @@ int Explicit_Filters_Input_Parameters::Parse_Next_Input_Control_Parameter(char *
             i_command = INVALID_INPUT_VALUE;
         }
     } 
-    else if (strcmp(code, "ExplicitFilter[2].Vasilyev.LS_constraints") == 0) {
+    else if (strcmp(code, "ExplicitFilter[2].Vasilyev.LS_Constraints") == 0) {
         i_command = 132;
         value >> value_string;
         if (strcmp(value_string.c_str(), "ON") == 0) {
@@ -382,11 +382,11 @@ int Explicit_Filters_Input_Parameters::Parse_Next_Input_Control_Parameter(char *
         }
     } 
     
-    else if (strcmp(code, "ExplicitFilter[1].Vasilyev.Derivative_constraints") == 0) {
+    else if (strcmp(code, "ExplicitFilter[1].Vasilyev.Derivative_Constraints") == 0) {
         i_command = 132;
         value >> Derivative_Constraints[PRIMARY_FILTER];
     } 
-    else if (strcmp(code, "ExplicitFilter[2].Vasilyev.Derivative_constraints") == 0) {
+    else if (strcmp(code, "ExplicitFilter[2].Vasilyev.Derivative_Constraints") == 0) {
         i_command = 132;
         value >> Derivative_Constraints[SECONDARY_FILTER];
     } 

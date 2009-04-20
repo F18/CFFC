@@ -64,12 +64,13 @@ public:
     void Read_Properties(void) {
         if (properties->Changed()) {
             Discrete_Filter<Soln_pState,Soln_cState>::Read_Basic_Properties();
-            properties->Get_Property(relaxation_factor,"relaxation_factor");
-            properties->Get_Property(weighting,"least_squares_filter_weighting");
-            properties->Get_Property(least_squares_filter_weighting_factor,"least_squares_filter_weighting_factor");
-            properties->Get_Property(uniform_grid,"uniform_grid");
-            properties->Get_Property(target_filter_sharpness,"target_filter_sharpness");
-            properties->Get_Property(filter_strength,"filter_strength");
+            properties->Get_Property("relaxation_factor",relaxation_factor);
+            properties->Get_Property("least_squares_filter_weighting",weighting);
+            properties->Get_Property("least_squares_filter_weighting_factor",least_squares_filter_weighting_factor);
+            properties->Get_Property("uniform_grid",uniform_grid);
+            properties->Get_Property("target_filter_sharpness",target_filter_sharpness);
+            properties->Get_Property("filter_strength",filter_strength);
+            properties->Get_Property("high_order",reconstruction_type);
             properties->Properties_Read();
             cout << endl;
             
@@ -120,6 +121,7 @@ private:
     double target_filter_sharpness;
     double least_squares_filter_weighting_factor;
     double filter_strength;
+    int reconstruction_type;
     
     
     /* ------------------- uniform grid ---------------------- */
@@ -247,14 +249,12 @@ inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     
     RowVector w(theNeighbours.number_of_neighbours);
     
-    const bool old_way = false;
-    const bool new_way = true;
-    
-    
-    // todo: check for high order (CENO)
-    bool way = new_way;
-    
-    if (way == old_way) {
+
+    if (reconstruction_type == RECONSTRUCTION_HIGH_ORDER) {
+        DenseMatrix Cell_LHS_Inv = ComputeCellReconstructionPseudoInverse(theCell,theNeighbours);
+        w = ComputeCellWeights(theCell, theNeighbours, Cell_LHS_Inv);
+    }
+    else {
         // The system matrix used in Least Squares
         DenseMatrix A = Matrix_A(theCell,theNeighbours);
         
@@ -268,9 +268,6 @@ inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
         
         // weights are first row of pseudo_inverse
         w = Z[0];
-    } else {
-        DenseMatrix Cell_LHS_Inv = ComputeCellReconstructionPseudoInverse(theCell,theNeighbours);
-        w = ComputeCellWeights(theCell, theNeighbours, Cell_LHS_Inv);
     }
     
     // Add weight to centre cell, to scale transfer function

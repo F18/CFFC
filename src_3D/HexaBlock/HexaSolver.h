@@ -22,7 +22,7 @@
 
 #ifndef _EXPLICIT_FILTER_COMMANDS_INCLUDED
 #include "../ExplicitFilters/Explicit_Filter_Commands.h"
-#endif
+#endif // _EXPLICIT_FILTER_COMMANDS_INCLUDED
 
 #ifndef _HEXA_PRE_PROCESSING_INCLUDED
 #include "HexaPreProcessing.h"

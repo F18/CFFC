@@ -9,14 +9,6 @@
 #ifndef _EXPLICIT_FILTER_HELPERS_INCLUDED
 #define _EXPLICIT_FILTER_HELPERS_INCLUDED
 
-#ifndef _CFD_INCLUDED
-#include "../CFD/CFD.h"
-#endif
-
-#ifndef _HEXA_BLOCK_INCLUDED
-#include "../HexaBlock/HexaBlock.h"
-#endif
-
 #ifndef _NEIGHBOURS_INCLUDED
 #include "Neighbours.h"
 #endif
@@ -27,82 +19,38 @@
 
 #include <map>
 
+
+template <typename Soln_pState, typename Soln_cState> 
+class Hexa_Block;
+
 /* ------------------------------------------------------------------------------------------------------------------------------ */
 /**
  * CLASS : Explicit_Filter_Properties
  */
 
-
 class Explicit_Filter_Properties {
 private:
-    std::map<std::string,int> map_int;
-    std::map<std::string,double> map_double;
-    std::map<std::string,std::string> map_char;
+    std::map<std::string,std::string> property_map;
     bool properties_changed;
 
-    void Set_New_Property(std::string property_name, int property_value) {
-        map_int[property_name]=property_value;
-    }
-    void Set_New_Property(std::string property_name, bool property_value) {
-        map_int[property_name]=property_value;
-    }
-    void Set_New_Property(std::string property_name, double property_value) {
-        map_double[property_name]=property_value;
-    }
-    void Set_New_Property(std::string property_name, std::string property_value) {
-        map_char[property_name]=property_value;
+    template <typename T>
+    void Set_Property(const std::string property_name, const T& property_value) {
+        property_map[property_name] = to_str(property_value);
     }
     
-    void Set_Property(std::string property_name, int property_value) {
-        map<std::string,int>::iterator p;
-        p = map_int.find(property_name);
-        if(p!=map_int.end()) {
-            map_int[property_name]=property_value;
-        } else {
-            cout << "\n ERROR: Property " << property_name << " does not exist in Explicit_Filter_Helpers.h"; cout.flush();
-            exit(1);
-        }
+public:
+    template <typename T>
+    T Get_Property(const std::string property_name) {
+        return from_str<T>(property_map[property_name]);
     }
-    void Set_Property(std::string property_name, bool property_value) {
-        map<std::string,int>::iterator p;
-        p = map_int.find(property_name);
-        if(p!=map_int.end()) {
-            map_int[property_name]=property_value;
-        } else {
-            cout << "\n ERROR: Property " << property_name << " does not exist in Explicit_Filter_Helpers.h"; cout.flush();
-            exit(1);
-        }
+    
+    template <typename T>
+    void Get_Property(const std::string property_name, T& property_value) {
+        property_value = from_str<T>(property_map[property_name]);
     }
-    void Set_Property(std::string property_name, double property_value) {
-        map<std::string,double>::iterator p;
-        p = map_double.find(property_name);
-        if(p!=map_double.end()) {
-            map_double[property_name]=property_value;
-        } else {
-            cout << "\n ERROR: Property " << property_name << " does not exist in Explicit_Filter_Helpers.h"; cout.flush();
-            exit(1);
-        }
-        
-    }
-    void Set_Property(std::string property_name, std::string property_value) {
-        map<std::string,std::string>::iterator p;
-        p = map_char.find(property_name);
-        if(p!=map_char.end()) {
-            map_char[property_name]=property_value;
-        } else {
-            cout << "\n ERROR: Property " << property_name << " does not exist in Explicit_Filter_Helpers.h"; cout.flush();
-            exit(1);
-        }
-    }
-    void Set_Property(std::string property_name, char* property_value) {
-        map<std::string,std::string>::iterator p;
-        p = map_char.find(property_name);
-        if(p!=map_char.end()) {
-            map_char[property_name]=string(property_value);
-        } else {
-            cout << "\n ERROR: Property " << property_name << " does not exist in Explicit_Filter_Helpers.h"; cout.flush();
-            exit(1);
-        }
+    
+    void Get_Property(const std::string property_name, std::string& property_value) {
+        property_value = property_map[property_name];
     }
     
     
@@ -117,101 +65,55 @@ public:
     
     
     template <typename Soln_pState, typename Soln_cState>
-    void Set_Properties(Input_Parameters<Soln_pState,Soln_cState> &IPs, int batch_flag){
-        Set_New_Property("G_cutoff",exp(-sqr(PI)/(4.*6.)));
-        Set_New_Property("FGR",IPs.Turbulence_IP.FGR);
-        Set_New_Property("commutation_order",IPs.Turbulence_IP.commutation_order);
-        Set_New_Property("number_of_rings",IPs.Turbulence_IP.number_of_rings);
-        Set_New_Property("filter_type",IPs.Turbulence_IP.i_filter_type);
-        Set_New_Property("target_filter_sharpness",IPs.Turbulence_IP.Target_Filter_Sharpness);
-        Set_New_Property("LS_constraints",IPs.Turbulence_IP.LS_constraints);
-        Set_New_Property("Derivative_constraints",IPs.Turbulence_IP.Derivative_constraints);
-        Set_New_Property("Filter_Width_strict",IPs.Turbulence_IP.Filter_Width_strict);
-        Set_New_Property("memory_efficient",IPs.Turbulence_IP.Filter_Memory_Efficient);
-        Set_New_Property("relaxation_factor",IPs.Turbulence_IP.relaxation_factor);
-        Set_New_Property("least_squares_filter_weighting",IPs.Turbulence_IP.least_squares_filter_weighting);
-        Set_New_Property("least_squares_filter_weighting_factor",IPs.Turbulence_IP.least_squares_filter_weighting_factor);
-        Set_New_Property("uniform_grid",IPs.Turbulence_IP.uniform_grid);
-        Set_New_Property("use_fixed_filter_width",IPs.Turbulence_IP.use_fixed_filter_width);
-        Set_New_Property("fixed_filter_width",IPs.Turbulence_IP.Filter_Width);
-        Set_New_Property("filter_strength",IPs.Turbulence_IP.Filter_Strength);
+    void Set_Properties(Explicit_Filter_Constants::Filter_Number filter_number, Input_Parameters<Soln_pState,Soln_cState> &IPs, int batch_flag){
+        Set_Property("Filter_Number",filter_number);
+        Set_Property("G_cutoff",exp(-sqr(PI)/(4.*6.)));
+        Set_Property("commutation_order",IPs.ExplicitFilters_IP.Commutation_Order);
+        Set_Property("uniform_grid",IPs.ExplicitFilters_IP.Uniform_Grid);
+        Set_Property("FGR",IPs.ExplicitFilters_IP.FGR[filter_number]);
+        Set_Property("number_of_rings",IPs.ExplicitFilters_IP.Number_Of_Rings[filter_number]);
+        Set_Property("filter_type",IPs.ExplicitFilters_IP.Filter_Type[filter_number]);
+        Set_Property("target_filter_sharpness",IPs.ExplicitFilters_IP.Target_Filter_Sharpness[filter_number]);
+        Set_Property("LS_constraints",IPs.ExplicitFilters_IP.LS_Constraints[filter_number]);
+        Set_Property("Derivative_constraints",IPs.ExplicitFilters_IP.Derivative_Constraints[filter_number]);
+        Set_Property("Filter_Width_strict",IPs.ExplicitFilters_IP.Filter_Width_Strict[filter_number]);
+        Set_Property("memory_efficient",IPs.ExplicitFilters_IP.Filter_Memory_Efficient[filter_number]);
+        Set_Property("relaxation_factor",IPs.ExplicitFilters_IP.Relaxation_Factor[filter_number]);
+        Set_Property("least_squares_filter_weighting",IPs.ExplicitFilters_IP.Least_Squares_Filter_Weighting[filter_number]);
+        Set_Property("least_squares_filter_weighting_factor",IPs.ExplicitFilters_IP.Least_Squares_Filter_Weighting_Factor[filter_number]);
+        Set_Property("use_fixed_filter_width",!IPs.ExplicitFilters_IP.Filter_Relative[filter_number]);
+        Set_Property("fixed_filter_width",IPs.ExplicitFilters_IP.Filter_Width[filter_number]);
+        Set_Property("filter_strength",IPs.ExplicitFilters_IP.Filter_Strength[filter_number]);
+        Set_Property("high_order",IPs.i_Reconstruction);
 
-        
-        Set_New_Property("batch_flag",batch_flag);
-        Set_New_Property("debug_flag",OFF);
-        Set_New_Property("derivative_accuracy",3);
-        Set_New_Property("number_of_rings_increased",3);
-        Set_New_Property("derivative_accuracy",3);
-        Set_New_Property("output_file_name",std::string(IPs.Output_File_Name_Prefix));
-        Set_New_Property("finite_differencing_order",IPs.Turbulence_IP.finite_differencing_order);
-        Set_New_Property("restarted",false);
-        if (IPs.Turbulence_IP.i_filter_type!=Explicit_Filter_Constants::RESTART_FILTER) {
-            Set_New_Property("progress_mode",IPs.Progress_Mode);
+        Set_Property("batch_flag",batch_flag);
+        Set_Property("debug_flag",OFF);
+        Set_Property("derivative_accuracy",3);
+        Set_Property("number_of_rings_increased",3);
+        Set_Property("derivative_accuracy",3);
+        Set_Property("output_file_name",std::string(IPs.Output_File_Name_Prefix)+"_filter["+to_str(filter_number+1)+"]");
+        Set_Property("finite_differencing_order",IPs.ExplicitFilters_IP.Finite_Differencing_Order);
+        Set_Property("restarted",false);
+        if (IPs.ExplicitFilters_IP.Filter_Type[filter_number]!=Explicit_Filter_Constants::RESTART_FILTER) {
+            Set_Property("progress_mode",IPs.Progress_Mode);
         } else {
-            Set_New_Property("progress_mode",PROGRESS_MODE_SILENT);
+            Set_Property("progress_mode",PROGRESS_MODE_SILENT);
         }
         properties_changed = true;
     }
     
     template<typename T>
-    void Set_Filter_Property(std::string property_name, T property_value) {
+    void Set_Filter_Property(const std::string property_name, const T& property_value) {
         Set_Property(property_name, property_value);
         properties_changed = true;
     }
     template<typename T>
-    void Set_Operating_Property(std::string property_name, T property_value) {
+    void Set_Operating_Property(const std::string property_name, const T& property_value) {
         Set_Property(property_name, property_value);
-    }
-        
-    int Get_Property_int(std::string property_name) {
-        map<std::string,int>::iterator p;
-        p = map_int.find(property_name);
-        if(p!=map_int.end()) {
-            return p->second;
-        } else {
-            cout << "\n ERROR: Property " << property_name << " does not exist in Explicit_Filter_Helpers.h"; cout.flush();
-            exit(1);
-        }
-    }
-    double Get_Property_double(std::string property_name) {
-        map<std::string,double>::iterator p;
-        p = map_double.find(property_name);
-        if(p!=map_double.end()) {
-            return p->second;    
-        } else {
-            cout << "\n ERROR: Property " << property_name << " does not exist in Explicit_Filter_Helpers.h"; cout.flush();
-            exit(1);
-        }
-    }
-    std::string Get_Property_string(std::string property_name) {
-        map<std::string,std::string>::iterator p;
-        p = map_char.find(property_name);
-        if(p!=map_char.end()) {
-            return p->second;   
-        } else {
-            cout << "\n ERROR: Property " << property_name << " does not exist in Explicit_Filter_Helpers.h"; cout.flush();
-            exit(1);
-        }
-    }
-    
-    void Get_Property(int &property, std::string property_name) {
-        property = Get_Property_int(property_name);
-    }
-    void Get_Property(double &property, std::string property_name) {
-        property = Get_Property_double(property_name);
-    }
-    void Get_Property(std::string &property, std::string property_name) {
-        property = Get_Property_string(property_name);
     }
     
     void Output_Properties(void){
-        for (map<std::string,int>::iterator p=map_int.begin(); p!=map_int.end(); p++){
-            cout << "\n" << p->first << " = " << p->second; cout.flush();
-        }
-        for (map<std::string,double>::iterator p=map_double.begin(); p!=map_double.end(); p++){
-            cout << "\n" << p->first << " = " << p->second; cout.flush();
-        }
-        for (map<std::string,std::string>::iterator p=map_char.begin(); p!=map_char.end(); p++){
+        for (map<std::string,string>::iterator p=property_map.begin(); p!=property_map.end(); p++){
             cout << "\n" << p->first << " = " << p->second; cout.flush();
         }
         cout << "\n" << "properties_changed = " << properties_changed; cout.flush();

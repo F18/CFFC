@@ -10,9 +10,6 @@
 #ifndef _FILTER_NEIGHBOURS_INCLUDED
 #define _FILTER_NEIGHBOURS_INCLUDED
 
-
-#include <cstdlib>     // defines the drand48() function
-#include <ctime>       // defines the time() function
 #include "../Grid/Cell3D.h"
 #include "../Grid/Grid3DHexaBlock.h"
 

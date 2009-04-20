@@ -10,10 +10,6 @@
 #ifndef _DISCRETE_FILTER_INCLUDED
 #define _DISCRETE_FILTER_INCLUDED
 
-#include "General_Filter.h"
-#include "Explicit_Filter_Helpers.h"
-#include "Neighbours.h"
-
 #include <complex>
 
 #include "../Math/Math.h"
@@ -47,15 +43,15 @@ public:
     }
     
     virtual void Read_Basic_Properties(void) {
-        properties->Get_Property(debug_flag,"debug_flag");
-        properties->Get_Property(batch_flag,"batch_flag");
-        properties->Get_Property(FGR,"FGR");
-        properties->Get_Property(use_fixed_filter_width,"use_fixed_filter_width");
-        properties->Get_Property(fixed_filter_width,"fixed_filter_width");
-        properties->Get_Property(commutation_order,"commutation_order");
-        properties->Get_Property(number_of_rings,"number_of_rings");
-        properties->Get_Property(G_cutoff,"G_cutoff");
-        Store_Filter_Weights = !properties->Get_Property_int("memory_efficient");
+        properties->Get_Property("debug_flag",debug_flag);
+        properties->Get_Property("batch_flag",batch_flag);
+        properties->Get_Property("FGR",FGR);
+        properties->Get_Property("use_fixed_filter_width",use_fixed_filter_width);
+        properties->Get_Property("fixed_filter_width",fixed_filter_width);
+        properties->Get_Property("commutation_order",commutation_order);
+        properties->Get_Property("number_of_rings",number_of_rings);
+        properties->Get_Property("G_cutoff",G_cutoff);
+        Store_Filter_Weights = !properties->Get_Property<int>("memory_efficient");
     }
     
     virtual void Read_Properties(void) = 0;
@@ -359,7 +355,7 @@ void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Blo
     }
     int N=25;
     std::stringstream prefix;
-    prefix << properties->Get_Property_string("output_file_name") << "_";
+    prefix << properties->Get_Property<string>("output_file_name") << "_";
     prefix << "transfer_function_I" << theCell.I << "J" << theCell.J << "K" << theCell.K;
     
     /* -------------- Output gnuplot ----------------- */

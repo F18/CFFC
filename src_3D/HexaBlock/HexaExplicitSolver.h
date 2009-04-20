@@ -167,12 +167,11 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
         
     /*************************** SOLUTION FILTERING *****************************/            
     /* Periodically filter the solution to eliminate build-up of high frequency */
-    if (Solution_Data.Input.Turbulence_IP.i_filter_type != Explicit_Filter_Constants::IMPLICIT_FILTER &&
-        Solution_Data.Input.Turbulence_IP.solution_filtering_frequency != OFF) {
+    if (Solution_Data.Input.ExplicitFilters_IP.Solution_Filtering_Frequency != OFF) {
                         
         if (!first_step && 
-            Data.number_of_explicit_time_steps-Solution_Data.Input.Turbulence_IP.solution_filtering_frequency*
-            (Data.number_of_explicit_time_steps/Solution_Data.Input.Turbulence_IP.solution_filtering_frequency) == 0 ) {
+            Data.number_of_explicit_time_steps-Solution_Data.Input.ExplicitFilters_IP.Solution_Filtering_Frequency*
+            (Data.number_of_explicit_time_steps/Solution_Data.Input.ExplicitFilters_IP.Solution_Filtering_Frequency) == 0 ) {
             if (!Data.batch_flag) {
                 cout << "o";   // This symbol will notify a solution filtering operation
                 cout.flush();
@@ -265,17 +264,15 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
           
     /*******************************************************************/
     // 9. Filter Solution in case of Filtering the variables instead of Residuals        
-    if (Solution_Data.Input.Turbulence_IP.i_filter_type != Explicit_Filter_Constants::IMPLICIT_FILTER) {
-        if (Solution_Data.Input.Turbulence_IP.Filter_Method == Explicit_Filter_Constants::FILTER_VARIABLES) {
-            error_flag = Explicit_Filter_Commands::Filter_Solution(Data,Solution_Data,Explicit_Filter_Constants::PRIMARY_FILTER);
-            if (error_flag) {
-                cout << "\n ERROR: Could not filter solution "
-                << "on processor "
-                << CFFC_MPI::This_Processor_Number
-                << ".\n";
-                cout.flush();
-            } /* endif */
-        }
+    if (Solution_Data.Input.ExplicitFilters_IP.Filter_Method == Explicit_Filter_Constants::FILTER_VARIABLES) {
+        error_flag = Explicit_Filter_Commands::Filter_Solution(Data,Solution_Data,Explicit_Filter_Constants::PRIMARY_FILTER);
+        if (error_flag) {
+            cout << "\n ERROR: Could not filter solution "
+            << "on processor "
+            << CFFC_MPI::This_Processor_Number
+            << ".\n";
+            cout.flush();
+        } /* endif */
     }
         
           
