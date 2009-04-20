@@ -140,7 +140,7 @@ class CFD_Input_Parameters{
   //@}
 
   //@{ @name Spatial Order of Accuracy type indicator and related input parameters:
-  char Spatial_Accuracy[INPUT_PARAMETER_LENGTH];
+  int Spatial_Accuracy;
   int Reconstruction_Order;
   //@}
 
@@ -266,7 +266,7 @@ class CFD_Input_Parameters{
     Residual_Norm = 1;   //density default
     Number_of_Residual_Norms =1;
     // Spatial Order of Accuracy type indicator and related input parameters:
-    strcpy(Spatial_Accuracy, "2");
+    Spatial_Accuracy = 2;
     Reconstruction_Order = 1;
     // Reconstruction type indicator and related input parameters:
     strcpy(Reconstruction_Type, "Least_Squares");
@@ -332,6 +332,10 @@ class CFD_Input_Parameters{
                                            int &Command_Flag);
   //! Check validity of specified input parameters
   int Check_Inputs(void);
+  //@}
+
+  //! Set final input parameters (and static variables) based on the parsed input parameters
+  int Set_Final_Input_Parameters(void);
   //@}
 
   //@{ @name Input-output operators:

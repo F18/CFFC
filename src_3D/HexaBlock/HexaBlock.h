@@ -755,8 +755,6 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate_HighOrder(const int Reconstr
   bool _pseudo_inverse_allocation_(false);
   int i;
 
-  //ReconstructionOrder = ??;
-
   // Decide whether to allocate the pseudo-inverse
   if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
     _pseudo_inverse_allocation_ = true;

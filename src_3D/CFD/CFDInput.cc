@@ -432,20 +432,24 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
     //
     } else if (strcmp(code, "Spatial_Order_of_Accuracy") == 0) {
       i_command = 49;
-      value_stream >> value_string;
-      strcpy(Spatial_Accuracy, value_string.c_str());
-      if (strcmp(Spatial_Accuracy, "1") == 0) {
-	Reconstruction_Order = 0;
-      } else if (strcmp(Spatial_Accuracy, "2") == 0) {
-	Reconstruction_Order = 1;
-      } else if (strcmp(Spatial_Accuracy, "3") == 0) {
-	Reconstruction_Order = 2;
-      } else if (strcmp(Spatial_Accuracy, "4") == 0) {
-	Reconstruction_Order = 3;
-      } else {
+      value_stream >> Spatial_Accuracy;
+//      strcpy(Spatial_Accuracy, value_string.c_str());
+//      if (strcmp(Spatial_Accuracy, "1") == 0) {
+//	Reconstruction_Order = 0;
+//      } else if (strcmp(Spatial_Accuracy, "2") == 0) {
+//	Reconstruction_Order = 1;
+//      } else if (strcmp(Spatial_Accuracy, "3") == 0) {
+//	Reconstruction_Order = 2;
+//      } else if (strcmp(Spatial_Accuracy, "4") == 0) {
+//	Reconstruction_Order = 3;
+//      } else {
+//	i_command = INVALID_INPUT_VALUE;
+//      } /* endif */
+      if (Spatial_Accuracy < 1 || Spatial_Accuracy > 4) {
+	cout << "\n Spatial_Order_of_Accuracy should be between 1 and 4. \n" << endl;
 	i_command = INVALID_INPUT_VALUE;
-      } /* endif */
-      Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER = Reconstruction_Order;
+      }
+//      Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER = Reconstruction_Order;
     //
     // Reconstruction type indicator and related input parameters:
     //
@@ -459,7 +463,7 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
        } else if (strcmp(Reconstruction_Type, "CENO") == 0) {
 	  i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
-	  Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID = ON;
+//	  Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID = ON;
        } else {
           i_command = INVALID_INPUT_VALUE;
        } /* endif */
@@ -977,6 +981,17 @@ int CFD_Input_Parameters::Process_Input_Control_Parameter_File(char *Input_File_
       } /* endif */
    } /* endwhile */
 
+   /* Set final input parameters */
+
+   if (!error_flag) {
+     error_flag = Set_Final_Input_Parameters();
+     if (error_flag) {
+       cout << "\n ERROR: Setting the final input parameters.\n";
+       return (error_flag);
+     } /* endif */
+   } /* endif */
+
+
    /* Perform consistency checks on all input parameters. */
 
    if (!error_flag) {
@@ -1233,6 +1248,46 @@ void CFD_Input_Parameters::Broadcast(void) {
 
 }
 
+
+/*********************************************************
+ * Routine: Set_Final_Input_Parameters                   *
+ *                                                       *
+ * Set the final input parameters (and static variables) *
+ * based on parsed parameters.                           *
+ *                                                       *
+*********************************************************/
+int CFD_Input_Parameters::Set_Final_Input_Parameters(void) {
+
+    int error_flag = 0;
+
+    // Set the reconstruction order based on FlowType
+    if (i_Flow_Type == FLOWTYPE_INVISCID){
+      Reconstruction_Order = Spatial_Accuracy-1;
+    } else { 
+      Reconstruction_Order = Spatial_Accuracy;
+    }
+
+    // Set static variables used in generation of high-order grid information 
+
+    Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER = Reconstruction_Order;
+
+    if (i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+      Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID = ON;
+    } else {
+      Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID = OFF;
+    }
+
+    if(Grid_IP.Mesh_Stretching == ON || Grid_IP.Disturb_Interior_Nodes){
+      Grid3D_HO_Execution_Mode::UNIFORM_GRID = OFF;
+    } else {
+      Grid3D_HO_Execution_Mode::UNIFORM_GRID = ON;
+    }
+
+    // Input parameters are consistent.  Exit successfully.
+    return (error_flag);
+
+}
+
 /********************************************************
  * Routine: Check_Inputs                                *
  *                                                      *
@@ -1423,7 +1478,7 @@ void CFD_Input_Parameters::Output_Solver_Type(ostream &out_file) const {
    out_file << "\n  -> Reconstruction Type: " 
             << Reconstruction_Type;
    out_file << "\n  -> Order of Accuracy: "
-	    << Reconstruction_Order + 1;
+	    << Spatial_Accuracy;
    out_file << "\n  -> Limiter: " 
             << Limiter_Type;   
    if (Limiter_Type != LIMITER_ZERO && Freeze_Limiter) {

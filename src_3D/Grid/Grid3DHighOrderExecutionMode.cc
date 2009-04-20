@@ -16,6 +16,7 @@
 
 short Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID = OFF;
 int   Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER = 1;
+int   Grid3D_HO_Execution_Mode::UNIFORM_GRID = OFF;
 
 
 //! Routine: SetDefaults
@@ -30,6 +31,7 @@ void Grid3D_HO_Execution_Mode::SetDefaults(void){
   
   USE_HO_CENO_GRID = OFF;
   RECONSTRUCTION_ORDER = 1;
+  UNIFORM_GRID = OFF;
 }
 
 //! Routine: Print_Info
