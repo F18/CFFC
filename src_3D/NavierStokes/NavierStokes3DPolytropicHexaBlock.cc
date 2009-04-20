@@ -730,8 +730,8 @@ dUdt_Residual_HighOrder(Input_Parameters<NavierStokes3D_Polytropic_pState,
   // ------------------------------------------------------------------------------------------------
 
   HighOrderVariable.ComputeUnlimitedSolutionReconstruction(*this, 
-							  &Hexa_Block<NavierStokes3D_Polytropic_pState, 
-							              NavierStokes3D_Polytropic_cState>::CellSolution);
+							   &Hexa_Block<NavierStokes3D_Polytropic_pState, 
+							               NavierStokes3D_Polytropic_cState>::CellSolution);
 
   // Step 2. Compute interior fluxes and any source contributions for the cells
   //         in the range of (ICl,JCl,KCl)-->(ICu,JCu,KCu)
@@ -757,7 +757,7 @@ dUdt_Residual_HighOrder(Input_Parameters<NavierStokes3D_Polytropic_pState,
 	     point to be used for calculation of the viscous flux by taking the 
 	     average of the left and right interface states at the current Gauss
 	     point location based on the unlimited high-order reconstruction */
-	  W_face = 0.5*(HighOrderVariable.SolutionStateAtLocation(i  ,j,k,GaussQuadPoints[GQPoint]) +
+	  W_face = 0.5*(HighOrderVariable.SolutionStateAtLocation(i  ,j,k,GaussQuadPoints[GQPoint]) +  
 			HighOrderVariable.SolutionStateAtLocation(i+1,j,k,GaussQuadPoints[GQPoint]));
 	  
 	  // Validate W_face state
@@ -786,8 +786,8 @@ dUdt_Residual_HighOrder(Input_Parameters<NavierStokes3D_Polytropic_pState,
 
 	/* Evaluate cell-averaged solution changes. */
 	
-	dUdt[i  ][j][k][k_residual] -= (IPs.CFL_Number* dt[i  ][j][k])*Flux* Grid.AfaceE(i  , j, k)/Grid.Cell[i  ][j][k].V;
-	dUdt[i+1][j][k][k_residual] += (IPs.CFL_Number* dt[i+1][j][k])*Flux* Grid.AfaceW(i+1, j, k)/Grid.Cell[i+1][j][k].V;
+	dUdt[i  ][j][k][k_residual] += (IPs.CFL_Number* dt[i  ][j][k])*Flux* Grid.AfaceE(i  , j, k)/Grid.Cell[i  ][j][k].V;
+	dUdt[i+1][j][k][k_residual] -= (IPs.CFL_Number* dt[i+1][j][k])*Flux* Grid.AfaceW(i+1, j, k)/Grid.Cell[i+1][j][k].V;
 
 
 	/* Evaluate the cell interface j-direction fluxes.
@@ -836,8 +836,8 @@ dUdt_Residual_HighOrder(Input_Parameters<NavierStokes3D_Polytropic_pState,
 
 	/* Evaluate cell-averaged solution changes. */
 	
-	dUdt[i][j  ][k][k_residual] -=(IPs.CFL_Number* dt[i][j  ][k])* Flux* Grid.AfaceN(i, j  , k)/Grid.Cell[i][j  ][k].V;
-	dUdt[i][j+1][k][k_residual] +=(IPs.CFL_Number* dt[i][j+1][k])* Flux* Grid.AfaceS(i, j+1, k)/Grid.Cell[i][j+1][k].V;
+	dUdt[i][j  ][k][k_residual] +=(IPs.CFL_Number* dt[i][j  ][k])* Flux* Grid.AfaceN(i, j  , k)/Grid.Cell[i][j  ][k].V;
+	dUdt[i][j+1][k][k_residual] -=(IPs.CFL_Number* dt[i][j+1][k])* Flux* Grid.AfaceS(i, j+1, k)/Grid.Cell[i][j+1][k].V;
 	
 
 	/* Evaluate the cell interface k-direction fluxes.
@@ -882,6 +882,147 @@ dUdt_Residual_HighOrder(Input_Parameters<NavierStokes3D_Polytropic_pState,
 													dWdz_face,
 													Grid.nfaceTop(i, j, k));
 	} //endfor (GQPoint)
+
+	/* Evaluate cell-averaged solution changes. */
+	
+	dUdt[i][j][k  ][k_residual] +=(IPs.CFL_Number* dt[i][j][k  ])* Flux* Grid.AfaceTop(i, j, k  )/Grid.Cell[i][j][k  ].V;
+	dUdt[i][j][k+1][k_residual] -=(IPs.CFL_Number* dt[i][j][k+1])* Flux* Grid.AfaceBot(i, j, k+1)/Grid.Cell[i][j][k+1].V;
+
+      } // endfor(i)
+    } // endfor(j)
+  } //endfor(k)
+
+
+  /*****************************************************************
+   * --------------------------------------------------------------*
+     Evaluate the time rate of change of the solution 
+     (i.e., the solution residuals) using a high-order 
+     CENO upwind finite-volume scheme for the convective fluxes.
+     NOTE: Included here are the contribution of the hyperbolic terms! */
+
+
+  /* ------------------------------------------------------------------------------
+     Step 1. Enforce monotonicity to the high-order interpolants
+             detected as non-smooth by the smoothness indicator analysis.
+     NOTE:   This solution reconstruction IS recommended for computing
+             hyperbolic fluxes!
+  *///-----------------------------------------------------------------------------
+
+  HighOrderVariable.ComputeSmoothnessIndicator(*this);
+  HighOrderVariable.EnforceMonotonicityToNonSmoothInterpolants(*this, IPs.i_Limiter);
+
+  /* ------------------------------------------------------------------------------
+     Step 2. Compute convective fluxes and any source contributions
+             for the cells in the range of (ICl,JCl,KCl)-->(ICu,JCu,KCu)
+  *///-----------------------------------------------------------------------------
+
+  for ( k = KCl-1 ; k <= KCu ; ++k ){
+    for ( j = JCl-1 ; j <= JCu ; ++j ){
+      for ( i = ICl-1 ; i <= ICu ; ++i ) {
+
+	/* Evaluate the cell interface i-direction fluxes.
+	   --> ( i.e. East Flux for cell (i,j,k) & West Flux for cell (i+1,j,k) ) */
+	// -------------------------------------------------------------------------
+
+	// Determine the location of the Gauss Quadrature Points
+	Grid.getGaussQuadPointsFaceE(i,j,k,GaussQuadPoints,NumGQP);
+
+	// Reset Flux
+	Flux.Vacuum();
+
+	for (GQPoint = 0; GQPoint < NumGQP; ++GQPoint) { // for each Gauss Quadrature point
+	  
+	  // Compute left and right interface states at the current Gauss
+	  // point location based on the high-order reconstruction
+	  Wl = HighOrderVariable.SolutionStateAtLocation(i  ,j,k,GaussQuadPoints[GQPoint]);
+	  Wr = HighOrderVariable.SolutionStateAtLocation(i+1,j,k,GaussQuadPoints[GQPoint]);
+
+	  // --> RR: comment out state validation in flux calculation!!
+	  // Validate the left state
+	  //Validate_Primitive_SolnState(Wl,i  ,j,k, "East", Pos);
+	  // Validate the right state
+	  //Validate_Primitive_SolnState(Wr,i+1,j,k, "West", Pos);
+	  
+	  /* Add the weighted contribution of the current GQP to the total 
+	     flux in the normal direction through the face. */
+
+	  Flux += GaussQuadWeights[GQPoint] * RiemannFlux_n(IPs.i_Flux_Function,
+							    Wl, Wr,
+							    Grid.nfaceE(i, j, k));
+
+	} //endfor (GQPoint)
+
+	/* Evaluate cell-averaged solution changes. */
+	
+	dUdt[i  ][j][k][k_residual] -= (IPs.CFL_Number* dt[i  ][j][k])*Flux* Grid.AfaceE(i  , j, k)/Grid.Cell[i  ][j][k].V;
+	dUdt[i+1][j][k][k_residual] += (IPs.CFL_Number* dt[i+1][j][k])*Flux* Grid.AfaceW(i+1, j, k)/Grid.Cell[i+1][j][k].V;
+
+
+	/* Evaluate the cell interface j-direction fluxes.
+	   --> ( i.e. North Flux for cell (i,j,k) & South Flux for cell (i,j+1,k) ) */
+	// ---------------------------------------------------------------------------
+
+	// Determine the Gauss Quadrature Points
+	Grid.getGaussQuadPointsFaceN(i,j,k,GaussQuadPoints,NumGQP);
+
+	// Reset Flux
+	Flux.Vacuum();
+
+	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
+
+	  // Compute left and right interface states at the current Gauss
+	  // point location based on the high-order reconstruction
+	  Wl = HighOrderVariable.SolutionStateAtLocation(i,j  ,k,GaussQuadPoints[GQPoint]);
+	  Wr = HighOrderVariable.SolutionStateAtLocation(i,j+1,k,GaussQuadPoints[GQPoint]);
+
+	  // Validate the left state
+	  //Validate_Primitive_SolnState(Wl,i ,j  ,k, "North", Pos);
+	  // Validate the right state
+	  //Validate_Primitive_SolnState(Wr,i ,j+1,k, "South", Pos);	  
+
+	  /* Add the weighted contribution of the current GQP to the total 
+	     flux through the face in the normal direction. */
+	  Flux += GaussQuadWeights[GQPoint] * RiemannFlux_n(IPs.i_Flux_Function,
+							    Wl, Wr,
+							    Grid.nfaceN(i, j, k));
+	} //endfor (GQPoint)
+
+
+	/* Evaluate cell-averaged solution changes. */
+	
+	dUdt[i][j  ][k][k_residual] -=(IPs.CFL_Number* dt[i][j  ][k])* Flux* Grid.AfaceN(i, j  , k)/Grid.Cell[i][j  ][k].V;
+	dUdt[i][j+1][k][k_residual] +=(IPs.CFL_Number* dt[i][j+1][k])* Flux* Grid.AfaceS(i, j+1, k)/Grid.Cell[i][j+1][k].V;
+	
+
+	/* Evaluate the cell interface k-direction fluxes.
+	   --> ( i.e. Top Flux for cell (i,j,k) & Bottom Flux for cell (i,j,k+1) ) */
+	// ---------------------------------------------------------------------------
+
+	// Determine the Gauss Quadrature Points
+	Grid.getGaussQuadPointsFaceTop(i,j,k,GaussQuadPoints,NumGQP);
+
+	// Reset Flux
+	Flux.Vacuum();
+
+	for(GQPoint = 0; GQPoint < NumGQP; ++GQPoint){ // for each Gauss Quadrature point
+
+	  // Compute left and right interface states at the current Gauss
+	  // point location based on the high-order reconstruction
+	  Wl = HighOrderVariable.SolutionStateAtLocation(i,j,k  ,GaussQuadPoints[GQPoint]);
+	  Wr = HighOrderVariable.SolutionStateAtLocation(i,j,k+1,GaussQuadPoints[GQPoint]);
+
+	  // Validate the left state
+	  //Validate_Primitive_SolnState(Wl,i ,j, k  , "Top", Pos);
+	  // Validate the right state
+	  //Validate_Primitive_SolnState(Wr,i ,j, k+1, "Bottom", Pos);	  
+
+	  /* Add the weighted contribution of the current GQP to the total 
+	     flux through the face in the normal direction. */
+	  Flux += GaussQuadWeights[GQPoint] * RiemannFlux_n(IPs.i_Flux_Function,
+							    Wl, Wr,
+							    Grid.nfaceTop(i, j, k));
+	} //endfor (GQPoint)
+
 
 	/* Evaluate cell-averaged solution changes. */
 	

@@ -51,7 +51,7 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
   if (!Data.batch_flag) {
     cout << "\n Creating multi-block octree data structure, assigning"
       << "\n  solution blocks corresponding to initial mesh, and computing"
-      << "\n  geometric coefficients (if required)";
+      << "\n  geometric coefficients (if required).";
     cout.flush();
   } /* endif */
   
