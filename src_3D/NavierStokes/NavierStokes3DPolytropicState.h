@@ -221,6 +221,13 @@ public :
                                                           const double &deltad, 
                                                           const double &Volume, 
                                                           const double &Volume_Neigbour);
+
+   static NavierStokes3D_Polytropic_cState FluxViscous_HighOrder_n(NavierStokes3D_Polytropic_pState &W_face,
+								   const NavierStokes3D_Polytropic_pState &dWdx_face,
+								   const NavierStokes3D_Polytropic_pState &dWdy_face,
+								   const NavierStokes3D_Polytropic_pState &dWdz_face,
+								   const Vector3D &norm);
+
 //@}
     
 /** @name Navier-Stokes related functions */
