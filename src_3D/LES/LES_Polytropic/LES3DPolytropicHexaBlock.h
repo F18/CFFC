@@ -78,6 +78,11 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                                     Input_Parameters<LES3D_Polytropic_pState,
                                                      LES3D_Polytropic_cState> &IPs);
 
+template<>
+int Hexa_Block<LES3D_Polytropic_pState, LES3D_Polytropic_cState>::
+dUdt_Residual_HighOrder(Input_Parameters<LES3D_Polytropic_pState, LES3D_Polytropic_cState> &IPs,
+                        const int & k_residual,
+                        const bool & UseTimeStep);
 
 
 /********************************************************

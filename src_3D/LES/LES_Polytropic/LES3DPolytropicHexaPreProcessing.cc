@@ -428,9 +428,22 @@ int Output_Other_Solution_Progress_Specialization_Data(HexaSolver_Data &Data,
                                                        HexaSolver_Solution_Data<LES3D_Polytropic_pState,
 						                                LES3D_Polytropic_cState> &Solution_Data) {
 
+    
+    
    int error_flag(0);
    double total_TKE, total_enstrophy, u_prime, Taylor_scale, viscosity, k_SFS;
 
+    // WARNING!!! UNNECESSARY COMPUTATION IN CASE OF CENO!!!! JUST FOR OUTPUT PURPOSE FOR NOW!
+    if (Solution_Data.Input.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER) {
+        // Call Linear_Reconstruction_LeastSquares to set dWdx, dWdy, dWdz needed in the subroutines below
+        Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState> *Soln_Blks = Solution_Data.Local_Solution_Blocks.Soln_Blks;
+        for (int nBlk = 0; nBlk < Solution_Data.Local_Solution_Blocks.Number_of_Soln_Blks; nBlk++ ) {
+            if (Solution_Data.Local_Solution_Blocks.Block_Used[nBlk]) {
+                Soln_Blks[nBlk].Linear_Reconstruction_LeastSquares(LIMITER_ZERO); 
+            }
+        }
+    }
+    
    // Calculate various turbulence quantities
    total_TKE = Total_TKE<Hexa_Block<LES3D_Polytropic_pState, LES3D_Polytropic_cState> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
                                                                                         Data.Local_Adaptive_Block_List);

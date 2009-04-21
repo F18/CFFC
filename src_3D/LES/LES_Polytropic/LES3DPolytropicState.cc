@@ -483,7 +483,30 @@ LES3D_Polytropic_cState  LES3D_Polytropic_pState::FluxViscous_n(const LES3D_Poly
 }
 
 
-
+// n-direction viscous flux and heat flux used in the evaluation of the 
+// high order fluxes at the Gauss Quadrature Points
+LES3D_Polytropic_cState  LES3D_Polytropic_pState::FluxViscous_HighOrder_n(LES3D_Polytropic_pState &W_face,
+                                                                          const LES3D_Polytropic_pState &dWdx_face,
+                                                                          const LES3D_Polytropic_pState &dWdy_face,
+                                                                          const LES3D_Polytropic_pState &dWdz_face,
+                                                                          const double &Volume,
+                                                                          const Vector3D &norm) {
+    // Evaluate viscous flux
+    if (fabs(norm.y) < TOLER && fabs(norm.z) < TOLER) {
+        return (W_face.Fvx(dWdx_face, dWdy_face, dWdz_face, Volume)*norm.x);
+        
+    } else if (fabs(norm.x) < TOLER && fabs(norm.z) < TOLER) {
+        return (W_face.Fvy(dWdx_face, dWdy_face, dWdz_face, Volume)*norm.y);
+        
+    } else if (fabs(norm.x) < TOLER && fabs(norm.y) < TOLER) {
+        return (W_face.Fvz(dWdx_face, dWdy_face, dWdz_face, Volume)*norm.z);
+        
+    } else {
+        return (W_face.Fvx(dWdx_face, dWdy_face, dWdz_face, Volume)*norm.x +
+                W_face.Fvy(dWdx_face, dWdy_face, dWdz_face, Volume)*norm.y +
+                W_face.Fvz(dWdx_face, dWdy_face, dWdz_face, Volume)*norm.z);
+    }
+}
 
 
 
