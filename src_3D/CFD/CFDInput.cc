@@ -1318,14 +1318,14 @@ int CFD_Input_Parameters::Check_Inputs(void) {
       cout << "\n CFD::Check_Inputs: Limiter_Type must be set to zero for a Spatial_Order_of_Accuracy = 1." << endl;
       cout.flush();
       return 1;
-    } else if (i_Limiter == LIMITER_ZERO && Reconstruction_Order > 1){
+    } else if (i_Limiter == LIMITER_ZERO && Spatial_Accuracy > 1){
       cout << "\n CFD::Check_Inputs: Caution! Limiter_Type has been set to zero which conflicts with the desired Spatial_Order_of_Accracy." <<endl;
       cout.flush();
       return 1;
     }/* endif */
 
     // Make sure that the reconstruction type for high-order reconstruction is set to CENO
-    if (i_Reconstruction != RECONSTRUCTION_HIGH_ORDER && Reconstruction_Order > 1){
+    if (i_Reconstruction != RECONSTRUCTION_HIGH_ORDER && Spatial_Accuracy > 2){
       cout << "\n CFD::Check_Inputs: Spatial Order of Accuracy conflicts with the given Reconstruction_Type.\n";
       cout << "For high-order reconstruction please use the CENO Reconstruction_Type." << endl;
       cout.flush();

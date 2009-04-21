@@ -4886,8 +4886,8 @@ RiemannFlux_n(const int & Flux_Function,
 //    return SOLN_pSTATE::FluxVanLeer_n(Wl, Wr, normal_dir);
 //  case FLUX_FUNCTION_AUSM :
 //    return SOLN_pSTATE::FluxAUSM_n(Wl, Wr, normal_dir);
-//  case FLUX_FUNCTION_AUSMplus :
-//    return SOLN_pSTATE::FluxAUSMplus_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_AUSM_PLUS_UP :
+    return SOLN_pSTATE::FluxAUSMplus_up_n(Wl, Wr, normal_dir);
 //  case FLUX_FUNCTION_ROE_PRECON_WS :
 //    return SOLN_pSTATE::FluxRoe_n_Precon_WS(Wl, Wr, normal_dir);
 //  case FLUX_FUNCTION_HLLE_PRECON_WS :
