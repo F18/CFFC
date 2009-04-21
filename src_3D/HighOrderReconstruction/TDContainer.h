@@ -696,7 +696,7 @@ T TaylorDerivativesContainer<T>::ComputeYGradientFor(const double DeltaX, const 
     DeltaZtoPower = 1.0;
     for (p3=0; p3<=OrderOfRec-p1-p2; ++p3){
       /* Update Gradient */
-      YGradient += DeltaYtoPower*DeltaZtoPower*DContainer[IndexOrder(p1,p2,p3)].D();
+      YGradient += DeltaXtoPower*DeltaZtoPower*DContainer[IndexOrder(p1,p2,p3)].D();
       /* Update DeltaZtoPower */
       DeltaZtoPower *= DeltaZ;
     }
