@@ -1239,10 +1239,10 @@ void CFD_Input_Parameters::Broadcast(void) {
     Turbulence_IP.Broadcast();
 
     // High Order Grid Execution Mode:
-    // Grid_HO_Execution_Mode.Broadcast(); --> RR: broadcast later
+    Grid_HO_Execution_Mode.Broadcast();
 
     // CENO Execution Mode:
-    // CENO_Execution_Mode.Broadcast();  --> RR: broadcast later
+    CENO_Execution_Mode.Broadcast();
 
 #endif
 
