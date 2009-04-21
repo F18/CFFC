@@ -83,7 +83,17 @@ public:
         Set_Property("use_fixed_filter_width",!IPs.ExplicitFilters_IP.Filter_Relative[filter_number]);
         Set_Property("fixed_filter_width",IPs.ExplicitFilters_IP.Filter_Width[filter_number]);
         Set_Property("filter_strength",IPs.ExplicitFilters_IP.Filter_Strength[filter_number]);
-        Set_Property("high_order",IPs.i_Reconstruction);
+        if (IPs.ExplicitFilters_IP.Reconstruction_Type[filter_number] == Explicit_Filter_Constants::DEFAULT_RECONSTRUCTION) {
+            if( IPs.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER ) {
+                Set_Property("reconstruction_type",Explicit_Filter_Constants::CENO_RECONSTRUCTION);
+            }
+            else {
+                Set_Property("reconstruction_type",Explicit_Filter_Constants::STANDARD_RECONSTRUCTION);
+            }
+        }
+        else {
+            Set_Property("reconstruction_type",IPs.ExplicitFilters_IP.Reconstruction_Type[filter_number]);
+        }
 
         Set_Property("batch_flag",batch_flag);
         Set_Property("debug_flag",OFF);

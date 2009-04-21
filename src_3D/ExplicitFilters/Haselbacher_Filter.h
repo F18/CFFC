@@ -248,7 +248,7 @@ inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
     RowVector w(theNeighbours.number_of_neighbours);
     
 
-    if (reconstruction_type == RECONSTRUCTION_HIGH_ORDER) {
+    if (reconstruction_type == Explicit_Filter_Constants::CENO_RECONSTRUCTION) {
         DenseMatrix Cell_LHS_Inv = ComputeCellReconstructionPseudoInverse(theCell,theNeighbours);
         w = ComputeCellWeights(theCell, theNeighbours, Cell_LHS_Inv);
     }

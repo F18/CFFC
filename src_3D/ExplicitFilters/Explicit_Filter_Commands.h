@@ -178,8 +178,10 @@ int Explicit_Filter_Commands::Transfer_Function(HexaSolver_Data &Data, HexaSolve
         
         for (int nBlk = 0; nBlk < Solution_Data.Local_Solution_Blocks.Number_of_Soln_Blks; nBlk++ ) {
             if (Solution_Data.Local_Solution_Blocks.Block_Used[nBlk]) {
-                if (first_block)
+                if (first_block) {
                     Soln_Blks[nBlk].Explicit_Filter.transfer_function(Explicit_Filter_Constants::MIDDLE_CELL);   
+                    Soln_Blks[nBlk].Explicit_Secondary_Filter.transfer_function(Explicit_Filter_Constants::MIDDLE_CELL);   
+                }
                 first_block = false;
             }
         }

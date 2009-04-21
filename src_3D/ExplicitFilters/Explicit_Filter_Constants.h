@@ -12,10 +12,11 @@
 
 namespace Explicit_Filter_Constants {
     
-    enum Filter_Method         {FILTER_VARIABLES, FILTER_RESIDUALS};
-    enum Filter_Cell           {CORNER_CELL, FACE_CELL, EDGE_CELL, INNER_CELL, MIDDLE_CELL};
-    enum Filter_Type           {IMPLICIT_FILTER, HASELBACHER_FILTER, VASILYEV_FILTER, RESTART_FILTER};
-    enum Filter_Number         {PRIMARY_FILTER,SECONDARY_FILTER};
+    enum Filter_Method          {FILTER_VARIABLES, FILTER_RESIDUALS};
+    enum Filter_Cell            {CORNER_CELL, FACE_CELL, EDGE_CELL, INNER_CELL, MIDDLE_CELL};
+    enum Filter_Type            {IMPLICIT_FILTER, HASELBACHER_FILTER, VASILYEV_FILTER, RESTART_FILTER};
+    enum Filter_Number          {PRIMARY_FILTER,SECONDARY_FILTER};
+    enum LS_Reconstruction_Type {DEFAULT_RECONSTRUCTION, STANDARD_RECONSTRUCTION, CENO_RECONSTRUCTION}; 
 }
 
 #endif

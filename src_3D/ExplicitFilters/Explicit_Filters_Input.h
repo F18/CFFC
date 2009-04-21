@@ -89,7 +89,7 @@ public:
     std::vector<double> Relaxation_Factor;                      //!< This coefficient is used in the least-squares reconstruction filter and should be left "DEFAULT".
     std::vector<int>    Least_Squares_Filter_Weighting;         //!< This coefficient controls if a weighted least-squares is used in Haselbacher filter.
     std::vector<double> Least_Squares_Filter_Weighting_Factor;  //!< This coefficient controls if a weighted least-squares is used in Haselbacher filter.
-    
+    std::vector<int>    Reconstruction_Type;                    //!< This flag defines whether to use the CENO geometric coefficients or standard LS
     //@{ @name Constructors and desctructors:
     //! Constructor (assign default values)
     Explicit_Filters_Input_Parameters();    

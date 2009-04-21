@@ -25,6 +25,7 @@ Explicit_Filters_Input_Parameters::Explicit_Filters_Input_Parameters() :
     Relaxation_Factor(NUMBER_OF_FILTERS),
     Least_Squares_Filter_Weighting(NUMBER_OF_FILTERS),
     Least_Squares_Filter_Weighting_Factor(NUMBER_OF_FILTERS),
+    Reconstruction_Type(NUMBER_OF_FILTERS),
     Target_Filter_Sharpness(NUMBER_OF_FILTERS),
     Filter_Width_Strict(NUMBER_OF_FILTERS),
     LS_Constraints(NUMBER_OF_FILTERS),
@@ -84,6 +85,9 @@ Explicit_Filters_Input_Parameters::Explicit_Filters_Input_Parameters() :
     
     Least_Squares_Filter_Weighting[PRIMARY_FILTER]   = ON;
     Least_Squares_Filter_Weighting[SECONDARY_FILTER] = ON;
+    
+    Reconstruction_Type[PRIMARY_FILTER]   = DEFAULT_RECONSTRUCTION;
+    Reconstruction_Type[SECONDARY_FILTER] = DEFAULT_RECONSTRUCTION;
     
     // ============================================================== //
     // Vasilyev Filter Input
@@ -454,6 +458,33 @@ int Explicit_Filters_Input_Parameters::Parse_Next_Input_Control_Parameter(char *
         }
     } 
     
+    else if (strcmp(code, "ExplicitFilter[1].Haselbacher.Reconstruction_Type") == 0) {
+        i_command = 132;
+        value >> value_string;
+        if (strcmp(value_string.c_str(), "Default") == 0) {
+            Reconstruction_Type[PRIMARY_FILTER] = Explicit_Filter_Constants::DEFAULT_RECONSTRUCTION;
+        } else if(strcmp(value_string.c_str(), "Standard") == 0) {
+            Reconstruction_Type[PRIMARY_FILTER] = Explicit_Filter_Constants::STANDARD_RECONSTRUCTION;
+        } else if(strcmp(value_string.c_str(), "CENO") == 0) {
+            Reconstruction_Type[PRIMARY_FILTER] = Explicit_Filter_Constants::CENO_RECONSTRUCTION; 
+        } else {
+            i_command = INVALID_INPUT_VALUE; 
+        }
+    }
+    else if (strcmp(code, "ExplicitFilter[2].Haselbacher.Reconstruction_Type") == 0) {
+        i_command = 132;
+        value >> value_string;
+        if (strcmp(value_string.c_str(), "Default") == 0) {
+            Reconstruction_Type[SECONDARY_FILTER] = Explicit_Filter_Constants::DEFAULT_RECONSTRUCTION;
+        } else if(strcmp(value_string.c_str(), "Standard") == 0) {
+            Reconstruction_Type[SECONDARY_FILTER] = Explicit_Filter_Constants::STANDARD_RECONSTRUCTION;
+        } else if(strcmp(value_string.c_str(), "CENO") == 0) {
+            Reconstruction_Type[SECONDARY_FILTER] = Explicit_Filter_Constants::CENO_RECONSTRUCTION; 
+        } else {
+            i_command = INVALID_INPUT_VALUE; 
+        }
+    }
+    
     else {
         i_command = INVALID_INPUT_CODE;
     } /* endif */
@@ -526,6 +557,7 @@ void Explicit_Filters_Input_Parameters::Broadcast(void) {
         MPI::COMM_WORLD.Bcast(&(Relaxation_Factor[filter_number]), 1, MPI::DOUBLE, 0);
         MPI::COMM_WORLD.Bcast(&(Least_Squares_Filter_Weighting_Factor[filter_number]), 1, MPI::DOUBLE, 0);
         MPI::COMM_WORLD.Bcast(&(Least_Squares_Filter_Weighting[filter_number]), 1, MPI::INT, 0);
+        MPI::COMM_WORLD.Bcast(&(Reconstruction_Type[filter_number]), 1, MPI::INT, 0);
         MPI::COMM_WORLD.Bcast(&(Target_Filter_Sharpness[filter_number]), 1, MPI::DOUBLE, 0);
         MPI::COMM_WORLD.Bcast(&(Filter_Width_Strict[filter_number]), 1, MPI::INT, 0);
         MPI::COMM_WORLD.Bcast(&(LS_Constraints[filter_number]), 1, MPI::INT, 0);
