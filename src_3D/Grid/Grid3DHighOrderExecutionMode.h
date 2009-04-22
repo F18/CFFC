@@ -51,6 +51,12 @@ public:
    */
   static int RECONSTRUCTION_ORDER;
 
+  /*!
+   * This parameter is set equal to ON only if there is no mesh stretching 
+   * and no distortion of the nodes. In other words, the grid must be a uniform cartesian mesh.
+   * If set to ON then the geometric coefficients will be calculated using one cell
+   * only, and then those cofficients are then copied to all remaining cells.
+   */
   static int UNIFORM_GRID;
 
 
