@@ -1477,6 +1477,14 @@ void CFD_Input_Parameters::Output_Solver_Type(ostream &out_file) const {
    out_file << "\n\n Spatial Discretization";
    out_file << "\n  -> Reconstruction Type: " 
             << Reconstruction_Type;
+   if (i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+     out_file <<  "\n  -> Smoothness Indicator: ";
+     if (CENO_Execution_Mode::CENO_ENFORCE_MONOTONICITY_USING_SMOOTHNESS_INDICATOR) {
+       out_file <<  "ON";
+     } else {
+       out_file << "OFF";
+     } /* endif */
+   } /* endif */
    out_file << "\n  -> Order of Accuracy: "
 	    << Spatial_Accuracy;
    out_file << "\n  -> Limiter: " 

@@ -30,6 +30,7 @@ short CENO_Execution_Mode::IGNORE_CURVED_BOUNDARIES_FOR_ACCURACY_ASSESSMENT = OF
 short CENO_Execution_Mode::USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA = ON; // use the smoothness indicator for CENO AMR
 short CENO_Execution_Mode::HIGH_ORDER_MESSAGE_PASSING = ON; // use high-order message passing for high-order AMR
 short CENO_Execution_Mode::CENO_VERBOSE = ON; // output more information (i.e. be verbose)
+short CENO_Execution_Mode::CENO_ENFORCE_MONOTONICITY_USING_SMOOTHNESS_INDICATOR = ON;
 
 //! Set all flags to default values
 // add all flag default values to this function
@@ -52,6 +53,7 @@ void CENO_Execution_Mode::SetDefaults(void){
   USE_SMOOTHNESS_INDICATOR_FOR_AMR_CRITERIA = ON; // use the smoothness indicator for CENO AMR
   HIGH_ORDER_MESSAGE_PASSING = ON; // use high-order message passing for high-order AMR
   CENO_VERBOSE = ON; // output more information (i.e. be verbose)
+  CENO_ENFORCE_MONOTONICITY_USING_SMOOTHNESS_INDICATOR = ON;
   Limiter = LIMITER_VANLEER;
 }
 
@@ -215,6 +217,9 @@ void CENO_Execution_Mode::Broadcast(void){
  			1, 
  			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&CENO_VERBOSE,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&CENO_ENFORCE_MONOTONICITY_USING_SMOOTHNESS_INDICATOR,
  			1, 
  			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&Limiter,

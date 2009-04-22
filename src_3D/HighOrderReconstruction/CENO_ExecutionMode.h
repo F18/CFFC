@@ -156,6 +156,16 @@ public:
       --------------------------------------------------------------------------------------- */
   static short CENO_VERBOSE;
 
+  /*! This flag controls whether or not solution monotonicity is \n
+      enforced using the Smoothness Indicator for the convective (inviscid) flux \n
+      calculations. If you do not need to enforce monotonicity then the number of \n 
+      required ghost cells may be reduced by turning this flag off. \n
+      Turn ON if you want to enforce montonicity (default) \n 
+      Turn OFF if you do not want to use (or calculate) the smoothness indicator. Note that
+      there will be no enforcement of monotonicity! 
+      --------------------------------------------------------------------------------------- */
+  static short CENO_ENFORCE_MONOTONICITY_USING_SMOOTHNESS_INDICATOR;
+
   static int Limiter;   //!< the limiter used for the limited linear reconstruction performed for non-smooth solutions
 
   

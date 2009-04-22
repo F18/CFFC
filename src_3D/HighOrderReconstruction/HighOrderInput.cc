@@ -93,7 +93,7 @@ int HighOrder_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
     }
     i_command = 0;
 
-  } else if (strcmp(code, "CENO_Smoothness_Indicator") == 0) {
+  } else if (strcmp(code, "CENO_Smoothness_Indicator_Neighbours") == 0) {
     value >> value_string;
     if (value_string == "Use_First_Neighbours") {
       CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
@@ -148,7 +148,14 @@ int HighOrder_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
       CENO_Execution_Mode::HIGH_ORDER_MESSAGE_PASSING = OFF;
     }
     i_command = 0;
-
+  } else if (strcmp(code, "CENO_Enforce_Monotonicity") == 0) {
+    value >> value_string;
+    if ( value_string == "Yes" || value_string == "ON") {
+      CENO_Execution_Mode::CENO_ENFORCE_MONOTONICITY_USING_SMOOTHNESS_INDICATOR = ON;      
+    } else if ( value_string == "No" || value_string == "OFF") {
+      CENO_Execution_Mode::CENO_ENFORCE_MONOTONICITY_USING_SMOOTHNESS_INDICATOR = OFF;
+    }
+    i_command = 0;
   } else if (strcmp(code, "CENO_Verbose") == 0) {
     value >> value_string;
     if (value_string == "Yes" || value_string == "YES") {

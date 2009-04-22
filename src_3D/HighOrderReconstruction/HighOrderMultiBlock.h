@@ -11,26 +11,32 @@
 // None
 
 /* Include CFFC header files */
-#ifndef _HIGHORDER_INCLUDED
 #include "HighOrder.h"	      // Include high-order class header file
-#endif //_HIGHORDER_INCLUDED
-
-#ifndef _HIGHORDER_INPUT_INCLUDED
 #include "HighOrderInput.h"   // Include high-order input header file
-#endif //_HIGHORDER_INPUT_INCLUDED
 
-/*!
- * \class HighOrder_Multi_Block
+
+//! \class HighOrder_Multi_Block
+//  -----------------------------------------------------------------------------
+/*! \brief Collection of templated functions that operate
+ *         on high-order variables of 3D arrays of 
+ *         hexahedral solution blocks.
  *
- * \brief Collection of templated functions that operate
- *        on high-order variables of 3D arrays of 
- *        quadrilateral solution blocks.
- * \nosubgrouping
- *********************************************************/
+ *  \nosubgrouping
+ *
+ *///----------------------------------------------------------------------------
+
 class HighOrder_Multi_Block {
 public:
 
-  //! Create initial high-order variables
+
+  //! Routine: Create_Initial_HighOrder_Variables
+  //  -----------------------------------------------------------------------------
+  /*! Purpose: Allocates the memory for the high order variable(s) for all used
+   *           solution blocks in the provided list.
+   *
+   *  \param ReconstructionOrder provides the order of reconstruction
+   *
+   *///----------------------------------------------------------------------------
   template<typename HEXA_BLOCK>
   static int Create_Initial_HighOrder_Variables(HEXA_BLOCK *Solution_Block,
 						AdaptiveBlock3D_List &LocalSolnBlockList,
@@ -48,22 +54,22 @@ public:
 	// Solution_Block[i].allocate_HighOrder_BoundaryConditions(); //RR: allocate_HighOrder_Boundary_Conditions()
      
       } /* endif */
-   
-    }  /* endfor */
+     }  /* endfor */
  
     //  } //endif (NumberOfHighOrderReconstructions)
 
     return(0);
   }
 
-
-  /*!
-   * Perform high-order reconstruction for 
-   * all used solution blocks in the provided list.
-   * 
-   * \param ReconstructedSoln member function of Quad_Soln_Block which returns the solution.
-   */
-
+  //! Routine: HighOrder_Reconstruction
+  //  -----------------------------------------------------------------------------
+  /*! Purpose: Performs high-order reconstruction for all used
+   *           solution blocks in the provided list. 
+   *
+   *  \param  ReconstructedSoln member function of Hexa_Block
+   *          which returns the solution.
+   *
+   *///----------------------------------------------------------------------------
   template <class HEXA_BLOCK>
   static void HighOrder_Reconstruction(HEXA_BLOCK *Solution_Block,
 				       AdaptiveBlock3D_List &LocalSolnBlockList,
@@ -84,13 +90,15 @@ public:
     }  /* endfor */
   }
 
-  /*!
-   * Routine: Linear_Reconstruction
-   *                                                      
-   * Perform piecewise limited linear reconstruct for 
-   * the solution of a 1D array of 3D hexahedral multi-block 
-   * solution blocks.
-   */
+
+  //! Routine: Linear_Reconstruction
+  //  -----------------------------------------------------------------------------
+  /*! Purpose: Perform piecewise limited linear reconstruction for the
+   *           solution of an array of 3D hexahedral solution blocks.
+   *
+   *  \param  LimiterType provides the type of limiter to be used
+   *
+   *///----------------------------------------------------------------------------
   template<class HEXA_BLOCK>
   static void Linear_Reconstruction(HEXA_BLOCK *Solution_Block,
 				    AdaptiveBlock3D_List &LocalSolnBlockList,
@@ -103,8 +111,6 @@ public:
      }  /* endfor */
     
   }
-  
-  void Linear_Reconstruction(const int Limiter);
   
 private:
   HighOrder_Multi_Block(void);   //!< Private default constructor
