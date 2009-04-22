@@ -1380,9 +1380,12 @@ dUdt_Residual_HighOrder(Input_Parameters<LES3D_Polytropic_pState,
      NOTE:   This solution reconstruction IS recommended for computing
      hyperbolic fluxes!
      *///-----------------------------------------------------------------------------
-    
-    HighOrderVariable.ComputeSmoothnessIndicator(*this);
-    HighOrderVariable.EnforceMonotonicityToNonSmoothInterpolants(*this, IPs.i_Limiter);
+    if (CENO_Execution_Mode::CENO_ENFORCE_MONOTONICITY_USING_SMOOTHNESS_INDICATOR){
+     
+      HighOrderVariable.ComputeSmoothnessIndicator(*this);
+      HighOrderVariable.EnforceMonotonicityToNonSmoothInterpolants(*this, IPs.i_Limiter);
+
+    }
     
     /* ------------------------------------------------------------------------------
      Step 2. Compute convective fluxes and any source contributions

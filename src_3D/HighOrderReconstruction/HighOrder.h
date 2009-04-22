@@ -2070,11 +2070,13 @@ int HighOrder<SOLN_STATE>::getTaylorDerivativesSize(const int &ReconstructionOrd
 template<class SOLN_STATE> inline
 int HighOrder<SOLN_STATE>::getNghostHighOrder(const int &ReconstructionOrder){
 
-  if (CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING){
-    // This method is not implemented yet but it's left as a possible development stream.
-    // In the current implementation the 'CENO_Execution_Mode' class should refuse to set this flag to ON.
+//  if (CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING){
+//    // This method is not implemented yet but it's left as a possible development stream.
+//    // In the current implementation the 'CENO_Execution_Mode' class should refuse to set this flag to ON.
+//
+//  } else {
 
-  } else {
+  if (CENO_Execution_Mode::CENO_ENFORCE_MONOTONICITY_USING_SMOOTHNESS_INDICATOR){
 
     if (CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS){
       // Return the minimum number of ghost cells when smoothness indicator computation is done with only the closes neighbours
@@ -2139,9 +2141,44 @@ int HighOrder<SOLN_STATE>::getNghostHighOrder(const int &ReconstructionOrder){
 	// require a very large number such that to generate a stop
 	return 20;
       }	// endswitch
-    }
+    }// end if FIRST_NEIGHBOURS
 
-  }//endif    
+  } else { 
+    // Return the minimum number of ghost cells (ONE) when the smootness indicator is not being used and
+    // the solution monotonicity is not enforced.
+    switch (ReconstructionOrder){
+    case 4:
+      return 1;
+      break;
+
+    case 3:
+      return 1;
+      break;
+
+    case 2:
+      return 1;
+      break;
+
+    case 1:
+      return 1;
+      break;
+
+    case 0:
+      return 1;
+      break;
+
+    case -1:
+      return 0;
+      break;
+
+    default:
+      // require a very large number such that to generate a stop
+      return 20;
+    } // endswitch
+  }// end if ENFORCE_MONOTONICITY
+
+//  }//end if MESSAGE PASSING
+
 }
 
 // getMinimumNghost()

@@ -187,12 +187,20 @@ dUdt_Residual_HighOrder(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
 
  
   // Step 1. Perform the high-order CENO reconstruction within each cell of the computational grid
-  //         for this stage. NOTE: This solution reconstruction enforces monotonicity if required so!
+  //         for this stage. 
+  // NOTE:   By default, the solution reconstruction enforces monotonicity if deemed necessary by
+  //         the smoothness indicator calculations
   // ------------------------------------------------------------------------------------------------
+  if (CENO_Execution_Mode::CENO_ENFORCE_MONOTONICITY_USING_SMOOTHNESS_INDICATOR){
 
-  HighOrderVariable.ComputeHighOrderSolutionReconstruction(*this, 
-							   IPs.i_Limiter,
-							   &Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::CellSolution);
+    HighOrderVariable.ComputeHighOrderSolutionReconstruction(*this, 
+							     IPs.i_Limiter,
+							     &Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::CellSolution);
+  } else {
+
+    HighOrderVariable.ComputeUnlimitedSolutionReconstruction(*this, 
+							     &Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::CellSolution);
+  }
 
   // Step 2. Compute interior fluxes and any source contributions for the cells
   //         in the range of (ICl,JCl,KCl)-->(ICu,JCu,KCu)
