@@ -1247,10 +1247,10 @@ void CFD_Input_Parameters::Broadcast(void) {
     ExplicitFilters_IP.Broadcast();
 
     // High Order Grid Execution Mode:
-    Grid_HO_Execution_Mode.Broadcast();
+    Grid3D_HO_Execution_Mode::Broadcast();
 
     // CENO Execution Mode:
-    CENO_Execution_Mode.Broadcast();
+    CENO_Execution_Mode::Broadcast();
 
 #endif
 

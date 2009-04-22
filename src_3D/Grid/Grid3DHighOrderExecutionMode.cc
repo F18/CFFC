@@ -93,7 +93,7 @@ void Grid3D_HO_Execution_Mode::Broadcast(void){
   MPI::COMM_WORLD.Bcast(&RECONSTRUCTION_ORDER,
  			1, 
  			MPI::SHORT, 0);
-  MPI::COMM_WORLD.Bcast(&UNIFORM_ORDER,
+  MPI::COMM_WORLD.Bcast(&UNIFORM_GRID,
  			1, 
  			MPI::SHORT, 0);
 
