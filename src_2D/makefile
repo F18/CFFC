@@ -2,7 +2,7 @@
 # Makefile for CFFC (2D version)
 #
 # Computational Framework for Fluids and Combustion (CFFC)
-
+#SHELL=/usr/bin/bash
 #
 # Set CFFC directory location which can be overridden by 
 # setting an environement variable CFFC_Path
@@ -109,8 +109,6 @@ SRC_GRID = $(GRID_DIR)Cell1D.cc \
            $(GRID_DIR)Cell2D.cc \
            $(GRID_DIR)Grid2DQuadSingleBlock.cc \
            $(GRID_DIR)Grid2DQuadMultiBlock.cc \
-           $(GRID_DIR)Grid3DHexaSingleBlock.cc \
-           $(GRID_DIR)Grid3DHexaMultiBlock.cc \
 	   $(GRID_DIR)Tecplot_ExecutionMode.cc
 SRC_GRID_HO = $(GRID_DIR)HO_Cell2D.cc \
               $(GRID_DIR)HO_Spline2D.cc \
@@ -524,7 +522,7 @@ SRC_REACTIONS = $(REACTIONS_DIR)Reactions.cc \
 	  	$(REACTIONS_DIR)15step_GRI3.f
 SRC_REACTIONS_F90 = $(REACTIONS_DIR)c_15step_GRI211.f90 \
                     $(REACTIONS_DIR)c_15step_GRI3.f90
-SRC_REACTIONS += $(SRC_REACTIONS_F90)
+#SRC_REACTIONS += $(SRC_REACTIONS_F90)
 SRC_SNBCK = $(SNBCK_DIR)SNBCK.cc \
 	    $(SNBCK_DIR)PlanckMean.cc
 SRC_SHOCK_RELATIONS = #nothing, all in .h files
@@ -856,9 +854,9 @@ sparselib:
 	@echo Building $(SPARSELIB) library for a $(PLATFORM) platform.
 	@echo '--------------------------------------------------------'
 	@echo ' '
-	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
-	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
-	cd $(SPARSELIB_DIR); make CFFC_SRC_TREE=$(CFFC_SRC_TREE) sp;
+	cd $(SPARSELIB_DIR); gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
+	cd $(SPARSELIB_DIR); gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
+	cd $(SPARSELIB_DIR); gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) sp;
 	@echo ' '
 	@echo $(SPARSELIB) library has been brought up to date.
 	@echo '------------------------------------------------'
@@ -869,8 +867,8 @@ bpkit:
 	@echo Building $(BPKIT) library for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------'
 	@echo ' '
-	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
-	cd $(BPKIT_DIR)/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE);
+	cd $(BPKIT_DIR)/src; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
+	cd $(BPKIT_DIR)/src; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE);
 	@echo ' '
 	@echo $(BPKIT) library has been brought up to date.
 	@echo '--------------------------------------------'
@@ -1001,12 +999,12 @@ $(EXE_NAVIERSTOKES2D): $(OBJ_NAVIERSTOKES_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES) $
 	@echo '----------------------------------------------------------'
 	@echo ' '
 
-$(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_SNBCK) $(OBJ_CHEM) $(OBJ_ICEMCFD)
+$(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE_NOHO) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_SNBCK) $(OBJ_CHEM) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_CHEM2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_CHEM2D) $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_SNBCK) $(OBJ_CHEM) $(OBJ_ICEMCFD) $(LDFLAGS)
+	$(LD) -o $(EXE_CHEM2D) $(OBJ_CHEM_EXE) $(OBJ_BASE_NOHO) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_SNBCK) $(OBJ_CHEM) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_CHEM2D) has been brought up to date.
 	@echo '--------------------------------------------------'

@@ -41,7 +41,7 @@ srcs: $(SRCS)
 lib: $(SPARSELIB_A)
 
 $(SPARSELIB_A) : $(OBJ) 
-	@ ar rv $(SPARSELIB_A) $?
+	@ ar rv  $(SPARSELIB_A) $? #-X64
 	@ case x$(HASRANLIB) in xt ) echo ranlib; ranlib $(SPARSELIB_A);; esac
 
 #iohb.o : iohb.c

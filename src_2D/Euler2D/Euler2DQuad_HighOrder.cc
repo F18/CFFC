@@ -1007,7 +1007,8 @@ int Euler2D_Quad_Block::dUdt_Residual_HighOrder(const Euler2D_Input_Parameters &
   */
 
   HighOrderVariable(Pos).ComputeHighOrderSolutionReconstruction(*this,
-								IP.Limiter());
+								IP.Limiter(),
+								&Euler2D_Quad_Block::CellSolution);
 
   // ** Step 1. Compute interior fluxes and any source contributions for cells between (ICl,JCl)-->(ICu,JCu) **
   // **********************************************************************************************************

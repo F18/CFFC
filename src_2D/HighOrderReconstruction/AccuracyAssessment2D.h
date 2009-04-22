@@ -591,7 +591,7 @@ void AccuracyAssessment2D<Quad_Soln_Block>::
 addAerodynamicForcesHighOrder(vector<double> & Fx, vector<double> & Fy, vector<double> & WettedSurface,
 			      const unsigned short int &Pos){
   
-  double _dummy_param;
+  double _dummy_param(0);
 
   // Define high-order data type
   typedef typename Quad_Soln_Block::HighOrderType HighOrderType;
@@ -681,7 +681,7 @@ void AccuracyAssessment2D<Quad_Soln_Block>::addAerodynamicForces(vector<double> 
 								 vector<double> & Fy,
 								 vector<double> & WettedSurface){
 
-  double _dummy_param;
+  double _dummy_param(0);
 
   // Visit each block boundary
 

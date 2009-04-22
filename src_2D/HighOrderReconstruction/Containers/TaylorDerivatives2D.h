@@ -76,8 +76,14 @@ class DerivativeObj<TwoD,T>{
 
  /* Overloaded operators */
  // Assignment operator
- DerivativeObj& operator=(const DerivativeObj<TwoD,T>& rhs);
- 
+ DerivativeObj& operator=(const DerivativeObj<TwoD,T>& rhs){
+   if(this == &rhs) return *this;
+   Power1 = rhs.Power1;
+   Power2 = rhs.Power2;
+   ValueD = rhs.ValueD;
+   return *this;
+ }
+
  // Friend functions & operators
  friend bool operator== <TwoD,T> (const DerivativeObj<TwoD,T>& left,
 				  const DerivativeObj<TwoD,T>& right);
@@ -97,16 +103,6 @@ DerivativeObj<TwoD,T>::DerivativeObj(const vector<int> & PPP_, const T & ValueD_
    Power1 = PPP_[0];
    Power2 = PPP_[1];
    ValueD = ValueD_;
-}
-
-// Assignment operator
-template< class T>
-inline DerivativeObj<TwoD,T> & DerivativeObj<TwoD,T>::operator=(const DerivativeObj<TwoD,T>& rhs){
-  if(this == &rhs) return *this;
-  Power1 = rhs.Power1;
-  Power2 = rhs.Power2;
-  ValueD = rhs.ValueD;
-  return *this;
 }
 
 // SetPowers()
@@ -231,7 +227,29 @@ class TaylorDerivativesContainer<TwoD,T>{
   // Copy constructor
   TaylorDerivativesContainer(const TaylorDerivativesContainer<TwoD,T> & rhs);
   // Assignment operator;
-  TaylorDerivativesContainer<TwoD,T> & operator=(const TaylorDerivativesContainer<TwoD,T> & rhs);
+  TaylorDerivativesContainer<TwoD,T> & operator=(const TaylorDerivativesContainer<TwoD,T> & rhs){
+  // !!! If the LHS container already has objects assigned, these are going to be deleted.
+  // Handle self-assignment:
+  if (this == & rhs) return *this;
+
+  // allocate memory if there isn't enough
+  allocate(rhs.size());
+
+  // set the OrderOfRec
+  OrderOfRec = rhs.RecOrder();
+
+  /* Copy phi */
+  phi = rhs.Limiter();
+  phi_copy = rhs.phi_copy;
+
+  // copy the value from the RHS
+  for (int i=0; i<=LastElem() ; ++i){
+    DContainer[i] = rhs.DContainer[i];
+  }
+
+  return *this;
+
+  }
 
   // GenerateContainer()
   void GenerateContainer(const int OrderOfReconstruction); /* Allocate memory for the derivatives and 
@@ -401,32 +419,32 @@ void TaylorDerivativesContainer<TwoD,T>::free_memory(void) {
   }
 }
 
-/* Assignment operator = */
-template<class T> inline
-TaylorDerivativesContainer<TwoD,T> & 
-TaylorDerivativesContainer<TwoD,T>::operator=(const TaylorDerivativesContainer<TwoD,T> & rhs){
+// /* Assignment operator = */
+// template<class T> inline
+// TaylorDerivativesContainer<TwoD,T> & 
+// TaylorDerivativesContainer<TwoD,T>::operator=(const TaylorDerivativesContainer<TwoD,T> & rhs){
 
-  // !!! If the LHS container already has objects assigned, these are going to be deleted.
-  // Handle self-assignment:
-  if (this == & rhs) return *this;
+//   // !!! If the LHS container already has objects assigned, these are going to be deleted.
+//   // Handle self-assignment:
+//   if (this == & rhs) return *this;
 
-  // allocate memory if there isn't enough
-  allocate(rhs.size());
+//   // allocate memory if there isn't enough
+//   allocate(rhs.size());
 
-  // set the OrderOfRec
-  OrderOfRec = rhs.RecOrder();
+//   // set the OrderOfRec
+//   OrderOfRec = rhs.RecOrder();
 
-  /* Copy phi */
-  phi = rhs.Limiter();
-  phi_copy = rhs.phi_copy;
+//   /* Copy phi */
+//   phi = rhs.Limiter();
+//   phi_copy = rhs.phi_copy;
 
-  // copy the value from the RHS
-  for (int i=0; i<=LastElem() ; ++i){
-    DContainer[i] = rhs.DContainer[i];
-  }
+//   // copy the value from the RHS
+//   for (int i=0; i<=LastElem() ; ++i){
+//     DContainer[i] = rhs.DContainer[i];
+//   }
 
-  return *this;
-}
+//   return *this;
+// }
 
 /* Access data */
 /*IndexOrder(int,int) -> determines the position of the element having the power combination (p1,p2) */

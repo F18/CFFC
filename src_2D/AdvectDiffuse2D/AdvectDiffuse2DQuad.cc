@@ -635,6 +635,9 @@ Vector2D AdvectDiffuse2D_Quad_Block::InterfaceSolutionGradient(const int & ii_L,
   default :
     throw runtime_error("AdvectDiffuse2D_Quad_Block::InterfaceSolutionGradient() ERROR! Unknown gradient reconstruction type!");
   }
+
+  // Added for compiler complain!
+  return Vector2D(0);
 }
 
 /**************************************************//**
@@ -743,6 +746,9 @@ DiamondPathGradientReconstruction(const Vector2D &Xl, const AdvectDiffuse2D_Stat
     // Return the right gradient
     return Vector2D(dUdxr.u,dUdyr.u);
   }
+
+  // Added for compiler complain!
+  return Vector2D(0);
 }
 
 
@@ -2602,7 +2608,8 @@ int AdvectDiffuse2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
 
 	// Make sure that reconstruction is done for this block
 	HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(*this,
-								    CENO_Execution_Mode::Limiter);
+								    CENO_Execution_Mode::Limiter,
+								    &AdvectDiffuse2D_Quad_Block::CellSolution);
 
 	for ( j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
 	  for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {

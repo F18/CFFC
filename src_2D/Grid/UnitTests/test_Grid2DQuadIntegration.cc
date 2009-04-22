@@ -289,7 +289,7 @@ namespace tut
 			   RecOrder);
 
     int NumGQP = Spline2DInterval_HO::get_NumGQPoints_ContourIntegral();
-    double Val;
+    double Val(0);
     Vector2D *GaussQuadPoints = new Vector2D [NumGQP];   // the GQPs used to calculate the integral along a line segment
     double * GaussQuadWeights = new double [NumGQP];     // the Gauss integration weights for each Gauss quadrature
     double DeltaY;
@@ -328,7 +328,7 @@ namespace tut
     Grid2D_Quad_MultiBlock_HO Mesh;
     
     int i,j;
-    double Result, IntVal;
+    double Result(0), IntVal;
 
     int Blocks_Idir = 1;
     int Blocks_Jdir = 1;
@@ -399,7 +399,7 @@ namespace tut
     Grid2D_Quad_MultiBlock_HO Mesh;
     
     int i,j;
-    double Result, IntVal;
+    double Result(0), IntVal;
 
     int Blocks_Idir = 1;
     int Blocks_Jdir = 1;
@@ -505,7 +505,7 @@ namespace tut
     Grid2D_Quad_MultiBlock_HO Mesh;
     
     int i,j;
-    double Result, IntVal;
+    double Result(0), IntVal;
 
     int Blocks_Idir = 1;
     int Blocks_Jdir = 1;
@@ -613,7 +613,7 @@ namespace tut
     Grid2D_Quad_MultiBlock_HO Mesh;
     
     int i,j;
-    double Result, IntVal;
+    double Result(0), IntVal;
 
     int Blocks_Idir = 1;
     int Blocks_Jdir = 1;
@@ -717,7 +717,7 @@ namespace tut
     set_test_name("Test QuadrilateralQuadrature routine for integration on rotated rectangle");
 
     Node2D_HO SW, NW, NE, SE;
-    double NumericResult, AnalyticResult;
+    double NumericResult(0), AnalyticResult;
 
     // Set the integration domain (i.e. a rectangle rotated counterclockwise at 30 degrees) 
     double cos30, sin30, alpha1, alpha2;
@@ -732,11 +732,11 @@ namespace tut
     SE.x() = 2*cos30;
     SE.y() = 2*sin30;
 
-    NE.x() = 2*sqrt(2)*cos(alpha2 + PI/6);
-    NE.y() = 2*sqrt(2)*sin(alpha2 + PI/6);
+    NE.x() = 2*sqrt(2.0)*cos(alpha2 + PI/6);
+    NE.y() = 2*sqrt(2.0)*sin(alpha2 + PI/6);
 
-    NW.x() = sqrt(5)*cos(alpha1 + PI/6);
-    NW.y() = sqrt(5)*sin(alpha1 + PI/6);
+    NW.x() = sqrt(5.0)*cos(alpha1 + PI/6);
+    NW.y() = sqrt(5.0)*sin(alpha1 + PI/6);
     
     AnalyticResult = 14./3.*(1. + cos30*sin30) + 8./3.*(1. - cos30*sin30) + 3.*(cos30*cos30 - sin30*sin30);
 

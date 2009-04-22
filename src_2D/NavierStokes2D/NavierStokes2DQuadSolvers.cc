@@ -883,6 +883,57 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 				  residual_l2_norm,
 				  residual_max_norm);
 
+	// Periodically check for error output.
+	if (!first_step &&
+	    number_of_time_steps-Input_Parameters.AMR_Frequency*
+	    (number_of_time_steps/Input_Parameters.AMR_Frequency) == 0 );
+	
+	if ( (AccuracyAssessment_Execution_Mode::Assessment_Frequency() != 0) && 
+	     !first_step && 
+	     number_of_time_steps - AccuracyAssessment_Execution_Mode::Assessment_Frequency()*
+	     (number_of_time_steps/AccuracyAssessment_Execution_Mode::Assessment_Frequency() ) == 0 ){
+
+	  if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	    cout << "\n\n ---------------------------------------\n" 
+		 << " Append error norms to Tecplot file ...\n";
+	    cout.flush();
+	  }
+
+	  // Reconstruct solution before calculating the error
+	  if ( Input_Parameters.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+	    // Use high-order reconstruction
+	    HighOrder2D_MultiBlock::HighOrder_Reconstruction(Local_SolnBlk,
+							     List_of_Local_Solution_Blocks,
+							     Input_Parameters,
+							     0);
+	  } else {
+	    // Use low-order reconstruction
+	    Linear_Reconstruction(Local_SolnBlk, 
+				  List_of_Local_Solution_Blocks,
+				  Input_Parameters);
+	  } // endif
+
+	  // Calculate errors and append them to the Tecplot output file
+	  error_flag = AccuracyAssessment2D_MultiBlock::AppendErrorNormsToTecplotOutputFile(Local_SolnBlk, 
+											    List_of_Local_Solution_Blocks, 
+											    Input_Parameters,
+											    number_of_time_steps,
+											    Time);
+       
+	  if (CFFC_Primary_MPI_Processor() && error_flag) {
+	    cout << "\n NavierStokes2D ERROR: Unable to append NavierStokes2D error norms data.\n"; cout.flush();
+	  } // endif
+
+	  CFFC_Broadcast_MPI(&error_flag, 1);
+	  if (error_flag) return (error_flag);
+
+	  if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	    cout << "\n ---------------------------------------\n";       
+	    cout.flush();
+	  }
+	} // Finish accuracy assessment
+
+
 	// Check to see if calculations are complete.
 	if (!Input_Parameters.Time_Accurate &&
 	    number_of_time_steps >= 
@@ -1188,8 +1239,7 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
     HighOrder2D_MultiBlock::HighOrder_Reconstruction(Local_SolnBlk,
 						     List_of_Local_Solution_Blocks,
 						     Input_Parameters,
-						     0,
-						     &NavierStokes2D_Quad_Block::CellSolution);
+						     0);
   } else {
     // Use low-order reconstruction
     Linear_Reconstruction(Local_SolnBlk, 

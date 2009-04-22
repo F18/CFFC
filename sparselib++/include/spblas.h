@@ -32,13 +32,21 @@
 #ifndef SPBLAS_H
 #define SPBLAS_H
 
-#ifndef F77NAME
-# if defined(RIOS)
-#  define F77NAME(x) x
-# else
-#  define F77NAME(x) x##_
-# endif
+
+#define name2(a,b) a ## b
+#ifdef UNIX_NAMES
+#define F77NAME(x) x
+#else
+#define F77NAME(x) name2(x,_)
 #endif
+
+// #ifndef F77NAME
+// # if defined(RIOS)
+// #  define F77NAME(x) x
+// # else
+// #  define F77NAME(x) x##_
+// # endif
+// #endif
 
 #ifdef COMPLEX_SUPPORT
 #include "complex.h"

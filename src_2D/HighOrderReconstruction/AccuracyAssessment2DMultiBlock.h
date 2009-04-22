@@ -24,6 +24,8 @@ using std::cout;
 #include "../MPI/MPI.h"
 #include "AccuracyAssessment_ExecutionMode.h"
 
+#include "../System/System_Linux.h"
+
 /*!
  * \class AccuracyAssessment2D_MultiBlock
  *
@@ -63,6 +65,20 @@ public:
   static int AppendErrorNormsToOutputFile(Quad_Soln_Block *SolnBlk,
 					  const AdaptiveBlock2D_List &Soln_Block_List,
 					  const Input_Parameters_Type &IP);
+
+  /*! @brief Append the error norms to the output file specified in the input parameters in a format suitable for Tecplot */
+  template<typename Quad_Soln_Block, typename Input_Parameters_Type>
+  static int AppendErrorNormsToTecplotOutputFile(Quad_Soln_Block *SolnBlk,
+						 const AdaptiveBlock2D_List &Soln_Block_List,
+						 const Input_Parameters_Type &IP,
+						 const int &Number_of_Time_Steps,
+						 const double &Time);
+
+  template<typename Input_Parameters_Type>
+  static void PrintTecplotTitle(const Input_Parameters_Type &IP,
+				const int &Number_of_Time_Steps,
+				const double &Time,
+				ostream & os);
 
   //! @name Access to the error data:
   //@{
@@ -309,6 +325,140 @@ int AccuracyAssessment2D_MultiBlock::AppendErrorNormsToOutputFile(Quad_Soln_Bloc
 
   /* Writing of output data files complete.  Return zero value. */
   return(0);
+
+}
+
+/*!
+ * Append the error norms to an output file which has the 
+ * base name specified in the input parameters, in a format
+ * suitable for plotting with Tecplot.
+ */
+template<typename Quad_Soln_Block, typename Input_Parameters_Type>
+int AccuracyAssessment2D_MultiBlock::AppendErrorNormsToTecplotOutputFile(Quad_Soln_Block *SolnBlk,
+									 const AdaptiveBlock2D_List &Soln_Block_List,
+									 const Input_Parameters_Type &IP,
+									 const int &Number_of_Time_Steps,
+									 const double &Time){
+
+  int i, i_output_title;
+  char prefix[256], extension[256], output_file_name[256];
+  ofstream output_file;    
+  int error_flag(0);
+
+  /* Determine prefix of output data file names. */
+
+  i = 0;
+  while (1) {
+    if (IP.Output_File_Name[i] == ' ' ||
+	IP.Output_File_Name[i] == '.') break;
+    prefix[i]=IP.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(IP.Output_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+
+  /* Determine output data file name. */
+  strcpy(extension, "_ErrorNorms.dat");
+  strcpy(output_file_name, prefix);
+  strcat(output_file_name, extension);
+
+  // Check if the file has been previously generated
+  if (System::Check_If_File_Exists(output_file_name) ){
+    // Don't write the header in case there is a restart run
+    Title_Error_Norms = false;
+  }
+
+  /* Open the output data file. */
+  output_file.open(output_file_name, ios::app);
+  if (output_file.fail()) return (1);
+
+  /* Print Tecplot title if required */
+  PrintTecplotTitle(IP,
+		    Number_of_Time_Steps,
+		    Time,
+		    output_file);
+
+  /* Assess solution errors */
+  error_flag = AssessSolutionAccuracy(SolnBlk,
+				      Soln_Block_List,
+				      IP);
+  if (error_flag){
+    return error_flag;
+  }
+
+  /* Print error measurements to the output data file. */
+  // Customize the output based on the method
+  switch(AccuracyAssessment_Execution_Mode::Method()){
+
+  case AccuracyAssessment_Execution_Mode::Based_On_Lift_And_Drag_Coefficients:
+    output_file << " " 
+		<< Time <<" "
+		<< Number_of_Time_Steps <<" "
+		<< getLift()  <<" " 
+		<< getDrag()  <<" " 
+		<< getLiftCoefficient()  <<" "
+		<< getDragCoefficient()  <<" "
+		<< getWettedSurface() << "\n";
+    break;
+    
+  default:
+    // output error norms to the os stream
+    output_file << " " 
+		<< TotalCells  <<" " 
+		<< L1()  <<" " 
+		<< L2()  <<" "
+		<< LMax()  <<"\n";
+  } // endswitch
+
+
+  /* Close the output data file. */
+  output_file.close();
+
+  /* Writing of output data files complete.  Return zero value. */
+  return(0);
+
+}
+
+/*!
+ * Print the Tecplot file header based on the error assessment method,
+ * to the provided stream.
+ */
+template<typename Input_Parameters_Type>
+void AccuracyAssessment2D_MultiBlock::PrintTecplotTitle(const Input_Parameters_Type &IP,
+							const int &Number_of_Time_Steps,
+							const double &Time,
+							ostream & os){
+
+  if (Title_Error_Norms){
+    
+    // Customize the header based on the method
+    switch(AccuracyAssessment_Execution_Mode::Method()){
+
+    case AccuracyAssessment_Execution_Mode::Based_On_Lift_And_Drag_Coefficients:
+      os << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Solver, Aerodynamic Measurements \"\n"
+	 << "VARIABLES = \"t\" \\ \n"
+	 << "\"Time Step\" \\ \n"
+	 << "\"Lift\" \\ \n"
+	 << "\"Drag\" \\ \n"
+	 << "\"Cl\" \\ \n"
+	 << "\"Cd\" \\ \n"
+	 << "\"WettedSurface\" \\ \n"
+	 << "ZONE \n";
+      break;
+
+    default:
+      os << "TITLE = \"" << CFFC_Name() << ": 2D NavierStokes Error Measurements \"\n"
+	 << "VARIABLES = \"Cells\" \\ \n"
+	 << "\"L1_Norm\" \\ \n"
+	 << "\"L2_Norm\" \\ \n"
+	 << "\"Max_Norm\" \\ \n"
+	 << "ZONE \n";
+    } // endswitch
+
+    // Mark the fact that title has been printed
+    Title_Error_Norms = false;
+      
+  } // endif
 
 }
 

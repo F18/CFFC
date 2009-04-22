@@ -105,7 +105,7 @@ namespace tut
     RunRegression = ON;
  
     // Set input file name
-    Open_Input_File("Ringleb.in");
+    this->Open_Input_File("Ringleb.in");
 
     // call solver
     Solve_Problem();

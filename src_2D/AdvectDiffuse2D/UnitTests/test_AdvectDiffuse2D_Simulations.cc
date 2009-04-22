@@ -108,7 +108,7 @@ namespace tut
     RunRegression = ON;
     
     // Set input file name
-    Open_Input_File("AdvectionDiffusionInRectangularChannel.in");
+    this->Open_Input_File("AdvectionDiffusionInRectangularChannel.in");
 
     // call solver
     Solve_Problem();
@@ -148,7 +148,7 @@ namespace tut
     RunRegression = ON;
     
     // Set input file name
-    Open_Input_File("StationaryHeatTransferWithLinearSource.in");
+    this->Open_Input_File("StationaryHeatTransferWithLinearSource.in");
 
     // call solver
     Solve_Problem();
@@ -215,7 +215,7 @@ namespace tut
     RunRegression = ON;
     
     // Set input file name
-    Open_Input_File("PeriodicWaveAdvection.in");
+    this->Open_Input_File("PeriodicWaveAdvection.in");
 
     // call solver
     Solve_Problem();
@@ -255,7 +255,7 @@ namespace tut
     RunRegression = ON;
     
     // Set input file name
-    Open_Input_File("CircularAdvectionInRectangularBox.in");
+    this->Open_Input_File("CircularAdvectionInRectangularBox.in");
 
     // call solver
     Solve_Problem();
@@ -296,7 +296,7 @@ namespace tut
     RunRegression = ON;
     
     // Set input file name
-    Open_Input_File("AdvectionDiffusionInRectangularChannel_ConstrainedBnds.in");
+    this->Open_Input_File("AdvectionDiffusionInRectangularChannel_ConstrainedBnds.in");
 
     // call solver
     Solve_Problem();
@@ -336,7 +336,7 @@ namespace tut
     RunRegression = ON;
     
     // Set input file name
-    Open_Input_File("AdvectionDiffusionInRectangularChannel_ConstrainedBnds_MemEfficient.in");
+    this->Open_Input_File("AdvectionDiffusionInRectangularChannel_ConstrainedBnds_MemEfficient.in");
 
     // call solver
     Solve_Problem();

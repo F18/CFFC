@@ -139,7 +139,7 @@ namespace tut
   {
     set_test_name("DerivativeObj-> Copy Constructor");
 
-    Deriv_Type DObj2(DObj);
+    Data_TaylorDerivatives2D::Deriv_Type DObj2(DObj);
 
     ensure_equals("Power1", DObj2.P1(), DObj.P1());
     ensure_equals("Power2", DObj2.P2(), DObj.P2());
@@ -153,7 +153,7 @@ namespace tut
   {
     set_test_name("DerivativeObj-> Assignment operator");
 
-    Deriv_Type DObj2;
+    Data_TaylorDerivatives2D::Deriv_Type DObj2;
     DObj2 = DObj;
 
     ensure_equals("Power1", DObj2.P1(), DObj.P1());
@@ -168,7 +168,7 @@ namespace tut
   {
     set_test_name("DerivativeObj-> operator ==");
 
-    Deriv_Type DObj2;
+    Data_TaylorDerivatives2D::Deriv_Type DObj2;
     DObj2 = DObj;
 
     ensure_equals("==", DObj2 == DObj, true);
@@ -181,7 +181,7 @@ namespace tut
   {
     set_test_name("DerivativeObj-> operator !=");
 
-    Deriv_Type DObj2(DObj);
+    Data_TaylorDerivatives2D::Deriv_Type DObj2(DObj);
     DObj2.P1() = 2;
     ensure_equals("1: !=", DObj2 != DObj, true);
 
@@ -199,7 +199,7 @@ namespace tut
   {
     set_test_name("DerivativeObj-> IsPowerEqualTo()");
 
-    Deriv_Type DObj2(DObj);
+    Data_TaylorDerivatives2D::Deriv_Type DObj2(DObj);
     ensure_equals("1: IsPowerEqualTo()", DObj2.IsPowerEqualTo(1,3), true);
 
     DObj2.P1() = 2;
@@ -227,7 +227,7 @@ namespace tut
   void object::test<8>()
   {
     set_test_name("DerivativeObj-> operator << & >>");
-    Deriv_Type DObj2(1,1,1.0); // this object is different than DObj!
+    Data_TaylorDerivatives2D::Deriv_Type DObj2(1,1,1.0); // this object is different than DObj!
 
     Check_Input_Output_Operator(DObj2);
   }
@@ -238,7 +238,7 @@ namespace tut
   void object::test<9>()
   {
     set_test_name("DerivativeObj-> Read_Derivative");
-    Deriv_Type DObj2;
+    Data_TaylorDerivatives2D::Deriv_Type DObj2;
 
     // open the output file
     Open_Output_File("DObj1");
@@ -283,7 +283,7 @@ namespace tut
   {
     set_test_name("TaylorDeriv-> Constructor(int)");
 
-    TD_Type TD3(3);
+    Data_TaylorDerivatives2D::TD_Type TD3(3);
     ensure_equals("size()", TD3.size(), 10);
     ensure_equals("Limiter()", TD3.Limiter(), 1.0);
     ensure_equals("RecOrder()", TD3.RecOrder(), 3);
@@ -318,7 +318,7 @@ namespace tut
 
     InitContainer(TD2);
     TD2.Limiter() = 0.232345;
-    TD_Type TD_Copy(TD2);
+    Data_TaylorDerivatives2D::TD_Type TD_Copy(TD2);
 
     ensure_equals("size()", TD_Copy.size(), TD2.size());
     ensure_equals("Limiter()", TD_Copy.Limiter(), TD2.Limiter());
@@ -339,7 +339,7 @@ namespace tut
 
     InitContainer(TD2);
     TD2.Limiter() = 0.232345;
-    TD_Type TD_Copy;
+    Data_TaylorDerivatives2D::TD_Type TD_Copy;
 
     // operator
     TD_Copy = TD2;
@@ -361,7 +361,7 @@ namespace tut
   void object::test<15>()
   {
     set_test_name("TaylorDeriv-> IndexOrder() ");
-    TD_Type TD3(3);
+    Data_TaylorDerivatives2D::TD_Type TD3(3);
 
     ensure_equals("pair (0,0)", TD3.IndexOrder(0,0), 0);
     ensure_equals("pair (0,1)", TD3.IndexOrder(0,1), 1);
@@ -398,7 +398,7 @@ namespace tut
   void object::test<17>()
   {
     set_test_name("TaylorDeriv-> operator == ");
-    TD_Type TD3(3);
+    Data_TaylorDerivatives2D::TD_Type TD3(3);
 
     // Initialize Container
     InitContainer(TD3);
@@ -416,7 +416,7 @@ namespace tut
   void object::test<18>()
   {
     set_test_name("TaylorDeriv-> operator != ");
-    TD_Type TD3(3);
+    Data_TaylorDerivatives2D::TD_Type TD3(3);
 
     // Assignment
     TD2 = TD3;
@@ -441,7 +441,7 @@ namespace tut
   {
     set_test_name("TaylorDeriv-> : Out->In->Compare ");
 
-    TD_Type TD3(3);
+    Data_TaylorDerivatives2D::TD_Type TD3(3);
     // Initialize Container
     InitContainer(TD3);
     Check_Input_Output_Operator(TD3);

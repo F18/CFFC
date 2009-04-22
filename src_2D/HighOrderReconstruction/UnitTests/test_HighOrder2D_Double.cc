@@ -3141,7 +3141,7 @@ namespace tut
 
 
     // === check gradient in the normal direction
-    Vector2D normal_dir(-0.5, - 0.5*sqrt(3));
+    Vector2D normal_dir(-0.5, - 0.5*sqrt(3.0));
     int parameter(1);
     double dRdn;
 

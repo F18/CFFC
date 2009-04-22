@@ -435,55 +435,60 @@ inline DenseMat_SVD::DenseMat_SVD(const DenseMat& A, double rthresh,
   double athresh)
     : DenseMat(A)
 {
-    assert (nrow == ncol);
 
-    int i, j;
-    double thresh;
-    double *u  = new double[nrow*ncol];
-    double *s  = new double[nrow];
-    double *vt = new double[nrow*ncol];
+  cout<< "\n NO DenseMat_SVD due to no dgesvd from LAPACK "; exit(1);
 
-    char job = 'A';
-    integer N = nrow;
-    integer LWORK = 5*N;
-    double *work = new double[LWORK];
-    integer INFO;
+  // ESSL does have dgesvf though 
 
-    F77NAME(dgesvd) (&job, &job, &N, &N, a, &N, s, u, &N, vt, &N,
-	work, &LWORK, &INFO);
-    if (INFO != 0)
-	bperror("DenseMat_SVD: dgesvd error", INFO);
+//     assert (nrow == ncol);
 
-    delete [] work;
+//     int i, j;
+//     double thresh;
+//     double *u  = new double[nrow*ncol];
+//     double *s  = new double[nrow];
+//     double *vt = new double[nrow*ncol];
 
-    // apply threshold
-    thresh = s[0]*rthresh + athresh;
-    for (i=0; i<nrow; i++)
-	if (s[i] < thresh)
-	    s[i] = thresh;
+//     char job = 'A';
+//     integer N = nrow;
+//     integer LWORK = 5*N;
+//     double *work = new double[LWORK];
+//     integer INFO;
 
-    if (s[0] == 0.0)
-	bperror("DenseMat_SVD: block is zero after thresholding", 0);
+//     F77NAME(dgesvd) (&job, &job, &N, &N, a, &N, s, u, &N, vt, &N,
+// 	work, &LWORK, &INFO);
+//     if (INFO != 0)
+// 	bperror("DenseMat_SVD: dgesvd error", INFO);
 
-    // scale the columns of u with reciprocal singular values
-    double *p = u;
-    for (i=0; i<ncol; i++)
-    {
-	double scal = s[i];
-	for (j=0; j<nrow; j++)
-	    *p++ /= scal;
-    }
+//     delete [] work;
 
-    // multiply through and store the result
-    char trans = 'T';
-    double alpha = 1.0;
-    double beta = 0.0;
-    F77NAME(dgemm)(&trans, &trans, &N, &N, &N, &alpha, vt, &N,
-        u, &N, &beta, a, &N);
+//     // apply threshold
+//     thresh = s[0]*rthresh + athresh;
+//     for (i=0; i<nrow; i++)
+// 	if (s[i] < thresh)
+// 	    s[i] = thresh;
 
-    delete [] u;
-    delete [] s;
-    delete [] vt;
+//     if (s[0] == 0.0)
+// 	bperror("DenseMat_SVD: block is zero after thresholding", 0);
+
+//     // scale the columns of u with reciprocal singular values
+//     double *p = u;
+//     for (i=0; i<ncol; i++)
+//     {
+// 	double scal = s[i];
+// 	for (j=0; j<nrow; j++)
+// 	    *p++ /= scal;
+//     }
+
+//     // multiply through and store the result
+//     char trans = 'T';
+//     double alpha = 1.0;
+//     double beta = 0.0;
+//     F77NAME(dgemm)(&trans, &trans, &N, &N, &N, &alpha, vt, &N,
+//         u, &N, &beta, a, &N);
+
+//     delete [] u;
+//     delete [] s;
+//     delete [] vt;
 }
 
 inline DenseMat_DIAGDOM::DenseMat_DIAGDOM(const DenseMat& A, double alpha)

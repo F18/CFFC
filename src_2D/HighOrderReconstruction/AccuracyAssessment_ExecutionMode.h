@@ -37,6 +37,7 @@ public:
   static const short& Method(void) {return Accuracy_Assessment_Method; }
   static const unsigned int & Exact_Digits(void) {return Accuracy_Assessment_Exact_Digits; }
   static const unsigned int & Assessment_Parameter(void) {return Accuracy_Assessment_Parameter; }
+  static const unsigned int & Assessment_Frequency(void) {return Accuracy_Assessment_Frequency; }
   //@}
 
   template<class Input_Parameters_Type>
@@ -54,6 +55,7 @@ protected:
   static short Accuracy_Assessment_Method;
   static unsigned int Accuracy_Assessment_Exact_Digits;
   static unsigned int Accuracy_Assessment_Parameter;
+  static unsigned int Accuracy_Assessment_Frequency; //!< The frequency for assessing errors in time-dependent problems
 };
 
 //! Parse the input control parameters for 
@@ -95,6 +97,13 @@ void AccuracyAssessment_Execution_Mode::Parse_Next_Input_Control_Parameter(Input
     ++IP.Line_Number;
     IP.Input_File >> Accuracy_Assessment_Parameter;
     IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Accuracy_Assessment_Frequency") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> Accuracy_Assessment_Frequency;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if (Accuracy_Assessment_Frequency < 0) i_command = INVALID_INPUT_VALUE;
 
   } else {
     i_command = INVALID_INPUT_CODE;

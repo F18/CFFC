@@ -2186,6 +2186,9 @@ inline double NavierStokes2D_pState::beta_k(const NavierStokes2D_pState &dWdx,
     xi = THREE/TWO;
     return B*( ONE + xi*F_Wilcox() );
   }
+
+  // It shouldn't get to this point!
+  return 0;
 }
 
 /**********************************************************************
@@ -2213,6 +2216,9 @@ inline double NavierStokes2D_pState::beta_omega(const NavierStokes2D_pState &dWd
     double xi = THREE/TWO;
     return B1 - B2*xi*F_Wilcox();
   }
+
+  // It shouldn't get to this point!
+  return 0;
 }
 
 /**********************************************************************
@@ -3196,6 +3202,9 @@ inline double NavierStokes2D_cState::beta_k(const NavierStokes2D_pState &dWdx,
     xi = THREE/TWO;
     return B * ( ONE + xi*F_Wilcox() );
   }
+
+  // It shouldn't get to this point!
+  return 0;
 }
 
 /**********************************************************************
@@ -3224,6 +3233,9 @@ inline double NavierStokes2D_cState::beta_omega(const NavierStokes2D_pState &dWd
     double xi = THREE/TWO;
     return B1 - B2*xi*F_Wilcox();
   }
+
+  // It shouldn't get to this point!
+  return 0;
 }
 
 /**********************************************************************

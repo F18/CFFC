@@ -8,7 +8,7 @@
 
 #define name2(a,b) a ## b
 
-#ifdef CRAY
+#ifdef UNIX_NAMES
 #define F77NAME(x) x
 #else
 #define F77NAME(x) name2(x,_)

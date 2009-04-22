@@ -68,7 +68,7 @@ inline RandomGen::RandomGen(Ullong seed):
  * Generator for exponential deviates (Numerical Recipes Third Ed. (pp. 362) )
  * 
  */
-class Expondev : RandomGen {
+class Expondev : public RandomGen {
 
 public:
 

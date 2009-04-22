@@ -131,7 +131,7 @@ public:
   void Zero_Non_Multigrid_State_Variables(void){};
 
   //! Check for unphysical state properties.
-  int Unphysical_Properties(void) const{};
+  int Unphysical_Properties(void) const{ return 0; }
   //@}
 
   //! @name Compute upwind state

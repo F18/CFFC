@@ -79,8 +79,13 @@ class DerivativeObj<OneD,T>{
 
  /* Overloaded operators */
  // Assignment operator
- DerivativeObj& operator=(const DerivativeObj<OneD,T>& right);
- 
+ DerivativeObj& operator= (const DerivativeObj<OneD,T>& rhs) {
+   if(this == &rhs) return *this;
+   Power = rhs.Power;
+   ValueD = rhs.ValueD;
+   return *this;
+ }
+
  // Friend functions & operators
  friend bool operator== <OneD,T> (const DerivativeObj<OneD,T>& left,
 				  const DerivativeObj<OneD,T>& right);
@@ -92,14 +97,6 @@ class DerivativeObj<OneD,T>{
 };
 
 // CLASS DerivativeObj
-// Assignment operator
-template< class T>
-inline DerivativeObj<OneD,T> & DerivativeObj<OneD,T>::operator=(const DerivativeObj<OneD,T>& rhs){
-  if(this == &rhs) return *this;
-  Power = rhs.Power;
-  ValueD = rhs.ValueD;
-  return *this;
-};
 
 // SetPowers()
 template< class T>
@@ -246,7 +243,28 @@ class TaylorDerivativesContainer<OneD,T>{
   friend std::istream & operator>> <OneD,T> (std::istream & os, TaylorDerivativesContainer<OneD,T>& Obj);
 
     // Assignment operator;
-  TaylorDerivativesContainer<OneD,T> & operator=(const TaylorDerivativesContainer<OneD,T> & rhs);
+  TaylorDerivativesContainer<OneD,T> & operator=(const TaylorDerivativesContainer<OneD,T> & rhs){
+
+  // !!! If the LHS container already has objects assigned, these are going to be deleted.
+  // Handle self-assignment:
+  if (this == & rhs) return *this;
+
+  // Check if there is memory allocated
+  free_memory();
+
+  // allocate memory
+  allocate(rhs.size());
+
+  // copy the value from the LHS
+  for (int i=0; i<=LastElem() ; ++i){
+    DContainer[i] = rhs.DContainer[i];
+  }
+
+  return *this;
+
+
+
+  }
 
 };
 
@@ -318,28 +336,28 @@ void TaylorDerivativesContainer<OneD,T>::free_memory() {
   }
 };
 
-/* Assignment operator = */
-template<class T> inline
-TaylorDerivativesContainer<OneD,T> & 
-TaylorDerivativesContainer<OneD,T>::operator=(const TaylorDerivativesContainer<OneD,T> & rhs){
+// /* Assignment operator = */
+// template<class T> inline
+// TaylorDerivativesContainer<OneD,T> & 
+// TaylorDerivativesContainer<OneD,T>::operator=(const TaylorDerivativesContainer<OneD,T> & rhs){
 
-  // !!! If the LHS container already has objects assigned, these are going to be deleted.
-  // Handle self-assignment:
-  if (this == & rhs) return *this;
+//   // !!! If the LHS container already has objects assigned, these are going to be deleted.
+//   // Handle self-assignment:
+//   if (this == & rhs) return *this;
 
-  // Check if there is memory allocated
-  free_memory();
+//   // Check if there is memory allocated
+//   free_memory();
 
-  // allocate memory
-  allocate(rhs.size());
+//   // allocate memory
+//   allocate(rhs.size());
 
-  // copy the value from the LHS
-  for (int i=0; i<=LastElem() ; ++i){
-    DContainer[i] = rhs.DContainer[i];
-  }
+//   // copy the value from the LHS
+//   for (int i=0; i<=LastElem() ; ++i){
+//     DContainer[i] = rhs.DContainer[i];
+//   }
 
-  return *this;
-};
+//   return *this;
+// };
 
 /* Access data */
 // operator(unsigned) -> returns the derivative for which p1_ = p1

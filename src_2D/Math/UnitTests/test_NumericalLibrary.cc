@@ -2244,36 +2244,35 @@ namespace tut
     double AcceptError;	        // Acceptable error
     double MapleResult;		// Result obtained with Maple
     double DummyParam;
-
-
-    class TestClass{
-    private:
-      TestClass();
-      double val;
-
-    public:
-      typedef double (TestClass::*MemberFunctionType1D)(const double &);
-      typedef double (TestClass::*MemberFunctionType2D)(const double &, const double &);
-      typedef double (TestClass::*MemberFunctionType3D)(const double &, const double &, const double &);
-
-      TestClass(double _val_): val(_val_){}
-
-      // member functions
-      double SolutionAtCoordinate(const double &coord){return val*coord;}
-      double SquareSolutionAtCoordinate(const double &coord){return val*val*coord*coord;}
-
-      double SolutionAtCoordinate(const double &coord, const double & coord2){return val*coord*coord2;}
-      double SquareSolutionAtCoordinate(const double &coord, const double &coord2){return val*val*coord2*coord2;}
-      
-      double SolutionAtCoordinate(const double &coord, const double &coord2, const double &coord3){
-	return val*coord*coord2*coord3;
-      }
-      double SquareSolutionAtCoordinate(const double &coord, const double &coord2, const double &coord3){
-	return val*val*coord2*coord2*coord3*coord3;
-      }
-    };
-
   };
+
+  class TestClass{
+  private:
+    TestClass();
+    double val;
+
+  public:
+    typedef double (TestClass::*MemberFunctionType1D)(const double &);
+    typedef double (TestClass::*MemberFunctionType2D)(const double &, const double &);
+    typedef double (TestClass::*MemberFunctionType3D)(const double &, const double &, const double &);
+
+    TestClass(double _val_): val(_val_){}
+
+    // member functions
+    double SolutionAtCoordinate(const double &coord){return val*coord;}
+    double SquareSolutionAtCoordinate(const double &coord){return val*val*coord*coord;}
+
+    double SolutionAtCoordinate(const double &coord, const double & coord2){return val*coord*coord2;}
+    double SquareSolutionAtCoordinate(const double &coord, const double &coord2){return val*val*coord2*coord2;}
+      
+    double SolutionAtCoordinate(const double &coord, const double &coord2, const double &coord3){
+      return val*coord*coord2*coord3;
+    }
+    double SquareSolutionAtCoordinate(const double &coord, const double &coord2, const double &coord3){
+      return val*val*coord2*coord2*coord3*coord3;
+    }
+  };
+
 
   typedef test_group<Data_ErrorSubroutines> ErrorSubroutines_TestSuite;
   typedef ErrorSubroutines_TestSuite::object  ErrorSub_Object;

@@ -216,7 +216,7 @@ namespace tut
   void object::test<11>()
   {
     set_test_name("Check_Input_Output_Operator()");
-    __LocalTest__ MyData;
+    TestData::__LocalTest__ MyData;
 
     MyData.x = 10; MyData.y = 1.3433e-29; MyData.z = 32.03232e5;
     Check_Input_Output_Operator("first check", MyData);
