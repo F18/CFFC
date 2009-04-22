@@ -72,6 +72,9 @@ public:
     template <typename Filter_Variable_Type>
     void filter(Filter_Variable_Type filter_variable, int extra_specification);
     
+    template <typename Filter_Variable_Type>
+    void filter(Filter_Variable_Type filter_variable, int extra_specification_1, int extra_specification_2);
+    
     void filter_Blocks(void);
 
     RowVector ***Filtered;
@@ -263,6 +266,19 @@ void Explicit_Filters<Soln_pState,Soln_cState>::filter(Filter_Variable_Type filt
     filter_Blocks();
 }
 
+template <typename Soln_pState, typename Soln_cState>
+template <typename Filter_Variable_Type>
+void Explicit_Filters<Soln_pState,Soln_cState>::filter(Filter_Variable_Type filter_variable, int extra_specification_1, int extra_specification_2) {
+    if (!initialized) {
+        cout << "Explicit_Filter not initialized, can not filter" << endl;
+        return;
+    }
+    // Let an adaptor deal with what will be filtered
+    adaptor.Set_Adaptor(filter_variable,extra_specification_1,extra_specification_2);
+    filter_Blocks();
+}
+
+
 template<typename Soln_pState, typename Soln_cState>
 void Explicit_Filters<Soln_pState,Soln_cState>::filter_Blocks(void) {
     if (!initialized) {
@@ -282,8 +298,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::filter_Blocks(void) {
     for(int i=SolnBlk_ptr->ICl; i<=SolnBlk_ptr->ICu; i++) {
         for (int j=SolnBlk_ptr->JCl; j<=SolnBlk_ptr->JCu; j++) {
             for (int k=SolnBlk_ptr->KCl; k<=SolnBlk_ptr->KCu; k++) {
-                Filtered[i][j][k] = filter_ptr->filter(*this,SolnBlk_ptr->Grid,
-                                                       SolnBlk_ptr->Grid.Cell[i][j][k]);
+                filter_ptr->filter(Filtered[i][j][k], *this, SolnBlk_ptr->Grid, SolnBlk_ptr->Grid.Cell[i][j][k]);
                 number_of_processed_cells++;
                 ShowProgress(" Filtering  ", number_of_processed_cells, number_of_cells, progress_mode);
             }
@@ -1104,50 +1119,58 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Deallocate_Derivative_Reconstruc
 
 template <typename Soln_pState, typename Soln_cState>
 void Explicit_Filters<Soln_pState,Soln_cState>::ShowProgress(std::string message, int numIn, int maximum, int mode) {
-    if (properties.Get_Property<int>("batch_flag"))
-        mode = PROGRESS_MODE_SILENT;
+
     int first_index = 1;
     int last_index = maximum;
     int percent = int(100*numIn/double(last_index));
-    if (mode == PROGRESS_MODE_TERMINAL) {
-        char barspin[16] = {'\\','\\','\\','\\',
-            '|', '|','|','|',
-            '/','/', '/', '/',
-        '-','-','-','-'};
-        
-        int whichOne;
-        
-        whichOne = numIn % 16;
-        
-        std::cout << '\r'
-        << message << setw(3)  <<  percent << " %"
-        << "  " << barspin[whichOne] << " ";
-        std::cout.flush();
-        if (percent == 100) {
+    switch (mode) {
+        case PROGRESS_MODE_SILENT :
+            break;
+        case PROGRESS_MODE_TERMINAL : 
+        {
+            char barspin[16] = {'\\','\\','\\','\\',
+                '|', '|','|','|',
+                '/','/', '/', '/',
+            '-','-','-','-'};
+            
+            int whichOne;
+            
+            whichOne = numIn % 16;
+            
             std::cout << '\r'
-            << message << setw(3)  <<  percent << " %      " << std::endl;
-        }
-        
-    } else if (mode == PROGRESS_MODE_FILE) {
-        if (numIn == first_index) {
-            std::cout << message << endl;
-        }
-        int previous_percent = int(100*(numIn-1)/double(last_index));
-        if (percent != previous_percent || numIn == first_index) {
-            std::cout << " " << percent << "%";
+            << message << setw(3)  <<  percent << " %"
+            << "  " << barspin[whichOne] << " ";
             std::cout.flush();
+            if (percent == 100) {
+                std::cout << '\r'
+                << message << setw(3)  <<  percent << " %      " << std::endl;
+            }  
+            break;
         }
-        if (percent == 100) {
-            std::cout << std::endl;
+        case PROGRESS_MODE_FILE : 
+        {
+            if (numIn == first_index) {
+                std::cout << message << endl;
+            }
+            int previous_percent = int(100*(numIn-1)/double(last_index));
+            if (percent != previous_percent || numIn == first_index) {
+                std::cout << " " << percent << "%";
+                std::cout.flush();
+            }
+            if (percent == 100) {
+                std::cout << std::endl;
+            }
+            break;
         }
-        
-    } else if (mode == PROGRESS_MODE_MESSAGE) {
-        // no progress, just message
-        if (numIn == first_index) {
-            std::cout << message << endl;
+        case PROGRESS_MODE_MESSAGE :
+        {
+            // no progress, just message
+            if (numIn == first_index) {
+                std::cout << message << endl;
+            }
         }
-    } else {
-        // nothing
+        default :
+            break;
     }
     return;
 }

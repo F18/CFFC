@@ -97,8 +97,6 @@ public:
     using Discrete_Filter<Soln_pState,Soln_cState>::FGR;
     using Discrete_Filter<Soln_pState,Soln_cState>::debug_flag;
     using Discrete_Filter<Soln_pState,Soln_cState>::batch_flag;
-    using Discrete_Filter<Soln_pState,Soln_cState>::Neighbouring_Values;
-    using Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values;
     using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments;
     using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments_1D;
     using Discrete_Filter<Soln_pState,Soln_cState>::G_cutoff;

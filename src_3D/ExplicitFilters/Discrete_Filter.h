@@ -70,10 +70,8 @@ public:
     int use_fixed_filter_width;
     double fixed_filter_width;
 
-    DenseMatrix Neighbouring_Values;
-    void Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, Neighbours &theNeighbours);
-    void Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, std::vector<Cell3D*> &stencil);
-
+    void Multiply_Weights_With_Values(RowVector& Result, RowVector& Weights, std::vector<Cell3D*> &stencil);
+    void filter(RowVector& Result, Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
     RowVector filter(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
     RowVector filter_1D(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter,Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction);
 
@@ -266,7 +264,7 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Explicit_Filters<Soln
         explicit_filter.Allocate_Filter_Weights();
     }
      
-
+    RowVector Result;
     if (Store_Filter_Weights) {
         int I(theCell.I);
         int J(theCell.J);
@@ -278,12 +276,36 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Explicit_Filters<Soln
             explicit_filter.Filter_Stencil[I][J][K] = theNeighbours.neighbour;
             explicit_filter.Filter_Weights_Assigned[I][J][K] = true;
         }
-        Set_Neighbouring_Values(Neighbouring_Values,explicit_filter.Filter_Stencil[I][J][K]);
-        return (explicit_filter.Filter_Weights[I][J][K]*Neighbouring_Values);
+        Multiply_Weights_With_Values(Result, explicit_filter.Filter_Weights[I][J][K],explicit_filter.Filter_Stencil[I][J][K]);
     } else {
         RowVector W = Get_Weights(theCell,theNeighbours);
-        Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
-        return (W*Neighbouring_Values);
+        Multiply_Weights_With_Values(Result, W, theNeighbours.neighbour);
+    }
+    return Result;
+}
+
+template <typename Soln_pState, typename Soln_cState>
+void Discrete_Filter<Soln_pState,Soln_cState>::filter(RowVector& Result, Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
+    
+    if (!explicit_filter.Filter_Weights_Allocated && Store_Filter_Weights) {
+        explicit_filter.Allocate_Filter_Weights();
+    }
+    
+    if (Store_Filter_Weights) {
+        int I(theCell.I);
+        int J(theCell.J);
+        int K(theCell.K);
+        if (!explicit_filter.Filter_Weights_Assigned[I][J][K]) {
+            theNeighbours.set_grid(Grid_Blk);
+            Get_Neighbours(theCell);
+            explicit_filter.Filter_Weights[I][J][K] = Get_Weights(theCell,theNeighbours);
+            explicit_filter.Filter_Stencil[I][J][K] = theNeighbours.neighbour;
+            explicit_filter.Filter_Weights_Assigned[I][J][K] = true;
+        }
+        Multiply_Weights_With_Values(Result, explicit_filter.Filter_Weights[I][J][K],explicit_filter.Filter_Stencil[I][J][K]);
+    } else {
+        RowVector W = Get_Weights(theCell,theNeighbours);
+        Multiply_Weights_With_Values(Result, W, theNeighbours.neighbour);
     }
     
 }
@@ -297,11 +319,10 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter_1D(Explicit_Filters<S
         explicit_filter.Filter_Weights_Allocated = true;
     }
     
-    
     theNeighbours.set_grid(Grid_Blk);
     Get_Neighbours_1D(theCell, direction);
     
-    
+    RowVector Result;
     
     if (Store_Filter_Weights) {
         int I(theCell.I);
@@ -311,24 +332,18 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter_1D(Explicit_Filters<S
             explicit_filter.Filter_Weights[I][J][K] = Get_Weights_1D(theCell,theNeighbours,direction);
             explicit_filter.Filter_Weights_Assigned[I][J][K] = true;
         }
-        Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
-        return (explicit_filter.Filter_Weights[I][J][K]*Neighbouring_Values);
+        Multiply_Weights_With_Values(Result, explicit_filter.Filter_Weights[I][J][K],explicit_filter.Filter_Stencil[I][J][K]);
     } else {
         RowVector W = Get_Weights_1D(theCell,theNeighbours,direction);
-        Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
-        return (W*Neighbouring_Values);
+        Multiply_Weights_With_Values(Result, W, theNeighbours.neighbour);
     }
-
+    return Result;
 }
 
-template <typename Soln_pState, typename Soln_cState>
-void Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, Neighbours &theNeighbours) {
-    Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrix(Neighbouring_Values, theNeighbours);
-}
 
 template <typename Soln_pState, typename Soln_cState>
-void Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, std::vector<Cell3D*> &stencil) {
-    Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrix(Neighbouring_Values, stencil);
+void Discrete_Filter<Soln_pState,Soln_cState>::Multiply_Weights_With_Values(RowVector& Result, RowVector& Weights, std::vector<Cell3D*> &stencil) {
+    Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::Multiply_Weights_With_Values(Result, Weights, stencil);
 }
 
 

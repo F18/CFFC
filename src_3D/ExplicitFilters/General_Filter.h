@@ -21,7 +21,8 @@ template <typename Soln_pState, typename Soln_cState> class Explicit_Filters;
 template <typename Soln_pState, typename Soln_cState>
 class General_Filter {
 public:
-    virtual RowVector filter(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) =0;
+    virtual void filter(RowVector& Result, Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) = 0;
+    virtual RowVector filter(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) = 0;
     virtual RowVector filter_1D(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction) = 0;
     virtual void transfer_function(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) = 0;
     virtual void filter_tests(Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) = 0;
