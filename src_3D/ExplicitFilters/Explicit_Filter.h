@@ -63,9 +63,7 @@ public:
     void transfer_function();
     void transfer_function(int flag);
     void transfer_function(int i, int j, int k);
-    
-    void ShowProgress(std::string message, int numIn, int maximum, int mode);
-    
+        
     template <typename Filter_Variable_Type>
     void filter(Filter_Variable_Type filter_variable);
     
@@ -1114,66 +1112,5 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Deallocate_Derivative_Reconstruc
     }
     Derivative_Reconstruction_Weights_Allocated = false;
 }
-
-
-
-template <typename Soln_pState, typename Soln_cState>
-void Explicit_Filters<Soln_pState,Soln_cState>::ShowProgress(std::string message, int numIn, int maximum, int mode) {
-
-    int first_index = 1;
-    int last_index = maximum;
-    int percent = int(100*numIn/double(last_index));
-    switch (mode) {
-        case PROGRESS_MODE_SILENT :
-            break;
-        case PROGRESS_MODE_TERMINAL : 
-        {
-            char barspin[16] = {'\\','\\','\\','\\',
-                '|', '|','|','|',
-                '/','/', '/', '/',
-            '-','-','-','-'};
-            
-            int whichOne;
-            
-            whichOne = numIn % 16;
-            
-            std::cout << '\r'
-            << message << setw(3)  <<  percent << " %"
-            << "  " << barspin[whichOne] << " ";
-            std::cout.flush();
-            if (percent == 100) {
-                std::cout << '\r'
-                << message << setw(3)  <<  percent << " %      " << std::endl;
-            }  
-            break;
-        }
-        case PROGRESS_MODE_FILE : 
-        {
-            if (numIn == first_index) {
-                std::cout << message << endl;
-            }
-            int previous_percent = int(100*(numIn-1)/double(last_index));
-            if (percent != previous_percent || numIn == first_index) {
-                std::cout << " " << percent << "%";
-                std::cout.flush();
-            }
-            if (percent == 100) {
-                std::cout << std::endl;
-            }
-            break;
-        }
-        case PROGRESS_MODE_MESSAGE :
-        {
-            // no progress, just message
-            if (numIn == first_index) {
-                std::cout << message << endl;
-            }
-        }
-        default :
-            break;
-    }
-    return;
-}
-
 
 #endif
