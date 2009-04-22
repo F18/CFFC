@@ -141,6 +141,7 @@ template<class SOLN_STATE> inline
 void HighOrder<SOLN_STATE>::ComputeReconstructionPseudoInverse(void){
 
   int i,j,k;
+  int StencilSize(i_index.size());
 
   // == Check if the pseudo-inverse has been allocated and it hasn't been precomputed
   if ( IsPseudoInverseAllocated() && !IsPseudoInversePreComputed() ){
@@ -162,21 +163,56 @@ void HighOrder<SOLN_STATE>::ComputeReconstructionPseudoInverse(void){
     // Check whether constrained reconstruction is required anywhere in the block.
     //    if ( !_constrained_block_reconstruction ){
 
-      // Calculate the pseudo-inverse using the central stencil for cells in the specified range
-    for ( k  = StartK ; k <= EndK ; ++k ) {
-      for ( j  = StartJ ; j <= EndJ ; ++j ) {
-	for ( i = StartI ; i <= EndI ; ++i ) {
-	
-	  // Set the stencil of points used for reconstruction
-	  SetReconstructionStencil(i, j, k, i_index, j_index, k_index);
+      
+    /* If the grid is uniform then the A matrix and the geometric
+     * weights are identical for all cells.  In this case, we compute
+     * the psuedo_inverse and geometric wieghts for one cell only and
+     * then copy those values it to all remaining cells.
+     *///--------------------------------------------------------------------
+    if(Grid3D_HO_Execution_Mode::UNIFORM_GRID){
 
-	  // Compute the pseudo-inverse for the current cell
-	  ComputeCellReconstructionPseudoInverse(i, j, k, i_index, j_index, k_index);
+      // For ONE cell only, calculate the Pseudo Inverse and geometric weights
+      SetReconstructionStencil(StartI, StartJ, StartK, i_index, j_index, k_index);
+      ComputeCellReconstructionPseudoInverse(StartI, StartJ, StartK, i_index, j_index, k_index);
+
+      // COPY the the pseudo-inverse and geometric weights to all remaining cells
+      for ( k  = StartK ; k <= EndK ; ++k ) {
+	for ( j  = StartJ ; j <= EndJ ; ++j ) {
+	  for ( i = StartI ; i <= EndI ; ++i ) {
+
+	      SetReconstructionStencil(i, j, k, i_index, j_index, k_index);
+	    
+	      // Note: The matrix inversion process has reversed the originally allocated matrix 
+	      //       dimensions. So here we must re-set the matrix dimensions manually (before copying).
+	      CENO_LHS[i][j][k].newsize(NumberOfTaylorDerivatives() - 1,StencilSize - 1);
+	      CENO_LHS[i][j][k] = CENO_LHS[StartI][StartJ][StartK];
+	      GeomWeights(i,j,k) = GeomWeights(StartI, StartJ, StartK);
+
+	  }/* endfor i */
+	}/* endfor j */
+      }/* endfor k */
+
+      // Calculate the psuedo-inverse and geomtric weights for every cell sepereately.
+      } else{
+
+      
+      // Calculate the pseudo-inverse using the central stencil for all cells in the specified range
+      for ( k  = StartK ; k <= EndK ; ++k ) {
+	for ( j  = StartJ ; j <= EndJ ; ++j ) {
+	  for ( i = StartI ; i <= EndI ; ++i ) {
+	    
+	    // Set the stencil of points used for reconstruction
+	    SetReconstructionStencil(i, j, k, i_index, j_index, k_index);
+	    // Compute the pseudo-inverse for the current cell
+	    ComputeCellReconstructionPseudoInverse(i, j, k, i_index, j_index, k_index);
+
+	  }/* endfor */
 	}/* endfor */
       }/* endfor */
-    }/* endfor */
 
-//    } else {
+    } /* endif (UNIFORM_GRID) */
+
+      //    } else {
 //
 //
 //      // --> RR: comment out constrained pseudo inverse stuff
@@ -582,7 +618,7 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 						    const IndexType & i_index,
 						    const IndexType & j_index,
 						    const IndexType & k_index){
-
+  
   // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
 
   int StencilSize(i_index.size()); 
@@ -607,6 +643,7 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
     if ( Delta_U.size() != (StencilSize - 1) ){
       Delta_U.newsize(StencilSize - 1);
     }
+      
 
     // START: Compute for every parameter the high-order approximation
     // ***************************************************************
@@ -621,8 +658,8 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 
 	// Apply the precomputed geometric weight to the Delta_U term
 	Delta_U(cell-1) *= GeomWeightValue(iCell,jCell,kCell,cell);
-      } 
-     
+      }
+      
       // Step 2. Find the solution of the linear-system for the current parameter
       X = Cell_LHS_Inv(iCell,jCell,kCell) * Delta_U;
       
