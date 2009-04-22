@@ -527,65 +527,65 @@ $(EXE_MAIN): $(OBJ_MAIN) $(OBJ_CFFC)
 	@echo ' '
 
 $(EXE_EULER_POLYTROPIC): $(OBJ_EULER_POLYTROPIC_EXE) $(OBJ_BASE) $(OBJ_EULER_POLYTROPIC) \
-                         $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+                         $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS)
 	@echo ' '
 	@echo Building program $(EXE_EULER_POLYTROPIC) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'
 	@echo ' '
 	$(LD) -o $(EXE_EULER_POLYTROPIC) $(OBJ_EULER_POLYTROPIC_EXE) $(OBJ_BASE) $(OBJ_EULER_POLYTROPIC) \
-                 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
+                 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_EULER_POLYTROPIC) has been brought up to date.
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
 $(EXE_EULER_THERMPERFECT): $(OBJ_EULER_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_EULER_THERMPERFECT) \
-                           $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+                           $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS)
 	@echo ' '
 	@echo Building program $(EXE_EULER_THERMPERFECT) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'
 	@echo ' '
 	$(LD) -o $(EXE_EULER_THERMPERFECT) $(OBJ_EULER_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_EULER_THERMPERFECT) \
-                 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
+                 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_EULER_THERMPERFECT) has been brought up to date.
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
 $(EXE_NAVIERSTOKES_POLYTROPIC): $(OBJ_NAVIERSTOKES_POLYTROPIC_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES_POLYTROPIC) \
-                                  $(OBJ_EULER_POLYTROPIC) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+                                  $(OBJ_EULER_POLYTROPIC) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS)
 	@echo ' '
 	@echo Building program $(EXE_NAVIERSTOKES_POLYTROPIC) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'
 	@echo ' '
 	$(LD) -o $(EXE_NAVIERSTOKES_POLYTROPIC) $(OBJ_NAVIERSTOKES_POLYTROPIC_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES_POLYTROPIC) \
-                 $(OBJ_EULER_POLYTROPIC) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
+                 $(OBJ_EULER_POLYTROPIC) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_NAVIERSTOKES_POLYTROPIC) has been brought up to date.
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
 $(EXE_NAVIERSTOKES_THERMPERFECT): $(OBJ_NAVIERSTOKES_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES_THERMPERFECT) \
-                                  $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+                                  $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS)
 	@echo ' '
 	@echo Building program $(EXE_NAVIERSTOKES_THERMPERFECT) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'
 	@echo ' '
 	$(LD) -o $(EXE_NAVIERSTOKES_THERMPERFECT) $(OBJ_NAVIERSTOKES_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES_THERMPERFECT) \
-                 $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
+                 $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_NAVIERSTOKES_THERMPERFECT) has been brought up to date.
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
 $(EXE_FANS_THERMPERFECT): $(OBJ_FANS_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_FANS_THERMPERFECT) $(OBJ_NAVIERSTOKES_THERMPERFECT) \
-                          $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+                          $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS)
 	@echo ' '
 	@echo Building program $(EXE_FANS_THERMPERFECT) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'
 	@echo ' '
 	$(LD) -o $(EXE_FANS_THERMPERFECT) $(OBJ_FANS_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_FANS_THERMPERFECT) $(OBJ_NAVIERSTOKES_THERMPERFECT) \
-                 $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
+                 $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_FANS_THERMPERFECT) has been brought up to date.
 	@echo '---------------------------------------------------------'
@@ -605,26 +605,26 @@ $(EXE_LES_POLYTROPIC): $(OBJ_LES_POLYTROPIC_EXE) $(OBJ_BASE) $(OBJ_LES_POLYTROPI
 	@echo ' '
 
 $(EXE_LESFSD): $(OBJ_LESFSD_EXE) $(OBJ_BASE) $(OBJ_LESFSD) $(OBJ_NAVIERSTOKES_THERMPERFECT) $(OBJ_EULER_THERMPERFECT) \
-               $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+               $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS)
 	@echo ' '
 	@echo Building program $(EXE_LESFSD) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'
 	@echo ' '
 	$(LD) -o $(EXE_LESFSD) $(OBJ_LESFSD_EXE) $(OBJ_BASE) $(OBJ_LESFSD) $(OBJ_NAVIERSTOKES_THERMPERFECT) $(OBJ_EULER_THERMPERFECT) \
-                 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
+                 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_LESFSD) has been brought up to date.
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
 $(EXE_LESTF): $(OBJ_LESTF_EXE) $(OBJ_BASE) $(OBJ_LESTF) $(OBJ_NAVIERSTOKES_THERMPERFECT) $(OBJ_EULER_THERMPERFECT) \
-               $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+               $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS)
 	@echo ' '
 	@echo Building program $(EXE_LESTF) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'
 	@echo ' '
 	$(LD) -o $(EXE_LESTF) $(OBJ_LESTF_EXE) $(OBJ_BASE) $(OBJ_LESTF) $(OBJ_NAVIERSTOKES_THERMPERFECT) $(OBJ_EULER_THERMPERFECT) \
-                 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
+                 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_FILTERS) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_LESTF) has been brought up to date.
 	@echo '---------------------------------------------------------'
