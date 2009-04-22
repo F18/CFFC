@@ -11,7 +11,6 @@
 
 #include "Discrete_Filter.h"
 
-
 #define G_CONSTRAINT 0
 #define DG_CONSTRAINT 1
 #define LS_CONSTRAINT 2
@@ -98,8 +97,6 @@ public:
     using Discrete_Filter<Soln_pState,Soln_cState>::FGR;
     using Discrete_Filter<Soln_pState,Soln_cState>::debug_flag;
     using Discrete_Filter<Soln_pState,Soln_cState>::batch_flag;
-    using Discrete_Filter<Soln_pState,Soln_cState>::Neighbouring_Values;
-    using Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values;
     using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments;
     using Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments_1D;
     using Discrete_Filter<Soln_pState,Soln_cState>::G_cutoff;
@@ -141,10 +138,10 @@ public:
     void Read_Properties(void) {
         if (properties->Changed()) {
             Discrete_Filter<Soln_pState,Soln_cState>::Read_Basic_Properties();
-            properties->Get_Property(target_filter_sharpness,"target_filter_sharpness");
-            properties->Get_Property(LS_constraints,"LS_constraints");
-            properties->Get_Property(Derivative_constraints,"Derivative_constraints");
-            properties->Get_Property(Filter_Width_strict,"Filter_Width_strict");
+            properties->Get_Property("target_filter_sharpness",target_filter_sharpness);
+            properties->Get_Property("LS_constraints",LS_constraints);
+            properties->Get_Property("Derivative_constraints",Derivative_constraints);
+            properties->Get_Property("Filter_Width_strict",Filter_Width_strict);
             properties->Properties_Read();
             cout << endl;
             
@@ -355,7 +352,9 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D &t
         RowVector w_k = Calculate_Weights_1D(theCell,theNeighbours,Z_DIRECTION);
         
 #ifdef _GNUPLOT
-        if (properties->Get_Property_int("debug_flag")) {
+    int debug_flag;
+    properties->Get_Property("debug_flag",debug_flag);
+    if (debug_flag) {
             int n=200;
             double *Gr = new double [n];
             double *Gi = new double [n];
@@ -501,7 +500,9 @@ inline RowVector Vasilyev_Filter<Soln_pState,Soln_cState>::Get_Weights_1D(Cell3D
     RowVector w = Calculate_Weights_1D(theCell,theNeighbours,direction);
     
 #ifdef _GNUPLOT
-    if (properties->Get_Property_int("debug_flag")) {
+    int debug_flag;
+    properties->Get_Property("debug_flag",debug_flag);
+    if (debug_flag) {
         int n=200;
         double *Gr = new double [n];
         double *Gi = new double [n];

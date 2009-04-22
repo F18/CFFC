@@ -372,6 +372,13 @@ public:
                                           const double &deltad,
                                           const double &Volume, 
                                           const double &Volume_Neighbour);
+    
+    static LES3D_Polytropic_cState FluxViscous_HighOrder_n(LES3D_Polytropic_pState &W_face,
+                                                           const LES3D_Polytropic_pState &dWdx_face,
+                                                           const LES3D_Polytropic_pState &dWdy_face,
+                                                           const LES3D_Polytropic_pState &dWdz_face,
+                                                           const double &Volume,
+                                                           const Vector3D &norm);
                 
 //@}
 

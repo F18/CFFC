@@ -9,18 +9,12 @@
 #ifndef _EXPLICIT_FILTER_INCLUDED
 #define _EXPLICIT_FILTER_INCLUDED
 
-#include "../Grid/Grid3DHexaMultiBlock.h"
-#include "../CFD/Input.h"
+#include "Explicit_Filter_Constants.h"
 #include "Explicit_Filter_Helpers.h"
 #include "General_Filter.h"
 #include "Haselbacher_Filter.h"
 #include "Vasilyev_Filter.h"
-//#include "Derivative_Reconstruction.h"
-//#include "Tophat_Filter.h"
-//#include "Gaussian_Filter.h"
 #include "Finite_Difference.h"
-#include "Explicit_Filter_Constants.h"
-
 
 /* ------------------------------------------------------------------------------------------------------------------------------ */
 /**
@@ -37,7 +31,6 @@ public:
     
     Hexa_Block<Soln_pState,Soln_cState> *SolnBlk_ptr;
     Input_Parameters<Soln_pState,Soln_cState> *Input_ptr;
-    
     
     int initialized;
     
@@ -58,12 +51,8 @@ public:
             delete filter_ptr;
     }
 
-    void Initialize(int batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input);    
-    void Initialize_Secondary(int batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input);    
+    void Initialize(Explicit_Filter_Constants::Filter_Number filter_number, int& batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input);
 
-    
-    void Set_Properties(Input_Parameters<Soln_pState,Soln_cState> &IPs, int batch_flag);
-    
     template <typename T>
     void Set_Filter_Property(string property_name, T property_value);  
     
@@ -74,14 +63,15 @@ public:
     void transfer_function();
     void transfer_function(int flag);
     void transfer_function(int i, int j, int k);
-    
-    void ShowProgress(std::string message, int numIn, int maximum, int mode);
-    
+        
     template <typename Filter_Variable_Type>
     void filter(Filter_Variable_Type filter_variable);
     
     template <typename Filter_Variable_Type>
     void filter(Filter_Variable_Type filter_variable, int extra_specification);
+    
+    template <typename Filter_Variable_Type>
+    void filter(Filter_Variable_Type filter_variable, int extra_specification_1, int extra_specification_2);
     
     void filter_Blocks(void);
 
@@ -110,6 +100,7 @@ public:
     void Allocate_Filter_Weights(void);
     void Deallocate_Filter_Weights(void);
     
+    std::vector<Cell3D*> ***Filter_Stencil;
     DenseMatrix    ***Derivative_Reconstruction_Weights;  // Weights used in reconstructing derivatives (in LES_Filters.h)
     bool  ***Derivative_Reconstruction_Weights_Assigned;  // Stores if the Derivative_Reconstruction_Weights have been allocated
     bool    Derivative_Reconstruction_Weights_Allocated;    
@@ -147,43 +138,11 @@ public:
 
 
 template<typename Soln_pState,typename Soln_cState>
-void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(int batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input) {
+void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(Explicit_Filter_Constants::Filter_Number filter_number, int& batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input) {
     if (!initialized) {
         
-        Input_ptr = &Input;
-        
-        Set_Properties(Input, batch_flag);
-        
-        /*if (Solution_Data.Input.i_ICs == IC_RESTART && !properties.restarted)
-            properties.filter_type = Explicit_Filter_Constants::RESTART_FILTER; */
-        
-        Create_filter();
-        initialized = true;
-    }
-}
-
-template<typename Soln_pState,typename Soln_cState>
-void Explicit_Filters<Soln_pState,Soln_cState>::Initialize_Secondary(int batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input) {
-    if (!initialized) {
-        
-        Input_ptr = &Input;
-
-        Set_Properties(Input, batch_flag);
-        
-        /*if (Solution_Data.Input.i_ICs == IC_RESTART && !properties.restarted)
-         properties.filter_type = Explicit_Filter_Constants::RESTART_FILTER; */
-        
-        //properties.Set_Operating_Property("memory_efficient",ON);
-        string output_file_name;
-        properties.Get_Property(output_file_name,"output_file_name");
-        properties.Set_Operating_Property("output_file_name",output_file_name+string("_secondary_filter"));
-        properties.Set_Filter_Property("FGR",Input.Turbulence_IP.FGR_secondary);
-        if (properties.Get_Property_int("use_fixed_filter_width")) {
-            properties.Set_Filter_Property("fixed_filter_width",Input.Turbulence_IP.Filter_Width_secondary);
-        }
-        properties.Set_Operating_Property("progress_mode",Input.Progress_Mode);
-
-        properties.Set_Filter_Property("filter_type",Input.Turbulence_IP.i_filter_type_secondary);
+        Input_ptr = &Input;   
+        properties.Set_Properties(filter_number,Input,batch_flag);
         Create_filter();
         initialized = true;
     }
@@ -191,27 +150,29 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize_Secondary(int batch_f
 
 
 
-template<typename Soln_pState,typename Soln_cState>
-void Explicit_Filters<Soln_pState,Soln_cState>::Set_Properties(Input_Parameters<Soln_pState,Soln_cState> &Input, int batch_flag) {
-    properties.Set_Properties(Input,batch_flag);
-}
 
-template<typename Soln_pState,typename Soln_cState>
-template<typename T>
-void Explicit_Filters<Soln_pState,Soln_cState>::Set_Filter_Property(string property_name, T property_value){
-    properties.Set_Filter_Property(property_name,property_value);
-}
 
-template<typename Soln_pState,typename Soln_cState>
-template<typename T>
-void Explicit_Filters<Soln_pState,Soln_cState>::Set_Operating_Property(string property_name, T property_value){
-    properties.Set_Operating_Property(property_name,property_value);
-}
+//template<typename Soln_pState,typename Soln_cState>
+//void Explicit_Filters<Soln_pState,Soln_cState>::Set_Properties(Input_Parameters<Soln_pState,Soln_cState> &Input, int batch_flag) {
+//    properties.Set_Properties(Input,batch_flag);
+//}
+//
+//template<typename Soln_pState,typename Soln_cState>
+//template<typename T>
+//void Explicit_Filters<Soln_pState,Soln_cState>::Set_Filter_Property(string property_name, T property_value){
+//    properties.Set_Filter_Property(property_name,property_value);
+//}
+//
+//template<typename Soln_pState,typename Soln_cState>
+//template<typename T>
+//void Explicit_Filters<Soln_pState,Soln_cState>::Set_Operating_Property(string property_name, T property_value){
+//    properties.Set_Operating_Property(property_name,property_value);
+//}
 
 template <typename Soln_pState, typename Soln_cState>
 void Explicit_Filters<Soln_pState,Soln_cState>::Create_filter(void) {
     int error_flag;
-    switch (properties.Get_Property_int("filter_type")) {
+    switch (properties.Get_Property<int>("filter_type")) {
         case Explicit_Filter_Constants::HASELBACHER_FILTER:
             filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>(properties);
             break;
@@ -242,7 +203,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::transfer_function(int flag) {
     NMj    = SolnBlk_ptr->Grid.NCj/2;
     NMk    = SolnBlk_ptr->Grid.NCk/2;
 
-    number_of_rings = properties.Get_Property_int("number_of_rings");
+    number_of_rings = properties.Get_Property<int>("number_of_rings");
     switch (flag) {
         case Explicit_Filter_Constants::CORNER_CELL:
             transfer_function(Nghost, Nghost, Nghost);      break;
@@ -303,13 +264,26 @@ void Explicit_Filters<Soln_pState,Soln_cState>::filter(Filter_Variable_Type filt
     filter_Blocks();
 }
 
+template <typename Soln_pState, typename Soln_cState>
+template <typename Filter_Variable_Type>
+void Explicit_Filters<Soln_pState,Soln_cState>::filter(Filter_Variable_Type filter_variable, int extra_specification_1, int extra_specification_2) {
+    if (!initialized) {
+        cout << "Explicit_Filter not initialized, can not filter" << endl;
+        return;
+    }
+    // Let an adaptor deal with what will be filtered
+    adaptor.Set_Adaptor(filter_variable,extra_specification_1,extra_specification_2);
+    filter_Blocks();
+}
+
+
 template<typename Soln_pState, typename Soln_cState>
 void Explicit_Filters<Soln_pState,Soln_cState>::filter_Blocks(void) {
     if (!initialized) {
         cout << "Explicit_Filters not initialized, can not filter" << endl;
         return;
     }
-    int progress_mode = properties.Get_Property_int("progress_mode");
+    int progress_mode = properties.Get_Property<int>("progress_mode");
     int number_of_cells = 0;
     int number_of_processed_cells = 0;
 
@@ -322,8 +296,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::filter_Blocks(void) {
     for(int i=SolnBlk_ptr->ICl; i<=SolnBlk_ptr->ICu; i++) {
         for (int j=SolnBlk_ptr->JCl; j<=SolnBlk_ptr->JCu; j++) {
             for (int k=SolnBlk_ptr->KCl; k<=SolnBlk_ptr->KCu; k++) {
-                Filtered[i][j][k] = filter_ptr->filter(*this,SolnBlk_ptr->Grid,
-                                                       SolnBlk_ptr->Grid.Cell[i][j][k]);
+                filter_ptr->filter(Filtered[i][j][k], *this, SolnBlk_ptr->Grid, SolnBlk_ptr->Grid.Cell[i][j][k]);
                 number_of_processed_cells++;
                 ShowProgress(" Filtering  ", number_of_processed_cells, number_of_cells, progress_mode);
             }
@@ -507,7 +480,7 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Block
     out_file.open(out_file_name, ios::out);
     if (out_file.bad()) return (1);
 
-    if (!properties.Get_Property_int("batch_flag"))
+    if (!properties.Get_Property<int>("batch_flag"))
         cout << "\n\n Calculating Commutation Error: " << endl;
 
     /* ----- allocations ----- */
@@ -558,14 +531,14 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     //properties.number_of_rings_increased = properties.number_of_rings;
     //Derivative_Reconstruction<Soln_pState,Soln_cState> derivative_reconstructor(properties.commutation_order,properties.number_of_rings_increased);
     
-    properties.Set_Operating_Property("derivative_accuracy",properties.Get_Property_int("finite_differencing_order"));
-    Finite_Difference_Class<Soln_pState,Soln_cState> finite_differencer(properties.Get_Property_int("derivative_accuracy"));
+    properties.Set_Operating_Property("derivative_accuracy",properties.Get_Property<int>("finite_differencing_order"));
+    Finite_Difference_Class<Soln_pState,Soln_cState> finite_differencer(properties.Get_Property<int>("derivative_accuracy"));
     properties.Set_Operating_Property("number_of_rings_increased",finite_differencer.Get_central_rings());
     
     //assert(Grid_Blk.Nghost >= properties.number_of_rings+properties.number_of_rings_increased);
-    int number_of_rings = properties.Get_Property_int("number_of_rings");
-    int number_of_rings_increased = properties.Get_Property_int("number_of_rings_increased");
-    int progress_mode = properties.Get_Property_int("progress_mode");
+    int number_of_rings = properties.Get_Property<int>("number_of_rings");
+    int number_of_rings_increased = properties.Get_Property<int>("number_of_rings_increased");
+    int progress_mode = properties.Get_Property<int>("progress_mode");
     int number_of_cells_first = 0;
     int number_of_cells_second = 0;
     int number_of_cells_third = 0;
@@ -691,9 +664,9 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     RowVector Commutation_Error_L1norm = p_norm(Grid_Blk, Commutation_Error, 1);
     RowVector Commutation_Error_L2norm = p_norm(Grid_Blk, Commutation_Error, 2);
     
-    if (!properties.Get_Property_int("batch_flag")){
+    if (!properties.Get_Property<int>("batch_flag")){
         cout << "Filter : " << filter_ptr->filter_name() << endl;
-        cout << "Commutation Order : " << properties.Get_Property_int("commutation_order") << endl;
+        cout << "Commutation Order : " << properties.Get_Property<int>("commutation_order") << endl;
         cout << "Grid : " << (Grid_Blk.ICu - Grid_Blk.ICl + 1) 
         << "x" << (Grid_Blk.JCu - Grid_Blk.JCl + 1)
         << "x" << (Grid_Blk.KCu - Grid_Blk.KCl + 1) << endl;
@@ -710,7 +683,7 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Calculate_Commutation_Error_Bloc
     
     
     std::stringstream filenamestream;
-    filenamestream << "commutation_error_norms_"<< filter_ptr->filter_name() << "_" << properties.Get_Property_int("commutation_order") << ".dat";
+    filenamestream << "commutation_error_norms_"<< filter_ptr->filter_name() << "_" << properties.Get_Property<int>("commutation_order") << ".dat";
     
     ofstream commutation_error_norms_file;
     commutation_error_norms_file.open(filenamestream.str().c_str(),ios::app);    // open file for appending
@@ -750,8 +723,8 @@ template<typename Soln_pState, typename Soln_cState>
 RowVector Explicit_Filters<Soln_pState,Soln_cState>::p_norm(Grid3D_Hexa_Block &Grid_Blk,
                                                       RowVector ***Rows,
                                                       int p) {
-    int number_of_rings = properties.Get_Property_int("number_of_rings");
-    int number_of_rings_increased = properties.Get_Property_int("number_of_rings_increased");
+    int number_of_rings = properties.Get_Property<int>("number_of_rings");
+    int number_of_rings_increased = properties.Get_Property<int>("number_of_rings_increased");
 
     int imin = Grid_Blk.ICl+(number_of_rings+number_of_rings_increased),
         imax = Grid_Blk.ICu-(number_of_rings+number_of_rings_increased),
@@ -787,8 +760,8 @@ RowVector Explicit_Filters<Soln_pState,Soln_cState>::p_norm(Grid3D_Hexa_Block &G
 template<typename Soln_pState, typename Soln_cState>
 RowVector Explicit_Filters<Soln_pState,Soln_cState>::maxnorm(Grid3D_Hexa_Block &Grid_Blk,
                                                              RowVector ***Rows) {
-    int number_of_rings = properties.Get_Property_int("number_of_rings");
-    int number_of_rings_increased = properties.Get_Property_int("number_of_rings_increased");
+    int number_of_rings = properties.Get_Property<int>("number_of_rings");
+    int number_of_rings_increased = properties.Get_Property<int>("number_of_rings_increased");
     
     int 
     imin = Grid_Blk.ICl+(number_of_rings+number_of_rings_increased),
@@ -855,17 +828,17 @@ void Explicit_Filters<Soln_pState,Soln_cState>::test(void) {
 
 template<typename Soln_pState, typename Soln_cState>
 int Explicit_Filters<Soln_pState,Soln_cState>::Write_to_file(void){
-    if (properties.Get_Property_int("memory_efficient")) {
+    if (properties.Get_Property<int>("memory_efficient")) {
         cerr <<"\n Memory Efficient mode is ON --> No filter weights to write to file. " << endl;
         return (0);
     }
-    if (!properties.Get_Property_int("batch_flag"))
+    if (!properties.Get_Property<int>("batch_flag"))
         cout << "\n Writing explicit filter coefficients to file." << endl ;
     int i;
     char prefix[256], cpu_id[256], extension[256], out_file_name[256];
     char *out_file_name_ptr;
     
-    strcpy(prefix,properties.Get_Property_string("output_file_name").c_str());
+    strcpy(prefix,properties.Get_Property<string>("output_file_name").c_str());
     strcat(prefix, "_explicit_filter");
     strcpy(extension, ".dat");
     
@@ -905,14 +878,14 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Write_to_file(void){
 
 template<typename Soln_pState, typename Soln_cState>
 int Explicit_Filters<Soln_pState,Soln_cState>::Read_from_file(void) {
-    if (!properties.Get_Property_int("batch_flag"))
+    if (!properties.Get_Property<int>("batch_flag"))
         cout << "\n Reading explicit filter coefficients from file." << endl ;
     int i;
     char prefix[256];
     char cpu_id[256], extension[256], in_file_name[256];
     char *in_file_name_ptr;
     
-    strcpy(prefix,properties.Get_Property_string("output_file_name").c_str());
+    strcpy(prefix,properties.Get_Property<string>("output_file_name").c_str());
     strcat(prefix,  "_explicit_filter");
     strcpy(extension, ".dat");
     
@@ -933,7 +906,7 @@ int Explicit_Filters<Soln_pState,Soln_cState>::Read_from_file(void) {
     properties.Set_Operating_Property("filter_type",filter_type);
     Create_filter();
     
-    bool Store_Filter_Weights = !properties.Get_Property_int("memory_efficient");
+    bool Store_Filter_Weights = !properties.Get_Property<int>("memory_efficient");
 
     if (Store_Filter_Weights) {
         Allocate_Filter_Weights();
@@ -976,8 +949,8 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Output_Commutation(Grid3D_Hexa_B
     
     int nVar = 0;
     
-    int number_of_rings = properties.Get_Property_int("number_of_rings");
-    int number_of_rings_increased = properties.Get_Property_int("number_of_rings_increased");
+    int number_of_rings = properties.Get_Property<int>("number_of_rings");
+    int number_of_rings_increased = properties.Get_Property<int>("number_of_rings_increased");
 
     
     int 
@@ -1013,9 +986,9 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Output_Commutation(Grid3D_Hexa_B
         << "\"commutation error\" \\ \n"
         << "\"truncation error\" \\ \n";
         Out_File << "DATASETAUXDATA filter = \"" << filter_ptr->filter_name() << "\" \\ \n"
-                 << "DATASETAUXDATA commutation_order = \"" << properties.Get_Property_int("commutation_order") << "\" \\ \n"
-                 << "DATASETAUXDATA filter_grid_ratio = \"" << properties.Get_Property_double("FGR") << "\" \\ \n"
-                 << "DATASETAUXDATA number_of_rings = \"" << properties.Get_Property_int("number_of_rings")  << "\" \\ \n";
+                 << "DATASETAUXDATA commutation_order = \"" << properties.Get_Property<int>("commutation_order") << "\" \\ \n"
+                 << "DATASETAUXDATA filter_grid_ratio = \"" << properties.Get_Property<double>("FGR") << "\" \\ \n"
+                 << "DATASETAUXDATA number_of_rings = \"" << properties.Get_Property<int>("number_of_rings")  << "\" \\ \n";
         Out_File<< "ZONE T =  \"Block Number = " << Block_Number
         << "\" \\ \n"
         << "I = " << imax - imin + 1 << " \\ \n"
@@ -1063,12 +1036,15 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Output_Commutation(Grid3D_Hexa_B
 template<typename Soln_pState, typename Soln_cState>
 void Explicit_Filters<Soln_pState,Soln_cState>::Allocate_Filter_Weights(void) {
     Deallocate_Filter_Weights();
+    Filter_Stencil = new std::vector<Cell3D*> **[SolnBlk_ptr->NCi];
     Filter_Weights = new RowVector **[SolnBlk_ptr->NCi];
     Filter_Weights_Assigned = new bool **[SolnBlk_ptr->NCi];
     for (int i=0; i<SolnBlk_ptr->NCi; i++) {
+        Filter_Stencil[i] = new std::vector<Cell3D*> *[SolnBlk_ptr->NCj];
         Filter_Weights[i] = new RowVector *[SolnBlk_ptr->NCj];
         Filter_Weights_Assigned[i] = new bool *[SolnBlk_ptr->NCj];
         for (int j=0; j<SolnBlk_ptr->NCj; j++) {
+            Filter_Stencil[i][j] = new std::vector<Cell3D*> [SolnBlk_ptr->NCk];
             Filter_Weights[i][j] = new RowVector [SolnBlk_ptr->NCk];
             Filter_Weights_Assigned[i][j] = new bool [SolnBlk_ptr->NCk];
             
@@ -1085,12 +1061,15 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Deallocate_Filter_Weights(void) 
     if (Filter_Weights_Allocated) {
         for (int i=0; i<SolnBlk_ptr->NCi; i++) {
             for (int j=0; j<SolnBlk_ptr->NCj; j++) {
+                delete[] Filter_Stencil[i][j];          Filter_Stencil[i][j] = NULL;
                 delete[] Filter_Weights[i][j];          Filter_Weights[i][j] = NULL;
                 delete[] Filter_Weights_Assigned[i][j]; Filter_Weights_Assigned[i][j] = NULL;
             }
+            delete[] Filter_Stencil[i];             Filter_Stencil[i] = NULL;
             delete[] Filter_Weights[i];             Filter_Weights[i] = NULL;
             delete[] Filter_Weights_Assigned[i];    Filter_Weights_Assigned[i] = NULL;
         }
+        delete[] Filter_Stencil;            Filter_Stencil = NULL;
         delete[] Filter_Weights;            Filter_Weights = NULL;
         delete[] Filter_Weights_Assigned;   Filter_Weights_Assigned = NULL;
     }
@@ -1133,58 +1112,5 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Deallocate_Derivative_Reconstruc
     }
     Derivative_Reconstruction_Weights_Allocated = false;
 }
-
-
-
-template <typename Soln_pState, typename Soln_cState>
-void Explicit_Filters<Soln_pState,Soln_cState>::ShowProgress(std::string message, int numIn, int maximum, int mode) {
-    if (properties.Get_Property_int("batch_flag"))
-        mode = PROGRESS_MODE_SILENT;
-    int first_index = 1;
-    int last_index = maximum;
-    int percent = int(100*numIn/double(last_index));
-    if (mode == PROGRESS_MODE_TERMINAL) {
-        char barspin[16] = {'\\','\\','\\','\\',
-            '|', '|','|','|',
-            '/','/', '/', '/',
-        '-','-','-','-'};
-        
-        int whichOne;
-        
-        whichOne = numIn % 16;
-        
-        std::cout << '\r'
-        << message << setw(3)  <<  percent << " %"
-        << "  " << barspin[whichOne] << " ";
-        std::cout.flush();
-        if (percent == 100) {
-            std::cout << '\r'
-            << message << setw(3)  <<  percent << " %      " << std::endl;
-        }
-        
-    } else if (mode == PROGRESS_MODE_FILE) {
-        if (numIn == first_index) {
-            std::cout << message << endl;
-        }
-        int previous_percent = int(100*(numIn-1)/double(last_index));
-        if (percent != previous_percent || numIn == first_index) {
-            std::cout << " " << percent << "%";
-            std::cout.flush();
-        }
-        if (percent == 100) {
-            std::cout << std::endl;
-        }
-        
-    } else if (mode == PROGRESS_MODE_MESSAGE) {
-        // no progress, just message
-        if (numIn == first_index) {
-            std::cout << message << endl;
-        }
-    } else {
-        // nothing
-    }
-    return;
-}
-
 
 #endif

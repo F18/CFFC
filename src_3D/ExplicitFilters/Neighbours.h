@@ -10,9 +10,6 @@
 #ifndef _FILTER_NEIGHBOURS_INCLUDED
 #define _FILTER_NEIGHBOURS_INCLUDED
 
-
-#include <cstdlib>     // defines the drand48() function
-#include <ctime>       // defines the time() function
 #include "../Grid/Cell3D.h"
 #include "../Grid/Grid3DHexaBlock.h"
 
@@ -285,8 +282,11 @@ inline void Neighbours::append_theCell(Cell3D &theCell) {
 }
 
 inline void Neighbours::delete_theCell(void) {
-    if (theCell_included)   number_of_neighbours--;
-    theCell_included = false;
+    if (theCell_included){
+        neighbour.pop_back();
+        number_of_neighbours--;
+        theCell_included = false;
+    }   
 }
 
 

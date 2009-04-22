@@ -17,10 +17,14 @@
 #include <iomanip>
 #include <stdexcept>
 #include <iostream>
+#include <string> 
+#include <sstream>
+
 
 /* Using std namespace functions */
 using std::cout;
 using std::setprecision;
+using std::setw;
 using std::endl;
 
 #define Print_(x) cout << setprecision(16) << #x " = " << x << endl;
@@ -84,5 +88,103 @@ inline void assure(std::ofstream& out,
     exit(1);
   }
 }
+
+/// Converts to std::string
+/// Don't use this to convert to a char, use c_str for that.
+/// Typical use is to convert to numbers.
+/// @param str string to convert from
+/// @return converter type
+template <class T>
+static std::string to_str (T v)
+{
+    std::ostringstream oss;
+    oss << v;
+    return oss.str();
+}
+
+/// Converts from std::string
+/// Don't use this to convert to a char, use c_str for that.
+/// Typical use is to convert to numbers.
+/// @param str string to convert from
+/// @return converter type
+template <class T>
+static T from_str (const std::string& str)
+{
+    T v;
+    if (str.length() > 0)
+    {
+        std::istringstream iss(str.c_str());
+        iss >> v;
+    }
+    else
+    {
+        // pretty much everything has an empty constuctor
+        v = T();
+    }
+    return v;
+  }
+
+enum ProgressMode {PROGRESS_MODE_SILENT,PROGRESS_MODE_MESSAGE,PROGRESS_MODE_FILE,PROGRESS_MODE_TERMINAL};
+
+inline void ShowProgress(std::string message, int numIn, int maximum, int mode) {
+
+    switch (mode) {
+        case PROGRESS_MODE_SILENT :
+            break;
+        case PROGRESS_MODE_TERMINAL : 
+        {
+            char barspin[16] = {'\\','\\','\\','\\',
+                '|', '|','|','|',
+                '/','/', '/', '/',
+            '-','-','-','-'};
+            
+            int whichOne = numIn % 16;
+            
+            int last_index = maximum;
+            int percent = int(100*numIn/double(last_index));
+            
+            std::cout << '\r'
+            << message << setw(3)  <<  percent << " %"
+            << "  " << barspin[whichOne] << " ";
+            std::cout.flush();
+            if (percent == 100) {
+                std::cout << '\r'
+                << message << setw(3)  <<  percent << " %      " << std::endl;
+            }  
+            break;
+        }
+        case PROGRESS_MODE_FILE : 
+        {
+            int first_index = 1;
+            int last_index = maximum;
+            int percent = int(100*numIn/double(last_index));
+            if (numIn == first_index) {
+                std::cout << message << endl;
+            }
+            int previous_percent = int(100*(numIn-1)/double(last_index));
+            if (percent != previous_percent || numIn == first_index) {
+                std::cout << " " << percent << "%";
+                std::cout.flush();
+            }
+            if (percent == 100) {
+                std::cout << std::endl;
+            }
+            break;
+        }
+        case PROGRESS_MODE_MESSAGE :
+        {
+            // no progress, just message
+            int first_index = 1;
+            if (numIn == first_index) {
+                std::cout << message << endl;
+            }
+        }
+        default :
+            break;
+    }
+    return;
+}
+
+
 
 #endif // _UTILITIES_INCLUDED

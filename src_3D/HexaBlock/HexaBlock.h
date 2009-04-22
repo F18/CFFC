@@ -42,11 +42,13 @@
 #include "../HighOrderReconstruction/HighOrder.h"
 #endif // HIGHORDER_INCLUDED
 
+#ifndef _EXPLICIT_FILTER_INCLUDED
+#include "../ExplicitFilters/Explicit_Filter.h"
+#endif // EXPLICIT_FILTER_INCLUDED
+
 // Additional includes at end of file
 
 class FlowField_2D;
-
-template <typename SOLN_pSTATE, typename SOLN_cSTATE> class Explicit_Filters;
 
 /* Define the solution block in-use indicators. */
 
@@ -4944,10 +4946,5 @@ SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdydz = NULL;
 #ifndef _HEXABLOCK_HIGHORDER_INCLUDED
 #include "HexaBlockHighOrder.h"
 #endif //_HEXABLOCK_HIGHORDER_INCLUDED
-
-
-#ifndef _EXPLICIT_FILTER_INCLUDED
-#include "../ExplicitFilters/Explicit_Filter.h"
-#endif // _EXPLICIT_FILTER_INCLUDED
 
 #endif // _HEXA_BLOCK_INCLUDED

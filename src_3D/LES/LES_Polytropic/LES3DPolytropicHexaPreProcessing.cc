@@ -17,7 +17,7 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
      *                RESTART                 *
      * ---------------------------------------*/
     if (Solution_Data.Input.i_ICs == IC_RESTART) {
-        if(Solution_Data.Input.Turbulence_IP.filter_solution_before_execution == ON) {
+        if(Solution_Data.Input.ExplicitFilters_IP.Filter_Solution_Before_Execution) {
             if(!Data.batch_flag){
                 cout 
                 << "\n ==============================="
@@ -37,9 +37,6 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                 cout.flush();
             } /* endif */
         }
-        
-        cout << "\n done filtering" << endl;
-        
         
         if (Solution_Data.Input.i_Flow_Type==FLOWTYPE_TURBULENT_LES) {
             
@@ -196,14 +193,14 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             
             
             /* ---------------------- Explicitly filter the initial condition --------------------- */
-            if (Solution_Data.Input.Turbulence_IP.i_filter_type != Explicit_Filter_Constants::IMPLICIT_FILTER) {
+            if (Solution_Data.Input.ExplicitFilters_IP.Filter_Type[Explicit_Filter_Constants::PRIMARY_FILTER] != Explicit_Filter_Constants::IMPLICIT_FILTER) {
                 // Initialize the filter
                 Explicit_Filter_Commands::Initialize_Filters(Data, Solution_Data);
 
                 // output the filter transfer function
                 Explicit_Filter_Commands::Transfer_Function(Data,Solution_Data);
             
-                if (Solution_Data.Input.Turbulence_IP.Filter_Initial_Condition) {
+                if (Solution_Data.Input.ExplicitFilters_IP.Filter_Initial_Condition) {
                     // filter the initial condition
                     if (CFFC_Primary_MPI_Processor() && !Data.batch_flag) {
                         cout << endl;
@@ -431,9 +428,22 @@ int Output_Other_Solution_Progress_Specialization_Data(HexaSolver_Data &Data,
                                                        HexaSolver_Solution_Data<LES3D_Polytropic_pState,
 						                                LES3D_Polytropic_cState> &Solution_Data) {
 
+    
+    
    int error_flag(0);
    double total_TKE, total_enstrophy, u_prime, Taylor_scale, viscosity, k_SFS;
 
+    // WARNING!!! UNNECESSARY COMPUTATION IN CASE OF CENO!!!! JUST FOR OUTPUT PURPOSE FOR NOW!
+    if (Solution_Data.Input.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER) {
+        // Call Linear_Reconstruction_LeastSquares to set dWdx, dWdy, dWdz needed in the subroutines below
+        Hexa_Block<LES3D_Polytropic_pState,LES3D_Polytropic_cState> *Soln_Blks = Solution_Data.Local_Solution_Blocks.Soln_Blks;
+        for (int nBlk = 0; nBlk < Solution_Data.Local_Solution_Blocks.Number_of_Soln_Blks; nBlk++ ) {
+            if (Solution_Data.Local_Solution_Blocks.Block_Used[nBlk]) {
+                Soln_Blks[nBlk].Linear_Reconstruction_LeastSquares(LIMITER_ZERO); 
+            }
+        }
+    }
+    
    // Calculate various turbulence quantities
    total_TKE = Total_TKE<Hexa_Block<LES3D_Polytropic_pState, LES3D_Polytropic_cState> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
                                                                                         Data.Local_Adaptive_Block_List);

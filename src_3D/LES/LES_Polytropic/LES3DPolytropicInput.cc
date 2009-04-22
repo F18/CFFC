@@ -40,8 +40,8 @@ Set_Reference_Solution_States(void) {
     
     // create filter
     Filter_Parameters filter;
-    filter.FGR = Turbulence_IP.FGR;
-    filter.type = Turbulence_IP.i_filter_type;
+    filter.FGR = ExplicitFilters_IP.FGR[Explicit_Filter_Constants::PRIMARY_FILTER];
+    filter.type = ExplicitFilters_IP.Filter_Type[Explicit_Filter_Constants::PRIMARY_FILTER];
                           
     SFS_model_Parameters SFS_model;
     SFS_model.model = Turbulence_IP.i_SFS_model;

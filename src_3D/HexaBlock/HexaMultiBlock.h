@@ -17,9 +17,6 @@
 #include "../AMR/AdaptiveBlock3D.h"
 #endif //_ADAPTIVEBLOCK3D_INCLUDED
 
-template<typename Soln_pState, typename Soln_cState>
-class Explicit_Filters;
-
 // A local list of solution blocks on a given processor.
 template<class HEXA_BLOCK> 
 class Hexa_Multi_Block {

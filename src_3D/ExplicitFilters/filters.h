@@ -41,21 +41,9 @@
 #include "../ICEM/ICEMCFD.h"
 #endif // _ICEMCFD_INCLUDED
 
-#ifndef _SPECTRAL_ANALYSIS_INCLUDED
-#include "../TurbulenceModelling/SpectralAnalysis.h"
-#endif // _SPECTRAL_ANALYSIS_INCLUDED
-
 #ifndef _FILTER_CONTROLLER_INCLUDED
 #include "Filter_Controller.h"
 #endif // _FILTER_CONTROLLER_INCLUDED
-
-#ifndef _EXPLICIT_FILTER_INCLUDED
-#include "Explicit_Filter.h"
-#endif
-
-#ifndef _EXLICIT_FILTER_TRANSLATOR
-#include "Explicit_Filter_Translator.h"
-#endif
 
 #endif // _FILTERS_INCLUDED
 

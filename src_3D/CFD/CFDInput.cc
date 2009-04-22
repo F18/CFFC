@@ -906,6 +906,11 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
                                                                        value_stream);
        } /* endif */
 
+        // Explicit Filters
+        if (i_command == INVALID_INPUT_CODE) {
+            i_command = ExplicitFilters_IP.Parse_Next_Input_Control_Parameter(code, value_stream);
+        }
+        
        // High Order
        if (i_command == INVALID_INPUT_CODE) {
 	 i_command = HighOrder_IP.Parse_Next_Input_Control_Parameter(code,
@@ -1237,12 +1242,15 @@ void CFD_Input_Parameters::Broadcast(void) {
 
     // Turbulence modelling
     Turbulence_IP.Broadcast();
+    
+    // Explicit Filtering
+    ExplicitFilters_IP.Broadcast();
 
     // High Order Grid Execution Mode:
-    Grid_HO_Execution_Mode.Broadcast();
+    Grid3D_HO_Execution_Mode::Broadcast();
 
     // CENO Execution Mode:
-    CENO_Execution_Mode.Broadcast();
+    CENO_Execution_Mode::Broadcast();
 
 #endif
 

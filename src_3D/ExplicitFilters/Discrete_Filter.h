@@ -10,10 +10,6 @@
 #ifndef _DISCRETE_FILTER_INCLUDED
 #define _DISCRETE_FILTER_INCLUDED
 
-#include "General_Filter.h"
-#include "Explicit_Filter_Helpers.h"
-#include "Neighbours.h"
-
 #include <complex>
 
 #include "../Math/Math.h"
@@ -47,15 +43,15 @@ public:
     }
     
     virtual void Read_Basic_Properties(void) {
-        properties->Get_Property(debug_flag,"debug_flag");
-        properties->Get_Property(batch_flag,"batch_flag");
-        properties->Get_Property(FGR,"FGR");
-        properties->Get_Property(use_fixed_filter_width,"use_fixed_filter_width");
-        properties->Get_Property(fixed_filter_width,"fixed_filter_width");
-        properties->Get_Property(commutation_order,"commutation_order");
-        properties->Get_Property(number_of_rings,"number_of_rings");
-        properties->Get_Property(G_cutoff,"G_cutoff");
-        Store_Filter_Weights = !properties->Get_Property_int("memory_efficient");
+        properties->Get_Property("debug_flag",debug_flag);
+        properties->Get_Property("batch_flag",batch_flag);
+        properties->Get_Property("FGR",FGR);
+        properties->Get_Property("use_fixed_filter_width",use_fixed_filter_width);
+        properties->Get_Property("fixed_filter_width",fixed_filter_width);
+        properties->Get_Property("commutation_order",commutation_order);
+        properties->Get_Property("number_of_rings",number_of_rings);
+        properties->Get_Property("G_cutoff",G_cutoff);
+        Store_Filter_Weights = !properties->Get_Property<int>("memory_efficient");
     }
     
     virtual void Read_Properties(void) = 0;
@@ -74,9 +70,8 @@ public:
     int use_fixed_filter_width;
     double fixed_filter_width;
 
-    DenseMatrix Neighbouring_Values;
-    void Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, Neighbours &theNeighbours);
-
+    void Multiply_Weights_With_Values(RowVector& Result, RowVector& Weights, std::vector<Cell3D*> &stencil);
+    void filter(RowVector& Result, Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
     RowVector filter(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
     RowVector filter_1D(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter,Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction);
 
@@ -267,34 +262,51 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter(Explicit_Filters<Soln
     
     if (!explicit_filter.Filter_Weights_Allocated && Store_Filter_Weights) {
         explicit_filter.Allocate_Filter_Weights();
-        explicit_filter.Filter_Weights_Allocated = true;
     }
      
-     
-     theNeighbours.set_grid(Grid_Blk);
-     Get_Neighbours(theCell);
-     
-     
-
+    RowVector Result;
     if (Store_Filter_Weights) {
         int I(theCell.I);
         int J(theCell.J);
         int K(theCell.K);
         if (!explicit_filter.Filter_Weights_Assigned[I][J][K]) {
+            theNeighbours.set_grid(Grid_Blk);
+            Get_Neighbours(theCell);
             explicit_filter.Filter_Weights[I][J][K] = Get_Weights(theCell,theNeighbours);
+            explicit_filter.Filter_Stencil[I][J][K] = theNeighbours.neighbour;
             explicit_filter.Filter_Weights_Assigned[I][J][K] = true;
         }
-        Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
-        return (explicit_filter.Filter_Weights[I][J][K]*Neighbouring_Values);
+        Multiply_Weights_With_Values(Result, explicit_filter.Filter_Weights[I][J][K],explicit_filter.Filter_Stencil[I][J][K]);
     } else {
         RowVector W = Get_Weights(theCell,theNeighbours);
-        Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
-        return (W*Neighbouring_Values);
+        Multiply_Weights_With_Values(Result, W, theNeighbours.neighbour);
+    }
+    return Result;
+}
+
+template <typename Soln_pState, typename Soln_cState>
+void Discrete_Filter<Soln_pState,Soln_cState>::filter(RowVector& Result, Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
+    
+    if (!explicit_filter.Filter_Weights_Allocated && Store_Filter_Weights) {
+        explicit_filter.Allocate_Filter_Weights();
     }
     
-
-
-    
+    if (Store_Filter_Weights) {
+        int I(theCell.I);
+        int J(theCell.J);
+        int K(theCell.K);
+        if (!explicit_filter.Filter_Weights_Assigned[I][J][K]) {
+            theNeighbours.set_grid(Grid_Blk);
+            Get_Neighbours(theCell);
+            explicit_filter.Filter_Weights[I][J][K] = Get_Weights(theCell,theNeighbours);
+            explicit_filter.Filter_Stencil[I][J][K] = theNeighbours.neighbour;
+            explicit_filter.Filter_Weights_Assigned[I][J][K] = true;
+        }
+        Multiply_Weights_With_Values(Result, explicit_filter.Filter_Weights[I][J][K],explicit_filter.Filter_Stencil[I][J][K]);
+    } else {
+        RowVector W = Get_Weights(theCell,theNeighbours);
+        Multiply_Weights_With_Values(Result, W, theNeighbours.neighbour);
+    }
     
 }
 
@@ -307,11 +319,10 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter_1D(Explicit_Filters<S
         explicit_filter.Filter_Weights_Allocated = true;
     }
     
-    
     theNeighbours.set_grid(Grid_Blk);
     Get_Neighbours_1D(theCell, direction);
     
-    
+    RowVector Result;
     
     if (Store_Filter_Weights) {
         int I(theCell.I);
@@ -321,19 +332,18 @@ RowVector Discrete_Filter<Soln_pState,Soln_cState>::filter_1D(Explicit_Filters<S
             explicit_filter.Filter_Weights[I][J][K] = Get_Weights_1D(theCell,theNeighbours,direction);
             explicit_filter.Filter_Weights_Assigned[I][J][K] = true;
         }
-        Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
-        return (explicit_filter.Filter_Weights[I][J][K]*Neighbouring_Values);
+        Multiply_Weights_With_Values(Result, explicit_filter.Filter_Weights[I][J][K],explicit_filter.Filter_Stencil[I][J][K]);
     } else {
         RowVector W = Get_Weights_1D(theCell,theNeighbours,direction);
-        Set_Neighbouring_Values(Neighbouring_Values,theNeighbours);
-        return (W*Neighbouring_Values);
+        Multiply_Weights_With_Values(Result, W, theNeighbours.neighbour);
     }
-
+    return Result;
 }
 
+
 template <typename Soln_pState, typename Soln_cState>
-void Discrete_Filter<Soln_pState,Soln_cState>::Set_Neighbouring_Values(DenseMatrix &Neighbouring_Values, Neighbours &theNeighbours) {
-    Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::FillMatrix(Neighbouring_Values, theNeighbours);
+void Discrete_Filter<Soln_pState,Soln_cState>::Multiply_Weights_With_Values(RowVector& Result, RowVector& Weights, std::vector<Cell3D*> &stencil) {
+    Explicit_Filter_Adaptor<Soln_pState,Soln_cState>::Multiply_Weights_With_Values(Result, Weights, stencil);
 }
 
 
@@ -359,7 +369,7 @@ void Discrete_Filter<Soln_pState,Soln_cState>::transfer_function(Grid3D_Hexa_Blo
     }
     int N=25;
     std::stringstream prefix;
-    prefix << properties->Get_Property_string("output_file_name") << "_";
+    prefix << properties->Get_Property<string>("output_file_name") << "_";
     prefix << "transfer_function_I" << theCell.I << "J" << theCell.J << "K" << theCell.K;
     
     /* -------------- Output gnuplot ----------------- */

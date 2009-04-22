@@ -9,10 +9,6 @@
 #ifndef _EXPLICIT_FILTER_COMMANDS_INCLUDED
 #define _EXPLICIT_FILTER_COMMANDS_INCLUDED
 
-#ifndef _HEXA_SOLVER_CLASSES_INCLUDED
-#include  "../HexaBlock/HexaSolverClasses.h"
-#endif  //_HEXA_SOLVER_CLASSES_INCLUDED
-
 #ifndef _EXPLICIT_FILTER_CONSTANTS_INCLUDED
 #include "Explicit_Filter_Constants.h"
 #endif
@@ -20,6 +16,10 @@
 /* ------------------------------------------------------------------------------------------------------------------------------ */
 /**
  * CLASS : Explicit_Filter_Commands
+ * This class contains some shortcut commands for explicit filtering.
+ * These commands are therefore no interface, but a guideline to how to use
+ * explicit filters.
+ * More commands can be added
  */
 
 class Explicit_Filter_Commands {
@@ -47,13 +47,13 @@ int Explicit_Filter_Commands::Initialize_Filters(HexaSolver_Data &Data, HexaSolv
 {
     int error_flag(0);
 
-    if (Solution_Data.Input.Turbulence_IP.i_filter_type != Explicit_Filter_Constants::IMPLICIT_FILTER) {
+    if (Solution_Data.Input.ExplicitFilters_IP.Filter_Type[Explicit_Filter_Constants::PRIMARY_FILTER] != Explicit_Filter_Constants::IMPLICIT_FILTER) {
         
         Hexa_Block<Soln_pState,Soln_cState> *Soln_Blks = Solution_Data.Local_Solution_Blocks.Soln_Blks;
         for (int nBlk = 0; nBlk < Solution_Data.Local_Solution_Blocks.Number_of_Soln_Blks; nBlk++ ) {
             if (Solution_Data.Local_Solution_Blocks.Block_Used[nBlk]) {        
-                Soln_Blks[nBlk].Explicit_Filter.Initialize(Data.batch_flag,Solution_Data.Input);
-                Soln_Blks[nBlk].Explicit_Secondary_Filter.Initialize_Secondary(Data.batch_flag,Solution_Data.Input);
+                Soln_Blks[nBlk].Explicit_Filter.Initialize(Explicit_Filter_Constants::PRIMARY_FILTER,Data.batch_flag,Solution_Data.Input);
+                Soln_Blks[nBlk].Explicit_Secondary_Filter.Initialize(Explicit_Filter_Constants::SECONDARY_FILTER,Data.batch_flag,Solution_Data.Input);
             }
         }
     }
@@ -70,7 +70,7 @@ int Explicit_Filter_Commands::Filter_Solution(HexaSolver_Data &Data, HexaSolver_
     }
 
         
-    if (Solution_Data.Input.Turbulence_IP.i_filter_type != Explicit_Filter_Constants::IMPLICIT_FILTER) {
+    if (Solution_Data.Input.ExplicitFilters_IP.Filter_Type[filter] != Explicit_Filter_Constants::IMPLICIT_FILTER) {
 
         
         Soln_cState *** (Hexa_Block<Soln_pState,Soln_cState>::*U_ptr) = &Hexa_Block<Soln_pState,Soln_cState>::U;
@@ -95,20 +95,7 @@ int Explicit_Filter_Commands::Filter_Solution(HexaSolver_Data &Data, HexaSolver_
                 }
             }
         }
-        
-        //    double Soln_pState::*p_ptr = p_ptr = &Soln_pState::p; 
-        //    Explicit_Filter.filter(p_ptr);    
-        //    for (int nBlk = 0; nBlk < Number_of_Soln_Blks; ++nBlk) {
-        //        if (Block_Used[nBlk]) {
-        //            for (int k  = Soln_Blks[nBlk].KCl-Soln_Blks[nBlk].Nghost ; k <= Soln_Blks[nBlk].KCu+Soln_Blks[nBlk].Nghost ; ++k ) {
-        //                for ( int j  = Soln_Blks[nBlk].JCl-Soln_Blks[nBlk].Nghost ; j <= Soln_Blks[nBlk].JCu+Soln_Blks[nBlk].Nghost ; ++j ) {
-        //                    for ( int i = Soln_Blks[nBlk].ICl-Soln_Blks[nBlk].Nghost ; i <= Soln_Blks[nBlk].ICu+Soln_Blks[nBlk].Nghost ; ++i ) {
-        //                         Soln_Blks[nBlk].U[i][j][k] =  Soln_Blks[nBlk].W[i][j][k].U();
-        //                    }	  
-        //                }
-        //            }
-        //        }
-        //    }            
+                  
     }
     return (error_flag);     
 }
@@ -119,8 +106,8 @@ int Explicit_Filter_Commands::Filter_Residual(int i_stage, HexaSolver_Data &Data
     
     int error_flag(0);
     
-    if (Solution_Data.Input.Turbulence_IP.i_filter_type != Explicit_Filter_Constants::IMPLICIT_FILTER) {
-        if (Solution_Data.Input.Turbulence_IP.Filter_Method == Explicit_Filter_Constants::FILTER_RESIDUALS) {
+    if (Solution_Data.Input.ExplicitFilters_IP.Filter_Type[Explicit_Filter_Constants::PRIMARY_FILTER] != Explicit_Filter_Constants::IMPLICIT_FILTER) {
+        if (Solution_Data.Input.ExplicitFilters_IP.Filter_Method == Explicit_Filter_Constants::FILTER_RESIDUALS) {
             
             int residual_index = 0;
             
@@ -191,8 +178,10 @@ int Explicit_Filter_Commands::Transfer_Function(HexaSolver_Data &Data, HexaSolve
         
         for (int nBlk = 0; nBlk < Solution_Data.Local_Solution_Blocks.Number_of_Soln_Blks; nBlk++ ) {
             if (Solution_Data.Local_Solution_Blocks.Block_Used[nBlk]) {
-                if (first_block)
+                if (first_block) {
                     Soln_Blks[nBlk].Explicit_Filter.transfer_function(Explicit_Filter_Constants::MIDDLE_CELL);   
+                    Soln_Blks[nBlk].Explicit_Secondary_Filter.transfer_function(Explicit_Filter_Constants::MIDDLE_CELL);   
+                }
                 first_block = false;
             }
         }
@@ -206,7 +195,7 @@ int Explicit_Filter_Commands::Filter(Filter_Variable filter_variable, HexaSolver
 {
     int error_flag(0);
     
-    if (Solution_Data.Input.Turbulence_IP.i_filter_type != Explicit_Filter_Constants::IMPLICIT_FILTER) {
+    if (Solution_Data.Input.ExplicitFilters_IP.Filter_Type[Explicit_Filter_Constants::PRIMARY_FILTER] != Explicit_Filter_Constants::IMPLICIT_FILTER) {
             
             Hexa_Block<Soln_pState,Soln_cState> *Soln_Blks = Solution_Data.Local_Solution_Blocks.Soln_Blks;
             

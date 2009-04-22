@@ -216,7 +216,7 @@ SRC_LESTF = $(LESTF_DIR)LES3DThickenedFlameInput.cc \
 SRC_LESTF_EXE = $(LESTF_DIR)LES3DThickenedFlame.cc
 
 # Filters
-SRC_FILTERS = #$(FILTERS_DIR)Explicit_Filter.cc
+SRC_FILTERS = $(FILTERS_DIR)Explicit_Filters_Input.cc
 SRC_FILTERS_EXE = $(FILTERS_DIR)filters.cc
 
 # Physics, Turbulence, Thermodynamics, and Chemistry:
