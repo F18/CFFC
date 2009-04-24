@@ -260,10 +260,10 @@ inline RowVector Haselbacher_Filter<Soln_pState,Soln_cState>::Get_Weights(Cell3D
         //                              -1
         // (W A) x = W b  -->  x = (W A)   W  b  -->  x = Z b
         //
-        DenseMatrix Z = (W*A).pseudo_inverse()*W;
-        
-        // weights are first row of pseudo_inverse
-        w = Z[0];
+        A = W*A;
+        A.pseudo_inverse_override();
+        A = A*W;
+        w = A[0];
     }
     
     // Add weight to centre cell, to scale transfer function

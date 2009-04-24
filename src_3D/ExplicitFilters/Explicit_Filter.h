@@ -144,7 +144,6 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(Explicit_Filter_Const
         Input_ptr = &Input;   
         properties.Set_Properties(filter_number,Input,batch_flag);
         Create_filter();
-        initialized = true;
     }
 }
 
@@ -175,13 +174,21 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Create_filter(void) {
     switch (properties.Get_Property<int>("filter_type")) {
         case Explicit_Filter_Constants::HASELBACHER_FILTER:
             filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>(properties);
+            initialized = true;
             break;
         case Explicit_Filter_Constants::VASILYEV_FILTER:
             filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>(properties);
+            initialized = true;
             break;
         case Explicit_Filter_Constants::RESTART_FILTER:
             error_flag = Read_from_file();
-            if (error_flag == 1) cerr << "could not read filter_input_file" << endl;
+            if (error_flag == 1) {
+                cerr << "could not read filter_input_file" << endl;
+            } else {
+                initialized = true;
+            }
+            break;
+        case Explicit_Filter_Constants::IMPLICIT_FILTER:
             break;
         default:
             cerr << "Filter not defined" << endl;
@@ -297,8 +304,10 @@ void Explicit_Filters<Soln_pState,Soln_cState>::filter_Blocks(void) {
         for (int j=SolnBlk_ptr->JCl; j<=SolnBlk_ptr->JCu; j++) {
             for (int k=SolnBlk_ptr->KCl; k<=SolnBlk_ptr->KCu; k++) {
                 filter_ptr->filter(Filtered[i][j][k], *this, SolnBlk_ptr->Grid, SolnBlk_ptr->Grid.Cell[i][j][k]);
-                number_of_processed_cells++;
-                ShowProgress(" Filtering  ", number_of_processed_cells, number_of_cells, progress_mode);
+                if (CFFC_Primary_MPI_Processor()) {
+                    number_of_processed_cells++;
+                    ShowProgress(" Filtering  ", number_of_processed_cells, number_of_cells, progress_mode);
+                }
             }
         }
     }
