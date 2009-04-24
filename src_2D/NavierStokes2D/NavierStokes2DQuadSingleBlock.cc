@@ -4696,7 +4696,7 @@ void Fix_Refined_Block_Boundaries(NavierStokes2D_Quad_Block &SolnBlk,
  **********************************************************************/
 void Unfix_Refined_Block_Boundaries(NavierStokes2D_Quad_Block &SolnBlk) {
 
-  double sp_l, sp_r, sp_m, ds_ratio, dl, dr;
+  double sp_l, sp_r, sp_m, ds_ratio, dl, dr, sp_i;
   bool ModifiedGrid(false);
  
   // Return the nodes at the north boundary to their original positions.
@@ -4712,14 +4712,31 @@ void Unfix_Refined_Block_Boundaries(NavierStokes2D_Quad_Block &SolnBlk) {
 	       SolnBlk.Grid.Node[i  ][SolnBlk.Grid.JNu].X);
       ds_ratio = dl/(dl+dr);
       sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-      SolnBlk.Grid.Node[i][SolnBlk.Grid.JNu].X = Spline(sp_m,SolnBlk.Grid.BndNorthSpline);
+
+      // Get the correspondent current path length of the "i" node
+      sp_i = getS(SolnBlk.Grid.Node[i][SolnBlk.Grid.JNu].X,
+		  SolnBlk.Grid.BndNorthSpline);
+
+      // Test if sp_i is different than sp_m
+      if ( RelativeError(sp_i,sp_m) >= EpsilonTol::epsilon_relative ){
+	// Move the node on the spline
+	SolnBlk.Grid.Node[i][SolnBlk.Grid.JNu].X = Spline(sp_m,SolnBlk.Grid.BndNorthSpline);
+
+	// Mark the modification
+	ModifiedGrid = true;
+
+	// Redistribute the solution average in the affected cells
+	// Left cell
+	SolnBlk.U[i-1][SolnBlk.JCu] = (SolnBlk.Grid.Cell[i-1][SolnBlk.JCu].A/
+				       SolnBlk.Grid.area(i-1,SolnBlk.JCu))*SolnBlk.U[i-1][SolnBlk.JCu];
+	SolnBlk.W[i-1][SolnBlk.JCu] = W(SolnBlk.U[i-1][SolnBlk.JCu]);
+
+	// Right cell
+	SolnBlk.U[i][SolnBlk.JCu] = (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A/
+				     SolnBlk.Grid.area(i,SolnBlk.JCu))*SolnBlk.U[i][SolnBlk.JCu];
+	SolnBlk.W[i][SolnBlk.JCu] = W(SolnBlk.U[i][SolnBlk.JCu]);
+      }
     }
-    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-      SolnBlk.U[i][SolnBlk.JCu] = (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A/
-				   SolnBlk.Grid.area(i,SolnBlk.JCu))*SolnBlk.U[i][SolnBlk.JCu];
-      SolnBlk.W[i][SolnBlk.JCu] = W(SolnBlk.U[i][SolnBlk.JCu]);
-    }
-    ModifiedGrid = true;
   }
 
   // Return the nodes at the south boundary to their original positions.
@@ -4735,14 +4752,31 @@ void Unfix_Refined_Block_Boundaries(NavierStokes2D_Quad_Block &SolnBlk) {
 	       SolnBlk.Grid.Node[i  ][SolnBlk.Grid.JNl].X);
       ds_ratio = dl/(dl+dr);
       sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-      SolnBlk.Grid.Node[i][SolnBlk.Grid.JNl].X = Spline(sp_m,SolnBlk.Grid.BndSouthSpline);
+
+      // Get the correspondent current path length of the "i" node
+      sp_i = getS(SolnBlk.Grid.Node[i][SolnBlk.Grid.JNl].X,
+		  SolnBlk.Grid.BndSouthSpline);
+
+      // Test if sp_i is different than sp_m
+      if ( RelativeError(sp_i,sp_m) >= EpsilonTol::epsilon_relative ){
+	// Move the node on the spline
+	SolnBlk.Grid.Node[i][SolnBlk.Grid.JNl].X = Spline(sp_m,SolnBlk.Grid.BndSouthSpline);
+
+	// Mark the modification
+	ModifiedGrid = true;
+
+	// Redistribute the solution average in the affected cells
+	// Left cell
+	SolnBlk.U[i-1][SolnBlk.JCl] = (SolnBlk.Grid.Cell[i-1][SolnBlk.JCl].A/
+				       SolnBlk.Grid.area(i-1,SolnBlk.JCl))*SolnBlk.U[i-1][SolnBlk.JCl];
+	SolnBlk.W[i-1][SolnBlk.JCl] = W(SolnBlk.U[i-1][SolnBlk.JCl]);
+
+	// Right cell
+	SolnBlk.U[i][SolnBlk.JCl] = (SolnBlk.Grid.Cell[i][SolnBlk.JCl].A/
+				     SolnBlk.Grid.area(i,SolnBlk.JCl))*SolnBlk.U[i][SolnBlk.JCl];
+	SolnBlk.W[i][SolnBlk.JCl] = W(SolnBlk.U[i][SolnBlk.JCl]);
+      }
     }
-    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-      SolnBlk.U[i][SolnBlk.JCl] = (SolnBlk.Grid.Cell[i][SolnBlk.JCl].A/
-				   SolnBlk.Grid.area(i,SolnBlk.JCl))*SolnBlk.U[i][SolnBlk.JCl];
-      SolnBlk.W[i][SolnBlk.JCl] = W(SolnBlk.U[i][SolnBlk.JCl]);
-    }
-    ModifiedGrid = true;
   }
 
   // Return the nodes at the east boundary to their original positions.
@@ -4758,14 +4792,31 @@ void Unfix_Refined_Block_Boundaries(NavierStokes2D_Quad_Block &SolnBlk) {
 	       SolnBlk.Grid.Node[SolnBlk.Grid.INu][j  ].X);
       ds_ratio = dl/(dl+dr);
       sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-      SolnBlk.Grid.Node[SolnBlk.Grid.INu][j].X = Spline(sp_m,SolnBlk.Grid.BndEastSpline);
+
+      // Get the correspondent current path length of the "j" node
+      sp_i = getS(SolnBlk.Grid.Node[SolnBlk.Grid.INu][j].X,
+		  SolnBlk.Grid.BndEastSpline);
+
+      // Test if sp_i is different than sp_m
+      if ( RelativeError(sp_i,sp_m) >= EpsilonTol::epsilon_relative ){
+	// Move the node on the spline
+	SolnBlk.Grid.Node[SolnBlk.Grid.INu][j].X = Spline(sp_m,SolnBlk.Grid.BndEastSpline);
+
+	// Mark the modification
+	ModifiedGrid = true;
+
+	// Redistribute the solution average in the affected cells
+	// Lower cell
+	SolnBlk.U[SolnBlk.ICu][j-1] = (SolnBlk.Grid.Cell[SolnBlk.ICu][j-1].A/
+				       SolnBlk.Grid.area(SolnBlk.ICu,j-1))*SolnBlk.U[SolnBlk.ICu][j-1];
+	SolnBlk.W[SolnBlk.ICu][j-1] = W(SolnBlk.U[SolnBlk.ICu][j-1]);
+
+	// Upper cell
+	SolnBlk.U[SolnBlk.ICu][j] = (SolnBlk.Grid.Cell[SolnBlk.ICu][j].A/
+				     SolnBlk.Grid.area(SolnBlk.ICu,j))*SolnBlk.U[SolnBlk.ICu][j];
+	SolnBlk.W[SolnBlk.ICu][j] = W(SolnBlk.U[SolnBlk.ICu][j]);
+      }
     }
-    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-      SolnBlk.U[SolnBlk.ICu][j] = (SolnBlk.Grid.Cell[SolnBlk.ICu][j].A/
-				   SolnBlk.Grid.area(SolnBlk.ICu,j))*SolnBlk.U[SolnBlk.ICu][j];
-      SolnBlk.W[SolnBlk.ICu][j] = W(SolnBlk.U[SolnBlk.ICu][j]);
-    }
-    ModifiedGrid = true;
   }
 
   // Return the nodes at the west boundary to their original positions.
@@ -4781,14 +4832,31 @@ void Unfix_Refined_Block_Boundaries(NavierStokes2D_Quad_Block &SolnBlk) {
 	       SolnBlk.Grid.Node[SolnBlk.Grid.INl][j  ].X);
       ds_ratio = dl/(dl+dr);
       sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-      SolnBlk.Grid.Node[SolnBlk.Grid.INl][j].X = Spline(sp_m,SolnBlk.Grid.BndWestSpline);
+
+      // Get the correspondent current path length of the "j" node
+      sp_i = getS(SolnBlk.Grid.Node[SolnBlk.Grid.INl][j].X,
+		  SolnBlk.Grid.BndWestSpline);
+
+      // Test if sp_i is different than sp_m
+      if ( RelativeError(sp_i,sp_m) >= EpsilonTol::epsilon_relative ){
+	// Move the node on the spline
+	SolnBlk.Grid.Node[SolnBlk.Grid.INl][j].X = Spline(sp_m,SolnBlk.Grid.BndWestSpline);
+
+	// Mark the modification
+	ModifiedGrid = true;
+
+	// Redistribute the solution average in the affected cells
+	// Lower cell
+	SolnBlk.U[SolnBlk.ICl][j-1] = (SolnBlk.Grid.Cell[SolnBlk.ICl][j-1].A/
+				       SolnBlk.Grid.area(SolnBlk.ICl,j-1))*SolnBlk.U[SolnBlk.ICl][j-1];
+	SolnBlk.W[SolnBlk.ICl][j-1] = W(SolnBlk.U[SolnBlk.ICl][j-1]);
+
+	// Upper cell
+	SolnBlk.U[SolnBlk.ICl][j] = (SolnBlk.Grid.Cell[SolnBlk.ICl][j].A/
+				     SolnBlk.Grid.area(SolnBlk.ICl,j))*SolnBlk.U[SolnBlk.ICl][j];
+	SolnBlk.W[SolnBlk.ICl][j] = W(SolnBlk.U[SolnBlk.ICl][j]);
+      }
     }
-    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-      SolnBlk.U[SolnBlk.ICl][j] = (SolnBlk.Grid.Cell[SolnBlk.ICl][j].A/
-				   SolnBlk.Grid.area(SolnBlk.ICl,j))*SolnBlk.U[SolnBlk.ICl][j];
-      SolnBlk.W[SolnBlk.ICl][j] = W(SolnBlk.U[SolnBlk.ICl][j]);
-    }
-    ModifiedGrid = true;
   }
 
   if (ModifiedGrid){

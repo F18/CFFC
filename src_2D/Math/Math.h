@@ -502,4 +502,14 @@ inline int Find_Quadrilateral_Type(const PositionVectorType &X1, const PositionV
   return 0;
 }
 
+/*! 
+ * Calculate the error of an approximate value relative to an exact value. \n
+ * The class of the variables should provide : \n
+ *   value constructor, "+", "-" operators and "fabs" function.
+ */
+template<typename T>
+inline T RelativeError(const T & ApproxValue, const T & ExactValue){
+  return fabs(ExactValue - ApproxValue)/(T(1) + fabs(ExactValue));
+}
+
 #endif // _MATH_MACROS_INCLUDED
