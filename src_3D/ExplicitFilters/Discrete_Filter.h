@@ -74,7 +74,7 @@ public:
     void filter(RowVector& Result, Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
     RowVector filter(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
     RowVector filter_1D(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter,Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell, int direction);
-
+    void generate(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell);
     
     
     /* --------------- Transfer function calculations ------------- */
@@ -255,6 +255,29 @@ void Discrete_Filter<Soln_pState,Soln_cState>::check_filter_moments_1D(Grid3D_He
 }
 
 
+
+template <typename Soln_pState, typename Soln_cState>
+void Discrete_Filter<Soln_pState,Soln_cState>::generate(Explicit_Filters<Soln_pState,Soln_cState> &explicit_filter, Grid3D_Hexa_Block &Grid_Blk, Cell3D &theCell) {
+    
+    if (!explicit_filter.Filter_Weights_Allocated && Store_Filter_Weights) {
+        explicit_filter.Allocate_Filter_Weights();
+    }
+    if (Store_Filter_Weights) {
+        int I(theCell.I);
+        int J(theCell.J);
+        int K(theCell.K);
+        if (!explicit_filter.Filter_Weights_Assigned[I][J][K]) {
+            theNeighbours.set_grid(Grid_Blk);
+            Get_Neighbours(theCell);
+            explicit_filter.Filter_Weights[I][J][K] = Get_Weights(theCell,theNeighbours);
+            explicit_filter.Filter_Stencil[I][J][K] = theNeighbours.neighbour;
+            explicit_filter.Filter_Weights_Assigned[I][J][K] = true;
+        }
+    } else {
+        if (!properties->Get_Property<int>("batch_flag"))
+            cout << "No use calculating filter weights in advance since MEMORY_EFFICIENT = ON"; cout.flush();
+    }
+}
 
 
 template <typename Soln_pState, typename Soln_cState>

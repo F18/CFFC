@@ -20,6 +20,7 @@ Explicit_Filters_Input_Parameters::Explicit_Filters_Input_Parameters() :
     Filter_Width(NUMBER_OF_FILTERS),
     Number_Of_Rings(NUMBER_OF_FILTERS),
     Filter_Memory_Efficient(NUMBER_OF_FILTERS),
+    Generate_At_Startup(NUMBER_OF_FILTERS),
     Filter_Relative(NUMBER_OF_FILTERS),
     Filter_Strength(NUMBER_OF_FILTERS),
     Relaxation_Factor(NUMBER_OF_FILTERS),
@@ -66,6 +67,9 @@ Explicit_Filters_Input_Parameters::Explicit_Filters_Input_Parameters() :
     
     Filter_Memory_Efficient[PRIMARY_FILTER]   = OFF;
     Filter_Memory_Efficient[SECONDARY_FILTER] = OFF;
+    
+    Generate_At_Startup[PRIMARY_FILTER]   = ON;
+    Generate_At_Startup[SECONDARY_FILTER] = ON;
     
     Filter_Relative[PRIMARY_FILTER] = ON;
     Filter_Relative[SECONDARY_FILTER] = ON;
@@ -238,6 +242,29 @@ int Explicit_Filters_Input_Parameters::Parse_Next_Input_Control_Parameter(char *
             Filter_Memory_Efficient[SECONDARY_FILTER] = ON;
         } else if(strcmp(value_string.c_str(), "OFF") == 0) {
             Filter_Memory_Efficient[SECONDARY_FILTER] = OFF; 
+        } else {
+            i_command = INVALID_INPUT_VALUE;
+        }
+    }
+    
+    else if (strcmp(code, "ExplicitFilter[1].Generate_At_Startup") == 0) {
+        i_command = 132;
+        value >> value_string;
+        if (strcmp(value_string.c_str(), "ON") == 0) {
+            Generate_At_Startup[PRIMARY_FILTER] = ON;
+        } else if(strcmp(value_string.c_str(), "OFF") == 0) {
+            Generate_At_Startup[PRIMARY_FILTER] = OFF; 
+        } else {
+            i_command = INVALID_INPUT_VALUE;
+        }
+    } 
+    else if (strcmp(code, "ExplicitFilter[2].Generate_At_Startup") == 0) {
+        i_command = 132;
+        value >> value_string;
+        if (strcmp(value_string.c_str(), "ON") == 0) {
+            Generate_At_Startup[SECONDARY_FILTER] = ON;
+        } else if(strcmp(value_string.c_str(), "OFF") == 0) {
+            Generate_At_Startup[SECONDARY_FILTER] = OFF; 
         } else {
             i_command = INVALID_INPUT_VALUE;
         }
@@ -552,6 +579,7 @@ void Explicit_Filters_Input_Parameters::Broadcast(void) {
         MPI::COMM_WORLD.Bcast(&(Filter_Width[filter_number]), 1, MPI::DOUBLE, 0);
         MPI::COMM_WORLD.Bcast(&(Number_Of_Rings[filter_number]), 1, MPI::INT, 0);
         MPI::COMM_WORLD.Bcast(&(Filter_Memory_Efficient[filter_number]), 1, MPI::INT, 0);
+        MPI::COMM_WORLD.Bcast(&(Generate_At_Startup[filter_number]), 1, MPI::INT, 0);
         MPI::COMM_WORLD.Bcast(&(Filter_Relative[filter_number]), 1, MPI::INT, 0);
         MPI::COMM_WORLD.Bcast(&(Filter_Strength[filter_number]), 1, MPI::DOUBLE, 0);
         MPI::COMM_WORLD.Bcast(&(Relaxation_Factor[filter_number]), 1, MPI::DOUBLE, 0);

@@ -74,6 +74,8 @@ public:
     void filter(Filter_Variable_Type filter_variable, int extra_specification_1, int extra_specification_2);
     
     void filter_Blocks(void);
+    
+    void generate_all_weights(void); 
 
     RowVector ***Filtered;
     void allocate_Filtered(Grid3D_Hexa_Block &Grid_Blk);
@@ -133,6 +135,10 @@ public:
     
     int Read_from_file(void);
     int Write_to_file(void);
+    
+    bool isInitialized(void) {
+        return initialized;
+    }
 
 };
 
@@ -144,7 +150,10 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(Explicit_Filter_Const
         Input_ptr = &Input;   
         properties.Set_Properties(filter_number,Input,batch_flag);
         Create_filter();
-        initialized = true;
+        
+        if (properties.Get_Property<int>("generate_at_startup")) {
+            generate_all_weights();
+        }
     }
 }
 
@@ -175,13 +184,21 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Create_filter(void) {
     switch (properties.Get_Property<int>("filter_type")) {
         case Explicit_Filter_Constants::HASELBACHER_FILTER:
             filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>(properties);
+            initialized = true;
             break;
         case Explicit_Filter_Constants::VASILYEV_FILTER:
             filter_ptr = new Vasilyev_Filter<Soln_pState,Soln_cState>(properties);
+            initialized = true;
             break;
         case Explicit_Filter_Constants::RESTART_FILTER:
             error_flag = Read_from_file();
-            if (error_flag == 1) cerr << "could not read filter_input_file" << endl;
+            if (error_flag == 1) {
+                cerr << "could not read filter_input_file" << endl;
+            } else {
+                initialized = true;
+            }
+            break;
+        case Explicit_Filter_Constants::IMPLICIT_FILTER:
             break;
         default:
             cerr << "Filter not defined" << endl;
@@ -297,13 +314,46 @@ void Explicit_Filters<Soln_pState,Soln_cState>::filter_Blocks(void) {
         for (int j=SolnBlk_ptr->JCl; j<=SolnBlk_ptr->JCu; j++) {
             for (int k=SolnBlk_ptr->KCl; k<=SolnBlk_ptr->KCu; k++) {
                 filter_ptr->filter(Filtered[i][j][k], *this, SolnBlk_ptr->Grid, SolnBlk_ptr->Grid.Cell[i][j][k]);
-                number_of_processed_cells++;
-                ShowProgress(" Filtering  ", number_of_processed_cells, number_of_cells, progress_mode);
+                if (CFFC_Primary_MPI_Processor()) {
+                    number_of_processed_cells++;
+                    ShowProgress(" Filtering  ", number_of_processed_cells, number_of_cells, progress_mode);
+                }
             }
         }
     }
     adaptor.Load_into_Solution_Block(Filtered);
     deallocate_Filtered(SolnBlk_ptr->Grid);
+    
+    if (progress_mode!=PROGRESS_MODE_SILENT){
+        properties.Set_Operating_Property("progress_mode",PROGRESS_MODE_SILENT);
+    }
+}
+
+template<typename Soln_pState, typename Soln_cState>
+void Explicit_Filters<Soln_pState,Soln_cState>::generate_all_weights(void) {
+    if (!initialized) {
+        cout << "Explicit_Filters not initialized, can not generate filter weights" << endl;
+        return;
+    }
+    int progress_mode = properties.Get_Property<int>("progress_mode");
+    int number_of_cells = 0;
+    int number_of_processed_cells = 0;
+    
+    number_of_cells = (SolnBlk_ptr->ICu - SolnBlk_ptr->ICl + 1)
+    * (SolnBlk_ptr->JCu - SolnBlk_ptr->JCl + 1)
+    * (SolnBlk_ptr->KCu - SolnBlk_ptr->KCl + 1);
+    
+    for(int i=SolnBlk_ptr->ICl; i<=SolnBlk_ptr->ICu; i++) {
+        for (int j=SolnBlk_ptr->JCl; j<=SolnBlk_ptr->JCu; j++) {
+            for (int k=SolnBlk_ptr->KCl; k<=SolnBlk_ptr->KCu; k++) {
+                filter_ptr->generate(*this, SolnBlk_ptr->Grid, SolnBlk_ptr->Grid.Cell[i][j][k]);
+                if (CFFC_Primary_MPI_Processor()) {
+                    number_of_processed_cells++;
+                    ShowProgress("    Computing Filter Weights  ", number_of_processed_cells, number_of_cells, progress_mode);
+                }
+            }
+        }
+    }
     
     if (progress_mode!=PROGRESS_MODE_SILENT){
         properties.Set_Operating_Property("progress_mode",PROGRESS_MODE_SILENT);

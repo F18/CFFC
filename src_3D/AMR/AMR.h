@@ -132,7 +132,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
                                                2*Initial_Mesh.Grid_Blks[nb].Nghost;
          Octree.Roots[nb].block.info.dimen.k = Initial_Mesh.Grid_Blks[nb].NCk -
                                                2*Initial_Mesh.Grid_Blks[nb].Nghost;
-         Octree.Roots[nb].block.info.dimen.ghost = 2;
+          Octree.Roots[nb].block.info.dimen.ghost = Initial_Mesh.Grid_Blks[nb].Nghost;
          Octree.Roots[nb].block.info.sector = ADAPTIVEBLOCK3D_SECTOR_NONE;
          Octree.Roots[nb].block.info.level = 0;
          Octree.Roots[nb].parent_ptr = NULL;

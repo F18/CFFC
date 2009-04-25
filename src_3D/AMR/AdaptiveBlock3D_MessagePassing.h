@@ -153,30 +153,30 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                  
                     // Load ghost cell solution variable information.
                     if (ii == -1) {
-                       n_imin = Soln_Blks[i_blk].Nghost;
-                       n_imax = Soln_Blks[i_blk].ICl+1;
+                       n_imin = Soln_Blks[i_blk].ICl;
+                       n_imax = Soln_Blks[i_blk].ICl+Soln_Blks[i_blk].Nghost-1;
                     } else if (ii == 1){
-                       n_imin = Soln_Blks[i_blk].ICu-1;
+                       n_imin = Soln_Blks[i_blk].ICu-Soln_Blks[i_blk].Nghost+1;
                        n_imax = Soln_Blks[i_blk].ICu;
                     } else {
                        n_imin = 0;
                        n_imax = 0;
                     } /* endif */
                     if (jj == -1 ) {
-                       n_jmin = Soln_Blks[i_blk].Nghost;
-                       n_jmax = Soln_Blks[i_blk].JCl+1;
+                       n_jmin = Soln_Blks[i_blk].JCl;
+                       n_jmax = Soln_Blks[i_blk].JCl+Soln_Blks[i_blk].Nghost-1;
                     } else if( jj == 1) {
-                       n_jmin = Soln_Blks[i_blk].JCu-1;
+                       n_jmin = Soln_Blks[i_blk].JCu-Soln_Blks[i_blk].Nghost+1;
                        n_jmax = Soln_Blks[i_blk].JCu;
                     } else {
                        n_jmin = 0;
                        n_jmax = 0;
                     } /* endif */
                     if (kk == -1 ) {
-                       n_kmin = Soln_Blks[i_blk].Nghost;
-                       n_kmax = Soln_Blks[i_blk].KCl+1;
+                       n_kmin = Soln_Blks[i_blk].KCl;
+                       n_kmax = Soln_Blks[i_blk].KCl+Soln_Blks[i_blk].Nghost-1;
                     } else if ( kk == 1) {
-                       n_kmin = Soln_Blks[i_blk].KCu-1;
+                       n_kmin = Soln_Blks[i_blk].KCu-Soln_Blks[i_blk].Nghost+1;
                        n_kmax = Soln_Blks[i_blk].KCu;
                     } else {
                        n_kmin = 0;
@@ -392,9 +392,9 @@ int Load_Send_Message_Buffers_Residual(Hexa_Soln_Block *Soln_Blks,
                             // Load ghost cell solution variable information.
                             if (ii == -1) {
                                 n_imin = Soln_Blks[i_blk].Nghost;
-                                n_imax = Soln_Blks[i_blk].ICl+1;
+                                n_imax = Soln_Blks[i_blk].ICl+Soln_Blks[i_blk].Nghost-1;
                             } else if (ii == 1){
-                                n_imin = Soln_Blks[i_blk].ICu-1;
+                                n_imin = Soln_Blks[i_blk].ICu-Soln_Blks[i_blk].Nghost+1;
                                 n_imax = Soln_Blks[i_blk].ICu;
                             } else {
                                 n_imin = 0;
@@ -402,9 +402,9 @@ int Load_Send_Message_Buffers_Residual(Hexa_Soln_Block *Soln_Blks,
                             } /* endif */
                             if (jj == -1 ) {
                                 n_jmin = Soln_Blks[i_blk].Nghost;
-                                n_jmax = Soln_Blks[i_blk].JCl+1;
+                                n_jmax = Soln_Blks[i_blk].JCl+Soln_Blks[i_blk].Nghost-1;
                             } else if( jj == 1) {
-                                n_jmin = Soln_Blks[i_blk].JCu-1;
+                                n_jmin = Soln_Blks[i_blk].JCu-Soln_Blks[i_blk].Nghost+1;
                                 n_jmax = Soln_Blks[i_blk].JCu;
                             } else {
                                 n_jmin = 0;
@@ -412,9 +412,9 @@ int Load_Send_Message_Buffers_Residual(Hexa_Soln_Block *Soln_Blks,
                             } /* endif */
                             if (kk == -1 ) {
                                 n_kmin = Soln_Blks[i_blk].Nghost;
-                                n_kmax = Soln_Blks[i_blk].KCl+1;
+                                n_kmax = Soln_Blks[i_blk].KCl+Soln_Blks[i_blk].Nghost-1;
                             } else if ( kk == 1) {
-                                n_kmin = Soln_Blks[i_blk].KCu-1;
+                                n_kmin = Soln_Blks[i_blk].KCu-Soln_Blks[i_blk].Nghost+1;
                                 n_kmax = Soln_Blks[i_blk].KCu;
                             } else {
                                 n_kmin = 0;
@@ -990,31 +990,31 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                    
                       // Unload ghost cell solution information.
                       if (ii == -1) {
-                         n_imin = Soln_Blks[i_blk].Nghost-2;
-                         n_imax = Soln_Blks[i_blk].Nghost-1;
+                         n_imin = Soln_Blks[i_blk].ICl-Soln_Blks[i_blk].Nghost;
+                         n_imax = Soln_Blks[i_blk].ICl-1;
                       } else if (ii == 1) {
-                         n_imin =  Soln_Blks[i_blk].ICu+ 1;
-                         n_imax = Soln_Blks[i_blk].ICu+ Soln_Blks[i_blk].Nghost;
+                         n_imin = Soln_Blks[i_blk].ICu+1;
+                         n_imax = Soln_Blks[i_blk].ICu+Soln_Blks[i_blk].Nghost;
                       } else {
                          n_imin = 0;
                          n_imax = 0;
                       } /* endif */
                       if (jj == -1) {
-                         n_jmin = Soln_Blks[i_blk].Nghost-2;
-                         n_jmax = Soln_Blks[i_blk].Nghost-1;
+                         n_jmin = Soln_Blks[i_blk].JCl-Soln_Blks[i_blk].Nghost;
+                         n_jmax = Soln_Blks[i_blk].JCl-1;
                       } else if (jj == 1) {
-                         n_jmin =  Soln_Blks[i_blk].JCu+1;
-                         n_jmax = Soln_Blks[i_blk].JCu + Soln_Blks[i_blk].Nghost;
+                         n_jmin = Soln_Blks[i_blk].JCu+1;
+                         n_jmax = Soln_Blks[i_blk].JCu+Soln_Blks[i_blk].Nghost;
                       } else {
                          n_jmin = 0;
                          n_jmax = 0;
                       } /* endif */
                       if (kk == -1) {
-                         n_kmin = Soln_Blks[i_blk].Nghost-2;
-                         n_kmax = Soln_Blks[i_blk].Nghost-1;
+                         n_kmin = Soln_Blks[i_blk].KCl-Soln_Blks[i_blk].Nghost;
+                         n_kmax = Soln_Blks[i_blk].KCl-1;
                       } else if (kk == 1) {
-                         n_kmin =  Soln_Blks[i_blk].KCu + 1;
-                         n_kmax = Soln_Blks[i_blk].KCu +  Soln_Blks[i_blk].Nghost;
+                         n_kmin = Soln_Blks[i_blk].KCu+1;
+                         n_kmax = Soln_Blks[i_blk].KCu+Soln_Blks[i_blk].Nghost;
                       } else {
                          n_kmin = 0;
                          n_kmax = 0;
@@ -1179,31 +1179,31 @@ int Unload_Receive_Message_Buffers_Residual(Hexa_Soln_Block *Soln_Blks,
                             
                             // Unload ghost cell solution information.
                             if (ii == -1) {
-                                n_imin = Soln_Blks[i_blk].Nghost-2;
-                                n_imax = Soln_Blks[i_blk].Nghost-1;
+                                n_imin = Soln_Blks[i_blk].ICl-Soln_Blks[i_blk].Nghost;
+                                n_imax = Soln_Blks[i_blk].ICl-1;
                             } else if (ii == 1) {
-                                n_imin =  Soln_Blks[i_blk].ICu+ 1;
-                                n_imax = Soln_Blks[i_blk].ICu+ Soln_Blks[i_blk].Nghost;
+                                n_imin = Soln_Blks[i_blk].ICu+1;
+                                n_imax = Soln_Blks[i_blk].ICu+Soln_Blks[i_blk].Nghost;
                             } else {
                                 n_imin = 0;
                                 n_imax = 0;
                             } /* endif */
                             if (jj == -1) {
-                                n_jmin = Soln_Blks[i_blk].Nghost-2;
-                                n_jmax = Soln_Blks[i_blk].Nghost-1;
+                                n_jmin = Soln_Blks[i_blk].JCl-Soln_Blks[i_blk].Nghost;
+                                n_jmax = Soln_Blks[i_blk].JCl-1;
                             } else if (jj == 1) {
-                                n_jmin =  Soln_Blks[i_blk].JCu+1;
-                                n_jmax = Soln_Blks[i_blk].JCu + Soln_Blks[i_blk].Nghost;
+                                n_jmin = Soln_Blks[i_blk].JCu+1;
+                                n_jmax = Soln_Blks[i_blk].JCu+Soln_Blks[i_blk].Nghost;
                             } else {
                                 n_jmin = 0;
                                 n_jmax = 0;
                             } /* endif */
                             if (kk == -1) {
-                                n_kmin = Soln_Blks[i_blk].Nghost-2;
-                                n_kmax = Soln_Blks[i_blk].Nghost-1;
+                                n_kmin = Soln_Blks[i_blk].KCl-Soln_Blks[i_blk].Nghost;
+                                n_kmax = Soln_Blks[i_blk].KCl-1;
                             } else if (kk == 1) {
-                                n_kmin =  Soln_Blks[i_blk].KCu + 1;
-                                n_kmax = Soln_Blks[i_blk].KCu +  Soln_Blks[i_blk].Nghost;
+                                n_kmin = Soln_Blks[i_blk].KCu+1;
+                                n_kmax = Soln_Blks[i_blk].KCu+Soln_Blks[i_blk].Nghost;
                             } else {
                                 n_kmin = 0;
                                 n_kmax = 0;

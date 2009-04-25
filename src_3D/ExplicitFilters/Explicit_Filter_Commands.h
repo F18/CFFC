@@ -46,16 +46,37 @@ template <typename Soln_pState, typename Soln_cState>
 int Explicit_Filter_Commands::Initialize_Filters(HexaSolver_Data &Data, HexaSolver_Solution_Data<Soln_pState,Soln_cState> &Solution_Data)
 {
     int error_flag(0);
-
+    int first_block = true;;
     if (Solution_Data.Input.ExplicitFilters_IP.Filter_Type[Explicit_Filter_Constants::PRIMARY_FILTER] != Explicit_Filter_Constants::IMPLICIT_FILTER) {
         
         Hexa_Block<Soln_pState,Soln_cState> *Soln_Blks = Solution_Data.Local_Solution_Blocks.Soln_Blks;
+        
+        first_block = true;
+        if (CFFC_Primary_MPI_Processor() && !Data.batch_flag && first_block)
         for (int nBlk = 0; nBlk < Solution_Data.Local_Solution_Blocks.Number_of_Soln_Blks; nBlk++ ) {
             if (Solution_Data.Local_Solution_Blocks.Block_Used[nBlk]) {        
+                if (CFFC_Primary_MPI_Processor() && !Data.batch_flag && first_block) {
+                    first_block = false;
+                    if (!Soln_Blks[nBlk].Explicit_Filter.isInitialized())
+                        cout << "\n Initializing Explicit Filter 1 ..." << endl;
+                }
+
                 Soln_Blks[nBlk].Explicit_Filter.Initialize(Explicit_Filter_Constants::PRIMARY_FILTER,Data.batch_flag,Solution_Data.Input);
+            }
+        }
+        first_block = true;
+        for (int nBlk = 0; nBlk < Solution_Data.Local_Solution_Blocks.Number_of_Soln_Blks; nBlk++ ) {
+            if (Solution_Data.Local_Solution_Blocks.Block_Used[nBlk]) {
+                if (CFFC_Primary_MPI_Processor() && !Data.batch_flag && first_block) {
+                    first_block = false;
+                    if (!Soln_Blks[nBlk].Explicit_Secondary_Filter.isInitialized())
+                        cout << "\n Initializing Explicit Filter 2 ..." << endl;
+                }
                 Soln_Blks[nBlk].Explicit_Secondary_Filter.Initialize(Explicit_Filter_Constants::SECONDARY_FILTER,Data.batch_flag,Solution_Data.Input);
             }
         }
+        
+
     }
     return error_flag;
 }
