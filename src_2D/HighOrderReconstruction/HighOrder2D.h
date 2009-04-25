@@ -431,6 +431,19 @@ public:
 				  const unsigned & parameter) const {
     return NormalGradientAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y,norm_dir,parameter);
   }
+
+  //! Evaluate the interpolant with X-dependency integrated at a given location (X_Coord,Y_Coord) for all solution variables,
+  //  using the reconstruction of cell (ii,jj)
+  Soln_State SolutionStateWithXDependencyIntegratedAtCoordinates(const int & ii, const int & jj,
+								 const double & X_Coord, const double & Y_Coord) const {
+    return TD[ii][jj].ComputeXDependencyIntegratedSolutionFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
+  }
+
+  //! Evaluate the interpolant at a given position vector for all solution variables, using the reconstruction of cell (ii,jj).
+  Soln_State SolutionStateWithXDependencyIntegratedAtLocation(const int & ii, const int & jj,
+							      const Vector2D &CalculationPoint) const {
+    return SolutionStateWithXDependencyIntegratedAtCoordinates(ii,jj,CalculationPoint.x,CalculationPoint.y);
+  }
   //@}
 
   /*! @brief Integrate over the domain of the geometry associated with this high-order solution  */

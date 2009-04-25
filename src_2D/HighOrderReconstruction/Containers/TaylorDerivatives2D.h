@@ -283,6 +283,9 @@ class TaylorDerivativesContainer<TwoD,T>{
   //! Compute Y-gradient for a specific solution variable
   double ComputeYGradientFor(const double & DeltaX, const double & DeltaY, const unsigned & parameter) const;
 
+  //! Compute the polynomial with X-dependency integrated
+  T ComputeXDependencyIntegratedSolutionFor(const double DeltaX, const double DeltaY);
+
   // Reset limiter --> set limiter to ONE for all parameters
   void ResetLimiter(void){ phi.One();}
   void ResetFrozenLimiter(void){ phi_copy.One(); }
@@ -734,6 +737,48 @@ double TaylorDerivativesContainer<TwoD,T>::ComputeYGradientFor(const double &Del
   }
 }
 
+/*!
+ * Evaluate the polynomial approximation with X-dependency integrated
+ *  \f$ p(x,y) = \sum_{p1=0}^{k} \sum_{p2=0}^{k} \frac{1}{p1+1} (x - x_i)^{p1+1} (y - y_i)^p2 D_{p1p2} \f$
+ */
+template<class T>
+T TaylorDerivativesContainer<TwoD,T>::ComputeXDependencyIntegratedSolutionFor(const double DeltaX, const double DeltaY){
+
+  // Initialize the solution state
+  T Solution(0.0), Sum;
+  double DeltaXtoPower(DeltaX), DeltaYtoPower, OneOverP1PlusOne;
+  int p1,p2,Position;
+
+  // Loop over the first power (i.e. p1)
+  for (p1=0,Position=0; p1<=OrderOfRec; ++p1){
+    // Calculate OneOverP1PlusOne
+    OneOverP1PlusOne = 1.0/(p1 + 1.0);
+
+    /* Reinitialize DeltaYtoPower */
+    DeltaYtoPower = 1.0;
+
+    // Reset sum
+    Sum.Vacuum();
+
+    // Loop over the second power (i.e. p2)
+    for (p2=0; p2<=OrderOfRec-p1; ++p2, ++Position){
+      /* Update solution */
+      Sum += DeltaYtoPower*DContainer[Position].D();
+
+      /* Update DeltaYtoPower */
+      DeltaYtoPower *= DeltaY;
+    }
+
+    // Update solution with DeltaXtoPower contribution
+    Solution += OneOverP1PlusOne*DeltaXtoPower*Sum;
+
+    /* Update DeltaXtoPower */
+    DeltaXtoPower *= DeltaX;
+  }
+
+  // Return final solution. It considers the scalar limiter applied to all derivatives.
+  return (phi^Solution) + ( (T(1.0)-phi)^(DeltaX*DContainer[0].D()) );
+}
 
 // Friend functions
 template<class T> inline
@@ -929,6 +974,48 @@ double TaylorDerivativesContainer<TwoD,double>::ComputeSolutionFor(const double 
     return (phi*Solution) + ((1.0 - phi)*DContainer[0].D());
 
   }
+}
+
+/*!
+ * Evaluate the polynomial approximation with X-dependency integrated
+ *  \f$ p(x,y) = \sum_{p1=0}^{k} \sum_{p2=0}^{k} \frac{1}{p1+1} (x - x_i)^{p1+1} (y - y_i)^p2 D_{p1p2} \f$
+ */
+template<> inline
+double TaylorDerivativesContainer<TwoD,double>::ComputeXDependencyIntegratedSolutionFor(const double DeltaX, const double DeltaY){
+
+  // Initialize the solution state
+  double Solution(0.0), Sum;
+  double DeltaXtoPower(DeltaX), DeltaYtoPower, OneOverP1PlusOne;
+  int p1,p2,Position;
+
+  // Loop over the first power (i.e. p1)
+  for (p1=0,Position=0; p1<=OrderOfRec; ++p1){
+    // Calculate OneOverP1PlusOne
+    OneOverP1PlusOne = 1.0/(p1 + 1.0);
+
+    /* Reinitialize DeltaYtoPower */
+    DeltaYtoPower = 1.0;
+
+    // Reset sum
+    Sum = 0.0;
+    // Loop over the second power (i.e. p2)
+    for (p2=0; p2<=OrderOfRec-p1; ++p2, ++Position){
+      /* Update solution */
+      Sum += DeltaYtoPower*DContainer[Position].D();
+
+      /* Update DeltaYtoPower */
+      DeltaYtoPower *= DeltaY;
+    }
+
+    // Update solution with DeltaXtoPower contribution
+    Solution += Sum*OneOverP1PlusOne*DeltaXtoPower;
+
+    /* Update DeltaXtoPower */
+    DeltaXtoPower *= DeltaX;
+  }
+
+  // Return final solution. It considers the scalar limiter applied to all derivatives.
+  return (phi*Solution) + ( (1.0-phi)*(DeltaX*DContainer[0].D()) );
 }
 
 #endif
