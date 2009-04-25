@@ -18,7 +18,7 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
      * ---------------------------------------*/
     if (Solution_Data.Input.i_ICs == IC_RESTART) {
         if(Solution_Data.Input.ExplicitFilters_IP.Filter_Solution_Before_Execution) {
-            if(!Data.batch_flag){
+            if(!Data.batch_flag && CFFC_Primary_MPI_Processor()){
                 cout 
                 << "\n ==============================="
                 << "\n    Filtering solution first    "
@@ -152,7 +152,9 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                                                                                        Data.Velocity_Field);
                 } else {
                     // Create a uniform single block with same dimensions as Initial_Mesh
-                    cout << "\n\n Creating Auxiliary mesh " << endl;
+                    if(!Data.batch_flag && CFFC_Primary_MPI_Processor()){
+                        cout << "\n Creating Auxiliary mesh for Turbulence generation" << endl;
+                    }
                     Data.Auxiliary_Mesh.Create_Uniform_Initial_Grid(Solution_Data.Input.Grid_IP,Data.Initial_Mesh);
                               
                     char grid_file_name[256];
@@ -203,15 +205,10 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                 if (Solution_Data.Input.ExplicitFilters_IP.Filter_Initial_Condition) {
                     // filter the initial condition
                     if (CFFC_Primary_MPI_Processor() && !Data.batch_flag) {
-                        cout << endl;
-                        cout << " ------------------------------------------------" << endl;
-                        cout << "    Explicitly filtering the initial condition   " << endl;
-                        cout << " ------------------------------------------------" << endl;        
+                        cout << "\n\n Explicitly filtering the initial condition   " << endl;
                     }
                     error_flag = Explicit_Filter_Commands::Filter_Solution(Data,Solution_Data,Explicit_Filter_Constants::PRIMARY_FILTER);
-                    if (CFFC_Primary_MPI_Processor() && !Data.batch_flag) {
-                        cout << "    Finished explicitly filtering the initial condition" << endl;
-                    }
+
 //                    // save filter to file so don't have to recompute.
 //                    if (Solution_Data.Input.Turbulence_IP.i_filter_type != Explicit_Filter_Constants::RESTART_FILTER)
 //                        error_flag = Solution_Data.Explicit_Filter.Write_to_file();
@@ -227,7 +224,7 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             
             /* ----------- Get turbulence statistics before computations -------- */
             if (CFFC_Primary_MPI_Processor() && !Data.batch_flag) {
-                cout << "    Get turbulence statistics before computations" << endl;
+                cout << "\n\n Get turbulence statistics before computations" << endl;
             }
             // Get average velocity
             double u_ave, v_ave, w_ave, sqr_u;

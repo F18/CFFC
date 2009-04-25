@@ -69,7 +69,6 @@ public:
             properties->Get_Property("filter_strength",filter_strength);
             properties->Get_Property("high_order",reconstruction_type);
             properties->Properties_Read();
-            cout << endl;
             
             Assigned_w_Uniform_Grid = false;
             weight_factor = 1.5;

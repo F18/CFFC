@@ -31,13 +31,13 @@ Smagorinsky_Coefficient =
 #     Filter parameters      #
 ##############################
 ExplicitFilter.Commutation_Order =
-4
+2
 ExplicitFilter[1].Type = 
 Haselbacher
 ExplicitFilter[2].Type =
 Implicit
 ExplicitFilter[1].Number_Of_Rings =
-4
+2
 ExplicitFilter[1].Vasilyev.LS_Constraints = 
 OFF
 ExplicitFilter[1].Vasilyev.Filter_Width_Strict =
@@ -65,17 +65,17 @@ Periodic_Box
 Number_of_Ghost_Cells = 
 4
 Number_of_Cells_Idir =
-6
+16
 Number_of_Cells_Jdir =
-6
+16
 Number_of_Cells_Kdir
-6
+16
 Number_of_Blocks_Idir = 
-1
+2
 Number_of_Blocks_Jdir =
-1
+2
 Number_of_Blocks_Kdir =
-1
+2
 Box_Width = 
 #20.37
 #0.0366
@@ -95,8 +95,8 @@ Box_Length =
 #3.14
 #16
 Mesh_Stretching =
-ON
-# OFF
+# ON
+OFF
 Stretching_Factor_Idir = 
 1.2
 Stretching_Factor_Jdir = 

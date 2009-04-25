@@ -78,6 +78,7 @@ public:
     std::vector<bool>   Filter_Memory_Efficient;     //!< Determines whether to store filter weights or not (not storing slows down tremendously)
     std::vector<double> Filter_Strength;             //!< Defines how strong the filter will act (from 0 to 1)
     std::vector<bool>   Filter_Relative;             //!< Defines if the filtering happens relative to the mesh spacing
+    std::vector<bool>   Generate_At_Startup;         //!< Sets whether the filter weights will be calculated on the go or during Initialization
 
     // Vasilyev
     std::vector<double> Target_Filter_Sharpness;     //!< Sharpness of target filter in case of Least squares constraint (vasilyev)
