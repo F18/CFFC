@@ -1263,6 +1263,14 @@ class DenseMatrix: public MV_ColMat_double{
     friend DenseMatrix pseudo_inverse(const DenseMatrix &A);
     void pseudo_inverse_override(void);
     friend void pseudo_inverse_override(DenseMatrix &A);
+    
+    /* Get a vector containing the eigenvalues of an NxN matrix */
+    ColumnVector eigenvalues(void) const;
+    ColumnVector eigenvalues_overwrite(void);
+
+    /* Get matrix inverse */
+    DenseMatrix inverse(void) const;
+    void inverse_overwrite(void);
 
     /* Compute the Frobenious norm of the matrix ||A|| = sqrt(SUM_i SUM_j (A(i,j)^2) ) */
     double NormFro (void) const;

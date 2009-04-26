@@ -75,15 +75,15 @@ public:
     std::vector<double> FGR;                         //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
     std::vector<double> Filter_Width;                //!< Constant filter width
     std::vector<int>    Number_Of_Rings;             //!< Number of rings used in the explicit filter
-    std::vector<bool>   Filter_Memory_Efficient;     //!< Determines whether to store filter weights or not (not storing slows down tremendously)
+    std::vector<int>    Filter_Memory_Efficient;     //!< Determines whether to store filter weights or not (not storing slows down tremendously)
     std::vector<double> Filter_Strength;             //!< Defines how strong the filter will act (from 0 to 1)
-    std::vector<bool>   Filter_Relative;             //!< Defines if the filtering happens relative to the mesh spacing
-    std::vector<bool>   Generate_At_Startup;         //!< Sets whether the filter weights will be calculated on the go or during Initialization
+    std::vector<int>    Filter_Relative;             //!< Defines if the filtering happens relative to the mesh spacing
+    std::vector<int>    Generate_At_Startup;         //!< Sets whether the filter weights will be calculated on the go or during Initialization
 
     // Vasilyev
     std::vector<double> Target_Filter_Sharpness;     //!< Sharpness of target filter in case of Least squares constraint (vasilyev)
-    std::vector<bool>   Filter_Width_Strict;         //!< This will strictly set the FGR and won't allow Least squares to approximate : default = false
-    std::vector<bool>   LS_Constraints;              //!< This will turn on or off Least squares constraints for Vasilyev's filter : default = true
+    std::vector<int>    Filter_Width_Strict;         //!< This will strictly set the FGR and won't allow Least squares to approximate : default = false
+    std::vector<int>    LS_Constraints;              //!< This will turn on or off Least squares constraints for Vasilyev's filter : default = true
     std::vector<int>    Derivative_Constraints;      //!< Determines the number of derivative constraints for Vasilyev's filter : default = true
     
     // Haselbacher

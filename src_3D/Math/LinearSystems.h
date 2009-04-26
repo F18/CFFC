@@ -13,19 +13,14 @@
 #include <cstdlib>
 #include <cmath>
 
-/* Include lapack double precision library. */
-
-#include "lapackd.h"
+#include "lapackd.h"   /* Include lapack double precision library. */
 
 using namespace std;
 
 /* Include CFFC header files */
-
-#ifndef _MATRIX_INCLUDED
 #include "Matrix.h"             /* Include the matrix header file. */
-#endif // _MATRIX_INCLUDED
-
 #include "../Utilities/EpsilonTol.h" /* Include numerical tolerances header file. */
+#include "../Utilities/Utilities.h" /* Include utilities header file. */
 
 /* Define some useful constants. */
 
@@ -36,6 +31,12 @@ using namespace std;
 #define LS_Householder              4
 
 /* External subroutines for dense systems. */
+
+extern "C" 
+{
+  void dgells  (int*, void *, int *, void *, int*, void *, int*,
+		double *, double*, int*, int*, int*, int*, double *, int*);
+}
 
 extern void Solve_LU_Decomposition(DenseMatrix &A,
                                    ColumnVector &b,
@@ -304,6 +305,40 @@ inline void Solve_LS_Householder_F77(DenseMatrix &A,
 				     DenseMatrix &B,
 				     int &krank, const int & NumberOfParameters,
 				     int _NROW_, int _NCOL_){
+  
+#ifdef _USE_ESSL_LIB
+
+  /* Initialize variables */
+  static double RCOND(EpsilonTol::epsilon);
+  static integer NRHS, NROW, NCOL, LWORK;
+  static double *WORK;
+  static double rn;			// it doesn't get used in the current setup
+  static int k;			// number of columns of matrix A used in the solution.
+  static int i,j;
+
+
+  NRHS = NumberOfParameters;
+  NROW = _NROW_;
+  NCOL = _NCOL_;
+  LWORK = 4*NCOL + max(NCOL, NRHS) + 3;
+  WORK = new double[LWORK];
+  DenseMatrix X(NCOL,NRHS);
+
+  /* Call Fortran subroutine from IBM ESSL library */  
+  dgells (0, &A(0,0), &NROW, &B(0,0), &NROW, &X(0,0), &NCOL,
+	  &rn, &RCOND, &NROW, &NCOL, &NRHS, &k, WORK, &LWORK);
+
+  // Copy solution X into the elements of B
+  for (j = 0; j < NRHS; ++j){
+    for (i = 0; i < NCOL; ++ i){
+      B(i,j) = X(i,j);
+    }
+  }
+
+  /* Free memory */
+  delete [] WORK; WORK = NULL;
+
+#else
 
   //  static char TRANS('N');
   static integer INFO;
@@ -322,14 +357,17 @@ inline void Solve_LS_Householder_F77(DenseMatrix &A,
   for (int i=0; i<NCOL; ++i){
     JPVT[i] = 0;
   }
-  
-  /* Call Fortran subroutine */
+
+  /* Call Fortran subroutine from lapack */
   F77NAME(dgelsy)(&NROW, &NCOL, &NRHS, &A(0,0), &NROW,
 		  &B(0,0), &NROW, JPVT, &RCOND, &krank, WORK, &LWORK, &INFO);
 
   /* Free memory */
   delete [] WORK; WORK = NULL;
   delete [] JPVT; JPVT = NULL;
+
+#endif
+
 }
 
 inline void Solve_LS_Householder_F77(DenseMatrix &A,

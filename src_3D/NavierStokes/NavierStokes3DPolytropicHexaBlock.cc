@@ -910,10 +910,14 @@ dUdt_Residual_HighOrder(Input_Parameters<NavierStokes3D_Polytropic_pState,
 
   if (CENO_Execution_Mode::CENO_ENFORCE_MONOTONICITY_USING_SMOOTHNESS_INDICATOR){
 
-    HighOrderVariable.ComputeSmoothnessIndicator(*this);
-    HighOrderVariable.EnforceMonotonicityToNonSmoothInterpolants(*this, IPs.i_Limiter);
+    HighOrderVariable.ComputeSmoothnessIndicator(*this, 
+  							   &Hexa_Block<NavierStokes3D_Polytropic_pState, 
+  							               NavierStokes3D_Polytropic_cState>::CellSolution);
+    HighOrderVariable.EnforceMonotonicityToNonSmoothInterpolants(*this, IPs.i_Limiter,&Hexa_Block<NavierStokes3D_Polytropic_pState, 
+             							               NavierStokes3D_Polytropic_cState>::CellSolution);
 
   }
+  
 
   /* ------------------------------------------------------------------------------
      Step 2. Compute convective fluxes and any source contributions

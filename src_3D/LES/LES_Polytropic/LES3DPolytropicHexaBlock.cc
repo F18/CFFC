@@ -1382,8 +1382,10 @@ dUdt_Residual_HighOrder(Input_Parameters<LES3D_Polytropic_pState,
      *///-----------------------------------------------------------------------------
     if (CENO_Execution_Mode::CENO_ENFORCE_MONOTONICITY_USING_SMOOTHNESS_INDICATOR){
      
-      HighOrderVariable.ComputeSmoothnessIndicator(*this);
-      HighOrderVariable.EnforceMonotonicityToNonSmoothInterpolants(*this, IPs.i_Limiter);
+      HighOrderVariable.ComputeSmoothnessIndicator(*this,&Hexa_Block<LES3D_Polytropic_pState, 
+       LES3D_Polytropic_cState>::CellSolution);
+      HighOrderVariable.EnforceMonotonicityToNonSmoothInterpolants(*this, IPs.i_Limiter,&Hexa_Block<LES3D_Polytropic_pState, 
+       LES3D_Polytropic_cState>::CellSolution);
 
     }
     

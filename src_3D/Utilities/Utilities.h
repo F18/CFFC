@@ -95,7 +95,7 @@ inline void assure(std::ofstream& out,
 /// @param str string to convert from
 /// @return converter type
 template <class T>
-static std::string to_str (T v)
+inline std::string to_str (T v)
 {
     std::ostringstream oss;
     oss << v;
@@ -108,7 +108,7 @@ static std::string to_str (T v)
 /// @param str string to convert from
 /// @return converter type
 template <class T>
-static T from_str (const std::string& str)
+inline T from_str (const std::string& str)
 {
     T v;
     if (str.length() > 0)

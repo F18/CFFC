@@ -17,6 +17,11 @@
 #include "Filter_State.h"
 #endif
 
+#ifndef _UTILITIES_INCLUDED
+#include "../Utilities/Utilities.h"
+#endif
+
+
 #include <map>
 
 
