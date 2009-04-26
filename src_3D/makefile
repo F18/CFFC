@@ -507,8 +507,8 @@ fftw:
 	@echo Building $(FFTW) library for a $(PLATFORM) platform.
 	@echo '--------------------------------------------------------'
 	@echo ' '
-  # cd $(FFTW_DIR); ./configure CC=xlc CXX=xlc++ --prefix=$(FFTW_DIR);
-	cd $(FFTW_DIR); make -j2;
+	cd $(FFTW_DIR); ./configure $(FFTW_CONFIG_FLAGS) --prefix=$(FFTW_DIR);
+	cd $(FFTW_DIR); make;
 	cd $(FFTW_DIR); make install;
 	@echo ' '
 	@echo $(FFTW) library has been brought up to date.

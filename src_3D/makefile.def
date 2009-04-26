@@ -53,6 +53,7 @@ LD = $(CXX)
 LDFLAGS = -lm
 MODFLAG =
 DEPENDSFLAGS =
+FFTW_CONFIG_FLAGS =
 
 #
 # Determine the platform that is being used for this compilation
@@ -183,6 +184,12 @@ BLKCLIB_LIB_DIR         = $(BLKCLIB_DIR)/lib
 BLKCLIB_INC_DIR         = $(BLKCLIB_DIR)/include
 BLKCLIB_CPP_FLAGS       = -I$(BLKCLIB_INC_DIR) 
 BLKCLIB_LD_FLAGS        = -L$(BLKCLIB_LIB_DIR) -lblkc 
+
+#
+# Set flag to compile FFTW library
+ifeq ($(OS),AIX)
+  FFTW_CONFIG_FLAGS = CC=xlc CXX=xlc++
+endif
 
 #
 # Set flags associated with cantera
