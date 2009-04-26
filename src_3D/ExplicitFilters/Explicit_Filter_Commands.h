@@ -52,7 +52,6 @@ int Explicit_Filter_Commands::Initialize_Filters(HexaSolver_Data &Data, HexaSolv
         Hexa_Block<Soln_pState,Soln_cState> *Soln_Blks = Solution_Data.Local_Solution_Blocks.Soln_Blks;
         
         first_block = true;
-        if (CFFC_Primary_MPI_Processor() && !Data.batch_flag && first_block)
         for (int nBlk = 0; nBlk < Solution_Data.Local_Solution_Blocks.Number_of_Soln_Blks; nBlk++ ) {
             if (Solution_Data.Local_Solution_Blocks.Block_Used[nBlk]) {        
                 if (CFFC_Primary_MPI_Processor() && !Data.batch_flag && first_block) {

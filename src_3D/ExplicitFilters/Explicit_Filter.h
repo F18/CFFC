@@ -59,7 +59,7 @@ public:
     template <typename T>
     void Set_Operating_Property(string property_name, T property_value);   
 
-    void Create_filter(void);
+    int Create_filter(void);
     void transfer_function();
     void transfer_function(int flag);
     void transfer_function(int i, int j, int k);
@@ -146,11 +146,10 @@ public:
 template<typename Soln_pState,typename Soln_cState>
 void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(Explicit_Filter_Constants::Filter_Number filter_number, int& batch_flag, Input_Parameters<Soln_pState,Soln_cState> &Input) {
     if (!initialized) {
-        
+        int error_flag;
         Input_ptr = &Input;   
         properties.Set_Properties(filter_number,Input,batch_flag);
-        Create_filter();
-        
+        error_flag = Create_filter();
         if (properties.Get_Property<int>("generate_at_startup")) {
             generate_all_weights();
         }
@@ -158,29 +157,9 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Initialize(Explicit_Filter_Const
 }
 
 
-
-
-
-//template<typename Soln_pState,typename Soln_cState>
-//void Explicit_Filters<Soln_pState,Soln_cState>::Set_Properties(Input_Parameters<Soln_pState,Soln_cState> &Input, int batch_flag) {
-//    properties.Set_Properties(Input,batch_flag);
-//}
-//
-//template<typename Soln_pState,typename Soln_cState>
-//template<typename T>
-//void Explicit_Filters<Soln_pState,Soln_cState>::Set_Filter_Property(string property_name, T property_value){
-//    properties.Set_Filter_Property(property_name,property_value);
-//}
-//
-//template<typename Soln_pState,typename Soln_cState>
-//template<typename T>
-//void Explicit_Filters<Soln_pState,Soln_cState>::Set_Operating_Property(string property_name, T property_value){
-//    properties.Set_Operating_Property(property_name,property_value);
-//}
-
 template <typename Soln_pState, typename Soln_cState>
-void Explicit_Filters<Soln_pState,Soln_cState>::Create_filter(void) {
-    int error_flag;
+int Explicit_Filters<Soln_pState,Soln_cState>::Create_filter(void) {
+    int error_flag(0);
     switch (properties.Get_Property<int>("filter_type")) {
         case Explicit_Filter_Constants::HASELBACHER_FILTER:
             filter_ptr = new Haselbacher_Filter<Soln_pState,Soln_cState>(properties);
@@ -199,11 +178,14 @@ void Explicit_Filters<Soln_pState,Soln_cState>::Create_filter(void) {
             }
             break;
         case Explicit_Filter_Constants::IMPLICIT_FILTER:
+          cout << "Implicit Filtering!" << endl;
             break;
         default:
             cerr << "Filter not defined" << endl;
+            error_flag = 1;
             break;
     }
+    return error_flag;
 }
 
 template <typename Soln_pState, typename Soln_cState>
@@ -838,11 +820,6 @@ RowVector Explicit_Filters<Soln_pState,Soln_cState>::maxnorm(Grid3D_Hexa_Block &
     
     return normRow;
 }
-
-
-
-
-
 
 
 template<typename Soln_pState, typename Soln_cState>
