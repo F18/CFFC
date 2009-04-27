@@ -227,6 +227,8 @@ class Grid3D_Hexa_Multi_Block_List {
 
     void Create_Grid_Cube(Grid3D_Input_Parameters &Input);
 
+    void Create_Grid_Periodic_Box_Stretch(Grid3D_Input_Parameters &Input);
+    
     void Create_Grid_Periodic_Box(Grid3D_Input_Parameters &Input);
     
     void Create_Grid_Single_Block_Periodic_Box(Grid3D_Input_Parameters &Input);
