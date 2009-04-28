@@ -36,6 +36,10 @@ namespace tut
     ColumnVector B;
     int rings;
 
+    Grid2DTesting_Input_Parameters IP;
+
+    int error_flag;
+
     // Constructor
     Data_HighOrder2D();
 
@@ -46,6 +50,10 @@ namespace tut
 							const HighOrderVariable &MasterHO,
 							const int &i_Master, const int &j_Master,
 							const std::string & BaseMsg = "");
+
+    // Create Mesh
+    void CreateMesh(Grid2D_Quad_MultiBlock_HO & _MeshBlk_,
+		    Grid2DTesting_Input_Parameters & IP) throw(std::runtime_error);
 
   private:
     
@@ -66,6 +74,9 @@ namespace tut
 
     // set geometry
     Spline2D_HO::ResetCounter();
+    Spline2DInterval_HO::Set_Default_Parameters();
+
+    Grid2D_Quad_Block_HO::setLowOrderBoundaryRepresentation();
     
     // set the pseudo-inverse situation
     A(0,0) = 1.0; A(0,1) = 2.0; A(0,2) = 3.0;
@@ -141,6 +152,31 @@ namespace tut
 
       }
     }
+  }
+
+
+  // === CreateMesh()
+  void Data_HighOrder2D::CreateMesh(Grid2D_Quad_MultiBlock_HO & _MeshBlk_,
+				    Grid2DTesting_Input_Parameters & IP) throw(std::runtime_error){
+    
+    // Ensure that the highest reconstruction order was set correctly
+    HighOrder2D_Input::Set_Final_Parameters(IP);
+
+    /* Initialize all static variables within the class */
+    if (IP.IncludeHighOrderBoundariesRepresentation == ON){
+      Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+    } else {
+      Grid2D_Quad_Block_HO::setLowOrderBoundaryRepresentation();
+    }
+
+    error_flag = _MeshBlk_.Multi_Block_Grid(IP);
+    
+    if (error_flag) {
+      // try to output the nodes
+      _MeshBlk_.Output_Nodes_Tecplot_Using_IP(IP);
+      throw runtime_error("CreateMesh() ERROR: Unable to create valid multi-block mesh.");
+    }
+   
   }
   
   /**
@@ -3085,7 +3121,7 @@ namespace tut
     in() >> Grid;
 
     // Initialize high-order variable
-    HO.InitializeVariable(RecOrder,Grid,true);
+    HO.InitializeVariable(RecOrder,Grid,false);
 
     // Set the Taylor derivatives
     HO.CellTaylorDerivState(3,3,0,0) = 1.0;
@@ -3161,6 +3197,322 @@ namespace tut
 		    dRdn, AcceptedError(dRdn));
   }
 
+
+  /* Test 44:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<44>()
+  {
+    set_test_name("Calculate solution prolongation");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(4);
+    int p1,p2;
+    double Ubar, U_SW, U_SE, U_NE, U_NW;
+    double Ufine_SW, Ufine_SE, Ufine_NE, Ufine_NW;
+    double areaSW, areaSE, areaNE, areaNW;
+    Node2D_HO nodeSW,nodeSE,nodeNW,nodeNE,MidN,MidS,MidE,MidW,CC;
+    int iCell,jCell;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,false);
+
+    // Set cell indexes and node coordinates
+    iCell = 3;
+    jCell = 3;
+    nodeSW = Grid.nodeSW(iCell,jCell);
+    nodeSE = Grid.nodeSE(iCell,jCell);
+    nodeNW = Grid.nodeNW(iCell,jCell);
+    nodeNE = Grid.nodeNE(iCell,jCell);
+    MidN.setloc(Grid.xfaceN(iCell,jCell));
+    MidS.setloc(Grid.xfaceS(iCell,jCell));
+    MidE.setloc(Grid.xfaceE(iCell,jCell));
+    MidW.setloc(Grid.xfaceW(iCell,jCell));
+    CC.setloc(Grid.getNodeAverage(iCell,jCell));
+
+    // Set the Taylor derivatives
+    HO.CellTaylorDerivState(iCell,jCell,0,0) = 1.0;
+    HO.CellTaylorDerivState(iCell,jCell,0,1) = 2.0;
+    HO.CellTaylorDerivState(iCell,jCell,0,2) = 3.0;
+    HO.CellTaylorDerivState(iCell,jCell,0,3) = 4.0;
+    HO.CellTaylorDerivState(iCell,jCell,0,4) = 5.0;
+    HO.CellTaylorDerivState(iCell,jCell,1,0) = 1.0;
+    HO.CellTaylorDerivState(iCell,jCell,1,1) = 2.0;
+    HO.CellTaylorDerivState(iCell,jCell,1,2) = 3.0;
+    HO.CellTaylorDerivState(iCell,jCell,1,3) = 4.0;
+    HO.CellTaylorDerivState(iCell,jCell,2,0) = 1.0;
+    HO.CellTaylorDerivState(iCell,jCell,2,1) = 2.0;
+    HO.CellTaylorDerivState(iCell,jCell,2,2) = 3.0;
+    HO.CellTaylorDerivState(iCell,jCell,3,0) = 1.0;
+    HO.CellTaylorDerivState(iCell,jCell,3,1) = 2.0;
+    HO.CellTaylorDerivState(iCell,jCell,4,0) = 1.0;
+
+    // Calculate average solutions for each sector and (iCell,jCell) cell
+    Ubar = ( HO.IntegrateCellReconstructionOverQuadDomain(iCell,jCell,
+							  nodeSW, nodeNW, 
+							  nodeNE, nodeSE)/ Grid.CellArea(iCell,jCell) );
+
+    areaSW = Grid.area(nodeSW,MidW,CC,MidS);
+    U_SW = ( HO.IntegrateCellReconstructionOverQuadDomain(iCell,jCell,
+							  nodeSW,MidW,CC,MidS)/ areaSW );
+
+    areaSE = Grid.area(MidS,CC,MidE,nodeSE);
+    U_SE = ( HO.IntegrateCellReconstructionOverQuadDomain(iCell,jCell,
+							  MidS,CC,MidE,nodeSE)/ areaSE );
+
+    areaNW = Grid.area(MidW,nodeNW,MidN,CC);
+    U_NW = ( HO.IntegrateCellReconstructionOverQuadDomain(iCell,jCell,
+							  MidW,nodeNW,MidN,CC)/ areaNW );
+
+    areaNE = Grid.area(CC,MidN,nodeNE,MidE);
+    U_NE = ( HO.IntegrateCellReconstructionOverQuadDomain(iCell,jCell,
+							  CC,MidN,nodeNE,MidE)/ areaNE );
+
+    // Calculate the average values for each sector provided by the high-order prolongation
+    HO.ComputeHighOrderSolutionProlongation(iCell,jCell, Ubar,
+					    Ufine_SW, Ufine_NW, 
+					    Ufine_SE, Ufine_NE);
+
+    // === Check results ===
+    ensure_distance("Prolonged average solution to the SW sector", Ufine_SW, U_SW, AcceptedError(U_SW));
+    ensure_distance("Prolonged average solution to the SE sector", Ufine_SE, U_SE, AcceptedError(U_SE));
+    ensure_distance("Prolonged average solution to the NW sector", Ufine_SW, U_SW, AcceptedError(U_NW));
+    ensure_distance("Prolonged average solution to the NE sector", Ufine_SW, U_SW, AcceptedError(U_NE));
+  }
+
+  /* Test 45:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<45>()
+  {
+    set_test_name("Calculate solution prolongation with disturbed mesh");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(4);
+    int p1,p2;
+    double Ubar, U_SW, U_SE, U_NE, U_NW;
+    double Ufine_SW, Ufine_SE, Ufine_NE, Ufine_NW;
+    double areaSW, areaSE, areaNE, areaNW;
+    Node2D_HO nodeSW,nodeSE,nodeNW,nodeNE,MidN,MidS,MidE,MidW,CC;
+    int iCell,jCell;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+    
+    // Disturb mesh
+    Grid.Disturb_Interior_Nodes(100);
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,false);
+
+    for (iCell = Grid.ICl; iCell <= Grid.ICu; ++iCell){
+      for (jCell = Grid.JCl; jCell <= Grid.JCu; ++jCell){
+
+	// Set cell indexes and node coordinates
+	nodeSW = Grid.nodeSW(iCell,jCell);
+	nodeSE = Grid.nodeSE(iCell,jCell);
+	nodeNW = Grid.nodeNW(iCell,jCell);
+	nodeNE = Grid.nodeNE(iCell,jCell);
+	MidN.setloc(Grid.xfaceN(iCell,jCell));
+	MidS.setloc(Grid.xfaceS(iCell,jCell));
+	MidE.setloc(Grid.xfaceE(iCell,jCell));
+	MidW.setloc(Grid.xfaceW(iCell,jCell));
+	CC.setloc(Grid.getNodeAverage(iCell,jCell));
+
+	// Set the Taylor derivatives
+	HO.CellTaylorDerivState(iCell,jCell,0,0) = 1.0;
+	HO.CellTaylorDerivState(iCell,jCell,0,1) = 2.0;
+	HO.CellTaylorDerivState(iCell,jCell,0,2) = 3.0;
+	HO.CellTaylorDerivState(iCell,jCell,0,3) = 4.0;
+	HO.CellTaylorDerivState(iCell,jCell,0,4) = 5.0;
+	HO.CellTaylorDerivState(iCell,jCell,1,0) = 1.0;
+	HO.CellTaylorDerivState(iCell,jCell,1,1) = 2.0;
+	HO.CellTaylorDerivState(iCell,jCell,1,2) = 3.0;
+	HO.CellTaylorDerivState(iCell,jCell,1,3) = 4.0;
+	HO.CellTaylorDerivState(iCell,jCell,2,0) = 1.0;
+	HO.CellTaylorDerivState(iCell,jCell,2,1) = 2.0;
+	HO.CellTaylorDerivState(iCell,jCell,2,2) = 3.0;
+	HO.CellTaylorDerivState(iCell,jCell,3,0) = 1.0;
+	HO.CellTaylorDerivState(iCell,jCell,3,1) = 2.0;
+	HO.CellTaylorDerivState(iCell,jCell,4,0) = 1.0;
+
+	// Calculate average solutions for each sector and (iCell,jCell) cell
+	Ubar = ( HO.IntegrateCellReconstructionOverQuadDomain(iCell,jCell,
+							      nodeSW, nodeNW, 
+							      nodeNE, nodeSE)/ Grid.CellArea(iCell,jCell) );
+
+	areaSW = Grid.area(nodeSW,MidW,CC,MidS);
+	U_SW = ( HO.IntegrateCellReconstructionOverQuadDomain(iCell,jCell,
+							      nodeSW,MidW,CC,MidS)/ areaSW );
+
+	areaSE = Grid.area(MidS,CC,MidE,nodeSE);
+	U_SE = ( HO.IntegrateCellReconstructionOverQuadDomain(iCell,jCell,
+							      MidS,CC,MidE,nodeSE)/ areaSE );
+
+	areaNW = Grid.area(MidW,nodeNW,MidN,CC);
+	U_NW = ( HO.IntegrateCellReconstructionOverQuadDomain(iCell,jCell,
+							      MidW,nodeNW,MidN,CC)/ areaNW );
+
+	areaNE = Grid.area(CC,MidN,nodeNE,MidE);
+	U_NE = ( HO.IntegrateCellReconstructionOverQuadDomain(iCell,jCell,
+							      CC,MidN,nodeNE,MidE)/ areaNE );
+
+	// Calculate the average values for each sector provided by the high-order prolongation
+	HO.ComputeHighOrderSolutionProlongation(iCell,jCell, Ubar,
+						Ufine_SW, Ufine_NW, 
+						Ufine_SE, Ufine_NE);
+    
+	// === Check results ===
+	ostm() << "Checked Cell (" << iCell << "," << jCell << "), " 
+	       << "prolonged solution to the SW sector\n";
+	ensure_distance(ostm().str(), Ufine_SW, U_SW, AcceptedError(U_SW));
+	ostmClear();
+
+	ostm() << "Checked Cell (" << iCell << "," << jCell << "), " 
+	       << "prolonged solution to the SE sector\n";
+	ensure_distance(ostm().str(), Ufine_SE, U_SE, AcceptedError(U_SE));
+	ostmClear();
+
+	ostm() << "Checked Cell (" << iCell << "," << jCell << "), " 
+	       << "prolonged solution to the NW sector\n";
+	ensure_distance(ostm().str(), Ufine_SW, U_SW, AcceptedError(U_NW));
+	ostmClear();
+
+	ostm() << "Checked Cell (" << iCell << "," << jCell << "), " 
+	       << "prolonged solution to the NE sector\n";
+	ensure_distance(ostm().str(), Ufine_SW, U_SW, AcceptedError(U_NE));
+	ostmClear();
+      }
+    }
+
+  }
+
+  /* Test 46:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<46>()
+  {
+    set_test_name("Calculate solution prolongation with high-order circular mesh");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(4);
+    int p1,p2;
+    double Ubar, U_SW, U_SE, U_NE, U_NW;
+    double Ufine_SW, Ufine_SE, Ufine_NE, Ufine_NW;
+    double areaSW, areaSE, areaNE, areaNW;
+    Node2D_HO nodeSW,nodeSE,nodeNW,nodeNE,MidN,MidS,MidE,MidW,CC;
+    int iCell,jCell;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_MultiBlock_HO MeshBlk;
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 6;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 20;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = OFF;
+    Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
+    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+    IP.X_Scale = 1.0;
+    IP.X_Rotate = 0.0;
+    IP.X_Shift = Vector2D(0);
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+    MeshBlk(0,0).BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,MeshBlk(0,0),false);
+
+    for (iCell = MeshBlk(0,0).ICl; iCell <= MeshBlk(0,0).ICu; ++iCell){
+      for (jCell = MeshBlk(0,0).JCl; jCell <= MeshBlk(0,0).JCu; ++jCell){
+
+	// Set cell indexes and node coordinates
+	nodeSW = MeshBlk(0,0).nodeSW(iCell,jCell);
+	nodeSE = MeshBlk(0,0).nodeSE(iCell,jCell);
+	nodeNW = MeshBlk(0,0).nodeNW(iCell,jCell);
+	nodeNE = MeshBlk(0,0).nodeNE(iCell,jCell);
+	MidN.setloc(MeshBlk(0,0).xfaceN(iCell,jCell));
+	MidS.setloc(MeshBlk(0,0).xfaceS(iCell,jCell));
+	MidE.setloc(MeshBlk(0,0).xfaceE(iCell,jCell));
+	MidW.setloc(MeshBlk(0,0).xfaceW(iCell,jCell));
+	CC.setloc(MeshBlk(0,0).getNodeAverage(iCell,jCell));
+
+	// Set the Taylor derivatives
+	HO.CellTaylorDerivState(iCell,jCell,0,0) = 1.0;
+	HO.CellTaylorDerivState(iCell,jCell,0,1) = 2.0;
+	HO.CellTaylorDerivState(iCell,jCell,0,2) = 3.0;
+	HO.CellTaylorDerivState(iCell,jCell,0,3) = 4.0;
+	HO.CellTaylorDerivState(iCell,jCell,0,4) = 5.0;
+	HO.CellTaylorDerivState(iCell,jCell,1,0) = 1.0;
+	HO.CellTaylorDerivState(iCell,jCell,1,1) = 2.0;
+	HO.CellTaylorDerivState(iCell,jCell,1,2) = 3.0;
+	HO.CellTaylorDerivState(iCell,jCell,1,3) = 4.0;
+	HO.CellTaylorDerivState(iCell,jCell,2,0) = 1.0;
+	HO.CellTaylorDerivState(iCell,jCell,2,1) = 2.0;
+	HO.CellTaylorDerivState(iCell,jCell,2,2) = 3.0;
+	HO.CellTaylorDerivState(iCell,jCell,3,0) = 1.0;
+	HO.CellTaylorDerivState(iCell,jCell,3,1) = 2.0;
+	HO.CellTaylorDerivState(iCell,jCell,4,0) = 1.0;
+
+
+	// Calculate average solutions for each sector and (iCell,jCell) cell
+	// 	Ubar = ( HO.IntegrateCellReconstructionOverAnotherCellDomain(iCell,jCell,
+	// 								     HO,
+	// 								     iCell,jCell)/ MeshBlk(0,0).CellArea(iCell,jCell) );
+	Ubar = 10.0;
+
+	// Calculate the average values for each sector provided by the high-order prolongation
+	HO.ComputeHighOrderSolutionProlongation(iCell,jCell, Ubar,
+						Ufine_SW, Ufine_NW, 
+						Ufine_SE, Ufine_NE);
+      }
+    }
+
+  }
 
 }
 

@@ -1748,6 +1748,12 @@ namespace tut
       ensure_equals("GhostCells", MeshBlk(0,0).Value_GhostCellsUpdate_Flag(), OFF);
       ensure_equals("CornerGhostCells", MeshBlk(0,0).Value_CornerGhostCellsUpdate_Flag(), OFF);
 
+      // Check faces
+      ensure_equals("Curved South face", MeshBlk(0,0).IsSouthFaceOfInteriorCellCurved(iCell,jCell), true);
+      ensure_equals("Straight East face", MeshBlk(0,0).IsEastFaceOfInteriorCellCurved(iCell,jCell), false);
+      ensure_equals("Straight West face", MeshBlk(0,0).IsWestFaceOfInteriorCellCurved(iCell,jCell), false);
+      ensure_equals("Straight North face", MeshBlk(0,0).IsNorthFaceOfInteriorCellCurved(iCell,jCell), false);
+
     } else {
       Open_Output_File(MasterFile);
       

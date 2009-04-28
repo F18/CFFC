@@ -14199,3 +14199,195 @@ void Grid2D_Quad_Block_HO::Output_Cells_Translation_Rotation_Invariant_Propertie
   out_file.precision(15);
 }
 
+/*!
+ * Determine the necessary geometric properties to
+ * carry out Gauss quadrature integration along 
+ * a segment line specified by the StartPoint and EndPoint.
+ *
+ * \param GQPoints vector of Gauss integration points
+ * \param NumberOfGQPs the required number of integration points
+ * \param dYds the derivative of the y-coordinate with respect to the pathlength coordinate (constant for this case)
+ * \param Length the length of the line segment
+ */
+void Grid2D_Quad_Block_HO::getLineSegmentGaussIntegrationData(const Vector2D & StartPoint, const Vector2D & EndPoint,
+							      Vector2D * GQPoints, const int & NumberOfGQPs,
+							      double & DeltaY) const {
+
+  Vector2D Temp;
+
+  switch (NumberOfGQPs){
+  case 1:
+    GQPoints[0] = HALF*(StartPoint+EndPoint);
+    break;
+
+  case 2:
+    Temp = StartPoint-EndPoint;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = EndPoint + GaussQuadratureData::GQ2_Abscissa[0]*Temp;
+    
+    /* final value GQPoints[1] */
+    GQPoints[1] = EndPoint + GaussQuadratureData::GQ2_Abscissa[1]*Temp;
+    break;
+
+  case 3:
+    Temp = StartPoint-EndPoint;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = EndPoint + GaussQuadratureData::GQ3_Abscissa[0]*Temp;
+   
+    /* final value GQPoints[1] */
+    GQPoints[1] = EndPoint + GaussQuadratureData::GQ3_Abscissa[1]*Temp;
+
+    /* final value GQPoints[2] */
+    GQPoints[2] = EndPoint + GaussQuadratureData::GQ3_Abscissa[2]*Temp;
+    break;
+
+  case 5:
+    Temp = StartPoint-EndPoint;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = EndPoint + GaussQuadratureData::GQ5_Abscissa[0]*Temp;
+   
+    /* final value GQPoints[1] */
+    GQPoints[1] = EndPoint + GaussQuadratureData::GQ5_Abscissa[1]*Temp;
+
+    /* final value GQPoints[2] */
+    GQPoints[2] = EndPoint + GaussQuadratureData::GQ5_Abscissa[2]*Temp;
+
+    /* final value GQPoints[3] */
+    GQPoints[3] = EndPoint + GaussQuadratureData::GQ5_Abscissa[3]*Temp;
+
+    /* final value GQPoints[4] */
+    GQPoints[4] = EndPoint + GaussQuadratureData::GQ5_Abscissa[4]*Temp;
+    break;
+
+  default:
+    throw runtime_error("Grid2D_Quad_Block_HO::getLineSegmentGaussIntegrationData() ERROR! \
+                         Not implemented number of Gauss quadrature points!");
+  }
+  
+  // Calculate DeltaY
+  DeltaY = (EndPoint.y - StartPoint.y);
+
+}
+
+
+/*!
+ * Get North face midpoint for an interior cell.
+ * This routine also works if the face is curved.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ */
+Vector2D Grid2D_Quad_Block_HO::getMidPointFaceN(const int ii, const int jj) const{
+  double sp_l, sp_r, dl, dr, ds_ratio, sp_m;
+  Vector2D MidP;
+
+  if (IsNorthFaceOfInteriorCellCurved(ii,jj)){
+
+    MidP = xfaceN(ii,jj);
+    sp_l = getS(nodeNW(ii,jj).X,
+		BndNorthSpline);
+    sp_r = getS(nodeNE(ii,jj).X,
+		BndNorthSpline);
+    dl = abs(MidP - nodeNW(ii,jj).X);
+    dr = abs(nodeNE(ii,jj).X - MidP);
+    ds_ratio = dl/(dl+dr);
+    sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+    return Spline(sp_m, BndNorthSpline);
+
+  } else {
+    return xfaceN(ii,jj);
+  }
+}
+
+/*!
+ * Get South face midpoint for an interior cell.
+ * This routine also works if the face is curved.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ */
+Vector2D Grid2D_Quad_Block_HO::getMidPointFaceS(const int ii, const int jj) const{
+
+  double sp_l, sp_r, dl, dr, ds_ratio, sp_m;
+  Vector2D MidP;
+
+  if (IsSouthFaceOfInteriorCellCurved(ii,jj)){
+    
+    MidP = xfaceS(ii,jj);
+    sp_l = getS(nodeSW(ii,jj).X,
+		BndSouthSpline);
+    sp_r = getS(nodeSE(ii,jj).X,
+		BndSouthSpline);
+    dl = abs(MidP - nodeSW(ii,jj).X);
+    dr = abs(nodeSE(ii,jj).X - MidP);
+    ds_ratio = dl/(dl+dr);
+    sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+    return Spline(sp_m, BndSouthSpline);
+
+  } else {
+    return xfaceS(ii,jj);
+  }
+}
+
+/*!
+ * Get East face midpoint for an interior cell.
+ * This routine also works if the face is curved.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ */
+Vector2D Grid2D_Quad_Block_HO::getMidPointFaceE(const int ii, const int jj) const{
+
+  double sp_l, sp_r, dl, dr, ds_ratio, sp_m;
+  Vector2D MidP;
+
+  if (IsEastFaceOfInteriorCellCurved(ii,jj)){
+
+    MidP = xfaceE(ii,jj);
+    sp_l = getS(nodeSE(ii,jj).X, 
+		BndEastSpline);
+    sp_r = getS(nodeNE(ii,jj).X,
+		BndEastSpline);
+    dl = abs(MidP - nodeSE(ii,jj).X);
+    dr = abs(nodeNE(ii,jj).X - MidP);
+    ds_ratio = dl/(dl+dr);
+    sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+    return Spline(sp_m, BndEastSpline);
+
+  } else {
+    return xfaceE(ii,jj);
+  }
+}
+
+/*!
+ * Get West face midpoint for an interior cell.
+ * This routine also works if the face is curved.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ */
+Vector2D Grid2D_Quad_Block_HO::getMidPointFaceW(const int ii, const int jj) const{
+
+  double sp_l, sp_r, dl, dr, ds_ratio, sp_m;
+  Vector2D MidP;
+
+  if (IsWestFaceOfInteriorCellCurved(ii,jj)){
+
+    MidP = xfaceW(ii,jj);
+    sp_l = getS(nodeSW(ii,jj).X,
+		BndWestSpline);
+    sp_r = getS(nodeNW(ii,jj).X,
+		BndWestSpline);
+    dl = abs(MidP - nodeSW(ii,jj).X);
+    dr = abs(nodeNW(ii,jj).X - MidP);
+    ds_ratio = dl/(dl+dr);
+    sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+    return Spline(sp_m, BndWestSpline);
+
+  } else {
+    return xfaceW(ii,jj);
+  }
+}

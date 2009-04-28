@@ -162,11 +162,11 @@ public:
     return InitializeInterval(SupportCurve,StartPoint.X, EndPoint.X,NumGQPoints);
   }
 
-  //! Update properties of the sline interval
+  //! Update properties of the spline interval
   void UpdateInterval(const Spline2D_HO & SupportCurve,
 		      const Vector2D & StartPoint, const Vector2D & EndPoint,
 		      const int &NumGQPoints);
-  //! Update properties of the sline interval when the end points are Node2D_HO
+  //! Update properties of the spline interval when the end points are Node2D_HO
   void UpdateInterval(const Spline2D_HO & SupportCurve,
 		      const Node2D_HO & StartPoint, const Node2D_HO & EndPoint,
 		      const int &NumGQPoints){

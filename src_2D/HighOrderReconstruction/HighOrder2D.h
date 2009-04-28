@@ -450,13 +450,25 @@ public:
   template<typename FO, class ReturnType>
   ReturnType IntegrateOverTheCell(const int &ii, const int &jj, const FO FuncObj,
 				  const int & digits, ReturnType _dummy_param) const;
-
   
   /*! @brief Integrate the reconstructed polynomial of cell (ii,jj) over an arbitrary quad domain. */
   template<typename Node2DType>
   Soln_State IntegrateCellReconstructionOverQuadDomain(const int &ii, const int &jj,
 						       const Node2DType &SW, const Node2DType &NW,
 						       const Node2DType &NE, const Node2DType &SE) const;
+
+  /*! @brief Integrate the reconstructed polynomial of cell (ii,jj) over the cell domain of another high-order object.
+     The integration domain can be with curved boundaries. */
+  Soln_State IntegrateCellReconstructionOverAnotherCellDomain(const int &ii_Reconstruct, const int &jj_Reconstruct,
+							      const ClassType & HO_Domain,
+							      const int &ii_Domain, const int &jj_Domain) const;
+
+  /*! @brief Compute the average solution corresponding to each sector of cell (ii,jj) to obtain high-order solution prolongation. */
+  void ComputeHighOrderSolutionProlongation(const int &ii, const int &jj,
+					    const Soln_State & CoarseAvgSoln,
+					    Soln_State & AvgSoln_SW, Soln_State & AvgSoln_NW,
+					    Soln_State & AvgSoln_SE, Soln_State & AvgSoln_NE) const;
+
   //! @name Reconstructions:
   //@{
 
@@ -2740,6 +2752,39 @@ IntegrateCellReconstructionOverQuadDomain(const int &ii, const int &jj,
 										_dummy_result),
 					     SW, NW, NE, SE,
 					     _dummy_result) );
+}
+
+/*! 
+ * Integrate the reconstruction of cell (ii,jj)
+ * over its own cell domain.
+ * This routine is useful if the integral of a 
+ * given polynomial is required without knowing the 
+ * initial average solution.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ */
+template<class SOLN_STATE> inline
+SOLN_STATE HighOrder2D<SOLN_STATE>::
+IntegrateCellReconstructionOverAnotherCellDomain(const int &ii_Reconstruct, const int &jj_Reconstruct,
+						 const ClassType & HO_Domain,
+						 const int &ii_Domain, const int &jj_Domain) const{
+  
+  SOLN_STATE _dummy_result;
+
+  return ( HO_Domain.Geom->Integration.
+	   IntegrateFunctionOverCell(ii_Domain, jj_Domain,
+				     wrapped_soln_block_member_function(this,
+									&ClassType::SolutionStateAtCoordinates,
+									ii_Reconstruct, jj_Reconstruct,
+									_dummy_result),
+				     wrapped_soln_block_member_function(this,
+									&ClassType::
+									SolutionStateWithXDependencyIntegratedAtCoordinates,
+									ii_Reconstruct, jj_Reconstruct,
+									_dummy_result),
+				     10,
+				     _dummy_result) );
 }
 
 /*! 
@@ -5103,6 +5148,50 @@ double HighOrder2D<SOLN_STATE>::AMR_Criteria_Based_On_Minimum_Smoothness_Indicat
   // Evaluate the block refinement criteria based on the minimum encountered SI.
   return ( exp( -max(ZERO, SI_Min) / (CENO_Tolerances::AMR_Smoothness_Units * CENO_Tolerances::Fit_Tolerance )) );
   
+}
+
+/*!
+ * Compute the average solution for each sector of cell (ii,jj)
+ * (i.e. South-West, South-East, North-West, North-East). 
+ * These sectors are defined by the mesh refinement process.
+ * This routine is used for high-order solution prolongation and
+ * message passing from the coarse interior cells to the ghost cells 
+ * of the finer mesh.
+ *
+ * \param [in] ii i-index of the coarse cell for which solution prolongation is calculated
+ * \param [in] jj j-index of the coarse cell for which solution prolongation is calculated
+ * \param [in] CoarseAvgSoln the average solution in (ii,jj) cell
+ * \param [out] AvgSoln_SW the average solution transferred to the SW sector
+ * \param [out] AvgSoln_NW the average solution transferred to the NW sector
+ * \param [out] AvgSoln_SE the average solution transferred to the SE sector
+ * \param [out] AvgSoln_NE the average solution transferred to the NE sector
+ * All average quantities are calculated even if only part of them are required.
+ *
+ * Algorithm: \n
+ * To calculate the average quantities corresponding to each sector, 
+ * the high-order polynomial, which is assumed to have been already calculated, 
+ * is integrated over the domain of each sector using a contour integration technique.
+ * This method fits naturally within the framework of curved boundaries.
+ * The contour integration is applied also to cells with straight edges.
+ * Exact integration can be obtained for straight edges by using a proper number of Gauss integration points.
+ */
+template<class SOLN_STATE>
+void HighOrder2D<SOLN_STATE>::ComputeHighOrderSolutionProlongation(const int &ii, const int &jj,
+								   const SOLN_STATE & CoarseAvgSoln,
+								   SOLN_STATE & AvgSoln_SW, SOLN_STATE & AvgSoln_NW,
+								   SOLN_STATE & AvgSoln_SE, SOLN_STATE & AvgSoln_NE) const {
+  Soln_State _dummy_result;
+
+  return ( Geom->Integration.
+	   IntegrateFunctionOverCellSectorsUsingContourIntegrand(ii, jj,
+								 wrapped_soln_block_member_function(this,
+												    &ClassType::
+												    SolutionStateWithXDependencyIntegratedAtCoordinates,
+												    ii, jj,
+												    _dummy_result),
+								 CoarseAvgSoln,
+								 AvgSoln_SW, AvgSoln_NW,
+								 AvgSoln_SE, AvgSoln_NE) );
 }
 
 /*!
