@@ -61,7 +61,7 @@ class Explicit_Filters_Input_Parameters{
 private:
 public:
     // operations
-    int Filter_Initial_Condition;           //!< Flag defines to filter the initial condition
+    std::vector<int> Filter_Initial_Condition;           //!< Flag defines to filter the initial condition
     int Solution_Filtering_Frequency;       //!< The solution is filtered (with secondary filter) each time after this number of timesteps has passed.
     int Filter_Solution_Before_Execution;   //!< Define if the solution is filtered before execution with secondary filter
     

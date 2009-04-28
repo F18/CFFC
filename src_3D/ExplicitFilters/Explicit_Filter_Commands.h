@@ -63,6 +63,13 @@ int Explicit_Filter_Commands::Initialize_Filters(HexaSolver_Data &Data, HexaSolv
                 Soln_Blks[nBlk].Explicit_Filter.Initialize(Explicit_Filter_Constants::PRIMARY_FILTER,Data.batch_flag,Solution_Data.Input);
             }
         }
+    }
+    
+    if (Solution_Data.Input.ExplicitFilters_IP.Filter_Type[Explicit_Filter_Constants::SECONDARY_FILTER] != Explicit_Filter_Constants::IMPLICIT_FILTER) {
+
+        Hexa_Block<Soln_pState,Soln_cState> *Soln_Blks = Solution_Data.Local_Solution_Blocks.Soln_Blks;
+
+        
         first_block = true;
         for (int nBlk = 0; nBlk < Solution_Data.Local_Solution_Blocks.Number_of_Soln_Blks; nBlk++ ) {
             if (Solution_Data.Local_Solution_Blocks.Block_Used[nBlk]) {
@@ -194,15 +201,26 @@ int Explicit_Filter_Commands::Transfer_Function(HexaSolver_Data &Data, HexaSolve
         
         Hexa_Block<Soln_pState,Soln_cState> *Soln_Blks = Solution_Data.Local_Solution_Blocks.Soln_Blks;
         
-        bool first_block = true;
-        
-        for (int nBlk = 0; nBlk < Solution_Data.Local_Solution_Blocks.Number_of_Soln_Blks; nBlk++ ) {
-            if (Solution_Data.Local_Solution_Blocks.Block_Used[nBlk]) {
-                if (first_block) {
-                    Soln_Blks[nBlk].Explicit_Filter.transfer_function(Explicit_Filter_Constants::MIDDLE_CELL);   
-                    Soln_Blks[nBlk].Explicit_Secondary_Filter.transfer_function(Explicit_Filter_Constants::MIDDLE_CELL);   
+        if (Solution_Data.Input.ExplicitFilters_IP.Filter_Type[Explicit_Filter_Constants::PRIMARY_FILTER] != Explicit_Filter_Constants::IMPLICIT_FILTER) {
+            bool first_block = true;
+            for (int nBlk = 0; nBlk < Solution_Data.Local_Solution_Blocks.Number_of_Soln_Blks; nBlk++ ) {
+                if (Solution_Data.Local_Solution_Blocks.Block_Used[nBlk]) {
+                    if (first_block) {
+                        Soln_Blks[nBlk].Explicit_Filter.transfer_function(Explicit_Filter_Constants::MIDDLE_CELL);   
+                    }
+                    first_block = false;
                 }
-                first_block = false;
+            }
+        }
+        if (Solution_Data.Input.ExplicitFilters_IP.Filter_Type[Explicit_Filter_Constants::SECONDARY_FILTER] != Explicit_Filter_Constants::IMPLICIT_FILTER) {
+            bool first_block = true;
+            for (int nBlk = 0; nBlk < Solution_Data.Local_Solution_Blocks.Number_of_Soln_Blks; nBlk++ ) {
+                if (Solution_Data.Local_Solution_Blocks.Block_Used[nBlk]) {
+                    if (first_block) {
+                        Soln_Blks[nBlk].Explicit_Secondary_Filter.transfer_function(Explicit_Filter_Constants::MIDDLE_CELL);   
+                    }
+                    first_block = false;
+                }
             }
         }
     }

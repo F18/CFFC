@@ -195,25 +195,27 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
             
             
             /* ---------------------- Explicitly filter the initial condition --------------------- */
-            if (Solution_Data.Input.ExplicitFilters_IP.Filter_Type[Explicit_Filter_Constants::PRIMARY_FILTER] != Explicit_Filter_Constants::IMPLICIT_FILTER) {
                 // Initialize the filter
                 Explicit_Filter_Commands::Initialize_Filters(Data, Solution_Data);
 
                 // output the filter transfer function
                 Explicit_Filter_Commands::Transfer_Function(Data,Solution_Data);
             
-                if (Solution_Data.Input.ExplicitFilters_IP.Filter_Initial_Condition) {
+                if (Solution_Data.Input.ExplicitFilters_IP.Filter_Initial_Condition[Explicit_Filter_Constants::PRIMARY_FILTER]) {
                     // filter the initial condition
                     if (CFFC_Primary_MPI_Processor() && !Data.batch_flag) {
-                        cout << "\n\n Explicitly filtering the initial condition   " << endl;
+                        cout << "\n\n Explicitly filtering the initial condition with filter 1 " << endl;
                     }
                     error_flag = Explicit_Filter_Commands::Filter_Solution(Data,Solution_Data,Explicit_Filter_Constants::PRIMARY_FILTER);
-
-//                    // save filter to file so don't have to recompute.
-//                    if (Solution_Data.Input.Turbulence_IP.i_filter_type != Explicit_Filter_Constants::RESTART_FILTER)
-//                        error_flag = Solution_Data.Explicit_Filter.Write_to_file();
                 }
-            }
+                if (Solution_Data.Input.ExplicitFilters_IP.Filter_Initial_Condition[Explicit_Filter_Constants::SECONDARY_FILTER]) {
+                    // filter the initial condition
+                    if (CFFC_Primary_MPI_Processor() && !Data.batch_flag) {
+                        cout << "\n\n Explicitly filtering the initial condition with filter 2  " << endl;
+                    }
+                    error_flag = Explicit_Filter_Commands::Filter_Solution(Data,Solution_Data,Explicit_Filter_Constants::SECONDARY_FILTER);
+                }
+            
 
             
             /* -------------------- ICs Specializations --------------------- */

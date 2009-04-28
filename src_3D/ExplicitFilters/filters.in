@@ -63,7 +63,7 @@ OFF
 Grid_Type =
 Periodic_Box
 Number_of_Ghost_Cells = 
-4
+2
 Number_of_Cells_Idir =
 16
 Number_of_Cells_Jdir =

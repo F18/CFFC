@@ -30,14 +30,16 @@ Explicit_Filters_Input_Parameters::Explicit_Filters_Input_Parameters() :
     Target_Filter_Sharpness(NUMBER_OF_FILTERS),
     Filter_Width_Strict(NUMBER_OF_FILTERS),
     LS_Constraints(NUMBER_OF_FILTERS),
-    Derivative_Constraints(NUMBER_OF_FILTERS)
+    Derivative_Constraints(NUMBER_OF_FILTERS),
+    Filter_Initial_Condition(NUMBER_OF_FILTERS)
 {
     
     // ============================================================== //
     // Explicit Filter Operations
     // ============================================================== //
     
-    Filter_Initial_Condition = ON;
+    Filter_Initial_Condition[PRIMARY_FILTER]   = ON;
+    Filter_Initial_Condition[SECONDARY_FILTER] = OFF;
     Solution_Filtering_Frequency = 0;
     Filter_Solution_Before_Execution = OFF;
     
@@ -128,19 +130,8 @@ int Explicit_Filters_Input_Parameters::Parse_Next_Input_Control_Parameter(char *
     // Explicit Filter Operations
     // ============================================================== //
     
-    if (strcmp(code, "ExplicitFilter[1].Filter_Initial_Condition") == 0) {
-        i_command = 132;
-        value >> value_string;
-        if (strcmp(value_string.c_str(), "ON") == 0) {
-            Filter_Initial_Condition = ON;
-        } else if(strcmp(value_string.c_str(), "OFF") == 0) {
-            Filter_Initial_Condition = OFF; 
-        } else {
-            i_command = INVALID_INPUT_VALUE;
-        }
-    } 
     
-    else if (strcmp(code, "ExplicitFilter[2].Solution_Filtering_Frequency") == 0) {
+    if (strcmp(code, "ExplicitFilter[2].Solution_Filtering_Frequency") == 0) {
         i_command = 132;
         value >> Solution_Filtering_Frequency;
     } 
@@ -172,11 +163,19 @@ int Explicit_Filters_Input_Parameters::Parse_Next_Input_Control_Parameter(char *
             Filter_Method = FILTER_VARIABLES;
             Filter_Strength[PRIMARY_FILTER] = 0.2;
             Filter_Strength[SECONDARY_FILTER] = 0.0;
+            
+            Filter_Initial_Condition[PRIMARY_FILTER]   = ON;
+            Filter_Initial_Condition[SECONDARY_FILTER] = OFF;
+            
         }
         else if (value_string == "Residuals") {
             Filter_Method = FILTER_RESIDUALS;
             Filter_Strength[PRIMARY_FILTER] = 1.0;
             Filter_Strength[SECONDARY_FILTER] = 1.0;
+            
+            Filter_Initial_Condition[PRIMARY_FILTER]   = OFF;
+            Filter_Initial_Condition[SECONDARY_FILTER] = ON;
+            
         }
         else
             i_command = INVALID_INPUT_VALUE;
@@ -222,6 +221,30 @@ int Explicit_Filters_Input_Parameters::Parse_Next_Input_Control_Parameter(char *
         } else {
             i_command = INVALID_INPUT_VALUE;
         } /* endif */
+    } 
+    
+    else if (strcmp(code, "ExplicitFilter[1].Filter_Initial_Condition") == 0) {
+        i_command = 132;
+        value >> value_string;
+        if (strcmp(value_string.c_str(), "ON") == 0) {
+            Filter_Initial_Condition[PRIMARY_FILTER] = ON;
+        } else if(strcmp(value_string.c_str(), "OFF") == 0) {
+            Filter_Initial_Condition[PRIMARY_FILTER] = OFF; 
+        } else {
+            i_command = INVALID_INPUT_VALUE;
+        }
+    } 
+    
+    else if (strcmp(code, "ExplicitFilter[2].Filter_Initial_Condition") == 0) {
+        i_command = 132;
+        value >> value_string;
+        if (strcmp(value_string.c_str(), "ON") == 0) {
+            Filter_Initial_Condition[SECONDARY_FILTER] = ON;
+        } else if(strcmp(value_string.c_str(), "OFF") == 0) {
+            Filter_Initial_Condition[SECONDARY_FILTER] = OFF; 
+        } else {
+            i_command = INVALID_INPUT_VALUE;
+        }
     } 
     
     else if (strcmp(code, "ExplicitFilter[1].Filter_Memory_Efficient") == 0) {
@@ -566,7 +589,6 @@ void Explicit_Filters_Input_Parameters::Broadcast(void) {
     
 #ifdef _MPI_VERSION
     
-    MPI::COMM_WORLD.Bcast(&(Filter_Initial_Condition), 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Solution_Filtering_Frequency), 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Filter_Solution_Before_Execution), 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Commutation_Order), 1, MPI::INT, 0);
@@ -574,6 +596,7 @@ void Explicit_Filters_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(Finite_Differencing_Order), 1, MPI::INT, 0);
 
     for (int filter_number = PRIMARY_FILTER; filter_number <= SECONDARY_FILTER; filter_number++) {
+        MPI::COMM_WORLD.Bcast(&(Filter_Initial_Condition[filter_number]), 1, MPI::INT, 0);
         MPI::COMM_WORLD.Bcast(&(Filter_Type[filter_number]), 1, MPI::INT, 0);
         MPI::COMM_WORLD.Bcast(&(FGR[filter_number]), 1, MPI::DOUBLE, 0);
         MPI::COMM_WORLD.Bcast(&(Filter_Width[filter_number]), 1, MPI::DOUBLE, 0);
