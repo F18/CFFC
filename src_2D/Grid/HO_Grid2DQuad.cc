@@ -171,6 +171,7 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
    OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1),
    // Initialize mesh update flags to OFF (i.e. no update scheduled)
    InteriorMeshUpdate(OFF), GhostCellsUpdate(OFF), CornerGhostCellsUpdate(OFF),
+   CheckNodesExtendedSplinesConsistency(OFF),
    // Initialize state trackers
    InteriorCellGeometryStateTracker(0), GhostCellGeometryStateTracker(0), CornerGhostCellGeometryStateTracker(0),
    NumGQP(0)
@@ -547,6 +548,7 @@ void Grid2D_Quad_Block_HO::deallocate(void) {
   InteriorMeshUpdate = OFF;
   GhostCellsUpdate = OFF;
   CornerGhostCellsUpdate = OFF;
+  CheckNodesExtendedSplinesConsistency = OFF;
 
   InteriorCellGeometryStateTracker = 0;
   GhostCellGeometryStateTracker = 0;
@@ -4627,6 +4629,231 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 
 }
 
+/*!
+ * This routine is run after the message passing with sending geometry is called.
+ * It ensures that ghost boundary nodes are located on the physical boundaries.
+ * This kind of situations can arise at mesh resolution changes that occur near a physical boundary.
+ * 
+ * \todo Program the rest of the cases!!!
+ */
+void Grid2D_Quad_Block_HO::EnsureConsistencyBetweenExtendedSplinesAndBoundaryNodes(void){
+
+  int NodeIndex;
+  double sChecked;
+  double sp_l, sp_r, dl, dr;
+
+  /*  Obs. 
+   *  The pathlength ratio: ds_ratio = dl/(dl+dr);
+   *  The pathlength assigned to the Node is:  sp_m = sp_l + (dl/(dl+dr))*(sp_r-sp_l);
+   */
+
+  if (CheckNodesExtendedSplinesConsistency == ON){
+
+    // Don't analyse if there are fewer than three ghost cells
+    if (Nghost < 3){
+      return;
+    }
+
+    std::vector<double> ReferencePaths(Nghost+1,0);
+  
+    // Check ExtendWest_BndSouthSpline
+    if (ExtendWest_BndSouthSpline.Xp != 0){
+      // Calculate and store the pathlength for each "good" node (i.e. those already correctly set by geometry message passing)
+      for (NodeIndex = INl; NodeIndex >= 0; NodeIndex-=2){
+	ReferencePaths[NodeIndex] = ExtendWest_BndSouthSpline.getS(Node[NodeIndex][JNl]);
+      }
+
+      // Check improper order of pathlengths with 3 nodes (INl, INl-1, INl-2)
+      // Obs. INl and INl-2 will be correct due to the message passing from the coarse block
+      //       sChecked = ExtendWest_BndSouthSpline.getS(Node[INl-1][JNl]);
+      //       if ( ( (ReferencePaths[INl  ] - sChecked) * (ReferencePaths[INl-2] - sChecked) ) > 0 ){
+
+      for (NodeIndex = INl-1; NodeIndex > 0; NodeIndex-=2){ // For every 'wrong' node but last
+	
+	sp_l = ReferencePaths[NodeIndex-1];
+	sp_r = ReferencePaths[NodeIndex+1];
+	dl = abs(Node[NodeIndex-1][JNl].X - Node[NodeIndex][JNl].X);
+	dr = abs(Node[NodeIndex+1][JNl].X - Node[NodeIndex][JNl].X);
+	Node[NodeIndex][JNl].X = ExtendWest_BndSouthSpline.Spline(sp_l + (dl/(dl+dr))*(sp_r-sp_l));
+      }
+      
+      // Modify the node with NodeIndex=0 if the number of ghost cells is odd.
+      // For an even number this node has the right location due to the message passing.
+      if ( EvenOrOdd(Nghost) ){
+	// Obs. Use the distance between the zero node and the next to estimate the pathlength difference relative to 
+	//      the last "good" node
+	// Set the new pathlength. Use sign function to decide whether the difference should be added or subtracted.
+	sChecked = ReferencePaths[1] + sign(ReferencePaths[1]-ReferencePaths[3])*abs(Node[0][JNl].X - Node[1][JNl].X);
+	Node[0][JNl].X = ExtendWest_BndSouthSpline.Spline(sChecked);
+      }
+      // }
+    }
+
+    // Check ExtendEast_BndSouthSpline
+    if (ExtendEast_BndSouthSpline.Xp != 0){
+      // Calculate and store the pathlength for each "good" node (i.e. those already correctly set by geometry message passing)
+      for (NodeIndex = INu; NodeIndex <= INu+Nghost; NodeIndex+=2){
+	ReferencePaths[NodeIndex-INu] = ExtendEast_BndSouthSpline.getS(Node[NodeIndex][JNl]);
+      }
+
+      // Check improper order with 3 nodes (INu, INu+1, INu+2)
+      // Obs. INu and INu+2 will be correct due to the message passing from the coarse block
+      //       sChecked = ExtendEast_BndSouthSpline.getS(Node[INu+1][JNl]);
+      //       if ( ( (ReferencePaths[0  ] - sChecked) * (ReferencePaths[2] - sChecked) ) > 0 ){
+
+      for (NodeIndex = INu+1; NodeIndex < INu+Nghost; NodeIndex+=2){ // For every 'wrong' node but last
+	
+	sp_l = ReferencePaths[NodeIndex-1-INu];
+	sp_r = ReferencePaths[NodeIndex+1-INu];
+	dl = abs(Node[NodeIndex-1][JNl].X - Node[NodeIndex][JNl].X);
+	dr = abs(Node[NodeIndex+1][JNl].X - Node[NodeIndex][JNl].X);
+	Node[NodeIndex][JNl].X = ExtendEast_BndSouthSpline.Spline(sp_l + (dl/(dl+dr))*(sp_r-sp_l));
+      }
+	
+      // Modify the node with NodeIndex=0 if the number of ghost cells is odd.
+      // For an even number this node has the right location due to the message passing.
+      if ( EvenOrOdd(Nghost) ){
+	// Obs. Use the distance between the zero node and the next to estimate the pathlength difference relative to 
+	//      the last "good" node
+	// Set the new pathlength. Use sign function to decide whether the difference should be added or subtracted.
+	sChecked = ( ReferencePaths[Nghost-1] + 
+		     sign(ReferencePaths[Nghost-1]-ReferencePaths[Nghost-3])*abs(Node[INu+Nghost  ][JNl].X - 
+										 Node[INu+Nghost-1][JNl].X) );
+	Node[INu+Nghost][JNl].X = ExtendEast_BndSouthSpline.Spline(sChecked);
+      }
+      // }
+    }
+
+    // Check ExtendWest_BndNorthSpline
+    if (ExtendWest_BndNorthSpline.Xp != 0){
+      // Calculate and store the pathlength for each "good" node (i.e. those already correctly set by geometry message passing)
+      for (NodeIndex = INl; NodeIndex >= 0; NodeIndex-=2){
+	ReferencePaths[NodeIndex] = ExtendWest_BndNorthSpline.getS(Node[NodeIndex][JNu]);
+      }
+      
+      // Check improper order with 3 nodes (INl, INl-1, INl-2)
+      // Obs. INl and INl-2 will be correct due to the message passing from the coarse block
+      //      sChecked = ExtendWest_BndNorthSpline.getS(Node[INl-1][JNu]);
+      //       if ( ( (ReferencePaths[INl  ] - sChecked) * (ReferencePaths[INl-2] - sChecked) ) > 0 ){
+
+      for (NodeIndex = INl-1; NodeIndex > 0; NodeIndex-=2){ // For every 'wrong' node but last
+	
+	sp_l = ReferencePaths[NodeIndex-1];
+	sp_r = ReferencePaths[NodeIndex+1];
+	dl = abs(Node[NodeIndex-1][JNu].X - Node[NodeIndex][JNu].X);
+	dr = abs(Node[NodeIndex+1][JNu].X - Node[NodeIndex][JNu].X);
+	Node[NodeIndex][JNu].X = ExtendWest_BndNorthSpline.Spline(sp_l + (dl/(dl+dr))*(sp_r-sp_l));
+      }
+      
+      // Modify the node with NodeIndex=0 if the number of ghost cells is odd.
+      // For an even number this node has the right location due to the message passing.
+      if ( EvenOrOdd(Nghost) ){
+	// Obs. Use the distance between the zero node and the next to estimate the pathlength difference relative to 
+	//      the last "good" node
+	// Set the new pathlength. Use sign function to decide whether the difference should be added or subtracted.
+	sChecked = ReferencePaths[1] + sign(ReferencePaths[1]-ReferencePaths[3])*abs(Node[0][JNu].X - Node[1][JNu].X);
+	Node[0][JNu].X = ExtendWest_BndNorthSpline.Spline(sChecked);
+      }
+      // }
+    }
+
+    // Check ExtendEast_BndNorthSpline
+    if (ExtendEast_BndNorthSpline.Xp != 0){
+      // Calculate and store the pathlength for each "good" node (i.e. those already correctly set by geometry message passing)
+      for (NodeIndex = INu; NodeIndex <= INu+Nghost; NodeIndex+=2){
+	ReferencePaths[NodeIndex-INu] = ExtendEast_BndNorthSpline.getS(Node[NodeIndex][JNu]);
+      }
+
+      // Check improper order with 3 nodes (INu, INu+1, INu+2)
+      // Obs. INu and INu+2 will be correct due to the message passing from the coarse block
+      //      sChecked = ExtendEast_BndNorthSpline.getS(Node[INu+1][JNu]);
+      //       if ( ( (ReferencePaths[0  ] - sChecked) * (ReferencePaths[2] - sChecked) ) > 0 ){
+
+      for (NodeIndex = INu+1; NodeIndex < INu+Nghost; NodeIndex+=2){ // For every 'wrong' node but last
+	
+	sp_l = ReferencePaths[NodeIndex-1-INu];
+	sp_r = ReferencePaths[NodeIndex+1-INu];
+	dl = abs(Node[NodeIndex-1][JNu].X - Node[NodeIndex][JNu].X);
+	dr = abs(Node[NodeIndex+1][JNu].X - Node[NodeIndex][JNu].X);
+	Node[NodeIndex][JNu].X = ExtendEast_BndNorthSpline.Spline(sp_l + (dl/(dl+dr))*(sp_r-sp_l));
+      }
+	
+      // Modify the node with NodeIndex=0 if the number of ghost cells is odd.
+      // For an even number this node has the right location due to the message passing.
+      if ( EvenOrOdd(Nghost) ){
+	// Obs. Use the distance between the zero node and the next to estimate the pathlength difference relative to 
+	//      the last "good" node
+	// Set the new pathlength. Use sign function to decide whether the difference should be added or subtracted.
+	sChecked = ( ReferencePaths[Nghost-1] + 
+		     sign(ReferencePaths[Nghost-1]-ReferencePaths[Nghost-3])*abs(Node[INu+Nghost  ][JNu].X - 
+										 Node[INu+Nghost-1][JNu].X) );
+	Node[INu+Nghost][JNu].X = ExtendEast_BndNorthSpline.Spline(sChecked);
+      }
+      // }
+    }
+
+    // Check ExtendSouth_BndWestSpline
+    if (ExtendSouth_BndWestSpline.Xp != 0){
+      // Check improper order with 3 nodes (JNl, JNl-1, JNl-2)
+      // Obs. JNl and JNl-2 will be correct due to the message passing from the coarse block
+      sChecked = ExtendSouth_BndWestSpline.getS(Node[INl][JNl-1]);
+      if ( ( ( ExtendSouth_BndWestSpline.getS(Node[INl][JNl]) - sChecked ) * 
+	     (ExtendSouth_BndWestSpline.getS(Node[INl][JNl-2]) - sChecked) ) > 0 ){
+	cout << "Incorrect ordering for ExtendSouth_BndWestSpline \n";
+	for (NodeIndex = JNl; NodeIndex >= 0; --NodeIndex){
+	  Print_(ExtendSouth_BndWestSpline.getS(Node[INl][NodeIndex]));
+	}
+      }
+    }
+
+    // Check ExtendNorth_BndWestSpline
+    if (ExtendNorth_BndWestSpline.Xp != 0){
+      // Check improper order with 3 nodes (JNu, JNu+1, JNu+2)
+      // Obs. JNu and JNu+2 will be correct due to the message passing from the coarse block
+      sChecked = ExtendNorth_BndWestSpline.getS(Node[INl][JNu+1]);
+      if ( ( ( ExtendNorth_BndWestSpline.getS(Node[INl][JNu]) - sChecked ) * 
+	     (ExtendNorth_BndWestSpline.getS(Node[INl][JNu+2]) - sChecked) ) > 0 ){
+	cout << "Incorrect ordering for ExtendNorth_BndWestSpline \n";
+	for (NodeIndex = JNu; NodeIndex <= JNu+Nghost ; ++NodeIndex){
+	  Print_(ExtendNorth_BndWestSpline.getS(Node[INl][NodeIndex]));
+	}
+      }
+    }
+
+
+    // Check ExtendSouth_BndEastSpline
+    if (ExtendSouth_BndEastSpline.Xp != 0){
+      // Check improper order with 3 nodes (JNl, JNl-1, JNl-2)
+      // Obs. JNl and JNl-2 will be correct due to the message passing from the coarse block
+      sChecked = ExtendSouth_BndEastSpline.getS(Node[INu][JNl-1]);
+      if ( ( ( ExtendSouth_BndEastSpline.getS(Node[INu][JNl]) - sChecked ) * 
+	     (ExtendSouth_BndEastSpline.getS(Node[INu][JNl-2]) - sChecked) ) > 0 ){
+	cout << "Incorrect ordering for ExtendSouth_BndEastSpline \n";
+	for (NodeIndex = JNl; NodeIndex >= 0; --NodeIndex){
+	  Print_(ExtendSouth_BndEastSpline.getS(Node[INu][NodeIndex]));
+	}
+      }
+    }
+
+    // Check ExtendNorth_BndEastSpline
+    if (ExtendNorth_BndEastSpline.Xp != 0){
+      // Check improper order with 3 nodes (JNu, JNu+1, JNu+2)
+      // Obs. JNu and JNu+2 will be correct due to the message passing from the coarse block
+      sChecked = ExtendNorth_BndEastSpline.getS(Node[INu][JNu+1]);
+      if ( ( ( ExtendNorth_BndEastSpline.getS(Node[INu][JNu]) - sChecked ) * 
+	     (ExtendNorth_BndEastSpline.getS(Node[INu][JNu+2]) - sChecked) ) > 0 ){
+	cout << "Incorrect ordering for ExtendNorth_BndEastSpline \n";
+	for (NodeIndex = JNu; NodeIndex <= JNu+Nghost ; ++NodeIndex){
+	  Print_(ExtendNorth_BndEastSpline.getS(Node[INu][NodeIndex]));
+	}
+      }
+    }
+
+    // Confirm consistency check done!
+    CheckNodesExtendedSplinesConsistency = OFF;
+  }
+
+}
 
 /*!
  * Updates the corner ghost nodes for the quadrilateral 
@@ -4637,6 +4864,10 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
   
   Vector2D norm_dir, X_norm, X_tan;
+
+  // Ensure that all nodes that should be on an existing extended spline are actually on that spline.
+  // Inconsistencies can occur at interfaces between coarse and fine meshes.
+  EnsureConsistencyBetweenExtendedSplinesAndBoundaryNodes();
   
   // SOUTH-WEST corner:
   if (BCtypeS[INl-1] == BC_NONE &&

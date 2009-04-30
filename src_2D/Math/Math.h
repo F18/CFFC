@@ -512,4 +512,14 @@ inline T RelativeError(const T & ApproxValue, const T & ExactValue){
   return fabs(ExactValue - ApproxValue)/(T(1) + fabs(ExactValue));
 }
 
+/*! 
+ * Determine if an integer number is odd or even
+ * If the return value is 'TRUE' then the number is ODD.
+ * If the return value is 'FALSE' then the number is EVEN.
+ * This function uses bitwise operation so it's faster than the mod (%) function.
+ */
+inline bool EvenOrOdd(int Value){
+  return Value&1;
+}
+
 #endif // _MATH_MACROS_INCLUDED

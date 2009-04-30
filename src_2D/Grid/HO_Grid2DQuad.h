@@ -829,6 +829,7 @@ public:
   void Update_SplineInfos(void);
 
   void Update_Grid_Properties(const int &HighestRecOrder);
+  void EnsureConsistencyBetweenExtendedSplinesAndBoundaryNodes(void);
 
   int Check_Quad_Block(void);
   int Check_Quad_Block_Completely(void);
@@ -1180,6 +1181,8 @@ private:
   int GhostCellsUpdate;    
   //! Controls the update of the geometric properties of the corner ghost cells.
   int CornerGhostCellsUpdate; 
+  //! Control the check of consistency between boundary nodes and the extended splines (i.e. they exist)
+  int CheckNodesExtendedSplinesConsistency;
   //! Reset to NO update all the mesh update flags.
   void Reset_Mesh_Update_Flags(void){ InteriorMeshUpdate = OFF; GhostCellsUpdate = OFF; CornerGhostCellsUpdate = OFF;}
 
@@ -1269,7 +1272,8 @@ inline Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void)
     BetaJ(ONE), TauJ(ONE),
     OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1),
     // Initialize mesh update flags to OFF (i.e. no update scheduled)
-    InteriorMeshUpdate(OFF), GhostCellsUpdate(OFF), CornerGhostCellsUpdate(OFF),
+    InteriorMeshUpdate(OFF), GhostCellsUpdate(OFF), CornerGhostCellsUpdate(OFF), 
+    CheckNodesExtendedSplinesConsistency(OFF),
     // Initialize state trackers
     InteriorCellGeometryStateTracker(0), GhostCellGeometryStateTracker(0), CornerGhostCellGeometryStateTracker(0),
     NumGQP(0)
@@ -2602,6 +2606,9 @@ inline void Grid2D_Quad_Block_HO::Update_Cell(const int & iCell, const int & jCe
 inline void Grid2D_Quad_Block_HO::Update_GhostCellProperties_DuringMessagePassing(const int &iCell,
 										  const int &jCell){
   Schedule_Ghost_Cells_Update();
+  
+  // Require check of consistency between boundary nodes and the extended splines.
+  CheckNodesExtendedSplinesConsistency = ON;
 }
 
 /*!
