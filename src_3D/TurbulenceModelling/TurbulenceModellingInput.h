@@ -51,6 +51,7 @@ class Turbulence_Modelling_Input_Parameters{
     char SFS_model[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];     //!< Sub-filter-scale model , default = Smagorinsky + Yoshizawa
     int i_SFS_model;                                            //!< Sub-filter-scale model , default = Smagorinsky + Yoshizawa
     double smagorinsky_coefficient;                             //!< SFS smagorinsky coefficient
+    double SFS_FGR;                                             //!< filter-grid ratio used in the SFS model // NOT same as FGR of Explicit Filters
     double Filter_Width;
 
     //@}
@@ -82,6 +83,7 @@ class Turbulence_Modelling_Input_Parameters{
       i_SFS_model = SFS_MODEL_SMAGORINSKY;
       smagorinsky_coefficient = 0.18;
       Filter_Width = 0.0;
+      SFS_FGR = DEFAULT;
       
       // Spectrum parameters
       strcpy(spectrum,"Pope");

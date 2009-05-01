@@ -7,6 +7,10 @@
 #include "TurbulenceModellingInput.h"
 #endif // _TURBULENCEMODEL_INPUT_INCLUDED
 
+#ifndef _UTILITIES_INCLUDED
+#include "../Utilities/Utilities.h"
+#endif // _UTILITIES_INCLUDED
+
 /* Define member functions. */
 
 /************************************************************************************
@@ -28,6 +32,9 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
                           1,
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Filter_Width),
+                          1,
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(SFS_FGR),
                           1,
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(spectrum,
@@ -113,6 +120,17 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
       value >> smagorinsky_coefficient;
       if (smagorinsky_coefficient < ZERO)
           i_command = INVALID_INPUT_VALUE;
+      
+  } else if (strcmp(code, "SFS_FGR") == 0) {
+      i_command = 121;
+      value >> value_string;
+      if (strcmp(value_string.c_str(),"Default") == 0){
+          SFS_FGR = DEFAULT;
+      } else {
+          SFS_FGR = from_str<double>(value_string.c_str());
+          if (SFS_FGR < ZERO)
+              i_command = INVALID_INPUT_VALUE;
+      }
       
   } else if (strcmp(code, "Filter_Width") == 0) {
       i_command = 121;
