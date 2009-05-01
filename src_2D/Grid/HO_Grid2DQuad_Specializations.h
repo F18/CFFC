@@ -223,7 +223,8 @@ IntegrateFunctionOverCellSectorsUsingContourIntegrand(const int &ii, const int &
     faceS_SW_Int, faceS_SE_Int,
     faceE_SE_Int, faceE_NE_Int,
     faceW_CC_Int, faceS_CC_Int,
-    faceE_CC_Int, faceN_CC_Int;
+    faceE_CC_Int, faceN_CC_Int,
+    AvgError;
   double faceN_NW_area, faceN_NE_area,
     faceW_SW_area, faceW_NW_area,
     faceS_SW_area, faceS_SE_area,
@@ -268,6 +269,7 @@ IntegrateFunctionOverCellSectorsUsingContourIntegrand(const int &ii, const int &
 							       NumGQP, DeltaY, faceN_CC_Int);
   faceN_CC_area = ZeroLineIntegration(CC, MidN);
 
+
   // Integrate along West boundary
   if ( CellFacesInfo[0] ){
     // == This face is curved ==
@@ -290,11 +292,17 @@ IntegrateFunctionOverCellSectorsUsingContourIntegrand(const int &ii, const int &
 
     // Integrate Along Line Segment nodeNW->MidW
     faceW_NW_Int  = SplineIntervalInfo_1.IntegrateFunctionWithRespectToY(ContourIntegrand,faceW_NW_Int);
-    faceW_NW_area = SplineIntervalInfo_1.AreaContribution();
-    
     // Integrate Along Line Segment MidW->nodeSW
     faceW_SW_Int  = SplineIntervalInfo_2.IntegrateFunctionWithRespectToY(ContourIntegrand,faceW_SW_Int);
-    faceW_SW_area = SplineIntervalInfo_2.AreaContribution();
+
+    // Calculate area contributions for both segments
+    if (Grid->getGaussQuadCurvilinearIntegrationValue() && (!Grid->getMixedCurvilinearIntegrationValue())){
+      faceW_NW_area = SplineIntervalInfo_1.AreaContribution();
+      faceW_SW_area = SplineIntervalInfo_2.AreaContribution();
+    } else {
+      faceW_NW_area = CellBndWest->ZeroOrderIntegration(Grid->nodeNW(ii,jj),MidW, 15);
+      faceW_SW_area = CellBndWest->ZeroOrderIntegration(MidW, Grid->nodeSW(ii,jj), 15);
+    }
 
   } else {
     // == This face is straight ==
@@ -334,11 +342,17 @@ IntegrateFunctionOverCellSectorsUsingContourIntegrand(const int &ii, const int &
 
     // Integrate Along Line Segment nodeSW->MidS
     faceS_SW_Int  = SplineIntervalInfo_1.IntegrateFunctionWithRespectToY(ContourIntegrand,faceS_SW_Int);
-    faceS_SW_area = SplineIntervalInfo_1.AreaContribution();
-    
-    // Integrate Along Line Segment MidS->nodeSE (Currently not used. It's substituted by the conservation law!!!)
-    //  faceS_SE_Int  = SplineIntervalInfo_2.IntegrateFunctionWithRespectToY(ContourIntegrand,faceS_SE_Int);
-    faceS_SE_area = SplineIntervalInfo_2.AreaContribution();
+    // Integrate Along Line Segment MidS->nodeSE
+    faceS_SE_Int  = SplineIntervalInfo_2.IntegrateFunctionWithRespectToY(ContourIntegrand,faceS_SE_Int);
+
+    // Calculate area contributions for both segments
+    if (Grid->getGaussQuadCurvilinearIntegrationValue() && (!Grid->getMixedCurvilinearIntegrationValue())){
+      faceS_SW_area = SplineIntervalInfo_1.AreaContribution();
+      faceS_SE_area = SplineIntervalInfo_2.AreaContribution();
+    } else {
+      faceS_SW_area = CellBndSouth->ZeroOrderIntegration(Grid->nodeSW(ii,jj), MidS, 15);
+      faceS_SE_area = CellBndSouth->ZeroOrderIntegration(MidS, Grid->nodeSE(ii,jj), 15);
+    }
 
   } else {
     // == This face is straight ==
@@ -349,10 +363,10 @@ IntegrateFunctionOverCellSectorsUsingContourIntegrand(const int &ii, const int &
 								 NumGQP, DeltaY, faceS_SW_Int);
     faceS_SW_area = ZeroLineIntegration(Grid->nodeSW(ii,jj), MidS);
     
-    // Integrate Along Line Segment MidS->nodeSE (Currently not used. It's substituted by the conservation law!!!)
-    //  Grid->getLineSegmentGaussIntegrationData(MidS.X, Grid->nodeSE(ii,jj).X, GaussQuadPoints, NumGQP, DeltaY);
-    //  faceS_SE_Int = CalculateFunctionIntegralWithGaussQuadratures(ContourIntegrand, GaussQuadPoints, GaussQuadWeights,
-    //  								 NumGQP, DeltaY, faceS_SE_Int);
+    // Integrate Along Line Segment MidS->nodeSE
+    Grid->getLineSegmentGaussIntegrationData(MidS.X, Grid->nodeSE(ii,jj).X, GaussQuadPoints, NumGQP, DeltaY);
+    faceS_SE_Int = CalculateFunctionIntegralWithGaussQuadratures(ContourIntegrand, GaussQuadPoints, GaussQuadWeights,
+     								 NumGQP, DeltaY, faceS_SE_Int);
     faceS_SE_area = ZeroLineIntegration(MidS, Grid->nodeSE(ii,jj));
   }
 
@@ -376,21 +390,27 @@ IntegrateFunctionOverCellSectorsUsingContourIntegrand(const int &ii, const int &
       SplineIntervalInfo_2.InitializeInterval(SplineCopy,MidE,Grid->nodeNE(ii,jj),1);
     }//endif
 
-    // Integrate Along Line Segment nodeSE->MidE (Currently not used. It's substituted by the conservation law!!!)
-    //  faceE_SE_Int  = SplineIntervalInfo_1.IntegrateFunctionWithRespectToY(ContourIntegrand,faceE_SE_Int); 
-    faceE_SE_area = SplineIntervalInfo_1.AreaContribution();
-
+    // Integrate Along Line Segment nodeSE->MidE
+    faceE_SE_Int  = SplineIntervalInfo_1.IntegrateFunctionWithRespectToY(ContourIntegrand,faceE_SE_Int); 
     // Integrate Along Line Segment MidE->nodeNE
     faceE_NE_Int  = SplineIntervalInfo_2.IntegrateFunctionWithRespectToY(ContourIntegrand,faceE_NE_Int);
-    faceE_NE_area = SplineIntervalInfo_2.AreaContribution();
+
+    // Calculate area contributions for both segments
+    if (Grid->getGaussQuadCurvilinearIntegrationValue() && (!Grid->getMixedCurvilinearIntegrationValue())){
+      faceE_SE_area = SplineIntervalInfo_1.AreaContribution();
+      faceE_NE_area = SplineIntervalInfo_2.AreaContribution();
+    } else {
+      faceE_SE_area = CellBndEast->ZeroOrderIntegration(Grid->nodeSE(ii,jj), MidE, 15);
+      faceE_NE_area = CellBndEast->ZeroOrderIntegration(MidE, Grid->nodeNE(ii,jj), 15);
+    }
 
   } else {
     // == This face is straight ==
 
-    // Integrate Along Line Segment nodeSE->MidE (Currently not used. It's substituted by the conservation law!!!)
-    //  Grid->getLineSegmentGaussIntegrationData(Grid->nodeSE(ii,jj).X, MidE.X, GaussQuadPoints, NumGQP, DeltaY);
-    //  faceE_SE_Int = CalculateFunctionIntegralWithGaussQuadratures(ContourIntegrand, GaussQuadPoints, GaussQuadWeights,
-    //  								 NumGQP, DeltaY, faceE_SE_Int);
+    // Integrate Along Line Segment nodeSE->MidE
+    Grid->getLineSegmentGaussIntegrationData(Grid->nodeSE(ii,jj).X, MidE.X, GaussQuadPoints, NumGQP, DeltaY);
+    faceE_SE_Int = CalculateFunctionIntegralWithGaussQuadratures(ContourIntegrand, GaussQuadPoints, GaussQuadWeights,
+     								 NumGQP, DeltaY, faceE_SE_Int);
     faceE_SE_area = ZeroLineIntegration(Grid->nodeSE(ii,jj), MidE);
 
     // Integrate Along Line Segment MidE->nodeNE
@@ -422,11 +442,17 @@ IntegrateFunctionOverCellSectorsUsingContourIntegrand(const int &ii, const int &
 
     // Integrate Along Line Segment nodeNE->MidN
     faceN_NE_Int  = SplineIntervalInfo_2.IntegrateFunctionWithRespectToY(ContourIntegrand,faceN_NE_Int);
-    faceN_NE_area = SplineIntervalInfo_2.AreaContribution();
-
     // Integrate Along Line Segment MidN->nodeNW
     faceN_NW_Int  = SplineIntervalInfo_1.IntegrateFunctionWithRespectToY(ContourIntegrand,faceN_NW_Int);
-    faceN_NW_area = SplineIntervalInfo_1.AreaContribution();
+
+    // Calculate area contributions for both segments
+    if (Grid->getGaussQuadCurvilinearIntegrationValue() && (!Grid->getMixedCurvilinearIntegrationValue())){
+      faceN_NE_area = SplineIntervalInfo_2.AreaContribution();
+      faceN_NW_area = SplineIntervalInfo_1.AreaContribution();      
+    } else {
+      faceN_NE_area = CellBndNorth->ZeroOrderIntegration(Grid->nodeNE(ii,jj), MidN, 15);
+      faceN_NW_area = CellBndNorth->ZeroOrderIntegration(MidN, Grid->nodeNW(ii,jj), 15);
+    }
 
   } else {
     // == This face is straight ==
@@ -453,20 +479,25 @@ IntegrateFunctionOverCellSectorsUsingContourIntegrand(const int &ii, const int &
   // === Calculate integrals for each cell sector
   AvgSoln_SW  = (faceW_CC_Int + faceW_SW_Int + faceS_SW_Int - faceS_CC_Int);
   AvgSoln_NE  = (faceE_CC_Int + faceE_NE_Int + faceN_NE_Int - faceN_CC_Int);
-  AvgSoln_NW  = (faceN_CC_Int + faceN_NW_Int + faceW_NW_Int - faceW_CC_Int);  
-  
-  // === Calculate final average solutions
+  AvgSoln_NW  = (faceN_CC_Int + faceN_NW_Int + faceW_NW_Int - faceW_CC_Int); 
+  AvgSoln_SE  = (faceS_CC_Int + faceS_SE_Int + faceE_SE_Int - faceE_CC_Int);
 
-  /* Calculate AvgSoln_SE based on conservation equation instead of 
-     AvgSoln_SE  = (faceS_CC_Int + faceS_SE_Int + faceE_SE_Int - faceE_CC_Int)/area_SE;
-     This approach is conservative and will also be accurate if high-order treatment of boundaries is performed.
-     There is no particular reason why SE sector has been choosen instead of a different cell sector.
-     A better approach is to use the sector with the most curved boundaries at the expense of a more complicated algorithm.
-  */
-  AvgSoln_SE = (CoarseAvgSoln*Grid->CellArea(ii,jj) - (AvgSoln_SW + AvgSoln_NE + AvgSoln_NW) )/area_SE;
+  // === Calculate the average error resulting from the conservation equation
+  AvgError = ( ( CoarseAvgSoln*Grid->CellArea(ii,jj) - (AvgSoln_SW + AvgSoln_NE + AvgSoln_NW + AvgSoln_SE) )/
+	       (area_SW + area_SE + area_NE + area_NW) );
+  
+  // === Calculate final average solutions for each sector. The error, if exists, is distributed uniformly between sectors.
+  AvgSoln_SE /= area_SE;
+  AvgSoln_SE += AvgError;
+
   AvgSoln_SW /= area_SW;
+  AvgSoln_SW += AvgError;
+
   AvgSoln_NE /= area_NE;
+  AvgSoln_NE += AvgError;
+
   AvgSoln_NW /= area_NW;
+  AvgSoln_NW += AvgError;
 
   // Deallocate memory
   delete [] GaussQuadPoints;

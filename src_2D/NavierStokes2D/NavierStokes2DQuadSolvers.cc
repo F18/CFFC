@@ -1436,6 +1436,20 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       // Apply boundary conditions.
       BCs(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
 
+      // Reconstruct solution
+      if ( Input_Parameters.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+	// Use high-order reconstruction
+	HighOrder2D_MultiBlock::HighOrder_Reconstruction(Local_SolnBlk,
+							 List_of_Local_Solution_Blocks,
+							 Input_Parameters,
+							 0);
+      } else {
+	// Use low-order reconstruction
+	Linear_Reconstruction(Local_SolnBlk, 
+			      List_of_Local_Solution_Blocks,
+			      Input_Parameters);
+      } // endif
+
     } else if (command_flag == MORTON_ORDERING_CODE) {
       if (!batch_flag) { cout << "\n\n Applying Morton re-ordering algorithm. "; }
       error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 

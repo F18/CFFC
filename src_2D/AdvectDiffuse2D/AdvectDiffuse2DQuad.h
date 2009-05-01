@@ -1025,6 +1025,9 @@ inline void AdvectDiffuse2D_Quad_Block::copy_HighOrder_Objects(const AdvectDiffu
     
     // Copy the high-order objects
     for (k = 1; k <= NumberOfHighOrderVariables; ++k){
+      // set geometry pointer for each high-order object to the current grid
+      HighOrderVariable(k-1).SetGeometryPointer(Grid);
+      // copy high-order content from the the SolnBlk
       HighOrderVariable(k-1) = SolnBlk.HighOrderVariable(k-1);
     }/* endfor */
 

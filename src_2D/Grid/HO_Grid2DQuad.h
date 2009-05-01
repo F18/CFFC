@@ -1004,6 +1004,10 @@ public:
   static bool IsHighOrderBoundary(void) { return HighOrderBoundaryRepresentation == ON? true:false; }
   //! Get the value of the HighOrderBoundaryRepresentation variable.
   static int getHighOrderBoundaryValue(void) {return HighOrderBoundaryRepresentation; }
+  //! Get the value of the Mixed_Curvilinear_Integration variable.
+  static int getMixedCurvilinearIntegrationValue(void) { return Mixed_Curvilinear_Integration; }
+  //! Get the value of the Gauss_Quad_Curvilinear_Integration variable.
+  static int getGaussQuadCurvilinearIntegrationValue(void) { return Gauss_Quad_Curvilinear_Integration; }
   //! Set the designated switch to require the use of Gauss quadratures for evaluating curvilinear path integrals.
   static void setContourIntegrationBasedOnGaussQuadratures(void) {
     Gauss_Quad_Curvilinear_Integration = ON; Mixed_Curvilinear_Integration = OFF;
