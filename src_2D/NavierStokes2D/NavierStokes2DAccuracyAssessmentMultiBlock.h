@@ -13,28 +13,12 @@
 /* Include CFFC header files */
 #include "../HighOrderReconstruction/AccuracyAssessment2DMultiBlock.h" /* Include 2D accuracy assessment
 									  multi-block header file. */
+#include "NavierStokes2DAccuracyAssessment.h"
 #include "NavierStokes2DQuad.h"    // Include 2D Navier-Stokes quadrilateral mesh solution header file.
 
 /*******************************************
  *          SPECIALIZATIONS                *
  ******************************************/
-
-template<>
-inline bool LiftAndDragCoeffs_Helper<NavierStokes2D_Input_Parameters>::PointInIntegrationDomainTest(const Vector2D& Location) const{
-
-  // Add your conditions for the particular problem here
-
-  // === Flat-plate === 
-  if (IP->i_Grid == GRID_FLAT_PLATE){
-    // limit the integration up to the length of the flat-plate
-    if (Location.x > IP->Plate_Length){
-      return false;
-    }
-  }
-  
-  // Return 'true' by default
-  return true;
-}
 
 /*!
  * Assess the solution accuracy by calculating 
@@ -116,10 +100,10 @@ AssessSolutionAccuracyBasedOnLiftAndDragCoefficients(NavierStokes2D_Quad_Block *
 	      throw runtime_error("Skin friction calculation not added for the stand numerical scheme.");
 	    }
 	  }
-	
-	}	//endif
+
+	} //endif
       } //endfor
-   
+
     } // endif
 
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
