@@ -32,8 +32,13 @@ template<SpaceType TwoD, class T >
 template<SpaceType TwoD, class T >
 istream& operator>> (istream& os, DerivativeObj<TwoD,T>& Obj);
 
-/*******************************************************
- * CLASS Template: DerivativeObj                    *
+/*!
+ * \class DerivativeObj
+ *
+ * \brief Template class for high-order derivative in 2D.
+ *        It contains the derivative coefficient and the 
+ *        corresponding powers in the polynomial expansion.
+ * \nosubgrouping
  ******************************************************/
 template< class T>
 class DerivativeObj<TwoD,T>{
@@ -44,16 +49,23 @@ class DerivativeObj<TwoD,T>{
  T ValueD;         		/* the Value of the Derivative, T = solution class */
 
  public:
- // Constructors
+ //! @name Constructors:
+ //@{
  DerivativeObj(void): Power1(0), Power2(0), ValueD() { };
  DerivativeObj(const double Val): Power1(0), Power2(0), ValueD(Val) { };
  DerivativeObj(const vector<int> & PPP_, const T & ValueD_);
  DerivativeObj(const int p1, const int p2, const T ValueD_): Power1(p1),Power2(p2),ValueD(ValueD_) { };
  // Copy constructor
  DerivativeObj( const DerivativeObj & rhs): Power1(rhs.Power1), Power2(rhs.Power2), ValueD(rhs.ValueD){ };
+ //@}
+
+ //! @name Destructors:
+ //@{
  ~DerivativeObj(){ };
+ //@}
  
- // Member functions
+ //! @name Member functions:
+ //@{
  void SetPowers(const int p1, const int p2) {Power1 = p1; Power2 = p2; }	/* set p1 & p2 */
  /* set p1 & p2 , passing by reference */
  void SetPowers(const int &p1, const int &p2, const bool) {Power1 = p1; Power2 = p2;}
@@ -63,8 +75,10 @@ class DerivativeObj<TwoD,T>{
  bool IsPowerEqualTo(const int p1, const int p2) const ; /* if the argument provided is equal to p1 & p2 returns true */
 
  void Read_Derivative(istream &In_File);
+ //@}
 
- // Access functions
+ //! @name Access functions:
+ //@{
  T & D(void) { return ValueD; } 		      /* return ValueD */
  const T & D(void) const {return ValueD; }
  const double & D(const int VarPosition) const { return ValueD[VarPosition]; }
@@ -73,8 +87,10 @@ class DerivativeObj<TwoD,T>{
  const short int & P1(void) const {return Power1;}
  short int & P2(void) { return Power2; }	/* returns p2 */
  const short int & P2(void) const {return Power2;}
+ //@}
 
- /* Overloaded operators */
+ //! @name Overloaded operators:
+ //@{
  // Assignment operator
  DerivativeObj& operator=(const DerivativeObj<TwoD,T>& rhs){
    if(this == &rhs) return *this;
@@ -83,8 +99,10 @@ class DerivativeObj<TwoD,T>{
    ValueD = rhs.ValueD;
    return *this;
  }
+ //@}
 
- // Friend functions & operators
+ //! @name Friend functions & operators:
+ //@{
  friend bool operator== <TwoD,T> (const DerivativeObj<TwoD,T>& left,
 				  const DerivativeObj<TwoD,T>& right);
  friend bool operator!= <TwoD,T> (const DerivativeObj<TwoD,T>& left,
@@ -92,6 +110,7 @@ class DerivativeObj<TwoD,T>{
  friend ostream& operator<< <TwoD,T> (ostream& os, const DerivativeObj<TwoD,T>& Obj);
 
  friend istream& operator>> <TwoD,T> (istream& os, DerivativeObj<TwoD,T>& Obj);
+ //@}
 };
 
 // CLASS DerivativeObj
@@ -200,9 +219,13 @@ ostream & operator<< (ostream & os, const TaylorDerivativesContainer<TwoD,T>& Ob
 template<SpaceType TwoD, class T>
 istream & operator>> (istream & os, TaylorDerivativesContainer<TwoD,T>& Obj);
 
-/*******************************************************
- * CLASS Template: TaylorDerivativesContainer_2D    *
- ******************************************************/
+/*!
+ * \class TaylorDerivativesContainer_2D
+ *
+ * \brief Template class for the container of high-order derivatives in 2D.
+ *        It contains all derivatives required by a given polynomial order.
+ * \nosubgrouping
+ **************************************************************************/
 template<class T>
 class TaylorDerivativesContainer<TwoD,T>{
  public:
@@ -282,6 +305,9 @@ class TaylorDerivativesContainer<TwoD,T>{
 
   //! Compute Y-gradient for a specific solution variable
   double ComputeYGradientFor(const double & DeltaX, const double & DeltaY, const unsigned & parameter) const;
+
+  //! Compute the polynomial with X-dependency integrated
+  T ComputeXDependencyIntegratedSolutionFor(const double DeltaX, const double DeltaY);
 
   // Reset limiter --> set limiter to ONE for all parameters
   void ResetLimiter(void){ phi.One();}
@@ -734,6 +760,48 @@ double TaylorDerivativesContainer<TwoD,T>::ComputeYGradientFor(const double &Del
   }
 }
 
+/*!
+ * Evaluate the polynomial approximation with X-dependency integrated
+ *  \f$ p(x,y) = \sum_{p1=0}^{k} \sum_{p2=0}^{k} \frac{1}{p1+1} (x - x_i)^{p1+1} (y - y_i)^{p2} D_{p1p2} \f$
+ */
+template<class T>
+T TaylorDerivativesContainer<TwoD,T>::ComputeXDependencyIntegratedSolutionFor(const double DeltaX, const double DeltaY){
+
+  // Initialize the solution state
+  T Solution(0.0), Sum;
+  double DeltaXtoPower(DeltaX), DeltaYtoPower, OneOverP1PlusOne;
+  int p1,p2,Position;
+
+  // Loop over the first power (i.e. p1)
+  for (p1=0,Position=0; p1<=OrderOfRec; ++p1){
+    // Calculate OneOverP1PlusOne
+    OneOverP1PlusOne = 1.0/(p1 + 1.0);
+
+    /* Reinitialize DeltaYtoPower */
+    DeltaYtoPower = 1.0;
+
+    // Reset sum
+    Sum.Vacuum();
+
+    // Loop over the second power (i.e. p2)
+    for (p2=0; p2<=OrderOfRec-p1; ++p2, ++Position){
+      /* Update solution */
+      Sum += DeltaYtoPower*DContainer[Position].D();
+
+      /* Update DeltaYtoPower */
+      DeltaYtoPower *= DeltaY;
+    }
+
+    // Update solution with DeltaXtoPower contribution
+    Solution += OneOverP1PlusOne*DeltaXtoPower*Sum;
+
+    /* Update DeltaXtoPower */
+    DeltaXtoPower *= DeltaX;
+  }
+
+  // Return final solution. It considers the scalar limiter applied to all derivatives.
+  return (phi^Solution) + ( (T(1.0)-phi)^(DeltaX*DContainer[0].D()) );
+}
 
 // Friend functions
 template<class T> inline
@@ -929,6 +997,48 @@ double TaylorDerivativesContainer<TwoD,double>::ComputeSolutionFor(const double 
     return (phi*Solution) + ((1.0 - phi)*DContainer[0].D());
 
   }
+}
+
+/*!
+ * Evaluate the polynomial approximation with X-dependency integrated
+ *  \f$ p(x,y) = \sum_{p1=0}^{k} \sum_{p2=0}^{k} \frac{1}{p1+1} (x - x_i)^{p1+1} (y - y_i)^{p2} D_{p1p2} \f$
+ */
+template<> inline
+double TaylorDerivativesContainer<TwoD,double>::ComputeXDependencyIntegratedSolutionFor(const double DeltaX, const double DeltaY){
+
+  // Initialize the solution state
+  double Solution(0.0), Sum;
+  double DeltaXtoPower(DeltaX), DeltaYtoPower, OneOverP1PlusOne;
+  int p1,p2,Position;
+
+  // Loop over the first power (i.e. p1)
+  for (p1=0,Position=0; p1<=OrderOfRec; ++p1){
+    // Calculate OneOverP1PlusOne
+    OneOverP1PlusOne = 1.0/(p1 + 1.0);
+
+    /* Reinitialize DeltaYtoPower */
+    DeltaYtoPower = 1.0;
+
+    // Reset sum
+    Sum = 0.0;
+    // Loop over the second power (i.e. p2)
+    for (p2=0; p2<=OrderOfRec-p1; ++p2, ++Position){
+      /* Update solution */
+      Sum += DeltaYtoPower*DContainer[Position].D();
+
+      /* Update DeltaYtoPower */
+      DeltaYtoPower *= DeltaY;
+    }
+
+    // Update solution with DeltaXtoPower contribution
+    Solution += Sum*OneOverP1PlusOne*DeltaXtoPower;
+
+    /* Update DeltaXtoPower */
+    DeltaXtoPower *= DeltaX;
+  }
+
+  // Return final solution. It considers the scalar limiter applied to all derivatives.
+  return (phi*Solution) + ( (1.0-phi)*(DeltaX*DContainer[0].D()) );
 }
 
 #endif

@@ -2619,7 +2619,7 @@ int AdvectDiffuse2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
 	    MidS.setloc(Grid.xfaceS(i,j));
 	    MidE.setloc(Grid.xfaceE(i,j));
 	    MidW.setloc(Grid.xfaceW(i,j));
-	    CC.setloc(Grid.CellCentroid(i,j));
+	    CC.setloc(Grid.getNodeAverage(i,j));
 
 	    // Evaluate SW sub (fine) cell values if required.
 	    if (!(face == NORTH && sector == WEST && Nghost%2 && j == j_min) &&
@@ -2670,7 +2670,7 @@ int AdvectDiffuse2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
 	    MidS.setloc(Grid.xfaceS(i,j));
 	    MidE.setloc(Grid.xfaceE(i,j));
 	    MidW.setloc(Grid.xfaceW(i,j));
-	    CC.setloc(Grid.CellCentroid(i,j));
+	    CC.setloc(Grid.getNodeAverage(i,j));
 
 	    // Evaluate NW sub (fine) cell values if required.
 	    if (!(face == NORTH && sector == EAST && Nghost%2 && i == i_min) &&
@@ -2809,10 +2809,14 @@ int AdvectDiffuse2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
     } /* endif */
   } /* endif */
 
-
   // Load send message buffer for the coarse-to-fine grid for cases in
   // which one (or both) of the increments is negative.  Only for two
   // ghost cells.
+
+  if (CENO_Execution_Mode::USE_CENO_ALGORITHM &&
+      CENO_Execution_Mode::HIGH_ORDER_MESSAGE_PASSING){ // High-order message passing
+    throw runtime_error("AdvectDiffuse2D_Quad_Block::LoadSendBuffer_C2F() ERROR! The case in which one (or both) of the incements is negative has not been implemented for high-order message passing!");
+  }
 
   if (j_min == j_max) { // North or south boundary.
     // Four different orderings to consider depending on the value of i_inc & j_inc.

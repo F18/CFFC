@@ -16,6 +16,22 @@
 /*******************************************
  *          SPECIALIZATIONS                *
  ******************************************/
+template<>
+inline bool LiftAndDragCoeffs_Helper<NavierStokes2D_Input_Parameters>::PointInIntegrationDomainTest(const Vector2D& Location) const{
+
+  // Add your conditions for the particular problem here
+
+  // === Flat-plate === 
+  if (IP->i_Grid == GRID_FLAT_PLATE){
+    // limit the integration up to the length of the flat-plate
+    if (Location.x > IP->Plate_Length){
+      return false;
+    }
+  }
+  
+  // Return 'true' by default
+  return true;
+}
 
 /************************************************************************//**
  * \class _Wall_Shear_Stress_HO_Function_Wrapper_

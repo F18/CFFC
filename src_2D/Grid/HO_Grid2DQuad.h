@@ -473,6 +473,10 @@ public:
 
   Node2D_HO nodeSW(const Cell2D_HO &Cell) const;
   Node2D_HO nodeSW(const int ii, const int jj) const;
+
+  Vector2D getNodeAverage(const int ii, const int jj) const {
+    return 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii][jj+1].X + Node[ii+1][jj+1].X);
+  }
   //@}
 
   //! @name Get cell face midpoints.
@@ -488,6 +492,11 @@ public:
 
   Vector2D xfaceW(const Cell2D_HO &Cell) const;
   Vector2D xfaceW(const int ii, const int jj) const;
+
+  Vector2D getMidPointFaceN(const int ii, const int jj) const;
+  Vector2D getMidPointFaceS(const int ii, const int jj) const;
+  Vector2D getMidPointFaceE(const int ii, const int jj) const;
+  Vector2D getMidPointFaceW(const int ii, const int jj) const;
   //@}
 
   //! @name Get cell face lengths.
@@ -545,6 +554,9 @@ public:
   void getGaussQuadPointsFaceW(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
   void getGaussQuadPointsFaceW(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
   void addGaussQuadPointsFaceW(const int &ii, const int &jj, std::vector<Vector2D> &GQPoints, const int & NumberOfGQPs) const;
+
+  void getLineSegmentGaussIntegrationData(const Vector2D & StartPoint, const Vector2D & EndPoint,
+					  Vector2D * GQPoints, const int & NumberOfGQPs, double & DeltaY) const;
   //@}
   
   //! @name Number of Gauss quadrature points used for flux calculation.
@@ -817,6 +829,7 @@ public:
   void Update_SplineInfos(void);
 
   void Update_Grid_Properties(const int &HighestRecOrder);
+  void EnsureConsistencyBetweenExtendedSplinesAndBoundaryNodes(void);
 
   int Check_Quad_Block(void);
   int Check_Quad_Block_Completely(void);
@@ -991,6 +1004,10 @@ public:
   static bool IsHighOrderBoundary(void) { return HighOrderBoundaryRepresentation == ON? true:false; }
   //! Get the value of the HighOrderBoundaryRepresentation variable.
   static int getHighOrderBoundaryValue(void) {return HighOrderBoundaryRepresentation; }
+  //! Get the value of the Mixed_Curvilinear_Integration variable.
+  static int getMixedCurvilinearIntegrationValue(void) { return Mixed_Curvilinear_Integration; }
+  //! Get the value of the Gauss_Quad_Curvilinear_Integration variable.
+  static int getGaussQuadCurvilinearIntegrationValue(void) { return Gauss_Quad_Curvilinear_Integration; }
   //! Set the designated switch to require the use of Gauss quadratures for evaluating curvilinear path integrals.
   static void setContourIntegrationBasedOnGaussQuadratures(void) {
     Gauss_Quad_Curvilinear_Integration = ON; Mixed_Curvilinear_Integration = OFF;
@@ -1054,6 +1071,15 @@ public:
   bool IsSouthBoundaryCurved(void) const;
   //! Check if the North boundary is curved (i.e. has control points and is not an interior boundary based on the BCs)
   bool IsNorthBoundaryCurved(void) const;
+
+  //! Check if the West face of an INTERIOR cell is curved (i.e. is part of a curved boundary spline)
+  bool IsWestFaceOfInteriorCellCurved(const int &iCell, const int &jCell) const;
+  //! Check if the East face of an INTERIOR cell is curved
+  bool IsEastFaceOfInteriorCellCurved(const int &iCell, const int &jCell) const;
+  //! Check if the South face of an INTERIOR cell is curved
+  bool IsSouthFaceOfInteriorCellCurved(const int &iCell, const int &jCell) const;
+  //! Check if the North face of an INTERIOR cell is curved
+  bool IsNorthFaceOfInteriorCellCurved(const int &iCell, const int &jCell) const;
 
   //! Check if the North extension of the West boundary is curved (i.e. same conditions as for the West boundary)
   bool IsNorthExtendWestBoundaryCurved(void) const;
@@ -1159,6 +1185,8 @@ private:
   int GhostCellsUpdate;    
   //! Controls the update of the geometric properties of the corner ghost cells.
   int CornerGhostCellsUpdate; 
+  //! Control the check of consistency between boundary nodes and the extended splines (i.e. they exist)
+  int CheckNodesExtendedSplinesConsistency;
   //! Reset to NO update all the mesh update flags.
   void Reset_Mesh_Update_Flags(void){ InteriorMeshUpdate = OFF; GhostCellsUpdate = OFF; CornerGhostCellsUpdate = OFF;}
 
@@ -1248,7 +1276,8 @@ inline Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void)
     BetaJ(ONE), TauJ(ONE),
     OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1),
     // Initialize mesh update flags to OFF (i.e. no update scheduled)
-    InteriorMeshUpdate(OFF), GhostCellsUpdate(OFF), CornerGhostCellsUpdate(OFF),
+    InteriorMeshUpdate(OFF), GhostCellsUpdate(OFF), CornerGhostCellsUpdate(OFF), 
+    CheckNodesExtendedSplinesConsistency(OFF),
     // Initialize state trackers
     InteriorCellGeometryStateTracker(0), GhostCellGeometryStateTracker(0), CornerGhostCellGeometryStateTracker(0),
     NumGQP(0)
@@ -2581,6 +2610,9 @@ inline void Grid2D_Quad_Block_HO::Update_Cell(const int & iCell, const int & jCe
 inline void Grid2D_Quad_Block_HO::Update_GhostCellProperties_DuringMessagePassing(const int &iCell,
 										  const int &jCell){
   Schedule_Ghost_Cells_Update();
+  
+  // Require check of consistency between boundary nodes and the extended splines.
+  CheckNodesExtendedSplinesConsistency = ON;
 }
 
 /*!
@@ -3583,6 +3615,21 @@ inline bool Grid2D_Quad_Block_HO::IsWestExtendNorthBoundaryCurved(void) const{
   }
 }
 
+inline bool Grid2D_Quad_Block_HO::IsWestFaceOfInteriorCellCurved(const int &iCell, const int &jCell) const {
+   return ( iCell == ICl && IsWestBoundaryCurved() )? true : false;
+}
+
+inline bool Grid2D_Quad_Block_HO::IsEastFaceOfInteriorCellCurved(const int &iCell, const int &jCell) const {
+   return ( iCell == ICu && IsEastBoundaryCurved() )? true : false;
+}
+
+inline bool Grid2D_Quad_Block_HO::IsSouthFaceOfInteriorCellCurved(const int &iCell, const int &jCell) const {
+   return ( jCell == JCl && IsSouthBoundaryCurved() )? true : false;
+}
+
+inline bool Grid2D_Quad_Block_HO::IsNorthFaceOfInteriorCellCurved(const int &iCell, const int &jCell) const {
+   return ( jCell == JCu && IsNorthBoundaryCurved() )? true : false;
+}
 
 /*!
  * Set all the state trackers to a new state.

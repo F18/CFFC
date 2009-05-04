@@ -345,38 +345,40 @@ int AccuracyAssessment2D_MultiBlock::AppendErrorNormsToTecplotOutputFile(Quad_So
   ofstream output_file;    
   int error_flag(0);
 
-  /* Determine prefix of output data file names. */
+  /* Determine prefix of output data file names on primary CPU. */
 
-  i = 0;
-  while (1) {
-    if (IP.Output_File_Name[i] == ' ' ||
-	IP.Output_File_Name[i] == '.') break;
-    prefix[i]=IP.Output_File_Name[i];
-    i = i + 1;
-    if (i > strlen(IP.Output_File_Name) ) break;
-  } /* endwhile */
-  prefix[i] = '\0';
+  if( CFFC_Primary_MPI_Processor() ){
+    i = 0;
+    while (1) {
+      if (IP.Output_File_Name[i] == ' ' ||
+	  IP.Output_File_Name[i] == '.') break;
+      prefix[i]=IP.Output_File_Name[i];
+      i = i + 1;
+      if (i > strlen(IP.Output_File_Name) ) break;
+    } /* endwhile */
+    prefix[i] = '\0';
 
-  /* Determine output data file name. */
-  strcpy(extension, "_ErrorNorms.dat");
-  strcpy(output_file_name, prefix);
-  strcat(output_file_name, extension);
+    /* Determine output data file name. */
+    strcpy(extension, "_ErrorNorms.dat");
+    strcpy(output_file_name, prefix);
+    strcat(output_file_name, extension);
 
-  // Check if the file has been previously generated
-  if (System::Check_If_File_Exists(output_file_name) ){
-    // Don't write the header in case there is a restart run
-    Title_Error_Norms = false;
+    // Check if the file has been previously generated
+    if (System::Check_If_File_Exists(output_file_name) ){
+      // Don't write the header in case there is a restart run
+      Title_Error_Norms = false;
+    }
+
+    /* Open the output data file. */
+    output_file.open(output_file_name, ios::app);
+    if (output_file.fail()) return (1);
+
+    /* Print Tecplot title if required */
+    PrintTecplotTitle(IP,
+		      Number_of_Time_Steps,
+		      Time,
+		      output_file);
   }
-
-  /* Open the output data file. */
-  output_file.open(output_file_name, ios::app);
-  if (output_file.fail()) return (1);
-
-  /* Print Tecplot title if required */
-  PrintTecplotTitle(IP,
-		    Number_of_Time_Steps,
-		    Time,
-		    output_file);
 
   /* Assess solution errors */
   error_flag = AssessSolutionAccuracy(SolnBlk,
@@ -386,33 +388,35 @@ int AccuracyAssessment2D_MultiBlock::AppendErrorNormsToTecplotOutputFile(Quad_So
     return error_flag;
   }
 
-  /* Print error measurements to the output data file. */
-  // Customize the output based on the method
-  switch(AccuracyAssessment_Execution_Mode::Method()){
+  /* Print error measurements to the output data file on primary CPU. */
+  if( CFFC_Primary_MPI_Processor() ){
+    // Customize the output based on the method
+    switch(AccuracyAssessment_Execution_Mode::Method()){
+      
+    case AccuracyAssessment_Execution_Mode::Based_On_Lift_And_Drag_Coefficients:
+      output_file << " " 
+		  << Time <<" "
+		  << Number_of_Time_Steps <<" "
+		  << getLift()  <<" " 
+		  << getDrag()  <<" " 
+		  << getLiftCoefficient()  <<" "
+		  << getDragCoefficient()  <<" "
+		  << getWettedSurface() << "\n";
+      break;
+      
+    default:
+      // output error norms to the os stream
+      output_file << " " 
+		  << TotalCells  <<" " 
+		  << L1()  <<" " 
+		  << L2()  <<" "
+		  << LMax()  <<"\n";
+    } // endswitch
 
-  case AccuracyAssessment_Execution_Mode::Based_On_Lift_And_Drag_Coefficients:
-    output_file << " " 
-		<< Time <<" "
-		<< Number_of_Time_Steps <<" "
-		<< getLift()  <<" " 
-		<< getDrag()  <<" " 
-		<< getLiftCoefficient()  <<" "
-		<< getDragCoefficient()  <<" "
-		<< getWettedSurface() << "\n";
-    break;
-    
-  default:
-    // output error norms to the os stream
-    output_file << " " 
-		<< TotalCells  <<" " 
-		<< L1()  <<" " 
-		<< L2()  <<" "
-		<< LMax()  <<"\n";
-  } // endswitch
 
-
-  /* Close the output data file. */
-  output_file.close();
+    /* Close the output data file. */
+    output_file.close();
+  }
 
   /* Writing of output data files complete.  Return zero value. */
   return(0);

@@ -598,6 +598,82 @@ namespace tut
 
   }
 
+  /*Test24: */
+  template<>
+  template<>
+  void object::test<24>()
+  {
+    set_test_name("TaylorDeriv-> : ComputeXDependencyIntegratedSolutionFor() ");
+
+    double DeltaX, DeltaY, Result;
+    int RO;			// Reconstruction Order
+    char number[4], msg[20];
+
+    // Input Data
+    DeltaX = 1.2333333;
+    DeltaY = 0.1235;
+
+    for (RO = 4; RO>=1; --RO){
+      TD.GenerateContainer(RO);
+
+      // Initialize container
+      InitContainer(TD);
+      
+      // Get analytic result
+      Result = 0.0;
+      for (int i = 0; i<=TD.LastElem(); ++i){
+	Result += (1.0/(TD(i).P1()+1)) * Initialization(i) * pow(DeltaX,TD(i).P1()+1) * pow(DeltaY,TD(i).P2());
+      }
+
+      // check
+      sprintf(number,"%d",RO);
+      strcpy(msg, "Order ");
+      strcat(msg, number);
+      ensure_distance(msg, TD.ComputeXDependencyIntegratedSolutionFor(DeltaX, DeltaY), Result, tol*(1.0 + Result));
+    }
+
+  }
+
+
+  /*Test25: */
+  template<>
+  template<>
+  void object::test<25>()
+  {
+    set_test_name("TaylorDeriv-> : ComputeXDependencyIntegratedSolutionFor() ");
+
+    double DeltaX, DeltaY, Result, Limiter;
+    int RO;			// Reconstruction Order
+    char number[4], msg[20];
+
+    // Input Data
+    DeltaX = 1.2333333;
+    DeltaY = 0.1235;
+    Limiter = 0.3333;
+
+    for (RO = 4; RO>=1; --RO){
+      TD.GenerateContainer(RO);
+      TD.Limiter() = Limiter;
+
+      // Initialize container
+      InitContainer(TD);
+      
+      // Get analytic result
+      Result = 0.0;
+      for (int i = TD.FirstElem()+1; i<=TD.LastElem(); ++i){
+	Result += (1.0/(TD(i).P1()+1)) * Initialization(i) * pow(DeltaX,TD(i).P1()+1) * pow(DeltaY,TD(i).P2());
+      }
+      Result = Initialization(0)*DeltaX + Limiter*Result;
+
+      // check
+      sprintf(number,"%d",RO);
+      strcpy(msg, "Order ");
+      strcat(msg, number);
+      ensure_distance(msg, TD.ComputeXDependencyIntegratedSolutionFor(DeltaX, DeltaY), Result, tol*Result);
+    }
+
+  }
+
 }
 
 

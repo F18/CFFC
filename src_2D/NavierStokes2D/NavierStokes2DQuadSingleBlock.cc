@@ -487,7 +487,7 @@ int Prolong_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk_Fine,
 			   NavierStokes2D_Quad_Block &SolnBlk_Original,
 			   const int Sector) {
 
-  int error_flag, i, j;
+  int error_flag, i, j, iBase, jBase;
   int i_min, i_max, j_min, j_max, mesh_refinement_permitted;
   int i_fine, j_fine, i_coarse_min, j_coarse_min, coarse_cell_found;
   double distance, area_total_fine;
@@ -591,80 +591,63 @@ int Prolong_Solution_Block(NavierStokes2D_Quad_Block &SolnBlk_Fine,
       break;
     };
 
-    for (j = j_min; j <= j_max; j++) {
-      for (i = i_min ; i <= i_max; i++) {
-	//area_total_fine = SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl  ]
-	//                                      [2*(j-j_min)+SolnBlk_Fine.JCl  ].A+
-	//                SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl+1]
-	//                                      [2*(j-j_min)+SolnBlk_Fine.JCl  ].A+
-	//                SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl  ]
-	//                                      [2*(j-j_min)+SolnBlk_Fine.JCl+1].A+
-	//                SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl+1]
-	//                                      [2*(j-j_min)+SolnBlk_Fine.JCl+1].A;
-	SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl  ] = SolnBlk_Original.U[i][j];
-	//= (SolnBlk_Original.Grid.Cell[i][j].A/area_total_fine)*SolnBlk_Original.U[i][j];
-	SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl  ] = W(SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl  ]);
-	SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl  ] = SolnBlk_Original.U[i][j];
-	//= (SolnBlk_Original.Grid.Cell[i][j].A/area_total_fine)*SolnBlk_Original.U[i][j];
-	SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl  ] = W(SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl  ]);
-	SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl+1] = SolnBlk_Original.U[i][j];
-	//= (SolnBlk_Original.Grid.Cell[i][j].A/area_total_fine)*SolnBlk_Original.U[i][j];
-	SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl+1] = W(SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl+1]);
-	SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl+1] = SolnBlk_Original.U[i][j];
-	//= (SolnBlk_Original.Grid.Cell[i][j].A/area_total_fine)*SolnBlk_Original.U[i][j];
-	SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl+1] = W(SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl+1]);
-// 	if (SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl  ].rho < ZERO ||
-// 	    SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl  ].rho < ZERO ||
-// 	    SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl+1].rho < ZERO ||
-// 	    SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl+1].rho < ZERO) {
-// 	  for (int jj = SolnBlk_Original.JCl; jj <= SolnBlk_Original.JCu; jj++) {
-// 	    for (int ii = SolnBlk_Original.ICl; ii <= SolnBlk_Original.ICu; ii++) {
-// 	      cout << endl << SolnBlk_Original.Grid.Cell[ii][jj].Xc << " " << SolnBlk_Original.W[ii][jj];
-// 	    }
-// 	  }
-// // 	  cout << endl << i << " " << j << " " << SolnBlk_Original.JCu
-// // 	       << endl << SolnBlk_Original.Grid.Cell[i][j].Xc
-// // 	       << endl << SolnBlk_Original.U[i][j]
-// // 	       << endl << SolnBlk_Original.W[i][j]
-// // 	       << endl << SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl  ].Xc
-// // 	       << endl << SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl  ]
-// // 	       << endl << SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl  ]
-// // 	       << endl << SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl  ].Xc
-// // 	       << endl << SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl  ]
-// // 	       << endl << SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl  ]
-// // 	       << endl << SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl+1].Xc
-// // 	       << endl << SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl+1]
-// // 	       << endl << SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl+1]
-// // 	       << endl << SolnBlk_Fine.Grid.Cell[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl+1].Xc
-// // 	       << endl << SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl+1]
-// // 	       << endl << SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl+1];
-// 	}
-// 	if (SolnBlk_Original.U[i][j].rho < ZERO) {
-// 	  if (SolnBlk_Original.U[i-1][j].rho > ZERO && i-1 >= SolnBlk_Original.ICl) Ucoarse = SolnBlk_Original.U[i-1][j];
-// 	  else if (SolnBlk_Original.U[i-1][j-1].rho > ZERO && i-1 >= SolnBlk_Original.ICl && j-1 >= SolnBlk_Original.JCl) Ucoarse = SolnBlk_Original.U[i-1][j-1];
-// 	  else if (SolnBlk_Original.U[i  ][j-1].rho > ZERO                                && j-1 >= SolnBlk_Original.JCl) Ucoarse = SolnBlk_Original.U[i  ][j-1];
-// 	  else if (SolnBlk_Original.U[i+1][j-1].rho > ZERO && i+1 <= SolnBlk_Original.ICu && j-1 >= SolnBlk_Original.JCl) Ucoarse = SolnBlk_Original.U[i+1][j-1];
-// 	  else if (SolnBlk_Original.U[i+1][j  ].rho > ZERO && i+1 <= SolnBlk_Original.ICu                               ) Ucoarse = SolnBlk_Original.U[i+1][j  ];
-// 	  else if (SolnBlk_Original.U[i+1][j+1].rho > ZERO && i+1 <= SolnBlk_Original.ICu && j+1 <= SolnBlk_Original.JCu) Ucoarse = SolnBlk_Original.U[i+1][j+1];
-// 	  else if (SolnBlk_Original.U[i  ][j+1].rho > ZERO                                && j+1 <= SolnBlk_Original.JCu) Ucoarse = SolnBlk_Original.U[i  ][j+1];
-// 	  else if (SolnBlk_Original.U[i-1][j+1].rho > ZERO && i-1 >= SolnBlk_Original.ICl && j+1 <= SolnBlk_Original.JCu) Ucoarse = SolnBlk_Original.U[i-1][j+1];
-// 	  else return 1;
-// 	  SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl  ] = Ucoarse;
-// 	  //= (SolnBlk_Original.Grid.Cell[i][j].A/area_total_fine)*SolnBlk_Original.U[i][j];
-// 	  SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl  ] = W(SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl  ]);
-// 	  SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl  ] = Ucoarse;
-// 	  //= (SolnBlk_Original.Grid.Cell[i][j].A/area_total_fine)*SolnBlk_Original.U[i][j];
-// 	  SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl  ] = W(SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl  ]);
-// 	  SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl+1] = Ucoarse;
-// 	  //= (SolnBlk_Original.Grid.Cell[i][j].A/area_total_fine)*SolnBlk_Original.U[i][j];
-// 	  SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl+1] = W(SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl  ][2*(j-j_min)+SolnBlk_Fine.JCl+1]);
-// 	  SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl+1] = Ucoarse;
-// 	  //= (SolnBlk_Original.Grid.Cell[i][j].A/area_total_fine)*SolnBlk_Original.U[i][j];
-// 	  SolnBlk_Fine.W[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl+1] = W(SolnBlk_Fine.U[2*(i-i_min)+SolnBlk_Fine.ICl+1][2*(j-j_min)+SolnBlk_Fine.JCl+1]);
-// 	}
+    if (CENO_Execution_Mode::USE_CENO_ALGORITHM &&
+	CENO_Execution_Mode::HIGH_ORDER_MESSAGE_PASSING){ // High-order prolongation
 
-      }
-    }
+      // **************************************************
+      // Prolong solution using the high-order reconstruction
+
+      for (j = j_min; j <= j_max; j++) {
+	for (i = i_min ; i <= i_max; i++) {
+
+	  // Base indexes for the fine grid.
+	  // They are related to the indexes (i,j) of the coarse grid
+	  iBase = 2*(i-i_min)+SolnBlk_Fine.ICl;
+	  jBase = 2*(j-j_min)+SolnBlk_Fine.JCl;
+
+	  // Calculate the sub (fine) cell average values with the high-order interpolant for the current coarse cell
+
+	  SolnBlk_Original.HighOrderVariable(0).
+	    ComputeHighOrderSolutionProlongation(i,j,
+						 SolnBlk_Original.CellSolution(i,j),
+						 SolnBlk_Fine.W[iBase  ][jBase], SolnBlk_Fine.W[iBase  ][jBase+1],
+						 SolnBlk_Fine.W[iBase+1][jBase], SolnBlk_Fine.W[iBase+1][jBase+1]);
+	  
+	  // Update the conserved solutions
+	  SolnBlk_Fine.U[iBase  ][jBase  ] = SolnBlk_Fine.W[iBase  ][jBase  ].U();
+	  SolnBlk_Fine.U[iBase+1][jBase  ] = SolnBlk_Fine.W[iBase+1][jBase  ].U();
+	  SolnBlk_Fine.U[iBase  ][jBase+1] = SolnBlk_Fine.W[iBase  ][jBase+1].U();
+	  SolnBlk_Fine.U[iBase+1][jBase+1] = SolnBlk_Fine.W[iBase+1][jBase+1].U();
+	  	  
+	} // endfor (i)
+      }	// endfor (j)    
+
+    } else {
+
+      //******************************************************
+      // Prolong solution by injection (i.e. low-order)
+
+      for (j = j_min; j <= j_max; j++) {
+	for (i = i_min ; i <= i_max; i++) {
+
+	  // Base indexes for the fine grid.
+	  // They are related to the indexes (i,j) of the coarse grid
+	  iBase = 2*(i-i_min)+SolnBlk_Fine.ICl;
+	  jBase = 2*(j-j_min)+SolnBlk_Fine.JCl;
+
+	  SolnBlk_Fine.U[iBase  ][jBase  ] = SolnBlk_Original.U[i][j];
+	  SolnBlk_Fine.W[iBase  ][jBase  ] = W(SolnBlk_Fine.U[iBase  ][jBase  ]);
+	  SolnBlk_Fine.U[iBase+1][jBase  ] = SolnBlk_Original.U[i][j];
+	  SolnBlk_Fine.W[iBase+1][jBase  ] = W(SolnBlk_Fine.U[iBase+1][jBase  ]);
+	  SolnBlk_Fine.U[iBase  ][jBase+1] = SolnBlk_Original.U[i][j];
+	  SolnBlk_Fine.W[iBase  ][jBase+1] = W(SolnBlk_Fine.U[iBase  ][jBase+1]);
+	  SolnBlk_Fine.U[iBase+1][jBase+1] = SolnBlk_Original.U[i][j];
+	  SolnBlk_Fine.W[iBase+1][jBase+1] = W(SolnBlk_Fine.U[iBase+1][jBase+1]);
+
+	} // endfor (i)
+      }	// endfor (j)
+
+    }/* endif (High-order prolongation) */
 
     // Prolong the east and west boundary states.
     for (j = j_min-SolnBlk_Original.Nghost/2; j <= j_max+SolnBlk_Original.Nghost/2; j++) {
@@ -4696,7 +4679,7 @@ void Fix_Refined_Block_Boundaries(NavierStokes2D_Quad_Block &SolnBlk,
  **********************************************************************/
 void Unfix_Refined_Block_Boundaries(NavierStokes2D_Quad_Block &SolnBlk) {
 
-  double sp_l, sp_r, sp_m, ds_ratio, dl, dr;
+  double sp_l, sp_r, sp_m, ds_ratio, dl, dr, sp_i;
   bool ModifiedGrid(false);
  
   // Return the nodes at the north boundary to their original positions.
@@ -4712,14 +4695,31 @@ void Unfix_Refined_Block_Boundaries(NavierStokes2D_Quad_Block &SolnBlk) {
 	       SolnBlk.Grid.Node[i  ][SolnBlk.Grid.JNu].X);
       ds_ratio = dl/(dl+dr);
       sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-      SolnBlk.Grid.Node[i][SolnBlk.Grid.JNu].X = Spline(sp_m,SolnBlk.Grid.BndNorthSpline);
+
+      // Get the correspondent current path length of the "i" node
+      sp_i = getS(SolnBlk.Grid.Node[i][SolnBlk.Grid.JNu].X,
+		  SolnBlk.Grid.BndNorthSpline);
+
+      // Test if sp_i is different than sp_m
+      if ( RelativeError(sp_i,sp_m) >= EpsilonTol::epsilon_relative ){
+	// Move the node on the spline
+	SolnBlk.Grid.Node[i][SolnBlk.Grid.JNu].X = Spline(sp_m,SolnBlk.Grid.BndNorthSpline);
+
+	// Mark the modification
+	ModifiedGrid = true;
+
+	// Redistribute the solution average in the affected cells
+	// Left cell
+	SolnBlk.U[i-1][SolnBlk.JCu] = (SolnBlk.Grid.Cell[i-1][SolnBlk.JCu].A/
+				       SolnBlk.Grid.area(i-1,SolnBlk.JCu))*SolnBlk.U[i-1][SolnBlk.JCu];
+	SolnBlk.W[i-1][SolnBlk.JCu] = W(SolnBlk.U[i-1][SolnBlk.JCu]);
+
+	// Right cell
+	SolnBlk.U[i][SolnBlk.JCu] = (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A/
+				     SolnBlk.Grid.area(i,SolnBlk.JCu))*SolnBlk.U[i][SolnBlk.JCu];
+	SolnBlk.W[i][SolnBlk.JCu] = W(SolnBlk.U[i][SolnBlk.JCu]);
+      }
     }
-    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-      SolnBlk.U[i][SolnBlk.JCu] = (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A/
-				   SolnBlk.Grid.area(i,SolnBlk.JCu))*SolnBlk.U[i][SolnBlk.JCu];
-      SolnBlk.W[i][SolnBlk.JCu] = W(SolnBlk.U[i][SolnBlk.JCu]);
-    }
-    ModifiedGrid = true;
   }
 
   // Return the nodes at the south boundary to their original positions.
@@ -4735,14 +4735,31 @@ void Unfix_Refined_Block_Boundaries(NavierStokes2D_Quad_Block &SolnBlk) {
 	       SolnBlk.Grid.Node[i  ][SolnBlk.Grid.JNl].X);
       ds_ratio = dl/(dl+dr);
       sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-      SolnBlk.Grid.Node[i][SolnBlk.Grid.JNl].X = Spline(sp_m,SolnBlk.Grid.BndSouthSpline);
+
+      // Get the correspondent current path length of the "i" node
+      sp_i = getS(SolnBlk.Grid.Node[i][SolnBlk.Grid.JNl].X,
+		  SolnBlk.Grid.BndSouthSpline);
+
+      // Test if sp_i is different than sp_m
+      if ( RelativeError(sp_i,sp_m) >= EpsilonTol::epsilon_relative ){
+	// Move the node on the spline
+	SolnBlk.Grid.Node[i][SolnBlk.Grid.JNl].X = Spline(sp_m,SolnBlk.Grid.BndSouthSpline);
+
+	// Mark the modification
+	ModifiedGrid = true;
+
+	// Redistribute the solution average in the affected cells
+	// Left cell
+	SolnBlk.U[i-1][SolnBlk.JCl] = (SolnBlk.Grid.Cell[i-1][SolnBlk.JCl].A/
+				       SolnBlk.Grid.area(i-1,SolnBlk.JCl))*SolnBlk.U[i-1][SolnBlk.JCl];
+	SolnBlk.W[i-1][SolnBlk.JCl] = W(SolnBlk.U[i-1][SolnBlk.JCl]);
+
+	// Right cell
+	SolnBlk.U[i][SolnBlk.JCl] = (SolnBlk.Grid.Cell[i][SolnBlk.JCl].A/
+				     SolnBlk.Grid.area(i,SolnBlk.JCl))*SolnBlk.U[i][SolnBlk.JCl];
+	SolnBlk.W[i][SolnBlk.JCl] = W(SolnBlk.U[i][SolnBlk.JCl]);
+      }
     }
-    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-      SolnBlk.U[i][SolnBlk.JCl] = (SolnBlk.Grid.Cell[i][SolnBlk.JCl].A/
-				   SolnBlk.Grid.area(i,SolnBlk.JCl))*SolnBlk.U[i][SolnBlk.JCl];
-      SolnBlk.W[i][SolnBlk.JCl] = W(SolnBlk.U[i][SolnBlk.JCl]);
-    }
-    ModifiedGrid = true;
   }
 
   // Return the nodes at the east boundary to their original positions.
@@ -4758,14 +4775,31 @@ void Unfix_Refined_Block_Boundaries(NavierStokes2D_Quad_Block &SolnBlk) {
 	       SolnBlk.Grid.Node[SolnBlk.Grid.INu][j  ].X);
       ds_ratio = dl/(dl+dr);
       sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-      SolnBlk.Grid.Node[SolnBlk.Grid.INu][j].X = Spline(sp_m,SolnBlk.Grid.BndEastSpline);
+
+      // Get the correspondent current path length of the "j" node
+      sp_i = getS(SolnBlk.Grid.Node[SolnBlk.Grid.INu][j].X,
+		  SolnBlk.Grid.BndEastSpline);
+
+      // Test if sp_i is different than sp_m
+      if ( RelativeError(sp_i,sp_m) >= EpsilonTol::epsilon_relative ){
+	// Move the node on the spline
+	SolnBlk.Grid.Node[SolnBlk.Grid.INu][j].X = Spline(sp_m,SolnBlk.Grid.BndEastSpline);
+
+	// Mark the modification
+	ModifiedGrid = true;
+
+	// Redistribute the solution average in the affected cells
+	// Lower cell
+	SolnBlk.U[SolnBlk.ICu][j-1] = (SolnBlk.Grid.Cell[SolnBlk.ICu][j-1].A/
+				       SolnBlk.Grid.area(SolnBlk.ICu,j-1))*SolnBlk.U[SolnBlk.ICu][j-1];
+	SolnBlk.W[SolnBlk.ICu][j-1] = W(SolnBlk.U[SolnBlk.ICu][j-1]);
+
+	// Upper cell
+	SolnBlk.U[SolnBlk.ICu][j] = (SolnBlk.Grid.Cell[SolnBlk.ICu][j].A/
+				     SolnBlk.Grid.area(SolnBlk.ICu,j))*SolnBlk.U[SolnBlk.ICu][j];
+	SolnBlk.W[SolnBlk.ICu][j] = W(SolnBlk.U[SolnBlk.ICu][j]);
+      }
     }
-    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-      SolnBlk.U[SolnBlk.ICu][j] = (SolnBlk.Grid.Cell[SolnBlk.ICu][j].A/
-				   SolnBlk.Grid.area(SolnBlk.ICu,j))*SolnBlk.U[SolnBlk.ICu][j];
-      SolnBlk.W[SolnBlk.ICu][j] = W(SolnBlk.U[SolnBlk.ICu][j]);
-    }
-    ModifiedGrid = true;
   }
 
   // Return the nodes at the west boundary to their original positions.
@@ -4781,14 +4815,31 @@ void Unfix_Refined_Block_Boundaries(NavierStokes2D_Quad_Block &SolnBlk) {
 	       SolnBlk.Grid.Node[SolnBlk.Grid.INl][j  ].X);
       ds_ratio = dl/(dl+dr);
       sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-      SolnBlk.Grid.Node[SolnBlk.Grid.INl][j].X = Spline(sp_m,SolnBlk.Grid.BndWestSpline);
+
+      // Get the correspondent current path length of the "j" node
+      sp_i = getS(SolnBlk.Grid.Node[SolnBlk.Grid.INl][j].X,
+		  SolnBlk.Grid.BndWestSpline);
+
+      // Test if sp_i is different than sp_m
+      if ( RelativeError(sp_i,sp_m) >= EpsilonTol::epsilon_relative ){
+	// Move the node on the spline
+	SolnBlk.Grid.Node[SolnBlk.Grid.INl][j].X = Spline(sp_m,SolnBlk.Grid.BndWestSpline);
+
+	// Mark the modification
+	ModifiedGrid = true;
+
+	// Redistribute the solution average in the affected cells
+	// Lower cell
+	SolnBlk.U[SolnBlk.ICl][j-1] = (SolnBlk.Grid.Cell[SolnBlk.ICl][j-1].A/
+				       SolnBlk.Grid.area(SolnBlk.ICl,j-1))*SolnBlk.U[SolnBlk.ICl][j-1];
+	SolnBlk.W[SolnBlk.ICl][j-1] = W(SolnBlk.U[SolnBlk.ICl][j-1]);
+
+	// Upper cell
+	SolnBlk.U[SolnBlk.ICl][j] = (SolnBlk.Grid.Cell[SolnBlk.ICl][j].A/
+				     SolnBlk.Grid.area(SolnBlk.ICl,j))*SolnBlk.U[SolnBlk.ICl][j];
+	SolnBlk.W[SolnBlk.ICl][j] = W(SolnBlk.U[SolnBlk.ICl][j]);
+      }
     }
-    for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-      SolnBlk.U[SolnBlk.ICl][j] = (SolnBlk.Grid.Cell[SolnBlk.ICl][j].A/
-				   SolnBlk.Grid.area(SolnBlk.ICl,j))*SolnBlk.U[SolnBlk.ICl][j];
-      SolnBlk.W[SolnBlk.ICl][j] = W(SolnBlk.U[SolnBlk.ICl][j]);
-    }
-    ModifiedGrid = true;
   }
 
   if (ModifiedGrid){

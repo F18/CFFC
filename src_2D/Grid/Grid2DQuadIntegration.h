@@ -67,6 +67,16 @@ public:
     throw runtime_error("Grid2DQuadIntegration()::IntegrateFunctionOverCellUsingContourIntegrand() not implemented for this Grid type");
   }
 
+  //! Compute the averages given by a function over the sectors of cell (ii,jj) (i.e. SW, NW, SE, NE) using contour integration
+  template<typename FO, class ReturnType>
+  void IntegrateFunctionOverCellSectorsUsingContourIntegrand(const int &ii, const int &jj,
+							     FO ContourIntegrand,
+							     const ReturnType & CoarseAvgSoln,
+							     ReturnType & AvgSoln_SW, ReturnType & AvgSoln_NW,
+							     ReturnType & AvgSoln_SE, ReturnType & AvgSoln_NE) {
+    throw runtime_error("Grid2DQuadIntegration()::IntegrateFunctionOverCellSectorsUsingContourIntegrand() not implemented for this Grid type");
+  }
+
   //! Compute the integral of a general function over the domain of cell (ii,jj) which has curved faces using Monte Carlo method
   template<typename FO, class ReturnType>
   ReturnType IntegrateFunctionOverCellUsingMonteCarloMethod(const int &ii, const int &jj,

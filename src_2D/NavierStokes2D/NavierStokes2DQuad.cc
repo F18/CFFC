@@ -399,6 +399,622 @@ void NavierStokes2D_Quad_Block::Set_Boundary_Reference_States(const bool &SetNor
 }
 
 /********************************************************************//**
+ * NavierStokes2D_Quad_Block::LoadSendBuffer_C2F --                   
+ *                     Loads send message buffer for coarse to fine   
+ *                     block message passing.                        
+ *
+ * \todo Avoid recomputing the subcell average values with the high-order interpolant! 
+ **********************************************************************/
+int NavierStokes2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
+						  int &buffer_count,
+						  const int buffer_size,
+						  const int i_min,
+						  const int i_max,
+						  const int i_inc,
+						  const int j_min,
+						  const int j_max,
+						  const int j_inc,
+						  const int face,
+						  const int sector) {
+
+  int i, j, k;
+  Vector2D dX;
+  NavierStokes2D_pState Wfine;
+  NavierStokes2D_cState Ufine;
+  int Limiter = LIMITER_VENKATAKRISHNAN;
+
+  if (j_inc > 0) {
+    if (i_inc > 0) {
+
+      if (CENO_Execution_Mode::USE_CENO_ALGORITHM &&
+	  CENO_Execution_Mode::HIGH_ORDER_MESSAGE_PASSING){ // High-order message passing
+	
+	NavierStokes2D_pState Wfine_SW, Wfine_SE, Wfine_NE, Wfine_NW;
+
+	// Make sure that reconstruction is done for this block
+	HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(*this,
+								    CENO_Execution_Mode::Limiter,
+								    &NavierStokes2D_Quad_Block::CellSolution);
+
+	for (j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
+	  for (i = i_min; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
+
+	    // Calculate the sub (fine) cell average values with the high-order interpolant for the current coarse cell
+	    HighOrderVariable(0).ComputeHighOrderSolutionProlongation(i,j,
+								      CellSolution(i,j),
+								      Wfine_SW, Wfine_NW,
+								      Wfine_SE, Wfine_NE);
+
+	    // Fill in the first row of ghost cells
+
+	    // Load SW sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == WEST && Nghost%2 && j == j_min) &&
+		!(face == NORTH && sector == EAST && Nghost%2 && (i == i_min || j == j_min)) &&
+		!(face == SOUTH && sector == EAST && Nghost%2 && i == i_min) &&
+		!(face == EAST && sector == NORTH && Nghost%2 && (i == i_min || j == j_min)) &&
+		!(face == EAST && sector == SOUTH && Nghost%2 && i == i_min) &&
+		!(face == WEST && sector == NORTH && Nghost%2 && j == j_min) &&
+		!(face == NORTH_EAST && Nghost%2 && (i == i_min || j == j_min)) &&
+		!(face == NORTH_WEST && Nghost%2 && j == j_min) &&
+		!(face == SOUTH_EAST && Nghost%2 && i == i_min)) {
+
+	      // Calculate the conserved variables
+	      Ufine = Wfine_SW.U();
+	      for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+		buffer_count++;
+		if (buffer_count >= buffer_size) return 1;
+		buffer[buffer_count] = Ufine[k];
+	      }
+	    }
+	    // Load SE sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == WEST && Nghost%2 && (i == i_max || j == j_min)) &&
+		!(face == NORTH && sector == EAST && Nghost%2 && j == j_min) &&
+		!(face == SOUTH && sector == WEST && Nghost%2 && i == i_max) &&
+		!(face == EAST && sector == NORTH && Nghost%2 && j == j_min) &&
+		!(face == WEST && sector == NORTH && Nghost%2 && (i == i_max || j == j_min)) &&
+		!(face == WEST && sector == SOUTH && Nghost%2 && i == i_max) &&
+		!(face == NORTH_EAST && Nghost%2 && j == j_min) &&
+		!(face == NORTH_WEST && Nghost%2 && (i == i_max || j == j_min)) &&
+		!(face == SOUTH_WEST && Nghost%2 && i == i_max)) {
+
+	      // Calculate the conserved variables
+	      Ufine = Wfine_SE.U();
+	      for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+		buffer_count++;
+		if (buffer_count >= buffer_size) return 1;
+		buffer[buffer_count] = Ufine[k];
+	      }
+	    }
+	  }
+	  for ( i = i_min; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
+
+	    // (Re)Calculate the sub (fine) cell average values with the high-order interpolant for the current coarse cell
+	    // This is not efficient but it's required because of the way the buffer is loaded!!!
+	    HighOrderVariable(0).ComputeHighOrderSolutionProlongation(i,j,
+								      CellSolution(i,j),
+								      Wfine_SW, Wfine_NW,
+								      Wfine_SE, Wfine_NE);
+
+	    // Evaluate NW sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == EAST && Nghost%2 && i == i_min) &&
+		!(face == SOUTH && sector == EAST && Nghost%2 && (i == i_min || j == j_max)) &&
+		!(face == SOUTH && sector == WEST && Nghost%2 && j == j_max) &&
+		!(face == EAST && sector == NORTH && Nghost%2 && i == i_min) &&
+		!(face == EAST && sector == SOUTH && Nghost%2 && (i == i_min || j == j_max)) &&
+		!(face == WEST && sector == SOUTH && Nghost%2 && j == j_max) &&
+		!(face == NORTH_EAST && Nghost%2 && i == i_min) &&
+		!(face == SOUTH_EAST && Nghost%2 && (i == i_min || j == j_max)) &&
+		!(face == SOUTH_WEST && Nghost%2 && j == j_max)) {
+
+	      // Calculate the conserved variables
+	      Ufine = Wfine_NW.U();
+	      for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) { 
+		buffer_count++;
+		if (buffer_count >= buffer_size) return 1;
+		buffer[buffer_count] = Ufine[k];
+	      }
+	    }
+
+	    // Evaluate NE sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == WEST && Nghost%2 && i == i_max) &&
+		!(face == SOUTH && sector == EAST && Nghost%2 && j == j_max) &&
+		!(face == SOUTH && sector == WEST && Nghost%2 && (i == i_max || j == j_max)) &&
+		!(face == EAST && sector == SOUTH && Nghost%2 && j == j_max) &&
+		!(face == WEST && sector == NORTH && Nghost%2 && i == i_max) &&
+		!(face == WEST && sector == SOUTH && Nghost%2 && (i == i_max || j == j_max)) &&
+		!(face == NORTH_WEST && Nghost%2 && i == i_max) &&
+		!(face == SOUTH_EAST && Nghost%2 && j == j_max) &&
+		!(face == SOUTH_WEST && Nghost%2 && (i == i_max || j == j_max))) {
+
+	      // Calculate the conserved variables
+	      Ufine = Wfine_NE.U();
+	      for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+		buffer_count++;
+		if (buffer_count >= buffer_size) return 1;
+		buffer[buffer_count] = Ufine[k];
+	      } /* endfor (k) */
+	    } /* endif */
+	  } /* endfor */
+	} /* endfor */
+
+      } else {            // Lower-order
+
+	for (j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
+	  for (i = i_min; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
+	    // Perform limited linear least squares reconstruction in cell (i,j_min).
+	    SubcellReconstruction(i,j,Limiter);
+	    // Evaluate SW sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == WEST && Nghost%2 && j == j_min) &&
+		!(face == NORTH && sector == EAST && Nghost%2 && (i == i_min || j == j_min)) &&
+		!(face == SOUTH && sector == EAST && Nghost%2 && i == i_min) &&
+		!(face == EAST && sector == NORTH && Nghost%2 && (i == i_min || j == j_min)) &&
+		!(face == EAST && sector == SOUTH && Nghost%2 && i == i_min) &&
+		!(face == WEST && sector == NORTH && Nghost%2 && j == j_min) &&
+		!(face == NORTH_EAST && Nghost%2 && (i == i_min || j == j_min)) &&
+		!(face == NORTH_WEST && Nghost%2 && j == j_min) &&
+		!(face == SOUTH_EAST && Nghost%2 && i == i_min)) {
+	      dX = Grid.centroidSW(i,j) - Grid.Cell[i][j].Xc;
+	      Wfine = W[i][j] + (phi[i][j]^dWdx[i][j])*dX.x +
+		(phi[i][j]^dWdy[i][j])*dX.y;
+	      Ufine = Wfine.U();
+	      for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+		buffer_count++;
+		if (buffer_count >= buffer_size) return 1;
+		buffer[buffer_count] = Ufine[k];
+	      }
+	    }
+	    // Evaluate SE sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == WEST && Nghost%2 && (i == i_max || j == j_min)) &&
+		!(face == NORTH && sector == EAST && Nghost%2 && j == j_min) &&
+		!(face == SOUTH && sector == WEST && Nghost%2 && i == i_max) &&
+		!(face == EAST && sector == NORTH && Nghost%2 && j == j_min) &&
+		!(face == WEST && sector == NORTH && Nghost%2 && (i == i_max || j == j_min)) &&
+		!(face == WEST && sector == SOUTH && Nghost%2 && i == i_max) &&
+		!(face == NORTH_EAST && Nghost%2 && j == j_min) &&
+		!(face == NORTH_WEST && Nghost%2 && (i == i_max || j == j_min)) &&
+		!(face == SOUTH_WEST && Nghost%2 && i == i_max)) {
+	      dX = Grid.centroidSE(i,j) - Grid.Cell[i][j].Xc;
+	      Wfine = W[i][j] + (phi[i][j]^dWdx[i][j])*dX.x +
+		(phi[i][j]^dWdy[i][j])*dX.y;
+	      Ufine = Wfine.U();
+	      for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+		buffer_count++;
+		if (buffer_count >= buffer_size) return 1;
+		buffer[buffer_count] = Ufine[k];
+	      }
+	    }
+	  }
+	  for ( i = i_min; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
+	    // Evaluate NW sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == EAST && Nghost%2 && i == i_min) &&
+		!(face == SOUTH && sector == EAST && Nghost%2 && (i == i_min || j == j_max)) &&
+		!(face == SOUTH && sector == WEST && Nghost%2 && j == j_max) &&
+		!(face == EAST && sector == NORTH && Nghost%2 && i == i_min) &&
+		!(face == EAST && sector == SOUTH && Nghost%2 && (i == i_min || j == j_max)) &&
+		!(face == WEST && sector == SOUTH && Nghost%2 && j == j_max) &&
+		!(face == NORTH_EAST && Nghost%2 && i == i_min) &&
+		!(face == SOUTH_EAST && Nghost%2 && (i == i_min || j == j_max)) &&
+		!(face == SOUTH_WEST && Nghost%2 && j == j_max)) {
+	      dX = Grid.centroidNW(i,j) - Grid.Cell[i][j].Xc;
+	      Wfine = W[i][j] + (phi[i][j]^dWdx[i][j])*dX.x +
+		(phi[i][j]^dWdy[i][j])*dX.y;
+	      Ufine = Wfine.U();
+	      for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) { 
+		buffer_count++;
+		if (buffer_count >= buffer_size) return 1;
+		buffer[buffer_count] = Ufine[k];
+	      }
+	    }
+	    // Evaluate NE sub (fine) cell values if required.
+	    if (!(face == NORTH && sector == WEST && Nghost%2 && i == i_max) &&
+		!(face == SOUTH && sector == EAST && Nghost%2 && j == j_max) &&
+		!(face == SOUTH && sector == WEST && Nghost%2 && (i == i_max || j == j_max)) &&
+		!(face == EAST && sector == SOUTH && Nghost%2 && j == j_max) &&
+		!(face == WEST && sector == NORTH && Nghost%2 && i == i_max) &&
+		!(face == WEST && sector == SOUTH && Nghost%2 && (i == i_max || j == j_max)) &&
+		!(face == NORTH_WEST && Nghost%2 && i == i_max) &&
+		!(face == SOUTH_EAST && Nghost%2 && j == j_max) &&
+		!(face == SOUTH_WEST && Nghost%2 && (i == i_max || j == j_max))) {
+	      dX = Grid.centroidNE(i,j) - Grid.Cell[i][j].Xc;
+	      Wfine = W[i][j] + (phi[i][j]^dWdx[i][j])*dX.x +
+		(phi[i][j]^dWdy[i][j])*dX.y;
+	      Ufine = Wfine.U();
+	      for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+		buffer_count++;
+		if (buffer_count >= buffer_size) return 1;
+		buffer[buffer_count] = Ufine[k];
+	      } /* endfor (k) */
+	    } /* endif */
+	  } /* endfor */
+	} /* endfor */
+
+      }	//endif (CENO_Execution_Mode::Use_CENO_ALGORITHM)
+
+      return 0;
+
+    } /* endif */
+  } /* endif */
+
+  // Load send message buffer for the coarse-to-fine grid for cases in
+  // which one (or both) of the increments is negative.  Only for two
+  // ghost cells.
+
+  if (CENO_Execution_Mode::USE_CENO_ALGORITHM &&
+      CENO_Execution_Mode::HIGH_ORDER_MESSAGE_PASSING){ // High-order message passing
+    throw runtime_error("NavierStokes2D_Quad_Block::LoadSendBuffer_C2F() ERROR! The case in which one (or both) of the incements is negative has not been implemented for high-order message passing!");
+  }
+
+  if (j_min == j_max) { // North or south boundary.
+    // Four different orderings to consider depending on the value of i_inc & j_inc.
+    if (j_inc > 0) {
+      if (i_inc > 0) {
+	return 1;
+      } else {
+	for ( i = i_min; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
+	  // Perform limited linear least squares reconstruction in cell (i,j_min).
+	  SubcellReconstruction(i,j_min,Limiter);
+	  // Evaluate SE sub (fine) cell values.
+	  dX = (HALF*(Grid.Node[i][j_min].X + Grid.Node[i+1][j_min].X) +
+		Grid.Node[i+1][j_min].X + Grid.Cell[i][j_min].Xc +
+		HALF*(Grid.Node[i+1][j_min].X + Grid.Node[i+1][j_min+1].X))/FOUR -
+	       Grid.Cell[i][j_min].Xc;
+	  Wfine = W[i][j_min] + (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+	                        (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate SW sub (fine) cell values.
+	  dX = (Grid.Node[i][j_min].X +
+		HALF*(Grid.Node[i][j_min].X + Grid.Node[i+1][j_min].X) +
+		HALF*(Grid.Node[i][j_min].X + Grid.Node[i][j_min+1].X) +
+		Grid.Cell[i][j_min].Xc)/FOUR - Grid.Cell[i][j_min].Xc;
+	  Wfine = W[i][j_min] + (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+	                        (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	}
+	for ( i = i_min; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
+	  // Evaluate NE sub (fine) cell values.
+	  dX = (Grid.Cell[i][j_min].Xc +
+		HALF*(Grid.Node[i+1][j_min].X + Grid.Node[i+1][j_min+1].X) +
+		HALF*(Grid.Node[i][j_min+1].X + Grid.Node[i+1][j_min+1].X) +
+		Grid.Node[i+1][j_min+1].X)/FOUR - Grid.Cell[i][j_min].Xc;
+	  Wfine = W[i][j_min] + (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+	                        (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate NW sub (fine) cell values.
+	  dX = (HALF*(Grid.Node[i][j_min].X + Grid.Node[i][j_min+1].X) +
+		Grid.Cell[i][j_min].Xc + Grid.Node[i][j_min+1].X +
+		HALF*(Grid.Node[i][j_min+1].X + Grid.Node[i+1][j_min+1].X))/FOUR -
+	       Grid.Cell[i][j_min].Xc;
+	  Wfine = W[i][j_min] + (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+	                        (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) { 
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	}
+      }
+    } else {
+      if (i_inc > 0) {
+	for ( i = i_min; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
+	  // Perform limited linear least squares reconstruction in cell (i,j_min).
+	  SubcellReconstruction(i,j_min,Limiter);
+	  // Evaluate NW sub (fine) cell values.
+	  dX = (HALF*(Grid.Node[i][j_min].X + Grid.Node[i][j_min+1].X) +
+		Grid.Cell[i][j_min].Xc + Grid.Node[i][j_min+1].X +
+		HALF*(Grid.Node[i][j_min+1].X + Grid.Node[i+1][j_min+1].X))/FOUR -
+	       Grid.Cell[i][j_min].Xc;
+	  Wfine = W[i][j_min] + (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+	                        (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) { 
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate NE sub (fine) cell values.
+	  dX = (Grid.Cell[i][j_min].Xc +
+		HALF*(Grid.Node[i+1][j_min].X + Grid.Node[i+1][j_min+1].X) +
+		HALF*(Grid.Node[i][j_min+1].X + Grid.Node[i+1][j_min+1].X) +
+		Grid.Node[i+1][j_min+1].X)/FOUR - Grid.Cell[i][j_min].Xc;
+	  Wfine = W[i][j_min] + (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+	                        (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	}
+	for ( i = i_min; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
+	  // Evaluate SW sub (fine) cell values.
+	  dX = (Grid.Node[i][j_min].X +
+		HALF*(Grid.Node[i][j_min].X + Grid.Node[i+1][j_min].X) +
+		HALF*(Grid.Node[i][j_min].X + Grid.Node[i][j_min+1].X) +
+		Grid.Cell[i][j_min].Xc)/FOUR - Grid.Cell[i][j_min].Xc;
+	  Wfine = W[i][j_min] + (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+	                        (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate SE sub (fine) cell values.
+	  dX = (HALF*(Grid.Node[i][j_min].X + Grid.Node[i+1][j_min].X) +
+		Grid.Node[i+1][j_min].X + Grid.Cell[i][j_min].Xc +
+		HALF*(Grid.Node[i+1][j_min].X + Grid.Node[i+1][j_min+1].X))/FOUR -
+	       Grid.Cell[i][j_min].Xc;
+	  Wfine = W[i][j_min] + (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+	                        (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	}
+      } else {
+	for ( i = i_min; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
+	  // Perform limited linear least squares reconstruction in cell (i,j_min).
+	  SubcellReconstruction(i,j_min,Limiter);
+	  // Evaluate NE sub (fine) cell values.
+	  dX = (Grid.Cell[i][j_min].Xc +
+		HALF*(Grid.Node[i+1][j_min].X + Grid.Node[i+1][j_min+1].X) +
+		HALF*(Grid.Node[i][j_min+1].X + Grid.Node[i+1][j_min+1].X) +
+		Grid.Node[i+1][j_min+1].X)/FOUR - Grid.Cell[i][j_min].Xc;
+	  Wfine = W[i][j_min] + (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+	                        (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate NW sub (fine) cell values.
+	  dX = (HALF*(Grid.Node[i][j_min].X + Grid.Node[i][j_min+1].X) +
+		Grid.Cell[i][j_min].Xc + Grid.Node[i][j_min+1].X +
+		HALF*(Grid.Node[i][j_min+1].X + Grid.Node[i+1][j_min+1].X))/FOUR -
+	       Grid.Cell[i][j_min].Xc;
+	  Wfine = W[i][j_min] + (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+	                        (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) { 
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	}
+	for ( i = i_min; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max); i += i_inc) {
+	  // Evaluate SE sub (fine) cell values.
+	  dX = (HALF*(Grid.Node[i][j_min].X + Grid.Node[i+1][j_min].X) +
+		Grid.Node[i+1][j_min].X + Grid.Cell[i][j_min].Xc +
+		HALF*(Grid.Node[i+1][j_min].X + Grid.Node[i+1][j_min+1].X))/FOUR -
+	       Grid.Cell[i][j_min].Xc;
+	  Wfine = W[i][j_min] + (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+	                        (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate SW sub (fine) cell values.
+	  dX = (Grid.Node[i][j_min].X +
+		HALF*(Grid.Node[i][j_min].X + Grid.Node[i+1][j_min].X) +
+		HALF*(Grid.Node[i][j_min].X + Grid.Node[i][j_min+1].X) +
+		Grid.Cell[i][j_min].Xc)/FOUR - Grid.Cell[i][j_min].Xc;
+	  Wfine = W[i][j_min] + (phi[i][j_min]^dWdx[i][j_min])*dX.x +
+	                        (phi[i][j_min]^dWdy[i][j_min])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	}
+      }
+    }
+  } else { // East or west boundary.
+    // Four different orderings to consider depending on the value of i_inc & j_inc.
+    if (j_inc > 0) {
+      if (i_inc > 0) {
+	return 1;
+      } else {
+	for ( j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
+	  // Perform limited linear least squares reconstruction in cell (i_min,j).
+	  SubcellReconstruction(i_min,j,Limiter);
+	  // Evaluate SE sub (fine) cell values.
+	  dX = (HALF*(Grid.Node[i_min][j].X + Grid.Node[i_min+1][j].X) +
+		Grid.Node[i_min+1][j].X + Grid.Cell[i_min][j].Xc +
+		HALF*(Grid.Node[i_min+1][j].X + Grid.Node[i_min+1][j+1].X))/FOUR -
+	       Grid.Cell[i_min][j].Xc;
+	  Wfine = W[i_min][j] + (phi[i_min][j]^dWdx[i_min][j])*dX.x +
+	                        (phi[i_min][j]^dWdy[i_min][j])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate SW sub (fine) cell values.
+	  dX = (Grid.Node[i_min][j].X +
+		HALF*(Grid.Node[i_min][j].X + Grid.Node[i_min+1][j].X) +
+		HALF*(Grid.Node[i_min][j].X + Grid.Node[i_min][j+1].X) +
+		Grid.Cell[i_min][j].Xc)/FOUR - Grid.Cell[i_min][j].Xc;
+	  Wfine = W[i_min][j] + (phi[i_min][j]^dWdx[i_min][j])*dX.x +
+	                        (phi[i_min][j]^dWdy[i_min][j])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate NE sub (fine) cell values.
+	  dX = (Grid.Cell[i_min][j].Xc +
+		HALF*(Grid.Node[i_min+1][j].X + Grid.Node[i_min+1][j+1].X) +
+		HALF*(Grid.Node[i_min][j+1].X + Grid.Node[i_min+1][j+1].X) +
+		Grid.Node[i_min+1][j+1].X)/FOUR - Grid.Cell[i_min][j].Xc;
+	  Wfine = W[i_min][j] + (phi[i_min][j]^dWdx[i_min][j])*dX.x +
+	                        (phi[i_min][j]^dWdy[i_min][j])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate NW sub (fine) cell values.
+	  dX = (HALF*(Grid.Node[i_min][j].X + Grid.Node[i_min][j+1].X) +
+		Grid.Cell[i_min][j].Xc + Grid.Node[i_min][j+1].X +
+		HALF*(Grid.Node[i_min][j+1].X + Grid.Node[i_min+1][j+1].X))/FOUR -
+	       Grid.Cell[i_min][j].Xc;
+	  Wfine = W[i_min][j] + (phi[i_min][j]^dWdx[i_min][j])*dX.x +
+	                        (phi[i_min][j]^dWdy[i_min][j])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) { 
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	}
+      }
+    } else {
+      if (i_inc > 0) {
+	for ( j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
+	  // Perform limited linear least squares reconstruction in cell (i_min,j).
+	  SubcellReconstruction(i_min,j,Limiter);
+	  // Evaluate NW sub (fine) cell values.
+	  dX = (HALF*(Grid.Node[i_min][j].X + Grid.Node[i_min][j+1].X) +
+		Grid.Cell[i_min][j].Xc + Grid.Node[i_min][j+1].X +
+		HALF*(Grid.Node[i_min][j+1].X + Grid.Node[i_min+1][j+1].X))/FOUR -
+	       Grid.Cell[i_min][j].Xc;
+	  Wfine = W[i_min][j] + (phi[i_min][j]^dWdx[i_min][j])*dX.x +
+	                        (phi[i_min][j]^dWdy[i_min][j])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) { 
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate NE sub (fine) cell values.
+	  dX = (Grid.Cell[i_min][j].Xc +
+		HALF*(Grid.Node[i_min+1][j].X + Grid.Node[i_min+1][j+1].X) +
+		HALF*(Grid.Node[i_min][j+1].X + Grid.Node[i_min+1][j+1].X) +
+		Grid.Node[i_min+1][j+1].X)/FOUR - Grid.Cell[i_min][j].Xc;
+	  Wfine = W[i_min][j] + (phi[i_min][j]^dWdx[i_min][j])*dX.x +
+	                        (phi[i_min][j]^dWdy[i_min][j])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate SW sub (fine) cell values.
+	  dX = (Grid.Node[i_min][j].X +
+		HALF*(Grid.Node[i_min][j].X + Grid.Node[i_min+1][j].X) +
+		HALF*(Grid.Node[i_min][j].X + Grid.Node[i_min][j+1].X) +
+		Grid.Cell[i_min][j].Xc)/FOUR - Grid.Cell[i_min][j].Xc;
+	  Wfine = W[i_min][j] + (phi[i_min][j]^dWdx[i_min][j])*dX.x +
+	                        (phi[i_min][j]^dWdy[i_min][j])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate SE sub (fine) cell values.
+	  dX = (HALF*(Grid.Node[i_min][j].X + Grid.Node[i_min+1][j].X) +
+		Grid.Node[i_min+1][j].X + Grid.Cell[i_min][j].Xc +
+		HALF*(Grid.Node[i_min+1][j].X + Grid.Node[i_min+1][j+1].X))/FOUR -
+	       Grid.Cell[i_min][j].Xc;
+	  Wfine = W[i_min][j] + (phi[i_min][j]^dWdx[i_min][j])*dX.x +
+	                        (phi[i_min][j]^dWdy[i_min][j])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	}
+      } else {
+	for ( j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
+	  // Perform limited linear least squares reconstruction in cell (i_min,j).
+	  SubcellReconstruction(i_min,j,Limiter);
+	  // Evaluate NE sub (fine) cell values.
+	  dX = (Grid.Cell[i_min][j].Xc +
+		HALF*(Grid.Node[i_min+1][j].X + Grid.Node[i_min+1][j+1].X) +
+		HALF*(Grid.Node[i_min][j+1].X + Grid.Node[i_min+1][j+1].X) +
+		Grid.Node[i_min+1][j+1].X)/FOUR - Grid.Cell[i_min][j].Xc;
+	  Wfine = W[i_min][j] + (phi[i_min][j]^dWdx[i_min][j])*dX.x +
+	                        (phi[i_min][j]^dWdy[i_min][j])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate NW sub (fine) cell values.
+	  dX = (HALF*(Grid.Node[i_min][j].X + Grid.Node[i_min][j+1].X) +
+		Grid.Cell[i_min][j].Xc + Grid.Node[i_min][j+1].X +
+		HALF*(Grid.Node[i_min][j+1].X + Grid.Node[i_min+1][j+1].X))/FOUR -
+	       Grid.Cell[i_min][j].Xc;
+	  Wfine = W[i_min][j] + (phi[i_min][j]^dWdx[i_min][j])*dX.x +
+	                        (phi[i_min][j]^dWdy[i_min][j])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) { 
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate SE sub (fine) cell values.
+	  dX = (HALF*(Grid.Node[i_min][j].X + Grid.Node[i_min+1][j].X) +
+		Grid.Node[i_min+1][j].X + Grid.Cell[i_min][j].Xc +
+		HALF*(Grid.Node[i_min+1][j].X + Grid.Node[i_min+1][j+1].X))/FOUR -
+	       Grid.Cell[i_min][j].Xc;
+	  Wfine = W[i_min][j] + (phi[i_min][j]^dWdx[i_min][j])*dX.x +
+	                        (phi[i_min][j]^dWdy[i_min][j])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	  // Evaluate SW sub (fine) cell values.
+	  dX = (Grid.Node[i_min][j].X +
+		HALF*(Grid.Node[i_min][j].X + Grid.Node[i_min+1][j].X) +
+		HALF*(Grid.Node[i_min][j].X + Grid.Node[i_min][j+1].X) +
+		Grid.Cell[i_min][j].Xc)/FOUR - Grid.Cell[i_min][j].Xc;
+	  Wfine = W[i_min][j] + (phi[i_min][j]^dWdx[i_min][j])*dX.x +
+	                        (phi[i_min][j]^dWdy[i_min][j])*dX.y;
+	  Ufine = Wfine.U();
+	  for ( k = 1; k <= NUM_VAR_NAVIERSTOKES2D; k++) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return 1;
+	    buffer[buffer_count] = Ufine[k];
+	  }
+	}
+      }
+    }
+  }
+  return 0;
+}
+
+/********************************************************************//**
  * This routine evaluates the residual for the specified solution     
  * block using a 2nd-order limited upwind finite-volume spatial       
  * discretization scheme with either the Godunov, Roe, Rusanov, HLLE, 

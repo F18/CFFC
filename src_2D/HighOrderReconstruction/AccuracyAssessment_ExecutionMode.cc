@@ -80,6 +80,9 @@ void AccuracyAssessment_Execution_Mode::Broadcast(void){
   MPI::COMM_WORLD.Bcast(&Accuracy_Assessment_Exact_Digits,
  			1, 
  			MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&Accuracy_Assessment_Frequency,
+ 			1, 
+ 			MPI::INT, 0);
 
 #endif
 }

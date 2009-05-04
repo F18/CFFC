@@ -158,7 +158,6 @@ void Spline2DInterval_HO::deallocate(void){
  * \param EndPoint the second end of the interval
  * \NumGQPoints the number of Gauss quadrature points per subinterval
  *
- * \todo Add code for the situation when there are sharp corners between StartPoint and EndPoint
  */
 void Spline2DInterval_HO::InitializeInterval(const Spline2D_HO & SupportCurve, const Vector2D & StartPoint,
 					     const Vector2D & EndPoint, const int &NumGQPoints){
