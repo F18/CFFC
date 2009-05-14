@@ -325,8 +325,10 @@ dUdt_Residual_HighOrder(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
 
 
   // Deallocate memory
-  delete [] GaussQuadPoints;
-  delete [] GaussQuadWeights;
+  delete []GaussQuadPoints;
+  GaussQuadPoints = NULL;
+  delete []GaussQuadWeights;
+  GaussQuadWeights = NULL;
   
   /* residual for the stage successfully calculated. */
   return (0);

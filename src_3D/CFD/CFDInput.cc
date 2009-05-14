@@ -1292,31 +1292,44 @@ int CFD_Input_Parameters::Check_Inputs(void) {
 
     // CFD Input Parameters:
     // ---------------------
+    cout << endl << endl << endl;
+    Print_3(i_Flow_Type,  Spatial_Accuracy, Reconstruction_Order);
+    Print_(i_Limiter);
+    if (Reconstruction_Order < 0) {
+      cout << "\n\n CFD::Check_Inputs: Reconstruction order has been set to a negative number. Check the Spatial Accuracy. \n";
+      cout.flush();
+      return 1;
+    }
 
     // Make sure that the spatial order of accuracy is in the valid range:
     // This range is determined by the maximum allowable reconstruction order 
     // implemented in the CENO reconstruction scheme.
     if (i_Flow_Type == FLOWTYPE_INVISCID && (Spatial_Accuracy < 1 || Spatial_Accuracy > 5)) {
-      cout << "\n\n CFD::Check_Inputs: For Flow_Type = Inviscid, the Spatial Accuracy should be between 1 and 5." << endl; cout.flush();
+      cout << "\n\n CFD::Check_Inputs: For Flow_Type = Inviscid, the Spatial Accuracy should be between 1 and 5. \n"; 
+      cout.flush();
       return 1;
     } else if (i_Flow_Type != FLOWTYPE_INVISCID && (Spatial_Accuracy < 1 || Spatial_Accuracy > 4)) {
-      cout << "\n\n CFD::Check_Inputs: For Flow_Type != Inviscid, the Spatial Accuracy should be between 1 and 4." << endl; cout.flush(); 
+      cout << "\n\n CFD::Check_Inputs: For Flow_Type != Inviscid, the Spatial Accuracy should be between 1 and 4.\n";
+      cout.flush(); 
       return 1;
     }
 
     // Make sure that the spatial order of accuracy is in agreement
     // with a limiter type of ZERO for the piecewise constant case
-    if (i_Limiter == LIMITER_ZERO && Reconstruction_Order == 1){
-      Reconstruction_Order = 0;
-      Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER = Reconstruction_Order;
-      cout << "\n\n CFD::Check_Inputs: Note: Spatial Order of Accuracy has been reduced from second to first-order due to the Limiter_Type having been set to Zero." << endl;
-      cout.flush();
-    } else if (Reconstruction_Order == 0 && i_Limiter != LIMITER_ZERO){
-      cout << "\n\n CFD::Check_Inputs: Limiter_Type must be set to zero for a Spatial_Order_of_Accuracy = 1." << endl;
+//    if (i_Limiter == LIMITER_ZERO && Reconstruction_Order == 1){
+//      Reconstruction_Order = 0;
+//      Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER = Reconstruction_Order;
+//      cout << "\n\n CFD::Check_Inputs: Note: Using piecewise-constant reconstruction due to the " 
+//	   << "Limiter_Type having been set to Zero. \n"; 
+//      cout.flush();
+//    } else 
+    if (Reconstruction_Order == 0 && i_Limiter != LIMITER_ZERO){
+      cout << "\n\n CFD::Check_Inputs: Limiter_Type must be set to zero for piecewise-constant reconstruction. \n";
       cout.flush();
       return 1;
     } else if (i_Limiter == LIMITER_ZERO && Spatial_Accuracy > 1){
-      cout << "\n\n CFD::Check_Inputs: Caution! Limiter_Type has been set to zero which conflicts with the desired Spatial_Order_of_Accracy." <<endl;
+      cout << "\n\n CFD::Check_Inputs: Caution! Limiter_Type has been set to zero which conflicts with the " 
+	   << "desired Spatial_Order_of_Accracy. \n";
       cout.flush();
       return 1;
     }/* endif */
@@ -1324,7 +1337,7 @@ int CFD_Input_Parameters::Check_Inputs(void) {
     // Make sure that the reconstruction type for high-order reconstruction is set to CENO
     if (i_Reconstruction != RECONSTRUCTION_HIGH_ORDER && Spatial_Accuracy > 2){
       cout << "\n\n CFD::Check_Inputs: Spatial Order of Accuracy conflicts with the given Reconstruction_Type.\n";
-      cout << "For high-order reconstruction please use the CENO Reconstruction_Type." << endl;
+      cout << "For high-order reconstruction please use the CENO Reconstruction_Type. \n";
       cout.flush();
       return 1;
     }
@@ -1489,6 +1502,8 @@ void CFD_Input_Parameters::Output_Solver_Type(ostream &out_file) const {
    } /* endif */
    out_file << "\n  -> Order of Accuracy: "
 	    << Spatial_Accuracy;
+   out_file << "\n  -> Order of Reconstruction: "
+	    << Reconstruction_Order;
    out_file << "\n  -> Limiter: " 
             << Limiter_Type;   
    if (Limiter_Type != LIMITER_ZERO && Freeze_Limiter) {
