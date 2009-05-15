@@ -464,10 +464,15 @@ public:
     friend Euler3D_Polytropic_pState operator /(const Euler3D_Polytropic_pState &W, const double &a);
     //! W = W ^ W
     friend Euler3D_Polytropic_pState operator ^(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    //! max(W1,W2)
+    friend Euler3D_Polytropic_pState max(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2 );
+    //! min(W1,W2)
+    friend Euler3D_Polytropic_pState min(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2 );
 
 // Unary arithmetic operators. 
     //! W = -W 
     friend Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W);
+    friend Euler3D_Polytropic_pState fabs(const Euler3D_Polytropic_pState &W);
 
 // Shortcut arithmetic operators.
     //! W = W
@@ -477,8 +482,10 @@ public:
     //! W -= W
     Euler3D_Polytropic_pState &operator -=(const Euler3D_Polytropic_pState &W);
     //! W *= W
+    Euler3D_Polytropic_pState &operator *=(const Euler3D_Polytropic_pState &W);
     Euler3D_Polytropic_pState &operator *=(const double &a);
     //! W /= W
+    Euler3D_Polytropic_pState &operator /=(const Euler3D_Polytropic_pState &W);
     Euler3D_Polytropic_pState &operator /=(const double &a);
 
 // Relational operators. 
@@ -929,6 +936,7 @@ public:
 // Unary arithmetic operators.
     //! U = -U
     friend Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U);
+    friend Euler3D_Polytropic_cState fabs(const Euler3D_Polytropic_cState &U);
 
 // Shortcut arithmetic operators.
     //! U = U
@@ -1097,11 +1105,45 @@ inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator /=(const d
     return *this;
 }
 
+inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator /=(const Euler3D_Polytropic_pState &W){
+  rho /= W.rho;
+  v.x /= W.v.x;
+  v.y /= W.v.y;
+  v.z /= W.v.z;
+  p /= W.p;
+  return *this;
+}
+
+inline Euler3D_Polytropic_pState& Euler3D_Polytropic_pState::operator *=(const Euler3D_Polytropic_pState &W) {
+  rho *= W.rho; v.x *= W.v.x; v.y *= W.v.y; v.z *= W.v.z; p *= W.p;
+  return *this;
+}
+// --> RR: Max/Min of state - question... 
+/*!
+ * Compute maximum between 2 states. 
+ * Return the state of maximum values.
+ */
+inline Euler3D_Polytropic_pState max(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2 ){
+  return Euler3D_Polytropic_pState(max(W1.rho,W2.rho),max(W1.v.x,W2.v.x),max(W1.v.y,W2.v.y),max(W1.v.z,W2.v.z),max(W1.p,W2.p));
+}
+
+/*!
+ * Compute minimum between 2 states. 
+ * Return the state of minimum values.
+ */
+inline Euler3D_Polytropic_pState min(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2 ){
+  return Euler3D_Polytropic_pState(min(W1.rho,W2.rho),min(W1.v.x,W2.v.x),min(W1.v.y,W2.v.y),min(W1.v.z,W2.v.z),min(W1.p,W2.p));
+}
+
 /***************************************************************************************
  * Euler3D_Polytropic_pState -- Unary arithmetic operators.                            *
  ***************************************************************************************/
 inline Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W) {
     return (Euler3D_Polytropic_pState(-W.rho, -W.v, -W.p));
+}
+
+inline Euler3D_Polytropic_pState fabs(const Euler3D_Polytropic_pState &W){
+  return (Euler3D_Polytropic_pState(fabs(W[1]),fabs(W[2]),fabs(W[3]),fabs(W[4]),fabs(W[5])));
 }
 
 /***************************************************************************************
@@ -1286,6 +1328,10 @@ inline Euler3D_Polytropic_cState& Euler3D_Polytropic_cState::operator /=(const d
  ***************************************************************************************/
 inline Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U) {
     return (Euler3D_Polytropic_cState(-U.rho, -U.rhov, -U.E));
+}
+
+inline Euler3D_Polytropic_cState fabs(const Euler3D_Polytropic_cState &U){
+  return (Euler3D_Polytropic_cState(fabs(U[1]),fabs(U[2]),fabs(U[3]),fabs(U[4]),fabs(U[5])));
 }
 
 /***************************************************************************************

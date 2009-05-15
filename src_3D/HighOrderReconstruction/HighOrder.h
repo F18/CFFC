@@ -1050,7 +1050,7 @@ private:
   Soln_State MeanSolution;
   //! Sum of the squares of differences between the reconstructions of stencil cells evaluated at their centroids and MeanSolution.
   Soln_State SS_Regression;
-  /*! Sum of the squares of difference between the reconstruction of cell (iCell,jCell) and 
+  /*! Sum of the squares of difference between the reconstruction of cell (iCell,jCell,kCell) and 
     the reconstructions of the stencil cells evaluated at their centroids. */
   Soln_State SS_Residual;
   //! Intermediate variables.
@@ -2619,111 +2619,108 @@ void HighOrder<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk,
 						       const int & StencilSize){
 
 
-  // --> RR: TEMPORARY SI CALCULATION!! comment out the rest
-  int parameter;
+  // SET VARIABLES USED IN THE ANALYSIS PROCESS
+  double alpha;
+  int parameter, cell;
+
+  // Set the mean solution of (iCell,jCell,kCell). It's used as a reference.
+  MeanSolution = (SolnBlk.*ReconstructedSoln)(iCell,jCell,kCell);
+
+  // Initialize the minimum mean solution in absolute value.
+  Min_Mean_Solution = fabs(MeanSolution);
+
+  /*! NOTE: The following used variables are set as private to the class:
+    SS_Regression, SS_Residual, Max_SS_Regression, Temp_Regression, Temp_Residual. */
+
+  // Initialize SS_Regression and SS_Residual
+  SS_Regression  = CellTaylorDerivState(iCell,jCell,kCell,0) - MeanSolution;
+  SS_Regression *= SS_Regression;      // get the squared value
+  Max_SS_Regression = SS_Regression;   // initialize Max_SS_Regression 
+  SS_Residual.Vacuum(); // Note: the residual difference for (iCell,jCell,kCell) is zero.
+  // Get the normalization state
+  //NormalizationState = SolnBlk.getNormalizationState(iCell,jCell,kCell);
+  // --> RR: My makeshift NormalizationState (ask Lucian about this).
   for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
-    CellSmoothnessIndicatorValue(iCell,jCell,kCell,parameter) = 1.0e20;
+    NormalizationState[parameter] = 1.0;
+  }
+
+  /* Compute SS_Regression and SS_Residual for all the variables at once */
+  for( cell=1; cell<StencilSize; ++cell){
+    
+    // Get minimum average solution in absolute value
+    Min_Mean_Solution = min(Min_Mean_Solution , fabs((SolnBlk.*ReconstructedSoln)(i_index[cell],j_index[cell],k_index[cell])));
+
+    Temp_Regression  = CellTaylorDerivState(i_index[cell],j_index[cell],k_index[cell],0) - MeanSolution;
+    Temp_Regression *= Temp_Regression;          /* compute Temp_Regression square */
+
+    // Get maximum squared solution variation for the current Temp_Regression
+    Max_SS_Regression = max(Max_SS_Regression, Temp_Regression);
+
+    Temp_Residual  = ( CellTaylorDerivState(i_index[cell],j_index[cell],k_index[cell],0) - 
+		       SolutionStateAtLocation(iCell,jCell,kCell,CellCenter(i_index[cell],j_index[cell],k_index[cell])) );
+
+    // Update SS_Regression & SS_Residual
+    if (CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS){
+
+      /* Compute the X and Y component of the distance between
+	 the cell center of the neighbour cell and the reconstructed cell */
+      DeltaCentroids = CellCenter(i_index[cell],j_index[cell],k_index[cell]) - CellCenter(iCell,jCell,kCell);
+    
+      // Compute the geometric weight based on the centroid distance
+      CENO_Geometric_Weighting(GeomWeightSI, DeltaCentroids.abs());
+
+      // Update SS_Regression
+      SS_Regression += Temp_Regression * GeomWeightSI;
+      // Update SS_Residual
+      Temp_Residual *= Temp_Residual;       /* compute Temp_Residual square */
+      SS_Residual   += Temp_Residual * GeomWeightSI;
+
+    } else {
+
+      // Update SS_Regression
+      SS_Regression += Temp_Regression;
+
+      // Update SS_Residual
+      Temp_Residual *= Temp_Residual;       /* compute Temp_Residual square */
+      SS_Residual  += Temp_Residual;
+    }//endif
+
+  }//endfor(cell)
+
+  /* Compute the smoothness indicator for each variable */
+  for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+
+    /* Decide if the 'alpha' for the current parameter is computed or not.
+       This decision is dictated by the following reasons:
+       --> If there is not at all or very small solution variation within the stencil (i.e. uniform flow)
+           SS_Residual[parameter] is approximately equal to SS_Regression[parameter].
+	   That would trigger 'alpha' to have a very small value and consequently the cell flagged as unfit.
+       --> The user should have the freedom to specify a level of numerical noise under which solution
+           discontinuities are not of interest.
+       To solve both these problems, the maximum squared variation is compared relative to an accepted 
+       level of solution variation.
+       To obtain consistency in setting the tolerated lack of smoothness for large ranges of solution values,
+       a normalization is employed with the reference state provided by the solution state class for the 
+       current parameter.
+    */
+    if ( Max_SS_Regression[parameter]/sqr(NormalizationState[parameter]) > 
+	 CENO_Tolerances::SquareToleranceAroundValue(Min_Mean_Solution[parameter]/NormalizationState[parameter]) ){
+      
+      // Compute 'alpha'
+      alpha = 1.0 - (SS_Residual[parameter]/SS_Regression[parameter]);
+      
+    } else {
+      
+      // There is not enough variation in the solution based on user set tolerance to flag a potential discontinuity.
+      // Assign the perfect fit value to the smoothness indicator
+      alpha = 1.0;
+      
+    } // endif
+
+    /* Compute final value */
+    CellSmoothnessIndicatorValue(iCell,jCell,kCell,parameter) = (alpha/(max(CENO_Tolerances::epsilon,1.0 - alpha)))*AdjustmentCoeff;
+
   } // endfor (parameter)
-
-
-//  // SET VARIABLES USED IN THE ANALYSIS PROCESS
-//  double alpha;
-//  int parameter, cell;
-//
-//  // Set the mean solution of (iCell,jCell). It's used as a reference.
-//  MeanSolution = (SolnBlk.*ReconstructedSoln)(iCell,jCell,kCell);
-//
-//  // Initialize the minimum mean solution in absolute value.
-//  Min_Mean_Solution = fabs(MeanSolution);
-//
-//  /*! NOTE: The following used variables are set as private to the class:
-//    SS_Regression, SS_Residual, Max_SS_Regression, Temp_Regression, Temp_Residual. */
-//
-//  // Initialize SS_Regression and SS_Residual
-//  SS_Regression  = CellTaylorDerivState(iCell,jCell,kCell,0) - MeanSolution;
-//  SS_Regression *= SS_Regression;      // get the squared value
-//  Max_SS_Regression = SS_Regression;   // initialize Max_SS_Regression 
-//  SS_Residual.Vacuum(); // Note: the residual difference for (iCell,jCell,kCell) is zero.
-//  // Get the normalization state
-//  NormalizationState = SolnBlk.getNormalizationState(iCell,jCell,kCell);
-//
-//  /* Compute SS_Regression and SS_Residual for all the variables at once */
-//  for( cell=1; cell<StencilSize; ++cell){
-//
-//    // Get minimum average solution in absolute value
-//    Min_Mean_Solution = min(Min_Mean_Solution , fabs((SolnBlk.*ReconstructedSoln)(i_index[cell],j_index[cell],k_index[cell])));
-//
-//    Temp_Regression  = CellTaylorDerivState(i_index[cell],j_index[cell],k_index[0],0) - MeanSolution;
-//    Temp_Regression *= Temp_Regression;          /* compute Temp_Regression square */
-//
-//    // Get maximum squared solution variation for the current Temp_Regression
-//    Max_SS_Regression = max(Max_SS_Regression, Temp_Regression);
-//
-//    Temp_Residual  = ( CellTaylorDerivState(i_index[cell],j_index[cell],k_index[cell],0) - 
-//		       SolutionStateAtLocation(iCell,jCell,CellCenter(i_index[cell],j_index[cell],k_index[cell])) );
-//
-//    // Update SS_Regression & SS_Residual
-//    if (CENO_Execution_Mode::CENO_CONSIDER_WEIGHTS){
-//
-//      /* Compute the X and Y component of the distance between
-//	 the cell center of the neighbour cell and the reconstructed cell */
-//      DeltaCentroids = CellCenter(i_index[cell],j_index[cell],k_index[cell]) - CellCenter(iCell,jCell,kCell);
-//    
-//      // Compute the geometric weight based on the centroid distance
-//      CENO_Geometric_Weighting(GeomWeightSI, DeltaCentroids.abs());
-//
-//      // Update SS_Regression
-//      SS_Regression += Temp_Regression * GeomWeightSI;
-//      // Update SS_Residual
-//      Temp_Residual *= Temp_Residual;       /* compute Temp_Residual square */
-//      SS_Residual   += Temp_Residual * GeomWeightSI;
-//
-//    } else {
-//
-//      // Update SS_Regression
-//      SS_Regression += Temp_Regression;
-//
-//      // Update SS_Residual
-//      Temp_Residual *= Temp_Residual;       /* compute Temp_Residual square */
-//      SS_Residual  += Temp_Residual;
-//    }//endif
-//
-//  }//endfor(cell)
-//
-//  /* Compute the smoothness indicator for each variable */
-//  for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
-//
-//    /* Decide if the 'alpha' for the current parameter is computed or not.
-//       This decision is dictated by the following reasons:
-//       --> If there is not at all or very small solution variation within the stencil (i.e. uniform flow)
-//           SS_Residual[parameter] is approximately equal to SS_Regression[parameter].
-//	   That would trigger 'alpha' to have a very small value and consequently the cell flagged as unfit.
-//       --> The user should have the freedom to specify a level of numerical noise under which solution
-//           discontinuities are not of interest.
-//       To solve both these problems, the maximum squared variation is compared relative to an accepted 
-//       level of solution variation.
-//       To obtain consistency in setting the tolerated lack of smoothness for large ranges of solution values,
-//       a normalization is employed with the reference state provided by the solution state class for the 
-//       current parameter.
-//    */
-//    if ( Max_SS_Regression[parameter]/sqr(NormalizationState[parameter]) > 
-//	 CENO_Tolerances::SquareToleranceAroundValue(Min_Mean_Solution[parameter]/NormalizationState[parameter]) ){
-//      
-//      // Compute 'alpha'
-//      alpha = 1.0 - (SS_Residual[parameter]/SS_Regression[parameter]);
-//      
-//    } else {
-//      
-//      // There is not enough variation in the solution based on user set tolerance to flag a potential discontinuity.
-//      // Assign the perfect fit value to the smoothness indicator
-//      alpha = 1.0;
-//      
-//    } // endif
-//
-//    /* Compute final value */
-//    CellSmoothnessIndicatorValue(iCell,jCell,kCell,parameter) = (alpha/(max(CENO_Tolerances::epsilon,1.0 - alpha)))*AdjustmentCoeff;
-//
-//  } // endfor (parameter)
 
 }
 
