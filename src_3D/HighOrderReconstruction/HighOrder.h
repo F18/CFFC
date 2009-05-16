@@ -1516,6 +1516,7 @@ void HighOrder<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder, 
 
   // Remember the smoothness indicator calculation method which was used for the current setup.
   _si_calculation = CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS;
+
 }
 
 // --> RR: comment out  allocate_ReconstructionTypeMap(void)
@@ -2501,7 +2502,6 @@ void HighOrder<SOLN_STATE>::ComputeCellSmoothnessDataWithCentralStencil(Soln_Blo
 													      const int &) const,
 									const int &iCell, const int &jCell, const int &kCell){
 
-
   /* 
    * Set the central supporting stencil.
    * Write the 'i','j','k' indices of the cells that are part of
@@ -2902,6 +2902,8 @@ void HighOrder<SOLN_STATE>::SetCentralStencil(const int &iCell, const int &jCell
       } /*end for*/
     } /*end for*/
   } /*end if*/
+
+  StencilSize = Poz;
 
 }
 
