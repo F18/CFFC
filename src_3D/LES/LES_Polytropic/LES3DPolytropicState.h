@@ -179,6 +179,11 @@ public:
     void Set_LES_parameters(SFS_model_Parameters &SFS_model_, Filter_Parameters &filter_);
 //@}    
     
+    
+    static double E_return(LES3D_Polytropic_pState &W) {
+        return W.E();
+    }
+    
 /** @name Turbulent transport coefficients */
 /*        -------------------------------- */
 //@{
@@ -367,6 +372,13 @@ public:
                                           const double &deltad,
                                           const double &Volume, 
                                           const double &Volume_Neighbour);
+    
+    static LES3D_Polytropic_cState FluxViscous_HighOrder_n(LES3D_Polytropic_pState &W_face,
+                                                           const LES3D_Polytropic_pState &dWdx_face,
+                                                           const LES3D_Polytropic_pState &dWdy_face,
+                                                           const LES3D_Polytropic_pState &dWdz_face,
+                                                           const double &Volume,
+                                                           const Vector3D &norm);
                 
 //@}
 

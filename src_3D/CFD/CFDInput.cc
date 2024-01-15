@@ -218,9 +218,10 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
     } else if (strcmp(code, "Output_File_Name") == 0) {
        i_command = 10;
        value_stream >> value_string;
-       strcpy(Output_File_Name, value_string.c_str());
+       strcpy(Output_File_Name_Prefix, value_string.c_str());
+       strcpy(Output_File_Name, Output_File_Name_Prefix);
        strcat(Output_File_Name, ".dat");
-       strcpy(Restart_File_Name, value_string.c_str());
+       strcpy(Restart_File_Name, Output_File_Name_Prefix);
        strcat(Restart_File_Name, ".soln");
       
     } else if (strcmp(code, "Restart_File_Name") == 0) {
@@ -252,6 +253,21 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        } else {
           i_command = INVALID_INPUT_VALUE;
        } /* endif */
+        
+    } else if (strcmp(code, "Progress_Mode") == 0) {
+        i_command = 12;
+        value_stream >> value_string;
+        if (strcmp(value_string.c_str(), "Silent") == 0) {
+            Progress_Mode = PROGRESS_MODE_SILENT;
+        } else if (strcmp(value_string.c_str(), "Message") == 0) {
+            Progress_Mode = PROGRESS_MODE_MESSAGE;
+        } else if (strcmp(value_string.c_str(), "File") == 0) {
+            Progress_Mode = PROGRESS_MODE_FILE;
+        } else if (strcmp(value_string.c_str(), "Terminal") == 0) {
+            Progress_Mode = PROGRESS_MODE_TERMINAL;
+        } else {
+            i_command = INVALID_INPUT_VALUE;
+        } /* endif */
 
     } else if (strcmp(code, "Restart_Solution_Save_Frequency") == 0) {
        i_command = 13;
@@ -383,6 +399,18 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        i_command = 45;
        value_stream >> CFL_Number;
        if (CFL_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
+        
+    } else if (strcmp(code, "Output_CFL_Limit") == 0) {
+        i_command = 45;
+        value_stream >> value_string;
+        if (value_string == "ON") {
+            Output_CFL_Limit = ON;
+        } else if (value_string == "OFF") {
+            Output_CFL_Limit = OFF;
+        } else {
+            i_command = INVALID_INPUT_VALUE;
+        } /* endif */
+        
 
     }  else if (strcmp(code, "Time_Max") == 0) {
        i_command = 46;
@@ -399,7 +427,12 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        i_command = 48;
        value_stream >> Number_of_Residual_Norms;
        if (Number_of_Residual_Norms < 0) i_command = INVALID_INPUT_VALUE;
-
+    //
+    // Spatial Order of Accuracy type indicator and related input parameters:
+    //
+    } else if (strcmp(code, "Spatial_Order_of_Accuracy") == 0) {
+      i_command = 49;
+      value_stream >> Spatial_Accuracy;
     //
     // Reconstruction type indicator and related input parameters:
     //
@@ -411,6 +444,9 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_Reconstruction = RECONSTRUCTION_GREEN_GAUSS;
        } else if (strcmp(Reconstruction_Type, "Least_Squares") == 0) {
           i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
+       } else if (strcmp(Reconstruction_Type, "CENO") == 0) {
+	  i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+//	  Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID = ON;
        } else {
           i_command = INVALID_INPUT_VALUE;
        } /* endif */
@@ -627,8 +663,12 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_TURBULENT_BUNSEN_BOX;
        }else if (strcmp(ICs_Type, "Turbulent_Box") == 0) {
           i_ICs = IC_TURBULENT_BOX;
+       }else if (strcmp(ICs_Type, "Radial_Cosine") == 0) {
+           i_ICs = IC_RADIAL_COSINE;
        } else if (strcmp(ICs_Type, "Restart") == 0) {
           i_ICs = IC_RESTART;
+       } else if (strcmp(ICs_Type,"Sin_X") == 0) {
+      	  i_ICs = IC_SINE_WAVE_XDIR;
        } else {
           i_command = INVALID_INPUT_VALUE;
        } /* endif */
@@ -849,6 +889,17 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
                                                                        value_stream);
        } /* endif */
 
+        // Explicit Filters
+        if (i_command == INVALID_INPUT_CODE) {
+            i_command = ExplicitFilters_IP.Parse_Next_Input_Control_Parameter(code, value_stream);
+        }
+        
+       // High Order
+       if (i_command == INVALID_INPUT_CODE) {
+	 i_command = HighOrder_IP.Parse_Next_Input_Control_Parameter(code,
+								     value_stream);
+       } /* endif */
+       
     } /* endif */
 
     // Check for long input lines that have not been completely read in.
@@ -918,6 +969,17 @@ int CFD_Input_Parameters::Process_Input_Control_Parameter_File(char *Input_File_
       } /* endif */
    } /* endwhile */
 
+   /* Set final input parameters */
+
+   if (!error_flag) {
+     error_flag = Set_Final_Input_Parameters();
+     if (error_flag) {
+       cout << "\n ERROR: Setting the final input parameters.\n";
+       return (error_flag);
+     } /* endif */
+   } /* endif */
+
+
    /* Perform consistency checks on all input parameters. */
 
    if (!error_flag) {
@@ -961,6 +1023,9 @@ void CFD_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(Output_File_Name,
                           INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(Output_File_Name_Prefix,
+                          INPUT_PARAMETER_LENGTH,
+                          MPI::CHAR, 0);
     MPI::COMM_WORLD.Bcast(Restart_File_Name,
                           INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
@@ -974,6 +1039,9 @@ void CFD_Input_Parameters::Broadcast(void) {
                           1,
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Time_Accurate_Output_Frequency),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(Progress_Mode),
                           1,
                           MPI::INT, 0);
 
@@ -1015,6 +1083,9 @@ void CFD_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(CFL_Number),
                            1,
                            MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Output_CFL_Limit),
+                          1,
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Time_Max),
                           1,
                           MPI::DOUBLE, 0);
@@ -1154,7 +1225,57 @@ void CFD_Input_Parameters::Broadcast(void) {
 
     // Turbulence modelling
     Turbulence_IP.Broadcast();
+    
+    // Explicit Filtering
+    ExplicitFilters_IP.Broadcast();
+
+    // High Order Grid Execution Mode:
+    Grid3D_HO_Execution_Mode::Broadcast();
+
+    // CENO Execution Mode:
+    CENO_Execution_Mode::Broadcast();
+
 #endif
+
+}
+
+
+/*********************************************************
+ * Routine: Set_Final_Input_Parameters                   *
+ *                                                       *
+ * Set the final input parameters (and static variables) *
+ * based on parsed parameters.                           *
+ *                                                       *
+*********************************************************/
+int CFD_Input_Parameters::Set_Final_Input_Parameters(void) {
+
+    int error_flag = 0;
+
+    // Set the reconstruction order based on FlowType
+    if (i_Flow_Type == FLOWTYPE_INVISCID){
+      Reconstruction_Order = Spatial_Accuracy-1;
+    } else { 
+      Reconstruction_Order = Spatial_Accuracy;
+    }
+
+    // Set static variables used in generation of high-order grid information 
+
+    Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER = Reconstruction_Order;
+
+    if (i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+      Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID = ON;
+    } else {
+      Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID = OFF;
+    }
+
+    if(Grid_IP.Mesh_Stretching == ON || Grid_IP.Disturb_Interior_Nodes){
+      Grid3D_HO_Execution_Mode::UNIFORM_GRID = OFF;
+    } else {
+      Grid3D_HO_Execution_Mode::UNIFORM_GRID = ON;
+    }
+
+    // Input parameters are consistent.  Exit successfully.
+    return (error_flag);
 
 }
 
@@ -1170,6 +1291,56 @@ int CFD_Input_Parameters::Check_Inputs(void) {
     int error_flag = 0;
 
     // CFD Input Parameters:
+    // ---------------------
+    cout << endl << endl << endl;
+    Print_3(i_Flow_Type,  Spatial_Accuracy, Reconstruction_Order);
+    Print_(i_Limiter);
+    if (Reconstruction_Order < 0) {
+      cout << "\n\n CFD::Check_Inputs: Reconstruction order has been set to a negative number. Check the Spatial Accuracy. \n";
+      cout.flush();
+      return 1;
+    }
+
+    // Make sure that the spatial order of accuracy is in the valid range:
+    // This range is determined by the maximum allowable reconstruction order 
+    // implemented in the CENO reconstruction scheme.
+    if (i_Flow_Type == FLOWTYPE_INVISCID && (Spatial_Accuracy < 1 || Spatial_Accuracy > 5)) {
+      cout << "\n\n CFD::Check_Inputs: For Flow_Type = Inviscid, the Spatial Accuracy should be between 1 and 5. \n"; 
+      cout.flush();
+      return 1;
+    } else if (i_Flow_Type != FLOWTYPE_INVISCID && (Spatial_Accuracy < 1 || Spatial_Accuracy > 4)) {
+      cout << "\n\n CFD::Check_Inputs: For Flow_Type != Inviscid, the Spatial Accuracy should be between 1 and 4.\n";
+      cout.flush(); 
+      return 1;
+    }
+
+    // Make sure that the spatial order of accuracy is in agreement
+    // with a limiter type of ZERO for the piecewise constant case
+//    if (i_Limiter == LIMITER_ZERO && Reconstruction_Order == 1){
+//      Reconstruction_Order = 0;
+//      Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER = Reconstruction_Order;
+//      cout << "\n\n CFD::Check_Inputs: Note: Using piecewise-constant reconstruction due to the " 
+//	   << "Limiter_Type having been set to Zero. \n"; 
+//      cout.flush();
+//    } else 
+    if (Reconstruction_Order == 0 && i_Limiter != LIMITER_ZERO){
+      cout << "\n\n CFD::Check_Inputs: Limiter_Type must be set to zero for piecewise-constant reconstruction. \n";
+      cout.flush();
+      return 1;
+    } else if (i_Limiter == LIMITER_ZERO && Spatial_Accuracy > 1){
+      cout << "\n\n CFD::Check_Inputs: Caution! Limiter_Type has been set to zero which conflicts with the " 
+	   << "desired Spatial_Order_of_Accracy. \n";
+      cout.flush();
+      return 1;
+    }/* endif */
+
+    // Make sure that the reconstruction type for high-order reconstruction is set to CENO
+    if (i_Reconstruction != RECONSTRUCTION_HIGH_ORDER && Spatial_Accuracy > 2){
+      cout << "\n\n CFD::Check_Inputs: Spatial Order of Accuracy conflicts with the given Reconstruction_Type.\n";
+      cout << "For high-order reconstruction please use the CENO Reconstruction_Type. \n";
+      cout.flush();
+      return 1;
+    }
 
     // Multigrid Input Parameters:
     if (!error_flag &&
@@ -1319,8 +1490,20 @@ void CFD_Input_Parameters::Output_Solver_Type(ostream &out_file) const {
    } /* endif */
    
    out_file << "\n\n Spatial Discretization";
-   out_file << "\n  -> Reconstruction: " 
+   out_file << "\n  -> Reconstruction Type: " 
             << Reconstruction_Type;
+   if (i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+     out_file <<  "\n  -> Smoothness Indicator: ";
+     if (CENO_Execution_Mode::CENO_ENFORCE_MONOTONICITY_USING_SMOOTHNESS_INDICATOR) {
+       out_file <<  "ON";
+     } else {
+       out_file << "OFF";
+     } /* endif */
+   } /* endif */
+   out_file << "\n  -> Order of Accuracy: "
+	    << Spatial_Accuracy;
+   out_file << "\n  -> Order of Reconstruction: "
+	    << Reconstruction_Order;
    out_file << "\n  -> Limiter: " 
             << Limiter_Type;   
    if (Limiter_Type != LIMITER_ZERO && Freeze_Limiter) {

@@ -100,7 +100,7 @@ namespace tut
     set_test_name("PolynomLineIntegration(), Orders up to 3 inclusiv");
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3); //
+    Data_ContourIntegration_Along_Spline2D_HO::GeometricMoments GeomCoeff(3); //
 
     StartPointX = 1.1000;     StartPointY = 2.2300;
     EndPointX   = 10.2390;    EndPointY   = 5.32434;
@@ -130,7 +130,7 @@ namespace tut
 
     // Initialize variables
     double MiddlePointX, MiddlePointY;
-    GeometricMoments LineInt1(3), LineInt2(3), LineIntTotal(3);
+    Data_ContourIntegration_Along_Spline2D_HO::GeometricMoments LineInt1(3), LineInt2(3), LineIntTotal(3);
 
     double MapleSolution[10];
     MapleSolution[0] = 26.833631906356;  MapleSolution[1] = 81.7513377432353;
@@ -187,7 +187,7 @@ namespace tut
     MapleSolution[6] = 2876.03052249886; MapleSolution[7] = 2578.20750573109;
     MapleSolution[8] = 8890.60849614838; MapleSolution[9] = 27486.4222128094;
 
-    GeometricMoments GeomCoeff(3);
+    Data_ContourIntegration_Along_Spline2D_HO::GeometricMoments GeomCoeff(3);
 
     for (int i=0; i<=9 ; ++i){
       GeomCoeff(i).D() = Line.PolynomOrderIntegration(V1,V2,Centroid,15,
@@ -210,7 +210,7 @@ namespace tut
     Curve.Create_Spline_Circular_Arc(V1,1.0,10.0,90.0,7);
     Curve.setBCtype(BC_NULL);
 
-    GeometricMoments GeomCoeff(3);
+    Data_ContourIntegration_Along_Spline2D_HO::GeometricMoments GeomCoeff(3);
 
     for (int i=0; i<=9 ; ++i){
       GeomCoeff(i).D() = Curve.PolynomOrderIntegration(Curve.Xp[0],Curve.Xp[Curve.np-1],V1,15,
@@ -384,7 +384,7 @@ namespace tut
     tol = 1.0e-9;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3); //
+    Data_ContourIntegration_Along_Spline2D_HO::GeometricMoments GeomCoeff(3); //
 
     double Angle1, Angle2, Radius;
     Vector2D Centroid;

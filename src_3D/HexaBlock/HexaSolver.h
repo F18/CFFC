@@ -1,4 +1,3 @@
-
 #ifndef _HEXA_SOLVER_INCLUDED
 #define _HEXA_SOLVER_INCLUDED
 
@@ -20,6 +19,10 @@
 #include  "HexaSolverClasses.h"
 #endif  //_HEXA_SOLVER_CLASSES_INCLUDED
 
+#ifndef _EXPLICIT_FILTER_COMMANDS_INCLUDED
+#include "../ExplicitFilters/Explicit_Filter_Commands.h"
+#endif // _EXPLICIT_FILTER_COMMANDS_INCLUDED
+
 #ifndef _HEXA_PRE_PROCESSING_INCLUDED
 #include "HexaPreProcessing.h"
 #endif //_HEXA_PRE_PROCESSING_INCLUDED
@@ -35,6 +38,7 @@
 #ifndef _NKS_INCLUDED
 #include "../NewtonKrylovSchwarz/NKS.h"
 #endif //_NKS_INCLUDED
+
 
 /********************************************************
  * Routine: HexaSolver                                  *
@@ -163,11 +167,44 @@ int HexaSolver(char *Input_File_Name_ptr, int batch_flag) {
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
 
+
+    /***************************************************************
+     * Perform solution reconstruction with the final average      *
+     * states in order to use the true piecewise representation    *
+     * of the solution for post-processing steps, such as solution *
+     * plotting or accuracy assessment.                            *
+     **************************************************************/
+
+    if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+      std::cout << "\n\n---------------------------------------\n"
+		<< " Reconstruct final solution.\n";
+    }
+
+    if ( Solution_Data.Input.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+      // Use high-order reconstruction
+      HighOrder_Multi_Block::HighOrder_Reconstruction(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+						      Data.Local_Adaptive_Block_List,
+						      0); 
+    } else {
+      // Use low-order reconstruction
+      HighOrder_Multi_Block::Linear_Reconstruction(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+						   Data.Local_Adaptive_Block_List,
+						   Solution_Data.Input.i_Limiter);
+    } // endif
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
+
+    if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+      std::cout << " Solution reconstruction done.\n" 
+		<< " ---------------------------------------\n";
+    }
+
     /***************************** POST PROCESSSING *******************************
       Solution calculations complete. Write 3D solution to output and restart files  
       as required, reset solution parameters, and run other cases as specified 
       by input parameters.        
-    *******************************************************************************/     
+    *******************************************************************************/ 
+    
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.    
     if (!Data.batch_flag) cout << "\n";
 

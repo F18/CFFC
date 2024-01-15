@@ -229,7 +229,6 @@ int main(int num_arg, char *arg_ptr[]) {
   /*********************************************************************
    * RUN UNIT TESTS AS REQUIRED AND STOP (tests run using only 1 CPU). *
    *********************************************************************/
-
   if (test_flag) {
      error_flag = Perform_UnitTesting(TestSuite, TestNumber, TestRootPath);
      CFFC_Finalize_MPI();

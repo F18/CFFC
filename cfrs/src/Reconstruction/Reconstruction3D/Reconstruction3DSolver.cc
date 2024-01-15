@@ -1,5 +1,5 @@
-/* Reconstruction2DSolver.cc:  Source file defining 
-   2D ReconstructionSolver function */
+/* Reconstruction3DSolver.cc:  Source file defining 
+   3D ReconstructionSolver function */
 
 /* Include header files. */
 #include "CFD/CFD.h"
@@ -13,9 +13,6 @@
  *                                                      *
  ********************************************************/
 int Reconstruction3DSolver(char *Input_File_Name_ptr){
-
-  std::cout << "The 3D framework is just incipient!" << std::endl;
-#if 0
 
   // Reconstruction3D input variables and parameters:
   Reconstruct3D_Input_Parameters Input_Parameters;
@@ -72,16 +69,14 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
   
   /***************************************************************  
    * Create the mesh variable and call for the proper solver:    *
-   * - Reconstruction3D_CartesianMesh                            *
    * - Reconstruction3D_HexahedralMesh                           *
    **************************************************************/
 
   // Solution variables.
-  ComputationalDomain<TwoD,Cell3D_Hexa,double> SolnBlkDouble;           //
+  ComputationalDomain<ThreeD,Cell3D_Hexa,double> SolnBlkDouble;           //
 
   // Mesh variables
   Grid3D_Hexa_Block   Grid;
-  Grid3D_Hexa_Block   **MeshBlk(NULL); // the mesh
 
  execute_new_calculation: ;
 
@@ -92,24 +87,34 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
     SolnBlkDouble.SetDomain(Input_Parameters);
 
     // Reconstruct the solution
-    SolnBlkDouble.ReconstructZonalSolution(Input_Parameters);
+    SolnBlkDouble.ReconstructSolution(Input_Parameters);
 
 
-  } else {
+  } 
+   else {
     std::cout << "\n Create Grid:\n";
     // Set Grid
-    MeshBlk = Multi_Block_Grid(MeshBlk,Input_Parameters);
-    if (MeshBlk != NULL) {
-      if (Check_Multi_Block_Grid(MeshBlk,
-				 Input_Parameters.Number_of_Blocks_Idir,
-				 Input_Parameters.Number_of_Blocks_Jdir)) {
-	std::cout << "Check_Multi_Block_Grid ERROR\n";
-      } 
-    } /* endif */
-
-    // copy the mesh to the computational domain
-    Copy_Quad_Block(Grid,MeshBlk[0][0]);
-  
+    Grid.Create_Block(Input_Parameters.Box_Length,
+		      Input_Parameters.Box_Width,
+		      Input_Parameters.Box_Height,
+		      ZERO,    // x-orig
+		      ZERO,    // y-orig
+		      ZERO,    // z-orig
+		      ZERO,    // alpha
+		      ZERO,    // beta
+		      ZERO,    // gamma
+		      BC_NONE, // top
+		      BC_NONE, // bottom
+		      BC_NONE, // north
+		      BC_NONE, // south
+		      BC_NONE, // west
+		      BC_NONE, // east
+		      Input_Parameters.NCells_Idir,
+		      Input_Parameters.NCells_Jdir,
+		      Input_Parameters.NCells_Kdir,
+		      Input_Parameters.Nghost_Cells);
+    
+    
     std::cout << " Set the Computational Domain:\n";
     // Set the Computation Domain
     SolnBlkDouble.SetDomain(Grid,Input_Parameters);
@@ -142,14 +147,6 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
     line_number = Input_Parameters.Line_Number;
 
     if (command_flag == EXECUTE_CODE) {
-      if (MeshBlk != NULL){
-	  // Deallocate memory for 3D reconstruction solution.
-	  cout << "\n Deallocating Reconstruction3D "
-	       << "solution variables.";
-	  MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
-						Input_Parameters.Number_of_Blocks_Idir, 
-						Input_Parameters.Number_of_Blocks_Jdir);
-      }
 
       // Output input parameters for new caluculation.
       cout << "\n\n Starting a new calculation.";
@@ -166,10 +163,6 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
       // Deallocate memory for 3D reconstruction solution.
       cout << "\n\n Deallocating Reconstruction3D"
 	   <<" solution variables.";
-
-      MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
-					    Input_Parameters.Number_of_Blocks_Idir, 
-					    Input_Parameters.Number_of_Blocks_Jdir);
 
       Grid.deallocate();
 
@@ -264,9 +257,16 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
     } else if (command_flag == WRITE_OUTPUT_GRID_NODES_CODE) {
       // Output node solution data file.
       //      if (MeshBlk != NULL){
+	cout << "\n Writing grid at cells to"
+	     << " output data file(s): ";
+	Output_Mesh_Nodes_Tecplot(SolnBlkDouble, Input_Parameters);
+	//      }
+    } else if (command_flag == WRITE_OUTPUT_GRID_CELLS_CODE) {
+      // Output node solution data file.
+      //      if (MeshBlk != NULL){
 	cout << "\n Writing Reconstruction3D solution at nodes to"
 	     << " output data file(s): ";
-	Output_Solution_Nodes_Tecplot(SolnBlkDouble, Input_Parameters);
+	Output_Mesh_Cells_Tecplot(SolnBlkDouble, Input_Parameters);
 	//      }
 
     } else if (command_flag == WRITE_OUTPUT_FULL_GRID_NODES_CODE) {
@@ -276,7 +276,6 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
 	     << " output data file(s): ";
 	Output_Full_Solution_Nodes_Tecplot(SolnBlkDouble, Input_Parameters);
 	//      }
-
     } else if (command_flag == INVALID_INPUT_CODE ||
 	       command_flag == INVALID_INPUT_VALUE) {
       line_number = -line_number;
@@ -288,7 +287,6 @@ int Reconstruction3DSolver(char *Input_File_Name_ptr){
     
   } // endwhile
 
-#endif  
   /**********************************************************  
    * End of all Reconstruction3DSolver computations and I/O. *
    **********************************************************/

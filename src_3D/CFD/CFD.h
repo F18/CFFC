@@ -98,6 +98,15 @@ inline char *Date_And_Time() {
 
 #define	OFF                           0
 #define	ON                            1
+#define DEFAULT                      -1
+
+/**********************************************************************
+ * CFD - CFL_LIMIT_OPTIONS                                                   *
+ **********************************************************************/
+
+#define CFL_LIMIT_ACOUSTIC              1
+#define CFL_LIMIT_VISCOUS               2
+
 
 /**********************************************************************
  * CFD -- Input parameter command codes.                              *
@@ -449,8 +458,7 @@ inline char *Date_And_Time() {
 /* ---------- SFS model ----------- */
 #define SFS_MODEL_SMAGORINSKY                         0
 #define SFS_MODEL_K_EQUATION                          5
-/* --------- filter type -----------*/
-#define FILTER_TYPE_IMPLICIT                          10
+
 
 /**********************************************************************
  * CFD -- Particle-phase formulation.                                 *
@@ -490,6 +498,7 @@ inline char *Date_And_Time() {
 #define SPECTRUM_CHASNOV                         4
 #define SPECTRUM_BELL_DAY                        5
 #define SPECTRUM_POPE                            6
+#define SPECTRUM_UNIFORM                         7
 
 /**********************************************************************
  * CFD -- Initial Condition Types.                                    *
@@ -548,6 +557,7 @@ inline char *Date_And_Time() {
 #define IC_SINE2_WAVE_XDIR             46
 #define IC_SINE2_WAVE_YDIR             47
 #define IC_SINE2_WAVE_ZDIR             48
+#define IC_RADIAL_COSINE               49
 
 #define IC_COMPRESSION_XDIR            50
 #define IC_COMPRESSION_YDIR            51
@@ -670,6 +680,8 @@ inline char *Date_And_Time() {
 #define RECONSTRUCTION_QUADRATIC_ESSENTIALLY_NON_OSCILLATORY   8
 #define RECONSTRUCTION_CUBIC_ESSENTIALLY_NON_OSCILLATORY       9
 #define RECONSTRUCTION_WEIGHTED_ESSENTIALLY_NON_OSCILLATORY   10
+#define RECONSTRUCTION_HIGH_ORDER                             11
+#define RECONSTRUCTION_CENO                                   12 /* CENO --> CENTRAL_ESSENTIALLY_NON_OSCILLATORY */
 
 #define VISCOUS_RECONSTRUCTION_CARTESIAN           21
 #define VISCOUS_RECONSTRUCTION_DIAMOND_PATH        22
@@ -782,6 +794,9 @@ inline char *Date_And_Time() {
 #define NORTH_WEST                     12
 #define SOUTH_EAST                     13
 #define SOUTH_WEST                     14
+#define X_DIRECTION 20
+#define Y_DIRECTION 21
+#define Z_DIRECTION 22
 
 /**********************************************************************
  * CFD -- Inline functions.                                           *

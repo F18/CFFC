@@ -39,4 +39,12 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                                     Input_Parameters<NavierStokes3D_Polytropic_pState,
                                                      NavierStokes3D_Polytropic_cState> &IPs);
 
+template<>
+int Hexa_Block<NavierStokes3D_Polytropic_pState, 
+               NavierStokes3D_Polytropic_cState>::
+dUdt_Residual_HighOrder(Input_Parameters<NavierStokes3D_Polytropic_pState, 
+			                 NavierStokes3D_Polytropic_cState> &IPs,
+			const int & k_residual,
+			const bool & UseTimeStep);
+
 #endif // _NAVIERSTOKES3D_POLYTROPIC_HEXA_BLOCK_INCLUDED

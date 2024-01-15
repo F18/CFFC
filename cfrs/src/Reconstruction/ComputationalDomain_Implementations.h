@@ -11,7 +11,7 @@
 // Default Constructor
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
 ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ComputationalDomain()
-  :SolnPtr(NULL), L1Norm(0.0), L2Norm(0.0), LMaxNorm(0.0)
+  :SolnPtr(NULL), L1Norm(0.0), L2Norm(0.0), LMaxNorm(0.0), CENO_LHS(NULL)
 {
   N_XYZ.reserve(SpaceDimension);
   IndexLow.reserve(SpaceDimension);
@@ -48,9 +48,7 @@ ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ComputationalDoma
   // copy the elements
   switch(SpaceDimension){
   case OneD:
-    for (int i=0; i<N_XYZ[0]; ++i){
-      SolnPtr[0][0][i] = rhs.SolnPtr[0][0][i];
-    }
+    // Not implemented/used in OneD case
     break;
   case TwoD:
     for (int i=0; i<N_XYZ[0]; ++i)
@@ -63,6 +61,27 @@ ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ComputationalDoma
 	for (int k=0; k<N_XYZ[2]; ++k)
 	  SolnPtr[k][j][i] = rhs.SolnPtr[k][j][i];
     break;
+  }
+  // copy the elements of the CENO_LHS
+  if (CENO_CFRS_Execution_Mode::USE_PSEUDO_INVERSE == ON) {
+    switch(SpaceDimension){
+    case OneD:
+      // Not implemented/used in OneD case
+      break;
+    case TwoD:
+      for (int i=0; i<N_XYZ[0]; ++i)
+	for (int j=0; j<N_XYZ[1]; ++j)
+	  CENO_LHS[0][j][i] = rhs.CENO_LHS[0][j][i];
+      break;
+    case ThreeD:
+      for (int i=0; i<N_XYZ[0]; ++i)
+	for (int j=0; j<N_XYZ[1]; ++j)
+	  for (int k=0; k<N_XYZ[2]; ++k)
+	    CENO_LHS[k][j][i] = rhs.CENO_LHS[k][j][i];
+      break;
+    }
+  } else {
+    CENO_LHS(NULL);
   }
 }
 
@@ -89,7 +108,7 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
 
   // allocate memory
   allocate();
-  // copy the elements
+  // copy the elements of the SolnPtr
   switch(SpaceDimension){
   case OneD:
     for (int i=0; i<N_XYZ[0]; ++i)
@@ -107,6 +126,28 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
 	  SolnPtr[k][j][i] = rhs.SolnPtr[k][j][i];
     break;
   }
+  // copy the elements of the CENO_LHS
+  if (CENO_CFRS_Execution_Mode::USE_PSEUDO_INVERSE == ON) {
+    switch(SpaceDimension){
+    case OneD:
+      // Not implemented/used for OneD case
+      break;
+    case TwoD:
+      for (int i=0; i<N_XYZ[0]; ++i)
+	for (int j=0; j<N_XYZ[1]; ++j)
+	  CENO_LHS[0][j][i] = rhs.CENO_LHS[0][j][i];
+      break;
+    case ThreeD:
+      for (int i=0; i<N_XYZ[0]; ++i)
+	for (int j=0; j<N_XYZ[1]; ++j)
+	  for (int k=0; k<N_XYZ[2]; ++k)
+	    CENO_LHS[k][j][i] = rhs.CENO_LHS[k][j][i];
+      break;
+    }
+  } else {
+    CENO_LHS = NULL;
+  }
+
   return *this;
 }
 
@@ -137,6 +178,32 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::allocate( ) 
   default: 
     std::cout << "In ComputationalDomain<>::allocate() the number of dimensions are not properly defined.\n";
   }
+  if (CENO_CFRS_Execution_Mode::USE_PSEUDO_INVERSE == ON){
+    switch(SpaceDimension){
+    case OneD:
+      // Not implemented/used in OneD case
+      break;
+    case TwoD:
+      CENO_LHS = new DenseMatrix** ;
+      CENO_LHS[0] = new DenseMatrix* [N_XYZ[1]];
+      for (int i=0; i<N_XYZ[1]; ++i)
+	CENO_LHS[0][i] = new DenseMatrix[N_XYZ[0]]( );
+      break;
+    case ThreeD:
+      CENO_LHS = new DenseMatrix** [N_XYZ[2]];
+      for (int i=0; i<N_XYZ[2]; ++i)
+	CENO_LHS[i] = new DenseMatrix* [N_XYZ[1]];
+      for (int i=0; i<N_XYZ[2]; ++i)
+	for (int j=0; j<N_XYZ[1]; ++j)
+	  CENO_LHS[i][j] = new DenseMatrix[N_XYZ[0]]( );
+      break;
+    default: 
+      std::cout << "In ComputationalDomain<>::allocate() the number of dimensions are not properly defined.\n";
+    }
+  } else {
+    CENO_LHS = NULL;
+  }
+
 }
 
 // Deallocate function
@@ -166,9 +233,35 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::deallocate( 
     default: 
       std::cout << "In ComputationalDomain::deallocate() the number of dimensions are not properly defined.\n";
     }
-
     SolnPtr = NULL;
   }
+  if (CENO_LHS!=NULL){
+    switch(SpaceDimension){
+    case OneD:
+      // Not implemented/used in OneD case
+      break;
+    case TwoD:
+      for (int i=0; i<N_XYZ[1]; ++i)
+	delete [] CENO_LHS[0][i];
+      delete [] CENO_LHS[0];
+      delete CENO_LHS;
+      break;
+    case ThreeD:
+      for (int i=0; i<N_XYZ[2]; ++i)
+	for (int j=0; j<N_XYZ[1]; ++j)
+	  delete [] CENO_LHS[i][j];
+      for (int i=0; i<N_XYZ[2]; ++i)
+	delete [] CENO_LHS[i];
+      delete [] CENO_LHS;
+      break;
+    default: 
+      std::cout << "In ComputationalDomain::deallocate() the number of dimensions are not properly defined.\n";
+    }
+    CENO_LHS = NULL;
+  }
+
+
+ 
 }
 
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
@@ -348,6 +441,10 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       SolnPtr[0][j][i].SetCell(InitCell,SubGridPoints,IP.RecOrder());  
     }
 
+  // This functions does nothing if the USE_PSEUDO_INVERSE flag is OFF.
+  // Otherwise, it allocates the size of the matrices stored in the CENO_LHS container
+  allocate_CENO_LHS_size();
+
   // Set the characteristic length of the geometry
   CharacteristicLength = IP.CharacteristicLength;
   CutoffKnob = IP.CutoffKnob();
@@ -391,7 +488,9 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   double XnodeSW, YnodeSW, XnodeSE, YnodeSE;
   double XnodeNE, YnodeNE, XnodeNW, YnodeNW;
   double CentroidX, CentroidY;
-  GeometricIntegrals GeomCoeff; GeomCoeff.GenerateContainer(RecOrder);
+  GeometricIntegrals GeomCoeff; 
+
+  GeomCoeff.GenerateContainer(RecOrder);
 
   // Set the geometry
   Cell2D_Quad InitCell;
@@ -428,12 +527,218 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
     }
   }
 
+  // This functions does nothing if the USE_PSEUDO_INVERSE flag is OFF.
+  // Otherwise, it allocates the size of the matrices stored in the CENO_LHS container
+  allocate_CENO_LHS_size();
+
   In_File.close();
 
   // Reset the L1, L2 and LMax norms
   L1Norm = SolutionType(0.0);
   L2Norm = SolutionType(0.0);
   LMaxNorm = SolutionType(0.0);
+
+}
+
+// SetDomain(const Grid3D_Hexa_Block, const Reconstruct3D_Input_Parameters)
+template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
+void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
+  SetDomain(Grid3D_Hexa_Block & Grid, const Reconstruct3D_Input_Parameters & IP)
+{
+
+  int i,j,k;
+
+  // allocate memory
+  SetDomain(IP.iCell(), IP.jCell(), IP.kCell(), IP.Nghost());
+
+  // allocate all the neccessary memory for the computational cell
+  vector<int> SubGridPoints;
+  SubGridPoints.reserve(3);
+  SubGridPoints.push_back( IP.NumSubGridI() );
+  SubGridPoints.push_back( IP.NumSubGridJ() );
+  SubGridPoints.push_back( IP.NumSubGridK() );
+
+  // Set the geometry
+  Cell3D ijkCell;
+  Cell3D_Hexa InitCell;
+
+  for(k=0; k<=kLastCell(); ++k){
+    for(j=0; j<=jLastCell(); ++j){
+      for(i=0; i<=iLastCell(); ++i){
+
+	ijkCell.setindex(i,j,k);
+	InitCell.setnodes(Grid.nodeSWTop(ijkCell).X.x,Grid.nodeSWTop(ijkCell).X.y,Grid.nodeSWTop(ijkCell).X.z,
+			  Grid.nodeSETop(ijkCell).X.x,Grid.nodeSETop(ijkCell).X.y,Grid.nodeSETop(ijkCell).X.z,
+			  Grid.nodeNETop(ijkCell).X.x,Grid.nodeNETop(ijkCell).X.y,Grid.nodeNETop(ijkCell).X.z,
+			  Grid.nodeNWTop(ijkCell).X.x,Grid.nodeNWTop(ijkCell).X.y,Grid.nodeNWTop(ijkCell).X.z,
+			  Grid.nodeSWBot(ijkCell).X.x,Grid.nodeSWBot(ijkCell).X.y,Grid.nodeSWBot(ijkCell).X.z,
+			  Grid.nodeSEBot(ijkCell).X.x,Grid.nodeSEBot(ijkCell).X.y,Grid.nodeSEBot(ijkCell).X.z,
+			  Grid.nodeNEBot(ijkCell).X.x,Grid.nodeNEBot(ijkCell).X.y,Grid.nodeNEBot(ijkCell).X.z,
+			  Grid.nodeNWBot(ijkCell).X.x,Grid.nodeNWBot(ijkCell).X.y,Grid.nodeNWBot(ijkCell).X.z);
+	SolnPtr[k][j][i].SetCell(InitCell,SubGridPoints,IP.RecOrder());
+      
+      } /* end for */
+    } /* end for */
+  } /* end for */
+
+  // This functions does nothing if the USE_PSEUDO_INVERSE flag is OFF.
+  // Otherwise, it allocates the size of the matrices stored in the CENO_LHS container
+  allocate_CENO_LHS_size();
+
+  // Set the characteristic length of the geometry
+  CharacteristicLength = IP.CharacteristicLength;
+  CutoffKnob = IP.CutoffKnob();
+
+  // Reset the L1, L2 and LMax norms
+  L1Norm = SolutionType(0.0);
+  L2Norm = SolutionType(0.0);
+  LMaxNorm = SolutionType(0.0);
+
+}
+
+// SetDomain(const Reconstruct3D_Input_Parameters)
+template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
+void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
+  SetDomain(const Reconstruct3D_Input_Parameters & IP)
+{
+ 
+  ifstream In_File;
+  int i,j,k, Nghost, RecOrder;
+
+  // Open data file.
+  In_File.open(IP.Input_File_Name, ios::in);
+  if (In_File.bad()) {
+    std::cout << "SetDomain()::ERROR!!! Can't open the input data file " << IP.Input_File_Name << "\n";
+    std::cout.flush();
+    exit(1);
+  }
+
+  // Read the number of cells in the Xdir and in the Ydir. Read number of ghost cells and the reconstruction order
+  In_File >> i >> j >> k >> Nghost >> RecOrder; // >> pseudo_inverse;
+
+  // allocate memory
+  SetDomain(i, j, k, Nghost);
+
+  // allocate all the neccessary memory for the computational cell
+  vector<int> SubGridPoints;
+  SubGridPoints.reserve(3);
+  SubGridPoints.push_back( IP.NumSubGridI() );
+  SubGridPoints.push_back( IP.NumSubGridJ() );
+  SubGridPoints.push_back( IP.NumSubGridK() );
+
+  double XnodeSWTop, YnodeSWTop, ZnodeSWTop, XnodeSETop, YnodeSETop, ZnodeSETop;
+  double XnodeNETop, YnodeNETop, ZnodeNETop, XnodeNWTop, YnodeNWTop, ZnodeNWTop;
+  double XnodeSWBot, YnodeSWBot, ZnodeSWBot, XnodeSEBot, YnodeSEBot, ZnodeSEBot;
+  double XnodeNEBot, YnodeNEBot, ZnodeNEBot, XnodeNWBot, YnodeNWBot, ZnodeNWBot;
+  double CentroidX, CentroidY, CentroidZ;
+  GeometricIntegrals GeomCoeff; 
+
+  GeomCoeff.GenerateContainer(RecOrder);
+
+  // Set the geometry
+  Cell3D_Hexa InitCell;
+
+  for (i = 0; i<= iLastCell(); ++i){
+    for (j = 0; j<= jLastCell(); ++j){
+      for(k = 0; k<= kLastCell(); ++k){
+
+	In_File >> XnodeSWTop >> YnodeSWTop >> ZnodeSWTop >> XnodeSETop >> YnodeSETop >> ZnodeSETop 
+		>> XnodeNETop >> YnodeNETop >> ZnodeNETop >> XnodeNWTop >> YnodeNWTop >> ZnodeNWTop;
+	In_File >> XnodeSWBot >> YnodeSWBot >> ZnodeSWBot >> XnodeSEBot >> YnodeSEBot >> ZnodeSEBot 
+		>> XnodeNEBot >> YnodeNEBot >> ZnodeNEBot >> XnodeNWBot >> YnodeNWBot >> ZnodeNWBot;
+
+	// Set the nodes
+	InitCell.setnodes(XnodeSWTop,YnodeSWTop,ZnodeSWTop,
+			  XnodeSETop,YnodeSETop,ZnodeSETop, 
+			  XnodeNETop,YnodeNETop,ZnodeNETop,
+			  XnodeNWTop,YnodeNWTop,ZnodeNWTop,
+			  XnodeSWBot,YnodeSWBot,ZnodeSWBot,
+			  XnodeSEBot,YnodeSEBot,ZnodeSEBot, 
+			  XnodeNEBot,YnodeNEBot,ZnodeNEBot,
+			  XnodeNWBot,YnodeNWBot,ZnodeNWBot);
+
+	SolnPtr[k][j][i].SetCell(InitCell,SubGridPoints,RecOrder);  
+	
+	In_File >> CentroidX >> CentroidY >> CentroidZ;
+	
+	// Set the centroid
+	SolnPtr[k][j][i].CellGeometry().xc.x = CentroidX;
+	SolnPtr[k][j][i].CellGeometry().xc.y = CentroidY;
+	SolnPtr[k][j][i].CellGeometry().xc.z = CentroidZ;
+	
+	In_File >> GeomCoeff;
+	
+	// Copy geometric coefficients
+	SolnPtr[k][j][i].CellGeomCoeff() = GeomCoeff;
+	
+	In_File.setf(ios::skipws);
+	In_File >> SolnPtr[k][j][i].CellSolution();
+	
+	SolnPtr[k][j][i].CellDeriv(0) = SolnPtr[k][j][i].CellSolution();
+	SolnPtr[k][j][i].UpdateSubgridSolution();
+
+      } /* end for */
+    } /* end for */
+  } /* end for */
+
+  // This functions does nothing if the USE_PSEUDO_INVERSE flag is OFF.
+  // Otherwise, it allocates the size of the matrices stored in the CENO_LHS container
+  allocate_CENO_LHS_size();
+
+
+  In_File.close();
+
+  // Reset the L1, L2 and LMax norms
+  L1Norm = SolutionType(0.0);
+  L2Norm = SolutionType(0.0);
+  LMaxNorm = SolutionType(0.0);
+
+}
+
+
+/* Memory management functions */
+// Allocate function
+template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
+void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::allocate_CENO_LHS_size() {
+
+  // First make sure that we need to store/use the LHS pseudo inverse! If not, return.
+  if (CENO_CFRS_Execution_Mode::USE_PSEUDO_INVERSE == OFF){
+    return;
+  }
+  
+  int NumOfCellsInOneDirection, StencilSize;
+  int i,j,k;
+  
+  NumOfCellsInOneDirection = 2*SolnPtr[0][0][0].CellRings() + 1;
+  StencilSize = NumOfCellsInOneDirection*NumOfCellsInOneDirection;
+
+  // Allocate pseudo-inverse data
+  // Note: There is no need to initialize these containers here!
+  switch(SpaceDimension){
+  case OneD:
+    // Not implemented/used for OneD case
+    break;
+  case TwoD:
+  for (i = 0; i<= iLastCell(); ++i){
+    for (j = 0; j<= jLastCell(); ++j){
+      CENO_LHS[0][j][i].newsize(StencilSize - 1, SolnPtr[0][j][i].CellGeomCoeff().size() - 1);
+      //CENO_Geometric_Weights[i][j].assign(StencilSize, 0.0);
+      }
+    }
+    break;
+  case ThreeD:
+  for (i = 0; i<= iLastCell(); ++i){
+    for (j = 0; j<= jLastCell(); ++j){
+      for(k = 0; k<= kLastCell(); ++k){
+	CENO_LHS[k][j][i].newsize(StencilSize - 1, SolnPtr[k][j][i].CellGeomCoeff().size() - 1);
+	//CENO_Geometric_Weights[i][j].assign(StencilSize, 0.0);
+      }
+    }
+  }
+  break;
+  default: 
+    ;    std::cout << "In ComputationalDomain<>::allocate_CENO_LHS_size() the number of dimensions are not properly defined.\n";
+  }
 }
 
 /* Overloaded operators */
@@ -605,6 +910,73 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       for(j=jStart(); j<=jEnd()+1; ++j)
 	for(i=iStart(); i<=iEnd()+1; ++i){
 	  SolnPtr[k][j][i].OutputMeshNodesTecplot(output_file,i,j,k);
+	}
+
+    break; 
+  }
+}
+
+// OutputMeshNodesTecplot
+/* Outputs the coordinates of the interior mesh nodes */
+template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
+void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
+  OutputMeshCellsTecplot(std::ofstream &output_file,const bool Title ) const
+{
+  output_file << setprecision(14);
+  int i,j,k, _dummy_parameter_(0);
+
+  switch(SpaceDimension){
+  case OneD:
+    if (Title) {
+      output_file << "VARIABLES = \"x\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+    }
+    output_file << "ZONE T = \" Mesh \" \\ \n"
+		<< "I=" << N_XYZ[0] << "\n"
+		<< "F = POINT \n";
+    
+    for(i=iStart(); i<=iEnd()+1; ++i){
+      SolnPtr[0][0][i].OutputMeshCellsTecplot(output_file,i,_dummy_parameter_,_dummy_parameter_);
+    }
+    break;
+
+  case TwoD:
+    if (Title) {
+      output_file << "VARIABLES = \"x\" \\ \n"
+		  << "\"y\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+    }
+    output_file << "ZONE T = \" Mesh \" \\ \n"
+		<< "I=" << N_XYZ[0] << "\n"
+		<< "J=" << N_XYZ[1] << "\n"
+		<< "F = POINT \n";
+
+    for(j=jStart(); j<=jEnd()+1; ++j)
+      for(i=iStart(); i<=iEnd()+1; ++i){
+	SolnPtr[0][j][i].OutputMeshCellsTecplot(output_file,i,j,_dummy_parameter_);
+      }
+    break;
+
+  case ThreeD:
+    if (Title) {
+      output_file << "VARIABLES = \"x\" \\ \n"
+		  << "\"y\" \\ \n"
+		  << "\"z\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+    }
+    output_file << "ZONE T = \" Mesh \" \\ \n"
+		<< "I=" << N_XYZ[0] << "\n"
+		<< "J=" << N_XYZ[1] << "\n"
+		<< "K=" << N_XYZ[2] << "\n"
+		<< "F = POINT \n";
+
+    for(k=kStart()-Nghost; k<=kEnd()+Nghost; ++k)
+      for(j=jStart()-Nghost; j<=jEnd()+Nghost; ++j)
+	for(i=iStart()-Nghost; i<=iEnd()+Nghost; ++i){
+	  SolnPtr[k][j][i].OutputMeshCellsTecplot(output_file,i,j,k);
 	}
 
     break; 
@@ -944,24 +1316,24 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
 		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+		  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].kSubgridPoints() << "\\ \n"
 		  << "F = POINT \n";
       VarNames.PrintDataTypeTecplot(output_file,ThreeD);
     } else {
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
 		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+		  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].kSubgridPoints() << "\\ \n"
 		  << "F = POINT \n";
       VarNames.PrintDataTypeTecplot(output_file,ThreeD);
     }
 
-    for(k=jStart(); k<=kEnd(); ++k)
+    for(k=kStart(); k<=kEnd(); ++k)
       for(SubgridNz = 0; SubgridNz < SolnPtr[0][0][0].kSubgridPoints(); ++SubgridNz){
 	for(j=jStart(); j<=jEnd(); ++j)
 	  for(SubgridNy = 0; SubgridNy < SolnPtr[0][0][0].jSubgridPoints(); ++SubgridNy){
 	    for(i=iStart(); i<=iEnd(); ++i){
-	      SolnPtr[0][j][i].OutputSolutionCellTecplotOneZone(output_file, SubgridNy, SubgridNz);
+   	      SolnPtr[k][j][i].OutputSolutionCellTecplotOneZone(output_file, SubgridNy, SubgridNz);
 	    }
 	  }
       }
@@ -1066,7 +1438,7 @@ OutputPWC(std::ofstream &output_file, const bool Title) const{
 	for(j=jStart(); j<=jEnd(); ++j)
 	  for(SubgridNy = 0; SubgridNy < SolnPtr[0][0][0].jSubgridPoints(); ++SubgridNy){
 	    for(i=iStart(); i<=iEnd(); ++i){
-	      SolnPtr[0][j][i].OutputPWC(output_file, SubgridNy, SubgridNz);
+	      SolnPtr[k][j][i].OutputPWC(output_file, SubgridNy, SubgridNz);
 	    }
 	  }
       }
@@ -1143,6 +1515,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
     break;
 
   case ThreeD:
+    // --> RR: Needs to be implemented
     break;
   }
 }
@@ -1151,7 +1524,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 /* Outputs the smoothness indicator at the nodes of the cell */
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
 void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
-  OutputSmoothnessIndicatorAtNodesTecplot(std::ofstream &output_file, const bool Title) const
+OutputSmoothnessIndicatorAtNodesTecplot(std::ofstream &output_file, const bool Title) const
 {
 
   int i,j,k, _dummy_parameter_, SubgridNy, SubgridNz;
@@ -1162,18 +1535,18 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       /* Write TECPLOT title */
       output_file << "TITLE = \"Smoothness Indicator in " << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
       output_file << "VARIABLES = \"x\" \n"
-		  << "\"SI\" \\ \n";
+                  << "\"SI\" \\ \n";
       /* output dataset auxiliary data */
       TecplotDatasetAuxData::PrintAuxData(output_file);
 
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
-		  << "F = POINT \n";
+                  << "F = POINT \n";
       output_file << "DT = (DOUBLE DOUBLE) \n";
     } else {
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
-		  << "F = POINT \n";
+                  << "F = POINT \n";
       output_file << "DT = (DOUBLE DOUBLE) \n";
     }
 
@@ -1187,29 +1560,29 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       /* Write TECPLOT title */
       output_file << "TITLE = \"Smoothness Indicator in " << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
       output_file << "VARIABLES = \"x\" \\ \n"
-		  << "\"y\" \\ \n"
-		  << "\"SI\" \\ \n";
+                  << "\"y\" \\ \n"
+                  << "\"SI\" \\ \n";
       /* output dataset auxiliary data */
       TecplotDatasetAuxData::PrintAuxData(output_file);
 
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
-		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "F = POINT \n";
+                  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+                  << "F = POINT \n";
       output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
     } else {
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
-		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "F = POINT \n";
+                  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+                  << "F = POINT \n";
       output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
     }
 
     for(j=jStart(), _dummy_parameter_=0; j<=jEnd(); ++j)
       for(SubgridNy = 0; SubgridNy < SolnPtr[0][0][0].jSubgridPoints(); ++SubgridNy){
-	for(i=iStart(); i<=iEnd(); ++i){
-	  SolnPtr[0][j][i].OutputSmoothnessIndicatorAtNodesTecplot(output_file, SubgridNy, _dummy_parameter_);
-	}
+        for(i=iStart(); i<=iEnd(); ++i){
+          SolnPtr[0][j][i].OutputSmoothnessIndicatorAtNodesTecplot(output_file, SubgridNy, _dummy_parameter_);
+        }
       }
     break;
 
@@ -1218,37 +1591,37 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
       /* Write TECPLOT title */
       output_file << "TITLE = \"Solution" << SpaceDimension << "D" << " (at subgrid nodes locations)\"\n ";
       output_file << "VARIABLES = \"x\" \\ \n"
-		  << "\"y\" \\ \n"
-		  << "\"z\" \\ \n"
-		  << "\"SI\" \\ \n";
+                  << "\"y\" \\ \n"
+                  << "\"z\" \\ \n"
+                  << "\"SI\" \\ \n";
       /* output dataset auxiliary data */
       TecplotDatasetAuxData::PrintAuxData(output_file);
 
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
-		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "F = POINT \n";
+                  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+                  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+                  << "F = POINT \n";
       output_file << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE) \n";
     } else {
       output_file << "ZONE T = \" SolBlock \" \\ \n";
       output_file << "I=" << (iEnd() - iStart() + 1)*SolnPtr[0][0][0].iSubgridPoints() << "\\ \n"
-		  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
-		  << "F = POINT \n";
+                  << "J=" << (jEnd() - jStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+                  << "K=" << (kEnd() - kStart() + 1)*SolnPtr[0][0][0].jSubgridPoints() << "\\ \n"
+                  << "F = POINT \n";
       output_file << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE) \n";
     }
 
     for(k=jStart(); k<=kEnd(); ++k)
       for(SubgridNz = 0; SubgridNz < SolnPtr[0][0][0].kSubgridPoints(); ++SubgridNz){
-	for(j=jStart(); j<=jEnd(); ++j)
-	  for(SubgridNy = 0; SubgridNy < SolnPtr[0][0][0].jSubgridPoints(); ++SubgridNy){
-	    for(i=iStart(); i<=iEnd(); ++i){
-	      SolnPtr[k][j][i].OutputSmoothnessIndicatorAtNodesTecplot(output_file, SubgridNy, SubgridNz);
-	    }
-	  }
+        for(j=jStart(); j<=jEnd(); ++j)
+          for(SubgridNy = 0; SubgridNy < SolnPtr[0][0][0].jSubgridPoints(); ++SubgridNy){
+            for(i=iStart(); i<=iEnd(); ++i){
+              SolnPtr[k][j][i].OutputSmoothnessIndicatorAtNodesTecplot(output_file, SubgridNy, SubgridNz);
+            }
+          }
       }
-    
+  
     break;
   }
 }
@@ -1291,11 +1664,78 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
     break;
 
   case TwoD:
+    if (Title) {
+      output_file << "TITLE = \"Multiple-Correlation Coeffcient in " <<SpaceDimension <<"D"<< " (at cell center locations)\"\n ";
+      output_file << "VARIABLES = \"x\" \n"
+                  << "VARIABLES = \"y\" \n";
+      output_file << "\"MCC\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
 
+      output_file << "ZONE T = \" SolBlock \" \\ \n";
+      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
+                  << "J=" << jEnd() - jStart() + 1 << "\\ \n"
+		  << "F = POINT \n";
+      output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
+    }
+    else {
+      output_file << "VARIABLES = \"x\" \n"
+                  << "VARIABLES = \"y\" \n";
+      output_file << "\"MCC\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
+      output_file << "ZONE T = \" SolBlock \" \\ \n";
+      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
+                  << "J=" << jEnd() - jStart() + 1 << "\\ \n";
+      output_file << "F = POINT \n";
+      output_file << "DT = (DOUBLE DOUBLE DOUBLE) \n";
+    }
+    for(int j=jStart(); j<=jEnd(); ++j)
+      for(int i=iStart(); i<=iEnd(); ++i){
+        output_file << SolnPtr[0][j][i].CellCenter() << "\t" << SolnPtr[0][j][i].CellMCC();
+      }
     break;
+
   case ThreeD:
+    if (Title) {
+      output_file << "TITLE = \"Multiple-Correlation Coeffcient in " <<SpaceDimension <<"D"<< " (at cell center locations)\"\n ";
+      output_file << "VARIABLES = \"x\" \n"
+                  << "VARIABLES = \"y\" \n"
+                  << "VARIABLES = \"z\" \n";
+      output_file << "\"MCC\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
 
+      output_file << "ZONE T = \" SolBlock \" \\ \n";
+      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
+                  << "J=" << jEnd() - jStart() + 1 << "\\ \n"
+                  << "K=" << kEnd() - kStart() + 1 << "\\ \n"
+		  << "F = POINT \n";
+      output_file << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE) \n";
+    }
+    else {
+      output_file << "VARIABLES = \"x\" \n"
+                  << "VARIABLES = \"y\" \n"
+                  << "VARIABLES = \"z\" \n";
+      output_file << "\"MCC\" \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
+      output_file << "ZONE T = \" SolBlock \" \\ \n";
+      output_file << "I=" << iEnd() - iStart() + 1 << "\\ \n"
+                  << "J=" << jEnd() - jStart() + 1 << "\\ \n"
+                  << "K=" << kEnd() - kStart() + 1 << "\\ \n"
+		  << "F = POINT \n";
+      output_file << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE) \n";
+    }
+    for(int k=kStart(); k<=kEnd(); ++k)
+      for(int j=jStart(); j<=jEnd(); ++j)
+        for(int i=iStart(); i<=iEnd(); ++i){
+          output_file << SolnPtr[k][j][i].CellCenter() << "\t" << SolnPtr[k][j][i].CellMCC();
+        }
     break;
+
   }
 }
 
@@ -1304,7 +1744,6 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType>
 void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
   OutputSmoothnessIndicatorFlag(std::ofstream &output_file,const bool Title) const{
-
   switch(SpaceDimension){
   case OneD:
     if (Title) {
@@ -1373,7 +1812,44 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
     break;
     
   case ThreeD:
-    
+    if (Title) {
+      output_file << "TITLE = \"Smoothness Indicator Flag for " << SpaceDimension << "D" << " (at cell center locations)\"\n ";
+      output_file << "VARIABLES = \"x\" \\ \n"
+		  << "\"y\" \\ \n"
+                  << "\"z\" \\ \n";
+      output_file << "\"SI\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
+      output_file << "ZONE T = \" SolBlock \" \\ \n";
+      output_file << "I=" << (iEnd() - iStart() + 1) << "\\ \n"
+		  << "J=" << (jEnd() - jStart() + 1) << "\\ \n"
+                  << "K=" << (kEnd() - kStart() + 1) << "\\ \n"
+		  << "F = POINT \n";
+      output_file << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE) \n";
+    }
+    else {
+      output_file << "VARIABLES = \"x\" \\ \n"
+		  << "\"y\" \\ \n"
+		  << "\"z\" \\ \n";
+      output_file << "\"SI\" \\ \n";
+      /* output dataset auxiliary data */
+      TecplotDatasetAuxData::PrintAuxData(output_file);
+
+      output_file << "ZONE T = \" SolBlock \" \\ \n";
+      output_file << "I=" << (iEnd() - iStart() + 1) << "\\ \n"
+		  << "J=" << (jEnd() - jStart() + 1) << "\\ \n"
+		  << "K=" << (kEnd() - kStart() + 1) << "\\ \n"
+		  << "F = POINT \n";
+      output_file << "DT = (DOUBLE DOUBLE DOUBLE DOUBLE) \n";
+    }
+    for(int k=kStart(); k<=kEnd(); ++k){
+      for(int j=jStart(); j<=jEnd(); ++j){
+        for(int i=iStart(); i<=iEnd(); ++i){
+          output_file << SolnPtr[k][j][i].CellCenter() << "\t" << SolnPtr[k][j][i].UnfitReconstructionFlag() << std::endl;
+        }
+      }
+    }
     break;
   }
 }
@@ -1913,14 +2389,16 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructZ
       }
     }//endfor
 
-  /* reduce to limited piecewise linear */
-  for (i=iStart(); i<=iEnd(); ++i)
-    for (j=jStart(); j<=jEnd(); ++j){
-      if(SolnPtr[0][j][i].UnfitReconstructionFlag() == ON ){
-	++TotalModifiedCells;
-	ReconstructToLimitedPiecewiseLinear(i,j,IP.Limiter());
-      }
-    }
+  if (CENO_CFRS_Execution_Mode::REDUCE_ORDER == ON){
+    /* reduce to limited piecewise linear */
+    for (i=iStart(); i<=iEnd(); ++i)
+      for (j=jStart(); j<=jEnd(); ++j){
+	if(SolnPtr[0][j][i].UnfitReconstructionFlag() == ON ){
+	  ++TotalModifiedCells;
+	  ReconstructToLimitedPiecewiseLinear(i,j,IP.Limiter());
+	}/*endif*/
+      }/*endfor*/
+  }/*endif*/
 
   for (i=iStart(); i<=iEnd(); ++i)
     for (j=jStart(); j<=jEnd(); ++j){
@@ -2067,7 +2545,7 @@ void ReconstructSolution(Reconstruct3D_Input_Parameters)
 Solves the reconstruction over the domain
 ***********************************************/
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
-  void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructSolution(bool ChangeMe)
+void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructSolution(const Reconstruct3D_Input_Parameters & IP)
 {
 
   require(SpaceDimension==ThreeD, "ERROR:Reconstruct3DSolution(). This function can be called only for a 3D computational domain. Check your space dimension and call for the proper function!");
@@ -2086,17 +2564,114 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
     return;
   }
 
-  vector<int> i_index, j_index, k_index;
+  //vector<int> i_index, j_index, k_index;
+  int *i_index(NULL), *j_index(NULL), *k_index(NULL);
+  int UnfitCells(0);            /* the number of cells that didn't get the smooth resolution */
+  int TotalModifiedCells(0);    /* the total number of cells affected by the order reduction */
+
+  int i,j,k, FinishedCell;
 
   /*****************************************************************************
    *                    COMPUTE THE RECONSTRUCTION                             *
    *****************************************************************************/
 
   /* Determine the number of cells in the stencil based on the number of rings */
-  int CellsInOneDirection;
+  int NumOfCellsInOneDirection, StencilSize;
   
-  switch(ChangeMe){
+  switch(IP.ReconstructionMethod()){
     
+  case CENO:
+    NumOfCellsInOneDirection = 2*SolnPtr[0][0][0].CellRings() + 1;
+    StencilSize = NumOfCellsInOneDirection*NumOfCellsInOneDirection*NumOfCellsInOneDirection;
+    i_index = new int [StencilSize];
+    j_index = new int [StencilSize];
+    k_index = new int [StencilSize];
+    
+    // Solve reconstruction for each cell in the domain plus 2 additional layers of cells for each boundary.
+    // These boundary cells are used for checking the goodness of fit of the first domain cell.
+    for (i=iStart()-2, FinishedCell=0; i<=iEnd()+2; ++i){
+      for (j=jStart()-2; j<=jEnd()+2; ++j){
+	for (k=kStart()-2; k<=kEnd()+2; ++k){
+	  /* Make Stencil */
+	  MakeReconstructionStencil(SolnPtr[0][0][0].CellRings(),i,j,k,i_index,j_index,k_index);
+	  /* Solve reconstruction for the current cell */
+	  kExact_Reconstruction(*this,i_index,j_index,k_index,StencilSize);
+	  ++FinishedCell;
+	  Print_Progress(FinishedCell,ProgressFrequency);
+	}//endfor(k)
+      }//endfor(j)
+    }//endfor(i)
+    
+    
+    // Compute the Smoothness Indicator for each cell reconstruction
+
+ 
+    for (i=iStart(); i<=iEnd(); ++i)
+      for (j=jStart(); j<=jEnd(); ++j)
+	for (k=kStart(); k<=kEnd(); ++k){
+	  /* Make Stencil */
+	  MakeReconstructionStencil(SolnPtr[0][0][0].CellRings(),i,j,k,i_index,j_index,k_index);
+	  ComputeSmoothnessIndicator(*this,i_index,j_index,k_index,StencilSize,i,j,k); 
+	}
+
+    // Flag the cells which didn't get a good reconstruction
+    for (i=iStart(); i<=iEnd(); ++i)
+      for (j=jStart(); j<=jEnd(); ++j)
+	for (k=kStart(); k<=kEnd(); ++k){
+	  if ( SolnPtr[k][j][i].CellMCC() < CENO_Tolerances::Fit_Tolerance ){
+            /* Flag the cell with non-smooth reconstruction */
+            SolnPtr[k][j][i].UnfitReconstructionFlag() = ON;
+	  
+            //#ifdef CENO_Padding
+            //	  /* Flag all the cells surrounding this cell */
+            //	  SolnPtr[0][j-1][i-1].UnfitReconstructionFlag() = ON;
+            //	  SolnPtr[0][j-1][i].UnfitReconstructionFlag() = ON;
+            //	  SolnPtr[0][j-1][i+1].UnfitReconstructionFlag() = ON;
+            //
+            //	  SolnPtr[0][j][i-1].UnfitReconstructionFlag() = ON;
+            //	  SolnPtr[0][j][i+1].UnfitReconstructionFlag() = ON;
+            //
+            //	  SolnPtr[0][j+1][i-1].UnfitReconstructionFlag() = ON;
+            //	  SolnPtr[0][j+1][i].UnfitReconstructionFlag() = ON;
+            //	  SolnPtr[0][j+1][i+1].UnfitReconstructionFlag() = ON;
+            //#endif
+
+            /* Update the number of cell with not enough resolution */
+            ++UnfitCells;
+          }//end if
+        }//endfor
+    //
+
+    if (CENO_CFRS_Execution_Mode::REDUCE_ORDER == ON){
+      /* reduce to limited piecewise linear */
+      for (i=iStart(); i<=iEnd(); ++i)
+	for (j=jStart(); j<=jEnd(); ++j)
+	  for (k=kStart(); k<=kEnd(); ++k){
+	    if(SolnPtr[k][j][i].UnfitReconstructionFlag() == ON ){
+	      ++TotalModifiedCells;
+	      ReconstructToLimitedPiecewiseLinear(i,j,k,IP.Limiter());
+	    } /*endif*/
+	  }/*endfor*/
+    }/*endif*/
+
+    for (i=iStart(); i<=iEnd(); ++i)
+      for (j=jStart(); j<=jEnd(); ++j)
+	for (k=kStart(); k<=kEnd(); ++k){
+	// Update subgrid solution
+	SolnPtr[k][j][i].UpdateSubgridSolution();
+        }
+
+    /* Print UnfitCells and TotalModifiedCells */
+    std::cout << std::endl;
+    Print_(UnfitCells);
+    Print_(TotalModifiedCells);
+
+    // Free memory
+    delete [] i_index; i_index = NULL;
+    delete [] j_index; j_index = NULL;
+    delete [] k_index; k_index = NULL;
+    break;
+
     /* DataDependent ENO-like reconstruction */
   case DD_ENO:
     
@@ -2119,6 +2694,136 @@ template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inli
   }
 
 }
+
+/*****************************************************
+void ReconstructToLimitedPiecewiseLinear(iCell,jCell,kCell)
+Solves the reconstruction over the domain
+******************************************************/
+template< SpaceType SpaceDimension, class GeometryType, class SolutionType> inline
+  void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::ReconstructToLimitedPiecewiseLinear(int iCell, int jCell,
+													  int kCell, const int Limiter)
+{
+
+//--> RR: Limiter Calculation may be commented back in at a later time
+//#ifdef LimiterBasedOnlyOnGaussPoints
+//  int NQuad(8);
+//  double uQuad[8];
+//#else
+//  int NQuad(12);
+//  double uQuad[12];
+//#endif
+//
+//  int i, n, n2, n_pts, indexI[8], indexJ[8];
+  int i;
+//  double u0Min, u0Max;
+//
+//  n_pts = 8;
+//  /* First ring */
+//  indexI[0] = iCell-1; indexJ[0] = jCell-1;
+//  indexI[1] = iCell  ; indexJ[1] = jCell-1;
+//  indexI[2] = iCell+1; indexJ[2] = jCell-1;
+//  indexI[3] = iCell-1; indexJ[3] = jCell;
+//  indexI[4] = iCell+1; indexJ[4] = jCell;
+//  indexI[5] = iCell-1; indexJ[5] = jCell+1;
+//  indexI[6] = iCell  ; indexJ[6] = jCell+1;
+//  indexI[7] = iCell+1; indexJ[7] = jCell+1;
+ 
+  /*****************************************************************************
+   *                    COMPUTE THE RECONSTRUCTION                             *
+   *****************************************************************************/
+  int *i_index, *j_index, *k_index, StencilSize(27);
+  i_index = new int [StencilSize];
+  j_index = new int [StencilSize];
+  k_index = new int [StencilSize];
+
+  /* Make Stencil */
+  MakeReconstructionStencil(1,iCell,jCell,kCell,i_index,j_index,k_index);
+
+  /* Zero all the high-order derivatives */
+  for (i=1; i<SolnPtr[kCell][jCell][iCell].NumberOfTaylorDerivatives(); ++i){
+    SolnPtr[kCell][jCell][iCell].CellDeriv(i).D() = SolutionType(0.0);
+  }
+
+  /* Solve reconstruction for the current cell */
+  FirstOrder_kExact_Reconstruction(*this, i_index, j_index, k_index, StencilSize);
+
+//  /* Compute and assign the limiter */
+//  u0Min = SolnPtr[0][jCell][iCell].CellSolution();
+//  u0Max = u0Min;
+//  for ( n2 = 0 ; n2 < n_pts ; ++n2 ) {
+//    u0Min = min(u0Min, SolnPtr[0][ indexJ[n2] ][ indexI[n2] ].CellSolution());
+//    u0Max = max(u0Max, SolnPtr[0][ indexJ[n2] ][ indexI[n2] ].CellSolution());
+//  } /* endfor */
+//
+//  /* Gauss Quadrature Point values */
+//  Vector2D GP1, GP2;
+//
+//  /* N face */
+//  SolnPtr[0][jCell][iCell].CellGeometry().GaussQuadPointsFaceN(GP1,GP2);
+//  uQuad[0] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//  uQuad[1] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP2.x, GP2.y);
+//
+//  /* S face */
+//  SolnPtr[0][jCell][iCell].CellGeometry().GaussQuadPointsFaceS(GP1,GP2);
+//  uQuad[2] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//  uQuad[3] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP2.x, GP2.y);
+//
+//  /* E face */
+//  SolnPtr[0][jCell][iCell].CellGeometry().GaussQuadPointsFaceE(GP1,GP2);
+//  uQuad[4] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//  uQuad[5] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP2.x, GP2.y);
+//
+//  /* W face */
+//  SolnPtr[0][jCell][iCell].CellGeometry().GaussQuadPointsFaceW(GP1,GP2);
+//  uQuad[6] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//  uQuad[7] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP2.x, GP2.y);
+//
+//#ifndef LimiterBasedOnlyOnGaussPoints
+//  /* Use also the nodes of the cell */
+//  GP1 = SolnPtr[0][jCell][iCell].CellGeometry().NodeNW();
+//  uQuad[8] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//
+//  GP1 = SolnPtr[0][jCell][iCell].CellGeometry().NodeNE();
+//  uQuad[9] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//
+//  GP1 = SolnPtr[0][jCell][iCell].CellGeometry().NodeSW();
+//  uQuad[10] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//
+//  GP1 = SolnPtr[0][jCell][iCell].CellGeometry().NodeSE();
+//  uQuad[11] = SolnPtr[0][jCell][iCell].SolutionAtCoordinates(GP1.x, GP1.y);
+//#endif
+//
+//  switch(Limiter) {
+//  case LIMITER_ZERO :
+//    SolnPtr[0][jCell][iCell].CellLimiter() = ZERO;
+//    break;
+//  case LIMITER_ONE :
+//    SolnPtr[0][jCell][iCell].CellLimiter() = ONE;
+//    break;
+//  case LIMITER_BARTH_JESPERSEN :
+//    SolnPtr[0][jCell][iCell].CellLimiter()=Limiter_BarthJespersen(uQuad,SolnPtr[0][jCell][iCell].CellSolution(),u0Min,u0Max,NQuad);
+//    break;
+//  case LIMITER_VENKATAKRISHNAN :
+//    SolnPtr[0][jCell][iCell].CellLimiter() = Limiter_Venkatakrishnan(uQuad,SolnPtr[0][jCell][iCell].CellSolution(),u0Min,u0Max,NQuad);
+//    break;
+//  case LIMITER_VANLEER :
+//    SolnPtr[0][jCell][iCell].CellLimiter() = Limiter_VanLeer(uQuad,SolnPtr[0][jCell][iCell].CellSolution(),u0Min,u0Max,NQuad);
+//    break;
+//  case LIMITER_VANALBADA :
+//    SolnPtr[0][jCell][iCell].CellLimiter() = Limiter_VanAlbada(uQuad,SolnPtr[0][jCell][iCell].CellSolution(),u0Min,u0Max,NQuad);
+//    break;
+//  default:
+//    SolnPtr[0][jCell][iCell].CellLimiter() = Limiter_BarthJespersen(uQuad,SolnPtr[0][jCell][iCell].CellSolution(),u0Min,u0Max,NQuad);
+//    break;
+//  } /* endswitch */
+
+  // Free memory
+  delete [] i_index; i_index = NULL;
+  delete [] j_index; j_index = NULL;
+  delete [] k_index; k_index = NULL;
+}
+
+
 
 /***********************************************************************************
 void ReconstructSolutionAndBoundary(Reconstruct1D_Input_Parameters)
@@ -2418,7 +3123,7 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 	L1Norm += SolnPtr[0][j][i].CellErrorL1();
 	L2Norm += SolnPtr[0][j][i].CellErrorL2();
 	LMaxNorm = max(LMaxNorm,SolnPtr[0][j][i].CellErrorL1()/SolnPtr[0][j][i].CellDomain());
-	Domain += SolnPtr[0][0][i].CellDomain();
+	Domain += SolnPtr[0][j][i].CellDomain();
 
 	++FinishedCell;
 	Print_Progress(FinishedCell,ProgressFrequency);
@@ -2428,13 +3133,12 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
     L2Norm = sqrt(L2Norm/Domain);
     break;
   case ThreeD:
-    /* Must be modified!!!! */
-    ProgressFrequency = (IP.iCell()*IP.jCell()*IP.kCell())/10;
+     ProgressFrequency = (IP.iCell()*IP.jCell()*IP.kCell())/10;
     if (ProgressFrequency == 0){
       ProgressFrequency = 10;
     }
 
-    for (int i=iStart(); i<=iEnd(); ++i)
+    for (int i=iStart(), FinishedCell=0; i<=iEnd(); ++i)
       for (int j=jStart(); j<=jEnd(); ++j)
 	for (int k=kStart(); k<=kEnd(); ++k){
 	  /* compute error in each cell */
@@ -2442,10 +3146,15 @@ void ComputationalDomain<SpaceDimension,GeometryType,SolutionType>::
 	  /* update norms */
 	  L1Norm += SolnPtr[k][j][i].CellErrorL1();
 	  L2Norm += SolnPtr[k][j][i].CellErrorL2();
-	  LMaxNorm = max(LMaxNorm,SolnPtr[k][j][i].CellErrorMax());
+	  LMaxNorm = max(LMaxNorm,SolnPtr[k][j][i].CellErrorL1()/SolnPtr[k][j][i].CellDomain());
+          Domain += SolnPtr[k][j][i].CellDomain();
+
+          ++FinishedCell;
+          Print_Progress(FinishedCell,ProgressFrequency);
 	}
     /* compute final expression for norms */
-    L2Norm = sqrt(L2Norm);
+    L1Norm /= Domain;
+    L2Norm = sqrt(L2Norm/Domain);
     break;
   }
 }
@@ -2763,7 +3472,7 @@ void Output_Mesh_Nodes_Tecplot(SolutionBlock & SolnBlk, InputParameters &IP)
     cout.flush();
   }
 
-  cout << "\n Writing Reconstruction2D mesh nodes to output data file(s): ";
+  cout << "\n Writing Reconstruction mesh nodes to output data file(s): ";
 
   // Write the name of the file to the console
   std::cout << output_file_name << std::endl;
@@ -2774,6 +3483,57 @@ void Output_Mesh_Nodes_Tecplot(SolutionBlock & SolnBlk, InputParameters &IP)
 
   // Write solution data
   SolnBlk.OutputMeshNodesTecplot(output_file);
+
+  // Close the output data file.
+  output_file << setprecision(6);  
+  output_file.close();
+}
+
+template<typename SolutionBlock, typename InputParameters>
+void Output_Mesh_Cells_Tecplot(SolutionBlock & SolnBlk, InputParameters &IP)
+{
+  /* open the stream for outputing */
+
+  int i;
+  char prefix[256], output_file_name[256], output_directory[30];
+  ofstream output_file;    
+
+  // Determine prefix of output data file names.
+  
+  i = 0;
+  while (1) {
+    if (IP.Output_File_Name[i] == ' ' ||
+	IP.Output_File_Name[i] == '.') break;
+    prefix[i]=IP.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(IP.Output_File_Name) ) break;
+  } // endwhile
+  prefix[i] = '\0';
+  
+  // Determine output data file name.
+  strcpy(output_file_name, prefix);
+  strcat(output_file_name, "_mesh_cells.dat");
+  
+  // Open the output data file.
+  output_file.open(output_file_name, ios::out);
+
+  if (output_file.bad()) {
+    cout << "\n Reconstruct" << IP.IP_SpaceDimension << "D ERROR:" 
+	 << " Unable to open Reconstruct" << IP.IP_SpaceDimension << "D output data file(s) for mesh geometry.\n";
+    cout.flush();
+  }
+
+  cout << "\n Writing Reconstruction mesh nodes to output data file(s): ";
+
+  // Write the name of the file to the console
+  std::cout << output_file_name << std::endl;
+  
+  // Write the title.
+  output_file << setprecision(14);
+  output_file << "TITLE = \"" << " Mesh cells for grid " << IP.Grid_Type << "\"\n";
+
+  // Write solution data
+  SolnBlk.OutputMeshCellsTecplot(output_file);
 
   // Close the output data file.
   output_file << setprecision(6);  

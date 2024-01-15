@@ -1,0 +1,371 @@
+	###################################################################
+	#-----------------------------------------------------------------#
+	#  Paramters for the simulating the subsonic flow over a cylinder #
+	#-----------------------------------------------------------------#
+	###################################################################
+
+#
+# SOLVED PROBLEM: Simulate subsonic flow over cylinder.
+#
+		##############################
+		#	DEFINE PROBLEM       #
+		##############################
+
+	##############################
+	#	DEFINE GEOMETRY      #
+	##############################
+Flow_Geometry_Type = 
+	Planar
+Grid_Type =
+	Circular_Cylinder
+Cylinder_Radius =
+        1
+Cylinder_Radius2 =
+        32
+
+	#########################
+	# SET INITIAL CONDITION #
+	#########################
+Gas_Type = 
+	AIR
+
+ICs_Type =
+        Uniform
+        # Restart
+	# Given_StartUp
+Mach_Number =
+         0.3
+Flow_Angle =
+         0
+Exact_Integration_Digits =
+        8
+
+	################################
+	#  DEFINE BOUNDARY CONDITIONS  #
+	################################
+Boundary_Conditions_Specified =
+	        ON
+BC_North =
+       Fixed
+BC_South =
+       Inviscid_Wall
+BC_West =
+       None
+BC_East =
+       None
+
+
+			###########################################
+			# SET NUMERICAL DISCRETIZATION PARAMETERS #
+			##########################################
+
+
+	#########################
+	#  SET MESH PARAMETERS  #
+	#########################
+Number_of_Blocks_Idir = 
+	1
+Number_of_Blocks_Jdir =
+	1
+Number_of_Cells_Idir = 
+        32
+#	400
+Number_of_Cells_Jdir =
+	16
+Number_of_Ghost_Cells =
+	5
+Iteration_Disturb_Mesh =
+        0
+Mesh_Stretching =
+        ON
+Mesh_Stretching_Type_Idir =
+        Linear
+Mesh_Stretching_Type_Jdir =
+        Min_Clustering
+Mesh_Stretching_Factor_Idir =
+        1.0
+Mesh_Stretching_Factor_Jdir =
+        1.01
+#        1.001
+High_Order_Boundary =
+        Off
+#        On
+Curved_Boundary_Integration =
+       Mixed_Gauss_Quad
+Gauss_Points_For_Boundary_Integration =
+       5
+Check_Mesh_Validity =
+       Off
+
+	###########################################
+	#  SET SPATIAL DISCRETIZATION PARAMETERS  #
+	###########################################
+Reconstruction_Type =
+	# Least_Squares
+	  CENO
+
+Space_Accuracy =
+	4
+	# 2
+
+Limiter_Type = 
+	 Venkatakrishnan
+	# One
+CENO_Execution_Mode =
+         Speed_Efficient
+        # Memory_Efficient
+CENO_Padding =
+         No
+CENO_Smoothness_Indicator =
+         Use_All_Neighbours
+         # Use_First_Neighbours
+CENO_Use_Geom_Weighting_For_Smoothness_Analysis =
+         Yes
+CENO_Square_Geom_Weighting =
+         Yes
+CENO_Apply_Geom_Weighting =
+         Yes
+CENO_Absolute_Epsilon =
+         5.0e-7
+CENO_Relative_Epsilon =
+         5.0e-5
+#Ref_State_Normalization = 
+#         1.225 0.0 0.0 101325.0
+CENO_Drop_Order =
+#         Yes
+         No
+CENO_Additional_Approximate_Constraints =
+         No
+CENO_Tolerance =
+         1500
+
+
+	################################
+	# SET TIME STEPPING PARAMETERS #
+	################################
+Time_Integration_Type =
+        Multistage_Optimal_Smoothing
+	# Explicit_Runge_Kutta
+	#Explicit_Predictor_Corrector
+
+N_Stage =
+         5
+	# 2
+	# 4
+
+Time_Accurate =	   	# Time accurate is OFF
+		0
+
+Local_Time_Stepping =
+		1
+
+CFL_Number =
+	0.7
+
+	# ====   Control time from this parameter  =====
+Maximum_Number_of_Time_Steps =
+0
+#        100
+
+   ############################
+   # NKS PARAMETERS
+   ############################
+GMRES_Overlap =
+0
+GMRES_Tolerance =
+1.0e-01
+NKS_Overall_Tolerance =
+1.0e-8
+GMRES_Block_Preconditioner = 
+ILUK
+#( ILUK, Diagonal)
+GMRES_ILUK_Level_of_Fill = 
+4
+GMRES_Check
+ON
+# Implict Euler Startup
+NKS_Finite_Time_Step =
+ON
+NKS_Finite_Time_Step_Initial_CFL =
+10.0
+NKS_Finite_Time_Step_Max_CFL =
+1e9
+#1e12
+GMRES_Normalization = 
+ON
+Jacobian_Order =
+#First_Order_Inviscid_Roe
+First_Order_Inviscid_HLLE
+
+Full_Multigrid =
+0
+##### IMPLICIT PARAMETERS ###############
+Maximum_Number_of_NKS_Iterations =
+0
+#100
+Maximum_Number_of_GMRES_Iterations =
+80
+GMRES_Restart =
+80
+
+	####################################
+	#  DEFINE FLUX CALCULATION METHOD  #
+	####################################
+Flux_Function_Type =
+	 Roe
+	# Godunov                 
+	# Roe                            
+	# Rusanov                        
+	# HLLE                           
+	# Linde                          
+	# HLLC                           
+
+Flux_Calculation_Method_Specified =
+         No
+#         Yes
+#Flux_West_Method = 
+#        Constrained_Reconstruction
+#Flux_East_Method =
+#        Constrained_Reconstruction
+Flux_South_Method =
+        Constrained_Reconstruction
+#Flux_North_Method =
+#        Constrained_Reconstruction
+
+
+	###################################
+	#      SET AMR PARAMETERS         #
+	###################################
+
+AMR =                  # ZERO --> No AMR is performed
+	OFF
+
+AMR_Frequency =
+	100
+
+Number_of_Uniform_Mesh_Refinements =
+	1
+Number_of_Initial_Mesh_Refinements =
+        0
+Threshold_for_Refinement =
+        0.9
+Threshold_for_Coarsening =
+        0.2
+
+	###################################
+	#      SET MPI PARAMETERS         #
+	###################################
+Number_of_Blocks_Per_Processor =
+        5000
+
+	#########################
+	# SET OUTPUT PARAMETERS #
+	#########################
+Output_File_Name = 
+        Euler2D/UnitTests/QuadBlockData/CircularCylinderGrid
+Tecplot_Output_Format =
+         Brief
+	# Detail
+	# Full
+	# Extended
+#Tecplot_Data_Precision =
+        # Single
+	# Double
+
+	###################################
+	# 	RESTART PARAMETERS  	  #
+	###################################
+Restart_Solution_Save_Frequency = 
+	500
+
+	#########################
+	#  ACCURACY ASSESSMENT  #
+	#########################
+Accuracy_Assessment_Exact_Digits =
+        10
+Accuracy_Assessment_Parameter = 
+        1
+Accuracy_Assessment_Near_Curved_Boundaries =
+        Ignore_Cells
+Accuracy_Assessment_Method =
+#         Entropy_Variation
+        Calculate_Lift_And_Drag
+
+	#######################
+	#   Execute program   #
+	#######################
+
+Execute 	# Execute program
+
+#######################
+# Write output
+#######################
+Write_Output_Mesh
+Write_Output     
+Write_Output_Cells
+Write_Output_Nodes
+
+#Write_Restart   # Prepare restart
+
+#Print_Accuracy  # Accuracy study
+
+Terminate
+###########################################################
+# Second run
+###########################################################
+
+ICs_Type =
+	 Restart
+Maximum_Number_of_Time_Steps =
+        6500
+
+	#######################
+	#   Execute program   #
+	#######################
+
+Execute # 
+Write_Output     
+Write_Output_Cells
+
+Write_Restart   # Prepare restart
+
+Print_Accuracy  # Accuracy study
+
+Terminate
+###########################################################
+# Third run
+###########################################################
+
+Reconstruction_Type =
+	 CENO
+
+Maximum_Number_of_Time_Steps =
+        2000
+
+	#######################
+	#   Execute program   #
+	#######################
+
+Continue	# 
+Write_Output     
+Write_Output_Cells
+
+Write_Restart   # Prepare restart
+
+Print_Accuracy  # Accuracy study
+
+Terminate
+
+###########################################################
+# Third run
+###########################################################
+Number_of_Cells_Idir = 
+        400
+
+Execute
+Print_Accuracy
+Write_Restart   # Prepare restart
+
+Terminate	# Terminate execution
+
+###########################################################

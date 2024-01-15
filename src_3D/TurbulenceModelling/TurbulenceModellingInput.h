@@ -51,10 +51,9 @@ class Turbulence_Modelling_Input_Parameters{
     char SFS_model[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];     //!< Sub-filter-scale model , default = Smagorinsky + Yoshizawa
     int i_SFS_model;                                            //!< Sub-filter-scale model , default = Smagorinsky + Yoshizawa
     double smagorinsky_coefficient;                             //!< SFS smagorinsky coefficient
-    char filter_type[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];   //!< Filter type : default = implicit filtering
-    int i_filter_type;                                          //!< Filter type : default = implicit filtering
-    double FGR;                                                 //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
-    double Filter_Width;                                        //!< Constant filter width
+    double SFS_FGR;                                             //!< filter-grid ratio used in the SFS model // NOT same as FGR of Explicit Filters
+    double Filter_Width;
+
     //@}
     
     //@{ @name Spectrum related input parameters:
@@ -82,19 +81,16 @@ class Turbulence_Modelling_Input_Parameters{
       // LES parameters
       strcpy(SFS_model, "Smagorinsky");
       i_SFS_model = SFS_MODEL_SMAGORINSKY;
-      strcpy(filter_type, "Implicit");
       smagorinsky_coefficient = 0.18;
-      i_filter_type = FILTER_TYPE_IMPLICIT;
-      FGR = TWO;
-      Filter_Width = ZERO;
-    
+      Filter_Width = 0.0;
+      SFS_FGR = DEFAULT;
+      
       // Spectrum parameters
       strcpy(spectrum,"Pope");
       i_spectrum = SPECTRUM_POPE;
       LLR = 6;
       TKE = 150.0;
       rescale_spectrum = OFF;
-
 
       // Reacting LES parameters
       Laminar_Flame_Speed = 0.38;

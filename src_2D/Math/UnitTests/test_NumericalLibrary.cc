@@ -2244,36 +2244,35 @@ namespace tut
     double AcceptError;	        // Acceptable error
     double MapleResult;		// Result obtained with Maple
     double DummyParam;
-
-
-    class TestClass{
-    private:
-      TestClass();
-      double val;
-
-    public:
-      typedef double (TestClass::*MemberFunctionType1D)(const double &);
-      typedef double (TestClass::*MemberFunctionType2D)(const double &, const double &);
-      typedef double (TestClass::*MemberFunctionType3D)(const double &, const double &, const double &);
-
-      TestClass(double _val_): val(_val_){}
-
-      // member functions
-      double SolutionAtCoordinate(const double &coord){return val*coord;}
-      double SquareSolutionAtCoordinate(const double &coord){return val*val*coord*coord;}
-
-      double SolutionAtCoordinate(const double &coord, const double & coord2){return val*coord*coord2;}
-      double SquareSolutionAtCoordinate(const double &coord, const double &coord2){return val*val*coord2*coord2;}
-      
-      double SolutionAtCoordinate(const double &coord, const double &coord2, const double &coord3){
-	return val*coord*coord2*coord3;
-      }
-      double SquareSolutionAtCoordinate(const double &coord, const double &coord2, const double &coord3){
-	return val*val*coord2*coord2*coord3*coord3;
-      }
-    };
-
   };
+
+  class TestClass{
+  private:
+    TestClass();
+    double val;
+
+  public:
+    typedef double (TestClass::*MemberFunctionType1D)(const double &);
+    typedef double (TestClass::*MemberFunctionType2D)(const double &, const double &);
+    typedef double (TestClass::*MemberFunctionType3D)(const double &, const double &, const double &);
+
+    TestClass(double _val_): val(_val_){}
+
+    // member functions
+    double SolutionAtCoordinate(const double &coord){return val*coord;}
+    double SquareSolutionAtCoordinate(const double &coord){return val*val*coord*coord;}
+
+    double SolutionAtCoordinate(const double &coord, const double & coord2){return val*coord*coord2;}
+    double SquareSolutionAtCoordinate(const double &coord, const double &coord2){return val*val*coord2*coord2;}
+      
+    double SolutionAtCoordinate(const double &coord, const double &coord2, const double &coord3){
+      return val*coord*coord2*coord3;
+    }
+    double SquareSolutionAtCoordinate(const double &coord, const double &coord2, const double &coord3){
+      return val*val*coord2*coord2*coord3*coord3;
+    }
+  };
+
 
   typedef test_group<Data_ErrorSubroutines> ErrorSubroutines_TestSuite;
   typedef ErrorSubroutines_TestSuite::object  ErrorSub_Object;
@@ -2569,6 +2568,58 @@ namespace tut
     ensure_distance("Result", NumericResultA, 610.53786993983962760, 1.0e-13);
   }
 
+
+
+
+  // ******************************************************
+  //                 TEST SUITE: RootFinding_TestSuite
+  // ******************************************************
+  // Data used for testing
+  // **********************
+  class Data_RootFinding: public TestData{
+  public:
+    double TheoreticResult;	// Result obtained with the exact integration
+    double NumericResultA, NumericResultB, NumericResult;
+    double StartPointX;		// One end of the interval (X dir)
+    double EndPointX;		// The other end of the interval (X dir)
+    double AcceptError;	        // Acceptable error
+    double MapleResult;		// Result obtained with Maple
+    double DummyParam;
+    int Flag;
+  };
+
+  typedef test_group<Data_RootFinding> RootFinding_TestSuite;
+  typedef RootFinding_TestSuite::object  RootFinding_Object;
+
+  /******************************************************************************************************
+   ******************************************************************************************************
+   *                      ********    *******        ***       ********        ***                      *
+   *                         **       **           **   **        **         **   **                    *
+   *                         **       **          **              **        **                          *
+   *                         **       *******      *****          **          *****                     *
+   *                         **       **                **        **               **                   *
+   *                         **       **            *    **       **          *   **                    *
+   *                         **       *******        ****         **           ****                     *
+   ******************************************************************************************************
+   ******************************************************************************************************/
+
+  /* Test 1:*/
+  template<>
+  template<>
+  void RootFinding_Object::test<1>()
+  {
+    set_test_name("Check Ridder's method");
+    
+    // Find the root for equation (Test_Example19(x) = 0)
+    StartPointX = 5.0;
+    EndPointX = 8.0;
+
+    Flag = ridder(Test_Example19, StartPointX, EndPointX, 100, 10, NumericResult); 
+
+    ensure_distance("Result", NumericResult, 6.283185307259324, AcceptedError(6.283185307259324));
+  }
+
+
 }
 
 
@@ -2589,3 +2640,6 @@ tut::AGQ3D_TestSuite AGQ3D_Test("Integration:AdaptiveGaussianQuadrature() in 3D"
 
 // ErrorSubroutines
 tut::ErrorSubroutines_TestSuite ErrorSubroutines_Test("Numerical Library:Error functors & wrappers");
+
+// RootFinding
+tut::RootFinding_TestSuite RootFinding_Test("Numerical Library:Root Equation Finding");

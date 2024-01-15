@@ -65,7 +65,7 @@ NavierStokes2D_Quad_Block* Deallocate(NavierStokes2D_Quad_Block *Soln_ptr,
  * added to facilitate grid management.                               *
  *                                                                    *
  **********************************************************************/
-NavierStokes2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block **InitMeshBlk,
+NavierStokes2D_Quad_Block* CreateInitialSolutionBlocks(Grid2D_Quad_Block_HO **InitMeshBlk,
 						       NavierStokes2D_Quad_Block *Soln_ptr,
 						       NavierStokes2D_Input_Parameters &Input_Parameters,
 						       QuadTreeBlock_DataStructure &QuadTree,
@@ -144,6 +144,30 @@ void ICs(NavierStokes2D_Quad_Block *Soln_ptr,
     }
   }
 
+}
+
+/******************************************************//**
+ * Routine: Linear_Reconstruction
+ *                                                      
+ * Perform piecewise limited linear reconstruct for 
+ * the solution of a 1D array of 2D quadrilateral multi-block 
+ * solution blocks.
+ ********************************************************/
+void Linear_Reconstruction(NavierStokes2D_Quad_Block *Soln_ptr,
+			   AdaptiveBlock2D_List &Soln_Block_List,
+			   NavierStokes2D_Input_Parameters &Input_Parameters){
+  
+  int i;
+  
+  /* Prescribe boundary data for each solution block. */
+
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      Linear_Reconstruction(Soln_ptr[i],
+			    Input_Parameters.i_Reconstruction,
+			    Input_Parameters.i_Limiter);
+    } /* endif */
+  }  /* endfor */
 }
 
 /**********************************************************************

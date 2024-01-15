@@ -82,6 +82,7 @@ SRC_COMMON              += $(CFFC_2D_Path)/Utilities/EpsilonTol.cc
 
 # Common from other directories:
 SRC_COMMON              += Reconstruction/CENO_Tolerances.cc
+SRC_COMMON              += Reconstruction/CENO_CFRS_ExecutionMode.cc
 
 
 #--- SRC_COMMON_TESTS ----
@@ -96,7 +97,8 @@ endif
 # Tests for Containers:
 SRC_CONTAINERS_TESTS = $(CONTAINERS_TEST_DIR)/test_PointWiseSolution.cc \
 		       $(CONTAINERS_TEST_DIR)/test_TaylorDerivatives.cc \
-		       Reconstruction/UnitTests/test_ComputationalCell.cc
+		       Reconstruction/UnitTests/test_ComputationalCell.cc \
+		       Reconstruction/UnitTests/test_ComputationalDomain.cc
 
 # Tests for SubGrid:
 SRC_SUBGRID_TESTS := test_SubGridMesh.cc
@@ -169,7 +171,7 @@ SRC_RECONSTRUCTION2D	+= $(SRC_GRID2D) $(SRC_2D_TEST_FUNCTIONS)
 ##################################################################################
 ##################################################################################
 # Grid:
-SRC_GRID3D		= 
+SRC_GRID3D		= Cell3D.cc Grid3DHexaBlock.cc
 SRC_GRID3D		:= $(addprefix $(GRID3D_DIR)/, $(SRC_GRID3D))
 #
 
@@ -180,7 +182,7 @@ SRC_3D_TEST_FUNCTIONS   := $(addprefix $(TESTFUNCTIONS_DIR)/, $(SRC_3D_TEST_FUNC
 
 # Reconstruction:
 #*********************************
-SRC_RECONSTRUCTION3D	= Reconstruction3DSolver.cc
+SRC_RECONSTRUCTION3D	= Reconstruct3DInput.cc Reconstruction3DSolver.cc
 SRC_RECONSTRUCTION3D	:= $(addprefix  $(RECONSTRUCTION3D_DIR)/, $(SRC_RECONSTRUCTION3D))
 
 #*********************************

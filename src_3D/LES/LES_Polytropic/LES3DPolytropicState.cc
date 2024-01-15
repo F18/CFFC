@@ -18,7 +18,7 @@
 SFS_model_Parameters LES3D_Polytropic_pState::SFS_model = {SFS_MODEL_SMAGORINSKY,
                                                            10000000};
 Filter_Parameters LES3D_Polytropic_pState::filter = {2,
-                                                     FILTER_TYPE_IMPLICIT};
+                                                     Explicit_Filter_Constants::IMPLICIT_FILTER};
 
 void LES3D_Polytropic_pState::Set_LES_parameters(SFS_model_Parameters &SFS_model_,Filter_Parameters &filter_){
     SFS_model = SFS_model_;
@@ -483,7 +483,30 @@ LES3D_Polytropic_cState  LES3D_Polytropic_pState::FluxViscous_n(const LES3D_Poly
 }
 
 
-
+// n-direction viscous flux and heat flux used in the evaluation of the 
+// high order fluxes at the Gauss Quadrature Points
+LES3D_Polytropic_cState  LES3D_Polytropic_pState::FluxViscous_HighOrder_n(LES3D_Polytropic_pState &W_face,
+                                                                          const LES3D_Polytropic_pState &dWdx_face,
+                                                                          const LES3D_Polytropic_pState &dWdy_face,
+                                                                          const LES3D_Polytropic_pState &dWdz_face,
+                                                                          const double &Volume,
+                                                                          const Vector3D &norm) {
+    // Evaluate viscous flux
+    if (fabs(norm.y) < TOLER && fabs(norm.z) < TOLER) {
+        return (W_face.Fvx(dWdx_face, dWdy_face, dWdz_face, Volume)*norm.x);
+        
+    } else if (fabs(norm.x) < TOLER && fabs(norm.z) < TOLER) {
+        return (W_face.Fvy(dWdx_face, dWdy_face, dWdz_face, Volume)*norm.y);
+        
+    } else if (fabs(norm.x) < TOLER && fabs(norm.y) < TOLER) {
+        return (W_face.Fvz(dWdx_face, dWdy_face, dWdz_face, Volume)*norm.z);
+        
+    } else {
+        return (W_face.Fvx(dWdx_face, dWdy_face, dWdz_face, Volume)*norm.x +
+                W_face.Fvy(dWdx_face, dWdy_face, dWdz_face, Volume)*norm.y +
+                W_face.Fvz(dWdx_face, dWdy_face, dWdz_face, Volume)*norm.z);
+    }
+}
 
 
 
@@ -634,7 +657,7 @@ double LES3D_Polytropic_pState::SFS_Kinetic_Energy(const LES3D_Polytropic_pState
 SFS_model_Parameters LES3D_Polytropic_cState::SFS_model = {SFS_MODEL_SMAGORINSKY,
                                                            0.18};
 Filter_Parameters LES3D_Polytropic_cState::filter = {2,
-                                                     FILTER_TYPE_IMPLICIT};
+                                                     Explicit_Filter_Constants::IMPLICIT_FILTER};
 
 void LES3D_Polytropic_cState::Set_LES_parameters(SFS_model_Parameters &SFS_model_, Filter_Parameters &filter_){
     SFS_model = SFS_model_;

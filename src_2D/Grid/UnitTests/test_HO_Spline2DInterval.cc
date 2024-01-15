@@ -521,7 +521,7 @@ namespace tut
     tol = 1.0e-13;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3); //
+    Data_Spline2DInterval_HO::GeometricMoments GeomCoeff(3); //
 
     P1.x = 1.1000;  P1.y = 2.2300;
     P2.x = 10.2390; P2.y = 5.32434;
@@ -558,7 +558,7 @@ namespace tut
     tol = 1.0e-13;
 
     // Initialize variables
-    GeometricMoments LineInt1(3), LineInt2(3), LineIntTotal(3);
+    Data_Spline2DInterval_HO::GeometricMoments LineInt1(3), LineInt2(3), LineIntTotal(3);
     Spline2DInterval_HO SI1, SI2;
 
     double MapleSolution[10];
@@ -647,7 +647,7 @@ namespace tut
     tol = 1.0e-6;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3);
+    Data_Spline2DInterval_HO::GeometricMoments GeomCoeff(3);
 
     Angle1 = 0.0; Angle2 = 18.0;
     Radius = 1.0;
@@ -696,7 +696,7 @@ namespace tut
     tol = 1.0e-6;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3);
+    Data_Spline2DInterval_HO::GeometricMoments GeomCoeff(3);
 
     Angle1 = 0.0; Angle2 = 9.0;
     Radius = 1.0;
@@ -897,7 +897,7 @@ namespace tut
     tol = 1.0e-13;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3); //
+    Data_Spline2DInterval_HO::GeometricMoments GeomCoeff(3); //
 
     P1.x = 1.1000;  P1.y = 2.2300;
     P2.x = 10.2390; P2.y = 5.32434;
@@ -937,7 +937,7 @@ namespace tut
     tol = 1.0e-13;
 
     // Initialize variables
-    GeometricMoments LineInt1(3), LineInt2(3), LineIntTotal(3);
+    Data_Spline2DInterval_HO::GeometricMoments LineInt1(3), LineInt2(3), LineIntTotal(3);
     Spline2DInterval_HO SI1, SI2;
 
     double MapleSolution[10];
@@ -1032,7 +1032,7 @@ namespace tut
     tol = 1.0e-6;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3);
+    Data_Spline2DInterval_HO::GeometricMoments GeomCoeff(3);
 
     Angle1 = 0.0; Angle2 = 18.0;
     Radius = 1.0;
@@ -1084,7 +1084,7 @@ namespace tut
     tol = 1.0e-6;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3);
+    Data_Spline2DInterval_HO::GeometricMoments GeomCoeff(3);
 
     Angle1 = 0.0; Angle2 = 9.0;
     Radius = 1.0;
@@ -1697,7 +1697,7 @@ namespace tut
     tol = 1.0e-6;
 
     // Initialize variables
-    GeometricMoments GeomCoeff(3);
+    Data_Spline2DInterval_HO::GeometricMoments GeomCoeff(3);
     Vector2D Shift = Vector2D(-1.0e2, 2.0e5);
 
     Angle1 = 0.0; Angle2 = 9.0;
@@ -1773,13 +1773,78 @@ namespace tut
     // Initialize interval
     SInfo.InitializeInterval(S,S.Xp[0],S.Xp[9],2);
 
-    double Int;
+    double Int(0);
 
     // Analytic result
     AnalyticResult = exp(V1.y)*(exp(V2.y - V1.y) - 1.0);
 
     // Numerical result
     Int = SInfo.IntegrateFunctionWithRespectToY(TestFunction,Int);
+
+    // == check
+    ensure_distance("Integral value", Int, AnalyticResult, AcceptedError(AnalyticResult, 1.0e-6));
+
+  }
+
+  /* Test 38: */
+  template<>
+  template<>
+  void Spline2DInterval_HO_object::test<38>()
+  {
+    set_test_name("IntegrateFunctionProjectionOnNormalDirections() along a line");
+
+    // Set 5-point Gauss integration
+    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+    V1 = Vector2D(0.0);
+    V2 = Vector2D(4.0,3.0);
+
+    // Create Spline
+    S.Create_Spline_Line(V1,V2,10);
+
+    // Initialize interval
+    SInfo.InitializeInterval(S,S.Xp[0],S.Xp[9],2);
+
+    double IntX(3.0), IntY(5.0), Length(0);
+
+    // Analytic result
+    AnalyticResult = 31.8092282053127796;
+
+    // Numerical result
+    SInfo.IntegrateFunctionProjectionOnNormalDirections(S, TestFunction, IntX, IntY, Length);
+
+    // == check
+    ensure_distance("X Component Integral", IntX, 3.0 + AnalyticResult*0.6, AcceptedError(3.0 + AnalyticResult*0.6, 1.0e-6));
+    ensure_distance("Y Component Integral", IntY, 5.0 + AnalyticResult*(-0.8), AcceptedError(5.0 + AnalyticResult*(-0.8), 1.0e-6));
+  }
+
+  /* Test 39: */
+  template<>
+  template<>
+  void Spline2DInterval_HO_object::test<39>()
+  {
+    set_test_name("IntegrateFunctionAlongInterval() along a line");
+
+    // Set 5-point Gauss integration
+    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+    V1 = Vector2D(0.0);
+    V2 = Vector2D(4.0,3.0);
+
+    // Create Spline
+    S.Create_Spline_Line(V1,V2,10);
+
+    // Initialize interval
+    SInfo.InitializeInterval(S,S.Xp[0],S.Xp[9],2);
+
+    double Int(0);
+
+    // Analytic result
+    AnalyticResult = 31.8092282053127796;
+
+    // Numerical result
+    Int = SInfo.IntegrateFunctionAlongInterval(TestFunction,
+					       Int);
 
     // == check
     ensure_distance("Integral value", Int, AnalyticResult, AcceptedError(AnalyticResult, 1.0e-6));

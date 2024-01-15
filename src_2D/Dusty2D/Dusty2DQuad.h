@@ -187,6 +187,12 @@
 class Dusty2D_Quad_Block{
 private:
 public:
+
+  //! @name Defined public types:
+  //@{
+  typedef Grid2D_Quad_Block GridType;
+  //@}
+
   //@{ @name Solution state arrays:
   Dusty2D_pState              **W; //!< Primitive solution state.
   Dusty2D_cState              **U; //!< Conserved solution state.

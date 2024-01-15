@@ -43,123 +43,94 @@ void HighOrder2D<SOLN_STATE>::ComputeUnlimitedSolutionReconstruction(Soln_Block_
   // Set the freeze limiter flag. It's value affects the reset monotonicity data!
   _freeze_limiter = SolnBlk.Freeze_Limiter;
 
-  // Carry out the solution reconstruction for cells in the specified range.
-  for ( j  = StartJ ; j <= EndJ ; ++j ) {
-    for ( i = StartI ; i <= EndI ; ++i ) {
+  /* If reconstruction with pseudo-inverse is required,
+     check if the associated grid encountered modifications
+     since the pseudo-inverse was computed last time. */
+  if ( IsPseudoInverseAllocated() && 
+       ( ObserverInteriorCellGeometryState != Geom->getInteriorStateTracker() ||
+	 ObserverGhostCellGeometryState != Geom->getGhostStateTracker() || 
+	 ObserverCornerGhostCellGeometryState != Geom->getCornerGhostStateTracker() ||
+	 (IsPseudoInversePreComputed() == false) ) ){
 
-      // Reset the monotonicity data
-      ResetMonotonicityData(i,j);
-      
-      // Set the stencil of points used for reconstruction
-      SetReconstructionStencil(i, j, i_index, j_index);
-
-      // Compute the reconstruction for the current cell
-      ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
-							  i, j, i_index, j_index);
-      
-    } /* endfor */
-  }/* endfor */
+    // Require pseudo-inverse update
+    MustUpdatePseudoInverse();
+    ComputeReconstructionPseudoInverse();
+  }
 
   // Check whether constrained reconstruction is required anywhere in the block.
   if ( !_constrained_block_reconstruction ){
-    // No need to perform constrained reconstructions
-    return;
-  }
 
+    // Carry out the solution reconstruction using the central stencil for cells in the specified range.
+    for ( j  = StartJ ; j <= EndJ ; ++j ) {
+      for ( i = StartI ; i <= EndI ; ++i ) {
 
-  /***************************************************************************
-   *    Perform constrained unlimited high-order solution reconstruction     *
-   **************************************************************************/
+	// Reset the monotonicity data
+	ResetMonotonicityData(i,j);
+      
+	// Set the stencil of points used for reconstruction
+	SetReconstructionStencil(i, j, i_index, j_index);
 
-  // Check WEST boundary
-  if (_constrained_WEST_reconstruction){
-    // Add constrained reconstruction here
-    for (j = StartJ_ConstrWest; j <= EndJ_ConstrWest; ++j){
-      for (i = StartI_ConstrWest; i <= EndI_ConstrWest; ++i){
+	// Compute the reconstruction for the current cell
+	ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
+							    i, j, i_index, j_index);
+      
+      } /* endfor */
+    }/* endfor */
+
+  } else {
+    
+    /*****************************************************************************************
+     *    Depending on the ReconstructionTypeMap value for a given cell,                     *
+     *    perform constrained or unconstrained unlimited high-order solution reconstruction, *
+     *    or no reconstruction at all.                                                       *
+     ****************************************************************************************/
+
+    for (j = StartJ; j <= EndJ; ++j){
+      for (i = StartI; i <= EndI; ++i){
 	
 	// Reset the monotonicity data
 	ResetMonotonicityData(i,j);
 	
-	// Set the modified stencil of points used for reconstruction
-	SetConstrainedReconstructionStencil(i, j, i_index_ave, j_index_ave);
-	
-	// Compute the constrained reconstruction for the current cell
-	ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
-							  i, j, i_index_ave, j_index_ave);
+	switch (ReconstructionTypeMap[i][j]){
+	case 'r':		// "Regular reconstruction" (i.e. uses the central stencil)
+	  // Set the stencil of points used for reconstruction
+	  SetReconstructionStencil(i, j, i_index, j_index);
+
+	  // Compute the reconstruction for the current cell
+	  ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
+							      i, j, i_index, j_index);
+	  break;
+	  
+	case 'm':		// "Modified reconstruction" (i.e. uses a deviated stencil but it has no constraints)
+	case 'c':		// "Constrained reconstruction" (i.e. uses a deviated stencil and it has constraints)
+	  // Set the biased stencil of points used for reconstruction
+	  SetDeviatedReconstructionStencil(i, j, i_index_ave, j_index_ave, rings);
+
+	  // Compute the constrained reconstruction for the current cell
+	  ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
+							    i, j, i_index_ave, j_index_ave);
+	  break;
+	  
+	case 'n':		// "No reconstruction" (i.e. cell for which no reconstruction should be performed)
+	  // Do nothing
+	  break;
+	}
 
       }	// endfor
     }// endfor
-  } 
-
-  // Check EAST boundary
-  if (_constrained_EAST_reconstruction){
-    // Add constrained reconstruction here
-    for (j = StartJ_ConstrEast; j <= EndJ_ConstrEast; ++j){
-      for (i = StartI_ConstrEast; i <= EndI_ConstrEast; ++i){
-	
-	// Reset the monotonicity data
-	ResetMonotonicityData(i,j);
-	
-	// Set the modified stencil of points used for reconstruction
-	SetConstrainedReconstructionStencil(i, j, i_index_ave, j_index_ave);
-	
-	// Compute the constrained reconstruction for the current cell
-	ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
-							  i, j, i_index_ave, j_index_ave);
-
-      }	// endfor
-    }// endfor
-  } 
-
-  // Check NORTH boundary
-  if (_constrained_NORTH_reconstruction){
-    // Add constrained reconstruction here
-    for (j = StartJ_ConstrNorth; j <= EndJ_ConstrNorth; ++j){
-      for (i = StartI_ConstrNorth; i <= EndI_ConstrNorth; ++i){
-	
-	// Reset the monotonicity data
-	ResetMonotonicityData(i,j);
-	
-	// Set the modified stencil of points used for reconstruction
-	SetConstrainedReconstructionStencil(i, j, i_index_ave, j_index_ave);
-	
-	// Compute the constrained reconstruction for the current cell
-	ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
-							  i, j, i_index_ave, j_index_ave);
-
-      }	// endfor
-    }// endfor
-  } 
-
-  // Check SOUTH boundary
-  if (_constrained_SOUTH_reconstruction){
-    // Add constrained reconstruction here
-    for (j = StartJ_ConstrSouth; j <= EndJ_ConstrSouth; ++j){
-      for (i = StartI_ConstrSouth; i <= EndI_ConstrSouth; ++i){
-	
-	// Reset the monotonicity data
-	ResetMonotonicityData(i,j);
-	
-	// Set the modified stencil of points used for reconstruction
-	SetConstrainedReconstructionStencil(i, j, i_index_ave, j_index_ave);
-	
-	// Compute the constrained reconstruction for the current cell
-	ComputeConstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
-							  i, j, i_index_ave, j_index_ave);
-
-      }	// endfor
-    }// endfor
-  }
-
+    
+  } // endif (_constrained_block_reconstruction)
 }
 
 /*! 
  * Compute the pseudo-inverse of the left-hand-side term in the 
  * unlimited k-exact high-order reconstruction for all computational
  * cells based on the information provided by the associated grid.
- *
- * \note The pseudo-inverse in not determined for cells which use 
- * constrained reconstruction.
+ * For cells influenced by the presence of constrained boundary
+ * conditions, either the pseudo-inverse of the noncentral reconstruction
+ * is computed (if no constraints are imposed), or the LHS matrix 
+ * generated by the conservation of mean quantities in the supporting stencil.
+ * 
  */
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(void){
@@ -174,25 +145,83 @@ void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(void){
       // There is no need to calculate pseudo-inverse
       // Confirm the pseudo-inverse calculation
       _calculated_psinv = true;
+
+      // Memorise the corresponding state of the grid
+      ObserverInteriorCellGeometryState = Geom->getInteriorStateTracker();
+      ObserverGhostCellGeometryState = Geom->getGhostStateTracker();
+      ObserverCornerGhostCellGeometryState = Geom->getCornerGhostStateTracker();
       return;
     }
 
-    // Calculate the pseudo-inverse for cells in the specified range
-    for ( j  = StartJ ; j <= EndJ ; ++j ) {
-      for ( i = StartI ; i <= EndI ; ++i ) {
-	
-	// Set the stencil of points used for reconstruction
-	SetReconstructionStencil(i, j, i_index, j_index);
+    // Check whether constrained reconstruction is required anywhere in the block.
+    if ( !_constrained_block_reconstruction ){
 
-	// Compute the pseudo-inverse for the current cell
-	ComputeCellReconstructionPseudoInverse(i, j, i_index, j_index);
+      // Calculate the pseudo-inverse using the central stencil for cells in the specified range
+      for ( j  = StartJ ; j <= EndJ ; ++j ) {
+	for ( i = StartI ; i <= EndI ; ++i ) {
+	
+	  // Set the stencil of points used for reconstruction
+	  SetReconstructionStencil(i, j, i_index, j_index);
+
+	  // Compute the pseudo-inverse for the current cell
+	  ComputeCellReconstructionPseudoInverse(i, j, i_index, j_index);
+	}/* endfor */
       }/* endfor */
-    }/* endfor */
+
+    } else {
+
+      // Calculate the pseudo-inverse for a block that has some constrained cells.
+      // The ReconstructionTypeMap variable indicates which cells are constrained, 
+      // which once have only the stencil modified and which ones use the central stencil.
+
+      /********************************************************************************************
+       * Calculate the matrices that need to be stored in order to speed up the high-order solution
+       * reconstruction of the cells affected by the presence of constrained boundaries
+       * (i.e. calculate the pseudo-inverse of the unconstrained unlimited reconstruction
+       * for those cells that don't have constraints but use a biased supporting stencil,
+       * calculate the LHS matrix associate with the least-squares problem and the mean conservation
+       * for those cells that have also constraint equations.
+       ********************************************************************************************/
+
+      for ( j  = StartJ ; j <= EndJ ; ++j ) {
+	for ( i = StartI ; i <= EndI ; ++i ) {
+	  
+	  switch (ReconstructionTypeMap[i][j]){
+	    
+	  case 'r':		// "Regular reconstruction" (i.e. uses the central stencil)
+	    // Set the stencil of points used for reconstruction
+	    SetReconstructionStencil(i, j, i_index, j_index);
+	    
+	    // Compute the pseudo-inverse for the current cell
+	    ComputeCellReconstructionPseudoInverse(i, j, i_index, j_index);
+	    break;
+
+	  case 'm':		// "Modified reconstruction" (i.e. uses a deviated stencil but it has no constraints)
+	  case 'c':		// "Constrained reconstruction" (i.e. uses a deviated stencil and it has constraints)
+	    // Get matrix for the current cell (i.e. pseudo-inverse or LHS)
+	    ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries(i,j);
+	    break;
+
+	  case 'n':		// "No reconstruction" (i.e. cell for which no reconstruction should be performed)
+	    // Do nothing
+	    break;
+	  }
+
+	}/* endfor */
+      }/* endfor */
+      
+    } // endif (_constrained_block_reconstruction)
 
     
     // Confirm the pseudo-inverse calculation
     _calculated_psinv = true;
-  }
+
+    // Memorise the corresponding state of the grid
+    ObserverInteriorCellGeometryState = Geom->getInteriorStateTracker();
+    ObserverGhostCellGeometryState = Geom->getGhostStateTracker();
+    ObserverCornerGhostCellGeometryState = Geom->getCornerGhostStateTracker();
+
+  } // endif ( IsPseudoInverseAllocated() && !IsPseudoInversePreComputed() )
 
 }
 
@@ -227,9 +256,9 @@ void HighOrder2D<SOLN_STATE>::EnforceMonotonicityToNonSmoothInterpolants(Soln_Bl
   if (CENO_Execution_Mode::CENO_DROP_ORDER){
     // Carry on actions required to enforce monotonicity
 
-    // Switch to limited piecewise linear reconstruction those interpolants detected as non-smooth
-    for ( j  = StartJ_LPWL ; j <= EndJ_LPWL ; ++j ) {
-      for ( i = StartI_LPWL ; i <= EndI_LPWL ; ++i ) {
+    // Switch to limited piecewise linear reconstruction those interior interpolants detected as non-smooth
+    for ( j  = JCl ; j <= JCu ; ++j ) {
+      for ( i = ICl ; i <= ICu ; ++i ) {
       
 	if ( IsThereAnyNonSmoothHighOrderReconstruction(i,j) ){
 	  // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
@@ -244,92 +273,189 @@ void HighOrder2D<SOLN_STATE>::EnforceMonotonicityToNonSmoothInterpolants(Soln_Bl
 
     // Check whether reconstruction based flux calculation is required anywhere in the block.
     if ( !_constrained_block_reconstruction ){
-      // All cells involved in flux calculation have been checked for non-smooth interpolants.
-      // No need to do anything more.
-      return;
-    }
 
+      // Switch to limited piecewise linear reconstruction those ghost cells 
+      // involved in flux calculation and detected as non-smooth
 
-    /* Motivation of the algorithm below:
-       If reconstruction based flux calculation is required at some of the boundaries
-       and non-smooth solution interpolants are detected near these boundaries the 
-       flux is not going to be computed based on the high-order interpolant but on
-       solving a Riemann problem at the interface.
-       The purpose of the algorithm below is to ensure that a limited piecewise linear
-       reconstruction is available in the first ghost cells that have interface with an
-       interior cell detected with inadequate interpolant. Thus, when the flux calculation 
-       is performed, the Riemann problem for those interfaces can be solved.
-       Note that no interior cells are going to be affected by the code that follows!
-       Note also that trying to obtain a high-order interpolant in these ghost cells is not
-       justified based on accuracy and computational efficiency reasons.
-    */
-
-    // Check WEST boundary
-    if (_constrained_WEST_reconstruction){
-      for (j = JCl; j <= JCu; ++j){
-	if ( IsThereAnyNonSmoothHighOrderReconstruction(ICl,j) ) { // check the interior cell
-	  // flag all reconstructions of the adjacent ghost cell as non-smooth
-	  FlagCellReconstructionsAsNonSmooth(ICl-1,j);
-	  // perform a limited piecewise linear reconstruction
-	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
-							      ICl-1,j,
-							      Limiter,
-							      ReconstructedSoln);
-	}// endif
-      }// enfor 
-    }// endif 
-
-    // Check EAST boundary
-    if (_constrained_EAST_reconstruction){
-      for (j = JCl; j <= JCu; ++j){
-	if ( IsThereAnyNonSmoothHighOrderReconstruction(ICu,j) ) { // check the interior cell
-	  // flag all reconstructions of the adjacent ghost cell as non-smooth
-	  FlagCellReconstructionsAsNonSmooth(ICu+1,j);
-	  // perform a limited piecewise linear reconstruction
-	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
-							      ICu+1,j,
-							      Limiter,
-							      ReconstructedSoln);
-	}// endif
-      }// enfor 
-    }// endif 
-
-    // Check NORTH boundary
-    if (_constrained_NORTH_reconstruction){
-      for (i = ICl; i <= ICu; ++i){
-	if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCu) ) { // check the interior cell
-	  // flag all reconstructions of the adjacent ghost cell as non-smooth
-	  FlagCellReconstructionsAsNonSmooth(i,JCu+1);
-	  // perform a limited piecewise linear reconstruction
-	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
-							      i,JCu+1,
-							      Limiter,
-							      ReconstructedSoln);
-
-	}// endif
-      }// enfor 
-    }// endif 
-
-    // Check SOUTH boundary
-    if (_constrained_SOUTH_reconstruction){
-      for (i = ICl; i <= ICu; ++i){
-	if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCl) ) { // check the interior cell
-	  // flag all reconstructions of the adjacent ghost cell as non-smooth
-	  FlagCellReconstructionsAsNonSmooth(i,JCl-1);
-	  // perform a limited piecewise linear reconstruction
+      // == South and North boundaries ==
+      for (i = ICl; i<=ICu; ++i){
+	// == South bnd.
+	if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCl-1) ){
+	  // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
 	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
 							      i,JCl-1,
 							      Limiter,
 							      ReconstructedSoln);
+	}
+	
+	// == North bnd.
+	if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCu+1) ){
+	  // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+							      i,JCu+1,
+							      Limiter,
+							      ReconstructedSoln);
+	}
+      }	// endfor
 
-	}// endif
-      }// enfor 
-    }// endif 
+      // == West and East boundaries ==
+      for (j = JCl; j<=JCu; ++j){
+	// == West bnd.
+	if ( IsThereAnyNonSmoothHighOrderReconstruction(ICl-1,j) ){
+	  // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+							      ICl-1,j,
+							      Limiter,
+							      ReconstructedSoln);
+	}
+	
+	// == East bnd.
+	if ( IsThereAnyNonSmoothHighOrderReconstruction(ICu+1,j) ){
+	  // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	  ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+							      ICu+1,j,
+							      Limiter,
+							      ReconstructedSoln);
+	}
+      }	// endfor
+      
+    } else {
+
+      // === Some boundaries require reconstruction based flux calculation
+
+      /* Motivation of the algorithm below:
+	 If reconstruction based flux calculation is required at some of the boundaries
+	 and non-smooth solution interpolants are detected near these boundaries the 
+	 flux is not going to be computed based on the high-order interpolant but on
+	 solving a Riemann problem at the interface.
+	 The purpose of the algorithm below is to ensure that a limited piecewise linear
+	 reconstruction is available in the first ghost cells that have interface with an
+	 interior cell detected with inadequate interpolant. Thus, when the flux calculation 
+	 is performed, the Riemann problem for those interfaces can be solved.
+	 Note that no interior cells are going to be affected by the code that follows!
+	 Note also that trying to obtain a high-order interpolant in these ghost cells is not
+	 justified based on accuracy and computational efficiency reasons.
+      */
+
+      // Check WEST boundary
+      if (WestBnd.IsReconstructionConstrained()){
+	for (j = JCl; j <= JCu; ++j){
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(ICl,j) ) { // check the interior cell
+	    // flag all reconstructions of the adjacent ghost cell as non-smooth
+	    FlagCellReconstructionsAsNonSmooth(ICl-1,j);
+	    // perform a limited piecewise linear reconstruction
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								ICl-1,j,
+								Limiter,
+								ReconstructedSoln);
+	  }// endif
+	}// enfor 
+
+      } else {
+	// Check the ghost cells near this boundary
+	for (j = JCl; j<=JCu; ++j){
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(ICl-1,j) ){
+	    // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								ICl-1,j,
+								Limiter,
+								ReconstructedSoln);
+	  }
+	} // endfor
+
+      }// endif (WestBnd)
+
+      // Check EAST boundary
+      if (EastBnd.IsReconstructionConstrained()){
+	for (j = JCl; j <= JCu; ++j){
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(ICu,j) ) { // check the interior cell
+	    // flag all reconstructions of the adjacent ghost cell as non-smooth
+	    FlagCellReconstructionsAsNonSmooth(ICu+1,j);
+	    // perform a limited piecewise linear reconstruction
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								ICu+1,j,
+								Limiter,
+								ReconstructedSoln);
+	  }// endif
+	}// enfor 
+
+      } else {
+	// Check the ghost cells near this boundary	
+	for (j = JCl; j <= JCu; ++j){
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(ICu+1,j) ){
+	    // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								ICu+1,j,
+								Limiter,
+								ReconstructedSoln);
+	  }
+	} // endfor
+
+      }// endif (EastBnd)
+
+      // Check NORTH boundary
+      if (NorthBnd.IsReconstructionConstrained()){
+	for (i = ICl; i <= ICu; ++i){
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCu) ) { // check the interior cell
+	    // flag all reconstructions of the adjacent ghost cell as non-smooth
+	    FlagCellReconstructionsAsNonSmooth(i,JCu+1);
+	    // perform a limited piecewise linear reconstruction
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								i,JCu+1,
+								Limiter,
+								ReconstructedSoln);
+	  }// endif
+	}// enfor 
+
+      } else {
+	// Check the ghost cells near this boundary	
+	for (i = ICl; i <= ICu; ++i){ 
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCu+1) ){
+	    // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								i,JCu+1,
+								Limiter,
+								ReconstructedSoln);
+	  }
+	} // endfor
+
+      }// endif (NorthBnd)
+
+      // Check SOUTH boundary
+      if (SouthBnd.IsReconstructionConstrained()){
+	for (i = ICl; i <= ICu; ++i){
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCl) ) { // check the interior cell
+	    // flag all reconstructions of the adjacent ghost cell as non-smooth
+	    FlagCellReconstructionsAsNonSmooth(i,JCl-1);
+	    // perform a limited piecewise linear reconstruction
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								i,JCl-1,
+								Limiter,
+								ReconstructedSoln);
+	  }// endif
+	}// enfor 
+
+      } else {
+	// Check the ghost cells near this boundary	
+	for (i = ICl; i <= ICu; ++i){ 
+	  if ( IsThereAnyNonSmoothHighOrderReconstruction(i,JCl-1) ){
+	    // One or more solution variables need to have the interpolant switched to a limited piecewise linear one.
+	    ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk,
+								i,JCl-1,
+								Limiter,
+								ReconstructedSoln);
+	  }
+	} // endfor
+
+      }// endif (SouthBnd)
+
+    } // endif (_constrained_block_reconstruction)
+
 
   } else {
     /* Reset monotonicity flags for boundary cells near splines which require reconstruction based flux calculation.
        If Riemann based flux calculation is desired there is nothing to be done.
-     */
+    */
 
     // Check whether reset of monotonicity flags is required anywhere in the block.
     if ( !_constrained_block_reconstruction ){
@@ -338,7 +464,7 @@ void HighOrder2D<SOLN_STATE>::EnforceMonotonicityToNonSmoothInterpolants(Soln_Bl
     }
 
     // Check WEST boundary
-    if (_constrained_WEST_reconstruction){
+    if (WestBnd.IsReconstructionConstrained()){
       for (j = JCl - 1; j <= JCu + 1; ++j){
 	// reset the monotonicity flag for the interior cell
 	ResetMonotonicityData(ICl,j);
@@ -346,7 +472,7 @@ void HighOrder2D<SOLN_STATE>::EnforceMonotonicityToNonSmoothInterpolants(Soln_Bl
     } 
 
     // Check EAST boundary
-    if (_constrained_EAST_reconstruction){
+    if (EastBnd.IsReconstructionConstrained()){
       for (j = JCl - 1; j <= JCu + 1; ++j){
 	// reset the monotonicity flag for the interior cell
 	ResetMonotonicityData(ICu,j);
@@ -354,7 +480,7 @@ void HighOrder2D<SOLN_STATE>::EnforceMonotonicityToNonSmoothInterpolants(Soln_Bl
     } 
 
     // Check NORTH boundary
-    if (_constrained_NORTH_reconstruction){
+    if (NorthBnd.IsReconstructionConstrained()){
       for (i = ICl - 1; i <= ICu + 1; ++i){
 	// reset the monotonicity flag for the interior cell
 	ResetMonotonicityData(i,JCu);
@@ -362,7 +488,7 @@ void HighOrder2D<SOLN_STATE>::EnforceMonotonicityToNonSmoothInterpolants(Soln_Bl
     } 
 
     // Check SOUTH boundary
-    if (_constrained_SOUTH_reconstruction){
+    if (SouthBnd.IsReconstructionConstrained()){
       for (i = ICl - 1; i <= ICu + 1; ++i){
 	// reset the monotonicity flag for the interior cell
 	ResetMonotonicityData(i,JCl);
@@ -458,6 +584,11 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 
     // Use the pseudo-inverse to calculate the least-squares reconstruction
     
+    // Ensure that Delta_U vector has proper dimension
+    if ( Delta_U.size() != (StencilSize - 1) ){
+      Delta_U.newsize(StencilSize - 1);
+    }
+
     // START: Compute for every parameter the high-order approximation
     // ***************************************************************
     for (parameter = 1; parameter <= NumberOfVariables() ; ++parameter){
@@ -507,7 +638,7 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
     double IntSum(0.0);
 
     // Ensure that enough memory is allocated for the current least-squares problem.
-    if (A.size(0) != StencilSize) {
+    if (A.size(0) != StencilSize-1) {
       // Resize the matrices accordingly
       A.newsize(StencilSize-1,NumberOfTaylorDerivatives()-1);
       All_Delta_U.newsize(StencilSize-1,NumberOfVariables());
@@ -675,6 +806,7 @@ void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverse(const int &
   // Ensure that the LHS matrix is formated correctly.
   // Memory shouldn't be allocated here, only the dimensions should be defined properly.
   Cell_LHS_Inv(iCell,jCell).newsize(StencilSize - 1, NumberOfTaylorDerivatives() - 1);
+  GeomWeights(iCell,jCell).resize(StencilSize);
 
 
   // START:   Set the LHS of the linear system 
@@ -756,6 +888,76 @@ void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverse(const int &
 }
 
 /*! 
+ * Compute the pseudo-inverse of the left-hand-side term in the 
+ * unlimited k-exact high-order reconstruction for a specified
+ * computational cell based on the information provided by the
+ * associated grid. 
+ * The reconstruction of this cell is influence by the presence
+ * of curved boundaries.
+ * If the pseudo-inverse cannot be computed because boundary condition
+ * constraints must be added to the linear system, the LHS matrix of the 
+ * k-exact least-squares reconstruction is stored instead.
+ *
+ * \note This routine must be called ONLY IF the block is constrained (i.e. ReconstructionTypeMap has been created)
+ */
+template<class SOLN_STATE>
+void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries(const int &iCell,
+											      const int &jCell){
+
+  ostringstream ErrorMsg;
+
+  // Set the biased stencil of points used for the reconstruction of the current cell
+  SetDeviatedReconstructionStencil(iCell, jCell,
+				   i_index_ave, j_index_ave,
+				   rings);
+    
+
+  if (ReconstructionTypeMap[iCell][jCell] == 'm'){
+    /* There are NO constraints for this cell,
+       so a pseudo-inverse with the biased stencil may be computed.
+       The reconstruction of this cell has only the stencil MODIFIED (i.e. deviated from central). */
+
+    // Check overdeterminancy
+    if ( i_index_ave.size() > NumberOfTaylorDerivatives() ){
+      // The pseudo-inverse CAN be computed
+
+      // Compute the pseudo-inverse for the current cell
+      ComputeCellReconstructionPseudoInverse(iCell, jCell, i_index_ave, j_index_ave);
+	      
+    } else {
+      // The pseudo-inverse CANNOT be computed
+      // Throw an error
+      // Set the error message
+      ErrorMsg << "HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries() ERROR!"
+	       << " The pseudo-inverse couldn't be computed for cell (" 
+	       << iCell << "," << jCell << ")";
+      throw runtime_error(ErrorMsg.str());
+    }
+
+  } else if (ReconstructionTypeMap[iCell][jCell] == 'c'){
+    /* There are constraints for this cell, so the pseudo-inverse CANNOT be computed.
+       Instead, the least-squares part of the reconstruction matrix will be stored.
+       That is, the mean conservation equation in the reconstructed cell (first equation)
+       and the approximate equations for the neighbouring cells. */
+	    
+    /********* Generate the exact and approximate mean conservation equations ***********/
+    /************************************************************************************/
+    Set_LHS_MeanValueConservation_Equations(iCell,jCell,
+					    i_index_ave, j_index_ave,
+					    Cell_LHS_Inv(iCell,jCell),
+					    GeomWeights(iCell,jCell));
+  } else {
+    // The pseudo-inverse SHOULDN'T be computed with this routine
+    // Throw an error
+    // Set the error message
+    ErrorMsg << "HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverseNearConstrainedBoundaries() ERROR!"
+	     << "This routine should be used to compute pseudo-inverse only for 'modified' and 'constrained' reconstructions"
+	     << "The reconstruction type of cell (" << iCell << "," << jCell << ") is different than those!"; 
+    throw runtime_error(ErrorMsg.str());    
+  } // endif (ReconstructionTypeMap[iCell][jCell])  
+}
+
+/*! 
  * Performs the reconstruction of a limited piecewise 
  * linear solution state within a given cell (iCell,jCell) of   
  * the computational mesh for the specified             
@@ -763,7 +965,7 @@ void HighOrder2D<SOLN_STATE>::ComputeCellReconstructionPseudoInverse(const int &
  * approach is used in the evaluation of the unlimited  
  * solution gradients.  Several slope limiters may be   
  * used.
- * The high-order derivatives of the variable flag as unfit
+ * The high-order derivatives of the variables flagged as unfit
  * are replaced with the first-order ones computed with
  * this subroutine. 
  */
@@ -853,6 +1055,7 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
 
     }//endif(RecOrder())
 
+
     // Calculate slope limiters or used the frozen ones.
     if (!SolnBlk.Freeze_Limiter) {
 
@@ -874,9 +1077,16 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
       // Get North face GQPs
       n = 0;
       if (faceNorth){
-	// used GQPs from BndSplineInfo
-	Geom->BndNorthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
-      } else {
+
+	if (jCell == JCu){ // this is an interior cell
+	  // used GQPs from BndNorthSplineInfo
+	  Geom->BndNorthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+	} else { // this is a ghost cell
+	  // used GQPs from BndSouthSplineInfo
+	  Geom->BndSouthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+	}
+	
+      }	else {
 	// used GQPs from straight edge
 	Geom->getGaussQuadPointsFaceN(iCell,jCell,&GQP[n],GQP_North);
       }
@@ -885,8 +1095,16 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
       
       // Get West face GQPs
       if (faceWest){
-	// used GQPs from BndSplineInfo
-	Geom->BndWestSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+
+	if (iCell == ICl){ // this is an interior cell
+	  // used GQPs from BndWestSplineInfo
+	  Geom->BndWestSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+	} else { // this is a ghost cell
+	  // used GQPs from BndEastSplineInfo
+	  Geom->BndEastSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+	}
+	
+	
       } else {
 	// used GQPs from straight edge
 	Geom->getGaussQuadPointsFaceW(iCell,jCell,&GQP[n],GQP_West);
@@ -896,8 +1114,15 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
       
       // Get South face GQPs
       if (faceSouth){
-	// used GQPs from BndSplineInfo
-	Geom->BndSouthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+
+	if (jCell == JCl){ // this is an interior cell
+	  // used GQPs from BndSouthSplineInfo
+	  Geom->BndSouthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+	} else { // this is a ghost cell
+	  // used GQPs from BndNorthSplineInfo
+	  Geom->BndNorthSplineInfo[iCell].CopyGQPoints(&GQP[n]);
+	}
+
       } else {
 	// used GQPs from straight edge
 	Geom->getGaussQuadPointsFaceS(iCell,jCell,&GQP[n],GQP_South);
@@ -907,8 +1132,15 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
       
       // Get East face GQPs
       if (faceEast){
-	// used GQPs from BndSplineInfo
-	Geom->BndEastSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+
+	if (iCell == ICu){ // this is an interior cell
+	  // used GQPs from BndEastSplineInfo
+	  Geom->BndEastSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+	} else { // this is a ghost cell
+	  // used GQPs from BndWestSplineInfo
+	  Geom->BndWestSplineInfo[jCell].CopyGQPoints(&GQP[n]);
+	}
+
       } else {
 	// used GQPs from straight edge
 	Geom->getGaussQuadPointsFaceE(iCell,jCell,&GQP[n],GQP_East);
@@ -1023,6 +1255,7 @@ ComputeLimitedPiecewiseLinearSolutionReconstruction(Soln_Block_Type &SolnBlk,
     CellTaylorDeriv(iCell,jCell).Limiter().Vacuum();
     
   } /* endif */
+
 }
 
 
@@ -1093,8 +1326,6 @@ ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
  * affected by the presence of a boundary condition enforced with constrained 
  * reconstruction.
  * The mean quantity conservation is also enforced as a constraint.
- *
- * \note This routine is customized for advection-diffusion state class!
  */
 template<class SOLN_STATE>
 template<class Soln_Block_Type>
@@ -1106,265 +1337,95 @@ ComputeConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 						  const IndexType & i_index,
 						  const IndexType & j_index) {
 
-  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
-  int TotalNumberOfExactlySatisfiedConstraints(0),
-    TotalNumberOfExactlySatisfiedEquations(1), // account for average conservation in cell (iCell,jCell)
-    TotalNumberOfApproximatelySatisfiedConstraints(0),
-    TotalNumberOfApproximatelySatisfiedEquations(i_index.size() - 1); // account for average conservation in neighbour cells
-
-  int Temp, cell, n;
-  int NumGQP(Geom->getNumGQP());
-
-  IndexType ParameterIndex(1,1); //< for advection-diffusion!!!
-
-
-
   // == Check if the reconstruction polynomial is piecewise constant
   if (RecOrder() == 0){
-    // *********  Assign the average solution to D00 ***********
-    CellTaylorDerivState(iCell,jCell,0) = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
     // There is no need to calculate the reconstruction
     return;
   }
 
-  // Reset the memory pools
-  Constraints_Loc.clear();
-  Constraints_Normals.clear();
-  Constraints_BCs.clear();
-  Approx_Constraints_Loc.clear();
-  Approx_Constraints_Normals.clear();
-  Approx_Constraints_BCs.clear();
+  int constrGQP_W, constrGQP_E, constrGQP_N, constrGQP_S; // number of constrained points on each edge
+  bool IC_Flag(false), RC_Flag(false);			  // flags to indicate the type of constraints encountered
+
+  /**********************************************************************************
+   *  STEP 1. DETERMINE THE NUMBER AND TYPE OF CONSTRAINTS THAT NEED TO BE IMPOSED  *
+   *********************************************************************************/
   
-
-  // ========  Determine the number of exactly satisfied constraints and fetch the data  ==========
-  // Check North cell face
-  Temp = Geom->NumOfConstrainedGaussQuadPoints_North(iCell,jCell);
-  if (Temp > 0){
-    // Constraints detected on the North face
-    TotalNumberOfExactlySatisfiedConstraints += Temp;
-
-    // Fetch the data
-    if (Geom->BndNorthSplineInfo != NULL){
-      Geom->BndNorthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndNorthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
-    } else {
-      Geom->addGaussQuadPointsFaceN(iCell,jCell,Constraints_Loc,NumGQP);
-      for (n = 0; n < NumGQP; ++n){
-	Constraints_Normals.push_back(Geom->nfaceN(iCell,jCell));
-      }
-    }
-    
-    Constraints_BCs.push_back(&SolnBlk.BC_NorthCell(iCell));
+  // Determine the number of constraints for the West boundary.
+  constrGQP_W = SolnBlk.Grid.NumOfConstrainedGaussQuadPoints_West(iCell,jCell);
+  if (constrGQP_W > 0){
+    // Ensure physical constraints (i.e. proper boundary conditions)
+    SolnBlk.EnsurePhysicalBCsConstraints(WEST,jCell);
+    // Identify what type of constraints are imposed by this face
+    RC_Flag = RC_Flag || SolnBlk.BC_WestCell(jCell).IsThereAnyRelationalConstraintRequired();
+    IC_Flag = IC_Flag || SolnBlk.BC_WestCell(jCell).IsThereAnyIndividualConstraintRequired();
   }
 
-  // Check South cell face
-  Temp = Geom->NumOfConstrainedGaussQuadPoints_South(iCell,jCell);
-  if (Temp > 0){
-    // Constraints detected on the South face
-    TotalNumberOfExactlySatisfiedConstraints += Temp;
-
-    // Fetch the data
-    if (Geom->BndSouthSplineInfo != NULL){
-      Geom->BndSouthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndSouthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
-    } else {
-      Geom->addGaussQuadPointsFaceS(iCell,jCell,Constraints_Loc,NumGQP);
-      for (n = 0; n < NumGQP; ++n){
-	Constraints_Normals.push_back(Geom->nfaceS(iCell,jCell));
-      }
-    }
-    
-    Constraints_BCs.push_back(&SolnBlk.BC_SouthCell(iCell));
+  // Determine the number of constraints for the South boundary
+  constrGQP_S = SolnBlk.Grid.NumOfConstrainedGaussQuadPoints_South(iCell,jCell);
+  if (constrGQP_S > 0){
+    // Ensure physical constraints (i.e. proper boundary conditions)
+    SolnBlk.EnsurePhysicalBCsConstraints(SOUTH,iCell);
+    // Identify what type of constraints are imposed by this face
+    RC_Flag = RC_Flag || SolnBlk.BC_SouthCell(iCell).IsThereAnyRelationalConstraintRequired();
+    IC_Flag = IC_Flag || SolnBlk.BC_SouthCell(iCell).IsThereAnyIndividualConstraintRequired();
   }
+
+  // Determine the number of constraints for the East boundary
+  constrGQP_E = SolnBlk.Grid.NumOfConstrainedGaussQuadPoints_East(iCell,jCell);
+  if (constrGQP_E > 0){
+    // Ensure physical constraints (i.e. proper boundary conditions)
+    SolnBlk.EnsurePhysicalBCsConstraints(EAST,jCell);
+    // Identify what type of constraints are imposed by this face
+    RC_Flag = RC_Flag || SolnBlk.BC_EastCell(jCell).IsThereAnyRelationalConstraintRequired();
+    IC_Flag = IC_Flag || SolnBlk.BC_EastCell(jCell).IsThereAnyIndividualConstraintRequired();
+  }
+    
+  // Determine the number of constraints for the North boundary
+  constrGQP_N = SolnBlk.Grid.NumOfConstrainedGaussQuadPoints_North(iCell,jCell);
+  if (constrGQP_N > 0){
+    // Ensure physical constraints (i.e. proper boundary conditions)
+    SolnBlk.EnsurePhysicalBCsConstraints(NORTH,iCell);
+    // Identify what type of constraints are imposed by this face
+    RC_Flag = RC_Flag || SolnBlk.BC_NorthCell(iCell).IsThereAnyRelationalConstraintRequired();
+    IC_Flag = IC_Flag || SolnBlk.BC_NorthCell(iCell).IsThereAnyIndividualConstraintRequired();
+  }
+
+
+  /***********************************************************************************************
+   * STEP 2. PROCEED WITH A DIFFERENT ALGORITHM DEPENDING ON THE TYPE OF ENCOUNTERED CONSTRAINTS *
+   **********************************************************************************************/
   
-  // Check East cell face
-  Temp = Geom->NumOfConstrainedGaussQuadPoints_East(iCell,jCell);
-  if (Temp > 0){
-    // Constraints detected on the East face
-    TotalNumberOfExactlySatisfiedConstraints += Temp;
-
-    // Fetch the data
-    if (Geom->BndEastSplineInfo != NULL){
-      Geom->BndEastSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndEastSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
-    } else {
-      Geom->addGaussQuadPointsFaceE(iCell,jCell,Constraints_Loc,NumGQP);
-      for (n = 0; n < NumGQP; ++n){
-	Constraints_Normals.push_back(Geom->nfaceE(iCell,jCell));
-      }
-    }
-    
-    Constraints_BCs.push_back(&SolnBlk.BC_EastCell(jCell));
-  }
-
-  // Check West cell face
-  Temp = Geom->NumOfConstrainedGaussQuadPoints_West(iCell,jCell);
-  if (Temp > 0){
-    // Constraints detected on the West face
-    TotalNumberOfExactlySatisfiedConstraints += Temp;
-
-    // Fetch the data
-    if (Geom->BndWestSplineInfo != NULL){
-      Geom->BndWestSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
-      Geom->BndWestSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);      
-    } else {
-      Geom->addGaussQuadPointsFaceW(iCell,jCell,Constraints_Loc,NumGQP);
-      for (n = 0; n < NumGQP; ++n){
-	Constraints_Normals.push_back(Geom->nfaceW(iCell,jCell));
-      }
-    }
-    
-    Constraints_BCs.push_back(&SolnBlk.BC_WestCell(jCell));
-  }
-
-
-  if (CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_ADDITIONAL_APPROXIMATE_CONSTRAINTS == ON && 
-      CENO_Execution_Mode::CENO_CONSTRAINED_RECONSTRUCTION_WITH_EXTENDED_BIASED_STENCIL == OFF) {
-
-    // ======= Determine the number of approximately satisfied constraints and fetch the data ======
-    for (cell = 1; cell < i_index.size(); ++cell){ // for each neighbour cell
-    
-      // Check North neighbour cell face
-      Temp = Geom->NumOfConstrainedGaussQuadPoints_North(i_index[cell],j_index[cell]);
-      if (Temp > 0){
-	// Constraints detected on the North face
-	TotalNumberOfApproximatelySatisfiedConstraints += Temp;
-
-	// Fetch the data
-	if (Geom->BndNorthSplineInfo != NULL){
-	  Geom->BndNorthSplineInfo[i_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
-	  Geom->BndNorthSplineInfo[i_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
-	} else {
-	  Geom->addGaussQuadPointsFaceN(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
-	  for (n = 0; n < NumGQP; ++n){
-	    Approx_Constraints_Normals.push_back(Geom->nfaceN(i_index[cell],j_index[cell]));
-	  }
-	}
-    
-	Approx_Constraints_BCs.push_back(&SolnBlk.BC_NorthCell(i_index[cell]));
-      }
-
-      // Check South neighbour cell face
-      Temp = Geom->NumOfConstrainedGaussQuadPoints_South(i_index[cell],j_index[cell]);
-      if (Temp > 0){
-	// Constraints detected on the South face
-	TotalNumberOfApproximatelySatisfiedConstraints += Temp;
-
-	// Fetch the data
-	if (Geom->BndSouthSplineInfo != NULL){
-	  Geom->BndSouthSplineInfo[i_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
-	  Geom->BndSouthSplineInfo[i_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
-	} else {
-	  Geom->addGaussQuadPointsFaceS(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
-	  for (n = 0; n < NumGQP; ++n){
-	    Approx_Constraints_Normals.push_back(Geom->nfaceS(i_index[cell],j_index[cell]));
-	  }
-	}
-    
-	Approx_Constraints_BCs.push_back(&SolnBlk.BC_SouthCell(i_index[cell]));
-      }
-  
-      // Check East neighbour cell face
-      Temp = Geom->NumOfConstrainedGaussQuadPoints_East(i_index[cell],j_index[cell]);
-      if (Temp > 0){
-	// Constraints detected on the East face
-	TotalNumberOfApproximatelySatisfiedConstraints += Temp;
-
-	// Fetch the data
-	if (Geom->BndEastSplineInfo != NULL){
-	  Geom->BndEastSplineInfo[j_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
-	  Geom->BndEastSplineInfo[j_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
-	} else {
-	  Geom->addGaussQuadPointsFaceE(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
-	  for (n = 0; n < NumGQP; ++n){
-	    Approx_Constraints_Normals.push_back(Geom->nfaceE(i_index[cell],j_index[cell]));
-	  }
-	}
-    
-	Approx_Constraints_BCs.push_back(&SolnBlk.BC_EastCell(j_index[cell]));
-      }
-
-      // Check West neighbour cell face
-      Temp = Geom->NumOfConstrainedGaussQuadPoints_West(i_index[cell],j_index[cell]);
-      if (Temp > 0){
-	// Constraints detected on the West face
-	TotalNumberOfApproximatelySatisfiedConstraints += Temp;
-
-	// Fetch the data
-	if (Geom->BndWestSplineInfo != NULL){
-	  Geom->BndWestSplineInfo[j_index[cell]].CopyGQPoints(Approx_Constraints_Loc);
-	  Geom->BndWestSplineInfo[j_index[cell]].CopyNormalGQPoints(Approx_Constraints_Normals);      
-	} else {
-	  Geom->addGaussQuadPointsFaceW(i_index[cell],j_index[cell],Approx_Constraints_Loc,NumGQP);
-	  for (n = 0; n < NumGQP; ++n){
-	    Approx_Constraints_Normals.push_back(Geom->nfaceW(i_index[cell],j_index[cell]));
-	  }
-	}
-    
-	Approx_Constraints_BCs.push_back(&SolnBlk.BC_WestCell(j_index[cell]));
-      }
-    } // endfor (cell)
-
+  if (RC_Flag && IC_Flag){
+    // There are both relational and individual constraints
+    ComputeRelationallyAndIndividuallyConstrainedUnlimitedSolutionReconstruction(SolnBlk,
+										 ReconstructedSoln,
+										 iCell, jCell,
+										 i_index, j_index,
+										 constrGQP_W, constrGQP_S,
+										 constrGQP_E, constrGQP_N);
+  } else if (RC_Flag){
+    // There are only relational constraints
+    ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(SolnBlk,
+								  ReconstructedSoln,
+								  iCell, jCell,
+								  i_index, j_index,
+								  constrGQP_W, constrGQP_S,
+								  constrGQP_E, constrGQP_N);
+  } else if (IC_Flag){
+    // There are only individual constraints
+    ComputeIndividuallyConstrainedUnlimitedSolutionReconstruction(SolnBlk,
+								  ReconstructedSoln,
+								  iCell, jCell,
+								  i_index, j_index,
+								  constrGQP_W, constrGQP_S,
+								  constrGQP_E, constrGQP_N);
+  } else {
+    // There are no constraints
+    ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk,
+							ReconstructedSoln,
+							iCell, jCell,
+							i_index, j_index);
   } // endif
-
-  /******** Determine dimensions of the least-squares problem and set matrices accordingly ************/
-  /****************************************************************************************************/
-  TotalNumberOfExactlySatisfiedEquations += TotalNumberOfExactlySatisfiedConstraints;
-  TotalNumberOfApproximatelySatisfiedEquations += TotalNumberOfApproximatelySatisfiedConstraints;
-
-  A_Assembled.newsize(TotalNumberOfExactlySatisfiedEquations + TotalNumberOfApproximatelySatisfiedEquations,
-		      NumberOfTaylorDerivatives());
-  All_U_Assembled.newsize(TotalNumberOfExactlySatisfiedEquations + TotalNumberOfApproximatelySatisfiedEquations,
-			  NumberOfVariables());
-
-  /************ Generate exactly satisfied individual constraints for UNCOUPLED variables *************/
-  /****************************************************************************************************/
-  Generalized_IndividualConstraints_Equations(SolnBlk,
-					      iCell, jCell,
-					      Constraints_Loc,
-					      Constraints_Normals,
-					      Constraints_BCs,
-					      A_Assembled, All_U_Assembled,
-					      ParameterIndex,
-					      0, 0);
-
-
-  /******** Generate approximately satisfied individual constraints for UNCOUPLED variables ***********/
-  /****************************************************************************************************/
-  Generalized_IndividualConstraints_Equations(SolnBlk,
-					      iCell, jCell,
-					      Approx_Constraints_Loc,
-					      Approx_Constraints_Normals,
-					      Approx_Constraints_BCs,
-					      A_Assembled, All_U_Assembled,
-					      ParameterIndex,
-					      TotalNumberOfExactlySatisfiedEquations, 0);
-
-  /******************** Generate the exact and approximate mean conservation equations ***************************/
-  /***************************************************************************************************************/
-  Set_MeanValueConservation_Equations(SolnBlk,
-				      ReconstructedSoln,
-				      iCell,jCell,
-				      i_index, j_index,
-				      A_Assembled, All_U_Assembled,
-				      ParameterIndex,
-				      TotalNumberOfExactlySatisfiedConstraints,
-				      TotalNumberOfExactlySatisfiedEquations + TotalNumberOfApproximatelySatisfiedConstraints,
-				      0);
-
-
-  /************* Obtain solution to the constrained least-square problem *************/
-  /***********************************************************************************/
-  Solve_Constrained_LS_Householder(A_Assembled,
-				   All_U_Assembled,
-				   X_Assembled,
-				   TotalNumberOfExactlySatisfiedEquations);
-
-  // Update the coefficients D (derivatives)
-  //**************************************************
-  for (n=0; n<=CellTaylorDeriv(iCell,jCell).LastElem(); ++n){
-    CellTaylorDerivState(iCell,jCell,n)[1] = X_Assembled(n,0);
-  }//endfor
 
 }
 
@@ -1495,8 +1556,135 @@ Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
 }
 
 /*!
+ * Generate the LHS of the least-squares problem associated with the 
+ * reconstruction procedure and write the values at the specified locations.
+ * This matrix reflects the conservation of mean value in the control
+ * volumes of cells specified by (i_index,j_index).
+ * The row associated with cell (iCell,jCell) represents a constraint and    
+ * therefore it must be satisfied exactly.
+ * The rest of the system is approximately solved in the least squares sense.
+ *                                                                          
+ * \note It is assumed that the (i_index[0],j_index[0]) is equal to          
+ *       (iCell,jCell). That is, the first line of A is a constraint!!!
+ * The approximate equations are filled in the rest of the matrix.
+ *
+ * \param iCell i-index of the reconstructed cell
+ * \param jCell j-index of the reconstructed cell
+ * \param A the LHS matrix
+ * \param CellGeometricWeights the array of geometric weights
+ *
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::
+Set_LHS_MeanValueConservation_Equations(const int &iCell, const int &jCell,
+					const IndexType & i_index, const IndexType & j_index,
+					DenseMatrix & A,
+					DoubleArrayType & GeometricWeights){
+
+
+  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+
+  int StencilSize(i_index.size());
+  Vector2D *DeltaCellCenters;              /* stores the difference between the cell center of
+					      neighbour cells and the one of (i,j) cell.
+					      The first value is 0!!! */
+  int IndexSumY, IndexSumX, P1, P2;
+  double CombP1X, CombP2Y;
+  double PowDistanceYC, PowDistanceXC;
+  int cell, i;
+  double IntSum(0.0);
+  double MaxWeight(0.0);
+
+  // Allocate memory
+  DeltaCellCenters = new Vector2D [StencilSize];
+
+  // Ensure that enough memory is allocated for the current least-squares problem.
+  if (A.size(0) != StencilSize || A.size(1) != NumberOfTaylorDerivatives()) {
+    // Resize the matrix accordingly
+    A.newsize(StencilSize,NumberOfTaylorDerivatives());
+  }
+  if (GeometricWeights.size() != StencilSize){
+    // Resize the vector accordingly
+    GeometricWeights.resize(StencilSize);
+  }
+
+  // START:   Set the LHS of the linear system 
+  // *****************************************************
+
+  // ==== Set the geometric weight associated with the reconstructed cell
+  GeometricWeights[0] = 1;
+
+  // Step1. Compute the normalized geometric weights
+  for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
+    
+    /* Compute the X and Y component of the distance between
+       the cell centers of the neighbour and the reconstructed cell */
+    DeltaCellCenters[cell] = CellCenter(i_index[cell],j_index[cell]) - CellCenter(iCell,jCell);
+    
+    /* Compute the geometric weight based on the centroid distance */
+    CENO_Geometric_Weighting(GeometricWeights[cell], DeltaCellCenters[cell].abs());
+    
+    /* Compute the maximum geometric weight (this is used for normalization) */
+    MaxWeight = max(MaxWeight, GeometricWeights[cell]);
+  }
+
+  // Step 2. Set the constraint equation
+  for (i=0; i <= CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+    A(0,i) = Geom->CellGeomCoeffValue(iCell,jCell,i);
+  }
+
+  // Step 3. Set the approximate equations
+  for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
+
+    // compute the normalized geometric weight
+    GeometricWeights[cell] /= MaxWeight;
+
+    // *** SET the matrix A of the linear system (LHS) ***
+    /* compute for each derivative the corresponding entry in the matrix of the linear system */
+    for (i=0; i<=CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+      // build the row of the matrix
+      P1 = CellTaylorDeriv(iCell,jCell,i).P1();  // identify P1
+      P2 = CellTaylorDeriv(iCell,jCell,i).P2();  // identify P2
+      A(cell,i) = 0.0;                      // set sumation variable to zero
+      CombP2Y = 1.0;                        // the binomial coefficient "nC k" for k=0 is 1
+      PowDistanceYC = 1.0; 	            // initialize PowDistanceYC
+
+      // Compute geometric integral over the neighbour's domain
+      for (IndexSumY = 0; IndexSumY<=P2; ++IndexSumY){
+	CombP1X = 1.0;       // the binomial coefficient "nC k" for k=0 is 1
+	PowDistanceXC = 1.0; // initialize PowDistanceXC
+	IntSum = 0.0;	     // reset internal sumation variable
+
+	for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
+	  IntSum += ( CombP1X*PowDistanceXC*
+		      Geom->CellGeomCoeffValue(i_index[cell],j_index[cell],P1-IndexSumX,P2-IndexSumY) );
+	    
+	  // update the binomial coefficients
+	  CombP1X = (P1-IndexSumX)*CombP1X/(IndexSumX+1);  // The index is still the old one => expression for "nC k+1"
+	  PowDistanceXC *= DeltaCellCenters[cell].x;       // Update PowDistanceXC
+	}//endfor (IndexSumX)
+
+	A(cell,i) += CombP2Y*PowDistanceYC*IntSum; // update the external sum
+
+	CombP2Y = (P2-IndexSumY)*CombP2Y/(IndexSumY+1); // the index is still the old one => expression for "nC k+1"
+	PowDistanceYC *= DeltaCellCenters[cell].y;      // Update PowDistanceYC
+      }//endfor (IndexSumY)
+
+      // apply geometric weighting
+      A(cell,i) *= GeometricWeights[cell];
+
+    }//endfor (i)
+      
+  } //endfor (cell)
+
+
+  delete [] DeltaCellCenters;
+
+}
+
+/*!
  * Set the constraints equations in the constrained least-square reconstruction.
- * This constraints are called individual because they are independent of
+ * These constraints are called individual because they are independent of
  * other solution parameters
  * (i.e they don't express any relationship between solution parameters).
  * The starting position for the entries in the LHS and RHS of the linear
@@ -1521,7 +1709,8 @@ Set_MeanValueConservation_Equations(Soln_Block_Type & SolnBlk,
  * \param A the LHS assemble matrix 
  * \param B the RHS assemble matrix
  *
- * \note This routine is customized for advection-diffusion state class!
+ * \note This routine uses the boundary condition coefficients (i.e. 'a' and 'b')
+ *       from the first entry in the ParameterIndex!
  */
 template<class SOLN_STATE>
 template<class Soln_Block_Type> inline
@@ -1553,10 +1742,6 @@ Generalized_IndividualConstraints_Equations(Soln_Block_Type & SolnBlk,
       DistXi = Constraints_Loc[Eq].x - XCellCenter(iCell,jCell);
       DistYi = Constraints_Loc[Eq].y - YCellCenter(iCell,jCell);
 
-      /* Compute the geometric weight based on the centroid distance */
-      CENO_Geometric_Weighting(GeometricWeight, Vector2D(DistXi,DistYi).abs());
-
-      
       // Step 1. Form the LHS  -- build the row of the matrix A associated with the current GQP
       for (i=0; i<=CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
 	// build the row of the matrix
@@ -1571,6 +1756,7 @@ Generalized_IndividualConstraints_Equations(Soln_Block_Type & SolnBlk,
 	for (IndexP1 = 1; IndexP1 <= P1; ++IndexP1){ PowXC *= DistXi; }
 	for (IndexP2 = 1; IndexP2 <= P2; ++IndexP2){ PowYC *= DistYi; }
 
+	// Use the first entry in the ParameterIndex to retrieve data for the a(BCs) and b(BCs).
 	A(Eq+StartRow,i+StartCol) = ( PowXC * PowYC * 
 				      ( Constraints_BCs[BCs_Entry]->a(BCs)[ParameterIndex[0]] * DistXi * DistYi + 
 					Constraints_BCs[BCs_Entry]->b(BCs)[ParameterIndex[0]] * (P1 * DistYi * 
@@ -1578,26 +1764,1310 @@ Generalized_IndividualConstraints_Equations(Soln_Block_Type & SolnBlk,
 												 P2 * DistXi * 
 												 Constraints_Normals[Eq].y )) );
 
-	// Apply geometric weighting
-	A(Eq+StartRow,i+StartCol) *= GeometricWeight;
       } //endfor (i)
        
 
       // Step 2. Form the RHS  -- build the row of the matrix All_U associated with the current GQP
       for (i=0; i<ParameterIndex.size(); ++i){
 	All_U(Eq+StartRow, i) = ( ( Constraints_BCs[BCs_Entry]->a(BCs)[ParameterIndex[0]] * 
-				    Constraints_BCs[BCs_Entry]->DirichletBC(BCs)[ParameterIndex[0]] ) + 
+				    Constraints_BCs[BCs_Entry]->DirichletBC(BCs)[ParameterIndex[i]] ) + 
 				  ( Constraints_BCs[BCs_Entry]->b(BCs)[ParameterIndex[0]] * 
-				    Constraints_BCs[BCs_Entry]->NeumannBC(BCs)[ParameterIndex[0]] ) );
-
-	// Apply geometric weighting
-	All_U(Eq+StartRow, i) *= GeometricWeight;
+				    Constraints_BCs[BCs_Entry]->NeumannBC(BCs)[ParameterIndex[i]] ) );
 
       }//endfor (i)
 
     } // endfor (BCs)
 
   }// endfor (BCs_Entry) 
+
+}
+
+
+/*!
+ * Set the constraints equations in the constrained least-square reconstruction.
+ * These constraints are called relational because they put in relationship
+ * several solution parameters.
+ * The starting position for the entries in the LHS and RHS of the linear
+ * system are specified by the (StartRow, StartCol) input parameters.   \n                                
+ *                                                                          
+ * The BCs handled by this subroutine are specific to each solver,
+ * so this subroutine MUST be specialized!
+ *
+ * The data passed:
+ *  GQP      -- Gauss Quadrature Point Locations (i.e. flux calculation points)
+ *  A_GQP    -- The coefficient for the Dirichlet boundary condition at GQP                                                
+ *  B_GQP    -- The coefficient for the Neumann boundary condition at GQP                                                
+ *  F1(GQP)  -- The value of the Dirichlet boundary condition at GQP  
+ *  F2(GQP)  -- The value of the Neumann boundary condition at GQP    
+ *
+ * \param SolnBlk the quad block for which the solution reconstruction is done.
+ * \param iCell i-index of the reconstructed cell
+ * \param jCell j-index of the reconstructed cell
+ * \param Constraints_Loc GQP array
+ * \param Constraints_Normals normal vectors at GQP locations
+ * \param Constraints_BCs provide the boundary condition coefficients (i.e. A_GQP, B_GQP, F1, F2)
+ * \param BC_Type the type of the boundary condition for which the relational constraint is built
+ * \param ParameterIndex related to the indexes of the solution
+ * \param A the LHS assemble matrix 
+ * \param B the RHS assemble matrix
+ *
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::
+Generalized_RelationalConstraints_Equations(Soln_Block_Type & SolnBlk,
+					    const int &iCell, const int &jCell,
+					    Vector2DArray & Constraints_Loc,
+					    Vector2DArray & Constraints_Normals,
+					    BC_Type_Array & Constraints_BCs,
+					    const int & BC_Type,
+					    DenseMatrix & A, DenseMatrix & All_U,
+					    const IndexType & ParameterIndex,
+					    const int &StartRow, const int &StartCol) {  
+  // Specialize this routine!
+}
+
+
+/*! 
+ * Compute the unlimited k-exact high-order reconstruction
+ * proposed by Barth (1993) combined with exactly satisfied equations 
+ * (i.e. only relational constraints) which account for boundary conditions.
+ * This reconstruction procedure should be used for computational cells
+ * affected by the presence of a boundary condition enforced with relational constraints.
+ * Relational constraints represent exact equations relating multiple solution parameters.
+ * The mean quantity conservation is also enforced as a constraint for all solution parameters.
+ *
+ * \param SolnBlk the quad block for which the solution reconstruction is done.
+ * \param ReconstructedSoln member function of SolnBlk which returns the average solution of (iCell,jCell)
+ * \param iCell i-index of the reconstructed cell
+ * \param jCell j-index of the reconstructed cell
+ * \param i_index i-indexes of the cells that are part of the supporting stencil
+ * \param j_index j-indexes of the cells that are part of the supporting stencil
+ * \param ConstrainedGQPs_West number of Gauss quadrature points constrained on West cell edge
+ * \param ConstrainedGQPs_South number of Gauss quadrature points constrained on South cell edge
+ * \param ConstrainedGQPs_East number of Gauss quadrature points constrained on East cell edge
+ * \param ConstrainedGQPs_North number of Gauss quadrature points constrained on North cell edge
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::
+ComputeRelationallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
+							      const Soln_State & 
+							      (Soln_Block_Type::*ReconstructedSoln)(const int &,
+												    const int &) const,
+							      const int &iCell, const int &jCell,
+							      const IndexType & i_index,
+							      const IndexType & j_index,
+							      const int & ConstrainedGQPs_West,
+							      const int & ConstrainedGQPs_South,
+							      const int & ConstrainedGQPs_East,
+							      const int & ConstrainedGQPs_North) {
+
+  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+  IndexType ParametersWithPhysicalBCs,   //!< List of solution parameters that have physical BCs (i.e. have relational constraints)
+    ParametersWithNumericalBCs,		 //!< List of solution parameters that have numerical BCs (i.e. no constraints)
+    ParameterIndex(1);			 //!< List of constrained solution parameters (used for current calculations)
+  //! List for West edge of BCtype for each parameter (i.e. how many conditions per edge)
+  int *RelationalBCs_W = new int [NumberOfVariables()+1];
+  //! List for South edge of BCtype for each parameter (i.e. how many conditions per edge)
+  int *RelationalBCs_S = new int [NumberOfVariables()+1];
+  //! List for East edge of BCtype for each parameter (i.e. how many conditions per edge)
+  int *RelationalBCs_E = new int [NumberOfVariables()+1];
+  //! List for North edge of BCtype for each parameter (i.e. how many conditions per edge)
+  int *RelationalBCs_N = new int [NumberOfVariables()+1];
+  int parameter;
+  int TotalNumberOfEquations, TotalNumberOfExactlySatisfiedEquations, TotalNumberOfRelationalBCsEquations(0);
+  int ApproxMeanConservationRow, MeanConservationRow, MeanConservationCol(0);
+  int cell, n, iterator;
+  int BC_Type, TotalRelational;
+  int StencilSize(i_index.size());
+  DenseMatrix X;		//< the matrix of unknowns
+
+  
+  /********************************************************************************************************
+   *  STEP 1. SORT THE PARAMETERS INTO THE DESIGNATED CATEGORIES AND DETECT CONSTRAINTS ON EACH CELL EDGE *
+   *******************************************************************************************************/
+  for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+
+    // (Re)set variables
+    TotalRelational = 0;
+
+    RelationalBCs_W[parameter] = 0;
+    RelationalBCs_S[parameter] = 0;
+    RelationalBCs_E[parameter] = 0;
+    RelationalBCs_N[parameter] = 0;
+
+    // West edge
+    if (ConstrainedGQPs_West > 0){
+      RelationalBCs_W[parameter] = ConstrainedGQPs_West * SolnBlk.BC_WestCell(jCell).NumberOfRelationalConstraints(parameter);
+      TotalRelational += RelationalBCs_W[parameter];
+    }
+
+    // South edge
+    if (ConstrainedGQPs_South > 0){
+      RelationalBCs_S[parameter] = ConstrainedGQPs_South * SolnBlk.BC_SouthCell(iCell).NumberOfRelationalConstraints(parameter);
+      TotalRelational += RelationalBCs_S[parameter];
+    }
+
+    // East edge
+    if (ConstrainedGQPs_East > 0){
+      RelationalBCs_E[parameter] = ConstrainedGQPs_East * SolnBlk.BC_EastCell(jCell).NumberOfRelationalConstraints(parameter);
+      TotalRelational += RelationalBCs_E[parameter];
+    }
+
+    // North edge
+    if (ConstrainedGQPs_North > 0){
+      RelationalBCs_N[parameter] = ConstrainedGQPs_North * SolnBlk.BC_NorthCell(iCell).NumberOfRelationalConstraints(parameter);
+      TotalRelational += RelationalBCs_N[parameter];
+    }
+    
+    if (TotalRelational){
+      // At least one edge has relational constraints for this parameter
+      ParametersWithPhysicalBCs.push_back(parameter);
+    } else {
+      // There are no constraints for this parameter.
+      ParametersWithNumericalBCs.push_back(parameter);
+    }
+  }// endfor
+
+
+  /****************************************************************************
+   *  STEP 2. SOLVE THE RECONSTRUCTION FOR PARAMETERS THAT HAVE NUMERICAL BCs *
+   ***************************************************************************/
+  ComputeUnconstrainedUnlimitedSolutionReconstructionInConstrainedCell(SolnBlk, ReconstructedSoln,
+								       iCell, jCell,
+								       i_index, j_index,
+								       ParametersWithNumericalBCs);
+  
+
+  /****************************************************************************************
+   *  STEP 3. SOLVE THE RECONSTRUCTION FOR PARAMETERS THAT HAVE PHYSICAL (RELATIONAL) BCs *
+   ***************************************************************************************/
+  /* Note: It is assumed that each GQP introduces one relational constraint 
+     that relates all parameters in the ParametersWithPhysicalBCs vector. */
+
+  if (ParametersWithPhysicalBCs.size() == 0){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::ComputeRelationallyConstrainedUnlimitedSolutionReconstruction() ERROR! Reconstruction with relational constraints is required but there are no relational constraints present!!");
+  }
+
+  // === Reset and initialize the local variables ===
+  // Calculate TotalNumberOfExactlySatisfiedEquations
+  // Initialize with the number of mean conservation constraints
+  TotalNumberOfExactlySatisfiedEquations = ParametersWithPhysicalBCs.size();
+
+  // Add number of relational constraints on each cell face.
+  // Use the first solution variable with physical constraints to determine this number.
+  parameter = ParametersWithPhysicalBCs[0];
+  TotalNumberOfRelationalBCsEquations = (RelationalBCs_W[parameter] + RelationalBCs_S[parameter] +
+					 RelationalBCs_E[parameter] + RelationalBCs_N[parameter]);
+  TotalNumberOfExactlySatisfiedEquations += TotalNumberOfRelationalBCsEquations;
+
+  // Calculate TotalNumberOfEquations 
+  // Add TotalNumberOfExactlySatisfiedEquations and the number of approximate equations for all related variables
+  TotalNumberOfEquations = TotalNumberOfExactlySatisfiedEquations + (StencilSize-1) * ParametersWithPhysicalBCs.size();
+
+  /******** Set dimensions for the matrices of the least-squares problem **********/
+  /********************************************************************************/
+  A_Assembled.newsize(TotalNumberOfEquations, ParametersWithPhysicalBCs.size()*NumberOfTaylorDerivatives());
+  A_Assembled.zero();
+  All_U_Assembled.newsize(TotalNumberOfEquations, 1); // There is only ONE column
+  All_U_Assembled.zero();
+  X.newsize(ParametersWithPhysicalBCs.size()*NumberOfTaylorDerivatives(), 1); // There is only ONE column
+
+
+  /******** Fetch the data on each cell edge for the exactly satisfied RELATIONAL constraints ************/
+  /*******************************************************************************************************/
+  parameter = ParametersWithPhysicalBCs[0];
+  FetchDataConstraints(SolnBlk, iCell, jCell,
+		       BC_Type, parameter,
+		       ConstrainedGQPs_West,  RelationalBCs_W,
+		       ConstrainedGQPs_South, RelationalBCs_S,
+		       ConstrainedGQPs_East,  RelationalBCs_E,
+		       ConstrainedGQPs_North, RelationalBCs_N,
+		       Constraints_Loc, Constraints_Normals, Constraints_BCs);
+
+  /************ Generate exactly satisfied relational constraints for COUPLED variables *************/
+  /************ Only one type of relational constraint can be accommodated at a time *****************/
+  Generalized_RelationalConstraints_Equations(SolnBlk,
+  					      iCell, jCell,
+  					      Constraints_Loc,
+  					      Constraints_Normals,
+  					      Constraints_BCs,
+					      BC_Type,
+  					      A_Assembled, All_U_Assembled,
+  					      ParametersWithPhysicalBCs,
+  					      0, 0);
+
+  /*** Set the individual constraints matrix entries ****/
+  /******************************************************/
+  // === Initialize matrix entry indexes
+  MeanConservationRow = TotalNumberOfRelationalBCsEquations;  
+  ApproxMeanConservationRow = TotalNumberOfExactlySatisfiedEquations;
+
+  for (iterator = 0;  iterator < ParametersWithPhysicalBCs.size(); ++iterator){
+    
+    // === Reset and initialize the local variables ===
+    parameter = ParametersWithPhysicalBCs[iterator]; // index of current state variable
+    ParameterIndex[0] = parameter;
+
+    /** Generate the exact and approximate mean conservation equations for each parameter in the ParametersWithPhysicalBCs **/
+    /************************************************************************************************************************/
+    if ( IsPseudoInverseAllocated() && IsPseudoInversePreComputed() ){  
+
+      // Copy the matrix (i.e. the least-squares equations + the mean conservation)
+      // into the assembled matrix for each parameter.
+
+      // ===== Copy mean conservation equation and set RHS =====
+      A_Assembled.incorporate_matrix(MeanConservationRow,MeanConservationCol,
+				     Cell_LHS_Inv(iCell,jCell),
+				     0, StencilSize-1); //< copy only the first row in the Cell_LHS_Inv matrix
+      
+      All_U_Assembled(MeanConservationRow,0) = (SolnBlk.*ReconstructedSoln)(iCell,jCell)[parameter];
+      
+      // ===== Copy approximate mean conservation equations and set RHS =====
+      A_Assembled.incorporate_matrix(ApproxMeanConservationRow,MeanConservationCol,
+				     Cell_LHS_Inv(iCell,jCell),
+				     1); //< skip only the first row in the Cell_LHS_Inv matrix
+      
+      // Form the RHS for the least-squares problem
+      for (cell=1; cell<StencilSize; ++cell) { //for each cell in the stencil
+	All_U_Assembled(ApproxMeanConservationRow + cell-1, 0) = ( GeomWeightValue(iCell,jCell,cell)*
+								   (SolnBlk.*ReconstructedSoln)(i_index[cell],
+												j_index[cell])[parameter] );
+      } //endfor (cell)
+
+    } else {
+
+      // Set the mean conservation equation for the current parameter
+      Set_MeanValueConservation_Equations(SolnBlk,
+					  ReconstructedSoln,
+					  iCell,jCell,
+					  i_index, j_index,
+					  A_Assembled, All_U_Assembled,
+					  ParameterIndex,
+					  MeanConservationRow,
+					  ApproxMeanConservationRow, MeanConservationCol);
+    } // endif
+
+
+    // Update entry indexes for the next parameter
+    ++MeanConservationRow;
+    MeanConservationCol += NumberOfTaylorDerivatives();
+    ApproxMeanConservationRow += StencilSize - 1;
+  } // endfor (iterator)
+
+
+  /** Obtain solution to the linear equality-constrained least-square problem ********/
+  /***********************************************************************************/
+  Solve_Constrained_LS_Householder(A_Assembled,
+				   All_U_Assembled,
+				   X,
+				   TotalNumberOfExactlySatisfiedEquations);
+  
+  /** Update the coefficients D (derivatives) ********/
+  /***************************************************/
+  for (parameter = 0; parameter < ParametersWithPhysicalBCs.size(); ++parameter){
+    MeanConservationRow = parameter*NumberOfTaylorDerivatives(); // < calculate the shift in X vector
+    for (n=0; n<=CellTaylorDeriv(iCell,jCell).LastElem(); ++n){
+      CellTaylorDerivState(iCell,jCell,n)[ParametersWithPhysicalBCs[parameter]] = X(MeanConservationRow + n,0);
+    }//endfor
+  }//endfor
+
+  // Deallocate memory
+  delete [] RelationalBCs_W;
+  delete [] RelationalBCs_S;
+  delete [] RelationalBCs_E;
+  delete [] RelationalBCs_N;
+}
+
+
+/*! 
+ * Compute the unlimited k-exact high-order reconstruction
+ * proposed by Barth (1993) combined with exactly satisfied equations 
+ * (i.e. only individual constraints) which account for boundary conditions.
+ * This reconstruction procedure should be used for computational cells
+ * affected by the presence of a boundary condition enforced with individual constraints.
+ * Individual constraints represent exact equations in only one solution parameter.
+ * The mean quantity conservation is also enforced as a constraint.
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::
+ComputeIndividuallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
+							      const Soln_State & 
+							      (Soln_Block_Type::*ReconstructedSoln)(const int &,
+												    const int &) const,
+							      const int &iCell, const int &jCell,
+							      const IndexType & i_index,
+							      const IndexType & j_index,
+							      const int & ConstrainedGQPs_West,
+							      const int & ConstrainedGQPs_South,
+							      const int & ConstrainedGQPs_East,
+							      const int & ConstrainedGQPs_North) {
+
+  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+  IndexType ParametersWithPhysicalBCs,   //!< List of solution parameters that have physical BCs (i.e. have individual constraints)
+    ParametersWithNumericalBCs,		 //!< List of solution parameters that have numerical BCs (i.e. no constraints)
+    ParameterIndex(1);			 //!< List of constrained solution parameters (used for current calculations)
+  //! List for West edge of BCtype for each parameter (i.e. how many conditions per edge)
+  int *IndividualBCs_W = new int [NumberOfVariables()+1];
+  //! List for South edge of BCtype for each parameter (i.e. how many conditions per edge)
+  int *IndividualBCs_S = new int [NumberOfVariables()+1];
+  //! List for East edge of BCtype for each parameter (i.e. how many conditions per edge)
+  int *IndividualBCs_E = new int [NumberOfVariables()+1];
+  //! List for North edge of BCtype for each parameter (i.e. how many conditions per edge)
+  int *IndividualBCs_N = new int [NumberOfVariables()+1];
+  int parameter;
+  int TotalNumberOfEquations, TotalNumberOfExactlySatisfiedEquations, StartRow;
+  int TotalIndividual;
+  int cell, n, iterator;
+  int BC_Type;			//< defined only for compatibility
+  
+
+  /********************************************************************************************************
+   *  STEP 1. SORT THE PARAMETERS INTO THE DESIGNATED CATEGORIES AND DETECT CONSTRAINTS ON EACH CELL EDGE *
+   *******************************************************************************************************/
+  for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+
+    // (Re)set variables
+    TotalIndividual = 0;
+
+    IndividualBCs_W[parameter] = 0;
+    IndividualBCs_S[parameter] = 0;
+    IndividualBCs_E[parameter] = 0;
+    IndividualBCs_N[parameter] = 0;
+
+    // West edge
+    if (ConstrainedGQPs_West > 0){
+      IndividualBCs_W[parameter] = ConstrainedGQPs_West * SolnBlk.BC_WestCell(jCell).NumberOfIndividualConstraints(parameter);
+      TotalIndividual += IndividualBCs_W[parameter];
+    }
+
+    // South edge
+    if (ConstrainedGQPs_South > 0){
+      IndividualBCs_S[parameter] = ConstrainedGQPs_South * SolnBlk.BC_SouthCell(iCell).NumberOfIndividualConstraints(parameter);
+      TotalIndividual += IndividualBCs_S[parameter];
+    }
+
+    // East edge
+    if (ConstrainedGQPs_East > 0){
+      IndividualBCs_E[parameter] = ConstrainedGQPs_East * SolnBlk.BC_EastCell(jCell).NumberOfIndividualConstraints(parameter);
+      TotalIndividual += IndividualBCs_E[parameter];
+    }
+
+    // North edge
+    if (ConstrainedGQPs_North > 0){
+      IndividualBCs_N[parameter] = ConstrainedGQPs_North * SolnBlk.BC_NorthCell(iCell).NumberOfIndividualConstraints(parameter);
+      TotalIndividual += IndividualBCs_N[parameter];
+    }
+    
+    if (TotalIndividual){
+      // At least one edge has individual constraints for this parameter
+      ParametersWithPhysicalBCs.push_back(parameter);
+    } else {
+      // There are no constraints for this parameter.
+      ParametersWithNumericalBCs.push_back(parameter);
+    }
+  }// endfor
+
+
+  /****************************************************************************
+   *  STEP 2. SOLVE THE RECONSTRUCTION FOR PARAMETERS THAT HAVE NUMERICAL BCs *
+   ***************************************************************************/
+  ComputeUnconstrainedUnlimitedSolutionReconstructionInConstrainedCell(SolnBlk, ReconstructedSoln,
+								       iCell, jCell,
+								       i_index, j_index,
+								       ParametersWithNumericalBCs);
+  
+  
+  /***************************************************************************
+   *  STEP 3. SOLVE THE RECONSTRUCTION FOR PARAMETERS THAT HAVE PHYSICAL BCs *
+   **************************************************************************/
+  for (iterator = 0; iterator < ParametersWithPhysicalBCs.size(); ++iterator){
+    /*** Perform solution reconstruction for each parameter with individual constraints (i.e. physical BCs) *********/
+    /****************************************************************************************************************/
+
+    // === Reset and initialize the local variables ===
+    parameter = ParametersWithPhysicalBCs[iterator]; // index of current state variable    
+    // Calculate TotalNumberOfExactlySatisfiedEquations and account for average conservation in cell (iCell,jCell)
+    TotalNumberOfExactlySatisfiedEquations = (1 + IndividualBCs_W[parameter] + IndividualBCs_S[parameter] + 
+					      IndividualBCs_E[parameter] + IndividualBCs_N[parameter]);
+    // Calculate TotalNumberOfEquations (i.e. TotalNumberOfExactlySatisfiedEquations + approximate equations)
+    TotalNumberOfEquations = TotalNumberOfExactlySatisfiedEquations + (i_index.size() - 1);
+
+    /******** Determine dimensions of the least-squares problem and set matrices accordingly ************/
+    /****************************************************************************************************/    
+    A_Assembled.newsize(TotalNumberOfEquations, NumberOfTaylorDerivatives());
+    All_U_Assembled.newsize(TotalNumberOfEquations, 1); // There is only ONE column
+
+    /******** Fetch the data on each cell edge for the exactly satisfied individual constraints ************/
+    /*******************************************************************************************************/
+    FetchDataConstraints(SolnBlk, iCell, jCell,
+			 BC_Type, parameter,
+			 ConstrainedGQPs_West,  IndividualBCs_W,
+			 ConstrainedGQPs_South, IndividualBCs_S,
+			 ConstrainedGQPs_East,  IndividualBCs_E,
+			 ConstrainedGQPs_North, IndividualBCs_N,
+			 Constraints_Loc, Constraints_Normals, Constraints_BCs);
+
+    /************ Generate exactly satisfied individual constraints for UNCOUPLED variables *************/
+    /****************************************************************************************************/
+    ParameterIndex[0] = parameter;
+    Generalized_IndividualConstraints_Equations(SolnBlk,
+						iCell, jCell,
+						Constraints_Loc,
+						Constraints_Normals,
+						Constraints_BCs,
+						A_Assembled, All_U_Assembled,
+						ParameterIndex,
+						0, 0);
+
+    /******************** Generate the exact and approximate mean conservation equations ***************************/
+    /***************************************************************************************************************/
+    if ( IsPseudoInverseAllocated() && IsPseudoInversePreComputed() ){
+
+      // Copy the matrix (i.e. the least-squares equations + the mean conservation) into the assembled matrix
+      // starting at the right position
+      StartRow = TotalNumberOfExactlySatisfiedEquations-1;
+      A_Assembled.incorporate_matrix(StartRow,0,
+				     Cell_LHS_Inv(iCell,jCell));
+
+      
+      // Form the RHS for the least-squares problem
+      for (cell=0; cell<i_index.size(); ++cell) { //for each cell in the stencil
+	All_U_Assembled(cell+StartRow,0) = ( GeomWeightValue(iCell,jCell,cell)*
+					     (SolnBlk.*ReconstructedSoln)(i_index[cell],
+									  j_index[cell])[parameter] );
+      } //endfor (cell)
+
+    } else {
+      // Set the mean conservation equation for the current parameter
+      Set_MeanValueConservation_Equations(SolnBlk,
+					  ReconstructedSoln,
+					  iCell,jCell,
+					  i_index, j_index,
+					  A_Assembled, All_U_Assembled,
+					  ParameterIndex,
+					  TotalNumberOfExactlySatisfiedEquations-1,
+					  TotalNumberOfExactlySatisfiedEquations,
+					  0);
+    } // endif
+
+
+    /** Obtain solution to the linear equality-constrained least-square problem ********/
+    /***********************************************************************************/
+    // Note: X_Assembled might have more columns than necessary, but that's not a problem!
+    Solve_Constrained_LS_Householder(A_Assembled,
+				     All_U_Assembled,
+				     X_Assembled,
+				     TotalNumberOfExactlySatisfiedEquations);
+
+    /** Update the coefficients D (derivatives) ********/
+    /***************************************************/
+    for (n=0; n<=CellTaylorDeriv(iCell,jCell).LastElem(); ++n){
+      CellTaylorDerivState(iCell,jCell,n)[ParameterIndex[0]] = X_Assembled(n,0);
+    }//endfor
+
+  } // endfor (iterator)
+
+  // Deallocate memory
+  delete [] IndividualBCs_W;
+  delete [] IndividualBCs_S;
+  delete [] IndividualBCs_E;
+  delete [] IndividualBCs_N;
+}
+
+/*! 
+ * Compute the unlimited k-exact high-order reconstruction
+ * proposed by Barth (1993) combined with exactly satisfied equations 
+ * (i.e. relational and individual constraints) which account for boundary conditions.
+ * The mean quantity conservation is also enforced as a constraint for all solution parameters.
+ *
+ * \param SolnBlk the quad block for which the solution reconstruction is done.
+ * \param ReconstructedSoln member function of SolnBlk which returns the average solution of (iCell,jCell)
+ * \param iCell i-index of the reconstructed cell
+ * \param jCell j-index of the reconstructed cell
+ * \param i_index i-indexes of the cells that are part of the supporting stencil
+ * \param j_index j-indexes of the cells that are part of the supporting stencil
+ * \param ConstrainedGQPs_West number of Gauss quadrature points constrained on West cell edge
+ * \param ConstrainedGQPs_South number of Gauss quadrature points constrained on South cell edge
+ * \param ConstrainedGQPs_East number of Gauss quadrature points constrained on East cell edge
+ * \param ConstrainedGQPs_North number of Gauss quadrature points constrained on North cell edge
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::
+ComputeRelationallyAndIndividuallyConstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
+									     const Soln_State & 
+									     (Soln_Block_Type::
+									      *ReconstructedSoln)(const int &,
+												  const int &) const,
+									     const int &iCell, const int &jCell,
+									     const IndexType & i_index,
+									     const IndexType & j_index,
+									     const int & ConstrainedGQPs_West,
+									     const int & ConstrainedGQPs_South,
+									     const int & ConstrainedGQPs_East,
+									     const int & ConstrainedGQPs_North) {
+
+  /* Notes on the algorithm:
+   * 
+   * The solution variables are sorted into 3 categories:
+   *    A. Variables with physical BCs imposed with relational constraints and individual (if they exist) constraints
+   *    B. Variables with physical BCs imposed with only individual constraints
+   *    C. Variables with numerical BCs (i.e. what doens't belong to A or B)
+   */
+  
+  
+  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+  IndexType ParametersWithOnlyIndividualBCs,  /*!< List of solution parameters in category B */
+    ParametersWithRelationalBCs,         /*!< List of solution parameters in category A */
+    ParametersWithNumericalBCs,		 //!< List of solution parameters that have numerical BCs (i.e. no constraints)
+    ParameterIndex(1);			 //!< List of constrained solution parameters (used for current calculations)
+
+  //! List for West edge of relational BCtype for each parameter (i.e. how many conditions per edge)
+  int *RelationalBCs_W = new int [NumberOfVariables()+1];
+  //! List for South edge of relational BCtype for each parameter (i.e. how many conditions per edge)
+  int *RelationalBCs_S = new int [NumberOfVariables()+1];
+  //! List for East edge of relational BCtype for each parameter (i.e. how many conditions per edge)
+  int *RelationalBCs_E = new int [NumberOfVariables()+1];
+  //! List for North edge of relational BCtype for each parameter (i.e. how many conditions per edge)
+  int *RelationalBCs_N = new int [NumberOfVariables()+1];
+  //! List for West edge of individual BCtype for each parameter (i.e. how many conditions per edge)
+  int *IndividualBCs_W = new int [NumberOfVariables()+1];
+  //! List for South edge of individual BCtype for each parameter (i.e. how many conditions per edge)
+  int *IndividualBCs_S = new int [NumberOfVariables()+1];
+  //! List for East edge of individual BCtype for each parameter (i.e. how many conditions per edge)
+  int *IndividualBCs_E = new int [NumberOfVariables()+1];
+  //! List for North edge of individual BCtype for each parameter (i.e. how many conditions per edge)
+  int *IndividualBCs_N = new int [NumberOfVariables()+1];
+
+  int parameter, iterator, StartRow, StartCol;
+  int TotalNumberOfEquations, TotalNumberOfExactlySatisfiedEquations;
+  int ApproxMeanConservationRow, MeanConservationRow, MeanConservationCol(0);
+  int cell, n, BC_Type;
+  int StencilSize(i_index.size());
+  DenseMatrix X;		//< the matrix of unknowns
+  int TotalRelational, TotalIndividual;  
+  int TotalNumberOfRelationalBCsEquations(0), TotalNumberOfIndividualBCsEquations(0);
+
+
+  /********************************************************************************************************
+   *  STEP 1. SORT THE PARAMETERS INTO THE DESIGNATED CATEGORIES AND DETECT CONSTRAINTS ON EACH CELL EDGE *
+   *******************************************************************************************************/
+  for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+
+    // (Re)set variables
+    TotalRelational = 0;
+    TotalIndividual = 0;
+
+    RelationalBCs_W[parameter] = 0;
+    RelationalBCs_S[parameter] = 0;
+    RelationalBCs_E[parameter] = 0;
+    RelationalBCs_N[parameter] = 0;
+
+    IndividualBCs_W[parameter] = 0;
+    IndividualBCs_S[parameter] = 0;
+    IndividualBCs_E[parameter] = 0;
+    IndividualBCs_N[parameter] = 0;
+
+    // West edge
+    if (ConstrainedGQPs_West > 0){
+      RelationalBCs_W[parameter] = ConstrainedGQPs_West * SolnBlk.BC_WestCell(jCell).NumberOfRelationalConstraints(parameter);
+      TotalRelational += RelationalBCs_W[parameter];
+      IndividualBCs_W[parameter] = ConstrainedGQPs_West * SolnBlk.BC_WestCell(jCell).NumberOfIndividualConstraints(parameter);
+      TotalIndividual += IndividualBCs_W[parameter];
+    }
+
+    // South edge
+    if (ConstrainedGQPs_South > 0){
+      RelationalBCs_S[parameter] = ConstrainedGQPs_South * SolnBlk.BC_SouthCell(iCell).NumberOfRelationalConstraints(parameter);
+      TotalRelational += RelationalBCs_S[parameter];
+      IndividualBCs_S[parameter] = ConstrainedGQPs_South * SolnBlk.BC_SouthCell(iCell).NumberOfIndividualConstraints(parameter);
+      TotalIndividual += IndividualBCs_S[parameter];
+    }
+
+    // East edge
+    if (ConstrainedGQPs_East > 0){
+      RelationalBCs_E[parameter] = ConstrainedGQPs_East * SolnBlk.BC_EastCell(jCell).NumberOfRelationalConstraints(parameter);
+      TotalRelational += RelationalBCs_E[parameter];
+      IndividualBCs_E[parameter] = ConstrainedGQPs_East * SolnBlk.BC_EastCell(jCell).NumberOfIndividualConstraints(parameter);
+      TotalIndividual += IndividualBCs_E[parameter];
+    }
+
+    // North edge
+    if (ConstrainedGQPs_North > 0){
+      RelationalBCs_N[parameter] = ConstrainedGQPs_North * SolnBlk.BC_NorthCell(iCell).NumberOfRelationalConstraints(parameter);
+      TotalRelational += RelationalBCs_N[parameter];
+      IndividualBCs_N[parameter] = ConstrainedGQPs_North * SolnBlk.BC_NorthCell(iCell).NumberOfIndividualConstraints(parameter);
+      TotalIndividual += IndividualBCs_N[parameter];
+    }
+    
+    if (TotalRelational){
+      // At least one edge has relational constraints for this parameter
+      ParametersWithRelationalBCs.push_back(parameter);
+    } else if (TotalIndividual){
+      // At least one edge has individual constraints for this parameter but no edge has relational constraints
+      ParametersWithOnlyIndividualBCs.push_back(parameter);
+    } else {
+      // There are no constraints for this parameter.
+      ParametersWithNumericalBCs.push_back(parameter);
+    }
+  }// endfor
+
+
+  /****************************************************************************
+   *  STEP 2. SOLVE THE RECONSTRUCTION FOR PARAMETERS THAT HAVE NUMERICAL BCs *
+   ***************************************************************************/
+  ComputeUnconstrainedUnlimitedSolutionReconstructionInConstrainedCell(SolnBlk, ReconstructedSoln,
+								       iCell, jCell,
+								       i_index, j_index,
+								       ParametersWithNumericalBCs);
+
+
+
+  /*********************************************************************************
+   *  STEP 3. SOLVE THE RECONSTRUCTION FOR PARAMETERS THAT HAVE ONY INDIVIDUAL BCs *
+   *********************************************************************************/
+  for (iterator = 0;  iterator < ParametersWithOnlyIndividualBCs.size(); ++iterator){
+    /*** Perform solution reconstruction for each parameter with only individual constraints  ****/
+    /*********************************************************************************************/
+
+    // === Reset and initialize the local variables ===
+    parameter = ParametersWithOnlyIndividualBCs[iterator]; // index of current state variable
+    // Calculate TotalNumberOfExactlySatisfiedEquations and account for average conservation in cell (iCell,jCell)
+    TotalNumberOfExactlySatisfiedEquations = (1 + IndividualBCs_W[parameter] + IndividualBCs_S[parameter] + 
+					      IndividualBCs_E[parameter] + IndividualBCs_N[parameter]);
+    // Calculate TotalNumberOfEquations (i.e. TotalNumberOfExactlySatisfiedEquations + approximate equations)
+    TotalNumberOfEquations = TotalNumberOfExactlySatisfiedEquations + (StencilSize - 1);
+
+    /******** Determine dimensions of the least-squares problem and set matrices accordingly ************/
+    /****************************************************************************************************/    
+    A_Assembled.newsize(TotalNumberOfEquations, NumberOfTaylorDerivatives());
+    All_U_Assembled.newsize(TotalNumberOfEquations, 1); // There is only ONE column
+
+    /******** Fetch the data on each cell edge for the exactly satisfied individual constraints ************/
+    /*******************************************************************************************************/
+    FetchDataConstraints(SolnBlk, iCell, jCell,
+			 BC_Type, parameter,
+			 ConstrainedGQPs_West,  IndividualBCs_W,
+			 ConstrainedGQPs_South, IndividualBCs_S,
+			 ConstrainedGQPs_East,  IndividualBCs_E,
+			 ConstrainedGQPs_North, IndividualBCs_N,
+			 Constraints_Loc, Constraints_Normals, Constraints_BCs);
+
+    /************ Generate exactly satisfied individual constraints for UNCOUPLED variables *************/
+    /****************************************************************************************************/
+    ParameterIndex[0] = parameter;
+    Generalized_IndividualConstraints_Equations(SolnBlk,
+						iCell, jCell,
+						Constraints_Loc,
+						Constraints_Normals,
+						Constraints_BCs,
+						A_Assembled, All_U_Assembled,
+						ParameterIndex,
+						0, 0);
+
+    /******************** Generate the exact and approximate mean conservation equations ***************************/
+    /***************************************************************************************************************/
+    if ( IsPseudoInverseAllocated() && IsPseudoInversePreComputed() ){
+
+      // Copy the matrix (i.e. the least-squares equations + the mean conservation) into the assembled matrix
+      // starting at the right position
+      StartRow = TotalNumberOfExactlySatisfiedEquations-1;
+      A_Assembled.incorporate_matrix(StartRow,0,
+				     Cell_LHS_Inv(iCell,jCell));
+
+      
+      // Form the RHS for the least-squares problem
+      for (cell=0; cell<i_index.size(); ++cell) { //for each cell in the stencil
+	All_U_Assembled(cell+StartRow,0) = ( GeomWeightValue(iCell,jCell,cell)*
+					     (SolnBlk.*ReconstructedSoln)(i_index[cell],
+									  j_index[cell])[ParameterIndex[0]] );
+      } //endfor (cell)
+
+    } else {
+      // Set the mean conservation equation for the current parameter
+      Set_MeanValueConservation_Equations(SolnBlk,
+					  ReconstructedSoln,
+					  iCell,jCell,
+					  i_index, j_index,
+					  A_Assembled, All_U_Assembled,
+					  ParameterIndex,
+					  TotalNumberOfExactlySatisfiedEquations-1,
+					  TotalNumberOfExactlySatisfiedEquations,
+					  0);
+    } // endif
+    
+    
+    /** Obtain solution to the linear equality-constrained least-square problem ********/
+    /***********************************************************************************/
+    // Note: X_Assembled might have more columns than necessary, but that's not a problem!
+    Solve_Constrained_LS_Householder(A_Assembled,
+				     All_U_Assembled,
+				     X_Assembled,
+				     TotalNumberOfExactlySatisfiedEquations);
+    
+    /** Update the coefficients D (derivatives) ********/
+    /***************************************************/
+    for (n=0; n<=CellTaylorDeriv(iCell,jCell).LastElem(); ++n){
+      CellTaylorDerivState(iCell,jCell,n)[ParameterIndex[0]] = X_Assembled(n,0);
+    }//endfor
+    
+  } // endfor (iterator)
+
+
+  /********************************************************************************************
+   *  STEP 4. SOLVE THE RECONSTRUCTION FOR PARAMETERS THAT HAVE RELATIONAL AND INDIVIDUAL BCs *
+   *******************************************************************************************/
+  /* Note: It is assumed that each GQP introduces only one relational constraint
+           that relates all parameters in the ParametersWithRelationalBCs vector.
+	   There is only one type of relational constraint in a given cell!
+  */
+
+  if (ParametersWithRelationalBCs.size() == 0){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::ComputeRelationallyAndIndividuallyConstrainedUnlimitedSolutionReconstruction() ERROR! Reconstruction with relational constraints is required but there are no relational constraints present!!");
+  }
+
+  // === Reset and initialize the local variables ===
+  // Calculate TotalNumberOfExactlySatisfiedEquations
+  // Initialize with the number of mean conservation constraints
+  TotalNumberOfExactlySatisfiedEquations = ParametersWithRelationalBCs.size();
+
+  // Add number of relational constraints on each cell face.
+  // Use the first solution variable with relational constraints to determine this number.
+  parameter = ParametersWithRelationalBCs[0];
+  TotalNumberOfRelationalBCsEquations += (RelationalBCs_W[parameter] + RelationalBCs_S[parameter] +
+					  RelationalBCs_E[parameter] + RelationalBCs_N[parameter]);
+  TotalNumberOfExactlySatisfiedEquations += TotalNumberOfRelationalBCsEquations;
+  
+  // Add individual constraints required by each solution variable in ParametersWithRelationalBCs on each cell face.
+  for (iterator = 0; iterator < ParametersWithRelationalBCs.size(); ++iterator){
+    parameter = ParametersWithRelationalBCs[iterator];
+    
+    TotalNumberOfIndividualBCsEquations += (IndividualBCs_W[parameter] + IndividualBCs_S[parameter] +
+					    IndividualBCs_E[parameter] + IndividualBCs_N[parameter]);
+  }
+  TotalNumberOfExactlySatisfiedEquations += TotalNumberOfIndividualBCsEquations;
+  
+  // Calculate TotalNumberOfEquations 
+  // Add TotalNumberOfExactlySatisfiedEquations and the number of approximate equations for all related variables
+  TotalNumberOfEquations = TotalNumberOfExactlySatisfiedEquations + (StencilSize-1) * ParametersWithRelationalBCs.size();
+
+
+  /******** Set dimensions for the matrices of the least-squares problem **********/
+  /********************************************************************************/
+  A_Assembled.newsize(TotalNumberOfEquations, ParametersWithRelationalBCs.size()*NumberOfTaylorDerivatives());
+  A_Assembled.zero();
+  All_U_Assembled.newsize(TotalNumberOfEquations, 1); // There is only ONE column
+  All_U_Assembled.zero();
+  X.newsize(ParametersWithRelationalBCs.size()*NumberOfTaylorDerivatives(), 1); // There is only ONE column
+
+
+  /******** Fetch the data on each cell edge for the exactly satisfied RELATIONAL constraints ************/
+  /*******************************************************************************************************/
+  parameter = ParametersWithRelationalBCs[0];
+  FetchDataConstraints(SolnBlk, iCell, jCell,
+		       BC_Type, parameter,
+		       ConstrainedGQPs_West,  RelationalBCs_W,
+		       ConstrainedGQPs_South, RelationalBCs_S,
+		       ConstrainedGQPs_East,  RelationalBCs_E,
+		       ConstrainedGQPs_North, RelationalBCs_N,
+		       Constraints_Loc, Constraints_Normals, Constraints_BCs);
+
+  /************ Generate exactly satisfied relational constraints for COUPLED variables *************/
+  /************ Only one type of relational constraint can be accommodated at a time *****************/
+  Generalized_RelationalConstraints_Equations(SolnBlk,
+  					      iCell, jCell,
+  					      Constraints_Loc,
+  					      Constraints_Normals,
+  					      Constraints_BCs,
+					      BC_Type,
+  					      A_Assembled, All_U_Assembled,
+  					      ParametersWithRelationalBCs,
+  					      0, 0);
+
+  
+  /*** Set the individual constraints matrix entries ****/
+  /******************************************************/
+  StartRow = TotalNumberOfRelationalBCsEquations;
+  StartCol = 0; 
+  MeanConservationRow = TotalNumberOfRelationalBCsEquations + TotalNumberOfIndividualBCsEquations;
+  ApproxMeanConservationRow = TotalNumberOfExactlySatisfiedEquations;
+  for (iterator = 0;  iterator < ParametersWithRelationalBCs.size(); ++iterator){
+
+    // === Reset and initialize the local variables ===
+    parameter = ParametersWithRelationalBCs[iterator]; // index of current state variable
+    ParameterIndex[0] = parameter;
+
+    /******** Fetch the data on each cell edge for the exactly satisfied individual constraints ************/
+    /*******************************************************************************************************/
+    FetchDataConstraints(SolnBlk, iCell, jCell,
+			 BC_Type, parameter,
+			 ConstrainedGQPs_West,  IndividualBCs_W,
+			 ConstrainedGQPs_South, IndividualBCs_S,
+			 ConstrainedGQPs_East,  IndividualBCs_E,
+			 ConstrainedGQPs_North, IndividualBCs_N,
+			 Constraints_Loc, Constraints_Normals, Constraints_BCs);
+
+    /************ Generate exactly satisfied individual constraints for UNCOUPLED variables *************/
+    /****************************************************************************************************/
+    Generalized_IndividualConstraints_Equations(SolnBlk,
+						iCell, jCell,
+						Constraints_Loc,
+						Constraints_Normals,
+						Constraints_BCs,
+						A_Assembled, All_U_Assembled,
+						ParameterIndex,
+						StartRow, StartCol);
+    
+
+    /** Generate the exact and approximate mean conservation equations for each parameter **/
+    /***************************************************************************************/
+    if ( IsPseudoInverseAllocated() && IsPseudoInversePreComputed() ){  
+
+      // Copy the matrix (i.e. the least-squares equations + the mean conservation)
+      // into the assembled matrix for each parameter.
+
+      // ===== Copy mean conservation equation and set RHS =====
+      A_Assembled.incorporate_matrix(MeanConservationRow,StartCol,
+				     Cell_LHS_Inv(iCell,jCell),
+				     0, StencilSize-1); //< copy only the first row in the Cell_LHS_Inv matrix
+      
+      All_U_Assembled(MeanConservationRow,0) = (SolnBlk.*ReconstructedSoln)(iCell,jCell)[parameter];
+      
+      // ===== Copy approximate mean conservation equations and set RHS =====
+      A_Assembled.incorporate_matrix(ApproxMeanConservationRow,StartCol,
+				     Cell_LHS_Inv(iCell,jCell),
+				     1); //< skip only the first row in the Cell_LHS_Inv matrix
+      
+      // Form the RHS for the least-squares problem
+      for (cell=1; cell<StencilSize; ++cell) { //for each cell in the stencil
+	All_U_Assembled(ApproxMeanConservationRow + cell-1, 0) = ( GeomWeightValue(iCell,jCell,cell)*
+								   (SolnBlk.*ReconstructedSoln)(i_index[cell],
+												j_index[cell])[parameter] );
+      } //endfor (cell)
+      
+    } else {
+
+      // Set the mean conservation equation for the current parameter
+      Set_MeanValueConservation_Equations(SolnBlk,
+					  ReconstructedSoln,
+					  iCell,jCell,
+					  i_index, j_index,
+					  A_Assembled, All_U_Assembled,
+					  ParameterIndex,
+					  MeanConservationRow,
+					  ApproxMeanConservationRow, StartCol);
+    }// endif
+
+
+    // Update entry indexes for the next parameter
+    StartRow += ( IndividualBCs_W[parameter] + IndividualBCs_S[parameter] + 
+		  IndividualBCs_E[parameter] + IndividualBCs_N[parameter] );
+    StartCol += NumberOfTaylorDerivatives();
+    ++MeanConservationRow;    
+    ApproxMeanConservationRow += StencilSize - 1;
+
+  } // endfor (iterator)
+
+
+  /** Obtain solution to the linear equality-constrained least-square problem ********/
+  /***********************************************************************************/
+  Solve_Constrained_LS_Householder(A_Assembled,
+				   All_U_Assembled,
+				   X,
+				   TotalNumberOfExactlySatisfiedEquations);
+  
+  /** Update the coefficients D (derivatives) ********/
+  /***************************************************/
+  for (iterator = 0; iterator < ParametersWithRelationalBCs.size(); ++iterator){
+    MeanConservationRow = iterator*NumberOfTaylorDerivatives(); // < calculate the shift in X vector
+    for (n=0; n<=CellTaylorDeriv(iCell,jCell).LastElem(); ++n){
+      CellTaylorDerivState(iCell,jCell,n)[ParametersWithRelationalBCs[iterator]] = X(MeanConservationRow + n,0);
+    }//endfor
+  }//endfor
+
+
+  // Deallocate memory
+  delete [] RelationalBCs_W;
+  delete [] RelationalBCs_S;
+  delete [] RelationalBCs_E;
+  delete [] RelationalBCs_N;
+  delete [] IndividualBCs_W;
+  delete [] IndividualBCs_S;
+  delete [] IndividualBCs_E;
+  delete [] IndividualBCs_N;
+}
+
+/*! 
+ * Compute the unlimited k-exact high-order reconstruction
+ * proposed by Barth (1993) for a set of solution parameters 
+ * that have imposed only numerical boundary conditions.
+ * This reconstruction procedure should be used for computational cells
+ * next to the boundary and which have boundary conditions enforced with constraints.
+ * Due to the physics of the BCs several parameters might not have any constraints enforced.
+ * This routine is designed for these parameters.
+ * The mean quantity conservation is enforced as a constraint.
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::
+ComputeUnconstrainedUnlimitedSolutionReconstructionInConstrainedCell(Soln_Block_Type &SolnBlk, 
+								     const Soln_State & 
+								     (Soln_Block_Type::*ReconstructedSoln)(const int &,
+													   const int &) const,
+								     const int &iCell, const int &jCell,
+								     const IndexType & i_index, const IndexType & j_index,
+								     const IndexType & ParameterIndex){
+
+  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+
+  int StencilSize(i_index.size()); 
+  int cell, i, parameter;
+  int P1, P2;
+  int ParameterIndexSize(ParameterIndex.size());
+  int n;
+
+  // === Check if there are any variables for which this reconstruction must be performed ===
+  if (ParameterIndexSize == 0){
+    return;
+  }
+
+  // Check if the full matrix has been allocated and pre-computed
+  if ( IsPseudoInverseAllocated() && IsPseudoInversePreComputed() ){
+    // Use the full matrix to speedup the least-squares reconstruction
+
+    // Step 1. Copy the full matrix (i.e. the least-squares equations + the mean conservation) into a local variable
+    A_Assembled = Cell_LHS_Inv(iCell,jCell);
+    
+    // Step 2. Set the RHS term
+    // Ensure that All_U_Assembled matrix has proper dimensions
+    if ( All_U_Assembled.size(0) != StencilSize || All_U_Assembled.size(1) != ParameterIndexSize ){
+      All_U_Assembled.newsize(StencilSize, ParameterIndexSize);
+    }
+    for (cell=0; cell<StencilSize; ++cell){ //for each cell in the stencil
+      for (parameter=0; parameter < ParameterIndexSize; ++parameter){
+	All_U_Assembled(cell,parameter) = ( GeomWeightValue(iCell,jCell,cell)*
+					    (SolnBlk.*ReconstructedSoln)(i_index[cell],
+									 j_index[cell])[ParameterIndex[parameter]] );
+      }
+    } //endfor (cell)
+
+    // Step 3. Obtain solution to the linear equality-constrained least-square problem (i.e. first equation is a constraint)
+    // X_Assembled might have more columns than necessary, but that's not a problem.
+    Solve_Constrained_LS_Householder(A_Assembled,
+				     All_U_Assembled,
+				     X_Assembled,
+				     1);
+
+    // Step 4. Update the coefficients D (derivatives)
+    //**************************************************
+    for (parameter=0; parameter < ParameterIndexSize; ++parameter){
+      for (n=0; n<=CellTaylorDeriv(iCell,jCell).LastElem(); ++n){
+	CellTaylorDerivState(iCell,jCell,n)[ParameterIndex[parameter]] = X_Assembled(n,parameter);
+      }//endfor
+    }//endfor
+    
+  } else {
+    // Form both LHS and RHS in order to calculate the least-squares reconstruction
+
+    // SET VARIABLES USED ONLY IN THIS RECONSTRUCTION PROCESS
+
+    int krank;                        //< the final rank of matrix A is returned here
+    int IndexSumY, IndexSumX, P1, P2;
+    double CombP1X, CombP2Y;
+    double PowDistanceYC, PowDistanceXC;
+    double MaxWeight(0.0);
+    double IntSum(0.0);
+    int CurrentParameter;
+
+    // Ensure that enough memory is allocated for the current least-squares problem.
+    if (    A_Assembled.size(0) != (StencilSize-1)  ||     A_Assembled.size(1) != (NumberOfTaylorDerivatives()-1) ||
+	All_U_Assembled.size(0) != (StencilSize-1)  || All_U_Assembled.size(1) != ParameterIndexSize) {
+      // Resize the matrices accordingly
+      A_Assembled.newsize(StencilSize-1,NumberOfTaylorDerivatives()-1);
+      All_U_Assembled.newsize(StencilSize-1,ParameterIndexSize);
+    }
+
+    // START:   Set the LHS and RHS of the linear system 
+    // ***************************************************
+
+    // ==== Set the geometric weight associated with the reconstructed cell
+    GeometricWeights[0] = 1;
+
+    // Step 1. Compute the normalized geometric weights
+    for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
+
+      /* Compute the X and Y component of the distance between
+	 the cell centers of the neighbour and the reconstructed cell */
+      DeltaCellCenters[cell] = CellCenter(i_index[cell],j_index[cell]) - CellCenter(iCell,jCell);
+    
+      /* Compute the geometric weight based on the centroid distance */
+      CENO_Geometric_Weighting(GeometricWeights[cell], DeltaCellCenters[cell].abs());
+
+      /* Compute the maximum geometric weight (this is used for normalization) */
+      MaxWeight = max(MaxWeight, GeometricWeights[cell]);
+    }
+
+    // Step 2. Set the approximate equations
+    for (cell=1 ; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
+    
+      // compute the normalized geometric weight
+      GeometricWeights[cell] /= MaxWeight;
+
+      // *** SET the matrix A_Assembled of the linear system (LHS) ***
+      /* compute for each derivative the corresponding entry in the matrix of the linear system */
+      for (i=1; i<=CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+	// build the row of the matrix
+	P1 = CellTaylorDeriv(iCell,jCell,i).P1();  // identify P1
+	P2 = CellTaylorDeriv(iCell,jCell,i).P2();  // identify P2
+	A_Assembled(cell-1,i-1) = 0.0;  // set sumation variable to zero
+	CombP2Y = 1.0;        // the binomial coefficient "nC k" for k=0 is 1
+	PowDistanceYC = 1.0;  // initialize PowDistanceYC
+
+	// Compute geometric integral over the neighbour's domain
+	for (IndexSumY = 0; IndexSumY<=P2; ++IndexSumY){
+	  CombP1X = 1.0;       // the binomial coefficient "nC k" for k=0 is 1
+	  PowDistanceXC = 1.0; // initialize PowDistanceXC
+	  IntSum = 0.0;	     // reset internal sumation variable
+
+	  for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
+	    IntSum += ( CombP1X*PowDistanceXC*
+			Geom->CellGeomCoeffValue(i_index[cell],j_index[cell],P1-IndexSumX,P2-IndexSumY) );
+	    
+	    // update the binomial coefficients
+	    CombP1X = (P1-IndexSumX)*CombP1X/(IndexSumX+1); // the index is still the old one => expression for "nC k+1"
+	    PowDistanceXC *= DeltaCellCenters[cell].x;      // Update PowDistanceXC
+	  }//endfor
+
+	  A_Assembled(cell-1,i-1) += CombP2Y*PowDistanceYC*IntSum; // update the external sum
+
+	  CombP2Y = (P2-IndexSumY)*CombP2Y/(IndexSumY+1); // the index is still the old one => expression for "nC k+1"
+	  PowDistanceYC *= DeltaCellCenters[cell].y;    // Update PowDistanceYC
+	}//endfor
+
+	// subtract the corresponding geometric moment of cell (iCell,jCell) 
+	A_Assembled(cell-1,i-1) -= Geom->CellGeomCoeffValue(iCell,jCell,P1,P2);
+
+	// apply geometric weighting
+	A_Assembled(cell-1,i-1) *= GeometricWeights[cell];
+      }
+
+      // *** SET the matrix All_U_Assembled (Delta_U) of the linear system (RHS) ***
+      for (parameter = 0; parameter < ParameterIndexSize; ++parameter){
+	
+	// Solution parameter for the current setup
+	CurrentParameter = ParameterIndex[parameter];
+
+	// Compute Delta_U = U[neighbour] - U[cell] for each parameter
+	All_U_Assembled(cell-1,parameter) = ( (SolnBlk.*ReconstructedSoln)(i_index[cell],j_index[cell])[CurrentParameter] -
+					      (SolnBlk.*ReconstructedSoln)(iCell,jCell)[CurrentParameter] );
+	
+	// Apply geometric weighting
+	All_U_Assembled(cell-1,parameter) *= GeometricWeights[cell];
+
+      }	// endfor (parameter)
+      
+    }//endfor (cell)
+
+    // STOP:   Matrix A_Assembled of the linear system (LHS) built.
+    //         Matrix All_U_Assembled of the linear system (RHS) built.
+    // **********************************************************************
+
+    // Assign the average solution to D00 for each parameter in ParameterIndex
+    for (parameter = 0; parameter < ParameterIndexSize; ++parameter){
+      CellTaylorDeriv(iCell,jCell,0).D(ParameterIndex[parameter]) =
+	(SolnBlk.*ReconstructedSoln)(iCell,jCell)[ParameterIndex[parameter]];
+    }
+    
+    if (CENO_Execution_Mode::USE_LAPACK_LEAST_SQUARES) {
+      
+      // Solve the least-squares system with Lapack subroutine
+      /*********************************************************/
+      Solve_LS_Householder_F77(A_Assembled, All_U_Assembled,
+			       krank, ParameterIndexSize, StencilSize-1, NumberOfTaylorDerivatives()-1);
+
+      // Update the high-order derivatives
+      //***********************************
+      for (i = 1; i <= CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+
+	// Identify 'x' and 'y' powers of the i-th derivative
+	P1 = CellTaylorDeriv(iCell,jCell,i).P1();  // identify P1
+	P2 = CellTaylorDeriv(iCell,jCell,i).P2();  // identify P2
+
+	for (parameter = 0; parameter < ParameterIndexSize; ++parameter){
+	  // Set the i-th derivative for the current parameter
+	  CellTaylorDeriv(iCell,jCell,i).D(ParameterIndex[parameter]) = All_U_Assembled(i-1,parameter);
+	  
+	  // This equation ensures the mean conservation of the current parameter inside the reconstructed cell.
+	  CellTaylorDeriv(iCell,jCell,0).D(ParameterIndex[parameter]) -= ( Geom->CellGeomCoeffValue(iCell,jCell,P1,P2) 
+									   * All_U_Assembled(i-1,parameter) );
+	} // endfor (parameter)
+      }	// endfor (i)
+
+    } else { 
+
+      ColumnVector Rnorm(ParameterIndexSize);       //< residual norm of the LS problem for each parameter.
+      DenseMatrix Xm(NumberOfTaylorDerivatives()-1, ParameterIndexSize); //< storage for the solution to the least-square problem
+
+      /* Solve the overdetermined linear system of equations using the internal least-squares procedure */
+      /**************************************************************************************************/
+      Solve_LS_Householder(A_Assembled,All_U_Assembled,Xm,krank,Rnorm);
+
+      // Update the high-order derivatives
+      //***********************************
+      for (i = 1; i <= CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+
+	// Identify 'x' and 'y' powers of the i-th derivative
+	P1 = CellTaylorDeriv(iCell,jCell,i).P1();  // identify P1
+	P2 = CellTaylorDeriv(iCell,jCell,i).P2();  // identify P2
+
+	for (parameter = 0; parameter < ParameterIndexSize; ++parameter){
+	  // Set the i-th derivative for the current parameter
+	  CellTaylorDeriv(iCell,jCell,i).D(ParameterIndex[parameter]) = Xm(i-1,parameter);
+    
+	  // This equation ensures the mean conservation of the current parameter inside the reconstructed cell.
+	  CellTaylorDeriv(iCell,jCell,0).D(ParameterIndex[parameter]) -= ( Geom->CellGeomCoeffValue(iCell,jCell,P1,P2)
+									   * Xm(i-1,parameter) );
+
+	} // endfor (parameter)
+      } // endfor (i)
+
+    } // endif (CENO_Execution_Mode::USE_LAPACK_LEAST_SQUARES)
+
+  } // endif (IsPseudoInverseAllocated() && IsPseudoInversePreComputed())
+  
+}
+
+
+/*!
+ * Gather the data on each cell edge for imposing the required constraints 
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::FetchDataConstraints(Soln_Block_Type & SolnBlk,
+						   const int &iCell, const int &jCell,
+						   int & BC_Type,
+						   const int & parameter,
+						   const int & ConstrainedGQPs_West,  const int * ConstraintBCs_W,
+						   const int & ConstrainedGQPs_South, const int * ConstraintBCs_S,
+						   const int & ConstrainedGQPs_East,  const int * ConstraintBCs_E,
+						   const int & ConstrainedGQPs_North, const int * ConstraintBCs_N,
+						   Vector2DArray & Constraints_Loc,
+						   Vector2DArray & Constraints_Normals,
+						   BC_Type_Array & Constraints_BCs){
+  int n;
+
+  // === Ensure clean containers
+  Constraints_Loc.clear();
+  Constraints_Normals.clear();
+  Constraints_BCs.clear();
+  
+  //=== West edge ===
+  if ( ConstraintBCs_W[parameter] ){
+    // Constraints detected on the West face
+    // Fetch the data for imposing the constraints
+    if (jCell<JCl && Geom->ExtendSouth_BndWestSplineInfo != NULL){
+      Geom->ExtendSouth_BndWestSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendSouth_BndWestSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);
+    } else if ( jCell>=JCl && jCell<=JCu && Geom->BndWestSplineInfo != NULL){
+      Geom->BndWestSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndWestSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);
+    } else if ( jCell>JCu && Geom->ExtendNorth_BndWestSplineInfo != NULL){
+      Geom->ExtendNorth_BndWestSplineInfo[jCell-(JCu+1)].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendNorth_BndWestSplineInfo[jCell-(JCu+1)].CopyNormalGQPoints(Constraints_Normals);
+    } else {
+      Geom->addGaussQuadPointsFaceW(iCell,jCell,Constraints_Loc,ConstrainedGQPs_West);
+      for (n = 0; n < ConstrainedGQPs_West; ++n){
+	Constraints_Normals.push_back(Geom->nfaceW(iCell,jCell));
+      }
+    }
+      
+    Constraints_BCs.push_back(&SolnBlk.BC_WestCell(jCell));
+
+    // store the type of the boundary condition for this cell
+    BC_Type = Geom->BCtypeW[jCell];
+  }
+
+
+  //=== South edge ===
+  if ( ConstraintBCs_S[parameter] ){
+    // Constraints detected on the South face
+    // Fetch the data for imposing the constraints
+    if (iCell<ICl && Geom->ExtendWest_BndSouthSplineInfo != NULL){
+      Geom->ExtendWest_BndSouthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendWest_BndSouthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else if (iCell>=ICl && iCell<=ICu && Geom->BndSouthSplineInfo != NULL){
+      Geom->BndSouthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndSouthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else if (iCell>ICu && Geom->ExtendEast_BndSouthSplineInfo != NULL){
+      Geom->ExtendEast_BndSouthSplineInfo[iCell-(ICu+1)].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendEast_BndSouthSplineInfo[iCell-(ICu+1)].CopyNormalGQPoints(Constraints_Normals);      
+    } else {
+      Geom->addGaussQuadPointsFaceS(iCell,jCell,Constraints_Loc,ConstrainedGQPs_South);
+      for (n = 0; n < ConstrainedGQPs_South; ++n){
+	Constraints_Normals.push_back(Geom->nfaceS(iCell,jCell));
+      }
+    }
+    
+    Constraints_BCs.push_back(&SolnBlk.BC_SouthCell(iCell));
+
+    // store the type of the boundary condition for this cell
+    BC_Type = Geom->BCtypeS[iCell];
+  }
+
+  //=== East edge ===
+  if ( ConstraintBCs_E[parameter] ){
+    // Constraints detected on the East face
+    // Fetch the data for imposing the constraints
+    if (jCell<JCl && Geom->ExtendSouth_BndEastSplineInfo != NULL){
+      Geom->ExtendSouth_BndEastSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendSouth_BndEastSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);
+    } else if (jCell>=JCl && jCell<=JCu && Geom->BndEastSplineInfo != NULL){
+      Geom->BndEastSplineInfo[jCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndEastSplineInfo[jCell].CopyNormalGQPoints(Constraints_Normals);
+    } else if (jCell>JCu && Geom->ExtendNorth_BndEastSplineInfo != NULL){
+      Geom->ExtendNorth_BndEastSplineInfo[jCell-(JCu+1)].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendNorth_BndEastSplineInfo[jCell-(JCu+1)].CopyNormalGQPoints(Constraints_Normals);
+    } else {
+      Geom->addGaussQuadPointsFaceE(iCell,jCell,Constraints_Loc,ConstrainedGQPs_East);
+      for (n = 0; n < ConstrainedGQPs_East; ++n){
+	Constraints_Normals.push_back(Geom->nfaceE(iCell,jCell));
+      }
+    }
+      
+    Constraints_BCs.push_back(&SolnBlk.BC_EastCell(jCell));
+
+    // store the type of the boundary condition for this cell
+    BC_Type = Geom->BCtypeE[jCell];
+  }
+
+  //=== North edge ===
+  if ( ConstraintBCs_N[parameter] ){
+    // Constraints detected on the North face
+    // Fetch the data for imposing the constraints
+    if (iCell<ICl && Geom->ExtendWest_BndNorthSplineInfo != NULL){
+      Geom->ExtendWest_BndNorthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendWest_BndNorthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);      
+    } else if (iCell>=ICl && iCell<=ICu && Geom->BndNorthSplineInfo != NULL){
+      Geom->BndNorthSplineInfo[iCell].CopyGQPoints(Constraints_Loc);
+      Geom->BndNorthSplineInfo[iCell].CopyNormalGQPoints(Constraints_Normals);
+    } else if (iCell>ICu && Geom->ExtendEast_BndNorthSplineInfo != NULL){
+      Geom->ExtendEast_BndNorthSplineInfo[iCell-(ICu+1)].CopyGQPoints(Constraints_Loc);
+      Geom->ExtendEast_BndNorthSplineInfo[iCell-(ICu+1)].CopyNormalGQPoints(Constraints_Normals);
+    } else {
+      Geom->addGaussQuadPointsFaceN(iCell,jCell,Constraints_Loc,ConstrainedGQPs_North);
+      for (n = 0; n < ConstrainedGQPs_North; ++n){
+	Constraints_Normals.push_back(Geom->nfaceN(iCell,jCell));
+      }
+    }
+      
+    Constraints_BCs.push_back(&SolnBlk.BC_NorthCell(iCell));
+
+    // store the type of the boundary condition for this cell
+    BC_Type = Geom->BCtypeN[iCell];
+  }
 
 }
 

@@ -7,6 +7,10 @@
 #include "TurbulenceModellingInput.h"
 #endif // _TURBULENCEMODEL_INPUT_INCLUDED
 
+#ifndef _UTILITIES_INCLUDED
+#include "../Utilities/Utilities.h"
+#endif // _UTILITIES_INCLUDED
+
 /* Define member functions. */
 
 /************************************************************************************
@@ -27,16 +31,10 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(smagorinsky_coefficient),
                           1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(filter_type,
-                          TURBULENCEMODEL_INPUT_PARAMETER_LENGTH,
-                          MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(i_filter_type),
-                          1,
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(FGR),
+    MPI::COMM_WORLD.Bcast(&(Filter_Width),
                           1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(Filter_Width),
+    MPI::COMM_WORLD.Bcast(&(SFS_FGR),
                           1,
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(spectrum,
@@ -123,30 +121,23 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
       if (smagorinsky_coefficient < ZERO)
           i_command = INVALID_INPUT_VALUE;
       
-          
-    /* ---- LES : filter type ---- */
-  } else if (strcmp(code, "Filter_Type") == 0) {
-    i_command = 130;
-    value >> value_string;
-    strcpy(filter_type, value_string.c_str());
-    if (strcmp(filter_type, "Implicit") == 0) {
-      i_filter_type = FILTER_TYPE_IMPLICIT;
-    } else {
-      i_command = INVALID_INPUT_VALUE;
-    } /* endif */
+  } else if (strcmp(code, "SFS_FGR") == 0) {
+      i_command = 121;
+      value >> value_string;
+      if (strcmp(value_string.c_str(),"Default") == 0){
+          SFS_FGR = DEFAULT;
+      } else {
+          SFS_FGR = from_str<double>(value_string.c_str());
+          if (SFS_FGR < ZERO)
+              i_command = INVALID_INPUT_VALUE;
+      }
       
-  } else if (strcmp(code, "Filter_Grid_Ratio") == 0) {
-    i_command = 131;
-    value >> FGR;
-    if (FGR < 1)
-      i_command = INVALID_INPUT_VALUE;
-
   } else if (strcmp(code, "Filter_Width") == 0) {
-    i_command = 132;
-    value >> Filter_Width;
-    if ( Filter_Width < 0.0 )
-      i_command = INVALID_INPUT_VALUE;
-        
+      i_command = 121;
+      value >> Filter_Width;
+      if (Filter_Width < ZERO)
+          i_command = INVALID_INPUT_VALUE;
+      
     /* ---- Spectrum Parameters ---- */
   } else if (strcmp(code, "Spectrum_Model") == 0) {
     i_command = 140;
@@ -159,7 +150,9 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
     } else if(strcmp(spectrum, "Pope") == 0) {
       i_spectrum = SPECTRUM_POPE;
     } else if(strcmp(spectrum, "Laval_Nazarenko") == 0) {
-      i_spectrum = SPECTRUM_LAVAL_NAZARENKO;         
+      i_spectrum = SPECTRUM_LAVAL_NAZARENKO; 
+    } else if(strcmp(spectrum, "Uniform") == 0) {
+      i_spectrum = SPECTRUM_UNIFORM;
     } else {
       i_command = INVALID_INPUT_VALUE;
     } /* endif */
@@ -277,10 +270,6 @@ void Turbulence_Modelling_Input_Parameters::Output(ostream &out_file) const {
   } /* endif */
 
     out_file << "\n  LES parameters:";
-    out_file << "\n    -> Filter type: " << filter_type;
-    if (i_filter_type == FILTER_TYPE_IMPLICIT){
-        out_file << "\n       -> Filter Grid Ratio: " << FGR;
-    }
     out_file << "\n    -> Sub Filter Scale model: " << SFS_model;
     if (i_SFS_model == SFS_MODEL_SMAGORINSKY){
         out_file << "\n       -> Smagorinsky Coefficient: " << smagorinsky_coefficient;

@@ -862,7 +862,7 @@ int Elliptic_Operator_Analysis_Diamond_Path(Quad_Soln_Block *Local_SolnBlk,
  *                                                                    *
  **********************************************************************/
 template <class Quad_Soln_Block>
-void Output_Taylor_Series_Coefficients(Quad_Soln_Block SolnBlk,
+void Output_Taylor_Series_Coefficients(Quad_Soln_Block &SolnBlk,
 				       const int &i, const int &j,
 				       EllipticOperatorCoefficients2D &Laplacian,
 				       ofstream &out) {
@@ -928,7 +928,7 @@ void Output_Taylor_Series_Coefficients(Quad_Soln_Block SolnBlk,
  *                                                                    *
  **********************************************************************/
 template <class Quad_Soln_Block>
-void Linear_Weighting_Coefficients_HC(Quad_Soln_Block SolnBlk,
+void Linear_Weighting_Coefficients_HC(Quad_Soln_Block &SolnBlk,
 				      const int &ii, const int &jj,
 				      double *w) {
   Vector2D lambda, R, X0, X1, X2, X3, X4;
@@ -961,7 +961,7 @@ void Linear_Weighting_Coefficients_HC(Quad_Soln_Block SolnBlk,
  *                                                                    *
  **********************************************************************/
 template <class Quad_Soln_Block>
-void Linear_Weighting_Coefficients_ZY(Quad_Soln_Block SolnBlk,
+void Linear_Weighting_Coefficients_ZY(Quad_Soln_Block &SolnBlk,
 				      const int &ii, const int &jj,
 				      double *w) {
   double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y, 

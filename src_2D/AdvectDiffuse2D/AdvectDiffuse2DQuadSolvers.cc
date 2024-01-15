@@ -12,7 +12,7 @@
 #include "../Grid/HO_Grid2DQuadMultiBlock.h" /* Include 2D quadrilateral multiblock grid header file */
 #include "AdvectDiffuse2DQuadFASMultigrid.h" /* Include the multigrid header file. */
 #include "AdvectDiffuse2DQuadNKS.h"          /* Include 2D Newton-Krylov-Schwarz solver header file for advection-diffusion. */
-#include "../HighOrderReconstruction/AccuracyAssessment2DMultiBlock.h" /* Include 2D accuracy assessment for multi-block level. */
+#include "AdvectDiffuse2DAccuracyAssessmentMultiBlock.h" /* Include 2D accuracy assessment for multi-block level. */
 #include "../HighOrderReconstruction/HighOrder2D_MultiBlock.h" /* Include 2D high-order header file for multi-block level. */
 
 /******************************************************//**
@@ -622,6 +622,8 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 		 << ".\n";
 	    cout.flush();
 	  } /* endif */
+	  error_flag = CFFC_OR_MPI(error_flag);
+	  if (error_flag) return (error_flag);
 
 	  if (CFFC_Primary_MPI_Processor()) {
 	    if (!batch_flag) cout << "\n  Saving QuadTree data file.";
@@ -921,8 +923,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
     HighOrder2D_MultiBlock::HighOrder_Reconstruction(Local_SolnBlk,
 						     List_of_Local_Solution_Blocks,
 						     Input_Parameters,
-						     0,
-						     &AdvectDiffuse2D_Quad_Block::CellSolution);
+						     0);
   } else {
     // Use low-order reconstruction
     Linear_Reconstruction(Local_SolnBlk, 
@@ -1200,7 +1201,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
          // Write multi-block solution-adaptive mesh definition files.
          if (CFFC_Primary_MPI_Processor()) {
             if (!batch_flag) cout << "\n Writing AdvectDiffuse2D multi-block mesh to grid definition files.";
-	    MeshBlk.Write_Multi_Block_Grid_Definition_Using_IP(Input_Parameters);
+	    error_flag = MeshBlk.Write_Multi_Block_Grid_Definition_Using_IP(Input_Parameters);
             if (error_flag) {
                cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D multi-block mesh definition files.\n";
                cout.flush();

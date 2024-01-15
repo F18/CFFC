@@ -20,6 +20,8 @@ using namespace std;
 #include "Math.h"
 #endif // _MATH_MACROS_INCLUDED
 
+#include "Vector2D.h"		// Include 2D vector definition class
+
 /* Define the class. */
 
 #define	NUM_COMP_VECTOR3D    3
@@ -73,6 +75,11 @@ class Vector3D{
        x = ZERO; y = ZERO; z = ZERO;
     }
 
+    //! Value constructor (i.e. All components get set to the same value!!!)
+    explicit Vector3D(const double &V) {
+      x = V; y = V; z = V;
+    }
+
     Vector3D(const Vector3D &V) {
        x = V.x; y = V.y; z = V.z;
     }
@@ -81,6 +88,17 @@ class Vector3D{
 	     const double &yy,
 	     const double &zz) {
        x = xx; y = yy; z = zz;
+    }
+
+    //! Constructor with given x and y components. The third component gets set to zero.
+    explicit Vector3D(const double &xx,
+		      const double &yy) {
+      x = xx; y = yy; z = ZERO;
+    }
+
+    //! Constructor with Vector2D (i.e. set x and y based on the 2D vector and z to zero)
+    explicit Vector3D(const Vector2D &V) {
+      x = V.x; y = V.y; z = ZERO;
     }
 
     /* Destructor. */
@@ -94,6 +112,10 @@ class Vector3D{
     double abs(void);
     double abs(void) const;
     friend double abs(const Vector3D &V);
+
+    //@{ @name Vector of absolute values.
+    friend Vector3D fabs(const Vector3D &V){ return Vector3D(fabs(V.x), fabs(V.y), fabs(V.z));}
+    //@}
 
     /* Square of vector. */
     double sqr(void);
@@ -173,10 +195,15 @@ class Vector3D{
     /* Shortcut arithmetic operators. */
     friend Vector3D &operator +=(Vector3D &V1, const Vector3D &V2);
     friend Vector3D &operator -=(Vector3D &V1, const Vector3D &V2);
+    Vector3D &operator *=(const double &a);
+    Vector3D &operator /=(const double &a);
+
     
     /* Relational operators. */
     friend int operator ==(const Vector3D &V1, const Vector3D &V2);
     friend int operator !=(const Vector3D &V1, const Vector3D &V2);
+    friend bool operator >=(const Vector3D &V1, const Vector3D &V2){ return (V1.x >= V2.x) && (V1.y >= V2.y) && (V1.z >= V2.z);}
+    friend bool operator <=(const Vector3D &V1, const Vector3D &V2){ return (V1.x <= V2.x) && (V1.y <= V2.y) && (V1.z <= V2.z);}
     
     /* Input-output operators. */
     friend ostream &operator << (ostream &out_file, const Vector3D &V);
@@ -365,6 +392,17 @@ inline Vector3D &operator -=(Vector3D &V1, const Vector3D &V2) {
   V1.z -= V2.z;
   return (V1);
 }
+
+inline Vector3D& Vector3D::operator *=(const double &a) {
+  x *= a; y *= a; z *= a;
+  return *this;
+}
+
+inline Vector3D& Vector3D::operator /=(const double &a) {
+  x /= a; y /= a; z /= a;
+  return *this;
+}
+
 
 /********************************************************
  * Vector3D -- Relational operators.                    *

@@ -32,8 +32,13 @@ template<SpaceType TwoD, class T >
 template<SpaceType TwoD, class T >
 istream& operator>> (istream& os, DerivativeObj<TwoD,T>& Obj);
 
-/*******************************************************
- * CLASS Template: DerivativeObj                    *
+/*!
+ * \class DerivativeObj
+ *
+ * \brief Template class for high-order derivative in 2D.
+ *        It contains the derivative coefficient and the 
+ *        corresponding powers in the polynomial expansion.
+ * \nosubgrouping
  ******************************************************/
 template< class T>
 class DerivativeObj<TwoD,T>{
@@ -44,16 +49,23 @@ class DerivativeObj<TwoD,T>{
  T ValueD;         		/* the Value of the Derivative, T = solution class */
 
  public:
- // Constructors
+ //! @name Constructors:
+ //@{
  DerivativeObj(void): Power1(0), Power2(0), ValueD() { };
  DerivativeObj(const double Val): Power1(0), Power2(0), ValueD(Val) { };
  DerivativeObj(const vector<int> & PPP_, const T & ValueD_);
  DerivativeObj(const int p1, const int p2, const T ValueD_): Power1(p1),Power2(p2),ValueD(ValueD_) { };
  // Copy constructor
  DerivativeObj( const DerivativeObj & rhs): Power1(rhs.Power1), Power2(rhs.Power2), ValueD(rhs.ValueD){ };
+ //@}
+
+ //! @name Destructors:
+ //@{
  ~DerivativeObj(){ };
+ //@}
  
- // Member functions
+ //! @name Member functions:
+ //@{
  void SetPowers(const int p1, const int p2) {Power1 = p1; Power2 = p2; }	/* set p1 & p2 */
  /* set p1 & p2 , passing by reference */
  void SetPowers(const int &p1, const int &p2, const bool) {Power1 = p1; Power2 = p2;}
@@ -63,8 +75,10 @@ class DerivativeObj<TwoD,T>{
  bool IsPowerEqualTo(const int p1, const int p2) const ; /* if the argument provided is equal to p1 & p2 returns true */
 
  void Read_Derivative(istream &In_File);
+ //@}
 
- // Access functions
+ //! @name Access functions:
+ //@{
  T & D(void) { return ValueD; } 		      /* return ValueD */
  const T & D(void) const {return ValueD; }
  const double & D(const int VarPosition) const { return ValueD[VarPosition]; }
@@ -73,12 +87,22 @@ class DerivativeObj<TwoD,T>{
  const short int & P1(void) const {return Power1;}
  short int & P2(void) { return Power2; }	/* returns p2 */
  const short int & P2(void) const {return Power2;}
+ //@}
 
- /* Overloaded operators */
+ //! @name Overloaded operators:
+ //@{
  // Assignment operator
- DerivativeObj& operator=(const DerivativeObj<TwoD,T>& rhs);
- 
- // Friend functions & operators
+ DerivativeObj& operator=(const DerivativeObj<TwoD,T>& rhs){
+   if(this == &rhs) return *this;
+   Power1 = rhs.Power1;
+   Power2 = rhs.Power2;
+   ValueD = rhs.ValueD;
+   return *this;
+ }
+ //@}
+
+ //! @name Friend functions & operators:
+ //@{
  friend bool operator== <TwoD,T> (const DerivativeObj<TwoD,T>& left,
 				  const DerivativeObj<TwoD,T>& right);
  friend bool operator!= <TwoD,T> (const DerivativeObj<TwoD,T>& left,
@@ -86,6 +110,7 @@ class DerivativeObj<TwoD,T>{
  friend ostream& operator<< <TwoD,T> (ostream& os, const DerivativeObj<TwoD,T>& Obj);
 
  friend istream& operator>> <TwoD,T> (istream& os, DerivativeObj<TwoD,T>& Obj);
+ //@}
 };
 
 // CLASS DerivativeObj
@@ -97,16 +122,6 @@ DerivativeObj<TwoD,T>::DerivativeObj(const vector<int> & PPP_, const T & ValueD_
    Power1 = PPP_[0];
    Power2 = PPP_[1];
    ValueD = ValueD_;
-}
-
-// Assignment operator
-template< class T>
-inline DerivativeObj<TwoD,T> & DerivativeObj<TwoD,T>::operator=(const DerivativeObj<TwoD,T>& rhs){
-  if(this == &rhs) return *this;
-  Power1 = rhs.Power1;
-  Power2 = rhs.Power2;
-  ValueD = rhs.ValueD;
-  return *this;
 }
 
 // SetPowers()
@@ -204,9 +219,13 @@ ostream & operator<< (ostream & os, const TaylorDerivativesContainer<TwoD,T>& Ob
 template<SpaceType TwoD, class T>
 istream & operator>> (istream & os, TaylorDerivativesContainer<TwoD,T>& Obj);
 
-/*******************************************************
- * CLASS Template: TaylorDerivativesContainer_2D    *
- ******************************************************/
+/*!
+ * \class TaylorDerivativesContainer_2D
+ *
+ * \brief Template class for the container of high-order derivatives in 2D.
+ *        It contains all derivatives required by a given polynomial order.
+ * \nosubgrouping
+ **************************************************************************/
 template<class T>
 class TaylorDerivativesContainer<TwoD,T>{
  public:
@@ -231,7 +250,29 @@ class TaylorDerivativesContainer<TwoD,T>{
   // Copy constructor
   TaylorDerivativesContainer(const TaylorDerivativesContainer<TwoD,T> & rhs);
   // Assignment operator;
-  TaylorDerivativesContainer<TwoD,T> & operator=(const TaylorDerivativesContainer<TwoD,T> & rhs);
+  TaylorDerivativesContainer<TwoD,T> & operator=(const TaylorDerivativesContainer<TwoD,T> & rhs){
+  // !!! If the LHS container already has objects assigned, these are going to be deleted.
+  // Handle self-assignment:
+  if (this == & rhs) return *this;
+
+  // allocate memory if there isn't enough
+  allocate(rhs.size());
+
+  // set the OrderOfRec
+  OrderOfRec = rhs.RecOrder();
+
+  /* Copy phi */
+  phi = rhs.Limiter();
+  phi_copy = rhs.phi_copy;
+
+  // copy the value from the RHS
+  for (int i=0; i<=LastElem() ; ++i){
+    DContainer[i] = rhs.DContainer[i];
+  }
+
+  return *this;
+
+  }
 
   // GenerateContainer()
   void GenerateContainer(const int OrderOfReconstruction); /* Allocate memory for the derivatives and 
@@ -259,6 +300,15 @@ class TaylorDerivativesContainer<TwoD,T>{
   // ComputeYGradientFor( )
   T ComputeYGradientFor(const double DeltaX, const double DeltaY);
 
+  //! Compute X-gradient for a specific solution variable
+  double ComputeXGradientFor(const double & DeltaX, const double & DeltaY, const unsigned & parameter) const;
+
+  //! Compute Y-gradient for a specific solution variable
+  double ComputeYGradientFor(const double & DeltaX, const double & DeltaY, const unsigned & parameter) const;
+
+  //! Compute the polynomial with X-dependency integrated
+  T ComputeXDependencyIntegratedSolutionFor(const double DeltaX, const double DeltaY);
+
   // Reset limiter --> set limiter to ONE for all parameters
   void ResetLimiter(void){ phi.One();}
   void ResetFrozenLimiter(void){ phi_copy.One(); }
@@ -277,11 +327,6 @@ class TaylorDerivativesContainer<TwoD,T>{
 
 
   /* Overloaded Operators */
-  Derivative & operator()(const int & position, const bool,
-			  const bool, const bool) {return DContainer[position];}
-  const Derivative & operator()(const int & position, const bool,
-				const bool, const bool) const {return DContainer[position];}
-
   Derivative & operator()(const int position) {return DContainer[position];}
   const Derivative & operator()(const int position) const {return DContainer[position];}
 
@@ -400,32 +445,32 @@ void TaylorDerivativesContainer<TwoD,T>::free_memory(void) {
   }
 }
 
-/* Assignment operator = */
-template<class T> inline
-TaylorDerivativesContainer<TwoD,T> & 
-TaylorDerivativesContainer<TwoD,T>::operator=(const TaylorDerivativesContainer<TwoD,T> & rhs){
+// /* Assignment operator = */
+// template<class T> inline
+// TaylorDerivativesContainer<TwoD,T> & 
+// TaylorDerivativesContainer<TwoD,T>::operator=(const TaylorDerivativesContainer<TwoD,T> & rhs){
 
-  // !!! If the LHS container already has objects assigned, these are going to be deleted.
-  // Handle self-assignment:
-  if (this == & rhs) return *this;
+//   // !!! If the LHS container already has objects assigned, these are going to be deleted.
+//   // Handle self-assignment:
+//   if (this == & rhs) return *this;
 
-  // allocate memory if there isn't enough
-  allocate(rhs.size());
+//   // allocate memory if there isn't enough
+//   allocate(rhs.size());
 
-  // set the OrderOfRec
-  OrderOfRec = rhs.RecOrder();
+//   // set the OrderOfRec
+//   OrderOfRec = rhs.RecOrder();
 
-  /* Copy phi */
-  phi = rhs.Limiter();
-  phi_copy = rhs.phi_copy;
+//   /* Copy phi */
+//   phi = rhs.Limiter();
+//   phi_copy = rhs.phi_copy;
 
-  // copy the value from the RHS
-  for (int i=0; i<=LastElem() ; ++i){
-    DContainer[i] = rhs.DContainer[i];
-  }
+//   // copy the value from the RHS
+//   for (int i=0; i<=LastElem() ; ++i){
+//     DContainer[i] = rhs.DContainer[i];
+//   }
 
-  return *this;
-}
+//   return *this;
+// }
 
 /* Access data */
 /*IndexOrder(int,int) -> determines the position of the element having the power combination (p1,p2) */
@@ -567,12 +612,12 @@ T TaylorDerivativesContainer<TwoD,T>::ComputeXGradientFor(const double DeltaX, c
     break;
 
   case 0:
-    return 0.0;
+    return T(0.0);
     break;
 
   default:
     /* Orders higher than FOUR */
-    return 0.0;			/* TO DO LATER! */
+    return T(0.0);			/* TO DO LATER! */
 
   }
 }
@@ -613,6 +658,99 @@ T TaylorDerivativesContainer<TwoD,T>::ComputeYGradientFor(const double DeltaX, c
     break;
 
   case 0:
+    return T(0.0);
+    break;
+
+  default:
+    /* Orders higher than FOUR */
+    return T(0.0);			/* TO DO LATER! */
+  }
+}
+
+// ComputeXGradientFor( ) :-> Compute the gradient in X direction of
+// the Taylor series expansion for a particular distance (DeltaX,DeltaY) and a specific solution variable
+template<class T> inline
+double TaylorDerivativesContainer<TwoD,T>::ComputeXGradientFor(const double &DeltaX, const double &DeltaY,
+							       const unsigned & parameter) const {
+
+  double DeltaXSquare, DeltaYSquare;
+
+  switch(OrderOfRec){
+  case 4:			/* Fourth Order Reconstruction */
+    DeltaXSquare = DeltaX*DeltaX;
+    DeltaYSquare = DeltaY*DeltaY;
+
+    return ( DContainer[5].D(parameter) + DeltaY*DContainer[6].D(parameter)
+	     + DeltaYSquare*DContainer[7].D(parameter) + DeltaY*DeltaYSquare*DContainer[8].D(parameter) 
+	     + 2.0*DeltaX*DContainer[9].D(parameter) + 2.0*DeltaX*DeltaY*DContainer[10].D(parameter) 
+	     + 2.0*DeltaX*DeltaYSquare*DContainer[11].D(parameter) + 3.0*DeltaXSquare*DContainer[12].D(parameter)
+	     + 3.0*DeltaXSquare*DeltaY*DContainer[13].D(parameter) + 4.0*DeltaXSquare*DeltaX*DContainer[14].D(parameter) );
+    break;
+
+  case 3: 			/* Third Order Reconstruction */
+    return ( DContainer[4].D(parameter) + DeltaY*DContainer[5].D(parameter)
+	     + DeltaY*DeltaY*DContainer[6].D(parameter) + 2.0*DeltaX*DContainer[7].D(parameter) 
+	     + 2.0*DeltaX*DeltaY*DContainer[8].D(parameter) + 3.0*DeltaX*DeltaX*DContainer[9].D(parameter) );
+    break;
+
+  case 2:			/* Second Order Reconstruction */
+    
+    return ( DContainer[3].D(parameter) + DeltaY*DContainer[4].D(parameter) + 2.0*DeltaX*DContainer[5].D(parameter) );
+    break;
+
+  case 1:			/* First Order Reconstruction */
+
+    return ( DContainer[2].D(parameter) );
+    break;
+
+  case 0:
+    return 0.0;
+    break;
+
+  default:
+    /* Orders higher than FOUR */
+    return 0.0;			/* TO DO LATER! */
+
+  }
+}
+
+// ComputeYGradientFor( ) :-> Compute the gradient in Y direction of
+// the Taylor series expansion for a particular distance (DeltaX,DeltaY) and a specific solution variable
+template<class T> inline
+double TaylorDerivativesContainer<TwoD,T>::ComputeYGradientFor(const double &DeltaX, const double &DeltaY,
+							       const unsigned & parameter) const {
+
+  double DeltaXSquare, DeltaYSquare;
+
+  switch(OrderOfRec){
+  case 4:			/* Fourth Order Reconstruction */
+    DeltaXSquare = DeltaX*DeltaX;
+    DeltaYSquare = DeltaY*DeltaY;
+
+    return ( DContainer[1].D(parameter) + 2.0*DeltaY*DContainer[2].D(parameter)
+	     + 3.0*DeltaYSquare*DContainer[3].D(parameter) + 4.0*DeltaYSquare*DeltaY*DContainer[4].D(parameter)
+	     + DeltaX*DContainer[6].D(parameter) + 2.0*DeltaX*DeltaY*DContainer[7].D(parameter) 
+	     + 3.0*DeltaX*DeltaYSquare*DContainer[8].D(parameter) + DeltaXSquare*DContainer[10].D(parameter) 
+	     + 2.0*DeltaXSquare*DeltaY*DContainer[11].D(parameter) + DeltaX*DeltaXSquare*DContainer[13].D(parameter) );
+    break;
+
+  case 3: 			/* Third Order Reconstruction */
+    return ( DContainer[1].D(parameter) + 2.0*DeltaY*DContainer[2].D(parameter)
+	     + 3.0*DeltaY*DeltaY*DContainer[3].D(parameter) + DeltaX*DContainer[5].D(parameter)
+	     + 2.0*DeltaX*DeltaY*DContainer[6].D(parameter) + DeltaX*DeltaX*DContainer[8].D(parameter) );
+    break;
+
+  case 2:			/* Second Order Reconstruction */
+    
+    return ( DContainer[1].D(parameter) + 2.0*DeltaY*DContainer[2].D(parameter) + DeltaX*DContainer[4].D(parameter) );
+    break;
+
+  case 1:			/* First Order Reconstruction */
+
+    return ( DContainer[1].D(parameter) );
+    break;
+
+  case 0:
     return 0.0;
     break;
 
@@ -620,6 +758,49 @@ T TaylorDerivativesContainer<TwoD,T>::ComputeYGradientFor(const double DeltaX, c
     /* Orders higher than FOUR */
     return 0.0;			/* TO DO LATER! */
   }
+}
+
+/*!
+ * Evaluate the polynomial approximation with X-dependency integrated
+ *  \f$ p(x,y) = \sum_{p1=0}^{k} \sum_{p2=0}^{k} \frac{1}{p1+1} (x - x_i)^{p1+1} (y - y_i)^{p2} D_{p1p2} \f$
+ */
+template<class T>
+T TaylorDerivativesContainer<TwoD,T>::ComputeXDependencyIntegratedSolutionFor(const double DeltaX, const double DeltaY){
+
+  // Initialize the solution state
+  T Solution(0.0), Sum;
+  double DeltaXtoPower(DeltaX), DeltaYtoPower, OneOverP1PlusOne;
+  int p1,p2,Position;
+
+  // Loop over the first power (i.e. p1)
+  for (p1=0,Position=0; p1<=OrderOfRec; ++p1){
+    // Calculate OneOverP1PlusOne
+    OneOverP1PlusOne = 1.0/(p1 + 1.0);
+
+    /* Reinitialize DeltaYtoPower */
+    DeltaYtoPower = 1.0;
+
+    // Reset sum
+    Sum.Vacuum();
+
+    // Loop over the second power (i.e. p2)
+    for (p2=0; p2<=OrderOfRec-p1; ++p2, ++Position){
+      /* Update solution */
+      Sum += DeltaYtoPower*DContainer[Position].D();
+
+      /* Update DeltaYtoPower */
+      DeltaYtoPower *= DeltaY;
+    }
+
+    // Update solution with DeltaXtoPower contribution
+    Solution += OneOverP1PlusOne*DeltaXtoPower*Sum;
+
+    /* Update DeltaXtoPower */
+    DeltaXtoPower *= DeltaX;
+  }
+
+  // Return final solution. It considers the scalar limiter applied to all derivatives.
+  return (phi^Solution) + ( (T(1.0)-phi)^(DeltaX*DContainer[0].D()) );
 }
 
 // Friend functions
@@ -630,7 +811,7 @@ ostream & operator<< (ostream & os, const TaylorDerivativesContainer<TwoD,T>& Ob
   os.width(4);
   os << Obj.RecOrder() << endl;
   for(int i=0; i<=Obj.LastElem(); ++i)
-    os << Obj(i,true,true,true) << endl;
+    os << Obj(i) << endl;
   os.unsetf(ios::skipws);
   return os;
 }
@@ -644,7 +825,7 @@ istream & operator>> (istream & os, TaylorDerivativesContainer<TwoD,T>& Obj){
   /* Adjust the container size */
   Obj.GenerateContainer(ReconstructionOrder);
   for(int i=0; i<=Obj.LastElem(); ++i){
-    os >> Obj(i,true,true,true);
+    os >> Obj(i);
   }
   os.unsetf(ios::skipws);
   return os;
@@ -658,7 +839,7 @@ const TaylorDerivativesContainer<TwoD,T> operator+(const TaylorDerivativesContai
   TaylorDerivativesContainer<TwoD,T> Temp(left.RecOrder());
   
   for (int i=0; i<=right.LastElem(); ++i){
-    Temp(i,true,true,true).D() = left(i,true,true,true).D() + right(i,true,true,true).D();
+    Temp(i).D() = left(i).D() + right(i).D();
   }
   
   return Temp;
@@ -672,7 +853,7 @@ const TaylorDerivativesContainer<TwoD,T> operator-(const TaylorDerivativesContai
   TaylorDerivativesContainer<TwoD,T> Temp(left.RecOrder());
   
   for (int i=0; i<=right.LastElem(); ++i){
-    Temp(i,true,true,true).D() = left(i,true,true,true).D() - right(i,true,true,true).D();
+    Temp(i).D() = left(i).D() - right(i).D();
   }
   
   return Temp;
@@ -687,7 +868,7 @@ bool operator==(const TaylorDerivativesContainer<TwoD,T>& left,
   if (left.size() != right.size() )
     return !answer;
   for (int i=0; i<=right.LastElem(); ++i){
-    answer = answer && ( left(i,true,true,true) == right(i,true,true,true) );
+    answer = answer && ( left(i) == right(i) );
   }
   return answer;
 }
@@ -816,6 +997,48 @@ double TaylorDerivativesContainer<TwoD,double>::ComputeSolutionFor(const double 
     return (phi*Solution) + ((1.0 - phi)*DContainer[0].D());
 
   }
+}
+
+/*!
+ * Evaluate the polynomial approximation with X-dependency integrated
+ *  \f$ p(x,y) = \sum_{p1=0}^{k} \sum_{p2=0}^{k} \frac{1}{p1+1} (x - x_i)^{p1+1} (y - y_i)^{p2} D_{p1p2} \f$
+ */
+template<> inline
+double TaylorDerivativesContainer<TwoD,double>::ComputeXDependencyIntegratedSolutionFor(const double DeltaX, const double DeltaY){
+
+  // Initialize the solution state
+  double Solution(0.0), Sum;
+  double DeltaXtoPower(DeltaX), DeltaYtoPower, OneOverP1PlusOne;
+  int p1,p2,Position;
+
+  // Loop over the first power (i.e. p1)
+  for (p1=0,Position=0; p1<=OrderOfRec; ++p1){
+    // Calculate OneOverP1PlusOne
+    OneOverP1PlusOne = 1.0/(p1 + 1.0);
+
+    /* Reinitialize DeltaYtoPower */
+    DeltaYtoPower = 1.0;
+
+    // Reset sum
+    Sum = 0.0;
+    // Loop over the second power (i.e. p2)
+    for (p2=0; p2<=OrderOfRec-p1; ++p2, ++Position){
+      /* Update solution */
+      Sum += DeltaYtoPower*DContainer[Position].D();
+
+      /* Update DeltaYtoPower */
+      DeltaYtoPower *= DeltaY;
+    }
+
+    // Update solution with DeltaXtoPower contribution
+    Solution += Sum*OneOverP1PlusOne*DeltaXtoPower;
+
+    /* Update DeltaXtoPower */
+    DeltaXtoPower *= DeltaX;
+  }
+
+  // Return final solution. It considers the scalar limiter applied to all derivatives.
+  return (phi*Solution) + ( (1.0-phi)*(DeltaX*DContainer[0].D()) );
 }
 
 #endif

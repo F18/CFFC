@@ -235,6 +235,7 @@ inline char *Date_And_Time() {
 #define GRID_ANNULUS                         31
 #define GRID_DEFORMED_BOX                    32
 #define GRID_NACA_AEROFOIL_OGRID             33
+#define GRID_RINGLEB_FLOW_STRAIGHT_INFLOW_BOUNDARY    34
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
@@ -348,7 +349,7 @@ inline char *Date_And_Time() {
 #define BC_WALL                         12000   // Core | CGNS
 //  Invisid walls
 #define BC_WALL_INVISCID                12001   //      | CGNS
-#define BC_FREE_SLIP_ISOTHERMAL         12002   //      | ????     
+#define BC_FREE_SLIP_ISOTHERMAL         12002   //      | ????  
 
 //  Viscous walls
 #define BC_WALL_VISCOUS                 12100   //      | CGNS
@@ -466,6 +467,7 @@ inline char *Date_And_Time() {
  * CFD -- Initial Condition Types.                                    *
  **********************************************************************/
 
+#define IC_GIVEN_STARTUP               -2
 #define IC_RESTART                     -1
 
 #define	IC_CONSTANT                     0
@@ -501,6 +503,8 @@ inline char *Date_And_Time() {
 #define	IC_CYLINDRICAL_IMPLOSION       24
 #define IC_ACOUSTIC_WAVE               25
 #define IC_SLOWLY_IMPACTING_XDIR       26
+#define IC_DAI_WOODWARD                27
+#define	IC_UNIFORM_PERTURBED           28
 
 #define IC_SQUARE_WAVE_XDIR            31
 #define IC_SQUARE_WAVE_YDIR            32
@@ -886,14 +890,6 @@ inline char *Date_And_Time() {
  ********************************************************/
 #define EXPLICIT                          0
 #define IMPLICIT                          1
-
-
-/********************************************************
- * CFD -- Accuracy Assessment Modes                     *
- ********************************************************/
-#define ACCURACY_ASSESSMENT_BASED_ON_EXACT_SOLUTION        0
-#define ACCURACY_ASSESSMENT_BASES_ON_ENTROPY_PRODUCTION    1
-#define ACCURACY_ASSESSMENT_BASES_ON_DRAG_COEFFICIENT      2
 
 
 /*************************************************************************
@@ -1485,6 +1481,10 @@ inline int Bilinear_Interpolation_Coefficients(double &interpolation_coefficient
     default:
       return(1);
   }
+
+  // Return error if code gets here
+  return(1);
+
 }
 
 template <class T>

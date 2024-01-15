@@ -38,6 +38,16 @@
 #include "../TurbulenceModelling/TurbulenceModelling.h"
 #endif // TURBULENCE_MODELLING_INCLUDED   
 
+#ifndef _HIGHORDER_INCLUDED
+#include "../HighOrderReconstruction/HighOrder.h"
+#endif // HIGHORDER_INCLUDED
+
+#ifndef _EXPLICIT_FILTER_INCLUDED
+#include "../ExplicitFilters/Explicit_Filter.h"
+#endif // EXPLICIT_FILTER_INCLUDED
+
+// Additional includes at end of file
+
 class FlowField_2D;
 
 /* Define the solution block in-use indicators. */
@@ -72,6 +82,8 @@ class Hexa_Block {
    int           Freeze_Limiter;  // Limiter freezing indicator.
    int                Flow_Type;  // Flow type indicator.
    double                 ***dt;  // Local time step.
+    double           dt_viscous;
+    double          dt_acoustic;
    
    SOLN_pSTATE             ***W;  // Primitive solution state.
    SOLN_cSTATE             ***U;  // Conserved solution state.
@@ -86,6 +98,7 @@ class Hexa_Block {
                                   // (z-direction).
    SOLN_pSTATE           ***phi;  // Solution slope limiter.
    SOLN_cSTATE            ***Uo;  // Initial solution state.
+        
    //   SOLN_cSTATE **FluxN,**FluxS,  // Boundary solution fluxes.
    //               **FluxE,**FluxW,
    //               **FluxT,**FluxB;
@@ -96,12 +109,21 @@ class Hexa_Block {
    
    // Only allocate for turbulent flow (depending on flow type indicator)
    Turbulent3DWallData ***WallData;
+
+   Explicit_Filters<SOLN_pSTATE,SOLN_cSTATE> Explicit_Filter;
+   Explicit_Filters<SOLN_pSTATE,SOLN_cSTATE> Explicit_Secondary_Filter;
+
+   // Declare high-order variable required for CENO reconstruction
+   HighOrder<SOLN_pSTATE> HighOrderVariable;
 		      
    int Allocated; // Indicates whether or not the solution block has been allocated.
 
    /* Constructors. */
 
-   Hexa_Block(void) {
+   Hexa_Block(void) :
+    Explicit_Filter(this),
+    Explicit_Secondary_Filter(this)
+    {
       NCi=0; ICl=0; ICu=0; NCj=0; JCl=0; JCu=0;
       NCk=0; KCl=0; KCu=0; Nghost=0; 
       Flow_Type = FLOWTYPE_INVISCID; Freeze_Limiter = OFF;
@@ -117,6 +139,11 @@ class Hexa_Block {
       WoT = NULL; WoB = NULL; WallData = NULL;
    }
 
+   Hexa_Block(Hexa_Block &Block2) {
+       Copy(Block2);
+   }
+    
+    
    Hexa_Block(const int Ni, 
               const int Nj, 
               const int Nk, 
@@ -133,6 +160,7 @@ class Hexa_Block {
       allocate(Ni, Nj, Nk, Ng);
       Grid.Copy(Grid2);
       Flow_Type = flow_type;
+
    }
    
    /* Destructors. */
@@ -143,9 +171,15 @@ class Hexa_Block {
    /* Allocate memory for structured hexahedrial solution block. */
    void allocate(void);
    void allocate(const int Ni, const int Nj, const int Nk, const int Ng);
- 
+
    /* Deallocate memory for structured hexahedral solution block. */
    void deallocate(void);
+
+   //! Allocate memory for high-order variables
+   void allocate_HighOrder(const int ReconstructionOrder);
+
+   //! Deallocate memory for high-order variables
+   void deallocate_HighOrder(void);  
    
    /* Allocate static memory for structured hexahedrial solution block. */
    void allocate_static(void);
@@ -177,6 +211,9 @@ class Hexa_Block {
    
    /* Number of solution state variables. */
    int NumVar(void);
+
+   /* Field access to the primitive cell solution */  
+   const SOLN_pSTATE& CellSolution(const int &ii, const int &jj, const int &kk) const { return W[ii][jj][kk]; }
 
    /* Other important member functions. */
 
@@ -253,6 +290,8 @@ class Hexa_Block {
 
    void BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
+    void BCs_dUdt(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs, int residual_index);
+    
    double CFL(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
    void Set_Global_TimeStep(const double &Dt_min);
@@ -292,6 +331,17 @@ class Hexa_Block {
    int Update_Solution_Multistage_Explicit(const int i_stage, 
                                            Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
+
+   /* MEMBER FUNCTIONS REQUIRED FOR HIGH ORDER RECONSTRUCTION. */
+
+   int dUdt_Multistage_Explicit_HighOrder(const int i_stage, 
+					  Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+
+   int dUdt_Residual_HighOrder(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
+			       const int & k_residual,
+			       const bool & UseTimeStep);
+
+
    /* MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING. */
 
    /* Load send message passing buffer. */
@@ -304,6 +354,15 @@ class Hexa_Block {
                                const int *inc,
                                const int *neigh_orient);
 
+    int LoadSendBuffer_Residual(double *buffer,
+                                int &buffer_count,
+                                const int buffer_size,
+                                const int *id_start,
+                                const int *id_end,
+                                const int *inc,
+                                const int *neigh_orient,
+                                int residual_index);
+    
    int LoadSendBuffer_Geometry(double *buffer,
                                int &buffer_count,
                                const int buffer_size,
@@ -363,6 +422,20 @@ class Hexa_Block {
                                     const int k_min,
                                     const int k_max,
                                     const int k_inc);
+    
+    int UnloadReceiveBuffer_Residual(double *buffer,
+                                     int &buffer_count,
+                                     const int buffer_size,
+                                     const int i_min,
+                                     const int i_max,
+                                     const int i_inc,
+                                     const int j_min,
+                                     const int j_max,
+                                     const int j_inc,
+                                     const int k_min,
+                                     const int k_max,
+                                     const int k_inc,
+                                     int residual_index);
 
    int UnloadReceiveBuffer_Geometry(double *buffer,
                                     int &buffer_count,
@@ -453,7 +526,15 @@ class Hexa_Block {
 				    const int k_min,
 				    const int k_max,
 				    const int k_inc);
-   
+
+   SOLN_cSTATE RiemannFlux_n(const int & Flux_Function,
+			     const SOLN_pSTATE &Wl,
+			     const SOLN_pSTATE &Wr,
+			     const Vector3D &normal_dir) const;
+    
+
+   double SinVariationInXDir(const double x, const double y, const double z);
+
   private:
    //copy and assignment are not permitted ...
    Hexa_Block(const Hexa_Block &Soln);
@@ -665,6 +746,66 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate(void) {
 
    } /* endif */
 
+}
+
+/*****************************************//**
+ * Allocate memory for high-order variables.
+ ********************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate_HighOrder(const int ReconstructionOrder){
+
+  bool _pseudo_inverse_allocation_(false);
+  int i;
+
+  // Decide whether to allocate the pseudo-inverse
+  if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
+    _pseudo_inverse_allocation_ = true;
+  }
+
+  HighOrderVariable.InitializeVariable(ReconstructionOrder,
+				       Grid,
+				       _pseudo_inverse_allocation_);
+// --> RR: comment out multiple reconstruction order allocations in allocate_HighOrder
+//  // Re-allocate new memory if necessary
+//  if (NumberOfReconstructions != NumberOfHighOrderVariables){
+//
+//    // allocate the high-order array
+//    allocate_HighOrder_Array(NumberOfReconstructions);
+//    
+//    // set the reconstruction order of each high-order object
+//    for (i=0; i<NumberOfHighOrderVariables; ++i){
+//      if (_complete_initialization_){
+//	// initialize the high-order variable completely 
+//	HO_Ptr[i].InitializeVariable(ReconstructionOrders[i],
+//				     Grid,
+//				     _pseudo_inverse_allocation_);
+//      } else {
+//	// initialize the basic high-order variable
+//	HO_Ptr[i].InitializeBasicVariable(ReconstructionOrders[i],
+//					  Grid,
+//					  _pseudo_inverse_allocation_);
+//      }
+//    }
+//
+//  } else {
+//    // check the reconstruction orders
+//    for (i=0; i<ReconstructionOrders.size(); ++i){
+//      if (HighOrderVariable(i).RecOrder() != ReconstructionOrders[i]){
+//	// change the reconstruction order of the high-order object
+//	HO_Ptr[i].SetReconstructionOrder(ReconstructionOrders[i]);
+//      }
+//    } // endfor
+//  }// endif
+
+}
+
+/******************************************//**
+ * Deallocate memory for high-order variables
+ *********************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate_HighOrder(void) {
+  //  delete []HO_Ptr; HO_Ptr = NULL;
+  //  NumberOfHighOrderVariables = 0;
 }
 
 /******************************************************************
@@ -970,7 +1111,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Grid_Exterior_Nodes(void) {
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Grid_Cells(void) {
 
-   Grid.Update_Cells();
+   Grid.Update_Cells_HighOrder();
 
 }
 
@@ -984,7 +1125,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Grid_Cells(void) {
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Grid_Ghost_Cells(void) {
 
-   Grid.Update_Ghost_Cells();
+   Grid.Update_Ghost_Cells_HighOrder();
 
 }
 
@@ -1009,8 +1150,87 @@ Update_Corner_Cells_for_3_Blks_Abutting(const int i_elem,
                                         const int k_elem, 
                                         const int numNeigh,
                                         const int be) {
+     
+  int execute_this_prog = 1;
    
-   return 0;
+  if( ((abs(i_elem) && abs(j_elem) && !(k_elem)) ||
+       (abs(i_elem) && abs(k_elem) && !(j_elem)) ||
+       (abs(j_elem) && abs(k_elem) && !(i_elem))) && (!numNeigh && !be) ) {
+    execute_this_prog = 1;
+  }
+   
+  if(!execute_this_prog) return 0;
+   
+  // execute this program for the true situation.
+  int i_nearest, j_nearest, k_nearest;
+  int i_inc, j_inc, k_inc;
+   
+  // default values
+  i_nearest = Nghost;
+  j_nearest = Nghost;
+  k_nearest = Nghost;
+   
+  i_inc = 0;
+  j_inc = 0;
+  k_inc = 0;
+   
+  // set the corner's nearest nodes based on where the element is located.
+  if(i_elem <0){
+    i_nearest = Nghost;
+    i_inc = -1;
+  }else{
+    i_nearest = ICu;
+    i_inc = 1;
+  }
+  if(j_elem <0){
+    j_nearest = Nghost;
+    j_inc = -1;
+  }else{
+    j_nearest = JCu;
+    j_inc = 1;
+  }
+  if(k_elem <0){
+    k_nearest = Nghost;
+    k_inc = -1;
+  }else{
+    k_nearest = KCu;
+    k_inc = 1;
+  }
+   
+  // coincide the ghost corners with the nearest physical ones.
+  if(abs(i_elem) && abs(j_elem) && !(k_elem)){
+    for (int kDir = KCl-Nghost; kDir<= KCu+Nghost-1; ++kDir){
+      for(int jDir = 1; jDir <= Nghost; ++jDir){
+	for(int iDir = 1; iDir <= Nghost; ++iDir){
+	  W[i_nearest + i_inc*iDir][j_nearest + j_inc*jDir][kDir] = 
+	    W[i_nearest][j_nearest][kDir];
+	}
+      }
+    }
+  }
+
+  if(abs(i_elem) && abs(k_elem) && !(j_elem)){
+    for (int jDir = JCl-Nghost; jDir<= JCu+Nghost-1; ++jDir){
+      for(int iDir = 1; iDir <= Nghost; ++iDir){
+	for(int kDir = 1; kDir <= Nghost; ++kDir){
+	  W[i_nearest + i_inc*iDir][jDir][k_nearest + k_inc*kDir] = 
+	    W[i_nearest][jDir][k_nearest];
+	}
+      }
+    }
+  }
+
+  if (abs(j_elem) && abs(k_elem) && !(i_elem)){
+    for (int iDir = ICl-Nghost; iDir<= ICu+Nghost-1; ++iDir){
+      for(int jDir = 1; jDir <= Nghost; ++jDir){
+	for(int kDir = 1; kDir <= Nghost; ++kDir){
+	  W[iDir][j_nearest + j_inc*jDir][k_nearest + k_inc*kDir] = 
+	    W[iDir][j_nearest][k_nearest];
+	}
+      }
+    }
+  }
+  return 0;
 
 }
 
@@ -1536,7 +1756,24 @@ ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
            } 
            break; 
            
-
+        case IC_RADIAL_COSINE:
+           // Set the solution state everywhere to the initial state Wo[0].
+           // and sets rho to a cosine function.
+           // This is used to demonstrate explicitfiltering capabilities, 
+           // not for actual computations.
+           for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+               for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+                   for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                       W[i][j][k] = IPs.Wo;
+                       double r = Grid.Cell[i][j][k].Xc.abs();
+                       double a = W[i][j][k].rho;
+                       W[i][j][k].rho = a + a/3.0*cos(2.0*r);// + a/5.0*cos(6.0*r);
+                       U[i][j][k] = W[i][j][k].U( );
+                   } /* endfor */
+               } /* endfor */
+           } /* endfor */
+           break;
+           
       case IC_UNIFORM :
       default:
          // Set the solution state everywhere to the initial state Wo[0].
@@ -1549,7 +1786,27 @@ ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             } /* endfor */
          } /* endfor */
          break;
-      
+
+   case IC_SINE_WAVE_XDIR :
+    Wl.v.x = 100.0;
+    Wl.v.y = 0.0;
+    Wl.v.z = 0.0;
+    Wl.p = PRESSURE_STDATM;
+    for (int k = KCl-Nghost ; k<= KCu+Nghost; ++k) {
+      for (int j = JCl-Nghost ; j<= JCu+Nghost; ++j) {
+	 for (int i = ICl-Nghost ; i<= ICu+Nghost; ++i) {
+//	   Wl.d = Grid.IntegrateFunctionOverCell(i,j,k,SinVariationInXDir,8,Wl.d) / Grid.Cell[i][j][k].V;
+//	   Wl.rho = 2.0 + 20.0*std::sin((ConvertDomainToMinusOneOne(-100,100,Grid.Cell[i][j][k].Xc.x)+1)*PI);
+	   Wl.rho = 2.0 + std::sin(Grid.Cell[i][j][k].Xc.x*2*PI);
+//	   if ( (i == ICl && j == JCl && k == KCl) || (i == ICu && j == JCu && k == KCu) ){
+//	     std::cout << "\n Wl.rho["<< i <<"]["<< j <<"]["<< k <<"] = " << Wl.rho << endl;
+//	   }
+	   W[i][j][k] = Wl;
+	   U[i][j][k] = W[i][j][k].U();
+	 }/* endfor */
+      }/* endfor */
+    }/* endfor */
+     break;
    } /* endswitch */
 
    /* Set default values for the boundary conditions
@@ -1967,7 +2224,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
                   break;
          
               case BC_FIXED_PRESSURE :
-		  for (int ghost = 1 ; ghost <= Nghost ; ++ghost){
+                  for (int ghost = 1 ; ghost <= Nghost ; ++ghost){
 		    W[i][ JCl-ghost][k] = W[i][JCl+ghost-1][k];
 		    W[i][ JCl-ghost][k].p = WoS[i][k].p;
 		    U[i][ JCl-ghost][k] = W[i][JCl-ghost][k].U();
@@ -2344,6 +2601,152 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    } /* endfor */
 
 }
+
+/********************************************************
+ * Routine: BCs_dUdt                                    *
+ *                                                      *
+ * Apply boundary conditions at boundaries of the       *
+ * specified hexa solution block.                       *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+BCs_dUdt(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
+         int n) {
+    
+    SOLN_cSTATE dUdt_temp;
+    SOLN_pSTATE dWdt_temp;
+    
+    Vector3D dX;
+    double dpdx;
+    
+    for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+        for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+            
+            // Do not yet prescribe any corner ghost cells
+            if ( (j >= JCl && j <= JCu) && (k >= KCl && k <= KCu) ){
+                
+                // Prescribe West boundary conditions.
+                switch(Grid.BCtypeW[j][k]) {
+                    case BC_NONE :
+                        break;
+                    case BC_PERIODIC :  
+                        for (int ghost = 1 ; ghost <= Nghost ; ++ghost){
+                            dUdt[ICl-ghost][j][k][n] = dUdt[ICu-ghost+1][j][k][n];
+                        }
+                    break;
+                        
+                    default :
+                        cout << "boundary condition " << Grid.BCtypeW[j][k] << " for dUdt not supported" << endl;
+                        break;
+                        
+                } /* endswitch */
+                
+                // Prescribe East boundary conditions.  
+                switch(Grid.BCtypeE[j][k]) {
+                    case BC_NONE :
+                        break;
+                    case BC_PERIODIC :
+                        for (int ghost = 1 ; ghost <= Nghost ; ++ghost){	
+                            dUdt[ICu+ghost][j][k][n] = dUdt[ICl+ghost-1][j][k][n];
+                        }
+                        break;
+
+                    default :
+                        cout << "boundary condition " << Grid.BCtypeE[j][k] << " for dUdt not supported" << endl;
+                        break;
+                        
+                } /* endswitch */
+            } /* endif */
+        } /* endfor */
+    } /* endfor */
+    
+    for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+        for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+            
+            
+            // Use the north and south BCtypes to prescribe all of the corner 
+            // ghost-cells found in the domain of (k >= KCl && k <= KCu).
+            // Corner ghost cells outside of this domain will be prescribed based
+            // on the north and south BCtypes accordingly.
+            if ( k >= KCl && k <= KCu){
+                
+                // Prescribe South boundary conditions.
+                switch(Grid.BCtypeS[i][k]) {
+                    case BC_NONE :
+                        break;
+                    case BC_PERIODIC :
+                        for (int ghost = 1 ; ghost <= Nghost ; ++ghost){
+                            dUdt[i][JCl-ghost][k][n] = dUdt[i][JCu-ghost+1][k][n];
+                        }
+                        break;
+                        
+                    default :
+                        cout << "boundary condition " << Grid.BCtypeS[i][k] << " for dUdt not supported" << endl;
+                        break;
+                        
+                } /* endswitch */
+                
+                // Prescribe North boundary conditions.
+                switch(Grid.BCtypeN[i][k]) {
+                    case BC_NONE :
+                        break;
+                    case BC_PERIODIC :
+                        for (int ghost = 1 ; ghost <= Nghost ; ++ghost){
+                            dUdt[i][JCu+ghost][k][n] = dUdt[i][JCl+ghost-1][k][n];
+                        }
+                        break;
+                        
+                    default :
+                        cout << "boundary condition " << Grid.BCtypeN[i][k] << " for dUdt not supported" << endl;
+                        break;
+                        
+                } /* endswitch */
+            } /* endif */
+        } /* endfor */
+    } /* endfor */
+    
+    for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+        for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+            // Remaining corner ghost cells, outside of the domain of (k >= KCl && k <= KCu),
+            // are prescribed based on the north and south BCtypes accordingly.
+            
+            // Prescribe Bottom boundary conditions.
+            switch(Grid.BCtypeB[i][j]) {
+                case BC_NONE :
+                    break;
+                case BC_PERIODIC :
+                    for (int ghost = 1 ; ghost <= Nghost ; ++ghost){
+                        dUdt[i][j][KCl-ghost][n] = dUdt[i][j][KCu-ghost+1][n];
+                    }
+                    break;
+
+                default :
+                    cout << "boundary condition " << Grid.BCtypeB[i][j] << " for dUdt not supported" << endl;
+                    break;
+                    
+            } /* endswitch */
+            
+            // Prescribe Top boundary conditions.
+            switch(Grid.BCtypeT[i][j]) {
+                case BC_NONE :
+                    break;
+                case BC_PERIODIC :
+                    for (int ghost = 1 ; ghost <= Nghost ; ++ghost){
+                        dUdt[i][j][KCu+ghost][n] = dUdt[i][j][KCl+ghost-1][n];
+                    }
+                    break;
+                    
+                default : 
+                    cout << "boundary condition " << Grid.BCtypeT[i][j] << " for dUdt not supported" << endl;
+                    break;
+            } /* endswitch */
+        } /* endfor */
+    } /* endfor */
+    
+}
+
+
 
 /********************************************************
  * Routine: CFL                                         *
@@ -3225,18 +3628,18 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
     
 }
 
-/********************************************************
- * Routine: dUdt_Multistage_Explicit                    *
- *                                                      *
- * This routine determines the solution residuals for a *
- * given stage of a variety of multi-stage explicit     *
- * time integration schemes for a given solution block. *
- *                                                      *
- ********************************************************/
+/*********************************************************
+ * Routine: dUdt_Multistage_Explicit                     *
+ *                                                       *
+ * This routine determines the solution residuals for a  *
+ * given stage of a variety of multi-stage explicit      *
+ * time integration schemes for a given solution block.  *
+ *                                                       *
+ *********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
 dUdt_Multistage_Explicit(const int i_stage,
-                         Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+			 Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
    int i, j, k,  k_residual;
    double omega; 
@@ -3299,6 +3702,7 @@ dUdt_Multistage_Explicit(const int i_stage,
       Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
       
       break;
+
    default:
       Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
       break;
@@ -3957,6 +4361,59 @@ LoadSendBuffer_Solution(double *buffer,
 }
 
 /*******************************************************************************
+ * Hexa_Block::LoadSendBuffer_Residual -- Loads send message buffer with       *
+ *                                        solution data.                       *
+ *******************************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+LoadSendBuffer_Residual(double *buffer,
+                        int &buffer_count,
+                        const int buffer_size,
+                        const int *id_start, 
+                        const int *id_end,
+                        const int *inc,
+                        const int *neigh_orient,
+                        int residual_index) {
+    
+    int indices[3];
+    
+    int &i = indices[0];
+    int &j = indices[1];
+    int &k = indices[2];
+    
+    int &rcv_i = indices[neigh_orient[0]];
+    int &rcv_j = indices[neigh_orient[1]];
+    int &rcv_k = indices[neigh_orient[2]];
+    
+    int rcv_i_s = id_start[neigh_orient[0]];
+    int rcv_j_s = id_start[neigh_orient[1]];
+    int rcv_k_s = id_start[neigh_orient[2]];
+    
+    int rcv_i_e = id_end[neigh_orient[0]];
+    int rcv_j_e = id_end[neigh_orient[1]];
+    int rcv_k_e = id_end[neigh_orient[2]];
+    
+    int rcv_i_c = inc[neigh_orient[0]];
+    int rcv_j_c = inc[neigh_orient[1]];
+    int rcv_k_c = inc[neigh_orient[2]];
+    
+    for (rcv_k = rcv_k_s ; (rcv_k - rcv_k_s)*(rcv_k - rcv_k_e)<=0 ; rcv_k+= rcv_k_c) {
+        for (rcv_j = rcv_j_s ; (rcv_j - rcv_j_s)*(rcv_j - rcv_j_e)<=0 ; rcv_j+= rcv_j_c) {
+            for (rcv_i = rcv_i_s ; (rcv_i - rcv_i_s)*(rcv_i - rcv_i_e)<=0 ; rcv_i+= rcv_i_c) {
+                for (int nV = 1 ; nV <= NumVar(); ++nV) {
+                    buffer_count++;
+                    if (buffer_count >= buffer_size) return(1);
+                    buffer[buffer_count] = dUdt[i][j][k][residual_index][nV];
+                } /* endfor */
+            } /* endfor */
+        } /* endfor */
+    } /* endfor */
+    
+    return (0);
+    
+}
+
+/*******************************************************************************
  * Hexa_Block::LoadSendBuffer_Geometry -- Loads send message buffer with       *
  *                                        mesh geometry data.                  *
  *******************************************************************************/
@@ -4216,6 +4673,42 @@ UnloadReceiveBuffer_Solution(double *buffer,
 }
 
 /*******************************************************************************
+ * Hexa_Block::UnloadReceiveBuffer_Solution -- Unloads solution data from the  *
+ *                                             receive message buffer.         *
+ *******************************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+UnloadReceiveBuffer_Residual(double *buffer,
+                             int &buffer_count,
+                             const int buffer_size,
+                             const int i_min, 
+                             const int i_max,
+                             const int i_inc,
+                             const int j_min, 
+                             const int j_max,
+                             const int j_inc,
+                             const int k_min, 
+                             const int k_max,
+                             const int k_inc,
+                             int residual_index) {
+    
+    for (int k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
+        for (int j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
+            for (int i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
+                for (int nV = 1; nV <=NumVar(); ++ nV) {
+                    buffer_count++;
+                    if (buffer_count >= buffer_size) return(1);    
+                    dUdt[i][j][k][residual_index][nV] = buffer[buffer_count];
+                } /* endfor */
+            } /* endfor */
+        } /* endfor */
+    } /* endfor */ 
+    
+    return (0);
+    
+}
+
+/*******************************************************************************
  * Hexa_Block::UnloadReceiveBuffer_Geometry -- Unloads mesh geometry data from *
  *                                             the receive message buffer.     *
  *******************************************************************************/
@@ -4440,6 +4933,61 @@ UnloadReceiveBuffer_Flux_F2C(double *buffer,
 
 }
 
+/*!
+ * Return the upwind flux in the normal direction 
+ * based on the left and right interface states for 
+ * a variety of flux functions.
+ *
+ * \param Flux_Function index to specify the requested flux function
+ * \param Wl left interface state
+ * \param Wr right interface state
+ * \param normal_dir vector to define the normal direction
+ */
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+SOLN_cSTATE Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+RiemannFlux_n(const int & Flux_Function,
+	      const SOLN_pSTATE &Wl,
+	      const SOLN_pSTATE &Wr,
+	      const Vector3D &normal_dir) const{
+
+  switch(Flux_Function) {
+//  case FLUX_FUNCTION_GODUNOV :
+//    return SOLN_pSTATE::FluxGodunov_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_ROE :
+    return SOLN_pSTATE::FluxRoe_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_RUSANOV :
+//    return SOLN_pSTATE::FluxRusanov_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_HLLE :
+    return SOLN_pSTATE::FluxHLLE_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_LINDE :
+//    return SOLN_pSTATE::FluxLinde_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_HLLC :
+//    return SOLN_pSTATE::FluxHLLC_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_VANLEER :
+//    return SOLN_pSTATE::FluxVanLeer_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_AUSM :
+//    return SOLN_pSTATE::FluxAUSM_n(Wl, Wr, normal_dir);
+  case FLUX_FUNCTION_AUSM_PLUS_UP :
+    return SOLN_pSTATE::FluxAUSMplus_up_n(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_ROE_PRECON_WS :
+//    return SOLN_pSTATE::FluxRoe_n_Precon_WS(Wl, Wr, normal_dir);
+//  case FLUX_FUNCTION_HLLE_PRECON_WS :
+//    return SOLN_pSTATE::FluxHLLE_n_Precon_WS(Wl, Wr, normal_dir);
+  default:
+    return SOLN_pSTATE::FluxRoe_n(Wl, Wr, normal_dir);
+  } /* endswitch */
+}
+
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+SinVariationInXDir(const double x, const double y, const double z){
+  if (x<-100 || x>100){
+    return 2.0;
+  } else {
+    return 2.0 + std::sin((ConvertDomainToMinusOneOne(-100,100,x)+1)*PI);
+  }
+}
+
 /***************************************************************************************
  * Hexa_Block -- Template creation of storage and assignment of default valuse for     *
  *               static values.                                                        *
@@ -4474,5 +5022,10 @@ SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdxdz = NULL;
 
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdydz = NULL;
+
+// The following must be included at the end of file.
+#ifndef _HEXABLOCK_HIGHORDER_INCLUDED
+#include "HexaBlockHighOrder.h"
+#endif //_HEXABLOCK_HIGHORDER_INCLUDED
 
 #endif // _HEXA_BLOCK_INCLUDED

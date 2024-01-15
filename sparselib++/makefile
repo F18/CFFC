@@ -42,12 +42,12 @@ all: sp test done
 
 
 sp:
-	cd ./src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE);
-	cd ./spblas; make CFFC_SRC_TREE=$(CFFC_SRC_TREE);
-	cd ./mv/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE);
+	cd ./src; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE);
+	cd ./spblas; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE);
+	cd ./mv/src; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE);
 
 test:
-	cd ./testing; make CFFC_SRC_TREE=$(CFFC_SRC_TREE);
+	cd ./testing; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE);
 	cd ./testing; sp_test > sp_test.out;
 	@echo "  "
 	@echo " +---------------------------------------------------------------+"
@@ -58,16 +58,16 @@ test:
 	@echo "  "
 
 clean:
-	cd ./src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
-	cd ./spblas; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
-	cd ./mv/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
-	cd ./testing; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
+	cd ./src; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
+	cd ./spblas; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
+	cd ./mv/src; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
+	cd ./testing; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) clean;
 
 wipe:
-	cd ./src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
-	cd ./spblas; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
-	cd ./mv/src; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
-	cd ./testing; make CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
+	cd ./src; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
+	cd ./spblas; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
+	cd ./mv/src; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
+	cd ./testing; gmake CFFC_SRC_TREE=$(CFFC_SRC_TREE) wipe;
 
 done:
 	@echo "  "

@@ -9,6 +9,9 @@
 
 #include "../Utilities/Utilities.h" // Include util functions & macros header file.
 
+// Define macro to use Lapack library to solve least-squares problems
+#define __LAPACK_LEAST_SQUARES__
+
 /********************************************************
  * Routine: Solve_LU_Decomposition                      *
  *                                                      *
@@ -939,9 +942,7 @@ void Solve_Constrained_LS_Householder  (DenseMatrix &A,
 
   // Memory allocation for the Least-Squares problem
   DenseMatrix A_LS(M+1-NumberOfConstraints,N+1-NumberOfConstraints), B_LS(M+1-NumberOfConstraints,JB+1);
-  DenseMatrix X_LS(N+1-NumberOfConstraints,JB+1);
   int krank;
-  ColumnVector Rnorm(JB+1);
 
   int *PermutationVector;
   PermutationVector = new int[NumberOfConstraints];	// stores the permutation indexes
@@ -1014,6 +1015,7 @@ void Solve_Constrained_LS_Householder  (DenseMatrix &A,
     // Solve the Least Squares problem and copy solution to the X matrix
     /*******************************************************************/
 #ifdef __LAPACK_LEAST_SQUARES__
+
     // Solve the least-squares system with Lapack subroutine
     Solve_LS_Householder_F77(A_LS, B_LS, krank, JB+1, M+1-NumberOfConstraints,N+1-NumberOfConstraints);
 
@@ -1028,6 +1030,9 @@ void Solve_Constrained_LS_Householder  (DenseMatrix &A,
 
     /* Solve the overdetermined linear system of equations using a least-squares procedure written by L. Ivan */
     /**********************************************************************************************************/
+    DenseMatrix X_LS(N+1-NumberOfConstraints,JB+1);
+    ColumnVector Rnorm(JB+1);
+
     Solve_LS_Householder(A_LS,B_LS,X_LS,krank,Rnorm);
 
     // copy X_LS into X

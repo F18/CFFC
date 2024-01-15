@@ -853,6 +853,12 @@ class DenseMatrix: public MV_ColMat_double{
     friend DenseMatrix permute_col(const DenseMatrix &M, const int col1_,
 				   const int col2_);
     
+    /*! @brief Make matrix M part of the current matrix starting from (StartRow,StartCol) element */
+    void incorporate_matrix(const int & StartRow, const int & StartCol, 
+			    const DenseMatrix &M,
+			    const int & SkipRowsForward = 0,
+			    const int & SkipRowsBackward = 0);
+
     /* Assignment operator. */
     // DenseMatrix operator = (const DenseMatrix &M1);
     // Use automatically generated assignment operator.
@@ -1457,6 +1463,42 @@ inline double trace(const TriDiagonalMatrix &M) {
    for ( i = 0; i <= M.n-1; ++i ) xx+=M.D(i);
    return (xx);
 }
+
+/*!
+ * Make matrix M part of the current matrix starting from (StartRow,StartCol) element.
+ * This routine is useful is an assembly matrix is formed.
+ * \note This routine doesn't check if the current matrix has enough space to 
+ *  incorporate matrix M. This property is assumed to exist!
+ *
+ * \param StartRow the starting matrix row for filling with the elements of M (starts from 0)
+ * \param StartCol the starting matrix column for filling with the elements of M (starts from 0)
+ * \param M the matrix which is incorporated
+ * \param SkipRowsForward the number of rows (starting from the first one) 
+ *                        that are skipped when copying M into the current one
+ * \param SkipRowsBackward the number of rows (starting from the last one backwards) 
+ *                         that are skipped when copying M into the current one
+ */
+inline void DenseMatrix::incorporate_matrix(const int & StartRow, const int & StartCol, 
+					    const DenseMatrix &M,
+					    const int & SkipRowsForward,
+					    const int & SkipRowsBackward){
+
+  // copy the columns of M into the columns of *this
+  // this should run much faster than just accessing each (i,j)
+  // element individually 
+
+  int col, row, index;
+
+  for (col = 0; col < M.dim(1); ++col){
+    for (row = SkipRowsForward; row < M.lda()-SkipRowsBackward; ++row){
+      // calculate the index in the current vector
+      index = (StartCol + col)*lda() + StartRow + row - SkipRowsForward;
+      v_[index] = M.v_[M.lda()*col + row];
+    }
+  }
+
+}
+
 
 /********************************************************
  * TriDiagonalMatrix -- Unary arithmetic operators.     *

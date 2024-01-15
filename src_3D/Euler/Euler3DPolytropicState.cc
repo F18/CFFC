@@ -20,7 +20,7 @@ double Euler3D_Polytropic_pState::gm1 = GAMMA_AIR-ONE;
 double Euler3D_Polytropic_pState::gm1i = ONE/(GAMMA_AIR-ONE);
 double Euler3D_Polytropic_pState::R = R_UNIVERSAL/(MOLE_WT_AIR*MILLI);
 char* Euler3D_Polytropic_pState::gas_type = "AIR";
-double Euler3D_Polytropic_pState::Mref = 0.1;
+double Euler3D_Polytropic_pState::Mref = 0.5;
 
 
 // Set gas constants.
@@ -147,6 +147,30 @@ double Euler3D_Polytropic_pState::E(void) {
 
 double Euler3D_Polytropic_pState::E(void) const {
     return (p*gm1i + HALF*rho*v.sqr());
+}
+
+// Kinetic energy.
+/*!
+ * \f$ E =  \frac{1}{2} \rho \boldmath{\bar{v}}^2 \f$
+ */
+double Euler3D_Polytropic_pState::Ek(void) {
+    return (HALF*rho*v.sqr());
+}
+
+double Euler3D_Polytropic_pState::Ek(void) const {
+    return (HALF*rho*v.sqr());
+}
+
+// specific kinetic energy.
+/*!
+ * \f$ E =  \frac{1}{2} \boldmath{\bar{v}}^2 \f$
+ */
+double Euler3D_Polytropic_pState::ek(void) {
+    return (HALF*v.sqr());
+}
+
+double Euler3D_Polytropic_pState::ek(void) const {
+    return (HALF*v.sqr());
 }
 
 // Specific enthalpy. 

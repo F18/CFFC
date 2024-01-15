@@ -55,6 +55,18 @@ using namespace std;
 #include "../TurbulenceModelling/TurbulenceModellingInput.h"
 #endif // _TURBULENCEMODEL_INPUT_INCLUDED
 
+#ifndef _GRID3D_HO_EXECUTIONMODE_INCLUDED
+#include "../Grid/Grid3DHighOrderExecutionMode.h"
+#endif // _GRID3D_HO_EXECUTIONMODE_INCLUDED
+
+#ifndef _HIGHORDER_INPUT_INCLUDED
+#include "../HighOrderReconstruction/HighOrderInput.h"
+#endif // _HIGHORDER_INPUT_INCLUDED
+
+#ifndef _EXPLICIT_FILTERS_INPUT_INCLUDED
+#include "../ExplicitFilters/Explicit_Filters_Input.h"
+#endif // _EXPLICIT_FILTERS_INPUT_INCLUDED
+
 /* Define the class. */
 
 #define	INPUT_PARAMETER_LENGTH    256
@@ -90,6 +102,7 @@ class CFD_Input_Parameters{
   //@{ @name Output parameters:
   //! Output file name
   char Output_File_Name[INPUT_PARAMETER_LENGTH];
+  char Output_File_Name_Prefix[INPUT_PARAMETER_LENGTH];
   //! Restart file name
   char Restart_File_Name[INPUT_PARAMETER_LENGTH];
   //! Output format type indicator
@@ -101,6 +114,8 @@ class CFD_Input_Parameters{
   int Output_Progress_Frequency;
   //! Frequency of outputting solution for time accurate calculations
   int Time_Accurate_Output_Frequency;
+  //! Determines how progress is indicated (Only use PROGRESS_MODE_TERMINAL in case output on terminal)
+  int Progress_Mode;
   //@}
 
   //@{ @name Debugging parameters:
@@ -124,6 +139,12 @@ class CFD_Input_Parameters{
   int Residual_Norm;
   int Number_of_Residual_Norms;
   double CFL_Number, Time_Max;
+  int Output_CFL_Limit;
+  //@}
+
+  //@{ @name Spatial Order of Accuracy type indicator and related input parameters:
+  int Spatial_Accuracy;
+  int Reconstruction_Order;
   //@}
 
   //@{ @name Reconstruction type indicator and related input parameters:
@@ -178,6 +199,14 @@ class CFD_Input_Parameters{
   Turbulence_Modelling_Input_Parameters Turbulence_IP;
   //@}
 
+  //@{ @name High Order related input parameters:
+  HighOrder_Input_Parameters HighOrder_IP;
+  //@}
+    
+  //@{ @name High Order related input parameters:
+  Explicit_Filters_Input_Parameters ExplicitFilters_IP;
+  //@}
+
   //@{ @name Initial condition type indicator and related input parameters:
   char ICs_Type[INPUT_PARAMETER_LENGTH];
   int i_ICs;
@@ -207,7 +236,7 @@ class CFD_Input_Parameters{
   //! Pressure gradient 
   Vector3D Pressure_Gradient;
   //@}
- 
+
   //@{ @name Constructors and desctructors:
   //! Constructor (assign default values).
   CFD_Input_Parameters(void) {
@@ -218,11 +247,13 @@ class CFD_Input_Parameters{
     strcpy(Next_Control_Parameter, " ");
     // Output parameters:
     strcpy(Output_File_Name, "outputfile.dat");
+    strcpy(Output_File_Name, "outputfile");
     strcpy(Restart_File_Name, "restartfile.soln");
     strcpy(Output_Format_Type, "Tecplot");
     i_Output_Format = IO_TECPLOT;
     Restart_Solution_Save_Frequency = 1000;
     Time_Accurate_Output_Frequency = 0;
+    Progress_Mode = PROGRESS_MODE_MESSAGE;
     // Debugging parameters:
     Debug_Level = 0;  //default no debug information
     // Flow type indicator and related input parameters:
@@ -237,9 +268,13 @@ class CFD_Input_Parameters{
     Maximum_Number_of_Time_Steps = 100;
     N_Stage = 1;
     CFL_Number = HALF;
+    Output_CFL_Limit = OFF;
     Time_Max = ZERO;
     Residual_Norm = 1;   //density default
     Number_of_Residual_Norms =1;
+    // Spatial Order of Accuracy type indicator and related input parameters:
+    Spatial_Accuracy = 2;
+    Reconstruction_Order = 1;
     // Reconstruction type indicator and related input parameters:
     strcpy(Reconstruction_Type, "Least_Squares");
     i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
@@ -274,6 +309,12 @@ class CFD_Input_Parameters{
     Mean_Velocity.zero();
     Fresh_Gas_Height = ZERO;
     Pressure_Gradient.zero(); 
+    // Set default values in class Grid3D_HO_Execution_Mode
+    Grid3D_HO_Execution_Mode::SetDefaults();
+    // Set default values in class CENO_Execution_Mode
+    CENO_Execution_Mode::SetDefaults();
+    // Set default values in class CENO_Tolerances
+    CENO_Tolerances::SetDefaults();
   }
 
   //! Destructor
@@ -298,6 +339,10 @@ class CFD_Input_Parameters{
                                            int &Command_Flag);
   //! Check validity of specified input parameters
   int Check_Inputs(void);
+  //@}
+
+  //! Set final input parameters (and static variables) based on the parsed input parameters
+  int Set_Final_Input_Parameters(void);
   //@}
 
   //@{ @name Input-output operators:

@@ -143,9 +143,9 @@ int main(int num_arg, char *arg_ptr[]) {
         batch_flag = 1;
       } else if (strcmp(arg_ptr[i], "-pde") == 0) {
         pde_flag = 1;
-//       } else if (strcmp(arg_ptr[i-1], "-pde") == 0) {
-//         Equation_Type_ptr = arg_ptr[i];
-//         strcpy(Equation_Type, Equation_Type_ptr);
+      } else if (strcmp(arg_ptr[i-1], "-pde") == 0) {
+        Equation_Type_ptr = arg_ptr[i];
+        strcpy(Equation_Type, Equation_Type_ptr);
       } else if (strcmp(arg_ptr[i], "-f") == 0) {
         file_flag = 1;
       } else if (strcmp(arg_ptr[i-1], "-f") == 0) {
@@ -235,10 +235,12 @@ int main(int num_arg, char *arg_ptr[]) {
    * RUN UNIT TESTS AS REQUIRED AND STOP (tests run using only 1 CPU). *
    *********************************************************************/
 
+#ifndef _NO_TUT_TESTING
   if (test_flag) {
      error_flag = Perform_UnitTesting(TestSuite, TestNumber, TestRootPath);
      return (error_flag);
   } /* endif */
+#endif
 
   /***********************************************************  
    * PERFORM REQUIRED CALCULATIONS.                          *

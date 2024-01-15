@@ -11,6 +11,7 @@
 #include "Grid/Grid2D/Cell2D.h"
 #include "TestFunctions/TestFunctions_2D.h"
 #include "include/TypeDefinition.h"
+#include "../CENO_CFRS_ExecutionMode.h" // Include high-order CENO execution mode header file
 
 using namespace std;
 
@@ -44,9 +45,11 @@ class Reconstruct2D_Input_Parameters{
   char Method_Used[INPUT_PARAMETER_LENGTH_RECONSTRUCT2D];
   int  Method;
   char Geometric_Weighting[INPUT_PARAMETER_LENGTH_RECONSTRUCT2D];
-  int geom_weighting;
+  int  geom_weighting;
   char Data_Dependent_Weighting[INPUT_PARAMETER_LENGTH_RECONSTRUCT2D];
-  int data_depend_weighting;
+  int  data_depend_weighting;
+  char Pseudo_Inverse[INPUT_PARAMETER_LENGTH_RECONSTRUCT2D];
+  char Reduce_Order[INPUT_PARAMETER_LENGTH_RECONSTRUCT2D];
 
   // Function file name to be reconstructed and related input parameters:
   char Function_Type[INPUT_PARAMETER_LENGTH_RECONSTRUCT2D];

@@ -199,6 +199,8 @@ Vector2D Spline(const double &s,
 
     } /* endif */
 
+    // Added for compiler complain!
+    return Vector2D(0);
 }
 
 /********************************************************

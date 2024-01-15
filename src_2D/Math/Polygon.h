@@ -68,6 +68,8 @@ using namespace std;
  *      min_length       -- Returns the length of the shortest edge.
  *      point_in_polygon -- Determines if the given point is inside
  *                          the polygon.
+ *      IsPointInPolygon -- Determines if the given point is inside
+ *                          the polygon (similar function to point_in_polygon but different algorithm)
  *      sort             -- Sort the polygon into counter-clockwise
  *                          order.
  *      reverse_order    -- Reverse the order of the polygon nodes.
@@ -166,6 +168,9 @@ public:
   //! Determine if the given point is inside the polygon.
   int point_in_polygon(const Vector2D &Xt) const;
 
+  //! Determine if the given point is inside the polygon (different algorithm than point_in_polygon)
+  bool IsPointInPolygon(const Vector2D &Xt) const;
+
   //! Sort the polygon nodes into counter-clockwise order.
   void sort(void);
 
@@ -197,6 +202,9 @@ public:
 
   //! Assignment Operator.
   Polygon& operator =(const Polygon &P);
+
+  //! @brief Calculate bounding box for the polygon
+  void BoundingBoxCoordinates(Vector2D & xlo, Vector2D & xhi);
 
   //! Output operator.
   friend ostream &operator << (ostream &out_file, const Polygon &P);
@@ -372,6 +380,26 @@ inline int Polygon::point_in_polygon(const Vector2D &Xt) const {
 
 }
 
+/*!
+ * Similar routine to 'point_in_polygon' that uses a different algorithm.
+ * See http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+ * for explanations.
+ */
+inline bool Polygon::IsPointInPolygon(const Vector2D &Xt) const {
+
+  int i, j, c = 0;
+  
+  for (i = 0, j = np-1; i < np; j = i++) {
+    if ((((X[i].y<=Xt.y) && (Xt.y<X[j].y)) ||
+	 ((X[j].y<=Xt.y) && (Xt.y<X[i].y))) &&
+	(Xt.x < (X[j].x - X[i].x) * (Xt.y - X[i].y) / (X[j].y - X[i].y) + X[i].x))
+
+      c = !c;
+  }
+
+  return c;
+}
+
 /**********************************************************************
  * Polygon::sort -- Sort the polygon nodes into counter-clockwise     *
  *                  order.                                            *
@@ -456,6 +484,24 @@ inline Polygon& Polygon::operator =(const Polygon &P) {
 //   for (int n = 0; n < np; n++) X[n] = P.X[n];
   copy(P);
   return *this;
+}
+
+/*!
+ * Determine the lower and upper limits of the coordinates
+ * for the rectangular bounding box of the polygon.
+ */
+inline void Polygon::BoundingBoxCoordinates(Vector2D & xlo, Vector2D & xhi){
+
+  // Initialize xlo and xhi
+  xlo = X[0];
+  xhi = X[0];
+
+  // Iterate over the polygon nodes and find out the minimum and maximum 'x' and 'y' coordinates
+  for (int n=1; n < np; ++n ){
+    xlo = vmin(xlo,X[n]);
+    xhi = vmax(xhi,X[n]);
+  }
+
 }
 
 /**********************************************************************

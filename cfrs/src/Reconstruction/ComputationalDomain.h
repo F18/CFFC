@@ -8,7 +8,9 @@
 #include "include/ComputationalCell.h"
 #include "Reconstruction1D/Reconstruct1DInput.h"
 #include "Reconstruction2D/Reconstruct2DInput.h"
+#include "Reconstruction3D/Reconstruct3DInput.h"
 #include "Grid/Grid2D/QuadrilateralGrid.h"
+#include "Grid/Grid3D/Grid3DHexaBlock.h"
 #include "ReconstructionFunction.h"
 #include "CENO_DataAnalysis.h"
 #include "Common/TecplotAuxData.h"
@@ -58,9 +60,6 @@ std::ostream& operator<< (std::ostream& os,
  * TEMPLATIZED CLASS: ComputationalDomain                                   *
  *                                                                          *
  * Container for ComputationalCells.                                        *
- * 
- * VARIABLES:                                                               *
- *                                                                          *
  ***************************************************************************/
 
 template< SpaceType SpaceDimension, class GeometryType, class SolutionType>
@@ -75,9 +74,9 @@ class ComputationalDomain{
   typedef ComputationalDomain<SpaceDimension,GeometryType,SolutionType> CompDomainType;
 
   static const int NumberOfParameters = CompCellType::NumberOfVariables;
+
+private:
   
- private:
-  CompCellType*** SolnPtr;      /* Solution variable */
   vector<int> N_XYZ;		/* Total number of cells in the X, Y and Z direction */
   vector<int> IndexLow;		/* Start of the computational domain */
   vector<int> IndexUp;		/* End of the computational domain */
@@ -90,6 +89,11 @@ class ComputationalDomain{
 						the whole computational domain */
   double CharacteristicLength;	/* The characteristic length of the geometry */
   double CutoffKnob;
+  
+  DenseMatrix*** CENO_LHS;      /* Block-level Container for the LHS Matrix used in the kExact_Reconstruction prcedure */
+
+  CompCellType*** SolnPtr;      /* Solution variable */
+
 
  public:
 
@@ -108,12 +112,16 @@ class ComputationalDomain{
   void allocate();
   void deallocate();
 
+  void allocate_CENO_LHS_size();
+
   void SetDomain(const int & NCx, const int & Nghost);
   void SetDomain(const int & NCx, const int & NCy, const int & Nghost);
   void SetDomain(const int & NCx, const int & NCy, const int & NCz, const int & Nghost);
   void SetDomain(const Reconstruct1D_Input_Parameters & IP);
   void SetDomain(Grid2D_Quad_Block & Grid, const Reconstruct2D_Input_Parameters & IP);
   void SetDomain(const Reconstruct2D_Input_Parameters & IP);
+  void SetDomain(Grid3D_Hexa_Block & Grid, const Reconstruct3D_Input_Parameters & IP);
+  void SetDomain(const Reconstruct3D_Input_Parameters & IP);
 
   /* Access functions */
   int & iStart(void) { return IndexLow[0];}
@@ -141,6 +149,7 @@ class ComputationalDomain{
   double & MaxDeltaSolutionDomain(int parameter) { return MaxDeltaSolutionOverDomain[parameter]; }
   double & GeomCharacteristicLength(void) { return CharacteristicLength; }
   const double & KnobCutoff(void) { return CutoffKnob;}
+  const int & NumberOfCellRings(void) const { return SolnPtr[0][0][0].CellRings(); }
 
   /* Operation functions */
   int NumberOfTaylorDerivatives() const {
@@ -154,10 +163,11 @@ class ComputationalDomain{
   void ReconstructSolution(const Reconstruct1D_Input_Parameters & IP);
   void ReconstructSolution(const Reconstruct2D_Input_Parameters & IP);
   void ReconstructZonalSolution(const Reconstruct2D_Input_Parameters & IP);
-  void ReconstructSolution(bool ChangeMe);
+  void ReconstructSolution(const Reconstruct3D_Input_Parameters & IP);
   void ReconstructSolutionAndBoundary(const Reconstruct1D_Input_Parameters & IP);
   void ReconstructToLimitedPiecewiseLinear(int iCell, const int Limiter);
   void ReconstructToLimitedPiecewiseLinear(int iCell, int jCell, const int Limiter);
+  void ReconstructToLimitedPiecewiseLinear(int iCell, int jCell, int kCell, const int Limiter);
 
   template<class InputParameters>
     void SetInitialData(const InputParameters & IP); /* template based on the class of the input parameters */
@@ -171,9 +181,49 @@ class ComputationalDomain{
   void ComputeMultipleCorrelationCoefficient(void);
   void ComputeMultipleCorrelationCoefficient2D(void);
 
+  //! @name Pseudo-inverse of the LHS term in the CENO reconstruction
+  //@{
+  //! Get the pointer to the double array of reconstruction pseudo-inverse matrices.
+  DenseMatrix *** LHS_Inv(void) {return CENO_LHS;}
+  
+  // 2D Accessors
+  // ************
+  //! Get the pseudo-inverse matrix for the reconstruction of cell (ii,jj)
+  DenseMatrix & Cell_LHS_Inv(const int & ii, const int & jj) {return CENO_LHS[0][jj][ii];}
+  //! Get the pseudo-inverse matrix for the reconstruction of cell (ii,jj)
+  const DenseMatrix & Cell_LHS_Inv(const int & ii, const int & jj) const {return CENO_LHS[0][jj][ii];}
+  //! Get the entry (IndexI,IndexJ) in the pseudo-inverse matrix for the reconstruction of cell (ii,jj)
+  double & Cell_LHS_Inv_Value(const int & ii, const int & jj,
+			      const int & IndexI, const int & IndexJ) {return CENO_LHS[0][jj][ii](IndexI,IndexJ);}
+  //! Get the entry (IndexI,IndexJ) in the pseudo-inverse matrix for the reconstruction of cell (ii,jj)
+  const double & Cell_LHS_Inv_Value(const int & ii, const int & jj,
+				    const int & IndexI, const int & IndexJ) const {return CENO_LHS(IndexI,IndexJ);}
+  
+  // 3D Accessors
+  // ************
+  //! Get the pseudo-inverse matrix for the reconstruction of cell (ii,jj,kk)
+  DenseMatrix & Cell_LHS_Inv(const int & ii, const int & jj, const int & kk) {return CENO_LHS[kk][jj][ii];}
+  //! Get the pseudo-inverse matrix for the reconstruction of cell (ii,jj,kk)
+  const DenseMatrix & Cell_LHS_Inv(const int & ii, const int & jj, const int & kk) const {return CENO_LHS[kk][jj][ii];}
+  //! Get the entry (IndexI,IndexJ) in the pseudo-inverse matrix for the reconstruction of cell (ii,jj,kk)
+  double & Cell_LHS_Inv_Value(const int & ii, const int & jj, const int & kk,
+			      const int & IndexI, const int & IndexJ) {return CENO_LHS[kk][jj][ii](IndexI,IndexJ);}
+  //! Get the entry (IndexI,IndexJ) in the pseudo-inverse matrix for the reconstruction of cell (ii,jj,kk)
+  const double & Cell_LHS_Inv_Value(const int & ii, const int & jj, const int & kk,
+				    const int & IndexI, const int & IndexJ) const {return CENO_LHS(IndexI,IndexJ);}
+
+  //! Return true if the pseudo-inverse has been already computed, otherwise false.
+  //bool IsPseudoInversePreComputed(void) const { return _calculated_psinv; }
+  //! Require update of the pseudo-inverse
+  //void MustUpdatePseudoInverse(void) { _calculated_psinv = false; }
+  //! Return true if the pseudo-inverse related containers has been allocated.
+  //bool IsPseudoInverseAllocated(void) const { return _allocated_psinv; }
+  //@}
+
   /* Output functions */
   void DefineHeader(const HeaderData & NameOfThePrintedVariables){ VarNames = NameOfThePrintedVariables; }
   void OutputMeshNodesTecplot(std::ofstream &output_file,const bool Title = true) const;
+  void OutputMeshCellsTecplot(std::ofstream &output_file,const bool Title = true) const;
   void OutputNodesTecplot(std::ofstream &output_file,const bool Title = true) const;
   void OutputSolutionNodesTecplot(std::ofstream &output_file,const bool Title = true) const;
   void OutputFullSolutionNodesTecplot(std::ofstream &output_file,const bool Title = true) const;

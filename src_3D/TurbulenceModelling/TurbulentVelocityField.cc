@@ -17,6 +17,7 @@ void Turbulent_Velocity_Field_Block::allocate(const int Ni,
                                               const int Nj, 
                                               const int Nk,
                                               const int Ng) {
+
     assert( Ni >= 1 && Nj >= 1 && Nk >= 1 && Ng >=1 && !Allocated);
     NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1;
     NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1;
@@ -171,7 +172,7 @@ void Turbulent_Velocity_Field_Block::LeastSquares_Reconstruction(const int &i,
 
 
   assign_indices(n_pts, i, j, k, i_index, j_index, k_index);
-     
+    //cout << "n_pts = " << n_pts << endl;
 
   if (n_pts > 0) {
 
@@ -233,7 +234,6 @@ void Turbulent_Velocity_Field_Block::LeastSquares_Reconstruction(const int &i,
     dVdy.zero();
     dVdz.zero();
   } /* endif */
-    
 }
 
 /***********************************************************************
@@ -646,18 +646,16 @@ void Turbulent_Velocity_Field_Multi_Block_List::Deallocate(void) {
  * Turbulent_Velocity_Field_Multi_Block_List::Create --                      *
  *       Create memory containers for velocity field data.                   *
  *****************************************************************************/
-void Turbulent_Velocity_Field_Multi_Block_List::Create(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
+void Turbulent_Velocity_Field_Multi_Block_List::Create(const Grid3D_Hexa_Multi_Block_List &Grid,
                                                        const Grid3D_Input_Parameters &Input) {
-    if (Initial_Mesh.NBlk >= 1 && Initial_Mesh.Allocated) {
-        Allocate(Initial_Mesh.NBlk_Idir, Initial_Mesh.NBlk_Jdir, Initial_Mesh.NBlk_Kdir);
+    if (Grid.NBlk >= 1 && Grid.Allocated) {
+        Allocate(Grid.NBlk_Idir, Grid.NBlk_Jdir, Grid.NBlk_Kdir);
         for (int nBlk = 0; nBlk <= NBlk-1; ++nBlk ) {
-            if (Initial_Mesh.Grid_Blks[nBlk].Allocated) Vel_Blks[nBlk].allocate(Initial_Mesh.Grid_Blks[nBlk].NCi-
-                                                                                2*Initial_Mesh.Grid_Blks[nBlk].Nghost,
-                                                                                Initial_Mesh.Grid_Blks[nBlk].NCj-
-                                                                                2*Initial_Mesh.Grid_Blks[nBlk].Nghost,
-                                                                                Initial_Mesh.Grid_Blks[nBlk].NCk-
-                                                                                2*Initial_Mesh.Grid_Blks[nBlk].Nghost,
-                                                                                Initial_Mesh.Grid_Blks[nBlk].Nghost);
+            if (Grid.Grid_Blks[nBlk].Allocated && !Vel_Blks[nBlk].Allocated) 
+                Vel_Blks[nBlk].allocate(Grid.Grid_Blks[nBlk].NCi-2*Grid.Grid_Blks[nBlk].Nghost,
+                                        Grid.Grid_Blks[nBlk].NCj-2*Grid.Grid_Blks[nBlk].Nghost,
+                                        Grid.Grid_Blks[nBlk].NCk-2*Grid.Grid_Blks[nBlk].Nghost,
+                                        Grid.Grid_Blks[nBlk].Nghost);
         } /* endfor */
     } /* endif */
 }
@@ -746,433 +744,456 @@ void Turbulent_Velocity_Field_Block::assign_indices(int &n_pts,
 						    int j_index[],
 						    int k_index[]) {
 
-  if (i != ICl  &&  i != ICu &&
-      j != JCl  &&  j != JCu &&
-      k != KCl  &&  k != KCu) {
+    // 1 ring
+    int imin = max(ICl,i-1);
+    int jmin = max(JCl,j-1);
+    int kmin = max(KCl,k-1);
 
-    n_pts = 26;
-    // k plane
-    i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
-    i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
-    i_index[2] = i+1; j_index[2] = j-1; k_index[2] = k;
-    i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k;
-    i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k;
-    i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k;
-    i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k;
-    i_index[7] = i+1; j_index[7] = j+1; k_index[7] = k;
-    //k-1 plane
-    i_index[8] = i-1; j_index[8] = j-1; k_index[8] = k-1;
-    i_index[9] = i  ; j_index[9] = j-1; k_index[9] = k-1;
-    i_index[10] = i+1; j_index[10] = j-1; k_index[10] = k-1;
-    i_index[11] = i-1; j_index[11] = j  ; k_index[11] = k-1;
-    i_index[12] = i  ; j_index[12] = j  ; k_index[12] = k-1;
-    i_index[13] = i+1; j_index[13] = j  ; k_index[13] = k-1;
-    i_index[14] = i-1; j_index[14] = j+1; k_index[14] = k-1;
-    i_index[15] = i  ; j_index[15] = j+1; k_index[15] = k-1;
-    i_index[16] = i+1; j_index[16] = j+1; k_index[16] = k-1;
-    //k+1 plane
-    i_index[17] = i-1; j_index[17] = j-1; k_index[17] = k+1;
-    i_index[18] = i  ; j_index[18] = j-1; k_index[18] = k+1;
-    i_index[19] = i+1; j_index[19] = j-1; k_index[19] = k+1;
-    i_index[20] = i-1; j_index[20] = j  ; k_index[20] = k+1;
-    i_index[21] = i  ; j_index[21] = j  ; k_index[21] = k+1;
-    i_index[22] = i+1; j_index[22] = j  ; k_index[22] = k+1;
-    i_index[23] = i-1; j_index[23] = j+1; k_index[23] = k+1;
-    i_index[24] = i  ; j_index[24] = j+1; k_index[24] = k+1;
-    i_index[25] = i+1; j_index[25] = j+1; k_index[25] = k+1;
+    int imax = min(ICu,i+1);
+    int jmax = min(JCu,j+1);
+    int kmax = min(KCu,k+1);
 
-  } else {
-    //-------------------
-    //  ICl and ICu
-    //-------------------
-    if (i == ICl) {
-
-      if (j == JCl) {
-	// corner ICl, JCl, KCl
-	if (k == KCl) {
-	  n_pts = 7;
-	  // k plane
-	  i_index[0] = i+1; j_index[0] = j  ; k_index[0] = k;
-	  i_index[1] = i  ; j_index[1] = j+1; k_index[1] = k;
-	  i_index[2] = i+1; j_index[2] = j+1; k_index[2] = k;
-	  // k+1 plane
-	  i_index[3] = i  ; j_index[3] = j  ; k_index[3] = k+1;
-	  i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k+1;
-	  i_index[5] = i  ; j_index[5] = j+1; k_index[5] = k+1;
-	  i_index[6] = i+1; j_index[6] = j+1; k_index[6] = k+1;
-	  // corner ICl, JCl, KCu
-	} else if (k == KCu) {
-	  n_pts = 7;
-	  // k plane
-	  i_index[0] = i+1; j_index[0] = j  ; k_index[0] = k;
-	  i_index[1] = i  ; j_index[1] = j+1; k_index[1] = k;
-	  i_index[2] = i+1; j_index[2] = j+1; k_index[2] = k;
-	  //k-1 plane
-	  i_index[3] = i  ; j_index[3] = j  ; k_index[3] = k-1;
-	  i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k-1;
-	  i_index[5] = i  ; j_index[5] = j+1; k_index[5] = k-1;
-	  i_index[6] = i+1; j_index[6] = j+1; k_index[6] = k-1;
-	  // outer ICl, JCl
-	} else {
-	  n_pts = 11;
-	  // k plane
-	  i_index[0] = i+1; j_index[0] = j  ; k_index[0] = k;
-	  i_index[1] = i  ; j_index[1] = j+1; k_index[1] = k;
-	  i_index[2] = i+1; j_index[2] = j+1; k_index[2] = k;
-	  //k-1 plane	 
-	  i_index[3] = i  ; j_index[3] = j  ; k_index[3] = k-1;
-	  i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k-1;
-	  i_index[5] = i  ; j_index[5] = j+1; k_index[5] = k-1;
-	  i_index[6] = i+1; j_index[6] = j+1; k_index[6] = k-1;
-	  //k+1 plane	 
-	  i_index[7] = i  ; j_index[7] = j  ; k_index[7] = k+1;
-	  i_index[8] = i+1; j_index[8] = j  ; k_index[8] = k+1;
-	  i_index[9] = i  ; j_index[9] = j+1; k_index[9] = k+1;
-	  i_index[10] = i+1; j_index[10] = j+1; k_index[10] = k+1;
-	}
-      } else if (j == JCu) {
-	// corner ICl, JCu, KCl
-	if (k == KCl) {
-	  n_pts = 7;
-	  // k plane
-	  i_index[0] = i  ; j_index[0] = j-1; k_index[0] = k;
-	  i_index[1] = i+1; j_index[1] = j-1; k_index[1] = k;
-	  i_index[2] = i+1; j_index[2] = j  ; k_index[2] = k;
-	  //k+1 plane 
-	  i_index[3] = i  ; j_index[3] = j-1; k_index[3] = k+1;
-	  i_index[4] = i+1; j_index[4] = j-1; k_index[4] = k+1;
-	  i_index[5] = i  ; j_index[5] = j  ; k_index[5] = k+1;
-	  i_index[6] = i+1; j_index[6] = j  ; k_index[6] = k+1;
-	  // corner ICl, JCu, KCu
-	} else if (k == KCu) {
-	  n_pts = 7;
-	  // k plane
-	  i_index[0] = i  ; j_index[0] = j-1; k_index[0] = k;
-	  i_index[1] = i+1; j_index[1] = j-1; k_index[1] = k;
-	  i_index[2] = i+1; j_index[2] = j  ; k_index[2] = k;
-	  //k-1 plane
-	  i_index[3] = i  ; j_index[3] = j-1; k_index[3] = k-1;
-	  i_index[4] = i+1; j_index[4] = j-1; k_index[4] = k-1;
-	  i_index[5] = i  ; j_index[5] = j  ; k_index[5] = k-1;
-	  i_index[6] = i+1; j_index[6] = j  ; k_index[6] = k-1;
-	  // outer ICl, JCu
-	} else {
-	  n_pts = 11;
-	  // k plane
-	  i_index[0] = i  ; j_index[0] = j-1; k_index[0] = k;
-	  i_index[1] = i+1; j_index[1] = j-1; k_index[1] = k;
-	  i_index[2] = i+1; j_index[2] = j  ; k_index[2] = k;
-	  //k-1 plane
-	  i_index[3] = i  ; j_index[3] = j-1; k_index[3] = k-1;
-	  i_index[4] = i+1; j_index[4] = j-1; k_index[4] = k-1;
-	  i_index[5] = i  ; j_index[5] = j  ; k_index[5] = k-1;
-	  i_index[6] = i+1; j_index[6] = j  ; k_index[6] = k-1;
-	  //k+1 plane
-	  i_index[7] = i  ; j_index[7] = j-1; k_index[7] = k+1;
-	  i_index[8] = i+1; j_index[8] = j-1; k_index[8] = k+1;
-	  i_index[9] = i  ; j_index[9] = j  ; k_index[9] = k+1;
-	  i_index[10] = i+1; j_index[10] = j  ; k_index[10] = k+1;
-	}
-	// inner ICl, != JCl, != JCu, != KCl, != KCu
-      } else {
-	n_pts = 17;
-	// k plane
-	i_index[0] = i  ; j_index[0] = j-1; k_index[0] = k;
-	i_index[1] = i+1; j_index[1] = j-1; k_index[1] = k;
-	i_index[2] = i+1; j_index[2] = j  ; k_index[2] = k;
-	i_index[3] = i  ; j_index[3] = j+1; k_index[3] = k;
-	i_index[4] = i+1; j_index[4] = j+1; k_index[4] = k;
-	//k-1 plane
-	i_index[5] = i  ; j_index[5] = j-1; k_index[5] = k-1;
-	i_index[6] = i+1; j_index[6] = j-1; k_index[6] = k-1;
-	i_index[7] = i  ; j_index[7] = j  ; k_index[7] = k-1;
-	i_index[8] = i+1; j_index[8] = j  ; k_index[8] = k-1;
-	i_index[9] = i  ; j_index[9] = j+1; k_index[9] = k-1;
-	i_index[10] = i+1; j_index[10] = j+1; k_index[10] = k-1;
-	//k+1 plane
-	i_index[11] = i  ; j_index[11] = j-1; k_index[11] = k+1;
-	i_index[12] = i+1; j_index[12] = j-1; k_index[12] = k+1;
-	i_index[13] = i  ; j_index[13] = j  ; k_index[13] = k+1;
-	i_index[14] = i+1; j_index[14] = j  ; k_index[14] = k+1;
-	i_index[15] = i  ; j_index[15] = j+1; k_index[15] = k+1;
-	i_index[16] = i+1; j_index[16] = j+1; k_index[16] = k+1;
-      }
-    } else if (i == ICu) {
-
-      if (j == JCl) {
-	// corner ICu, JCl, KCl
-	if (k == KCl) {
-	  n_pts = 7;
-	  // k plane
-	  i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
-	  i_index[1] = i-1; j_index[1] = j+1; k_index[1] = k;
-	  i_index[2] = i  ; j_index[2] = j+1; k_index[2] = k;
-	  //k+1 plane
-	  i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k+1;
-	  i_index[4] = i  ; j_index[4] = j  ; k_index[4] = k+1;
-	  i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k+1;
-	  i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k+1;
-	  // corner ICu, JCl, KCu
-	} else if (k == KCu) {
-	  n_pts = 7;
-	  // k plane
-	  i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
-	  i_index[1] = i-1; j_index[1] = j+1; k_index[1] = k;
-	  i_index[2] = i  ; j_index[2] = j+1; k_index[2] = k;
-	  //k-1 plane      
-	  i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k-1;
-	  i_index[4] = i  ; j_index[4] = j  ; k_index[4] = k-1;
-	  i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k-1;
-	  i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k-1;
-	  // outer ICu, JCl
-	} else {
-	  n_pts = 11;
-	  // k plane 
-	  i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
-	  i_index[1] = i-1; j_index[1] = j+1; k_index[1] = k;
-	  i_index[2] = i  ; j_index[2] = j+1; k_index[2] = k;
-	  //k-1 plane
-	  i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k-1;
-	  i_index[4] = i  ; j_index[4] = j  ; k_index[4] = k-1;
-	  i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k-1;
-	  i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k-1;
-	  //k+1 plane
-	  i_index[7] = i-1; j_index[7] = j  ; k_index[7] = k+1;
-	  i_index[8] = i  ; j_index[8] = j  ; k_index[8] = k+1;
-	  i_index[9] = i-1; j_index[9] = j+1; k_index[9] = k+1;
-	  i_index[10] = i  ; j_index[10] = j+1; k_index[10] = k+1;
-	}
-      } else if (j == JCu) {
-	// corner ICu, JCu, KCl
-	if (k == KCl) {
-	  n_pts = 7;
-	  // k plane
-	  i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
-	  i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
-	  i_index[2] = i-1; j_index[2] = j  ; k_index[2] = k;
-	  //k+1 plane
-	  i_index[3] = i-1; j_index[3] = j-1; k_index[3] = k+1;
-	  i_index[4] = i  ; j_index[4] = j-1; k_index[4] = k+1;
-	  i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k+1;
-	  i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k+1; 
-	  // corner ICu, JCu, KCu
-	} else if (k == KCu) {
-	  n_pts = 7;
-	  // k plane
-	  i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
-	  i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
-	  i_index[2] = i-1; j_index[2] = j  ; k_index[2] = k;
-	  //k-1 plane
-	  i_index[3] = i-1; j_index[3] = j-1; k_index[3] = k-1;
-	  i_index[4] = i  ; j_index[4] = j-1; k_index[4] = k-1;
-	  i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k-1;
-	  i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k-1;
-	  // outer ICu, JCu
-	} else {
-	  n_pts = 11;
-	  // k plane
-	  i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
-	  i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
-	  i_index[2] = i-1; j_index[2] = j  ; k_index[2] = k;
-	  //k-1 plane
-	  i_index[3] = i-1; j_index[3] = j-1; k_index[3] = k-1;
-	  i_index[4] = i  ; j_index[4] = j-1; k_index[4] = k-1;
-	  i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k-1;
-	  i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k-1;
-	  //k+1 plane
-	  i_index[7] = i-1; j_index[7] = j-1; k_index[7] = k+1;
-	  i_index[8] = i  ; j_index[8] = j-1; k_index[8] = k+1;      
-	  i_index[9] = i-1; j_index[9] = j  ; k_index[9] = k+1;
-	  i_index[10] = i  ; j_index[10] = j  ; k_index[10] = k+1;
-	}
-	// inner ICu, != JCl, != JCu, != KCl, != KCu
-      } else {
-	n_pts = 17;
-	// k plane
-	i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
-	i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
-	i_index[2] = i-1; j_index[2] = j  ; k_index[2] = k;
-	i_index[3] = i-1; j_index[3] = j+1; k_index[3] = k;
-	i_index[4] = i  ; j_index[4] = j+1; k_index[4] = k;
-	//k-1 plane
-	i_index[5] = i-1; j_index[5] = j-1; k_index[5] = k-1;
-	i_index[6] = i  ; j_index[6] = j-1; k_index[6] = k-1;
-	i_index[7] = i-1; j_index[7] = j  ; k_index[7] = k-1;
-	i_index[8] = i  ; j_index[8] = j  ; k_index[8] = k-1;
-	i_index[9] = i-1; j_index[9] = j+1; k_index[9] = k-1;
-	i_index[10] = i  ; j_index[10] = j+1; k_index[10] = k-1;
-	//k+1 plane
-	i_index[11] = i-1; j_index[11] = j-1; k_index[11] = k+1;
-	i_index[12] = i  ; j_index[12] = j-1; k_index[12] = k+1;
-	i_index[13] = i-1; j_index[13] = j  ; k_index[13] = k+1;
-	i_index[14] = i  ; j_index[14] = j  ; k_index[14] = k+1;
-	i_index[15] = i-1; j_index[15] = j+1; k_index[15] = k+1;
-	i_index[16] = i  ; j_index[16] = j+1; k_index[16] = k+1;
-      }
-      //-------------------
-      //  JCl and JCu
-      //-------------------    
-    } else if (j == JCl) {
-      //  JCl, KCl
-      if (k == KCl) {
-	n_pts = 11;
-	// k plane
-	i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
-	i_index[1] = i+1; j_index[1] = j  ; k_index[1] = k;
-	i_index[2] = i-1; j_index[2] = j+1; k_index[2] = k;
-	i_index[3] = i  ; j_index[3] = j+1; k_index[3] = k;
-	i_index[4] = i+1; j_index[4] = j+1; k_index[4] = k;
-	// k+1 plane
-	i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k+1;
-	i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k+1;
-	i_index[7] = i+1; j_index[7] = j  ; k_index[7] = k+1;
-	i_index[8] = i-1; j_index[8] = j+1; k_index[8] = k+1;
-	i_index[9] = i ;  j_index[9] = j+1; k_index[9] = k+1;
-	i_index[10] = i+1; j_index[10] = j+1; k_index[10] = k+1;
-	//  JCl, KCu
-      } else if (k == KCu) {
-	n_pts = 11;
-	// k plane
-	i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
-	i_index[1] = i+1; j_index[1] = j  ; k_index[1] = k;
-	i_index[2] = i-1; j_index[2] = j+1; k_index[2] = k;
-	i_index[3] = i  ; j_index[3] = j+1; k_index[3] = k;
-	i_index[4] = i+1; j_index[4] = j+1; k_index[4] = k;
-	//k-1 plane
-	i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k-1;
-	i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k-1;
-	i_index[7] = i+1; j_index[7] = j  ; k_index[7] = k-1;
-	i_index[8] = i-1; j_index[8] = j+1; k_index[8] = k-1;
-	i_index[9] = i  ; j_index[9] = j+1; k_index[9] = k-1;
-	i_index[10] = i+1; j_index[10] = j+1; k_index[10] = k-1;
-      } else {
-	n_pts = 17;
-	// k plane
-	i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
-	i_index[1] = i+1; j_index[1] = j  ; k_index[1] = k;
-	i_index[2] = i-1; j_index[2] = j+1; k_index[2] = k;
-	i_index[3] = i  ; j_index[3] = j+1; k_index[3] = k;
-	i_index[4] = i+1; j_index[4] = j+1; k_index[4] = k;
-	//k-1 plane	 
-	i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k-1;
-	i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k-1;
-	i_index[7] = i+1; j_index[7] = j  ; k_index[7] = k-1;
-	i_index[8] = i-1; j_index[8] = j+1; k_index[8] = k-1;
-	i_index[9] = i  ; j_index[9] = j+1; k_index[9] = k-1;
-	i_index[10] = i+1; j_index[10] = j+1; k_index[10] = k-1;
-	//k+1 plane	 
-	i_index[11] = i-1; j_index[11] = j  ; k_index[11] = k+1;
-	i_index[12] = i  ; j_index[12] = j  ; k_index[12] = k+1;
-	i_index[13] = i+1; j_index[13] = j  ; k_index[13] = k+1;
-	i_index[14] = i-1; j_index[14] = j+1; k_index[14] = k+1;
-	i_index[15] = i  ; j_index[15] = j+1; k_index[15] = k+1;
-	i_index[16] = i+1; j_index[16] = j+1; k_index[16] = k+1;
-      }
-    } else if (j == JCu) {
-      // JCu, KCl
-      if (k == KCl) {
-	n_pts = 11;
-	// k plane
-	i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
-	i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
-	i_index[2] = i+1; j_index[2] = j-1; k_index[2] = k;
-	i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k;
-	i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k;
-	//k+1 plane 
-	i_index[5] = i-1; j_index[5] = j-1; k_index[5] = k+1;
-	i_index[6] = i  ; j_index[6] = j-1; k_index[6] = k+1;
-	i_index[7] = i+1; j_index[7] = j-1; k_index[7] = k+1;
-	i_index[8] = i-1; j_index[8] = j  ; k_index[8] = k+1;
-	i_index[9] = i  ; j_index[9] = j  ; k_index[9] = k+1;
-	i_index[10] = i+1; j_index[10] = j  ; k_index[10] = k+1;
-	// JCu, KCu
-      } else if (k == KCu) {
-	n_pts = 11;
-	// k plane
-	i_index[0] = i  ; j_index[0] = j-1; k_index[0] = k;
-	i_index[1] = i+1; j_index[1] = j-1; k_index[1] = k;
-	i_index[2] = i+1; j_index[2] = j  ; k_index[2] = k;
-	//k-1 plane
-	i_index[3] = i  ; j_index[3] = j-1; k_index[3] = k-1;
-	i_index[4] = i+1; j_index[4] = j-1; k_index[4] = k-1;
-	i_index[5] = i  ; j_index[5] = j  ; k_index[5] = k-1;
-	i_index[6] = i+1; j_index[6] = j  ; k_index[6] = k-1;
-      } else {
-	n_pts = 17;
-	// k plane
-	i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
-	i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
-	i_index[2] = i+1; j_index[2] = j-1; k_index[2] = k;
-	i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k;
-	i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k;
-	//k-1 plane
-	i_index[5] = i-1; j_index[5] = j-1; k_index[5] = k-1;
-	i_index[6] = i  ; j_index[6] = j-1; k_index[6] = k-1;
-	i_index[7] = i+1; j_index[7] = j-1; k_index[7] = k-1;
-	i_index[8] = i-1; j_index[8] = j  ; k_index[8] = k-1;
-	i_index[9] = i  ; j_index[9] = j  ; k_index[9] = k-1;
-	i_index[10] = i+1; j_index[10] = j  ; k_index[10] = k-1;
-	//k+1 plane
-	i_index[11] = i-1; j_index[11] = j-1; k_index[11] = k+1;
-	i_index[12] = i  ; j_index[12] = j-1; k_index[12] = k+1;
-	i_index[13] = i+1; j_index[13] = j-1; k_index[13] = k+1;
-	i_index[14] = i-1; j_index[14] = j  ; k_index[14] = k+1;
-	i_index[15] = i  ; j_index[15] = j  ; k_index[15] = k+1;
-	i_index[16] = i+1; j_index[16] = j  ; k_index[16] = k+1;
-      }
-      //-------------------
-      //  KCl and KCu
-      //-------------------
-    } else if (k == KCl) {
-      //  KCl
-      n_pts = 17;
-      // k plane
-      i_index[0] = i-1; j_index[0] = j-1 ; k_index[0] = k;
-      i_index[1] = i  ; j_index[1] = j-1 ; k_index[1] = k;
-      i_index[2] = i+1; j_index[2] = j-1 ; k_index[2] = k;
-      i_index[3] = i-1; j_index[3] = j  ;  k_index[3] = k;
-      i_index[4] = i+1; j_index[4] = j  ;  k_index[4] = k;
-      i_index[5] = i-1; j_index[5] = j+1;  k_index[5] = k;
-      i_index[6] = i  ; j_index[6] = j+1;  k_index[6] = k;
-      i_index[7] = i+1; j_index[7] = j+1;  k_index[7] = k;
-      // k+1 plane
-      i_index[8] = i-1; j_index[8] = j-1;  k_index[8] = k+1;
-      i_index[9] = i  ; j_index[9] = j-1;  k_index[9] = k+1;
-      i_index[10] = i+1; j_index[10] = j-1; k_index[10] = k+1;
-      i_index[11] = i-1; j_index[11] = j  ; k_index[11] = k+1;
-      i_index[12] = i  ; j_index[12] = j  ; k_index[12] = k+1;
-      i_index[13] = i+1; j_index[13] = j  ; k_index[13] = k+1;
-      i_index[14] = i-1; j_index[14] = j+1; k_index[14] = k+1;
-      i_index[15] = i ;  j_index[15] = j+1; k_index[15] = k+1;
-      i_index[16] = i+1; j_index[16] = j+1; k_index[16] = k+1;
-      //   KCu
-    } else if (k == KCu) {
-      n_pts = 17;
-      // k plane
-      i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
-      i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
-      i_index[2] = i+1; j_index[2] = j-1; k_index[2] = k;
-      i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k;
-      i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k;
-      i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k;
-      i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k;
-      i_index[7] = i+1; j_index[7] = j+1; k_index[7] = k;
-      //k-1 plane
-      i_index[8] = i-1; j_index[8] = j-1 ; k_index[8] = k-1;
-      i_index[9] = i  ; j_index[9] = j-1 ; k_index[9] = k-1;
-      i_index[10] = i+1; j_index[10] = j-1 ; k_index[10] = k-1;
-      i_index[11] = i-1; j_index[11] = j  ; k_index[11] = k-1;
-      i_index[12] = i  ; j_index[12] = j  ; k_index[12] = k-1;
-      i_index[13] = i+1; j_index[13] = j  ; k_index[13] = k-1;
-      i_index[14] = i-1; j_index[14] = j+1; k_index[14] = k-1;
-      i_index[15] = i  ; j_index[15] = j+1; k_index[15] = k-1;
-      i_index[16] = i+1; j_index[16] = j+1; k_index[16] = k-1;
-    } else {
-      cout << "\n Case not coded yet: i = " << i << "  j = " << j <<  "   k = " << k;
-      n_pts = 0;
+    n_pts = 0;
+    for (int ii=imin; ii<=imax; ii++) {
+        for (int jj=jmin; jj<=jmax; jj++) {
+            for (int kk=kmin; kk<=kmax; kk++) {
+                if (!(ii==i && jj==j && kk==k)) {
+                    i_index[n_pts] = ii;
+                    j_index[n_pts] = jj;
+                    k_index[n_pts] = kk;
+                    n_pts++;
+                }
+            }
+        }
     }
     
-  } /* end if */  
+//  if (i != ICl  &&  i != ICu &&
+//      j != JCl  &&  j != JCu &&
+//      k != KCl  &&  k != KCu) {
+//
+//    n_pts = 26;
+//    // k plane
+//    i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
+//    i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
+//    i_index[2] = i+1; j_index[2] = j-1; k_index[2] = k;
+//    i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k;
+//    i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k;
+//    i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k;
+//    i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k;
+//    i_index[7] = i+1; j_index[7] = j+1; k_index[7] = k;
+//    //k-1 plane
+//    i_index[8] = i-1; j_index[8] = j-1; k_index[8] = k-1;
+//    i_index[9] = i  ; j_index[9] = j-1; k_index[9] = k-1;
+//    i_index[10] = i+1; j_index[10] = j-1; k_index[10] = k-1;
+//    i_index[11] = i-1; j_index[11] = j  ; k_index[11] = k-1;
+//    i_index[12] = i  ; j_index[12] = j  ; k_index[12] = k-1;
+//    i_index[13] = i+1; j_index[13] = j  ; k_index[13] = k-1;
+//    i_index[14] = i-1; j_index[14] = j+1; k_index[14] = k-1;
+//    i_index[15] = i  ; j_index[15] = j+1; k_index[15] = k-1;
+//    i_index[16] = i+1; j_index[16] = j+1; k_index[16] = k-1;
+//    //k+1 plane
+//    i_index[17] = i-1; j_index[17] = j-1; k_index[17] = k+1;
+//    i_index[18] = i  ; j_index[18] = j-1; k_index[18] = k+1;
+//    i_index[19] = i+1; j_index[19] = j-1; k_index[19] = k+1;
+//    i_index[20] = i-1; j_index[20] = j  ; k_index[20] = k+1;
+//    i_index[21] = i  ; j_index[21] = j  ; k_index[21] = k+1;
+//    i_index[22] = i+1; j_index[22] = j  ; k_index[22] = k+1;
+//    i_index[23] = i-1; j_index[23] = j+1; k_index[23] = k+1;
+//    i_index[24] = i  ; j_index[24] = j+1; k_index[24] = k+1;
+//    i_index[25] = i+1; j_index[25] = j+1; k_index[25] = k+1;
+//
+//  } else {
+//    //-------------------
+//    //  ICl and ICu
+//    //-------------------
+//    if (i == ICl) {
+//
+//      if (j == JCl) {
+//	// corner ICl, JCl, KCl
+//	if (k == KCl) {
+//	  n_pts = 7;
+//	  // k plane
+//	  i_index[0] = i+1; j_index[0] = j  ; k_index[0] = k;
+//	  i_index[1] = i  ; j_index[1] = j+1; k_index[1] = k;
+//	  i_index[2] = i+1; j_index[2] = j+1; k_index[2] = k;
+//	  // k+1 plane
+//	  i_index[3] = i  ; j_index[3] = j  ; k_index[3] = k+1;
+//	  i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k+1;
+//	  i_index[5] = i  ; j_index[5] = j+1; k_index[5] = k+1;
+//	  i_index[6] = i+1; j_index[6] = j+1; k_index[6] = k+1;
+//	  // corner ICl, JCl, KCu
+//	} else if (k == KCu) {
+//	  n_pts = 7;
+//	  // k plane
+//	  i_index[0] = i+1; j_index[0] = j  ; k_index[0] = k;
+//	  i_index[1] = i  ; j_index[1] = j+1; k_index[1] = k;
+//	  i_index[2] = i+1; j_index[2] = j+1; k_index[2] = k;
+//	  //k-1 plane
+//	  i_index[3] = i  ; j_index[3] = j  ; k_index[3] = k-1;
+//	  i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k-1;
+//	  i_index[5] = i  ; j_index[5] = j+1; k_index[5] = k-1;
+//	  i_index[6] = i+1; j_index[6] = j+1; k_index[6] = k-1;
+//	  // outer ICl, JCl
+//	} else {
+//	  n_pts = 11;
+//	  // k plane
+//	  i_index[0] = i+1; j_index[0] = j  ; k_index[0] = k;
+//	  i_index[1] = i  ; j_index[1] = j+1; k_index[1] = k;
+//	  i_index[2] = i+1; j_index[2] = j+1; k_index[2] = k;
+//	  //k-1 plane	 
+//	  i_index[3] = i  ; j_index[3] = j  ; k_index[3] = k-1;
+//	  i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k-1;
+//	  i_index[5] = i  ; j_index[5] = j+1; k_index[5] = k-1;
+//	  i_index[6] = i+1; j_index[6] = j+1; k_index[6] = k-1;
+//	  //k+1 plane	 
+//	  i_index[7] = i  ; j_index[7] = j  ; k_index[7] = k+1;
+//	  i_index[8] = i+1; j_index[8] = j  ; k_index[8] = k+1;
+//	  i_index[9] = i  ; j_index[9] = j+1; k_index[9] = k+1;
+//	  i_index[10] = i+1; j_index[10] = j+1; k_index[10] = k+1;
+//	}
+//      } else if (j == JCu) {
+//	// corner ICl, JCu, KCl
+//	if (k == KCl) {
+//	  n_pts = 7;
+//	  // k plane
+//	  i_index[0] = i  ; j_index[0] = j-1; k_index[0] = k;
+//	  i_index[1] = i+1; j_index[1] = j-1; k_index[1] = k;
+//	  i_index[2] = i+1; j_index[2] = j  ; k_index[2] = k;
+//	  //k+1 plane 
+//	  i_index[3] = i  ; j_index[3] = j-1; k_index[3] = k+1;
+//	  i_index[4] = i+1; j_index[4] = j-1; k_index[4] = k+1;
+//	  i_index[5] = i  ; j_index[5] = j  ; k_index[5] = k+1;
+//	  i_index[6] = i+1; j_index[6] = j  ; k_index[6] = k+1;
+//	  // corner ICl, JCu, KCu
+//	} else if (k == KCu) {
+//	  n_pts = 7;
+//	  // k plane
+//	  i_index[0] = i  ; j_index[0] = j-1; k_index[0] = k;
+//	  i_index[1] = i+1; j_index[1] = j-1; k_index[1] = k;
+//	  i_index[2] = i+1; j_index[2] = j  ; k_index[2] = k;
+//	  //k-1 plane
+//	  i_index[3] = i  ; j_index[3] = j-1; k_index[3] = k-1;
+//	  i_index[4] = i+1; j_index[4] = j-1; k_index[4] = k-1;
+//	  i_index[5] = i  ; j_index[5] = j  ; k_index[5] = k-1;
+//	  i_index[6] = i+1; j_index[6] = j  ; k_index[6] = k-1;
+//	  // outer ICl, JCu
+//	} else {
+//	  n_pts = 11;
+//	  // k plane
+//	  i_index[0] = i  ; j_index[0] = j-1; k_index[0] = k;
+//	  i_index[1] = i+1; j_index[1] = j-1; k_index[1] = k;
+//	  i_index[2] = i+1; j_index[2] = j  ; k_index[2] = k;
+//	  //k-1 plane
+//	  i_index[3] = i  ; j_index[3] = j-1; k_index[3] = k-1;
+//	  i_index[4] = i+1; j_index[4] = j-1; k_index[4] = k-1;
+//	  i_index[5] = i  ; j_index[5] = j  ; k_index[5] = k-1;
+//	  i_index[6] = i+1; j_index[6] = j  ; k_index[6] = k-1;
+//	  //k+1 plane
+//	  i_index[7] = i  ; j_index[7] = j-1; k_index[7] = k+1;
+//	  i_index[8] = i+1; j_index[8] = j-1; k_index[8] = k+1;
+//	  i_index[9] = i  ; j_index[9] = j  ; k_index[9] = k+1;
+//	  i_index[10] = i+1; j_index[10] = j  ; k_index[10] = k+1;
+//	}
+//	// inner ICl, != JCl, != JCu, != KCl, != KCu
+//      } else {
+//	n_pts = 17;
+//	// k plane
+//	i_index[0] = i  ; j_index[0] = j-1; k_index[0] = k;
+//	i_index[1] = i+1; j_index[1] = j-1; k_index[1] = k;
+//	i_index[2] = i+1; j_index[2] = j  ; k_index[2] = k;
+//	i_index[3] = i  ; j_index[3] = j+1; k_index[3] = k;
+//	i_index[4] = i+1; j_index[4] = j+1; k_index[4] = k;
+//	//k-1 plane
+//	i_index[5] = i  ; j_index[5] = j-1; k_index[5] = k-1;
+//	i_index[6] = i+1; j_index[6] = j-1; k_index[6] = k-1;
+//	i_index[7] = i  ; j_index[7] = j  ; k_index[7] = k-1;
+//	i_index[8] = i+1; j_index[8] = j  ; k_index[8] = k-1;
+//	i_index[9] = i  ; j_index[9] = j+1; k_index[9] = k-1;
+//	i_index[10] = i+1; j_index[10] = j+1; k_index[10] = k-1;
+//	//k+1 plane
+//	i_index[11] = i  ; j_index[11] = j-1; k_index[11] = k+1;
+//	i_index[12] = i+1; j_index[12] = j-1; k_index[12] = k+1;
+//	i_index[13] = i  ; j_index[13] = j  ; k_index[13] = k+1;
+//	i_index[14] = i+1; j_index[14] = j  ; k_index[14] = k+1;
+//	i_index[15] = i  ; j_index[15] = j+1; k_index[15] = k+1;
+//	i_index[16] = i+1; j_index[16] = j+1; k_index[16] = k+1;
+//      }
+//    } else if (i == ICu) {
+//
+//      if (j == JCl) {
+//	// corner ICu, JCl, KCl
+//	if (k == KCl) {
+//	  n_pts = 7;
+//	  // k plane
+//	  i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
+//	  i_index[1] = i-1; j_index[1] = j+1; k_index[1] = k;
+//	  i_index[2] = i  ; j_index[2] = j+1; k_index[2] = k;
+//	  //k+1 plane
+//	  i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k+1;
+//	  i_index[4] = i  ; j_index[4] = j  ; k_index[4] = k+1;
+//	  i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k+1;
+//	  i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k+1;
+//	  // corner ICu, JCl, KCu
+//	} else if (k == KCu) {
+//	  n_pts = 7;
+//	  // k plane
+//	  i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
+//	  i_index[1] = i-1; j_index[1] = j+1; k_index[1] = k;
+//	  i_index[2] = i  ; j_index[2] = j+1; k_index[2] = k;
+//	  //k-1 plane      
+//	  i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k-1;
+//	  i_index[4] = i  ; j_index[4] = j  ; k_index[4] = k-1;
+//	  i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k-1;
+//	  i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k-1;
+//	  // outer ICu, JCl
+//	} else {
+//	  n_pts = 11;
+//	  // k plane 
+//	  i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
+//	  i_index[1] = i-1; j_index[1] = j+1; k_index[1] = k;
+//	  i_index[2] = i  ; j_index[2] = j+1; k_index[2] = k;
+//	  //k-1 plane
+//	  i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k-1;
+//	  i_index[4] = i  ; j_index[4] = j  ; k_index[4] = k-1;
+//	  i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k-1;
+//	  i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k-1;
+//	  //k+1 plane
+//	  i_index[7] = i-1; j_index[7] = j  ; k_index[7] = k+1;
+//	  i_index[8] = i  ; j_index[8] = j  ; k_index[8] = k+1;
+//	  i_index[9] = i-1; j_index[9] = j+1; k_index[9] = k+1;
+//	  i_index[10] = i  ; j_index[10] = j+1; k_index[10] = k+1;
+//	}
+//      } else if (j == JCu) {
+//	// corner ICu, JCu, KCl
+//	if (k == KCl) {
+//	  n_pts = 7;
+//	  // k plane
+//	  i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
+//	  i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
+//	  i_index[2] = i-1; j_index[2] = j  ; k_index[2] = k;
+//	  //k+1 plane
+//	  i_index[3] = i-1; j_index[3] = j-1; k_index[3] = k+1;
+//	  i_index[4] = i  ; j_index[4] = j-1; k_index[4] = k+1;
+//	  i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k+1;
+//	  i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k+1; 
+//	  // corner ICu, JCu, KCu
+//	} else if (k == KCu) {
+//	  n_pts = 7;
+//	  // k plane
+//	  i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
+//	  i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
+//	  i_index[2] = i-1; j_index[2] = j  ; k_index[2] = k;
+//	  //k-1 plane
+//	  i_index[3] = i-1; j_index[3] = j-1; k_index[3] = k-1;
+//	  i_index[4] = i  ; j_index[4] = j-1; k_index[4] = k-1;
+//	  i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k-1;
+//	  i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k-1;
+//	  // outer ICu, JCu
+//	} else {
+//	  n_pts = 11;
+//	  // k plane
+//	  i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
+//	  i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
+//	  i_index[2] = i-1; j_index[2] = j  ; k_index[2] = k;
+//	  //k-1 plane
+//	  i_index[3] = i-1; j_index[3] = j-1; k_index[3] = k-1;
+//	  i_index[4] = i  ; j_index[4] = j-1; k_index[4] = k-1;
+//	  i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k-1;
+//	  i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k-1;
+//	  //k+1 plane
+//	  i_index[7] = i-1; j_index[7] = j-1; k_index[7] = k+1;
+//	  i_index[8] = i  ; j_index[8] = j-1; k_index[8] = k+1;      
+//	  i_index[9] = i-1; j_index[9] = j  ; k_index[9] = k+1;
+//	  i_index[10] = i  ; j_index[10] = j  ; k_index[10] = k+1;
+//	}
+//	// inner ICu, != JCl, != JCu, != KCl, != KCu
+//      } else {
+//	n_pts = 17;
+//	// k plane
+//	i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
+//	i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
+//	i_index[2] = i-1; j_index[2] = j  ; k_index[2] = k;
+//	i_index[3] = i-1; j_index[3] = j+1; k_index[3] = k;
+//	i_index[4] = i  ; j_index[4] = j+1; k_index[4] = k;
+//	//k-1 plane
+//	i_index[5] = i-1; j_index[5] = j-1; k_index[5] = k-1;
+//	i_index[6] = i  ; j_index[6] = j-1; k_index[6] = k-1;
+//	i_index[7] = i-1; j_index[7] = j  ; k_index[7] = k-1;
+//	i_index[8] = i  ; j_index[8] = j  ; k_index[8] = k-1;
+//	i_index[9] = i-1; j_index[9] = j+1; k_index[9] = k-1;
+//	i_index[10] = i  ; j_index[10] = j+1; k_index[10] = k-1;
+//	//k+1 plane
+//	i_index[11] = i-1; j_index[11] = j-1; k_index[11] = k+1;
+//	i_index[12] = i  ; j_index[12] = j-1; k_index[12] = k+1;
+//	i_index[13] = i-1; j_index[13] = j  ; k_index[13] = k+1;
+//	i_index[14] = i  ; j_index[14] = j  ; k_index[14] = k+1;
+//	i_index[15] = i-1; j_index[15] = j+1; k_index[15] = k+1;
+//	i_index[16] = i  ; j_index[16] = j+1; k_index[16] = k+1;
+//      }
+//      //-------------------
+//      //  JCl and JCu
+//      //-------------------    
+//    } else if (j == JCl) {
+//      //  JCl, KCl
+//      if (k == KCl) {
+//	n_pts = 11;
+//	// k plane
+//	i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
+//	i_index[1] = i+1; j_index[1] = j  ; k_index[1] = k;
+//	i_index[2] = i-1; j_index[2] = j+1; k_index[2] = k;
+//	i_index[3] = i  ; j_index[3] = j+1; k_index[3] = k;
+//	i_index[4] = i+1; j_index[4] = j+1; k_index[4] = k;
+//	// k+1 plane
+//	i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k+1;
+//	i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k+1;
+//	i_index[7] = i+1; j_index[7] = j  ; k_index[7] = k+1;
+//	i_index[8] = i-1; j_index[8] = j+1; k_index[8] = k+1;
+//	i_index[9] = i ;  j_index[9] = j+1; k_index[9] = k+1;
+//	i_index[10] = i+1; j_index[10] = j+1; k_index[10] = k+1;
+//	//  JCl, KCu
+//      } else if (k == KCu) {
+//	n_pts = 11;
+//	// k plane
+//	i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
+//	i_index[1] = i+1; j_index[1] = j  ; k_index[1] = k;
+//	i_index[2] = i-1; j_index[2] = j+1; k_index[2] = k;
+//	i_index[3] = i  ; j_index[3] = j+1; k_index[3] = k;
+//	i_index[4] = i+1; j_index[4] = j+1; k_index[4] = k;
+//	//k-1 plane
+//	i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k-1;
+//	i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k-1;
+//	i_index[7] = i+1; j_index[7] = j  ; k_index[7] = k-1;
+//	i_index[8] = i-1; j_index[8] = j+1; k_index[8] = k-1;
+//	i_index[9] = i  ; j_index[9] = j+1; k_index[9] = k-1;
+//	i_index[10] = i+1; j_index[10] = j+1; k_index[10] = k-1;
+//      } else {
+//	n_pts = 17;
+//	// k plane
+//	i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
+//	i_index[1] = i+1; j_index[1] = j  ; k_index[1] = k;
+//	i_index[2] = i-1; j_index[2] = j+1; k_index[2] = k;
+//	i_index[3] = i  ; j_index[3] = j+1; k_index[3] = k;
+//	i_index[4] = i+1; j_index[4] = j+1; k_index[4] = k;
+//	//k-1 plane	 
+//	i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k-1;
+//	i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k-1;
+//	i_index[7] = i+1; j_index[7] = j  ; k_index[7] = k-1;
+//	i_index[8] = i-1; j_index[8] = j+1; k_index[8] = k-1;
+//	i_index[9] = i  ; j_index[9] = j+1; k_index[9] = k-1;
+//	i_index[10] = i+1; j_index[10] = j+1; k_index[10] = k-1;
+//	//k+1 plane	 
+//	i_index[11] = i-1; j_index[11] = j  ; k_index[11] = k+1;
+//	i_index[12] = i  ; j_index[12] = j  ; k_index[12] = k+1;
+//	i_index[13] = i+1; j_index[13] = j  ; k_index[13] = k+1;
+//	i_index[14] = i-1; j_index[14] = j+1; k_index[14] = k+1;
+//	i_index[15] = i  ; j_index[15] = j+1; k_index[15] = k+1;
+//	i_index[16] = i+1; j_index[16] = j+1; k_index[16] = k+1;
+//      }
+//    } else if (j == JCu) {
+//      // JCu, KCl
+//      if (k == KCl) {
+//	n_pts = 11;
+//	// k plane
+//	i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
+//	i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
+//	i_index[2] = i+1; j_index[2] = j-1; k_index[2] = k;
+//	i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k;
+//	i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k;
+//	//k+1 plane 
+//	i_index[5] = i-1; j_index[5] = j-1; k_index[5] = k+1;
+//	i_index[6] = i  ; j_index[6] = j-1; k_index[6] = k+1;
+//	i_index[7] = i+1; j_index[7] = j-1; k_index[7] = k+1;
+//	i_index[8] = i-1; j_index[8] = j  ; k_index[8] = k+1;
+//	i_index[9] = i  ; j_index[9] = j  ; k_index[9] = k+1;
+//	i_index[10] = i+1; j_index[10] = j  ; k_index[10] = k+1;
+//	// JCu, KCu
+//      } else if (k == KCu) {
+//	n_pts = 11;
+//	// k plane
+//	i_index[0] = i  ; j_index[0] = j-1; k_index[0] = k;
+//	i_index[1] = i+1; j_index[1] = j-1; k_index[1] = k;
+//	i_index[2] = i+1; j_index[2] = j  ; k_index[2] = k;
+//	//k-1 plane
+//	i_index[3] = i  ; j_index[3] = j-1; k_index[3] = k-1;
+//	i_index[4] = i+1; j_index[4] = j-1; k_index[4] = k-1;
+//	i_index[5] = i  ; j_index[5] = j  ; k_index[5] = k-1;
+//	i_index[6] = i+1; j_index[6] = j  ; k_index[6] = k-1;
+//      } else {
+//	n_pts = 17;
+//	// k plane
+//	i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
+//	i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
+//	i_index[2] = i+1; j_index[2] = j-1; k_index[2] = k;
+//	i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k;
+//	i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k;
+//	//k-1 plane
+//	i_index[5] = i-1; j_index[5] = j-1; k_index[5] = k-1;
+//	i_index[6] = i  ; j_index[6] = j-1; k_index[6] = k-1;
+//	i_index[7] = i+1; j_index[7] = j-1; k_index[7] = k-1;
+//	i_index[8] = i-1; j_index[8] = j  ; k_index[8] = k-1;
+//	i_index[9] = i  ; j_index[9] = j  ; k_index[9] = k-1;
+//	i_index[10] = i+1; j_index[10] = j  ; k_index[10] = k-1;
+//	//k+1 plane
+//	i_index[11] = i-1; j_index[11] = j-1; k_index[11] = k+1;
+//	i_index[12] = i  ; j_index[12] = j-1; k_index[12] = k+1;
+//	i_index[13] = i+1; j_index[13] = j-1; k_index[13] = k+1;
+//	i_index[14] = i-1; j_index[14] = j  ; k_index[14] = k+1;
+//	i_index[15] = i  ; j_index[15] = j  ; k_index[15] = k+1;
+//	i_index[16] = i+1; j_index[16] = j  ; k_index[16] = k+1;
+//      }
+//      //-------------------
+//      //  KCl and KCu
+//      //-------------------
+//    } else if (k == KCl) {
+//      //  KCl
+//      n_pts = 17;
+//      // k plane
+//      i_index[0] = i-1; j_index[0] = j-1 ; k_index[0] = k;
+//      i_index[1] = i  ; j_index[1] = j-1 ; k_index[1] = k;
+//      i_index[2] = i+1; j_index[2] = j-1 ; k_index[2] = k;
+//      i_index[3] = i-1; j_index[3] = j  ;  k_index[3] = k;
+//      i_index[4] = i+1; j_index[4] = j  ;  k_index[4] = k;
+//      i_index[5] = i-1; j_index[5] = j+1;  k_index[5] = k;
+//      i_index[6] = i  ; j_index[6] = j+1;  k_index[6] = k;
+//      i_index[7] = i+1; j_index[7] = j+1;  k_index[7] = k;
+//      // k+1 plane
+//      i_index[8] = i-1; j_index[8] = j-1;  k_index[8] = k+1;
+//      i_index[9] = i  ; j_index[9] = j-1;  k_index[9] = k+1;
+//      i_index[10] = i+1; j_index[10] = j-1; k_index[10] = k+1;
+//      i_index[11] = i-1; j_index[11] = j  ; k_index[11] = k+1;
+//      i_index[12] = i  ; j_index[12] = j  ; k_index[12] = k+1;
+//      i_index[13] = i+1; j_index[13] = j  ; k_index[13] = k+1;
+//      i_index[14] = i-1; j_index[14] = j+1; k_index[14] = k+1;
+//      i_index[15] = i ;  j_index[15] = j+1; k_index[15] = k+1;
+//      i_index[16] = i+1; j_index[16] = j+1; k_index[16] = k+1;
+//      //   KCu
+//    } else if (k == KCu) {
+//      n_pts = 17;
+//      // k plane
+//      i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
+//      i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
+//      i_index[2] = i+1; j_index[2] = j-1; k_index[2] = k;
+//      i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k;
+//      i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k;
+//      i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k;
+//      i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k;
+//      i_index[7] = i+1; j_index[7] = j+1; k_index[7] = k;
+//      //k-1 plane
+//      i_index[8] = i-1; j_index[8] = j-1 ; k_index[8] = k-1;
+//      i_index[9] = i  ; j_index[9] = j-1 ; k_index[9] = k-1;
+//      i_index[10] = i+1; j_index[10] = j-1 ; k_index[10] = k-1;
+//      i_index[11] = i-1; j_index[11] = j  ; k_index[11] = k-1;
+//      i_index[12] = i  ; j_index[12] = j  ; k_index[12] = k-1;
+//      i_index[13] = i+1; j_index[13] = j  ; k_index[13] = k-1;
+//      i_index[14] = i-1; j_index[14] = j+1; k_index[14] = k-1;
+//      i_index[15] = i  ; j_index[15] = j+1; k_index[15] = k-1;
+//      i_index[16] = i+1; j_index[16] = j+1; k_index[16] = k-1;
+//    } else {
+//      cout << "\n Case not coded yet: i = " << i << "  j = " << j <<  "   k = " << k;
+//      n_pts = 0;
+//    }
+//    
+//  } /* end if */  
 
 }
 
@@ -1226,114 +1247,118 @@ int Turbulent_Velocity_Field_Multi_Block_List::Read_Turbulent_Velocity_Field(voi
  * Turbulent_Velocity_Field_Multi_Block_List::Interpolate_Turbulent_Field    *
  *       -- Interpolate velocity field onto another grid.                    *
  *****************************************************************************/
-void Turbulent_Velocity_Field_Multi_Block_List::
+int Turbulent_Velocity_Field_Multi_Block_List::
 Interpolate_Turbulent_Field(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
-			    Turbulent_Velocity_Field_Multi_Block_List &Interpolated_Velocity_Field) {
-
-  int nnBlk, ii, jj, kk, n;
-  double delta, dmin;
-  double xmax, xmin, ymax, ymin, zmax, zmin;
-  Vector3D dVdx, dVdy, dVdz, dX;
-
-  for (int nBlk = 0; nBlk <= Initial_Mesh.NBlk-1; ++nBlk ) {
-    for (int i = Initial_Mesh.Grid_Blks[nBlk].ICl; i <= Initial_Mesh.Grid_Blks[nBlk].ICu; ++i) {
-      for (int j = Initial_Mesh.Grid_Blks[nBlk].JCl; j <= Initial_Mesh.Grid_Blks[nBlk].JCu; ++j) {
-	for (int k = Initial_Mesh.Grid_Blks[nBlk].KCl; k <= Initial_Mesh.Grid_Blks[nBlk].KCu; ++k) {
-
-	  Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k] = Initial_Mesh.Grid_Blks[nBlk].Cell[i][j][k].Xc;
-
-	  //---------------------------
-	  //   Cartesian box
-	  //---------------------------
-
-	  // find  nnBlk, ii, jj and kk to perform the interpolation/reconstruction
-	  for (nnBlk = 0; nnBlk < NBlk; ++nnBlk) {
-	    xmax = max(Vel_Blks[nnBlk].Node_INl_JNl_KNl.x, Vel_Blks[nnBlk].Node_INu_JNu_KNu.x);
-	    xmin = min(Vel_Blks[nnBlk].Node_INl_JNl_KNl.x, Vel_Blks[nnBlk].Node_INu_JNu_KNu.x);
-
-	    ymax = max(Vel_Blks[nnBlk].Node_INl_JNl_KNl.y, Vel_Blks[nnBlk].Node_INu_JNu_KNu.y);
-	    ymin = min(Vel_Blks[nnBlk].Node_INl_JNl_KNl.y, Vel_Blks[nnBlk].Node_INu_JNu_KNu.y);
-
-	    zmax = max(Vel_Blks[nnBlk].Node_INl_JNl_KNl.z, Vel_Blks[nnBlk].Node_INu_JNu_KNu.z);
-	    zmin = min(Vel_Blks[nnBlk].Node_INl_JNl_KNl.z, Vel_Blks[nnBlk].Node_INu_JNu_KNu.z);
-
-	    if ( (Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].x >= xmin  && 
-		  Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].x <= xmax)  &&
-		 (Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].y >= ymin  && 
-		  Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].y <= ymax) &&
-		 (Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].z >= zmin && 
-		  Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].z <= zmax) ) {
-	      break;
-	    }
-
-	  } /* end for*/   
-
-	  
-	  
-	  // search in X-direction
-	  dmin = 1E10;
-	  for (n = Vel_Blks[nnBlk].ICl; n <= Vel_Blks[nnBlk].ICu; ++n) {
-	    delta = fabs(Vel_Blks[nnBlk].Position[n][Vel_Blks[nnBlk].JCl][Vel_Blks[nnBlk].KCl].x -
-			 Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].x);
-	    if ( delta < dmin )  { 
-	      dmin = delta;
-	      ii = n;
-	    }
-	    if (dmin == 0.0) break;
-	  } /* end for */
-
-
-	  // search in Y-direction
-	  dmin = 1E10; 
-	  for (n = Vel_Blks[nnBlk].JCl; n <= Vel_Blks[nnBlk].JCu; ++n) {
-	    delta = fabs(Vel_Blks[nnBlk].Position[Vel_Blks[nnBlk].ICl][n][Vel_Blks[nnBlk].KCl].y -
-			 Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].y);
-	    if ( delta < dmin )  { 
-	      dmin = delta;
-	      jj = n;
-	    }
-	    if (dmin == 0.0) break;
-	  } /* end for */
-
-
-	  // search in Z-direction
-	  dmin = 1E10; 
-	  for (n = Vel_Blks[nnBlk].KCl; n <= Vel_Blks[nnBlk].KCu; ++n) {
-	    delta = fabs(Vel_Blks[nnBlk].Position[Vel_Blks[nnBlk].ICl][Vel_Blks[nnBlk].JCl][n].z - 
-			 Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].z);
-	    if ( delta < dmin )  { 
-	      dmin = delta;
-	      kk = n;
-	    }
-	    if (dmin == 0.0) break;
-	  } /* end for */
-
-
-	  if (ii < Vel_Blks[nnBlk].ICl || ii > Vel_Blks[nnBlk].ICu || 
-	      jj < Vel_Blks[nnBlk].JCl || jj > Vel_Blks[nnBlk].JCu || 
-	      kk < Vel_Blks[nnBlk].KCl || kk > Vel_Blks[nnBlk].KCu) {
-	    cout << "\n Index out of bound!!! -> ii = " << ii 
-		 << "  jj = " << jj << "  kk = " << kk
-		 << "\nICu = " << Vel_Blks[nnBlk].ICu 
-		 << "  JCu = " << Vel_Blks[nnBlk].JCu 
-		 << "  KCu = " << Vel_Blks[nnBlk].KCu; 
-	  }
-
-	  // use least squares to reconstruct the turbulent velocity field 
-	  Vel_Blks[nnBlk].LeastSquares_Reconstruction(ii, jj, kk, 
-						      dVdx, dVdy, dVdz);
-
-	  dX = Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k] - 
-	    Vel_Blks[nnBlk].Position[ii][jj][kk];
-
-	  Interpolated_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k] = 
-	    Vel_Blks[nnBlk].Velocity[ii][jj][kk] + dVdx*dX.x + dVdy*dX.y + dVdz*dX.z;
-
-	} /* endfor */
-      } /* endfor */
+                            Turbulent_Velocity_Field_Multi_Block_List &Interpolated_Velocity_Field) {
+    
+    int nnBlk, ii, jj, kk, n;
+    double delta, dmin;
+    double xmax, xmin, ymax, ymin, zmax, zmin;
+    Vector3D dVdx, dVdy, dVdz, dX;
+    
+    for (int nBlk = 0; nBlk <= Initial_Mesh.NBlk-1; ++nBlk ) {
+        for (int i = Initial_Mesh.Grid_Blks[nBlk].ICl; i <= Initial_Mesh.Grid_Blks[nBlk].ICu; ++i) {
+            for (int j = Initial_Mesh.Grid_Blks[nBlk].JCl; j <= Initial_Mesh.Grid_Blks[nBlk].JCu; ++j) {
+                for (int k = Initial_Mesh.Grid_Blks[nBlk].KCl; k <= Initial_Mesh.Grid_Blks[nBlk].KCu; ++k) {
+                    
+                    Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k] = Initial_Mesh.Grid_Blks[nBlk].Cell[i][j][k].Xc;
+                    
+                    //---------------------------
+                    //   Cartesian box
+                    //---------------------------
+                    
+                    // find  nnBlk, ii, jj and kk to perform the interpolation/reconstruction
+                    bool found = false;
+                    
+                    for (nnBlk = 0; nnBlk < NBlk; nnBlk++) {
+                        xmax = max(Vel_Blks[nnBlk].Node_INl_JNl_KNl.x, Vel_Blks[nnBlk].Node_INu_JNu_KNu.x);
+                        xmin = min(Vel_Blks[nnBlk].Node_INl_JNl_KNl.x, Vel_Blks[nnBlk].Node_INu_JNu_KNu.x);
+                        
+                        ymax = max(Vel_Blks[nnBlk].Node_INl_JNl_KNl.y, Vel_Blks[nnBlk].Node_INu_JNu_KNu.y);
+                        ymin = min(Vel_Blks[nnBlk].Node_INl_JNl_KNl.y, Vel_Blks[nnBlk].Node_INu_JNu_KNu.y);
+                        
+                        zmax = max(Vel_Blks[nnBlk].Node_INl_JNl_KNl.z, Vel_Blks[nnBlk].Node_INu_JNu_KNu.z);
+                        zmin = min(Vel_Blks[nnBlk].Node_INl_JNl_KNl.z, Vel_Blks[nnBlk].Node_INu_JNu_KNu.z);
+                        
+                        if ( (Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].x >= xmin  && 
+                              Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].x <= xmax)  &&
+                            (Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].y >= ymin  && 
+                             Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].y <= ymax) &&
+                            (Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].z >= zmin && 
+                             Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].z <= zmax) ) {
+                            found = true;
+                            break;
+                        }
+                    } 
+                    
+                    
+                    if (!found) {
+                        cout << "Can not interpolate, point out of domain" << endl;
+                        return (1);
+                    }
+                    
+                    // search in X-direction
+                    dmin = 1E10;
+                    for (n = Vel_Blks[nnBlk].ICl; n <= Vel_Blks[nnBlk].ICu; ++n) {
+                        delta = fabs(Vel_Blks[nnBlk].Position[n][Vel_Blks[nnBlk].JCl][Vel_Blks[nnBlk].KCl].x -
+                                     Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].x);
+                        if ( delta < dmin )  { 
+                            dmin = delta;
+                            ii = n;
+                        }
+                        if (dmin == 0.0) break;
+                    } /* end for */
+                    
+                    // search in Y-direction
+                    dmin = 1E10; 
+                    for (n = Vel_Blks[nnBlk].JCl; n <= Vel_Blks[nnBlk].JCu; ++n) {
+                        delta = fabs(Vel_Blks[nnBlk].Position[Vel_Blks[nnBlk].ICl][n][Vel_Blks[nnBlk].KCl].y -
+                                     Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].y);
+                        if ( delta < dmin )  { 
+                            dmin = delta;
+                            jj = n;
+                        }
+                        if (dmin == 0.0) break;
+                    } /* end for */
+                    
+                    
+                    // search in Z-direction
+                    dmin = 1E10; 
+                    for (n = Vel_Blks[nnBlk].KCl; n <= Vel_Blks[nnBlk].KCu; ++n) {
+                        delta = fabs(Vel_Blks[nnBlk].Position[Vel_Blks[nnBlk].ICl][Vel_Blks[nnBlk].JCl][n].z - 
+                                     Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].z);
+                        if ( delta < dmin )  { 
+                            dmin = delta;
+                            kk = n;
+                        }
+                        if (dmin == 0.0) break;
+                    } /* end for */
+                    
+                    if (ii < Vel_Blks[nnBlk].ICl || ii > Vel_Blks[nnBlk].ICu || 
+                        jj < Vel_Blks[nnBlk].JCl || jj > Vel_Blks[nnBlk].JCu || 
+                        kk < Vel_Blks[nnBlk].KCl || kk > Vel_Blks[nnBlk].KCu) {
+                        cout << "\n Index out of bound!!! -> ii = " << ii 
+                        << "  jj = " << jj << "  kk = " << kk
+                        << "\nICu = " << Vel_Blks[nnBlk].ICu 
+                        << "  JCu = " << Vel_Blks[nnBlk].JCu 
+                        << "  KCu = " << Vel_Blks[nnBlk].KCu; 
+                    }
+                    
+                    dX = Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k] - 
+                    Vel_Blks[nnBlk].Position[ii][jj][kk];
+                    
+                    // use least squares to reconstruct the turbulent velocity field 
+                    Vel_Blks[nnBlk].LeastSquares_Reconstruction(ii, jj, kk, 
+                                                                dVdx, dVdy, dVdz);
+                    
+                    Interpolated_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k] = 
+                    Vel_Blks[nnBlk].Velocity[ii][jj][kk] + dVdx*dX.x + dVdy*dX.y + dVdz*dX.z;
+                    
+                } /* endfor */
+            } /* endfor */
+        } /* endfor */
     } /* endfor */
-  } /* endfor */
-
+    return (0);
 }
 
 

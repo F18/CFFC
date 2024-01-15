@@ -1,5 +1,6 @@
-/* Grid3DHexaBlock.cc: Defines member functions for 
-                       3D hexahedral grid block class. */
+/*! \file    Grid3DHexaBlock.cc
+ *  \brief   Defines member functions for 3D hexahedral grid block class. */
+
 
 /* Include 3D hexahedral block grid type header file. */
 
@@ -237,8 +238,11 @@ void Grid3D_Hexa_Block::Copy(Grid3D_Hexa_Block &Grid2) {
 	     for (int i = Grid2.ICl-Grid2.Nghost; i <= Grid2.ICu+Grid2.Nghost; ++i) {
 	        Cell[i][j][k].I  = Grid2.Cell[i][j][k].I;
 	        Cell[i][j][k].J  = Grid2.Cell[i][j][k].J;
+	        Cell[i][j][k].K  = Grid2.Cell[i][j][k].K;
 	        Cell[i][j][k].Xc = Grid2.Cell[i][j][k].Xc;
 	        Cell[i][j][k].V  = Grid2.Cell[i][j][k].V;
+             Cell[i][j][k].Jacobian  = Grid2.Cell[i][j][k].Jacobian;
+
 	     } /* endfor */
           } /* endfor */
        } /* endfor */
@@ -266,8 +270,10 @@ void Grid3D_Hexa_Block::Copy(Grid3D_Hexa_Block &Grid2) {
 	     BCtypeB[i][j] = Grid2.BCtypeB[i][j];
 	   } /* endfor */
        } /* endfor */
-
     } /* endif */
+
+    // Copy the number of Gauss quadrature points
+    CopyNumberOfGaussQuadraturePoints(Grid2.getNumGQP());
 
 }
 
@@ -1219,11 +1225,62 @@ void Grid3D_Hexa_Block::Update_Cells(void) {
 	Cell[i][j][k].J = j ;
 	Cell[i][j][k].K = k ;
 	Cell[i][j][k].Xc = centroid(i, j, k);
-        Cell[i][j][k].V = volume(Cell[i][j][k]);
+    Cell[i][j][k].V = volume(Cell[i][j][k]);
+
       } /* endfor */
     } /* endfor */
   } /* endfor */
+    
+    for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+        for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+            for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
+                /* calculate jacobian to 4th order */
+                Cell[i][j][k].Jacobian = jacobian(i,j,k,4);
+            } /* endfor */
+        } /* endfor */
+    } /* endfor */    
+}
 
+/*****************************************************************
+ * Routine: Update Cells HighOrder                               *
+ *                                                               *
+ * Updates the cell information for the hexahedral mesh block.   *
+ *                                                               *
+ *****************************************************************/
+void Grid3D_Hexa_Block::Update_Cells_HighOrder(void) {
+    
+    Update_Cells();
+    
+    // If using CENO Reconstruction, then we need 
+    // to compute and store the geometric coefficients
+    // -----------------------------------------------
+    if(Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID){
+
+
+      if(Grid3D_HO_Execution_Mode::UNIFORM_GRID){
+	// Compute geometric coefficients for one cell only
+	ComputeGeometricCoefficients(0,0,0);
+	// Copy the same geometric coefficients to all remaining cells
+	for(int k = KCl; k <=KCu ; ++k){ 
+	  for(int j = JCl ; j <= JCu; ++j) {
+	    for (int i = ICl; i <= ICu; ++i) {
+	      Cell[i][j][k].GeomCoeff() = Cell[0][0][0].GeomCoeff();
+	    } /* endfor */
+	  } /* endfor */
+        } /* endfor */	
+
+
+      } else{
+
+        for(int k = KCl; k <=KCu ; ++k){ 
+	  for(int j = JCl ; j <= JCu; ++j) {
+	    for (int i = ICl ; i <= ICu; ++i) {
+	      ComputeGeometricCoefficients(i,j,k);
+	    } /* endfor */
+	  } /* endfor */
+        } /* endfor */
+      } /* end if */
+    }
 }
 
 /*****************************************************************
@@ -1245,10 +1302,69 @@ void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
             Cell[i][j][k].Xc = centroid(i, j, k);
             Cell[i][j][k].V = volume(Cell[i][j][k]);
          } /* endif */
+
       } /* endfor */
     } /* endfor */
   } /* endfor */
+    
+    for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+        for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+            for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
+                if (k < KCl || k > KCu || j < JCl || j > JCu || i < ICl || i > ICu) {
+                    /* calculate jacobian to 4th order */
+                    Cell[i][j][k].Jacobian = jacobian(i,j,k,4);
+                } /* endif */
+            } /* endfor */
+        } /* endfor */
+    } /* endfor */
 
+}
+
+
+/*****************************************************************
+ * Routine: Update Ghost Cells HighOrder                         *
+ *                                                               *
+ * Updates the ghost cells information of the hexahedral mesh    *
+ * block.                                                        *
+ *                                                               *
+ *****************************************************************/
+void Grid3D_Hexa_Block::Update_Ghost_Cells_HighOrder(void) {
+    
+    Update_Ghost_Cells();
+
+    if(Grid3D_HO_Execution_Mode::UNIFORM_GRID){
+      // Compute geometric coefficients for one cell only
+      ComputeGeometricCoefficients(0,0,0);
+      // Copy the same geometric coefficients to all remaining cells
+      for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+	for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+	  for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
+	    if (k < KCl || k > KCu || j < JCl || j > JCu || i < ICl || i > ICu) {
+	      Cell[i][j][k].GeomCoeff() = Cell[0][0][0].GeomCoeff();
+	    } /* endif */
+	  } /* endfor */
+	} /* endfor */
+      } /* endfor */	
+
+
+      } else{
+
+      // If using CENO Reconstruction, then we need 
+      // to compute and store the geometric coefficients
+      // -----------------------------------------------
+      if(Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID){
+	for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+	  for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+	    for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
+	      if (k < KCl || k > KCu || j < JCl || j > JCu || i < ICl || i > ICu) {
+		ComputeGeometricCoefficients(i,j,k);
+	      } /* endif */
+	    } /* endfor */
+	  } /* endfor */
+	} /* endfor */
+      } /* endif */
+
+    } /* endif */
 }
 
 /********************************************************
@@ -1417,6 +1533,27 @@ void Grid3D_Hexa_Block::Rotate(const double &Angle,
  *                                                      *
  ********************************************************/
 void Grid3D_Hexa_Block::Extrude(Grid2D_Quad_Block &Grid2D_XYplane, 
+                                const int Nk,
+                                const int Stretching_Flag,
+                                const int i_Stretching_Kdir,
+                                const double &Stretching_Kdir,
+                                const double &Z_min,
+                                const double &Z_max) {
+    int Stretching_type_Kdir = i_Stretching_Kdir;
+    if (Stretching_Flag == OFF) {
+        Stretching_type_Kdir = STRETCHING_FCN_LINEAR;
+    }
+    
+    Extrude(Grid2D_XYplane,
+            Nk,
+            Stretching_type_Kdir,
+            Stretching_Kdir,
+            Z_min,
+            Z_max);
+            
+}
+
+void Grid3D_Hexa_Block::Extrude(Grid2D_Quad_Block &Grid2D_XYplane, 
            			const int Nk,
                                 const int i_Stretching_Kdir,
 			        const double &Stretching_Kdir,
@@ -1472,4 +1609,738 @@ void Grid3D_Hexa_Block::Extrude(Grid2D_Quad_Block &Grid2D_XYplane,
 
 }
 
+Vector3D Grid3D_Hexa_Block::Delta_minimum(void) {
+    double dx(1e10), dy(1e10), dz(1e10);
+    double D;
+    for (int k = KNl; k <= KNu; k++) {
+        for (int j =  JNl; j <= JNu; j++) {
+            for (int i = INl; i <= INu; i++) {
+                if (i<INu) {
+                    D = Node[i+1][j][k].X.x-Node[i][j][k].X.x;
+                    if (D < dx)     dx = D;
+                }
+                if (j<JNu){
+                    D = Node[i][j+1][k].X.y-Node[i][j][k].X.y;
+                    if (D < dy)     dy = D; 
+                }
+                if (j<KNu){
+                    D = Node[i][j][k+1].X.z-Node[i][j][k].X.z;
+                    if (D < dz)     dz = D;
+                } 
+            }
+        }
+    }
+    return Vector3D(dx,dy,dz);
+}
+//! Routine: ComputeGeometricCoefficients
+//  -----------------------------------------------------------------------------
+/*! Purpose: Computes the geometric moments with respect to the cell
+ *           centroid (xCC,yCC,zCC) of cell (ii,jj,kk).
+ *
+ *  \note    The geometric moment is the integral over the cell domain
+ *           (per unit volume) of a polynomial function with the form:
+ *           (x-xCC)^l*(y-yCC)^m*(z-zCC)^n
+ *
+ *  \warning This subroutine is for cartesian grids (no curved boundaries).
+ *
+ *///----------------------------------------------------------------------------
+void Grid3D_Hexa_Block::ComputeGeometricCoefficients(const int &ii, const int &jj, const int &kk){
 
+  int p1,p2,p3;
+  double DummyParam;
+
+  // ----- Define the polynomial function for the cell ----- //
+
+  GeneralizedPolynomialFunctionOfThreeVariables Polynom(0,0,0,
+							centroid(ii,jj,kk).x,
+							centroid(ii,jj,kk).y,
+							centroid(ii,jj,kk).z);
+
+  // ----- Compute The Geometric Coefficients ----- //
+  
+  // Note: When the method of integration is used the moments associated with the
+  // ----  first order are not quite accurate
+
+  for (int i =  Cell[ii][jj][kk].GeomCoeff().FirstElem(); i<=Cell[ii][jj][kk].GeomCoeff().LastElem(); ++i){
+
+    p1 = Cell[ii][jj][kk].GeomCoeff(i).P1();
+    p2 = Cell[ii][jj][kk].GeomCoeff(i).P2();
+    p3 = Cell[ii][jj][kk].GeomCoeff(i).P3();
+
+    Polynom.ChangePowersTo(p1,p2,p3);
+
+    Cell[ii][jj][kk].GeomCoeffValue(i) = IntegratePolynomialOverTheCell(Polynom,14,DummyParam,ii,jj,kk) / volume(ii,jj,kk);
+
+  } /* endfor */
+}
+
+//! Routine: IntegratePolynomialOverTheCell
+//  -----------------------------------------------------------------------------
+/*! Purpose: Performs the integration of a polynomial over the given
+ *           cell (ii,jj,kk) using Adaptive Gaussian Quadrature
+ *  
+ *  \param [in]  FuncObj       the polynomial to be integrated
+ *  \param [in]  digits        the number of digits required for convergence
+ *  \param [in]  ii            the i-index of the cell
+ *  \param [in]  jj            the j-index of the cell
+ *  \param [in]  kk            the k-index of the cell
+ *  \param [in] _dummy_param   used only to provide the return type
+ *  
+ *  \return ReturnType  the result of the integration
+ *  
+ *///----------------------------------------------------------------------------
+template<typename FO, class ReturnType>
+ReturnType Grid3D_Hexa_Block::IntegratePolynomialOverTheCell(FO FuncObj,
+							     const int & digits,
+							     const ReturnType & _dummy_param, 
+							     const int &ii, 
+							     const int &jj, 
+							     const int &kk){
+
+  return AdaptiveGaussianQuadrature(FuncObj, 
+				    nodeSWBot(ii,jj,kk).X.x, nodeSEBot(ii,jj,kk).X.x, 
+				    nodeSWBot(ii,jj,kk).X.y, nodeNWBot(ii,jj,kk).X.y,
+				    nodeSWBot(ii,jj,kk).X.z, nodeSWTop(ii,jj,kk).X.z, 
+				    digits,
+				    _dummy_param);
+}
+
+#define DXDI 1
+#define DYDI 2
+#define DZDI 3
+#define DXDJ 4
+#define DYDJ 5
+#define DZDJ 6
+#define DXDK 7
+#define DYDK 8
+#define DZDK 9
+
+/* Finite difference for equally spaced samples */
+double Grid3D_Hexa_Block::Central_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
+    
+    int n=int(ceil(order/2.0));
+    int N=2*n;
+    RowVector coefficients(N);
+    ColumnVector samples(N);
+    
+    for(int p=1; p<=n; p++) {
+        switch (derivative) {
+            case DXDI:
+                samples(n-p)   = Cell[i-p][j][k].Xc.x;
+                samples(n+p-1) = Cell[i+p][j][k].Xc.x;
+                break;
+            case DYDI:
+                samples(n-p)   = Cell[i-p][j][k].Xc.y;
+                samples(n+p-1) = Cell[i+p][j][k].Xc.y;
+                break;
+            case DZDI:
+                samples(n-p)   = Cell[i-p][j][k].Xc.z;
+                samples(n+p-1) = Cell[i+p][j][k].Xc.z;
+                break;
+            case DXDJ:
+                samples(n-p)   = Cell[i][j-p][k].Xc.x;
+                samples(n+p-1) = Cell[i][j+p][k].Xc.x;
+                break;
+            case DYDJ:
+                samples(n-p)   = Cell[i][j-p][k].Xc.y;
+                samples(n+p-1) = Cell[i][j+p][k].Xc.y;
+                break;
+            case DZDJ:
+                samples(n-p)   = Cell[i][j-p][k].Xc.z;
+                samples(n+p-1) = Cell[i][j+p][k].Xc.z;
+                break;
+            case DXDK:
+                samples(n-p)   = Cell[i][j][k-p].Xc.x;
+                samples(n+p-1) = Cell[i][j][k+p].Xc.x;
+                break;
+            case DYDK:
+                samples(n-p)   = Cell[i][j][k-p].Xc.y;
+                samples(n+p-1) = Cell[i][j][k+p].Xc.y;
+                break;
+            case DZDK:
+                samples(n-p)   = Cell[i][j][k-p].Xc.z;
+                samples(n+p-1) = Cell[i][j][k+p].Xc.z;
+                break;
+        }
+    }
+    
+    switch (N) {
+        case 2:
+            /* 2nd order */
+            coefficients(0) = -1.0;
+            coefficients(1) = 1.0;
+            coefficients /= 2.0;
+            break;
+        case 4:
+            /* 4th order */
+            coefficients(0) =  1.0;
+            coefficients(1) = -8.0;
+            coefficients(2) =  8.0;
+            coefficients(3) = -1.0;
+            coefficients /= 12.0;
+            break;
+        case 6:
+            /* 6th order */
+            coefficients(0) = -1.0;
+            coefficients(1) =  9.0;
+            coefficients(2) = -45.0;
+            coefficients(3) =  45.0;
+            coefficients(4) = -9.0;
+            coefficients(5) =  1.0;
+            coefficients /= 60.0;
+            break;
+        case 8:
+            /* 8th order */
+            coefficients(0) =  3.0;
+            coefficients(1) = -32.0;
+            coefficients(2) =  168.0;
+            coefficients(3) = -672.0;
+            coefficients(4) =  672.0;
+            coefficients(5) = -168.0;
+            coefficients(6) =  32.0;
+            coefficients(7) = -3.0;
+            coefficients /= 840.0;
+            break;
+        case 10:
+            /* 10th order */
+            coefficients(0) = -2.0;
+            coefficients(1) =  25.0;
+            coefficients(2) = -150.0;
+            coefficients(3) =  600.0;
+            coefficients(4) = -2100.0;
+            coefficients(5) =  2100.0;
+            coefficients(6) = -600.0;
+            coefficients(7) =  150.0;
+            coefficients(8) = -25.0;
+            coefficients(9) =  2.0;
+            coefficients /= 2520.0;
+            break;
+    }
+    
+    return coefficients*samples/dt;
+}
+
+/* Finite difference for equally spaced samples */
+double Grid3D_Hexa_Block::Forward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
+    
+    
+    int n = int(ceil(order/2.0));
+    order = 2*n;
+    int N=2*n+1;
+    RowVector coefficients(N);
+    ColumnVector samples(N);
+    //double sample;
+    for(int p=1; p<=N; p++) {
+        switch (derivative) {
+            case DXDI:
+                samples(N-p) = Cell[i-p][j][k].Xc.x;
+                //sample = samples(N-p);
+                break;
+            case DYDI:
+                samples(N-p) = Cell[i-p][j][k].Xc.y;
+                //sample = samples(N-p);
+                break;
+            case DZDI:       
+                samples(N-p) = Cell[i-p][j][k].Xc.z;
+                //sample = samples(N-p);
+                break;
+            case DXDJ:
+                samples(N-p) = Cell[i][j-p][k].Xc.x;
+                //sample = samples(N-p);
+                break;
+            case DYDJ:
+                samples(N-p) = Cell[i][j-p][k].Xc.y;
+                //sample = samples(N-p);
+                break;
+            case DZDJ:
+                samples(N-p) = Cell[i][j-p][k].Xc.z;
+                //sample = samples(N-p);
+                break;
+            case DXDK:
+                samples(N-p) = Cell[i][j][k-p].Xc.x;
+                //sample = samples(N-p);
+                break;
+            case DYDK:
+                samples(N-p) = Cell[i][j][k-p].Xc.y;
+                //sample = samples(N-p);
+                break;
+            case DZDK:
+                samples(N-p) = Cell[i][j][k-p].Xc.z;
+                //sample = samples(N-p);
+                break;
+        }
+    }
+    
+    switch (order) {
+        case 2:
+            /* 2nd order */
+            coefficients(0) =  1.0;
+            coefficients(1) = -4.0;
+            coefficients(2) =  3.0;
+            coefficients /= 2.0;
+            break;
+        case 4:
+            /* 4th order */
+            coefficients(0) =  3.0;
+            coefficients(1) = -16.0;
+            coefficients(2) =  36.0;
+            coefficients(3) = -48.0;
+            coefficients(4) =  25.0;
+            coefficients /= 12.0;
+            break;
+        case 6:
+            /* 6th order */
+            coefficients(0) =  10.0;
+            coefficients(1) = -72.0;
+            coefficients(2) =  225.0;
+            coefficients(3) = -400.0;
+            coefficients(4) =  450.0;
+            coefficients(5) = -360.0;
+            coefficients(6) =  147.0;
+            coefficients /= 60.0;
+            break;
+        case 8:
+            /* 8th order */
+            coefficients(0) =  105.0;
+            coefficients(1) = -960.0;
+            coefficients(2) =  3920.0;
+            coefficients(3) = -9408.0;
+            coefficients(4) =  14700.0;
+            coefficients(5) = -15680.0;
+            coefficients(6) =  11760.0;
+            coefficients(7) = -6720.0;
+            coefficients(8) =  2283.0;
+            coefficients /= 840.0;
+            break;
+        case 10:
+            /* 10th order */
+            coefficients(0)  =  252.0;
+            coefficients(1)  = -2800.0;
+            coefficients(2)  =  14175.0;
+            coefficients(3)  = -43200.0;
+            coefficients(4)  =  88200.0;
+            coefficients(5)  = -127008.0;
+            coefficients(6)  =  132300.0;
+            coefficients(7)  = -100800.0;
+            coefficients(8)  =  56700.0;
+            coefficients(9)  = -25200.0;
+            coefficients(10) =  7381.0;
+            coefficients /= 2520.0;
+            break;
+    }
+    
+    return coefficients*samples/dt;
+}
+
+
+/* Finite difference for equally spaced samples */
+double Grid3D_Hexa_Block::Backward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
+    
+    int n=int(ceil(order/2.0));
+    order=2*n;
+    int N=2*n+1;
+    RowVector coefficients(N);
+    ColumnVector samples(N);
+    //double sample ;
+    for(int p=0; p<N; p++) {
+        switch (derivative) {
+            case DXDI:
+                samples(p) = Cell[i+p][j][k].Xc.x;
+                //cout << "Cell("<<i+p<<","<<j<<","<<k<<") = " << Cell[i+p][j][k].Xc << endl;
+                //sample = samples(p);
+                break;
+            case DYDI:
+                samples(p) = Cell[i+p][j][k].Xc.y;
+                //sample = samples(p);
+                break;
+            case DZDI:       
+                samples(p) = Cell[i+p][j][k].Xc.z;
+                //sample = samples(p);
+                break;
+            case DXDJ:
+                samples(p) = Cell[i][j+p][k].Xc.x;
+                //cout << "Cell("<<i<<","<<j<<","<<k<<") = " << Cell[i+p][j][k].Xc << endl;
+                //sample = samples(p);
+                break;
+            case DYDJ:
+                samples(p) = Cell[i][j+p][k].Xc.y;
+                //sample = samples(p);
+                break;
+            case DZDJ:
+                samples(p) = Cell[i][j+p][k].Xc.z;
+                //sample = samples(p);
+                break;
+            case DXDK:
+                samples(p) = Cell[i][j][k+p].Xc.x;
+                //sample = samples(p);
+                break;
+            case DYDK:
+                samples(p) = Cell[i][j][k+p].Xc.y;
+                //sample = samples(p);
+                break;
+            case DZDK:
+                samples(p) = Cell[i][j][k+p].Xc.z;
+                //sample = samples(p);
+                break;
+        }
+    }
+    
+    switch (order) {
+        case 2:
+            /* 2nd order */
+            coefficients(0) = -3.0;
+            coefficients(1) =  4.0;
+            coefficients(2) = -1.0;
+            coefficients /= 2.0;
+            break;
+        case 4:
+            /* 4th order */
+            coefficients(0) = -25.0;
+            coefficients(1) =  48.0;
+            coefficients(2) = -36.0;
+            coefficients(3) =  16.0;
+            coefficients(4) = -3.0;
+            coefficients /= 12.0;
+            break;
+        case 6:
+            /* 6th order */
+            coefficients(0) = -147.0;
+            coefficients(1) =  360.0;
+            coefficients(2) = -450.0;
+            coefficients(3) =  400.0;
+            coefficients(4) = -225.0;
+            coefficients(5) =  72.0;
+            coefficients(6) = -10.0;
+            coefficients /= 60.0;
+            break;
+        case 8:
+            /* 8th order */
+            coefficients(0) =  2283.0;
+            coefficients(1) = -6720.0;
+            coefficients(2) =  11760.0;
+            coefficients(3) = -15680.0;
+            coefficients(4) =  14700.0;
+            coefficients(5) = -9408.0;
+            coefficients(6) =  3920.0;
+            coefficients(7) = -960.0;
+            coefficients(8) =  105.0;
+            coefficients /= 840.0;
+            break;
+        case 10:
+            /* 10th order */
+            coefficients(0)  = -7381.0;
+            coefficients(1)  =  25200.0;
+            coefficients(2)  = -56700.0;
+            coefficients(3)  =  100800.0;
+            coefficients(4)  = -132300.0;
+            coefficients(5)  =  127008.0;
+            coefficients(6)  = -88200.0;
+            coefficients(7)  =  43200.0;
+            coefficients(8)  = -14175.0;
+            coefficients(9)  =  2800.0;
+            coefficients(10) = -252.0;
+            coefficients /= 2520.0;
+            break;
+    }
+    
+    return coefficients*samples/dt;
+}
+
+double Grid3D_Hexa_Block::Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order) {
+    
+    int n=int(ceil(order/2.0));
+    
+    int index, last_index;
+    switch(derivative) {
+        case DXDI:
+        case DYDI:
+        case DZDI:
+            index = i;
+            last_index = NCi-1;
+            break;
+        case DXDJ:
+        case DYDJ:
+        case DZDJ:
+            index = j;
+            last_index = NCj-1;
+            break;
+        case DXDK:
+        case DYDK:
+        case DZDK:
+            index = k;
+            last_index = NCk-1;
+            break;
+    }
+    
+    if (n > index) {
+        return Backward_Finite_Difference(i,j,k, derivative, dt, order);
+    } else if (n > last_index - index) {
+        return  Forward_Finite_Difference(i,j,k, derivative, dt, order);
+    } else {
+        return  Central_Finite_Difference(i,j,k, derivative, dt, order);
+    }
+}
+
+
+double Grid3D_Hexa_Block::jacobian(const Cell3D &theCell, int order) {
+    return jacobian(theCell.I,theCell.J,theCell.K,order);
+}
+
+double Grid3D_Hexa_Block::jacobian(const int i, const int j, const int k, int order) {
+    double dt = 1.0;
+    
+    double dxdi, dxdj, dxdk, dydi, dydj, dydk, dzdi, dzdj, dzdk, detJm1, detJ;
+    
+    /* calculate  dxdi */
+    dxdi = Finite_Difference(i,j,k,DXDI, dt, order);
+    dxdj = Finite_Difference(i,j,k,DXDJ, dt, order);
+    dxdk = Finite_Difference(i,j,k,DXDK, dt, order);
+    dydi = Finite_Difference(i,j,k,DYDI, dt, order);
+    dydj = Finite_Difference(i,j,k,DYDJ, dt, order);
+    dydk = Finite_Difference(i,j,k,DYDK, dt, order);
+    dzdi = Finite_Difference(i,j,k,DZDI, dt, order);
+    dzdj = Finite_Difference(i,j,k,DZDJ, dt, order);
+    dzdk = Finite_Difference(i,j,k,DZDK, dt, order);
+    
+    detJm1 = -dxdk*dydj*dzdi + dxdj*dydk*dzdi + dxdk*dydi*dzdj 
+        - dxdi*dydk*dzdj - dxdj*dydi*dzdk + dxdi*dydj*dzdk;
+    detJ = ONE/detJm1;
+      
+    Cell[i][j][k].dXc.x = dxdi + dxdj + dxdk;
+    Cell[i][j][k].dXc.y = dydi + dydj + dydk;
+    Cell[i][j][k].dXc.z = dzdi + dzdj + dzdk;
+    
+    return detJ;
+}
+
+void Grid3D_Hexa_Block::Jacobian_Matrix(DenseMatrix &J, const int i, const int j, const int k, int order) {
+    double dt = 1.0;
+        
+    DenseMatrix Jm1(3,3);
+    
+    double dxdi, dxdj, dxdk, dydi, dydj, dydk, dzdi, dzdj, dzdk, detJm1, detJ;
+    
+    /* calculate  dxdi */
+    dxdi = Finite_Difference(i,j,k,DXDI, dt, order);
+    dxdj = Finite_Difference(i,j,k,DXDJ, dt, order);
+    dxdk = Finite_Difference(i,j,k,DXDK, dt, order);
+    dydi = Finite_Difference(i,j,k,DYDI, dt, order);
+    dydj = Finite_Difference(i,j,k,DYDJ, dt, order);
+    dydk = Finite_Difference(i,j,k,DYDK, dt, order);
+    dzdi = Finite_Difference(i,j,k,DZDI, dt, order);
+    dzdj = Finite_Difference(i,j,k,DZDJ, dt, order);
+    dzdk = Finite_Difference(i,j,k,DZDK, dt, order);
+    
+    Jm1(0,0) = dxdi;    Jm1(0,1) = dxdj;    Jm1(0,2) = dxdk;
+    Jm1(1,0) = dydi;    Jm1(1,1) = dydj;    Jm1(1,2) = dydk;
+    Jm1(2,0) = dzdi;    Jm1(2,1) = dzdj;    Jm1(2,2) = dzdk;
+    
+    detJm1 = -dxdk*dydj*dzdi + dxdj*dydk*dzdi + dxdk*dydi*dzdj 
+    - dxdi*dydk*dzdj - dxdj*dydi*dzdk + dxdi*dydj*dzdk;
+    detJ = ONE/detJm1;
+    
+    /* calculate inverse */
+    
+    J(0,0) = detJ*(-(dydk*dzdj) + dydj*dzdk);
+    J(0,1) = detJ*(dydk*dzdi - dydi*dzdk);
+    J(0,2) = detJ*(-(dydj*dzdi) + dydi*dzdj);
+    J(1,0) = detJ*(dxdk*dzdj - dxdj*dzdk);
+    J(1,1) = detJ*(-(dxdk*dzdi) + dxdi*dzdk);
+    J(1,2) = detJ*(dxdj*dzdi - dxdi*dzdj);
+    J(2,0) = detJ*(-(dxdk*dydj) + dxdj*dydk);
+    J(2,1) = detJ*(dxdk*dydi - dxdi*dydk);
+    J(2,2) = detJ*(-(dxdj*dydi) + dxdi*dydj);
+    
+}
+
+
+void Grid3D_Hexa_Block::Disturb_Interior_Nodes(const int Number_of_Iterations) {
+    double MinDistance, phi, theta , Displacement;
+	
+	/* Displace the interior nodes of the quadrilateral mesh block without affecting the boundary nodes */
+	for (int num_iter=1; num_iter<=Number_of_Iterations; ++num_iter){
+		
+		//srand48(num_iter);        // set the seed for the pseudo-random number generator
+		
+		for (int i=INl+1; i<=INu-1 ; i++) {
+			for (int j=JNl+1; j<=JNu-1; j++) {
+                for (int k=KNl+1; k<=KNu-1; k++) {
+                    
+                    // Determine the minimum distance between the Node[i][j] and all the neighbour edges
+                    MinDistance = MinimumNodeFaceDistance(i,j,k);
+                    
+                    // Generate a random angle for the displacement direction
+                    phi   = 2.0*PI*drand48();
+                    theta =     PI*drand48();
+                    
+                    // Calculate the displacement -> 5% of the MinDistance
+                    Displacement = 0.05 * MinDistance;
+                    
+                    // Calculate the new node location
+                    Node[i][j][k].X.x += Displacement*sin(theta)*cos(phi);
+                    Node[i][j][k].X.y += Displacement*sin(theta)*sin(phi);
+                    Node[i][j][k].X.z += Displacement*cos(theta);
+                    
+                    
+                    
+                }    // endfor (i)
+            } // endfor (j)
+        } // endfor (k)
+        
+    } //endfor (num_iter)
+}
+
+/********************************************************\
+ * Routine: MinimumNodeFaceDistance                       *
+ *                                                        *
+ * Determines the minimum distance between the Node[i][j] *
+ * and all the neighbour edges, for a quadrilateral mesh. *
+ \********************************************************/
+double Grid3D_Hexa_Block::MinimumNodeFaceDistance(const int i, const int j, const int k) 
+{
+	
+	// Obs. For the quadrilateral mesh there are 8 edges and 4 diagonals that must be checked for determining the min distance.
+	/***************************************\
+     *          6      5                     *
+     *       o-----o------o                  *
+     *       |            |                  *
+     *     7 |   (i,j)    | 4                *
+     *       o     o      o                  *
+     *       |            |                  *
+     *     8 |            | 3                *
+     *       o-----o------o                  *
+     *          1     2                      *
+     \***************************************/
+	
+	double MinDistance;
+	
+    // Face (i-1/2,j,k)
+	
+	MinDistance = DistanceFromPointToFace(Node[i][j][k], Node[i-1][j-1][k-1], Node[i-1][j-1][k], Node[i-1][j][k], Node[i-1][j][k-1]);
+	MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j-1][k], Node[i-1][j-1][k+1], Node[i-1][j][k+1], Node[i-1][j][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j][k], Node[i-1][j][k+1], Node[i-1][j+1][k+1], Node[i-1][j+1][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j][k-1], Node[i-1][j][k], Node[i-1][j+1][k], Node[i-1][j+1][k-1]));
+    
+    // Face (i+1/2,j,k)
+	
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i+1][j-1][k-1], Node[i+1][j-1][k], Node[i+1][j][k], Node[i+1][j][k-1]));
+	MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i+1][j-1][k], Node[i+1][j-1][k+1], Node[i+1][j][k+1], Node[i+1][j][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i+1][j][k], Node[i+1][j][k+1], Node[i+1][j+1][k+1], Node[i+1][j+1][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i+1][j][k-1], Node[i+1][j][k], Node[i+1][j+1][k], Node[i+1][j+1][k-1]));
+    
+    
+    // Face (i,j-1/2,k)
+	
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j-1][k-1], Node[i-1][j-1][k], Node[i][j-1][k], Node[i][j-1][k-1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j-1][k], Node[i-1][j-1][k+1], Node[i][j-1][k+1], Node[i][j-1][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j-1][k], Node[i][j-1][k+1], Node[i+1][j-1][k+1], Node[i+1][j-1][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j-1][k-1], Node[i][j-1][k], Node[i+1][j-1][k], Node[i+1][j-1][k-1]));
+    
+    // Face (i,j+1/2,k)
+	
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j+1][k-1], Node[i-1][j+1][k], Node[i][j+1][k], Node[i][j+1][k-1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j+1][k], Node[i-1][j+1][k+1], Node[i][j+1][k+1], Node[i][j+1][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j+1][k], Node[i][j+1][k+1], Node[i+1][j+1][k+1], Node[i+1][j+1][k]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j+1][k-1], Node[i][j+1][k], Node[i+1][j+1][k], Node[i+1][j+1][k-1]));
+    
+    
+    
+    // Face (i,j,k-1/2)
+	
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j-1][k-1], Node[i-1][j][k-1], Node[i][j][k-1], Node[i][j-1][k-1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j][k-1], Node[i-1][j+1][k-1], Node[i][j+1][k-1], Node[i][j][k-1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j][k-1], Node[i][j+1][k-1], Node[i+1][j+1][k-1], Node[i+1][j][k-1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j-1][k-1], Node[i][j][k-1], Node[i+1][j][k-1], Node[i+1][j-1][k-1]));
+    
+    // Face (i,j,k+1/2)
+	
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j-1][k+1], Node[i-1][j][k+1], Node[i][j][k+1], Node[i][j-1][k+1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i-1][j][k+1], Node[i-1][j+1][k+1], Node[i][j+1][k+1], Node[i][j][k+1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j][k+1], Node[i][j+1][k+1], Node[i+1][j+1][k+1], Node[i+1][j][k+1]));
+    MinDistance = min(MinDistance, 
+                      DistanceFromPointToFace(Node[i][j][k], Node[i][j-1][k+1], Node[i][j][k+1], Node[i+1][j][k+1], Node[i+1][j-1][k+1]));
+    
+	return MinDistance;
+}
+
+/**********************************************************
+ * Routine: DistanceFromPointToLine                       *
+ *                                                        *
+ * Determines the distance between the Point and the face *
+ *  by using 4 points in the face and the given point     *
+ **********************************************************/
+double Grid3D_Hexa_Block::DistanceFromPointToFace(const Node3D &Point, const Node3D &node1, const Node3D &node2, const Node3D &node3, const Node3D &node4) {
+    Vector3D Xp = (node1.X + node2.X + node3.X + node4.X)/FOUR;
+    Vector3D n1,n2,n3,n4;
+    
+	/***************************************\
+     *     2                3              *
+     *       o------------o                *
+     *       |            |                *
+     *       |     Xp     |                *
+     *       |     o      |                *
+     *       |            |                *
+     *       |            |                *
+     *       o------------o                *
+     *     1                4              *
+     \***************************************/
+    
+    n1 = (Xp-node1.X)^(node2.X-node1.X);
+    n2 = (Xp-node2.X)^(node3.X-node2.X);
+    n3 = (Xp-node3.X)^(node4.X-node3.X);
+    n4 = (Xp-node4.X)^(node1.X-node4.X);
+    if(abs(n1)!=0)
+        n1=n1/abs(n1);
+    if(abs(n2)!=0)
+        n2=n2/abs(n2);
+    if(abs(n3)!=0)
+        n3=n3/abs(n3);
+    if(abs(n4)!=0)
+        n4=n4/abs(n4);
+    
+    double A1, A2, A3, A4;
+    A1 = abs(((Xp-node1.X)^(node1.X-node2.X)))/2;
+    A2 = abs(((Xp-node2.X)^(node2.X-node3.X)))/2;
+    A3 = abs(((Xp-node3.X)^(node3.X-node4.X)))/2;
+    A4 = abs(((Xp-node4.X)^(node4.X-node1.X)))/2;
+    
+    
+    Vector3D n =((A1*n1+A2*n2+A3*n3+A4*n4));
+    if(abs(n)!=0)
+        n=n/abs(n); 
+    
+    return DistanceFromPointToFace(Point, Xp, n);
+}
+
+/**********************************************************
+ * Routine: DistanceFromPointToLine                       *
+ *                                                        *
+ * Determines the distance between the Point and the face *
+ * defined by a point on the face and the normal.         *
+ *********************************************************/
+double Grid3D_Hexa_Block::DistanceFromPointToFace(const Node3D &Point, const Vector3D &Xp, const Vector3D &n) {
+    Vector3D dX = Point.X - Xp;
+    return fabs(n*dX)/n.abs();
+}

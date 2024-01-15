@@ -42,6 +42,8 @@ ostream &operator << (ostream &out_file,
 	       << IP.Limiter_Type; 
       out_file << "\n  -> Fit Tolerance: "
 	       << CENO_Tolerances::Fit_Tolerance;
+      out_file << "\n  -> Pseudo Inverse: "
+	       << IP.Pseudo_Inverse;
       break;
     } /* endswitch */
 
@@ -226,7 +228,9 @@ void Set_Default_Input_Parameters(Reconstruct2D_Input_Parameters &IP) {
     IP.geom_weighting = OFF;
     strcpy(IP.Data_Dependent_Weighting, "No");
     IP.data_depend_weighting = OFF;
-
+    strcpy(IP.Pseudo_Inverse, "No");
+    strcpy(IP.Reduce_Order, "Yes");
+ 
     strcpy(IP.Limiter_Type, "Barth-Jespersen");
     IP.i_Limiter = LIMITER_BARTH_JESPERSEN;
     IP.CENO_Cutoff = 430;
@@ -301,6 +305,8 @@ void Set_Default_Input_Parameters(Reconstruct2D_Input_Parameters &IP) {
 
     IP.Line_Number = 0;
     IP.Message_Number = 1;
+
+    CENO_CFRS_Execution_Mode::SetDefaults();
 
 }
 
@@ -1008,6 +1014,9 @@ int Parse_Next_Input_Control_Parameter(Reconstruct2D_Input_Parameters &IP) {
 
     /* Parse next control parameter with CENO_Tolerances parser */
     CENO_Tolerances::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+    /* Parse next control parameter with CENO_CFRS_Execution_Mode parser */
+    CENO_CFRS_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
 
     
     /* Return the parser command type indicator. */

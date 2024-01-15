@@ -18,6 +18,7 @@
 #include <sys/stat.h> 
 #include <stdexcept>
 #include <unistd.h>
+#include <cmath>
 
 //=====End of Includes=====//
 
@@ -56,7 +57,12 @@ namespace System
   // Get current path
   void Get_Current_Path(char * buffer) throw(std::runtime_error);
 
-  
+  // Return a value whose absolute value matches that of x, but whose sign bit matches that of y
+  inline double Copysign(const double & x, const double & y){
+    // Use the function provided by the system
+    return copysign(x,y);
+  }
+ 
 }  // End of namespace System
 
 #endif  // _SYSTEM_LINUX_INCLUDED

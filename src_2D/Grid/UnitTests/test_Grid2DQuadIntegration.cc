@@ -289,7 +289,7 @@ namespace tut
 			   RecOrder);
 
     int NumGQP = Spline2DInterval_HO::get_NumGQPoints_ContourIntegral();
-    double Val;
+    double Val(0);
     Vector2D *GaussQuadPoints = new Vector2D [NumGQP];   // the GQPs used to calculate the integral along a line segment
     double * GaussQuadWeights = new double [NumGQP];     // the Gauss integration weights for each Gauss quadrature
     double DeltaY;
@@ -328,7 +328,7 @@ namespace tut
     Grid2D_Quad_MultiBlock_HO Mesh;
     
     int i,j;
-    double Result, IntVal;
+    double Result(0), IntVal;
 
     int Blocks_Idir = 1;
     int Blocks_Jdir = 1;
@@ -387,6 +387,365 @@ namespace tut
 
   }
 
+
+  /* Test 8:*/
+  template<>
+  template<>
+  void Grid2DQuadIntegration_object::test<8>()
+  {
+
+    set_test_name("Integrate over high-order quadrilateral domain with polygonal adaptive integration");
+
+    Grid2D_Quad_MultiBlock_HO Mesh;
+    
+    int i,j;
+    double Result(0), IntVal;
+
+    int Blocks_Idir = 1;
+    int Blocks_Jdir = 1;
+    double Box_Width = 10.0;
+    int IdirCells = 10;
+    int JdirCells = 10;
+    int Nghost = 3;
+    int RecOrder = 1;
+    int Stretching_Flag = 0;
+    int Stretching_Type_Idir = 1;
+    int Stretching_Type_Jdir = 1;
+    double Stretching_Factor_Idir = 1.0;
+    double Stretching_Factor_Jdir = 1.0;
+    Vector2D SW = Vector2D(-2.0,-2.0);
+    Vector2D SE = Vector2D(5.0, -0.5);
+    Vector2D NE = Vector2D(4.5, 2.7);
+    Vector2D NW = Vector2D(-1.0, 3.3);
+
+    // Require high-order boundaries.
+    Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+    
+    // Set 5-point Gauss integration
+    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+    Grid2D_Quad_Block_HO::setPolygonalAdaptiveQuadratureIntegrationON();
+    NumericalLibrary_Execution_Mode::Output_Error_Messages = false;
+
+    // Set the square grid
+    Mesh.Grid_Deformed_Box(Blocks_Idir, Blocks_Jdir,
+			   SW, SE, NE, NW,
+			   Stretching_Flag,
+			   Stretching_Type_Idir,
+			   Stretching_Type_Jdir,
+			   Stretching_Factor_Idir,
+			   Stretching_Factor_Jdir,
+			   IdirCells, JdirCells, Nghost,
+			   RecOrder);
+
+    Mesh.Check_Multi_Block_Grid_Completely();
+
+    // Activate the extension splines
+    int INl, INu, JNl, JNu, NNi, NNj;
+    INl = Mesh(0,0).INl;
+    INu = Mesh(0,0).INu;
+    JNl = Mesh(0,0).JNl;
+    JNu = Mesh(0,0).JNu;
+    NNi = Mesh(0,0).NNi;
+    NNj = Mesh(0,0).NNj;
+   
+    Mesh(0,0).ExtendWest_BndNorthSpline.Create_Spline_Line(Mesh(0,0).Node[0][JNu].X,Mesh(0,0).Node[INl][JNu].X,2);
+    Mesh(0,0).ExtendEast_BndNorthSpline.Create_Spline_Line(Mesh(0,0).Node[INu][JNu].X,Mesh(0,0).Node[NNi-1][JNu].X,2); 
+    Mesh(0,0).ExtendWest_BndSouthSpline.Create_Spline_Line(Mesh(0,0).Node[0][JNl].X,Mesh(0,0).Node[INl][JNl].X,2); 
+    Mesh(0,0).ExtendEast_BndSouthSpline.Create_Spline_Line(Mesh(0,0).Node[INu][JNl].X,Mesh(0,0).Node[NNi-1][JNl].X,2); 
+    Mesh(0,0).ExtendNorth_BndEastSpline.Create_Spline_Line(Mesh(0,0).Node[INu][JNu].X, Mesh(0,0).Node[INu][NNj-1].X, 2); 
+    Mesh(0,0).ExtendSouth_BndEastSpline.Create_Spline_Line(Mesh(0,0).Node[INu][0].X, Mesh(0,0).Node[INu][JNl].X, 2); 
+    Mesh(0,0).ExtendNorth_BndWestSpline.Create_Spline_Line(Mesh(0,0).Node[INl][JNu].X, Mesh(0,0).Node[INl][NNj-1].X, 2); 
+    Mesh(0,0).ExtendSouth_BndWestSpline.Create_Spline_Line(Mesh(0,0).Node[INl][0].X, Mesh(0,0).Node[INl][JNl].X, 2); 
+
+    Mesh(0,0).ExtendWest_BndNorthSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendEast_BndNorthSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendWest_BndSouthSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendEast_BndSouthSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendNorth_BndEastSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendSouth_BndEastSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendNorth_BndWestSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendSouth_BndWestSpline.setBCtype(BC_DIRICHLET);
+
+    Mesh(0,0).Schedule_Ghost_Cells_Update();
+    Mesh(0,0).Update_Cells();
+
+    // == check integration
+    for (i = 0; i<Mesh(0,0).NCi; ++i){
+      for (j = 0; j<Mesh(0,0).NCj; ++j){
+
+	// Calculate integration with low-order boundaries
+	Result = Mesh(0,0).Integration.IntegrateFunctionOverCell(i,j,
+								 Test_Example1,
+								 14,Result);
+
+	IntVal = Mesh(0,0).Integration.IntegrateFunctionOverCell(i,j,
+								 Test_Example1,
+								 Test_Example1_XDependencyIntegrated,
+								 14,Result);
+
+	// == check numerical integration with high-order boundaries
+	ostmClear();
+	ostm() << "IntegrateFunctionOverCell(), Cell (" << i << "," << j << ")";
+	ensure_distance(ostm().str(), IntVal, Result, AcceptedError(Result, 1.0e-4));
+
+      }	// endfor
+    } // endfor
+
+  }
+
+  /* Test 9:*/
+  template<>
+  template<>
+  void Grid2DQuadIntegration_object::test<9>()
+  {
+
+    set_test_name("Integrate over high-order quadrilateral domain with Monte Carlo integration");
+
+    Grid2D_Quad_MultiBlock_HO Mesh;
+    
+    int i,j;
+    double Result(0), IntVal;
+
+    int Blocks_Idir = 1;
+    int Blocks_Jdir = 1;
+    double Box_Width = 10.0;
+    int IdirCells = 10;
+    int JdirCells = 10;
+    int Nghost = 3;
+    int RecOrder = 1;
+    int Stretching_Flag = 0;
+    int Stretching_Type_Idir = 1;
+    int Stretching_Type_Jdir = 1;
+    double Stretching_Factor_Idir = 1.0;
+    double Stretching_Factor_Jdir = 1.0;
+    Vector2D SW = Vector2D(-2.0,-2.0);
+    Vector2D SE = Vector2D(5.0, -0.5);
+    Vector2D NE = Vector2D(4.5, 2.7);
+    Vector2D NW = Vector2D(-1.0, 3.3);
+
+    // Require high-order boundaries.
+    Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+    
+    // Set 5-point Gauss integration
+    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+    Grid2D_Quad_Block_HO::setPolygonalAdaptiveQuadratureIntegrationOFF();
+    Grid2D_Quad_Block_HO::setMonteCarloIntegrationON();
+    NumericalLibrary_Execution_Mode::Number_Monte_Carlo_Samples = 800000;
+
+    // Set the square grid
+    Mesh.Grid_Deformed_Box(Blocks_Idir, Blocks_Jdir,
+			   SW, SE, NE, NW,
+			   Stretching_Flag,
+			   Stretching_Type_Idir,
+			   Stretching_Type_Jdir,
+			   Stretching_Factor_Idir,
+			   Stretching_Factor_Jdir,
+			   IdirCells, JdirCells, Nghost,
+			   RecOrder);
+
+    Mesh.Check_Multi_Block_Grid_Completely();
+
+    // Activate the extension splines
+    int INl, INu, JNl, JNu, NNi, NNj;
+    INl = Mesh(0,0).INl;
+    INu = Mesh(0,0).INu;
+    JNl = Mesh(0,0).JNl;
+    JNu = Mesh(0,0).JNu;
+    NNi = Mesh(0,0).NNi;
+    NNj = Mesh(0,0).NNj;
+   
+    Mesh(0,0).ExtendWest_BndNorthSpline.Create_Spline_Line(Mesh(0,0).Node[0][JNu].X,Mesh(0,0).Node[INl][JNu].X,2);
+    Mesh(0,0).ExtendEast_BndNorthSpline.Create_Spline_Line(Mesh(0,0).Node[INu][JNu].X,Mesh(0,0).Node[NNi-1][JNu].X,2); 
+    Mesh(0,0).ExtendWest_BndSouthSpline.Create_Spline_Line(Mesh(0,0).Node[0][JNl].X,Mesh(0,0).Node[INl][JNl].X,2); 
+    Mesh(0,0).ExtendEast_BndSouthSpline.Create_Spline_Line(Mesh(0,0).Node[INu][JNl].X,Mesh(0,0).Node[NNi-1][JNl].X,2); 
+    Mesh(0,0).ExtendNorth_BndEastSpline.Create_Spline_Line(Mesh(0,0).Node[INu][JNu].X, Mesh(0,0).Node[INu][NNj-1].X, 2); 
+    Mesh(0,0).ExtendSouth_BndEastSpline.Create_Spline_Line(Mesh(0,0).Node[INu][0].X, Mesh(0,0).Node[INu][JNl].X, 2); 
+    Mesh(0,0).ExtendNorth_BndWestSpline.Create_Spline_Line(Mesh(0,0).Node[INl][JNu].X, Mesh(0,0).Node[INl][NNj-1].X, 2); 
+    Mesh(0,0).ExtendSouth_BndWestSpline.Create_Spline_Line(Mesh(0,0).Node[INl][0].X, Mesh(0,0).Node[INl][JNl].X, 2); 
+
+    Mesh(0,0).ExtendWest_BndNorthSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendEast_BndNorthSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendWest_BndSouthSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendEast_BndSouthSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendNorth_BndEastSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendSouth_BndEastSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendNorth_BndWestSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendSouth_BndWestSpline.setBCtype(BC_DIRICHLET);
+
+    Mesh(0,0).Schedule_Ghost_Cells_Update();
+    Mesh(0,0).Update_Cells();
+
+    // == check integration
+    for (i = 0; i<Mesh(0,0).NCi; ++i){
+      for (j = 0; j<Mesh(0,0).NCj; ++j){
+
+	// Calculate integration with low-order boundaries
+	Result = Mesh(0,0).Integration.IntegrateFunctionOverCell(i,j,
+								 Test_Example1,
+								 14,Result);
+
+	IntVal = Mesh(0,0).Integration.IntegrateFunctionOverCell(i,j,
+								 Test_Example1,
+								 Test_Example1_XDependencyIntegrated,
+								 14,Result);
+
+	// == check numerical integration with high-order boundaries
+	ostmClear();
+	ostm() << "IntegrateFunctionOverCell(), Cell (" << i << "," << j << ")";
+	ensure_distance(ostm().str(), IntVal, Result, AcceptedError(Result, 1.0e-2));
+
+      }	// endfor
+    } // endfor
+
+  }
+
+
+  /* Test 10:*/
+  template<>
+  template<>
+  void Grid2DQuadIntegration_object::test<10>()
+  {
+
+    set_test_name("Integrate over high-order quadrilateral domain with Monte Carlo integration");
+
+    Grid2D_Quad_MultiBlock_HO Mesh;
+    
+    int i,j;
+    double Result(0), IntVal;
+
+    int Blocks_Idir = 1;
+    int Blocks_Jdir = 1;
+    double Box_Width = 10.0;
+    int IdirCells = 10;
+    int JdirCells = 10;
+    int Nghost = 3;
+    int RecOrder = 1;
+    int Stretching_Flag = 0;
+    int Stretching_Type_Idir = 1;
+    int Stretching_Type_Jdir = 1;
+    double Stretching_Factor_Idir = 1.0;
+    double Stretching_Factor_Jdir = 1.0;
+    Vector2D SW = Vector2D(0.0,0.0);
+    Vector2D SE = Vector2D(5.0, 0.0);
+    Vector2D NE = Vector2D(5.0, 5.0);
+    Vector2D NW = Vector2D(0.0, 5.0);
+
+    // Require high-order boundaries.
+    Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+
+    // Set 5-point Gauss integration
+    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+    Grid2D_Quad_Block_HO::setPolygonalAdaptiveQuadratureIntegrationON();
+    NumericalLibrary_Execution_Mode::Output_Error_Messages = false;
+
+    // Set the square grid
+    Mesh.Grid_Deformed_Box(Blocks_Idir, Blocks_Jdir,
+			   SW, SE, NE, NW,
+			   Stretching_Flag,
+			   Stretching_Type_Idir,
+			   Stretching_Type_Jdir,
+			   Stretching_Factor_Idir,
+			   Stretching_Factor_Jdir,
+			   IdirCells, JdirCells, Nghost,
+			   RecOrder);
+
+    // Activate the extension splines
+    int INl, INu, JNl, JNu, NNi, NNj;
+    INl = Mesh(0,0).INl;
+    INu = Mesh(0,0).INu;
+    JNl = Mesh(0,0).JNl;
+    JNu = Mesh(0,0).JNu;
+    NNi = Mesh(0,0).NNi;
+    NNj = Mesh(0,0).NNj;
+   
+    Mesh(0,0).ExtendWest_BndNorthSpline.Create_Spline_Line(Mesh(0,0).Node[0][JNu].X,Mesh(0,0).Node[INl][JNu].X,2);
+    Mesh(0,0).ExtendEast_BndNorthSpline.Create_Spline_Line(Mesh(0,0).Node[INu][JNu].X,Mesh(0,0).Node[NNi-1][JNu].X,2); 
+    Mesh(0,0).ExtendWest_BndSouthSpline.Create_Spline_Line(Mesh(0,0).Node[0][JNl].X,Mesh(0,0).Node[INl][JNl].X,2); 
+    Mesh(0,0).ExtendEast_BndSouthSpline.Create_Spline_Line(Mesh(0,0).Node[INu][JNl].X,Mesh(0,0).Node[NNi-1][JNl].X,2); 
+    Mesh(0,0).ExtendNorth_BndEastSpline.Create_Spline_Line(Mesh(0,0).Node[INu][JNu].X, Mesh(0,0).Node[INu][NNj-1].X, 2); 
+    Mesh(0,0).ExtendSouth_BndEastSpline.Create_Spline_Line(Mesh(0,0).Node[INu][0].X, Mesh(0,0).Node[INu][JNl].X, 2); 
+    Mesh(0,0).ExtendNorth_BndWestSpline.Create_Spline_Line(Mesh(0,0).Node[INl][JNu].X, Mesh(0,0).Node[INl][NNj-1].X, 2); 
+    Mesh(0,0).ExtendSouth_BndWestSpline.Create_Spline_Line(Mesh(0,0).Node[INl][0].X, Mesh(0,0).Node[INl][JNl].X, 2); 
+
+    Mesh(0,0).ExtendWest_BndNorthSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendEast_BndNorthSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendWest_BndSouthSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendEast_BndSouthSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendNorth_BndEastSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendSouth_BndEastSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendNorth_BndWestSpline.setBCtype(BC_DIRICHLET);
+    Mesh(0,0).ExtendSouth_BndWestSpline.setBCtype(BC_DIRICHLET);
+
+    Mesh(0,0).Schedule_Ghost_Cells_Update();
+    Mesh(0,0).Update_Cells();
+
+    // == check integration
+    for (i = 0; i<Mesh(0,0).NCi; ++i){
+      for (j = 0; j<Mesh(0,0).NCj; ++j){
+
+	// Calculate integration with low-order boundaries
+	Result = Mesh(0,0).Integration.IntegrateFunctionOverCell(i,j,
+								 Test_Example1,
+								 14,Result);
+
+	
+	IntVal = Mesh(0,0).Integration.IntegrateFunctionOverCell(i,j,
+								 Test_Example1,
+								 Test_Example1_XDependencyIntegrated,
+								 14,Result);
+
+	// == check numerical integration with high-order boundaries
+	ostmClear();
+	ostm() << "IntegrateFunctionOverCell(), Cell (" << i << "," << j << ")";
+	ensure_distance(ostm().str(), IntVal, Result, AcceptedError(Result, 1.0e-12));
+
+      }	// endfor
+    } // endfor
+
+  }
+
+
+  /* Test 11:*/
+  template<>
+  template<>
+  void Grid2DQuadIntegration_object::test<11>()
+  {
+
+    set_test_name("Test QuadrilateralQuadrature routine for integration on rotated rectangle");
+
+    Node2D_HO SW, NW, NE, SE;
+    double NumericResult(0), AnalyticResult;
+
+    // Set the integration domain (i.e. a rectangle rotated counterclockwise at 30 degrees) 
+    double cos30, sin30, alpha1, alpha2;
+    cos30 = cos(PI/6);
+    sin30 = sin(PI/6);
+    alpha1 = arctan(2.0,1.0);
+    alpha2 = arctan(2.0,2.0);
+
+    SW.x() = cos30;
+    SW.y() = sin30;
+    
+    SE.x() = 2*cos30;
+    SE.y() = 2*sin30;
+
+    NE.x() = 2*sqrt(2.0)*cos(alpha2 + PI/6);
+    NE.y() = 2*sqrt(2.0)*sin(alpha2 + PI/6);
+
+    NW.x() = sqrt(5.0)*cos(alpha1 + PI/6);
+    NW.y() = sqrt(5.0)*sin(alpha1 + PI/6);
+    
+    AnalyticResult = 14./3.*(1. + cos30*sin30) + 8./3.*(1. - cos30*sin30) + 3.*(cos30*cos30 - sin30*sin30);
+
+    NumericResult = QuadrilateralQuadrature(Test_Example1,
+					    SW, NW, NE, SE,
+					    14, NumericResult);
+   
+    ensure_distance("Numeric result", NumericResult, AnalyticResult, AcceptedError(AnalyticResult));
+  }
 
 }
 

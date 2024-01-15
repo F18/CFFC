@@ -294,7 +294,7 @@ double Test_Example8 (double x, double y)
 
 double Test_Example8_Integral (double x1, double x2, double y1, double y2) {
 
-  double f;
+  double f(0);
 
   return f;
 }

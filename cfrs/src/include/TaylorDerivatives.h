@@ -5,5 +5,6 @@
 
 #include "Common/Containers/TaylorDerivatives1D.h"
 #include "Common/Containers/TaylorDerivatives2D.h"
+#include "Common/Containers/TaylorDerivatives3D.h"
 
 #endif

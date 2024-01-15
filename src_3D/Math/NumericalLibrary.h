@@ -1154,7 +1154,7 @@ inline ReturnType Gauss5PointQuadrature(FunctionType func, double StartX, double
 
 /**
  * \fn ReturnType AdaptiveGaussianQuadrature(FunctionType func, double StartX, double EndX,
- * double StartY, double EndY, int digits, const ReturnType & dummy)
+ * double StartY, double EndY, double StartZ, double EndZ, int digits, const ReturnType & dummy)
  * \brief Numerically evaluate integrals of THREE-variable functions over a cuboid (3D).
  *
  * This integration uses an adaptive Lobatto rule in each of the three directions, X, Y and Z.
@@ -1282,6 +1282,7 @@ planar_bilinear_function_transformation(FunctionType func,
   return BilinearTransformFunctionInPlan<FunctionType, NodeType, ReturnType> (func,SW,NW,NE,SE);
 }
 
+
 /**
  * \fn  ReturnType QuadrilateralQuadrature(FunctionType func, const NodeType & SW, const NodeType & NW, const NodeType & NE, 
  *  const NodeType & SE, int digits, const ReturnType & dummy)
@@ -1300,13 +1301,13 @@ planar_bilinear_function_transformation(FunctionType func,
  **************************************************************************************************************************/
 template<class FunctionType, class NodeType, class ReturnType>
 inline ReturnType QuadrilateralQuadrature(FunctionType func,
-					  const NodeType & SW, const NodeType & NW,
-					  const NodeType & NE, const NodeType & SE,
-					  int digits, const ReturnType & dummy){
-
-  /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
-  return AdaptiveGaussianQuadrature(planar_bilinear_function_transformation(func,SW,NW,NE,SE,dummy), // tranform the function
- 				    0.0,1.0,0.0,1.0,digits,dummy);
+                                          const NodeType & SW, const NodeType & NW,
+                                          const NodeType & NE, const NodeType & SE,
+                                          int digits, const ReturnType & dummy){
+    
+    /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
+    return AdaptiveGaussianQuadrature(planar_bilinear_function_transformation(func,SW,NW,NE,SE,dummy), // tranform the function
+                                      0.0,1.0,0.0,1.0,digits,dummy);
 }
 
 /**
@@ -1326,13 +1327,13 @@ inline ReturnType QuadrilateralQuadrature(FunctionType func,
  **************************************************************************************************************************/
 template<class FunctionType, class NodeType, class ReturnType>
 inline ReturnType GaussLobattoQuadrilateralQuadrature(FunctionType func,
-						      const NodeType & SW, const NodeType & NW,
-						      const NodeType & NE, const NodeType & SE,
-						      const ReturnType & dummy){
-
-  /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
-  return GaussLobattoQuadrature(planar_bilinear_function_transformation(func,SW,NW,NE,SE,dummy), // tranform the function
-				0.0,1.0,0.0,1.0,dummy);
+                                                      const NodeType & SW, const NodeType & NW,
+                                                      const NodeType & NE, const NodeType & SE,
+                                                      const ReturnType & dummy){
+    
+    /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
+    return GaussLobattoQuadrature(planar_bilinear_function_transformation(func,SW,NW,NE,SE,dummy), // tranform the function
+                                  0.0,1.0,0.0,1.0,dummy);
 }
 
 /**
@@ -1352,14 +1353,255 @@ inline ReturnType GaussLobattoQuadrilateralQuadrature(FunctionType func,
  **************************************************************************************************************************/
 template<class FunctionType, class NodeType, class ReturnType> 
 inline ReturnType Gauss5PointQuadrilateralQuadrature(FunctionType func,
-						     const NodeType & SW, const NodeType & NW,
-						     const NodeType & NE, const NodeType & SE,
-						     const ReturnType & dummy){
-
-  /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
-  return Gauss5PointQuadrature(planar_bilinear_function_transformation(func,SW,NW,NE,SE,dummy), // tranform the function
-			       0.0,1.0,0.0,1.0,dummy);
+                                                     const NodeType & SW, const NodeType & NW,
+                                                     const NodeType & NE, const NodeType & SE,
+                                                     const ReturnType & dummy){
+    
+    /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
+    return Gauss5PointQuadrature(planar_bilinear_function_transformation(func,SW,NW,NE,SE,dummy), // tranform the function
+                                 0.0,1.0,0.0,1.0,dummy);
 }
+
+
+
+/**
+ * \class TrilinearTransformFunctionInCube
+ * \brief Map a function defined on a 3D Hexahedral to a cube using a trilinear transformation
+ *
+ *
+ * On return:  <br>
+ *  -> operator(p,q,r): returns the value of the transformed function to the new coordinates                      <br>
+ *                      multiplied by the Jacobian of the transformation                                          <br>
+ *                      F(p,q,r) = Ptr_F(TransformX(p,q,r),TransformY(p,q,r),TransformZ(p,q,r) * Jacobian(p,q,r)    <br>
+ ********************************************************************************************************/
+
+template<class FunctionType, class NodeType, class ReturnType>
+class TrilinearTransformFunctionInCube{
+private:
+    FunctionType Ptr_F;		//!< pointer to the input function 
+    double Ax,Bx,Cx,Dx,Ex,Fx,Gx,Hx;  //!< coefficients to the transform
+    double Ay,By,Cy,Dy,Ey,Fy,Gy,Hy;
+    double Az,Bz,Cz,Dz,Ez,Fz,Gz,Hz;
+
+public:
+    double TrilinearTransformationX (double p, double q, double r){ //!< the transformation of the X-coordinate
+        return Ax + Bx*p + Cx*q + Dx*r + Ex*p*q + Fx*p*r * Gx*q*r + Hx*p*q*r;
+    }
+    
+    double TrilinearTransformationY (double p, double q, double r){ //!< the transformation of the Y-coordinate
+        return Ay + By*p + Cy*q + Dy*r + Ey*p*q + Fy*p*r * Gy*q*r + Hy*p*q*r;
+    }
+    
+    double TrilinearTransformationZ (double p, double q, double r){ //!< the transformation of the Z-coordinate
+        return Az + Bz*p + Cz*q + Dz*r + Ez*p*q + Fz*p*r * Gz*q*r + Hz*p*q*r;
+    }
+    
+    double Jacobian (double p, double q, double r){	//!< the Jacobian of the transformation
+        return
+        (Bz + r*(Ez + Fz + Hz*r))*((Dy + Fy*p + (Gy + Hy*p)*q)*(Cx + Ex*p + (Gx + Hx*p)*r) - 
+                                   (Dx + Fx*p + (Gx + Hx*p)*q)*(Cy + Ey*p + (Gy + Hy*p)*r)) - 
+        (Cz + Ez*q + (Gz + Hz*q)*r)*((Dy + Fy*p + (Gy + Hy*p)*q)*(Bx + Ex*q + (Fx + Hx*q)*r) - 
+                                     (Dx + Fx*p + (Gx + Hx*p)*q)*(By + Ey*q + (Fy + Hy*q)*r)) + 
+        (Dz + Fz*p + (Gz + Hz*p)*q)*((Cy + Ey*p + (Gy + Hy*p)*r)*(Bx + Ex*q + (Fx + Hx*q)*r) - 
+                                     (Cx + Ex*p + (Gx + Hx*p)*r)*(By + Ey*q + (Fy + Hy*q)*r));
+    }
+    
+    // Constructor (Input: the definition nodes of the quadrilateral domain)
+    TrilinearTransformFunctionInCube(const FunctionType Ptr_F_,
+                                     const NodeType & SWB, const NodeType & SEB, const NodeType & NWB, const NodeType & NEB,
+                                     const NodeType & SWT, const NodeType & SET, const NodeType & NWT, const NodeType & NET)
+    : Ptr_F(Ptr_F_){
+        /* determine the coefficients of the transformation */
+        Ax = SWB.x();
+        Bx = -SWB.x()+SEB.x();
+        Cx = -SWB.x()+NWB.x();
+        Dx = -SWB.x()+SWT.x();
+        Ex = SWB.x()-NWB.x()-SEB.x()+NEB.x();
+        Fx = SWB.x()-SWT.x()-SEB.x()+SET.x();
+        Gx = SWB.x()-SWT.x()-NWB.x()+NWT.x();
+        Hx = -SWB.x()+SWT.x()+NWB.x()-NWT.x()+SEB.x()-SET.x()-NEB.x()+NET.x();
+        
+        Ay = SWB.y();
+        By = -SWB.y()+SEB.y();
+        Cy = -SWB.y()+NWB.y();
+        Dy = -SWB.y()+SWT.y();
+        Ey = SWB.y()-NWB.y()-SEB.y()+NEB.y();
+        Fy = SWB.y()-SWT.y()-SEB.y()+SET.y();
+        Gy = SWB.y()-SWT.y()-NWB.y()+NWT.y();
+        Hy = -SWB.y()+SWT.y()+NWB.y()-NWT.y()+SEB.y()-SET.y()-NEB.y()+NET.y();
+        
+        Az = SWB.z();
+        Bz = -SWB.z()+SEB.z();
+        Cz = -SWB.z()+NWB.z();
+        Dz = -SWB.z()+SWT.z();
+        Ez = SWB.z()-NWB.z()-SEB.z()+NEB.z();
+        Fz = SWB.z()-SWT.z()-SEB.z()+SET.z();
+        Gz = SWB.z()-SWT.z()-NWB.z()+NWT.z();
+        Hz = -SWB.z()+SWT.z()+NWB.z()-NWT.z()+SEB.z()-SET.z()-NEB.z()+NET.z();
+    };
+    
+    
+    ReturnType operator() (double p, double q, double r){
+        //if (Jacobian(p,q,r) == 0.0) Print_("Jacobian equals zero");
+        return Ptr_F(TrilinearTransformationX(p,q,r), TrilinearTransformationY(p,q,r), TrilinearTransformationZ(p,q,r)) * Jacobian(p,q,r);
+    }
+    
+    friend ostream& operator<< (ostream& os,
+                                const TrilinearTransformFunctionInCube<FunctionType,NodeType,ReturnType>& Obj){
+        os << endl
+        << "TrilinearTransformFunctionInCube::Coefficients\n"
+        << "Ax = " << Obj.Ax << endl
+        << "Bx = " << Obj.Bx << endl
+        << "Cx = " << Obj.Cx << endl
+        << "Dx = " << Obj.Dx << endl
+        << "Ex = " << Obj.Ex << endl
+        << "Fx = " << Obj.Fx << endl
+        << "Gx = " << Obj.Gx << endl
+        << "Hx = " << Obj.Hx << endl
+        << "Ay = " << Obj.Ay << endl
+        << "By = " << Obj.By << endl
+        << "Cy = " << Obj.Cy << endl
+        << "Dy = " << Obj.Dy << endl
+        << "Ey = " << Obj.Ey << endl
+        << "Fy = " << Obj.Fy << endl
+        << "Gy = " << Obj.Gy << endl
+        << "Hy = " << Obj.Hy << endl
+        << "Az = " << Obj.Az << endl
+        << "Bz = " << Obj.Bz << endl
+        << "Cz = " << Obj.Cz << endl
+        << "Dz = " << Obj.Dz << endl
+        << "Ez = " << Obj.Ez << endl
+        << "Fz = " << Obj.Fz << endl
+        << "Gz = " << Obj.Gz << endl
+        << "Hz = " << Obj.Hz << endl;
+        
+        return os;
+    }
+    
+};
+
+
+/************************************************************************//**
+ * \fn TrilinearTransformFunctionInCube<FunctionType, NodeType, ReturnType>
+ * planar_bilinear_function_transformation(FunctionType func,
+ * const NodeType & SW, const NodeType & NW, const NodeType & NE, const NodeType & SE,
+ * ReturnType & dummy)
+ * \brief Generate a TrilinearTransformFunctionInCube object 
+ *
+ * \param func the name of the function to be mapped
+ * \param SWB the south-west-bottom node of the hexahedral
+ * \param SEB the south-east-bottom node of the hexahedral
+ * \param NWB the north-west-bottom node of the hexahedral
+ * \param NEB the north-east-bottom node of the hexahedral
+ * \param SWT the south-west-top node of the hexahedral
+ * \param SET the south-east-top node of the hexahedral
+ * \param NWT the north-west-top node of the hexahedral
+ * \param NET the north-east-top node of the hexahedral
+ * \param dummy used only to provide the return type
+ ****************************************************************************/
+template<class FunctionType, class NodeType, class ReturnType>
+inline 
+TrilinearTransformFunctionInCube<FunctionType, NodeType, ReturnType> // returned type
+cubical_trilinear_function_transformation(FunctionType func,
+                                          const NodeType & SWB, const NodeType & SEB, const NodeType & NWB, const NodeType & NEB,
+                                          const NodeType & SWT, const NodeType & SET, const NodeType & NWT, const NodeType & NET,
+                                          ReturnType & dummy){
+    return TrilinearTransformFunctionInCube<FunctionType, NodeType, ReturnType> (func,SWB,SEB,NWB,NEB,SWT,SET,NWT,NET);
+}
+
+
+/**
+ * \fn  ReturnType HexahedralQuadrature(FunctionType func, const NodeType & SW, const NodeType & NW, const NodeType & NE, 
+ *  const NodeType & SE, int digits, const ReturnType & dummy)
+ * \brief Numerically evaluate integrals of TWO-variable functions over a hexahedral domain.
+ *
+ * This subroutine maps the hexahedral domain into a rectangle and integrate using an adaptive Lobatto rule
+ *  
+ * see also AdaptiveGaussianQuadrature()                                                                  
+ * \param func the name of the function used to evaluate the integral
+ * \param SWB the south-west-bottom node of the hexahedral
+ * \param SEB the south-east-bottom node of the hexahedral
+ * \param NWB the north-west-bottom node of the hexahedral
+ * \param NEB the north-east-bottom node of the hexahedral
+ * \param SWT the south-west-top node of the hexahedral
+ * \param SET the south-east-top node of the hexahedral
+ * \param NWT the north-west-top node of the hexahedral
+ * \param NET the north-east-top node of the hexahedral
+ * \param dummy used only to provide the return type
+ * \param digits number of exact digits (there is a default value already provided!)
+ **************************************************************************************************************************/
+template<class FunctionType, class NodeType, class ReturnType>
+inline ReturnType HexahedralQuadrature(FunctionType func,
+                                       const NodeType & SWB, const NodeType & SEB, const NodeType & NWB, const NodeType & NEB,
+                                       const NodeType & SWT, const NodeType & SET, const NodeType & NWT, const NodeType & NET,
+                                       int digits, const ReturnType & dummy){
+    
+    /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
+    return AdaptiveGaussianQuadrature(cubical_trilinear_function_transformation(func,SWB,SEB,NWB,NEB,SWT,SET,NWT,NET,dummy), // tranform the function
+                                      0.0,1.0,0.0,1.0,0.0,1.0,digits,dummy);
+}
+
+/**
+ * \fn  ReturnType GaussLobattoHexahedralQuadrature(FunctionType func, NodeType & SW, NodeType & NW, NodeType & NE, 
+ *  NodeType & SE, const ReturnType & dummy)
+ * \brief Numerically evaluate integrals of TWO-variable functions over a hexahedral domain.
+ *
+ * This subroutine maps the hexahedral domain into a rectangle and integrate using a NON-adaptive Lobatto rule
+ *  
+ * see also GaussLobattoQuadrature()                                                                  
+ * \param func the name of the function used to evaluate the integral
+ * \param SWB the south-west-bottom node of the hexahedral
+ * \param SEB the south-east-bottom node of the hexahedral
+ * \param NWB the north-west-bottom node of the hexahedral
+ * \param NEB the north-east-bottom node of the hexahedral
+ * \param SWT the south-west-top node of the hexahedral
+ * \param SET the south-east-top node of the hexahedral
+ * \param NWT the north-west-top node of the hexahedral
+ * \param NET the north-east-top node of the hexahedral
+ * \param dummy used only to provide the return type
+ **************************************************************************************************************************/
+template<class FunctionType, class NodeType, class ReturnType>
+inline ReturnType GaussLobattoHexahedralQuadrature(FunctionType func,
+                                                   const NodeType & SWB, const NodeType & SEB, const NodeType & NWB, const NodeType & NEB,
+                                                   const NodeType & SWT, const NodeType & SET, const NodeType & NWT, const NodeType & NET,
+                                                   const ReturnType & dummy){
+    
+    /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
+    return GaussLobattoQuadrature(cubical_trilinear_function_transformation(func,SWB,SEB,NWB,NEB,SWT,SET,NWT,NET,dummy), // tranform the function
+                                  0.0,1.0,0.0,1.0,0.0,1.0,dummy);
+}
+
+/**
+ * \fn  ReturnType Gauss5PointHexahedralQuadrature(FunctionType func, NodeType & SW, NodeType & NW, NodeType & NE, 
+ *  NodeType & SE, const ReturnType & dummy)
+ * \brief Numerically evaluate integrals of TWO-variable functions over a hexahedral domain.
+ *
+ * This subroutine maps the hexahedral domain into a rectangle and integrate using a NON-adaptive 5 point Gauss-Legendre rule
+ *  
+ * see also Gauss5PointQuadrature()
+ * \param func the name of the function used to evaluate the integral
+ * \param SWB the south-west-bottom node of the hexahedral
+ * \param SEB the south-east-bottom node of the hexahedral
+ * \param NWB the north-west-bottom node of the hexahedral
+ * \param NEB the north-east-bottom node of the hexahedral
+ * \param SWT the south-west-top node of the hexahedral
+ * \param SET the south-east-top node of the hexahedral
+ * \param NWT the north-west-top node of the hexahedral
+ * \param NET the north-east-top node of the hexahedral
+ * \param dummy used only to provide the return type
+ **************************************************************************************************************************/
+template<class FunctionType, class NodeType, class ReturnType> 
+inline ReturnType Gauss5PointHexahedralQuadrature(FunctionType func,
+                                                  const NodeType & SWB, const NodeType & SEB, const NodeType & NWB, const NodeType & NEB,
+                                                  const NodeType & SWT, const NodeType & SET, const NodeType & NWT, const NodeType & NET,
+                                                     const ReturnType & dummy){
+    
+    /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
+    return Gauss5PointQuadrature(cubical_trilinear_function_transformation(func,SWB,SEB,NWB,NEB,SWT,SET,NWT,NET,dummy), // tranform the function
+                                 0.0,1.0,0.0,1.0,0.0,1.0,dummy);
+}
+
+
 
 /**
  * Generalized polynomial function of ONE-variable                                        
@@ -1412,6 +1654,43 @@ class GeneralizedPolynomialFunctionOfTwoVariables{
 	 << "yi=" << Var.yi << endl
 	 << "power n=" << Var.n << endl
 	 << "power m=" << Var.m << endl;
+      return os;
+    }
+};
+
+
+/**
+ * Generalized polynomial function of THREE-variables                                      
+ * is a class of functions which have the form (x-xi)^n * (y-yi)^m * (z-zi)^l                      
+ ****************************************************************************/
+class GeneralizedPolynomialFunctionOfThreeVariables{
+ private:
+  double xi, yi,zi;
+  int l,m,n;
+ public:
+  GeneralizedPolynomialFunctionOfThreeVariables(const int _l_, const int _m_, const int _n_,
+                                                const double _xi_, const double _yi_, const double _zi_)
+    : xi(_xi_), yi(_yi_), zi(_zi_), l(_l_), m(_m_), n(_n_){
+  };
+
+  void ChangePowersTo(const int _l_, const int _m_, const int _n_){
+      l = _l_;
+      m = _m_;
+      n = _n_;
+  }
+
+  double operator()(const double x, const double y, const double z){
+    return std::pow((x-xi),l)*std::pow((y-yi),m)*std::pow((z-zi),n);
+  }
+
+    friend ostream& operator << (ostream& os, const GeneralizedPolynomialFunctionOfThreeVariables & Var){
+      os << endl;
+      os << "xi=" << Var.xi << endl
+	 << "yi=" << Var.yi << endl
+         << "zi=" << Var.zi << endl
+	 << "power l=" << Var.l << endl
+	 << "power m=" << Var.m << endl
+	 << "power n=" << Var.n << endl;
       return os;
     }
 };
@@ -1520,17 +1799,9 @@ public:
   static const double GQ1_Abscissa[1];
   static const double GQ1_Weight[1];
 
-  // Abscissae and weights for 2-point Gaussian method
-  static const double GQ2_Abscissa[2];
-  static const double GQ2_Weight[2];
-
-  // Abscissae and weights for 3-point Gaussian method
-  static const double GQ3_Abscissa[3];
-  static const double GQ3_Weight[3];
-
-  // Abscissae and weights for 5-point Gaussian method
-  static const double GQ5_Abscissa[5];
-  static const double GQ5_Weight[5];  
+  // Abscissae and weights for 4-point Gaussian method
+  static const double GQ4_Abscissa[2];
+  static const double GQ4_Weight[4];
 
   //! Set the weights in the passed array
   static void getGaussQuadWeights(double * GaussQuadWeights, const int & NumberOfGQPs);
@@ -1551,23 +1822,11 @@ inline void GaussQuadratureData::getGaussQuadWeights(double * GaussQuadWeights, 
     GaussQuadWeights[0] = GQ1_Weight[0];
     break;
 
-  case 2:			// Two points
-    GaussQuadWeights[0] = GQ2_Weight[0];
-    GaussQuadWeights[1] = GQ2_Weight[1];
-    break;
-    
-  case 3:			// Three points
-    GaussQuadWeights[0] = GQ3_Weight[0];
-    GaussQuadWeights[1] = GQ3_Weight[1];
-    GaussQuadWeights[2] = GQ3_Weight[2];
-    break;
-
-  case 5:			// Five points
-    GaussQuadWeights[0] = GQ5_Weight[0];
-    GaussQuadWeights[1] = GQ5_Weight[1];
-    GaussQuadWeights[2] = GQ5_Weight[2];
-    GaussQuadWeights[3] = GQ5_Weight[3];
-    GaussQuadWeights[4] = GQ5_Weight[4];
+  case 4:			// Four points
+    GaussQuadWeights[0] = GQ4_Weight[0];
+    GaussQuadWeights[1] = GQ4_Weight[1];
+    GaussQuadWeights[2] = GQ4_Weight[2];
+    GaussQuadWeights[3] = GQ4_Weight[3];
     break;
 
   default:

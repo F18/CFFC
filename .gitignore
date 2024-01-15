@@ -57,6 +57,7 @@ labels.pl
 # misc
 tags
 .DS_Store
+*.xcodeproj
 
 # 1D executables
 solvers1D
@@ -82,6 +83,7 @@ embeddedboundaries2D
 gaussian2D
 rte2D
 flame2D
+mhd2D
 
 # 3D executables
 cffc3D
@@ -94,6 +96,7 @@ fans3Dthermallyperfect
 les3Dpolytropic
 les3Dfsd
 les3Dtf
+filters
 
 # unit testing directories
 journal.tut

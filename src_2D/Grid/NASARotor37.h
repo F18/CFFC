@@ -57,6 +57,8 @@ using namespace std;
 #include "../Grid/Grid2DQuad.h"
 #endif // _GRID2D_QUAD_BLOCK_INCLUDED
 
+#include "../Grid/HO_Grid2DQuadMultiBlock.h" /* Include 2D quadrilateral multiblock grid header file */
+
 // Define constants
 #define PEAK_FLOW    1
 #define STALL_FLOW   2
@@ -634,6 +636,77 @@ public:
 		int B21_StretchFcnJ, double B21_BetaJ, double B21_TauJ,
 		int B21_NbndType, int B21_EbndType, int B21_SbndType, int B21_WbndType,
 		int B21_OrthN, int B21_OrthE, int B21_OrthS, int B21_OrthW);
+
+  //! Generate a mesh using genMeshH_3x2 with preset parameters and high-order geometry type.
+  void genMeshH_3x2_AUTO(Grid2D_Quad_MultiBlock_HO &mesh,
+			 double pspan, double zMin, double zMax,  
+			 const int Number_of_Cells_Idir,
+			 const int Number_of_Cells_Jdir,
+			 const int Number_of_Ghost_Cells,
+			 const int & Highest_Order_of_Reconstruction,
+			 int smooth);
+
+  //! Generate a high-order H-grid for the cross-section of the blade at any %span.
+  void genMeshH_3x2(Grid2D_Quad_MultiBlock_HO &mesh,
+		    const int & Highest_Order_of_Reconstruction,
+
+		    double pspan, double zMin, double zMax, int n, 
+		
+		    // Parameters for block (0,0) - (BOTTOM LEFT CORNER)
+		    const int B00_Number_of_Cells_Idir, const int B00_Number_of_Cells_Jdir, const int B00_Number_of_Ghost_Cells,
+		    int B00_StretchFcnI, double B00_BetaI, double B00_TauI,
+		    int B00_StretchFcnJ, double B00_BetaJ, double B00_TauJ,
+		    int B00_NbndType, int B00_EbndType, int B00_SbndType, int B00_WbndType,
+		    int B00_OrthN, int B00_OrthE, int B00_OrthS, int B00_OrthW,
+		    
+		    // Parameters for block (1,0)
+		    const int B10_Number_of_Cells_Idir, const int B10_Number_of_Cells_Jdir, const int B10_Number_of_Ghost_Cells,
+		    int B10_StretchFcnI, double B10_BetaI, double B10_TauI,
+		    int B10_StretchFcnJ, double B10_BetaJ, double B10_TauJ,
+		    int B10_NbndType, int B10_EbndType, int B10_SbndType, int B10_WbndType,
+		    int B10_OrthN, int B10_OrthE, int B10_OrthS, int B10_OrthW,
+
+		    // Parameters for block (2,0)
+		    const int B20_Number_of_Cells_Idir, const int B20_Number_of_Cells_Jdir, const int B20_Number_of_Ghost_Cells,
+		    int B20_StretchFcnI, double B20_BetaI, double B20_TauI,
+		    int B20_StretchFcnJ, double B20_BetaJ, double B20_TauJ,
+		    int B20_NbndType, int B20_EbndType, int B20_SbndType, int B20_WbndType,
+		    int B20_OrthN, int B20_OrthE, int B20_OrthS, int B20_OrthW,
+
+		    // Parameters for block (0,1)
+		    const int B01_Number_of_Cells_Idir, const int B01_Number_of_Cells_Jdir, const int B01_Number_of_Ghost_Cells,
+		    int B01_StretchFcnI, double B01_BetaI, double B01_TauI,
+		    int B01_StretchFcnJ, double B01_BetaJ, double B01_TauJ,
+		    int B01_NbndType, int B01_EbndType, int B01_SbndType, int B01_WbndType,
+		    int B01_OrthN, int B01_OrthE, int B01_OrthS, int B01_OrthW,
+		
+		    // Parameters for block (1,1)
+		    const int B11_Number_of_Cells_Idir, const int B11_Number_of_Cells_Jdir, const int B11_Number_of_Ghost_Cells,
+		    int B11_StretchFcnI, double B11_BetaI, double B11_TauI,
+		    int B11_StretchFcnJ, double B11_BetaJ, double B11_TauJ,
+		    int B11_NbndType, int B11_EbndType, int B11_SbndType, int B11_WbndType,
+		    int B11_OrthN, int B11_OrthE, int B11_OrthS, int B11_OrthW,
+		
+		    // Parameters for block (2,1)
+		    const int B21_Number_of_Cells_Idir, const int B21_Number_of_Cells_Jdir, const int B21_Number_of_Ghost_Cells,
+		    int B21_StretchFcnI, double B21_BetaI, double B21_TauI,
+		    int B21_StretchFcnJ, double B21_BetaJ, double B21_TauJ,
+		    int B21_NbndType, int B21_EbndType, int B21_SbndType, int B21_WbndType,
+		    int B21_OrthN, int B21_OrthE, int B21_OrthS, int B21_OrthW);
+
+  //! Member functions to generate meshes  
+  //! generates a high-order mesh on a given block that already has the boundary splines defined
+  void genMeshBlock(Grid2D_Quad_Block_HO &block,
+		    const int & Highest_Order_of_Reconstruction,
+		    int n,
+		    const int Number_of_Cells_Idir,
+		    const int Number_of_Cells_Jdir,
+		    const int Number_of_Ghost_Cells,
+		    int node_init_procedure,
+		    int  StretchFcnI, double  BetaI, double  TauI,
+		    int  StretchFcnJ, double  BetaJ, double  TauJ,
+		    int  NbndType, int  EbndType, int  SbndType, int  WbndType,
+		    int  OrthN, int  OrthE, int  OrthS, int  OrthW) ;
   
   //! Generate a 3D structured HEX mesh using the genMeshH routine and output in TECPLOT FORMAT
   void outputTP_Mesh3D(const int Number_of_Cells_Idir, const int Number_of_Cells_Jdir, int kMax,
@@ -1641,6 +1714,8 @@ inline Vector3D NASARotor37::lInt(const Vector3D &v1, const Vector3D &v2, const 
     r=pspan/100*(shroudR(vInt.z)-hr)+hr;
     
   }     
+
+  return Vector3D(0);
 
 }
 

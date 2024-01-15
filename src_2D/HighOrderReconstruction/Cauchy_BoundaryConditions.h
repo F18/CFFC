@@ -60,6 +60,14 @@ public:
   //! @name Initialize container functions.
   //@{
   void allocate(const int & NumOfObjects);
+  void InitializeCauchyBCs(const int & NumOfObjects,
+			   const int & BCtype);
+  //@}
+
+  //! @name Set number of constraints
+  //@{
+  //! @brief Set number of constraints corresponding to the type of boundary condition
+  void SetCharacteristicConstraintsBasedOnBCtype(const int & BCtype);
   //@}
 
   //! @name Field access:
@@ -82,6 +90,23 @@ public:
   SOLN_STATE & b(const int &position) {return b_coeff[position-1];}
   const SOLN_STATE & b(const int &position) const {return b_coeff[position-1];}
   
+  const ShortIndexType & IndividualConstraintsVector(void) const { return IndividualConstraints; }
+  short int & NumberOfIndividualConstraints(const int &parameter){ return IndividualConstraints[parameter-1]; }
+  const short int & NumberOfIndividualConstraints(const int &parameter) const { return IndividualConstraints[parameter-1]; }
+
+  const ShortIndexType & RelationalConstraintsVector(void) const { return RelationalConstraints; }
+  short int & NumberOfRelationalConstraints(const int &parameter){ return RelationalConstraints[parameter-1]; }
+  const short int & NumberOfRelationalConstraints(const int &parameter) const { return RelationalConstraints[parameter-1]; }
+
+  bool IsThereAnyRelationalConstraintRequired(void) const { return RelationalConstraintsFlag; }
+  bool IsThereAnyIndividualConstraintRequired(void) const { return IndividualConstraintsFlag; }
+
+  void setIndividualConstraints(void) { IndividualConstraintsFlag = true; }
+  void setNOIndividualConstraints(void) { IndividualConstraintsFlag = false; }
+  void setRelationalConstraints(void) { RelationalConstraintsFlag = true; }
+  void setNORelationalConstraints(void) { RelationalConstraintsFlag = false; }
+  
+
   //! @name Friend functions:
   //@{
   friend std::ostream& operator<< <SOLN_STATE> (std::ostream& os, const Cauchy_BCs<SOLN_STATE>& rhs);
@@ -94,6 +119,17 @@ private:
   SOLN_STATE *a_coeff;		//!< Coefficient of Dirichlet BC in the mixed BC
   SOLN_STATE *b_coeff;		//!< Coefficient of Neumann BC in the mixed BC
   int NumLoc;			//!< Number of locations where the BCs are specified
+
+  //! @name Vectors of constraints for each solution parameter at each particular Location:
+  //@{  
+  ShortIndexType IndividualConstraints; /*!< Number of individual constraints imposed by the type of BCs.
+					 *   Get the total number of individual constraints by multiplying with NumLoc. */
+  ShortIndexType RelationalConstraints; /*!< Number of relational constraints imposed by the type of BCs.
+					 *   Get the total number of individual constraints by multiplying with NumLoc. */
+  //@}
+
+  bool IndividualConstraintsFlag; //!< Flag for existence of individual constraints
+  bool RelationalConstraintsFlag; //!< Flag for existence of relational constraints
 
   bool _allocated_container;	//!< allocation flag
 };
@@ -108,7 +144,10 @@ template< class SOLN_STATE > inline
 Cauchy_BCs<SOLN_STATE>::Cauchy_BCs(void):
   Dirichlet(NULL), Neumann(NULL),
   a_coeff(NULL), b_coeff(NULL),
-  NumLoc(0), _allocated_container(false)
+  NumLoc(0),
+  IndividualConstraintsFlag(false),
+  RelationalConstraintsFlag(false),
+  _allocated_container(false)
 {
   //
 }
@@ -118,7 +157,9 @@ template< class SOLN_STATE > inline
 Cauchy_BCs<SOLN_STATE>::Cauchy_BCs(const Cauchy_BCs<SOLN_STATE> & rhs):
   Dirichlet(NULL), Neumann(NULL),
   a_coeff(NULL), b_coeff(NULL),
-  NumLoc(0)  
+  NumLoc(0),
+  IndividualConstraintsFlag(false),
+  RelationalConstraintsFlag(false)
 {
 
   // check if the rhs has memory allocated
@@ -134,6 +175,13 @@ Cauchy_BCs<SOLN_STATE>::Cauchy_BCs(const Cauchy_BCs<SOLN_STATE> & rhs):
       a_coeff[i]   = rhs.a_coeff[i];
       b_coeff[i]   = rhs.b_coeff[i];      
     }
+
+    /* copy constraints values from the RHS */
+    IndividualConstraints = rhs.IndividualConstraints;
+    RelationalConstraints = rhs.RelationalConstraints;
+
+    IndividualConstraintsFlag = rhs.IndividualConstraintsFlag;
+    RelationalConstraintsFlag = rhs.RelationalConstraintsFlag;
   }
 }
 
@@ -159,11 +207,39 @@ void Cauchy_BCs<SOLN_STATE>::allocate(const int &NumOfObjects){
     Neumann   = new SOLN_STATE[NumLoc];
     a_coeff   = new SOLN_STATE[NumLoc];
     b_coeff   = new SOLN_STATE[NumLoc];
-  }
 
+    // allocate memory for the constraints vectors
+    IndividualConstraints.reserve(SOLN_STATE::NumVar());
+    RelationalConstraints.reserve(SOLN_STATE::NumVar());
+
+    // Initialize constraints vectors
+    for (int parameter = 1; parameter <= SOLN_STATE::NumVar(); ++parameter){
+      IndividualConstraints.push_back(0); // no individual constraints for this parameter
+      RelationalConstraints.push_back(0); // no relational constraints for this parameter
+    }
+  }
+  
   // Confirm the allocation
   _allocated_container = true;
 }
+
+/*!
+ * Initialize container with a particular boundary condition
+ * and a specified number of objects.
+ */
+template< class SOLN_STATE > inline
+void Cauchy_BCs<SOLN_STATE>::InitializeCauchyBCs(const int &NumOfObjects,
+						 const int &BCtype){
+
+  // allocate memory
+  allocate(NumOfObjects);
+
+  if (NumOfObjects > 0){
+    // set number of constraints per GQP for each solution parameter
+    SetCharacteristicConstraintsBasedOnBCtype(BCtype);
+  }
+}
+
 
 /*!
  * Deallocate memory
@@ -175,6 +251,12 @@ void Cauchy_BCs<SOLN_STATE>::deallocate(void){
   delete [] a_coeff; a_coeff = NULL;
   delete [] b_coeff; b_coeff = NULL;
   NumLoc = 0;
+
+  IndividualConstraints.clear();
+  RelationalConstraints.clear();
+
+  IndividualConstraintsFlag = false;
+  RelationalConstraintsFlag = false;
 
   // Confirm the de-allocation
   _allocated_container = false;
@@ -201,7 +283,40 @@ Cauchy_BCs<SOLN_STATE> & Cauchy_BCs<SOLN_STATE>::operator=(const Cauchy_BCs<SOLN
     b_coeff[i]   = rhs.b_coeff[i];      
   }
 
+  /* copy constraints values from the RHS */
+  IndividualConstraints = rhs.IndividualConstraints;
+  RelationalConstraints = rhs.RelationalConstraints;
+  
+  IndividualConstraintsFlag = rhs.IndividualConstraintsFlag;
+  RelationalConstraintsFlag = rhs.RelationalConstraintsFlag;
+
   return *this;
+}
+
+/*!
+ * Set number of constraints (i.e. individual and relational) 
+ * required by the boundary condition type to be satisfied  
+ * on each solution parameter at each flux calculation point (GQP).
+ *
+ * \param BCtype specifies the boundary condition type
+ *
+ * \note Specialize this routine to set the proper number
+ *       of constraints for each solution state!
+ */
+template< class SOLN_STATE > inline
+void Cauchy_BCs<SOLN_STATE>::SetCharacteristicConstraintsBasedOnBCtype(const int & BCtype){
+
+  for (int parameter = 1; parameter <= IndividualConstraints.size(); ++parameter) {
+
+    // Impose NO relational constraints
+    RelationalConstraints[parameter-1] = 0;
+
+    // Impose No individual constraints
+    IndividualConstraints[parameter-1] = 0;
+  }
+
+  IndividualConstraintsFlag = false;
+  RelationalConstraintsFlag = false;
 }
 
 /* Friend functions */
@@ -244,6 +359,79 @@ std::istream& operator>> (std::istream& is, Cauchy_BCs<SOLN_STATE>& rhs){
   }
 
   return is;
+}
+
+
+/*****************************************************************
+ *            SPECIALIZATIONS FOR CLASS DOUBLE                   *
+ ****************************************************************/
+
+/*!
+ * Allocate memory for the object.
+ */
+template< > inline
+void Cauchy_BCs<double>::allocate(const int &NumOfObjects){
+
+  if (NumLoc == NumOfObjects) {
+    return; /* enough memory already allocated */
+  } 
+
+  /* If there is not enough memory, deallocate the current one and allocate again */
+  if (_allocated_container){
+    deallocate();
+  }
+
+  // allocate new memory
+  if (NumOfObjects > 0){
+    NumLoc = NumOfObjects;
+    Dirichlet = new double[NumLoc];
+    Neumann   = new double[NumLoc];
+    a_coeff   = new double[NumLoc];
+    b_coeff   = new double[NumLoc];
+
+    // allocate memory for the constraints vectors
+    IndividualConstraints.reserve(1);
+    RelationalConstraints.reserve(1);
+
+    // Initialize constraints vectors
+    IndividualConstraints.push_back(0);
+    RelationalConstraints.push_back(0);
+  }
+  
+  // Confirm the allocation
+  _allocated_container = true;
+}
+
+/*!
+ * Access individual constraints
+ */
+template< > inline
+short int & Cauchy_BCs<double>::NumberOfIndividualConstraints(const int &parameter){
+  return IndividualConstraints[0];
+}
+
+/*!
+ * Access individual constraints with 'const'
+ */
+template< > inline
+const short int & Cauchy_BCs<double>::NumberOfIndividualConstraints(const int &parameter) const{
+  return IndividualConstraints[0];
+}
+
+/*!
+ * Access relational constraints
+ */
+template< > inline
+short int & Cauchy_BCs<double>::NumberOfRelationalConstraints(const int &parameter){
+  return RelationalConstraints[0];
+}
+
+/*!
+ * Access relational constraints with 'const'
+ */
+template< > inline
+const short int & Cauchy_BCs<double>::NumberOfRelationalConstraints(const int &parameter) const{
+  return RelationalConstraints[0];
 }
 
 #endif

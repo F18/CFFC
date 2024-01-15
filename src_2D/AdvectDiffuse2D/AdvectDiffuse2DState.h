@@ -95,7 +95,7 @@ public:
   AdvectDiffuse2D_State(void);
 
   //! Value Constructor
-  AdvectDiffuse2D_State(const double &uu);
+  explicit AdvectDiffuse2D_State(const double &uu);
 
   //! Copy constructor.
   AdvectDiffuse2D_State(const AdvectDiffuse2D_State &U){ u = U.u; }
@@ -131,7 +131,7 @@ public:
   void Zero_Non_Multigrid_State_Variables(void){};
 
   //! Check for unphysical state properties.
-  int Unphysical_Properties(void) const{};
+  int Unphysical_Properties(void) const{ return 0; }
   //@}
 
   //! @name Compute upwind state
@@ -261,6 +261,9 @@ public:
   //! Maximum value 
   friend AdvectDiffuse2D_State max(const AdvectDiffuse2D_State &Ul,
 				   const AdvectDiffuse2D_State &Ur){ return AdvectDiffuse2D_State(max(Ul.u,Ur.u));}
+  //! Minimum value
+  friend AdvectDiffuse2D_State min(const AdvectDiffuse2D_State &Ul,
+				   const AdvectDiffuse2D_State &Ur){ return AdvectDiffuse2D_State(min(Ul.u,Ur.u));}
 
   //! @name Binary arithmetic operators.
   //@{

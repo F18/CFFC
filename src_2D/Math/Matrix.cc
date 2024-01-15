@@ -4,6 +4,8 @@
 #include "Matrix.h"
 #include <lapackd.h>
 #include <BPKIT.h>
+#include "../Utilities/Utilities.h"    /* Include utilities header file. */
+#include "../Utilities/EpsilonTol.h"   /* Include numerical tolerances header file. */
 
 /*************************************************************
  * DenseMatrix -- Create storage for temp vector.            *
@@ -26,6 +28,11 @@ void F77NAME(dgeev) (char *, char *, integer *, doublereal *, integer *,
     doublereal *, integer *, integer *);
 
 void F77NAME(dgetrf)(int *, int *, doublereal *, int *, int *, int *);
+
+#ifdef _USE_ESSL_LIB
+  int dgesvf  (int*, void *, int *, void *, int*, int*,
+	       double *, int*, int*, double *, int*);
+#endif
 }
 
 /*************************************************************
@@ -34,6 +41,64 @@ void F77NAME(dgetrf)(int *, int *, doublereal *, int *, int *, int *);
  *                   initial matrix.                         *
  *************************************************************/
 void DenseMatrix::pseudo_inverse_override(void){
+
+#ifdef _USE_ESSL_LIB
+
+  int iopt(12);		// require singular values, V and UtB to be computed. Sort the singular values in desceding order.
+  integer NROW(size(0)), NCOL(size(1));
+  integer LWORK( 10 * 2*NCOL + max(NROW, NCOL) );
+  integer MN(min(NROW,NCOL));
+  double *S, *WORK;
+  WORK = new double[LWORK];	// work space
+  S = new double[MN];		// array of singular values
+  double LargestSV;		// the largest single value
+  integer i,j,k;
+  double tau(EpsilonTol::epsilon);
+
+  // RHS matrix; ensure calculation of Ut (U transpose)
+  DenseMatrix UtB(NROW,NROW); UtB.identity();
+
+  /* Call Fortran subroutine from ESSL. 
+     This routine calculates V matrix and Ut.
+     The pseudo-inverse is the product of V, SIGMA-inverse (i.e. the inverse of the diagonal matrix), and Ut. */
+  dgesvf(&iopt, &v_(0), &NROW, &UtB(0,0), &NROW, &NROW,
+	 S, &NROW, &NCOL, WORK, &LWORK);
+
+  // Store V matrix
+  DenseMatrix V(*this);  
+
+  // Get the reciprocal of each non-zero singular value of S
+  LargestSV = S[0];
+  if (LargestSV != 0){
+    for (i=0; i<MN; ++i){
+      if (S[i]/LargestSV > tau){
+	S[i] = 1.0/S[i];
+      } else {
+	S[i] = 0.0;
+      }
+    }
+  }
+ 
+  // Resize the initial matrix to store the pseudo_inverse
+  newsize(NCOL,NROW);
+
+  // Compute the pseudo-inverse
+  for (i=0; i<NCOL; ++i){
+    for (j=0; j<NROW; ++j){
+      operator()(i,j) = 0.0;
+      for (k=0; k<NCOL; ++k){
+	operator()(i,j) += V(i,k) * S[k] * UtB(k,j);
+      }//endfor(k)
+    }//endfor(j)
+  }//endfor(i)
+
+  // Deallocate locally allocated memory
+  delete [] S; S = NULL;
+  delete [] WORK; WORK = NULL;
+
+  return;
+
+#else
 
   // Get the SVD decomposition of matrix A using the 'dgesvd' Lapack subroutine
 
@@ -108,6 +173,8 @@ void DenseMatrix::pseudo_inverse_override(void){
   // Deallocate locally allocated memory
   delete [] S; S = NULL;
   delete [] WORK; WORK = NULL;
+
+#endif
 
 }
 

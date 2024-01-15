@@ -825,9 +825,9 @@ namespace tut
     AdvectDiffuse2D_State Ul(12.2323), Ur(5.34), Um(-34.56);
 
     // === check max
-    ensure_equals("Max I"  , max(Ul,Ur), 12.2323);
-    ensure_equals("Max II" , max(Ul,Um), 12.2323);
-    ensure_equals("Max III", max(Ur,Um), 5.34);
+    ensure_equals("Max I"  , max(Ul,Ur), AdvectDiffuse2D_State(12.2323));
+    ensure_equals("Max II" , max(Ul,Um), AdvectDiffuse2D_State(12.2323));
+    ensure_equals("Max III", max(Ur,Um), AdvectDiffuse2D_State(5.34));
   }
 
   /* Test 41:*/
@@ -870,6 +870,22 @@ namespace tut
     ensure_distance("Fa I", Fa(A,Vector2D(8.5,12.5),Normal), AdvectDiffuse2D_State(72.0), AdvectDiffuse2D_State(tol));
   }
 
+  /* Test 43:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<43>()
+  {
+
+    set_test_name("Min member function");
+
+    // Set initial data
+    AdvectDiffuse2D_State Ul(12.2323), Ur(5.34), Um(-34.56);
+
+    // === check max
+    ensure_equals("Min I"  , min(Ul,Ur), AdvectDiffuse2D_State(5.34));
+    ensure_equals("Min II" , min(Ul,Um), AdvectDiffuse2D_State(-34.56));
+    ensure_equals("Min III", min(Ur,Um), AdvectDiffuse2D_State(-34.56));
+  }
 
 }
 

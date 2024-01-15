@@ -4,50 +4,26 @@
 #ifndef _EULER2D_INPUT_INCLUDED
 #define _EULER2D_INPUT_INCLUDED
 
-/* Include 2D Euler state, 2D cell, 2D quadrilateral multiblock 
-   grid, and NASA rotor header files. */
+/* Include required C++ libraries. */
+// None
 
-#ifndef _EULER2D_STATE_INCLUDED
-#include "Euler2DState.h"
-#endif // _EULER2D_STATE_INCLUDED
+/* Using std namespace functions */
+// None
 
-#ifndef _CELL2D_INCLUDED
-#include "../Grid/Cell2D.h"
-#endif // _CELL2D_INCLUDED
-
-#ifndef _GRID2D_QUAD_BLOCK_INCLUDED
-#include "../Grid/Grid2DQuad.h"
-#endif // _GRID2D_QUAD_BLOCK_INCLUDED
-
-#ifndef _NASA_ROTOR37_INCLUDED
-#include "../Grid/NASARotor37.h"
-#endif // _NASA_ROTOR37_INCLUDED
-
-#ifndef _NASA_ROTOR67_INCLUDED
-#include "../Grid/NASARotor67.h"
-#endif // _NASA_ROTOR67_INCLUDED
-
-/* Include multigrid input header file. */
-
-#ifndef _FASMULTIGRID2DINPUT_INCLUDED
-#include "../FASMultigrid2D/FASMultigrid2DInput.h"
-#endif // _FASMULTIGRID2DINPUT_INCLUDED
-
-// Include embedded boundary input header file.
-
-#ifndef _EMBEDDEDBOUNDARIES2DINPUT_INCLUDED
-#include "../Interface2D/EmbeddedBoundaries2D_Input.h"
-#endif // _EMBEDDEDBOUNDARIES2DINPUT_INCLUDED
-
-/* Include ICEMCFD input header file. */
-
-#ifndef _ICEMCFD_INCLUDED
-#include "../ICEM/ICEMCFD.h"
-#endif // _ICEMCFD_INCLUDED
-
-
-/* Include file for NKS */
-#include "../NewtonKrylovSchwarz2D/NKSInput2D.h"
+/* Include CFFC header files */
+#include "Euler2DState.h"   // Include 2D Euler solution state header file
+#include "../Grid/NASARotor37.h" // Include NASA rotor 37 header file
+#include "../Grid/NASARotor67.h" // Include NASA rotor 67 header file
+#include "../FASMultigrid2D/FASMultigrid2DInput.h"     /* Include multigrid input header file. */
+#include "../Interface2D/EmbeddedBoundaries2D_Input.h" /* Include embedded boundary input header file. */
+#include "../ICEM/ICEMCFD.h"                           /* Include ICEMCFD input header file. */
+#include "../NewtonKrylovSchwarz2D/NKSInput2D.h"       /* Include file for NKS */
+#include "../HighOrderReconstruction/HighOrder2D_Input.h" /* Include file for high-order */
+#include "Euler2DExactSolutions.h" /* Include 2D Euler exact solutions header file */
+#include "../HighOrderReconstruction/CENO_ExecutionMode.h" // Include high-order CENO execution mode header file
+#include "../HighOrderReconstruction/CENO_Tolerances.h"	   // Include high-order CENO tolerances header file
+#include "../HighOrderReconstruction/AccuracyAssessment_ExecutionMode.h" /* Include accuracy assessment framework 
+									    execution mode header file */
 
 /* Define the structures and classes. */
 
@@ -103,8 +79,11 @@ class Euler2D_Input_Parameters{
   //@}
 
   //@{ @name Reconstruction type indicator and related input parameters:
-  char Reconstruction_Type[INPUT_PARAMETER_LENGTH_EULER2D];
-  int i_Reconstruction;
+  char Reconstruction_Type[INPUT_PARAMETER_LENGTH_EULER2D]; /*!< Spatial reconstruction type. */
+  int i_Reconstruction;		/*!< Index to store the reconstruction type. */
+  int i_ReconstructionMethod;	/*!< Index to store the reconstruction method. */
+  int Space_Accuracy;		/*!< Parameter to show the order of accuracy in space. */
+  int IncludeHighOrderBoundariesRepresentation;	/*!< Flag for including or excluding high-order BCs. */
   //@}
 
   //@{ @name Limiter type indicator and related input parameters:
@@ -128,6 +107,10 @@ class Euler2D_Input_Parameters{
   double Pressure, Temperature, Mach_Number, Flow_Angle;
   Vector2D Wave_Position;
   double Wave_Width;
+  Euler2D_ExactSolutions *ExactSoln; /*!< Pointer to the exact solution */
+  Euler2D_pState RefU;		     /*!< Reference state, used by CENO to normalize the
+					  variables in the computation of the smoothness indicator. */
+  unsigned int Exact_Integration_Digits;    //!< Number of exact digits with which the some integrations are carried out
   //@}
 
   //@{ @name Flow geometry (planar or axisymmetric):
@@ -149,11 +132,17 @@ class Euler2D_Input_Parameters{
          Cylinder_Radius, Cylinder_Radius2, Ellipse_Length_X_Axis, 
          Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
          Inner_Streamline_Number, Outer_Streamline_Number, Isotach_Line,
-         Wedge_Angle, Wedge_Length;
+         Wedge_Angle, Wedge_Length,
+         Annulus_Theta_Start, Annulus_Theta_End,
+         Step_Height, Channel_Gap, Top_Wall_Deflection;
   int Smooth_Bump, Nozzle_Type;
+  Vector2D VertexSW, VertexSE, VertexNE, VertexNW;
   double X_Scale, X_Rotate;
   Vector2D X_Shift;
   char **ICEMCFD_FileNames;
+  int IterationsOfInteriorNodesDisturbances; /*<! Number of iterations run to move (disturb) the interior nodes.
+						 (create an unsmooth interior mesh). */
+  int Num_Of_Spline_Control_Points;  /*<! Number of points used to define the spline curve. */
   //@}
 
   //@{ @name Mesh stretching factor.
@@ -172,6 +161,10 @@ class Euler2D_Input_Parameters{
   char BC_East_Type[INPUT_PARAMETER_LENGTH_EULER2D];
   char BC_West_Type[INPUT_PARAMETER_LENGTH_EULER2D];
   int BC_North, BC_South, BC_East, BC_West;
+  //! Reference states for north and south boundary conditons
+  Euler2D_pState Ref_State_BC_North, Ref_State_BC_South;
+  //! Reference states for east and west boundary conditons
+  Euler2D_pState Ref_State_BC_East, Ref_State_BC_West; 
   //@}
 
   //@{ @name NASA rotor input variables:
@@ -249,14 +242,59 @@ class Euler2D_Input_Parameters{
   int Restart_Solution_Save_Frequency;
   //! Output progress frequency:
   int Output_Progress_Frequency;
+  //! Batch mode or verbose
+  short verbose_flag;
+  //@}
+
+  //! @name Default Constructor
+  //@{
+  Euler2D_Input_Parameters(void);
+  //@}
+
+  //! @name Destructor
+  //@{
+  ~Euler2D_Input_Parameters(void);
   //@}
 
   //@{ @name Obtain the CFFC root directory path:
   void get_cffc_path();
   //@}
 
+  //! Output the name of the solver which this input parameters belong to.
+  std::string Solver_Name(void){
+    return "Euler2D";
+  }
+
   //@{ @name Multi-block solution-adaption and parallel domain decomposition input parameters:
   int Number_of_Processors, Number_of_Blocks_Per_Processor;
+  //@}
+
+  //! @name Reconstruction related member functions:
+  //@{
+  /*! Return order of reconstruction based on Space_Accuracy.
+    To obtain a certain space accuracy a piecewise polynomial reconstruction 
+    of one order lower than the space accuracy must be performed. */
+  int ReconstructionOrder(void) {return (Space_Accuracy-1);}
+  int & Limiter(void) {return i_Limiter;}                    //!< write/read selected limiter
+  const int & Limiter(void) const {return i_Limiter;}        //!< return selected limiter (read only)
+  //@}
+
+  //! @name Access fields:
+  //@{
+  short & Verbose(void) {return verbose_flag;}
+  const short & Verbose(void) const {return verbose_flag;}
+  void Verbose(const int & batch_flag){ (batch_flag != 0) ? verbose_flag=OFF: verbose_flag=ON; }
+  bool OutputBoundaryReferenceState(const int & BCtype) const;
+  //@}
+
+  //! @name Operating functions:
+  //@{
+  int Parse_Input_File(char *Input_File_Name_ptr); //!< \brief Parse input file
+  void Get_Next_Input_Control_Parameter(void);    //!< \brief Read the next input control parameter
+  void doInternalSetupAndConsistencyChecks(int & error_flag); //!< \brief Perform setup and check of different parameters
+  double ReferenceEntropy(void) const { return Wo.s(); } //!< Reference entropy at any given location
+  double FreeStreamVelocity(void) const { return abs(Wo.v); } //!< Return the magnitude of the free stream velocity
+  double FreeStreamDensity(void) const {return Wo[1]; }  //!< Return the density in the free stream
   //@}
 
   //@{ @name Input-output operators:
@@ -265,6 +303,30 @@ class Euler2D_Input_Parameters{
   //@}
 
 };
+
+/********************************************************
+ * Euler2D_Input_Parameters::Euler2D_Input_Parameters() *
+ * -->  Default Constructor                             *
+ *******************************************************/
+inline Euler2D_Input_Parameters::Euler2D_Input_Parameters(void): verbose_flag(OFF){
+  ICEMCFD_FileNames = NULL;
+
+  // Get access to the Euler2D_ExactSolutions object
+  ExactSoln = &Euler2D_ExactSolutions::getInstance();
+}
+
+/*********************************************************
+ * Euler2D_Input_Parameters::~Euler2D_Input_Parameters() *
+ * -->  Default Destructor                               *
+ ********************************************************/
+inline Euler2D_Input_Parameters::~Euler2D_Input_Parameters(void){
+  if (ICEMCFD_FileNames != NULL){
+    for (int i = 0 ; i < 3 ; ++i){
+      delete [] ICEMCFD_FileNames[i]; ICEMCFD_FileNames[i] = NULL;
+    }
+    delete [] ICEMCFD_FileNames; ICEMCFD_FileNames = NULL;
+  }
+}
 
 /*************************************************************
  * Euler2D_Input_Parameters::get_cffc_path -- Get CFFC path. *
@@ -297,15 +359,12 @@ inline ostream &operator << (ostream &out_file,
     } /* endif */
     out_file << "\n  -> Input File Name: " 
              << IP.Input_File_Name;
+
+    // ==== Time marching scheme parameters ====
     if (IP.Time_Accurate) { 
        out_file << "\n  -> Time Accurate (Unsteady) Solution";
     } else {
        out_file << "\n  -> Time Invariant (Steady-State) Solution";
-    }
-    if (IP.Axisymmetric) { 
-       out_file << "\n  -> 2D Axisymmetric Flow";
-    } else {
-       out_file << "\n  -> 2D Planar Flow";
     }
     out_file << "\n  -> Time Integration: " 
              << IP.Time_Integration_Type;
@@ -335,14 +394,62 @@ inline ostream &operator << (ostream &out_file,
       out_file << "\n  -> Gauss_Seidel_Iterations: " 
                << IP.Residual_Smoothing_Gauss_Seidel_Iterations;
     } /* endif */
+
+    // ==== Spatial approximation parameters ====
+    if (IP.Axisymmetric) { 
+       out_file << "\n  -> 2D Axisymmetric Flow";
+    } else {
+       out_file << "\n  -> 2D Planar Flow";
+    }
+    if (IP.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+      out_file << "\n  -> Space Accuracy : ";
+      switch(IP.Space_Accuracy){
+      case 1: 
+	out_file << "1st-order";
+	break;
+      case 2:
+	out_file << "2nd-order";
+	break;		
+      case 3:		
+	out_file << "3rd-order";
+	break;		
+      case 4:		
+	out_file << "4th-order";
+	break;		
+      case 5:		
+	out_file << "5th-order";
+	break;		
+      case 6:		
+	out_file << "6th-order";
+	break;
+      default:
+	out_file << "bigger than 6th-order";
+      }
+    } else {
+      out_file << "\n  -> Space Accuracy : 2nd-order";
+    }
     out_file << "\n  -> Reconstruction: " 
              << IP.Reconstruction_Type;
+    if (IP.i_ReconstructionMethod == RECONSTRUCTION_CENO){
+      CENO_Execution_Mode::Print_Info(out_file);
+      CENO_Tolerances::Print_Info(out_file);
+      out_file << "\n     -> Reference State: "
+	       << IP.RefU;
+    }
+
+    // output information related to auxiliary reconstructions.
+    HighOrder2D_Input::Print_Info(out_file);
+
     out_file << "\n  -> Limiter: " 
              << IP.Limiter_Type;
     if (IP.Limiter_Type != LIMITER_ZERO && IP.Freeze_Limiter) {
       out_file << "\n  -> Freeze Limiter when L2-norm of residual is < "
 	       << IP.Freeze_Limiter_Residual_Level;
     } /* endif */
+
+    // output information related to the treatment of curved boundaries.
+    HO_Grid2D_Execution_Mode::Print_Info(out_file);
+
     out_file << "\n  -> Flux Function: " 
              << IP.Flux_Function_Type;
     out_file << "\n  -> Initial Conditions: " 
@@ -403,6 +510,11 @@ inline ostream &operator << (ostream &out_file,
       default:
         break;
     } /* endswitch */
+
+    // ====    Exact solution parameters ====
+    IP.ExactSoln->Print_Info(out_file);
+
+    // ==== Grid parameters ====
     out_file << "\n  -> Grid: " 
              << IP.Grid_Type;
     switch(IP.i_Grid) {
@@ -422,18 +534,28 @@ inline ostream &operator << (ostream &out_file,
         out_file << "\n  -> Height of Solution Domain (m): " 
                  << IP.Box_Height;
         break;
+      case GRID_DEFORMED_BOX :
+        out_file << "\n     -> SW Corner: " 
+                 << IP.VertexSW;
+        out_file << "\n     -> SE Corner: " 
+                 << IP.VertexSE;
+        out_file << "\n     -> NE Corner: " 
+                 << IP.VertexNE;
+        out_file << "\n     -> NW Corner: " 
+                 << IP.VertexNW;
+        break;
       case GRID_FLAT_PLATE :
-        out_file << "\n  -> Plate Length (m): " 
+        out_file << "\n     -> Plate Length (m): " 
                  << IP.Plate_Length;
         break;
       case GRID_PIPE :
-        out_file << "\n  -> Pipe Length (m): " 
+        out_file << "\n     -> Pipe Length (m): " 
                  << IP.Pipe_Length;
-        out_file << "\n  -> Pipe Radius (m): " 
+        out_file << "\n     -> Pipe Radius (m): " 
                  << IP.Pipe_Radius;
         break;
       case GRID_BLUNT_BODY :
-        out_file << "\n  -> Cylinder Radius (m): " 
+        out_file << "\n     -> Cylinder Radius (m): " 
                  << IP.Blunt_Body_Radius;
         break;
       case GRID_ROCKET_MOTOR :
@@ -455,36 +577,57 @@ inline ostream &operator << (ostream &out_file,
 		 << IP.Nozzle_Type;
         break;
       case GRID_CIRCULAR_CYLINDER :
-        out_file << "\n  -> Cylinder Radius (m): " 
-                 << IP.Cylinder_Radius;
+        out_file << "\n     -> Inner Cylinder Radius (m): " 
+                 << IP.Cylinder_Radius
+		 << "\n     -> Outer Cylinder Radius (m): " 
+                 << IP.Cylinder_Radius2;
+        break;
+      case GRID_ANNULUS :
+        out_file << "\n     -> Inner Cylinder Radius (m): " 
+                 << IP.Cylinder_Radius
+		 << "\n     -> Outer Cylinder Radius (m): " 
+                 << IP.Cylinder_Radius2
+		 << "\n     -> Start Theta (degrees): " 
+		 << IP.Annulus_Theta_Start
+		 << "\n     -> End Theta (degrees): " 
+		 << IP.Annulus_Theta_End;
         break;
       case GRID_ELLIPSE :
-        out_file << "\n  -> Width of Ellipse along x-axis (m): " 
+        out_file << "\n     -> Width of Ellipse along x-axis (m): " 
                  << IP.Ellipse_Length_X_Axis;
-        out_file << "\n  -> Height of Ellipse along y-axis (m): " 
+        out_file << "\n     -> Height of Ellipse along y-axis (m): " 
                  << IP.Ellipse_Length_Y_Axis;
         break;
       case GRID_NACA_AEROFOIL :
-        out_file << "\n  -> NACA " 
+        out_file << "\n     -> NACA " 
                  << IP.NACA_Aerofoil_Type;
-        out_file << "\n  -> Chord Length (m): " 
+        out_file << "\n     -> Chord Length (m): " 
                  << IP.Chord_Length;
         break;
+      case GRID_NACA_AEROFOIL_OGRID :
+        out_file << "\n     -> NACA " 
+                 << IP.NACA_Aerofoil_Type;
+        out_file << "\n     -> Chord Length (m): " 
+                 << IP.Chord_Length
+		 << "\n     -> Outer Cylinder Radius (m): " 
+                 << IP.Cylinder_Radius2;
+        break;
       case GRID_FREE_JET :
-        out_file << "\n  -> Orifice Radius (m): " 
+        out_file << "\n     -> Orifice Radius (m): " 
                  << IP.Orifice_Radius;
         break;
+      case GRID_RINGLEB_FLOW_STRAIGHT_INFLOW_BOUNDARY :
       case GRID_RINGLEB_FLOW :
-	out_file << "\n  -> Inner streamline number: " << IP.Inner_Streamline_Number;
-	out_file << "\n  -> Outer streamline number: " << IP.Outer_Streamline_Number;
-	out_file << "\n  -> Isotach line: " << IP.Isotach_Line;
+	out_file << "\n     -> Inner streamline number: " << IP.Inner_Streamline_Number;
+	out_file << "\n     -> Outer streamline number: " << IP.Outer_Streamline_Number;
+	out_file << "\n     -> Isotach line: " << IP.Isotach_Line;
 	break;
       case GRID_WEDGE :
-        out_file << "\n  -> Wedge Angle (degrees): " << IP.Wedge_Angle;
-	out_file << "\n  -> Wedge Length (m): " << IP.Wedge_Length;
+        out_file << "\n     -> Wedge Angle (degrees): " << IP.Wedge_Angle;
+	out_file << "\n     -> Wedge Length (m): " << IP.Wedge_Length;
 	break;
       case GRID_UNSTEADY_BLUNT_BODY :
-	out_file << "\n  -> Cylinder Radius (m): " 
+	out_file << "\n     -> Cylinder Radius (m): " 
 		 << IP.Blunt_Body_Radius;
         break;
       case GRID_BUMP_CHANNEL_FLOW :
@@ -492,6 +635,23 @@ inline ostream &operator << (ostream &out_file,
 	  if (IP.Smooth_Bump) out_file << " (smooth bump)";
 	  else out_file << " (non-smooth bump)";
 	}
+	break;
+      case GRID_BACKWARD_FACING_STEP :
+	out_file << "\n  -> Step height: " << IP.Step_Height;
+	out_file << "\n  -> Inflow height: " << IP.Top_Wall_Deflection;
+	out_file << "\n  -> Maximum inflow velocity x-component: " << IP.Wo.v.x;
+	break;
+      case GRID_FORWARD_FACING_STEP :
+	out_file << "\n     -> Height of each block: " << IP.Step_Height << " m.";
+	out_file << "\n     -> Length of each block: " << IP.Channel_Gap << " m.";
+	out_file << "\n     ->   Each block of the forward facing step has the same height";
+	out_file << "\n     ->   and length. Thus the step height is simply the block height.";
+	out_file << "\n     -> West BC are fixed at:";
+	out_file << "\n        -> ";
+	out_file << "p: "   << IP.Wo.p/1000.0 << " kPa, ";
+	out_file << "rho: " << IP.Wo.d        << " kg/m3, ";
+	out_file << "T: "   << IP.Wo.T()      << " K, ";
+	out_file << "u: "   << IP.Wo.v.x      << " m/s.";
 	break;
       case GRID_NASA_ROTOR_37 :
         out_file << "\n  -> Percent Span: " 
@@ -514,12 +674,9 @@ inline ostream &operator << (ostream &out_file,
                  << IP.Box_Height;
         break;
     } /* endswitch */
-    if (IP.BCs_Specified) {
-      out_file << "\n  -> Boundary conditions specified as: "
-	       << "\n     -> BC_North = " << IP.BC_North_Type
-	       << "\n     -> BC_South = " << IP.BC_South_Type
-	       << "\n     -> BC_East = " << IP.BC_East_Type
-	       << "\n     -> BC_West = " << IP.BC_West_Type;
+    if (IP.IterationsOfInteriorNodesDisturbances > 0){
+      out_file << "\n     -> Disturbed Interior Quad Block Nodes: "
+	       << IP.IterationsOfInteriorNodesDisturbances << " iterations.";
     }
     out_file << "\n  -> Mesh shift, scale, and rotate: " 
              << IP.X_Shift << " " << IP.X_Scale << " " << IP.X_Rotate;
@@ -533,7 +690,36 @@ inline ostream &operator << (ostream &out_file,
              << IP.Number_of_Cells_Jdir;
     out_file << "\n  -> Number of Ghost Cells: "
 	     << IP.Number_of_Ghost_Cells;
+
+    // ====    Boundary conditions ====
+    if (IP.BCs_Specified) {
+      out_file << "\n  -> Boundary conditions specified as: ";
+
+      // North
+      out_file << "\n     -> BC_North = " << IP.BC_North_Type;
+      if (IP.OutputBoundaryReferenceState(IP.BC_North)){
+	out_file << " , Ref_State = " << IP.Ref_State_BC_North;
+      }
+      // South
+      out_file << "\n     -> BC_South = " << IP.BC_South_Type;
+      if (IP.OutputBoundaryReferenceState(IP.BC_South)){
+	out_file << " , Ref_State = " << IP.Ref_State_BC_South;
+      }
+      // East
+      out_file << "\n     -> BC_East  = " << IP.BC_East_Type;
+      if (IP.OutputBoundaryReferenceState(IP.BC_East)){
+	out_file << " , Ref_State = " << IP.Ref_State_BC_East;
+      }
+      // West
+      out_file << "\n     -> BC_West  = " << IP.BC_West_Type;
+      if (IP.OutputBoundaryReferenceState(IP.BC_West)){
+	out_file << " , Ref_State = " << IP.Ref_State_BC_West;
+      }
+    }
+
     if (IP.Interface_IP.Component_List.Ni) out_file << IP.Interface_IP;
+
+    // ==== AMR parameters ====
     if (IP.Number_of_Initial_Mesh_Refinements > 0)
     out_file << "\n  -> Number of Initial Mesh Refinements : " 
              << IP.Number_of_Initial_Mesh_Refinements;
@@ -559,6 +745,21 @@ inline ostream &operator << (ostream &out_file,
       out_file << "\n     -> Bounding-box for bounding-box AMR:" << IP.AMR_Xmin << IP.AMR_Xmax;
     out_file << "\n  -> CFL Number: " 
              << IP.CFL_Number;
+    if (IP.AMR) {
+      out_file << "\n  -> AMR Frequency: "
+	       << IP.AMR_Frequency
+	       << " steps (iterations)";
+
+      out_file << "\n  -> Threshold for Refinement: "
+	       << IP.Threshold_for_Refinement
+	       << "\n  -> Threshold for Coarsening: "
+	       << IP.Threshold_for_Coarsening
+	       << "\n  -> Maximum Refinement Level: "
+	       << IP.Maximum_Refinement_Level
+	       << "\n  -> Minimum Refinement Level: "
+	       << IP.Minimum_Refinement_Level;
+    }
+
     if (IP.Time_Accurate) { 
       out_file << "\n  -> Maximum Time (ms): " << IP.Time_Max*THOUSAND;
     }
@@ -577,22 +778,35 @@ inline ostream &operator << (ostream &out_file,
              << IP.Number_of_Processors;
     out_file << "\n  -> Number of Blocks Per Processor: " 
              << IP.Number_of_Blocks_Per_Processor;
+
+    // ==== Output parameters ====
     out_file << "\n  -> Output File Name: " 
              << IP.Output_File_Name;
     out_file << "\n  -> Output Format: " 
              << IP.Output_Format_Type;
+    if (IP.i_Output_Format == IO_TECPLOT){
+      // output information related to Tecplot output
+      Tecplot_Execution_Mode::Print_Info(out_file);
+    }
+
+    // ==== Accuracy assessment 
+    out_file << "\n  -> Accuracy Assessment: ";
+    // output information related to assessment of accuracy
+    AccuracyAssessment_Execution_Mode::Print_Info(out_file);
+
+    // output information related to the numerical integration parameters
+    NumericalLibrary_Execution_Mode::Print_Info(out_file);
+
     out_file << "\n  -> Restart Solution Save Frequency: "
              << IP.Restart_Solution_Save_Frequency
              << " steps (iterations)"; 
     out_file << "\n  -> Output Progress Frequency: "
 	   << IP.Output_Progress_Frequency
 	   << " steps (iterations)";
-    if (IP.AMR) out_file << "\n  -> AMR Frequency: "
-                         << IP.AMR_Frequency
-                         << " steps (iterations)";
     if (IP.Morton) out_file << "\n  -> Morton Re-Ordering Frequency: "
                             << IP.Morton_Reordering_Frequency
                             << " steps (iterations)"; 
+    out_file.flush();
     return (out_file);
 }
 

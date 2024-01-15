@@ -18,6 +18,8 @@
 #include "AdvectDiffuse2DParameterFields.h" /* Include 2D advection diffusion parameter fields */
 #include "../NewtonKrylovSchwarz2D/NKSInput2D.h" /* Include file for NKS */
 #include "../HighOrderReconstruction/HighOrder2D_Input.h" /* Include file for high-order */
+#include "../HighOrderReconstruction/AccuracyAssessment_ExecutionMode.h" /* Include accuracy assessment framework 
+									    execution mode header file */
 
 /* Define the structures and classes. */
 
@@ -139,8 +141,10 @@ public:
          Nozzle_Length, Nozzle_Radius_Exit, Nozzle_Radius_Throat, Grain_Radius,
          Cylinder_Radius, Cylinder_Radius2, Ellipse_Length_X_Axis, 
          Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
+         Inner_Streamline_Number, Outer_Streamline_Number, Isotach_Line,
+         Wedge_Angle, Wedge_Length,  
          Annulus_Theta_Start, Annulus_Theta_End;
-  int Nozzle_Type;
+  int Smooth_Bump, Nozzle_Type;
   Vector2D VertexSW, VertexSE, VertexNE, VertexNW;
   double X_Scale, X_Rotate;
   Vector2D X_Shift;
@@ -247,6 +251,11 @@ public:
   void get_cffc_path();
   //@}
 
+  //! Output the name of the solver which this input parameters belong to.
+  std::string Solver_Name(void){
+    return "AdvectDiffuse2D";
+  }
+
   //! @name Reconstruction related member functions:
   //@{
   /*! Return order of reconstruction based on Space_Accuracy.
@@ -269,17 +278,11 @@ public:
   bool OutputBoundaryReferenceState(const int & BCtype) const;
   //@}
 
-  //! @name Accuracy assessment parameters:
-  //@{
-  unsigned int Accuracy_Assessment_Mode;
-  unsigned int Accuracy_Assessment_Exact_Digits;
-  unsigned int Accuracy_Assessment_Parameter;
-  //@}
-
   //! @name Operating functions:
   //@{
   int Parse_Input_File(char *Input_File_Name_ptr); //!< \brief Parse input file
   void Get_Next_Input_Control_Parameter(void);    //!< \brief Read the next input control parameter
+  void doInternalSetupAndConsistencyChecks(int & error_flag); //!< \brief Perform setup and check of different parameters
   //@}
 
   //! @name Input-output operators:
@@ -311,7 +314,7 @@ inline AdvectDiffuse2D_Input_Parameters::AdvectDiffuse2D_Input_Parameters(void):
 
 /************************************************************************
  * AdvectDiffuse2D_Input_Parameters::~AdvectDiffuse2D_Input_Parameters()*
- * -->  Default Constructor                                             *
+ * -->  Default Destructor                                              *
  ***********************************************************************/
 inline AdvectDiffuse2D_Input_Parameters::~AdvectDiffuse2D_Input_Parameters(void){
   if (ICEMCFD_FileNames != NULL){

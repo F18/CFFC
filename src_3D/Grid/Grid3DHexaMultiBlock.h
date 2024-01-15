@@ -10,6 +10,12 @@
 #include "Grid3DInput.h"
 #endif // _GRID3D_INPUT_INCLUDED
 
+/* Include 3D grid high order execution mode header file. */
+
+#ifndef _GRID3D_HO_EXECUTIONMODE_INCLUDED
+#include "Grid3DHighOrderExecutionMode.h"
+#endif // _GRID3D_HO_EXECUTIONMODE_INCLUDED
+
 /* Include 3D hexahedral block grid header file. */
 
 #ifndef _GRID3D_HEXA_BLOCK_INCLUDED
@@ -164,6 +170,7 @@ class Grid3D_Hexa_Multi_Block_List {
                            NBlk_Jdir, 
                            NBlk_Kdir; // Number of blocks in i, j and k directions.
     int                    Allocated; // Indicates if the grid blocks have been allocated or not.
+    bool                 IsAuxiliary; // Indicates if the grid is auxiliary or not
  
     // Grid block connectivity information  
     Grid3D_Hexa_Multi_Block_Connectivity  *Connectivity; 
@@ -171,16 +178,18 @@ class Grid3D_Hexa_Multi_Block_List {
     /* Creation constructors. */
     Grid3D_Hexa_Multi_Block_List(void) : 
        NBlk(0), NBlk_Idir(0), NBlk_Jdir(0), NBlk_Kdir(0), Grid_Blks(NULL), 
-       Connectivity(NULL), Allocated(0) { }
+       Connectivity(NULL), Allocated(0), IsAuxiliary(false) { }
 
     Grid3D_Hexa_Multi_Block_List(const int N) {
        Allocate(N);
+        IsAuxiliary = false;
     }
 
     Grid3D_Hexa_Multi_Block_List(const int Ni, 
                                  const int Nj, 
                                  const int Nk) {
        Allocate(Ni, Nj, Nk);
+        IsAuxiliary = false;
     }
 
     /* Destructor. */
@@ -197,6 +206,8 @@ class Grid3D_Hexa_Multi_Block_List {
     void Deallocate(void);
 
     void Copy(Grid3D_Hexa_Multi_Block_List &Grid2);
+    
+    Vector3D Delta_minimum(void);
 
     void Broadcast(void);
 
@@ -211,15 +222,21 @@ class Grid3D_Hexa_Multi_Block_List {
     void Output_Gnuplot(ostream &Out_File);
 
     void Create_Grid(Grid3D_Input_Parameters &Input);
+    
+    void Create_Uniform_Initial_Grid(Grid3D_Input_Parameters &Input, Grid3D_Hexa_Multi_Block_List &Initial_Mesh);
 
     void Create_Grid_Cube(Grid3D_Input_Parameters &Input);
 
+    void Create_Grid_Periodic_Box_Stretch(Grid3D_Input_Parameters &Input);
+    
     void Create_Grid_Periodic_Box(Grid3D_Input_Parameters &Input);
+    
+    void Create_Grid_Single_Block_Periodic_Box(Grid3D_Input_Parameters &Input);
     
     void Create_Grid_Flat_Plate(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Turbulence_Box(Grid3D_Input_Parameters &Input);
-
+    
     void Create_Grid_Bunsen_Inflow(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Bunsen_Burner(Grid3D_Input_Parameters &Input);
@@ -237,8 +254,12 @@ class Grid3D_Hexa_Multi_Block_List {
     void Create_Grid_Bump_Channel_Flow(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_ICEMCFD(Grid3D_Input_Parameters &Input);
-
+    
     void Find_Neighbours(Grid3D_Input_Parameters &Input);
+    
+    void Update_Cells(void);
+    
+    void Disturb_Interior_Nodes(const int Number_of_Iterations);
 
   private:
     //copy and assignment are not permitted

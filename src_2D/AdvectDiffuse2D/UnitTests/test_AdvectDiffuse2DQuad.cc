@@ -11,7 +11,7 @@
 #include "TestData.h"
 #include "../AdvectDiffuse2DQuad.h"
 #include "../Grid/HO_Grid2DQuadMultiBlock.h" /* Include 2D quadrilateral multiblock grid header file */
-#include "../../HighOrderReconstruction/AccuracyAssessment2DMultiBlock.h"
+#include "../AdvectDiffuse2DAccuracyAssessmentMultiBlock.h"
 #include "../../HighOrderReconstruction/HighOrder2D_MultiBlock.h" /* Include 2D high-order header file for multi-block level. */
 
 namespace tut
@@ -173,7 +173,7 @@ namespace tut
 									 const int & k_residual){
 
     int i,j;
-    double IntResult;
+    double IntResult(0);
 
     // Calculate the integral of the right hand side term over the domain of each interior cell divided by the local area
     // Use the ExactSoln pointer to access the exact solution
@@ -192,7 +192,7 @@ namespace tut
 											 IntResult),
 								 IP.Exact_Integration_Digits,
 								 IntResult)/_SolnBlk_.Grid.Cell[i][j].A;
-	  _SolnBlk_.dUdt[i][j][k_residual] = IntResult;
+	  _SolnBlk_.dUdt[i][j][k_residual] = AdvectDiffuse2D_State(IntResult);
 	} /* endfor */
       } /* endfor */
     } else {
@@ -287,7 +287,7 @@ namespace tut
     RunRegression = ON;
  
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion.in");
+    this->Open_Input_File("CircularAdvectionDiffusion.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -327,7 +327,7 @@ namespace tut
     RunRegression = ON;
 
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion.in");
+    this->Open_Input_File("CircularAdvectionDiffusion.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -382,7 +382,7 @@ namespace tut
     set_local_output_path("QuadBlockData");
 
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion.in");
+    this->Open_Input_File("CircularAdvectionDiffusion.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -419,7 +419,7 @@ namespace tut
     set_local_output_path("QuadBlockData");
 
     // Set input file name
-    Open_Input_File("LaplaceInRectangularBox.in");
+    this->Open_Input_File("LaplaceInRectangularBox.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -470,7 +470,7 @@ namespace tut
     set_local_output_path("QuadBlockData");
 
     // Set input file name
-    Open_Input_File("LaplaceInRectangularBox.in");
+    this->Open_Input_File("LaplaceInRectangularBox.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -518,7 +518,7 @@ namespace tut
     set_local_output_path("QuadBlockData");
 
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion_HighOrder.in");
+    this->Open_Input_File("CircularAdvectionDiffusion_HighOrder.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -573,7 +573,7 @@ namespace tut
     set_local_output_path("QuadBlockData");
 
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion_HighOrder.in");
+    this->Open_Input_File("CircularAdvectionDiffusion_HighOrder.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -614,7 +614,7 @@ namespace tut
     RunRegression = ON ;
 
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion_HighOrder.in");
+    this->Open_Input_File("CircularAdvectionDiffusion_HighOrder.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -661,7 +661,7 @@ namespace tut
     set_local_input_path("QuadBlockData");
 
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion_HighOrder.in");
+    this->Open_Input_File("CircularAdvectionDiffusion_HighOrder.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -688,7 +688,7 @@ namespace tut
     set_local_output_path("QuadBlockData");
 
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion_HighOrder_ErrorStudy.in");
+    this->Open_Input_File("CircularAdvectionDiffusion_HighOrder_ErrorStudy.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -711,12 +711,12 @@ namespace tut
     ICs(SolnBlk,LocalList_Soln_Blocks,IP);
 
     // Reconstruct solution
-    SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
-    SolnBlk[0].HighOrderVariable(1).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
-    SolnBlk[0].HighOrderVariable(2).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+    SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0],&AdvectDiffuse2D_Quad_Block::CellSolution);
+    SolnBlk[0].HighOrderVariable(1).ComputeUnlimitedSolutionReconstruction(SolnBlk[0],&AdvectDiffuse2D_Quad_Block::CellSolution);
+    SolnBlk[0].HighOrderVariable(2).ComputeUnlimitedSolutionReconstruction(SolnBlk[0],&AdvectDiffuse2D_Quad_Block::CellSolution);
 
     // Compute solution error
-    double Error;
+    double Error(0);
 
     SolnBlk[0].HighOrderVariable(0).ComputeSolutionErrors(wrapped_member_function(SolnBlk[0].ExactSolution(),
 										  &AdvectDiffuse2D_Quad_Block::
@@ -788,7 +788,7 @@ namespace tut
     RunRegression = ON;
 
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion_HighOrder_ErrorStudy.in");
+    this->Open_Input_File("CircularAdvectionDiffusion_HighOrder_ErrorStudy.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -811,7 +811,8 @@ namespace tut
     ICs(SolnBlk,LocalList_Soln_Blocks,IP);
 
     // Reconstruct the solution
-    SolnBlk[0].HighOrderVariable(2).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+    SolnBlk[0].HighOrderVariable(2).ComputeUnlimitedSolutionReconstruction(SolnBlk[0],
+									   &AdvectDiffuse2D_Quad_Block::CellSolution);
 
     if (RunRegression){
       //===== Check solution interior nodal solution
@@ -872,7 +873,7 @@ namespace tut
     jCell = 7;
 
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion_HighOrder_With_DropOrder.in");
+    this->Open_Input_File("CircularAdvectionDiffusion_HighOrder_With_DropOrder.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -895,17 +896,19 @@ namespace tut
 
     // Reconstruct the solution without geometric weighting
     CENO_Execution_Mode::CENO_APPLY_GEOMETRIC_WEIGHTING = OFF;
-    SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
-    SolnBlk[0].HighOrderVariable(1).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+    SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0],&AdvectDiffuse2D_Quad_Block::CellSolution);
+    SolnBlk[0].HighOrderVariable(1).ComputeUnlimitedSolutionReconstruction(SolnBlk[0],&AdvectDiffuse2D_Quad_Block::CellSolution);
     // Reconstruct with PWL 
     SolnBlk[0].HighOrderVariable(0).CellInadequateFitValue(iCell,jCell,1) = ON;
     SolnBlk[0].HighOrderVariable(0).ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk[0],
 											iCell,jCell,
-											IP.Limiter());
+											IP.Limiter(),
+											&AdvectDiffuse2D_Quad_Block::CellSolution);
     SolnBlk[0].HighOrderVariable(1).CellInadequateFitValue(iCell,jCell,1) = ON;
     SolnBlk[0].HighOrderVariable(1).ComputeLimitedPiecewiseLinearSolutionReconstruction(SolnBlk[0],
 											iCell,jCell,
-											IP.Limiter());
+											IP.Limiter(),
+											&AdvectDiffuse2D_Quad_Block::CellSolution);
 
     Linear_Reconstruction_LeastSquares(SolnBlk[0],IP.Limiter());
 
@@ -978,7 +981,7 @@ namespace tut
     RunRegression = ON;
 
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion_HighOrder_SmoothnessIndicatorStudy.in");
+    this->Open_Input_File("CircularAdvectionDiffusion_HighOrder_SmoothnessIndicatorStudy.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -999,14 +1002,14 @@ namespace tut
     ICs(SolnBlk,LocalList_Soln_Blocks,IP);
 
     // Reconstruct the solution
-    SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
-    SolnBlk[0].HighOrderVariable(1).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
-    SolnBlk[0].HighOrderVariable(2).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+    SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0],&AdvectDiffuse2D_Quad_Block::CellSolution);
+    SolnBlk[0].HighOrderVariable(1).ComputeUnlimitedSolutionReconstruction(SolnBlk[0],&AdvectDiffuse2D_Quad_Block::CellSolution);
+    SolnBlk[0].HighOrderVariable(2).ComputeUnlimitedSolutionReconstruction(SolnBlk[0],&AdvectDiffuse2D_Quad_Block::CellSolution);
 
     // Calculate the smoothness indicator for the reconstructions
-    SolnBlk[0].HighOrderVariable(0).ComputeSmoothnessIndicator(SolnBlk[0]);
-    SolnBlk[0].HighOrderVariable(1).ComputeSmoothnessIndicator(SolnBlk[0]);
-    SolnBlk[0].HighOrderVariable(2).ComputeSmoothnessIndicator(SolnBlk[0]);
+    SolnBlk[0].HighOrderVariable(0).ComputeSmoothnessIndicator(SolnBlk[0],&AdvectDiffuse2D_Quad_Block::CellSolution);
+    SolnBlk[0].HighOrderVariable(1).ComputeSmoothnessIndicator(SolnBlk[0],&AdvectDiffuse2D_Quad_Block::CellSolution);
+    SolnBlk[0].HighOrderVariable(2).ComputeSmoothnessIndicator(SolnBlk[0],&AdvectDiffuse2D_Quad_Block::CellSolution);
 
     if (RunRegression) {
 
@@ -1078,7 +1081,7 @@ namespace tut
     RunRegression = ON;
 
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion_HighOrder_SmoothnessIndicatorStudy.in");
+    this->Open_Input_File("CircularAdvectionDiffusion_HighOrder_SmoothnessIndicatorStudy.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1100,11 +1103,14 @@ namespace tut
 
     // Reconstruct the solution
     SolnBlk[0].HighOrderVariable(0).ComputeHighOrderSolutionReconstruction(SolnBlk[0],
-									   IP.Limiter());
+									   IP.Limiter(),
+									   &AdvectDiffuse2D_Quad_Block::CellSolution);
     SolnBlk[0].HighOrderVariable(1).ComputeHighOrderSolutionReconstruction(SolnBlk[0],
-									   IP.Limiter());
+									   IP.Limiter(),
+									   &AdvectDiffuse2D_Quad_Block::CellSolution);
     SolnBlk[0].HighOrderVariable(2).ComputeHighOrderSolutionReconstruction(SolnBlk[0],
-									   IP.Limiter());
+									   IP.Limiter(),
+									   &AdvectDiffuse2D_Quad_Block::CellSolution);
 
     if (RunRegression) {
 
@@ -1180,7 +1186,7 @@ namespace tut
     double L1_M, L2_M, LMax_M;	// master errors
 
     // Set input file name
-    Open_Input_File("HighOrder_Residual_Study.in");
+    this->Open_Input_File("HighOrder_Residual_Study.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1300,7 +1306,7 @@ namespace tut
     double L1_M, L2_M, LMax_M;	// master errors
 
     // Set input file name
-    Open_Input_File("HighOrder_Residual_Study.in");
+    this->Open_Input_File("HighOrder_Residual_Study.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1417,7 +1423,7 @@ namespace tut
     RunRegression = ON;
 
     // Set input file name
-    Open_Input_File("HighOrder_CurvedBoundaries_Residual_Study.in");
+    this->Open_Input_File("HighOrder_CurvedBoundaries_Residual_Study.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1524,7 +1530,7 @@ namespace tut
     RunRegression = ON;
 
     // Set input file name
-    Open_Input_File("HighOrder_CurvedBoundaries_Residual_Study.in");
+    this->Open_Input_File("HighOrder_CurvedBoundaries_Residual_Study.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1576,7 +1582,7 @@ namespace tut
     RunRegression = ON;
 
     // Set input file name
-    Open_Input_File("HighOrder_StraightBoundaries_Residual_Study.in");
+    this->Open_Input_File("HighOrder_StraightBoundaries_Residual_Study.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1638,7 +1644,7 @@ namespace tut
     double L1_M, L2_M, LMax_M;	// master errors
 
     // Set input file name
-    Open_Input_File("HighOrder_Residual_Study.in");
+    this->Open_Input_File("HighOrder_Residual_Study.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1759,11 +1765,11 @@ namespace tut
     bool LocalAnalysis, GlobalAnalysis, StencilOptimization;
     unsigned short int HighOrderVar;
     int iCell,jCell;
-    double ErrorL1, ErrorL2 ;
+    double ErrorL1(0), ErrorL2(0) ;
 
 
     // Set input file name
-    Open_Input_File("HighOrder_EllipticTermDiscretization_PositivityStudy.in");
+    this->Open_Input_File("HighOrder_EllipticTermDiscretization_PositivityStudy.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1890,7 +1896,7 @@ namespace tut
     set_local_output_path("QuadBlockData");
 
     // Set input file name
-    Open_Input_File("HighOrder_CurvedBoundaries_Constraints.in");
+    this->Open_Input_File("HighOrder_CurvedBoundaries_Constraints.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1958,7 +1964,7 @@ namespace tut
     RunRegression = OFF;
 
     // Set input file name
-    Open_Input_File("HighOrder_StraightBoundaries_ConstraintBCs_Study.in");
+    this->Open_Input_File("HighOrder_StraightBoundaries_ConstraintBCs_Study.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -1976,10 +1982,11 @@ namespace tut
     SolnBlk[0].BCs_HighOrder();
 
     // Compute high-order unlimited reconstruction
-    SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+    SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0],
+									   &AdvectDiffuse2D_Quad_Block::CellSolution);
 
     // Compute solution error
-    double Error;
+    double Error(0);
 
     SolnBlk[0].HighOrderVariable(0).ComputeSolutionErrors(wrapped_member_function(SolnBlk[0].ExactSolution(),
 										  &AdvectDiffuse2D_Quad_Block::
@@ -2020,7 +2027,7 @@ namespace tut
     double L1_M, L2_M, LMax_M;	// master errors
 
     // Set input file name
-    Open_Input_File("HighOrder_StraightBoundaries_ConstraintBCs_Study.in");
+    this->Open_Input_File("HighOrder_StraightBoundaries_ConstraintBCs_Study.in");
 
     // Parse the input file
     IP.Verbose() = false;
@@ -2093,7 +2100,7 @@ namespace tut
     double L1_M, L2_M, LMax_M;	// master errors
 
     // Set input file name
-    Open_Input_File("HighOrder_ConstrainedBoundaries_Residual_Study.in");
+    this->Open_Input_File("HighOrder_ConstrainedBoundaries_Residual_Study.in");
 
     // Parse the input file
     IP.Verbose() = false;

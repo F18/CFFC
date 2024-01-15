@@ -102,4 +102,38 @@ Restrict_Boundary_Ref_States(const int &Level_Fine) {
 }
 
 
+/*! *********************************************************************
+ * Specialization: Additional_Solution_Block_Setup                      *
+ *                                                                      *
+ * Perform some additional setup on the local solution block before     *
+ * beginning Multi Grid computions.                                     *
+ *                                                                      *
+ ***********************************************************************/
+template <> 
+inline void FAS_Multigrid2D_Solver<AdvectDiffuse2D_State,
+				   AdvectDiffuse2D_Quad_Block,
+				   AdvectDiffuse2D_Input_Parameters>::
+Additional_Solution_Block_Setup(AdvectDiffuse2D_Quad_Block &SolnBlk,
+				AdvectDiffuse2D_Quad_Block &SolnBlk_FinestLevel)
+{
+
+  // High-order related variables
+  int i;
+  vector<int> ReconstructionOrders;
+
+  // High-order variables and their reconstruction order
+  for (i = 0; i < SolnBlk_FinestLevel.NumberOfHighOrderObjects(); ++i){
+    ReconstructionOrders.push_back(SolnBlk_FinestLevel.HighOrderVariable(i).RecOrder());
+  }
+
+  // allocate memory for high-order variables based on the setup of the FinestLevel
+  SolnBlk.allocate_HighOrder(SolnBlk_FinestLevel.NumberOfHighOrderObjects(),
+			     ReconstructionOrders);
+  // allocate memory for high-order boundary conditions if necessary
+  SolnBlk.allocate_HighOrder_BoundaryConditions();
+
+}
+
+
+
 #endif	// _ADVECTDIFFUSE2D_FASMULTIGRID_SPECIALIZATION_INCLUDED 

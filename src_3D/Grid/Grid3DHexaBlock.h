@@ -1,4 +1,5 @@
-/* Grid3DHexaBlock.h: Header file defining 3D hexahedral block grid type. */
+/*! \file    Grid3DHexaBlock.h
+ *  \brief   Header file defining 3D hexahedral block grid type. */
 
 #ifndef _GRID3D_HEXA_BLOCK_INCLUDED
 #define _GRID3D_HEXA_BLOCK_INCLUDED
@@ -28,6 +29,10 @@ using namespace std;
 #include "../Math/Vector3D.h"
 #endif //_VECTOR3D_INCLUDED
 
+#ifndef _MATRIX_INCLUDED
+#include "../Math/Matrix.h"
+#endif //_MATRIX_INCLUDED
+
 #ifndef _CELL3D_INCLUDED
 #include "Cell3D.h"
 #endif // _CELL3D_INCLUDED
@@ -35,6 +40,11 @@ using namespace std;
 #ifndef _MPI_INCLUDED
 #include "../MPI/MPI.h"
 #endif // _MPI_INCLUDED
+
+/* Include grid high order execution mode header file. */
+#ifndef _GRID3D_HO_EXECUTIONMODE_INCLUDED
+#include "Grid3DHighOrderExecutionMode.h"
+#endif // _GRID3D_HO_EXECUTIONMODE_INCLUDED
 
 /* Include 2D quadrilateral block grid type header file. */
 
@@ -92,6 +102,7 @@ using namespace std;
  *      Nghost     -- Returns number of ghost cells.    *
  *      Node       -- Return 3D node geometry.          *
  *      Cell       -- Return 3D cell geometry.          *
+ *      NumGQP     -- Number of Gauss Quadrature Points *
  *      Allocated  -- Indicates whether or not the block*
  *                    has been allocated.               *
  *      allocate   -- Allocate memory for structured    *
@@ -99,6 +110,12 @@ using namespace std;
  *      deallocate -- Deallocate memory for structured  *
  *                    hexahedral grid block.            *
  *      centroid   -- Calculate 3D vector containing    *
+ *                    the location of cell center.      *
+ *     Xcentroid   -- Return the x coordinate of        *
+ *                    the location of cell center.      *
+ *     Ycentroid   -- Return the y coordrinat of        *
+ *                    the location of cell center.      *
+ *     Zcentroid   -- Return the z coordinate of ing    *
  *                    the location of cell center.      *
  *      Volume     -- Calculate the volume for cell.    *
  *      nodeNWBot  -- Return NWBot node for cell.       *
@@ -147,6 +164,15 @@ using namespace std;
  ********************************************************/
 class Grid3D_Hexa_Block {
   public:
+
+
+    //! @name Defined datatypes
+    //@{
+    typedef Node3D NodeType;
+    typedef Cell3D::GeometricMoments GeometricMoments;
+    typedef GeometricMoments::Derivative  GeomMoment;
+    //@}
+
     int           NNi,INl,INu; // i-direction node counters
     int           NNj,JNl,JNu; // j-direction node counters
     int           NNk,KNl,KNu; // k-direction node counters
@@ -161,6 +187,8 @@ class Grid3D_Hexa_Block {
           **BCtypeE,**BCtypeW, // for north, south, east, & west boundaries
           **BCtypeT,**BCtypeB; // for north, south, east, & west boundaries
     
+    int NumGQP;	//!< Number of Gauss quadrature points required for flux calculation
+
     int Allocated; // Indicates whether or not the grid block has been allocated.
     
     /* Constructors. */
@@ -176,6 +204,7 @@ class Grid3D_Hexa_Block {
        BCtypeN = NULL; BCtypeS = NULL; 
        BCtypeE = NULL; BCtypeW = NULL;
        BCtypeT = NULL; BCtypeB = NULL;
+       NumGQP = 1;
     }
 
     Grid3D_Hexa_Block(const int Ni, 
@@ -199,10 +228,25 @@ class Grid3D_Hexa_Block {
     /* Calculate centroid of cell. */
     Vector3D centroid(const Cell3D &Cell);
     Vector3D centroid(const int ii, const int jj, const int kk);
+    double Xcentroid(const int ii, const int jj, const int kk);
+    double Ycentroid(const int ii, const int jj, const int kk);
+    double Zcentroid(const int ii, const int jj, const int kk);
 
+    /* Calculate Jacobian (Determinant) */
+    double jacobian(const Cell3D &Cell, int order);
+    double jacobian(const int ii, const int jj, const int kk, int order);
+    double Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
+    double Central_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
+    double Forward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
+    double Backward_Finite_Difference(const int i, const int j, const int k, const int derivative, const double &dt, int order);
+    void Jacobian_Matrix(DenseMatrix &J, const int i, const int j, const int k, int order);
+    
     /* Calculate cell volume. */
     double volume(const Cell3D &Cell);
     double volume(const int ii, const int jj, const int kk);
+    
+    /* Calculate smallest dx, dy, dz */
+    Vector3D Delta_minimum(void);
 
     /* Calculate vectors from a cell center pointing to its east neigbour cell center
        pointing to its north neigbour cell center, and pointing to its top neighbour 
@@ -258,21 +302,27 @@ class Grid3D_Hexa_Block {
     /*********************Calculate midpoints of faces***********************/
     Vector3D xfaceN(const Cell3D &Cell);
     Vector3D xfaceN(const int ii, const int jj, const int kk); 
+    const Vector3D xfaceN(const int ii, const int jj, const int kk) const; 
 
     Vector3D xfaceS(const Cell3D &Cell);
     Vector3D xfaceS(const int ii, const int jj, const int kk); 
+    const Vector3D xfaceS(const int ii, const int jj, const int kk) const; 
 
     Vector3D xfaceE(const Cell3D &Cell);
     Vector3D xfaceE(const int ii, const int jj, const int kk); 
+    const Vector3D xfaceE(const int ii, const int jj, const int kk) const; 
 
     Vector3D xfaceW(const Cell3D &Cell);
     Vector3D xfaceW(const int ii, const int jj, const int kk); 
+    const Vector3D xfaceW(const int ii, const int jj, const int kk) const; 
 
     Vector3D xfaceTop(const Cell3D &Cell);
     Vector3D xfaceTop(const int ii, const int jj, const int kk); 
+    const Vector3D xfaceTop(const int ii, const int jj, const int kk) const; 
 
     Vector3D xfaceBot(const Cell3D &Cell);
     Vector3D xfaceBot(const int ii, const int jj, const int kk); 
+    const Vector3D xfaceBot(const int ii, const int jj, const int kk) const; 
 
     /*******************Calculate normal to each face***********************/
     Vector3D nfaceN(const Cell3D &Cell);
@@ -396,6 +446,10 @@ class Grid3D_Hexa_Block {
 
     void Update_Ghost_Cells(void);
     
+    void Update_Cells_HighOrder(void);
+    
+    void Update_Ghost_Cells_HighOrder(void);
+    
     void Set_BCs_Xdir(const int BCtype_east_boundary,
                       const int BCtype_west_boundary);
 
@@ -417,11 +471,102 @@ class Grid3D_Hexa_Block {
                 const double &Angle2);
 
     void Extrude(Grid2D_Quad_Block &Grid2D_XYplane, 
+                 const int Nk,
+                 const int Stretching_Flag,
+                 const int i_Stretching_Kdir,
+                 const double &Stretching_Kdir,
+                 const double &Z_min,
+                 const double &Z_max);
+    
+    void Extrude(Grid2D_Quad_Block &Grid2D_XYplane, 
 		 const int Nk,
                  const int i_Stretching_Kdir,
 		 const double &Stretching_Kdir,
                  const double &Z_min,
                  const double &Z_max);
+
+    void Disturb_Interior_Nodes(const int Number_of_Iterations);
+    double MinimumNodeFaceDistance(const int i, const int j, const int k);
+    double DistanceFromPointToFace(const Node3D &Point, const Node3D &node1, const Node3D &node2, const Node3D &node3, const Node3D &node4);
+    double DistanceFromPointToFace(const Node3D &Point, const Vector3D &Xp, const Vector3D &n);
+
+    
+    /********************* Grid Information required for CENO Reconstruction ***********************/
+
+    //! @name Get cell geometric moments and related information.
+    //@{
+  
+    //! Get the current highest reconstruction order (if multiple reconstruction are to be performed - not implemeted yet)
+    const int & MaxRecOrder(void) const { return Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER; }
+
+    //! Get the geometric coefficient array of cell (ii,jj,kk).
+    const GeometricMoments & CellGeomCoeff(const int &ii, const int &jj, const int & kk) const { return Cell[ii][jj][kk].GeomCoeff(); }
+
+    //! Get the value of the geometric coefficient for cell (ii,jj,kk) with x-power 'p1', y-power 'p2', and z-power 'p3'.
+    const double & CellGeomCoeffValue(const int &ii, const int &jj, const int &kk, const int &p1, const int &p2, const int &p3) {
+      return Cell[ii][jj][kk].GeomCoeffValue(p1,p2,p3);
+    }
+
+    //! Get the value of the geometric coefficient for cell (ii,jj,kk) which is stored in the 'position' place 
+    const double & CellGeomCoeffValue(const int &ii, const int &jj, const int &kk, const int &position) const {
+      return Cell[ii][jj][kk].GeomCoeffValue(position);
+    }
+
+    //! Get the value and the powers (p1,p2,p3) of the geometric coefficient for cell (ii,jj,kk) which is stored in the 'position' place
+    GeomMoment & CellGeomCoeff(const int &ii, const int &jj, const int &kk, const int &position) {
+      return Cell[ii][jj][kk].GeomCoeff(position);
+    }
+    //@}
+  
+    //! @name Calculate cell geometric moments and related information.
+    //@{
+    void ComputeGeometricCoefficients(const Cell3D &Cell){ ComputeGeometricCoefficients(Cell.I,Cell.J,Cell.K);}
+    void ComputeGeometricCoefficients(const int &ii, const int &jj, const int &kk);
+    //@}
+
+    //! @name Integrate a Polynomial Over the Cell
+    //@{
+    template<typename FO, class ReturnType>
+    ReturnType IntegratePolynomialOverTheCell(FO FuncObj, const int & digits, const ReturnType & _dummy_param,
+					      const int &ii, const int &jj, const int &kk);
+    //@}
+
+    //! @name Get Gauss quadrature points for each flat (catesian) cell face
+    //@{
+    void getGaussQuadPointsFaceN(const Cell3D &Cell, Vector3D * GQPoints, const int & NumberOfGQPs) const;
+    void getGaussQuadPointsFaceN(const int &ii, const int &jj, const int &kk, Vector3D * GQPoints, const int & NumberOfGQPs) const;
+  //    void addGaussQuadPointsFaceN(const int &ii, const int &jj, const int &kk, std::vector<Vector3D> &GQPoints, const int & NumberOfGQPs) const;
+  
+    void getGaussQuadPointsFaceS(const Cell3D &Cell, Vector3D * GQPoints, const int & NumberOfGQPs) const;
+    void getGaussQuadPointsFaceS(const int &ii, const int &jj, const int &kk, Vector3D * GQPoints, const int & NumberOfGQPs) const;
+  //    void addGaussQuadPointsFaceS(const int &ii, const int &jj, const int &kk, std::vector<Vector3D> &GQPoints, const int & NumberOfGQPs) const;
+  
+    void getGaussQuadPointsFaceE(const Cell3D &Cell, Vector3D * GQPoints, const int & NumberOfGQPs) const;
+    void getGaussQuadPointsFaceE(const int &ii, const int &jj, const int &kk, Vector3D * GQPoints, const int & NumberOfGQPs) const;
+  //    void addGaussQuadPointsFaceE(const int &ii, const int &jj, const int &kk, std::vector<Vector3D> &GQPoints, const int & NumberOfGQPs) const;
+  
+    void getGaussQuadPointsFaceW(const Cell3D &Cell, Vector3D * GQPoints, const int & NumberOfGQPs) const;
+    void getGaussQuadPointsFaceW(const int &ii, const int &jj, const int &kk, Vector3D * GQPoints, const int & NumberOfGQPs) const;
+  //    void addGaussQuadPointsFaceW(const int &ii, const int &jj, const int &kk, std::vector<Vector3D> &GQPoints, const int & NumberOfGQPs) const;
+
+    void getGaussQuadPointsFaceTop(const Cell3D &Cell, Vector3D * GQPoints, const int & NumberOfGQPs) const;
+    void getGaussQuadPointsFaceTop(const int &ii, const int &jj, const int &kk, Vector3D * GQPoints, const int & NumberOfGQPs) const;
+
+    void getGaussQuadPointsFaceBot(const Cell3D &Cell, Vector3D * GQPoints, const int & NumberOfGQPs) const;
+    void getGaussQuadPointsFaceBot(const int &ii, const int &jj, const int &kk, Vector3D * GQPoints, const int & NumberOfGQPs) const;
+    //@}
+    
+    //! @name Number of Gauss quadrature points used for flux calculation.
+    //@{
+    //! Copies NumGQP to the passed number.
+    void CopyNumberOfGaussQuadraturePoints(const int & _NumGQP_){ NumGQP = _NumGQP_; }
+    //! Sets NumGQP based on the reconstruction order to obtain the required solution accuracy
+    void SetNumberOfFluxCalculationGaussQuadraturePoints(const int & RecOrder);
+    //! Sets NumGQP based on correlations.
+    void SetNumberOfGaussQuadraturePoints(const int & RecOrder);
+    //! Gets the NumGQP
+    const int & getNumGQP(void) const {return NumGQP; }
+    //@}
 
   private:
     //copy and assignment are not permitted
@@ -474,6 +619,21 @@ inline void Grid3D_Hexa_Block::allocate(const int Ni,
       BCtypeT[i] = new int[NCj]; BCtypeB[i] = new int[NCj];
    } /* endfor */
 
+   // If using CENO Reconstruction, we need to allocate the following grid information:
+   // ---------------------------------------------------------------------------------
+   if (Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID == ON){
+
+     // Set the Number of Gauss Quadrature Points for the flux evaluation
+     SetNumberOfGaussQuadraturePoints(Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER);
+     // allocate memory for the container of geometric coefficients
+     for (int i = 0; i <NCi ; ++i )
+       for (int j = 0; j <NCj ; ++j )
+	 for (int k = 0; k <NCk ; ++k ){
+	   Cell[i][j][k].SetGeomCoeffContainerSize(Grid3D_HO_Execution_Mode::RECONSTRUCTION_ORDER);     
+	 } /* endfor */
+
+   } /* endif */
+
    Allocated = GRID3D_HEXA_BLOCK_USED;
 
 }
@@ -484,6 +644,21 @@ inline void Grid3D_Hexa_Block::allocate(const int Ni,
 inline void Grid3D_Hexa_Block::deallocate(void) {
 
    if (Allocated) {
+
+      // If using CENO Reconstruction, we need to deallocate the following grid information:
+      // -----------------------------------------------------------------------------------
+      if (Grid3D_HO_Execution_Mode::USE_HO_CENO_GRID == ON){
+        
+        // re-set the Number of Gauss Quadrature Points for the flux evaluation
+        NumGQP = 1; 
+        // deallocate memory for the container of geometric coefficients
+        for (int i = 0; i <NCi ; ++i )
+      	 for (int j = 0; j <NCj ; ++j )
+      	   for (int k = 0; k <NCk ; ++k ){
+      	     Cell[i][j][k].FreeMemoryGeomCoeffContainer();
+      	   } /* endfor */
+        
+      } /* endif */
 
       assert(NNi >= 1 && NNj >= 1 && NNk >= 1);
       for (int i = 0; i <= NNi-1 ; ++i ) {
@@ -548,6 +723,18 @@ inline Vector3D Grid3D_Hexa_Block::centroid(const int ii, const int jj, const in
   return ((Node[ii][jj+1][kk].X+Node[ii+1][jj+1][kk].X+Node[ii+1][jj][kk].X+
            Node[ii][jj][kk].X+Node[ii][jj+1][kk+1].X+Node[ii+1][jj+1][kk+1].X+
            Node[ii+1][jj][kk+1].X+Node[ii][jj][kk+1].X)/8);
+}
+
+inline double Grid3D_Hexa_Block::Xcentroid(const int ii, const int jj, const int kk) {
+  return centroid(ii,jj,kk).x;
+}
+
+inline double Grid3D_Hexa_Block::Ycentroid(const int ii, const int jj, const int kk) {
+  return centroid(ii,jj,kk).y;
+}
+
+inline double Grid3D_Hexa_Block::Zcentroid(const int ii, const int jj, const int kk) {
+  return centroid(ii,jj,kk).z;
 }
 
 /*************************************************************************
@@ -704,7 +891,7 @@ inline Node3D Grid3D_Hexa_Block::nodeSEBot(const Cell3D &Cell) {
  
 inline Node3D Grid3D_Hexa_Block::nodeSEBot(const int ii, const int jj, const int kk) {
   return (Node[ii+1][jj][kk]);
-} 
+}
 
 inline Node3D Grid3D_Hexa_Block::nodeSWBot(const Cell3D &Cell) {
    return (Node[Cell.I][Cell.J][Cell.K]);
@@ -759,12 +946,22 @@ inline Vector3D Grid3D_Hexa_Block::xfaceN(const int ii, const int jj, const int 
 	   Node[ii+1][jj+1][kk+1].X+Node[ii][jj+1][kk+1].X)/FOUR);
 }
 
+inline const Vector3D Grid3D_Hexa_Block::xfaceN(const int ii, const int jj, const int kk) const {
+  return ((Node[ii][jj+1][kk].X+Node[ii+1][jj+1][kk].X+
+	   Node[ii+1][jj+1][kk+1].X+Node[ii][jj+1][kk+1].X)/FOUR);
+}
+
 inline Vector3D Grid3D_Hexa_Block::xfaceS(const Cell3D &Cell) {
   return ((Node[Cell.I][Cell.J][Cell.K].X+Node[Cell.I+1][Cell.J][Cell.K].X+
 	   Node[Cell.I+1][Cell.J][Cell.K+1].X+Node[Cell.I][Cell.J][Cell.K+1].X)/FOUR);
 }
 
 inline Vector3D Grid3D_Hexa_Block::xfaceS(const int ii, const int jj, const int kk) {
+  return ((Node[ii][jj][kk].X+Node[ii+1][jj][kk].X+
+	   Node[ii+1][jj][kk+1].X+Node[ii][jj][kk+1].X)/FOUR);
+}
+
+inline const Vector3D Grid3D_Hexa_Block::xfaceS(const int ii, const int jj, const int kk) const{
   return ((Node[ii][jj][kk].X+Node[ii+1][jj][kk].X+
 	   Node[ii+1][jj][kk+1].X+Node[ii][jj][kk+1].X)/FOUR);
 }
@@ -779,12 +976,22 @@ inline Vector3D Grid3D_Hexa_Block::xfaceE(const int ii, const int jj, const int 
 	   Node[ii+1][jj+1][kk+1].X+Node[ii+1][jj+1][kk].X)/FOUR);
 }
 
+inline const Vector3D Grid3D_Hexa_Block::xfaceE(const int ii, const int jj, const int kk) const {
+  return ((Node[ii+1][jj][kk].X+Node[ii+1][jj][kk+1].X+
+	   Node[ii+1][jj+1][kk+1].X+Node[ii+1][jj+1][kk].X)/FOUR);
+}
+
 inline Vector3D Grid3D_Hexa_Block::xfaceW(const Cell3D &Cell) {
   return ((Node[Cell.I][Cell.J][Cell.K].X+Node[Cell.I][Cell.J][Cell.K+1].X+
 	   Node[Cell.I][Cell.J+1][Cell.K+1].X+Node[Cell.I][Cell.J+1][Cell.K].X)/FOUR);
 }
 
 inline Vector3D Grid3D_Hexa_Block::xfaceW(const int ii, const int jj, const int kk) {
+  return ((Node[ii][jj][kk].X+Node[ii][jj][kk+1].X+
+	   Node[ii][jj+1][kk+1].X+Node[ii][jj+1][kk].X)/FOUR);
+}
+
+inline const Vector3D Grid3D_Hexa_Block::xfaceW(const int ii, const int jj, const int kk) const {
   return ((Node[ii][jj][kk].X+Node[ii][jj][kk+1].X+
 	   Node[ii][jj+1][kk+1].X+Node[ii][jj+1][kk].X)/FOUR);
 }
@@ -799,12 +1006,22 @@ inline Vector3D Grid3D_Hexa_Block::xfaceTop(const int ii, const int jj, const in
 	   Node[ii+1][jj+1][kk+1].X+Node[ii][jj+1][kk+1].X)/FOUR);
 }
 
+inline const Vector3D Grid3D_Hexa_Block::xfaceTop(const int ii, const int jj, const int kk) const {
+  return ((Node[ii][jj][kk+1].X+Node[ii+1][jj][kk+1].X+
+	   Node[ii+1][jj+1][kk+1].X+Node[ii][jj+1][kk+1].X)/FOUR);
+}
+
 inline Vector3D Grid3D_Hexa_Block::xfaceBot(const Cell3D &Cell) {
   return ((Node[Cell.I][Cell.J][Cell.K].X+Node[Cell.I+1][Cell.J][Cell.K].X+
 	   Node[Cell.I+1][Cell.J+1][Cell.K].X+Node[Cell.I][Cell.J+1][Cell.K].X)/FOUR);
 }
 
 inline Vector3D Grid3D_Hexa_Block::xfaceBot(const int ii, const int jj, const int kk) {
+  return ((Node[ii][jj][kk].X+Node[ii+1][jj][kk].X+
+	   Node[ii+1][jj+1][kk].X+Node[ii][jj+1][kk].X)/FOUR);
+}
+
+inline const Vector3D Grid3D_Hexa_Block::xfaceBot(const int ii, const int jj, const int kk) const {
   return ((Node[ii][jj][kk].X+Node[ii+1][jj][kk].X+
 	   Node[ii+1][jj+1][kk].X+Node[ii][jj+1][kk].X)/FOUR);
 }
@@ -1266,6 +1483,495 @@ inline double Grid3D_Hexa_Block::AfaceTop(int const ii, int const jj, int const 
   A4 = abs(((xfaceTop(ii,jj,kk)-nodeSETop(ii,jj,kk).X)^(nodeSETop(ii,jj,kk).X-nodeSWTop(ii,jj,kk).X)))/2;
   return A1+A2+A3+A4;   
 }
+
+//! Routine: SetNumberOfFluxCalculationGaussQuadraturePoints
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets the number of Gauss quadrature points used for 
+ *           flux evaluation based on the desired spatial accuracy, i.e., 
+ *           the reconstruction order.
+ * 
+ *  \param [in] RecOrder the reconstruction order required to obtain
+ *              the targeted solution accuracy
+ *
+ *  \warning Reconstruction Order = 4 (ie. case 4) may require more
+ *           than 4 GQ points.
+ *///---------------------------------------------------------------------
+inline void Grid3D_Hexa_Block::SetNumberOfFluxCalculationGaussQuadraturePoints(const int & RecOrder){
+
+  switch(RecOrder){
+  case 4:
+    NumGQP = 4;	    // This is a temporary solution to return the write number!
+  case 3:
+    NumGQP = 4;
+    break;
+  case 2:
+    NumGQP = 4;
+    break;
+  case 1:
+    NumGQP = 1;
+    break;
+  case 0:
+    NumGQP = 1;
+    break;
+  default:
+    throw runtime_error("Grid3D_Hexa_Block::SetNumberOfFluxCalculationGaussQuadraturePoints() ERROR! Unknown option for the passed reconstruction order");
+  } // endswitch
+}
+
+//! Routine: SetNumberOfGaussQuadraturePoints
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets the number of Gauss quadrature points used for 
+ *           flux evaluation based on the desired spatial accuracy, i.e., 
+ *           the reconstruction order.
+ * 
+ *  \param [in] RecOrder the reconstruction order required to obtain
+ *              the targeted solution accuracy
+ *
+ *///---------------------------------------------------------------------
+inline void Grid3D_Hexa_Block::SetNumberOfGaussQuadraturePoints(const int &RecOrder){
+
+  try{
+    SetNumberOfFluxCalculationGaussQuadraturePoints(RecOrder);
+  } catch (runtime_error){
+    throw runtime_error("Grid3D_Hexa_Block::SetNumberOfGaussQuadraturePoints() ERROR! Unknown option for the current reconstruction order");
+  }
+}
+
+//! Routine: getGaussQuadPointsFaceN
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the North face.
+ */
+inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceN(const Cell3D &Cell,
+						       Vector3D * GQPoints,
+						       const int & NumberOfGQPs) const {
+  return getGaussQuadPointsFaceN(Cell.I, Cell.J, Cell.K, GQPoints, NumberOfGQPs);
+}
+
+//! Routine: getGaussQuadPointsFaceS
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the South face.
+ */
+inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceS(const Cell3D &Cell,
+						       Vector3D * GQPoints,
+						       const int & NumberOfGQPs) const {
+  return getGaussQuadPointsFaceS(Cell.I, Cell.J, Cell.K, GQPoints, NumberOfGQPs);
+}
+
+//! Routine: getGaussQuadPointsFaceE
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the East face.
+ */
+inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceE(const Cell3D &Cell,
+						       Vector3D * GQPoints,
+						       const int & NumberOfGQPs) const {
+  return getGaussQuadPointsFaceE(Cell.I, Cell.J, Cell.K, GQPoints, NumberOfGQPs);
+}
+
+//! Routine: getGaussQuadPointsFaceW
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the West face.
+ */
+inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceW(const Cell3D &Cell,
+						       Vector3D * GQPoints,
+						       const int & NumberOfGQPs) const {
+  return getGaussQuadPointsFaceW(Cell.I, Cell.J, Cell.K, GQPoints, NumberOfGQPs);
+}
+
+//! Routine: getGaussQuadPointsFaceTop
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the Top face.
+ */
+inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceTop(const Cell3D &Cell,
+							  Vector3D * GQPoints,
+							  const int & NumberOfGQPs) const {
+  return getGaussQuadPointsFaceTop(Cell.I, Cell.J, Cell.K, GQPoints, NumberOfGQPs);
+}
+
+//! Routine: getGaussQuadPointsFaceBot
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the Bot face.
+ */
+inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceBot(const Cell3D &Cell,
+							 Vector3D * GQPoints,
+							 const int & NumberOfGQPs) const {
+  return getGaussQuadPointsFaceBot(Cell.I, Cell.J, Cell.K, GQPoints, NumberOfGQPs);
+}
+
+//! Routine: getGaussQuadPointsFaceN
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the North face.
+ * 
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param jj k-index of the cell
+ * \param GQPoints storage array for the Gauss quadrature points. 
+ *                 This memory is overwritten!
+ * \param NumberOfGQPs specifies how many points are returned. This number is
+ *                     typically dictated by the accuracy of the flux calculation.
+ * \warning This function is for cartesian grids only
+ * 
+ *///---------------------------------------------------------------------
+inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceN(const int &ii, const int &jj, const int &kk,
+						       Vector3D * GQPoints, const int & NumberOfGQPs) const {
+
+  double DeltaX;
+  double DeltaZ;
+
+  switch (NumberOfGQPs){
+
+  case 1:
+    GQPoints[0] = xfaceN(ii,jj,kk);
+    break;
+
+  case 4:
+
+    /* Initally, we set the position of all the GQPoints to the bottom-left node of current face
+     * and increment from there to get final GQPoint positions 
+     * 
+     * Note: numbering of GQPoints is counter-clockwise starting from the bottom-left corner. */
+
+    GQPoints[0] = GQPoints[1] = GQPoints[2] = GQPoints[3] = Node[ii+1][jj+1][kk].X; // = NEBot
+
+    // !! DeltaX has a NEGATIVE value in this case !!
+    DeltaX = Node[ii  ][jj+1][kk  ].X.x - Node[ii+1][jj+1][kk  ].X.x; // = NWBot - NEBot
+    DeltaZ = Node[ii+1][jj+1][kk+1].X.z - Node[ii+1][jj+1][kk  ].X.z; // = NETop - NEBot
+
+    /* Final position of GQPoints[0] */
+    GQPoints[0].x += GaussQuadratureData::GQ4_Abscissa[0]*DeltaX;
+    GQPoints[0].z += GaussQuadratureData::GQ4_Abscissa[0]*DeltaZ;
+    
+    /* Final position of GQPoints[1] */
+    GQPoints[1].x += GaussQuadratureData::GQ4_Abscissa[1]*DeltaX;
+    GQPoints[1].z += GaussQuadratureData::GQ4_Abscissa[0]*DeltaZ;
+
+    /* Final position of GQPoints[2] */
+    GQPoints[2].x += GaussQuadratureData::GQ4_Abscissa[1]*DeltaX;
+    GQPoints[2].z += GaussQuadratureData::GQ4_Abscissa[1]*DeltaZ;
+
+    /* Final position of GQPoints[3] */
+    GQPoints[3].x += GaussQuadratureData::GQ4_Abscissa[0]*DeltaX;
+    GQPoints[3].z += GaussQuadratureData::GQ4_Abscissa[1]*DeltaZ;
+
+    break;
+
+  default:
+    throw runtime_error("Grid3D_Hexa_Block::getGaussQuadPointsFaceN() ERROR! \
+                         Specified number of Gauss quadrature points is not implemented!");
+  }
+}
+
+//! Routine: getGaussQuadPointsFaceS
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the South face.
+ * 
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param jj k-index of the cell
+ * \param GQPoints storage array for the Gauss quadrature points. 
+ *                 This memory is overwritten!
+ * \param NumberOfGQPs specifies how many points are returned. This number is
+ *                     typically dictated by the accuracy of the flux calculation.
+ * \warning This function is for cartesian grids only
+ * 
+ *///---------------------------------------------------------------------
+inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceS(const int &ii, const int &jj, const int &kk,
+						       Vector3D * GQPoints, const int & NumberOfGQPs) const {
+
+  double DeltaX;
+  double DeltaZ;
+
+  switch (NumberOfGQPs){
+
+  case 1:
+    GQPoints[0] = xfaceS(ii,jj,kk);
+    break;
+
+  case 4:
+
+    /* Initally, we set the position of all the GQPoints to the bottom-left node of current face
+     * and increment from there to get final GQPoint positions 
+     * 
+     * Note: numbering of GQPoints is counter-clockwise starting from the bottom-left corner. */
+
+    GQPoints[0] = GQPoints[1] = GQPoints[2] = GQPoints[3] = Node[ii][jj][kk].X; // = SWBot
+
+    DeltaX = Node[ii+1][jj  ][kk  ].X.x - Node[ii  ][jj  ][kk  ].X.x; // = SEBot - SWBot
+    DeltaZ = Node[ii  ][jj  ][kk+1].X.z - Node[ii  ][jj  ][kk  ].X.z; // = SWTop - SWBot
+
+    /* Final position of GQPoints[0] */
+    GQPoints[0].x += GaussQuadratureData::GQ4_Abscissa[0]*DeltaX;
+    GQPoints[0].z += GaussQuadratureData::GQ4_Abscissa[0]*DeltaZ;
+    
+    /* Final position of GQPoints[1] */
+    GQPoints[1].x += GaussQuadratureData::GQ4_Abscissa[1]*DeltaX;
+    GQPoints[1].z += GaussQuadratureData::GQ4_Abscissa[0]*DeltaZ;
+
+    /* Final position of GQPoints[2] */
+    GQPoints[2].x += GaussQuadratureData::GQ4_Abscissa[1]*DeltaX;
+    GQPoints[2].z += GaussQuadratureData::GQ4_Abscissa[1]*DeltaZ;
+
+    /* Final position of GQPoints[3] */
+    GQPoints[3].x += GaussQuadratureData::GQ4_Abscissa[0]*DeltaX;
+    GQPoints[3].z += GaussQuadratureData::GQ4_Abscissa[1]*DeltaZ;
+
+    break;
+
+  default:
+    throw runtime_error("Grid3D_Hexa_Block::getGaussQuadPointsFaceS() ERROR! \
+                         Specified number of Gauss quadrature points is not implemented!");
+  }
+}
+
+//! Routine: getGaussQuadPointsFaceE
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the East face.
+ * 
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param jj k-index of the cell
+ * \param GQPoints storage array for the Gauss quadrature points. 
+ *                 This memory is overwritten!
+ * \param NumberOfGQPs specifies how many points are returned. This number is
+ *                     typically dictated by the accuracy of the flux calculation.
+ * \warning This function is for cartesian grids only
+ * 
+ *///---------------------------------------------------------------------
+inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceE(const int &ii, const int &jj, const int &kk,
+						       Vector3D * GQPoints, const int & NumberOfGQPs) const {
+
+  double DeltaY;
+  double DeltaZ;
+
+  switch (NumberOfGQPs){
+
+  case 1:
+    GQPoints[0] = xfaceE(ii,jj,kk);
+    break;
+
+  case 4:
+
+    /* Initally, we set the position of all the GQPoints to the bottom-left node of current face
+     * and increment from there to get final GQPoint positions 
+     * 
+     * Note: numbering of GQPoints is counter-clockwise starting from the bottom-left corner. */
+
+    GQPoints[0] = GQPoints[1] = GQPoints[2] = GQPoints[3] = Node[ii+1][jj][kk].X; // = SEBot
+
+    DeltaY = Node[ii+1][jj+1][kk  ].X.y - Node[ii+1][jj  ][kk  ].X.y; // = NEBot - SEBot
+    DeltaZ = Node[ii+1][jj  ][kk+1].X.z - Node[ii+1][jj  ][kk  ].X.z; // = SETop - SEBot
+
+    /* Final position of GQPoints[0] */
+    GQPoints[0].y += GaussQuadratureData::GQ4_Abscissa[0]*DeltaY;
+    GQPoints[0].z += GaussQuadratureData::GQ4_Abscissa[0]*DeltaZ;
+    
+    /* Final position of GQPoints[1] */
+    GQPoints[1].y += GaussQuadratureData::GQ4_Abscissa[1]*DeltaY;
+    GQPoints[1].z += GaussQuadratureData::GQ4_Abscissa[0]*DeltaZ;
+
+    /* Final position of GQPoints[2] */
+    GQPoints[2].y += GaussQuadratureData::GQ4_Abscissa[1]*DeltaY;
+    GQPoints[2].z += GaussQuadratureData::GQ4_Abscissa[1]*DeltaZ;
+
+    /* Final position of GQPoints[3] */
+    GQPoints[3].y += GaussQuadratureData::GQ4_Abscissa[0]*DeltaY;
+    GQPoints[3].z += GaussQuadratureData::GQ4_Abscissa[1]*DeltaZ;
+
+    break;
+
+  default:
+    throw runtime_error("Grid3D_Hexa_Block::getGaussQuadPointsFaceE() ERROR! \
+                         Specified number of Gauss quadrature points is not implemented!");
+  }
+}
+
+//! Routine: getGaussQuadPointsFaceW
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the West face.
+ * 
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param jj k-index of the cell
+ * \param GQPoints storage array for the Gauss quadrature points. 
+ *                 This memory is overwritten!
+ * \param NumberOfGQPs specifies how many points are returned. This number is
+ *                     typically dictated by the accuracy of the flux calculation.
+ * \warning This function is for cartesian grids only
+ * 
+ *///---------------------------------------------------------------------
+inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceW(const int &ii, const int &jj, const int &kk,
+						       Vector3D * GQPoints, const int & NumberOfGQPs) const {
+
+  double DeltaY;
+  double DeltaZ;
+
+  switch (NumberOfGQPs){
+
+  case 1:
+    GQPoints[0] = xfaceW(ii,jj,kk);
+    break;
+
+  case 4:
+
+    /* Initally, we set the position of all the GQPoints to the bottom-left node of current face
+     * and increment from there to get final GQPoint positions 
+     * 
+     * Note: numbering of GQPoints is counter-clockwise starting from the bottom-left corner. */
+
+    GQPoints[0] = GQPoints[1] = GQPoints[2] = GQPoints[3] = Node[ii+1][jj][kk].X; // = NWBot
+
+    // !! DeltaY has a NEGATIVE value in this case !!
+    DeltaY = Node[ii  ][jj  ][kk  ].X.y - Node[ii  ][jj+1][kk  ].X.y; // = SWBot - NWBot
+    DeltaZ = Node[ii  ][jj+1][kk+1].X.z - Node[ii  ][jj+1][kk  ].X.z; // = NWTop - NWBot
+
+    /* Final position of GQPoints[0] */
+    GQPoints[0].y += GaussQuadratureData::GQ4_Abscissa[0]*DeltaY;
+    GQPoints[0].z += GaussQuadratureData::GQ4_Abscissa[0]*DeltaZ;
+    
+    /* Final position of GQPoints[1] */
+    GQPoints[1].y += GaussQuadratureData::GQ4_Abscissa[1]*DeltaY;
+    GQPoints[1].z += GaussQuadratureData::GQ4_Abscissa[0]*DeltaZ;
+
+    /* Final position of GQPoints[2] */
+    GQPoints[2].y += GaussQuadratureData::GQ4_Abscissa[1]*DeltaY;
+    GQPoints[2].z += GaussQuadratureData::GQ4_Abscissa[1]*DeltaZ;
+
+    /* Final position of GQPoints[3] */
+    GQPoints[3].y += GaussQuadratureData::GQ4_Abscissa[0]*DeltaY;
+    GQPoints[3].z += GaussQuadratureData::GQ4_Abscissa[1]*DeltaZ;
+
+    break;
+
+  default:
+    throw runtime_error("Grid3D_Hexa_Block::getGaussQuadPointsFaceW() ERROR! \
+                         Specified number of Gauss quadrature points is not implemented!");
+  }
+}
+
+//! Routine: getGaussQuadPointsFaceTop
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the Top face.
+ * 
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param jj k-index of the cell
+ * \param GQPoints storage array for the Gauss quadrature points. 
+ *                 This memory is overwritten!
+ * \param NumberOfGQPs specifies how many points are returned. This number is
+ *                     typically dictated by the accuracy of the flux calculation.
+ * \warning This function is for cartesian grids only
+ * 
+ *///---------------------------------------------------------------------
+inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceTop(const int &ii, const int &jj, const int &kk,
+							 Vector3D * GQPoints, const int & NumberOfGQPs) const {
+
+  double DeltaX;
+  double DeltaY;
+
+  switch (NumberOfGQPs){
+
+  case 1:
+    GQPoints[0] = xfaceTop(ii,jj,kk);
+    break;
+
+  case 4:
+
+    /* Initally, we set the position of all the GQPoints to the bottom-left node of current face
+     * and increment from there to get final GQPoint positions 
+     * 
+     * Note: numbering of GQPoints is counter-clockwise starting from the bottom-left corner. */
+
+    GQPoints[0] = GQPoints[1] = GQPoints[2] = GQPoints[3] = Node[ii][jj][kk+1].X; // = SWTop
+
+    DeltaX = Node[ii+1][jj  ][kk+1].X.x - Node[ii  ][jj  ][kk+1].X.x; // = SETop - SWTop
+    DeltaY = Node[ii  ][jj+1][kk+1].X.y - Node[ii  ][jj  ][kk+1].X.y; // = NWTop - SWTop
+
+    /* Final position of GQPoints[0] */
+    GQPoints[0].x += GaussQuadratureData::GQ4_Abscissa[0]*DeltaX;
+    GQPoints[0].y += GaussQuadratureData::GQ4_Abscissa[0]*DeltaY;
+    
+    /* Final position of GQPoints[1] */
+    GQPoints[1].x += GaussQuadratureData::GQ4_Abscissa[1]*DeltaX;
+    GQPoints[1].y += GaussQuadratureData::GQ4_Abscissa[0]*DeltaY;
+
+    /* Final position of GQPoints[2] */
+    GQPoints[2].x += GaussQuadratureData::GQ4_Abscissa[1]*DeltaX;
+    GQPoints[2].y += GaussQuadratureData::GQ4_Abscissa[1]*DeltaY;
+
+    /* Final position of GQPoints[3] */
+    GQPoints[3].x += GaussQuadratureData::GQ4_Abscissa[0]*DeltaX;
+    GQPoints[3].y += GaussQuadratureData::GQ4_Abscissa[1]*DeltaY;
+
+    break;
+
+  default:
+    throw runtime_error("Grid3D_Hexa_Block::getGaussQuadPointsFaceTop() ERROR! \
+                         Specified number of Gauss quadrature points is not implemented!");
+  }
+}
+
+//! Routine: getGaussQuadPointsFaceBot
+//  ----------------------------------------------------------------------
+/*! Purpose: Sets spatial-coordinates of Gauss quadrature points for the Bottom face.
+ * 
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param jj k-index of the cell
+ * \param GQPoints storage array for the Gauss quadrature points. 
+ *                 This memory is overwritten!
+ * \param NumberOfGQPs specifies how many points are returned. This number is
+ *                     typically dictated by the accuracy of the flux calculation.
+ * \warning This function is for cartesian grids only
+ * 
+ *///---------------------------------------------------------------------
+inline void Grid3D_Hexa_Block::getGaussQuadPointsFaceBot(const int &ii, const int &jj, const int &kk,
+							 Vector3D * GQPoints, const int & NumberOfGQPs) const {
+
+  double DeltaX;
+  double DeltaY;
+
+  switch (NumberOfGQPs){
+
+  case 1:
+    GQPoints[0] = xfaceBot(ii,jj,kk);
+    break;
+
+  case 4:
+
+    /* Initally, we set the position of all the GQPoints to the bottom-left node of current face
+     * and increment from there to get final GQPoint positions 
+     * 
+     * Note: numbering of GQPoints is counter-clockwise starting from the bottom-left corner. */
+
+    GQPoints[0] = GQPoints[1] = GQPoints[2] = GQPoints[3] = Node[ii][jj+1][kk].X; // = NWBot
+
+    // !! DeltaY has a NEGATIVE value in this case !!
+    DeltaX = Node[ii+1][jj+1][kk  ].X.x - Node[ii  ][jj+1][kk  ].X.x; // = NEBot - NWBot
+    DeltaY = Node[ii  ][jj  ][kk  ].X.y - Node[ii  ][jj+1][kk  ].X.y; // = SWBot - NWBot
+
+    /* Final position of GQPoints[0] */
+    GQPoints[0].x += GaussQuadratureData::GQ4_Abscissa[0]*DeltaX;
+    GQPoints[0].y += GaussQuadratureData::GQ4_Abscissa[0]*DeltaY;
+    
+    /* Final position of GQPoints[1] */
+    GQPoints[1].x += GaussQuadratureData::GQ4_Abscissa[1]*DeltaX;
+    GQPoints[1].y += GaussQuadratureData::GQ4_Abscissa[0]*DeltaY;
+
+    /* Final position of GQPoints[2] */
+    GQPoints[2].x += GaussQuadratureData::GQ4_Abscissa[1]*DeltaX;
+    GQPoints[2].y += GaussQuadratureData::GQ4_Abscissa[1]*DeltaY;
+
+    /* Final position of GQPoints[3] */
+    GQPoints[3].x += GaussQuadratureData::GQ4_Abscissa[0]*DeltaX;
+    GQPoints[3].y += GaussQuadratureData::GQ4_Abscissa[1]*DeltaY;
+
+    break;
+
+  default:
+    throw runtime_error("Grid3D_Hexa_Block::getGaussQuadPointsFaceBot() ERROR! \
+                         Specified number of Gauss quadrature points is not implemented!");
+  }
+}
+
 
 /********************************************************
  * Grid3D_Hexa_Block -- Binary arithmetic operators.    *

@@ -90,7 +90,7 @@ namespace tut
     Set_Default_Input_Parameters(IP);
 
     // Set input file name
-    Open_Input_File("AdvectDiffuse2D_Test.in");
+    this->Open_Input_File("AdvectDiffuse2D_Test.in");
 
     // Parse the input file
     IP.Parse_Input_File(input_file_name);

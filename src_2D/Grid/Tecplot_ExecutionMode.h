@@ -34,10 +34,12 @@ public:
   enum Output_Accuracy_Type { SinglePrec, //!< define single precision
 			      DoublePrec  //!< define double precision 
   };
-  
-  static short OUTPUT_LEVEL;
-  static short OUTPUT_ACCURACY;
 
+  //! Data type defining different ways to output the solution at inter-cellular nodes
+  enum Soln_Representation_Type { SmearedOut,    //!< output a unique interpolated value
+				  Discontinuous  //!< output the solution provided by each cell reconstruction
+  };
+  
   // set all flags to default values
   static void SetDefaults(void);
 
@@ -48,8 +50,8 @@ public:
 
   static void Broadcast(void);
 
-  //! Set the designated switch to single accuracy precision
-  static void setDoublePrecisionPlotting(void){ OUTPUT_ACCURACY = SinglePrec; }
+  //! Set the designated switch to double accuracy precision
+  static void setDoublePrecisionPlotting(void){ OUTPUT_ACCURACY = DoublePrec; }
 
   //! Return true if the data must be plotted with double accuracy otherwise false
   static bool IsDoublePrecision(void){ return (OUTPUT_ACCURACY == DoublePrec) ? true: false; }
@@ -62,11 +64,18 @@ public:
 						   (OUTPUT_LEVEL == Extended) ) ? true: false; }
   //! Return true if the data associated with the extended format should be output otherwise false
   static bool IsExtendedOutputRequired(void){ return (OUTPUT_LEVEL == Extended) ? true: false; }
+
+  //! Return true if the nodal solution is smoothly represented (i.e. interpolated) otherwise false
+  static bool IsSmoothNodalSolnOutputRequired(void){ return (SOLUTION_REPRESENTATION == SmearedOut) ? true: false; }
   
 protected:
   Tecplot_Execution_Mode(void);   //!< Private default constructor
   Tecplot_Execution_Mode(const Tecplot_Execution_Mode&); //!< Private copy constructor
   Tecplot_Execution_Mode& operator=(const Tecplot_Execution_Mode&); //!< Private assignment operator
+
+  static short OUTPUT_LEVEL;
+  static short OUTPUT_ACCURACY;
+  static short SOLUTION_REPRESENTATION;
 
 };
 
@@ -105,6 +114,18 @@ void Tecplot_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters
       OUTPUT_LEVEL = Full;
     } else if ( strcmp(IP.Next_Control_Parameter, "Extended") == 0 ) {
       OUTPUT_LEVEL = Extended;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Tecplot_Nodal_Soln_Representation") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Interpolated") == 0 ){
+      SOLUTION_REPRESENTATION = SmearedOut;
+    } else if ( strcmp(IP.Next_Control_Parameter, "Discontinuous") == 0 ) {
+      SOLUTION_REPRESENTATION = Discontinuous;
     } else {
       i_command = INVALID_INPUT_VALUE;
       return;

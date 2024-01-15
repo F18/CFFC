@@ -24,7 +24,7 @@ CANTERA_VERSION = NoCANTERA
 FFTW_VERSION = V32
 
 # Set to ON in order to run the TUT unit testing on
-TUT_TESTING = ON
+TUT_TESTING = OFF
 
 # Set to ON for use with "gprof"
 # <x86  >  gprof cffc2D gmon.out > output.txt
@@ -76,7 +76,10 @@ DEPENDSFLAGS =
 #   alpha  - cxx (6.x)
 #   ia64   - icc (v8.0,v8.1)
 #
-PLATFORM:= $(shell uname)_$(shell uname -m)
+OS = $(shell uname)
+ARCH = $(shell uname -m)
+
+PLATFORM = $(shell uname)_$(shell uname -m)
 ifeq ($(PLATFORM),Linux_i486)
   PLATFORM = Linux_i386
 endif
@@ -178,7 +181,9 @@ endif
 ifeq ($(PLATFORM),Linux_x86_64)
   BLAS_LD_FLAGS           = -lblas -llapack -lgcc 
 endif
-
+ifeq ($(OS),AIX)
+  BLAS_LD_FLAGS           = -lessl -lxlf90 #-lxlopt
+endif
 #
 # Set flags associated with cantera
 ifeq ($(PLATFORM),Linux_i386)
@@ -555,10 +560,50 @@ ifeq ($(PLATFORM),hpux)
   endif
 endif
 
+
+#Set IBM Power6 specific compile flags on AIX 
+#using IBM XL Compilers
+ifeq ($(OS),AIX)
+   ifeq ($(MPI_VERSION),NoMPI)
+    FC = xlf
+    F90 = $(FC)
+    CC = xlc
+    CXX = xlc++
+    CPPFLAGS = -D_GNU_GCC_3 $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS) -DUNIX_NAMES -D_NO_MPI_VERSION -D_NO_ICEMCFD_VERSION -D_USE_ESSL_LIB
+    FFLAGS =  -O3 -qstrict -qarch=auto -qtune=auto
+    F90FLAGS = $(FFLAGS) -fdefault-real-8
+    CFLAGS =  -O3 -qstrict -qarch=auto -qtune=auto
+    CXXFLAGS = $(CFLAGS) 
+    LD = $(CXX)
+    LDFLAGS =   $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS)  $(BLAS_LD_FLAGS)  -lm
+#$(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS)
+    DEPENDSFLAGS =
+  endif
+  ifeq ($(MPI_VERSION),POE)
+    FC = mpxlf  
+    F90 = mpxlf90
+    CC = mpCC_r
+    CXX = mpCC_r 
+    CPPFLAGS = -D_GNU_GCC_3 $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS) -DUNIX_NAMES -D_MPI_VERSION -D_NO_ICEMCFD_VERSION -D_MPI_VERSION2 -D_USE_ESSL_LIB
+    FFLAGS = -O3  -qstrict -qarch=auto -qtune=auto
+    F90FLAGS = $(FFLAGS) -fdefault-real-8
+    CFLAGS = -O3 -qstrict -qarch=auto -qtune=auto
+    CXXFLAGS =  $(CFLAGS) -cpp -qstaticinline
+    LD = $(CXX)
+    LDFLAGS = -qstaticinline $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) #$(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
+    DEPENDSFLAGS =
+  endif
+endif
+
+
 #
 # Add TUT flags
 ifeq ($(TUT_TESTING),ON) 
   CPPFLAGS += $(TUT_CPP_FLAGS)
+  # Include proper RTTI compile option for AIX
+  ifeq ($(OS),AIX)
+	CPPFLAGS += -qrtti
+  endif
 else
   CPPFLAGS += -D_NO_TUT_TESTING
 endif
