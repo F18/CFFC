@@ -37,32 +37,32 @@ General Public License for more details.
 
 Contributors to the development of CFFC Version 0.00 include:
 
-Clinton Groth
-Jai Sachdev
-Scott Northrup
-Eric Li
-Kalvin Tsang
-Xinfeng Gao
-James McDonald
-Tomoki Ohsawa
-Ken Miura
-Francisco Hernandez-Perez
-Wen Lin
-Dagmara Biskupska
-Alistair Wood
-Lucian Ivan
-Tom Dusatko
-MingYao Ding
-Stefan Neata
-Tim Blair
-Eska Ko
-Marc Charest
-Stephen Guzik
-Pradeep Jha
-Willem Deconinck
-Samuel Wong
-Graeme Supeene
-Ramy Rashad
+- Clinton Groth
+- Jai Sachdev
+- Scott Northrup
+- Eric Li
+- Kalvin Tsang
+- Xinfeng Gao
+- James McDonald
+- Tomoki Ohsawa
+- Ken Miura
+- Francisco Hernandez-Perez
+- Wen Lin
+- Dagmara Biskupska
+- Alistair Wood
+- Lucian Ivan
+- Tom Dusatko
+- MingYao Ding
+- Stefan Neata
+- Tim Blair
+- Eska Ko
+- Marc Charest
+- Stephen Guzik
+- Pradeep Jha
+- Willem Deconinck
+- Samuel Wong
+- Graeme Supeene
+- Ramy Rashad
 
 ## CONTACT
 
